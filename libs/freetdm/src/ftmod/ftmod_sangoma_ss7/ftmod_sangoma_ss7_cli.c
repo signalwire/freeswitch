@@ -119,8 +119,12 @@ static ftdm_status_t cli_ss7_show_all_channels_of_span(ftdm_stream_handle_t *str
 static ftdm_status_t cli_ss7_show_span_by_id(ftdm_stream_handle_t *stream, char *span_id);
 static ftdm_status_t cli_ss7_show_all_spans_general(ftdm_stream_handle_t *stream);
 static ftdm_status_t cli_ss7_show_all_spans_detail(ftdm_stream_handle_t *stream); 
-static ftdm_status_t handle_show_sctp(ftdm_stream_handle_t *stream);
-static ftdm_status_t handle_show_m2ua(ftdm_stream_handle_t *stream);
+static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream);
+static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char* sctp_profile_name);
+static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream);
+static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char* m2ua_profile_name);
+static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream);
+static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char* profile_name);
 int get_assoc_resp_buf(char* buf,SbMgmt* cfm);
 
 /******************************************************************************/
@@ -390,11 +394,30 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 		/**********************************************************************/
 		} else if (!strcasecmp(argv[c], "m2ua")) {
 		/**********************************************************************/
-			handle_show_m2ua(stream);
+			if (check_arg_count(argc, 3)){
+				handle_show_m2ua_profiles(stream);
+			}else{	
+				c++;
+				handle_show_m2ua_profile(stream, argv[c]);
+			}
+		/**********************************************************************/
+		} else if (!strcasecmp(argv[c], "nif")) {
+		/**********************************************************************/
+			if (check_arg_count(argc, 3)){
+				handle_show_nif_profiles(stream);
+			}else{	
+				c++;
+				handle_show_nif_profile(stream, argv[c]);
+			}
 		/**********************************************************************/
 		} else if (!strcasecmp(argv[c], "sctp")) {
 		/**********************************************************************/
-			handle_show_sctp(stream);
+			if (check_arg_count(argc, 3)){
+				handle_show_sctp_profiles(stream);
+			}else{	
+				c++;
+				handle_show_sctp_profile(stream, argv[c]);
+			}
 		/**********************************************************************/
 		} else {
 		/**********************************************************************/
@@ -845,9 +868,11 @@ static ftdm_status_t handle_print_usage(ftdm_stream_handle_t *stream)
 
 	stream->write_function(stream, "ftmod_sangoma_ss7 M2UA status:\n");
 	stream->write_function(stream, "ftdm ss7 show sctp \n");
-	stream->write_function(stream, "ftdm ss7 show sctp <sctp_profile_name>\n");
+	stream->write_function(stream, "ftdm ss7 show sctp <sctp_interface_name>\n");
 	stream->write_function(stream, "ftdm ss7 show m2ua \n");
-	stream->write_function(stream, "ftdm ss7 show m2ua <m2ua_profile_name>\n");
+	stream->write_function(stream, "ftdm ss7 show m2ua <m2ua_interface_name>\n");
+	stream->write_function(stream, "ftdm ss7 show nif \n");
+	stream->write_function(stream, "ftdm ss7 show nif <nif_interface_name>\n");
 	stream->write_function(stream, "\n");
 
 	stream->write_function(stream, "\n");
@@ -2969,17 +2994,222 @@ static ftdm_status_t cli_ss7_show_all_spans_general(ftdm_stream_handle_t *stream
 }
 
 /******************************************************************************/
-static ftdm_status_t handle_show_m2ua(ftdm_stream_handle_t *stream)
+static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 {
-	/*char* xmlhdr = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";*/
+	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	char  buf[2048];
+	int x = 0x00;
+	int idx = 0x00;
+	int len = 0x00;
+	MwMgmt cfm;
+
+	memset((U8 *)&cfm, 0, sizeof(MwMgmt));
+	memset(&buf[0], 0, sizeof(buf));
+
+	len = len + sprintf(buf + len, "%s\n", xmlhdr);
+	len = len + sprintf(buf + len, "<m2ua_profiles>\n");
+
+	if(ftmod_m2ua_ssta_req(STMWGEN, 0x00, &cfm)) {
+		stream->write_function(stream," Request to Trillium M2UA layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<m2ua_gen>\n");
+		len = len + sprintf(buf + len, "<mem_size> %d </mem_size>\n",cfm.t.ssta.s.genSta.memSize);
+		len = len + sprintf(buf + len, " <allocated_mem_size> %d </allocated_mem_size>\n",cfm.t.ssta.s.genSta.memAlloc);
+		len = len + sprintf(buf + len, " <num_of_cluster> %d </num_of_cluster>\n",cfm.t.ssta.s.genSta.nmbClusters);
+		len = len + sprintf(buf + len, " <num_of_peers> %d </num_of_peers>\n",cfm.t.ssta.s.genSta.nmbPeers);
+		len = len + sprintf(buf + len, " <num_of_interfaces> %d </num_of_interfaces>\n",cfm.t.ssta.s.genSta.nmbIntf);
+		len = len + sprintf(buf + len, "</m2ua_gen>\n");
+	}
 
 	/*iterate through all the m2ua links and prints all information */
+	 x = 1;
+	 while(x<MW_MAX_NUM_OF_INTF){
+		 if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) &&
+				 (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
+
+			 len = len + sprintf(buf + len, "<m2ua_profile>\n");
+
+			 if(ftmod_m2ua_ssta_req(STMWDLSAP,x,&cfm)) {
+				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				 return FTDM_FAIL;
+			 } else {
+				 len = len + sprintf(buf + len, "<m2ua_dlsap>\n");
+				 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_SAP_STATE(cfm.t.ssta.s.dlSapSta.state));
+				 len = len + sprintf(buf + len," <link_state> %s </link_state>\n", PRNT_M2UA_LINK_STATE(cfm.t.ssta.s.dlSapSta.lnkState));
+				 len = len + sprintf(buf + len," <rpo_enable> %d </rpo_enable>\n", cfm.t.ssta.s.dlSapSta.rpoEnable);
+				 len = len + sprintf(buf + len," <lpo_enable> %d </lpo_enable>\n", cfm.t.ssta.s.dlSapSta.lpoEnable);
+				 len = len + sprintf(buf + len," <congestion_level> %d </congestion_level>\n", cfm.t.ssta.s.dlSapSta.congLevel);
+				 len = len + sprintf(buf + len, "</m2ua_dlsap>\n");
+			 }
+
+			 if(ftmod_m2ua_ssta_req(STMWCLUSTER,x,&cfm)) {
+				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				 return FTDM_FAIL;
+			 } else {
+				 len = len + sprintf(buf + len, "<m2ua_cluster>\n");
+				 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_CLUSTER_STATE(cfm.t.ssta.s.clusterSta.state));
+				 len = len + sprintf(buf + len, " <num_of_peers> %d </num_of_peers>\n",cfm.t.ssta.s.clusterSta.nmbPeer);
+				 len = len + sprintf(buf + len, "<m2ua_cluster_peer>\n");
+				 for(idx = 0; idx < cfm.t.ssta.s.clusterSta.nmbPeer; idx++)
+				 {
+					 len = len + sprintf(buf + len, " <peer_id> %d </peer_id>\n", cfm.t.ssta.s.clusterSta.peerSt[idx].peerId);
+					 len = len + sprintf(buf + len, " <peer_state> %s </peer_state>\n",  PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.clusterSta.peerSt[idx].peerState));
+				 }
+				 len = len + sprintf(buf + len, "</m2ua_cluster_peer>\n");
+				 len = len + sprintf(buf + len, "<num_active_peer> %d </num_active_peer>\n",cfm.t.ssta.s.clusterSta.nmbActPeer);
+
+				 len = len + sprintf(buf + len, "</m2ua_cluster>\n");
+			 }
+
+			 if(ftmod_m2ua_ssta_req(STMWPEER,x,&cfm)) {
+				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				 return FTDM_FAIL;
+			 } else {
+				 len = len + sprintf(buf + len, "<m2ua_peer>\n");
+				 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.peerSta.state));
+				 len = len + sprintf(buf + len, " <retry_count> %d </retry_count>\n",cfm.t.ssta.s.peerSta.retryCount);
+				 len = len + sprintf(buf + len, " <assoc_id> %d </assoc_id>\n",cfm.t.ssta.s.peerSta.assocSta.spAssocId);
+				 len = len + sprintf(buf + len, " <connected_status> %s </connected_status>\n",(cfm.t.ssta.s.peerSta.assocSta.connected)?"CONNECTED":"NOT CONNECTED");
+				 len = len + sprintf(buf + len, " <flow_cntrl_progress> %d </flow_cntrl_progress>\n",cfm.t.ssta.s.peerSta.assocSta.flcInProg);
+				 len = len + sprintf(buf + len, " <flow_cntrl_level> %d </flow_cntrl_level>\n",cfm.t.ssta.s.peerSta.assocSta.flcLevel);
+				 len = len + sprintf(buf + len, " <hearbeat_status> %d </hearbeat_status>\n",cfm.t.ssta.s.peerSta.assocSta.sctpHBeatEnb);
+				 len = len + sprintf(buf + len, " <nmb_of_stream> %d </nmb_of_stream>\n",cfm.t.ssta.s.peerSta.assocSta.locOutStrms);
+
+				 len = len + sprintf(buf + len, "</m2ua_peer>\n");
+			 }
+
+			 if(ftmod_m2ua_ssta_req(STMWSCTSAP,x,&cfm)) {
+				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				 return FTDM_FAIL;
+			 } else {
+				 len = len + sprintf(buf + len, "<m2ua_sctp_sap>\n");
+				 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_SAP_STATE(cfm.t.ssta.s.sctSapSta.state));
+				 len = len + sprintf(buf + len," <end_point_open_state> %s </end_point_open_state>\n", (cfm.t.ssta.s.sctSapSta.endpOpen)?"END_POINT_OPENED_SUCCESSFULLY":"END_POINT_NOT_OPEN");
+				 len = len + sprintf(buf + len," <end_point_id> %d </end_point_id>\n", cfm.t.ssta.s.sctSapSta.spEndpId);
+				 len = len + sprintf(buf + len," <nmb_of_retry_attemp> %d </nmb_of_retry_attemp>\n", cfm.t.ssta.s.sctSapSta.nmbPrimRetry);
+				 len = len + sprintf(buf + len, "</m2ua_sctp_sap>\n");
+			 }
+
+			 len = len + sprintf(buf + len, "</m2ua_profile>\n");
+		 }
+		 x++;
+	 }
+
+	len = len + sprintf(buf + len, "</m2ua_profiles>\n");
+	stream->write_function(stream,"\n%s\n",buf); 
+
+	return FTDM_FAIL;
+
+}
+
+static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char* m2ua_profile_name) 
+{
+	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	char  buf[2048];
+	int x = 0x00;
+	int idx = 0x00;
+	int found = 0x00;
+	int len = 0x00;
+	MwMgmt cfm;
+
+	memset((U8 *)&cfm, 0, sizeof(MwMgmt));
+	memset(&buf[0], 0, sizeof(buf));
+
+	len = len + sprintf(buf + len, "%s\n", xmlhdr);
+
+	/*iterate through all the m2ua links and get required profile */
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) &&
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
+
+			if(!strcasecmp(m2ua_profile_name, g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].name)){
+				found = 0x01;
+				break;
+			}
+		}
+		x++;
+	}
+
+	if(!found){
+		stream->write_function(stream,"Requested M2UA profile[%s] not configured\n", m2ua_profile_name);
+		return FTDM_FAIL;
+	}
+
+
+	len = len + sprintf(buf + len, "<m2ua_profile>\n");
+
+	if(ftmod_m2ua_ssta_req(STMWDLSAP,x,&cfm)) {
+		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<m2ua_dlsap>\n");
+		len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_SAP_STATE(cfm.t.ssta.s.dlSapSta.state));
+		len = len + sprintf(buf + len," <link_state> %s </link_state>\n", PRNT_M2UA_LINK_STATE(cfm.t.ssta.s.dlSapSta.lnkState));
+		len = len + sprintf(buf + len," <rpo_enable> %d </rpo_enable>\n", cfm.t.ssta.s.dlSapSta.rpoEnable);
+		len = len + sprintf(buf + len," <lpo_enable> %d </lpo_enable>\n", cfm.t.ssta.s.dlSapSta.lpoEnable);
+		len = len + sprintf(buf + len," <congestion_level> %d </congestion_level>\n", cfm.t.ssta.s.dlSapSta.congLevel);
+		len = len + sprintf(buf + len, "</m2ua_dlsap>\n");
+	}
+
+	if(ftmod_m2ua_ssta_req(STMWCLUSTER,x,&cfm)) {
+		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<m2ua_cluster>\n");
+		len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_CLUSTER_STATE(cfm.t.ssta.s.clusterSta.state));
+		len = len + sprintf(buf + len, " <num_of_peers> %d </num_of_peers>\n",cfm.t.ssta.s.clusterSta.nmbPeer);
+		len = len + sprintf(buf + len, "<m2ua_cluster_peer>\n");
+		for(idx = 0; idx < cfm.t.ssta.s.clusterSta.nmbPeer; idx++)
+		{
+			len = len + sprintf(buf + len, " <peer_id> %d </peer_id>\n", cfm.t.ssta.s.clusterSta.peerSt[idx].peerId);
+			len = len + sprintf(buf + len, " <peer_state> %s </peer_state>\n",  PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.clusterSta.peerSt[idx].peerState));
+		}
+		len = len + sprintf(buf + len, "</m2ua_cluster_peer>\n");
+		len = len + sprintf(buf + len, "<num_active_peer> %d </num_active_peer>\n",cfm.t.ssta.s.clusterSta.nmbActPeer);
+
+		len = len + sprintf(buf + len, "</m2ua_cluster>\n");
+	}
+
+	if(ftmod_m2ua_ssta_req(STMWPEER,x,&cfm)) {
+		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<m2ua_peer>\n");
+		len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.peerSta.state));
+		len = len + sprintf(buf + len, " <retry_count> %d </retry_count>\n",cfm.t.ssta.s.peerSta.retryCount);
+		len = len + sprintf(buf + len, " <assoc_id> %d </assoc_id>\n",cfm.t.ssta.s.peerSta.assocSta.spAssocId);
+		len = len + sprintf(buf + len, " <connected_status> %s </connected_status>\n",(cfm.t.ssta.s.peerSta.assocSta.connected)?"CONNECTED":"NOT CONNECTED");
+		len = len + sprintf(buf + len, " <flow_cntrl_progress> %d </flow_cntrl_progress>\n",cfm.t.ssta.s.peerSta.assocSta.flcInProg);
+		len = len + sprintf(buf + len, " <flow_cntrl_level> %d </flow_cntrl_level>\n",cfm.t.ssta.s.peerSta.assocSta.flcLevel);
+		len = len + sprintf(buf + len, " <hearbeat_status> %d </hearbeat_status>\n",cfm.t.ssta.s.peerSta.assocSta.sctpHBeatEnb);
+		len = len + sprintf(buf + len, " <nmb_of_stream> %d </nmb_of_stream>\n",cfm.t.ssta.s.peerSta.assocSta.locOutStrms);
+
+		len = len + sprintf(buf + len, "</m2ua_peer>\n");
+	}
+
+	if(ftmod_m2ua_ssta_req(STMWSCTSAP,x,&cfm)) {
+		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<m2ua_sctp_sap>\n");
+		len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_SAP_STATE(cfm.t.ssta.s.sctSapSta.state));
+		len = len + sprintf(buf + len," <end_point_open_state> %s </end_point_open_state>\n", (cfm.t.ssta.s.sctSapSta.endpOpen)?"END_POINT_OPENED_SUCCESSFULLY":"END_POINT_NOT_OPEN");
+		len = len + sprintf(buf + len," <end_point_id> %d </end_point_id>\n", cfm.t.ssta.s.sctSapSta.spEndpId);
+		len = len + sprintf(buf + len," <nmb_of_retry_attemp> %d </nmb_of_retry_attemp>\n", cfm.t.ssta.s.sctSapSta.nmbPrimRetry);
+		len = len + sprintf(buf + len, "</m2ua_sctp_sap>\n");
+	}
+
+	len = len + sprintf(buf + len, "</m2ua_profile>\n");
+
+	stream->write_function(stream,"\n%s\n",buf); 
 
 	return FTDM_FAIL;
 
 }
 /******************************************************************************/
-static ftdm_status_t handle_show_sctp(ftdm_stream_handle_t *stream)
+static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
 	char  buf[2048];
@@ -3079,7 +3309,7 @@ static ftdm_status_t handle_show_sctp(ftdm_stream_handle_t *stream)
 	len = len + sprintf(buf + len, "</sctp_profiles>\n");
 	stream->write_function(stream,"\n%s\n",buf); 
 
-	return FTDM_FAIL;
+	return FTDM_SUCCESS;
 }
 
 int get_assoc_resp_buf(char* buf,SbMgmt* cfm)
@@ -3182,6 +3412,186 @@ int get_assoc_resp_buf(char* buf,SbMgmt* cfm)
 #endif
 
 	return len;
+}
+
+
+static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char* sctp_profile_name)
+{
+	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	char  buf[2048];
+	int x = 0x00;
+	int len = 0x00;
+	SbMgmt cfm;
+	int found = 0x00;
+
+	memset((U8 *)&cfm, 0, sizeof(SbMgmt));
+	memset(&buf[0], 0, sizeof(buf));
+
+	len = len + sprintf(buf + len, "%s\n", xmlhdr);
+
+	/*iterate through all the sctp links and prints all information */
+	x = 1;
+	while(x<MAX_SCTP_LINK){
+		if((g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0) &&
+				(!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED))) {
+			if(!strcasecmp(sctp_profile_name, g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].name)){
+				found = 0x01;
+				break;
+			}
+		}
+		x++;
+	}
+	if(!found){
+		stream->write_function(stream,"Requested SCTP profile[%s] not configured\n", sctp_profile_name);
+		return FTDM_FAIL;
+	}
+
+	len = len + sprintf(buf + len, "<sctp_profile>\n");
+
+	if(ftmod_sctp_ssta_req(STSBSCTSAP,x,&cfm)) {
+		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<sctp_sap>\n");
+		len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_SCTP_SAP_STATE(cfm.t.ssta.s.sapSta.hlSt));
+		len = len + sprintf(buf + len," <switch> %s </switch>\n", PRNT_SCTP_PROTO_SWITCH(cfm.t.ssta.s.sapSta.swtch));
+		len = len + sprintf(buf + len, "</sctp_sap>\n");
+	}
+
+	if(ftmod_sctp_ssta_req(STSBTSAP,x,&cfm)) {
+		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<sctp_transport_sap>\n");
+		len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_SCTP_SAP_STATE(cfm.t.ssta.s.sapSta.hlSt));
+		len = len + sprintf(buf + len," <switch> %s </switch>\n", PRNT_SCTP_PROTO_SWITCH(cfm.t.ssta.s.sapSta.swtch));
+		len = len + sprintf(buf + len, "</sctp_transport_sap>\n");
+	}
+
+	if(ftmod_sctp_ssta_req(STSBASSOC,x,&cfm)) {
+		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<sctp_association>\n");
+		len = len + get_assoc_resp_buf(buf + len, &cfm);
+		len = len + sprintf(buf + len, "</sctp_association>\n");
+	}
+
+	/* TODO - STSBDTA */
+
+	len = len + sprintf(buf + len, "</sctp_profile>\n");
+
+	stream->write_function(stream,"\n%s\n",buf); 
+
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
+{
+	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	char  buf[2048];
+	int x = 0x00;
+	int len = 0x00;
+	NwMgmt cfm;
+
+	memset((U8 *)&cfm, 0, sizeof(NwMgmt));
+	memset(&buf[0], 0, sizeof(buf));
+
+	len = len + sprintf(buf + len, "%s\n", xmlhdr);
+	len = len + sprintf(buf + len, "<nif_profiles>\n");
+
+	if(ftmod_nif_ssta_req(STNWGEN, 0x00, &cfm)) {
+		stream->write_function(stream," Request to Trillium NIF layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<nif_gen>\n");
+		len = len + sprintf(buf + len, "<mem_size> %d </mem_size>\n",cfm.t.ssta.s.genSta.memSize);
+		len = len + sprintf(buf + len, " <allocated_mem_size> %d </allocated_mem_size>\n",cfm.t.ssta.s.genSta.memAlloc);
+		len = len + sprintf(buf + len, "</nif_gen>\n");
+	}
+
+	/*iterate through all the NIF links and prints all information */
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0) &&
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED))) {
+
+			len = len + sprintf(buf + len, "<nif_profile>\n");
+
+			if(ftmod_nif_ssta_req(STNWDLSAP,x,&cfm)) {
+				stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				return FTDM_FAIL;
+			} else {
+				len = len + sprintf(buf + len, "<nif_dlsap>\n");
+				len = len + sprintf(buf + len," <m2ua_sap_state> %s </m2ua_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.m2uaState));
+				len = len + sprintf(buf + len," <mtp2_sap_state> %s </mtp2_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.mtp2State));
+				len = len + sprintf(buf + len," <nmb_of_retry> %d </nmb_of_retry>\n", cfm.t.ssta.s.dlSapSta.nmbRetry);
+				len = len + sprintf(buf + len, "</nif_dlsap>\n");
+			}
+
+			len = len + sprintf(buf + len, "</nif_profile>\n");
+		}
+		x++;
+	}
+
+	len = len + sprintf(buf + len, "</nif_profiles>\n");
+	stream->write_function(stream,"\n%s\n",buf); 
+
+	return FTDM_FAIL;
+}
+
+static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char* nif_profile_name) 
+{
+	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	char  buf[2048];
+	int x = 0x00;
+	int found = 0x00;
+	int len = 0x00;
+	NwMgmt cfm;
+
+	memset((U8 *)&cfm, 0, sizeof(NwMgmt));
+	memset(&buf[0], 0, sizeof(buf));
+
+	len = len + sprintf(buf + len, "%s\n", xmlhdr);
+
+	/*iterate through all the m2ua links and get required profile */
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0) &&
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED))) {
+
+			if(!strcasecmp(nif_profile_name, g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].name)){
+				found = 0x01;
+				break;
+			}
+		}
+		x++;
+	}
+
+	if(!found){
+		stream->write_function(stream,"Requested NIF profile[%s] not configured\n", nif_profile_name);
+		return FTDM_FAIL;
+	}
+
+
+	len = len + sprintf(buf + len, "<nif_profile>\n");
+
+	if(ftmod_nif_ssta_req(STNWDLSAP,x,&cfm)) {
+		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<nif_dlsap>\n");
+		len = len + sprintf(buf + len," <m2ua_sap_state> %s </m2ua_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.m2uaState));
+		len = len + sprintf(buf + len," <mtp2_sap_state> %s </mtp2_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.mtp2State));
+		len = len + sprintf(buf + len," <nmb_of_retry> %d </nmb_of_retry>\n", cfm.t.ssta.s.dlSapSta.nmbRetry);
+		len = len + sprintf(buf + len, "</nif_dlsap>\n");
+	}
+
+	len = len + sprintf(buf + len, "</nif_profile>\n");
+
+	stream->write_function(stream,"\n%s\n",buf); 
+
+	return FTDM_FAIL;
 }
 
 /******************************************************************************/

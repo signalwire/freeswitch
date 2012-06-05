@@ -124,10 +124,8 @@ void ftmod_ss7_m2ua_free(void);
 ftdm_status_t ftmod_ss7_m2ua_cfg(void);
 
 int ftmod_sctp_ssta_req(int elemt, int id, SbMgmt* cfm);
-#if 0
-int ftmod_m2ua_ssta_req(int elemt);
-int ftmod_nif_ssta_req(int elemt);
-#endif
+int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm);
+int ftmod_nif_ssta_req(int elemt, int id, NwMgmt* cfm);
 
 
 #endif /*__FTMOD_SNG_SS7_M2UA_H__*/
