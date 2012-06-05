@@ -1403,7 +1403,6 @@ static void core_event_handler(switch_event_t *event)
 
 			switch (state_i) {
 			case CS_NEW:
-			case CS_HANGUP:
 			case CS_DESTROY:
 			case CS_REPORTING:
 				break;
