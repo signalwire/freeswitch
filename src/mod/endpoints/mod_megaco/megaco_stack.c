@@ -8,6 +8,7 @@
 
 /* INCLUDES *******************************************************************/
 #include "mod_megaco.h"
+#include "megaco_stack.h"
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/
@@ -17,27 +18,31 @@ int mgco_mg_gen_config(void);
 int mgco_mu_gen_config(void);
 int mgco_tucl_gen_config(void);
 int mgco_mu_ssap_config(int idx);
-int mgco_mg_tsap_config(int idx);
+int mgco_mg_tsap_config(megaco_profile_t* profile);
 int mgco_mg_enble_debug(void);
-int mgco_mg_ssap_config(int idx);
-int mgco_mg_peer_config(int idx);
-int mgco_mg_tpt_server_config(int idx);
+int mgco_mg_ssap_config(megaco_profile_t* profile);
+int mgco_mg_peer_config(megaco_profile_t* profile);
+int mgco_mg_tpt_server_config(megaco_profile_t* profile);
 int mgco_tucl_sap_config(int idx);
 
 int mgco_mg_tsap_bind_cntrl(int idx);
 int mgco_mg_tsap_enable_cntrl(int idx);
 int mgco_mg_ssap_cntrl(int idx);
 int mgco_mu_ssap_cntrl(int idx);
-int mgco_mg_tpt_server(int idx);
 int sng_mgco_tucl_shutdown();
 int sng_mgco_mg_shutdown();
 int sng_mgco_mg_ssap_stop(int sapId);
-int sng_mgco_mg_tpt_server_stop(int idx);
+int sng_mgco_mg_tpt_server_stop(megaco_profile_t* profile);
 int sng_mgco_mg_app_ssap_stop(int idx);
 
 switch_status_t sng_mgco_stack_gen_cfg();
 
 void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm);
+
+sng_mg_transport_types_e  mg_get_tpt_type(megaco_profile_t* mg_cfg);
+sng_mg_transport_types_e  mg_get_tpt_type_from_str(char* tpt_type);
+sng_mg_encoding_types_e  mg_get_enc_type_from_str(char* enc_type);
+sng_mg_protocol_types_e  mg_get_proto_type_from_str(char* proto_type);
 
 /******************************************************************************/
 
@@ -150,20 +155,15 @@ switch_status_t sng_mgco_stack_gen_cfg()
 
 /*****************************************************************************************************************/
 
-switch_status_t sng_mgco_cfg(const char* profilename)
+switch_status_t sng_mgco_cfg(megaco_profile_t* profile)
 {
 	int idx   = 0x00;
 
-	switch_assert(profilename);
+	switch_assert(profile);
 
-	GET_MG_CFG_IDX(profilename, idx);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Starting MG configuration for idx[%d] against profilename[%s]\n", profile->idx, profile->name);
 
-	if(!idx || (idx == MAX_MG_PROFILES)){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
-		return SWITCH_STATUS_FALSE;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Starting MG configuration for idx[%d] against profilename[%s]\n", idx, profilename);
+	idx = profile->idx;
 
 	if(mgco_tucl_sap_config(idx)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," mgco_tucl_sap_config FAILED \n");	
@@ -183,7 +183,7 @@ switch_status_t sng_mgco_cfg(const char* profilename)
 	}
 
 
-	if(mgco_mg_tsap_config(idx)) {
+	if(mgco_mg_tsap_config(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," mgco_mg_tsap_config FAILED \n");	
 		return SWITCH_STATUS_FALSE;
 	}
@@ -191,7 +191,7 @@ switch_status_t sng_mgco_cfg(const char* profilename)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," mgco_mg_tsap_config SUCCESS \n");	
 	}
 
-	if(mgco_mg_ssap_config(idx)) {
+	if(mgco_mg_ssap_config(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " mgco_mg_ssap_config FAILED \n");	
 		return SWITCH_STATUS_FALSE;
 	}
@@ -199,7 +199,7 @@ switch_status_t sng_mgco_cfg(const char* profilename)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " mgco_mg_ssap_config SUCCESS \n");	
 	}
 
-	if(mgco_mg_peer_config(idx)) {
+	if(mgco_mg_peer_config(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " mgco_mg_peer_config FAILED \n");	
 		return SWITCH_STATUS_FALSE;
 	}
@@ -207,7 +207,7 @@ switch_status_t sng_mgco_cfg(const char* profilename)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " mgco_mg_peer_config SUCCESS \n");	
 	}
 
-	if(mgco_mg_tpt_server_config(idx)) {
+	if(mgco_mg_tpt_server_config(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " mgco_mg_tpt_server_config FAILED \n");	
 		return SWITCH_STATUS_FALSE;
 	}
@@ -220,22 +220,11 @@ switch_status_t sng_mgco_cfg(const char* profilename)
 
 /*****************************************************************************************************************/
 
-switch_status_t sng_mgco_start(const char* profilename)
+switch_status_t sng_mgco_start(megaco_profile_t* profile )
 {
-	int idx   = 0x00;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Starting MG stack for idx[%d] against profilename[%s]\n", profile->idx, profile->name);
 
-	switch_assert(profilename);
-
-	GET_MG_CFG_IDX(profilename, idx);
-
-	if(!idx || (idx == MAX_MG_PROFILES)){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
-		return SWITCH_STATUS_FALSE;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Starting MG stack for idx[%d] against profilename[%s]\n", idx, profilename);
-
-	if(mgco_mu_ssap_cntrl(idx)) {
+	if(mgco_mu_ssap_cntrl(profile->idx)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " mgco_mu_ssap_cntrl FAILED \n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -243,7 +232,7 @@ switch_status_t sng_mgco_start(const char* profilename)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " mgco_mu_ssap_cntrl SUCCESS \n");
 	}
 
-	if(mgco_mg_tsap_bind_cntrl(idx)) {
+	if(mgco_mg_tsap_bind_cntrl(profile->idx)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " mgco_mg_tsap_bind_cntrl FAILED \n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -251,7 +240,7 @@ switch_status_t sng_mgco_start(const char* profilename)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " mgco_mg_tsap_bind_cntrl SUCCESS \n");
 	}
 
-	if(mgco_mg_ssap_cntrl(idx)) {
+	if(mgco_mg_ssap_cntrl(profile->idx)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " mgco_mg_ssap_cntrl FAILED \n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -259,7 +248,7 @@ switch_status_t sng_mgco_start(const char* profilename)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " mgco_mg_ssap_cntrl SUCCESS \n");
 	}
 
-	if(mgco_mg_tsap_enable_cntrl(idx)) {
+	if(mgco_mg_tsap_enable_cntrl(profile->idx)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " mgco_mg_tsap_enable_cntrl FAILED \n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -272,28 +261,20 @@ switch_status_t sng_mgco_start(const char* profilename)
 
 /*****************************************************************************************************************/
 
-switch_status_t sng_mgco_stop(const char* profilename)
+switch_status_t sng_mgco_stop(megaco_profile_t* profile )
 {
-	int idx   = 0x00;
-	sng_mg_cfg_t* mgCfg  = NULL; 
+	int idx = 0x00;
 
-	switch_assert(profilename);
+	switch_assert(profile);
 
-	GET_MG_CFG_IDX(profilename, idx);
+	idx = profile->idx;	
 
-	if(!idx || (idx == MAX_MG_PROFILES)){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
-		return SWITCH_STATUS_FALSE;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Stopping MG stack for idx[%d] against profilename[%s]\n", idx, profilename);
-
-	mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Stopping MG stack for idx[%d] against profilename[%s]\n", idx, profile->name);
 
 	/* MG STOP is as good as deleting that perticular mg(virtual mg instance) data from megaco stack */
 	/* currently we are not supporting enable/disable MG stack */
 
-	if(sng_mgco_mg_ssap_stop(mgCfg->id)) {
+	if(sng_mgco_mg_ssap_stop(idx)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " sng_mgco_mg_ssap_stop FAILED \n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -301,7 +282,7 @@ switch_status_t sng_mgco_stop(const char* profilename)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " sng_mgco_mg_ssap_stop SUCCESS \n");
 	}
 
-	if(sng_mgco_mg_tpt_server_stop(idx)) {
+	if(sng_mgco_mg_tpt_server_stop(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " sng_mgco_mg_tpt_server_stop FAILED \n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -342,7 +323,7 @@ int sng_mgco_mg_app_ssap_stop(int idx)
         mgMngmt.hdr.entId.ent       = ENTMG;
         mgMngmt.hdr.entId.inst      = S_INST;
         mgMngmt.hdr.elmId.elmnt     = STSSAP;
-        mgMngmt.hdr.elmId.elmntInst1     = GET_MU_SAP_ID(idx);
+        mgMngmt.hdr.elmId.elmntInst1     = idx;
 
         cntrl->action       = ADEL;
         cntrl->subAction    = SAELMNT;
@@ -383,14 +364,13 @@ int sng_mgco_mg_ssap_stop(int sapId)
 }
 
 /*****************************************************************************************************************/
-int sng_mgco_mg_tpt_server_stop(int idx)
+int sng_mgco_mg_tpt_server_stop(megaco_profile_t* mg_cfg)
 {
         MgMngmt         mgMngmt;
         Pst             pst;              /* Post for layer manager */
         MgCntrl         *cntrl;
         MgTptCntrl *tptCntrl = &mgMngmt.t.cntrl.s.tptCntrl;
         CmInetIpAddr   ipAddr = 0;
-	sng_mg_cfg_t* mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
 
         cntrl = &(mgMngmt.t.cntrl);
 
@@ -402,11 +382,11 @@ int sng_mgco_mg_tpt_server_stop(int idx)
         /* insert the destination Entity */
         pst.dstEnt = ENTMG;
 
-	tptCntrl->transportType = GET_TPT_TYPE(idx);
+	tptCntrl->transportType = mg_get_tpt_type(mg_cfg); 
         
 	tptCntrl->serverAddr.type =  CM_INET_IPV4ADDR_TYPE;
-	tptCntrl->serverAddr.u.ipv4TptAddr.port = mgCfg->port;
-	if(ROK == cmInetAddr((S8*)mgCfg->my_ipaddr, &ipAddr))
+	tptCntrl->serverAddr.u.ipv4TptAddr.port = atoi(mg_cfg->port);
+	if(ROK == cmInetAddr((S8*)mg_cfg->my_ipaddr, &ipAddr))
 	{
 		tptCntrl->serverAddr.u.ipv4TptAddr.address = ntohl(ipAddr);
 	}
@@ -448,7 +428,7 @@ int mgco_mg_tsap_bind_cntrl(int idx)
 
         cntrl->action       = ABND_ENA;
         cntrl->subAction    = SAELMNT;
-        cntrl->spId 	    = GET_TPT_ID(idx);
+        cntrl->spId 	    = idx; 
 
         return(sng_cntrl_mg(&pst, &mgMngmt));
 }
@@ -479,13 +459,14 @@ int mgco_mg_tsap_enable_cntrl(int idx)
 
         cntrl->action       = AENA;
         cntrl->subAction    = SAELMNT;
-        cntrl->spId 	    = GET_TPT_ID(idx);
+        cntrl->spId 	    = idx;
 
         return(sng_cntrl_mg(&pst, &mgMngmt));
 }
 
 /*****************************************************************************************************************/
 
+#if 0
 int mgco_mg_tpt_server(int idx)
 {
         MgMngmt         mgMngmt;
@@ -493,7 +474,7 @@ int mgco_mg_tpt_server(int idx)
         MgCntrl         *cntrl;
         MgTptCntrl *tptCntrl = &mgMngmt.t.cntrl.s.tptCntrl;
         CmInetIpAddr   ipAddr = 0;
-	sng_mg_cfg_t* mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
+	sng_mg_cfg_t* mg_cfg  = &megaco_globals.g_mg_cfg.mg_cfg[idx];
 
         cntrl = &(mgMngmt.t.cntrl);
 
@@ -508,8 +489,8 @@ int mgco_mg_tpt_server(int idx)
 	tptCntrl->transportType = GET_TPT_TYPE(idx);
         
 	tptCntrl->serverAddr.type =  CM_INET_IPV4ADDR_TYPE;
-	tptCntrl->serverAddr.u.ipv4TptAddr.port = mgCfg->port;
-	if(ROK == cmInetAddr((S8*)mgCfg->my_ipaddr, &ipAddr))
+	tptCntrl->serverAddr.u.ipv4TptAddr.port = mg_cfg->port;
+	if(ROK == cmInetAddr((S8*)mg_cfg->my_ipaddr, &ipAddr))
 	{
 		tptCntrl->serverAddr.u.ipv4TptAddr.address = ntohl(ipAddr);
 	}
@@ -526,6 +507,7 @@ int mgco_mg_tpt_server(int idx)
 
         return(sng_cntrl_mg(&pst, &mgMngmt));
 }
+#endif
 
 /*****************************************************************************************************************/
 
@@ -550,7 +532,7 @@ int mgco_mu_ssap_cntrl(int idx)
         mgMngmt.hdr.entId.ent       = ENTMG;
         mgMngmt.hdr.entId.inst      = S_INST;
         mgMngmt.hdr.elmId.elmnt     = STSSAP;
-        mgMngmt.hdr.elmId.elmntInst1     = GET_MU_SAP_ID(idx);
+        mgMngmt.hdr.elmId.elmntInst1     = idx;
 
         cntrl->action       = ABND_ENA;
         cntrl->subAction    = SAELMNT;
@@ -584,7 +566,7 @@ int mgco_mg_ssap_cntrl(int idx)
 
         cntrl->action       = AENA;
         cntrl->subAction    = SAELMNT;
-        cntrl->spId = (SpId)1;
+        cntrl->spId = (SpId)idx;
 
         return(sng_cntrl_mg(&pst, &mgMngmt));
 }
@@ -698,7 +680,7 @@ int mgco_tucl_sap_config(int idx)
 
 	pCfg = &cfg.t.cfg.s.hiSap;
 
-	pCfg->spId 		= GET_TPT_ID(idx); 
+	pCfg->spId 		= idx; 
 	pCfg->uiSel 		= 0x00;  /*loosley coupled */
 	pCfg->flcEnb 		= TRUE;
 	pCfg->txqCongStrtLim 	= HI_SAP_TXN_QUEUE_CONG_START_LIMIT;
@@ -860,8 +842,8 @@ int mgco_mu_ssap_config(int idx)
 	mgmt.hdr.elmId.elmnt     = STSSAP;
 
 	/* fill lower layer i.e. MG PST */ 
-	cfg->ssapId 		= GET_MU_SAP_ID(idx); 						/* SSAP ID */ 
-	cfg->spId 		= GET_MU_SAP_ID(idx);  		        			/* SSAP ID */ 
+	cfg->ssapId 		= idx; 
+	cfg->spId 		= idx;
 
 	cfg->mem.region 	= S_REG; 
 	cfg->mem.pool 	        = S_POOL;
@@ -877,14 +859,13 @@ int mgco_mu_ssap_config(int idx)
 
 /******************************************************************************/
 
-int mgco_mg_ssap_config(int idx)
+int mgco_mg_ssap_config(megaco_profile_t* profile)
 {
 	MgMngmt       mgMngmt;
 	MgSSAPCfg    *pCfg;
 	Pst          pst;              /* Post for layer manager */
 	CmInetIpAddr ipAddr;
 	int len = 0x00;
-	sng_mg_cfg_t* mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
 
 	memset(&mgMngmt, 0, sizeof(mgMngmt));
 	pCfg   = &(mgMngmt.t.cfg.c.sSAPCfg);
@@ -903,14 +884,14 @@ int mgco_mg_ssap_config(int idx)
 
 	/* FILL SAP config */
 
-	pCfg->sSAPId 		= mgCfg->id;  		/* SSAP ID */ 
+	pCfg->sSAPId 		= profile->idx;  		/* SSAP ID */ 
 	pCfg->sel 		= 0x00 ; 				/* Loosely coupled */ 
 	pCfg->memId.region 	= S_REG; 
 	pCfg->memId.pool 	= S_POOL;
 	pCfg->prior 		= PRIOR0; 
 	pCfg->route 		= RTESPEC;
 
-	pCfg->protocol 		= mgCfg->protocol_type;
+	pCfg->protocol 		= mg_get_proto_type_from_str(profile->protocol_type);
 
 	pCfg->startTxnNum = 50;
 	pCfg->endTxnNum   = 60;
@@ -919,7 +900,7 @@ int mgco_mg_ssap_config(int idx)
 	pCfg->mwdTimer = (U16)10;
 
 	pCfg->minMgcoVersion = LMG_VER_PROF_MGCO_H248_1_0;
-	switch(mgCfg->protocol_version)
+	switch(profile->protocol_version)
 	{
 		case 1:
 			pCfg->maxMgcoVersion = LMG_VER_PROF_MGCO_H248_1_0;
@@ -931,7 +912,7 @@ int mgco_mg_ssap_config(int idx)
 			pCfg->maxMgcoVersion = LMG_VER_PROF_MGCO_H248_3_0;
 			break;
 		default:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Protocol version[%d] \n",mgCfg->protocol_version);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Protocol version[%d] \n",profile->protocol_version);
 			return SWITCH_STATUS_FALSE;
 	}
 
@@ -940,17 +921,17 @@ int mgco_mg_ssap_config(int idx)
 	pCfg->userInfo.mid.pres = PRSNT_NODEF;
 	pCfg->userInfo.dname.namePres.pres = PRSNT_NODEF;
 
-	pCfg->userInfo.mid.len = (U8)strlen((char*)mgCfg->mid);
-	strncpy((char*)pCfg->userInfo.mid.val, (char*)mgCfg->mid, MAX_MID_LEN);
+	pCfg->userInfo.mid.len = (U8)strlen((char*)profile->mid);
+	strncpy((char*)pCfg->userInfo.mid.val, (char*)profile->mid, MAX_MID_LEN);
 
-	len = (U32)strlen((char*)mgCfg->my_domain);
+	len = (U32)strlen((char*)profile->my_domain);
 	memcpy( (U8*)(pCfg->userInfo.dname.name),
-			(CONSTANT U8*)(mgCfg->my_domain), len );
+			(CONSTANT U8*)(profile->my_domain), len );
 	pCfg->userInfo.dname.name[len] = '\0';
 
 	pCfg->userInfo.dname.netAddr.type = CM_TPTADDR_IPV4;
 	memset(&ipAddr,'\0',sizeof(ipAddr));
-	if(ROK == cmInetAddr((S8*)mgCfg->my_ipaddr,&ipAddr))
+	if(ROK == cmInetAddr((S8*)profile->my_ipaddr,&ipAddr))
 	{
 		pCfg->userInfo.dname.netAddr.u.ipv4NetAddr = ntohl(ipAddr);
 	}
@@ -968,13 +949,11 @@ int mgco_mg_ssap_config(int idx)
 
 /******************************************************************************/
 
-int mgco_mg_tsap_config(int idx)
+int mgco_mg_tsap_config(megaco_profile_t* profile)
 {
 	MgMngmt    mgMngmt;
-	/* local variables */
 	MgTSAPCfg    *cfg;
-	Pst          pst;              /* Post for layer manager */
-	sng_mg_cfg_t* mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
+	Pst          pst; 
 
 	memset(&mgMngmt, 0, sizeof(mgMngmt));
 	cfg   = &(mgMngmt.t.cfg.c.tSAPCfg);
@@ -992,9 +971,9 @@ int mgco_mg_tsap_config(int idx)
 	mgMngmt.hdr.elmId.elmnt     = STTSAP;
 
 	/* FILL TSAP config */
-	cfg->tSAPId 	= mgCfg->id;
-	cfg->spId   	= GET_TPT_ID(idx);
-	cfg->provType 	= GET_TPT_TYPE(idx);
+	cfg->tSAPId 	= profile->idx;
+	cfg->spId   	= profile->idx;
+	cfg->provType 	= mg_get_tpt_type(profile);
 
 	/* FILL TUCL Information */
 	cfg->memId.region = S_REG; 
@@ -1031,15 +1010,14 @@ int mgco_mg_tsap_config(int idx)
 
 /******************************************************************************/
 
-int mgco_mg_peer_config(int idx)
+int mgco_mg_peer_config(megaco_profile_t* mg_cfg)
 {
 	MgMngmt    	mgMngmt;
 	MgGcpEntCfg    *cfg;
 	Pst          	pst;              /* Post for layer manager */
 	U32            peerIdx = 0;
 	CmInetIpAddr   ipAddr = 0;
-	sng_mg_cfg_t*  mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
-	sng_mg_peer_t*  mgPeer = &megaco_globals.g_mg_cfg.mgPeer.peers[mgCfg->peer_id];
+	mg_peer_profile_t*  mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
 
 	memset(&mgMngmt, 0, sizeof(mgMngmt));
 	cfg   = &(mgMngmt.t.cfg.c.mgGcpEntCfg);
@@ -1056,10 +1034,10 @@ int mgco_mg_peer_config(int idx)
 	mgMngmt.hdr.entId.inst      = S_INST;
 	mgMngmt.hdr.elmId.elmnt     = STGCPENT;
 
-	cfg->numPeer 			= megaco_globals.g_mg_cfg.mgPeer.total_peer;
-	cfg->peerCfg[peerIdx].sSAPId 	= mgCfg->id;        /* SSAP ID */;
-	cfg->peerCfg[peerIdx].port 	= mgPeer->port;
-	cfg->peerCfg[peerIdx].tsapId 	= GET_TPT_ID(idx);
+	cfg->numPeer 			= mg_cfg->total_peers;
+	cfg->peerCfg[peerIdx].sSAPId 	= mg_cfg->idx;        /* SSAP ID */;
+	cfg->peerCfg[peerIdx].port 	= atoi(mg_peer->port);
+	cfg->peerCfg[peerIdx].tsapId 	= mg_cfg->idx;
 
 	cfg->peerCfg[peerIdx].mtuSize = MG_MAX_MTU_SIZE;
 
@@ -1068,7 +1046,7 @@ int mgco_mg_peer_config(int idx)
 	cfg->peerCfg[peerIdx].peerAddrTbl.netAddr[0].type =
 		CM_NETADDR_IPV4;
 
-	if(ROK == cmInetAddr((S8*)&mgPeer->ipaddr[0],&ipAddr))
+	if(ROK == cmInetAddr((S8*)&mg_peer->ipaddr[0],&ipAddr))
 	{
 		cfg->peerCfg[peerIdx].peerAddrTbl.netAddr[0].u.ipv4NetAddr = ntohl(ipAddr);
 	}
@@ -1079,14 +1057,14 @@ int mgco_mg_peer_config(int idx)
 	}
 
 #ifdef GCP_MG
-	cfg->peerCfg[peerIdx].transportType  = GET_TPT_TYPE(idx);
-	cfg->peerCfg[peerIdx].encodingScheme = GET_ENCODING_TYPE(idx); 
+	cfg->peerCfg[peerIdx].transportType  = mg_get_tpt_type_from_str(mg_peer->transport_type);
+	cfg->peerCfg[peerIdx].encodingScheme = mg_get_enc_type_from_str(mg_peer->encoding_type);
 	cfg->peerCfg[peerIdx].mgcPriority = 0;
 	cfg->peerCfg[peerIdx].useAHScheme = FALSE;
 	cfg->peerCfg[peerIdx].mid.pres = PRSNT_NODEF;
-	cfg->peerCfg[peerIdx].mid.len = strlen((char*)mgPeer->mid);
+	cfg->peerCfg[peerIdx].mid.len = strlen((char*)mg_peer->mid);
 	cmMemcpy((U8 *)cfg->peerCfg[peerIdx].mid.val, 
-		(CONSTANT U8*)(char*)mgPeer->mid, 
+		(CONSTANT U8*)(char*)mg_peer->mid, 
 		 cfg->peerCfg[peerIdx].mid.len);
 
 #endif /* GCP_MG */
@@ -1096,14 +1074,14 @@ int mgco_mg_peer_config(int idx)
 
 /******************************************************************************/
 
-int mgco_mg_tpt_server_config(int idx)
+int mgco_mg_tpt_server_config(megaco_profile_t* mg_cfg)
 {
 	MgMngmt    	mgMngmt;
 	MgTptSrvrCfg    *cfg;
 	Pst          	pst;              /* Post for layer manager */
 	CmInetIpAddr   ipAddr = 0;
-	sng_mg_cfg_t*  mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
 	int srvIdx = 0;
+	mg_peer_profile_t*  mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
 
 	memset(&mgMngmt, 0, sizeof(mgMngmt));
 	cfg   = &(mgMngmt.t.cfg.c.tptSrvrCfg);
@@ -1122,18 +1100,18 @@ int mgco_mg_tpt_server_config(int idx)
 
 	cfg->count = 1;
 	cfg->srvr[srvIdx].isDefault = TRUE;
-	cfg->srvr[srvIdx].sSAPId = mgCfg->id;
-	cfg->srvr[srvIdx].tSAPId = GET_TPT_ID(idx);
-	cfg->srvr[srvIdx].protocol = mgCfg->protocol_type;
-	cfg->srvr[srvIdx].transportType = GET_TPT_TYPE(idx); 
-	cfg->srvr[srvIdx].encodingScheme = GET_ENCODING_TYPE(idx);
+	cfg->srvr[srvIdx].sSAPId = mg_cfg->idx;
+	cfg->srvr[srvIdx].tSAPId = mg_cfg->idx; 
+	cfg->srvr[srvIdx].protocol = mg_get_proto_type_from_str(mg_cfg->protocol_type);
+	cfg->srvr[srvIdx].transportType = mg_get_tpt_type(mg_cfg); 
+	cfg->srvr[srvIdx].encodingScheme = mg_get_enc_type_from_str(mg_peer->encoding_type);
 
 	cfg->srvr[srvIdx].tptParam.type = CM_TPTPARAM_SOCK;
 	cfg->srvr[srvIdx].tptParam.u.sockParam.listenQSize = 5;
 	cfg->srvr[srvIdx].tptParam.u.sockParam.numOpts = 0;
 	cfg->srvr[srvIdx].lclTptAddr.type = CM_TPTADDR_IPV4;
-	cfg->srvr[srvIdx].lclTptAddr.u.ipv4TptAddr.port = mgCfg->port;
-	if(ROK == cmInetAddr((S8*)mgCfg->my_ipaddr, &ipAddr))
+	cfg->srvr[srvIdx].lclTptAddr.u.ipv4TptAddr.port = atoi(mg_cfg->port);
+	if(ROK == cmInetAddr((S8*)mg_cfg->my_ipaddr, &ipAddr))
 	{
 		cfg->srvr[srvIdx].lclTptAddr.u.ipv4TptAddr.address = ntohl(ipAddr);
 	}
@@ -1677,12 +1655,10 @@ void handle_tucl_alarm(Pst *pst, HiMngmt *sta)
 }   /* handle_sng_tucl_alarm */
 /******************************************************************************/
 
-int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, int mg_cfg_idx)
+int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm,  megaco_profile_t* mg_cfg, mg_peer_profile_t* mg_peer)
 {
 	Pst pst;
 	MgMngmt cntrl;
-	sng_mg_cfg_t*  mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[mg_cfg_idx];
-	sng_mg_peer_t*  mgPeer = &megaco_globals.g_mg_cfg.mgPeer.peers[mgCfg->peer_id];
 	CmInetIpAddr   ipAddr = 0;
 
 	memset((U8 *)&pst, 0, sizeof(Pst));
@@ -1709,30 +1685,30 @@ int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, int mg_cfg_idx)
 		case STGCPENT:
 			{
 				cntrl.t.ssta.s.mgPeerSta.peerId.pres = PRSNT_NODEF;
-				cntrl.t.ssta.s.mgPeerSta.peerId.val = mgCfg->peer_id;
+				cntrl.t.ssta.s.mgPeerSta.peerId.val  = mg_cfg->idx;
 
 				cntrl.t.ssta.s.mgPeerSta.mid.pres = PRSNT_NODEF;
-				cntrl.t.ssta.s.mgPeerSta.mid.len  = strlen((char*)mgPeer->mid);
+				cntrl.t.ssta.s.mgPeerSta.mid.len  = strlen((char*)mg_peer->mid);
 				cmMemcpy((U8 *)cntrl.t.ssta.s.mgPeerSta.mid.val, 
-						(CONSTANT U8*)(char*)mgPeer->mid, 
+						(CONSTANT U8*)(char*)mg_peer->mid, 
 					 	cntrl.t.ssta.s.mgPeerSta.mid.len);	
 				break;
 			}
 		case STSSAP:
 			{
-				cntrl.t.ssta.s.mgSSAPSta.sapId = mgCfg->id; 
+				cntrl.t.ssta.s.mgSSAPSta.sapId = mg_cfg->idx; 
 				break;
 			}
 		case STTSAP:
 			{
-				cntrl.t.ssta.s.mgTSAPSta.tSapId = GET_TPT_ID(mg_cfg_idx);
+				cntrl.t.ssta.s.mgTSAPSta.tSapId = mg_cfg->idx;
 				break;
 			}
 		case STSERVER:
 			{
 				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.type =  CM_INET_IPV4ADDR_TYPE;
 				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.port = ntohl(ipAddr);
-				if(ROK == cmInetAddr((S8*)mgCfg->my_ipaddr, &ipAddr))
+				if(ROK == cmInetAddr((S8*)mg_cfg->my_ipaddr, &ipAddr))
 				{
 					cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.address = ntohl(ipAddr);
 				}
@@ -1753,19 +1729,27 @@ switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char
 	int len   = 0x00;
 	MgMngmt   cfm;
 	char 	  prntBuf[1024];
+	megaco_profile_t*   mg_cfg  = NULL; 
+	mg_peer_profile_t*  mg_peer = NULL;
 
 	switch_assert(profilename);
 
 	memset((U8 *)&cfm, 0, sizeof(cfm));
 	memset((char *)&prntBuf, 0, sizeof(prntBuf));
 
-	GET_MG_CFG_IDX(profilename, idx);
-
-	if(!idx || (idx == MAX_MG_PROFILES)){
+	mg_cfg  = megaco_profile_locate(profilename);
+	if(!mg_cfg){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
 		return SWITCH_STATUS_FALSE;
 	}
+	mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
 
+	if(!mg_peer){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[0],profilename);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	idx = mg_cfg->idx;
 
 	/*stream->write_function(stream, "Collecting MG Profile[%s] status... \n",profilename);*/
 
@@ -1791,15 +1775,15 @@ switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char
 #endif
 
 	/* MG Peer Information */
-	sng_mgco_mg_get_status(STGCPENT, &cfm, idx);
+	sng_mgco_mg_get_status(STGCPENT, &cfm, mg_cfg, mg_peer);
 	smmgPrntPeerSta(&cfm.t.ssta.s.mgPeerSta);
 
 	/* MG Peer Information */
-	sng_mgco_mg_get_status(STSSAP, &cfm, idx);
+	sng_mgco_mg_get_status(STSSAP, &cfm, mg_cfg, mg_peer);
 	smmgPrntSsapSta(&cfm.t.ssta.s.mgSSAPSta);
 
 	/* MG Transport SAP Information */
-	sng_mgco_mg_get_status(STTSAP, &cfm, idx);
+	sng_mgco_mg_get_status(STTSAP, &cfm, mg_cfg, mg_peer);
 	len = len + sprintf(prntBuf+len,"***********************************************\n"); 
 	len = len + sprintf(prntBuf+len,"**********MG TRANSPORT SAP Information**********\n");
 	len = len + sprintf(prntBuf+len,"TSAP status:\n");
@@ -1810,7 +1794,7 @@ switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"%s\n",prntBuf); 
 
 	/* MG Transport Server Information */
-	sng_mgco_mg_get_status(STSERVER, &cfm, idx);
+	sng_mgco_mg_get_status(STSERVER, &cfm, mg_cfg, mg_peer);
 	smmgPrntSrvSta(&cfm.t.ssta.s.mgTptSrvSta);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1822,33 +1806,37 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 	int len   = 0x00;
 	MgMngmt   cfm;
 	char*     xmlhdr = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
-	char 	  prntBuf[10024];
-	sng_mg_cfg_t*  mgCfg  = NULL; 
-	sng_mg_peer_t*  mgPeer = NULL; 
+	char 	  prntBuf[3048];
 	int i = 0x00;
 	char *asciiAddr;
 	CmInetIpAddr ip;
+	megaco_profile_t*   mg_cfg  = NULL; 
+	mg_peer_profile_t*  mg_peer = NULL;
 
 	switch_assert(profilename);
 
 	memset((U8 *)&cfm, 0, sizeof(cfm));
 	memset((char *)&prntBuf, 0, sizeof(prntBuf));
 
-	GET_MG_CFG_IDX(profilename, idx);
-
-	if(!idx || (idx == MAX_MG_PROFILES)){
+	mg_cfg  = megaco_profile_locate(profilename);
+	if(!mg_cfg){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
 		return SWITCH_STATUS_FALSE;
 	}
+	 mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
 
-	mgCfg  = &megaco_globals.g_mg_cfg.mgCfg[idx];
-	mgPeer = &megaco_globals.g_mg_cfg.mgPeer.peers[mgCfg->peer_id];
+	if(!mg_peer){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[0],profilename);
+		return SWITCH_STATUS_FALSE;
+	}
 
+
+	idx = mg_cfg->idx;
 
 	len = len + sprintf(&prntBuf[0] + len,"%s\n",xmlhdr);
 
 	len = len + sprintf(&prntBuf[0] + len,"<mg_profile>\n");
-	len = len + sprintf(&prntBuf[0] + len,"<name>%s</name>\n",mgCfg->name);
+	len = len + sprintf(&prntBuf[0] + len,"<name>%s</name>\n",mg_cfg->name);
 	len = len + sprintf(&prntBuf[0] + len,"<profile>%s</profile>\n",profilename);
 /****************************************************************************************************************/
 /* Print Peer Information ***************************************************************************************/
@@ -1856,10 +1844,10 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 	/* TODO - as of now supporting only one peer .. need to add logic to iterate through all the peers associated with this profile..*/
 
 	len = len + sprintf(&prntBuf[0] + len,"<mg_peers>\n");
-	len = len + sprintf(&prntBuf[0] + len,"<mg_peer name=%s>\n",mgPeer->name);
+	len = len + sprintf(&prntBuf[0] + len,"<mg_peer name=%s>\n",mg_peer->name);
 
 	/* send request to MEGACO Trillium stack to get peer information*/
-	sng_mgco_mg_get_status(STGCPENT, &cfm, idx);
+	sng_mgco_mg_get_status(STGCPENT, &cfm, mg_cfg, mg_peer);
 
 	get_peer_xml_buffer(&prntBuf[0] + len, &cfm.t.ssta.s.mgPeerSta);
 
@@ -1873,7 +1861,7 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 	len = len + sprintf(&prntBuf[0] + len,"<mg_sap>\n");
 
 	/* MG SAP Information */
-	sng_mgco_mg_get_status(STSSAP, &cfm, idx);
+	sng_mgco_mg_get_status(STSSAP, &cfm, mg_cfg, mg_peer);
 
 	len = len + sprintf(prntBuf+len, "<state> %s </state>\n", PRNT_SAP_STATE((int)(cfm.t.ssta.s.mgSSAPSta.state)));
 	len = len + sprintf(prntBuf+len, "<num_of_peer> %u </num_of_peer>\n", (unsigned int)(cfm.t.ssta.s.mgSSAPSta.numAssocPeer));
@@ -1917,7 +1905,7 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 
 	len = len + sprintf(&prntBuf[0] + len,"<mg_transport_sap>\n");
 	/* MG Transport SAP Information */
-	sng_mgco_mg_get_status(STTSAP, &cfm, idx);
+	sng_mgco_mg_get_status(STTSAP, &cfm, mg_cfg, mg_peer);
 	len = len + sprintf(&prntBuf[0] + len,"<state> %s </state>\n", PRNT_SAP_STATE(cfm.t.ssta.s.mgTSAPSta.state));
 	len = len + sprintf(&prntBuf[0] + len,"<num_of_listeners> %u </num_of_listeners>\n", (unsigned int)(cfm.t.ssta.s.mgTSAPSta.numServers)); 
 	len = len + sprintf(&prntBuf[0] + len,"</mg_transport_sap>\n");
@@ -1925,7 +1913,7 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 /****************************************************************************************************************/
 /* Print MG Transport Server Information ***************************************************************************************/
 
-	if(sng_mgco_mg_get_status(STSERVER, &cfm, idx)){
+	if(sng_mgco_mg_get_status(STSERVER, &cfm, mg_cfg, mg_peer)){
 		len = len + sprintf(&prntBuf[0] + len,"<mg_transport_server> no established server found </mg_transport_server>\n");
 	}
 	else {
@@ -2096,3 +2084,84 @@ void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm)
 #endif
 
 } 
+/**********************************************************************************************************************************/
+sng_mg_transport_types_e mg_get_tpt_type(megaco_profile_t* mg_profile)
+{
+	mg_peer_profile_t* 	mg_peer_profile = NULL; 
+
+	if(NULL == mg_profile){
+		return SNG_MG_TPT_NONE;
+	}
+
+	if(!mg_profile->total_peers){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " No peer configured against profilename[%s]\n",mg_profile->name);
+		return SNG_MG_TPT_NONE;
+	}
+
+	if( NULL == (mg_peer_profile = megaco_peer_profile_locate(mg_profile->peer_list[0]))){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Not able to get peer_profile node based on profilename[%s]\n",mg_profile->peer_list[0]);
+		return SNG_MG_TPT_NONE;
+	}
+
+	return mg_get_tpt_type_from_str(mg_peer_profile->transport_type);
+}
+/**********************************************************************************************************************************/
+
+sng_mg_transport_types_e  mg_get_tpt_type_from_str(char* tpt_type)
+{
+	if(!tpt_type) return SNG_MG_TPT_NONE;
+
+	if(!strcasecmp(tpt_type, "UDP")){
+		return SNG_MG_TPT_UDP;
+	}else if(!strcasecmp(tpt_type,"TCP")){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TCP Transport for H.248 Protocol Not Yet Supported \n");
+		return SNG_MG_TPT_TCP;
+	}else if(!strcasecmp(tpt_type,"STCP")){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STCP Transport for H.248 Protocol Not Yet Supported \n");
+		return SNG_MG_TPT_SCTP;
+	}else{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Protocol Value[%s] \n",tpt_type);
+		return SNG_MG_TPT_NONE;
+	}
+
+	return SNG_MG_TPT_NONE;
+}
+/**********************************************************************************************************************************/
+
+sng_mg_encoding_types_e  mg_get_enc_type_from_str(char* enc_type)
+{
+	if(!enc_type) return SNG_MG_ENCODING_NONE;
+
+	if(!strcasecmp(enc_type, "TEXT")){
+		return SNG_MG_ENCODING_TEXT;
+	} else if(!strcasecmp(enc_type, "BINARY")){
+		return SNG_MG_ENCODING_BINARY;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Encoding Type[%s] \n", enc_type);
+		return SNG_MG_ENCODING_NONE;
+	}
+
+	return SNG_MG_ENCODING_NONE;
+}
+
+/**********************************************************************************************************************************/
+
+sng_mg_protocol_types_e  mg_get_proto_type_from_str(char* proto_type)
+{
+	if(!proto_type) return SNG_MG_NONE;
+
+	if(!strcasecmp(proto_type,"MEGACO")) {
+		return SNG_MG_MEGACO;
+	}else if(!strcasecmp(proto_type,"MGCP")){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MGCP Protocol Not Yet Supported \n");
+		return SNG_MG_MGCP;
+	}else{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Protocol Value[%s] \n",proto_type);
+		return SNG_MG_NONE;
+	}
+
+	return SNG_MG_NONE;
+}
+
+
+/**********************************************************************************************************************************/

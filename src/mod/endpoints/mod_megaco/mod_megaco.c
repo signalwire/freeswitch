@@ -7,6 +7,7 @@
 */
 
 #include "mod_megaco.h"
+#include "megaco_stack.h"
 
 struct megaco_globals megaco_globals;
 static sng_isup_event_interface_t sng_event;
@@ -14,7 +15,6 @@ static sng_isup_event_interface_t sng_event;
 SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown);
 SWITCH_MODULE_DEFINITION(mod_megaco, mod_megaco_load, mod_megaco_shutdown, NULL);
-
 
 #define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop] [status] [xmlstatus]"
 SWITCH_STANDARD_API(megaco_function)
@@ -34,11 +34,14 @@ SWITCH_STANDARD_API(megaco_function)
 		goto usage;
 	}
 	
+/**********************************************************************************/
 	if (!strcmp(argv[0], "profile")) {
 		if (zstr(argv[1]) || zstr(argv[2])) {
 			goto usage;
 		}
+/**********************************************************************************/
 		if (!strcmp(argv[2], "start")) {
+/**********************************************************************************/
 			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
 			if (profile) {
 				megaco_profile_release(profile);
@@ -47,7 +50,9 @@ SWITCH_STANDARD_API(megaco_function)
 				megaco_profile_start(argv[1]);
 				stream->write_function(stream, "+OK\n");
 			}
+/**********************************************************************************/
 		} else if (!strcmp(argv[2], "stop")) {
+/**********************************************************************************/
 			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
 			if (profile) {
 				megaco_profile_release(profile);
@@ -56,22 +61,29 @@ SWITCH_STANDARD_API(megaco_function)
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
+/**********************************************************************************/
 		}else if(!strcmp(argv[2], "status")) {
+/**********************************************************************************/
 			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
 			if (profile) {
 				megaco_profile_status(stream, profile->name);
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
+/**********************************************************************************/
 		}else if(!strcmp(argv[2], "xmlstatus")) {
+/**********************************************************************************/
 			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
 			if (profile) {
 				megaco_profile_xmlstatus(stream, profile->name);
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
+/**********************************************************************************/
+		}else {
+/**********************************************************************************/
+			goto usage;
 		}
-
 	}
 	
 	goto done;
@@ -125,6 +137,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load)
 		
 	switch_core_hash_init(&megaco_globals.profile_hash, pool);
 	switch_thread_rwlock_create(&megaco_globals.profile_rwlock, pool);
+
+	switch_core_hash_init(&megaco_globals.peer_profile_hash, pool);
+	switch_thread_rwlock_create(&megaco_globals.peer_profile_rwlock, pool);
 	
 	SWITCH_ADD_API(api_interface, "megaco", "megaco", megaco_function, MEGACO_FUNCTION_SYNTAX);
 	

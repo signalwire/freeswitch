@@ -8,9 +8,23 @@
 
 #include "mod_megaco.h"
 
-megaco_profile_t *megaco_profile_locate(const char *name) 
+megaco_profile_t *megaco_profile_locate(const char *name)
 {
 	megaco_profile_t *profile = switch_core_hash_find_rdlock(megaco_globals.profile_hash, name, megaco_globals.profile_rwlock);
+
+	if (profile) {
+		if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is locked\n", name);
+			profile = NULL;
+		}
+	}
+
+	return profile;
+}
+
+mg_peer_profile_t *megaco_peer_profile_locate(const char *name)
+{
+	mg_peer_profile_t *profile = switch_core_hash_find_rdlock(megaco_globals.peer_profile_hash, name, megaco_globals.peer_profile_rwlock);
 
 	if (profile) {
 		if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
@@ -27,92 +41,9 @@ void megaco_profile_release(megaco_profile_t *profile)
 	switch_thread_rwlock_unlock(profile->rwlock);
 }
 
-static switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
+void megaco_peer_profile_release(mg_peer_profile_t *profile) 
 {
-	switch_xml_t cfg, xml, mg_interfaces, mg_interface, tpt_interfaces, tpt_interface, peer_interfaces, peer_interface;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_event_t *event = NULL;
-	const char *file = "megaco.conf";
-	const char* mg_profile_tpt_id = NULL;
-	const char* mg_profile_peer_id = NULL;
-
-	if (!(xml = switch_xml_open_cfg(file, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open %s\n", file);
-		goto done;
-	}
-
-	if (!(mg_interfaces = switch_xml_child(cfg, "sng_mg_interfaces"))) {
-		goto done;
-	}
-
-	/* iterate through MG Interface list to build requested MG profile */
-	for (mg_interface = switch_xml_child(mg_interfaces, "sng_mg_interface"); mg_interface; mg_interface = mg_interface->next) {
-
-		const char *name = switch_xml_attr_soft(mg_interface, "name");
-		if (strcmp(name, profile->name)) {
-			continue;
-		}
-
-		/* parse MG profile */
-		if(SWITCH_STATUS_FALSE == sng_parse_mg_profile(mg_interface)) {
-			goto done;
-		}
-
-		mg_profile_tpt_id = switch_xml_attr_soft(mg_interface, "id");
-
-		/* Now get required transport profile against mg_profile_tpt_id*/
-		if (!(tpt_interfaces = switch_xml_child(cfg, "sng_transport_interfaces"))) {
-			goto done;
-		}
-
-		for (tpt_interface = switch_xml_child(tpt_interfaces, "sng_transport_interface"); tpt_interface; tpt_interface = tpt_interface->next) {
-			const char *id = switch_xml_attr_soft(tpt_interface, "id");
-			if (strcmp(id, mg_profile_tpt_id)) {
-				continue;
-			}
-
-			/* parse MG transport profile */
-			if(SWITCH_STATUS_FALSE == sng_parse_mg_tpt_profile(tpt_interface)) {
-				goto done;
-			}
-		}
-
-		/* as of now supporting only one peer */
-		mg_profile_peer_id = switch_xml_attr_soft(mg_interface, "peerId");
-		/* Now get required peer profile against mg_profile_peer_id*/
-		if (!(peer_interfaces = switch_xml_child(cfg, "sng_mg_peer_interfaces"))) {
-			goto done;
-		}
-
-		for (peer_interface = switch_xml_child(peer_interfaces, "sng_mg_peer_interface"); peer_interface; peer_interface = peer_interface->next) {
-			const char *id = switch_xml_attr_soft(peer_interface, "id");
-			if (strcmp(id, mg_profile_peer_id)) {
-				continue;
-			}
-
-			/* parse MG Peer profile */
-			if(SWITCH_STATUS_FALSE == sng_parse_mg_peer_profile(peer_interface)) {
-				goto done;
-			}
-		}
-
-
-		/* configure the MEGACO stack */
-		status = sng_mgco_cfg(profile->name);
-		
-		/* we should break from here , profile name should be unique */
-		break;
-	}
-
-done:
-	if (xml) {
-		switch_xml_free(xml);	
-	}
-
-	if (event) {
-		switch_event_destroy(&event);
-	}
-	return status;
+	switch_thread_rwlock_unlock(profile->rwlock);
 }
 
 switch_status_t megaco_profile_start(const char *profilename)
@@ -130,14 +61,13 @@ switch_status_t megaco_profile_start(const char *profilename)
 	profile->name = switch_core_strdup(pool, profilename);
 	
 	switch_thread_rwlock_create(&profile->rwlock, pool);
-	
-	if (config_profile(profile, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+
+	if (SWITCH_STATUS_SUCCESS != config_profile(profile, SWITCH_FALSE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error configuring profile %s\n", profile->name);
 		goto fail;
 	}
 	
-	/* start MEGACP stack */
-	if(SWITCH_STATUS_FALSE == sng_mgco_start(profilename)) {
+	if(SWITCH_STATUS_FALSE == sng_mgco_start(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting MEGACO Stack for profile  %s\n", profile->name);
 		goto fail;
 	}
@@ -161,8 +91,7 @@ switch_status_t megaco_profile_destroy(megaco_profile_t **profile)
 	switch_thread_rwlock_wrlock((*profile)->rwlock);
 	
 	
-	/* stop MEGACP stack */
-	if(SWITCH_STATUS_FALSE == sng_mgco_stop((*profile)->name)) {
+	if(SWITCH_STATUS_FALSE == sng_mgco_stop((*profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error stopping MEGACO Stack for profile  %s\n", (*profile)->name); 
 	}
 
@@ -171,6 +100,8 @@ switch_status_t megaco_profile_destroy(megaco_profile_t **profile)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stopped profile: %s\n", (*profile)->name);	
 	switch_core_hash_delete_wrlock(megaco_globals.profile_hash, (*profile)->name, megaco_globals.profile_rwlock);
 	
+	mg_config_cleanup(*profile);
+
 	switch_core_destroy_memory_pool(&(*profile)->pool);
 	
 	return SWITCH_STATUS_SUCCESS;	

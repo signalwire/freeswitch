@@ -6,7 +6,7 @@
 * <Insert license here>
 */
 
-#include "sng_megaco/sng_ss7.h"
+#include "mod_megaco.h"
 
 #ifndef _MEGACO_CFG_H_
 #define _MEGACO_CFG_H_
@@ -16,6 +16,7 @@
 #define MAX_NAME_LEN    25
 #define MAX_MG_PROFILES 5
 
+#if 0
 typedef struct sng_mg_peer{
   char          name[MAX_NAME_LEN];	     /* Peer Name as defined in config file */
   uint16_t 	id;			     /* Peer ID as defined in config file */
@@ -36,6 +37,7 @@ typedef struct sng_mg_transport_profile{
         uint16_t      transport_type;                /* transport type */
 }sng_mg_transport_profile_t;
 
+#endif
 
 typedef enum{
         SNG_MG_TPT_NONE,
@@ -68,6 +70,7 @@ typedef enum{
 	 "SNG_MG_ENCODING_NONE")
 
 
+#if 0
 /* each profile is corresponds to each MG Instance */
 typedef struct sng_mg_cfg{
   	char          		name[MAX_NAME_LEN];	     /* MG(Virtual MG) Name as defined in config file */
@@ -94,6 +97,7 @@ typedef struct sng_mg_gbl_cfg{
 extern switch_status_t sng_parse_mg_peer_profile(switch_xml_t mg_peer_profile);
 extern switch_status_t sng_parse_mg_tpt_profile(switch_xml_t mg_tpt_profile);
 extern switch_status_t sng_parse_mg_profile(switch_xml_t mg_interface);
+#endif
 
 
 void handle_sng_log(uint8_t level, char *fmt, ...);
@@ -107,17 +111,16 @@ void handle_mg_alarm(Pst *pst, MgMngmt *sta);
 void handle_tucl_alarm(Pst *pst, HiMngmt *sta);
 
 
+switch_status_t sng_mgco_cfg(megaco_profile_t* profile);
 switch_status_t sng_mgco_init(sng_isup_event_interface_t* event);
-switch_status_t sng_mgco_cfg(const char* profilename);
-switch_status_t sng_mgco_start(const char* profilename);
-switch_status_t sng_mgco_stop(const char* profilename);
 switch_status_t sng_mgco_stack_shutdown(void);
-int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, int mg_cfg_idx);
+int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, megaco_profile_t* mg_cfg, mg_peer_profile_t* mg_peer);
 switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char* profilename);
 switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const char* profilename);
 
 /*****************************************************************************************************/
 
+#if 0
 #define GET_MG_CFG_IDX(_profilename, _idx){\
 	for(idx=0; idx < MAX_MG_PROFILES; idx++){\
 		/* id zero is not acceptable */\
@@ -130,12 +133,12 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 		}\
 	}\
 }
-
 #define GET_TPT_ID(_id) 		megaco_globals.g_mg_cfg.mgTptProf[megaco_globals.g_mg_cfg.mgCfg[_id].transport_prof_id].id
 #define GET_MU_SAP_ID(_id) 		megaco_globals.g_mg_cfg.mgCfg[_id].id
 
 #define GET_TPT_TYPE(_id)		megaco_globals.g_mg_cfg.mgTptProf[megaco_globals.g_mg_cfg.mgCfg[_id].transport_prof_id].transport_type
 
 #define GET_ENCODING_TYPE(_id) 		megaco_globals.g_mg_cfg.mgPeer.peers[megaco_globals.g_mg_cfg.mgCfg[_id].peer_id].encoding_type
+#endif
 
 #endif /* _MEGACO_CFG_H_ */
