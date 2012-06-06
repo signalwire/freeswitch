@@ -165,6 +165,8 @@ static int ftmod_ss7_fill_in_nif_interface(sng_nif_cfg_t *nif_iface)
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[i].m2uaLnkNmb 	= nif_iface->m2uaLnkNmb;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[i].mtp2LnkNmb 	= nif_iface->mtp2LnkNmb;
 
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_NIF_PRESENT);
+
 	return 0;
 }
 
@@ -300,6 +302,7 @@ static int ftmod_ss7_fill_in_m2ua_interface(sng_m2ua_cfg_t *m2ua_iface)
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].sctpId 	= m2ua_iface->sctpId;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].peerId 	= m2ua_iface->peerId;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].clusterId 	= m2ua_iface->clusterId;
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_M2UA_PRESENT);
 
 	return 0;
 }
@@ -413,6 +416,19 @@ static int ftmod_ss7_parse_m2ua_peer_interface(ftdm_conf_node_t *m2ua_peer_inter
 
 			SS7_DEBUG("Found an sng_m2ua_peer loc_out_strms = %d\n", sng_m2ua_peer.locOutStrms);
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "init_sctp_assoc")) {
+		/**********************************************************************/
+			if(!strcasecmp(parm->val, "TRUE")){
+				sng_m2ua_peer.init_sctp_assoc = 0x01;
+			} else if(!strcasecmp(parm->val, "FALSE")){
+				sng_m2ua_peer.init_sctp_assoc = 0x00;
+			} else {
+				SS7_ERROR("Found an invalid init_sctp_assoc Parameter Value[%s]\n", parm->val);
+				return FTDM_FAIL;
+			}
+
+			SS7_DEBUG("Found an sng_m2ua_peer init_sctp_assoc = %d\n", sng_m2ua_peer.init_sctp_assoc);
+		/**********************************************************************/
 		} else {
 		/**********************************************************************/
 			SS7_ERROR("Found an invalid parameter %s!\n", parm->var);
@@ -447,6 +463,7 @@ static int ftmod_ss7_fill_in_m2ua_peer_interface(sng_m2ua_peer_cfg_t *m2ua_peer_
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].locOutStrms 	= m2ua_peer_iface->locOutStrms;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].numDestAddr 	= m2ua_peer_iface->numDestAddr;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].sctpId 		= m2ua_peer_iface->sctpId;
+	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].init_sctp_assoc 	= m2ua_peer_iface->init_sctp_assoc;
 	for (k=0; k<m2ua_peer_iface->numDestAddr; k++) {
 		g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].destAddrList[k] = m2ua_peer_iface->destAddrList[k];	
 	}
@@ -687,6 +704,8 @@ static int ftmod_ss7_parse_sctp_link(ftdm_conf_node_t *node)
 	for (i=1; i<=t_link.numSrcAddr; i++) {
 		g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].srcAddrList[i] = t_link.srcAddrList[i];
 	}
+
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SCTP_PRESENT);
 			
 	return FTDM_SUCCESS;
 }

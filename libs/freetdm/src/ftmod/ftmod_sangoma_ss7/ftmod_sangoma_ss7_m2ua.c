@@ -60,11 +60,12 @@ static int ftmod_nif_dlsap_config(int idx);
 static int ftmod_sctp_tucl_tsap_bind(int idx);
 static int ftmod_m2ua_sctp_sctsap_bind(int idx);
 static int ftmod_open_endpoint(int idx);
+static int ftmod_init_sctp_assoc(int peer_id);
 static int ftmod_nif_m2ua_dlsap_bind(int id);
 static int ftmod_nif_mtp2_dlsap_bind(int id);
-static int ftmod_m2ua_enable_debug(void);
-static int ftmod_tucl_enable_debug(void);
-static int ftmod_sctp_enable_debug(void);
+static int ftmod_m2ua_debug(int action);
+static int ftmod_tucl_debug(int action);
+static int ftmod_sctp_debug(int action);
 
 static int ftmod_ss7_sctp_shutdown(void);
 static int ftmod_ss7_m2ua_shutdown(void);
@@ -76,13 +77,18 @@ ftdm_status_t sng_m2ua_cfg(void);
 /******************************************************************************/
 void ftmod_ss7_m2ua_free()
 {
-        ftmod_ss7_m2ua_shutdown();
-        ftmod_ss7_sctp_shutdown();
-        ftmod_ss7_tucl_shutdown();
-
-        sng_isup_free_m2ua();
-        sng_isup_free_sctp();
-        sng_isup_free_tucl();
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_M2UA_STARTED)) {
+		ftmod_ss7_m2ua_shutdown();
+		sng_isup_free_m2ua();
+	}
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SCTP_STARTED)) {
+		ftmod_ss7_sctp_shutdown();
+		sng_isup_free_sctp();
+	}
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_TUCL_STARTED)) {
+		ftmod_ss7_tucl_shutdown();
+		sng_isup_free_tucl();
+	}
 }
 /******************************************************************************/
 static int ftmod_ss7_tucl_shutdown()
@@ -186,6 +192,12 @@ ftdm_status_t ftmod_ss7_m2ua_cfg(void)
 		return FTDM_FAIL;
 	}
 
+	/* SET STARTED FLAGS */
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_NIF_STARTED);
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_M2UA_STARTED);
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SCTP_STARTED);
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_TUCL_STARTED);
+
 	return FTDM_SUCCESS;
 }
 		
@@ -266,8 +278,10 @@ ftdm_status_t sng_m2ua_cfg(void)
 	}
 	/****************************************************************************************************/
 	/* M2UA SCTP SAP configurations */
-	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0; x++) {
-		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED)) {
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) && 
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
 
 			if(ftmod_m2ua_sctsap_config(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"M2UA SCTSAP[%d] configuration: NOT OK\n", x);
@@ -276,36 +290,37 @@ ftdm_status_t sng_m2ua_cfg(void)
 				ftdm_log (FTDM_LOG_INFO ,"M2UA SCTSAP[%d] configuration: OK\n", x);
 			}
 
-		/****************************************************************************************************/
-		/* M2UA PEER configurations */
+			/****************************************************************************************************/
+			/* M2UA PEER configurations */
 
-		if(ftmod_m2ua_peer_config(x)) {
-			ftdm_log (FTDM_LOG_ERROR ,"M2UA PEER configuration for M2UA INTF[%d] : NOT OK\n", x);
-			return FTDM_FAIL;
-		}else {
-			ftdm_log (FTDM_LOG_INFO ,"M2UA PEER configuration for M2UA INTF[%d] : OK\n", x);
-		}
-		/****************************************************************************************************/
-		/* M2UA Cluster configurations */
+			if(ftmod_m2ua_peer_config(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"M2UA PEER configuration for M2UA INTF[%d] : NOT OK\n", x);
+				return FTDM_FAIL;
+			}else {
+				ftdm_log (FTDM_LOG_INFO ,"M2UA PEER configuration for M2UA INTF[%d] : OK\n", x);
+			}
+			/****************************************************************************************************/
+			/* M2UA Cluster configurations */
 
-		if(ftmod_m2ua_cluster_config(x)) {
-			ftdm_log (FTDM_LOG_ERROR ,"M2UA CLUSTER configuration for M2UA INTF[%d] : NOT OK\n", x);
-			return FTDM_FAIL;
-		}else {
-			ftdm_log (FTDM_LOG_INFO ,"M2UA CLUSTER configuration for M2UA INTF[%d]: OK\n", x);
-		}
+			if(ftmod_m2ua_cluster_config(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"M2UA CLUSTER configuration for M2UA INTF[%d] : NOT OK\n", x);
+				return FTDM_FAIL;
+			}else {
+				ftdm_log (FTDM_LOG_INFO ,"M2UA CLUSTER configuration for M2UA INTF[%d]: OK\n", x);
+			}
 
-		/****************************************************************************************************/
+			/****************************************************************************************************/
 
-		/* Send the USAP (DLSAP) configuration request for M2UA layer; fill the number
-		 * of saps required to be configured. Max is 3 */ 
-		if(ftmod_m2ua_dlsap_config(x)) {
-			ftdm_log (FTDM_LOG_ERROR ,"M2UA DLSAP[%d] configuration: NOT OK\n", x);
-			return FTDM_FAIL;
-		}else {
-			ftdm_log (FTDM_LOG_INFO ,"M2UA DLSAP[%d] configuration: OK\n", x);
-		}
-	  } /* END - SNGSS7_CONFIGURED */
+			/* Send the USAP (DLSAP) configuration request for M2UA layer; fill the number
+			 * of saps required to be configured. Max is 3 */ 
+			if(ftmod_m2ua_dlsap_config(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"M2UA DLSAP[%d] configuration: NOT OK\n", x);
+				return FTDM_FAIL;
+			}else {
+				ftdm_log (FTDM_LOG_INFO ,"M2UA DLSAP[%d] configuration: OK\n", x);
+			}
+		} /* END - SNGSS7_CONFIGURED */
+		x++;
 	}/* END - M2UA Interfaces for loop*/
 /****************************************************************************************************/
 	/* NIF */
@@ -319,8 +334,10 @@ ftdm_status_t sng_m2ua_cfg(void)
 /****************************************************************************************************/
 	/* NIF DLSAP */
 
-	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0; x++) {
-		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED)) {
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if ((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0) && 
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED))) {
 			if(ftmod_nif_dlsap_config(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"NIF DLSAP[%d] configuration: NOT OK\n", x);
 				return FTDM_FAIL;
@@ -328,6 +345,7 @@ ftdm_status_t sng_m2ua_cfg(void)
 				ftdm_log (FTDM_LOG_INFO ,"NIF DLSAP[%d] configuration: OK\n", x);
 			}
 		}
+		x++;
 	}
 
 /****************************************************************************************************/
@@ -1134,19 +1152,32 @@ uint32_t iptoul(const char *ip)
         return (uint32_t)val;
 }
 /***********************************************************************************************************************/
+void ftmod_ss7_enable_m2ua_sg_logging(void){
 
+	/* Enable DEBUGs*/
+	ftmod_sctp_debug(AENA);
+	ftmod_m2ua_debug(AENA);
+	ftmod_tucl_debug(AENA);
+}
+
+/***********************************************************************************************************************/
+void ftmod_ss7_disable_m2ua_sg_logging(void){
+
+	/* DISABLE DEBUGs*/
+	ftmod_sctp_debug(ADISIMM);
+	ftmod_m2ua_debug(ADISIMM);
+	ftmod_tucl_debug(ADISIMM);
+}
+
+/***********************************************************************************************************************/
 int ftmod_ss7_m2ua_start(void){
 	int x=0;
 
 /***********************************************************************************************************************/
-	/* Enable DEBUGs*/
-	ftmod_sctp_enable_debug();
-	ftmod_m2ua_enable_debug();
-	ftmod_tucl_enable_debug();
-
-/***********************************************************************************************************************/
-	for (x=1; g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0; x++) {
-		if (!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED)) {
+	x = 1;
+	while(x<MAX_SCTP_LINK){
+		if((g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0) && 
+				(!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED))) {
 
 			/* Send a control request to bind the TSAP between SCTP and TUCL */
 			if(ftmod_sctp_tucl_tsap_bind(x)) {
@@ -1156,12 +1187,15 @@ int ftmod_ss7_m2ua_start(void){
 				ftdm_log (FTDM_LOG_INFO ,"\nControl request to bind TSAP[%d] of SCTP and TUCL: OK\n", x);
 			}
 		}
+		x++;
 	}
 
 /***********************************************************************************************************************/
 	/* Send a control request to bind the SCTSAP between SCTP and M2UA */
-	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0; x++) {
-		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED)) {
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) && 
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
 			if(ftmod_m2ua_sctp_sctsap_bind(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"Control request to bind SCTSAP[%d] of M2UA and SCTP : NOT OK\n", x);
 				return 1;
@@ -1169,11 +1203,14 @@ int ftmod_ss7_m2ua_start(void){
 				ftdm_log (FTDM_LOG_INFO ,"Control request to bind SCTSAP[%d] of M2UA and SCTP: OK\n", x);
 			}
 		}
-	}/* END - M2UA Interfaces for loop*/
+		x++;
+	}/* END - M2UA Interfaces while loop*/
 /***********************************************************************************************************************/
 
-	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0; x++) {
-		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED)) {
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if ((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0) && 
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED))) {
 			/* Send a control request to bind the DLSAP between NIF, M2UA and MTP-2 */
 			if(ftmod_nif_m2ua_dlsap_bind(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"Control request to bind DLSAP[%d] between NIF and M2UA: NOT OK\n", x);
@@ -1188,12 +1225,15 @@ int ftmod_ss7_m2ua_start(void){
 				ftdm_log (FTDM_LOG_INFO ,"Control request to bind DLSAP[%d] between NIF and MTP2 : OK\n", x);
 			}
 		}
+		x++;
 	}/* END - NIF Interfaces for loop*/
 
 /***********************************************************************************************************************/
 
-	for (x=1; g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0; x++) {
-		if (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED)) {
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if ((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) && 
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
 			/* Send a control request to open endpoint */
 			if(ftmod_open_endpoint(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"ftmod_open_endpoint FAIL  \n");
@@ -1202,7 +1242,29 @@ int ftmod_ss7_m2ua_start(void){
 				ftdm_log (FTDM_LOG_INFO ,"ftmod_open_endpoint SUCCESS  \n");
 			}
 		}
+		x++;
 	}
+
+/***********************************************************************************************************************/
+	sleep(2);
+
+	x = 1;
+	while (x < (MW_MAX_NUM_OF_PEER)) {
+		if ((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].id !=0) &&
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].flags & SNGSS7_CONFIGURED)) && 
+				(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].init_sctp_assoc)) {
+			if(ftmod_init_sctp_assoc(x)) {
+				ftdm_log (FTDM_LOG_ERROR ,"ftmod_init_sctp_assoc FAIL for peerId[%d] \n", x);
+				return 1;
+			}else {
+				ftdm_log (FTDM_LOG_INFO ,"ftmod_init_sctp_assoc SUCCESS for peerId[%d] \n", x);
+			}
+		}
+		x++;
+	}
+
+
+
 
 	return 0;
 }
@@ -1210,36 +1272,71 @@ int ftmod_ss7_m2ua_start(void){
 
 static int ftmod_open_endpoint(int id)
 {
-  Pst pst;
-  MwMgmt cntrl;  
-  sng_m2ua_cfg_t* m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
+	Pst pst;
+	MwMgmt cntrl;  
+	sng_m2ua_cfg_t* m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
 
-  memset((U8 *)&pst, 0, sizeof(Pst));
-  memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
 
-  smPstInit(&pst);
+	smPstInit(&pst);
 
-  pst.dstEnt = ENTMW;
+	pst.dstEnt = ENTMW;
 
-  /* prepare header */
-  cntrl.hdr.msgType     = TCNTRL;         /* message type */
-   cntrl.hdr.entId.ent   = ENTMW;          /* entity */
-   cntrl.hdr.entId.inst  = 0;              /* instance */
-   cntrl.hdr.elmId.elmnt = STMWSCTSAP;       /* General */
-   cntrl.hdr.transId     = 1;     /* transaction identifier */
+	/* prepare header */
+	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+	cntrl.hdr.entId.ent   = ENTMW;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = STMWSCTSAP;       /* General */
+	cntrl.hdr.transId     = 1;     /* transaction identifier */
 
-   cntrl.hdr.response.selector    = 0;
-   cntrl.hdr.response.prior       = PRIOR0;
-   cntrl.hdr.response.route       = RTESPEC;
-   cntrl.hdr.response.mem.region  = S_REG;
-   cntrl.hdr.response.mem.pool    = S_POOL;
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
 
 
-   cntrl.t.cntrl.action = AMWENDPOPEN;
-   cntrl.t.cntrl.s.suId = m2ua->id; /* M2UA sct sap Id */
+	cntrl.t.cntrl.action = AMWENDPOPEN;
+	cntrl.t.cntrl.s.suId = m2ua->id; /* M2UA sct sap Id */
 
-     return (sng_cntrl_m2ua (&pst, &cntrl));
+	return (sng_cntrl_m2ua (&pst, &cntrl));
+}
 
+/***********************************************************************************************************************/
+static int ftmod_init_sctp_assoc(int peer_id)
+{
+
+        Pst pst;
+        MwMgmt cntrl;
+
+        memset((U8 *)&pst, 0, sizeof(Pst));
+        memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
+
+        smPstInit(&pst);
+
+        pst.dstEnt = ENTMW;
+
+        /* prepare header */
+        cntrl.hdr.msgType     = TCNTRL;         /* message type */
+        cntrl.hdr.entId.ent   = ENTMW;          /* entity */
+        cntrl.hdr.entId.inst  = 0;              /* instance */
+        cntrl.hdr.elmId.elmnt = STMWPEER;       /* General */
+        cntrl.hdr.transId     = 1;     /* transaction identifier */
+
+        cntrl.hdr.response.selector    = 0;
+        cntrl.hdr.response.prior       = PRIOR0;
+        cntrl.hdr.response.route       = RTESPEC;
+        cntrl.hdr.response.mem.region  = S_REG;
+        cntrl.hdr.response.mem.pool    = S_POOL;
+
+
+        cntrl.t.cntrl.action = AMWESTABLISH;
+        /*cntrl.t.cntrl.s.suId = 1;*/
+
+        cntrl.t.cntrl.s.peerId = (MwPeerId) peer_id;
+
+        return (sng_cntrl_m2ua (&pst, &cntrl));
 }
 
 /***********************************************************************************************************************/
@@ -1380,7 +1477,7 @@ static int ftmod_nif_mtp2_dlsap_bind(int id)
 }
 
 /***********************************************************************************************************************/
-static int ftmod_sctp_enable_debug()
+static int ftmod_sctp_debug(int action)
 {
 	Pst pst;
 	SbMgmt cntrl;  
@@ -1404,7 +1501,7 @@ static int ftmod_sctp_enable_debug()
 	cntrl.hdr.response.mem.region  = S_REG;
 	cntrl.hdr.response.mem.pool    = S_POOL;
 
-	cntrl.t.cntrl.action = AENA;
+	cntrl.t.cntrl.action = action;
 	cntrl.t.cntrl.subAction = SADBG;
 	cntrl.t.cntrl.dbgMask   = 0xFFFF;
 
@@ -1412,7 +1509,7 @@ static int ftmod_sctp_enable_debug()
 }
 /***********************************************************************************************************************/
 
-static int ftmod_m2ua_enable_debug()
+static int ftmod_m2ua_debug(int action)
 {
 	Pst pst;
 	MwMgmt cntrl;  
@@ -1436,14 +1533,14 @@ static int ftmod_m2ua_enable_debug()
 	cntrl.hdr.response.mem.region  = S_REG;
 	cntrl.hdr.response.mem.pool    = S_POOL;
 
-	cntrl.t.cntrl.action = AENA;
+	cntrl.t.cntrl.action = action;
 	cntrl.t.cntrl.subAction = SADBG;
 	cntrl.t.cntrl.s.dbgMask   = 0xFFFF;
 
 	return (sng_cntrl_m2ua (&pst, &cntrl));
 }
 /***********************************************************************************************************************/
-static int ftmod_tucl_enable_debug()
+static int ftmod_tucl_debug(int action)
 {
 	Pst pst;
 	HiMngmt cntrl;  
@@ -1467,10 +1564,135 @@ static int ftmod_tucl_enable_debug()
 	cntrl.hdr.response.mem.region  = S_REG;
 	cntrl.hdr.response.mem.pool    = S_POOL;
 
-	cntrl.t.cntrl.action    = AENA;
+	cntrl.t.cntrl.action    = action;
 	cntrl.t.cntrl.subAction = SADBG;
 	cntrl.t.cntrl.ctlType.hiDbg.dbgMask = 0xFFFF;
 
 	return (sng_cntrl_tucl (&pst, &cntrl));
 }
 /***********************************************************************************************************************/
+
+/***********************************************************************************************************************/
+int ftmod_sctp_ssta_req(int elemt, int id, SbMgmt* cfm)
+{
+	SbMgmt ssta; 
+	Pst pst;
+	sng_sctp_link_t *k = &g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[id];
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&ssta, 0, sizeof(SbMgmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTSB;
+
+	/* prepare header */
+	ssta.hdr.msgType     = TSSTA;         /* message type */
+	ssta.hdr.entId.ent   = ENTSB;          /* entity */
+	ssta.hdr.entId.inst  = 0;              /* instance */
+	ssta.hdr.elmId.elmnt = elemt;  		/* STSBGEN */ /* Others are STSBTSAP, STSBSCTSAP, STSBASSOC, STSBDTA, STSBTMR */ 
+	ssta.hdr.transId     = 1;     /* transaction identifier */
+
+	ssta.hdr.response.selector    = 0;
+	ssta.hdr.response.prior       = PRIOR0;
+	ssta.hdr.response.route       = RTESPEC;
+	ssta.hdr.response.mem.region  = S_REG;
+	ssta.hdr.response.mem.pool    = S_POOL;
+
+	if((ssta.hdr.elmId.elmnt == STSBSCTSAP) || (ssta.hdr.elmId.elmnt == STSBTSAP))
+	{
+		ssta.t.ssta.sapId = k->id; /* SapId */
+	}
+        if(ssta.hdr.elmId.elmnt == STSBASSOC)
+        {
+		/*TODO - how to get assoc Id*/
+                ssta.t.ssta.s.assocSta.assocId = 0; /* association id */
+        }
+	return(sng_sta_sctp(&pst,&ssta,cfm));
+}
+
+int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm)
+{
+	MwMgmt ssta; 
+	Pst pst;
+	sng_m2ua_cfg_t* 	    m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
+	sng_m2ua_cluster_cfg_t*  clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
+	sng_m2ua_peer_cfg_t* peer  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[m2ua->peerId];
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&ssta, 0, sizeof(MwMgmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTMW;
+
+	/* prepare header */
+	ssta.hdr.msgType     = TSSTA;         /* message type */
+	ssta.hdr.entId.ent   = ENTMW;          /* entity */
+	ssta.hdr.entId.inst  = 0;              /* instance */
+	ssta.hdr.elmId.elmnt = elemt; 	      /*STMWGEN */ /* Others are STMWSCTSAP, STMWCLUSTER, STMWPEER,STMWSID, STMWDLSAP */
+	ssta.hdr.transId     = 1;     /* transaction identifier */
+
+	ssta.hdr.response.selector    = 0;
+	ssta.hdr.response.prior       = PRIOR0;
+	ssta.hdr.response.route       = RTESPEC;
+	ssta.hdr.response.mem.region  = S_REG;
+	ssta.hdr.response.mem.pool    = S_POOL;
+
+       switch(ssta.hdr.elmId.elmnt)
+       {
+          case STMWSCTSAP:
+                {
+                   ssta.t.ssta.id.suId = m2ua->id ; /* lower sap Id */            
+                   break;
+                }       
+          case STMWDLSAP:
+                {
+                   ssta.t.ssta.id.lnkNmb = id ; /* upper sap Id */            
+                   break;
+                }
+          case STMWPEER:
+                {
+                   ssta.t.ssta.id.peerId = peer->id ; /* peer Id */            
+                   break;
+                }
+          case STMWCLUSTER:
+                {
+                   ssta.t.ssta.id.clusterId = clust->id ; /* cluster Id */            
+                   break;
+                }
+           default:
+                   break;
+        }
+
+	return(sng_sta_m2ua(&pst,&ssta,cfm));
+}
+
+int ftmod_nif_ssta_req(int elemt, int id, NwMgmt* cfm)
+{
+	NwMgmt ssta; 
+	Pst pst;
+	sng_nif_cfg_t* nif = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[id];
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&ssta, 0, sizeof(NwMgmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTNW;
+
+	/* prepare header */
+	ssta.hdr.msgType     = TSSTA;         /* message type */
+	ssta.hdr.entId.ent   = ENTNW;          /* entity */
+	ssta.hdr.entId.inst  = 0;              /* instance */
+	ssta.hdr.elmId.elmnt = elemt;
+
+	ssta.hdr.response.selector    = 0;
+	ssta.hdr.response.prior       = PRIOR0;
+	ssta.hdr.response.route       = RTESPEC;
+	ssta.hdr.response.mem.region  = S_REG;
+	ssta.hdr.response.mem.pool    = S_POOL;
+	ssta.t.ssta.suId = nif->id; /*  Lower sapId */
+
+	return(sng_sta_nif(&pst,&ssta,cfm));
+}

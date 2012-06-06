@@ -758,6 +758,19 @@ typedef enum {
 
 	SNGSS7_CC_PRESENT	= (1 << 12),
 	SNGSS7_CC_STARTED       = (1 << 13),
+
+	SNGSS7_TUCL_PRESENT	 = (1 << 14),
+	SNGSS7_TUCL_STARTED      = (1 << 15),
+
+	SNGSS7_SCTP_PRESENT	 = (1 << 16),
+	SNGSS7_SCTP_STARTED      = (1 << 17),
+
+	SNGSS7_M2UA_PRESENT	 = (1 << 18),
+	SNGSS7_M2UA_STARTED      = (1 << 19),
+
+	SNGSS7_NIF_PRESENT	 = (1 << 20),
+	SNGSS7_NIF_STARTED       = (1 << 21),
+
 } sng_task_flag_t;
 /******************************************************************************/
 
