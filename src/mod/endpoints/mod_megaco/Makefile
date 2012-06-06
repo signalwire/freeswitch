@@ -7,6 +7,6 @@ ifeq ($(ARCH),x86_64)
 endif
 
 BASE=../../../..
-LOCAL_OBJS=megaco.o megaco_stack.o megaco_xml.o
+LOCAL_OBJS=megaco.o megaco_stack.o megaco_xml.o megaco_cli.o megaco_stack_alarms.o
 LOCAL_LDFLAGS=-lsng_megaco
 include $(BASE)/build/modmake.rules

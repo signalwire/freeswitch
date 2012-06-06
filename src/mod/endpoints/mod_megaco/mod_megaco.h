@@ -15,6 +15,8 @@
 
 #define MG_MAX_PEERS    5
 
+#define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop] [status] [xmlstatus]"
+
 struct megaco_globals {
 	switch_memory_pool_t 		*pool;
 	switch_hash_t 			*profile_hash;
@@ -68,6 +70,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload);
 switch_status_t sng_mgco_start(megaco_profile_t* profile);
 switch_status_t sng_mgco_stop(megaco_profile_t* profile);
 switch_status_t mg_config_cleanup(megaco_profile_t* profile);
+switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stream);
 
 
 #endif /* MOD_MEGACO_H */

@@ -16,84 +16,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown);
 SWITCH_MODULE_DEFINITION(mod_megaco, mod_megaco_load, mod_megaco_shutdown, NULL);
 
-#define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop] [status] [xmlstatus]"
 SWITCH_STANDARD_API(megaco_function)
 {
-	int argc;
-	char *argv[10];
-	char *dup = NULL;
-	
-	if (zstr(cmd)) {
-		goto usage;
-	}
-	
-	dup = strdup(cmd);
-	argc = switch_split(dup, ' ', argv);
-	
-	if (argc < 1 || zstr(argv[0])) {
-		goto usage;
-	}
-	
-/**********************************************************************************/
-	if (!strcmp(argv[0], "profile")) {
-		if (zstr(argv[1]) || zstr(argv[2])) {
-			goto usage;
-		}
-/**********************************************************************************/
-		if (!strcmp(argv[2], "start")) {
-/**********************************************************************************/
-			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
-			if (profile) {
-				megaco_profile_release(profile);
-				stream->write_function(stream, "-ERR Profile %s is already started\n", argv[2]);
-			} else {
-				megaco_profile_start(argv[1]);
-				stream->write_function(stream, "+OK\n");
-			}
-/**********************************************************************************/
-		} else if (!strcmp(argv[2], "stop")) {
-/**********************************************************************************/
-			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
-			if (profile) {
-				megaco_profile_release(profile);
-				megaco_profile_destroy(&profile);
-				stream->write_function(stream, "+OK\n");
-			} else {
-				stream->write_function(stream, "-ERR No such profile\n");
-			}
-/**********************************************************************************/
-		}else if(!strcmp(argv[2], "status")) {
-/**********************************************************************************/
-			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
-			if (profile) {
-				megaco_profile_status(stream, profile->name);
-			} else {
-				stream->write_function(stream, "-ERR No such profile\n");
-			}
-/**********************************************************************************/
-		}else if(!strcmp(argv[2], "xmlstatus")) {
-/**********************************************************************************/
-			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
-			if (profile) {
-				megaco_profile_xmlstatus(stream, profile->name);
-			} else {
-				stream->write_function(stream, "-ERR No such profile\n");
-			}
-/**********************************************************************************/
-		}else {
-/**********************************************************************************/
-			goto usage;
-		}
-	}
-	
-	goto done;
-	
-	usage:
-		stream->write_function(stream, "-ERR Usage: "MEGACO_FUNCTION_SYNTAX"\n");
-		
-	done:
-		switch_safe_free(dup);
-		return SWITCH_STATUS_SUCCESS;
+	return mg_process_cli_cmd(cmd, stream);
 }
 
 static switch_status_t console_complete_hashtable(switch_hash_t *hash, const char *line, const char *cursor, switch_console_callback_match_t **matches)
