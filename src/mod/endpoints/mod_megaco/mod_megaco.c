@@ -72,6 +72,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load)
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles stop");
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles status");
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles xmlstatus");
+	switch_console_set_complete("add megaco profile ::megaco::list_profiles peerxmlstatus");
 	switch_console_add_complete_func("::megaco::list_profiles", list_profiles);
 
 

@@ -15,7 +15,7 @@
 
 #define MG_MAX_PEERS    5
 
-#define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop] [status] [xmlstatus]"
+#define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop] [status] [xmlstatus] [peerxmlstatus]"
 
 struct megaco_globals {
 	switch_memory_pool_t 		*pool;

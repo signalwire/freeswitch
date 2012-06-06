@@ -12,8 +12,9 @@
 /******************************************************************************/
 
 /* FUNCTION PROTOTYPES ********************************************************/
-switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char* profilename);
-switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const char* profilename);
+switch_status_t megaco_profile_status(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg);
+switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg);
+switch_status_t megaco_profile_peer_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg);
 void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm);
 
 /******************************************************************************/
@@ -22,9 +23,10 @@ void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm);
 
 switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stream)
 {
-	int argc;
-	char *argv[10];
-	char *dup = NULL;
+	int 			argc;
+	char* 			argv[10];
+	char* 			dup = NULL;
+	megaco_profile_t* 	profile = NULL;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -37,15 +39,17 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 		goto usage;
 	}
 
-	/**********************************************************************************/
+/**********************************************************************************/
 	if (!strcmp(argv[0], "profile")) {
 		if (zstr(argv[1]) || zstr(argv[2])) {
 			goto usage;
 		}
-		/**********************************************************************************/
+/**********************************************************************************/
+	 	profile = megaco_profile_locate(argv[1]);
+
+/**********************************************************************************/
 		if (!strcmp(argv[2], "start")) {
-			/**********************************************************************************/
-			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
+/**********************************************************************************/
 			if (profile) {
 				megaco_profile_release(profile);
 				stream->write_function(stream, "-ERR Profile %s is already started\n", argv[2]);
@@ -53,10 +57,9 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 				megaco_profile_start(argv[1]);
 				stream->write_function(stream, "+OK\n");
 			}
-			/**********************************************************************************/
+/**********************************************************************************/
 		} else if (!strcmp(argv[2], "stop")) {
-			/**********************************************************************************/
-			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
+/**********************************************************************************/
 			if (profile) {
 				megaco_profile_release(profile);
 				megaco_profile_destroy(&profile);
@@ -64,27 +67,36 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
-			/**********************************************************************************/
+/**********************************************************************************/
 		}else if(!strcmp(argv[2], "status")) {
-			/**********************************************************************************/
-			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
+/**********************************************************************************/
 			if (profile) {
-				megaco_profile_status(stream, profile->name);
+				megaco_profile_release(profile);
+				megaco_profile_status(stream, profile);
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
-			/**********************************************************************************/
+/**********************************************************************************/
 		}else if(!strcmp(argv[2], "xmlstatus")) {
-			/**********************************************************************************/
-			megaco_profile_t *profile = megaco_profile_locate(argv[1]);
+/**********************************************************************************/
 			if (profile) {
-				megaco_profile_xmlstatus(stream, profile->name);
+				megaco_profile_release(profile);
+				megaco_profile_xmlstatus(stream, profile);
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
-			/**********************************************************************************/
+/**********************************************************************************/
+		}else if(!strcmp(argv[2], "peerxmlstatus")) {
+/**********************************************************************************/
+			if (profile) {
+				megaco_profile_release(profile);
+				megaco_profile_peer_xmlstatus(stream, profile);
+			} else {
+				stream->write_function(stream, "-ERR No such profile\n");
+			}
+/**********************************************************************************/
 		}else {
-			/**********************************************************************************/
+/**********************************************************************************/
 			goto usage;
 		}
 	}
@@ -100,7 +112,7 @@ done:
 }
 
 /******************************************************************************/
-switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const char* profilename)
+switch_status_t megaco_profile_peer_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg)
 {
 	int idx   = 0x00;
 	int len   = 0x00;
@@ -110,23 +122,69 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 	int i = 0x00;
 	char *asciiAddr;
 	CmInetIpAddr ip;
-	megaco_profile_t*   mg_cfg  = NULL; 
 	mg_peer_profile_t*  mg_peer = NULL;
 
-	switch_assert(profilename);
+	switch_assert(mg_cfg);
 
 	memset((U8 *)&cfm, 0, sizeof(cfm));
 	memset((char *)&prntBuf, 0, sizeof(prntBuf));
 
-	mg_cfg  = megaco_profile_locate(profilename);
-	if(!mg_cfg){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
-		return SWITCH_STATUS_FALSE;
-	}
 	 mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
 
 	if(!mg_peer){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[0],profilename);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[0],mg_cfg->name);
+		return SWITCH_STATUS_FALSE;
+	}
+
+
+	idx = mg_cfg->idx;
+
+	len = len + sprintf(&prntBuf[0] + len,"%s\n",xmlhdr);
+
+	len = len + sprintf(&prntBuf[0] + len,"<mg_peer>\n");
+	len = len + sprintf(&prntBuf[0] + len,"<name>%s</name>\n",mg_cfg->peer_list[0]);
+
+	/* TODO - as of now supporting only one peer .. need to add logic to iterate through all the peers associated with this profile..*/
+
+	/* send request to MEGACO Trillium stack to get peer information*/
+	sng_mgco_mg_get_status(STGCPENT, &cfm, mg_cfg, mg_peer);
+
+	ip = ntohl(cfm.t.ssta.s.mgPeerSta.peerAddrTbl.netAddr[i].u.ipv4NetAddr);
+	cmInetNtoa(ip, &asciiAddr);
+	len = len + sprintf(prntBuf+len, "<ipv4_address>%s</ipv4_address>\n",asciiAddr); 
+
+	len = len + sprintf(prntBuf+len, "<peer_state>%s</peer_state>\n",PRNT_MG_PEER_STATE(cfm.t.ssta.s.mgPeerSta.peerState)); 
+
+	len = len + sprintf(&prntBuf[0] + len,"</mg_peer>\n");
+
+	stream->write_function(stream, "\n%s\n",&prntBuf[0]);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/******************************************************************************/
+
+switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg)
+{
+	int idx   = 0x00;
+	int len   = 0x00;
+	MgMngmt   cfm;
+	char*     xmlhdr = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	char 	  prntBuf[3048];
+	int i = 0x00;
+	char *asciiAddr;
+	CmInetIpAddr ip;
+	mg_peer_profile_t*  mg_peer = NULL;
+
+	switch_assert(mg_cfg);
+
+	memset((U8 *)&cfm, 0, sizeof(cfm));
+	memset((char *)&prntBuf, 0, sizeof(prntBuf));
+
+	 mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
+
+	if(!mg_peer){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[0],mg_cfg->name);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -137,7 +195,6 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 
 	len = len + sprintf(&prntBuf[0] + len,"<mg_profile>\n");
 	len = len + sprintf(&prntBuf[0] + len,"<name>%s</name>\n",mg_cfg->name);
-	len = len + sprintf(&prntBuf[0] + len,"<profile>%s</profile>\n",profilename);
 /****************************************************************************************************************/
 /* Print Peer Information ***************************************************************************************/
 
@@ -254,29 +311,23 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, const c
 }
 
 /****************************************************************************************************************/
-switch_status_t megaco_profile_status(switch_stream_handle_t *stream, const char* profilename)
+switch_status_t megaco_profile_status(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg)
 {
 	int idx   = 0x00;
 	int len   = 0x00;
 	MgMngmt   cfm;
 	char 	  prntBuf[1024];
-	megaco_profile_t*   mg_cfg  = NULL; 
 	mg_peer_profile_t*  mg_peer = NULL;
 
-	switch_assert(profilename);
+	switch_assert(mg_cfg);
 
 	memset((U8 *)&cfm, 0, sizeof(cfm));
 	memset((char *)&prntBuf, 0, sizeof(prntBuf));
 
-	mg_cfg  = megaco_profile_locate(profilename);
-	if(!mg_cfg){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG configuration found against profilename[%s]\n",profilename);
-		return SWITCH_STATUS_FALSE;
-	}
 	mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
 
 	if(!mg_peer){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[0],profilename);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[0],mg_cfg->name);
 		return SWITCH_STATUS_FALSE;
 	}
 
