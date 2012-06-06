@@ -10,7 +10,7 @@
 #ifndef MOD_MEGACO_H
 #define MOD_MEGACO_H
 
-#include "sng_megaco/sng_ss7.h"
+#include "sng_mg/sng_mg.h"
 #include <switch.h>
 
 #define MG_MAX_PEERS    5

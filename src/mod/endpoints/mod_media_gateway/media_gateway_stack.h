@@ -6,7 +6,7 @@
 * <Insert license here>
 */
 
-#include "mod_megaco.h"
+#include "mod_media_gateway.h"
 
 #ifndef _MEGACO_STACK_H_
 #define _MEGACO_STACK_H_
@@ -56,7 +56,7 @@ void handle_tucl_alarm(Pst *pst, HiMngmt *sta);
 
 
 switch_status_t sng_mgco_cfg(megaco_profile_t* profile);
-switch_status_t sng_mgco_init(sng_isup_event_interface_t* event);
+switch_status_t sng_mgco_init(sng_mg_event_interface_t* event);
 switch_status_t sng_mgco_stack_shutdown(void);
 int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, megaco_profile_t* mg_cfg, mg_peer_profile_t* mg_peer);
 

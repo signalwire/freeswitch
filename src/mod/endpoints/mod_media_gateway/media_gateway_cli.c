@@ -7,8 +7,8 @@
 */
 
 /* INCLUDES *******************************************************************/
-#include "mod_megaco.h"
-#include "megaco_stack.h"
+#include "mod_media_gateway.h"
+#include "media_gateway_stack.h"
 /******************************************************************************/
 
 /* FUNCTION PROTOTYPES ********************************************************/

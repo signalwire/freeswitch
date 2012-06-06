@@ -6,11 +6,11 @@
 * <Insert license here>
 */
 
-#include "mod_megaco.h"
-#include "megaco_stack.h"
+#include "mod_media_gateway.h"
+#include "media_gateway_stack.h"
 
 struct megaco_globals megaco_globals;
-static sng_isup_event_interface_t sng_event;
+static sng_mg_event_interface_t sng_event;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown);

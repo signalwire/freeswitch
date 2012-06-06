@@ -6,7 +6,7 @@
 * <Insert license here>
 */
 
-#include "mod_megaco.h"
+#include "mod_media_gateway.h"
 
 megaco_profile_t *megaco_profile_locate(const char *name)
 {

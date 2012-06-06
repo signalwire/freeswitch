@@ -7,8 +7,8 @@
 */
 
 /* INCLUDES *******************************************************************/
-#include "mod_megaco.h"
-#include "megaco_stack.h"
+#include "mod_media_gateway.h"
+#include "media_gateway_stack.h"
 /******************************************************************************/
 
 /* DEFINES ********************************************************************/
@@ -47,42 +47,42 @@ sng_mg_protocol_types_e  mg_get_proto_type_from_str(char* proto_type);
 
 /* FUNCTIONS ******************************************************************/
 
-switch_status_t sng_mgco_init(sng_isup_event_interface_t* event)
+switch_status_t sng_mgco_init(sng_mg_event_interface_t* event)
 {
 	uint32_t major, minor, build;
 
 	switch_assert(event);
 
 	/* initalize sng_mg library */
-	sng_isup_init_gen(event);
+	sng_mg_init_gen(event);
 
 	/* print the version of the library being used */
-	sng_isup_version(&major, &minor, &build);
+	sng_mg_version(&major, &minor, &build);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Loaded LibSng-MEGACO %d.%d.%d\n", major, minor, build);
 
 	/* start up the stack manager */
-	if (sng_isup_init_sm()) {
+	if (sng_mg_init_sm()) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Failed to start Stack Manager\n");
 		return SWITCH_STATUS_FALSE;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Started Stack Manager!\n");
 	}
 
-	if (sng_isup_init_tucl()) {
+	if (sng_mg_init_tucl()) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Failed to start TUCL\n");
 		return SWITCH_STATUS_FALSE;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Started TUCL!\n");
 	}
 
-	if (sng_isup_init_mg()) {
+	if (sng_mg_init_mg()) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Failed to start MG\n");
 		return SWITCH_STATUS_FALSE;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Started MG!\n");
 	}
 
-	if (sng_isup_init_mu()) {
+	if (sng_mg_init_mu()) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Failed to start MU\n");
 		return SWITCH_STATUS_FALSE;
 	} else {
@@ -104,19 +104,19 @@ switch_status_t sng_mgco_stack_shutdown()
 	sng_mgco_tucl_shutdown();
 
 	/* free MEGACO Application */
-	sng_isup_free_mu();
+	sng_mg_free_mu();
 
 	/* free MEGACO */
-	sng_isup_free_mg();
+	sng_mg_free_mg();
 
 	/* free TUCL */
-	sng_isup_free_tucl();
+	sng_mg_free_tucl();
 
 	/* free SM */
-	sng_isup_free_sm();
+	sng_mg_free_sm();
 
 	/* free gen */
-	sng_isup_free_gen();
+	sng_mg_free_gen();
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -638,7 +638,7 @@ int mgco_tucl_gen_config(void)
 	cfg.t.cfg.s.hiGen.poolDropThr           = HI_MEM_POOL_DROP_THRESHOLD;
 	cfg.t.cfg.s.hiGen.poolStopThr           = HI_MEM_POOL_STOP_THRESHOLD;
 
-	cfg.t.cfg.s.hiGen.timeRes               = SI_PERIOD;        /* time resolution */
+	cfg.t.cfg.s.hiGen.timeRes               = HI_PERIOD;        /* time resolution */
 
 #ifdef HI_SPECIFY_GENSOCK_ADDR
 	cfg.t.cfg.s.hiGen.ipv4GenSockAddr.address = CM_INET_INADDR_ANY;

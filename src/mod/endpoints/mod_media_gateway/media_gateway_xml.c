@@ -5,8 +5,8 @@
 * 
 * <Insert license here>
 */
-#include "mod_megaco.h"
-#include "megaco_stack.h"
+#include "mod_media_gateway.h"
+#include "media_gateway_stack.h"
 
 /****************************************************************************************************************************/
 static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) ;
