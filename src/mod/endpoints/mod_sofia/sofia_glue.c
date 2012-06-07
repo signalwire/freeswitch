@@ -350,7 +350,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 						tech_pvt->local_sdp_audio_zrtp_hash);
 	}
 
-	if (sr) {
+	if (!zsttr(sr)) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=%s\n", sr);
 	}
 }
@@ -434,7 +434,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 		verbose_sdp = 1;
 	}
 
-	if (!force && !ip && !sr
+	if (!force && !ip && zstr(sr)
 		&& (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA))) {
 		return;
 	}
@@ -465,7 +465,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 		sofia_glue_sdp_map(b_sdp, &map, &ptmap);
 	}
 
-	if (!sr) {
+	if (zstr(sr)) {
 		if ((var_val = switch_channel_get_variable(tech_pvt->channel, "media_audio_mode"))) {
 			sr = var_val;
 		} else {
@@ -485,7 +485,9 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 	if ((tech_pvt->profile->ndlb & PFLAG_NDLB_SENDRECV_IN_SESSION) ||
 		((var_val = switch_channel_get_variable(tech_pvt->channel, "ndlb_sendrecv_in_session")) && switch_true(var_val))) {
-		switch_snprintf(srbuf, sizeof(srbuf), "a=%s\n", sr);
+		if (!zstr(sr)) {
+			switch_snprintf(srbuf, sizeof(srbuf), "a=%s\n", sr);
+		}
 		sr = NULL;
 	}
 
@@ -554,7 +556,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 							tech_pvt->local_sdp_audio_zrtp_hash);
 		}
 
-		if (sr) {
+		if (!zstr(sr)) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=%s\n", sr);
 		}
 	
