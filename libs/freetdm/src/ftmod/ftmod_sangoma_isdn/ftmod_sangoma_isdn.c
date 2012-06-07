@@ -281,8 +281,8 @@ ftdm_state_map_t sangoma_isdn_state_map = {
 static void ftdm_sangoma_isdn_process_phy_events(ftdm_span_t *span, ftdm_oob_event_t event)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
-	sngisdn_snd_event(signal_data->dchan, event);
-	
+	sngisdn_snd_event(signal_data, event);
+
 	switch (event) {
 		/* Check if the span woke up from power-saving mode */
 		case FTDM_OOB_ALARM_CLEAR:
@@ -354,7 +354,6 @@ static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
 
 	/* Initialize the d-channel */
-	ftdm_assert(((sngisdn_span_data_t*)span->signal_data)->dchan, "Span does not have a dchannel");
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	if (!chaniter) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
@@ -1039,21 +1038,11 @@ static ftdm_status_t ftdm_sangoma_isdn_dtmf(ftdm_channel_t *ftdmchan, const char
 	return FTDM_SUCCESS;
 }
 
-static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
+static ftdm_status_t ftdm_sangoma_isdn_perform_start(ftdm_span_t *span)
 {
 	sngisdn_span_data_t *signal_data = span->signal_data;
 
-	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
-	
-	ftdm_channel_set_feature(((sngisdn_span_data_t*)span->signal_data)->dchan, FTDM_CHANNEL_FEATURE_IO_STATS);
-	ftdm_channel_open_chan(((sngisdn_span_data_t*)span->signal_data)->dchan);
-	ftdm_sangoma_isdn_dchan_set_queue_size(((sngisdn_span_data_t*)span->signal_data)->dchan);	
-
-	if (sngisdn_stack_start(span) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
-		return FTDM_FAIL;
-	}
-
+	ftdm_log(FTDM_LOG_DEBUG, "Actually starting span:%s\n", span->name);
 	/* clear the monitor thread stop flag */
 	ftdm_clear_flag(span, FTDM_SPAN_STOP_THREAD);
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
@@ -1085,9 +1074,61 @@ static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
 	if (signal_data->restart_timeout) {
 		ftdm_log(FTDM_LOG_DEBUG, "%s:Scheduling Restart timeout\n", signal_data->ftdm_span->name);
 		ftdm_sched_timer(signal_data->sched, "restart_timeout", signal_data->restart_timeout,
-							sngisdn_restart_timeout, (void*) signal_data, &signal_data->timers[SNGISDN_SPAN_TIMER_RESTART]);
+						sngisdn_restart_timeout, (void*) signal_data, &signal_data->timers[SNGISDN_SPAN_TIMER_RESTART]);
 	}
+
 	ftdm_log(FTDM_LOG_DEBUG,"Finished starting span %s\n", span->name);
+	return FTDM_SUCCESS;
+}
+
+
+static ftdm_status_t ftdm_sangoma_isdn_start(ftdm_span_t *span)
+{
+	sngisdn_span_data_t *signal_data = span->signal_data;
+
+	ftdm_log(FTDM_LOG_INFO,"Starting span %s:%u.\n",span->name,span->span_id);
+
+	if (signal_data->dchan) {
+		ftdm_channel_set_feature(signal_data->dchan, FTDM_CHANNEL_FEATURE_IO_STATS);
+		ftdm_channel_open_chan(signal_data->dchan);
+		ftdm_sangoma_isdn_dchan_set_queue_size(signal_data->dchan);
+	}
+
+	if (signal_data->nfas.trunk) {
+		if (signal_data->nfas.trunk->num_spans == signal_data->nfas.trunk->num_spans_configured) {
+			int i;
+			ftdm_log(FTDM_LOG_DEBUG, "Starting span for all spans within trunkgroup:%s\n", signal_data->nfas.trunk->name);
+
+			sngisdn_stack_start(signal_data->nfas.trunk->dchan->ftdm_span);
+			ftdm_sangoma_isdn_perform_start(signal_data->nfas.trunk->dchan->ftdm_span);
+
+			if (signal_data->nfas.trunk->backup) {
+				sngisdn_stack_start(signal_data->nfas.trunk->backup->ftdm_span);
+				ftdm_sangoma_isdn_perform_start(signal_data->nfas.trunk->backup->ftdm_span);
+			}
+			
+			for (i = 0; i < signal_data->nfas.trunk->num_spans; i++) {
+				if (signal_data->nfas.trunk->spans[i] &&
+					signal_data->nfas.trunk->spans[i]->nfas.sigchan == SNGISDN_NFAS_DCHAN_NONE) {
+					sngisdn_stack_start(signal_data->nfas.trunk->spans[i]->ftdm_span);
+					ftdm_sangoma_isdn_perform_start(signal_data->nfas.trunk->spans[i]->ftdm_span);
+				}
+			}
+
+			return FTDM_SUCCESS;
+		} else {
+			ftdm_log(FTDM_LOG_DEBUG, "Delaying span start until all spans within trunkgroup are started: %s\n", signal_data->nfas.trunk->name);
+			return FTDM_SUCCESS;
+		}
+	}
+
+	if (sngisdn_stack_start(span) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to start span %s\n", span->name);
+		return FTDM_FAIL;
+	}
+
+	ftdm_sangoma_isdn_perform_start(span);
+	
 	return FTDM_SUCCESS;
 }
 
@@ -1138,13 +1179,13 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;
 
-	sngisdn_span_data_t *span_data;
+	sngisdn_span_data_t *signal_data;
 	
 	ftdm_log(FTDM_LOG_INFO, "Configuring ftmod_sangoma_isdn span = %s\n", span->name);	
 
-	span_data = ftdm_calloc(1, sizeof(sngisdn_span_data_t));
-	span_data->ftdm_span = span;
-	span->signal_data = span_data;
+	signal_data = ftdm_calloc(1, sizeof(sngisdn_span_data_t));
+	signal_data->ftdm_span = span;
+	span->signal_data = signal_data;
 	
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
@@ -1160,79 +1201,98 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 		return FTDM_FAIL;
 	}
 
-	if (sngisdn_stack_cfg(span) != FTDM_SUCCESS) {
+	if (signal_data->nfas.trunk) {
+		if (signal_data->nfas.trunk->num_spans == ++signal_data->nfas.trunk->num_spans_configured) {
+			int i;
+			ftdm_log(FTDM_LOG_DEBUG, "Starting stack configuration for all spans within trunkgroup:%s\n", signal_data->nfas.trunk->name);
+
+			sngisdn_stack_cfg(signal_data->nfas.trunk->dchan->ftdm_span);
+			if (signal_data->nfas.trunk->backup) {
+				sngisdn_stack_cfg(signal_data->nfas.trunk->backup->ftdm_span);
+			}
+			
+			for (i = 0; i < signal_data->nfas.trunk->num_spans; i++) {
+				if (signal_data->nfas.trunk->spans[i] &&
+					signal_data->nfas.trunk->spans[i]->nfas.sigchan == SNGISDN_NFAS_DCHAN_NONE) {
+					sngisdn_stack_cfg(signal_data->nfas.trunk->spans[i]->ftdm_span);
+				}
+			}
+		} else {
+			ftdm_log(FTDM_LOG_DEBUG, "Delaying span stack configuration until all spans within trunkgroup are started:%s\n", signal_data->nfas.trunk->name);
+		}
+	} else if (sngisdn_stack_cfg(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Sangoma ISDN Stack configuration failed\n");
 		return FTDM_FAIL;
 	}
 
-	if (span_data->cid_name_method == SNGISDN_CID_NAME_AUTO) {
-		switch (span_data->switchtype) {
+	if (signal_data->cid_name_method == SNGISDN_CID_NAME_AUTO) {
+		switch (signal_data->switchtype) {
 			case SNGISDN_SWITCH_EUROISDN:
 				if (FTDM_SPAN_IS_BRI(span)) {
-					span_data->cid_name_method = SNGISDN_CID_NAME_USR_USR_IE;
+					signal_data->cid_name_method = SNGISDN_CID_NAME_USR_USR_IE;
 				} else {
-					span_data->cid_name_method = SNGISDN_CID_NAME_DISPLAY_IE;
+					signal_data->cid_name_method = SNGISDN_CID_NAME_DISPLAY_IE;
 				}
 				break;
 			case SNGISDN_SWITCH_DMS100:
-				span_data->cid_name_method = SNGISDN_CID_NAME_DISPLAY_IE;
+				signal_data->cid_name_method = SNGISDN_CID_NAME_DISPLAY_IE;
 				break;
 			case SNGISDN_SWITCH_NI2:
 			case SNGISDN_SWITCH_5ESS:
 			case SNGISDN_SWITCH_4ESS:
-				span_data->cid_name_method = SNGISDN_CID_NAME_FACILITY_IE;
+				signal_data->cid_name_method = SNGISDN_CID_NAME_FACILITY_IE;
 				break;
 			default:
 				break;
 		}
 	}
 
-	if (span_data->send_cid_name == SNGISDN_OPT_DEFAULT) {
-		switch (span_data->switchtype) {
+	if (signal_data->send_cid_name == SNGISDN_OPT_DEFAULT) {
+		switch (signal_data->switchtype) {
 			case SNGISDN_SWITCH_EUROISDN:
 #ifdef SNGISDN_SUPPORT_CALLING_NAME_IN_FACILITY
 			case SNGISDN_SWITCH_NI2:
 			case SNGISDN_SWITCH_5ESS:
 			case SNGISDN_SWITCH_4ESS:
 #endif
-				if (span_data->signalling == SNGISDN_SIGNALING_NET) {
-					span_data->send_cid_name = SNGISDN_OPT_TRUE;
+				if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
+					signal_data->send_cid_name = SNGISDN_OPT_TRUE;
 				} else {
-					span_data->send_cid_name = SNGISDN_OPT_FALSE;
+					signal_data->send_cid_name = SNGISDN_OPT_FALSE;
 				}
 				break;
 			case SNGISDN_SWITCH_DMS100:
-				span_data->send_cid_name = SNGISDN_OPT_TRUE;
+				signal_data->send_cid_name = SNGISDN_OPT_TRUE;
 				break;
 #ifndef SNGISDN_SUPPORT_CALLING_NAME_IN_FACILITY
 			case SNGISDN_SWITCH_NI2:
 			case SNGISDN_SWITCH_5ESS:
 			case SNGISDN_SWITCH_4ESS:
-				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				signal_data->send_cid_name = SNGISDN_OPT_FALSE;
 				break;
 #endif
 			default:
-				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				signal_data->send_cid_name = SNGISDN_OPT_FALSE;
 				break;
 		}
-	} else if (span_data->send_cid_name == SNGISDN_OPT_TRUE) {
-		switch (span_data->switchtype) {
+	} else if (signal_data->send_cid_name == SNGISDN_OPT_TRUE) {
+		switch (signal_data->switchtype) {
 			case SNGISDN_SWITCH_NI2:
 			case SNGISDN_SWITCH_5ESS:
 			case SNGISDN_SWITCH_4ESS:
 #ifndef SNGISDN_SUPPORT_CALLING_NAME_IN_FACILITY
 				ftdm_log(FTDM_LOG_WARNING, "Sending Calling Name in Facility IE not supported, please update your libsng_isdn library\n");
-				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				signal_data->send_cid_name = SNGISDN_OPT_FALSE;
 #endif
 				break;
 			case SNGISDN_SWITCH_INSNET: /* Don't know how to transmit caller ID name on INSNET */
 			case SNGISDN_SWITCH_QSIG: /* It seems like QSIG does not support Caller ID */
-				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				signal_data->send_cid_name = SNGISDN_OPT_FALSE;
 				break;
 			case SNGISDN_SWITCH_EUROISDN:
 				break;
 			default:
-				span_data->send_cid_name = SNGISDN_OPT_FALSE;
+				signal_data->send_cid_name = SNGISDN_OPT_FALSE;
 				break;
 		}
 	}
