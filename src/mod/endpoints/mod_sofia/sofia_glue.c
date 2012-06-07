@@ -350,7 +350,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 						tech_pvt->local_sdp_audio_zrtp_hash);
 	}
 
-	if (!zsttr(sr)) {
+	if (!zstr(sr)) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=%s\n", sr);
 	}
 }
