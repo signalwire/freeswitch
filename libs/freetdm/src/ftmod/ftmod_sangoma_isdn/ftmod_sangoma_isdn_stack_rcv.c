@@ -33,17 +33,19 @@
  */
 
 #include "ftmod_sangoma_isdn.h"
+//static void sngisdn_rcv_q931_ind_span(sngisdn_span_data_t *signal_data, InMngmt *status);
 
 void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces)
 {
 	uint8_t bchan_no = 0;
+	int8_t interface_id = -1; /* Specifies which interface for NFAS */
 	sngisdn_chan_data_t *sngisdn_info = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Con Ind on unconfigured cc\n");
-	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Con Ind on unconfigured dchan\n");
+	ftdm_assert(g_sngisdn_data.spans[dChan], "Con Ind on unconfigured dchan\n");
 		
 	if (conEvnt->chanId.eh.pres != PRSNT_NODEF) {
 		/* TODO: Implement me */
@@ -58,19 +60,38 @@ void sngisdn_rcv_con_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, Co
 		bchan_no = conEvnt->chanId.infoChanSel.val;
 	}
 
+	if (conEvnt->chanId.intIdent.pres) {
+		interface_id = conEvnt->chanId.intIdent.val;
+	}
+
 	if (!bchan_no) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to obtain b-channel number from SETUP message\n");
 		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 		return;
 	}
 
-	if (g_sngisdn_data.dchans[dChan].channels[bchan_no] == NULL) {
-		ftdm_log(FTDM_LOG_ERROR, "Incoming call on unconfigured b-channel:%d\n", bchan_no);
-		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
-		return;
+	if (g_sngisdn_data.spans[dChan]->nfas.trunk) {
+		if (interface_id < 0) {
+			ftdm_log(FTDM_LOG_ERROR, "Interface ID not present on NFAS interface\n");
+			ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+			return;
+		} else if (!g_sngisdn_data.spans[dChan]->nfas.trunk->spans[interface_id]) {
+			ftdm_log(FTDM_LOG_ERROR, "NFAS group:%s does not have logical interface %d\n", g_sngisdn_data.spans[dChan]->nfas.trunk->name, interface_id);
+			ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+			return;
+		} else {
+			sngisdn_info = g_sngisdn_data.spans[dChan]->nfas.trunk->spans[interface_id]->channels[bchan_no];
+		}
+	} else {
+		if (g_sngisdn_data.spans[dChan]->channels[bchan_no] == NULL) {
+			ftdm_log(FTDM_LOG_ERROR, "Incoming call on unconfigured b-channel:%d\n", bchan_no);
+			ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+			return;
+		}
+		
+		sngisdn_info = g_sngisdn_data.spans[dChan]->channels[bchan_no];
 	}
-
-	sngisdn_info = g_sngisdn_data.dchans[dChan].channels[bchan_no];
+	
 
 	ftdm_log_chan(sngisdn_info->ftdmchan, FTDM_LOG_INFO, "Received SETUP (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 	
@@ -103,7 +124,7 @@ void sngisdn_rcv_con_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, Cn
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Con Cfm on unconfigured cc\n");
-	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Con Cfm on unconfigured dchan\n");
+	ftdm_assert(g_sngisdn_data.spans[dChan] != 0, "Con Cfm on unconfigured dchan\n");
 
 	if (get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
@@ -147,7 +168,7 @@ void sngisdn_rcv_cnst_ind (int16_t suId, uint32_t suInstId, uint32_t spInstId, C
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_assert(g_sngisdn_data.ccs[suId].activation_done != 0, "Cnst Ind on unconfigured cc\n");
-	ftdm_assert(g_sngisdn_data.dchans[dChan].num_spans != 0, "Cnst Ind on unconfigured dchan\n");
+	ftdm_assert(g_sngisdn_data.spans[dChan] != 0, "Cnst Ind on unconfigured dchan\n");
 
 	if (get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Could not find matching call suId:%u suInstId:%u spInstId:%u\n", suId, suInstId, spInstId);
@@ -537,37 +558,41 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 
 void sngisdn_rcv_srv_ind (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces)
 {
-	unsigned i;
+	
 	sngisdn_span_data_t	*signal_data;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log(FTDM_LOG_INFO, "Received SERVICE IND (dChan:%d ces:%u)\n", dChan, ces);
-	
-	/* Enqueue the event to each span within the dChan */
-	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
-		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
-		sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-		ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
-		memset(sngisdn_event, 0, sizeof(*sngisdn_event));
 
-		sngisdn_event->event_id = SNGISDN_EVENT_SRV_IND;		
-		sngisdn_event->suId = suId;
-		sngisdn_event->dChan = dChan;
-		sngisdn_event->ces = ces;
-		sngisdn_event->signal_data = signal_data;
-		
-		memcpy(&sngisdn_event->event.srvEvnt, srvEvnt, sizeof(*srvEvnt));
-		ftdm_queue_enqueue((signal_data)->event_queue, sngisdn_event);
+	signal_data = g_sngisdn_data.spans[dChan];
+
+	if (signal_data->nfas.trunk) {
+		unsigned i;
+		for (i = 0; i < signal_data->nfas.trunk->num_spans; i++) {
+			sngisdn_span_data_t	*my_signal_data = signal_data->nfas.trunk->spans[i];
+
+			sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
+			ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
+			memset(sngisdn_event, 0, sizeof(*sngisdn_event));
+			sngisdn_event->event_id = SNGISDN_EVENT_SRV_IND;
+			sngisdn_event->suId = suId;
+			sngisdn_event->dChan = dChan;
+			sngisdn_event->ces = ces;
+			sngisdn_event->signal_data = my_signal_data;
+			memcpy(&sngisdn_event->event.srvEvnt, srvEvnt, sizeof(*srvEvnt));
+			ftdm_queue_enqueue(my_signal_data->event_queue, sngisdn_event);
+		}
+	} else {
+		ftdm_queue_enqueue(signal_data->event_queue, sngisdn_event);
 	}
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 
 
 void sngisdn_rcv_srv_cfm (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces)
-{
-	unsigned i;
+{	
 	sngisdn_span_data_t	*signal_data = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
@@ -575,59 +600,65 @@ void sngisdn_rcv_srv_cfm (int16_t suId, Srv *srvEvnt, int16_t dChan, uint8_t ces
 
 	ftdm_log(FTDM_LOG_INFO, "Received SERVICE CFM (dChan:%d ces:%u)\n", dChan, ces);
 
-	/* Enqueue the event to each span within the dChan */
-	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
-		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
-		sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-		ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
-		memset(sngisdn_event, 0, sizeof(*sngisdn_event));
+	signal_data = g_sngisdn_data.spans[dChan];
 
-		sngisdn_event->event_id = SNGISDN_EVENT_SRV_CFM;		
-		sngisdn_event->suId = suId;
-		sngisdn_event->dChan = dChan;
-		sngisdn_event->ces = ces;
-		sngisdn_event->signal_data = signal_data;
+	if (signal_data->nfas.trunk) {
+		unsigned i;
+		for (i = 0; i < signal_data->nfas.trunk->num_spans; i++) {
+			sngisdn_span_data_t	*my_signal_data = signal_data->nfas.trunk->spans[i];
 
-		memcpy(&sngisdn_event->event.srvEvnt, srvEvnt, sizeof(*srvEvnt));
-		ftdm_queue_enqueue((signal_data)->event_queue, sngisdn_event);
+			sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
+			ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
+			memset(sngisdn_event, 0, sizeof(*sngisdn_event));
+			sngisdn_event->event_id = SNGISDN_EVENT_SRV_CFM;
+			sngisdn_event->suId = suId;
+			sngisdn_event->dChan = dChan;
+			sngisdn_event->ces = ces;
+			sngisdn_event->signal_data = my_signal_data;
+			memcpy(&sngisdn_event->event.srvEvnt, srvEvnt, sizeof(*srvEvnt));
+			ftdm_queue_enqueue(my_signal_data->event_queue, sngisdn_event);
+		}
+	} else {
+		ftdm_queue_enqueue(signal_data->event_queue, sngisdn_event);
 	}
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 
 void sngisdn_rcv_rst_ind (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType)
-{
-	unsigned i;
+{	
 	sngisdn_span_data_t	*signal_data = NULL;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
 	ftdm_log(FTDM_LOG_INFO, "Received RESTART IND (dChan:%d ces:%u type:%u)\n", dChan, ces, evntType);
-	
-	/* Enqueue the event to each span within the dChan */
-	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
-		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
 
-		sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-		ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
-		memset(sngisdn_event, 0, sizeof(*sngisdn_event));
+	signal_data = g_sngisdn_data.spans[dChan];
 
-		sngisdn_event->event_id = SNGISDN_EVENT_RST_IND;
-		sngisdn_event->suId = suId;
-		sngisdn_event->dChan = dChan;
-		sngisdn_event->ces = ces;
-		sngisdn_event->evntType = evntType;
-		sngisdn_event->signal_data = signal_data;
+	if (signal_data->nfas.trunk) {
+		unsigned i;
+		for (i = 0; i < signal_data->nfas.trunk->num_spans; i++) {
+			sngisdn_span_data_t	*my_signal_data = signal_data->nfas.trunk->spans[i];
 
-		memcpy(&sngisdn_event->event.rstEvnt, rstEvnt, sizeof(*rstEvnt));
+			sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
+			ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
+			memset(sngisdn_event, 0, sizeof(*sngisdn_event));
+			sngisdn_event->event_id = SNGISDN_EVENT_RST_IND;
+			sngisdn_event->suId = suId;
+			sngisdn_event->dChan = dChan;
+			sngisdn_event->ces = ces;
+			sngisdn_event->signal_data = my_signal_data;
+			memcpy(&sngisdn_event->event.rstEvnt, rstEvnt, sizeof(*rstEvnt));
+			ftdm_queue_enqueue(my_signal_data->event_queue, sngisdn_event);
+		}
+	} else {
 		ftdm_queue_enqueue(signal_data->event_queue, sngisdn_event);
 	}
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 
 void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces, uint8_t evntType)
-{
-	unsigned i;
+{	
 	sngisdn_span_data_t	*signal_data;
 	sngisdn_event_data_t *sngisdn_event = NULL;
 
@@ -636,22 +667,26 @@ void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 
 	ftdm_log(FTDM_LOG_INFO, "Received RESTART CFM (dChan:%d ces:%u type:%u)\n", dChan, ces, evntType);
 
-	/* Enqueue the event to each span within the dChan */
-	for(i=1; i<=g_sngisdn_data.dchans[dChan].num_spans; i++) {
-		signal_data = g_sngisdn_data.dchans[dChan].spans[i];
-		sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
-		ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
-		memset(sngisdn_event, 0, sizeof(*sngisdn_event));
+	signal_data = g_sngisdn_data.spans[dChan];
 
-		sngisdn_event->event_id = SNGISDN_EVENT_RST_CFM;
-		sngisdn_event->suId = suId;
-		sngisdn_event->dChan = dChan;
-		sngisdn_event->ces = ces;
-		sngisdn_event->evntType = evntType;
-		sngisdn_event->signal_data = signal_data;
+	if (signal_data->nfas.trunk) {
+		unsigned i;
+		for (i = 0; i < signal_data->nfas.trunk->num_spans; i++) {
+			sngisdn_span_data_t	*my_signal_data = signal_data->nfas.trunk->spans[i];
 
-		memcpy(&sngisdn_event->event.rstEvnt, rstEvnt, sizeof(*rstEvnt));
-		ftdm_queue_enqueue((signal_data)->event_queue, sngisdn_event);
+			sngisdn_event = ftdm_malloc(sizeof(*sngisdn_event));
+			ftdm_assert(sngisdn_event != NULL, "Failed to allocate memory\n");
+			memset(sngisdn_event, 0, sizeof(*sngisdn_event));
+			sngisdn_event->event_id = SNGISDN_EVENT_RST_CFM;
+			sngisdn_event->suId = suId;
+			sngisdn_event->dChan = dChan;
+			sngisdn_event->ces = ces;
+			sngisdn_event->signal_data = my_signal_data;
+			memcpy(&sngisdn_event->event.rstEvnt, rstEvnt, sizeof(*rstEvnt));
+			ftdm_queue_enqueue(my_signal_data->event_queue, sngisdn_event);
+		}
+	} else {
+		ftdm_queue_enqueue(signal_data->event_queue, sngisdn_event);
 	}
 	ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
 }
@@ -660,7 +695,7 @@ void sngisdn_rcv_rst_cfm (int16_t suId, Rst *rstEvnt, int16_t dChan, uint8_t ces
 void sngisdn_rcv_phy_ind(SuId suId, Reason reason)
 {
 	if (reason != LL1_REASON_CON_REQ_FAIL) {
-		ftdm_log(FTDM_LOG_INFO, "[SNGISDN PHY] D-chan %d : %s\n", suId, DECODE_LL1_REASON(reason));
+		ftdm_log(FTDM_LOG_DEBUG, "[SNGISDN PHY] D-chan %d : %s\n", suId, DECODE_LL1_REASON(reason));
 	}
     return;
 } 
@@ -669,7 +704,7 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 {	
 	ftdm_span_t *ftdmspan;
 
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[status->t.usta.lnkNmb].spans[1];
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[status->t.usta.lnkNmb];
 	
 	if (!signal_data) {
 		ftdm_log(FTDM_LOG_INFO, "Received q921 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.lnkNmb);
@@ -722,8 +757,43 @@ void sngisdn_rcv_q921_ind(BdMngmt *status)
 	}
     return;
 }
+
+#if 0
+static void sngisdn_rcv_q931_ind_span(sngisdn_span_data_t *signal_data, InMngmt *status)
+{
+	ftdm_span_t *ftdmspan =  signal_data->ftdm_span;
+	uint32_t chan_no = status->t.usta.evntParm[2];
+				
+	if (!signal_data) {
+		ftdm_log(FTDM_LOG_INFO, "Received q931 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.suId);
+		return;
+	}
+
+	ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
+			 status->t.usta.suId,
+	DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
+						DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
+										 DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
+
+	if (chan_no) {
+		ftdm_channel_t *ftdmchan = ftdm_span_get_channel(ftdmspan, chan_no);
+		if (ftdmchan) {
+			sngisdn_set_chan_sig_status(ftdmchan, (status->t.usta.alarm.event == LCM_EVENT_UP) ? FTDM_SIG_STATE_UP : FTDM_SIG_STATE_DOWN);
+			sngisdn_set_chan_avail_rate(ftdmchan, (status->t.usta.alarm.event == LCM_EVENT_UP) ? SNGISDN_AVAIL_UP: SNGISDN_AVAIL_PWR_SAVING);
+		} else {
+			ftdm_log(FTDM_LOG_CRIT, "stack alarm event on invalid channel :%d\n", chan_no);
+		}
+	} else {
+		sngisdn_set_span_sig_status(ftdmspan, (status->t.usta.alarm.event == LCM_EVENT_UP) ? FTDM_SIG_STATE_UP : FTDM_SIG_STATE_DOWN);
+		sngisdn_set_span_avail_rate(ftdmspan, (status->t.usta.alarm.event == LCM_EVENT_UP) ? SNGISDN_AVAIL_UP: SNGISDN_AVAIL_PWR_SAVING);
+	}
+}
+#endif
+
 void sngisdn_rcv_q931_ind(InMngmt *status)
-{	
+{
+	sngisdn_span_data_t	*signal_data = NULL;
+	ftdm_span_t *ftdmspan = NULL;
 #ifndef WIN32
 	if (status->t.usta.alarm.cause == 287) {
 		sngisdn_get_memory_info();
@@ -731,47 +801,53 @@ void sngisdn_rcv_q931_ind(InMngmt *status)
 	}
 #endif
 
+	signal_data = g_sngisdn_data.spans[status->t.usta.suId];
+	if (!signal_data) {
+		ftdm_log(FTDM_LOG_INFO, "Received q931 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.suId);
+		return;
+	}
+
+	ftdmspan =  signal_data->ftdm_span;
+
 	switch (status->t.usta.alarm.event) {
 		case LCM_EVENT_UP:
 		case LCM_EVENT_DOWN:
 		{
-			ftdm_span_t *ftdmspan;
-			sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[status->t.usta.suId].spans[1];
-			if (!signal_data) {
-				ftdm_log(FTDM_LOG_INFO, "Received q931 status on unconfigured span (lnkNmb:%d)\n", status->t.usta.suId);
-				return;
-			}
-			ftdmspan = signal_data->ftdm_span;
-			
-			if (status->t.usta.alarm.event == LCM_EVENT_UP) {
-				uint32_t chan_no = status->t.usta.evntParm[2];
-				ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
-						 status->t.usta.suId,
-								DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
-								DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
-								DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
+			int i;
+			sngisdn_nfas_data_t *nfas_data = NULL;
+			ftdm_log(FTDM_LOG_INFO, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
+										status->t.usta.suId,
+	  									DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
+										DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
+										DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
 
-				if (chan_no) {
-					ftdm_channel_t *ftdmchan = ftdm_span_get_channel(ftdmspan, chan_no);
-					if (ftdmchan) {
-						sngisdn_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
-						sngisdn_set_chan_avail_rate(ftdmchan, SNGISDN_AVAIL_UP);
-					} else {
-						ftdm_log(FTDM_LOG_CRIT, "stack alarm event on invalid channel :%d\n", chan_no);
+			nfas_data = signal_data->nfas.trunk;
+
+			if (nfas_data && status->t.usta.alarm.event == LCM_EVENT_UP) {
+				for (i = 0; i < ftdm_array_len(nfas_data->spans); i++) {
+					if (nfas_data->spans[i] && nfas_data->spans[i]->nfas.sigchan == SNGISDN_NFAS_DCHAN_NONE) {
+
+						sngisdn_set_span_sig_status(nfas_data->spans[i]->ftdm_span, FTDM_SIG_STATE_UP);
+						sngisdn_set_span_avail_rate(nfas_data->spans[i]->ftdm_span, SNGISDN_AVAIL_UP);
 					}
-				} else {
-					sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_UP);
-					sngisdn_set_span_avail_rate(ftdmspan, SNGISDN_AVAIL_UP);
 				}
-			} else {
-				ftdm_log(FTDM_LOG_WARNING, "[SNGISDN Q931] s%d: %s: %s(%d): %s(%d)\n",
-						 		status->t.usta.suId,
-								DECODE_LCM_CATEGORY(status->t.usta.alarm.category),
-								DECODE_LCM_EVENT(status->t.usta.alarm.event), status->t.usta.alarm.event,
-								DECODE_LCM_CAUSE(status->t.usta.alarm.cause), status->t.usta.alarm.cause);
-				
-				sngisdn_set_span_sig_status(ftdmspan, FTDM_SIG_STATE_DOWN);
-				sngisdn_set_span_avail_rate(ftdmspan, SNGISDN_AVAIL_PWR_SAVING);
+			}
+			
+			sngisdn_set_span_sig_status(ftdmspan, (status->t.usta.alarm.event == LCM_EVENT_UP) ? FTDM_SIG_STATE_UP : FTDM_SIG_STATE_DOWN);
+			sngisdn_set_span_avail_rate(ftdmspan, (status->t.usta.alarm.event == LCM_EVENT_UP) ? SNGISDN_AVAIL_UP: SNGISDN_AVAIL_PWR_SAVING);
+
+			if (nfas_data && status->t.usta.alarm.event == LCM_EVENT_DOWN) {
+				if (nfas_data->dchan->sigstatus == FTDM_SIG_STATE_DOWN &&
+				   (nfas_data->backup && nfas_data->backup->sigstatus == FTDM_SIG_STATE_DOWN)) {
+
+					for (i = 0; i < ftdm_array_len(nfas_data->spans); i++) {
+						if (nfas_data->spans[i] && nfas_data->spans[i]->nfas.sigchan == SNGISDN_NFAS_DCHAN_NONE) {
+
+							sngisdn_set_span_sig_status(nfas_data->spans[i]->ftdm_span, FTDM_SIG_STATE_DOWN);
+							sngisdn_set_span_avail_rate(nfas_data->spans[i]->ftdm_span, SNGISDN_AVAIL_PWR_SAVING);
+						}
+					}
+				}
 			}
 		}
 		break;
@@ -805,7 +881,7 @@ void sngisdn_rcv_q931_trace(InMngmt *trc, Buffer *mBuf)
 	ftdm_trace_dir_t dir;
 	uint8_t tdata[1000];
 
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[trc->t.trc.suId].spans[1];
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[trc->t.trc.suId];
 
 	ftdm_assert(mBuf != NULLP, "Received a Q931 trace with no buffer");
 	mlen = ((SsMsgInfo*)(mBuf->b_rptr))->len;
@@ -851,7 +927,7 @@ void sngisdn_rcv_q921_trace(BdMngmt *trc, Buffer *mBuf)
 	ftdm_trace_dir_t dir;
 	uint8_t tdata[1000];
 
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[trc->t.trc.lnkNmb].spans[1];
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[trc->t.trc.lnkNmb];
 
 	if (trc->t.trc.evnt == TL2TMR) {
 		return;
@@ -900,7 +976,7 @@ int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame)
 {
 	ftdm_status_t status;
 	ftdm_wait_flag_t flags = FTDM_WRITE;
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[spId].spans[1];
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];
 	ftdm_size_t length = l1_frame->len;
 
 	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
@@ -952,7 +1028,7 @@ int16_t sngisdn_rcv_l1_data_req(uint16_t spId, sng_l1_frame_t *l1_frame)
 
 int16_t sngisdn_rcv_l1_cmd_req(uint16_t spId, sng_l1_cmd_t *l1_cmd)
 {
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[spId].spans[1];
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[spId];
 	ftdm_assert(signal_data, "Received Data request on unconfigured span\n");
 	
 	switch(l1_cmd->type) {

@@ -1917,10 +1917,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 				return FTDM_FAIL;
 			}
 			if (sigmsg->event_id == FTDM_SIGEVENT_ALARM_CLEAR) {
-				ftdm_log(FTDM_LOG_NOTICE, "Alarm cleared on channel %d:%d\n", spanid, chanid);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-clear");
 			} else {
-				ftdm_log(FTDM_LOG_NOTICE, "Alarm raised on channel %d:%d\n", spanid, chanid);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-trap");
 			}
 		}
@@ -2525,7 +2523,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		break;	
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		{	
-			ftdm_signaling_status_t sigstatus = sigmsg->ev_data.sigstatus.status;
+			ftdm_signaling_status_t sigstatus = sigmsg->ev_data.sigstatus.status;	
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to :%s\n",
 					spanid, chanid, ftdm_signaling_status2str(sigstatus));
 		}
