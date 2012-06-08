@@ -375,7 +375,7 @@ void sofia_glue_check_dtmf_type(private_object_t *tech_pvt)
 
 void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch_port_t port, const char *sr, int force)
 {
-	char buf[2048];
+	char buf[65536];
 	int ptime = 0;
 	uint32_t rate = 0;
 	uint32_t v_port;
