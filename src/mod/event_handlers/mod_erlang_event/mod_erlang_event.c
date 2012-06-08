@@ -676,7 +676,6 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 	switch_thread_rwlock_wrlock(listener->session_rwlock);
 	/* do the deferred remove */
 
-	/* TODO refactor find_session_elem_by_uuid*/
 	for (header = event->headers; header; header = header->next) {
 		if ((sp = (session_elem_t*)switch_core_hash_find(listener->sessions, header->value))) {
 			remove_session_elem_from_listener(listener, sp);

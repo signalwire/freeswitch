@@ -499,10 +499,8 @@ static switch_status_t handle_msg_setevent(listener_t *listener, erlang_msg *msg
 		switch_event_types_t type;
 		int i = 0;
 
-		/* TODO listener write lock */
-
 		/* clear any previous event registrations */
-		for( x = 0; x <= SWITCH_EVENT_ALL; x++){
+		for(x = 0; x <= SWITCH_EVENT_ALL; x++) {
 			event_list[x] = 0;
 		}
 
@@ -566,14 +564,12 @@ static switch_status_t handle_msg_session_setevent(listener_t *listener, erlang_
 			switch_event_types_t type;
 			uint32_t x = 0;
 
-			/* TODO session write lock */
 			/* clear any previous event registrations */
 			for (x = 0; x <= SWITCH_EVENT_ALL; x++){
 				event_list[x] = 0;
 			}
 
 			/* create new hash */
-			/* TODO make thread safe*/
 			switch_core_hash_init(&event_hash, session->pool);
 
 			for (i = 1; i < arity; i++){
