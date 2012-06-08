@@ -113,7 +113,9 @@ static void timer_signal_handler(int sig, siginfo_t *si, void *cu)
 		if (val >= 0 && val <= MAX_ACTIVE_TIMERS) {
 			uint8_t active_id = (uint8_t)val;
 			/* notify runtime thread that timer identified by active_id has ticked */
-			write(globals.timer_tick_pipe[1], &active_id, 1);
+			if (write(globals.timer_tick_pipe[1], &active_id, 1) == -1) {
+				/* don't actually care about this error- this is only to make the compiler happy */
+			}
 		}
 	}
 }
