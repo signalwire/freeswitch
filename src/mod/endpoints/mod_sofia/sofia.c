@@ -2071,6 +2071,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									  TPTAG_TLS_VERIFY_SUBJECTS(profile->tls_verify_in_subjects)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
 									 TPTAG_TLS_VERSION(profile->tls_version)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_timeout,
+									 TPTAG_TLS_TIMEOUT(profile->tls_timeout)),
 							  TAG_IF(!strchr(profile->sipip, ':'),
 									 NTATAG_UDP_MTU(65535)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV),
@@ -3934,6 +3936,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->sip_force_expires = 0;
 				profile->sip_expires_max_deviation = 0;
 				profile->tls_version = 0;
+				profile->tls_timeout = 300;
 				profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
 				profile->server_rport_level = 1;
 				profile->client_rport_level = 1;
@@ -4754,6 +4757,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							profile->tls_version = 0;
 						}
+					} else if (!strcasecmp(var, "tls-timeout")) {
+						int v = atoi(val);
+						profile->tls_timeout = v > 0 ? (unsigned int)v : 300;
 					} else if (!strcasecmp(var, "timer-T1")) {
 						int v = atoi(val);
 						if (v > 0) {

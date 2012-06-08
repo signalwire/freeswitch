@@ -311,6 +311,8 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     return -1;
   }
 
+  SSL_CTX_set_timeout(tls->ctx, ti->timeout);
+
   /* Set callback if we have a passphrase */
   if (ti->passphrase != NULL) {
     SSL_CTX_set_default_passwd_cb(tls->ctx, passwd_cb);
