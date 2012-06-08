@@ -348,7 +348,6 @@ static void destroy_session_elem(session_elem_t *session_element)
 		}
 
 		switch_channel_set_private(channel, "_erlang_session_", NULL);
-		switch_core_event_hook_remove_state_change(session, state_handler);
 		switch_channel_clear_flag(channel, CF_CONTROLLED);
 		switch_core_session_rwunlock(session);
 	}
