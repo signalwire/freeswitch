@@ -7669,6 +7669,11 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 								 tagi_t tags[])
 {
 	char *call_info = NULL;
+	switch_channel_t *channel = NULL;
+
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+	}
 
 	if (session && profile && sip && sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -7693,7 +7698,6 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	}
 
 	if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-		switch_channel_t *channel = switch_core_session_get_channel(session);
 		if (channel && sip->sip_call_info) {
 			char *p;
 			if ((call_info = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info))) {
@@ -7707,6 +7711,11 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 			}
 		}
 	}
+
+	if (channel) {
+		switch_channel_execute_on(channel, "execute_on_sip_reinvite");
+	}
+
 }
 
 void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
