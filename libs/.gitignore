@@ -225,6 +225,7 @@ missing
 /ldns/doc/ldns_manpages
 /ldns/include/
 /ldns/ldns/config.h
+/ldns/ldns/ldns
 /ldns/ldns/net.h
 /ldns/ldns/util.h
 /ldns/lib
