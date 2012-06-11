@@ -3869,10 +3869,21 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 
 void sofia_glue_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session)
 {
-	switch_channel_t *aleg_channel = switch_core_session_get_channel(aleg_session);
-	private_object_t *aleg_tech_pvt = switch_core_session_get_private(aleg_session);
-	switch_channel_t *bleg_channel = switch_core_session_get_channel(bleg_session);
-	private_object_t *bleg_tech_pvt = switch_core_session_get_private(bleg_session);
+	switch_channel_t *aleg_channel;
+	private_object_t *aleg_tech_pvt;
+	switch_channel_t *bleg_channel;
+	private_object_t *bleg_tech_pvt;
+
+	if (!switch_core_session_compare(aleg_session, bleg_session)) {
+		/* since this digs into channel internals its only compatible with sofia sessions*/
+		return;
+	}
+
+	aleg_channel = switch_core_session_get_channel(aleg_session);
+	aleg_tech_pvt = switch_core_session_get_private(aleg_session);
+	bleg_channel = switch_core_session_get_channel(bleg_session);
+	bleg_tech_pvt = switch_core_session_get_private(bleg_session);
+
 	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Deciding whether to pass zrtp-hash between a-leg and b-leg\n");
 	if (!(switch_channel_test_flag(aleg_tech_pvt->channel, CF_ZRTP_PASSTHRU_REQ))) {
 		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "CF_ZRTP_PASSTHRU_REQ not set on a-leg, so not propagating zrtp-hash\n");
