@@ -840,7 +840,7 @@ static int ftmod_m2ua_sctsap_config(int m2ua_inf_id, int sctp_id)
    /* service provider ID   */
    cfg.t.cfg.s.sctSapCfg.spId                   = sctp_id;
    /* source port number */
-   cfg.t.cfg.s.sctSapCfg.srcPort                = 2904;
+   cfg.t.cfg.s.sctSapCfg.srcPort                = sctp->port;
    /* interface address */
    /*For multiple IP address support */
 #ifdef SCT_ENDP_MULTI_IPADDR
@@ -925,7 +925,7 @@ static int ftmod_m2ua_peer_config1(int m2ua_inf_id, int peer_id)
 	   cfg.t.cfg.s.peerCfg.assocCfg.dstAddrLst.nAddr[i].u.ipv4NetAddr = peer->destAddrList[i]; 
    }
 #ifdef MW_CFG_DSTPORT
-   cfg.t.cfg.s.peerCfg.assocCfg.dstPort = /* TODO */ 2904; /* Port on which M2UA runs */
+   cfg.t.cfg.s.peerCfg.assocCfg.dstPort = peer->port; /* Port on which M2UA runs */
 #endif
    cfg.t.cfg.s.peerCfg.assocCfg.srcAddrLst.nmb = sctp->numSrcAddr; /* source address list */
    for (i=0; i <= (sctp->numSrcAddr-1); i++) {

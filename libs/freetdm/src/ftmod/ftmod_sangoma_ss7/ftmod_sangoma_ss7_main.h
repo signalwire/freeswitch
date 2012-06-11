@@ -462,7 +462,7 @@ typedef struct sng_sctp_link {
 	char		name[MAX_NAME_LEN];
 	uint32_t	flags;
 	uint32_t	id;
-	uint32_t	tuclId;
+	uint32_t	port;
 	uint32_t	numSrcAddr;
 	uint32_t	srcAddrList[SCT_MAX_NET_ADDRS+1];	
 } sng_sctp_link_t;

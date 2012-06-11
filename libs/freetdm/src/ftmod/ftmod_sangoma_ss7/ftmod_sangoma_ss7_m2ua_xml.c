@@ -387,6 +387,12 @@ static int ftmod_ss7_parse_m2ua_peer_interface(ftdm_conf_node_t *m2ua_peer_inter
 
 			SS7_DEBUG("Found an sng_m2ua_peer sctp_id = %d\n", sng_m2ua_peer.sctpId);
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "dest_port")) {
+		/**********************************************************************/
+			sng_m2ua_peer.port = atoi(parm->val);
+
+			SS7_DEBUG("Found an sng_m2ua_peer port = %d\n", sng_m2ua_peer.port);
+		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "dest_addr")) {
 		/**********************************************************************/
 			if (sng_m2ua_peer.numDestAddr < SCT_MAX_NET_ADDRS) {
@@ -450,6 +456,7 @@ static int ftmod_ss7_fill_in_m2ua_peer_interface(sng_m2ua_peer_cfg_t *m2ua_peer_
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].locOutStrms 	= m2ua_peer_iface->locOutStrms;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].numDestAddr 	= m2ua_peer_iface->numDestAddr;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].sctpId 		= m2ua_peer_iface->sctpId;
+	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].port 		= m2ua_peer_iface->port;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].init_sctp_assoc 	= m2ua_peer_iface->init_sctp_assoc;
 	for (k=0; k<m2ua_peer_iface->numDestAddr; k++) {
 		g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[i].destAddrList[k] = m2ua_peer_iface->destAddrList[k];	
@@ -677,6 +684,9 @@ static int ftmod_ss7_parse_sctp_link(ftdm_conf_node_t *node)
 			} else {
 				SS7_ERROR("SCTP - too many source address configured. dropping %s \n", param->val);
 			}
+		} else if (!strcasecmp(param->var, "src_port")) {
+			t_link.port = atoi(param->val);
+			SS7_DEBUG("SCTP - Parsing <sng_sctp_interface> with port = %s\n", param->val);
 		}
 		else {
 			SS7_ERROR("SCTP - Found an unknown parameter <%s>. Skipping it.\n", param->var);
@@ -684,7 +694,7 @@ static int ftmod_ss7_parse_sctp_link(ftdm_conf_node_t *node)
 	}
 	
 	g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].id 		= t_link.id;
-	g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].tuclId 	= t_link.id;
+	g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].port   	= t_link.port;
 	strncpy((char*)g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].name, t_link.name, strlen(t_link.name) );
 	g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].flags		= 0;
 	g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].numSrcAddr = t_link.numSrcAddr;
