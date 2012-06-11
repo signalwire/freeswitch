@@ -22,6 +22,7 @@ cp -r . $dst_dir
 
 cd $dst_dir
 set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
+echo "$gver" > .version
 gnuize
 cd ..
 ls

@@ -28,6 +28,7 @@ mkdir -p $ddir
 git clone . $bdir
 cd $bdir
 set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
+echo "$gver" > .version
 cd libs
 getlib () {
   f="${1##*/}"
