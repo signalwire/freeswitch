@@ -1108,7 +1108,7 @@ static switch_status_t handle_msg_atom(listener_t *listener, erlang_msg * msg, e
 static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf)
 {
 	erlang_ref ref;
-	erlang_pid *pid;
+	erlang_pid pid;
 	char hash[100];
 	int arity;
 	const void *key;
@@ -1123,15 +1123,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(pid = malloc(sizeof(erlang_pid)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
-		ei_x_encode_tuple_header(rbuf, 2);
-		ei_x_encode_atom(rbuf, "error");
-		ei_x_encode_atom(rbuf, "badmem");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (ei_decode_pid(buf->buff, &buf->index, pid)) {
+	if (ei_decode_pid(buf->buff, &buf->index, &pid)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid pid in a reference/pid tuple\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1149,7 +1141,9 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 			switch_mutex_lock(se->spawn_reply->mutex);
 
 			if (se->spawn_reply->state == reply_waiting) {
-				se->spawn_reply->pid = pid;
+				se->spawn_reply->pid = switch_core_alloc(se->pool, sizeof(erlang_pid));
+				switch_assert(se->spawn_reply->pid != NULL);
+				memcpy(se->spawn_reply->pid, &pid, sizeof(erlang_pid));
 				switch_thread_cond_signal(se->spawn_reply->ready_or_found);
 				ei_x_encode_atom(rbuf, "ok");
 				switch_thread_rwlock_unlock(listener->session_rwlock);
@@ -1166,8 +1160,6 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 	ei_x_encode_tuple_header(rbuf, 2);
 	ei_x_encode_atom(rbuf, "error");
 	ei_x_encode_atom(rbuf, "notfound");
-
-	switch_safe_free(pid);		/* don't need it */
 
 	return SWITCH_STATUS_SUCCESS;
 }

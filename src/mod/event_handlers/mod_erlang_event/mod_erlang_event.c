@@ -1377,7 +1377,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	switch_thread_cond_create(&p->ready_or_found, session_element->pool);
 	switch_mutex_init(&p->mutex, SWITCH_MUTEX_UNNESTED, session_element->pool);
 	p->state = reply_waiting;
-	p->hash = hash;
+	p->hash = switch_core_strdup(session_element->pool, hash);
 	p->pid = NULL;
 
 	session_element->spawn_reply = p;
@@ -1436,8 +1436,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	switch_clear_flag_locked(session_element, LFLAG_WAITING_FOR_PID);
 
 	ei_link(listener, ei_self(listener->ec), &session_element->process.pid);
-
-	switch_safe_free(p->pid);
 
 	return session_element;
 }
