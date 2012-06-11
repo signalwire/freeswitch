@@ -17,7 +17,7 @@
  * The Original Code is FreeSWITCH mod_unimrcp
  *
  * The Initial Developer of the Original Code is
- * Christopher M. Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  *
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
@@ -25,10 +25,10 @@
  * Contributor(s):
  *
  * Brian West <brian@freeswitch.org>
- * Christopher M. Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
- * Maintainer: Christopher M. Rienzo <chris@rienzo.net>
+ * Maintainer: Christopher M. Rienzo <chris@rienzo.com>
  *
  * mod_unimrcp.c -- UniMRCP module (MRCP client)
  *

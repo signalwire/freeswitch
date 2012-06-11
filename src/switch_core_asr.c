@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
- * Christopher M. Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
  *
