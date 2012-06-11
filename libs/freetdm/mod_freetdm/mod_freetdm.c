@@ -2894,8 +2894,11 @@ static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *conf
 		return NULL;
 	}
 
-	/* search the isup config */
-	for (isup = switch_xml_child(ss7configs, "sng_isup"); isup; isup = isup->next) {
+	/* sng_isup and ss7config xml childs are treated the same way. sng_isup was used initially, but does not make sense
+	 * for configurations that do not have an ISUP layer, sng_isup is kept for backward compatibility */
+
+	/* search the ss7config */
+	for (isup = switch_xml_child(ss7configs, "sngss7_config"); isup; isup = isup->next) {
 		char *name = (char *) switch_xml_attr(isup, "name");
 		if (!name) {
 			continue;
@@ -2904,10 +2907,23 @@ static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *conf
 			break;
 		}
 	}
-
+	
 	if (!isup) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "not found '%s' sng_isup XML config section\n", confname);
-		return NULL;
+		/* search the isup config */
+		for (isup = switch_xml_child(ss7configs, "sng_isup"); isup; isup = isup->next) {
+			char *name = (char *) switch_xml_attr(isup, "name");
+			if (!name) {
+				continue;
+			}
+			if (!strcasecmp(name, confname)) {
+				break;
+			}
+		}
+
+		if (!isup) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "not found '%s' ss7config or sng_isup XML config section\n", confname);
+			return NULL;
+		}
 	}
 
 	/* found our XML chunk, create the root node */
