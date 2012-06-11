@@ -2252,7 +2252,11 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	sofia_clear_pflag_locked(profile, PFLAG_SHUTDOWN);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
 
-	switch_thread_join(&st, worker_thread);
+	if ( worker_thread ) {
+		switch_thread_join(&st, worker_thread);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Sofia worker thead failed to start\n");
+	}
 
 	sanity = 4;
 	while (profile->inuse) {
