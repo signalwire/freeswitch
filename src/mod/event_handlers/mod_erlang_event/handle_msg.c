@@ -805,7 +805,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 					value = malloc(size + 1);
 
 					if (ei_decode_string(buf->buff, &buf->index, value)) {
-       						fail = SWITCH_TRUE;
+						fail = SWITCH_TRUE;
 						break;
 					}
 
@@ -818,6 +818,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 					ei_x_encode_tuple_header(rbuf, 2);
 					ei_x_encode_atom(rbuf, "error");
 					ei_x_encode_atom(rbuf, "badarg");
+					switch_event_destroy(&event);
 				} else {
 					if (switch_core_session_queue_private_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 						ei_x_encode_atom(rbuf, "ok");
@@ -825,6 +826,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 						ei_x_encode_tuple_header(rbuf, 2);
 						ei_x_encode_atom(rbuf, "error");
 						ei_x_encode_atom(rbuf, "badmem");
+						switch_event_destroy(&event);
 					}
 
 				}
