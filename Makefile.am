@@ -415,29 +415,19 @@ $(OUR_MODULES): $(switch_builddir)/modules.conf libfreeswitch.la
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > $(switch_builddir)/quiet_libtool
 
-src/include/switch_version.h: src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
-	@have_version=1 ; \
-	force=0 ; \
-	grep -- "@SWITCH_VERSION_REVISION@" src/include/switch_version.h.in > /dev/null || have_version=0 ; \
-	test ! -f src/include/switch_version.h || grep -- "@SWITCH_VERSION_REVISION@" src/include/switch_version.h > /dev/null && force=1 ; \
-	if test $$have_version = 1 ; then \
-	  cat src/include/switch_version.h.in > src/include/switch_version.h ; \
-	  touch .version ; \
-	else \
-	  if [ -d .git ] ; then \
-	    version=`git log --pretty=format:"%h %ci" -1 HEAD | head -1 | sed -e 's|:|-|g' || echo hacked` ; \
-	    if [ "x$$version" = "xhacked" ] ; then \
-	      version="hacked-`date -u +%Y%m%dT%H%M%SZ`" ; \
-	    else \
-	      version="git-$$version" ; \
-	    fi ;\
-	  fi ; \
-	  oldversion=`cat .version 2>/dev/null || echo "0"` ; \
-	  if test "$$oldversion" != "$$version" || test $$force = 1 ; then \
-	    cat src/include/switch_version.h.in | sed "s/@SWITCH_VERSION_REVISION@/$$version/g" > src/include/switch_version.h ; \
-	    echo $$version > .version ; \
-	  fi ; \
-	fi ;
+src/include/switch_version.h: src/include/switch_version.h.in Makefile $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
+	@cat $< > $@; \
+	if [ -d .git ]; then \
+	  xdate="$$(date -d "$$(git log -n1 --format='%ci' HEAD)" -u '+%Y%m%dT%H%M%SZ')"; \
+	  xcommit="$$(git rev-list -n1 --abbrev=10 --abbrev-commit HEAD)"; \
+	  xver="+git~$$xdate~$$xcommit"; \
+	  if ! git diff-index --quiet HEAD; then \
+	    xver="$$xver+unclean~$$(date -u +%Y%m%dT%H%M%SZ)"; \
+	  fi; \
+	  sed \
+	    -e "/#define *SWITCH_VERSION_REVISION/{s/\"\([^\"]*\)\"/\"\1$$xver\"/; :l n; b l}" \
+	    $< > $@; \
+	fi;
 
 ##
 ## Dependency targets
@@ -544,7 +534,6 @@ is-scm:
 
 update: is-scm
 	@if test -d .git ; then \
-	  test ! -f .version || rm -f .version ; \
 	  echo "Pulling updates..." ; \
 	  git pull ; \
 	else \

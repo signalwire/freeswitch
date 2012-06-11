@@ -10,7 +10,6 @@ AC_SUBST(SWITCH_VERSION_MICRO, [0])
 AC_SUBST(SWITCH_VERSION_REVISION, [-rc2])
 
 AC_CONFIG_FILES([src/include/switch_version.h.in:src/include/switch_version.h.template])
-AC_CONFIG_FILES([.version:.version.in])
 
 AC_CONFIG_AUX_DIR(build/config)
 AM_INIT_AUTOMAKE(libfreeswitch,0.1)
