@@ -60,8 +60,6 @@ typedef struct sng_m2ua_cfg{
 	uint32_t    		 flags;
 	uint32_t    		 id;		/* ID */
 	uint8_t    		 nodeType; 	/*Node Type SG/ASP */
-	uint16_t    		 sctpId;	/* idx to sctp profile */
-	uint16_t    		 peerId;	/* idx to m2ua_peer profile */
 	uint16_t    		 clusterId;	/* idx to m2ua_cluster profile */
 }sng_m2ua_cfg_t;
 

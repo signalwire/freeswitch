@@ -51,8 +51,9 @@ static int ftmod_sctp_config(int id);
 static ftdm_status_t ftmod_sctp_sap_config(int id);
 static ftdm_status_t ftmod_sctp_tsap_config(int id);
 static int ftmod_m2ua_gen_config(void);
-static int ftmod_m2ua_sctsap_config(int id);
+static int ftmod_m2ua_sctsap_config(int m2ua_inf_id, int sctp_id);
 static int ftmod_m2ua_peer_config(int id);
+static int ftmod_m2ua_peer_config1(int m2ua_inf_id, int peer_id);
 static int ftmod_m2ua_cluster_config(int idx);
 static int ftmod_m2ua_dlsap_config(int idx);
 static int ftmod_nif_gen_config(void);
@@ -282,13 +283,6 @@ ftdm_status_t sng_m2ua_cfg(void)
 	while(x<MW_MAX_NUM_OF_INTF){
 		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) && 
 				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
-
-			if(ftmod_m2ua_sctsap_config(x)) {
-				ftdm_log (FTDM_LOG_ERROR ,"M2UA SCTSAP[%d] configuration: NOT OK\n", x);
-				return FTDM_FAIL;
-			}else {
-				ftdm_log (FTDM_LOG_INFO ,"M2UA SCTSAP[%d] configuration: OK\n", x);
-			}
 
 			/****************************************************************************************************/
 			/* M2UA PEER configurations */
@@ -780,13 +774,44 @@ static int ftmod_m2ua_gen_config(void)
 }   
 
 /**********************************************************************************************/
-static int ftmod_m2ua_sctsap_config(int id)
+static int ftmod_m2ua_peer_config(int id)
+{
+	int x = 0;
+	int peer_id = 0;
+	sng_m2ua_cfg_t* 	    m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
+	sng_m2ua_cluster_cfg_t*     clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
+	sng_m2ua_peer_cfg_t* 	    peer  = NULL;
+
+	/* loop through peer list from cluster to configure SCTSAP */
+
+	for(x = 0; x < clust->numOfPeers;x++){
+		peer_id = clust->peerIdLst[x];
+		peer = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[peer_id];
+		if(ftmod_m2ua_sctsap_config(id, peer->sctpId)){
+			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_sctsap_config: M2UA SCTSAP for M2UA Intf Id[%d] config FAILED \n", id);
+			return 0x01;
+		}else{
+			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_sctsap_config: M2UA SCTSAP for M2UA Intf Id[%d] config SUCCESS \n", id);
+		}
+		if(ftmod_m2ua_peer_config1(id, peer_id)){
+			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_peer_config1: M2UA Peer configuration for M2UA Intf Id[%d] config FAILED \n", id);
+			return 0x01;
+		}else{
+			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_peer_config1: M2UA Peer configuration for M2UA Intf Id[%d] config SUCCESS \n", id);
+		}
+
+
+	}
+
+	return 0x0;;
+}
+
+static int ftmod_m2ua_sctsap_config(int m2ua_inf_id, int sctp_id)
 {
    int    i;
    Pst    pst; 
    MwMgmt cfg;
-   sng_m2ua_cfg_t* m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
-   sng_sctp_link_t *sctp = &g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[m2ua->sctpId];
+   sng_sctp_link_t *sctp = &g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[sctp_id];
 
    memset((U8 *)&cfg, 0, sizeof(MwMgmt));
    memset((U8 *)&pst, 0, sizeof(Pst));
@@ -802,7 +827,7 @@ static int ftmod_m2ua_sctsap_config(int id)
    cfg.hdr.elmId.elmnt = STMWSCTSAP;     /* SCTSAP */
    cfg.hdr.transId     = 0;     /* transaction identifier */
 
-   cfg.hdr.response.selector    = 0;
+    cfg.hdr.response.selector    = 0;
    cfg.hdr.response.prior       = PRIOR0;
    cfg.hdr.response.route       = RTESPEC;
    cfg.hdr.response.mem.region  = S_REG;
@@ -811,9 +836,9 @@ static int ftmod_m2ua_sctsap_config(int id)
    cfg.t.cfg.s.sctSapCfg.reConfig.selector     = 0;
 
    /* service user SAP ID */
-   cfg.t.cfg.s.sctSapCfg.suId                   = m2ua->id;
+   cfg.t.cfg.s.sctSapCfg.suId                   = m2ua_inf_id;
    /* service provider ID   */
-   cfg.t.cfg.s.sctSapCfg.spId                   = m2ua->sctpId;
+   cfg.t.cfg.s.sctSapCfg.spId                   = sctp_id;
    /* source port number */
    cfg.t.cfg.s.sctSapCfg.srcPort                = 2904;
    /* interface address */
@@ -858,13 +883,12 @@ static int ftmod_m2ua_sctsap_config(int id)
 /****************************************************************************************************/
 
 /* M2UA - Peer configuration */
-static int ftmod_m2ua_peer_config(int id)
+static int ftmod_m2ua_peer_config1(int m2ua_inf_id, int peer_id)
 {
    int    i;
    Pst    pst;
    MwMgmt cfg;
-   sng_m2ua_cfg_t* 	m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
-   sng_m2ua_peer_cfg_t* peer  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[m2ua->peerId];
+   sng_m2ua_peer_cfg_t* peer  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[peer_id];
    sng_sctp_link_t 	*sctp = &g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[peer->sctpId];
 
    memset((U8 *)&cfg, 0, sizeof(MwMgmt));
@@ -1615,9 +1639,10 @@ int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm)
 {
 	MwMgmt ssta; 
 	Pst pst;
+	int peerId = 0x01;
 	sng_m2ua_cfg_t* 	    m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
 	sng_m2ua_cluster_cfg_t*  clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
-	sng_m2ua_peer_cfg_t* peer  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[m2ua->peerId];
+	sng_m2ua_peer_cfg_t* peer  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[peerId]; /*TODO - KAPIL - need to add proper peerId*/
 
 	memset((U8 *)&pst, 0, sizeof(Pst));
 	memset((U8 *)&ssta, 0, sizeof(MwMgmt));

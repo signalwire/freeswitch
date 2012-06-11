@@ -252,17 +252,6 @@ static int ftmod_ss7_parse_m2ua_interface(ftdm_conf_node_t *m2ua_interface)
 			}
 			SS7_DEBUG("Found an nif node_type = %d\n", sng_m2ua.nodeType);
 			/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "sctp_id")) {
-		/**********************************************************************/
-			sng_m2ua.sctpId=atoi(parm->val);
-
-			SS7_DEBUG("Found an m2ua sctp_id = %d\n", sng_m2ua.sctpId);
-		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "peerd_id")) {
-		/**********************************************************************/
-			sng_m2ua.peerId=atoi(parm->val);
-
-			SS7_DEBUG("Found an m2ua peerd_id = %d\n", sng_m2ua.peerId);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "cluster_id")) {
 		/**********************************************************************/
@@ -299,8 +288,6 @@ static int ftmod_ss7_fill_in_m2ua_interface(sng_m2ua_cfg_t *m2ua_iface)
 
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].id		= m2ua_iface->id;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].nodeType 	= m2ua_iface->nodeType;
-	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].sctpId 	= m2ua_iface->sctpId;
-	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].peerId 	= m2ua_iface->peerId;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].clusterId 	= m2ua_iface->clusterId;
 	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_M2UA_PRESENT);
 
