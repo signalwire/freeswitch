@@ -223,7 +223,6 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 	var = ftdm_parameters[i].var;
 	val = ftdm_parameters[i].val;
 
-	printf("var[%s], val[%s]\n",var,val);
 	/* confirm that the first parameter is the "operatingMode" */
 	if(!strcasecmp(var, "operatingMode")){
 		/**********************************************************************/
@@ -275,7 +274,7 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 		/**********************************************************************/
 			/* don't care for now */
 		/**********************************************************************/
-		} else if (!strcasecmp(var, "ccSpanId")) {
+		} else if (!strcasecmp(var, "span-id")) {
 		/**********************************************************************/
 			sngSpan.ccSpanId = atoi(val);
 			SS7_DEBUG("Found an ccSpanId  = %d\n",sngSpan.ccSpanId);
@@ -543,16 +542,6 @@ static int ftmod_ss7_parse_sng_isup(ftdm_conf_node_t *sng_isup)
 			}
 		case SNG_SS7_OPR_MODE_M2UA_SG: 
 			{
-				if (ftmod_ss7_parse_mtp_linksets(mtp_linksets)) {
-					SS7_ERROR("Failed to parse \"mtp_linksets\"!\n");
-					return FTDM_FAIL;
-				}
-
-				if (ftmod_ss7_parse_mtp_routes(mtp_routes)) {	
-					SS7_ERROR("Failed to parse \"mtp_routes\"!\n");
-					return FTDM_FAIL;
-				}
-
 				if (ftmod_ss7_parse_sctp_links(sctp_ifaces) != FTDM_SUCCESS) {
 					SS7_ERROR("Failed to parse <sctp_links>!\n");
 					return FTDM_FAIL;

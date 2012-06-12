@@ -71,8 +71,8 @@ typedef struct sng_m2ua_peer_cfg{
 	uint16_t    		 selfAspId;	/* Self ASP ID. ASP identifier for this ASP node if the aspIdFlag is TRUE. */
 	uint32_t    		 numDestAddr;	/* Number of destination address defined */
 	uint16_t    		 sctpId;	/* idx to sctp profile */
-	uint16_t    		 port;		/* port */	
-	uint32_t    		 destAddrList[SCT_MAX_NET_ADDRS+1]; /* Destination adddress list */
+	uint16_t 		 port;
+	uint32_t    	         destAddrList[SCT_MAX_NET_ADDRS+1]; /* Destination adddress list */
 	uint16_t    		 locOutStrms;	/*Number of outgoing streams supported by this association*/ 
 	int 			 init_sctp_assoc; /* flag to tell if we need to initiate SCTP association */
 }sng_m2ua_peer_cfg_t;

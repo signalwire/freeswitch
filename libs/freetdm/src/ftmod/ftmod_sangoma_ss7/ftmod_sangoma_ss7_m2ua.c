@@ -791,13 +791,13 @@ static int ftmod_m2ua_peer_config(int id)
 			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_sctsap_config: M2UA SCTSAP for M2UA Intf Id[%d] config FAILED \n", id);
 			return 0x01;
 		}else{
-			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_sctsap_config: M2UA SCTSAP for M2UA Intf Id[%d] config SUCCESS \n", id);
+			ftdm_log (FTDM_LOG_INFO, " ftmod_m2ua_sctsap_config: M2UA SCTSAP for M2UA Intf Id[%d] config SUCCESS \n", id);
 		}
 		if(ftmod_m2ua_peer_config1(id, peer_id)){
 			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_peer_config1: M2UA Peer configuration for M2UA Intf Id[%d] config FAILED \n", id);
 			return 0x01;
 		}else{
-			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_peer_config1: M2UA Peer configuration for M2UA Intf Id[%d] config SUCCESS \n", id);
+			ftdm_log (FTDM_LOG_INFO, " ftmod_m2ua_peer_config1: M2UA Peer configuration for M2UA Intf Id[%d] config SUCCESS \n", id);
 		}
 
 
@@ -1639,10 +1639,9 @@ int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm)
 {
 	MwMgmt ssta; 
 	Pst pst;
-	int peerId = 0x01;
-	sng_m2ua_cfg_t* 	    m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
-	sng_m2ua_cluster_cfg_t*  clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
-	sng_m2ua_peer_cfg_t* peer  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[peerId]; /*TODO - KAPIL - need to add proper peerId*/
+	sng_m2ua_cfg_t* 	 m2ua  = NULL; 
+	sng_m2ua_cluster_cfg_t*  clust = NULL; 
+	sng_m2ua_peer_cfg_t* 	 peer  = NULL; 
 
 	memset((U8 *)&pst, 0, sizeof(Pst));
 	memset((U8 *)&ssta, 0, sizeof(MwMgmt));
@@ -1668,6 +1667,7 @@ int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm)
        {
           case STMWSCTSAP:
                 {
+		   m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
                    ssta.t.ssta.id.suId = m2ua->id ; /* lower sap Id */            
                    break;
                 }       
@@ -1678,11 +1678,13 @@ int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm)
                 }
           case STMWPEER:
                 {
+		   peer  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[id];
                    ssta.t.ssta.id.peerId = peer->id ; /* peer Id */            
                    break;
                 }
           case STMWCLUSTER:
                 {
+		   clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[id];
                    ssta.t.ssta.id.clusterId = clust->id ; /* cluster Id */            
                    break;
                 }

@@ -870,6 +870,11 @@ void handle_sng_m2ua_alarm(Pst *pst, MwMgmt *sta)
 	/* To print the event specific information */
 	switch(sta->t.usta.alarm.event)
 	{
+		case LMW_EVENT_TERM_OK:
+			{
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_TERM_OK: Association Terminated with PeerId[%d]  \n",sta->t.usta.s.peerId);
+				break;
+			}
 		case LMW_EVENT_ENDPOPEN_OK:
 			{
 				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_ENDPOPEN_OK: \n");

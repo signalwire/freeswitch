@@ -2867,6 +2867,77 @@ static int add_config_list_nodes(switch_xml_t swnode, ftdm_conf_node_t *rootnode
 	return 0;
 }
 
+/* create ftdm_conf_node_t tree based on a fixed pattern XML configuration list 
+ * last arg is to specify if we have any sublist for e.g.
+ * <list_name>
+ *   <list_element_name>
+ *    <param name="xxx" value="xxx"/>
+ *    <sub-list>
+ *    	<param name="xxx" value="xxx"/>
+ *    </sub-list>
+ *   </list_element_name>
+ * </list_name>   
+ * */
+static int add_config_nodes(switch_xml_t swnode, ftdm_conf_node_t *rootnode, 
+		const char *list_name, const char *list_element_name, const char *sub_list_name)
+{
+	char *var, *val;
+	switch_xml_t list;
+	switch_xml_t sub_list;
+	switch_xml_t element;
+	switch_xml_t param;
+
+	ftdm_conf_node_t *n_list;
+	ftdm_conf_node_t *n_element;
+
+	list = switch_xml_child(swnode, list_name);
+	if (!list) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no list %s found\n", list_name);
+		return -1;
+	}
+
+	if ((FTDM_SUCCESS != ftdm_conf_node_create(list_name, &n_list, rootnode))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create %s node\n", list_name);
+		return -1;
+	}
+
+	for (element = switch_xml_child(list, list_element_name); element; element = element->next) {
+		char *element_name = (char *) switch_xml_attr(element, "name");
+
+		if (!element_name) {
+			continue;
+		}
+
+		if ((FTDM_SUCCESS != ftdm_conf_node_create(list_element_name, &n_element, n_list))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create %s node for %s\n", list_element_name, element_name);
+			return -1;
+		}
+		ftdm_conf_node_add_param(n_element, "name", element_name);
+
+		for (param = switch_xml_child(element, "param"); param; param = param->next) {
+			var = (char *) switch_xml_attr_soft(param, "name");
+			val = (char *) switch_xml_attr_soft(param, "value");
+			ftdm_conf_node_add_param(n_element, var, val);
+		}
+
+		/*If we have single node list */
+		if (sub_list_name ) {
+			sub_list = switch_xml_child(element, sub_list_name);
+			if (!sub_list) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no sub_list %s found\n", sub_list_name);
+				return -1;
+			}
+			for (param = switch_xml_child(sub_list, "param"); param; param = param->next) {
+				var = (char *) switch_xml_attr_soft(param, "name");
+				val = (char *) switch_xml_attr_soft(param, "value");
+				ftdm_conf_node_add_param(n_element, var, val);
+			}
+		}
+	}
+
+	return 0;
+}
+
 static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *confname, const char *operatingMode)
 {
 	switch_xml_t signode, ss7configs, isup, gen, param;
@@ -2998,23 +3069,21 @@ static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *conf
 			ftdm_conf_node_destroy(rootnode);
 			return NULL;
 		}
-	}
 
-	/* add mtp linksets */
-	if (add_config_list_nodes(isup, rootnode, "mtp_linksets", "mtp_linkset", NULL, NULL)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_linksets for sng_isup config %s\n", confname);
-		ftdm_conf_node_destroy(rootnode);
-		return NULL;
-	}
+		/* add mtp linksets */
+		if (add_config_list_nodes(isup, rootnode, "mtp_linksets", "mtp_linkset", NULL, NULL)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_linksets for sng_isup config %s\n", confname);
+			ftdm_conf_node_destroy(rootnode);
+			return NULL;
+		}
 
-	/* add mtp routes */
-	if (add_config_list_nodes(isup, rootnode, "mtp_routes", "mtp_route", "linksets", "linkset")) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_routes for sng_isup config %s\n", confname);
-		ftdm_conf_node_destroy(rootnode);
-		return NULL;
-	}
+		/* add mtp routes */
+		if (add_config_list_nodes(isup, rootnode, "mtp_routes", "mtp_route", "linksets", "linkset")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process mtp_routes for sng_isup config %s\n", confname);
+			ftdm_conf_node_destroy(rootnode);
+			return NULL;
+		}
 
-	if(is_isup) {
 		/* add isup interfaces */
 		if (add_config_list_nodes(isup, rootnode, "isup_interfaces", "isup_interface", NULL, NULL)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process isup_interfaces for sng_isup config %s\n", confname);
@@ -3049,13 +3118,14 @@ static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *conf
 			return NULL;
 		}
 
-		if (add_config_list_nodes(isup, rootnode, "sng_m2ua_peer_interfaces", "sng_m2ua_peer_interface", NULL, NULL)) {
+		if (add_config_nodes(isup, rootnode, "sng_m2ua_peer_interfaces", "sng_m2ua_peer_interface", "sng_destination_addresses")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process sng_m2ua_peer_interfaces for sng_isup config %s\n", confname);
 			ftdm_conf_node_destroy(rootnode);
 			return NULL;
 		}
 
-		if (add_config_list_nodes(isup, rootnode, "sng_m2ua_cluster_interfaces", "sng_m2ua_cluster_interface", NULL, NULL)) {
+
+		if (add_config_nodes(isup, rootnode, "sng_m2ua_cluster_interfaces", "sng_m2ua_cluster_interface", "sng_m2ua_peers")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process sng_m2ua_cluster_interfaces for sng_isup config %s\n", confname);
 			ftdm_conf_node_destroy(rootnode);
 			return NULL;
