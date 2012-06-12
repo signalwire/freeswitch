@@ -7723,6 +7723,9 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	}
 
 	if (channel) {
+		if (sip->sip_payload && sip->sip_payload->pl_data) {
+			switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
+		}
 		switch_channel_execute_on(channel, "execute_on_sip_reinvite");
 	}
 
