@@ -3070,13 +3070,13 @@ static ftdm_status_t cli_ss7_show_all_spans_general(ftdm_stream_handle_t *stream
 
 static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 {
-	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	MwMgmt cfm;
+	MwMgmt rsp;
 	char  buf[2048];
+	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
 	int x = 0x00;
 	int idx = 0x00;
 	int len = 0x00;
-	MwMgmt cfm;
-	MwMgmt rsp;
 
 	memset((U8 *)&cfm, 0, sizeof(MwMgmt));
 	memset((U8 *)&rsp, 0, sizeof(MwMgmt));
