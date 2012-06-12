@@ -206,13 +206,12 @@ static void ftmod_ss7_set_glare_resolution (const char *method);
 
 int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *span)
 {
+	sng_route_t			self_route;
+	sng_span_t			sngSpan;
 	int					i = 0;
 	const char			*var = NULL;
 	const char			*val = NULL;
 	ftdm_conf_node_t	*ptr = NULL;
-	sng_route_t			self_route;
-	sng_span_t			sngSpan;
-
 
 	/* clean out the isup ckt */
 	memset(&sngSpan, 0x0, sizeof(sngSpan));
@@ -223,8 +222,8 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 	var = ftdm_parameters[i].var;
 	val = ftdm_parameters[i].val;
 
-	/* confirm that the first parameter is the "operatingMode" */
-	if(!strcasecmp(var, "operatingMode")){
+	/* confirm that the first parameter is the "operating-mode" */
+	if(!strcasecmp(var, "operating-mode")){
 		/**********************************************************************/
 		if(!strcasecmp(val, "ISUP")) {
 			g_ftdm_operating_mode = SNG_SS7_OPR_MODE_ISUP;
@@ -274,7 +273,7 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 		/**********************************************************************/
 			/* don't care for now */
 		/**********************************************************************/
-		} else if (!strcasecmp(var, "span-id")) {
+		} else if (!strcasecmp(var, "span-id") || !strcasecmp(var, "ccSpanId")) {
 		/**********************************************************************/
 			sngSpan.ccSpanId = atoi(val);
 			SS7_DEBUG("Found an ccSpanId  = %d\n",sngSpan.ccSpanId);
