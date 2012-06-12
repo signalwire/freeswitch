@@ -1146,8 +1146,8 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 				memcpy(se->spawn_reply->pid, &pid, sizeof(erlang_pid));
 				switch_thread_cond_signal(se->spawn_reply->ready_or_found);
 				ei_x_encode_atom(rbuf, "ok");
-				switch_thread_rwlock_unlock(listener->session_rwlock);
 				switch_mutex_unlock(se->spawn_reply->mutex);
+				switch_thread_rwlock_unlock(listener->session_rwlock);
 				return SWITCH_STATUS_SUCCESS;
 			}
 			switch_mutex_unlock(se->spawn_reply->mutex);
