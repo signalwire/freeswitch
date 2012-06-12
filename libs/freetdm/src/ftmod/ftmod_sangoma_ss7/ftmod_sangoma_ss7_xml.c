@@ -260,27 +260,18 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 	i++;
 
 	while (ftdm_parameters[i].var != NULL) {
-	/**************************************************************************/
-
 		var = ftdm_parameters[i].var;
 		val = ftdm_parameters[i].val;
 
 		if (!strcasecmp(var, "dialplan")) {
-		/**********************************************************************/
 			/* don't care for now */
-		/**********************************************************************/
 		} else if (!strcasecmp(var, "context")) {
-		/**********************************************************************/
 			/* don't care for now */
-		/**********************************************************************/
 		} else if (!strcasecmp(var, "span-id") || !strcasecmp(var, "ccSpanId")) {
-		/**********************************************************************/
 			sngSpan.ccSpanId = atoi(val);
 			SS7_DEBUG("Found an ccSpanId  = %d\n",sngSpan.ccSpanId);
-		/**********************************************************************/
 		} else {
 			SS7_ERROR("Unknown parameter found =\"%s\"...ignoring it!\n", var);
-		/**********************************************************************/
 		}
 
 		i++;
