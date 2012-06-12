@@ -1115,6 +1115,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 	void *val;
 	session_elem_t *se;
 	switch_hash_index_t *iter;
+	int found = 0;
 
 	ei_decode_tuple_header(buf->buff, &buf->index, &arity);
 
@@ -1137,29 +1138,32 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 		switch_hash_this(iter, &key, NULL, &val);
 		se = (session_elem_t*)val;
 		if (se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, 100)) {
+			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "found matching session for %s : %s\n", hash, se->uuid_str);
+
 			switch_mutex_lock(se->spawn_reply->mutex);
 
-			if (se->spawn_reply->state == reply_waiting) {
-				se->spawn_reply->pid = switch_core_alloc(se->pool, sizeof(erlang_pid));
-				switch_assert(se->spawn_reply->pid != NULL);
-				memcpy(se->spawn_reply->pid, &pid, sizeof(erlang_pid));
-				switch_thread_cond_signal(se->spawn_reply->ready_or_found);
-				ei_x_encode_atom(rbuf, "ok");
-				switch_mutex_unlock(se->spawn_reply->mutex);
-				switch_thread_rwlock_unlock(listener->session_rwlock);
-				return SWITCH_STATUS_SUCCESS;
-			}
+			se->spawn_reply->pid = switch_core_alloc(se->pool, sizeof(erlang_pid));
+			switch_assert(se->spawn_reply->pid != NULL);
+			memcpy(se->spawn_reply->pid, &pid, sizeof(erlang_pid));
+			switch_thread_cond_signal(se->spawn_reply->ready_or_found);
+
 			switch_mutex_unlock(se->spawn_reply->mutex);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "get_pid came in too late for %s; %s\n", hash, se->uuid_str);
+
+			found++;
+
 			break;
 		}
 	}
 	switch_thread_rwlock_unlock(listener->session_rwlock);
 
-	ei_x_encode_tuple_header(rbuf, 2);
-	ei_x_encode_atom(rbuf, "error");
-	ei_x_encode_atom(rbuf, "notfound");
+	if (found) {
+		ei_x_encode_atom(rbuf, "ok");
+	} else {
+		ei_x_encode_tuple_header(rbuf, 2);
+		ei_x_encode_atom(rbuf, "error");
+		ei_x_encode_atom(rbuf, "notfound");
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

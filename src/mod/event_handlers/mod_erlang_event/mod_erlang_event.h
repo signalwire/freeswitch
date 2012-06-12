@@ -71,7 +71,6 @@ struct spawn_reply_struct
 {
 	switch_thread_cond_t *ready_or_found;
 	switch_mutex_t *mutex;
-	enum reply_state state;
 	erlang_pid *pid;
 	char *hash;
 };

@@ -1376,7 +1376,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	p = switch_core_alloc(session_element->pool, sizeof(*p));
 	switch_thread_cond_create(&p->ready_or_found, session_element->pool);
 	switch_mutex_init(&p->mutex, SWITCH_MUTEX_UNNESTED, session_element->pool);
-	p->state = reply_waiting;
 	p->hash = switch_core_strdup(session_element->pool, hash);
 	p->pid = NULL;
 
@@ -1421,7 +1420,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	if (!p->pid) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
-		p->state = reply_timeout;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid %s %s\n", hash, session_element->uuid_str);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return NULL;
