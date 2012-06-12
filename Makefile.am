@@ -418,14 +418,13 @@ $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 src/include/switch_version.h: src/include/switch_version.h.in Makefile $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@cat $< > $@; \
 	if [ -d .git ]; then \
-	  xdate="$$(date -d "$$(git log -n1 --format='%ci' HEAD)" -u '+%Y%m%dT%H%M%SZ')"; \
+	  xdate="$$(perl -e 'use POSIX; print strftime("%Y%m%dT%H%M%SZ",gmtime($$ARGV[0]))' "$$(git log -n1 --format='%ct' HEAD)")"; \
 	  xcommit="$$(git rev-list -n1 --abbrev=10 --abbrev-commit HEAD)"; \
 	  xver="+git~$$xdate~$$xcommit"; \
 	  if ! git diff-index --quiet HEAD; then \
 	    xver="$$xver+unclean~$$(date -u +%Y%m%dT%H%M%SZ)"; \
 	  fi; \
-	  sed \
-	    -e "/#define *SWITCH_VERSION_REVISION/{s/\"\([^\"]*\)\"/\"\1$$xver\"/; :l n; b l}" \
+	  perl -ple "if (/#define *SWITCH_VERSION_REVISION/) {s/\"(.*)\"/\"\1$$xver\"/}" \
 	    $< > $@; \
 	fi;
 
