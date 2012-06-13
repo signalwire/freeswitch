@@ -102,7 +102,6 @@ static void handle_SIGCHLD(int sig)
 	pid = wait(&status);
 	
 	if (pid > 0) {
-		printf("ASS %d\n", pid);
 		system_ready = -1;
 	}
 
