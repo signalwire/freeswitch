@@ -224,20 +224,19 @@ int ftmod_ss7_parse_xml(ftdm_conf_parameter_t *ftdm_parameters, ftdm_span_t *spa
 
 	/* confirm that the first parameter is the "operating-mode" */
 	if(!strcasecmp(var, "operating-mode")){
-		/**********************************************************************/
 		if(!strcasecmp(val, "ISUP")) {
 			g_ftdm_operating_mode = SNG_SS7_OPR_MODE_ISUP;
 		}
 		else if(!strcasecmp(val, "M2UA_SG")) {
 			g_ftdm_operating_mode = SNG_SS7_OPR_MODE_M2UA_SG;
 		} else {
-			SS7_ERROR("Invalid operating Mode[%s] \n", val);
-			return FTDM_FAIL;
+			SS7_DEBUG("Operating mode not specified, defaulting to ISUP\n");
+			g_ftdm_operating_mode = SNG_SS7_OPR_MODE_ISUP;
 		}
-		/**********************************************************************/
+		i++;
 	}
 
-	i++;
+	
 
 	var = ftdm_parameters[i].var;
 	val = ftdm_parameters[i].val;
