@@ -538,16 +538,16 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
 							 "full_via,expires,user_agent,accept,profile_name,network_ip"
 							 ",'%q',full_to,network_ip,network_port from sip_subscriptions "
-							 "where hostname='%q' and profile_name='%q' and event='message-summary' "
+							 "where hostname='%q' and event='message-summary' "
 							 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%')", 
-							 stream.data, mod_sofia_globals.hostname, profile->name, user, host, host);
+							 stream.data, mod_sofia_globals.hostname, user, host, host);
 	} else if (sub_call_id) {
 		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
 							 "full_via,expires,user_agent,accept,profile_name,network_ip"
 							 ",'%q',full_to,network_ip,network_port from sip_subscriptions where "
-							 "hostname='%q' and profile_name='%q' and event='message-summary' "
+							 "hostname='%q' and event='message-summary' "
 							 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%') and call_id='%q'",
-							 stream.data, mod_sofia_globals.hostname, profile->name, user, host, host, sub_call_id);
+							 stream.data, mod_sofia_globals.hostname, user, host, host, sub_call_id);
 	}
 
 
@@ -560,12 +560,12 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	if (for_everyone) {
 		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q',call_id "
-							 "from sip_registrations where hostname='%q' and profile_name='%q' and mwi_user='%q' and mwi_host='%q'", 
-							 stream.data, mod_sofia_globals.hostname, profile->name, user, host);
+							 "from sip_registrations where hostname='%q' and mwi_user='%q' and mwi_host='%q'", 
+							 stream.data, mod_sofia_globals.hostname, user, host);
 	} else if (call_id) {
 		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q',call_id "
-							 "from sip_registrations where hostname='%q' and profile_name='%q' and call_id='%q'", 
-							 stream.data, mod_sofia_globals.hostname, profile->name, call_id);
+							 "from sip_registrations where hostname='%q' and call_id='%q'", 
+							 stream.data, mod_sofia_globals.hostname, call_id);
 	}
 
 	if (sql) {
