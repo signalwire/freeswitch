@@ -1,2 +1,4 @@
 # -*- mode:conf -*-
+/.cproject
+/.project
 /include/zrtp_config_unix.h
