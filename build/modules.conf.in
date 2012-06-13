@@ -5,6 +5,7 @@ applications/mod_dptools
 applications/mod_commands
 applications/mod_hash
 applications/mod_spandsp
+applications/mod_rad_auth
 dialplans/mod_dialplan_xml
 endpoints/mod_sofia
 endpoints/mod_media_gateway
@@ -12,3 +13,5 @@ endpoints/mod_media_gateway
 xml_int/mod_xml_cdr
 event_handlers/mod_event_socket
 codecs/mod_sangoma_codec
+event_handlers/mod_radius_cdr
+
