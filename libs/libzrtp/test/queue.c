@@ -8,10 +8,9 @@
  */
 
 #include "zrtp.h"
-#include "zrtp_test_queue.h"
+#include "queue.h"
 
-struct zrtp_queue
-{
+struct zrtp_queue {
 	zrtp_sem_t*			size_sem;
 	zrtp_sem_t*			main_sem;
 	zrtp_mutex_t*		mutex;    
@@ -19,9 +18,9 @@ struct zrtp_queue
 	uint32_t			size;
 };
 
-/*----------------------------------------------------------------------------*/
-zrtp_status_t zrtp_test_queue_create(zrtp_queue_t** queue)
-{
+
+zrtp_status_t zrtp_test_queue_create(zrtp_queue_t** queue) {
+	
 	zrtp_status_t s = zrtp_status_fail;
 	zrtp_queue_t* new_queue = (zrtp_queue_t*) zrtp_sys_alloc(sizeof(zrtp_queue_t));
 	if (! new_queue) {
@@ -67,8 +66,7 @@ zrtp_status_t zrtp_test_queue_create(zrtp_queue_t** queue)
     return s;	
 }
 
-void zrtp_test_queue_destroy(zrtp_queue_t* queue)
-{
+void zrtp_test_queue_destroy(zrtp_queue_t* queue) {
 	if (queue->size_sem) {
 		zrtp_sem_destroy(queue->size_sem);
 	}
@@ -80,9 +78,8 @@ void zrtp_test_queue_destroy(zrtp_queue_t* queue)
 	}
 }
 
-/*----------------------------------------------------------------------------*/
-void zrtp_test_queue_push(zrtp_queue_t* queue, zrtp_queue_elem_t* elem)
-{
+
+void zrtp_test_queue_push(zrtp_queue_t* queue, zrtp_queue_elem_t* elem) {
 	zrtp_sem_wait(queue->size_sem);
 	
 	zrtp_mutex_lock(queue->mutex);
@@ -93,8 +90,7 @@ void zrtp_test_queue_push(zrtp_queue_t* queue, zrtp_queue_elem_t* elem)
 	zrtp_sem_post(queue->main_sem);
 }
 
-zrtp_queue_elem_t* zrtp_test_queue_pop(zrtp_queue_t* queue)
-{
+zrtp_queue_elem_t* zrtp_test_queue_pop(zrtp_queue_t* queue) {
 	zrtp_queue_elem_t* res = NULL;
 	zrtp_sem_wait(queue->main_sem);
 	

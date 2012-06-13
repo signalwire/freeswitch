@@ -17,7 +17,6 @@ INCLUDES = 	-I$(TOP_SRCDIR)/include \
 			-I$(TOP_SRCDIR)/third_party/bnlib
 
 
-#check_PROGRAMS = cache_test libzrtp_test
 check_PROGRAMS = cache_test
 
 ### ZRTP Cache testing
@@ -26,15 +25,6 @@ cache_test_SOURCES = $(TOP_SRCDIR)/test/cmockery/cmockery.c \
 					 $(TOP_SRCDIR)/test/cache_test.c
 cache_test_LDADD   = ../libzrtp.a  $(TOP_SRCDIR)/third_party/bnlib/libbn.a -lpthread
 
-
-### ZRTP high-level test-case 
-
-libzrtp_test_SOURCES =	$(TOP_SRCDIR)/test/pc/zrtp_test_core.c \
-					  	$(TOP_SRCDIR)/test/pc/zrtp_test_crypto.c \
-						$(TOP_SRCDIR)/test/pc/zrtp_test_queue.c \
-						$(TOP_SRCDIR)/test/pc/zrtp_test_ui.c
-
-libzrtp_test_LDADD = ../libzrtp.a $(TOP_SRCDIR)/third_party/bnlib/libbn.a -lpthread
 
 SUBDIRS = .
 

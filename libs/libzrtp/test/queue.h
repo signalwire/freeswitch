@@ -14,8 +14,7 @@
 
 #define ZRTP_QUEUE_SIZE 2000
 
-typedef struct zrtp_queue_elem
-{
+typedef struct zrtp_queue_elem {
     char		data[1500];
     uint32_t	size;
     mlist_t		_mlist;
