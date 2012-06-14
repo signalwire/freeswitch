@@ -3705,18 +3705,23 @@ static int _wrap_new_EventConsumer(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) NULL ;
   char *arg2 = (char *) "" ;
+  int arg3 = (int) 5000 ;
   EventConsumer *result = 0 ;
   
-  SWIG_check_num_args("EventConsumer",0,2)
+  SWIG_check_num_args("EventConsumer",0,3)
   if(lua_gettop(L)>=1 && !lua_isstring(L,1)) SWIG_fail_arg("EventConsumer",1,"char const *");
   if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("EventConsumer",2,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isnumber(L,3)) SWIG_fail_arg("EventConsumer",3,"int");
   if(lua_gettop(L)>=1){
     arg1 = (char *)lua_tostring(L, 1);
   }
   if(lua_gettop(L)>=2){
     arg2 = (char *)lua_tostring(L, 2);
   }
-  result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2);
+  if(lua_gettop(L)>=3){
+    arg3 = (int)lua_tonumber(L, 3);
+  }
+  result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2,arg3);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_EventConsumer,1); SWIG_arg++; 
   return SWIG_arg;

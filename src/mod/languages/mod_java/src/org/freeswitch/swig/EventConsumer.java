@@ -91,8 +91,8 @@ public class EventConsumer {
     return new SWIGTYPE_p_uint32_t(freeswitchJNI.EventConsumer_node_index_get(swigCPtr, this), true);
   }
 
-  public EventConsumer(String event_name, String subclass_name) {
-    this(freeswitchJNI.new_EventConsumer(event_name, subclass_name), true);
+  public EventConsumer(String event_name, String subclass_name, int len) {
+    this(freeswitchJNI.new_EventConsumer(event_name, subclass_name, len), true);
   }
 
   public int bind(String event_name, String subclass_name) {
