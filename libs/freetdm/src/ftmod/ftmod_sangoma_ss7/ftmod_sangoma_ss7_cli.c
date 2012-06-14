@@ -403,8 +403,8 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 	/**************************************************************************/
 
 		if (check_arg_count(argc, 2)) {
-			cli_ss7_show_general(stream); 
-			return FTDM_SUCCESS;
+			stream->write_function(stream, "Unknown \"xmlshow\" command\n");
+			goto handle_cli_error;
 		}
 		c++;
 	/**************************************************************************/
@@ -3071,7 +3071,7 @@ static ftdm_status_t cli_ss7_show_all_spans_general(ftdm_stream_handle_t *stream
 static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
-	char  buf[2048];
+	char  buf[6144];
 	int x = 0x00;
 	int idx = 0x00;
 	int len = 0x00;
@@ -3105,6 +3105,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 				 (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
 
 			 len = len + sprintf(buf + len, "<m2ua_profile>\n");
+			 len = len + sprintf(buf + len, "<name> %s </name>\n", g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].name);
 
 			 if(ftmod_m2ua_ssta_req(STMWDLSAP,x,&cfm)) {
 				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
@@ -3164,17 +3165,17 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 				 }
 			 }
 
-			 if(ftmod_m2ua_ssta_req(STMWSCTSAP,x,&cfm)) {
-				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
-				 return FTDM_FAIL;
-			 } else {
-				 len = len + sprintf(buf + len, "<m2ua_sctp_sap>\n");
-				 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_SAP_STATE(cfm.t.ssta.s.sctSapSta.state));
-				 len = len + sprintf(buf + len," <end_point_open_state> %s </end_point_open_state>\n", (cfm.t.ssta.s.sctSapSta.endpOpen)?"END_POINT_OPENED_SUCCESSFULLY":"END_POINT_NOT_OPEN");
-				 len = len + sprintf(buf + len," <end_point_id> %d </end_point_id>\n", cfm.t.ssta.s.sctSapSta.spEndpId);
-				 len = len + sprintf(buf + len," <nmb_of_retry_attemp> %d </nmb_of_retry_attemp>\n", cfm.t.ssta.s.sctSapSta.nmbPrimRetry);
-				 len = len + sprintf(buf + len, "</m2ua_sctp_sap>\n");
-			 }
+				 if(ftmod_m2ua_ssta_req(STMWSCTSAP,x,&cfm)) {
+					 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+					 return FTDM_FAIL;
+				 } else {
+					 len = len + sprintf(buf + len, "<m2ua_sctp_sap>\n");
+					 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_SAP_STATE(cfm.t.ssta.s.sctSapSta.state));
+					 len = len + sprintf(buf + len," <end_point_open_state> %s </end_point_open_state>\n", (cfm.t.ssta.s.sctSapSta.endpOpen)?"END_POINT_OPENED_SUCCESSFULLY":"END_POINT_NOT_OPEN");
+					 len = len + sprintf(buf + len," <end_point_id> %d </end_point_id>\n", cfm.t.ssta.s.sctSapSta.spEndpId);
+					 len = len + sprintf(buf + len," <nmb_of_retry_attemp> %d </nmb_of_retry_attemp>\n", cfm.t.ssta.s.sctSapSta.nmbPrimRetry);
+					 len = len + sprintf(buf + len, "</m2ua_sctp_sap>\n");
+				 }
 
 			 len = len + sprintf(buf + len, "</m2ua_profile>\n");
 		 }
@@ -3199,7 +3200,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char* m2ua_profile_name) 
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
-	char  buf[2048];
+	char  buf[4096];
 	int x = 0x00;
 	int idx = 0x00;
 	int found = 0x00;
@@ -3234,6 +3235,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 
 
 	len = len + sprintf(buf + len, "<m2ua_profile>\n");
+	len = len + sprintf(buf + len, "<name> %s </name>\n", m2ua_profile_name);
 
 	if(ftmod_m2ua_ssta_req(STMWDLSAP,x,&cfm)) {
 		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
@@ -3248,7 +3250,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 		len = len + sprintf(buf + len, "</m2ua_dlsap>\n");
 	}
 
-	if(ftmod_m2ua_ssta_req(STMWCLUSTER,x,&cfm)) {
+	if(ftmod_m2ua_ssta_req(STMWCLUSTER, g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].clusterId, &cfm)) {
 		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
 		return FTDM_FAIL;
 	} else {
@@ -3323,7 +3325,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
-	char  buf[2048];
+	char  buf[4096];
 	int x = 0x00;
 	int len = 0x00;
 	SbMgmt cfm;
@@ -3402,8 +3404,14 @@ static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 			}
 
 			if(ftmod_sctp_ssta_req(STSBASSOC,x,&cfm)) {
-				stream->write_function(stream," Request to Trillium SCTP layer failed \n");
-				return FTDM_FAIL;
+				if(LCM_REASON_INVALID_PAR_VAL == cfm.cfm.reason){
+					len = len + sprintf(buf + len, "<sctp_association>\n");
+					len = len + sprintf(buf + len, " <status> SCT_ASSOC_STATE_CLOSED </status>\n");
+					len = len + sprintf(buf + len, "</sctp_association>\n");
+				}else{
+					stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+					return FTDM_FAIL;
+				}
 			} else {
 				len = len + sprintf(buf + len, "<sctp_association>\n");
 				len = len + get_assoc_resp_buf(buf + len, &cfm);
@@ -3535,7 +3543,7 @@ int get_assoc_resp_buf(char* buf,SbMgmt* cfm)
 static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char* sctp_profile_name)
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
-	char  buf[2048];
+	char  buf[4096];
 	int x = 0x00;
 	int len = 0x00;
 	SbMgmt cfm;
@@ -3586,8 +3594,15 @@ static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char
 	}
 
 	if(ftmod_sctp_ssta_req(STSBASSOC,x,&cfm)) {
-		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
-		return FTDM_FAIL;
+		/* it means assoc id not yet allocated */
+		if(LCM_REASON_INVALID_PAR_VAL == cfm.cfm.reason){
+			len = len + sprintf(buf + len, "<sctp_association>\n");
+			len = len + sprintf(buf + len, " <status> SCT_ASSOC_STATE_CLOSED </status>\n");
+			len = len + sprintf(buf + len, "</sctp_association>\n");
+		}else{
+			stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+			return FTDM_FAIL;
+		}
 	} else {
 		len = len + sprintf(buf + len, "<sctp_association>\n");
 		len = len + get_assoc_resp_buf(buf + len, &cfm);
@@ -3613,7 +3628,7 @@ static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char
 static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
-	char  buf[2048];
+	char  buf[4096];
 	int x = 0x00;
 	int len = 0x00;
 	NwMgmt cfm;
@@ -3674,7 +3689,7 @@ static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char* nif_profile_name) 
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
-	char  buf[2048];
+	char  buf[4096];
 	int x = 0x00;
 	int found = 0x00;
 	int len = 0x00;
@@ -3737,7 +3752,7 @@ static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char*
 static ftdm_status_t handle_show_m2ua_peer_status(ftdm_stream_handle_t *stream, char* m2ua_profile_name) 
 {
 	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
-	char  buf[2048];
+	char  buf[4096];
 	int x = 0x00;
 	int found = 0x00;
 	int len = 0x00;

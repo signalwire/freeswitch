@@ -96,6 +96,7 @@ typedef struct sng_m2ua_cluster_cfg{
 	char 	    		 name[MAX_NAME_LEN];
 	uint32_t    		 flags;
 	uint32_t    		 id;		/* ID */
+	uint32_t    		 sct_sap_id;   /* Internal - sct_sap_id */
 	uint8_t    		 trfMode;	/* Traffic mode. This parameter defines the mode in which this m2ua cluster is supposed to work */ 
 	uint8_t    		 loadShareAlgo;	/* This parameter defines the M2UA load share algorithm which is used to distribute the traffic */ 
 	uint16_t    		 numOfPeers;	/* idx to m2ua_peer profile */

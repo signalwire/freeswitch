@@ -51,7 +51,7 @@ static int ftmod_sctp_config(int id);
 static ftdm_status_t ftmod_sctp_sap_config(int id);
 static ftdm_status_t ftmod_sctp_tsap_config(int id);
 static int ftmod_m2ua_gen_config(void);
-static int ftmod_m2ua_sctsap_config(int m2ua_inf_id, int sctp_id);
+static int ftmod_m2ua_sctsap_config(int sct_sap_id, int sctp_id);
 static int ftmod_m2ua_peer_config(int id);
 static int ftmod_m2ua_peer_config1(int m2ua_inf_id, int peer_id);
 static int ftmod_m2ua_cluster_config(int idx);
@@ -782,6 +782,14 @@ static int ftmod_m2ua_peer_config(int id)
 	sng_m2ua_cluster_cfg_t*     clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
 	sng_m2ua_peer_cfg_t* 	    peer  = NULL;
 
+	if((clust->flags & SNGSS7_CONFIGURED)){
+		ftdm_log (FTDM_LOG_INFO, " ftmod_m2ua_peer_config: Cluster [%s] is already configured \n", clust->name);
+		return 0x00;
+	}
+
+	/*NOTE : SCTSAP is based on per source address , so if we have same Cluster / peer shared across many <m2ua_interface> then 
+	 * we dont have do configuration for each time */
+
 	/* loop through peer list from cluster to configure SCTSAP */
 
 	for(x = 0; x < clust->numOfPeers;x++){
@@ -800,13 +808,18 @@ static int ftmod_m2ua_peer_config(int id)
 			ftdm_log (FTDM_LOG_INFO, " ftmod_m2ua_peer_config1: M2UA Peer configuration for M2UA Intf Id[%d] config SUCCESS \n", id);
 		}
 
+		clust->sct_sap_id = id;
 
+		/* set configured flag for cluster and peer */
+		clust->flags |= SNGSS7_CONFIGURED;
+		peer->flags |= SNGSS7_CONFIGURED;
 	}
 
 	return 0x0;;
 }
 
-static int ftmod_m2ua_sctsap_config(int m2ua_inf_id, int sctp_id)
+
+static int ftmod_m2ua_sctsap_config(int sct_sap_id, int sctp_id)
 {
    int    i;
    Pst    pst; 
@@ -836,7 +849,7 @@ static int ftmod_m2ua_sctsap_config(int m2ua_inf_id, int sctp_id)
    cfg.t.cfg.s.sctSapCfg.reConfig.selector     = 0;
 
    /* service user SAP ID */
-   cfg.t.cfg.s.sctSapCfg.suId                   = m2ua_inf_id;
+   cfg.t.cfg.s.sctSapCfg.suId                   = sct_sap_id;
    /* service provider ID   */
    cfg.t.cfg.s.sctSapCfg.spId                   = sctp_id;
    /* source port number */
@@ -1275,7 +1288,7 @@ int ftmod_ss7_m2ua_start(void){
 	x = 1;
 	while (x < (MW_MAX_NUM_OF_PEER)) {
 		if ((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].id !=0) &&
-				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].flags & SNGSS7_CONFIGURED)) && 
+				((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].flags & SNGSS7_CONFIGURED)) && 
 				(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].init_sctp_assoc)) {
 			if(ftmod_init_sctp_assoc(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"ftmod_init_sctp_assoc FAIL for peerId[%d] \n", x);
@@ -1296,9 +1309,16 @@ int ftmod_ss7_m2ua_start(void){
 
 static int ftmod_open_endpoint(int id)
 {
+	int ret = 0x00;
 	Pst pst;
 	MwMgmt cntrl;  
 	sng_m2ua_cfg_t* m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
+	sng_m2ua_cluster_cfg_t*     clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
+
+	if(clust->flags & SNGSS7_M2UA_EP_OPENED) {
+		ftdm_log (FTDM_LOG_INFO ," END-POINT already opened\n");
+		return ret;
+	}
 
 	memset((U8 *)&pst, 0, sizeof(Pst));
 	memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
@@ -1324,7 +1344,12 @@ static int ftmod_open_endpoint(int id)
 	cntrl.t.cntrl.action = AMWENDPOPEN;
 	cntrl.t.cntrl.s.suId = m2ua->id; /* M2UA sct sap Id */
 
-	return (sng_cntrl_m2ua (&pst, &cntrl));
+	
+	if(0 == (ret = sng_cntrl_m2ua (&pst, &cntrl))){
+		clust->flags |= SNGSS7_M2UA_EP_OPENED;
+	}
+	return ret;
+
 }
 
 /***********************************************************************************************************************/
@@ -1400,9 +1425,17 @@ static int ftmod_sctp_tucl_tsap_bind(int id)
 
 static int ftmod_m2ua_sctp_sctsap_bind(int id)
 {
+  int ret = 0x00;
   Pst pst;
   MwMgmt cntrl;  
   sng_m2ua_cfg_t* m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
+  sng_m2ua_cluster_cfg_t*     clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
+
+  if(clust->flags & SNGSS7_ACTIVE) {
+	  ftdm_log (FTDM_LOG_INFO ," SCT-SAP is already enabled\n");
+	  return ret;
+  }
+
 
   memset((U8 *)&pst, 0, sizeof(Pst));
   memset((U8 *)&cntrl, 0, sizeof(MwMgmt));
@@ -1427,8 +1460,10 @@ static int ftmod_m2ua_sctp_sctsap_bind(int id)
    cntrl.t.cntrl.action = ABND;
    cntrl.t.cntrl.s.suId = m2ua->id;
 
-     return (sng_cntrl_m2ua (&pst, &cntrl));
-
+   if(0 == (ret = sng_cntrl_m2ua (&pst, &cntrl))){
+	   clust->flags |= SNGSS7_ACTIVE;
+   }
+   return ret;
 }   
 /***********************************************************************************************************************/
 static int ftmod_nif_m2ua_dlsap_bind(int id)
@@ -1668,7 +1703,8 @@ int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm)
           case STMWSCTSAP:
                 {
 		   m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[id];
-                   ssta.t.ssta.id.suId = m2ua->id ; /* lower sap Id */            
+		   clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
+                   ssta.t.ssta.id.suId = clust->sct_sap_id ; /* lower sap Id */            
                    break;
                 }       
           case STMWDLSAP:
