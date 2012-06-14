@@ -186,7 +186,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 switch_event_node_t *enodes[SWITCH_EVENT_ALL + 1];
 		 uint32_t node_index;
 
-		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name = NULL, const char *subclass_name = "");
+		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name = NULL, const char *subclass_name = "", int len = 5000);
 		 SWITCH_DECLARE_CONSTRUCTOR ~ EventConsumer();
 		 SWITCH_DECLARE(int) bind(const char *event_name, const char *subclass_name = "");
 		 SWITCH_DECLARE(Event *) pop(int block = 0, int timeout = 0);
