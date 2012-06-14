@@ -2938,7 +2938,7 @@ static int add_config_nodes(switch_xml_t swnode, ftdm_conf_node_t *rootnode,
 	return 0;
 }
 
-static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *confname, const char *operatingMode)
+static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *confname, const char *operating_mode)
 {
 	switch_xml_t signode, ss7configs, isup, gen, param;
 	ftdm_conf_node_t *rootnode, *list;
@@ -3004,19 +3004,19 @@ static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *conf
 	}
 
 	/* operating mode , M2UA or ISUP */
-	if(operatingMode && ('\0' != operatingMode[0])) {
-		if(!strcasecmp(operatingMode, "ISUP")) {
+	if(operating_mode && ('\0' != operating_mode[0])) {
+		if(!strcasecmp(operating_mode, "ISUP")) {
 			is_isup = 0x01;
 		}
-		else if(!strcasecmp(operatingMode, "M2UA_SG")) {
+		else if(!strcasecmp(operating_mode, "M2UA_SG")) {
 			is_isup = 0x00;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid operating Mode[%s] \n", operatingMode);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid operating Mode[%s] \n", operating_mode);
 			ftdm_conf_node_destroy(rootnode);
 			return NULL;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Operating mode not specified, default to ISUP \n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Operating mode not specified, default to ISUP \n");
 		is_isup = 0x01;
 	}
 
@@ -3367,7 +3367,7 @@ static switch_status_t load_config(void)
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
 			char *configname = (char *) switch_xml_attr(myspan, "cfgprofile");
-			char *operatingMode = (char *) switch_xml_attr(myspan, "operating_mode");
+			char *operating_mode = (char *) switch_xml_attr(myspan, "operating_mode");
 			ftdm_span_t *span = NULL;
 			uint32_t span_id = 0;
 			unsigned paramindex = 0;
@@ -3401,7 +3401,7 @@ static switch_status_t load_config(void)
 				span_id = ftdm_span_get_id(span);
 			}
 
-			ss7confnode = _get_ss7_config_node(cfg, configname, operatingMode);
+			ss7confnode = _get_ss7_config_node(cfg, configname, operating_mode);
 			if (!ss7confnode) {
 				CONFIG_ERROR("Error finding ss7config '%s' for FreeTDM span id: %s\n", configname, switch_str_nil(id));
 				continue;
@@ -3409,9 +3409,9 @@ static switch_status_t load_config(void)
 
 			memset(spanparameters, 0, sizeof(spanparameters));
 			paramindex = 0;
-			if(operatingMode){
-				spanparameters[paramindex].var = "operatingMode";
-				spanparameters[paramindex].val = operatingMode;
+			if(operating_mode){
+				spanparameters[paramindex].var = "operating-mode";
+				spanparameters[paramindex].val = operating_mode;
 				paramindex++;
 			}
 			spanparameters[paramindex].var = "confnode";
