@@ -415,16 +415,14 @@ $(OUR_MODULES): $(switch_builddir)/modules.conf libfreeswitch.la
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > $(switch_builddir)/quiet_libtool
 
-src/include/switch_version.h: src/include/switch_version.h.in Makefile $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
+build/print_git_revision: build/print_git_revision.c
+	$(CC) -o $@ $<
+
+src/include/switch_version.h: src/include/switch_version.h.in Makefile build/print_git_revision $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@cat $< > $@; \
 	if [ -d .git ]; then \
-	  xdate="$$(perl -e 'use POSIX; print strftime("%Y%m%dT%H%M%SZ",gmtime($$ARGV[0]))' "$$(git log -n1 --format='%ct' HEAD)")"; \
-	  xcommit="$$(git rev-list -n1 --abbrev=10 --abbrev-commit HEAD)"; \
-	  xver="+git~$$xdate~$$xcommit"; \
-	  if ! git diff-index --quiet HEAD; then \
-	    xver="$$xver+unclean~$$(date -u +%Y%m%dT%H%M%SZ)"; \
-	  fi; \
-	  perl -ple "if (/#define *SWITCH_VERSION_REVISION/) {s/\"(.*)\"/\"\1$$xver\"/}" \
+	  xver="$$(./build/print_git_revision)"; \
+	  sed -e "/#define *SWITCH_VERSION_REVISION/{s/\"\([^\"]*\)\"/\"\1$$xver\"/}" \
 	    $< > $@; \
 	fi;
 
