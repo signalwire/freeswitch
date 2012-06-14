@@ -46,7 +46,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_posix_timer_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_posix_timer_runtime);
 SWITCH_MODULE_DEFINITION(mod_posix_timer, mod_posix_timer_load, mod_posix_timer_shutdown, mod_posix_timer_runtime);
 
-#define SIG SIGRTMAX
+#define SIG (SIGRTMAX - 1)
 #define MAX_INTERVAL 2000 /* ms */
 #define TIMERS_PER_INTERVAL 4
 #define MAX_ACTIVE_TIMERS 256 /* one byte */
