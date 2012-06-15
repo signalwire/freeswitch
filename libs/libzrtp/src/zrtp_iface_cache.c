@@ -56,7 +56,6 @@ static zrtp_status_t zrtp_cache_user_down();
 		return zrtp_status_bad_param; \
 	}
 
-/*----------------------------------------------------------------------------*/
 zrtp_status_t zrtp_def_cache_init(zrtp_global_t* a_zrtp)
 {
 	zrtp_status_t s = zrtp_status_ok;
@@ -102,7 +101,7 @@ void zrtp_def_cache_down()
 	}
 }
 
-/*----------------------------------------------------------------------------*/
+
 zrtp_status_t zrtp_def_cache_set_verified( const zrtp_stringn_t* one_ZID,
 										   const zrtp_stringn_t* another_ZID,
 										   uint32_t verified)
@@ -117,7 +116,7 @@ zrtp_status_t zrtp_def_cache_set_verified( const zrtp_stringn_t* one_ZID,
 	new_elem = get_elem(id, 0);
 	if (new_elem) {
 		new_elem->verified = verified;
-	}       		
+	}
 	zrtp_mutex_unlock(def_cache_protector);
 	
 	return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
@@ -145,7 +144,6 @@ zrtp_status_t zrtp_def_cache_get_verified( const zrtp_stringn_t* one_ZID,
 }
 
 
-/*----------------------------------------------------------------------------*/
 static zrtp_status_t cache_put( const zrtp_stringn_t* one_ZID,
 								const zrtp_stringn_t* another_ZID,
 								zrtp_shared_secret_t *rss,
@@ -229,7 +227,6 @@ zrtp_status_t zrtp_def_cache_put_mitm( const zrtp_stringn_t* one_ZID,
 }
 
 
-/*----------------------------------------------------------------------------*/
 static zrtp_status_t cache_get( const zrtp_stringn_t* one_ZID,
 								const zrtp_stringn_t* another_ZID,
 								zrtp_shared_secret_t *rss,
@@ -288,7 +285,6 @@ zrtp_status_t zrtp_def_cache_get_mitm( const zrtp_stringn_t* one_ZID,
 	return cache_get(one_ZID, another_ZID, rss, 0, 1);
 }
 
-/*-----------------------------------------------------------------------------*/
 zrtp_status_t zrtp_def_cache_set_presh_counter( const zrtp_stringn_t* one_zid,
 											    const zrtp_stringn_t* another_zid,
 											    uint32_t counter) 
@@ -331,7 +327,6 @@ zrtp_status_t zrtp_def_cache_get_presh_counter( const zrtp_stringn_t* one_zid,
 	return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
 
-/*-----------------------------------------------------------------------------*/
  void zrtp_cache_create_id( const zrtp_stringn_t* first_ZID,
 							 const zrtp_stringn_t* second_ZID,
 							 zrtp_cache_id_t id )
@@ -346,13 +341,12 @@ zrtp_status_t zrtp_def_cache_get_presh_counter( const zrtp_stringn_t* one_zid,
 	zrtp_memcpy((char*)id+sizeof(zrtp_zid_t), second_ZID->buffer, sizeof(zrtp_zid_t));
 }
 
-/*-----------------------------------------------------------------------------*/
 zrtp_cache_elem_t* zrtp_def_cache_get2(const zrtp_cache_id_t id, int is_mitm)
 {
 	return get_elem(id, is_mitm);
 }
 
-/*-----------------------------------------------------------------------------*/
+
 static zrtp_cache_elem_t* get_elem(const zrtp_cache_id_t id, uint8_t is_mitm)
 {
 	mlist_t* node = NULL;
@@ -367,7 +361,6 @@ static zrtp_cache_elem_t* get_elem(const zrtp_cache_id_t id, uint8_t is_mitm)
     return NULL;	
 }
 
-/*----------------------------------------------------------------------------*/
 static void cache_make_cross(zrtp_cache_elem_t* from, zrtp_cache_elem_t* to, uint8_t is_upload)
 {
 	if (!to) {
@@ -576,7 +569,7 @@ zrtp_status_t zrtp_cache_user_init()
 	return s;
 }
 
-/*---------------------------------------------------------------------------*/
+
 #define ZRTP_DOWN_CACHE_RETURN(s, f) \
 {\
 	if (zrtp_status_ok != s) { \

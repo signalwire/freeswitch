@@ -1129,7 +1129,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_ATL_HS32: return ZRTP_HS32;
 		case ZRTP_ATL_HS80: return ZRTP_HS80;
 		default: return "Unkn";
-		}		
+		}
 
 	default:
 		return "Unkn";
