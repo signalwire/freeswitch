@@ -1093,6 +1093,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_HASH_SHA384: return ZRTP_S384;
 		default: return "Unkn";
 		}
+		break;
 	    
 	case ZRTP_CC_SAS:
 		switch (id)
@@ -1101,6 +1102,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_SAS_BASE256:  return ZRTP_B256;
 		default: return "Unkn";
 		}
+		break;
 
 	case ZRTP_CC_CIPHER:
 		switch (id)
@@ -1109,6 +1111,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_CIPHER_AES256: return ZRTP_AES3;
 		default: return "Unkn";
 		}
+		break;
 
 	case ZRTP_CC_PKT:
 		switch (id)
@@ -1122,6 +1125,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_PKTYPE_EC521P: return ZRTP_EC521P;
 		default: return "Unkn";
 		}
+		break;
 
 	case ZRTP_CC_ATL:
 		switch (id)
@@ -1130,6 +1134,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_ATL_HS80: return ZRTP_HS80;
 		default: return "Unkn";
 		}
+		break;
 
 	default:
 		return "Unkn";
