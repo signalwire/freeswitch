@@ -51,8 +51,6 @@ void zrtp_log_set_log_engine(zrtp_log_engine *engine) {
     log_writer = engine;
 }
 
-static const uint32_t zrtp_log_header_allign = 16;
-
 /*----------------------------------------------------------------------------*/
 static void zrtp_log(uint8_t is_clean, const char *sender, uint32_t level,  const char *format, va_list marker)
 { 	
