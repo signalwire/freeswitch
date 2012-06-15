@@ -32,7 +32,7 @@ case $target_os in
 esac
 
 
-AM_INIT_AUTOMAKE([libzrtp], [1.15])
+AM_INIT_AUTOMAKE([libzrtp], [1.20])
 AX_PREFIX_CONFIG_H(include/zrtp_config_unix.h,ZRTP,config/config.h)
 
 CFLAGS="$CFLAGS -Wno-unused-parameter -fno-strict-aliasing -fPIC -DZRTP_AUTOMAKE=1"
