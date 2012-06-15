@@ -645,7 +645,7 @@ zrtp_status_t zrtp_cache_user_down()
 {
 	FILE* cache_file = 0;	
 	mlist_t *node = 0;
-	uint32_t count = 0;
+	uint32_t count = 0, dirty_count=0;
 	uint32_t pos = 0;
 
 	ZRTP_LOG(3,(_ZTU_,"\tStoring ZRTP cache to <%s>...\n", zrtp->def_cache_path.buffer));
@@ -687,7 +687,7 @@ zrtp_status_t zrtp_cache_user_down()
 	 */
 	pos = ftell(cache_file);
 	
-	count = 0;
+	count = 0; dirty_count = 0;
 	fwrite(&count, sizeof(count), 1, cache_file);
 	
 	mlist_for_each(node, &mitmcache_head) {
@@ -695,6 +695,7 @@ zrtp_status_t zrtp_cache_user_down()
 		/* Store dirty values only. */
 		if (g_needs_rewriting || elem->_is_dirty) {
 //			printf("zrtp_cache_user_down: Store MiTM elem index=%u, not modified.\n", elem->_index);
+			dirty_count++;
 			if (zrtp_status_ok != flush_elem_(elem, cache_file, 1)) {
 				ZRTP_DOWN_CACHE_RETURN(zrtp_status_write_fail, cache_file);
 			}
@@ -710,7 +711,8 @@ zrtp_status_t zrtp_cache_user_down()
 		ZRTP_DOWN_CACHE_RETURN(zrtp_status_write_fail, cache_file);
 	}
 
-	ZRTP_LOG(3,(_ZTU_,"\t%u MiTM cache entries have been stored successfully.\n",zrtp_ntoh32(count)));
+	if (dirty_count > 0)
+		ZRTP_LOG(3,(_ZTU_,"\t%u out of %u MiTM cache entries have been flushed successfully.\n", dirty_count, zrtp_ntoh32(count)));
 	
 	/*
 	 * Store regular secrets. Format: <secrets count>, <secrets' data>
@@ -723,7 +725,7 @@ zrtp_status_t zrtp_cache_user_down()
 	
 	fseek(cache_file, pos, SEEK_SET);
 	
-	count = 0;
+	count = 0; dirty_count=0;
 	fwrite(&count, sizeof(count), 1, cache_file);
 	
 	mlist_for_each(node, &cache_head) {
@@ -732,6 +734,7 @@ zrtp_status_t zrtp_cache_user_down()
 		/* Store dirty values only. */
 		if (g_needs_rewriting || elem->_is_dirty) {
 //			printf("zrtp_cache_user_down: Store RS elem index=%u, not modified.\n", elem->_index);
+			dirty_count++;
 			if (zrtp_status_ok != flush_elem_(elem, cache_file, 0)) {
 				ZRTP_DOWN_CACHE_RETURN(zrtp_status_write_fail, cache_file);
 			}
@@ -747,7 +750,9 @@ zrtp_status_t zrtp_cache_user_down()
 	if (fwrite(&count, sizeof(count), 1, cache_file) != 1) {
 		ZRTP_DOWN_CACHE_RETURN(zrtp_status_write_fail, cache_file);
 	}
-	ZRTP_LOG(3,(_ZTU_,"\t%u regular cache entries have been stored successfully.\n", zrtp_ntoh32(count)));
+
+	if (dirty_count > 0)
+		ZRTP_LOG(3,(_ZTU_,"\t%u out of %u regular cache entries have been flushed successfully.\n", dirty_count, zrtp_ntoh32(count)));
 	
 	g_needs_rewriting = 0;
 
@@ -946,13 +951,10 @@ void zrtp_def_cache_foreach( zrtp_global_t *global,
 /*----------------------------------------------------------------------------*/
 zrtp_status_t zrtp_def_cache_store(zrtp_global_t *zrtp)
 {
-	ZRTP_LOG(3,(_ZTU_,"Storing ZRTP Cache...\n"));
-
 	zrtp_mutex_lock(def_cache_protector);
 	zrtp_cache_user_down();
 	zrtp_mutex_unlock(def_cache_protector);
 	
-	ZRTP_LOG(3,(_ZTU_,"Storing ZRTP Cache - DONE.\n"));
 	return zrtp_status_ok;
 }
 
