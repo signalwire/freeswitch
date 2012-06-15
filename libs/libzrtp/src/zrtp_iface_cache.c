@@ -82,7 +82,9 @@ void zrtp_def_cache_down()
 	if (inited) {
 		mlist_t *node = NULL, *tmp = NULL;				
 		
-		zrtp_cache_user_down();
+		/* If automatic cache flushing enabled we don't need to store it in a disk as it should be already in sync. */
+		if (!zrtp->cache_auto_store)
+			zrtp_cache_user_down();
 
 		mlist_for_each_safe(node, tmp, &cache_head) {
 			zrtp_sys_free(mlist_get_struct(zrtp_cache_elem_t, _mlist, node));
@@ -119,6 +121,8 @@ zrtp_status_t zrtp_def_cache_set_verified( const zrtp_stringn_t* one_ZID,
 	}
 	zrtp_mutex_unlock(def_cache_protector);
 	
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
+
 	return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
 
@@ -210,6 +214,8 @@ static zrtp_status_t cache_put( const zrtp_stringn_t* one_ZID,
 		new_elem->_is_dirty = 1;
 	} while (0);
 	zrtp_mutex_unlock(def_cache_protector);
+
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
 
     return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
@@ -304,6 +310,8 @@ zrtp_status_t zrtp_def_cache_set_presh_counter( const zrtp_stringn_t* one_zid,
 	}
 	zrtp_mutex_unlock(def_cache_protector);
 	
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
+
 	return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
 
@@ -783,6 +791,8 @@ static zrtp_status_t put_name( const zrtp_stringn_t* one_ZID,
 	} while (0);
 	zrtp_mutex_unlock(def_cache_protector);
 	
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
+
 	return s;
 }
 
@@ -872,6 +882,8 @@ zrtp_status_t zrtp_def_cache_reset_since( const zrtp_stringn_t* one_zid,
 	}
 	zrtp_mutex_unlock(def_cache_protector);
 	
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
+
 	return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
 

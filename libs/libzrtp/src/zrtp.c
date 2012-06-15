@@ -34,6 +34,8 @@ void zrtp_config_defaults(zrtp_config_t* config)
 	ZSTR_SET_EMPTY(config->def_cache_path);
 	zrtp_zstrncpyc(ZSTR_GV(config->def_cache_path), "./zrtp_def_cache_path.dat", 25);
 
+	config->cache_auto_store = 1; /* cache auto flushing should be enabled by default */
+
 #if (defined(ZRTP_USE_BUILTIN_CACHE) && (ZRTP_USE_BUILTIN_CACHE == 1))
 	config->cb.cache_cb.on_init					= zrtp_def_cache_init;
 	config->cb.cache_cb.on_down					= zrtp_def_cache_down;
@@ -81,6 +83,7 @@ zrtp_status_t zrtp_init(zrtp_config_t* config, zrtp_global_t** zrtp)
 	ZSTR_SET_EMPTY(new_zrtp->def_cache_path);
 	zrtp_zstrcpy(ZSTR_GV(new_zrtp->def_cache_path), ZSTR_GV(config->def_cache_path));
 	zrtp_memcpy(&new_zrtp->cb, &config->cb, sizeof(zrtp_callback_t));
+	new_zrtp->cache_auto_store = config->cache_auto_store;
         
 	ZSTR_SET_EMPTY(new_zrtp->client_id);
 	zrtp_memset(new_zrtp->client_id.buffer, ' ', sizeof(zrtp_client_id_t));

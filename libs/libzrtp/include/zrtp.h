@@ -161,6 +161,17 @@ typedef struct zrtp_config_t
 
 	/** @brief Path to zrtp cache file (set if you use built-in realization) */
 	zrtp_string256_t		def_cache_path;
+
+	/**
+	 * @brief Flush the cache automatically
+	 * Set to 1 if you want libzrtp to flush the cache to the persistent storage
+	 * right after it is modified. If cache_auto_store is 0, libzrtp will flush
+	 * the cache on going down only and the app is responsible for storing the
+	 * cache in unexpected situations. Enabled by default.
+	 *
+	 * @sa zrtp_def_cache_store()
+	 */
+	unsigned				cache_auto_store;
 } zrtp_config_t;
 
 /**
