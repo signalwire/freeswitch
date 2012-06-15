@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <string.h>
- #include <stdio.h>
+#include <stdio.h>
 
 #include "zrtp.h"
 #include "cmockery/cmockery.h"
@@ -109,7 +109,7 @@ void cache_init_store_empty_test() {
  * Add few entries to the empty cache, flush it and then load again. Check if
  * all the entries were restored successfully.
  */
-void cache_add2empty_test() {	
+void cache_add2empty_test() {
 	zrtp_status_t status;	
 	int intres;
 	
@@ -146,8 +146,8 @@ void cache_save_unchanged_test() {
 	
 	/*
 	 * TEST: now let's store the cache making no changes to it.
-	  * After opening it should include all the secrets untouched.
-	*/
+	 * After opening it should include all the secrets untouched.
+	 */
 	
 	printf("==> And the cache again, it should contain all the stored values.\n");
 	

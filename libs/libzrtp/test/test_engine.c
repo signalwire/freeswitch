@@ -132,7 +132,6 @@ static int on_send_packet(const zrtp_stream_t* ctx, char* message, unsigned int 
 		zrtp_test_id_t *stream_id = zrtp_stream_get_userdata(ctx);
 		zrtp_test_stream_t *stream = zrtp_test_stream_by_id(*stream_id);
 		if (stream) {
-			printf("trace>>> PUSH from stream ID=%u\n", stream->id);
 			zrtp_test_queue_push(stream->output, elem);
 			return zrtp_status_ok;
 		} else {
@@ -168,24 +167,8 @@ static zrtp_test_stream_t *get_stream_to_process_(zrtp_endpoint_t *endpoint) {
 	j = (unsigned)i;
 	j = j % streams_count;
 
-	printf("trace>>> CHOOSE stream Endpoint=%u IDX=%u ID=%u\n", endpoint->id,  j, all_streams[j]);
+	//printf("trace>>> CHOOSE stream Endpoint=%u IDX=%u ID=%u\n", endpoint->id,  j, all_streams[j]);
 	return zrtp_test_stream_by_id(all_streams[j]);
-
-
-//	unsigned is_found = 0;
-//	zrtp_test_id_t result, left;
-//	for (i=0; i<streams_count; i++) {
-//		result = all_streams[i];
-//		if (result > stream_id) {
-//			is_found = 1;
-//			break;
-//		} else {
-//			left = result;
-//		}
-//	}
-//
-//	printf("TRACE>>> choose stream ID=%u\n", is_found ? result : left);
-//	return zrtp_test_stream_by_id(is_found ? result : left);
 }
 
 
