@@ -14,7 +14,7 @@ static sng_mg_event_interface_t sng_event;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown);
-SWITCH_MODULE_DEFINITION(mod_megaco, mod_megaco_load, mod_megaco_shutdown, NULL);
+SWITCH_MODULE_DEFINITION(mod_media_gateway, mod_media_gateway_load, mod_media_gateway_shutdown, NULL);
 
 SWITCH_STANDARD_API(megaco_function)
 {
@@ -51,7 +51,7 @@ static switch_status_t list_profiles(const char *line, const char *cursor, switc
 	return status;
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load)
+SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 {
 	switch_api_interface_t *api_interface;
 	
@@ -93,7 +93,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load)
 	return sng_mgco_init(&sng_event);
 }
 
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown)
 {
 	sng_mgco_stack_shutdown();
 
