@@ -167,7 +167,7 @@ typedef struct zrtp_config_t
  * \brief zrtp stream information structure
  * \ingroup zrtp_main_management
  * 
- * libzrtp, since v0.80 takes data incapsulating approach and hides all private date inside 
+ * libzrtp, since v0.80 takes data encapsulating approach and hides all private data inside
  * zrtp_stream_t structure. Developers shouldn't access them directly. \ref zrtp_stream_get() should 
  * be used instead to fill zrtp_stream_info_t structure. zrtp_stream_info_t contains all needed 
  * information in safe and easy to use form.
