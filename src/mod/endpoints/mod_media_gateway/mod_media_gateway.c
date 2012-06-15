@@ -12,8 +12,8 @@
 struct megaco_globals megaco_globals;
 static sng_mg_event_interface_t sng_event;
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_megaco_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_megaco_shutdown);
+SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown);
 SWITCH_MODULE_DEFINITION(mod_media_gateway, mod_media_gateway_load, mod_media_gateway_shutdown, NULL);
 
 SWITCH_STANDARD_API(megaco_function)
