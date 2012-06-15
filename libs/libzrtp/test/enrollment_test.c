@@ -54,9 +54,12 @@ static void enrollment_test() {
 	zrtp_test_id_t pbx2alice_stream = zrtp_test_session_get_stream_by_idx(g_pbxa_sid, 0);
 	assert_true(zrtp_stream_did_event_receive(pbx2alice_stream, ZRTP_EVENT_NEW_USER_ENROLLED));
 
+	/* Confirm enrollment at the PBX side */
+	s = zrtp_register_with_trusted_mitm(zrtp_stream_for_test_stream(alice2pbx_stream));
+	assert_int_equal(zrtp_status_ok, s);
+
 	/* Clean-up */
 	cleanup_alice_pbx_bob_setup();
-
 
 	/**************************************************************************
 	 * Try to make one more enrollment call. This time it should say "Already enrolled"
@@ -87,8 +90,6 @@ static void enrollment_test() {
 
 	// TODO: check if we have PBX secret cached
 	// TODO: test zrtp_is_user_enrolled()
-
-	// TODO: use zrtp_register_with_trusted_mitm()
 }
 
 int main(void) {
