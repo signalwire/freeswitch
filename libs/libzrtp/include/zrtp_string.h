@@ -11,7 +11,6 @@
 #define __ZRTP_STRING_H__
 
 #include "zrtp_config.h"
-#include "zrtp_types.h"
 
 /**
  * \file zrtp_strings.h
