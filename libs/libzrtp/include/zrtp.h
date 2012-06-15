@@ -956,6 +956,8 @@ int zrtp_entropy_add(zrtp_global_t* zrtp, const unsigned char *buffer, uint32_t 
  */
 int zrtp_randstr(zrtp_global_t* zrtp, unsigned char *buffer, uint32_t length);
 
+int zrtp_randstr2(unsigned char *buffer, uint32_t length);
+
 /* \} */
 
 #if defined(__cplusplus)

@@ -343,3 +343,9 @@ int zrtp_randstr(zrtp_global_t* zrtp, unsigned char *buffer, uint32_t length)
 	
     return generated;
 }
+
+int zrtp_randstr2(unsigned char *buffer, uint32_t length) {
+	zrtp_global_t zrtp;
+	zrtp.rand_initialized = 0;
+	return zrtp_randstr(&zrtp, buffer, length);
+}
