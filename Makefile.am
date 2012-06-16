@@ -420,7 +420,7 @@ build/print_git_revision: build/print_git_revision.c
 
 src/include/switch_version.h: src/include/switch_version.h.in Makefile build/print_git_revision $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@cat $< > $@; \
-	if [ -d .git ]; then \
+	if [ -d .git ] && [ -n "$$(which git)" ]; then \
 	  xver="$$(./build/print_git_revision)"; \
 	  sed -e "/#define *SWITCH_VERSION_REVISION/{s/\"\([^\"]*\)\"/\"\1$$xver\"/}" \
 	    $< > $@; \
