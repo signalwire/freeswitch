@@ -3093,12 +3093,11 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 #ifdef BIT_64		
 		len = len + sprintf(buf + len, "<mem_size> %d </mem_size>\n", cfm.t.ssta.s.genSta.memSize);
 		len = len + sprintf(buf + len, " <allocated_mem_size> %d </allocated_mem_size>\n", cfm.t.ssta.s.genSta.memAlloc);
-		len = len + sprintf(buf + len, " <num_of_cluster> %d </num_of_cluster>\n", cfm.t.ssta.s.genSta.nmbClusters);
 #else
 		len = len + sprintf(buf + len, "<mem_size> %ld </mem_size>\n", cfm.t.ssta.s.genSta.memSize);
 		len = len + sprintf(buf + len, " <allocated_mem_size> %ld </allocated_mem_size>\n", cfm.t.ssta.s.genSta.memAlloc);
-		len = len + sprintf(buf + len, " <num_of_cluster> %ld </num_of_cluster>\n", cfm.t.ssta.s.genSta.nmbClusters);
 #endif
+		len = len + sprintf(buf + len, " <num_of_cluster> %d </num_of_cluster>\n", cfm.t.ssta.s.genSta.nmbClusters);
 		len = len + sprintf(buf + len, " <num_of_peers> %d </num_of_peers>\n", cfm.t.ssta.s.genSta.nmbPeers);
 		len = len + sprintf(buf + len, " <num_of_interfaces> %d </num_of_interfaces>\n", cfm.t.ssta.s.genSta.nmbIntf);
 		len = len + sprintf(buf + len, "</m2ua_gen>\n");
@@ -3171,7 +3170,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 #ifdef BIT_64							 
 							 len = len + sprintf(buf + len, " <assoc_id> %d </assoc_id>\n", (int64_t) cfm.t.ssta.s.peerSta.assocSta.spAssocId);
 #else
-							 len = len + sprintf(buf + len, " <assoc_id> %ld </assoc_id>\n", (int64_t) cfm.t.ssta.s.peerSta.assocSta.spAssocId);
+							 len = len + sprintf(buf + len, " <assoc_id> %lld </assoc_id>\n", (int64_t) cfm.t.ssta.s.peerSta.assocSta.spAssocId);
 #endif
 							 len = len + sprintf(buf + len, " <connected_status> %s </connected_status>\n",(cfm.t.ssta.s.peerSta.assocSta.connected)?"CONNECTED":"NOT CONNECTED");
 							 len = len + sprintf(buf + len, " <flow_cntrl_progress> %d </flow_cntrl_progress>\n",cfm.t.ssta.s.peerSta.assocSta.flcInProg);
@@ -3201,7 +3200,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 #ifdef BIT_64							 
 				 len = len + sprintf(buf + len," <end_point_id> %d </end_point_id>\n", (int64_t) cfm.t.ssta.s.sctSapSta.spEndpId);
 #else
-				 len = len + sprintf(buf + len," <end_point_id> %ld </end_point_id>\n", (int64_t) cfm.t.ssta.s.sctSapSta.spEndpId);
+				 len = len + sprintf(buf + len," <end_point_id> %lld </end_point_id>\n", (int64_t) cfm.t.ssta.s.sctSapSta.spEndpId);
 #endif
 				 len = len + sprintf(buf + len," <nmb_of_retry_attemp> %d </nmb_of_retry_attemp>\n", cfm.t.ssta.s.sctSapSta.nmbPrimRetry);
 				 len = len + sprintf(buf + len, "</m2ua_sctp_sap>\n");
