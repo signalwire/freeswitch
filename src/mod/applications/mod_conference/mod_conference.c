@@ -1433,7 +1433,14 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		want_refresh = 0;
 
 		for (imember = conference->members; imember; imember = imember->next) {
-			switch_channel_t *ichannel = switch_core_session_get_channel(imember->session);
+			switch_core_session_t *isession = imember->session;
+			switch_channel_t *ichannel;
+
+			if (!isession || !switch_core_session_read_lock(isession)) {
+				continue;
+			}
+
+			ichannel = switch_core_session_get_channel(imember->session);
 
 			if (switch_channel_test_flag(ichannel, CF_VIDEO_REFRESH_REQ)) {
 				want_refresh++;
@@ -1444,6 +1451,8 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				has_vid++;
 				switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
+
+			switch_core_session_rwunlock(isession);
 		}
 		
 		if (want_refresh) {
