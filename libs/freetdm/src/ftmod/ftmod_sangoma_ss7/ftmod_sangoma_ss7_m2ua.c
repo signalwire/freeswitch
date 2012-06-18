@@ -72,25 +72,94 @@ static int ftmod_ss7_sctp_shutdown(void);
 static int ftmod_ss7_m2ua_shutdown(void);
 static int ftmod_ss7_tucl_shutdown(void);
 
-ftdm_status_t sng_m2ua_init(void); 
-ftdm_status_t sng_m2ua_cfg(void);
+
+/******************************************************************************/
+ftdm_status_t ftmod_ss7_m2ua_init(void) 
+{
+	/****************************************************************************************************/
+	if (sng_isup_init_nif()) {
+		ftdm_log (FTDM_LOG_ERROR , "Failed to start NIF\n");
+		return FTDM_FAIL;
+	} else {
+		ftdm_log (FTDM_LOG_INFO ,"Started NIF!\n");
+	}
+	/****************************************************************************************************/
+
+	if (sng_isup_init_m2ua()) {
+		ftdm_log (FTDM_LOG_ERROR ,"Failed to start M2UA\n");
+		return FTDM_FAIL;
+	} else {
+		ftdm_log (FTDM_LOG_INFO ,"Started M2UA!\n");
+	}
+	/****************************************************************************************************/
+
+	if (sng_isup_init_sctp()) {
+		ftdm_log (FTDM_LOG_ERROR ,"Failed to start SCTP\n");
+		return FTDM_FAIL;
+	} else {
+		ftdm_log (FTDM_LOG_INFO ,"Started SCTP!\n");
+	}
+	/****************************************************************************************************/
+
+	if (sng_isup_init_tucl()) {
+		ftdm_log (FTDM_LOG_ERROR ,"Failed to start TUCL\n");
+		return FTDM_FAIL;
+	} else {
+		ftdm_log (FTDM_LOG_INFO ,"Started TUCL!\n");
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_TUCL_PRESENT);
+	}
+	/****************************************************************************************************/
+
+	if(ftmod_tucl_gen_config()){
+		ftdm_log (FTDM_LOG_ERROR ,"TUCL GEN configuration: NOT OK\n");
+		return FTDM_FAIL;
+	} else {
+		ftdm_log (FTDM_LOG_INFO ,"TUCL GEN configuration: OK\n");
+	}
+	/****************************************************************************************************/
+	if(ftmod_sctp_gen_config()){
+		ftdm_log (FTDM_LOG_ERROR ,"SCTP GEN configuration: NOT OK\n");
+		return FTDM_FAIL;
+	} else {
+		ftdm_log (FTDM_LOG_INFO ,"SCTP GEN configuration: OK\n");
+	}
+	/****************************************************************************************************/
+	if(ftmod_m2ua_gen_config()) {
+		ftdm_log (FTDM_LOG_ERROR ,"M2UA General configuration: NOT OK\n");
+		return FTDM_FAIL;
+	}else {
+		ftdm_log (FTDM_LOG_INFO ,"M2UA General configuration: OK\n");
+	}
+	/****************************************************************************************************/
+	if(ftmod_nif_gen_config()){
+		ftdm_log (FTDM_LOG_ERROR ,"NIF General configuration: NOT OK\n");
+		return FTDM_FAIL;
+	}else {
+		ftdm_log (FTDM_LOG_INFO ,"NIF General configuration: OK\n");
+	}
+	/****************************************************************************************************/
+
+
+	return FTDM_SUCCESS;
+}
 
 /******************************************************************************/
 void ftmod_ss7_m2ua_free()
 {
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_M2UA_STARTED)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_M2UA_PRESENT)) {
 		ftmod_ss7_m2ua_shutdown();
 		sng_isup_free_m2ua();
 	}
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SCTP_STARTED)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SCTP_PRESENT)) {
 		ftmod_ss7_sctp_shutdown();
 		sng_isup_free_sctp();
 	}
-	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_TUCL_STARTED)) {
+	if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_TUCL_PRESENT)) {
 		ftmod_ss7_tucl_shutdown();
 		sng_isup_free_tucl();
 	}
 }
+
 /******************************************************************************/
 static int ftmod_ss7_tucl_shutdown()
 {
@@ -181,86 +250,12 @@ static int ftmod_ss7_sctp_shutdown()
 
 /******************************************************************************/
 
+
+
 ftdm_status_t ftmod_ss7_m2ua_cfg(void)
-{
-	if(FTDM_SUCCESS != sng_m2ua_init()){
-		ftdm_log (FTDM_LOG_ERROR, " sng_m2ua_init FAILED \n");
-		return FTDM_FAIL;
-	}
-	
-	if(FTDM_SUCCESS != sng_m2ua_cfg()){
-		ftdm_log (FTDM_LOG_ERROR, " sng_m2ua_cfg FAILED \n");
-		return FTDM_FAIL;
-	}
-
-	/* SET STARTED FLAGS */
-	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_NIF_STARTED);
-	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_M2UA_STARTED);
-	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SCTP_STARTED);
-	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_TUCL_STARTED);
-
-	return FTDM_SUCCESS;
-}
-		
-/******************************************************************************/
-
-ftdm_status_t sng_m2ua_init(void) 
-{
-	if (sng_isup_init_nif()) {
-		ftdm_log (FTDM_LOG_ERROR , "Failed to start NIF\n");
-		return FTDM_FAIL;
-	} else {
-		ftdm_log (FTDM_LOG_INFO ,"Started NIF!\n");
-	}
-
-	if (sng_isup_init_m2ua()) {
-		ftdm_log (FTDM_LOG_ERROR ,"Failed to start M2UA\n");
-		return FTDM_FAIL;
-	} else {
-		ftdm_log (FTDM_LOG_INFO ,"Started M2UA!\n");
-	}
-
-	if (sng_isup_init_sctp()) {
-		ftdm_log (FTDM_LOG_ERROR ,"Failed to start SCTP\n");
-		return FTDM_FAIL;
-	} else {
-		ftdm_log (FTDM_LOG_INFO ,"Started SCTP!\n");
-	}
-
-	if (sng_isup_init_tucl()) {
-		ftdm_log (FTDM_LOG_ERROR ,"Failed to start TUCL\n");
-		return FTDM_FAIL;
-	} else {
-		ftdm_log (FTDM_LOG_INFO ,"Started TUCL!\n");
-	}
-
-	return FTDM_SUCCESS;
-}
-
-/****************************************************************************************************/
-
-ftdm_status_t sng_m2ua_cfg(void)
 {
 	int x=0;
 
-	/****************************************************************************************************/
-	/* TUCL */
-	if(ftmod_tucl_gen_config()){
-		ftdm_log (FTDM_LOG_ERROR ,"TUCL GEN configuration: NOT OK\n");
-		return FTDM_FAIL;
-	} else {
-		ftdm_log (FTDM_LOG_INFO ,"TUCL GEN configuration: OK\n");
-	}
-
-	/****************************************************************************************************/
-	/* SCTP */
-	if(ftmod_sctp_gen_config()){
-		ftdm_log (FTDM_LOG_ERROR ,"SCTP GEN configuration: NOT OK\n");
-		return FTDM_FAIL;
-	} else {
-		ftdm_log (FTDM_LOG_INFO ,"SCTP GEN configuration: OK\n");
-	}
-	/****************************************************************************************************/
 	/* SCTP configuration */
 	if(ftmod_cfg_sctp()){
 		ftdm_log (FTDM_LOG_ERROR ,"SCTP Configuration : NOT OK\n");
@@ -268,15 +263,7 @@ ftdm_status_t sng_m2ua_cfg(void)
 	} else {
 		ftdm_log (FTDM_LOG_INFO ,"SCTP Configuration : OK\n");
 	}
-	/****************************************************************************************************/
-	/* M2UA configurations */
 
-	if(ftmod_m2ua_gen_config()) {
-		ftdm_log (FTDM_LOG_ERROR ,"M2UA General configuration: NOT OK\n");
-		return FTDM_FAIL;
-	}else {
-		ftdm_log (FTDM_LOG_INFO ,"M2UA General configuration: OK\n");
-	}
 	/****************************************************************************************************/
 	/* M2UA SCTP SAP configurations */
 	x = 1;
@@ -314,17 +301,9 @@ ftdm_status_t sng_m2ua_cfg(void)
 				ftdm_log (FTDM_LOG_INFO ,"M2UA DLSAP[%d] configuration: OK\n", x);
 			}
 		} /* END - SNGSS7_CONFIGURED */
+		g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags |= SNGSS7_CONFIGURED;
 		x++;
 	}/* END - M2UA Interfaces for loop*/
-/****************************************************************************************************/
-	/* NIF */
-	if(ftmod_nif_gen_config()){
-		ftdm_log (FTDM_LOG_ERROR ,"NIF General configuration: NOT OK\n");
-		return FTDM_FAIL;
-	}else {
-		ftdm_log (FTDM_LOG_INFO ,"NIF General configuration: OK\n");
-	}
-
 /****************************************************************************************************/
 	/* NIF DLSAP */
 
@@ -339,10 +318,16 @@ ftdm_status_t sng_m2ua_cfg(void)
 				ftdm_log (FTDM_LOG_INFO ,"NIF DLSAP[%d] configuration: OK\n", x);
 			}
 		}
+		g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags |= SNGSS7_CONFIGURED;
 		x++;
 	}
 
-/****************************************************************************************************/
+	/* successfully started all the layers , not SET STARTED FLAGS */
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_NIF_STARTED);
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_M2UA_STARTED);
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_SCTP_STARTED);
+	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_TUCL_STARTED);
+
 
 	return 0;
 }
@@ -524,16 +509,22 @@ static int ftmod_sctp_gen_config(void)
 static int ftmod_cfg_sctp(void)
 {
 	int x=0;
-	for (x=1; g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0; x++) {
-		if (!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED)) {
-			
+
+	x = 1;
+	while(x<MAX_SCTP_LINK){
+
+		if((g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0) && 
+				(!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED))) {
+
 			if (  ftmod_sctp_config(x) == FTDM_FAIL) {
 				SS7_CRITICAL("SCTP %d configuration FAILED!\n", x);
 				return FTDM_FAIL;
 			} else {
 				SS7_INFO("SCTP %d configuration DONE!\n", x);
 			}
+			g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags |= SNGSS7_CONFIGURED;
 		}
+		x++;
 	}
 	return FTDM_SUCCESS;
 }
@@ -1214,7 +1205,7 @@ int ftmod_ss7_m2ua_start(void){
 	x = 1;
 	while(x<MAX_SCTP_LINK){
 		if((g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0) && 
-				(!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED))) {
+				(!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_ACTIVE))) {
 
 			/* Send a control request to bind the TSAP between SCTP and TUCL */
 			if(ftmod_sctp_tucl_tsap_bind(x)) {
@@ -1223,6 +1214,7 @@ int ftmod_ss7_m2ua_start(void){
 			} else {
 				ftdm_log (FTDM_LOG_INFO ,"\nControl request to bind TSAP[%d] of SCTP and TUCL: OK\n", x);
 			}
+			g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags |= SNGSS7_ACTIVE;
 		}
 		x++;
 	}
@@ -1232,13 +1224,14 @@ int ftmod_ss7_m2ua_start(void){
 	x = 1;
 	while(x<MW_MAX_NUM_OF_INTF){
 		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) && 
-				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_ACTIVE))) {
 			if(ftmod_m2ua_sctp_sctsap_bind(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"Control request to bind SCTSAP[%d] of M2UA and SCTP : NOT OK\n", x);
 				return 1;
 			} else {
 				ftdm_log (FTDM_LOG_INFO ,"Control request to bind SCTSAP[%d] of M2UA and SCTP: OK\n", x);
 			}
+			g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags |= SNGSS7_ACTIVE;
 		}
 		x++;
 	}/* END - M2UA Interfaces while loop*/
@@ -1247,7 +1240,7 @@ int ftmod_ss7_m2ua_start(void){
 	x = 1;
 	while(x<MW_MAX_NUM_OF_INTF){
 		if ((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0) && 
-				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED))) {
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_ACTIVE))) {
 			/* Send a control request to bind the DLSAP between NIF, M2UA and MTP-2 */
 			if(ftmod_nif_m2ua_dlsap_bind(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"Control request to bind DLSAP[%d] between NIF and M2UA: NOT OK\n", x);
@@ -1261,6 +1254,7 @@ int ftmod_ss7_m2ua_start(void){
 			}else {
 				ftdm_log (FTDM_LOG_INFO ,"Control request to bind DLSAP[%d] between NIF and MTP2 : OK\n", x);
 			}
+			g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags |= SNGSS7_ACTIVE;
 		}
 		x++;
 	}/* END - NIF Interfaces for loop*/
@@ -1270,7 +1264,7 @@ int ftmod_ss7_m2ua_start(void){
 	x = 1;
 	while(x<MW_MAX_NUM_OF_INTF){
 		if ((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) && 
-				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].end_point_opened))) {
 			/* Send a control request to open endpoint */
 			if(ftmod_open_endpoint(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"ftmod_open_endpoint FAIL  \n");
@@ -1278,6 +1272,7 @@ int ftmod_ss7_m2ua_start(void){
 			}else {
 				ftdm_log (FTDM_LOG_INFO ,"ftmod_open_endpoint SUCCESS  \n");
 			}
+			g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].end_point_opened = 0x01;
 		}
 		x++;
 	}
@@ -1288,7 +1283,7 @@ int ftmod_ss7_m2ua_start(void){
 	x = 1;
 	while (x < (MW_MAX_NUM_OF_PEER)) {
 		if ((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].id !=0) &&
-				((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].flags & SNGSS7_CONFIGURED)) && 
+				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].flags & SNGSS7_M2UA_INIT_ASSOC_DONE)) && 
 				(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].init_sctp_assoc)) {
 			if(ftmod_init_sctp_assoc(x)) {
 				ftdm_log (FTDM_LOG_ERROR ,"ftmod_init_sctp_assoc FAIL for peerId[%d] \n", x);
@@ -1296,12 +1291,13 @@ int ftmod_ss7_m2ua_start(void){
 			}else {
 				ftdm_log (FTDM_LOG_INFO ,"ftmod_init_sctp_assoc SUCCESS for peerId[%d] \n", x);
 			}
+			g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[x].flags |= SNGSS7_M2UA_INIT_ASSOC_DONE;
 		}
 		x++;
 	}
 
 
-
+	
 
 	return 0;
 }
@@ -1676,7 +1672,6 @@ int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm)
 	Pst pst;
 	sng_m2ua_cfg_t* 	 m2ua  = NULL; 
 	sng_m2ua_cluster_cfg_t*  clust = NULL; 
-	sng_m2ua_peer_cfg_t* 	 peer  = NULL; 
 
 	memset((U8 *)&pst, 0, sizeof(Pst));
 	memset((U8 *)&ssta, 0, sizeof(MwMgmt));
@@ -1714,8 +1709,7 @@ int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm)
                 }
           case STMWPEER:
                 {
-		   peer  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[id];
-                   ssta.t.ssta.id.peerId = peer->id ; /* peer Id */            
+                   ssta.t.ssta.id.peerId = id ; /* peer Id */            
                    break;
                 }
           case STMWCLUSTER:
