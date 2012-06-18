@@ -146,9 +146,6 @@ static int ftmod_ss7_parse_nif_interface(ftdm_conf_node_t *nif_interface)
 	/**************************************************************************/
 	} /* for (i = 0; i < num_parms; i++) */
 
-	/* default the interface to paused state */
-	sngss7_set_flag(&sng_nif, SNGSS7_PAUSED);
-
 	/* fill in the nif interface */
 	ftmod_ss7_fill_in_nif_interface(&sng_nif);
 
@@ -258,9 +255,6 @@ static int ftmod_ss7_parse_m2ua_interface(ftdm_conf_node_t *m2ua_interface)
 	} /* for (i = 0; i < num_parms; i++) */
 
 	sng_m2ua.nodeType = SNG_M2UA_NODE_TYPE_SGP;
-
-	/* default the interface to paused state */
-	sngss7_set_flag(&sng_m2ua, SNGSS7_PAUSED);
 
 	/* fill in the nif interface */
 	ftmod_ss7_fill_in_m2ua_interface(&sng_m2ua);
@@ -421,9 +415,6 @@ static int ftmod_ss7_parse_m2ua_peer_interface(ftdm_conf_node_t *m2ua_peer_inter
 	/**************************************************************************/
 	} /* for (i = 0; i < num_parms; i++) */
 
-	/* default the interface to paused state */
-	sngss7_set_flag(&sng_m2ua_peer, SNGSS7_PAUSED);
-
 	/* fill in the sng_m2ua_peer interface */
 	ftmod_ss7_fill_in_m2ua_peer_interface(&sng_m2ua_peer);
 
@@ -576,9 +567,6 @@ static int ftmod_ss7_parse_m2ua_clust_interface(ftdm_conf_node_t *m2ua_cluster_i
 	/**************************************************************************/
 	} /* for (i = 0; i < num_parms; i++) */
 
-	/* default the interface to paused state */
-	sngss7_set_flag(&sng_m2ua_cluster, SNGSS7_PAUSED);
-
 	/* fill in the sng_m2ua_peer interface */
 	ftmod_ss7_fill_in_m2ua_clust_interface(&sng_m2ua_cluster);
 
@@ -663,7 +651,7 @@ static int ftmod_ss7_parse_sctp_link(ftdm_conf_node_t *node)
 			t_link.id = atoi(param->val);
 			SS7_DEBUG("SCTP - Parsing <sng_sctp_interface> with id = %s\n", param->val);
 		}
-		else if (!strcasecmp(param->var, "src-addr")) {
+		else if (!strcasecmp(param->var, "address")) {
 			if (t_link.numSrcAddr < SCT_MAX_NET_ADDRS) {
 				t_link.srcAddrList[t_link.numSrcAddr+1] = iptoul (param->val);
 				t_link.numSrcAddr++;
@@ -671,7 +659,7 @@ static int ftmod_ss7_parse_sctp_link(ftdm_conf_node_t *node)
 			} else {
 				SS7_ERROR("SCTP - too many source address configured. dropping %s \n", param->val);
 			}
-		} else if (!strcasecmp(param->var, "src-port")) {
+		} else if (!strcasecmp(param->var, "source-port")) {
 			t_link.port = atoi(param->val);
 			SS7_DEBUG("SCTP - Parsing <sng_sctp_interface> with port = %s\n", param->val);
 		}
@@ -683,7 +671,6 @@ static int ftmod_ss7_parse_sctp_link(ftdm_conf_node_t *node)
 	g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].id 		= t_link.id;
 	g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].port   	= t_link.port;
 	strncpy((char*)g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].name, t_link.name, strlen(t_link.name) );
-	g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].flags		= 0;
 	g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].numSrcAddr = t_link.numSrcAddr;
 	for (i=1; i<=t_link.numSrcAddr; i++) {
 		g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[t_link.id].srcAddrList[i] = t_link.srcAddrList[i];

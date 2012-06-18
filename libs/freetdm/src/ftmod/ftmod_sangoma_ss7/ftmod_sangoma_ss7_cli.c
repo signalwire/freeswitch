@@ -3090,8 +3090,8 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<m2ua_gen>\n");
-		len = len + sprintf(buf + len, "<mem_size> %ld </mem_size>\n", cfm.t.ssta.s.genSta.memSize);
-		len = len + sprintf(buf + len, " <allocated_mem_size> %ld </allocated_mem_size>\n", cfm.t.ssta.s.genSta.memAlloc);
+		len = len + sprintf(buf + len, "<mem_size> %d </mem_size>\n", cfm.t.ssta.s.genSta.memSize);
+		len = len + sprintf(buf + len, " <allocated_mem_size> %d </allocated_mem_size>\n", cfm.t.ssta.s.genSta.memAlloc);
 		len = len + sprintf(buf + len, " <num_of_cluster> %d </num_of_cluster>\n", cfm.t.ssta.s.genSta.nmbClusters);
 		len = len + sprintf(buf + len, " <num_of_peers> %d </num_of_peers>\n", cfm.t.ssta.s.genSta.nmbPeers);
 		len = len + sprintf(buf + len, " <num_of_interfaces> %d </num_of_interfaces>\n", cfm.t.ssta.s.genSta.nmbIntf);
@@ -3102,7 +3102,9 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 	 x = 1;
 	 while(x<MW_MAX_NUM_OF_INTF){
 		 if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) &&
-				 (!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
+				 ((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_ACTIVE))) {
+
+			 memset((U8 *)&cfm, 0, sizeof(MwMgmt));
 
 			 len = len + sprintf(buf + len, "<m2ua_profile>\n");
 			 len = len + sprintf(buf + len, "<name> %s </name>\n", g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].name);
@@ -3120,6 +3122,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 				 len = len + sprintf(buf + len, "</m2ua_dlsap>\n");
 			 }
 
+			 memset((U8 *)&cfm, 0, sizeof(MwMgmt));
 			 if(ftmod_m2ua_ssta_req(STMWCLUSTER,g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].clusterId,&cfm)) {
 				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
 				 return FTDM_FAIL;
@@ -3137,34 +3140,47 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 				 len = len + sprintf(buf + len, "<num_active_peer> %d </num_active_peer>\n",cfm.t.ssta.s.clusterSta.nmbActPeer);
 
 				 len = len + sprintf(buf + len, "</m2ua_cluster>\n");
-			 }
 
-			 memcpy((U8 *)&rsp, &cfm, sizeof(MwMgmt));
+				 memset((U8 *)&rsp, 0, sizeof(MwMgmt));
+				 memcpy(&rsp, &cfm, sizeof(MwMgmt));
 
-			 /* loop through configured peers */
-			 for(idx = 0; idx < rsp.t.ssta.s.clusterSta.nmbPeer; idx++)
-			 {
-				 memset((U8 *)&cfm, 0, sizeof(MwMgmt));
 
-				 if(ftmod_m2ua_ssta_req(STMWPEER, rsp.t.ssta.s.clusterSta.peerSt[idx].peerId, &cfm)) {
-					 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
-					 return FTDM_FAIL;
-				 } else {
-					 len = len + sprintf(buf + len, "<m2ua_peer>\n");
-					 len = len + sprintf(buf + len, "<name> %s </name>\n",g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[rsp.t.ssta.s.clusterSta.peerSt[idx].peerId].name);
-					 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.peerSta.state));
-					 len = len + sprintf(buf + len, " <retry_count> %d </retry_count>\n",cfm.t.ssta.s.peerSta.retryCount);
-					 len = len + sprintf(buf + len, " <assoc_id> %ld </assoc_id>\n",cfm.t.ssta.s.peerSta.assocSta.spAssocId);
-					 len = len + sprintf(buf + len, " <connected_status> %s </connected_status>\n",(cfm.t.ssta.s.peerSta.assocSta.connected)?"CONNECTED":"NOT CONNECTED");
-					 len = len + sprintf(buf + len, " <flow_cntrl_progress> %d </flow_cntrl_progress>\n",cfm.t.ssta.s.peerSta.assocSta.flcInProg);
-					 len = len + sprintf(buf + len, " <flow_cntrl_level> %d </flow_cntrl_level>\n",cfm.t.ssta.s.peerSta.assocSta.flcLevel);
-					 len = len + sprintf(buf + len, " <hearbeat_status> %d </hearbeat_status>\n",cfm.t.ssta.s.peerSta.assocSta.sctpHBeatEnb);
-					 len = len + sprintf(buf + len, " <nmb_of_stream> %d </nmb_of_stream>\n",cfm.t.ssta.s.peerSta.assocSta.locOutStrms);
+				 /* loop through configured peers */
+				 for(idx = 0; idx < rsp.t.ssta.s.clusterSta.nmbPeer; idx++)
+				 {
+					 int peer_id = rsp.t.ssta.s.clusterSta.peerSt[idx].peerId;
+					 
+					 memset(&cfm, 0, sizeof(MwMgmt));
 
-					 len = len + sprintf(buf + len, "</m2ua_peer>\n");
+					 if(LMW_PEER_DOWN != rsp.t.ssta.s.clusterSta.peerSt[idx].peerState){
+
+						 if(ftmod_m2ua_ssta_req(STMWPEER, peer_id, &cfm)) {
+							 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+							 return FTDM_FAIL;
+						 } else {
+							 len = len + sprintf(buf + len, "<m2ua_peer>\n");
+							 len = len + sprintf(buf + len, "<name> %s </name>\n",g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[peer_id].name);
+							 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.peerSta.state));
+							 len = len + sprintf(buf + len, " <retry_count> %d </retry_count>\n",cfm.t.ssta.s.peerSta.retryCount);
+							 len = len + sprintf(buf + len, " <assoc_id> %d </assoc_id>\n",cfm.t.ssta.s.peerSta.assocSta.spAssocId);
+							 len = len + sprintf(buf + len, " <connected_status> %s </connected_status>\n",(cfm.t.ssta.s.peerSta.assocSta.connected)?"CONNECTED":"NOT CONNECTED");
+							 len = len + sprintf(buf + len, " <flow_cntrl_progress> %d </flow_cntrl_progress>\n",cfm.t.ssta.s.peerSta.assocSta.flcInProg);
+							 len = len + sprintf(buf + len, " <flow_cntrl_level> %d </flow_cntrl_level>\n",cfm.t.ssta.s.peerSta.assocSta.flcLevel);
+							 len = len + sprintf(buf + len, " <hearbeat_status> %d </hearbeat_status>\n",cfm.t.ssta.s.peerSta.assocSta.sctpHBeatEnb);
+							 len = len + sprintf(buf + len, " <nmb_of_stream> %d </nmb_of_stream>\n",cfm.t.ssta.s.peerSta.assocSta.locOutStrms);
+
+							 len = len + sprintf(buf + len, "</m2ua_peer>\n");
+						 }
+					 } else {
+							 len = len + sprintf(buf + len, "<m2ua_peer>\n");
+							 len = len + sprintf(buf + len, "<name> %s </name>\n",g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[peer_id].name);
+							 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_PEER_STATE(rsp.t.ssta.s.clusterSta.peerSt[idx].peerState));
+							 len = len + sprintf(buf + len, "</m2ua_peer>\n");
+					 }
 				 }
 			 }
 
+			 memset((U8 *)&cfm, 0, sizeof(MwMgmt));
 			 if(ftmod_m2ua_ssta_req(STMWSCTSAP,x,&cfm)) {
 				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
 				 return FTDM_FAIL;
@@ -3172,7 +3188,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 				 len = len + sprintf(buf + len, "<m2ua_sctp_sap>\n");
 				 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_SAP_STATE(cfm.t.ssta.s.sctSapSta.state));
 				 len = len + sprintf(buf + len," <end_point_open_state> %s </end_point_open_state>\n", (cfm.t.ssta.s.sctSapSta.endpOpen)?"END_POINT_OPENED_SUCCESSFULLY":"END_POINT_NOT_OPEN");
-				 len = len + sprintf(buf + len," <end_point_id> %ld </end_point_id>\n", cfm.t.ssta.s.sctSapSta.spEndpId);
+				 len = len + sprintf(buf + len," <end_point_id> %d </end_point_id>\n", cfm.t.ssta.s.sctSapSta.spEndpId);
 				 len = len + sprintf(buf + len," <nmb_of_retry_attemp> %d </nmb_of_retry_attemp>\n", cfm.t.ssta.s.sctSapSta.nmbPrimRetry);
 				 len = len + sprintf(buf + len, "</m2ua_sctp_sap>\n");
 			 }
@@ -3218,7 +3234,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 	x = 1;
 	while(x<MW_MAX_NUM_OF_INTF){
 		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) &&
-				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
+				((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_ACTIVE))) {
 
 			if(!strcasecmp(m2ua_profile_name, g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].name)){
 				found = 0x01;
@@ -3284,7 +3300,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 			len = len + sprintf(buf + len, "<name> %s </name>\n",g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[rsp.t.ssta.s.clusterSta.peerSt[idx].peerId].name);
 			len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.peerSta.state));
 			len = len + sprintf(buf + len, " <retry_count> %d </retry_count>\n",cfm.t.ssta.s.peerSta.retryCount);
-			len = len + sprintf(buf + len, " <assoc_id> %ld </assoc_id>\n",cfm.t.ssta.s.peerSta.assocSta.spAssocId);
+			len = len + sprintf(buf + len, " <assoc_id> %d </assoc_id>\n",cfm.t.ssta.s.peerSta.assocSta.spAssocId);
 			len = len + sprintf(buf + len, " <connected_status> %s </connected_status>\n",(cfm.t.ssta.s.peerSta.assocSta.connected)?"CONNECTED":"NOT CONNECTED");
 			len = len + sprintf(buf + len, " <flow_cntrl_progress> %d </flow_cntrl_progress>\n",cfm.t.ssta.s.peerSta.assocSta.flcInProg);
 			len = len + sprintf(buf + len, " <flow_cntrl_level> %d </flow_cntrl_level>\n",cfm.t.ssta.s.peerSta.assocSta.flcLevel);
@@ -3302,7 +3318,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 		len = len + sprintf(buf + len, "<m2ua_sctp_sap>\n");
 		len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_SAP_STATE(cfm.t.ssta.s.sctSapSta.state));
 		len = len + sprintf(buf + len," <end_point_open_state> %s </end_point_open_state>\n", (cfm.t.ssta.s.sctSapSta.endpOpen)?"END_POINT_OPENED_SUCCESSFULLY":"END_POINT_NOT_OPEN");
-		len = len + sprintf(buf + len," <end_point_id> %ld </end_point_id>\n", cfm.t.ssta.s.sctSapSta.spEndpId);
+		len = len + sprintf(buf + len," <end_point_id> %d </end_point_id>\n", cfm.t.ssta.s.sctSapSta.spEndpId);
 		len = len + sprintf(buf + len," <nmb_of_retry_attemp> %d </nmb_of_retry_attemp>\n", cfm.t.ssta.s.sctSapSta.nmbPrimRetry);
 		len = len + sprintf(buf + len, "</m2ua_sctp_sap>\n");
 	}
@@ -3341,8 +3357,8 @@ static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<sctp_gen>\n");
-		len = len + sprintf(buf + len, "<mem_size> %ld </mem_size>\n",cfm.t.ssta.s.genSta.memSize);
-		len = len + sprintf(buf + len, " <allocated_mem_size> %ld </allocated_mem_size>\n",cfm.t.ssta.s.genSta.memAlloc);
+		len = len + sprintf(buf + len, "<mem_size> %d </mem_size>\n",cfm.t.ssta.s.genSta.memSize);
+		len = len + sprintf(buf + len, " <allocated_mem_size> %d </allocated_mem_size>\n",cfm.t.ssta.s.genSta.memAlloc);
 		len = len + sprintf(buf + len, " <num_of_open_assoc> %d </num_of_open_assoc>\n",cfm.t.ssta.s.genSta.nmbAssoc);
 		len = len + sprintf(buf + len, " <num_of_open_end_points> %d </num_of_open_end_points>\n",cfm.t.ssta.s.genSta.nmbEndp);
 		len = len + sprintf(buf + len, " <num_of_lcl_addr_in_use> %d </num_of_lcl_addr_in_use>\n",cfm.t.ssta.s.genSta.nmbLocalAddr);
@@ -3379,7 +3395,7 @@ static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 	x = 1;
 	while(x<MAX_SCTP_LINK){
 		if((g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0) &&
-				(!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED))) {
+				((g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_ACTIVE))) {
 
 			len = len + sprintf(buf + len, "<sctp_profile>\n");
 
@@ -3438,7 +3454,7 @@ int get_assoc_resp_buf(char* buf,SbMgmt* cfm)
 	char *asciiAddr;
 	CmInetIpAddr ip;
 
-	len = len + sprintf(buf + len, " <assoc_id> %ld </assoc_id>\n", cfm->t.ssta.s.assocSta.assocId);
+	len = len + sprintf(buf + len, " <assoc_id> %d </assoc_id>\n", cfm->t.ssta.s.assocSta.assocId);
 	len = len + sprintf(buf + len, " <assoc_status> %s </assoc_status>\n", PRNT_SCTP_ASSOC_STATE(cfm->t.ssta.s.assocSta.assocState));
 	len = len + sprintf(buf + len, " <assoc_dst_port> %d </assoc_dst_port>\n", cfm->t.ssta.s.assocSta.dstPort);
 	len = len + sprintf(buf + len, " <assoc_src_port> %d </assoc_src_port>\n", cfm->t.ssta.s.assocSta.srcPort);
@@ -3558,7 +3574,7 @@ static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char
 	x = 1;
 	while(x<MAX_SCTP_LINK){
 		if((g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].id !=0) &&
-				(!(g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_CONFIGURED))) {
+				((g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].flags & SNGSS7_ACTIVE))) {
 			if(!strcasecmp(sctp_profile_name, g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[x].name)){
 				found = 0x01;
 				break;
@@ -3644,8 +3660,8 @@ static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<nif_gen>\n");
-		len = len + sprintf(buf + len, "<mem_size> %ld </mem_size>\n",cfm.t.ssta.s.genSta.memSize);
-		len = len + sprintf(buf + len, " <allocated_mem_size> %ld </allocated_mem_size>\n",cfm.t.ssta.s.genSta.memAlloc);
+		len = len + sprintf(buf + len, "<mem_size> %d </mem_size>\n",cfm.t.ssta.s.genSta.memSize);
+		len = len + sprintf(buf + len, " <allocated_mem_size> %d </allocated_mem_size>\n",cfm.t.ssta.s.genSta.memAlloc);
 		len = len + sprintf(buf + len, "</nif_gen>\n");
 	}
 
@@ -3653,7 +3669,7 @@ static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 	x = 1;
 	while(x<MW_MAX_NUM_OF_INTF){
 		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0) &&
-				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED))) {
+				((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_ACTIVE))) {
 
 			len = len + sprintf(buf + len, "<nif_profile>\n");
 
@@ -3664,7 +3680,7 @@ static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 				len = len + sprintf(buf + len, "<nif_dlsap>\n");
 				len = len + sprintf(buf + len," <m2ua_sap_state> %s </m2ua_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.m2uaState));
 				len = len + sprintf(buf + len," <mtp2_sap_state> %s </mtp2_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.mtp2State));
-				len = len + sprintf(buf + len," <nmb_of_retry> %ld </nmb_of_retry>\n", cfm.t.ssta.s.dlSapSta.nmbRetry);
+				len = len + sprintf(buf + len," <nmb_of_retry> %d </nmb_of_retry>\n", cfm.t.ssta.s.dlSapSta.nmbRetry);
 				len = len + sprintf(buf + len, "</nif_dlsap>\n");
 			}
 
@@ -3704,7 +3720,7 @@ static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char*
 	x = 1;
 	while(x<MW_MAX_NUM_OF_INTF){
 		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id !=0) &&
-				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_CONFIGURED))) {
+				((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].flags & SNGSS7_ACTIVE))) {
 
 			if(!strcasecmp(nif_profile_name, g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].name)){
 				found = 0x01;
@@ -3729,7 +3745,7 @@ static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char*
 		len = len + sprintf(buf + len, "<nif_dlsap>\n");
 		len = len + sprintf(buf + len," <m2ua_sap_state> %s </m2ua_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.m2uaState));
 		len = len + sprintf(buf + len," <mtp2_sap_state> %s </mtp2_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.mtp2State));
-		len = len + sprintf(buf + len," <nmb_of_retry> %ld </nmb_of_retry>\n", cfm.t.ssta.s.dlSapSta.nmbRetry);
+		len = len + sprintf(buf + len," <nmb_of_retry> %d </nmb_of_retry>\n", cfm.t.ssta.s.dlSapSta.nmbRetry);
 		len = len + sprintf(buf + len, "</nif_dlsap>\n");
 	}
 
@@ -3774,7 +3790,7 @@ static ftdm_status_t handle_show_m2ua_peer_status(ftdm_stream_handle_t *stream, 
 	x = 1;
 	while(x<MW_MAX_NUM_OF_INTF){
 		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) &&
-				(!(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_CONFIGURED))) {
+				((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_ACTIVE))) {
 
 			if(!strcasecmp(m2ua_profile_name, g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].name)){
 				found = 0x01;

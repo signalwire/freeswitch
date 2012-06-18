@@ -60,6 +60,7 @@ typedef struct sng_m2ua_cfg{
 	uint32_t    		 flags;
 	uint32_t    		 id;		/* ID */
 	uint8_t    		 nodeType; 	/*Node Type SG/ASP */
+	uint8_t    		 end_point_opened; /* flag to check is end-point already opened */	
 	uint16_t    		 clusterId;	/* idx to m2ua_cluster profile */
 }sng_m2ua_cfg_t;
 
@@ -122,6 +123,7 @@ int ftmod_ss7_m2ua_start(void);
 void ftmod_ss7_m2ua_free(void);
 
 ftdm_status_t ftmod_ss7_m2ua_cfg(void);
+ftdm_status_t ftmod_ss7_m2ua_init(void);
 
 int ftmod_sctp_ssta_req(int elemt, int id, SbMgmt* cfm);
 int ftmod_m2ua_ssta_req(int elemt, int id, MwMgmt* cfm);
