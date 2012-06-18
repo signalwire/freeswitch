@@ -3784,7 +3784,11 @@ static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char*
 		len = len + sprintf(buf + len, "<nif_dlsap>\n");
 		len = len + sprintf(buf + len," <m2ua_sap_state> %s </m2ua_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.m2uaState));
 		len = len + sprintf(buf + len," <mtp2_sap_state> %s </mtp2_sap_state>\n", PRNT_NIF_SAP_STATE(cfm.t.ssta.s.dlSapSta.mtp2State));
+#ifdef BIT_64
 		len = len + sprintf(buf + len," <nmb_of_retry> %d </nmb_of_retry>\n", cfm.t.ssta.s.dlSapSta.nmbRetry);
+#else
+		len = len + sprintf(buf + len," <nmb_of_retry> %ld </nmb_of_retry>\n", cfm.t.ssta.s.dlSapSta.nmbRetry);
+#endif
 		len = len + sprintf(buf + len, "</nif_dlsap>\n");
 	}
 
