@@ -157,7 +157,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 	switch_event_create_subclass(&event, SWITCH_EVENT_CLONE, NULL);
 	switch_assert(event);
 	
-	/* iterate through the hash, call callback, if callback is NULL or returns true, put the key on the list (event)
+	/* iterate through the hash, call callback, if callback returns true, put the key on the list (event)
 	   When done, iterate through the list deleting hash entries
 	 */
 	
@@ -165,7 +165,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 		const void *key;
 		void *val;
 		switch_hash_this(hi, &key, NULL, &val);
-		if (!callback || callback(key, val, pData)) {
+		if (callback(key, val, pData)) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 		}
 	}
@@ -179,40 +179,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 
 	switch_event_destroy(&event);
 	
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi_wrlock(switch_hash_t *hash, switch_hash_delete_callback_t callback, void *pData, switch_thread_rwlock_t *rwlock) 
-{
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
-	if (rwlock) {
-		switch_thread_rwlock_wrlock(rwlock);
-	}
-	
-	status = switch_core_hash_delete_multi(hash, callback, pData);
-
-	if (rwlock) {
-		switch_thread_rwlock_unlock(rwlock);
-	}
-
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi_locked(switch_hash_t *hash, switch_hash_delete_callback_t callback, void *pData, switch_mutex_t *mutex)
-{
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
-	if (mutex) {
-		switch_mutex_lock(mutex);
-	}
-	
-	status = switch_core_hash_delete_multi(hash, callback, pData);
-
-	if (mutex) {
-		switch_mutex_unlock(mutex);
-	}
-
 	return status;
 }
 

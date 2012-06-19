@@ -1277,7 +1277,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(_In_ switch_hash_
   \brief Delete data from a hash based on desired key
   \param hash the hash to delete from
   \param key the key from which to delete the data
-  \param rwlock optional rwlock to wrlock
+  \param mutex optional rwlock to wrlock
   \return SWITCH_STATUS_SUCCESS if the data is deleted
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_wrlock(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ switch_thread_rwlock_t *rwlock);
@@ -1289,26 +1289,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_wrlock(_In_ switch_hash_
   \return SWITCH_STATUS_SUCCESS if any data is deleted
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(_In_ switch_hash_t *hash, _In_ switch_hash_delete_callback_t callback, _In_opt_ void *pData);
-
-/*! 
-  \brief Delete data from a hash based on callback function
-  \param hash the hash to delete from
-  \param callback the function to call which returns SWITCH_TRUE to delete, SWITCH_FALSE to preserve
-  \param rwlock optional rwlock to wrlock
-  \return SWITCH_STATUS_SUCCESS if any data is deleted
-*/
-								
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi_wrlock(_In_ switch_hash_t *hash, _In_ switch_hash_delete_callback_t callback, _In_opt_ void *pData, _In_ switch_thread_rwlock_t *rwlock);
-
-/*! 
-  \brief Delete data from a hash based on callback function
-  \param hash the hash to delete from
-  \param callback the function to call which returns SWITCH_TRUE to delete, SWITCH_FALSE to preserve
-  \param mutex optional mutex to lock
-  \return SWITCH_STATUS_SUCCESS if any data is deleted
-*/
-						
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi_locked(_In_ switch_hash_t *hash, _In_ switch_hash_delete_callback_t callback, _In_opt_ void *pData, _In_ switch_mutex_t *mutex);
 
 /*! 
   \brief Retrieve data from a given hash
