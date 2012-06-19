@@ -3666,7 +3666,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sending pnp NOTIFY to %s\n", uri);
 
 			/* Grandstream REALLY uses a header called Message Body */
-			extra_headers = switch_mprintf("Message Body: %s\r\n", profile->pnp_prov_url);
+			extra_headers = switch_mprintf("MessageBody: %s\r\n", profile->pnp_prov_url);
 
 			switch_event_create(&params, SWITCH_EVENT_NOTIFY);
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile->pnp_notify_profile);
