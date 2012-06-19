@@ -96,6 +96,9 @@ switch_status_t sng_mgco_init(sng_mg_event_interface_t* event)
 /*****************************************************************************************************************/
 switch_status_t sng_mgco_stack_shutdown()
 {
+	/* disable MG logging */
+	mg_disable_logging();
+
 	/* shutdown MG */
 	sng_mgco_mg_shutdown();
 
@@ -1256,7 +1259,7 @@ int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm,  megaco_profile_t* mg_cfg, 
 		case STSERVER:
 			{
 				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.type =  CM_INET_IPV4ADDR_TYPE;
-				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.port = ntohl(ipAddr);
+				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.port = atoi(mg_cfg->port); 
 				if(ROK == cmInetAddr((S8*)mg_cfg->my_ipaddr, &ipAddr))
 				{
 					cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.address = ntohl(ipAddr);
