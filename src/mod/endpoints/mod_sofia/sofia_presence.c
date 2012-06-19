@@ -3654,6 +3654,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	if ( sip->sip_event && sip->sip_event->o_type && !strcasecmp(sip->sip_event->o_type, "ua-profile") && contact_host ) {
 		switch_event_t *params;
 		char *uri = NULL;
+		char *extra_headers = NULL;
 
 		if ( contact_port ) {
 			uri = switch_mprintf("sip:%s:%s", contact_host, contact_port);
@@ -3664,16 +3665,21 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		if ( uri ) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sending pnp NOTIFY to %s\n", uri);
 
+			/* Grandstream REALLY uses a header called Message Body */
+			extra_headers = switch_mprintf("Message Body: %s\r\n", profile->pnp_prov_url);
+
 			switch_event_create(&params, SWITCH_EVENT_NOTIFY);
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile->pnp_notify_profile);
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "event-string", sip->sip_event->o_type);
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "to-uri", uri);
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "from-uri", uri);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "extra-headers", extra_headers);
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "content-type", "application/url");
 			switch_event_add_body(params, "%s", profile->pnp_prov_url);
 			switch_event_fire(&params);
 
 			switch_safe_free(uri);
+			switch_safe_free(extra_headers);
 		}
 	}
 

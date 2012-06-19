@@ -4935,6 +4935,8 @@ static void general_event_handler(switch_event_t *event)
 			const char *body = switch_event_get_body(event);
 			const char *to_uri = switch_event_get_header(event, "to-uri");
 			const char *from_uri = switch_event_get_header(event, "from-uri");
+			const char *extra_headers = switch_event_get_header(event, "extra-headers");
+
 			sofia_profile_t *profile;
 
 
@@ -4993,7 +4995,8 @@ static void general_event_handler(switch_event_t *event)
 					nua_notify(nh,
 							   NUTAG_NEWSUB(1), SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
 							   TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
-							   SIPTAG_EVENT_STR(es), TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
+							   SIPTAG_EVENT_STR(es), TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)),
+							   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
 					
 
 					switch_safe_free(route_uri);
