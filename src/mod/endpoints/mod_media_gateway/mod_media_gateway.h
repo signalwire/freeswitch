@@ -15,6 +15,8 @@
 
 #define MG_MAX_PEERS    5
 
+#define MEGACO_CLI_SYNTAX "profile|logging"
+#define MEGACO_LOGGING_CLI_SYNTAX "logging [enable|disable]"
 #define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop] [status] [xmlstatus] [peerxmlstatus]"
 
 struct megaco_globals {

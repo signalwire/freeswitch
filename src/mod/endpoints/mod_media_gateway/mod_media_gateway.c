@@ -73,6 +73,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles status");
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles xmlstatus");
 	switch_console_set_complete("add megaco profile ::megaco::list_profiles peerxmlstatus");
+	switch_console_set_complete("add megaco logging ::megaco::list_profiles enable");
+	switch_console_set_complete("add megaco logging ::megaco::list_profiles disable");
 	switch_console_add_complete_func("::megaco::list_profiles", list_profiles);
 
 

@@ -19,7 +19,6 @@ int mgco_mu_gen_config(void);
 int mgco_tucl_gen_config(void);
 int mgco_mu_ssap_config(int idx);
 int mgco_mg_tsap_config(megaco_profile_t* profile);
-int mgco_mg_enble_debug(void);
 int mgco_mg_ssap_config(megaco_profile_t* profile);
 int mgco_mg_peer_config(megaco_profile_t* profile);
 int mgco_mg_tpt_server_config(megaco_profile_t* profile);
@@ -571,7 +570,7 @@ int mgco_mg_ssap_cntrl(int idx)
 }
 /******************************************************************************/
                                                                                                        
-int mgco_mg_enble_debug()
+int mg_enable_logging()
 {
 	MgMngmt    mgMngmt;
 	Pst          pst;              /* Post for layer manager */
@@ -591,6 +590,33 @@ int mgco_mg_enble_debug()
 	mgMngmt.hdr.elmId.elmnt     = STGEN;
 
 	cntrl->action  		        = AENA;
+	cntrl->subAction                = SADBG;
+	cntrl->s.dbg.genDbgMask    = 0xfffffdff;
+
+	return(sng_cntrl_mg(&pst, &mgMngmt));
+}
+
+/******************************************************************************/
+int mg_disable_logging()
+{
+	MgMngmt    mgMngmt;
+	Pst          pst;              /* Post for layer manager */
+	MgCntrl*    cntrl;
+
+	memset(&mgMngmt, 0, sizeof(mgMngmt));
+	cntrl = &mgMngmt.t.cntrl;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTMG;
+	mgMngmt.hdr.msgType         = TCFG;
+	mgMngmt.hdr.entId.ent       = ENTHI;
+	mgMngmt.hdr.entId.inst      = S_INST;
+	mgMngmt.hdr.elmId.elmnt     = STGEN;
+
+	cntrl->action  		        = ADISIMM;
 	cntrl->subAction                = SADBG;
 	cntrl->s.dbg.genDbgMask    = 0xfffffdff;
 
