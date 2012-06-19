@@ -43,6 +43,7 @@ configure.lineno
 config.log
 config.status
 core.*
+TAGS
 *.2010.log
 *.Build.CppClean.log
 *.tlog
@@ -98,6 +99,7 @@ core.*
 /build/Makefile
 /build/Makefile.in
 /build/modmake.rules
+/build/print_git_revision
 
 /libs/curl/lib/ca-bundle.h
 /libs/esl/fs_cli

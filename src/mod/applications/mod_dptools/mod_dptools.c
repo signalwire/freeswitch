@@ -30,7 +30,7 @@
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  * Cesar Cepeda <cesar@auronix.com>
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -974,7 +974,7 @@ SWITCH_STANDARD_APP(transfer_function)
 			if (bleg || both) {
 				const char *uuid;
 				switch_channel_t *channel = switch_core_session_get_channel(session);
-				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+				if ((uuid = switch_channel_get_partner_uuid(channel))) {
 					switch_core_session_t *b_session;
 					if ((b_session = switch_core_session_locate(uuid))) {
 						switch_ivr_session_transfer(b_session, argv[1], argv[2], argv[3]);
@@ -2149,7 +2149,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 
 	channel = switch_core_session_get_channel(session);
 
-	if ((bond = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+	if ((bond = switch_channel_get_partner_uuid(channel))) {
 		bond = switch_core_session_strdup(session, bond);
 	}
 
@@ -3570,13 +3570,8 @@ SWITCH_STANDARD_APP(pickup_function)
 			caller_profile->callee_id_number = num;
 			
 			if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
-				const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+				const char *uuid = switch_channel_get_partner_uuid(channel);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
-
-				if (!uuid) {
-					uuid = switch_channel_get_variable(channel, "originate_signal_bond");
-				}
-
 				
 				if (uuid) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);

@@ -418,8 +418,6 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 		return zrtp_status_alloc_fail;
 	}
 	
-	ZSTR_SET_EMPTY(new_stream->signaling_hash);
-	
 	/*
 	 * Initialize the private data stream with default initial values	 
 	 */
@@ -437,6 +435,8 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 	ZSTR_SET_EMPTY(new_stream->cc.zrtp_key);
 	ZSTR_SET_EMPTY(new_stream->cc.peer_zrtp_key);
 	
+	ZSTR_SET_EMPTY(new_stream->messages.signaling_hash);
+
 	new_stream->dh_cc.initialized_with	= ZRTP_COMP_UNKN;
 	bnBegin(&new_stream->dh_cc.peer_pv);
 	ZSTR_SET_EMPTY(new_stream->dh_cc.dhss);		
@@ -638,8 +638,8 @@ zrtp_status_t zrtp_signaling_hash_set( zrtp_stream_t* ctx,
 	ctx->messages.signaling_hash.length = ZRTP_MESSAGE_HASH_SIZE;
 	
 	{
-	char buff[66];
-	ZRTP_LOG(3, (_ZTU_,"SIGNALLING HAS was ADDED for the comparing. ID=%u\n", ctx->id));
+	char buff[64];
+	ZRTP_LOG(3, (_ZTU_,"SIGNALLING HAS was ADDED for the comparision. ID=%u\n", ctx->id));
 	ZRTP_LOG(3, (_ZTU_,"Hash=%s.\n", hex2str(hash_buff, hash_buff_length, buff, sizeof(buff))));
 	}
 

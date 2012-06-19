@@ -1704,7 +1704,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, c
 		const char *brto;
 
 		if ((brto = switch_channel_get_variable(rchannel, "orignate_signal_bond")) || 
-			(brto = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			(brto = switch_channel_get_partner_uuid(rchannel))) {
 			switch_copy_string(b_uuid, brto, blen);
 			status = SWITCH_STATUS_SUCCESS;
 		}
@@ -1738,7 +1738,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 
 	channel = switch_core_session_get_channel(session);
 	rchannel = switch_core_session_get_channel(rsession);
-	buuid = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE);
+	buuid = switch_channel_get_partner_uuid(rchannel);
 
 	if ((var = switch_channel_get_variable(channel, "intercept_unbridged_only")) && switch_true(var)) {
 		if ((switch_channel_test_flag(rchannel, CF_BRIDGED))) {

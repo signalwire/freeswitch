@@ -3439,7 +3439,7 @@ SWITCH_STANDARD_API(break_function)
 	channel = switch_core_session_get_channel(psession);
 
 	if (both) {
-		const char *quuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *quuid = switch_channel_get_partner_uuid(channel);
 		if (quuid && (qsession = switch_core_session_locate(quuid))) {
 			qchannel = switch_core_session_get_channel(qsession);
 		}

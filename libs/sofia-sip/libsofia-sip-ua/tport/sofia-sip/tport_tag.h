@@ -198,6 +198,12 @@ enum tport_tls_verify_policy {
   TPTLS_VERIFY_SUBJECTS_ALL = 0xF,
 };
 
+TPORT_DLL extern tag_typedef_t tptag_tls_timeout;
+#define TPTAG_TLS_TIMEOUT(x) tptag_tls_timeout, tag_uint_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_tls_timeout_ref;
+#define TPTAG_TLS_TIMEOUT_REF(x) tptag_tls_timeout_ref, tag_uint_vr(&(x))
+
 TPORT_DLL extern tag_typedef_t tptag_tls_passphrase;
 #define TPTAG_TLS_PASSPHRASE(x)  tptag_tls_passphrase, tag_str_v(x)
 

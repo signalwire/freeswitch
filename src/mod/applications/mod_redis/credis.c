@@ -32,6 +32,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#ifdef  _MSC_VER
+#include <io.h>
+#include <WinSock2.h>
+#define snprintf _snprintf
+#else
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/time.h>
@@ -39,6 +44,7 @@
 #include <netdb.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
+#endif
 #include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
@@ -550,6 +556,7 @@ REDIS credis_connect(const char *host, int port, int timeout)
   int fd, yes = 1;
   struct sockaddr_in sa;  
   REDIS rhnd;
+  int valid = 0;
 
   if ((rhnd = cr_new()) == NULL)
     return NULL;
@@ -566,7 +573,16 @@ REDIS credis_connect(const char *host, int port, int timeout)
 
   sa.sin_family = AF_INET;
   sa.sin_port = htons(port);
-  if (inet_aton(host, &sa.sin_addr) == 0) {
+#ifdef WIN32
+  sa.sin_addr.S_un.S_addr = inet_addr(host);
+  if (sa.sin_addr.S_un.S_addr != 0) {
+    valid = 1;
+  }
+#else
+  valid = inet_aton(host, &sa.sin_addr);
+#endif
+
+  if (valid == 0) {
     struct hostent *he = gethostbyname(host);
     if (he == NULL)
       goto error;

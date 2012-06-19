@@ -1,7 +1,7 @@
 <!--
     This is a sofia sip profile/user agent.  This will service exactly one ip and port.
     In FreeSWITCH you can run multiple sip user agents on their own ip and port.
-    
+
     When you hear someone say "sofia profile" this is what they are talking about.
 -->
 
@@ -16,24 +16,24 @@
   <gateways>
     <X-PRE-PROCESS cmd="include" data="internal/*.xml"/>
   </gateways>
-  
+
   <domains>
     <!-- indicator to parse the directory for domains with parse="true" to get gateways-->
     <!--<domain name="$${domain}" parse="true"/>-->
     <!-- indicator to parse the directory for domains with parse="true" to get gateways and alias every domain to this profile -->
     <!--<domain name="all" alias="true" parse="true"/>-->
-    <domain name="all" alias="true" parse="false"/> 
+    <domain name="all" alias="true" parse="false"/>
   </domains>
-  
+
   <settings>
     <!--
-	When calls are in no media this will bring them back to media
-	when you press the hold button.
+        When calls are in no media this will bring them back to media
+        when you press the hold button.
     -->
     <!--<param name="media-option" value="resume-media-on-hold"/> -->
     <!--
-	This will allow a call after an attended transfer go back to 
-	 bypass media after an attended transfer.
+        This will allow a call after an attended transfer go back to
+        bypass media after an attended transfer.
     -->
     <!--<param name="media-option" value="bypass-media-after-att-xfer"/>-->
     <!-- <param name="user-agent-string" value="FreeSWITCH Rocks!"/> -->
@@ -63,7 +63,7 @@
     <!--<param name="dtmf-type" value="info"/>-->
     <param name="record-template" value="$${base_dir}/recordings/${caller_id_number}.${target_domain}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
 
-    
+
     <!-- This setting is for AAL2 bitpacking on G726 -->
     <!-- <param name="bitpacking" value="aal2"/> -->
     <!--max number of open dialogs in proceeding -->
@@ -88,36 +88,39 @@
     <param name="tls-cert-dir" value="$${internal_ssl_dir}"/>
     <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
     <param name="tls-version" value="$${sip_tls_version}"/>
-    
+
     <!--If you don't want to pass through timestamps from 1 RTP call to another (on a per call basis with rtp_rewrite_timestamps chanvar)-->
     <!--<param name="rtp-rewrite-timestamps" value="true"/>-->
     <!--<param name="pass-rfc2833" value="true"/>-->
     <!--If you have ODBC support and a working dsn you can use it instead of SQLite-->
     <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
-    
+
     <!--Uncomment to set all inbound calls to no media mode-->
     <!--<param name="inbound-bypass-media" value="true"/>-->
 
     <!--Uncomment to set all inbound calls to proxy media mode-->
     <!--<param name="inbound-proxy-media" value="true"/>-->
-    
-    <!--Uncomment to let calls hit the dialplan *before* you decide if the codec is ok-->
-    <!--<param name="inbound-late-negotiation" value="true"/>-->
-    
+
+    <!-- Let calls hit the dialplan before selecting codec for the a-leg -->
+    <param name="inbound-late-negotiation" value="true"/>
+
+    <!-- Allow ZRTP clients to negotiate end-to-end security associations (also enables late negotiation) -->
+    <param name="inbound-zrtp-passthru" value="true"/>
+
     <!-- this lets anything register -->
     <!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
     <!-- <param name="accept-blind-reg" value="true"/> -->
 
     <!-- accept any authentication without actually checking (not a good feature for most people) -->
     <!-- <param name="accept-blind-auth" value="true"/> -->
-    
+
     <!-- suppress CNG on this profile or per call with the 'suppress_cng' variable -->
     <!-- <param name="suppress-cng" value="true"/> -->
-    
+
     <!--TTL for nonce in sip auth-->
     <param name="nonce-ttl" value="60"/>
-    <!--Uncomment if you want to force the outbound leg of a bridge to only offer the codec 
-	that the originator is using-->
+    <!--Uncomment if you want to force the outbound leg of a bridge to only offer the codec
+        that the originator is using-->
     <!--<param name="disable-transcoding" value="true"/>-->
     <!-- Used for when phones respond to a challenged ACK with method INVITE in the hash -->
     <!--<param name="NDLB-broken-auth-hash" value="true"/>-->
@@ -138,7 +141,7 @@
     <!-- <param name="vad" value="out"/> -->
     <!-- <param name="vad" value="both"/> -->
     <!--<param name="alias" value="sip:10.0.1.251:5555"/>-->
- 
+
     <!--all inbound reg will look in this domain for the users -->
     <param name="force-register-domain" value="$${domain}"/>
     <!--all inbound reg will stored in the db using this domain -->
@@ -158,24 +161,24 @@
     <!--<param name="disable-transfer" value="true"/>-->
     <!--<param name="disable-register" value="true"/>-->
 
-	<!-- enable-3pcc can be set to either 'true' or 'proxy', true accepts the call right away, proxy waits until the call has been answered then sends accepts -->
+    <!-- enable-3pcc can be set to either 'true' or 'proxy', true accepts the call right away, proxy waits until the call has been answered then sends accepts -->
     <!--<param name="enable-3pcc" value="true"/>-->
-	
+
     <!-- use at your own risk or if you know what this does.-->
     <!--<param name="NDLB-force-rport" value="true"/>-->
     <!--
-	Choose the realm challenge key. Default is auto_to if not set. 
-	
-	auto_from  - uses the from field as the value for the sip realm.
-	auto_to    - uses the to field as the value for the sip realm.
-	<anyvalue> - you can input any value to use for the sip realm.
+        Choose the realm challenge key. Default is auto_to if not set.
 
-	If you want URL dialing to work you'll want to set this to auto_from.
-	
-	If you use any other value besides auto_to or auto_from you'll loose
-	the ability to do multiple domains.
-	
-	Note: comment out to restore the behavior before 2008-09-29
+        auto_from  - uses the from field as the value for the sip realm.
+        auto_to    - uses the to field as the value for the sip realm.
+        <anyvalue> - you can input any value to use for the sip realm.
+
+        If you want URL dialing to work you'll want to set this to auto_from.
+
+        If you use any other value besides auto_to or auto_from you'll loose
+        the ability to do multiple domains.
+
+        Note: comment out to restore the behavior before 2008-09-29
 
     -->
     <param name="challenge-realm" value="auto_from"/>
@@ -186,4 +189,3 @@
     <!--<param name="outbound-use-uuid-as-callid" value="true"/>-->
   </settings>
 </profile>
-

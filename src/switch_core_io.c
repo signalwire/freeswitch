@@ -288,7 +288,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	if (switch_test_flag(session, SSF_READ_TRANSCODE) && !need_codec && switch_core_codec_ready(session->read_codec)) {
 		switch_core_session_t *other_session;
-		const char *uuid = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *uuid = switch_channel_get_partner_uuid(switch_core_session_get_channel(session));
 		switch_clear_flag(session, SSF_READ_TRANSCODE);
 		
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
@@ -866,7 +866,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (switch_test_flag(session, SSF_WRITE_TRANSCODE) && !need_codec && switch_core_codec_ready(session->write_codec)) {
 		switch_core_session_t *other_session;
-		const char *uuid = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *uuid = switch_channel_get_partner_uuid(switch_core_session_get_channel(session));
 
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
 			switch_set_flag(other_session, SSF_READ_CODEC_RESET);
@@ -1469,6 +1469,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 
 	switch_assert(session != NULL);
 
+	if (zstr(dtmf_string)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (*dtmf_string == '~') {
 		dtmf_string++;
 		dtmf.flags = 0;
@@ -1478,9 +1482,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (zstr(dtmf_string)) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (strlen(dtmf_string) > 99) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Attempt to send very large dtmf string ignored!\n");

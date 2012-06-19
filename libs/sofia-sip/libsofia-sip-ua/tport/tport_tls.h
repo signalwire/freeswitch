@@ -65,6 +65,7 @@ typedef struct tls_issues_s {
                          */
   int   version;	/* For tls1, version is 1. When ssl3/ssl2 is
 			 * used, it is 0. */
+  unsigned timeout;	/* Maximum session lifetime in seconds */
 } tls_issues_t;
 
 typedef struct tport_tls_s {

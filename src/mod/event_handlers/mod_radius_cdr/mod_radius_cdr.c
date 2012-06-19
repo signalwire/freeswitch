@@ -213,7 +213,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 		   }
 		 */
 		
-		if ((signal_bond = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && !zstr(signal_bond)) {
+		if ((signal_bond = switch_channel_get_partner_uuid(channel)) && !zstr(signal_bond)) {
 			if (rc_avpair_add(rad_config, &send, PW_FS_OTHER_LEG_ID, (void*) signal_bond, -1, PW_FS_PEC) == NULL) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[mod_radius_cdr] Failed adding Freeswitch-Other-Leg-Id: %s\n", uuid_str);
 				rc_destroy(rad_config);

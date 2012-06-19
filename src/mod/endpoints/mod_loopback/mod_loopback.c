@@ -659,13 +659,13 @@ static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, 
 	*br_session = NULL;
 	*br_uuid = NULL;
 
-	a_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+	a_uuid = switch_channel_get_partner_uuid(channel);
 
 	while (a_uuid && (sp = switch_core_session_locate(a_uuid))) {
 		if (switch_core_session_check_interface(sp, loopback_endpoint_interface)) {
 			private_t *tech_pvt = switch_core_session_get_private(sp);
 
-			a_uuid = switch_channel_get_variable(tech_pvt->other_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+			a_uuid = switch_channel_get_partner_uuid(tech_pvt->other_channel);
 			switch_core_session_rwunlock(sp);
 			sp = NULL;
 		} else {
@@ -919,7 +919,7 @@ static switch_status_t loopback_bowout_on_execute_state_handler(switch_core_sess
 		/* Wait for b_channel to be fully bridged */
 		switch_channel_wait_for_flag(b_channel, CF_BRIDGED, SWITCH_TRUE, 5000, NULL);
 
-		uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		uuid = switch_channel_get_partner_uuid(b_channel);
 
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
 			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);

@@ -48,10 +48,17 @@ The format of debian/modules.conf is:
 To build this package, I recommend running the following from the root
 directory of your FS git working tree:
 
-  mkdir ../sounds
-  export FS_SOUNDS_DIR=$(pwd)/../sounds
+  distro=sid
+  ver="$(cat build/next-release.txt | sed -e 's/-/~/g')~n$(date +%Y%m%dT%H%M%SZ)-1~${distro}+1"
   git clean -fdx && git reset --hard HEAD
-  (cd debian && ./bootstrap.sh)
-  schedtool -B -e git-buildpackage --git-verbose -us -uc
+  ./build/set-fs-version.sh "$ver"
+  git add configure.in && git commit -m "bump to custom v$ver"
+  (cd debian && ./bootstrap.sh -c $distro)
+  dch -b -m -v "$ver" --force-distribution -D "$suite" "Custom build."
+  git-buildpackage -b -us -uc \
+    --git-verbose \
+    --git-pbuilder --git-dist=$distro \
+    --git-compression-level=1v --git-compression=xz
+  git reset --hard HEAD^
 
- -- Travis Cross <tc@traviscross.com>, Sat,  5 May 2012 23:32:53 +0000
+ -- Travis Cross <tc@traviscross.com>, Thu, 24 May 2012 16:35:57 +0000

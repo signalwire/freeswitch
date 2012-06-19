@@ -288,7 +288,7 @@ static void cycle_foreground(ftdm_channel_t *ftdmchan, int flash, const char *bc
 			const char *buuid;
 			tech_pvt = switch_core_session_get_private(session);
 			channel = switch_core_session_get_channel(session);
-			buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+			buuid = switch_channel_get_partner_uuid(channel);
 
 			
 			if (tokencnt  == 1 && flash) {
@@ -2142,19 +2142,19 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
 				if ((session_a = switch_core_session_locate(ftdm_channel_get_token(sigmsg->channel, 0)))) {
 					channel_a = switch_core_session_get_channel(session_a);
-					br_a_uuid = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
+					br_a_uuid = switch_channel_get_partner_uuid(channel_a);
 
 					tech_pvt = switch_core_session_get_private(session_a);
-					stop_hold(session_a, switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE));
+					stop_hold(session_a, switch_channel_get_partner_uuid(channel_a));
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				}
 
 				if ((session_b = switch_core_session_locate(ftdm_channel_get_token(sigmsg->channel, 1)))) {
 					channel_b = switch_core_session_get_channel(session_b);
-					br_b_uuid = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
+					br_b_uuid = switch_channel_get_partner_uuid(channel_b);
 
 					tech_pvt = switch_core_session_get_private(session_b);
-					stop_hold(session_a, switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE));
+					stop_hold(session_a, switch_channel_get_partner_uuid(channel_b));
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				}
 
@@ -2222,7 +2222,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					
 					tech_pvt = switch_core_session_get_private(session);
 					channel = switch_core_session_get_channel(session);
-					buuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+					buuid = switch_channel_get_partner_uuid(channel);
 					ftdm_channel_call_unhold(sigmsg->channel);
 					stop_hold(session, buuid);
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);

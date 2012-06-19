@@ -184,7 +184,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_partner(switch_core_sess
 {
 	const char *uuid;
 
-	if ((uuid = switch_channel_get_variable(session->channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(session->channel, "originate_signal_bond"))) {
+	if ((uuid = switch_channel_get_partner_uuid(session->channel))) {
 		if ((*partner = switch_core_session_locate(uuid))) {
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -544,7 +544,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 			// Needed by 3PCC proxy so that aleg can find bleg to pass SDP to, when final ACK arrives.
-			switch_channel_set_variable(channel, "originate_signal_bond", switch_core_session_get_uuid(*new_session));
+			switch_channel_set_variable(channel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(*new_session));
 
 			if ((val = switch_channel_get_variable(channel, SWITCH_PROCESS_CDR_VARIABLE))) {
 				switch_channel_set_variable(peer_channel, SWITCH_PROCESS_CDR_VARIABLE, val);
@@ -575,6 +575,10 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 									  "%s does not support the proxy feature, disabling.\n", switch_channel_get_name(peer_channel));
 					switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
 				}
+			}
+
+			if (switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU_REQ)) {
+				switch_channel_set_flag(peer_channel, CF_ZRTP_PASSTHRU_REQ);
 			}
 
 			if (profile) {
@@ -793,7 +797,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_pass_indication(switch_core_
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) || (uuid = switch_channel_get_variable(channel, "originate_signal_bond"))) && (other_session = switch_core_session_locate(uuid))) {
+	if (((uuid = switch_channel_get_partner_uuid(channel))) && (other_session = switch_core_session_locate(uuid))) {
 		msg.message_id = indication;
 		msg.from = __FILE__;
 		status = switch_core_session_receive_message(other_session, &msg);

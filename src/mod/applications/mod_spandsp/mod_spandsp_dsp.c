@@ -28,7 +28,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Steve Underwood <steveu@coppice.org>
  * Antonio Gallo <agx@linux.it>
- * Christopher M. Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  * mod_spandsp_dsp.c -- dsp applications provided by SpanDSP
  *
  */

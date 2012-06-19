@@ -27,7 +27,7 @@
  * Michael Jerris <mike@jerris.com>
  * Bret McDanel <bret AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  *
  * switch_ivr_async.c -- IVR Library (async operations)
  *
@@ -4068,7 +4068,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		}
 	}
 
-	if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
+	if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_partner_uuid(channel))
 		&& (other_session = switch_core_session_locate(other_uuid))) {
 		if ((flags & SMF_EXEC_INLINE)) {
 			switch_core_session_execute_application_get_flags(other_session, app, path, &app_flags);

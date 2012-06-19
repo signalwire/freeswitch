@@ -28,6 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
+ * Raymond Chandler <intralanman@gmail.com>
  *
  *
  * mod_sofia.h -- SOFIA SIP Endpoint
@@ -92,7 +93,7 @@ typedef struct private_object private_object_t;
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
-#define SOFIA_USER_AGENT "FreeSWITCH-mod_sofia/" SWITCH_VERSION_MAJOR "." SWITCH_VERSION_MINOR "." SWITCH_VERSION_MICRO "-" SWITCH_VERSION_REVISION
+#define SOFIA_USER_AGENT "FreeSWITCH-mod_sofia/" SWITCH_VERSION_FULL
 #define SOFIA_CHAT_PROTO "sip"
 #define SOFIA_MULTIPART_PREFIX "sip_mp_"
 #define SOFIA_MULTIPART_PREFIX_T "~sip_mp_"
@@ -317,6 +318,7 @@ typedef enum {
 	TFLAG_TPORT_LOG,
 	TFLAG_SENT_UPDATE,
 	TFLAG_PROXY_MEDIA,
+	TFLAG_ZRTP_PASSTHRU,
 	TFLAG_HOLD_LOCK,
 	TFLAG_3PCC_HAS_ACK,
 	TFLAG_PASS_RFC2833,
@@ -516,7 +518,8 @@ struct sofia_gateway {
 typedef enum {
 	PRES_TYPE_NONE = 0,
 	PRES_TYPE_FULL = 1,
-	PRES_TYPE_PASSIVE = 2
+	PRES_TYPE_PASSIVE = 2,
+	PRES_TYPE_PNP = 3
 } sofia_presence_type_t;
 
 typedef enum {
@@ -585,12 +588,15 @@ struct sofia_profile {
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
 	char *jb_msec;
+	char *pnp_prov_url;
+	char *pnp_notify_profile;
 	sofia_cid_type_t cid_type;
 	sofia_dtmf_t dtmf_type;
 	int auto_restart;
 	switch_port_t sip_port;
 	switch_port_t tls_sip_port;
 	int tls_version;
+	unsigned int tls_timeout;
 	char *inbound_codec_string;
 	char *outbound_codec_string;
 	int running;
@@ -825,6 +831,11 @@ struct private_object {
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
 	uint32_t session_timeout;
 	enum nua_session_refresher session_refresher;
+	/** ZRTP **/
+	char *local_sdp_audio_zrtp_hash;
+	char *local_sdp_video_zrtp_hash;
+	char *remote_sdp_audio_zrtp_hash;
+	char *remote_sdp_video_zrtp_hash;
 };
 
 struct callback_t {
@@ -932,6 +943,8 @@ void launch_sofia_profile_thread(sofia_profile_t *profile);
 switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
 										 
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
+void sofia_glue_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session);
+void sofia_glue_pass_zrtp_hash(switch_core_session_t *session);
 
 /*
  * \brief Sets the "ep_codec_string" channel variable, parsing r_sdp and taing codec_string in consideration 

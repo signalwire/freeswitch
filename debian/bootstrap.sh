@@ -15,9 +15,13 @@ avoid_mods=(
   applications/mod_osp
   applications/mod_rad_auth
   applications/mod_skel
+  applications/mod_soundtouch
   asr_tts/mod_cepstral
+  asr_tts/mod_flite
   codecs/mod_com_g729
+  codecs/mod_ilbc
   codecs/mod_sangoma_codec
+  codecs/mod_siren
   codecs/mod_skel_codec
   codecs/mod_voipcodecs
   endpoints/mod_gsmopen
@@ -27,9 +31,18 @@ avoid_mods=(
   endpoints/mod_reference
   endpoints/mod_unicall
   formats/mod_shout
+  languages/mod_managed
   languages/mod_spidermonkey
   sdk/autotools
   xml_int/mod_xml_ldap
+)
+avoid_mods_sid=(
+  endpoints/mod_portaudio
+  formats/mod_portaudio_stream
+)
+avoid_mods_wheezy=(
+  endpoints/mod_portaudio
+  formats/mod_portaudio_stream
 )
 avoid_mods_squeeze=(
   formats/mod_vlc
@@ -288,10 +301,8 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
  freeswitch-mod-amr (= \${binary:Version}),
- freeswitch-mod-ilbc (= \${binary:Version}),
  freeswitch-mod-speex (= \${binary:Version}),
  freeswitch-mod-h26x (= \${binary:Version}),
- freeswitch-mod-siren (= \${binary:Version}),
  freeswitch-mod-sndfile (= \${binary:Version}),
  freeswitch-mod-native-file (= \${binary:Version}),
  freeswitch-mod-local-stream (= \${binary:Version}),
@@ -322,13 +333,15 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
  freeswitch-mod-h26x (= \${binary:Version}),
- freeswitch-mod-ilbc (= \${binary:Version}),
  freeswitch-mod-mp4v (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
- freeswitch-mod-siren (= \${binary:Version}),
+ freeswitch-mod-spandsp (= \${binary:Version}),
  freeswitch-mod-speex (= \${binary:Version}),
  freeswitch-mod-theora (= \${binary:Version})
+Suggests:
+ freeswitch-mod-ilbc (= \${binary:Version}),
+ freeswitch-mod-siren (= \${binary:Version})
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .
@@ -408,26 +421,12 @@ Description: FreeSWITCH systemd configuration
 Package: freeswitch-music
 Architecture: all
 Depends: \${misc:Depends},
- freeswitch-music-default (= \${binary:Version})
+ freeswitch-music-default (>= 1.0.8)
 Description: Music on hold audio for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
  This is a metapackage which depends on the default music on hold
  packages for FreeSWITCH.
-
-Package: freeswitch-music-default
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-music-default-8k (= \${binary:Version})
-Recommends:
-  freeswitch-music-default-16k (= \${binary:Version}),
-  freeswitch-music-default-32k (= \${binary:Version}),
-  freeswitch-music-default-48k (= \${binary:Version})
-Description: Music on hold audio for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default music on hold
- packages for FreeSWITCH at various sampling rates.
 
 Package: freeswitch-sounds
 Architecture: all
@@ -452,26 +451,12 @@ Description: English sounds for FreeSWITCH
 Package: freeswitch-sounds-en-us
 Architecture: all
 Depends: \${misc:Depends},
- freeswitch-sounds-en-us-callie (= \${binary:Version})
+ freeswitch-sounds-en-us-callie (>= 1.0.18)
 Description: US English sounds for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
  This is a metapackage which depends on the default US/English sound
  packages for FreeSWITCH.
-
-Package: freeswitch-sounds-en-us-callie
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-sounds-en-us-callie-8k (= \${binary:Version})
-Recommends:
- freeswitch-sounds-en-us-callie-16k (= \${binary:Version}),
- freeswitch-sounds-en-us-callie-32k (= \${binary:Version}),
- freeswitch-sounds-en-us-callie-48k (= \${binary:Version})
-Description: US English sounds for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the US/English Callie sound
- packages for FreeSWITCH at various sampling rates.
 
 EOF
 }
@@ -557,14 +542,6 @@ print_conf_overrides () {
   print_common_overrides "$1"
 }
 
-print_sound_overrides () {
-  print_common_overrides "$1"
-}
-
-print_music_overrides () {
-  print_common_overrides "$1"
-}
-
 print_conf_control () {
   cat <<EOF
 Package: freeswitch-conf-${conf//_/-}
@@ -581,46 +558,6 @@ EOF
 print_conf_install () {
   cat <<EOF
 conf/${conf} /usr/share/freeswitch/conf
-EOF
-}
-
-print_music_control () {
-  cat <<EOF
-Package: freeswitch-music-default-${rate_k}
-Architecture: all
-Depends: \${misc:Depends}
-Description: Music on hold audio for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This package contains the default music on hold audio for FreeSWITCH
- at a sampling rate of ${rate}Hz.
-
-EOF
-}
-
-print_music_install () {
-  cat <<EOF
-/usr/share/freeswitch/sounds/music/${rate}
-EOF
-}
-
-print_sound_control () {
-  cat <<EOF
-Package: freeswitch-sounds-${sound//\//-}-${rate_k}
-Architecture: all
-Depends: \${misc:Depends}
-Description: ${sound} sounds for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This package contains the ${sound} sounds for FreeSWITCH at a
- sampling rate of ${rate}Hz.
-
-EOF
-}
-
-print_sound_install () {
-  cat <<EOF
-/usr/share/freeswitch/sounds/${sound_path}/*/${rate}
 EOF
 }
 
@@ -665,35 +602,6 @@ genconf () {
   local f=$p.lintian-overrides
   (print_edit_warning; print_conf_overrides "$p") > $f
   test -f $f.tmpl && cat $f.tmpl >> $f
-}
-
-genmusic () {
-  rate="$1" rate_k="${rate%%000}k"
-  print_music_control >> control
-  local p=freeswitch-music-default-${rate_k}
-  local f=$p.install
-  (print_edit_warning; print_music_install) > $f
-  test -f $f.tmpl && cat $f.tmpl >> $f
-  local f=$p.lintian-overrides
-  (print_edit_warning; print_music_overrides "$p") > $f
-  test -f $f.tmpl && cat $f.tmpl >> $f
-  unset rate rate_k
-}
-
-gensound () {
-  rate="$1"  rate_k="${rate%%000}k" sound_path="$2" sound="${2,,}"
-  language=$(echo $sound | cut -d/ -f1)
-  country=$(echo $sound | cut -d/ -f2)
-  speaker=$(echo $sound | cut -d/ -f3)
-  print_sound_control >> control
-  local p=freeswitch-sounds-${sound//\//-}-${rate_k}
-  local f=$p.install
-  (print_edit_warning; print_sound_install) > $f
-  test -f $f.tmpl && cat $f.tmpl >> $f
-  local f=$p.lintian-overrides
-  (print_edit_warning; print_sound_overrides "$p") > $f
-  test -f $f.tmpl && cat $f.tmpl >> $f
-  unset rate rate_k sound sound_path language country speaker
 }
 
 accumulate_build_depends () {
@@ -865,14 +773,6 @@ map_modules 'mod_filter' '' 'accumulate_build_depends'
 echo "Generating debian/..." >&2
 > control
 (print_edit_warning; print_source_control; print_core_control) >> control
-echo "Generating debian/ (music)..." >&2
-for r in 8000 16000 32000 48000; do genmusic $r; done
-echo "Generating debian/ (sounds)..." >&2
-for x in 'en/us/callie'; do
-  for r in 8000 16000 32000 48000; do
-    gensound $r $x
-  done
-done
 echo "Generating debian/ (conf)..." >&2
 (echo "### conf"; echo) >> control
 map_confs 'genconf'

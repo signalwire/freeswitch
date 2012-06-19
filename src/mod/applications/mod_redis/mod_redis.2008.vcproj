@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="mod_fax"
-	ProjectGUID="{7877EFC8-4807-484B-B573-D7B7FD058FAA}"
-	RootNamespace="mod_fax"
+	Name="mod_redis"
+	ProjectGUID="{886B5E9D-F2C2-4AF2-98C8-EF98C4C770E6}"
+	RootNamespace="mod_redis"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -23,7 +23,7 @@
 			Name="Debug|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
-			CharacterSet="0"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -42,7 +42,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-3.8.2\libtiff&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -56,7 +55,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
@@ -84,9 +82,11 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
-			CharacterSet="0"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -106,7 +106,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-3.8.2\libtiff&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -120,7 +119,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
 				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -152,7 +150,7 @@
 			Name="Release|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
-			CharacterSet="0"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -171,7 +169,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-3.8.2\libtiff&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -185,7 +182,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
@@ -213,9 +209,11 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
-			CharacterSet="0"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -235,7 +233,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-3.8.2\libtiff&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -249,7 +246,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
 				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -282,15 +278,15 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\mod_fax.c"
+			RelativePath=".\mod_redis.c"
 			>
 		</File>
 		<File
-			RelativePath=".\udptl.c"
+			RelativePath=".\credis.c"
 			>
 		</File>
 		<File
-			RelativePath=".\udptl.h"
+			RelativePath=".\credis.h"
 			>
 		</File>
 	</Files>

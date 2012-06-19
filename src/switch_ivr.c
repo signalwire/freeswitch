@@ -559,7 +559,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 				switch_channel_set_flag(channel, CF_BROADCAST);
 			}
 			if (hold_bleg && switch_true(hold_bleg)) {
-				if ((b_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+				if ((b_uuid = switch_channel_get_partner_uuid(channel))) {
 					const char *stream;
 					b_uuid = switch_core_session_strdup(session, b_uuid);
 
@@ -1384,7 +1384,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 	switch_core_session_receive_message(session, &msg);
 
 	if (moh && (stream = switch_channel_get_hold_music(channel))) {
-		if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		if ((other_uuid = switch_channel_get_partner_uuid(channel))) {
 			switch_ivr_broadcast(other_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
 		}
 	}
@@ -1421,7 +1421,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 	switch_core_session_receive_message(session, &msg);
 
 
-	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(other_uuid))) {
+	if ((other_uuid = switch_channel_get_partner_uuid(channel)) && (b_session = switch_core_session_locate(other_uuid))) {
 		switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 		switch_channel_stop_broadcast(b_channel);
 		switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
@@ -2976,7 +2976,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_string(switch_core_session_t *ses
 		}
 	}
 
-	if ((si = switch_loadable_module_get_say_interface(module_name))) {
+	if ((si = switch_loadable_module_get_say_interface(module_name)) && si->say_string_function) {
 		/* should go back and proto all the say mods to const.... */
 		switch_say_args_t say_args = {0};
 		

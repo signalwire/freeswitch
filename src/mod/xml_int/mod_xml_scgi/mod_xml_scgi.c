@@ -46,6 +46,9 @@ struct xml_binding {
 	switch_hash_t *vars_map;
 	char *bindings;
 	
+	char *server;
+	switch_thread_t *thread;
+	struct xml_binding *next;
 };
 
 static int GLOBAL_DEBUG = 0;
@@ -63,6 +66,8 @@ static struct {
 	switch_memory_pool_t *pool;
 	hash_node_t *hash_root;
 	hash_node_t *hash_tail;
+	int running;
+	xml_binding_t *bindings;
 } globals;
 
 #define XML_SCGI_SYNTAX "[debug_on|debug_off]"
@@ -90,6 +95,38 @@ SWITCH_STANDARD_API(xml_scgi_function)
   usage:
 	stream->write_function(stream, "USAGE: %s\n", XML_SCGI_SYNTAX);
 	return SWITCH_STATUS_SUCCESS;
+}
+
+void *SWITCH_THREAD_FUNC monitor_thread_run(switch_thread_t *thread, void *obj)
+{
+	xml_binding_t *binding = (xml_binding_t *) obj;
+	time_t st;
+	int diff;
+
+	while(globals.running) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Running server command: %s\n", binding->server);
+		st = switch_epoch_time_now(NULL);
+		switch_system(binding->server, SWITCH_TRUE);
+		diff = (int) switch_epoch_time_now(NULL) - st;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Server command complete: %s\n", binding->server);
+
+		if (globals.running && diff < 5) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Server command had short run duration, sleeping: %s\n", binding->server);
+			switch_yield(10000000);
+		}
+	}
+	
+	return NULL;
+}
+
+static void launch_monitor_thread(xml_binding_t *binding)
+{
+	switch_threadattr_t *thd_attr = NULL;
+
+	switch_threadattr_create(&thd_attr, globals.pool);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_increase(thd_attr);
+	switch_thread_create(&binding->thread, thd_attr, monitor_thread_run, binding, globals.pool);
 }
 
 
@@ -130,6 +167,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		txt = (char *) stream.data;
 
 		while((len = scgi_recv(&handle, buf, sizeof(buf))) > 0) {
+			char *expanded = switch_event_expand_headers(params, (char *)buf);
 			
 			bytes += len;
 
@@ -139,8 +177,14 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 				break;
 			}
 
-			stream.write_function(&stream, "%s", buf);
+			stream.write_function(&stream, "%s", expanded);
 			txt = (char *) stream.data;
+
+			if (expanded != (char *)buf) {
+				free(expanded);
+			}
+			
+			memset(buf, 0, sizeof(buf));
 		}
 
 		scgi_disconnect(&handle);
@@ -210,7 +254,8 @@ static switch_status_t do_config(void)
 		char *port = "8080";
 		char *bind_mask = NULL;
 		int timeout = 0;
-		
+		char *server = NULL;
+
 		hash_node_t *hash_node;
 		need_vars_map = 0;
 		vars_map = NULL;
@@ -248,6 +293,8 @@ static switch_status_t do_config(void)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't add %s to params hash!\n", val);
 					}
 				}
+			} else if (!strcasecmp(var, "server")) {
+				server = val;
 			}
 		}
 
@@ -273,6 +320,10 @@ static switch_status_t do_config(void)
 		binding->vars_map = vars_map;
 		binding->url = switch_mprintf("scgi://%s:%s/%s", host, port, bname);
 
+		if (server) {
+			binding->server = switch_core_strdup(globals.pool, server);
+		}
+
         if (bind_mask) {
 			binding->bindings = switch_core_strdup(globals.pool, bind_mask);
 		}                                         
@@ -297,6 +348,15 @@ static switch_status_t do_config(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
 						  zstr(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");
 		switch_xml_bind_search_function(xml_url_fetch, switch_xml_parse_section_string(binding->bindings), binding);
+		
+		if (binding->server) {
+			launch_monitor_thread(binding);
+		}
+
+		binding->next = globals.bindings;
+		globals.bindings = binding;
+		
+
 		x++;
 		binding = NULL;
 	}
@@ -315,6 +375,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_scgi_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	memset(&globals, 0, sizeof(globals));
+	globals.running = 1;
 	globals.pool = pool;
 	globals.hash_root = NULL;
 	globals.hash_tail = NULL;
@@ -334,6 +395,41 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_scgi_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_scgi_shutdown)
 {
 	hash_node_t *ptr = NULL;
+	xml_binding_t *bp;
+
+	globals.running = 0;
+
+	for(bp = globals.bindings; bp; bp = bp->next) {
+		if (bp->thread) {
+			switch_status_t st;
+			scgi_handle_t handle = { 0 };
+			unsigned char buf[16336] = "";
+			int x = 3;
+
+			scgi_add_param(&handle, "REQUEST_METHOD", "POST");
+			scgi_add_param(&handle, "REQUEST_URI", bp->url);
+			scgi_add_body(&handle, "SHUTDOWN");
+
+			while(x--) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sending shutdown message to server for %s\n", bp->url);
+
+				if (scgi_connect(&handle, bp->host, bp->port, bp->timeout * 1000) == SCGI_SUCCESS) {
+					while(0 && scgi_recv(&handle, buf, sizeof(buf)) > 0) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s\n", (char *) buf);
+						memset(buf, 0, sizeof(buf));
+					}
+					break;
+				}
+				
+				switch_yield(5000000);
+			}
+
+			scgi_disconnect(&handle);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for server to stop.\n");
+			switch_thread_join(&st, bp->thread);
+		}
+	}
+
 
 	while (globals.hash_root) {
 		ptr = globals.hash_root;

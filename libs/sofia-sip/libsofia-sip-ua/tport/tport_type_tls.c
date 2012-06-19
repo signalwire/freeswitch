@@ -181,6 +181,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
   char *tbf = NULL;
   char const *path = NULL;
   unsigned tls_version = 1;
+  unsigned tls_timeout = 300;
   unsigned tls_verify = 0;
   char const *passphrase = NULL;
   unsigned tls_policy = TPTLS_VERIFY_NONE;
@@ -198,6 +199,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
   tl_gets(tags,
 	  TPTAG_CERTIFICATE_REF(path),
 	  TPTAG_TLS_VERSION_REF(tls_version),
+	  TPTAG_TLS_TIMEOUT_REF(tls_timeout),
 	  TPTAG_TLS_VERIFY_PEER_REF(tls_verify),
 	  TPTAG_TLS_PASSPHRASE_REF(passphrase),
 	  TPTAG_TLS_VERIFY_POLICY_REF(tls_policy),
@@ -224,6 +226,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
     ti.cert = ti.key;
     ti.CAfile = su_sprintf(autohome, "%s/%s", path, "cafile.pem");
     ti.version = tls_version;
+    ti.timeout = tls_timeout;
     ti.CApath = su_strdup(autohome, path);
 
     SU_DEBUG_9(("%s(%p): tls key = %s\n", __func__, (void *)pri, ti.key));

@@ -1431,8 +1431,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_set_flag((&runtime.dummy_cng_frame), SFF_CNG);
 	switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
 	switch_set_flag((&runtime), SCF_CLEAR_SQL);
+#ifdef WIN32
 	switch_set_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
-
+#endif
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;
 	runtime.mailer_app = "sendmail";
@@ -1576,16 +1577,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 static void handle_SIGCHLD(int sig)
 {
 	int status = 0;
-	int pid = 0;
 
-	if (sig) {};
-
-	pid = wait(&status);
-	
-	if (pid > 0) {
-		printf("ASS %d\n", pid);
-	}
-
+	wait(&status);
 	return;
 }
 #endif

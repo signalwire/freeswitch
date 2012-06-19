@@ -145,7 +145,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		for (ap = app_log; ap; ap = ap->next) {
 			bson_append_start_object(&cdr, "application");
 			bson_append_string(&cdr, "app_name", ap->app);
-			bson_append_string(&cdr, "app_data", ap->arg);
+			bson_append_string(&cdr, "app_data", switch_str_nil(ap->arg));
 			bson_append_long(&cdr, "app_stamp", ap->stamp);
 			bson_append_finish_object(&cdr);		/* application */
 		}
@@ -186,7 +186,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 					bson_append_bool(&cdr, "last_executed", 1);
 				}
 				bson_append_string(&cdr, "app_name", ap->application_name);
-				bson_append_string(&cdr, "app_data", ap->application_data);
+				bson_append_string(&cdr, "app_data", switch_str_nil(ap->application_data));
 				bson_append_finish_object(&cdr);
 			}
 
@@ -215,7 +215,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 							bson_append_bool(&cdr, "last_executed", 1);
 						}
 						bson_append_string(&cdr, "app_name", ap->application_name);
-						bson_append_string(&cdr, "app_data", ap->application_data);
+						bson_append_string(&cdr, "app_data", switch_str_nil(ap->application_data));
 						bson_append_finish_object(&cdr);
 					}
 
