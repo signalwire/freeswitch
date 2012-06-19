@@ -857,7 +857,7 @@ static void listener_main_loop(listener_t *listener)
 
 		/* do we need the mutex when reading? */
 		/*switch_mutex_lock(listener->sock_mutex); */
-		status = ei_xreceive_msg_tmo(listener->sockfd, &msg, &buf, 100);
+		status = ei_xreceive_msg_tmo(listener->sockfd, &msg, &buf, 10);
 		/*switch_mutex_unlock(listener->sock_mutex); */
 
 		switch (status) {
