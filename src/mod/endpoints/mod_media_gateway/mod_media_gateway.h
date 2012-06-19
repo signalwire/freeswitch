@@ -32,6 +32,14 @@ typedef enum {
 	PF_RUNNING = (1 << 0)
 } megaco_profile_flags_t;
 
+typedef enum {
+	MEGACO_CODEC_PCMA,
+	MEGACO_CODEC_PCMU,
+	MEGACO_CODEC_G729,
+	MEGACO_CODEC_G723_1,
+	MEGACO_CODEC_ILBC,
+} megaco_codec_t;
+
 typedef struct mg_peer_profile_s{
 	char 				*name;
 	switch_memory_pool_t 		*pool;
@@ -47,18 +55,22 @@ typedef struct mg_peer_profile_s{
 
 typedef struct megaco_profile_s {
 	char 				*name;
-	switch_memory_pool_t 		*pool;
-	switch_thread_rwlock_t 		*rwlock; /* < Reference counting rwlock */
-	megaco_profile_flags_t 		flags;
-	int 				idx;         /* Trillium MEGACO SAP identification*/
-	char*                 		mid;  	     /* MG H.248 MID */
-	char*                 		my_domain;   /* local domain name */
-	char*                 		my_ipaddr;   /* local domain name */
-	char*                		port;              	     /* port */
-	char*                		protocol_type;    	     /* MEGACO/MGCP */
-	int 				protocol_version;            /* Protocol supported version */
-	int 				total_peers;            
-	char*                		peer_list[MG_MAX_PEERS];     /* MGC Peer ID LIST */
+	switch_memory_pool_t 	*pool;
+	switch_thread_rwlock_t 	*rwlock; /* < Reference counting rwlock */
+	megaco_profile_flags_t 	flags;
+	int 					idx;         /* Trillium MEGACO SAP identification*/
+	char*					mid;  	     /* MG H.248 MID */
+	char*					my_domain;   /* local domain name */
+	char*					my_ipaddr;   /* local domain name */
+	char*					port;              	     /* port */
+	char*					protocol_type;    	     /* MEGACO/MGCP */
+	int 					protocol_version;            /* Protocol supported version */
+	int 					total_peers;
+	megaco_codec_t			default_codec;
+	char*					rtp_port_range;
+	char*					rtp_termination_id_prefix;
+	int						rtp_termination_id_len;
+	char*                	peer_list[MG_MAX_PEERS];     /* MGC Peer ID LIST */
 } megaco_profile_t;
 
 
