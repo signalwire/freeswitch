@@ -81,6 +81,7 @@ struct sdp_parser_s {
   unsigned   pr_insane : 1;
   unsigned   pr_c_missing : 1;
   unsigned   pr_config : 1;
+  unsigned   pr_megaco : 1;
 };
 
 #define is_posdigit(c) ((c) >= '1' && (c) <= '9')
@@ -176,6 +177,7 @@ sdp_parse(su_home_t *home, char const msg[], issize_t msgsize, int flags)
     if (flags & sdp_f_config)
       p->pr_c_missing = 1, p->pr_config = 1;
     p->pr_mode_manual = (flags & sdp_f_mode_manual) != 0;
+	p->pr_megaco = (flags & sdp_f_megaco) != 0;
     p->pr_session_mode = sdp_sendrecv;
 
     parse_message(p);
@@ -1502,8 +1504,18 @@ static void parse_payload(sdp_parser_t *p, char *r, sdp_rtpmap_t **result)
 {
   while (*r) {
     unsigned long value;
+	 if (((p->pr_config && r[0] == '*') || (p->pr_megaco && r[0] == MEGACO_CHOOSE_TOK)) && (r[1] == ' ' || r[1] == '\0')) {
+      PARSE_ALLOC(p, sdp_rtpmap_t, rm);
 
-    if (parse_ul(p, &r, &value, 128) == 0) {
+      *result = rm; result = &rm->rm_next;
+
+      rm->rm_predef = 1;
+      rm->rm_any = 1;
+      rm->rm_encoding = "*";
+      rm->rm_rate = 0;
+
+      return;
+    } else if (parse_ul(p, &r, &value, 128) == 0  && value < 128) {
       PARSE_ALLOC(p, sdp_rtpmap_t, rm);
 
       assert(0 <= value && value < 128);
@@ -1519,21 +1531,8 @@ static void parse_payload(sdp_parser_t *p, char *r, sdp_rtpmap_t **result)
 	rm->rm_encoding = "";
 	rm->rm_rate = 0;
       }
-    }
-    else if (p->pr_config && r[0] == '*' && (r[1] == ' ' || r[1] == '\0')) {
-      PARSE_ALLOC(p, sdp_rtpmap_t, rm);
-
-      *result = rm; result = &rm->rm_next;
-
-      rm->rm_predef = 1;
-      rm->rm_any = 1;
-      rm->rm_encoding = "*";
-      rm->rm_rate = 0;
-
-      return;
-    }
-    else {
-      parsing_error(p, "m= invalid format for RTP/AVT");
+    } else {
+      parsing_error(p, "m= invalid format for RTP/AVP");
 
       return;
     }
@@ -1797,6 +1796,13 @@ static int parse_ul(sdp_parser_t *p, char **r,
     return 0;
   }
 
+  if (p->pr_megaco && *ul == MEGACO_CHOOSE_TOK) {
+	*result = MEGACO_CHOOSE;
+	(*r)++;
+    *r += strspn(*r, SPACE TAB);
+	return 0;
+  }
+
   return -1;
 }
 
@@ -1822,6 +1828,13 @@ static int parse_ull(sdp_parser_t *p, char **r,
     *result = (uint64_t)ull;
     *r += strspn(*r, SPACE TAB);
     return 0;
+  }
+
+  if (p->pr_megaco && *s == MEGACO_CHOOSE_TOK) {
+	*result = MEGACO_CHOOSE;
+	(*r)++;
+    *r += strspn(*r, SPACE TAB);
+	return 0;
   }
 
   return -1;

@@ -24,6 +24,10 @@
 
 #ifndef SDP_H
 #define SDP_H
+
+#define MEGACO_CHOOSE_TOK '$'
+#define MEGACO_CHOOSE (UINT16_MAX + 1)
+
 /**@file sofia-sip/sdp.h  Simple SDP (RFC 2327) Interface.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -260,7 +264,7 @@ typedef enum {
 /** Media announcement.
  *
  * This structure describes one media type, e.g., audio.  The description
- * contains the transport address (IP address and port) used for the group,
+ * contains the transport address (IP address and port) used for the group,/Users/mrene/Downloads
  * the transport protocol used, the media formats or RTP payload types, and
  * optionally media-specific bandwidth specification, encryption key and
  * attributes.
@@ -525,7 +529,9 @@ enum sdp_parse_flags_e {
   /** Do not generate or parse SDP mode */
   sdp_f_mode_manual = 512,
   /** Always generate media-level mode attributes */
-  sdp_f_mode_always = 1024
+  sdp_f_mode_always = 1024,
+  /** Allow optional (choose) parameters */
+  sdp_f_megaco = 2048
 };
 
 /** SDP parser handle. */
