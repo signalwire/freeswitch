@@ -25,7 +25,7 @@
     each time it creates new session via zrtp_session_init().    
   *- Added zrtp_randstr2() which allow to generate random string before libzrtp being initialized.
     Can be handy to generate initial ZID. In normal circumstances, use zrtp_randstr() whenever possible.
-  *- ZRTP cache API was completely redesigned. Look at zrtp_cache.h for more details.  
+  *- ZRTP cache API was completely redesigned. Look at zrtp_cache.h for more details.
   
 
 ***\subsection v120_feature New features and improvements.
