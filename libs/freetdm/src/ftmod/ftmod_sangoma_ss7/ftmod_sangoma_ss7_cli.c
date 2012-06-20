@@ -3167,11 +3167,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 							 len = len + sprintf(buf + len, "<name> %s </name>\n",g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[peer_id].name);
 							 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.peerSta.state));
 							 len = len + sprintf(buf + len, " <retry_count> %d </retry_count>\n",cfm.t.ssta.s.peerSta.retryCount);
-#ifdef BIT_64							 
-							 len = len + sprintf(buf + len, " <assoc_id> %d </assoc_id>\n", (int64_t) cfm.t.ssta.s.peerSta.assocSta.spAssocId);
-#else
-							 len = len + sprintf(buf + len, " <assoc_id> %lld </assoc_id>\n", (int64_t) cfm.t.ssta.s.peerSta.assocSta.spAssocId);
-#endif
+							 len = len + sprintf(buf + len, " <assoc_id> %d </assoc_id>\n", (int)cfm.t.ssta.s.peerSta.assocSta.spAssocId);
 							 len = len + sprintf(buf + len, " <connected_status> %s </connected_status>\n",(cfm.t.ssta.s.peerSta.assocSta.connected)?"CONNECTED":"NOT CONNECTED");
 							 len = len + sprintf(buf + len, " <flow_cntrl_progress> %d </flow_cntrl_progress>\n",cfm.t.ssta.s.peerSta.assocSta.flcInProg);
 							 len = len + sprintf(buf + len, " <flow_cntrl_level> %d </flow_cntrl_level>\n",cfm.t.ssta.s.peerSta.assocSta.flcLevel);
@@ -3197,11 +3193,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 				 len = len + sprintf(buf + len, "<m2ua_sctp_sap>\n");
 				 len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_SAP_STATE(cfm.t.ssta.s.sctSapSta.state));
 				 len = len + sprintf(buf + len," <end_point_open_state> %s </end_point_open_state>\n", (cfm.t.ssta.s.sctSapSta.endpOpen)?"END_POINT_OPENED_SUCCESSFULLY":"END_POINT_NOT_OPEN");
-#ifdef BIT_64							 
-				 len = len + sprintf(buf + len," <end_point_id> %d </end_point_id>\n", (int64_t) cfm.t.ssta.s.sctSapSta.spEndpId);
-#else
-				 len = len + sprintf(buf + len," <end_point_id> %lld </end_point_id>\n", (int64_t) cfm.t.ssta.s.sctSapSta.spEndpId);
-#endif
+				 len = len + sprintf(buf + len," <end_point_id> %d </end_point_id>\n", (int) cfm.t.ssta.s.sctSapSta.spEndpId);
 				 len = len + sprintf(buf + len," <nmb_of_retry_attemp> %d </nmb_of_retry_attemp>\n", cfm.t.ssta.s.sctSapSta.nmbPrimRetry);
 				 len = len + sprintf(buf + len, "</m2ua_sctp_sap>\n");
 			 }
