@@ -209,6 +209,13 @@ int  ft_to_sngss7_cfg_all(void)
 			}
 		} /* if (sngss7_test_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2)) */
 
+		if(SNG_SS7_OPR_MODE_M2UA_SG == g_ftdm_operating_mode){
+			if(FTDM_SUCCESS != ftmod_ss7_m2ua_init()){
+				ftdm_log (FTDM_LOG_ERROR, "ftmod_ss7_m2ua_init FAILED \n");
+				return FTDM_FAIL;
+			}
+		}
+
 		g_ftdm_sngss7_data.gen_config = SNG_GEN_CFG_STATUS_DONE;
 
 	} /* if (!(g_ftdm_sngss7_data.gen_config)) */

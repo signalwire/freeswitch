@@ -3061,7 +3061,6 @@ static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *conf
 		return NULL;
 	}
 
-	/* If ISUP is operating mode then only include mtp3_links/isup links */
 	if(is_isup) {
 		/* add mtp3 links */
 		if (add_config_list_nodes(isup, rootnode, "mtp3_links", "mtp3_link", NULL, NULL)) {
@@ -3097,10 +3096,9 @@ static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *conf
 			ftdm_conf_node_destroy(rootnode);
 			return NULL;
 		}
-	}
-	else {
+	} else {
 		/* add sctp links */
-		if (add_config_list_nodes(isup, rootnode, "sng_sctp_interfaces", "sng_sctp_interface", NULL, NULL)) {
+		if (add_config_nodes(isup, rootnode, "sng_sctp_interfaces", "sng_sctp_interface",  "sng_source_addresses")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process sng_sctp_interface for sng_isup config %s\n", confname);
 			ftdm_conf_node_destroy(rootnode);
 			return NULL;
@@ -3124,13 +3122,11 @@ static ftdm_conf_node_t *_get_ss7_config_node(switch_xml_t cfg, const char *conf
 			return NULL;
 		}
 
-
 		if (add_config_nodes(isup, rootnode, "sng_m2ua_cluster_interfaces", "sng_m2ua_cluster_interface", "sng_m2ua_peers")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to process sng_m2ua_cluster_interfaces for sng_isup config %s\n", confname);
 			ftdm_conf_node_destroy(rootnode);
 			return NULL;
 		}
-
 	}
 
 	switch_core_hash_insert(globals.ss7_configs, confname, rootnode);

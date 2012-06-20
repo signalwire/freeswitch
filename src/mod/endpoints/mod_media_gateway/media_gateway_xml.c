@@ -12,6 +12,7 @@
 static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) ;
 static switch_xml_config_item_t *get_peer_instructions(mg_peer_profile_t *profile) ;
 static int mg_sap_id;
+static switch_status_t modify_mid(char* mid);
 
 /****************************************************************************************************************************/
 switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
@@ -19,7 +20,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 	switch_xml_t cfg, xml, param, mg_interfaces, mg_interface, mg_peers, mg_peer, peer_interfaces ;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
-	const char *file = "megaco.conf";
+	const char *file = "media_gateway.conf";
 	switch_xml_config_item_t *instructions = (profile ? get_instructions(profile) : NULL);
 	int count;
 	int idx;
@@ -57,10 +58,19 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 			profile->total_peers++;
 		}
 
+		if(SWITCH_STATUS_FALSE == (status = modify_mid(profile->mid))){
+			goto done;
+		}
+
 		profile->idx = ++mg_sap_id;
 
 		/* we should break from here , profile name should be unique */
 		break;
+	}
+
+	if (!mg_interface) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error profile %s not found\n", profile->name);
+			return SWITCH_STATUS_FALSE;
 	}
 
 	/* go through the peer configuration and get the mg profile associated peers only */
@@ -84,6 +94,10 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 				count = switch_event_import_xml(switch_xml_child(mg_peer, "param"), "name", "value", &event);
 				if(SWITCH_STATUS_FALSE == (status = switch_xml_config_parse_event(event, count, reload, instructions1))){
 				     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Peer XML Parsing failed \n");
+					goto done;
+				}
+
+				if(SWITCH_STATUS_FALSE == (status = modify_mid(peer_profile->mid))){
 					goto done;
 				}
 
@@ -144,8 +158,23 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 	static switch_xml_config_int_options_t opt_version = { 
 		SWITCH_TRUE,  /* enforce min */
 		1,
-		SWITCH_TRUE, /* Enforce Max */
+		SWITCH_TRUE, /* enforce Max */
 		3
+	};
+
+	static switch_xml_config_int_options_t opt_termination_id_len = {
+		SWITCH_TRUE,  /* enforce min */
+		1,
+		SWITCH_TRUE, /* enforce Max */
+		9
+	};
+
+	static switch_xml_config_enum_item_t opt_default_codec_enum[] = {
+		{  "PCMA",  MEGACO_CODEC_PCMA},
+		{  "PCMU",  MEGACO_CODEC_PCMU},
+		{  "G.729",  MEGACO_CODEC_G729},
+		{  "G.723.1",  MEGACO_CODEC_G723_1},
+		{  "ILBC", MEGACO_CODEC_ILBC },
 	};
 
 	switch_xml_config_item_t instructions[] = {
@@ -156,6 +185,11 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		SWITCH_CONFIG_ITEM("port", SWITCH_CONFIG_STRING, 0, &profile->port, "2944", &switch_config_string_strdup, "", "port"),
 		SWITCH_CONFIG_ITEM("domain-name", SWITCH_CONFIG_STRING, 0, &profile->my_domain, "", &switch_config_string_strdup, "", "domain name"),
 		SWITCH_CONFIG_ITEM("message-identifier", SWITCH_CONFIG_STRING, 0, &profile->mid, "", &switch_config_string_strdup, "", "message identifier "),
+
+		SWITCH_CONFIG_ITEM("default-codec", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &profile->default_codec, "PCMU", &opt_default_codec_enum, "", "default codec"),
+		SWITCH_CONFIG_ITEM("rtp-port-range", SWITCH_CONFIG_STRING, CONFIG_REQUIRED, &profile->rtp_port_range, "1-65535", &switch_config_string_strdup, "", "rtp port range"),
+		SWITCH_CONFIG_ITEM("rtp-termination-id-prefix", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->rtp_termination_id_prefix, "", &switch_config_string_strdup, "", "rtp termination prefix"),
+		SWITCH_CONFIG_ITEM("rtp-termination-id-len", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->rtp_termination_id_len, "", &opt_termination_id_len, "", "rtp termination id"),
 		SWITCH_CONFIG_ITEM_END()
 	};
 	
@@ -165,3 +199,54 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 }
 
 /****************************************************************************************************************************/
+
+static switch_status_t modify_mid(char* mid)
+{
+	char* 			dup = NULL;
+	char* 			val[10];
+	int 			count;
+
+	switch_assert(mid);
+
+	/* If MID type is IP then add mid into [] brackets ,
+	 * If MID type is domain then add mid into <> brackets *
+	 */
+
+	dup = strdup(mid);
+	count = switch_split(dup, '.', val);
+
+	if(!count) {
+		/* Input string is not separated by '.', check if its separated by '-' as format could be xxx-xx-xxx/xxx-xx-xx-xxx  */
+		free(dup);
+		dup = strdup(mid);
+		if(0 == (count = switch_split(dup, '-', val))){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid input MID string[%s]\n",mid);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	if(('<' == val[0][0]) || ('[' == val[0][0])){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MID[%s] is already prefixed with proper brackets \n",mid);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	/*first check could be if count is 3 means domain name as generally we have xxx-xx-xxx/xxx.xx.xxx domain */
+	if(3 == count){
+		/* domain-type, add value into <> */
+		free(dup);
+		dup = strdup(mid);
+		sprintf(mid,"<%s>",dup);
+	}else if(4 == count){
+		/* IP address in xxx.xxx.xxx.xxx format */
+		free(dup);
+		dup = strdup(mid);
+		sprintf(mid,"[%s]",dup);
+	}else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid input MID string[%s]\n",mid);
+		return SWITCH_STATUS_FALSE;
+	}
+
+
+	free(dup);
+	return SWITCH_STATUS_SUCCESS;
+}
