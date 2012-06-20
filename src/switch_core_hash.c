@@ -157,7 +157,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 	switch_event_create_subclass(&event, SWITCH_EVENT_CLONE, NULL);
 	switch_assert(event);
 	
-	/* iterate through the hash, call callback, if callback returns true, put the key on the list (event)
+	/* iterate through the hash, call callback, if callback returns NULL or true, put the key on the list (event)
 	   When done, iterate through the list deleting hash entries
 	 */
 	
@@ -165,7 +165,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 		const void *key;
 		void *val;
 		switch_hash_this(hi, &key, NULL, &val);
-		if (callback(key, val, pData)) {
+		if (!callback || callback(key, val, pData)) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 		}
 	}
