@@ -124,6 +124,7 @@ static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char
 static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream);
 static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char* m2ua_profile_name);
 static ftdm_status_t handle_show_m2ua_peer_status(ftdm_stream_handle_t *stream, char* m2ua_profile_name);
+static ftdm_status_t handle_show_m2ua_cluster_status(ftdm_stream_handle_t *stream, char* m2ua_profile_name);
 static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream);
 static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char* profile_name);
 int get_assoc_resp_buf(char* buf,SbMgmt* cfm);
@@ -427,10 +428,17 @@ ftdm_status_t ftdm_sngss7_handle_cli_cmd(ftdm_stream_handle_t *stream, const cha
 					{
 						char* profile_name = argv[++c];
 						c++;
+						/***************************************************************/
 						if(!strcasecmp(argv[c],"peerstatus")){
+						/***************************************************************/
 							handle_show_m2ua_peer_status(stream, profile_name);
-						}
-						else{
+						/***************************************************************/
+						}else if(!strcasecmp(argv[c],"clusterstatus")){
+						/***************************************************************/
+							handle_show_m2ua_cluster_status(stream, profile_name);
+						/***************************************************************/
+						} else{
+						/***************************************************************/
 							stream->write_function(stream, "Unknown \"show m2ua \" command..\n");
 							goto handle_cli_error_argc;
 						}
@@ -933,6 +941,7 @@ static ftdm_status_t handle_print_usage(ftdm_stream_handle_t *stream)
 	stream->write_function(stream, "ftdm ss7 xmlshow m2ua \n");
 	stream->write_function(stream, "ftdm ss7 xmlshow m2ua <m2ua_interface_name>\n");
 	stream->write_function(stream, "ftdm ss7 xmlshow m2ua <m2ua_interface_name> peerstatus\n");
+	stream->write_function(stream, "ftdm ss7 xmlshow m2ua <m2ua_interface_name> clusterstatus\n");
 	stream->write_function(stream, "ftdm ss7 xmlshow nif \n");
 	stream->write_function(stream, "ftdm ss7 xmlshow nif <nif_interface_name>\n");
 	stream->write_function(stream, "\n");
@@ -3086,7 +3095,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 	len = len + sprintf(buf + len, "<m2ua_profiles>\n");
 
 	if(ftmod_m2ua_ssta_req(STMWGEN, 0x00, &cfm)) {
-		stream->write_function(stream," Request to Trillium M2UA layer failed \n");
+		stream->write_function(stream," Request to  layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<m2ua_gen>\n");
@@ -3115,7 +3124,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 			 len = len + sprintf(buf + len, "<name> %s </name>\n", g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].name);
 
 			 if(ftmod_m2ua_ssta_req(STMWDLSAP,x,&cfm)) {
-				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				 stream->write_function(stream," Request to M2UA  layer failed \n");
 				 return FTDM_FAIL;
 			 } else {
 				 len = len + sprintf(buf + len, "<m2ua_dlsap>\n");
@@ -3129,7 +3138,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 
 			 memset((U8 *)&cfm, 0, sizeof(MwMgmt));
 			 if(ftmod_m2ua_ssta_req(STMWCLUSTER,g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].clusterId,&cfm)) {
-				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				 stream->write_function(stream," Request to  M2UA layer failed \n");
 				 return FTDM_FAIL;
 			 } else {
 				 len = len + sprintf(buf + len, "<m2ua_cluster>\n");
@@ -3160,7 +3169,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 					 if(LMW_PEER_DOWN != rsp.t.ssta.s.clusterSta.peerSt[idx].peerState){
 
 						 if(ftmod_m2ua_ssta_req(STMWPEER, peer_id, &cfm)) {
-							 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+							 stream->write_function(stream," Request to M2UA  layer failed \n");
 							 return FTDM_FAIL;
 						 } else {
 							 len = len + sprintf(buf + len, "<m2ua_peer>\n");
@@ -3187,7 +3196,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 
 			 memset((U8 *)&cfm, 0, sizeof(MwMgmt));
 			 if(ftmod_m2ua_ssta_req(STMWSCTSAP,x,&cfm)) {
-				 stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				 stream->write_function(stream," Request to M2UA layer failed \n");
 				 return FTDM_FAIL;
 			 } else {
 				 len = len + sprintf(buf + len, "<m2ua_sctp_sap>\n");
@@ -3206,7 +3215,7 @@ static ftdm_status_t handle_show_m2ua_profiles(ftdm_stream_handle_t *stream)
 	len = len + sprintf(buf + len, "</m2ua_profiles>\n");
 	stream->write_function(stream,"\n%s\n",buf); 
 
-	return FTDM_FAIL;
+	return FTDM_SUCCESS;
 
 }
 
@@ -3259,7 +3268,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 	len = len + sprintf(buf + len, "<name> %s </name>\n", m2ua_profile_name);
 
 	if(ftmod_m2ua_ssta_req(STMWDLSAP,x,&cfm)) {
-		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		stream->write_function(stream," Request to M2UA layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<m2ua_dlsap>\n");
@@ -3272,7 +3281,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 	}
 
 	if(ftmod_m2ua_ssta_req(STMWCLUSTER, g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].clusterId, &cfm)) {
-		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		stream->write_function(stream," Request to M2UA layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<m2ua_cluster>\n");
@@ -3298,7 +3307,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 		memset((U8 *)&cfm, 0, sizeof(MwMgmt));
 
 		if(ftmod_m2ua_ssta_req(STMWPEER, rsp.t.ssta.s.clusterSta.peerSt[idx].peerId, &cfm)) {
-			stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+			stream->write_function(stream," Request to M2UA layer failed \n");
 			return FTDM_FAIL;
 		} else {
 			len = len + sprintf(buf + len, "<m2ua_peer>\n");
@@ -3321,7 +3330,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 	}
 
 	if(ftmod_m2ua_ssta_req(STMWSCTSAP,x,&cfm)) {
-		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		stream->write_function(stream," Request to M2UA layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<m2ua_sctp_sap>\n");
@@ -3340,7 +3349,7 @@ static ftdm_status_t handle_show_m2ua_profile(ftdm_stream_handle_t *stream, char
 
 	stream->write_function(stream,"\n%s\n",buf); 
 
-	return FTDM_FAIL;
+	return FTDM_SUCCESS;
 
 }
 
@@ -3366,7 +3375,7 @@ static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 	len = len + sprintf(buf + len, "<sctp_profiles>\n");
 
 	if(ftmod_sctp_ssta_req(STSBGEN, 0x00, &cfm)) {
-		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		stream->write_function(stream," Request to  SCTP layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<sctp_gen>\n");
@@ -3386,7 +3395,7 @@ static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 
 #ifdef LSB12
 	if(ftmod_sctp_ssta_req(STSBTMR, 0x00, &cfm)) {
-		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		stream->write_function(stream," Request to  SCTP layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<sctp_timers>\n");
@@ -3418,7 +3427,7 @@ static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 			len = len + sprintf(buf + len, "<sctp_profile>\n");
 
 			if(ftmod_sctp_ssta_req(STSBSCTSAP,x,&cfm)) {
-				stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				stream->write_function(stream," Request to  SCTP layer failed \n");
 				return FTDM_FAIL;
 			} else {
 				len = len + sprintf(buf + len, "<sctp_sap>\n");
@@ -3428,7 +3437,7 @@ static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 			}
 
 			if(ftmod_sctp_ssta_req(STSBTSAP,x,&cfm)) {
-				stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				stream->write_function(stream," Request to  SCTP layer failed \n");
 				return FTDM_FAIL;
 			} else {
 				len = len + sprintf(buf + len, "<sctp_transport_sap>\n");
@@ -3443,7 +3452,7 @@ static ftdm_status_t handle_show_sctp_profiles(ftdm_stream_handle_t *stream)
 					len = len + sprintf(buf + len, " <status> SCT_ASSOC_STATE_CLOSED </status>\n");
 					len = len + sprintf(buf + len, "</sctp_association>\n");
 				}else{
-					stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+					stream->write_function(stream," Request to  SCTP layer failed \n");
 					return FTDM_FAIL;
 				}
 			} else {
@@ -3612,7 +3621,7 @@ static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char
 	len = len + sprintf(buf + len, "<sctp_profile>\n");
 
 	if(ftmod_sctp_ssta_req(STSBSCTSAP,x,&cfm)) {
-		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		stream->write_function(stream," Request to  SCTP layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<sctp_sap>\n");
@@ -3622,7 +3631,7 @@ static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char
 	}
 
 	if(ftmod_sctp_ssta_req(STSBTSAP,x,&cfm)) {
-		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		stream->write_function(stream," Request to  SCTP layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<sctp_transport_sap>\n");
@@ -3638,7 +3647,7 @@ static ftdm_status_t handle_show_sctp_profile(ftdm_stream_handle_t *stream, char
 			len = len + sprintf(buf + len, " <status> SCT_ASSOC_STATE_CLOSED </status>\n");
 			len = len + sprintf(buf + len, "</sctp_association>\n");
 		}else{
-			stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+			stream->write_function(stream," Request to  SCTP layer failed \n");
 			return FTDM_FAIL;
 		}
 	} else {
@@ -3678,7 +3687,7 @@ static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 	len = len + sprintf(buf + len, "<nif_profiles>\n");
 
 	if(ftmod_nif_ssta_req(STNWGEN, 0x00, &cfm)) {
-		stream->write_function(stream," Request to Trillium NIF layer failed \n");
+		stream->write_function(stream," Request to  NIF layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<nif_gen>\n");
@@ -3701,7 +3710,7 @@ static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 			len = len + sprintf(buf + len, "<nif_profile>\n");
 
 			if(ftmod_nif_ssta_req(STNWDLSAP,x,&cfm)) {
-				stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				stream->write_function(stream," Request to NIF layer failed \n");
 				return FTDM_FAIL;
 			} else {
 				len = len + sprintf(buf + len, "<nif_dlsap>\n");
@@ -3723,7 +3732,7 @@ static ftdm_status_t handle_show_nif_profiles(ftdm_stream_handle_t *stream)
 	len = len + sprintf(buf + len, "</nif_profiles>\n");
 	stream->write_function(stream,"\n%s\n",buf); 
 
-	return FTDM_FAIL;
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************
@@ -3770,7 +3779,7 @@ static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char*
 	len = len + sprintf(buf + len, "<nif_profile>\n");
 
 	if(ftmod_nif_ssta_req(STNWDLSAP,x,&cfm)) {
-		stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+		stream->write_function(stream," Request to NIF layer failed \n");
 		return FTDM_FAIL;
 	} else {
 		len = len + sprintf(buf + len, "<nif_dlsap>\n");
@@ -3788,7 +3797,7 @@ static ftdm_status_t handle_show_nif_profile(ftdm_stream_handle_t *stream, char*
 
 	stream->write_function(stream,"\n%s\n",buf); 
 
-	return FTDM_FAIL;
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/
@@ -3848,7 +3857,7 @@ static ftdm_status_t handle_show_m2ua_peer_status(ftdm_stream_handle_t *stream, 
 		peer = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[peer_id];
 
 		if(ftmod_m2ua_ssta_req(STMWPEER, peer_id, &cfm)) {
-			stream->write_function(stream," Request to Trillium M2UA layer failed \n");
+			stream->write_function(stream," Request to  M2UA layer failed \n");
 			return FTDM_FAIL;
 		} else {
 			len = len + sprintf(buf + len, "<m2ua_peer>\n");
@@ -3867,7 +3876,7 @@ static ftdm_status_t handle_show_m2ua_peer_status(ftdm_stream_handle_t *stream, 
 				len = len + sprintf(buf + len, " <status> SCT_ASSOC_STATE_CLOSED </status>\n");
 				len = len + sprintf(buf + len, "</sctp_association>\n");
 			}else{
-				stream->write_function(stream," Request to Trillium SCTP layer failed \n");
+				stream->write_function(stream," Request to SCTP layer failed \n");
 				return FTDM_FAIL;
 			}
 		} else {
@@ -3879,7 +3888,82 @@ static ftdm_status_t handle_show_m2ua_peer_status(ftdm_stream_handle_t *stream, 
 
 	stream->write_function(stream,"\n%s\n",buf); 
 
-	return FTDM_FAIL;
+	return FTDM_SUCCESS;
+}
+
+/******************************************************************************
+* Fun:  handle_show_m2ua_cluster_status()
+* Desc: display requested m2ua profile cluster information
+* Ret:  FTDM_SUCCESS | FTDM_FAIL
+* Note: 
+* author: Kapil Gupta
+*******************************************************************************/
+
+static ftdm_status_t handle_show_m2ua_cluster_status(ftdm_stream_handle_t *stream, char* m2ua_profile_name) 
+{
+	char*  xmlhdr = (char*)"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	char  buf[4096];
+	int x = 0x00;
+	int found = 0x00;
+	int len = 0x00;
+	int idx = 0x00;
+	MwMgmt cfm;
+	SbMgmt sctp_cfm;
+	sng_m2ua_cluster_cfg_t*     clust = NULL; 
+	sng_m2ua_cfg_t*             m2ua  = NULL;
+
+	memset((U8 *)&cfm, 0, sizeof(MwMgmt));
+	memset((U8 *)&sctp_cfm, 0, sizeof(SbMgmt));
+	memset(&buf[0], 0, sizeof(buf));
+
+	len = len + sprintf(buf + len, "%s\n", xmlhdr);
+
+	/*iterate through all the m2ua links and get required profile */
+	x = 1;
+	while(x<MW_MAX_NUM_OF_INTF){
+		if((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].id !=0) &&
+				((g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].flags & SNGSS7_ACTIVE))) {
+
+			if(!strcasecmp(m2ua_profile_name, g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].name)){
+				found = 0x01;
+				break;
+			}
+		}
+		x++;
+	}
+
+	if(!found){
+		stream->write_function(stream,"Requested M2UA profile[%s] not configured\n", m2ua_profile_name);
+		return FTDM_FAIL;
+	}
+
+	m2ua  = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x];
+	clust = &g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_clus[m2ua->clusterId];
+
+	if(ftmod_m2ua_ssta_req(STMWCLUSTER,g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[x].clusterId,&cfm)) {
+		stream->write_function(stream," Request to M2UA layer failed \n");
+		return FTDM_FAIL;
+	} else {
+		len = len + sprintf(buf + len, "<m2ua_cluster>\n");
+		len = len + sprintf(buf + len, "<name> %s </name>\n",clust->name);
+		len = len + sprintf(buf + len," <state> %s </state>\n", PRNT_M2UA_CLUSTER_STATE(cfm.t.ssta.s.clusterSta.state));
+		len = len + sprintf(buf + len, "<num_of_peers> %d </num_of_peers>\n",cfm.t.ssta.s.clusterSta.nmbPeer);
+		for(idx = 0; idx < cfm.t.ssta.s.clusterSta.nmbPeer; idx++)
+		{
+			len = len + sprintf(buf + len, "<m2ua_cluster_peer>\n");
+			len = len + sprintf(buf + len, " <peer_name> %s </peer_name>\n", g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua_peer[cfm.t.ssta.s.clusterSta.peerSt[idx].peerId].name);
+			len = len + sprintf(buf + len, " <peer_id> %d </peer_id>\n", cfm.t.ssta.s.clusterSta.peerSt[idx].peerId);
+			len = len + sprintf(buf + len, " <peer_state> %s </peer_state>\n",  PRNT_M2UA_PEER_STATE(cfm.t.ssta.s.clusterSta.peerSt[idx].peerState));
+			len = len + sprintf(buf + len, "</m2ua_cluster_peer>\n");
+		}
+		len = len + sprintf(buf + len, "<num_active_peer> %d </num_active_peer>\n",cfm.t.ssta.s.clusterSta.nmbActPeer);
+
+		len = len + sprintf(buf + len, "</m2ua_cluster>\n");
+	}
+
+	stream->write_function(stream,"\n%s\n",buf); 
+
+	return FTDM_SUCCESS;
 }
 
 /******************************************************************************/

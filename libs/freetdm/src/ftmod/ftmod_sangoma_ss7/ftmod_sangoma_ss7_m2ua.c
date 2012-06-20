@@ -793,10 +793,10 @@ static int ftmod_m2ua_peer_config(int id)
 			ftdm_log (FTDM_LOG_INFO, " ftmod_m2ua_sctsap_config: M2UA SCTSAP for M2UA Intf Id[%d] config SUCCESS \n", id);
 		}
 		if(ftmod_m2ua_peer_config1(id, peer_id)){
-			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_peer_config1: M2UA Peer configuration for M2UA Intf Id[%d] config FAILED \n", id);
+			ftdm_log (FTDM_LOG_ERROR, " ftmod_m2ua_peer_config1: M2UA Peer[%d] configuration for M2UA Intf Id[%d] config FAILED \n", peer_id, id);
 			return 0x01;
 		}else{
-			ftdm_log (FTDM_LOG_INFO, " ftmod_m2ua_peer_config1: M2UA Peer configuration for M2UA Intf Id[%d] config SUCCESS \n", id);
+			ftdm_log (FTDM_LOG_INFO, " ftmod_m2ua_peer_config1: M2UA Peer[%d] configuration for M2UA Intf Id[%d] config SUCCESS \n", peer_id, id);
 		}
 
 		clust->sct_sap_id = id;
@@ -813,12 +813,27 @@ static int ftmod_m2ua_peer_config(int id)
 static int ftmod_m2ua_sctsap_config(int sct_sap_id, int sctp_id)
 {
    int    i;
+   int    ret;
    Pst    pst; 
    MwMgmt cfg;
+   MwMgmt cfm;
    sng_sctp_link_t *sctp = &g_ftdm_sngss7_data.cfg.sctpCfg.linkCfg[sctp_id];
 
+
+
    memset((U8 *)&cfg, 0, sizeof(MwMgmt));
+   memset((U8 *)&cfm, 0, sizeof(MwMgmt));
    memset((U8 *)&pst, 0, sizeof(Pst));
+
+   /* check is sct_sap is already configured */
+   if(!ftmod_m2ua_ssta_req(STMWSCTSAP, sct_sap_id, &cfm )){
+	   ftdm_log (FTDM_LOG_INFO, " ftmod_m2ua_sctsap_config: SCT SAP [%s] is already configured \n", sctp->name);
+	   return 0x00;
+   }
+
+   if(LCM_REASON_INVALID_SAP == cfm.cfm.reason){
+	   ftdm_log (FTDM_LOG_INFO, " ftmod_m2ua_sctsap_config: SCT SAP [%s] is not configured..configuring now \n", sctp->name);
+   }
 
    smPstInit(&pst);
 
@@ -880,8 +895,11 @@ static int ftmod_m2ua_sctsap_config(int sct_sap_id, int sctp_id)
    cfg.t.cfg.s.sctSapCfg.reConfig.mem.region    = S_REG;
    cfg.t.cfg.s.sctSapCfg.reConfig.mem.pool      = S_POOL;
 
-     return (sng_cfg_m2ua (&pst, &cfg));
+     if (0 == (ret = sng_cfg_m2ua (&pst, &cfg))){
+		sctp->flags |= SNGSS7_CONFIGURED;
+     }
 
+     return ret;
 }
 
 /****************************************************************************************************/
