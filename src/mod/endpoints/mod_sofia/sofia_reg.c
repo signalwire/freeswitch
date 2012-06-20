@@ -2125,7 +2125,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "action", "reverse-auth-lookup");
 
 		if ( sip->sip_call_id ) {
-			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_call_id", sip->sip_call_id->i_id);
+			switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "sip_call_id", sip->sip_call_id->i_id);
 		}
 
 		if (switch_xml_locate_user_merged("id", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, NULL,
