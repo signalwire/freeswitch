@@ -4552,7 +4552,7 @@ static const char *channel_val2str(unsigned long long flag)
 			return channel_flag_strs[i].name;
 		}
 	}
-	return channel_flag_strs[FTDM_CHANNEL_MAX_FLAG].name;
+	return "invalid";
 }
 
 static void print_channel_flag_values(ftdm_stream_handle_t *stream)
