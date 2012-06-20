@@ -197,6 +197,8 @@ typedef enum {
 	FTDM_SPAN_NON_STOPPABLE = (1 << 13),
 	/* If this flag is set, then this span supports TRANSFER state */
 	FTDM_SPAN_USE_TRANSFER = (1 << 14),
+	/* This is the last flag, no more flags bigger than this */
+	FTDM_SPAN_MAX_FLAG = (1 << 15),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */

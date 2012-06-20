@@ -5069,7 +5069,8 @@ static ftdm_cli_entry_t ftdm_cli_options[] =
 	/* Fake handlers as they are handled within freetdm library,
 	 * we should provide a way inside freetdm to query for completions from signaling modules */
 	{ "core state", "[!]<state_name>", "", NULL },
-	{ "core flag", "[!]<flag_value>", "", NULL },
+	{ "core flag", "[!]<flag-int-value|flag-name> [<span_id|span_name>] [<chan_id>]", "", NULL },
+	{ "core spanflag", "[!]<flag-int-value|flag-name> [<span_id|span_name>]", "", NULL },
 	{ "core calls", "", "", NULL },
 };
 
