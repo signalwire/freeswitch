@@ -271,36 +271,38 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	strVerRev   = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_REVISION")
 	
 	'Set version to the one reported by configure.in
-	if strVerRev <> "" Then
+	If strVerRev <> "" Then
 	    VERSION = strVerRev
 	End If
 
 	Dim sLastFile
 	Const ForReading       =  1
 
-	'Try To read revision from git, if it's found, use this instead of strVerRev found above
-	If FSO.FolderExists(VersionDir & ".git") Then
-		VersionCmd="git log --format=" & quote & "%%h %%ci" & quote & " -1 HEAD"
-		Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
-		MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
-		MyFile.WriteLine("@" & VersionCmd)
-		MyFile.Close
-		Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
-		Do
-			strFromProc = Trim(OExec.StdOut.ReadLine())
-			VERSION="git-" & strFromProc
-		Loop While Not OExec.StdOut.atEndOfStream
-		sLastVersion = ""
-		Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
-		If Not sLastFile.atEndOfStream Then
-			sLastVersion = sLastFile.ReadLine()
+	'Try To read revision from git, if it was not found in "configure.in" already
+	If strVerRev = "" Then
+		If FSO.FolderExists(VersionDir & ".git") Then
+			VersionCmd="git log --format=" & quote & "%%h %%ci" & quote & " -1 HEAD"
+			Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
+			MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
+			MyFile.WriteLine("@" & VersionCmd)
+			MyFile.Close
+			Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
+			Do
+				strFromProc = Trim(OExec.StdOut.ReadLine())
+				VERSION="git-" & strFromProc
+			Loop While Not OExec.StdOut.atEndOfStream
+			sLastVersion = ""
+			Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
+			If Not sLastFile.atEndOfStream Then
+				sLastVersion = sLastFile.ReadLine()
+			End If
+			sLastFile.Close
+			VERSION = Replace(VERSION, ":", "-")
 		End If
-		sLastFile.Close
-		VERSION = Replace(VERSION, ":", "-")
 	End If
 	
 	If VERSION = "" Then
-		VERSION = "UNKNOWN"
+		VERSION = "-UNKNOWN"
 	End If
 
 	If VERSION <> sLastVersion Then

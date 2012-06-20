@@ -21,6 +21,12 @@
 
 #include <linux/version.h>
 #include <linux/ioctl.h> /* needed for the _IOW etc stuff used later */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
+#include <asm/switch_to.h>		/* cli(), *_flags */
+#else
+#include <asm/system.h>		/* cli(), *_flags */
+#endif //LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
+
 
 #if LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 18)
 #define CENTOS_5 

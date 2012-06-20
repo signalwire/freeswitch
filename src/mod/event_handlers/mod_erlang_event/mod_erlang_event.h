@@ -39,7 +39,8 @@ typedef enum {
 } session_flag_t;
 
 typedef enum {
-	ERLANG_PID = 0,
+	NONE = 0,
+	ERLANG_PID,
 	ERLANG_REG_PROCESS
 } process_type;
 
@@ -70,7 +71,6 @@ struct spawn_reply_struct
 {
 	switch_thread_cond_t *ready_or_found;
 	switch_mutex_t *mutex;
-	enum reply_state state;
 	erlang_pid *pid;
 	char *hash;
 };
@@ -82,6 +82,8 @@ struct session_elem {
 	uint32_t flags;
 	struct erlang_process process;
 	switch_queue_t *event_queue;
+	switch_thread_rwlock_t *rwlock;
+	switch_thread_rwlock_t *event_rwlock;
 	switch_channel_state_t channel_state;
 	switch_memory_pool_t *pool;
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
@@ -128,6 +130,7 @@ struct listener {
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
 	switch_hash_t *event_hash;
 	switch_thread_rwlock_t *rwlock;
+	switch_thread_rwlock_t *event_rwlock;
 	switch_thread_rwlock_t *session_rwlock;
 	//session_elem_t *session_list;
 	switch_hash_t *sessions;

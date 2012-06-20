@@ -22,8 +22,10 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  * Timo Teräs <timo.teras@iki.fi> (based on mod_timerfd.c)
+ *
+ * Maintainer: Christopher M. Rienzo <chris@rienzo.com>
  *
  * mod_posix_timer.c -- soft timer implemented with POSIX timers (timer_create/timer_settime/timer_getoverrun)
  *
@@ -44,7 +46,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_posix_timer_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_posix_timer_runtime);
 SWITCH_MODULE_DEFINITION(mod_posix_timer, mod_posix_timer_load, mod_posix_timer_shutdown, mod_posix_timer_runtime);
 
-#define SIG SIGRTMAX
+#define SIG (SIGRTMAX - 1)
 #define MAX_INTERVAL 2000 /* ms */
 #define TIMERS_PER_INTERVAL 4
 #define MAX_ACTIVE_TIMERS 256 /* one byte */
@@ -111,7 +113,9 @@ static void timer_signal_handler(int sig, siginfo_t *si, void *cu)
 		if (val >= 0 && val <= MAX_ACTIVE_TIMERS) {
 			uint8_t active_id = (uint8_t)val;
 			/* notify runtime thread that timer identified by active_id has ticked */
-			write(globals.timer_tick_pipe[1], &active_id, 1);
+			if (write(globals.timer_tick_pipe[1], &active_id, 1) == -1) {
+				/* don't actually care about this error- this is only to make the compiler happy */
+			}
 		}
 	}
 }

@@ -1577,16 +1577,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 static void handle_SIGCHLD(int sig)
 {
 	int status = 0;
-	int pid = 0;
 
-	if (sig) {};
-
-	pid = wait(&status);
-	
-	if (pid > 0) {
-		printf("ASS %d\n", pid);
-	}
-
+	wait(&status);
 	return;
 }
 #endif

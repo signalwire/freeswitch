@@ -30,7 +30,7 @@
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  * Cesar Cepeda <cesar@auronix.com>
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *

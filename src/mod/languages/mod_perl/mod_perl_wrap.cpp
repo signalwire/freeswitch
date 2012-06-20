@@ -4675,6 +4675,7 @@ XS(_wrap_new_EventConsumer) {
   {
     char *arg1 = (char *) NULL ;
     char *arg2 = (char *) "" ;
+    int arg3 = (int) 5000 ;
     EventConsumer *result = 0 ;
     int res1 ;
     char *buf1 = 0 ;
@@ -4682,11 +4683,13 @@ XS(_wrap_new_EventConsumer) {
     int res2 ;
     char *buf2 = 0 ;
     int alloc2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 0) || (items > 2)) {
-      SWIG_croak("Usage: new_EventConsumer(event_name,subclass_name);");
+    if ((items < 0) || (items > 3)) {
+      SWIG_croak("Usage: new_EventConsumer(event_name,subclass_name,len);");
     }
     if (items > 0) {
       res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
@@ -4702,14 +4705,23 @@ XS(_wrap_new_EventConsumer) {
       }
       arg2 = reinterpret_cast< char * >(buf2);
     }
-    result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2);
+    if (items > 2) {
+      ecode3 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
+      if (!SWIG_IsOK(ecode3)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_EventConsumer" "', argument " "3"" of type '" "int""'");
+      } 
+      arg3 = static_cast< int >(val3);
+    }
+    result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2,arg3);
     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_EventConsumer, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    
     XSRETURN(argvi);
   fail:
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    
     SWIG_croak_null();
   }
 }

@@ -27,7 +27,7 @@
  * Michael Jerris <mike@jerris.com>
  * Bret McDanel <bret AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  *
  * switch_ivr_async.c -- IVR Library (async operations)
  *

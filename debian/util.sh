@@ -234,9 +234,11 @@ EOF
 build_debs () {
   {
     set -e
-    local OPTIND OPTARG debug_hook=false hookdir=""
-    while getopts 'd' o "$@"; do
+    local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
+    while getopts 'Bbd' o "$@"; do
       case "$o" in
+        B) cow_build_opts="--debbuildopts '-B'";;
+        b) cow_build_opts="--debbuildopts '-b'";;
         d) debug_hook=true;;
       esac
     done
@@ -274,9 +276,10 @@ build_debs () {
     fi
     cow --build $dsc \
       --hookdir "$hookdir" \
-      --buildresult ../
+      --buildresult ../ \
+      $cow_build_opts
   } 1>&2
-  echo ${dsc}_${arch}.changes
+  echo ${dsc%.dsc}_${arch}.changes
 }
 
 build_all () {
@@ -304,38 +307,96 @@ build_all () {
   mkdir -p ../log
   > ../log/changes
   echo; echo; echo; echo
+  trap 'echo "Killing children...">&2; for x in $(jobs -p); do kill $x; done' EXIT
   if [ "${orig:0:2}" = ".." ]; then
     for distro in $distros; do
       echo "Creating $distro dsc..." >&2
       local dsc="$(create_dsc $dsc_opts $distro $orig 2>../log/$distro | tail -n1)"
       echo "Done creating $distro dsc." >&2
       if [ "${dsc:0:2}" = ".." ]; then
+        local lopts="-b"
         for arch in $archs; do
           {
             echo "Building $distro-$arch debs..." >&2
-            local changes="$(build_debs $deb_opts $distro $dsc $arch 2>../log/$distro-$arch | tail -n1)"
+            local changes="$(build_debs $lopts $deb_opts $distro $dsc $arch 2>../log/$distro-$arch | tail -n1)"
             echo "Done building $distro-$arch debs." >&2
             if [ "${changes:0:2}" = ".." ]; then
               echo "$changes" >> ../log/changes
             fi
           } &
           $par || wait
+          lopts="-B"
         done
       fi
     done
     ! $par || wait
   fi
+  trap - EXIT
   cat ../log/changes
 }
 
-while getopts 'd' o "$@"; do
+usage () {
+  cat >&2 <<EOF
+$0 [opts] [cmd] [cmd-opts]
+
+options:
+
+  -d Enable debugging mode.
+
+commands:
+
+  archive-orig
+
+  build-all
+
+    -a Specify architectures
+    -b Bundle downloaded libraries in source package
+    -c Specify distributions
+    -d Enable cowbuilder debug hook
+    -j Build debs in parallel
+    -n Nightly build
+    -m [ quicktest ]
+      Choose custom list of modules to build
+    -s [ paranoid | reckless ]
+      Set FS bootstrap/build -j flags
+    -v Set version
+    -z Set compression level
+
+  build-debs <distro> <dsc-file> <architecture>
+
+    -B Binary architecture-dependent build
+    -b Binary-only build
+    -d Enable cowbuilder debug hook
+
+  create-dbg-pkgs
+
+  create-dsc <distro> <orig-file>
+
+    -m [ quicktest ]
+      Choose custom list of modules to build
+    -s [ paranoid | reckless ]
+      Set FS bootstrap/build -j flags
+
+  create-orig <treeish>
+
+    -b Bundle downloaded libraries in source package
+    -n Nightly build
+    -v Set version
+    -z Set compression level
+
+EOF
+  exit 1
+}
+
+while getopts 'dh' o "$@"; do
   case "$o" in
     d) set -vx;;
+    h) usage;;
   esac
 done
 shift $(($OPTIND-1))
 
-cmd="$1"
+cmd="$1"; [ -n "$cmd" ] || usage
 shift
 case "$cmd" in
   archive-orig) archive_orig "$@" ;;
@@ -344,5 +405,6 @@ case "$cmd" in
   create-dbg-pkgs) create_dbg_pkgs ;;
   create-dsc) create_dsc "$@" ;;
   create-orig) create_orig "$@" ;;
+  *) usage ;;
 esac
 

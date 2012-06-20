@@ -488,7 +488,7 @@ zrtp_status_t _zrtp_packet_preparse( zrtp_stream_t* stream,
 							 (const char*) info->message,
 							  zrtp_ntoh16(((zrtp_packet_Hello_t*) info->message)->hdr.length)*4,
 							  ZSTR_GV(hash_str) );
-				if (!zrtp_memcmp(stream->messages.signaling_hash.buffer, hash_str.buffer, ZRTP_MESSAGE_HASH_SIZE)) {
+				if (zrtp_memcmp(stream->messages.signaling_hash.buffer, hash_str.buffer, ZRTP_MESSAGE_HASH_SIZE)) {
 					if (stream->zrtp->cb.event_cb.on_zrtp_security_event) {
 						stream->zrtp->cb.event_cb.on_zrtp_security_event(stream, ZRTP_EVENT_WRONG_SIGNALING_HASH);
 					}

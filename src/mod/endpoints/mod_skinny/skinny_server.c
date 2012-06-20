@@ -1007,6 +1007,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 				const char *value = switch_xml_attr_soft(xbutton, "value");
 				if(type ==  SKINNY_BUTTON_LINE) {
 					const char *caller_name = switch_xml_attr_soft(xbutton, "caller-name");
+					const char *reg_metadata = switch_xml_attr_soft(xbutton, "registration-metadata");
 					uint32_t ring_on_idle = atoi(switch_xml_attr_soft(xbutton, "ring-on-idle"));
 					uint32_t ring_on_active = atoi(switch_xml_attr_soft(xbutton, "ring-on-active"));
 					uint32_t busy_trigger = atoi(switch_xml_attr_soft(xbutton, "busy-trigger"));
@@ -1030,7 +1031,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 						switch_safe_free(sql);
 						token = switch_mprintf("skinny/%q/%q/%q:%d", profile->name, value, request->data.reg.device_name, request->data.reg.instance);
 						url = switch_mprintf("skinny/%q/%q", profile->name, value);
-						switch_core_add_registration(value, profile->domain, token, url, 0, network_ip, network_port_c, "tcp");
+						switch_core_add_registration(value, profile->domain, token, url, 0, network_ip, network_port_c, "tcp", reg_metadata);
 						switch_safe_free(token);
 						switch_safe_free(url);
 					}

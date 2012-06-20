@@ -2671,8 +2671,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_add_registration(string user, string realm, string token, string url, uint expires, string network_ip, string network_port, string network_proto) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_add_registration(user, realm, token, url, expires, network_ip, network_port, network_proto);
+  public static switch_status_t switch_core_add_registration(string user, string realm, string token, string url, uint expires, string network_ip, string network_port, string network_proto, string metadata) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_add_registration(user, realm, token, url, expires, network_ip, network_port, network_proto, metadata);
     return ret;
   }
 
@@ -4116,6 +4116,11 @@ public class freeswitch {
 
   public static void switch_channel_transfer_to_extension(SWIGTYPE_p_switch_channel channel, switch_caller_extension caller_extension) {
     freeswitchPINVOKE.switch_channel_transfer_to_extension(SWIGTYPE_p_switch_channel.getCPtr(channel), switch_caller_extension.getCPtr(caller_extension));
+  }
+
+  public static string switch_channel_get_partner_uuid(SWIGTYPE_p_switch_channel channel) {
+    string ret = freeswitchPINVOKE.switch_channel_get_partner_uuid(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    return ret;
   }
 
   public static switch_status_t switch_buffer_create(SWIGTYPE_p_apr_pool_t pool, SWIGTYPE_p_p_switch_buffer buffer, SWIGTYPE_p_switch_size_t max_len) {
@@ -6130,6 +6135,7 @@ public class freeswitch {
   public static readonly string SWITCH_LAST_BRIDGE_VARIABLE = freeswitchPINVOKE.SWITCH_LAST_BRIDGE_VARIABLE_get();
   public static readonly string SWITCH_SIGNAL_BRIDGE_VARIABLE = freeswitchPINVOKE.SWITCH_SIGNAL_BRIDGE_VARIABLE_get();
   public static readonly string SWITCH_SIGNAL_BOND_VARIABLE = freeswitchPINVOKE.SWITCH_SIGNAL_BOND_VARIABLE_get();
+  public static readonly string SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE = freeswitchPINVOKE.SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE_get();
   public static readonly string SWITCH_ORIGINATOR_VARIABLE = freeswitchPINVOKE.SWITCH_ORIGINATOR_VARIABLE_get();
   public static readonly string SWITCH_ORIGINATOR_CODEC_VARIABLE = freeswitchPINVOKE.SWITCH_ORIGINATOR_CODEC_VARIABLE_get();
   public static readonly string SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE = freeswitchPINVOKE.SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE_get();
@@ -6779,6 +6785,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SIGNAL_BOND_VARIABLE_get")]
   public static extern string SWITCH_SIGNAL_BOND_VARIABLE_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE_get")]
+  public static extern string SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_ORIGINATOR_VARIABLE_get")]
   public static extern string SWITCH_ORIGINATOR_VARIABLE_get();
@@ -9094,7 +9103,7 @@ class freeswitchPINVOKE {
   public static extern uint switch_default_ptime(string jarg1, uint jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_add_registration")]
-  public static extern int switch_core_add_registration(string jarg1, string jarg2, string jarg3, string jarg4, uint jarg5, string jarg6, string jarg7, string jarg8);
+  public static extern int switch_core_add_registration(string jarg1, string jarg2, string jarg3, string jarg4, uint jarg5, string jarg6, string jarg7, string jarg8, string jarg9);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_del_registration")]
   public static extern int switch_core_del_registration(string jarg1, string jarg2, string jarg3);
@@ -12704,6 +12713,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_transfer_to_extension")]
   public static extern void switch_channel_transfer_to_extension(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_partner_uuid")]
+  public static extern string switch_channel_get_partner_uuid(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_create")]
   public static extern int switch_buffer_create(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);

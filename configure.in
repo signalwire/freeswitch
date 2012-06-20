@@ -10,7 +10,6 @@ AC_SUBST(SWITCH_VERSION_MICRO, [0])
 AC_SUBST(SWITCH_VERSION_REVISION, [-rc2])
 
 AC_CONFIG_FILES([src/include/switch_version.h.in:src/include/switch_version.h.template])
-AC_CONFIG_FILES([.version:.version.in])
 
 AC_CONFIG_AUX_DIR(build/config)
 AM_INIT_AUTOMAKE(libfreeswitch,0.1)
@@ -925,7 +924,7 @@ then
 			#
 			# python distutils found, get settings from python directly
 			#
-			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));'`"
+			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));' | sed -e 's/-arch i386//g;s/-arch x86_64//g'`"
 			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print(\" \".join(libs));'`"
 			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print(\"python\" + sysconfig.get_config_var(\"VERSION\"));'`"
 			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
@@ -993,7 +992,6 @@ AC_CONFIG_FILES([Makefile
 		src/Makefile
 		src/mod/Makefile
 		src/mod/applications/mod_expr/Makefile
-		src/mod/applications/mod_fax/Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_osp/Makefile
 		src/mod/applications/mod_stress/Makefile

@@ -115,7 +115,7 @@ static void *module_thread(void *dummy)
 /**
  * Load mod_posix_timer and start the runtime thread
  */
-static void load_module()
+static int load_module()
 {
 	fail_count = 0;
 	warn_count = 0;
@@ -124,9 +124,11 @@ static void load_module()
 	session_count = 0;
 	last_reported_session_count = 0;
 	shutdown = 0;
-	mod_posix_timer_load(&mod, &pool);
+	if (mod_posix_timer_load(&mod, &pool) != SWITCH_STATUS_SUCCESS) {
+		return -1;
+	}
 	timer_if = mod->timer;
-	pthread_create(&module_runtime_thread_id, NULL, module_thread, NULL);
+	return pthread_create(&module_runtime_thread_id, NULL, module_thread, NULL);
 }
 
 /**
@@ -444,12 +446,14 @@ int main (int argc, char **argv)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	srand48(ts.tv_nsec);
-	load_module();
+	if (load_module() == -1) {
+		return -1;
+	}
 	//test_timer(20, 5.0f, .2f, 1000);
 	//test_timer_session(intervals, interval_weights, 4, 2  * 86400.0f, 90, 2000, 30.0, 5.0f);
 	while(1) {
 		/* stop periodically to trigger timer shutdown */
-		test_timer_session(intervals, interval_weights, 1, 60, 150, 3000, 30.0, 5.0f);
+		test_timer_session(intervals, interval_weights, 1, 60, 150, 190 /* 3000 */, 30.0, 5.0f);
 	}
 	//test_timer(1000, 5.0f, 1);
 	//test_timer(20, 5.0f, .2f, 1000);

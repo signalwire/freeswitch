@@ -280,6 +280,19 @@ tag_typedef_t tptag_compartment = PTRTAG_TYPEDEF(compartment);
  */
 tag_typedef_t tptag_tls_version = UINTTAG_TYPEDEF(tls_version);
 
+/**@def TPTAG_TLS_TIMEOUT(x)
+ *
+ * Sets the maximum TLS session lifetime in seconds.
+ *
+ * The default value is 300 seconds.
+ *
+ * Use with tport_tbind(), nua_create(), nta_agent_create(),
+ * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().
+ *
+ * @NEW_UNRELEASED.
+ */
+tag_typedef_t tptag_tls_timeout = UINTTAG_TYPEDEF(tls_timeout);
+
 /**@def TPTAG_TLS_VERIFY_PEER(x)
  * @par Depreciated:
  *    Alias for TPTAG_TLS_VERIFY_POLICY(TPTLS_VERIFY_IN|TPTLS_VERIFY_OUT)

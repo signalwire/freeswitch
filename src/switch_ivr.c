@@ -2976,7 +2976,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_string(switch_core_session_t *ses
 		}
 	}
 
-	if ((si = switch_loadable_module_get_say_interface(module_name))) {
+	if ((si = switch_loadable_module_get_say_interface(module_name)) && si->say_string_function) {
 		/* should go back and proto all the say mods to const.... */
 		switch_say_args_t say_args = {0};
 		

@@ -1169,6 +1169,11 @@ SWITCH_DECLARE(switch_status_t) switch_thread_exit(switch_thread_t *thd, switch_
  */
 SWITCH_DECLARE(switch_status_t) switch_thread_join(switch_status_t *retval, switch_thread_t *thd)
 {
+	if ( !thd ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Attempting to join thread that does not exist\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	return apr_thread_join((apr_status_t *) retval, (apr_thread_t *) thd);
 }
 

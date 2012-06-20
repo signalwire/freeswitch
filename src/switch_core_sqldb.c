@@ -1193,7 +1193,7 @@ static char *parse_presence_data_cols(switch_event_t *event)
 	for (i = 0; i < col_count; i++) {
 		const char *val = NULL;
 
-		switch_snprintfv(col_name, sizeof(col_name), "variable_%q", cols[i]);
+		switch_snprintfv(col_name, sizeof(col_name), "PD-%q", cols[i]);
 		val = switch_event_get_header_nil(event, col_name);
 		if (zstr(val)) {
 			stream.write_function(&stream, "%q=NULL,", cols[i]);
@@ -1403,9 +1403,22 @@ static void core_event_handler(switch_event_t *event)
 
 			switch (state_i) {
 			case CS_NEW:
-			case CS_HANGUP:
 			case CS_DESTROY:
 			case CS_REPORTING:
+				break;
+			case CS_EXECUTE:
+				if ((extra_cols = parse_presence_data_cols(event))) {
+					new_sql() = switch_mprintf("update channels set state='%s',%s where uuid='%q'",
+											   switch_event_get_header_nil(event, "channel-state"),
+											   extra_cols,
+											   switch_event_get_header_nil(event, "unique-id"));
+					free(extra_cols);
+					
+				} else {
+					new_sql() = switch_mprintf("update channels set state='%s' where uuid='%s'",
+											   switch_event_get_header_nil(event, "channel-state"),
+											   switch_event_get_header_nil(event, "unique-id"));
+				}
 				break;
 			case CS_ROUTING:
 				if ((extra_cols = parse_presence_data_cols(event))) {
@@ -1713,7 +1726,8 @@ static char create_registrations_sql[] =
 	"   network_ip VARCHAR(256),\n"
 	"   network_port VARCHAR(256),\n"
 	"   network_proto VARCHAR(256),\n"
-	"   hostname VARCHAR(256)\n"
+	"   hostname VARCHAR(256),\n"
+	"   metadata VARCHAR(256)\n"
 	");\n";
 
 	
@@ -1843,7 +1857,8 @@ static char basic_calls_sql[] =
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
-															 const char *network_ip, const char *network_port, const char *network_proto)
+															 const char *network_ip, const char *network_port, const char *network_proto,
+															 const char *metadata)
 {
 	char *sql;
 
@@ -1860,19 +1875,35 @@ SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, c
 	}
 
 	switch_queue_push(sql_manager.sql_queue[0], sql);
-	
-	sql = switch_mprintf("insert into registrations (reg_user,realm,token,url,expires,network_ip,network_port,network_proto,hostname) "
-						 "values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q')",
-						 switch_str_nil(user),
-						 switch_str_nil(realm),
-						 switch_str_nil(token),
-						 switch_str_nil(url),
-						 expires,
-						 switch_str_nil(network_ip),
-						 switch_str_nil(network_port),
-						 switch_str_nil(network_proto),
-						 switch_core_get_switchname()
-						 );
+
+	if ( !zstr(metadata) ) {
+		sql = switch_mprintf("insert into registrations (reg_user,realm,token,url,expires,network_ip,network_port,network_proto,hostname,metadata) "
+							 "values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q','%q')",
+							 switch_str_nil(user),
+							 switch_str_nil(realm),
+							 switch_str_nil(token),
+							 switch_str_nil(url),
+							 expires,
+							 switch_str_nil(network_ip),
+							 switch_str_nil(network_port),
+							 switch_str_nil(network_proto),
+							 switch_core_get_switchname(),
+							 metadata
+							 );
+	} else {
+		sql = switch_mprintf("insert into registrations (reg_user,realm,token,url,expires,network_ip,network_port,network_proto,hostname) "
+							 "values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q')",
+							 switch_str_nil(user),
+							 switch_str_nil(realm),
+							 switch_str_nil(token),
+							 switch_str_nil(url),
+							 expires,
+							 switch_str_nil(network_ip),
+							 switch_str_nil(network_port),
+							 switch_str_nil(network_proto),
+							 switch_core_get_switchname()
+							 );
+	}
 
 	
 	switch_queue_push(sql_manager.sql_queue[0], sql);
@@ -2006,6 +2037,8 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_test_reactive(dbh, "select hostname from nat", "DROP TABLE nat", create_nat_sql);
 	switch_cache_db_test_reactive(dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
 								  "DROP TABLE registrations", create_registrations_sql);
+
+	switch_cache_db_test_reactive(dbh, "select metadata from registrations", NULL, "ALTER TABLE registrations ADD COLUMN metadata VARCHAR(256)");
 
 
 	switch (dbh->type) {

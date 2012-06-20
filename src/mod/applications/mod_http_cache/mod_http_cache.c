@@ -23,7 +23,10 @@
  *
  * Contributor(s):
  *
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
+ * Darren Schreiber <d@d-man.org>
+ *
+ * Maintainer: Christopher M. Rienzo <chris@rienzo.com>
  *
  * mod_http_cache.c -- HTTP GET with caching
  *                  -- designed for downloading audio files from a webserver for playback
@@ -188,12 +191,29 @@ static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session);
 static switch_status_t http_put(url_cache_t *cache, switch_core_session_t *session, const char *url, const char *filename)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_curl_slist_t *headers = NULL;  /* optional linked-list of HTTP headers */
+	char *ext;  /* file extension, used for MIME type identification */
+	const char *mime_type = "application/octet-stream";
+	char *buf;
+
 	CURL *curl_handle = NULL;
 	long httpRes = 0;
 	struct stat file_info = {0};
 	FILE *file_to_put = NULL;
 	int fd;
-	
+
+	/* guess what type of mime content this is going to be */
+	if ((ext = strrchr(filename, '.'))) {
+		ext++;
+		if (!(mime_type = switch_core_mime_ext2type(ext))) {
+			mime_type = "application/octet-stream";
+		}
+	}
+
+	buf = switch_mprintf("Content-Type: %s", mime_type);
+	headers = switch_curl_slist_append(headers, buf);
+
 	/* open file and get the file size */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for upload to %s\n", filename, url);
 	fd = open(filename, O_RDONLY);
@@ -224,6 +244,7 @@ static switch_status_t http_put(url_cache_t *cache, switch_core_session_t *sessi
 	switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, file_to_put);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);
@@ -257,6 +278,12 @@ done:
 	if (file_to_put) {
 		fclose(file_to_put);
 	}
+
+	if (headers) {
+		switch_curl_slist_free_all(headers);
+	}
+
+	switch_safe_free(buf);
 
 	return status;
 }

@@ -27,6 +27,7 @@
  * Ken Rice <krice@freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * Raymond Chandler <intralanman@gmail.com>
  *
  *
  * sofia_presence.c -- SOFIA SIP Endpoint (presence code)
@@ -537,16 +538,16 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
 							 "full_via,expires,user_agent,accept,profile_name,network_ip"
 							 ",'%q',full_to,network_ip,network_port from sip_subscriptions "
-							 "where hostname='%q' and profile_name='%q' and event='message-summary' "
+							 "where hostname='%q' and event='message-summary' "
 							 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%')", 
-							 stream.data, mod_sofia_globals.hostname, profile->name, user, host, host);
+							 stream.data, mod_sofia_globals.hostname, user, host, host);
 	} else if (sub_call_id) {
 		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
 							 "full_via,expires,user_agent,accept,profile_name,network_ip"
 							 ",'%q',full_to,network_ip,network_port from sip_subscriptions where "
-							 "hostname='%q' and profile_name='%q' and event='message-summary' "
+							 "hostname='%q' and event='message-summary' "
 							 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%') and call_id='%q'",
-							 stream.data, mod_sofia_globals.hostname, profile->name, user, host, host, sub_call_id);
+							 stream.data, mod_sofia_globals.hostname, user, host, host, sub_call_id);
 	}
 
 
@@ -559,12 +560,12 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	if (for_everyone) {
 		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q',call_id "
-							 "from sip_registrations where hostname='%q' and profile_name='%q' and mwi_user='%q' and mwi_host='%q'", 
-							 stream.data, mod_sofia_globals.hostname, profile->name, user, host);
+							 "from sip_registrations where hostname='%q' and mwi_user='%q' and mwi_host='%q'", 
+							 stream.data, mod_sofia_globals.hostname, user, host);
 	} else if (call_id) {
 		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q',call_id "
-							 "from sip_registrations where hostname='%q' and profile_name='%q' and call_id='%q'", 
-							 stream.data, mod_sofia_globals.hostname, profile->name, call_id);
+							 "from sip_registrations where hostname='%q' and call_id='%q'", 
+							 stream.data, mod_sofia_globals.hostname, call_id);
 	}
 
 	if (sql) {
@@ -3273,7 +3274,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	int sent_reply = 0;
 	sip_contact_t const *contact;
 	const char *ipv6;
-	const char *contact_user;
+	const char *contact_user = NULL;
+	const char *contact_host = NULL;
+	const char *contact_port = NULL;
 	sofia_nat_parse_t np = { { 0 } };
 	int found_proto = 0;
 	char to_tag[13] = "";
@@ -3295,8 +3298,11 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	switch_stun_random_string(to_tag, 12, NULL);
 
-	//contact_host = sip->sip_contact->m_url->url_host;
-	contact_user = sip->sip_contact->m_url->url_user;
+	if ( sip->sip_contact && sip->sip_contact->m_url ) {
+		contact_host = sip->sip_contact->m_url->url_host;
+		contact_port = sip->sip_contact->m_url->url_port;
+		contact_user = sip->sip_contact->m_url->url_user;
+	}
 
 	//tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
 
@@ -3642,6 +3648,38 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
 
 			switch_safe_free(sql);
+		}
+	}
+
+	if ( sip->sip_event && sip->sip_event->o_type && !strcasecmp(sip->sip_event->o_type, "ua-profile") && contact_host ) {
+		switch_event_t *params;
+		char *uri = NULL;
+		char *extra_headers = NULL;
+
+		if ( contact_port ) {
+			uri = switch_mprintf("sip:%s:%s", contact_host, contact_port);
+		} else {
+			uri = switch_mprintf("sip:%s", contact_host);
+		}
+
+		if ( uri ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sending pnp NOTIFY to %s\n", uri);
+
+			/* Grandstream REALLY uses a header called Message Body */
+			extra_headers = switch_mprintf("MessageBody: %s\r\n", profile->pnp_prov_url);
+
+			switch_event_create(&params, SWITCH_EVENT_NOTIFY);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile->pnp_notify_profile);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "event-string", sip->sip_event->o_type);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "to-uri", uri);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "from-uri", uri);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "extra-headers", extra_headers);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "content-type", "application/url");
+			switch_event_add_body(params, "%s", profile->pnp_prov_url);
+			switch_event_fire(&params);
+
+			switch_safe_free(uri);
+			switch_safe_free(extra_headers);
 		}
 	}
 

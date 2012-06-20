@@ -1185,7 +1185,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					}
 					count++;
 					if (count == 1) {
-						switch_event_create(event, SWITCH_EVENT_SOCKET_DATA);
+						switch_event_create(event, SWITCH_EVENT_CLONE);
 						switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Command", mbuf);
 					} else if (cur) {
 						char *var, *val;

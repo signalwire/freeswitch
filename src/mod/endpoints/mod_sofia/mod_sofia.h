@@ -28,6 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
+ * Raymond Chandler <intralanman@gmail.com>
  *
  *
  * mod_sofia.h -- SOFIA SIP Endpoint
@@ -92,7 +93,7 @@ typedef struct private_object private_object_t;
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
-#define SOFIA_USER_AGENT "FreeSWITCH-mod_sofia/" SWITCH_VERSION_MAJOR "." SWITCH_VERSION_MINOR "." SWITCH_VERSION_MICRO "-" SWITCH_VERSION_REVISION
+#define SOFIA_USER_AGENT "FreeSWITCH-mod_sofia/" SWITCH_VERSION_FULL
 #define SOFIA_CHAT_PROTO "sip"
 #define SOFIA_MULTIPART_PREFIX "sip_mp_"
 #define SOFIA_MULTIPART_PREFIX_T "~sip_mp_"
@@ -517,7 +518,8 @@ struct sofia_gateway {
 typedef enum {
 	PRES_TYPE_NONE = 0,
 	PRES_TYPE_FULL = 1,
-	PRES_TYPE_PASSIVE = 2
+	PRES_TYPE_PASSIVE = 2,
+	PRES_TYPE_PNP = 3
 } sofia_presence_type_t;
 
 typedef enum {
@@ -586,12 +588,15 @@ struct sofia_profile {
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
 	char *jb_msec;
+	char *pnp_prov_url;
+	char *pnp_notify_profile;
 	sofia_cid_type_t cid_type;
 	sofia_dtmf_t dtmf_type;
 	int auto_restart;
 	switch_port_t sip_port;
 	switch_port_t tls_sip_port;
 	int tls_version;
+	unsigned int tls_timeout;
 	char *inbound_codec_string;
 	char *outbound_codec_string;
 	int running;
@@ -1111,7 +1116,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);
 void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *stream, int up);
 void sofia_glue_del_every_gateway(sofia_profile_t *profile);
-void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent,
+void sofia_reg_send_reboot(sofia_profile_t *profile, const char *callid, const char *user, const char *host, const char *contact, const char *user_agent,
 						   const char *network_ip);
 void sofia_glue_restart_all_profiles(void);
 int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);

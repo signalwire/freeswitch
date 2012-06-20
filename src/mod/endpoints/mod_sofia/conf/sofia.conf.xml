@@ -242,6 +242,8 @@
         <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not
              work with TLSv1 -->
         <param name="tls-version" value="$${sip_tls_version}"/>
+        <!-- TLS maximum session lifetime -->
+        <!-- <param name="tls-timeout" value="300"/> -->
 
         <!-- turn on auto-flush during bridge (skip timer sleep when the socket
              already has data) (reduces delay on latent connections default
@@ -266,7 +268,7 @@
         <!-- Let calls hit the dialplan before selecting codec for the a-leg -->
         <param name="inbound-late-negotiation" value="true"/>
 
-        <!-- Allow ZRTP clients to negotiate end-to-end security associations -->
+        <!-- Allow ZRTP clients to negotiate end-to-end security associations (also enables late negotiation) -->
         <param name="inbound-zrtp-passthru" value="true"/>
 
         <!-- this lets anything register -->
