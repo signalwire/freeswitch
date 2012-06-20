@@ -572,7 +572,7 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 }
 
 
-void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent,
+void sofia_reg_send_reboot(sofia_profile_t *profile, const char *callid, const char *user, const char *host, const char *contact, const char *user_agent,
 						   const char *network_ip)
 {
 	const char *event = "check-sync";
@@ -587,7 +587,7 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 		event = "reboot";
 	}
 
-	sofia_glue_send_notify(profile, user, host, event, contenttype, body, contact, network_ip, NULL);
+	sofia_glue_send_notify(profile, user, host, event, contenttype, body, contact, network_ip, callid);
 }
 
 int sofia_sla_dialog_del_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -608,7 +608,7 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
 
 	if (argc > 12 && atoi(argv[12]) == 1) {
-		sofia_reg_send_reboot(profile, argv[1], argv[2], argv[3], argv[7], argv[11]);
+		sofia_reg_send_reboot(profile, argv[0], argv[1], argv[2], argv[3], argv[7], argv[11]);
 	}
 
 	if (argc >= 3) {
@@ -787,7 +787,7 @@ int sofia_reg_check_callback(void *pArg, int argc, char **argv, char **columnNam
 {
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
 
-	sofia_reg_send_reboot(profile, argv[1], argv[2], argv[3], argv[7], argv[11]);
+	sofia_reg_send_reboot(profile, argv[0], argv[1], argv[2], argv[3], argv[7], argv[11]);
 
 	return 0;
 }
@@ -2123,6 +2123,10 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		switch_assert(locate_params);
 
 		switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "action", "reverse-auth-lookup");
+
+		if ( sip->sip_call_id ) {
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_call_id", sip->sip_call_id->i_id);
+		}
 
 		if (switch_xml_locate_user_merged("id", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, NULL,
 										  &x_user, locate_params) == SWITCH_STATUS_SUCCESS) {
