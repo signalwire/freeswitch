@@ -169,7 +169,7 @@ static void stop_chan_io_dump(ftdm_io_dump_t *dump)
 		return;
 	}
 	ftdm_safe_free(dump->buffer);
-	memset(dump, 0, sizeof(dump));
+	memset(dump, 0, sizeof(*dump));
 }
 
 static ftdm_status_t start_chan_io_dump(ftdm_channel_t *chan, ftdm_io_dump_t *dump, ftdm_size_t size)
