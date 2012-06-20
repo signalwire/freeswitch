@@ -677,7 +677,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 		s = 1537 - rsession->hspos;
 		
 		if (rsession->profile->io->read(rsession, rsession->hsbuf + rsession->hspos, &s) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 			return SWITCH_STATUS_FALSE;
 		}
 		
@@ -708,7 +708,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 		
 		/* Receive C2 */
 		if (rsession->profile->io->read(rsession, rsession->hsbuf + rsession->hspos, &s) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 			return SWITCH_STATUS_FALSE;
 		}
 		
@@ -735,7 +735,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 				// Read the header's first byte
 				s = 1;
 				if (rsession->profile->io->read(rsession, (unsigned char*)buf, &s) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 					return SWITCH_STATUS_FALSE;
 				}
 				
@@ -790,7 +790,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 				switch_assert(s < 12 && s > 0); /** XXX **/
 				
 				if (rsession->profile->io->read(rsession, readbuf, &s) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 					return SWITCH_STATUS_FALSE;
 				}
 				
@@ -872,7 +872,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 				switch_assert(s <= rsession->in_chunksize);
 				
 				if (rsession->profile->io->read(rsession, state->buf + state->buf_pos, &s) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
 					return SWITCH_STATUS_FALSE;
 				}
 				rsession->recv += s;
