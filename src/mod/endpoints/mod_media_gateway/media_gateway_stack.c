@@ -19,7 +19,6 @@ int mgco_mu_gen_config(void);
 int mgco_tucl_gen_config(void);
 int mgco_mu_ssap_config(int idx);
 int mgco_mg_tsap_config(megaco_profile_t* profile);
-int mgco_mg_enble_debug(void);
 int mgco_mg_ssap_config(megaco_profile_t* profile);
 int mgco_mg_peer_config(megaco_profile_t* profile);
 int mgco_mg_tpt_server_config(megaco_profile_t* profile);
@@ -97,6 +96,9 @@ switch_status_t sng_mgco_init(sng_mg_event_interface_t* event)
 /*****************************************************************************************************************/
 switch_status_t sng_mgco_stack_shutdown()
 {
+	/* disable MG logging */
+	mg_disable_logging();
+
 	/* shutdown MG */
 	sng_mgco_mg_shutdown();
 
@@ -573,7 +575,7 @@ int mgco_mg_ssap_cntrl(int idx)
 }
 /******************************************************************************/
                                                                                                        
-int mgco_mg_enble_debug()
+int mg_enable_logging()
 {
 	MgMngmt    mgMngmt;
 	Pst          pst;              /* Post for layer manager */
@@ -593,6 +595,33 @@ int mgco_mg_enble_debug()
 	mgMngmt.hdr.elmId.elmnt     = STGEN;
 
 	cntrl->action  		        = AENA;
+	cntrl->subAction                = SADBG;
+	cntrl->s.dbg.genDbgMask    = 0xfffffdff;
+
+	return(sng_cntrl_mg(&pst, &mgMngmt));
+}
+
+/******************************************************************************/
+int mg_disable_logging()
+{
+	MgMngmt    mgMngmt;
+	Pst          pst;              /* Post for layer manager */
+	MgCntrl*    cntrl;
+
+	memset(&mgMngmt, 0, sizeof(mgMngmt));
+	cntrl = &mgMngmt.t.cntrl;
+
+	/* initalize the post structure */
+	smPstInit(&pst);
+
+	/* insert the destination Entity */
+	pst.dstEnt = ENTMG;
+	mgMngmt.hdr.msgType         = TCFG;
+	mgMngmt.hdr.entId.ent       = ENTHI;
+	mgMngmt.hdr.entId.inst      = S_INST;
+	mgMngmt.hdr.elmId.elmnt     = STGEN;
+
+	cntrl->action  		        = ADISIMM;
 	cntrl->subAction                = SADBG;
 	cntrl->s.dbg.genDbgMask    = 0xfffffdff;
 
@@ -1232,7 +1261,7 @@ int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm,  megaco_profile_t* mg_cfg, 
 		case STSERVER:
 			{
 				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.type =  CM_INET_IPV4ADDR_TYPE;
-				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.port = ntohl(ipAddr);
+				cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.port = atoi(mg_cfg->port); 
 				if(ROK == cmInetAddr((S8*)mg_cfg->my_ipaddr, &ipAddr))
 				{
 					cntrl.t.ssta.s.mgTptSrvSta.tptAddr.u.ipv4TptAddr.address = ntohl(ipAddr);

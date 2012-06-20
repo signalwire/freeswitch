@@ -53,6 +53,8 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg);
 void handle_mgco_audit_cfm(Pst *pst, SuId suId, MgMgtAudit* audit, Reason reason); 
 void handle_mg_alarm(Pst *pst, MgMngmt *sta);
 void handle_tucl_alarm(Pst *pst, HiMngmt *sta);
+int mg_enable_logging(void);
+int mg_disable_logging(void);
 
 
 switch_status_t sng_mgco_cfg(megaco_profile_t* profile);

@@ -40,6 +40,7 @@
 #define _GNU_SOURCE
 #include "private/ftdm_core.h"
 #include <stdarg.h>
+#include <ctype.h>
 #ifdef WIN32
 #include <io.h>
 #endif
@@ -66,7 +67,8 @@ static ftdm_status_t ftdm_call_set_call_id(ftdm_channel_t *fchan, ftdm_caller_da
 static ftdm_status_t ftdm_call_clear_call_id(ftdm_caller_data_t *caller_data);
 static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan);
 static ftdm_status_t ftdm_channel_sig_indicate(ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication, ftdm_usrmsg_t *usrmsg);
-
+static const char *channel_val2str(unsigned long long flag);
+static unsigned long long channel_str2val(const char *flag_name);
 
 static int time_is_init = 0;
 
@@ -4339,7 +4341,7 @@ static struct {
 	ftdm_io_interface_t *pika_interface;
 } interfaces;
 
-static void print_channels_by_flag(ftdm_stream_handle_t *stream, int32_t flagval, int not, int *count)
+static void print_channels_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, uint32_t inchan_id, int32_t flagval, int not, int *count)
 {
 	ftdm_hash_iterator_t *i = NULL;
 	ftdm_span_t *span;
@@ -4349,40 +4351,85 @@ static void print_channels_by_flag(ftdm_stream_handle_t *stream, int32_t flagval
 	const void *key = NULL;
 	void *val = NULL;
 	uint32_t flag = (1 << flagval);
+	int mycount = 0;
 
 	*count = 0;
 
 	ftdm_mutex_lock(globals.mutex);
 
-	for (i = hashtable_first(globals.span_hash); i; i = hashtable_next(i)) {
-		hashtable_this(i, &key, NULL, &val);
-		if (!key || !val) {
-			break;
-		}
-		span = val;
-		citer = ftdm_span_get_chan_iterator(span, NULL);
+	if (inspan) {
+		citer = ftdm_span_get_chan_iterator(inspan, NULL);
 		if (!citer) {
-			continue;
+			goto end;
 		}
 		for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
 			fchan = ftdm_iterator_current(curr);
-			if (not && !ftdm_test_flag(fchan, flag)) {
-				stream->write_function(stream, "[s%dc%d][%d:%d] has not flag %d\n", 
-						fchan->span_id, fchan->chan_id, 
-						fchan->physical_span_id, fchan->physical_chan_id, 
-						flagval);
-				(*count)++;
-			} else if (!not && ftdm_test_flag(fchan, flag)) {
-				stream->write_function(stream, "[s%dc%d][%d:%d] has flag %d\n", 
-						fchan->span_id, fchan->chan_id, 
-						fchan->physical_span_id, fchan->physical_chan_id, 
-						flagval);
-				(*count)++;
+			if (!inchan_id || inchan_id == fchan->chan_id) {
+				if (not) {
+					if (!ftdm_test_flag(fchan, flag)) {
+						stream->write_function(stream, "[s%dc%d][%d:%d] flag !%d(!%s) ON \n",
+												fchan->span_id, fchan->chan_id,
+												fchan->physical_span_id, fchan->physical_chan_id,
+												flagval, channel_val2str(flagval));
+
+						mycount++;
+					} else {
+						stream->write_function(stream, "[s%dc%d][%d:%d] flag !%d(!%s) OFF \n",
+												fchan->span_id, fchan->chan_id,
+												fchan->physical_span_id, fchan->physical_chan_id,
+												flagval, channel_val2str(flagval));
+					}
+				} else if (!not) {
+					if (ftdm_test_flag(fchan, flag)) {
+												stream->write_function(stream, "[s%dc%d][%d:%d] flag %d(%s) ON\n",
+												fchan->span_id, fchan->chan_id,
+												fchan->physical_span_id, fchan->physical_chan_id,
+												flagval, channel_val2str(flagval));
+
+						mycount++;
+					} else {
+						stream->write_function(stream, "[s%dc%d][%d:%d] flag %d(%s) OFF \n",
+												fchan->span_id, fchan->chan_id,
+												fchan->physical_span_id, fchan->physical_chan_id,
+												flagval, channel_val2str(flagval));
+					}
+				}
 			}
 		}
 		ftdm_iterator_free(citer);
-	}
 
+	} else {
+		for (i = hashtable_first(globals.span_hash); i; i = hashtable_next(i)) {
+			hashtable_this(i, &key, NULL, &val);
+			if (!key || !val) {
+				break;
+			}
+			span = val;
+			citer = ftdm_span_get_chan_iterator(span, NULL);
+			if (!citer) {
+				continue;
+			}
+			for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
+				fchan = ftdm_iterator_current(curr);
+				if (not && !ftdm_test_flag(fchan, flag)) {
+					stream->write_function(stream, "[s%dc%d][%d:%d] has not flag %d\n", 
+							fchan->span_id, fchan->chan_id, 
+							fchan->physical_span_id, fchan->physical_chan_id, 
+							flagval);
+					mycount++;
+				} else if (!not && ftdm_test_flag(fchan, flag)) {
+					stream->write_function(stream, "[s%dc%d][%d:%d] has flag %d\n", 
+							fchan->span_id, fchan->chan_id, 
+							fchan->physical_span_id, fchan->physical_chan_id, 
+							flagval);
+					mycount++;
+				}
+			}
+			ftdm_iterator_free(citer);
+		}
+	}
+	*count = mycount;
+end:
 	ftdm_mutex_unlock(globals.mutex);
 }
 
@@ -4434,10 +4481,86 @@ static void print_core_usage(ftdm_stream_handle_t *stream)
 {
 	stream->write_function(stream, 
 	"--------------------------------------------------------------------------------\n"
-	"ftdm core state [!]<state_name> - List all channels in or not in the given state\n"
-	"ftdm core flag <flag-int-value> - List all channels with the given flag value set\n"
+	"ftdm core state [!]<state-name> - List all channels in or not in the given state\n"
+	"ftdm core flag [!]<flag-int-value|flag-name> [<span_id|span_name>] [<chan_id>] - List all channels with the given flag value set\n"
 	"ftdm core calls - List all known calls to the FreeTDM core\n"
 	"--------------------------------------------------------------------------------\n");
+}
+
+typedef struct channel_flags_str {
+	const char *name;
+	unsigned long long channel_flag;
+} channel_flag_str_t;
+
+static channel_flag_str_t channel_flag_strs[] =  {
+ { "configured" ,  FTDM_CHANNEL_CONFIGURED},
+ { "ready",  FTDM_CHANNEL_READY},
+ { "open",  FTDM_CHANNEL_OPEN},
+ { "dtmf-detect",  FTDM_CHANNEL_DTMF_DETECT},
+ { "suppress-dtmf",  FTDM_CHANNEL_SUPRESS_DTMF},
+ { "transcode",  FTDM_CHANNEL_TRANSCODE},
+ { "buffer",  FTDM_CHANNEL_BUFFER},
+ { "in-thread",  FTDM_CHANNEL_INTHREAD},
+ { "wink",  FTDM_CHANNEL_WINK},
+ { "flash",  FTDM_CHANNEL_FLASH},
+ { "state-change",  FTDM_CHANNEL_STATE_CHANGE},
+ { "hold",  FTDM_CHANNEL_HOLD},
+ { "in-use",  FTDM_CHANNEL_INUSE},
+ { "off-hook",  FTDM_CHANNEL_OFFHOOK},
+ { "ringing",  FTDM_CHANNEL_RINGING},
+ { "progress-detect",  FTDM_CHANNEL_PROGRESS_DETECT},
+ { "callerid-detect",  FTDM_CHANNEL_CALLERID_DETECT},
+ { "outbound",  FTDM_CHANNEL_OUTBOUND},
+ { "suspended",  FTDM_CHANNEL_SUSPENDED},
+ { "3-way",  FTDM_CHANNEL_3WAY},
+ { "progress",  FTDM_CHANNEL_PROGRESS},
+ { "media",  FTDM_CHANNEL_MEDIA},
+ { "answered",  FTDM_CHANNEL_ANSWERED},
+ { "mute",  FTDM_CHANNEL_MUTE},
+ { "use-rx-gain",  FTDM_CHANNEL_USE_RX_GAIN},
+ { "use-tx-gain",  FTDM_CHANNEL_USE_TX_GAIN},
+ { "in-alarm",  FTDM_CHANNEL_IN_ALARM},
+ { "sig-up",  FTDM_CHANNEL_SIG_UP},
+ { "user-hangup",  FTDM_CHANNEL_USER_HANGUP},
+ { "rx-disabled",  FTDM_CHANNEL_RX_DISABLED},
+ { "tx-disabled",  FTDM_CHANNEL_TX_DISABLED},
+ { "call-started",  FTDM_CHANNEL_CALL_STARTED},
+ { "non-block",  FTDM_CHANNEL_NONBLOCK},
+ { "ind-ack-pending",  FTDM_CHANNEL_IND_ACK_PENDING},
+ { "blocking",  FTDM_CHANNEL_BLOCKING},
+ { "media",  FTDM_CHANNEL_DIGITAL_MEDIA},
+ { "native-sigbridge",  FTDM_CHANNEL_NATIVE_SIGBRIDGE},
+ { "invalid",  FTDM_CHANNEL_MAX_FLAG},
+};
+
+static unsigned long long channel_str2val(const char *flag_name)
+{
+	int i;
+	for (i = 0; i < ftdm_array_len(channel_flag_strs); i++) {
+		if (!strcasecmp(channel_flag_strs[i].name, flag_name)) {
+			return channel_flag_strs[i].channel_flag;
+		}
+	}
+	return FTDM_CHANNEL_MAX_FLAG;
+}
+
+static const char *channel_val2str(unsigned long long flag)
+{
+	int i;
+	for (i = 0; i < ftdm_array_len(channel_flag_strs); i++) {
+		if (channel_flag_strs[i].channel_flag == flag) {
+			return channel_flag_strs[i].name;
+		}
+	}
+	return "invalid";
+}
+
+static void print_channel_flag_values(ftdm_stream_handle_t *stream)
+{
+	int i;
+	for (i = 0; i < ftdm_array_len(channel_flag_strs); i++) {
+		stream->write_function(stream, "%s\n", channel_flag_strs[i].name);
+	}
 }
 
 static char *handle_core_command(const char *cmd)
@@ -4449,11 +4572,12 @@ static char *handle_core_command(const char *cmd)
 	char *argv[10] = { 0 };
 	char *state = NULL;
 	char *flag = NULL;
-	uint32_t flagval = 0;
+	unsigned long long flagval = 0;
 	uint32_t current_call_id = 0;
 	ftdm_caller_data_t *calldata = NULL;
 	ftdm_channel_t *fchan = NULL;
 	ftdm_channel_state_t i = FTDM_CHANNEL_STATE_INVALID;
+	ftdm_span_t *fspan = NULL;
 	ftdm_stream_handle_t stream = { 0 };
 
 	FTDM_STANDARD_STREAM(stream);
@@ -4494,6 +4618,7 @@ static char *handle_core_command(const char *cmd)
 		print_channels_by_state(&stream, i, not, &count);
 		stream.write_function(&stream, "\nTotal channels %s %s: %d\n", not ? "not in state" : "in state", ftdm_channel_state2str(i), count);
 	} else if (!strcasecmp(argv[0], "flag")) {
+		uint32_t chan_id = 0;
 		if (argc < 2) {
 			stream.write_function(&stream, "core flag command requires an argument\n");
 			print_core_usage(&stream);
@@ -4504,8 +4629,37 @@ static char *handle_core_command(const char *cmd)
 			not = 1;
 			flag++;
 		}
-		flagval = atoi(flag);
-		print_channels_by_flag(&stream, flagval, not, &count);
+		
+		if (isalpha(flag[0])) {
+			flagval = channel_str2val(flag);
+			if (flagval == FTDM_CHANNEL_MAX_FLAG) {
+				stream.write_function(&stream, "\nInvalid channel flag value. Possible channel flags\n");
+				print_channel_flag_values(&stream);
+				goto done;
+			}
+		} else {
+			flagval = atoi(flag);
+		}
+
+		/* Specific span specified */
+		if (argv[2]) {
+			ftdm_span_find_by_name(argv[2], &fspan);
+			if (!fspan) {
+				stream.write_function(&stream, "-ERR span:%s not found\n", argv[2]);
+				goto done;
+			}
+		}
+
+		/* Specific channel specified */
+		if (argv[3]) {
+			chan_id = atoi(argv[3]);
+			if (chan_id >= ftdm_span_get_chan_count(fspan)) {
+				stream.write_function(&stream, "-ERR invalid channel %d\n", chan_id);
+				goto done;
+			}
+		}
+
+		print_channels_by_flag(&stream, fspan, chan_id, flagval, not, &count);
 		stream.write_function(&stream, "\nTotal channels %s %d: %d\n", not ? "without flag" : "with flag", flagval, count);
 	} else if (!strcasecmp(argv[0], "calls")) {
 		ftdm_mutex_lock(globals.call_id_mutex);

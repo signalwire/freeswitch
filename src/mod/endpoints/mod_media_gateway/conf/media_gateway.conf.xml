@@ -1,0 +1,50 @@
+<configuration name="media_gateway.conf" description="Media Gateway Configuration">
+	<mg_profiles>
+	    <mg_profile name="profile-1">
+		<param name="protocol" value="MEGACO"/>
+		<param name="local-ip"  value="192.168.1.50"/>
+		<param name="port"      value="2944" />       
+		<param name="domain-name" value="lab.sangoma.com" />
+		<param name="message-identifier" value="<mg.sangoma.com>" />
+		<param name="version" value="3"/>
+		<param name="default-codec" value="PCMA"/>
+		<param name="rtp-port-range" value="5000-6000"/>
+		<param name="rtp-termination-id-prefix" value="TermRtp"/>
+		<param name="rtp-termination-id-len" value="4"/> <!--  /* Allowed values = any digit from 0 to 9 */ -->
+		<physical_terminations>
+			<map  termination-id-prefix="Term1/" termination-id-base="1" tech="freetdm" channel-prefix="wp2" channel-map="1-15,17-31"/>
+			<map  termination-id-prefix="Term2/" termination-id-base="1" tech="freetdm" channel-prefix="wp3" channel-map="1-31"/>
+		</physical_terminations>
+		<peers>
+			<param name="peer"  value = "peer-1" />
+			<param name="peer"  value = "peer-2" />
+			<param name="peer"  value = "peer-3" /> 
+		</peers>
+	
+		</mg_profile>
+	</mg_profiles>
+
+	<mg_peers>
+		<mg_peer name="peer-1">
+			<param name="ip"  value="192.168.1.49"/>          
+			<param name="port" value="2944"/>                       
+			<param name="encoding-scheme" value="TEXT"/>      
+		        <param name="transport-type" value="UDP"/>        
+			<param name="message-identifier" value="<remote1.mgc.com>" />    
+		</mg_peer>
+		<mg_peer name="peer-2">
+			<param name="ip"  value="192.168.1.55"/>
+				<param name="port" value="2944"/> 
+			<param name="encoding-scheme" value="BINARY"/>
+			<param name="transport-type" value="UDP"/> 
+			<param name="message-identifier" value="<remote2.mgc.com>" /> 
+		</mg_peer>
+		<mg_peer name="peer-3">
+			<param name="ip"  value="192.168.1.44"/> 
+			<param name="port" value="2944"/>
+			<param name="transport-type" value="UDP"/> 
+			<param name="encoding-scheme" value="TEXT"/> 
+			<param name="message-identifier" value="<remote3.mgc.com>" />
+		</mg_peer>
+	</mg_peers>
+</configuration>

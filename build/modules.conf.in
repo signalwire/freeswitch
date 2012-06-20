@@ -5,7 +5,7 @@ applications/mod_dptools
 applications/mod_commands
 applications/mod_hash
 applications/mod_spandsp
-applications/mod_rad_auth
+#applications/mod_rad_auth
 dialplans/mod_dialplan_xml
 endpoints/mod_sofia
 endpoints/mod_media_gateway

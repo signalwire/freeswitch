@@ -66,14 +66,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 	switch_core_hash_init(&megaco_globals.peer_profile_hash, pool);
 	switch_thread_rwlock_create(&megaco_globals.peer_profile_rwlock, pool);
 	
-	SWITCH_ADD_API(api_interface, "megaco", "megaco", megaco_function, MEGACO_FUNCTION_SYNTAX);
+	SWITCH_ADD_API(api_interface, "mg", "media_gateway", megaco_function, MEGACO_FUNCTION_SYNTAX);
 	
-	switch_console_set_complete("add megaco profile ::megaco::list_profiles start");
-	switch_console_set_complete("add megaco profile ::megaco::list_profiles stop");
-	switch_console_set_complete("add megaco profile ::megaco::list_profiles status");
-	switch_console_set_complete("add megaco profile ::megaco::list_profiles xmlstatus");
-	switch_console_set_complete("add megaco profile ::megaco::list_profiles peerxmlstatus");
-	switch_console_add_complete_func("::megaco::list_profiles", list_profiles);
+	switch_console_set_complete("add mg profile ::mg::list_profiles start");
+	switch_console_set_complete("add mg profile ::mg::list_profiles stop");
+	switch_console_set_complete("add mg profile ::mg::list_profiles status");
+	switch_console_set_complete("add mg profile ::mg::list_profiles xmlstatus");
+	switch_console_set_complete("add mg profile ::mg::list_profiles peerxmlstatus");
+	switch_console_set_complete("add mg logging ::mg::list_profiles enable");
+	switch_console_set_complete("add mg logging ::mg::list_profiles disable");
+	switch_console_add_complete_func("::mg::list_profiles", list_profiles);
 
 
 	/* Initialize MEGACO Stack */

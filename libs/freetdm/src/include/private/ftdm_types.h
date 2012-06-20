@@ -268,6 +268,10 @@ typedef enum {
 /*!< Native signaling bridge is enabled */
 #define FTDM_CHANNEL_NATIVE_SIGBRIDGE (1ULL << 37)
 
+/*!< This no more flags after this flag */
+#define FTDM_CHANNEL_MAX_FLAG 	     (1ULL << 38)
+/*!<When adding a new flag, need to update ftdm_io.c:channel_flag_strs */
+
 #include "ftdm_state.h"
 
 typedef enum ftdm_channel_hw_link_status {
