@@ -1926,10 +1926,10 @@ static switch_status_t load_skinny_config(void)
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-					switch_cache_db_test_reactive(skinny_get_db_handle(profile), "SELECT headset FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
-					switch_cache_db_test_reactive(skinny_get_db_handle(profile), "SELECT * FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
-					switch_cache_db_test_reactive(skinny_get_db_handle(profile), "SELECT * FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
-					switch_cache_db_test_reactive(skinny_get_db_handle(profile), "SELECT * FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
+					switch_odbc_handle_exec(profile->master_odbc, devices_sql, NULL, NULL);
+					switch_odbc_handle_exec(profile->master_odbc, lines_sql, NULL, NULL);
+					switch_odbc_handle_exec(profile->master_odbc, buttons_sql, NULL, NULL);
+					switch_odbc_handle_exec(profile->master_odbc, active_lines_sql, NULL, NULL);
 				} else {
 					if ((db = switch_core_db_open_file(profile->dbname))) {
 						switch_core_db_test_reactive(db, "SELECT headset FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
@@ -1942,6 +1942,11 @@ static switch_status_t load_skinny_config(void)
 					}
 					switch_core_db_close(db);
 				}
+
+				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_devices", NULL, NULL);
+				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_lines", NULL, NULL);
+				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
+				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_active_lines", NULL, NULL);
 
 				skinny_profile_respawn(profile, 0);
 
