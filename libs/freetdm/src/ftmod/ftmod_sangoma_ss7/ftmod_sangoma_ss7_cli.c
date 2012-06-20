@@ -1451,6 +1451,33 @@ static ftdm_status_t handle_show_status(ftdm_stream_handle_t *stream, int span, 
 		x++;
 	} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x]id != 0) */
 
+	/* Look spans that are being used by M2UA SG links */
+	for (x = 1; x < ftdm_array_len(g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif); x++) {
+		if (g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].id) {
+			if (g_ftdm_sngss7_data.cfg.mtp2Link[g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].mtp2LnkNmb].id) {
+				uint32_t mtp1_id = g_ftdm_sngss7_data.cfg.mtp2Link[g_ftdm_sngss7_data.cfg.g_m2ua_cfg.nif[x].mtp2LnkNmb].id;
+				if (g_ftdm_sngss7_data.cfg.mtp1Link[mtp1_id].id) {
+					if (g_ftdm_sngss7_data.cfg.mtp1Link[mtp1_id].span == span) {
+						if (chan) {
+							if (chan == g_ftdm_sngss7_data.cfg.mtp1Link[mtp1_id].chan) {
+							stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|SIGNALING LINK\n",
+													g_ftdm_sngss7_data.cfg.mtp1Link[mtp1_id].span,
+													g_ftdm_sngss7_data.cfg.mtp1Link[mtp1_id].chan,
+													0);
+							}
+						} else {
+							stream->write_function(stream, "span=%2d|chan=%2d|cic=%4d|SIGNALING LINK\n",
+													g_ftdm_sngss7_data.cfg.mtp1Link[mtp1_id].span,
+													g_ftdm_sngss7_data.cfg.mtp1Link[mtp1_id].chan,
+													0);
+						}
+					}
+				}
+
+			}
+		}
+	}
+
 	return FTDM_SUCCESS;
 }
 
