@@ -255,6 +255,8 @@ switch_status_t sng_mgco_start(megaco_profile_t* profile )
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " mgco_mg_tsap_enable_cntrl SUCCESS \n");
 	}
 
+	mgco_mg_enble_debug();
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
