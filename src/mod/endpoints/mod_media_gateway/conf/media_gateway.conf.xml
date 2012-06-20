@@ -1,0 +1,28 @@
+<configuration name="megaco.conf" description="Megaco Controllee">
+
+  	<!--Each instances of MG will have each mg profile  -->
+   <mg_profiles>
+	   <mg_profile name="default">
+		<param name="protocol" value="MEGACO"/>  			<!-- /* Protocol Type , Supported values are MEGACO/MGCP */ --> 
+		<param name="version" value="3"/>         			<!-- /* Protocol Version , Supported values for MEGACO are 1/2/3 */ -->
+		<param name="local-ip"  value="192.168.1.103"/> 		<!-- /* Local node IP */ --> 
+		<param name="port"      value="2944" /> 		 	<!-- /* Port */ -->
+		<param name="domain-name" value="lab.sangoma.com" />   		<!-- /* Local domain name */ -->
+		<param name="message-identifier" value="<mg.sangoma.com>" />   	<!-- /* Message Identifier (MID) of MEGACO message  */ -->
+		<peers>								<!-- /* List of Peers associated with this MG Profile */ -->
+			<param name="peer"  value = "peer-1" /> 		<!-- /* link to peer configuration block */ -->
+		</peers>
+	    </mg_profile>
+    </mg_profiles>
+
+    <mg_peers>
+         <mg_peer name="peer-1">
+        	<param name="ip"  value="192.168.1.102"/> 			<!-- /* Peer node IP */ -->
+	        <param name="port" value="2944"/> 				<!-- /* peer port */ -->
+        	<param name="encoding-scheme" value="TEXT"/>         		<!-- /* H.248 Encoding scheme TEXT/BINARY */ --> 
+	        <param name="transport-type" value="UDP"/>          		<!-- /* TCP/UDP/SCTP */ -->
+        	<param name="message-identifier" value="<remote1.mgc.com>" />     <!-- /* Message Identifier (MID) of remote MGC MEGACO message  */ -->
+        </mg_peer>
+
+ </mg_peers>
+ </configuration>
