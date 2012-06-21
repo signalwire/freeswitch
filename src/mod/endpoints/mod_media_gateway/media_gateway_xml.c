@@ -78,11 +78,12 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 		goto done;
 	}
 
-	count = 0x00;
-	event = NULL;
 	for (mg_peer = switch_xml_child(mg_peers, "mg_peer"); mg_peer; mg_peer = mg_peer->next) {
 		const char *name = switch_xml_attr_soft(mg_peer, "name");
 		for(idx=0; idx<profile->total_peers; idx++){
+			count = 0x00;
+			event = NULL;
+			peer_profile = NULL;
 			if (!strcmp(name, profile->peer_list[idx])) {
 				/* peer profile */
 				peer_profile = switch_core_alloc(profile->pool, sizeof(*peer_profile));
@@ -93,7 +94,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 
 				count = switch_event_import_xml(switch_xml_child(mg_peer, "param"), "name", "value", &event);
 				if(SWITCH_STATUS_FALSE == (status = switch_xml_config_parse_event(event, count, reload, instructions1))){
-				     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Peer XML Parsing failed \n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Peer XML Parsing failed \n");
 					goto done;
 				}
 
@@ -136,6 +137,7 @@ switch_status_t mg_config_cleanup(megaco_profile_t* profile)
 static switch_xml_config_item_t *get_peer_instructions(mg_peer_profile_t *profile) {
 	switch_xml_config_item_t *dup;
 
+
 	switch_xml_config_item_t instructions[] = {
 		/* parameter name        type                 reloadable   pointer                         default value     options structure */
 		SWITCH_CONFIG_ITEM("ip", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->ipaddr, "", &switch_config_string_strdup, "", "Peer IP"),
@@ -145,7 +147,7 @@ static switch_xml_config_item_t *get_peer_instructions(mg_peer_profile_t *profil
 		SWITCH_CONFIG_ITEM("message-identifier", SWITCH_CONFIG_STRING, 0, &profile->mid, "", &switch_config_string_strdup, "", "peer message identifier "),
 		SWITCH_CONFIG_ITEM_END()
 	};
-	
+
 	dup = malloc(sizeof(instructions));
 	memcpy(dup, instructions, sizeof(instructions));
 	return dup;

@@ -138,6 +138,7 @@ done:
 switch_status_t megaco_profile_peer_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg)
 {
 	int idx   = 0x00;
+	int peerIdx   = 0x00;
 	int len   = 0x00;
 	MgMngmt   cfm;
 	char*     xmlhdr = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
@@ -152,33 +153,37 @@ switch_status_t megaco_profile_peer_xmlstatus(switch_stream_handle_t *stream, me
 	memset((U8 *)&cfm, 0, sizeof(cfm));
 	memset((char *)&prntBuf, 0, sizeof(prntBuf));
 
-	 mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
-
-	if(!mg_peer){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[0],mg_cfg->name);
-		return SWITCH_STATUS_FALSE;
-	}
-
-
 	idx = mg_cfg->idx;
 
 	len = len + sprintf(&prntBuf[0] + len,"%s\n",xmlhdr);
 
-	len = len + sprintf(&prntBuf[0] + len,"<mg_peer>\n");
-	len = len + sprintf(&prntBuf[0] + len,"<name>%s</name>\n",mg_cfg->peer_list[0]);
+	len = len + sprintf(&prntBuf[0] + len,"<mg_peers>\n");
 
-	/* TODO - as of now supporting only one peer .. need to add logic to iterate through all the peers associated with this profile..*/
+	for(peerIdx =0; peerIdx < mg_cfg->total_peers; peerIdx++){
 
-	/* send request to MEGACO Trillium stack to get peer information*/
-	sng_mgco_mg_get_status(STGCPENT, &cfm, mg_cfg, mg_peer);
+		mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[peerIdx]);
 
-	ip = ntohl(cfm.t.ssta.s.mgPeerSta.peerAddrTbl.netAddr[i].u.ipv4NetAddr);
-	cmInetNtoa(ip, &asciiAddr);
-	len = len + sprintf(prntBuf+len, "<ipv4_address>%s</ipv4_address>\n",asciiAddr); 
+		if(!mg_peer){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[peerIdx],mg_cfg->name);
+			return SWITCH_STATUS_FALSE;
+		}
 
-	len = len + sprintf(prntBuf+len, "<peer_state>%s</peer_state>\n",PRNT_MG_PEER_STATE(cfm.t.ssta.s.mgPeerSta.peerState)); 
+		len = len + sprintf(&prntBuf[0] + len,"<mg_peer>\n");
+		len = len + sprintf(&prntBuf[0] + len,"<name>%s</name>\n",mg_peer->name);
 
-	len = len + sprintf(&prntBuf[0] + len,"</mg_peer>\n");
+		/* send request to MEGACO Trillium stack to get peer information*/
+		sng_mgco_mg_get_status(STGCPENT, &cfm, mg_cfg, mg_peer);
+
+		ip = ntohl(cfm.t.ssta.s.mgPeerSta.peerAddrTbl.netAddr[i].u.ipv4NetAddr);
+		cmInetNtoa(ip, &asciiAddr);
+		len = len + sprintf(prntBuf+len, "<ipv4_address>%s</ipv4_address>\n",asciiAddr); 
+
+		len = len + sprintf(prntBuf+len, "<peer_state>%s</peer_state>\n",PRNT_MG_PEER_STATE(cfm.t.ssta.s.mgPeerSta.peerState)); 
+
+		len = len + sprintf(&prntBuf[0] + len,"</mg_peer>\n");
+	}
+
+	len = len + sprintf(&prntBuf[0] + len,"</mg_peers>\n");
 
 	stream->write_function(stream, "\n%s\n",&prntBuf[0]);
 
@@ -190,6 +195,7 @@ switch_status_t megaco_profile_peer_xmlstatus(switch_stream_handle_t *stream, me
 switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg)
 {
 	int idx   = 0x00;
+	int peerIdx   = 0x00;
 	int len   = 0x00;
 	MgMngmt   cfm;
 	char*     xmlhdr = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
@@ -204,13 +210,7 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, megaco_
 	memset((U8 *)&cfm, 0, sizeof(cfm));
 	memset((char *)&prntBuf, 0, sizeof(prntBuf));
 
-	 mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
-
-	if(!mg_peer){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[0],mg_cfg->name);
-		return SWITCH_STATUS_FALSE;
-	}
-
+	 
 
 	idx = mg_cfg->idx;
 
@@ -221,17 +221,26 @@ switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, megaco_
 /****************************************************************************************************************/
 /* Print Peer Information ***************************************************************************************/
 
-	/* TODO - as of now supporting only one peer .. need to add logic to iterate through all the peers associated with this profile..*/
-
 	len = len + sprintf(&prntBuf[0] + len,"<mg_peers>\n");
-	len = len + sprintf(&prntBuf[0] + len,"<mg_peer name=%s>\n",mg_peer->name);
 
-	/* send request to MEGACO Trillium stack to get peer information*/
-	sng_mgco_mg_get_status(STGCPENT, &cfm, mg_cfg, mg_peer);
+	for(peerIdx =0; peerIdx < mg_cfg->total_peers; peerIdx++){
 
-	get_peer_xml_buffer(&prntBuf[0] + len, &cfm.t.ssta.s.mgPeerSta);
+		mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[peerIdx]);
 
-	len = len + sprintf(&prntBuf[0] + len,"</mg_peer>\n");
+		if(!mg_peer){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," No MG peer configuration found for peername[%s] against profilename[%s]\n",mg_cfg->peer_list[peerIdx],mg_cfg->name);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		len = len + sprintf(&prntBuf[0] + len,"<mg_peer name=%s>\n",mg_peer->name);
+
+		/* send request to MEGACO Trillium stack to get peer information*/
+		sng_mgco_mg_get_status(STGCPENT, &cfm, mg_cfg, mg_peer);
+
+		get_peer_xml_buffer(&prntBuf[0] + len, &cfm.t.ssta.s.mgPeerSta);
+
+		len = len + sprintf(&prntBuf[0] + len,"</mg_peer>\n");
+	}
 	len = len + sprintf(&prntBuf[0] + len,"</mg_peers>\n");
 
 	

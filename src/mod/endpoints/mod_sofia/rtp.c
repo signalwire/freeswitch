@@ -88,15 +88,19 @@ switch_io_routines_t crtp_io_routines = {
     .send_dtmf = channel_send_dtmf
 };
 
+#if 0
 SWITCH_STANDARD_API(test_function)
 {
     return SWITCH_STATUS_SUCCESS;
 }
+#endif
 
 void crtp_init(switch_loadable_module_interface_t *module_interface)
 {
     switch_endpoint_interface_t *endpoint_interface;
+#if 0 /* DAVIDY */
     switch_api_interface_t *api_interface;
+#endif
     crtp.pool = module_interface->pool;
     endpoint_interface = switch_loadable_module_create_interface(module_interface, SWITCH_ENDPOINT_INTERFACE);
     endpoint_interface->interface_name = "rtp";
@@ -128,12 +132,18 @@ typedef struct parsed_sdp_s {
 
 static switch_status_t setup_local_rtp(crtp_private_t *tech_pvt, const char *l_sdp, const char *codec_string)
 {
-    switch_core_session_t const * session = tech_pvt->session;    
-    int num_codecs;
-    const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS] = { 0 };
-    
-    char *codec_order[SWITCH_MAX_CODECS] = { 0 };
     int codec_order_last;
+    int num_codecs;
+#if 0 /* DAVIDY */
+    switch_core_session_t const * session = tech_pvt->session;    
+#endif
+    const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS] = { 0 };
+    char *codec_order[SWITCH_MAX_CODECS] = { 0 };
+#if 1 /* DAVIDY */
+    char *sdpbuf = NULL;
+    sdp_connection_t *connection = NULL;
+    sdp_printer_t *printer = NULL;
+#endif
 
     
     /* Load in the list of codecs we support. If we have a codec string we use our priorities first */
@@ -151,24 +161,30 @@ static switch_status_t setup_local_rtp(crtp_private_t *tech_pvt, const char *l_s
     
     if (zstr(l_sdp)) {
         /* Generate a local SDP here */
+#if 0 /* DAVIDY */
         const char *sdpbuf = switch_core_session_sprintf(session, "v=0\nIN IP4 %s\nm=audio %d RTP/AVP %d");
+#endif
         
     } else {
         /* Parse the SDP and remove anything we cannot support, then validate it to make sure it contains at least one codec 
          * so that we reject invalid ones. */
-#if 1
+#if 0
         uint8_t match = 0;
         int first = 0, last = 0;
         int ptime = 0, dptime = 0, maxptime = 0, dmaxptime = 0;
         int sendonly = 0, recvonly = 0;
-        int greedy = 0, x = 0, skip = 0, mine = 0;
-        int got_crypto = 0, got_audio = 0, got_avp = 0, got_savp = 0, got_udptl = 0;
+        int greedy = 0, x = 0, skip = 0;
 #endif
+	int ptime = 0, maxptime = 0;	
         int sdp_modified = 0;
         int cur_codec = 0;
         
         sdp_parser_t *parser = NULL;
+#if 1 /* DAVIDY */
+        sdp_session_t *sdp;
+#else
         sdp_session_t *sdp, *lsdp;
+#endif
         sdp_media_t *m;
         sdp_attribute_t *attr;
         su_home_t *sdp_home;
@@ -196,7 +212,6 @@ static switch_status_t setup_local_rtp(crtp_private_t *tech_pvt, const char *l_s
                     }
                 }
             
-                sdp_connection_t *connection;
                 connection = sdp->sdp_connection;
                 if (m->m_connections) {
                     connection = m->m_connections;
@@ -250,8 +265,10 @@ static switch_status_t setup_local_rtp(crtp_private_t *tech_pvt, const char *l_s
                 
             }
         }
+#if 0 /* DAVIDY */
         char sdpbuf[2048] = "";
-        sdp_printer_t *printer = sdp_print(sdp_home, sdp, sdpbuf, sizeof(sdpbuf), 0);
+#endif
+        printer = sdp_print(sdp_home, sdp, sdpbuf, sizeof(sdpbuf), 0);
         switch_channel_set_variable(tech_pvt->channel, kLSDP, sdpbuf);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting local SDP: [%s]\n", sdpbuf);
         sdp_printer_free(printer);
@@ -485,8 +502,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     char name[128];
     const char *dname = "PCMU";
     uint32_t interval = 20;
-    crtp_private_t *tech_pvt;
+    crtp_private_t *tech_pvt = NULL;
+#if 0
     const char *r_sdp = switch_event_get_header(var_event, kRSDP);
+#endif
     const char *l_sdp = switch_event_get_header(var_event, kLSDP);
     const char *codec_string = switch_event_get_header_nil(var_event, kCODECSTRING);
 
