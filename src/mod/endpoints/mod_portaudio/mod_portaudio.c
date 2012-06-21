@@ -2806,6 +2806,9 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 			} else {
 				switch_channel_t *channel = switch_core_session_get_channel(tp->session);
 				switch_set_flag_locked(tp, TFLAG_ANSWER);
+				if (tp != globals.call_list) {
+					remove_pvt(tp);
+				}
 				add_pvt(tp, PA_MASTER);
 				switch_channel_mark_answered(channel);
 			}
