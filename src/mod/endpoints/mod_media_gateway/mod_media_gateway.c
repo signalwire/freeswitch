@@ -130,11 +130,200 @@ void handle_sng_log(uint8_t level, char *fmt, ...)
 	va_end(ptr);
 }
 
+static void mgco_print_sdp(CmSdpInfoSet *sdp)
+{
+    int i;
+    
+//   XXX check if we can use that for debug:
+// cmUnpkCmSdpInfoSet(<#CmSdpInfoSet *param#>, <#Ptr ptr#>, <#CmIntfVer intfVer#>, <#Buffer *mBuf#>);
+        
+    
+    if (sdp->numComp.pres == NOTPRSNT) {
+        return;
+    }
+    
+    for (i = 0; i < sdp->numComp.val; i++) {
+        CmSdpInfo *s = sdp->info[i];
+        int mediaId;
+        
+        if (s->conn.addrType.pres && s->conn.addrType.val == CM_SDP_ADDR_TYPE_IPV4 &&
+            s->conn.netType.type.val == CM_SDP_NET_TYPE_IN &&
+            s->conn.u.ip4.addrType.val == CM_SDP_IPV4_IP_UNI) {
+
+            if (s->conn.u.ip4.addrType.pres) {
+                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Address: %d.%d.%d.%d\n",
+                                   s->conn.u.ip4.u.uniIp.b[0].val,
+                                   s->conn.u.ip4.u.uniIp.b[1].val,
+                                   s->conn.u.ip4.u.uniIp.b[2].val,
+                                   s->conn.u.ip4.u.uniIp.b[3].val);
+            }
+            if (s->attrSet.numComp.pres) {
+                for (mediaId = 0; mediaId < s->attrSet.numComp.val; mediaId++) {
+                    CmSdpAttr *a = s->attrSet.attr[mediaId];
+                    
+                }
+            }
+
+            if (s->mediaDescSet.numComp.pres) {
+                for (mediaId = 0; mediaId < s->mediaDescSet.numComp.val; mediaId++) {
+                    CmSdpMediaDesc *desc = s->mediaDescSet.mediaDesc[mediaId];
+                    
+                    if (desc->field.mediaType.val == CM_SDP_MEDIA_AUDIO &&
+                        desc->field.id.type.val ==  CM_SDP_VCID_PORT &&
+                        desc->field.id.u.port.type.val == CM_SDP_PORT_INT &&
+                        desc->field.id.u.port.u.portInt.port.type.val == CM_SDP_SPEC) {
+                        int port = desc->field.id.u.port.u.portInt.port.val.val;
+                        
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Port: %d\n", port);
+                        
+                    }
+                    
+                }
+            }
+
+        }
+        
+    }
+}
+
 /*****************************************************************************************************************************/
 
 void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
 {
+    size_t txnIter;
+    
 	/*TODO*/
+    if(msg->body.type.val == MGT_TXN)
+    {
+        /* Loop over transaction list */
+        for(txnIter=0;txnIter<msg->body.u.tl.num.val;txnIter++)
+        {
+            switch(msg->body.u.tl.txns[txnIter]->type.val) {
+                case MGT_TXNREQ:
+                {
+                    MgMgcoTxnReq* txnReq; 
+                    MgMgcoTransId transId; /* XXX */
+                    int axnIter;
+                    txnReq = &(msg->body.u.tl.txns[txnIter]->u.req);
+
+                    /* Loop over action list */
+                    for (axnIter=0;axnIter<txnReq->al.num.val;axnIter++) {
+                        MgMgcoActionReq *actnReq;
+                        MgMgcoContextId ctxId;
+                        int cmdIter;
+                        
+                        actnReq = txnReq->al.actns[axnIter];
+                        ctxId = actnReq->cxtId; /* XXX */
+                        
+                        if (actnReq->pres.pres == NOTPRSNT) {
+                            continue;
+                        }
+                        
+                        /* Loop over command list */
+                        for (cmdIter=0; cmdIter < (actnReq->cl.num.val); cmdIter++) {
+                            MgMgcoCommandReq *cmdReq = actnReq->cl.cmds[cmdIter];
+                            MgMgcoTermId *termId = NULLP;
+                            
+                            switch (cmdReq->cmd.type.val) {
+                                case MGT_ADD:
+                                {
+                                    MgMgcoAmmReq *addReq = &cmdReq->cmd.u.add;
+                                    MgMgcoTermId termId = addReq->termId;
+                                    int descId;
+                                    for (descId = 0; descId < addReq->dl.num.val; descId++) {
+                                        switch (addReq->dl.descs[descId]->type.val) {
+                                            case MGT_MEDIADESC:
+                                            {
+                                                int mediaId;
+                                                for (mediaId = 0; mediaId < addReq->dl.descs[descId]->u.media.num.val; mediaId++) {
+                                                    MgMgcoMediaPar *mediaPar = addReq->dl.descs[descId]->u.media.parms[mediaId];
+                                                    switch (mediaPar->type.val) {
+                                                        case MGT_MEDIAPAR_LOCAL:
+                                                        {
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Textual SDP %s\n", mediaPar->u.local.sdpStr.pres ? "present" : "absent");
+                                                            break;
+                                                        }
+                                                        case MGT_MEDIAPAR_REMOTE:
+                                                        {
+                                                            break;
+                                                        }
+                                                        
+                                                        case MGT_MEDIAPAR_LOCCTL:
+                                                        {
+                                                            break;
+                                                        }
+                                                        case MGT_MEDIAPAR_TERMST:
+                                                            break;
+                                                        case MGT_MEDIAPAR_STRPAR:
+                                                        {
+                                                            MgMgcoStreamDesc *mgStream = &mediaPar->u.stream;
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Textual SDP %s\n", mgStream->sl.remote.sdpStr.pres ? "present" : "absent");
+                                                            
+                                                            if (mgStream->sl.remote.pres.pres) {
+                                                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
+                                                                mgco_print_sdp(&mgStream->sl.remote.sdp);
+                                                            }
+                                                            
+                                                            if (mgStream->sl.local.pres.pres) {
+                                                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
+                                                                mgco_print_sdp(&mgStream->sl.local.sdp);
+                                                            }
+                                                            
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            case MGT_MODEMDESC:
+                                            case MGT_MUXDESC:
+                                            case MGT_REQEVTDESC:
+                                            case MGT_EVBUFDESC:
+                                            case MGT_SIGNALSDESC:
+                                            case MGT_DIGMAPDESC:
+                                            case MGT_AUDITDESC:
+                                            case MGT_STATSDESC:
+                                                break;
+                                        }
+                                    }
+                                    break;
+                                }
+                                case MGT_MODIFY:
+                                {
+                                    MgMgcoAmmReq *addReq = &cmdReq->cmd.u.mod;
+                                    break;
+                                }
+                                case MGT_MOVE:
+                                {
+                                    MgMgcoAmmReq *addReq = &cmdReq->cmd.u.move;
+                                    break;
+                                    
+                                }
+                                case MGT_SUB:
+                                {
+                                    MgMgcoSubAudReq *addReq = &cmdReq->cmd.u.sub;
+                                }
+                                case MGT_SVCCHG:
+                                case MGT_NTFY:
+                                case MGT_AUDITCAP:
+                                case MGT_AUDITVAL:
+                                    break;
+                            }
+                            
+                        }
+                    }
+                    
+                    break;
+                }
+                case MGT_TXNREPLY:
+                {
+                    break;
+                }
+                default:
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received unknown command %d in transaction\n", msg->body.u.tl.txns[txnIter]->type.val);
+                    break;
+            }
+        }
+    }
 }
 
 /*****************************************************************************************************************************/

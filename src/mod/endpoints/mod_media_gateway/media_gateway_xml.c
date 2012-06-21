@@ -243,6 +243,7 @@ static switch_status_t modify_mid(char* mid)
 		sprintf(mid,"[%s]",dup);
 	}else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid input MID string[%s]\n",mid);
+        free(dup);
 		return SWITCH_STATUS_FALSE;
 	}
 
