@@ -782,6 +782,8 @@ int mgco_mg_gen_config(void)
 	cfg->noEDInst = 1;
 #endif /* CM_ABNF_MT_LIB */
 
+	cfg->entType  = LMG_ENT_GW; 
+
 #ifdef GCP_CH
 	cfg->numBinsPeerCmdHl = 20;
 	cfg->numBinsTransReqHl = 50;
