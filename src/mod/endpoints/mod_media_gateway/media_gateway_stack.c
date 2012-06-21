@@ -1310,7 +1310,6 @@ sng_mg_transport_types_e  mg_get_tpt_type_from_str(char* tpt_type)
 	if(!strcasecmp(tpt_type, "UDP")){
 		return SNG_MG_TPT_UDP;
 	}else if(!strcasecmp(tpt_type,"TCP")){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TCP Transport for H.248 Protocol Not Yet Supported \n");
 		return SNG_MG_TPT_TCP;
 	}else if(!strcasecmp(tpt_type,"STCP")){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STCP Transport for H.248 Protocol Not Yet Supported \n");
