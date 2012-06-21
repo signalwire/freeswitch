@@ -437,8 +437,6 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 	ZSTR_SET_EMPTY(new_stream->cc.peer_hmackey);
 	ZSTR_SET_EMPTY(new_stream->cc.zrtp_key);
 	ZSTR_SET_EMPTY(new_stream->cc.peer_zrtp_key);
-	
-	ZSTR_SET_EMPTY(new_stream->messages.signaling_hash);
 
 	new_stream->dh_cc.initialized_with	= ZRTP_COMP_UNKN;
 	bnBegin(&new_stream->dh_cc.peer_pv);
@@ -466,6 +464,7 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 
 	zrtp_memset(&new_stream->messages, 0, sizeof(new_stream->messages));	
 	ZSTR_SET_EMPTY(new_stream->messages.h0);
+	ZSTR_SET_EMPTY(new_stream->messages.signaling_hash);
 
 	/* Generate Random nonce, compute H1 and store in the DH packet */
 	new_stream->messages.h0.length = (uint16_t)zrtp_randstr( new_stream->zrtp,
@@ -595,11 +594,11 @@ zrtp_status_t zrtp_signaling_hash_get( zrtp_stream_t* stream,
 	zrtp_string32_t hash_str = ZSTR_INIT_EMPTY(hash_str);
 	zrtp_hash_t *hash = NULL;
 
-	if (!stream) {
+	if (!stream || !hash_buff) {
 		return zrtp_status_bad_param;
 	}
 
-	if (ZRTP_MESSAGE_HASH_SIZE*2+1 > hash_buff_length) {
+	if (ZRTP_SIGN_ZRTP_HASH_LENGTH > hash_buff_length) {
 		return zrtp_status_buffer_size;
 	}
 
@@ -622,11 +621,11 @@ zrtp_status_t zrtp_signaling_hash_set( zrtp_stream_t* ctx,
 									   const char *hash_buff,
 									   uint32_t hash_buff_length)
 {
-	if (!ctx) {
+	if (!ctx || !hash_buff) {
 		return zrtp_status_bad_param;
 	}
 
-	if (ZRTP_MESSAGE_HASH_SIZE*2 < hash_buff_length) {
+	if (ZRTP_SIGN_ZRTP_HASH_LENGTH > hash_buff_length) {
 		return zrtp_status_buffer_size;
 	}
 
@@ -634,17 +633,14 @@ zrtp_status_t zrtp_signaling_hash_set( zrtp_stream_t* ctx,
 		return zrtp_status_wrong_state;
 	}
 	
-	str2hex( hash_buff,
-		     hash_buff_length,
-			 ctx->messages.signaling_hash.buffer,
-			 ctx->messages.signaling_hash.max_length);
+	str2hex(hash_buff,
+			ZRTP_SIGN_ZRTP_HASH_LENGTH,
+			ctx->messages.signaling_hash.buffer,
+			ctx->messages.signaling_hash.max_length);
 	ctx->messages.signaling_hash.length = ZRTP_MESSAGE_HASH_SIZE;
 	
-	{
-	char buff[64];
-	ZRTP_LOG(3, (_ZTU_,"SIGNALLING HAS was ADDED for the comparision. ID=%u\n", ctx->id));
-	ZRTP_LOG(3, (_ZTU_,"Hash=%s.\n", hex2str(hash_buff, hash_buff_length, buff, sizeof(buff))));
-	}
+	ZRTP_LOG(3, (_ZTU_,"SIGNALLING HAS was ADDED for the comparison. ID=%u\n", ctx->id));
+	ZRTP_LOG(3, (_ZTU_,"Hash=%.*s.\n", ZRTP_SIGN_ZRTP_HASH_LENGTH, hash_buff));
 
 	return zrtp_status_ok;
 }

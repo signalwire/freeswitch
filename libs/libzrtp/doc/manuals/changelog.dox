@@ -34,6 +34,8 @@
 ***\subsection v120_bugs Bug fixes
   *- fixed bug when ZRTP forces enrolled endpoints to re-render SAS when sashash is empty.
   *- other minor bug fixes and improvements
+  *- fixed bug when zrtp_signaling_hash_set() silently not accepted imported zrtp-hash-value with 
+     "buffer too small" debug output.
 
 
 ****************************************************************************************************

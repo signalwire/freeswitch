@@ -113,7 +113,7 @@ const char* hex2str(const char* bin, int bin_size, char* buff, int buff_size)
 	if (NULL == buff) {
 		return "buffer is NULL";
 	}		
-	if (buff_size < bin_size*2+1) {
+	if (buff_size < bin_size*2) {
 		return "buffer too small";
 	}
 	
@@ -121,7 +121,8 @@ const char* hex2str(const char* bin, int bin_size, char* buff, int buff_size)
 		nptr = hex2char(nptr, *bin++);
 	}
 	
-	*nptr = 0;
+	if (buff_size >= bin_size*2+1)
+		*nptr = 0;
 	
 	return buff;
 }

@@ -82,6 +82,9 @@
  * \ingroup zrtp_main_init 
  */
 
+/** Length of "zrtp-hash-value", RFC 6189 sec 8. @sa zrtp_signaling_hash_get(); */
+#define ZRTP_SIGN_ZRTP_HASH_LENGTH	(ZRTP_MESSAGE_HASH_SIZE*2)
+
 /**
  * \brief Enumeration for ZRTP Licensing modes
  * \ingroup zrtp_main_init 
@@ -798,7 +801,7 @@ zrtp_status_t  zrtp_process_srtcp( zrtp_stream_t *stream,
  * 
  * \param stream - stream for operating with;
  * \param hash_buff - signaling hash buffer. Function accepts string, not a binary value!;
- * \param hash_buff_length - signaling hash length in bytes (must be 64 bytes);
+ * \param hash_buff_length - signaling hash length in bytes, must be ZRTP_SIGN_ZRTP_HASH_LENGTH bytes;
  * \return:
  *  - zrtp_status_ok if the operation finished successfully
  *  - one of the errors otherwise
@@ -819,8 +822,8 @@ zrtp_status_t zrtp_signaling_hash_set( zrtp_stream_t* stream,
  *
  * \param stream - stream for operating with
  * \param hash_buff - buffer for storing signaling hash. Function returns already parsed hex string.
- *      String is null-terminated.
- * \param hash_buff_length - buffer length in bytes (not shorter than 65 bytes)
+ *      String is null-terminated. Buffer must be at least ZRTP_SIGN_ZRTP_HASH_LENGTH bytes length.
+ * \param hash_buff_length - buffer length in bytes, non less  than ZRTP_SIGN_ZRTP_HASH_LENGTH bytes.
  * \return:
  *  - zrtp_status_ok if the operation finished successfully
  *  - one of the errors otherwise
