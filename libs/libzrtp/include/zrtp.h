@@ -831,9 +831,9 @@ zrtp_status_t zrtp_signaling_hash_set( zrtp_stream_t* stream,
  *  - ZRTP RFC. sec 8;
  *  - zrtp_signaling_hash_set()
  */
-zrtp_status_t zrtp_signaling_hash_get( zrtp_stream_t* stream,
-									   char* hash_buff,
-									   uint32_t hash_buff_length);
+zrtp_status_t zrtp_signaling_hash_get(zrtp_stream_t* stream,
+									  char* hash_buff,
+									  uint32_t hash_buff_length);
 
 /**
  * \brief Changing the value of the secret's verification flag

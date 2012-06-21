@@ -462,7 +462,7 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 	 * Then insert these directly into the message structures.
      */
 
-	zrtp_memset(&new_stream->messages, 0, sizeof(new_stream->messages));	
+	zrtp_memset(&new_stream->messages, 0, sizeof(new_stream->messages));
 	ZSTR_SET_EMPTY(new_stream->messages.h0);
 	ZSTR_SET_EMPTY(new_stream->messages.signaling_hash);
 
