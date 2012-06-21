@@ -118,7 +118,7 @@ void handle_sng_log(uint8_t level, char *fmt, ...)
 		case SNG_LOGLEVEL_DEBUG:    log_level = SWITCH_LOG_DEBUG;       break;
 		case SNG_LOGLEVEL_INFO:     log_level = SWITCH_LOG_INFO;        break;
 		case SNG_LOGLEVEL_WARN:     log_level = SWITCH_LOG_WARNING;     break;
-		case SNG_LOGLEVEL_ERROR:    log_level = SWITCH_LOG_DEBUG;       break;
+		case SNG_LOGLEVEL_ERROR:    log_level = SWITCH_LOG_ERROR;       break;
 		case SNG_LOGLEVEL_CRIT:     log_level = SWITCH_LOG_CRIT;        break;
 		default:                    log_level = SWITCH_LOG_DEBUG;       break;
 	};
