@@ -503,7 +503,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				} else if (cause > 0 && cause < 128) {
 					switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 				} else {
-					switch_snprintf(reason, sizeof(reason), "%s;cause=%d;text=\"%s\"", tech_pvt->profile->username, cause, switch_channel_cause2str(cause));
+					switch_snprintf(reason, sizeof(reason), "SIP;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 				}
 			}
 		}
