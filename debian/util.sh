@@ -176,6 +176,7 @@ create_orig () {
       git add -f libs
     fi
     ./build/set-fs-version.sh "$uver" && git add configure.in
+    echo "$uver" > .version && git add -f .version
     git commit --allow-empty -m "nightly v$uver"
     git archive -v \
       --worktree-attributes \
