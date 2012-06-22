@@ -282,7 +282,10 @@ build_debs () {
       cow --create
     fi
     announce "Updating base $distro-$arch image..."
-    cow --update
+    local x=5
+    while ! cow --update; do
+      [ $x -lt 1 ] && break; sleep 60; x=$((x-1))
+    done
     announce "Building $distro-$arch DEBs from $dsc..."
     if $debug_hook; then
       mkdir -p .hooks
