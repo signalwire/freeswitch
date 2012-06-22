@@ -28,5 +28,9 @@
     <!--<param name="avatar" value="/path/to/tiny.jpg"/>-->
     <!--<param name="candidate-acl" value="wan.auto"/>-->
     <param name="local-network-acl" value="localnet.auto"/>
+
+    <!-- google voice does not work on this yet ....ikr... -->
+    <!--<param name="use-jingle" value="true"/>-->
+
   </x-profile>
 </include>
