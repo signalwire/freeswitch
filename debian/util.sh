@@ -298,15 +298,15 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts=""
   local archs="" distros="" orig="" par=false
-  while getopts 'a:bc:djnmo:s:v:z:' o "$@"; do
+  while getopts 'a:bc:djmno:s:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
       c) distros="$distros $OPTARG";;
       d) deb_opts="$deb_opts -d";;
       j) par=true;;
-      n) orig_opts="$orig_opts -n";;
       m) dsc_opts="$dsc_opts -m$OPTARG";;
+      n) orig_opts="$orig_opts -n";;
       o) orig="$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
       v) orig_opts="$orig_opts -v$OPTARG";;
@@ -367,9 +367,9 @@ commands:
     -c Specify distributions
     -d Enable cowbuilder debug hook
     -j Build debs in parallel
-    -n Nightly build
     -m [ quicktest ]
       Choose custom list of modules to build
+    -n Nightly build
     -o <orig-file>
       Specify existing .orig.tar.xz file
     -s [ paranoid | reckless ]
