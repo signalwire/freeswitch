@@ -134,9 +134,6 @@ static void mgco_print_sdp(CmSdpInfoSet *sdp)
 {
     int i;
     
-//   XXX check if we can use that for debug:
-// cmUnpkCmSdpInfoSet(<#CmSdpInfoSet *param#>, <#Ptr ptr#>, <#CmIntfVer intfVer#>, <#Buffer *mBuf#>);
-        
     
     if (sdp->numComp.pres == NOTPRSNT) {
         return;
@@ -161,6 +158,7 @@ static void mgco_print_sdp(CmSdpInfoSet *sdp)
                 for (mediaId = 0; mediaId < s->attrSet.numComp.val; mediaId++) {
                     CmSdpAttr *a = s->attrSet.attr[mediaId];
                     
+                    
                 }
             }
 
@@ -177,12 +175,9 @@ static void mgco_print_sdp(CmSdpInfoSet *sdp)
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Port: %d\n", port);
                         
                     }
-                    
                 }
             }
-
         }
-        
     }
 }
 
@@ -191,6 +186,9 @@ static void mgco_print_sdp(CmSdpInfoSet *sdp)
 void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
 {
     size_t txnIter;
+    switch_memory_pool_t *pool;
+    
+    switch_core_new_memory_pool(&pool);
     
 	/*TODO*/
     if(msg->body.type.val == MGT_TXN)
@@ -198,6 +196,7 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
         /* Loop over transaction list */
         for(txnIter=0;txnIter<msg->body.u.tl.num.val;txnIter++)
         {
+            
             switch(msg->body.u.tl.txns[txnIter]->type.val) {
                 case MGT_TXNREQ:
                 {
@@ -223,12 +222,44 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                         for (cmdIter=0; cmdIter < (actnReq->cl.num.val); cmdIter++) {
                             MgMgcoCommandReq *cmdReq = actnReq->cl.cmds[cmdIter];
                             MgMgcoTermId *termId = NULLP;
+                            /* The reply we'll send */
+                            MgMgcoCommand mgCmd = {0};
+                            mgCmd.peerId = msg->lcl.id;
+                            mgCmd.transId = transId;
+                            mgCmd.u.mgCmdInd[0] = cmdReq;
+                            
+                            
+                            /* XXX Handle choose context before this */
+                            
+                            mgCmd.contextId = ctxId;
+                            mgCmd.transId = transId;
+
+                            mgCmd.cmdStatus.pres = PRSNT_NODEF;
+                            
+                            if(cmdIter == (actnReq->cl.num.val -1))
+                            {
+                                mgCmd.cmdStatus.val = CH_CMD_STATUS_END_OF_AXN;
+                                if(axnIter == (txnReq->al.num.val-1))
+                                {
+                                    mgCmd.cmdStatus.val= CH_CMD_STATUS_END_OF_TXN;
+                                } 
+                            }
+                            else
+                            {
+                                mgCmd.cmdStatus.val = CH_CMD_STATUS_PENDING;
+                            }
+                            
+                            /* XXX handle props */
+                            mgCmd.cmdType.pres = PRSNT_NODEF;
+                            mgCmd.cmdType.val = CH_CMD_TYPE_REQ;
+                            mgCmd.u.mgCmdReq[0] = cmdReq;
+                            sng_mgco_send_cmd(suId, &mgCmd);
+                            
                             
                             switch (cmdReq->cmd.type.val) {
                                 case MGT_ADD:
                                 {
                                     MgMgcoAmmReq *addReq = &cmdReq->cmd.u.add;
-                                    MgMgcoTermId termId = addReq->termId;
                                     int descId;
                                     for (descId = 0; descId < addReq->dl.num.val; descId++) {
                                         switch (addReq->dl.descs[descId]->type.val) {
@@ -240,24 +271,28 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                                                     switch (mediaPar->type.val) {
                                                         case MGT_MEDIAPAR_LOCAL:
                                                         {
-                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Textual SDP %s\n", mediaPar->u.local.sdpStr.pres ? "present" : "absent");
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCAL");
                                                             break;
                                                         }
                                                         case MGT_MEDIAPAR_REMOTE:
                                                         {
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_REMOTE");
                                                             break;
                                                         }
                                                         
                                                         case MGT_MEDIAPAR_LOCCTL:
                                                         {
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCCTL");
                                                             break;
                                                         }
                                                         case MGT_MEDIAPAR_TERMST:
+                                                        {
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_TERMST");
                                                             break;
+                                                        }
                                                         case MGT_MEDIAPAR_STRPAR:
                                                         {
                                                             MgMgcoStreamDesc *mgStream = &mediaPar->u.stream;
-                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Textual SDP %s\n", mgStream->sl.remote.sdpStr.pres ? "present" : "absent");
                                                             
                                                             if (mgStream->sl.remote.pres.pres) {
                                                                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
@@ -268,6 +303,7 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                                                                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
                                                                 mgco_print_sdp(&mgStream->sl.local.sdp);
                                                             }
+                                                            
                                                             
                                                             break;
                                                         }
@@ -285,6 +321,9 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                                                 break;
                                         }
                                     }
+                                    
+                                    
+                                    
                                     break;
                                 }
                                 case MGT_MODIFY:
@@ -316,6 +355,7 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                 }
                 case MGT_TXNREPLY:
                 {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MGT_TXNREPLY\n");
                     break;
                 }
                 default:
@@ -324,18 +364,21 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
             }
         }
     }
+    
+    switch_core_destroy_memory_pool(&pool);
 }
 
 /*****************************************************************************************************************************/
 void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 {
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
 	/*TODO*/
 }
 
 /*****************************************************************************************************************************/
 void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* sta)
 {
-	/*TODO*/
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);	/*TODO*/
 }
 
 /*****************************************************************************************************************************/
@@ -343,18 +386,21 @@ void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* sta)
 void handle_mgco_txn_sta_ind(Pst *pst, SuId suId, MgMgcoInd* txn_sta_ind)
 {
 	/*TODO*/
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
 }
 
 /*****************************************************************************************************************************/
 void handle_mgco_cntrl_cfm(Pst *pst, SuId suId, MgMgtCntrl* cntrl, Reason reason) 
 {
 	/*TODO*/
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
 }
 
 /*****************************************************************************************************************************/
 void handle_mgco_audit_cfm(Pst *pst, SuId suId, MgMgtAudit* audit, Reason reason) 
 {
 	/*TODO*/
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
 }
 
 /*****************************************************************************************************************************/
