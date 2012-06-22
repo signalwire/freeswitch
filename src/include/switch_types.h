@@ -539,6 +539,7 @@ typedef struct {
 	switch_size_t raw_bytes;
 	switch_size_t media_bytes;
 	switch_size_t packet_count;
+	switch_size_t period_packet_count;
 	switch_size_t media_packet_count;
 	switch_size_t skip_packet_count;
 	switch_size_t jb_packet_count;
@@ -558,6 +559,7 @@ typedef struct {
 	switch_rtp_numbers_t inbound;
 	switch_rtp_numbers_t outbound;
 	switch_rtcp_numbers_t rtcp;
+	uint32_t read_count;
 } switch_rtp_stats_t;
 
 typedef enum {
@@ -890,6 +892,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_INFO,
 	SWITCH_MESSAGE_INDICATE_AUDIO_DATA,
 	SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE,
+	SWITCH_MESSAGE_INDICATE_STUN_ERROR,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 

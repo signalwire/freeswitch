@@ -645,6 +645,7 @@ static const char *message_names[] = {
 	"INFO",
 	"AUDIO_DATA",
 	"BLIND_TRANSFER_RESPONSE",
+	"STUN_ERROR",
 	"INVALID"
 };
 
