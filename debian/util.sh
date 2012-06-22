@@ -297,8 +297,8 @@ build_debs () {
 build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts=""
-  local archs="" distros="" par=false
-  while getopts 'a:bc:djnm:s:v:z:' o "$@"; do
+  local archs="" distros="" orig="" par=false
+  while getopts 'a:bc:djnmo:s:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -307,6 +307,7 @@ build_all () {
       j) par=true;;
       n) orig_opts="$orig_opts -n";;
       m) dsc_opts="$dsc_opts -m$OPTARG";;
+      o) orig="$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
       v) orig_opts="$orig_opts -v$OPTARG";;
       z) orig_opts="$orig_opts -z$OPTARG";;
@@ -315,7 +316,7 @@ build_all () {
   shift $(($OPTIND-1))
   [ -n "$archs" ] || archs="amd64 i386"
   [ -n "$distros" ] || distros="sid wheezy squeeze"
-  local orig="$(create_orig $orig_opts HEAD | tail -n1)"
+  [ -n "$orig" ] || orig="$(create_orig $orig_opts HEAD | tail -n1)"
   mkdir -p ../log
   > ../log/changes
   echo; echo; echo; echo
@@ -369,6 +370,8 @@ commands:
     -n Nightly build
     -m [ quicktest ]
       Choose custom list of modules to build
+    -o <orig-file>
+      Specify existing .orig.tar.xz file
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
     -v Set version
