@@ -186,7 +186,6 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 			 * we don't want the upper layers to have to deal with attributes without a value
 			 * (or worse: invalid length)
 			 */
-			return NULL;
 		}
 
 		/*
@@ -367,11 +366,12 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_st
 	header = (switch_stun_packet_header_t *) buf;
 	header->type = htons(type);
 	header->length = 0;
+	header->cookie = htonl(STUN_MAGIC_COOKIE);
 
 	if (id) {
-		memcpy(header->id, id, 16);
+		memcpy(header->id, id, 12);
 	} else {
-		switch_stun_random_string(header->id, 16, NULL);
+		switch_stun_random_string(header->id, 12, NULL);
 	}
 
 	return (switch_stun_packet_t *) buf;
@@ -403,6 +403,38 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_s
 	}
 
 	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
+
+	return 1;
+}
+
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port)
+{
+	switch_stun_packet_attribute_t *attribute;
+	switch_stun_ip_t *ip;
+	uint8_t *i, x;
+	char *p = ipstr;
+
+	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
+	attribute->type = htons(SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS);
+	attribute->length = htons(8);
+	ip = (switch_stun_ip_t *) attribute->value;
+
+	ip->port = htons(port ^ (STUN_MAGIC_COOKIE >> 16));
+	ip->family = 1;
+	i = (uint8_t *) & ip->address;
+
+	for (x = 0; x < 4; x++) {
+		i[x] = (uint8_t) atoi(p);
+		if ((p = strchr(p, '.'))) {
+			p++;
+		} else {
+			break;
+		}
+	}
+
+	ip->address = htonl(ntohl(ip->address) ^ STUN_MAGIC_COOKIE);
+
+	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
 	return 1;
 }
 
@@ -418,6 +450,26 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
 	attribute->length = htons(ulen);
 	if (username) {
 		memcpy(attribute->value, username, ulen);
+	} else {
+		switch_stun_random_string(attribute->value, ulen, NULL);
+	}
+
+	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
+	return 1;
+}
+
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_password(switch_stun_packet_t *packet, char *password, uint16_t ulen)
+{
+	switch_stun_packet_attribute_t *attribute;
+
+	if (ulen % 4 != 0) {
+		return 0;
+	}
+	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
+	attribute->type = htons(SWITCH_STUN_ATTR_PASSWORD);
+	attribute->length = htons(ulen);
+	if (password) {
+		memcpy(attribute->value, password, ulen);
 	} else {
 		switch_stun_random_string(attribute->value, ulen, NULL);
 	}
