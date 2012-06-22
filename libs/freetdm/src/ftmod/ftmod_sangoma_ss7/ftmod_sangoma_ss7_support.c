@@ -88,7 +88,7 @@ FTDM_STR2ENUM(ftmod_ss7_blk_state2flag, ftmod_ss7_blk_flag2str, sng_ckt_block_fl
 static uint8_t get_trillium_val(ftdm2trillium_t *vals, uint8_t ftdm_val, uint8_t default_val);
 static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t default_val);
 ftdm_status_t four_char_to_hex(const char* in, uint16_t* out) ;
-
+ftdm_status_t hex_to_four_char(uint16_t in, char* out);
 
 /* Maps generic FreeTDM CPC codes to SS7 CPC codes */
 ftdm2trillium_t cpc_codes[] = {
@@ -976,6 +976,54 @@ ftdm_status_t four_char_to_hex(const char* in, uint16_t* out)
 	return FTDM_SUCCESS;
 }
 
+
+ftdm_status_t hex_to_four_char(uint16_t in, char* out) 
+{
+	char val=0;
+	int mask = 0xf;
+	int i=0;
+	if (!out)  {
+		return FTDM_SUCCESS;
+	}
+
+	for (i=3; i>=0; i--) {
+		val = (in & (mask<<(4*i))) >> (4*i);
+		sprintf (out+(3-i), "%x", val);
+	}
+	
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_fwdCallInd_hex_from_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *fwdCallInd)
+{
+	char val[5];
+	uint16_t val_hex = 0;
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	memset (val, 0, 5*sizeof(char));
+	if (fwdCallInd->eh.pres != PRSNT_NODEF ) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No forward call indicator IE available\n");
+		return FTDM_SUCCESS;
+	}
+
+	val_hex |= fwdCallInd->natIntCallInd.val << 8; 
+	val_hex |= (fwdCallInd->end2EndMethInd.val & 0x1) << 9;
+	val_hex |= ((fwdCallInd->end2EndMethInd.val & 0x2)>>1) << 10;
+	val_hex |= fwdCallInd->intInd.val << 11;
+	val_hex |= fwdCallInd->end2EndInfoInd.val << 12;
+	val_hex |= fwdCallInd->isdnUsrPrtInd.val << 13;
+	val_hex |= (fwdCallInd->isdnUsrPrtPrfInd.val & 0x1) << 14;
+	val_hex |= ((fwdCallInd->isdnUsrPrtPrfInd.val & 0x2)>>1) << 15;
+	
+	val_hex |= fwdCallInd->isdnAccInd.val;
+	hex_to_four_char(val_hex, val) ;
+	
+	sngss7_add_var(sngss7_info, "ss7_iam_fwd_ind_hex", val);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Forwad Call Indicator Hex: 0x%s\n", val);
+	
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *fwdCallInd)
 {
 	const char *val = NULL;
@@ -1000,9 +1048,9 @@ ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *
 			SS7_ERROR ("Wrong value set in iam_fwd_ind_HEX variable. Please correct the error. Setting to default values.\n" );
 		} else {
 			fwdCallInd->natIntCallInd.val 		= (val_hex & 0x100)>>8;
-			fwdCallInd->end2EndMethInd.val 		= (val_hex & 0x600)>>9;
+			fwdCallInd->end2EndMethInd.val 	= (val_hex & 0x600)>>9;
 			fwdCallInd->intInd.val 			= (val_hex & 0x800)>>11;
-			fwdCallInd->end2EndInfoInd.val 		= (val_hex & 0x1000)>>12;
+			fwdCallInd->end2EndInfoInd.val 	= (val_hex & 0x1000)>>12;
 			fwdCallInd->isdnUsrPrtInd.val 		= (val_hex & 0x2000)>>13;
 			fwdCallInd->isdnUsrPrtPrfInd.val 	= (val_hex & 0xC000)>>14;
 			fwdCallInd->isdnUsrPrtPrfInd.val 	= (fwdCallInd->isdnUsrPrtPrfInd.val==0x03)?0x0:fwdCallInd->isdnUsrPrtPrfInd.val;

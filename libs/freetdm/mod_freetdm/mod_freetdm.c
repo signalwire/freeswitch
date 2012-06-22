@@ -1874,6 +1874,11 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Plan", "%d", channel_caller_data->rdnis.plan);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CPC", "%s", ftdm_calling_party_category2str(channel_caller_data->cpc));
 	
+		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_iam_fwd_ind_hex");
+		if (!ftdm_strlen_zero(var_value)) {
+			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-IAM-FWD-IND-HEX", "%s", var_value);
+		}
+		
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_access_transport_urlenc");
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-Access-Transport-URLENC", "%s", var_value);
