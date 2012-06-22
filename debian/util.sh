@@ -132,6 +132,17 @@ check_repo_clean () {
     || err "untracked files or build products present"
 }
 
+get_last_release_ver () {
+  grep -m1 -e '^AC_INIT' configure.in \
+    | cut -d, -f2 \
+    | sed -e 's/\[//' -e 's/\]//' -e 's/ //g'
+}
+
+get_nightly_version () {
+  local commit="$(git rev-list -n1 --abbrev=10 --abbrev-commit HEAD)"
+  echo "$(get_last_release_ver)+git~$(date +%Y%m%dT%H%M%SZ)~$commit"
+}
+
 create_orig () {
   {
     set -e
@@ -147,7 +158,7 @@ create_orig () {
     done
     shift $(($OPTIND-1))
     [ -z "$uver" ] || [ "$uver" = "nightly" ] \
-      && uver="$(cat build/next-release.txt)-n$(date +%Y%m%dT%H%M%SZ)"
+      && uver="$(get_nightly_version)"
     local treeish="$1" dver="$(mk_dver "$uver")"
     local orig="../freeswitch_$dver.orig.tar.xz"
     [ -n "$treeish" ] || treeish="HEAD"
