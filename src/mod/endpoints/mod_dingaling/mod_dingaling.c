@@ -3548,7 +3548,7 @@ static switch_status_t parse_candidates(ldl_session_t *dlsession, switch_core_se
 
 			// 192.0.0.0 - 192.0.127.255 is marked as reserved, should we filter all of them?
 			if (!strcasecmp(candidates[x].protocol, "udp") &&
-				(!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun") || !strcasecmp(candidates[x].type, "drelay")) &&
+				(!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun") || !strcasecmp(candidates[x].type, "relay")) &&
 				((tech_pvt->profile->lanaddr &&
 				  lanaddr) || (strncasecmp(candidates[x].address, "10.", 3) &&
 							   strncasecmp(candidates[x].address, "192.168.", 8) &&
