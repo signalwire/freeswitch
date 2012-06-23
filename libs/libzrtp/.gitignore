@@ -1,6 +1,7 @@
 # -*- mode:conf -*-
 /.cproject
 /.project
+/.stamp-doc
 /Makefile
 /Makefile.in
 /_configs.sed
@@ -10,6 +11,8 @@
 /config.*
 /config/*
 /configure
+/doc/Doxyfile
+/doc/out
 /include/zrtp_config_unix.h
 !/build/Makefile.am
 !/build/test/Makefile.am

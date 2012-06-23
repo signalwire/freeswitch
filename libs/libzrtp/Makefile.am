@@ -52,6 +52,13 @@ endif
 SUBDIRS =  third_party/bnlib
 SUBDIRS += build
 
+if HAVE_DOXYGEN
+doc: .stamp-doc
+.stamp-doc:
+	(cd doc && $(DOXYGEN) Doxyfile)
+	touch $@
+endif
+
 uninstall:
 	rm -rf $(prefix)/include/libzrtp
 	rm -f $(prefix)/lib/libzrtp.a
