@@ -1030,7 +1030,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 #ifdef ENABLE_ZRTP
 		/* ZRTP Send */
 		if (zrtp_on && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
-			unsigned int sbytes = (int) bytes;
+			unsigned int sbytes = (int) rtcp_bytes;
 			zrtp_status_t stat = zrtp_status_fail;
 
 			stat = zrtp_process_rtcp(rtp_session->zrtp_stream, (void *) &rtp_session->rtcp_send_msg, &sbytes);
@@ -1040,7 +1040,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 				break;
 			case zrtp_status_drop:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
-				ret = (int) bytes;
+				ret = (int)rtcp_bytes;
 				goto end;
 				break;
 			case zrtp_status_fail:
@@ -1050,7 +1050,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 				break;
 			}
 
-			bytes = sbytes;
+			rtcp_bytes = sbytes;
 		}
 #endif
 		if (switch_socket_sendto(rtp_session->rtcp_sock_output, rtp_session->rtcp_remote_addr, 0, 
