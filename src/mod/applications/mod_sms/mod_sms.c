@@ -42,7 +42,17 @@ SWITCH_MODULE_DEFINITION(mod_sms, mod_sms_load, mod_sms_shutdown, NULL);
 static void event_handler(switch_event_t *event) 
 {
 	const char *dest_proto = switch_event_get_header(event, "dest_proto");
+	const char *check_failure = switch_event_get_header(event, "Delivery-Failure");
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
+
+	if (switch_true(check_failure)) {
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Delivery Failure\n");
+		DUMP_EVENT(event);
+
+		return;
+	}
+
 	switch_core_chat_send(dest_proto, event);
 }
 

@@ -563,7 +563,6 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 			if ((ci = (switch_chat_interface_t *) val)) {
 				if (ci->chat_send && !strncasecmp(ci->interface_name, "GLOBAL_", 7)) {
 					status = ci->chat_send(message_event);
-
 					if (status == SWITCH_STATUS_BREAK) {
 						do_skip = 1;
 					}
@@ -581,6 +580,8 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	if (!do_skip && !switch_stristr("GLOBAL", dest_proto)) {
 		if ((ci = switch_loadable_module_get_chat_interface(dest_proto)) && ci->chat_send) {
 			status = ci->chat_send(message_event);
+					printf("FRICK\n");
+
 			UNPROTECT_INTERFACE(ci);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid chat interface [%s]!\n", dest_proto);
