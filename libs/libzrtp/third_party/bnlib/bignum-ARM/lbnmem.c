@@ -31,9 +31,6 @@
 #ifndef HAVE_STRINGS_H
 #define HAVE_STRINGS_H 0
 #endif
-#ifndef NEED_MEMORY_H
-#define NEED_MEMORY_H 0
-#endif
 
 #if !NO_STDLIB_H
 #include <stdlib.h>	/* For malloc() & co. */
@@ -47,9 +44,6 @@ void free();
 #include <string.h>	/* For memset */
 #elif HAVE_STRINGS_H
 #include <strings.h>
-#endif
-#if NEED_MEMORY_H
-#include <memory.h>
 #endif
 
 #ifndef DBMALLOC

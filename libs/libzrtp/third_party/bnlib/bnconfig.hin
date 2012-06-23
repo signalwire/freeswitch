@@ -29,7 +29,6 @@
 #define NO_STRING_H !HAVE_STRING_H
 
 #define HAVE_STRINGS_H 0
-#define NEED_MEMORY_H 0
 
 /* We go to some trouble to find accurate times... */
 
@@ -52,20 +51,6 @@
 #define TIME_WITH_SYS_TIME 0
 
 /* Defines for various kinds of library brokenness */
-
-/* Define if <stdio.h> is missing prototypes (= lots of warnings!) */
-#define NO_STDIO_PROTOS 0
-
-/* Define if <assert.h> depends on <stdio.h> and breaks without it */
-#define ASSERT_NEEDS_STDIO 0
-/* Define if <assert.h> depends on <stdlib.h> and complains without it */
-#define ASSERT_NEEDS_STDLIB 0
-
-/*
- * Define if <string.h> delcares the mem* functions to take char *
- * instead of void * parameters (= lots of warnings)
- */
-#define MEM_PROTOS_BROKEN 0
 
 /* If not available, bcopy() is substituted */
 #define HAVE_MEMMOVE 0

@@ -108,9 +108,6 @@
 #ifndef HAVE_STRINGS_H
 #define HAVE_STRINGS_H 0
 #endif
-#ifndef NEED_MEMORY_H
-#define NEED_MEMORY_H 0
-#endif
 
 #if !NO_ASSERT_H
 #include <assert.h>
@@ -126,9 +123,6 @@
 #include <string.h>	/* for memset() */
 #elif HAVE_STRINGS_H
 #include <strings.h>
-#endif
-#if NEED_MEMORY_H
-#include <memory.h>
 #endif
 
 #include "bn.h"

@@ -25,40 +25,6 @@
 #endif
 
 /*
- * If there are no prototypes for the stdio functions, to reduce
- * compiler warnings include these... conditional on EOF being
- * defined (a giveaway that <stdio.h> was #included).
- */
-#if defined(EOF)
-
-#if NO_STDIO_PROTOS	/* Missing prototypes for "simple" functions */
-int (puts)(char const *);
-int (fputs)(char const *, FILE *);
-void (rewind)(FILE *);
-int (fflush)(FILE *);
-int (fclose)(FILE *);
-int (printf)(char const *, ...);
-int (fprintf)(FILE *, char const *, ...);
-int (fseek)(FILE *, long, int);
-int (remove)(char const *);
-int (rename)(char const *, char const *);
-void (perror)(char const *);
-int (system)(char const *);	/* Really in <stdlib.h>, but this'll do... */
-int (pclose)(FILE *);
-/* If we have a sufficiently old-fashioned stdio, it probably uses these... */
-int (_flsbuf)(int, FILE *);
-int (_filbuf)(FILE *);
-int (ungetc)(int, FILE *);
-size_t (fread)(char *, size_t, size_t, FILE *);
-size_t (fwrite)(char const *, size_t, size_t, FILE *);
-#if defined(va_start) || defined(va_arg) || defined(va_end)
-int (vfprintf)(FILE *, char const *, ...);
-#endif
-#endif /* NO_STDIO_PROTOS */
-
-#endif /* EOF */
-
-/*
  * Make Microsoft Visual C shut the hell up about a few things...
  * Warning 4116 complains about the alignof() macro, saying:
  * warning C4116: unnamed type definition in parentheses
