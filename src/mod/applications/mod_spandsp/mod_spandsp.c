@@ -616,8 +616,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 	SWITCH_ADD_APP(app_interface, "spandsp_start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_MEDIA_TAP);
 
 
-	SWITCH_ADD_APP(app_interface, "spandsp_stop_send_tdd", "stop sending tdd", "", stop_tdd_encode_function, "", SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "spandsp_send_tdd", "Send TDD data", "Send TDD data", tdd_encode_function, "", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "spandsp_stop_inject_tdd", "stop sending tdd", "", stop_tdd_encode_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "spandsp_inject_tdd", "Send TDD data", "Send TDD data", tdd_encode_function, "", SAF_MEDIA_TAP);
 
 	SWITCH_ADD_APP(app_interface, "spandsp_stop_detect_tdd", "stop sending tdd", "", stop_tdd_decode_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "spandsp_detect_tdd", "Detect TDD data", "Detect TDD data", tdd_decode_function, "", SAF_MEDIA_TAP);
