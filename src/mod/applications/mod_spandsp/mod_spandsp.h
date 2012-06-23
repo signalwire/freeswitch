@@ -140,3 +140,11 @@ switch_status_t spandsp_fax_stop_detect_session(switch_core_session_t *session);
 void spanfax_log_message(void *user_data, int level, const char *msg);
 switch_status_t load_configuration(switch_bool_t reload);
 void mod_spandsp_indicate_data(switch_core_session_t *session, switch_bool_t self, switch_bool_t on);
+
+switch_status_t spandsp_stop_tdd_encode_session(switch_core_session_t *session);
+switch_status_t spandsp_tdd_encode_session(switch_core_session_t *session, const char *text);
+
+
+switch_status_t spandsp_stop_tdd_decode_session(switch_core_session_t *session);
+switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session);
+switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const char *text);

@@ -35,6 +35,285 @@
 
 #include "mod_spandsp.h"
 
+#define TDD_LEAD 10
+
+typedef struct {
+	switch_core_session_t *session;
+	v18_state_t *tdd_state;
+    int head_lead;
+    int tail_lead;
+} switch_tdd_t;
+
+static switch_bool_t tdd_encode_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	switch_tdd_t *pvt = (switch_tdd_t *) user_data;
+	switch_frame_t *frame = NULL;
+	switch_bool_t r = SWITCH_TRUE;
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT: {
+		break;
+	}
+	case SWITCH_ABC_TYPE_CLOSE:
+		if (pvt->tdd_state) {
+			v18_free(pvt->tdd_state);
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+		if ((frame = switch_core_media_bug_get_write_replace_frame(bug))) {
+			int len;
+
+            if (pvt->tail_lead) {
+                if (!--pvt->tail_lead) {
+                    r = SWITCH_FALSE;
+                }
+                memset(frame->data, 0, frame->datalen);
+
+            } else if (pvt->head_lead) {
+                pvt->head_lead--;
+                memset(frame->data, 0, frame->datalen);
+            } else {
+                len = v18_tx(pvt->tdd_state, frame->data, frame->samples);
+
+                if (!len) {
+                    pvt->tail_lead = TDD_LEAD;
+                }
+            }
+
+			switch_core_media_bug_set_write_replace_frame(bug, frame);
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE:
+	default:
+		break;
+	}
+
+	return r;
+}
+
+switch_status_t spandsp_stop_tdd_encode_session(switch_core_session_t *session)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if ((bug = switch_channel_get_private(channel, "tdd_encode"))) {
+		switch_channel_set_private(channel, "tdd_encode", NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+static void put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+    switch_tdd_t *pvt = (switch_tdd_t *) user_data;
+    switch_event_t *event, *clone;
+    switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
+    switch_core_session_t *other_session;
+
+
+    switch_channel_add_variable_var_check(channel, "tdd_messages", (char *)msg, SWITCH_FALSE, SWITCH_STACK_PUSH);
+
+    if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+        
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", "mod_spandsp");
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "tdd");
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "TDD MESSAGE");
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(pvt->session));
+        switch_event_add_body(event, (char *)msg);
+
+        if (switch_core_session_get_partner(pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
+        
+            if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+                switch_core_session_receive_event(other_session, &clone);
+            }
+
+            if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+                switch_core_session_queue_event(other_session, &clone);
+            }
+
+            switch_core_session_rwunlock(other_session);
+        }
+
+        switch_event_fire(&event);
+
+
+    }
+    
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "%s got TDD Message [%s]\n", switch_channel_get_name(channel), (char *)msg);
+
+}
+
+switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const char *text)
+{
+    v18_state_t *tdd_state;
+    switch_frame_t *read_frame, write_frame = { 0 };
+    uint8_t write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_codec_implementation_t read_impl = { 0 };
+	switch_codec_t write_codec = { 0 };
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    switch_status_t status;
+
+	switch_core_session_get_read_impl(session, &read_impl);
+    
+    if (switch_core_codec_init(&write_codec,
+                               "L16",
+                               NULL,
+                               read_impl.actual_samples_per_second,
+                               read_impl.microseconds_per_packet / 1000,
+                               read_impl.number_of_channels,
+                               SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+                               switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+        write_frame.data = write_buf;
+        write_frame.buflen = sizeof(write_buf);
+        write_frame.datalen = read_impl.decoded_bytes_per_packet;
+        write_frame.samples = write_frame.datalen / 2;
+        write_frame.codec = &write_codec;
+        switch_core_session_set_read_codec(session, &write_codec);
+    } else {
+        return SWITCH_STATUS_FALSE;
+    }
+
+    tdd_state = v18_init(NULL, TRUE, V18_MODE_5BIT_45, put_text_msg, NULL);
+
+
+	v18_put(tdd_state, text, -1);
+
+    while(switch_channel_ready(channel)) {
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+        
+
+        if (!v18_tx(tdd_state, (void *)write_buf, write_frame.samples)) {
+            break;
+        }
+
+        if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+            break;
+        }
+
+    }
+
+    switch_core_codec_destroy(&write_codec);
+    switch_core_session_set_read_codec(session, NULL);
+
+    v18_free(tdd_state);
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t spandsp_tdd_encode_session(switch_core_session_t *session, const char *text)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_bug_t *bug;
+	switch_status_t status;
+	switch_tdd_t *pvt;
+	//switch_codec_implementation_t read_impl = { 0 };
+
+	//switch_core_session_get_read_impl(session, &read_impl);
+
+	if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	pvt->session = session;
+	pvt->tdd_state = v18_init(NULL, TRUE, V18_MODE_5BIT_45, put_text_msg, NULL);
+    pvt->head_lead = TDD_LEAD;
+
+	v18_put(pvt->tdd_state, text, -1);
+
+	if ((status = switch_core_media_bug_add(session, "spandsp_tdd_encode", NULL,
+                                            tdd_encode_callback, pvt, 0, SMBF_WRITE_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
+		v18_free(pvt->tdd_state);
+		return status;
+	}
+
+	switch_channel_set_private(channel, "tdd_encode", bug);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+///XXX
+static switch_bool_t tdd_decode_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	switch_tdd_t *pvt = (switch_tdd_t *) user_data;
+	switch_frame_t *frame = NULL;
+	switch_bool_t r = SWITCH_TRUE;
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT: {
+		break;
+	}
+	case SWITCH_ABC_TYPE_CLOSE:
+		if (pvt->tdd_state) {
+			v18_free(pvt->tdd_state);
+		}
+		break;
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+		if ((frame = switch_core_media_bug_get_read_replace_frame(bug))) {
+
+            v18_rx(pvt->tdd_state, frame->data, frame->samples);
+
+			switch_core_media_bug_set_read_replace_frame(bug, frame);
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE:
+	default:
+		break;
+	}
+
+	return r;
+}
+
+switch_status_t spandsp_stop_tdd_decode_session(switch_core_session_t *session)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if ((bug = switch_channel_get_private(channel, "tdd_decode"))) {
+		switch_channel_set_private(channel, "tdd_decode", NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_bug_t *bug;
+	switch_status_t status;
+	switch_tdd_t *pvt;
+	//switch_codec_implementation_t read_impl = { 0 };
+
+	//switch_core_session_get_read_impl(session, &read_impl);
+
+	if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	pvt->session = session;
+	pvt->tdd_state = v18_init(NULL, FALSE, V18_MODE_5BIT_45, put_text_msg, pvt);
+
+	if ((status = switch_core_media_bug_add(session, "spandsp_tdd_decode", NULL,
+                                            tdd_decode_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
+		v18_free(pvt->tdd_state);
+		return status;
+	}
+
+	switch_channel_set_private(channel, "tdd_decode", bug);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+///XXX
+
 typedef struct {
 	switch_core_session_t *session;
 	dtmf_rx_state_t *dtmf_detect;
