@@ -7,7 +7,7 @@ dnl Anything which is not an m4 macro is copied directly to the output.
 dnl
 dnl Start things up.  If the specified file doesn't exist, configure
 dnl will complain.
-AC_INIT(lbn16.c)
+AC_INIT([libbn], [0.1])
 
 dnl The following tests need to know that we intend to produce a config.h
 dnl file, even though this won't expand to any shell script code until
