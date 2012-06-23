@@ -6,7 +6,7 @@
 # Viktor Krikun <v.krikun at zfoneproject.com> 
 #
 
-AC_INIT()
+AC_INIT([libzrtp], [1.2.0])
 
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADER(config/config.h)
@@ -32,7 +32,7 @@ case $target_os in
 esac
 
 
-AM_INIT_AUTOMAKE([libzrtp], [1.20])
+AM_INIT_AUTOMAKE
 AX_PREFIX_CONFIG_H(include/zrtp_config_unix.h,ZRTP,config/config.h)
 
 CFLAGS="$CFLAGS -Wno-unused-parameter -fno-strict-aliasing -fPIC -DZRTP_AUTOMAKE=1"
