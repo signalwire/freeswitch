@@ -5270,8 +5270,13 @@ public class freeswitch {
     freeswitchPINVOKE.switch_rtp_destroy(SWIGTYPE_p_p_switch_rtp.getCPtr(rtp_session));
   }
 
-  public static switch_status_t switch_rtp_activate_ice(SWIGTYPE_p_switch_rtp rtp_session, string login, string rlogin) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_ice(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), login, rlogin);
+  public static switch_status_t switch_rtp_activate_ice(SWIGTYPE_p_switch_rtp rtp_session, string login, string rlogin, string password) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_ice(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), login, rlogin, password);
+    return ret;
+  }
+
+  public static switch_status_t switch_rtp_activate_rtcp_ice(SWIGTYPE_p_switch_rtp rtp_session, string login, string rlogin, string password) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_rtcp_ice(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), login, rlogin, password);
     return ret;
   }
 
@@ -5317,6 +5322,10 @@ public class freeswitch {
     IntPtr cPtr = freeswitchPINVOKE.switch_rtp_get_rtp_socket(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
     SWIGTYPE_p_switch_socket_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_socket_t(cPtr, false);
     return ret;
+  }
+
+  public static void switch_rtp_ping(SWIGTYPE_p_switch_rtp rtp_session) {
+    freeswitchPINVOKE.switch_rtp_ping(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
   }
 
   public static uint switch_rtp_get_default_samples_per_interval(SWIGTYPE_p_switch_rtp rtp_session) {
@@ -7103,6 +7112,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_numbers_t_packet_count_get")]
   public static extern IntPtr switch_rtp_numbers_t_packet_count_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_numbers_t_period_packet_count_set")]
+  public static extern void switch_rtp_numbers_t_period_packet_count_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_numbers_t_period_packet_count_get")]
+  public static extern IntPtr switch_rtp_numbers_t_period_packet_count_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_numbers_t_media_packet_count_set")]
   public static extern void switch_rtp_numbers_t_media_packet_count_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -7186,6 +7201,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_rtcp_get")]
   public static extern IntPtr switch_rtp_stats_t_rtcp_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_read_count_set")]
+  public static extern void switch_rtp_stats_t_read_count_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_read_count_get")]
+  public static extern uint switch_rtp_stats_t_read_count_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_rtp_stats_t")]
   public static extern IntPtr new_switch_rtp_stats_t();
@@ -13740,7 +13761,10 @@ class freeswitchPINVOKE {
   public static extern void switch_rtp_destroy(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_ice")]
-  public static extern int switch_rtp_activate_ice(HandleRef jarg1, string jarg2, string jarg3);
+  public static extern int switch_rtp_activate_ice(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_rtcp_ice")]
+  public static extern int switch_rtp_activate_rtcp_ice(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_rtcp")]
   public static extern int switch_rtp_activate_rtcp(HandleRef jarg1, int jarg2, ushort jarg3);
@@ -13768,6 +13792,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_rtp_socket")]
   public static extern IntPtr switch_rtp_get_rtp_socket(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_ping")]
+  public static extern void switch_rtp_ping(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_default_samples_per_interval")]
   public static extern uint switch_rtp_get_default_samples_per_interval(HandleRef jarg1);
@@ -25104,6 +25131,7 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_INFO,
   SWITCH_MESSAGE_INDICATE_AUDIO_DATA,
   SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE,
+  SWITCH_MESSAGE_INDICATE_STUN_ERROR,
   SWITCH_MESSAGE_INVALID
 }
 
@@ -30735,6 +30763,18 @@ public class switch_rtp_numbers_t : IDisposable {
     } 
   }
 
+  public SWIGTYPE_p_switch_size_t period_packet_count {
+    set {
+      freeswitchPINVOKE.switch_rtp_numbers_t_period_packet_count_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_rtp_numbers_t_period_packet_count_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
   public SWIGTYPE_p_switch_size_t media_packet_count {
     set {
       freeswitchPINVOKE.switch_rtp_numbers_t_media_packet_count_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
@@ -30895,6 +30935,16 @@ public class switch_rtp_stats_t : IDisposable {
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_rtp_stats_t_rtcp_get(swigCPtr);
       switch_rtcp_numbers_t ret = (cPtr == IntPtr.Zero) ? null : new switch_rtcp_numbers_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public uint read_count {
+    set {
+      freeswitchPINVOKE.switch_rtp_stats_t_read_count_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtp_stats_t_read_count_get(swigCPtr);
       return ret;
     } 
   }
