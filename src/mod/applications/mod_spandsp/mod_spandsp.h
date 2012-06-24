@@ -42,6 +42,9 @@ typedef HANDLE zap_socket_t;
 typedef int zap_socket_t;
 #endif
 
+#define MY_EVENT_TDD_SEND_MESSAGE "TDD::SEND_MESSAGE"
+#define MY_EVENT_TDD_RECV_MESSAGE "TDD::RECV_MESSAGE"
+
 #define MAX_MODEMS 1024
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include <spandsp.h>

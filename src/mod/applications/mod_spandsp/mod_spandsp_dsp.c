@@ -114,7 +114,8 @@ static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 
     switch_channel_add_variable_var_check(channel, "tdd_messages", (char *)msg, SWITCH_FALSE, SWITCH_STACK_PUSH);
 
-    if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+    
+    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_TDD_RECV_MESSAGE) == SWITCH_STATUS_SUCCESS) {
         
         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", "mod_spandsp");
         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "tdd");

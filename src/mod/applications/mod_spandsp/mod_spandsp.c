@@ -35,7 +35,7 @@
  */
 
 
-#define MY_EVENT_TDD_SEND_MESSAGE "TDD::SEND_MESSAGE"
+
 #include "mod_spandsp.h"
 #include <spandsp/version.h>
 #include "mod_spandsp_modem.h"
