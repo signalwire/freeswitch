@@ -1436,7 +1436,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			switch_core_session_t *isession = imember->session;
 			switch_channel_t *ichannel;
 
-			if (!isession || !switch_core_session_read_lock(isession)) {
+			if (!isession || switch_core_session_read_lock(isession) != SWITCH_STATUS_SUCCESS) {
 				continue;
 			}
 
