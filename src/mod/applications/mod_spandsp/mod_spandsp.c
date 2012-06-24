@@ -261,9 +261,7 @@ SWITCH_STANDARD_APP(start_tone_detect_app)
 	}
 }
 
-/**
- * Start tone detector API
- */
+
 SWITCH_STANDARD_API(start_tone_detect_api)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -292,6 +290,8 @@ SWITCH_STANDARD_API(start_tone_detect_api)
 
 	return status;
 }
+
+
 
 /**
  * Stop tone detector application
@@ -335,6 +335,91 @@ SWITCH_STANDARD_API(stop_tone_detect_api)
 	return status;
 }
 
+
+
+SWITCH_STANDARD_API(start_tdd_detect_api)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	 switch_core_session_t *psession = NULL;
+
+    if (!(psession = switch_core_session_locate(cmd))) {
+        stream->write_function(stream, "-ERR Cannot locate session\n");
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+    spandsp_tdd_decode_session(psession);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK started\n");
+	} else {
+		stream->write_function(stream, "-ERR failed to start tdd detector\n");
+	}
+    
+    switch_core_session_rwunlock(psession);
+
+	return status;
+}
+
+
+SWITCH_STANDARD_API(stop_tdd_detect_api)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	 switch_core_session_t *psession = NULL;
+
+
+    if (!(psession = switch_core_session_locate(cmd))) {
+        stream->write_function(stream, "-ERR Cannot locate session\n");
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+    spandsp_stop_tdd_decode_session(psession);
+
+    stream->write_function(stream, "+OK stopped\n");
+    switch_core_session_rwunlock(psession);
+    
+	return status;
+}
+
+
+SWITCH_STANDARD_API(start_send_tdd_api)
+{
+    switch_core_session_t *psession = NULL;
+    char *puuid = NULL, *text = NULL;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR missing uuid\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+    puuid = strdup((char *)cmd);
+
+    if ((text = strchr(puuid, ' '))) {
+        *text++ = '\0';
+    }
+
+	if (zstr(text)) {
+		stream->write_function(stream, "-ERR missing text\n");
+        goto end;
+	}
+
+
+    if (!(psession = switch_core_session_locate(cmd))) {
+        stream->write_function(stream, "-ERR Cannot locate session\n");
+        goto end;
+    }
+
+
+    spandsp_tdd_encode_session(psession, text);
+
+    stream->write_function(stream, "+OK\n");
+    switch_core_session_rwunlock(psession);
+    
+ end:
+
+    switch_safe_free(puuid);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 void mod_spandsp_indicate_data(switch_core_session_t *session, switch_bool_t self, switch_bool_t on)
 {
@@ -645,6 +730,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
         SWITCH_ADD_API(api_interface, "stop_tone_detect", "Stop background tone detection with cadence", stop_tone_detect_api, "");
 	}
     
+
+    SWITCH_ADD_API(api_interface, "start_tdd_detect", "Start background tdd detection", start_tdd_detect_api, "<uuid>");
+    SWITCH_ADD_API(api_interface, "stop_tdd_detect", "Stop background tdd detection", stop_tdd_detect_api, "<uuid>");
+
+    SWITCH_ADD_API(api_interface, "uuid_send_tdd", "send tdd data to a uuid", start_send_tdd_api, "<uuid> <text>");
+
+
+
 	if ((switch_event_bind(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind our reloadxml handler!\n");
 		/* Not such severe to prevent loading */
