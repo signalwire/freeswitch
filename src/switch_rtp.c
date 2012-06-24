@@ -702,7 +702,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		bytes = switch_stun_packet_length(rpacket);
 		switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
 
-	} else if ((packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE)) {
+	} else if (packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE) {
 		switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 		
 		ice_out(rtp_session, ice);
