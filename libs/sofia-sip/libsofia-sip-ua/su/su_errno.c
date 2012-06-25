@@ -157,4 +157,7 @@ const char *su_strerror(int errcode)
   return strerror(errcode);
 }
 
+int su_errno(void) { return errno; }
+int su_seterrno(int n) { errno = n; return -1; }
+
 #endif /* SU_HAVE_WINSOCK */
