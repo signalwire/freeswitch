@@ -535,8 +535,6 @@ void auth_method_basic(auth_mod_t *am,
     if (!au->au_params)
       continue;
     n = base64_d(userpass, upsize - 1, au->au_params[0]);
-    if (n < 0 || n >= INT_MAX)
-      continue;
     if (n >= upsize) {
       void *b = realloc(userpass == buffer ? NULL : userpass, upsize = n + 1);
       if (b == NULL)
