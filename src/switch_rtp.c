@@ -590,7 +590,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
 	switch_stun_packet_attribute_add_username(packet, ice->ice_user, 32);
 	if (ice->pass) {
-		switch_stun_packet_attribute_add_password(packet, ice->pass, strlen(ice->pass));
+		switch_stun_packet_attribute_add_password(packet, ice->pass, (uint16_t)strlen(ice->pass));
 	}
 	bytes = switch_stun_packet_length(packet);
 
@@ -992,7 +992,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 		rb->dlsr = 0;
 		rtcp_bytes += sizeof(struct switch_rtcp_report_block);
 
-		rtp_session->rtcp_send_msg.header.length = htons((rtcp_bytes / 4) - 1); 
+		rtp_session->rtcp_send_msg.header.length = htons((u_short)(rtcp_bytes / 4) - 1); 
 		
 
 #ifdef ENABLE_SRTP
