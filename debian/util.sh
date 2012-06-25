@@ -199,9 +199,10 @@ EOF
 create_dsc () {
   {
     set -e
-    local OPTIND OPTARG modules_list="" speed="normal"
-    while getopts 'm:s:' o "$@"; do
+    local OPTIND OPTARG modules_conf="" modules_list="" speed="normal"
+    while getopts 'f:m:s:' o "$@"; do
       case "$o" in
+        f) modules_conf="$OPTARG";;
         m) modules_list="$OPTARG";;
         s) speed="$OPTARG";;
       esac
@@ -213,6 +214,9 @@ create_dsc () {
     local dver="${orig_ver}-1~${distro}+1"
     [ -x "$(which dch)" ] \
       || err "package devscripts isn't installed"
+    if [ -n "$modules_conf" ]; then
+      cp $modules_conf debian/modules.conf
+    fi
     if [ -n "$modules_list" ]; then
       set_modules_${modules_list}
     fi
@@ -298,12 +302,13 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts=""
   local archs="" distros="" orig="" par=false
-  while getopts 'a:bc:djmno:s:v:z:' o "$@"; do
+  while getopts 'a:bc:df:jmno:s:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
       c) distros="$distros $OPTARG";;
       d) deb_opts="$deb_opts -d";;
+      f) dsc_opts="$dsc_opts -f$OPTARG";;
       j) par=true;;
       m) dsc_opts="$dsc_opts -m$OPTARG";;
       n) orig_opts="$orig_opts -n";;
@@ -366,6 +371,8 @@ commands:
     -b Bundle downloaded libraries in source package
     -c Specify distributions
     -d Enable cowbuilder debug hook
+    -f <modules.conf>
+      Build only modules listed in this file
     -j Build debs in parallel
     -m [ quicktest ]
       Choose custom list of modules to build
@@ -387,6 +394,8 @@ commands:
 
   create-dsc <distro> <orig-file>
 
+    -f <modules.conf>
+      Build only modules listed in this file
     -m [ quicktest ]
       Choose custom list of modules to build
     -s [ paranoid | reckless ]
