@@ -84,6 +84,8 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload);
 switch_status_t sng_mgco_start(megaco_profile_t* profile);
 switch_status_t sng_mgco_stop(megaco_profile_t* profile);
 switch_status_t mg_config_cleanup(megaco_profile_t* profile);
+switch_status_t mg_peer_config_cleanup(mg_peer_profile_t* profile);
+switch_status_t megaco_peer_profile_destroy(mg_peer_profile_t **profile); 
 switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stream);
 
 

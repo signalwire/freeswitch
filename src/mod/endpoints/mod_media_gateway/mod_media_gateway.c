@@ -97,6 +97,32 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown)
 {
+	void 		*val = NULL;
+        const void 	*key = NULL;
+        switch_ssize_t   keylen;
+	switch_hash_index_t *hi = NULL;
+	megaco_profile_t*    profile = NULL;
+	mg_peer_profile_t*    peer_profile = NULL;
+
+	/* destroy all the mg profiles */
+	while ((hi = switch_hash_first(NULL, megaco_globals.profile_hash))) {
+		switch_hash_this(hi, &key, &keylen, &val);
+		profile = (megaco_profile_t *) val;
+		megaco_profile_destroy(&profile);
+		profile = NULL;
+	}
+
+	hi = NULL;
+	key = NULL;
+	val = NULL;
+	/* destroy all the mg peer profiles */
+	while ((hi = switch_hash_first(NULL, megaco_globals.peer_profile_hash))) {
+		switch_hash_this(hi, &key, &keylen, &val);
+		peer_profile = (mg_peer_profile_t *) val;
+		megaco_peer_profile_destroy(&peer_profile);
+		peer_profile = NULL;
+	}
+
 	sng_mgco_stack_shutdown();
 
 	return SWITCH_STATUS_SUCCESS;
@@ -156,7 +182,7 @@ static void mgco_print_sdp(CmSdpInfoSet *sdp)
             }
             if (s->attrSet.numComp.pres) {
                 for (mediaId = 0; mediaId < s->attrSet.numComp.val; mediaId++) {
-                    CmSdpAttr *a = s->attrSet.attr[mediaId];
+                    /*CmSdpAttr *a = s->attrSet.attr[mediaId];*/
                     
                     
                 }
@@ -221,9 +247,10 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                         /* Loop over command list */
                         for (cmdIter=0; cmdIter < (actnReq->cl.num.val); cmdIter++) {
                             MgMgcoCommandReq *cmdReq = actnReq->cl.cmds[cmdIter];
-                            MgMgcoTermId *termId = NULLP;
+                            /*MgMgcoTermId *termId = NULLP;*/
                             /* The reply we'll send */
-                            MgMgcoCommand mgCmd = {0};
+                            MgMgcoCommand mgCmd;
+			    memset(&mgCmd, 0, sizeof(mgCmd));
                             mgCmd.peerId = msg->lcl.id;
                             mgCmd.transId = transId;
                             mgCmd.u.mgCmdInd[0] = cmdReq;
@@ -328,18 +355,18 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                                 }
                                 case MGT_MODIFY:
                                 {
-                                    MgMgcoAmmReq *addReq = &cmdReq->cmd.u.mod;
+                                    /*MgMgcoAmmReq *addReq = &cmdReq->cmd.u.mod;*/
                                     break;
                                 }
                                 case MGT_MOVE:
                                 {
-                                    MgMgcoAmmReq *addReq = &cmdReq->cmd.u.move;
+                                    /*MgMgcoAmmReq *addReq = &cmdReq->cmd.u.move;*/
                                     break;
                                     
                                 }
                                 case MGT_SUB:
                                 {
-                                    MgMgcoSubAudReq *addReq = &cmdReq->cmd.u.sub;
+                                    /*MgMgcoSubAudReq *addReq = &cmdReq->cmd.u.sub;*/
                                 }
                                 case MGT_SVCCHG:
                                 case MGT_NTFY:
