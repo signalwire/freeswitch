@@ -209,9 +209,14 @@ void (*_su_home_destroy_mutexes)(void *mutex);
 su_inline void safefree(void *b) { b ? free(b) : (void)0; }
 #endif
 
-#define MEMLOCK(h)   \
-  ((void)((h) && (h)->suh_lock ? _su_home_locker((h)->suh_lock) : 0), (h)->suh_blocks)
-#define UNLOCK(h) ((void)((h) && (h)->suh_lock ? _su_home_unlocker((h)->suh_lock) : 0), NULL)
+static inline su_block_t* MEMLOCK(const su_home_t *h) {
+  if (h && h->suh_lock) _su_home_locker(h->suh_lock);
+  return h->suh_blocks;
+}
+static inline void* UNLOCK(const su_home_t *h) {
+  if (h && h->suh_lock) _su_home_unlocker(h->suh_lock);
+  return NULL;
+}
 
 #ifdef NDEBUG
 #define MEMCHECK 0
