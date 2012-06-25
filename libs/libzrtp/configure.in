@@ -78,7 +78,7 @@ AC_CHECK_FUNCS([pthread_mutex_lock pthread_mutex_unlock pthread_mutex_init pthre
 AC_CHECK_FUNCS([pthread_attr_init pthread_attr_setdetachstate pthread_create])
 AC_CHECK_FUNCS([sem_wait sem_trywait sem_post sem_unlink sem_destroy sem_open sem_init])
 
-AC_CHECK_LIB([pthread], [main], [LIB_PTHREAD="-lpthread"], [echo "  Couldn't find library pthread";])
+AC_CHECK_LIB([pthread], [main], [LIBS="-lpthread $LIBS"], [echo "  Couldn't find library pthread";])
 
 # Other
 AC_DEFINE(PRAGMA_PACK_PUSH,[#pragma pack(push, 1)],[Define pragma pack(push) for your platform])
