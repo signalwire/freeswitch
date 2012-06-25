@@ -199,7 +199,7 @@ void authorize_watcher(nea_server_t *nes,
   int substate = sn->sn_state;
   int status; char const *phrase;
 
-  SET_STATUS1(SIP_200_OK);
+  SET_STATUS(200, sip_200_OK);
 
   /* OK. In nhp (nua_handle_preferences_t) structure we have the
      current default action (or state) for incoming
@@ -218,10 +218,10 @@ void authorize_watcher(nea_server_t *nes,
       substate = nua_substate_pending;
 
     if (substate == nua_substate_terminated) {
-      what = "rejected"; SET_STATUS1(SIP_403_FORBIDDEN);
+      what = "rejected"; SET_STATUS(403, sip_403_Forbidden);
     }
     else if (substate == nua_substate_pending) {
-      what = "pending"; SET_STATUS1(SIP_202_ACCEPTED);
+      what = "pending"; SET_STATUS(202, sip_202_Accepted);
     }
     else {
       what = "active";
