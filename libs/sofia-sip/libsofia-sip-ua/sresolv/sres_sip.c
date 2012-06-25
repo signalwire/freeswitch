@@ -1625,7 +1625,7 @@ sres_sip_append_result(sres_sip_t *srs,
       break;
   }
 
-  if ((srs->srs_canonname && srs->srs_numeric) || (SU_LOG->log_level >= 0)) {
+  {
     unsigned port = 0;
     char const *lb = "", *rb = "";
 
