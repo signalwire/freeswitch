@@ -2383,7 +2383,7 @@ static JSBool session_hangup(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	if (switch_channel_up(channel)) {
 		jsval ret = JS_TRUE;
 
-		if (argc > 1) {
+		if (argc > 0) {
 			if (JSVAL_IS_INT(argv[0])) {
 				int32 i = 0;
 				JS_ValueToInt32(cx, argv[0], &i);
