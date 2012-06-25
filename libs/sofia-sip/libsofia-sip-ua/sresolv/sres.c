@@ -1372,7 +1372,7 @@ sres_cached_answers_sockaddr(sres_resolver_t *res,
     return NULL;
 
   if (!sres_cache_get(res->res_cache, type, name, &result))
-    su_seterrno(ENOENT), (void *)NULL;
+    return su_seterrno(ENOENT), (void *)NULL;
 
   return result;
 }
