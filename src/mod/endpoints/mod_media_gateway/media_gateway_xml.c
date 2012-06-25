@@ -27,6 +27,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 	char *var, *val;
 	mg_peer_profile_t* peer_profile = NULL;
 	switch_xml_config_item_t *instructions1 = NULL;
+	switch_memory_pool_t *pool;
 
 	if (!(xml = switch_xml_open_cfg(file, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open %s\n", file);
@@ -86,8 +87,9 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 			peer_profile = NULL;
 			if (!strcmp(name, profile->peer_list[idx])) {
 				/* peer profile */
-				peer_profile = switch_core_alloc(profile->pool, sizeof(*peer_profile));
-				peer_profile->pool = profile->pool;
+				switch_core_new_memory_pool(&pool);
+				peer_profile = switch_core_alloc(pool, sizeof(*peer_profile));
+				peer_profile->pool = pool;
 				peer_profile->name = switch_core_strdup(peer_profile->pool, name);
 				switch_thread_rwlock_create(&peer_profile->rwlock, peer_profile->pool);
 				instructions1 = (peer_profile ? get_peer_instructions(peer_profile) : NULL);

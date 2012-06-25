@@ -62,4 +62,12 @@ switch_status_t sng_mgco_init(sng_mg_event_interface_t* event);
 switch_status_t sng_mgco_stack_shutdown(void);
 int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, megaco_profile_t* mg_cfg, mg_peer_profile_t* mg_peer);
 
+/****************************************************************************************************************/
+/* MG Stack defines */
+   
+/* Free Commands inside MG CH command */
+#define mg_free_cmd(_cmd)   mgFreeEventMem(_cmd)
+
+/****************************************************************************************************************/
+
 #endif /* _MEGACO_STACK_H_ */

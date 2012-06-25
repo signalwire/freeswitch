@@ -9,12 +9,18 @@
 #include "mod_media_gateway.h"
 #include "media_gateway_stack.h"
 
+
+/**************************************************************************************************************/
 struct megaco_globals megaco_globals;
 static sng_mg_event_interface_t sng_event;
 
+/**************************************************************************************************************/
 SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown);
 SWITCH_MODULE_DEFINITION(mod_media_gateway, mod_media_gateway_load, mod_media_gateway_shutdown, NULL);
+switch_status_t handle_mg_add_cmd(MgMgcoAmmReq *addReq);
+
+/**************************************************************************************************************/
 
 SWITCH_STANDARD_API(megaco_function)
 {
@@ -247,7 +253,7 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                         /* Loop over command list */
                         for (cmdIter=0; cmdIter < (actnReq->cl.num.val); cmdIter++) {
                             MgMgcoCommandReq *cmdReq = actnReq->cl.cmds[cmdIter];
-                            /*MgMgcoTermId *termId = NULLP;*/
+                            /*MgMgcoTermId *term_id = NULLP;*/
                             /* The reply we'll send */
                             MgMgcoCommand mgCmd;
 			    memset(&mgCmd, 0, sizeof(mgCmd));
@@ -398,8 +404,81 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
 /*****************************************************************************************************************************/
 void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
-	/*TODO*/
+	uint32_t txn_id = 0x00;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
+
+	/* validate Transaction Id */
+	if (NOTPRSNT != cmd->transId.pres)
+		txn_id = cmd->transId.val;
+	else
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Transaction Id not present, rejecting\n", __PRETTY_FUNCTION__);	
+		/*TODO - can invoke "MgUiMgtMgcoErrReq" to report error to MEGACO stack */
+		/* deallocate the msg */
+		mg_free_cmd(cmd);
+		return ;	
+	}
+
+	mgAccEvntPrntMgMgcoCommand(cmd, stdout);
+
+	switch(cmd->cmdType.val)
+	{
+		case CH_CMD_TYPE_IND:
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command indication for command[%s]\n",
+						__PRETTY_FUNCTION__,PRNT_MG_CMD(cmd->u.mgCmdInd[0]->cmd.type.val));
+
+				switch(cmd->u.mgCmdInd[0]->cmd.type.val)
+				{
+					case MGT_ADD:
+						{
+							handle_mg_add_cmd(&cmd->u.mgCmdInd[0]->cmd.u.add);
+							break;
+						}
+
+					case MGT_MODIFY:
+						{
+							/*MgMgcoAmmReq *addReq = &cmdReq->cmd.u.mod;*/
+							break;
+						}
+					case MGT_MOVE:
+						{
+							/*MgMgcoAmmReq *addReq = &cmdReq->cmd.u.move;*/
+							break;
+
+						}
+					case MGT_SUB:
+						{
+							/*MgMgcoSubAudReq *addReq = &cmdReq->cmd.u.sub;*/
+						}
+					case MGT_SVCCHG:
+					case MGT_NTFY:
+					case MGT_AUDITCAP:
+					case MGT_AUDITVAL:
+						break;
+				}
+
+				break;
+			}
+		case CH_CMD_TYPE_REQ:
+			{
+				break;
+			}
+		case CH_CMD_TYPE_RSP:
+			{
+				break;
+			}
+		case CH_CMD_TYPE_CFM:
+			{
+				break;
+			}
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid command type[%d]\n",cmd->cmdType.val);
+			return;
+	}
+
+	return;
 }
 
 /*****************************************************************************************************************************/
@@ -430,7 +509,218 @@ void handle_mgco_audit_cfm(Pst *pst, SuId suId, MgMgtAudit* audit, Reason reason
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
 }
 
+
 /*****************************************************************************************************************************/
+/*
+*
+*       Fun:   mg_get_term_id_list
+*
+*       Desc:  Utility function to get MgMgcoTermIdLst structure
+*              from MgMgcoCommand structure.
+* 	       GCP_VER_2_1 - we will have term id list instead of single term id
+*
+*       Ret:   If success, return pointer to MgMgcoTermIdLst. 
+*              If failure, return Null.
+*
+*       Notes: None
+*
+*/
+
+MgMgcoTermIdLst *mg_get_term_id_list(MgMgcoCommand *cmd)
+{
+   uint8_t           cmd_type	= MGT_NONE;
+   uint8_t           api_type 	= CM_CMD_TYPE_NONE;
+   MgMgcoTermIdLst *    term_id 	= NULL;
+
+
+   /*-- mgCmdInd type represents the data structure for both
+    *   incoming and outgoing requests, hence we can get the
+    *   command type from there itself --*/
+   cmd_type = cmd->u.mgCmdInd[0]->cmd.type.val;
+
+   /*-- Find apiType --*/
+   api_type = cmd->cmdType.val;
+
+   switch (api_type)
+   {
+      case CH_CMD_TYPE_REQ:
+      case CH_CMD_TYPE_IND:
+         /* Based on Command Type, get to the TermId structure */
+         switch (cmd_type)
+         {
+            case MGT_ADD:
+               if (cmd->u.mgCmdInd[0]->cmd.u.add.pres.pres)
+                  term_id = &cmd->u.mgCmdInd[0]->cmd.u.add.termIdLst;
+               break;
+
+            case MGT_MOVE:
+               if (cmd->u.mgCmdInd[0]->cmd.u.move.pres.pres)
+                  term_id = &cmd->u.mgCmdInd[0]->cmd.u.move.termIdLst;
+               break;
+
+            case MGT_MODIFY:
+               if (cmd->u.mgCmdInd[0]->cmd.u.mod.pres.pres)
+                  term_id = &cmd->u.mgCmdInd[0]->cmd.u.mod.termIdLst;
+               break;
+
+            case MGT_SUB:
+               if (cmd->u.mgCmdInd[0]->cmd.u.sub.pres.pres)
+                  term_id = &cmd->u.mgCmdInd[0]->cmd.u.sub.termIdLst;
+               break;
+
+            case MGT_AUDITCAP:
+               if (cmd->u.mgCmdInd[0]->cmd.u.acap.pres.pres)
+                  term_id = &cmd->u.mgCmdInd[0]->cmd.u.acap.termIdLst;
+               break;
+
+            case MGT_AUDITVAL:
+               if (cmd->u.mgCmdInd[0]->cmd.u.aval.pres.pres)
+                  term_id = &cmd->u.mgCmdInd[0]->cmd.u.aval.termIdLst;
+               break;
+
+            case MGT_NTFY:
+               if (cmd->u.mgCmdInd[0]->cmd.u.ntfy.pres.pres)
+                  term_id = &cmd->u.mgCmdInd[0]->cmd.u.ntfy.termIdLst;
+               break;
+
+            case MGT_SVCCHG:
+               if (cmd->u.mgCmdInd[0]->cmd.u.svc.pres.pres)
+                  term_id = &cmd->u.mgCmdInd[0]->cmd.u.svc.termIdLst;
+               break;
+
+            default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: failed, Unsupported Command[%s]\n", __PRETTY_FUNCTION__, PRNT_MG_CMD(cmd_type));
+               break;
+         }
+         break;
+
+      case CH_CMD_TYPE_RSP:
+      case CH_CMD_TYPE_CFM:
+
+         cmd_type = cmd->u.mgCmdRsp[0]->type.val;
+
+         switch (cmd_type)
+         {
+            case MGT_ADD:
+               if (cmd->u.mgCmdRsp[0]->u.add.pres.pres)
+                  term_id = &cmd->u.mgCmdRsp[0]->u.add.termIdLst;
+               break;
+
+            case MGT_MOVE:
+               if (cmd->u.mgCmdRsp[0]->u.move.pres.pres)
+                  term_id = &cmd->u.mgCmdRsp[0]->u.move.termIdLst;
+               break;
+
+            case MGT_MODIFY:
+               if (cmd->u.mgCmdRsp[0]->u.mod.pres.pres)
+                  term_id = &cmd->u.mgCmdRsp[0]->u.mod.termIdLst;
+               break;
+
+            case MGT_SUB:
+               if (cmd->u.mgCmdRsp[0]->u.sub.pres.pres)
+                  term_id = &cmd->u.mgCmdRsp[0]->u.sub.termIdLst;
+               break;
+
+            case MGT_SVCCHG:
+               if (cmd->u.mgCmdRsp[0]->u.svc.pres.pres)
+                  term_id = &cmd->u.mgCmdRsp[0]->u.svc.termIdLst;
+               break;
+
+            case MGT_AUDITVAL:
+               if (cmd->u.mgCmdRsp[0]->u.aval.u.other.pres.pres)
+                  term_id = &cmd->u.mgCmdRsp[0]->u.aval.u.other.termIdLst;
+               break;
+
+            case MGT_AUDITCAP:
+               if (cmd->u.mgCmdRsp[0]->u.acap.u.other.pres.pres)
+                  term_id = &cmd->u.mgCmdRsp[0]->u.acap.u.other.termIdLst;
+               break;
+
+            case MGT_NTFY:
+               if (cmd->u.mgCmdRsp[0]->u.ntfy.pres.pres)
+                  term_id = &cmd->u.mgCmdRsp[0]->u.ntfy.termIdLst;
+               break;
+
+            default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: failed, Unsupported Command[%s]\n", __PRETTY_FUNCTION__, PRNT_MG_CMD(cmd_type));
+         } /* switch command type for reply */
+         break;
+
+      default:
+	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: failed, Unsupported api_type[%s]!\n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(api_type));
+         break;
+   } /* switch -api_type */
+
+   return (term_id);
+}
+
+/*****************************************************************************************************************************/
+
+switch_status_t handle_mg_add_cmd(MgMgcoAmmReq *addReq)
+{
+	int descId;
+	for (descId = 0; descId < addReq->dl.num.val; descId++) {
+		switch (addReq->dl.descs[descId]->type.val) {
+			case MGT_MEDIADESC:
+				{
+					int mediaId;
+					for (mediaId = 0; mediaId < addReq->dl.descs[descId]->u.media.num.val; mediaId++) {
+						MgMgcoMediaPar *mediaPar = addReq->dl.descs[descId]->u.media.parms[mediaId];
+						switch (mediaPar->type.val) {
+							case MGT_MEDIAPAR_LOCAL:
+								{
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCAL");
+									break;
+								}
+							case MGT_MEDIAPAR_REMOTE:
+								{
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_REMOTE");
+									break;
+								}
+
+							case MGT_MEDIAPAR_LOCCTL:
+								{
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCCTL");
+									break;
+								}
+							case MGT_MEDIAPAR_TERMST:
+								{
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_TERMST");
+									break;
+								}
+							case MGT_MEDIAPAR_STRPAR:
+								{
+									MgMgcoStreamDesc *mgStream = &mediaPar->u.stream;
+
+									if (mgStream->sl.remote.pres.pres) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
+										mgco_print_sdp(&mgStream->sl.remote.sdp);
+									}
+
+									if (mgStream->sl.local.pres.pres) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
+										mgco_print_sdp(&mgStream->sl.local.sdp);
+									}
+
+									break;
+								}
+						}
+					}
+				}
+			case MGT_MODEMDESC:
+			case MGT_MUXDESC:
+			case MGT_REQEVTDESC:
+			case MGT_EVBUFDESC:
+			case MGT_SIGNALSDESC:
+			case MGT_DIGMAPDESC:
+			case MGT_AUDITDESC:
+			case MGT_STATSDESC:
+				break;
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;	
+}
 
 /*****************************************************************************************************************************/
 

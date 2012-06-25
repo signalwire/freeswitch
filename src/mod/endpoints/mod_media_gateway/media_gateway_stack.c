@@ -945,6 +945,8 @@ int mgco_mg_ssap_config(megaco_profile_t* profile)
 			return SWITCH_STATUS_FALSE;
 	}
 
+	pCfg->chEnabled = 0x01;
+
 	pCfg->userInfo.pres.pres = PRSNT_NODEF;
 	pCfg->userInfo.id.pres 	 = NOTPRSNT;
 	pCfg->userInfo.mid.pres = PRSNT_NODEF;
