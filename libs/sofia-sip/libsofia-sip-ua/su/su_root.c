@@ -152,7 +152,7 @@ _su_task_r su_task_init(su_task_r task)
 {
   assert(task);
 
-  memset(task, 0, sizeof(task));
+  memset(task, 0, sizeof(su_task_r));
   return task;
 }
 
