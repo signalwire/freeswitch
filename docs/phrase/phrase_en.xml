@@ -186,7 +186,7 @@
     </time>
     <voicemail>
       <prompt phrase="The person at extension" filename="vm-person.wav"/>
-      <prompt phrase="marked urgent" filename="vm-marked_urgent.wav"/>
+      <prompt phrase="marked urgent" filename="vm-marked-urgent.wav"/>
       <prompt phrase="emailed" filename="vm-emailed.wav"/>
       <prompt phrase="you have" filename="vm-you_have.wav"/>
       <prompt phrase="please enter your i d, followed by" filename="vm-enter_id.wav"/>
@@ -220,7 +220,7 @@
       <prompt phrase="to listen to the recording" filename="vm-listen_to_recording.wav"/>
       <prompt phrase="to save the recording" filename="vm-save_recording.wav"/>
       <prompt phrase="to rerecord" filename="vm-rerecord.wav"/>
-      <prompt phrase="to mark this message urgent" filename="vm-mark_urgent.wav"/>
+      <prompt phrase="to mark this message urgent" filename="vm-mark-urgent.wav"/>
       <prompt phrase="to continue" filename="vm-continue.wav"/>
       <prompt phrase="to listen to the recording again" filename="vm-listen_to_recording_again.wav"/>
       <prompt phrase="to delete the recording" filename="vm-delete_recording.wav"/>
