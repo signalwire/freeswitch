@@ -739,6 +739,7 @@ switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req)
 	MgMgcoCommand  cmd;
 	int ret = 0x00;
 	MgMgcoTermId  *termId;
+	MgMgcoCtxt     ctxt;
 
 	memset(&cmd,0, sizeof(cmd));
 
@@ -784,6 +785,12 @@ switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req)
 
 	ret = sng_mgco_send_cmd(suId, &cmd);
 
+	memcpy(&ctxt.transId,&req->transId,sizeof(MgMgcoTransId)); 
+	memcpy(&ctxt.cntxtId, &req->contextId,sizeof(MgMgcoContextId));
+	memcpy(&ctxt.peerId, &req->peerId,sizeof(TknU32));
+	ctxt.cmdStatus.pres = PRSNT_NODEF;
+	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
+	ret = sng_mgco_send_axn_req(suId, &ctxt);
 
 	return ret;
 }
