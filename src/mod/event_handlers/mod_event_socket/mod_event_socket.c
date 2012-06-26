@@ -96,6 +96,7 @@ struct listener {
 	switch_event_t *filters;
 	time_t linger_timeout;
 	struct listener *next;
+	switch_pollfd_t *pollfd;
 };
 
 typedef struct listener listener_t;
@@ -475,6 +476,8 @@ SWITCH_STANDARD_APP(socket_function)
 	listener->session = session;
 	switch_set_flag(listener, LFLAG_ALLOW_LOG);
 
+	switch_socket_create_pollset(&listener->pollfd, listener->sock, SWITCH_POLLIN | SWITCH_POLLERR, listener->pool);
+
 	switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 	switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
@@ -832,6 +835,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		listener->format = EVENT_FORMAT_PLAIN;
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+
 
 		switch_core_hash_init(&listener->event_hash, listener->pool);
 		switch_set_flag(listener, LFLAG_AUTHED);
@@ -1381,7 +1385,10 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		}
 
 		if (do_sleep) {
-			switch_cond_next();
+			int fdr = 0;
+			switch_poll(listener->pollfd, 1, &fdr, 20000);
+		} else {
+			switch_os_yield();
 		}
 	}
 
@@ -2850,6 +2857,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
 		switch_core_hash_init(&listener->event_hash, listener->pool);
+		switch_socket_create_pollset(&listener->pollfd, listener->sock, SWITCH_POLLIN | SWITCH_POLLERR, listener->pool);
+
+
 
 		if (switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock) == SWITCH_STATUS_SUCCESS && listener->sa) {
 			switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
