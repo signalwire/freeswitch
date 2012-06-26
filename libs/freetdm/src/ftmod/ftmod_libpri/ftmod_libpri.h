@@ -30,17 +30,16 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-typedef enum {
-        SERVICE_CHANGE_STATUS_INSERVICE = 0,
-        SERVICE_CHANGE_STATUS_MAINTENANCE = 1,
-        SERVICE_CHANGE_STATUS_OUTOFSERVICE = 2
-} service_change_status_t;     
-
 #ifndef FTMOD_LIBPRI_H
 #define FTMOD_LIBPRI_H
 #include "freetdm.h"
 #include "lpwrap_pri.h"
+
+typedef enum {
+        SERVICE_CHANGE_STATUS_INSERVICE = 0,
+        SERVICE_CHANGE_STATUS_MAINTENANCE,
+        SERVICE_CHANGE_STATUS_OUTOFSERVICE
+} service_change_status_t;
 
 typedef enum {
 	FTMOD_LIBPRI_OPT_NONE = 0,
