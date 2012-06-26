@@ -76,6 +76,10 @@ struct ftdm_libpri_data {
 	unsigned int service_message_support;
 
 	lpwrap_pri_t spri;
+
+	/* MSN filter */
+	ftdm_hash_t *msn_hash;
+	ftdm_mutex_t *msn_mutex;
 };
 
 typedef struct ftdm_libpri_data ftdm_libpri_data_t;

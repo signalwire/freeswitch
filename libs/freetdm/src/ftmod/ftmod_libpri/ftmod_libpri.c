@@ -38,6 +38,11 @@
 #define MIN(x,y)	(((x) < (y)) ? (x) : (y))
 #endif
 
+
+static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span);
+static ftdm_io_interface_t ftdm_libpri_interface;
+
+
 static void _ftdm_channel_set_state_force(ftdm_channel_t *chan, const ftdm_channel_state_t state)
 {
 	assert(chan);
@@ -258,8 +263,145 @@ out:
 	return 0;
 }
 
-static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span);
-static ftdm_io_interface_t ftdm_libpri_interface;
+
+/***************************************************************
+ * MSN filter
+ ***************************************************************/
+
+static int msn_filter_init(ftdm_libpri_data_t *isdn_data)
+{
+	if (!isdn_data)
+		return FTDM_FAIL;
+
+	isdn_data->msn_hash = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
+	if (!isdn_data->msn_hash)
+		return FTDM_FAIL;
+
+	if (ftdm_mutex_create(&isdn_data->msn_mutex)) {
+		hashtable_destroy(isdn_data->msn_hash);
+		return FTDM_FAIL;
+	}
+
+	return FTDM_SUCCESS;
+}
+
+static int msn_filter_destroy(ftdm_libpri_data_t *isdn_data)
+{
+	if (!isdn_data)
+		return FTDM_FAIL;
+
+	if (isdn_data->msn_hash)
+		hashtable_destroy(isdn_data->msn_hash);
+	if (isdn_data->msn_mutex)
+		ftdm_mutex_destroy(&isdn_data->msn_mutex);
+
+	return FTDM_SUCCESS;
+}
+
+static int msn_filter_verify(const char *str)
+{
+	if (ftdm_strlen_zero(str) || strlen(str) >= FTDM_DIGITS_LIMIT)
+		return FTDM_FALSE;
+
+	if (ftdm_is_number(str) != FTDM_SUCCESS)
+		return FTDM_FALSE;
+
+	return FTDM_TRUE;
+}
+
+static int msn_filter_add(ftdm_libpri_data_t *isdn_data, const char *msn)
+{
+	static const int value = 0xdeadbeef;
+	char *key = NULL;
+	int ret = FTDM_SUCCESS;
+
+	if (!isdn_data || !msn_filter_verify(msn))
+		return FTDM_FAIL;
+
+	ftdm_mutex_lock(isdn_data->msn_mutex);
+
+	/* check for duplicates (ignore if already in set) */
+	if (hashtable_search(isdn_data->msn_hash, (void *)msn)) {
+		ret = FTDM_SUCCESS;
+		goto out;
+	}
+
+	/* Copy MSN (transient string), hashtable will free it in hashtable_destroy() */
+	key = ftdm_strdup(msn);
+	if (!key) {
+		ret = FTDM_FAIL;
+		goto out;
+	}
+
+	/* add MSN to list/hash */
+	if (!hashtable_insert(isdn_data->msn_hash, (void *)key, (void *)&value, HASHTABLE_FLAG_FREE_KEY)) {
+		ftdm_safe_free(key);
+		ret = FTDM_FAIL;
+	}
+out:
+	ftdm_mutex_unlock(isdn_data->msn_mutex);
+	return ret;
+}
+
+
+/**
+ *
+ */
+static int msn_filter_match(ftdm_libpri_data_t *isdn_data, const char *msn)
+{
+	int ret = FTDM_FALSE;
+
+	if (!isdn_data)
+		return FTDM_FAIL;
+	/* No number? return match found */
+	if (ftdm_strlen_zero(msn))
+		return FTDM_TRUE;
+
+	ftdm_mutex_lock(isdn_data->msn_mutex);
+
+	/* No MSN configured? */
+	if (hashtable_count(isdn_data->msn_hash) <= 0) {
+		ret = FTDM_TRUE;
+		goto out;
+	}
+	/* Search for a matching MSN */
+	if (hashtable_search(isdn_data->msn_hash, (void *)msn))
+		ret = FTDM_TRUE;
+out:
+	ftdm_mutex_unlock(isdn_data->msn_mutex);
+	return ret;
+}
+
+static int msn_filter_foreach(ftdm_libpri_data_t *isdn_data, int (* func)(const char *, void *), void *data)
+{
+	ftdm_hash_iterator_t *iter = NULL;
+	int ret = FTDM_SUCCESS;
+
+	if (!isdn_data || !func)
+		return FTDM_FAIL;
+
+	/* iterate over MSNs */
+	ftdm_mutex_lock(isdn_data->msn_mutex);
+
+	for (iter = hashtable_first(isdn_data->msn_hash); iter; iter = hashtable_next(iter)) {
+		const char *msn = NULL;
+
+		hashtable_this(iter, (const void **)&msn, NULL, NULL);
+
+		if (ftdm_strlen_zero(msn))
+			break;
+		if ((ret = func(msn, data)) != FTDM_SUCCESS)
+			break;
+	}
+
+	ftdm_mutex_unlock(isdn_data->msn_mutex);
+	return ret;
+}
+
+
+/***************************************************************
+ * Module API (CLI) interface
+ ***************************************************************/
 
 static const char *ftdm_libpri_usage =
 	"Usage:\n"
@@ -268,6 +410,7 @@ static const char *ftdm_libpri_usage =
 	"libpri restart <span> <channel/all>\n"
 	"libpri maintenance <span> <channel/all> <in/maint/out>\n"
 	"libpri debug <span> [all|none|flag,...flagN]\n"
+	"libpri msn <span>\n"
 	"\n"
 	"Possible debug flags:\n"
 	"\tq921_raw     - Q.921 Raw messages\n"
@@ -286,6 +429,29 @@ static const char *ftdm_libpri_usage =
 	"\n"
 	"\tnone         - Disable debugging\n"
 	"\tall          - Enable all debug options\n";
+
+
+/**
+ * Custom data handle for list iterator functions
+ */
+struct msn_list_cb_private {
+	ftdm_stream_handle_t *stream;
+	unsigned int count;
+};
+
+static int msn_list_cb(const char *msn, void *priv)
+{
+	struct msn_list_cb_private *data = priv;
+	ftdm_stream_handle_t *stream = data->stream;
+
+	if (!stream || ftdm_strlen_zero(msn))
+		return FTDM_FAIL;
+
+	stream->write_function(stream, "\t%s\n", msn);
+	data->count++;
+	return FTDM_SUCCESS;
+}
+
 
 /**
  * \brief API function to kill or debug a libpri span
@@ -330,6 +496,40 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 					__FILE__, argv[0]);
 				goto done;
 			}
+		}
+		if (!strcasecmp(argv[0], "msn")) {
+			ftdm_span_t *span = NULL;
+			struct msn_list_cb_private data;
+			data.stream = stream;
+			data.count  = 0;
+
+			if (ftdm_span_find_by_name(argv[1], &span) != FTDM_SUCCESS) {
+				stream->write_function(stream, "%s: -ERR span '%s' not found.\n",
+					__FILE__, argv[1]);
+				goto done;
+			}
+			if (span->start != ftdm_libpri_start) {
+				stream->write_function(stream, "%s: -ERR '%s' is not a libpri span.\n",
+					__FILE__, ftdm_span_get_name(span));
+				goto done;
+			}
+
+			/* header */
+			stream->write_function(stream, "------------------------------------------------------------------------------\n");
+
+			if (msn_filter_foreach(span->signal_data, msn_list_cb, &data)) {
+				stream->write_function(stream, "-ERR: Failed to list MSN(s)\n");
+				goto done;
+			}
+			if (data.count == 0) {
+				stream->write_function(stream, "\t\t\t -- no entries --\n");
+			}
+
+			/* footer */
+			stream->write_function(stream, "---------------------------------------------------------------[ %02d MSN(s) ]--\n",
+				data.count);
+			stream->write_function(stream, "+OK");
+			goto done;
 		}
 	} else if (argc >= 2) {
 		if (!strcasecmp(argv[0], "debug")) {
@@ -1309,12 +1509,30 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 {
 	ftdm_span_t *span = spri->span;
 	ftdm_libpri_data_t *isdn_data = span->signal_data;
-	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->ring.channel);
+	ftdm_channel_t *chan = NULL;
 	ftdm_caller_data_t *caller_data = NULL;
 	int ret = 0;
 
+	if (pevent->ring.channel == -1) {
+		ftdm_log(FTDM_LOG_ERROR, "-- New call without channel on span '%s' [NOTE: Initial SETUP w/o channel selection is not supported by FreeTDM]\n",
+			ftdm_span_get_name(span));
+		pri_destroycall(spri->pri, pevent->ring.call);
+		return ret;
+	}
+
+	chan = ftdm_span_get_channel(span, pevent->ring.channel);
 	if (!chan) {
-		ftdm_log(FTDM_LOG_ERROR, "-- Unable to get channel %d:%d\n", ftdm_span_get_id(span), pevent->ring.channel);
+		ftdm_log(FTDM_LOG_ERROR, "-- Unable to get channel %d:%d\n",
+			ftdm_span_get_id(span), pevent->ring.channel);
+		pri_hangup(spri->pri, pevent->ring.call, PRI_CAUSE_DESTINATION_OUT_OF_ORDER);
+		return ret;
+	}
+
+	/* check MSN filter */
+	if (!msn_filter_match(isdn_data, pevent->ring.callednum)) {
+		ftdm_log(FTDM_LOG_INFO, "-- MSN filter not matching incoming DNIS '%s', ignoring call\n",
+			pevent->ring.callednum);
+		pri_destroycall(spri->pri, pevent->ring.call);
 		return ret;
 	}
 
@@ -2216,7 +2434,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 #ifndef HAVE_LIBPRI_BRI
 		ftdm_log(FTDM_LOG_ERROR, "Unsupported trunk type: '%s', libpri too old\n", ftdm_span_get_trunk_type_str(span));
 		snprintf(span->last_error, sizeof(span->last_error), "Unsupported trunk type [%s], libpri too old", ftdm_span_get_trunk_type_str(span));
-		return FTDM_FAIL;
+		goto error;
 #endif
 	case FTDM_TRUNK_E1:
 		ftdm_log(FTDM_LOG_NOTICE, "Setting default Layer 1 to ALAW since this is an E1/BRI/BRI PTMP trunk\n");
@@ -2232,7 +2450,16 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 	default:
 		ftdm_log(FTDM_LOG_ERROR, "Invalid trunk type: '%s'\n", ftdm_span_get_trunk_type_str(span));
 		snprintf(span->last_error, sizeof(span->last_error), "Invalid trunk type [%s]", ftdm_span_get_trunk_type_str(span));
-		return FTDM_FAIL;
+		goto error;
+	}
+
+	/*
+	 * Init MSN filter
+	 */
+	if (msn_filter_init(isdn_data) != FTDM_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to init MSN filter\n");
+		snprintf(span->last_error, sizeof(span->last_error), "Failed to init MSN filter");
+		goto error;
 	}
 
 	for (i = 0; ftdm_parameters[i].var; i++) {
@@ -2247,7 +2474,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 		if (ftdm_strlen_zero(val)) {
 			ftdm_log(FTDM_LOG_ERROR, "Parameter '%s' has no value\n", var);
 			snprintf(span->last_error, sizeof(span->last_error), "Parameter [%s] has no value", var);
-			return FTDM_FAIL;
+			goto error;
 		}
 
 		if (!strcasecmp(var, "node") || !strcasecmp(var, "mode")) {
@@ -2285,10 +2512,17 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 				isdn_data->service_message_support = 1;
 			}
 		}
+		else if (!strcasecmp(var, "local-number") || !strcasecmp(var, "msn")) {
+			if (msn_filter_add(isdn_data, val) != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "Invalid MSN/DDI(s) '%s' specified\n", val);
+				snprintf(span->last_error, sizeof(span->last_error), "Invalid MSN/DDI(s) '%s' specified!", val);
+				goto error;
+			}
+		}
 		else {
 			ftdm_log(FTDM_LOG_ERROR, "Unknown parameter '%s', aborting configuration\n", var);
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
-			return FTDM_FAIL;
+			goto error;
 		}
 	}
 
@@ -2315,6 +2549,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 	}
 
 	return FTDM_SUCCESS;
+error:
+	msn_filter_destroy(isdn_data);
+	ftdm_safe_free(isdn_data);
+	return FTDM_FAIL;
 }
 
 /**
