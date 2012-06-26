@@ -3879,7 +3879,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_time_t uduration = 0, legbillusec = 0, billusec = 0, progresssec = 0, progressusec = 0, progress_mediasec = 0, progress_mediausec = 0, waitusec = 0;
 	time_t tt_created = 0, tt_answered = 0, tt_resurrected = 0, tt_bridged, tt_last_hold, tt_hold_accum,
 		tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_bridged = 0,
-		mtt_hungup = 0, tt_prof_created, mtt_prof_created, mtt_progress = 0, mtt_progress_media = 0;
+		mtt_hungup = 0, tt_prof_created, mtt_progress = 0, mtt_progress_media = 0;
 	void *pop;
 	char dtstr[SWITCH_DTMF_LOG_LEN + 1] = "";
 	int x = 0;
@@ -3992,7 +3992,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_channel_set_variable(channel, "start_uepoch", tmp);
 
 		tt_prof_created = (time_t) (caller_profile->times->profile_created / 1000000);
-		mtt_prof_created = (time_t) (caller_profile->times->profile_created / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_prof_created);
 		switch_channel_set_variable(channel, "profile_start_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
@@ -4072,13 +4071,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 			billmsec = (int32_t) (mtt_hungup - mtt_answered);
 			billusec = caller_profile->times->hungup - caller_profile->times->answered;
 
-			legbillsec = (int32_t) (tt_hungup - tt_prof_created);
-			legbillmsec = (int32_t) (mtt_hungup - mtt_prof_created);
-			legbillusec = caller_profile->times->hungup - caller_profile->times->profile_created;
+			legbillsec = (int32_t) (tt_hungup - tt_created);
+			legbillmsec = (int32_t) (mtt_hungup - mtt_created);
+			legbillusec = caller_profile->times->hungup - caller_profile->times->created;
 
-			answersec = (int32_t) (tt_answered - tt_prof_created);
-			answermsec = (int32_t) (mtt_answered - mtt_prof_created);
-			answerusec = caller_profile->times->answered - caller_profile->times->profile_created;
+			answersec = (int32_t) (tt_answered - tt_created);
+			answermsec = (int32_t) (mtt_answered - mtt_created);
+			answerusec = caller_profile->times->answered - caller_profile->times->created;
 		}
 
 		if (caller_profile->times->progress) {
