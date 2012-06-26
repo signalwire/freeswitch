@@ -7,7 +7,7 @@
 
 
 
-TOP_SRCDIR=$(top_srcdir)/../..
+TOP_SRCDIR=$(top_srcdir)
 INCLUDES = 	-I$(TOP_SRCDIR)/include \
 			-I$(TOP_SRCDIR)/include/enterprise \
 			-I$(TOP_SRCDIR)/. \

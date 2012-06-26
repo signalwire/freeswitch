@@ -7,5 +7,3 @@ mkdir libzrtp-doc
 cp -Rf ./out/html/* ./libzrtp-doc
 tar -zcvf ./libzrtp-doc.tar.gz ./libzrtp-doc >> /dev/null
 rm -rf libzrtp-doc
-mv libzrtp-doc.tar.gz ../projects/gnu
-cd ../projects/gnu

@@ -1,4 +1,8 @@
 # -*- mode:conf -*-
 /.cproject
 /.project
+/Makefile
+/Makefile.in
+/_configs.sed
+/config/
 /include/zrtp_config_unix.h

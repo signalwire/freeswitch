@@ -5,7 +5,7 @@
 # Viktor Krikun <v.krikun@soft-industry.com> <v.krikun@gmail.com>
 #
 
-TOP_SRCDIR=$(top_srcdir)/../..
+TOP_SRCDIR=$(top_srcdir)
 INCLUDES = 	-I$(TOP_SRCDIR)/include \
 			-I$(TOP_SRCDIR)/. \
 			-I$(TOP_SRCDIR)/third_party/bgaes \

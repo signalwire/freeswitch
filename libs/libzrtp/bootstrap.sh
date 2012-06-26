@@ -9,6 +9,6 @@ reconf () {
   automake --no-force --add-missing --copy
 }
 
-(cd ../../third_party/bnlib && ./bootstrap.sh)
+(cd third_party/bnlib && ./bootstrap.sh)
 reconf
 
