@@ -4,5 +4,12 @@
 /Makefile
 /Makefile.in
 /_configs.sed
-/config/
+/aclocal.m4
+/autom4te.cache/*
+/build/
+/config.*
+/config/*
+/configure
 /include/zrtp_config_unix.h
+!/build/Makefile.am
+!/build/test/Makefile.am
