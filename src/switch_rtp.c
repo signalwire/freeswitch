@@ -3502,7 +3502,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					const char *tx_host;
 					const char *old_host;
 					char bufa[30], bufb[30];
-					char adj_port[5];
+					char adj_port[6];
 
 					tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
 					old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
