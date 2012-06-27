@@ -576,6 +576,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 					switch_safe_free(resp_headers);
 				}
+				switch_safe_free(added_headers);
 			}
 		}
 		sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
