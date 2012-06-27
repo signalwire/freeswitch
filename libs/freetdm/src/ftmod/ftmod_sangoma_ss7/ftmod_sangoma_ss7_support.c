@@ -90,6 +90,10 @@ static uint8_t get_ftdm_val(ftdm2trillium_t *vals, uint8_t trillium_val, uint8_t
 ftdm_status_t four_char_to_hex(const char* in, uint16_t* out) ;
 ftdm_status_t hex_to_four_char(uint16_t in, char* out);
 
+
+ftdm_status_t hex_to_char(uint16_t in, char* out, int len);
+ftdm_status_t char_to_hex(const char* in, uint16_t* out, int len);
+
 /* Maps generic FreeTDM CPC codes to SS7 CPC codes */
 ftdm2trillium_t cpc_codes[] = {
 	{FTDM_CPC_UNKNOWN,			CAT_UNKNOWN},
@@ -976,7 +980,79 @@ ftdm_status_t four_char_to_hex(const char* in, uint16_t* out)
 	return FTDM_SUCCESS;
 }
 
+ftdm_status_t char_to_hex(const char* in, uint16_t* out, int len) 
+{
+	int i= len; 
+	char *val = ftdm_malloc(len*sizeof(char));
+	
+	if (!val ||!in || len>strlen(in)) {
+		return FTDM_FAIL;
+	}
+	
+	while(i)
+	{
+		switch((char)*(in+(len-i))) {
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':	
+			*(val+(len-i)) = *(in+(len-i)) - 48;
+			break;
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'E':
+		case 'F':	
+			*(val+(len-i)) = *(in+(len-i)) - 55;
+			break;
+		case 'a':
+		case 'b':
+		case 'c':
+		case 'd':
+		case 'e':
+		case 'f':		
+			*(val+(len-i)) = *(in+(len-i)) - 87;
+			break;
+		default:
+			SS7_ERROR("Invalid character found when decoding hex string, %c!\n", *(in+(len-i)) );
+			break;
+		}
+		i--;
+	};
 
+	for (i=0; i<=len-1; i++) {
+		*out = *out << 4;
+		*out |= *(val+i);
+	}
+
+	return FTDM_SUCCESS;
+}
+
+
+
+ftdm_status_t hex_to_char(uint16_t in, char* out, int len) 
+{
+	char val=0;
+	int mask = 0xf;
+	int i=0;
+	if (!out)  {
+		return FTDM_SUCCESS;
+	}
+
+	for (i=len-1; i>=0; i--) {
+		val = (in & (mask<<(4*i))) >> (4*i);
+		sprintf (out+(len-1-i), "%x", val);
+	}
+	
+	return FTDM_SUCCESS;
+}
 ftdm_status_t hex_to_four_char(uint16_t in, char* out) 
 {
 	char val=0;
@@ -990,6 +1066,60 @@ ftdm_status_t hex_to_four_char(uint16_t in, char* out)
 		val = (in & (mask<<(4*i))) >> (4*i);
 		sprintf (out+(3-i), "%x", val);
 	}
+	
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_NatureOfConnection_to_sngss7(ftdm_channel_t *ftdmchan, SiNatConInd *natConInd)
+{
+	const char *val = NULL;
+
+	natConInd->eh.pres 				= PRSNT_NODEF;
+	natConInd->satInd.pres 			= PRSNT_NODEF;
+	natConInd->contChkInd.pres		= PRSNT_NODEF;;
+	natConInd->echoCntrlDevInd.pres 	= PRSNT_NODEF;
+	
+	val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_iam_nature_connection_hex");
+	if (!ftdm_strlen_zero(val)) {
+		uint16_t val_hex = 0;		
+		if (char_to_hex (val, &val_hex, 2) == FTDM_FAIL) {
+			SS7_ERROR ("Wrong value set in ss7_iam_nature_connection_hex variable. Please correct the error. Setting to default values.\n" );
+		} else {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "hex =  0x%x\n", val_hex);
+			natConInd->satInd.val 			= (val_hex & 0x3);
+			natConInd->contChkInd.val		= (val_hex & 0xc)>>2;
+			natConInd->echoCntrlDevInd.val	= (val_hex & 0x10) >> 4;
+
+			return FTDM_SUCCESS;
+		}
+	} 
+	
+	natConInd->satInd.val 			= 0;
+	natConInd->contChkInd.val		= 0;
+	natConInd->echoCntrlDevInd.val 	= 0;
+
+	return FTDM_SUCCESS;
+}
+
+ftdm_status_t copy_NatureOfConnection_from_sngss7(ftdm_channel_t *ftdmchan, SiNatConInd *natConInd )
+{
+	char val[3];
+	uint16_t val_hex = 0;
+	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
+
+	memset (val, 0, 3*sizeof(char));
+	if (natConInd->eh.pres != PRSNT_NODEF ) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "No nature of connection indicator IE available\n");
+		return FTDM_SUCCESS;
+	}
+
+	val_hex |= natConInd->satInd.val;
+	val_hex |= natConInd->contChkInd.val << 2;
+	val_hex |= natConInd->echoCntrlDevInd.val <<4;
+	hex_to_char(val_hex, val, 2) ;
+	
+	sngss7_add_var(sngss7_info, "ss7_iam_nature_connection_hex", val);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Nature of connection indicator Hex: 0x%s\n", val);
 	
 	return FTDM_SUCCESS;
 }

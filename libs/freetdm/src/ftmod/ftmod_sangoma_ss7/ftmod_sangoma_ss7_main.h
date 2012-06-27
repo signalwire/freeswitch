@@ -930,6 +930,8 @@ ftdm_status_t copy_fwdCallInd_hex_from_sngss7(ftdm_channel_t *ftdmchan, SiFwdCal
 ftdm_status_t copy_fwdCallInd_to_sngss7(ftdm_channel_t *ftdmchan, SiFwdCallInd *fwdCallInd);
 ftdm_status_t copy_txMedReq_to_sngss7(ftdm_channel_t *ftdmchan, SiTxMedReq *txMedReq);
 ftdm_status_t copy_usrServInfoA_to_sngss7(ftdm_channel_t *ftdmchan, SiUsrServInfo *usrServInfoA);
+ftdm_status_t copy_NatureOfConnection_from_sngss7(ftdm_channel_t *ftdmchan, SiNatConInd *natConInd );
+ftdm_status_t copy_NatureOfConnection_to_sngss7(ftdm_channel_t *ftdmchan, SiNatConInd *natConInd);
 
 ftdm_status_t copy_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
 ftdm_status_t append_tknStr_from_sngss7(TknStr str, char *ftdm, TknU8 oddEven);
