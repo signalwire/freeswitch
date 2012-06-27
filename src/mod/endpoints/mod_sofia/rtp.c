@@ -502,7 +502,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     char name[128];
     const char *dname = "PCMU";
     uint32_t interval = 20;
-    crtp_private_t *tech_pvt;
+    crtp_private_t *tech_pvt = NULL;
 #if 0
     const char *r_sdp = switch_event_get_header(var_event, kRSDP);
 #endif

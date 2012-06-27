@@ -107,6 +107,21 @@ switch_status_t megaco_profile_destroy(megaco_profile_t **profile)
 	return SWITCH_STATUS_SUCCESS;	
 }
 
+switch_status_t megaco_peer_profile_destroy(mg_peer_profile_t **profile) 
+{
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stopping peer profile: %s\n", (*profile)->name);	
+	
+	switch_core_hash_delete_wrlock(megaco_globals.peer_profile_hash, (*profile)->name, megaco_globals.peer_profile_rwlock);
+	
+	mg_peer_config_cleanup(*profile);
+
+	switch_core_destroy_memory_pool(&(*profile)->pool);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stopped peer profile: %s\n", (*profile)->name);	
+	
+	return SWITCH_STATUS_SUCCESS;	
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

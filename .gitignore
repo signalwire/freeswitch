@@ -199,3 +199,6 @@ src/mod/formats/mod_shout/*/*/mod_shout.log
 /src/mod/languages/mod_managed/x64/Release_CLR/FREESWITCH.MANAGED.DLL.metagen
 /src/mod/languages/mod_managed/x64/Release_CLR/RSAENH.DLL.bi
 /src/mod/languages/mod_managed/x64/Release_CLR/TZRES.DLL.bi
+
+src/include/switch_apr.h
+.gitignore

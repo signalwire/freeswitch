@@ -183,7 +183,6 @@ switch_status_t sng_mgco_cfg(megaco_profile_t* profile)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," mgco_mu_ssap_config SUCCESS \n");	
 	}
 
-
 	if(mgco_mg_tsap_config(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," mgco_mg_tsap_config FAILED \n");	
 		return SWITCH_STATUS_FALSE;
@@ -783,6 +782,8 @@ int mgco_mg_gen_config(void)
 	cfg->noEDInst = 1;
 #endif /* CM_ABNF_MT_LIB */
 
+	cfg->entType  = LMG_ENT_GW; 
+
 #ifdef GCP_CH
 	cfg->numBinsPeerCmdHl = 20;
 	cfg->numBinsTransReqHl = 50;
@@ -944,6 +945,8 @@ int mgco_mg_ssap_config(megaco_profile_t* profile)
 			return SWITCH_STATUS_FALSE;
 	}
 
+	pCfg->chEnabled = 0x01;
+
 	pCfg->userInfo.pres.pres = PRSNT_NODEF;
 	pCfg->userInfo.id.pres 	 = NOTPRSNT;
 	pCfg->userInfo.mid.pres = PRSNT_NODEF;
@@ -1001,7 +1004,7 @@ int mgco_mg_tsap_config(megaco_profile_t* profile)
 	/* FILL TSAP config */
 	cfg->tSAPId 	= profile->idx;
 	cfg->spId   	= profile->idx;
-	cfg->provType 	= mg_get_tpt_type(profile);
+	cfg->provType 	= LMG_PROV_TYPE_TUCL; 
 
 	/* FILL TUCL Information */
 	cfg->memId.region = S_REG; 
@@ -1045,7 +1048,7 @@ int mgco_mg_peer_config(megaco_profile_t* mg_cfg)
 	Pst          	pst;              /* Post for layer manager */
 	U32            peerIdx = 0;
 	CmInetIpAddr   ipAddr = 0;
-	mg_peer_profile_t*  mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[0]);
+	mg_peer_profile_t*  mg_peer =  NULL;
 
 	memset(&mgMngmt, 0, sizeof(mgMngmt));
 	cfg   = &(mgMngmt.t.cfg.c.mgGcpEntCfg);
@@ -1063,39 +1066,43 @@ int mgco_mg_peer_config(megaco_profile_t* mg_cfg)
 	mgMngmt.hdr.elmId.elmnt     = STGCPENT;
 
 	cfg->numPeer 			= mg_cfg->total_peers;
-	cfg->peerCfg[peerIdx].sSAPId 	= mg_cfg->idx;        /* SSAP ID */;
-	cfg->peerCfg[peerIdx].port 	= atoi(mg_peer->port);
-	cfg->peerCfg[peerIdx].tsapId 	= mg_cfg->idx;
+	for(peerIdx =0; peerIdx < mg_cfg->total_peers; peerIdx++){
 
-	cfg->peerCfg[peerIdx].mtuSize = MG_MAX_MTU_SIZE;
+		mg_peer = megaco_peer_profile_locate(mg_cfg->peer_list[peerIdx]);
 
+		cfg->peerCfg[peerIdx].sSAPId 	= mg_cfg->idx;        /* SSAP ID */;
+		cfg->peerCfg[peerIdx].port 	= atoi(mg_peer->port);
+		cfg->peerCfg[peerIdx].tsapId 	= mg_cfg->idx;
 
-	cfg->peerCfg[peerIdx].peerAddrTbl.count = 1;
-	cfg->peerCfg[peerIdx].peerAddrTbl.netAddr[0].type =
-		CM_NETADDR_IPV4;
+		cfg->peerCfg[peerIdx].mtuSize = MG_MAX_MTU_SIZE;
 
-	if(ROK == cmInetAddr((S8*)&mg_peer->ipaddr[0],&ipAddr))
-	{
-		cfg->peerCfg[peerIdx].peerAddrTbl.netAddr[0].u.ipv4NetAddr = ntohl(ipAddr);
-	}
-	else
-	{
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "cmInetAddr failed \n");
-		cfg->peerCfg[peerIdx].peerAddrTbl.count = 0;
-	}
+		cfg->peerCfg[peerIdx].peerAddrTbl.count = 1;
+		cfg->peerCfg[peerIdx].peerAddrTbl.netAddr[0].type =
+			CM_NETADDR_IPV4;
+
+		if(ROK == cmInetAddr((S8*)&mg_peer->ipaddr[0],&ipAddr))
+		{
+			cfg->peerCfg[peerIdx].peerAddrTbl.netAddr[0].u.ipv4NetAddr = ntohl(ipAddr);
+		}
+		else
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "cmInetAddr failed \n");
+			cfg->peerCfg[peerIdx].peerAddrTbl.count = 0;
+		}
 
 #ifdef GCP_MG
-	cfg->peerCfg[peerIdx].transportType  = mg_get_tpt_type_from_str(mg_peer->transport_type);
-	cfg->peerCfg[peerIdx].encodingScheme = mg_get_enc_type_from_str(mg_peer->encoding_type);
-	cfg->peerCfg[peerIdx].mgcPriority = 0;
-	cfg->peerCfg[peerIdx].useAHScheme = FALSE;
-	cfg->peerCfg[peerIdx].mid.pres = PRSNT_NODEF;
-	cfg->peerCfg[peerIdx].mid.len = strlen((char*)mg_peer->mid);
-	cmMemcpy((U8 *)cfg->peerCfg[peerIdx].mid.val, 
-		(CONSTANT U8*)(char*)mg_peer->mid, 
-		 cfg->peerCfg[peerIdx].mid.len);
+		cfg->peerCfg[peerIdx].transportType  = mg_get_tpt_type_from_str(mg_peer->transport_type);
+		cfg->peerCfg[peerIdx].encodingScheme = mg_get_enc_type_from_str(mg_peer->encoding_type);
+		cfg->peerCfg[peerIdx].mgcPriority = peerIdx;
+		cfg->peerCfg[peerIdx].useAHScheme = FALSE;
+		cfg->peerCfg[peerIdx].mid.pres = PRSNT_NODEF;
+		cfg->peerCfg[peerIdx].mid.len = strlen((char*)mg_peer->mid);
+		cmMemcpy((U8 *)cfg->peerCfg[peerIdx].mid.val, 
+				(CONSTANT U8*)(char*)mg_peer->mid, 
+				cfg->peerCfg[peerIdx].mid.len);
 
 #endif /* GCP_MG */
+	}
 
 	return(sng_cfg_mg(&pst, &mgMngmt));
 }
@@ -1305,7 +1312,6 @@ sng_mg_transport_types_e  mg_get_tpt_type_from_str(char* tpt_type)
 	if(!strcasecmp(tpt_type, "UDP")){
 		return SNG_MG_TPT_UDP;
 	}else if(!strcasecmp(tpt_type,"TCP")){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TCP Transport for H.248 Protocol Not Yet Supported \n");
 		return SNG_MG_TPT_TCP;
 	}else if(!strcasecmp(tpt_type,"STCP")){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STCP Transport for H.248 Protocol Not Yet Supported \n");

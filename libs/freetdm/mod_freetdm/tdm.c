@@ -109,7 +109,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     ftdm_codec_t codec;
     uint32_t interval;
     
-    ctdm_private_t *tech_pvt;
+    ctdm_private_t *tech_pvt = NULL;
     
     if (zstr(szchanid) || zstr(szspanid)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Both "kSPAN_ID" and "kCHAN_ID" have to be set.\n");
