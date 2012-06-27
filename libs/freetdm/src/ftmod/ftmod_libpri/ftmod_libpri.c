@@ -268,6 +268,11 @@ out:
  * MSN filter
  ***************************************************************/
 
+/**
+ * Initialize MSN filter data structures
+ * \param[in]	isdn_data	Span private data
+ * \return	FTDM_SUCCESS, FTDM_FAIL
+ */
 static int msn_filter_init(ftdm_libpri_data_t *isdn_data)
 {
 	if (!isdn_data)
@@ -285,6 +290,11 @@ static int msn_filter_init(ftdm_libpri_data_t *isdn_data)
 	return FTDM_SUCCESS;
 }
 
+/**
+ * Destroy MSN filter data structures
+ * \param[in]	isdn_data	Span private data
+ * \return	FTDM_SUCCESS, FTDM_FAIL
+ */
 static int msn_filter_destroy(ftdm_libpri_data_t *isdn_data)
 {
 	if (!isdn_data)
@@ -298,6 +308,12 @@ static int msn_filter_destroy(ftdm_libpri_data_t *isdn_data)
 	return FTDM_SUCCESS;
 }
 
+/**
+ * Check if the given string is a valid MSN/DDI
+ * (i.e.: Not empty, not longer than FDM_DIGITS_LIMIT and all numbers)
+ * \param[in]	str	String to check
+ * \return	FTDM_SUCCESS, FTDM_FAIL
+ */
 static int msn_filter_verify(const char *str)
 {
 	if (ftdm_strlen_zero(str) || strlen(str) >= FTDM_DIGITS_LIMIT)
@@ -309,6 +325,12 @@ static int msn_filter_verify(const char *str)
 	return FTDM_TRUE;
 }
 
+/**
+ * Add a new MSN/DDI to the filter
+ * \param[in]	isdn_data	Span private data
+ * \param[in]	msn		New MSN/DDI to add
+ * \return	FTDM_SUCCESS, FTDM_FAIL
+ */
 static int msn_filter_add(ftdm_libpri_data_t *isdn_data, const char *msn)
 {
 	static const int value = 0xdeadbeef;
@@ -345,14 +367,18 @@ out:
 
 
 /**
- *
+ * Check if a DNIS (destination number) is a valid MSN/DDI
+ * \param[in]	isdn_data	Span private data
+ * \param[in]	msn		Number to check
+ * \retval	FTDM_TRUE	\p msn is a valid MSN/DDI or filter list is empty
+ * \retval	FTDM_FALSE	\p msn is not a valid MSN/DDI
  */
 static int msn_filter_match(ftdm_libpri_data_t *isdn_data, const char *msn)
 {
 	int ret = FTDM_FALSE;
 
 	if (!isdn_data)
-		return FTDM_FAIL;
+		return FTDM_FALSE;
 	/* No number? return match found */
 	if (ftdm_strlen_zero(msn))
 		return FTDM_TRUE;
@@ -372,6 +398,13 @@ out:
 	return ret;
 }
 
+/**
+ * Helper function to iterate over MSNs in the filter hash (handles locking)
+ * \param[in]	isdn_data	Span private data
+ * \param[in]	func		Callback function that is invoked for each entry
+ * \param[in]	data		Private data passed to callback
+ * \return	FTDM_SUCCESS, FTDM_FAIL
+ */
 static int msn_filter_foreach(ftdm_libpri_data_t *isdn_data, int (* func)(const char *, void *), void *data)
 {
 	ftdm_hash_iterator_t *iter = NULL;
@@ -439,6 +472,10 @@ struct msn_list_cb_private {
 	unsigned int count;
 };
 
+/**
+ * "ftdm libpri msn <span>" API command callback
+ * function for msn_filter_foreach()
+ */
 static int msn_list_cb(const char *msn, void *priv)
 {
 	struct msn_list_cb_private *data = priv;
