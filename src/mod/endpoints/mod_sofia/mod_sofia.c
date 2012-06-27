@@ -535,6 +535,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			} else {
 				char *resp_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 				const char *phrase;
+				char *added_headers = NULL;
+
 				if (tech_pvt->respond_code) {
 					sip_cause = tech_pvt->respond_code;
 				}
@@ -545,6 +547,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					phrase = sip_status_phrase(sip_cause);
 				}
 				
+				if (tech_pvt->respond_dest && !sofia_test_pflag(tech_pvt->profile, PFLAG_MANUAL_REDIRECT)) {
+					added_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
+				}
 
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
@@ -565,6 +570,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 								TAG_IF(cid, SIPTAG_HEADER_STR(cid)), 
 								TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), 
 								TAG_IF(!zstr(resp_headers), SIPTAG_HEADER_STR(resp_headers)), 
+								TAG_IF(!zstr(added_headers), SIPTAG_HEADER_STR(added_headers)), 
+								TAG_IF(tech_pvt->respond_dest, SIPTAG_CONTACT_STR(tech_pvt->respond_dest)),
 								TAG_END());
 
 					switch_safe_free(resp_headers);
@@ -2263,14 +2270,27 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_REDIRECT:
+
 		if (!zstr(msg->string_arg)) {
+
+			int status = 0;
+
+			if (tech_pvt->nh && tech_pvt->nh->nh_ds && tech_pvt->nh->nh_ds->ds_sr && nua_server_request_is_pending(tech_pvt->nh->nh_ds->ds_sr)) {
+				status = tech_pvt->nh->nh_ds->ds_sr->sr_status;
+			}
+
+			if (status == 0 || status > 199 || tech_pvt->nh->nh_destroyed) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Cannot call respond on handle at status %d\n", 
+								  switch_channel_get_name(channel), status);
+				goto end_lock;
+			}
+
+
 			if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
-				char *added_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 				char *dest = (char *) msg->string_arg;
 				char *argv[128] = { 0 };
 				char *mydata = NULL, *newdest = NULL;
-				int argc = 0, ok = 0, i;
+				int argc = 0, i;
 				switch_size_t len = 0;
 
 				if (strchr(dest, ',')) {
@@ -2306,21 +2326,18 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirecting to %s\n", dest);
 				
-				ok = sofia_test_pflag(tech_pvt->profile, PFLAG_MANUAL_REDIRECT);
-
+				tech_pvt->respond_dest = dest;
+				
 				if (argc > 1) {
-					nua_respond(tech_pvt->nh, SIP_300_MULTIPLE_CHOICES, SIPTAG_CONTACT_STR(dest),
-							TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-							TAG_IF((!zstr(added_headers) && !ok), SIPTAG_HEADER_STR(added_headers)), TAG_END());
+					tech_pvt->respond_code = 300;
+					tech_pvt->respond_phrase = "Multiple Choices";
 				} else {
-					nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(dest),
-							TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-							TAG_IF((!zstr(added_headers) && !ok), SIPTAG_HEADER_STR(added_headers)), TAG_END());	
+					tech_pvt->respond_code = 302;
+					tech_pvt->respond_phrase = "Moved Temporarily";
 				}
 
+				switch_channel_hangup(tech_pvt->channel, sofia_glue_sip_cause_to_freeswitch(tech_pvt->respond_code));
 
-				sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
-				switch_safe_free(extra_headers);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Too late for redirecting, already answered\n");
 

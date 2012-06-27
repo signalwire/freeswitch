@@ -1182,6 +1182,7 @@ SWITCH_STANDARD_APP(redirect_function)
 	msg.from = __FILE__;
 	msg.string_arg = data;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
+	msg.numeric_arg = 1;
 	switch_core_session_receive_message(session, &msg);
 }
 
