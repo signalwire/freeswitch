@@ -534,6 +534,18 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				}
 			} else {
 				char *resp_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
+				const char *phrase;
+				if (tech_pvt->respond_code) {
+					sip_cause = tech_pvt->respond_code;
+				}
+
+				if (tech_pvt->respond_phrase) {
+					phrase = su_strdup(nua_handle_home(tech_pvt->nh), tech_pvt->respond_phrase);
+				} else {
+					phrase = sip_status_phrase(sip_cause);
+				}
+				
+
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
 				if (!tech_pvt->got_bye) {
@@ -548,7 +560,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 						switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_FAIL);
 					}
 
-					nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause),
+					nua_respond(tech_pvt->nh, sip_cause, phrase,
 								TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 								TAG_IF(cid, SIPTAG_HEADER_STR(cid)), 
 								TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), 
@@ -2356,7 +2368,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				int code = msg->numeric_arg;
 				const char *reason = NULL;
 
-				if (code) {
+				if (code > 0) {
 					reason = msg->string_arg;
 				} else {
 					if (!zstr(msg->string_arg)) {
@@ -2490,8 +2502,19 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								switch_core_session_pass_indication(session, SWITCH_MESSAGE_INDICATE_ANSWER);
 							}
 						} else {
-							nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-										TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+							if (msg->numeric_arg) {
+								if (code > 399) {
+									tech_pvt->respond_code = code;
+									tech_pvt->respond_phrase = switch_core_session_strdup(tech_pvt->session, reason);
+									switch_channel_hangup(tech_pvt->channel, sofia_glue_sip_cause_to_freeswitch(code));
+								} else {
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot respond.\n");
+								}
+							} else {
+								nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+											TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+							}
+
 						}
 						switch_safe_free(extra_headers);
 					}

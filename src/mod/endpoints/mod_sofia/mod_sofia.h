@@ -836,6 +836,8 @@ struct private_object {
 	char *local_sdp_video_zrtp_hash;
 	char *remote_sdp_audio_zrtp_hash;
 	char *remote_sdp_video_zrtp_hash;
+	char *respond_phrase;
+	int respond_code;
 };
 
 struct callback_t {

@@ -1239,6 +1239,7 @@ SWITCH_STANDARD_APP(respond_function)
 	msg.from = __FILE__;
 	msg.string_arg = data;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
+	msg.numeric_arg = -1;
 	switch_core_session_receive_message(session, &msg);
 }
 
