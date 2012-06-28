@@ -1879,6 +1879,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	size_t len = 0;
 	char tb[2] = "";
+	int term_required = 0;
+	
+
+	if (*valid_terminators == '=') {
+		term_required = 1;
+	}
 
 	switch_assert(session);
 
@@ -1945,6 +1951,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 				}
 			}
 		}
+	} else if (term_required) {
+		status = SWITCH_STATUS_TOO_SMALL;
 	}
 
 	len = strlen(digit_buffer);
