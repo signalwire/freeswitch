@@ -131,6 +131,7 @@ switch_status_t mg_config_cleanup(megaco_profile_t* profile)
 {
 	switch_xml_config_item_t *instructions = (profile ? get_instructions(profile) : NULL);
 	switch_xml_config_cleanup(instructions);
+    free(instructions);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -140,6 +141,7 @@ switch_status_t mg_peer_config_cleanup(mg_peer_profile_t* profile)
 {
 	switch_xml_config_item_t *instructions = (profile ? get_peer_instructions(profile) : NULL);
 	switch_xml_config_cleanup(instructions);
+    free(instructions);
 
 	return SWITCH_STATUS_SUCCESS;
 }

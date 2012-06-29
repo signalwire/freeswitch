@@ -18,7 +18,7 @@ static sng_mg_event_interface_t sng_event;
 SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown);
 SWITCH_MODULE_DEFINITION(mod_media_gateway, mod_media_gateway_load, mod_media_gateway_shutdown, NULL);
-switch_status_t handle_mg_add_cmd(MgMgcoAmmReq *addReq);
+switch_status_t handle_mg_add_cmd(SuId suId, MgMgcoCommand *req, MgMgcoAmmReq *addReq);
 switch_status_t mg_stack_free_mem(MgMgcoMsg* msg);
 switch_status_t mg_stack_free_mem(MgMgcoMsg* msg);
 switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize );
@@ -195,13 +195,80 @@ static void mgco_print_sdp(CmSdpInfoSet *sdp)
                 for (mediaId = 0; mediaId < s->attrSet.numComp.val; mediaId++) {
                     /*CmSdpAttr *a = s->attrSet.attr[mediaId];*/
                     
-                    
                 }
             }
 
             if (s->mediaDescSet.numComp.pres) {
                 for (mediaId = 0; mediaId < s->mediaDescSet.numComp.val; mediaId++) {
                     CmSdpMediaDesc *desc = s->mediaDescSet.mediaDesc[mediaId];
+                    
+                    if (desc->field.mediaType.val == CM_SDP_MEDIA_AUDIO &&
+                        desc->field.id.type.val ==  CM_SDP_VCID_PORT &&
+                        desc->field.id.u.port.type.val == CM_SDP_PORT_INT &&
+                        desc->field.id.u.port.u.portInt.port.type.val == CM_SDP_SPEC) {
+                        int port = desc->field.id.u.port.u.portInt.port.val.val;
+                        
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Port: %d\n", port);
+                        
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+static switch_status_t mgco_parse_local_sdp(mg_termination_t *term, CmSdpInfoSet *sdp)
+{
+    int i;
+    CmSdpInfoSet *local_sdp;
+    /* Parse the local SDP while copying the important bits over to our local structure,
+     * while taking care of editing choose request and replacing them by real values */
+    
+    if (!term->u.rtp.local_sdp) {
+        local_sdp = term->u.rtp.local_sdp = switch_core_alloc(term->context->pool, sizeof *term->u.rtp.local_sdp);
+    }
+    
+    
+    if (sdp->numComp.pres == NOTPRSNT) {
+        return SWITCH_STATUS_FALSE;
+    }
+    
+    for (i = 0; i < sdp->numComp.val; i++) {
+        CmSdpInfo *s = sdp->info[i];
+        int mediaId;
+        
+        local_sdp->info[i] = switch_core_alloc(term->context->pool, sizeof *(local_sdp->info[i]));
+        *(local_sdp->info[i]) = *(sdp->info[i]);
+        
+        if (s->conn.addrType.pres && s->conn.addrType.val == CM_SDP_ADDR_TYPE_IPV4 &&
+            s->conn.netType.type.val == CM_SDP_NET_TYPE_IN &&
+            s->conn.u.ip4.addrType.val == CM_SDP_IPV4_IP_UNI) {
+            
+            if (s->conn.u.ip4.addrType.pres) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Local address: %d.%d.%d.%d\n",
+                                  s->conn.u.ip4.u.uniIp.b[0].val,
+                                  s->conn.u.ip4.u.uniIp.b[1].val,
+                                  s->conn.u.ip4.u.uniIp.b[2].val,
+                                  s->conn.u.ip4.u.uniIp.b[3].val);
+                
+                /* TODO: Double-check bind address for this profile */
+                
+            }
+            if (s->attrSet.numComp.pres) {
+                for (mediaId = 0; mediaId < s->attrSet.numComp.val; mediaId++) {
+                    CmSdpAttr *a = s->attrSet.attr[mediaId];
+                    local_sdp->info[i]->attrSet.attr[mediaId] = switch_core_alloc(term->context->pool, sizeof(CmSdpAttr));
+                    *(local_sdp->info[i]->attrSet.attr[mediaId]) = *a;
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Media %p\n", a);
+                }
+            }
+            
+            if (s->mediaDescSet.numComp.pres) {
+                for (mediaId = 0; mediaId < s->mediaDescSet.numComp.val; mediaId++) {
+                    CmSdpMediaDesc *desc = s->mediaDescSet.mediaDesc[mediaId];
+                    local_sdp->info[i]->mediaDescSet.mediaDesc[mediaId] = switch_core_alloc(term->context->pool, sizeof(CmSdpMediaDesc));
+                    *(local_sdp->info[i]->mediaDescSet.mediaDesc[mediaId]) = *desc;
                     
                     if (desc->field.mediaType.val == CM_SDP_MEDIA_AUDIO &&
                         desc->field.id.type.val ==  CM_SDP_VCID_PORT &&
@@ -330,17 +397,17 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                                                         }
                                                         case MGT_MEDIAPAR_STRPAR:
                                                         {
-                                                            MgMgcoStreamDesc *mgStream = &mediaPar->u.stream;
-                                                            
-                                                            if (mgStream->sl.remote.pres.pres) {
-                                                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
-                                                                mgco_print_sdp(&mgStream->sl.remote.sdp);
-                                                            }
-                                                            
-                                                            if (mgStream->sl.local.pres.pres) {
-                                                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
-                                                                mgco_print_sdp(&mgStream->sl.local.sdp);
-                                                            }
+//                                                            MgMgcoStreamDesc *mgStream = &mediaPar->u.stream;
+//                                                            
+//                                                            if (mgStream->sl.remote.pres.pres) {
+//                                                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
+//                                                                mgco_print_sdp(&mgStream->sl.remote.sdp);
+//                                                            }
+//                                                            
+//                                                            if (mgStream->sl.local.pres.pres) {
+//                                                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
+//                                                                mgco_print_sdp(&mgStream->sl.local.sdp);
+//                                                            }
                                                             
                                                             
                                                             break;
@@ -438,8 +505,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 				{
 					case MGT_ADD:
 						{
-							handle_mg_add_cmd(&cmd->u.mgCmdInd[0]->cmd.u.add);
-							mg_send_add_rsp(suId, cmd);
+							handle_mg_add_cmd(suId, cmd, &cmd->u.mgCmdInd[0]->cmd.u.add);
 							break;
 						}
 
@@ -598,7 +664,7 @@ MgMgcoTermIdLst *mg_get_term_id_list(MgMgcoCommand *cmd)
                break;
 
             default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: failed, Unsupported Command[%s]\n", __PRETTY_FUNCTION__, PRNT_MG_CMD(cmd_type));
+                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: failed, Unsupported Command[%s]\n", __PRETTY_FUNCTION__, PRNT_MG_CMD(cmd_type));
                break;
          }
          break;
@@ -651,12 +717,12 @@ MgMgcoTermIdLst *mg_get_term_id_list(MgMgcoCommand *cmd)
                break;
 
             default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: failed, Unsupported Command[%s]\n", __PRETTY_FUNCTION__, PRNT_MG_CMD(cmd_type));
+                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: failed, Unsupported Command[%s]\n", __PRETTY_FUNCTION__, PRNT_MG_CMD(cmd_type));
          } /* switch command type for reply */
          break;
 
       default:
-	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: failed, Unsupported api_type[%s]!\n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(api_type));
+           switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: failed, Unsupported api_type[%s]!\n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(api_type));
          break;
    } /* switch -api_type */
 
@@ -665,9 +731,40 @@ MgMgcoTermIdLst *mg_get_term_id_list(MgMgcoCommand *cmd)
 
 /*****************************************************************************************************************************/
 
-switch_status_t handle_mg_add_cmd(MgMgcoAmmReq *addReq)
+switch_status_t handle_mg_add_cmd(SuId suId, MgMgcoCommand *req, MgMgcoAmmReq *addReq)
 {
-	int descId;
+    int descId;
+    mg_context_t *ctx = NULL;
+    
+    MgMgcoCommand  cmd;
+	int ret = 0x00;
+	MgMgcoTermId  *termId;
+	MgMgcoCtxt     ctxt;
+    
+	memset(&cmd,0, sizeof(cmd));
+    
+	/*copy transaction-id*/
+	memcpy(&cmd.transId, &req->transId, sizeof(MgMgcoTransId));
+    
+    if (req->contextId.type.val == MGT_CXTID_CHOOSE) {
+        ctx = megaco_choose_context(NULL);
+    } else if (req->contextId.type.val == MGT_CXTID_OTHER) {
+        ctx = megaco_get_context(NULL, req->contextId.val.val);
+    }
+    
+    
+	/*copy context-id*/ /*TODO - in case of $ context should be generated by app, we should not simply copy incoming structure */
+	memcpy(&cmd.contextId, &req->contextId, sizeof(MgMgcoContextId));
+    
+	/*copy peer identifier */
+	memcpy(&cmd.peerId, &req->peerId, sizeof(TknU32));
+    
+	/*fill response structue */
+	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&cmd.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
+		return ret;
+	}
+
+
 	for (descId = 0; descId < addReq->dl.num.val; descId++) {
 		switch (addReq->dl.descs[descId]->type.val) {
 			case MGT_MEDIADESC:
@@ -727,72 +824,43 @@ switch_status_t handle_mg_add_cmd(MgMgcoAmmReq *addReq)
 				break;
 		}
 	}
-
-
-	return SWITCH_STATUS_SUCCESS;	
-}
-
-
-/*****************************************************************************************************************************/
-switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req)
-{
-	MgMgcoCommand  cmd;
-	int ret = 0x00;
-	MgMgcoTermId  *termId;
-	MgMgcoCtxt     ctxt;
-
-	memset(&cmd,0, sizeof(cmd));
-
-	/*copy transaction-id*/
-	memcpy(&cmd.transId, &req->transId,sizeof(MgMgcoTransId));
-
-	/*copy context-id*/ /*TODO - in case of $ context should be generated by app, we should not simply copy incoming structure */
-	memcpy(&cmd.contextId, &req->contextId,sizeof(MgMgcoContextId));
-
-	/*copy peer identifier */
-	memcpy(&cmd.peerId, &req->peerId,sizeof(TknU32));
-
-	/*fill response structue */
-	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&cmd.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
-		return ret;
-	}
-
-	cmd.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
+    
+    cmd.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
 	cmd.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
 	cmd.u.mgCmdRsp[0]->type.val = MGT_ADD;
 	cmd.u.mgCmdRsp[0]->u.add.pres.pres = PRSNT_NODEF;
-
-
+    
+    
 	cmd.u.mgCmdRsp[0]->u.add.termIdLst.num.pres = PRSNT_NODEF;
 	cmd.u.mgCmdRsp[0]->u.add.termIdLst.num.val  = 1;
-
+    
 	mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.add.termIdLst, &req->u.mgCmdReq[0]->cmd.u.add.termIdLst);
-
+    
 #ifdef GCP_VER_2_1
 	termId = cmd.u.mgCmdRsp[0]->u.add.termIdLst.terms[0];
 #else
 	termId = &(cmd.u.mgCmdRsp[0]->u.add.termId);
 #endif
+    /* FIXME */
 	mg_fill_mgco_termid(termId, (CONSTANT U8*)"term1",&req->u.mgCmdRsp[0]->memCp);
-
+    
 	/* We will always send one command at a time..*/
 	cmd.cmdStatus.pres = PRSNT_NODEF;
 	cmd.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
-
+    
 	cmd.cmdType.pres = PRSNT_NODEF;
 	cmd.cmdType.val  = CH_CMD_TYPE_RSP;
-
-
+    
+    
 	ret = sng_mgco_send_cmd(suId, &cmd);
-
+    
 	memcpy(&ctxt.transId,&req->transId,sizeof(MgMgcoTransId)); 
-	memcpy(&ctxt.cntxtId, &req->contextId,sizeof(MgMgcoContextId));
+	memcpy(&ctxt.cntxtId, &cmd.contextId,sizeof(MgMgcoContextId));
 	memcpy(&ctxt.peerId, &req->peerId,sizeof(TknU32));
 	ctxt.cmdStatus.pres = PRSNT_NODEF;
 	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
-	ret = sng_mgco_send_axn_req(suId, &ctxt);
 
-	return ret;
+	return sng_mgco_send_axn_req(suId, &ctxt);;	
 }
 
 /*****************************************************************************************************************************/
@@ -811,7 +879,7 @@ switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize )
 
 	if ( ROK != cmAllocEvnt( _memSize, MG_MAXBLKSIZE, &sMem, _memPtr ) )
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed mg_stack_alloc_mem: cmAllocEvnt return failure for _memSize=%d\n",_memSize); 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed mg_stack_alloc_mem: cmAllocEvnt return failure for _memSize=%d\n", (int)_memSize); 
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -850,7 +918,7 @@ switch_status_t mg_stack_free_mem(MgMgcoMsg* msg)
 {
         if ( !msg )
         {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed mg_stack_get_mem: invalid message\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed mg_stack_free_mem: invalid message\n"); 
 		return SWITCH_STATUS_FALSE;
         }
 

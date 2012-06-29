@@ -15,6 +15,8 @@
 
 #define MG_MAX_PEERS    5
 
+#define MG_CONTEXT_MAX_TERMS 3
+
 #define MEGACO_CLI_SYNTAX "profile|logging"
 #define MEGACO_LOGGING_CLI_SYNTAX "logging [enable|disable]"
 #define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop] [status] [xmlstatus] [peerxmlstatus]"
@@ -50,10 +52,57 @@ typedef struct mg_peer_profile_s{
 	char*       			mid;  	     /* Peer H.248 MID */
 	char*       			transport_type; /* UDP/TCP */ 
 	char*      			encoding_type; /* Encoding TEXT/Binary */
-}mg_peer_profile_t;
+} mg_peer_profile_t;
 
 
-typedef struct megaco_profile_s {
+typedef enum {
+    MG_TERM_FREE = 0,
+    MG_TERM_TDM,
+    MG_TERM_RTP
+} mg_termination_type_t;
+
+typedef struct megaco_profile_s megaco_profile_t;
+typedef struct mg_context_s mg_context_t;
+
+typedef struct mg_termination_s {
+    mg_termination_type_t type;
+    const char *uuid;
+    mg_context_t *context;
+    
+    union {
+        struct {
+            const char *codec;
+            int ptime;
+            const char *remote_address;
+            switch_port_t remote_port;
+            switch_port_t local_port;
+            
+            CmSdpInfoSet *local_sdp;
+            CmSdpInfoSet *remote_sdp;
+            
+            unsigned mode:2;
+            unsigned :0;
+        } rtp;
+        struct {
+            int span;
+            int channel;
+        } tdm;
+    } u;
+} mg_termination_t;
+
+
+struct mg_context_s {
+    uint32_t context_id;
+    mg_termination_t terminations[MG_CONTEXT_MAX_TERMS];
+    megaco_profile_t *profile;
+    mg_context_t *next;
+    switch_memory_pool_t *pool;
+};
+
+#define MG_CONTEXT_MODULO 16
+#define MG_MAX_CONTEXTS 32768
+
+struct megaco_profile_s {
 	char 				*name;
 	switch_memory_pool_t 	*pool;
 	switch_thread_rwlock_t 	*rwlock; /* < Reference counting rwlock */
@@ -71,7 +120,12 @@ typedef struct megaco_profile_s {
 	char*					rtp_termination_id_prefix;
 	int						rtp_termination_id_len;
 	char*                	peer_list[MG_MAX_PEERS];     /* MGC Peer ID LIST */
-} megaco_profile_t;
+    
+    switch_thread_rwlock_t  *contexts_rwlock;
+    uint32_t next_context_id;
+    uint8_t contexts_bitmap[MG_MAX_CONTEXTS/8]; /* Availability matrix, enough bits for a 32768 bitmap */    
+    mg_context_t *contexts[MG_CONTEXT_MODULO];
+};
 
 
 megaco_profile_t *megaco_profile_locate(const char *name);
@@ -80,6 +134,11 @@ void megaco_profile_release(megaco_profile_t *profile);
 
 switch_status_t megaco_profile_start(const char *profilename);
 switch_status_t megaco_profile_destroy(megaco_profile_t **profile);
+
+mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id);
+mg_context_t *megaco_choose_context(megaco_profile_t *profile);
+void megaco_release_context(mg_context_t *ctx);
+
 switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload);
 switch_status_t sng_mgco_start(megaco_profile_t* profile);
 switch_status_t sng_mgco_stop(megaco_profile_t* profile);
