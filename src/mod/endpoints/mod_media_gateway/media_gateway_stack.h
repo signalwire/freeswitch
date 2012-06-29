@@ -43,6 +43,35 @@ typedef enum{
 	 (_val == SNG_MG_ENCODING_BINARY)?"SNG_MG_ENCODING_BINARY":\
 	 "SNG_MG_ENCODING_NONE")
 
+typedef struct _mgStr
+{
+   U8  len;
+   U8  val[128];
+} MgStr;
+
+#define MG_TXN_INVALID 0
+
+#define mg_zero(_buf, _size) {cmMemset((U8 *)(_buf), 0, _size);}
+
+/* Set pres field */
+#define mg_util_set_pres(_pres)           \
+         (_pres) = PRSNT_NODEF; 
+ 
+/* Set token value  */
+#define mg_util_set_val_pres(tkn,_val)    \
+   mg_util_set_pres((tkn).pres);          \
+   (tkn).val = _val;                        
+
+
+#define mg_mem_copy(_dst, _src, _len) \
+	cmMemcpy((U8*) (_dst), (const U8*) (_src), _len)
+
+#define mg_get_mem(_memPtr, _size, _allocPtr, ret)                  \
+{                                                                   \
+	(*ret) = cmGetMem((Ptr *)(_memPtr),(_size) ,(Ptr *)&(_allocPtr)); \
+}
+
+
 
 void handle_sng_log(uint8_t level, char *fmt, ...);
 void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* msg);

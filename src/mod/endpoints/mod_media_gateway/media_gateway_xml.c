@@ -153,7 +153,7 @@ static switch_xml_config_item_t *get_peer_instructions(mg_peer_profile_t *profil
 		/* parameter name        type                 reloadable   pointer                         default value     options structure */
 		SWITCH_CONFIG_ITEM("ip", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->ipaddr, "", &switch_config_string_strdup, "", "Peer IP"),
 		SWITCH_CONFIG_ITEM("port", SWITCH_CONFIG_STRING, 0, &profile->port, "", &switch_config_string_strdup, "", "peer port"),
-		SWITCH_CONFIG_ITEM("encoding-scheme", SWITCH_CONFIG_STRING, 0, &profile->encoding_type, "TEXT", &switch_config_string_strdup, "", "peer encoding type"),
+		SWITCH_CONFIG_ITEM("encoding-scheme", SWITCH_CONFIG_STRING, 0, &profile->encoding_type, "", &switch_config_string_strdup, "", "peer encoding type"),
 		SWITCH_CONFIG_ITEM("transport-type", SWITCH_CONFIG_STRING, 0, &profile->transport_type, "", &switch_config_string_strdup, "", "peer transport type "),
 		SWITCH_CONFIG_ITEM("message-identifier", SWITCH_CONFIG_STRING, 0, &profile->mid, "", &switch_config_string_strdup, "", "peer message identifier "),
 		SWITCH_CONFIG_ITEM_END()
@@ -239,6 +239,7 @@ static switch_status_t modify_mid(char* mid)
 	}
 
 	if(('<' == val[0][0]) || ('[' == val[0][0])){
+		free(dup);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MID[%s] is already prefixed with proper brackets \n",mid);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -256,7 +257,7 @@ static switch_status_t modify_mid(char* mid)
 		sprintf(mid,"[%s]",dup);
 	}else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid input MID string[%s]\n",mid);
-        free(dup);
+		free(dup);
 		return SWITCH_STATUS_FALSE;
 	}
 
