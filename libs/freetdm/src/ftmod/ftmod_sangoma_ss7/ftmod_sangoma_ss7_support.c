@@ -247,13 +247,14 @@ ftdm_status_t copy_locPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCgPtyNum *loc
 {
         const char *val = NULL;
         const char *loc_nadi = NULL;
-		int pres_val = PRSNT_NODEF;
+	int pres_val = PRSNT_NODEF;
 
         sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
         ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 
 	if (!strcasecmp(caller_data->loc.digits, "NULL")) {
 		pres_val = NOTPRSNT;
+		return FTDM_SUCCESS;
 	}
 
         locPtyNum->eh.pres = pres_val;
