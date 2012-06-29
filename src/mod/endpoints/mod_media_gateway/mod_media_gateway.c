@@ -24,6 +24,8 @@ switch_status_t mg_stack_free_mem(MgMgcoMsg* msg);
 switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize );
 switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req);
 S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, CONSTANT U8   *str, CmMemListCp   *memCp);
+void mg_util_set_txn_string(MgStr  *errTxt, U32 *txnId);
+switch_status_t mg_build_mgco_err_request(MgMgcoInd  **errcmd,U32  trans_id, MgMgcoContextId   *ctxt_id, U32  err, MgStr  *errTxt);
 
 /**************************************************************************************************************/
 
@@ -477,6 +479,10 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
 void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 {
 	uint32_t txn_id = 0x00;
+	MgMgcoInd  *mgErr;
+	MgStr      errTxt;
+	MgMgcoContextId   ctxtId;
+
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
 
@@ -486,7 +492,20 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	else
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Transaction Id not present, rejecting\n", __PRETTY_FUNCTION__);	
-		/*TODO - can invoke "MgUiMgtMgcoErrReq" to report error to MEGACO stack */
+		
+		/*-- Send Error to MG Stack --*/
+		mg_zero(&ctxtId, sizeof(MgMgcoContextId));
+		ctxtId.type.pres = NOTPRSNT;
+		ctxtId.val.pres  = NOTPRSNT;
+
+		mg_util_set_txn_string(&errTxt, &txn_id);
+
+		if (SWITCH_STATUS_FALSE == mg_build_mgco_err_request(&mgErr, txn_id, &ctxtId,
+						MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER, &errTxt))
+		{
+			sng_mgco_send_err(suId, mgErr);
+		}
+
 		/* deallocate the msg */
 		mg_free_cmd(cmd);
 		return ;	
@@ -975,6 +994,78 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, CONSTANT U8   *str, CmMemListCp
 
    RETVALUE(ROK);
 }
+
+switch_status_t mg_build_mgco_err_request(MgMgcoInd  **errcmd,U32  trans_id, MgMgcoContextId   *ctxt_id, U32  err, MgStr  *errTxt)
+{
+	MgMgcoInd     *mgErr;   
+	S16            ret;
+
+	mgErr = NULLP;
+	ret = ROK;
+
+	/* Allocate for AG error */
+	mg_stack_alloc_mem((Ptr*)&mgErr, sizeof(MgMgcoInd));
+	if (NULL == mgErr) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " mg_build_mgco_err_request Failed : memory alloc \n"); 
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* Set transaction Id in the error request */
+	mg_util_set_val_pres(mgErr->transId, trans_id);
+
+	/* Copy the context Id */
+	mg_mem_copy(&mgErr->cntxtId, 
+			ctxt_id, 
+			sizeof(MgMgcoContextId));
+
+	/* Set the peerId  */
+	mgErr->peerId.pres = NOTPRSNT;
+
+	/* Set the error code   */
+	mg_util_set_pres(mgErr->err.pres.pres);                 
+	mg_util_set_pres(mgErr->err.code.pres);                 
+	mg_util_set_val_pres(mgErr->err.code, err);   
+
+	if(errTxt->len)
+	{
+		mg_get_mem(&mgErr->memCp, (errTxt->len)*sizeof(U8), mgErr->err.text.val, &ret);
+		if (ROK != ret) {
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " mg_build_mgco_err_request Failed : memory alloc \n"); 
+			return SWITCH_STATUS_FALSE;
+		}
+		mgErr->err.text.pres = PRSNT_NODEF;
+		mgErr->err.text.len =  errTxt->len;
+		mg_mem_copy(mgErr->err.text.val, errTxt->val, errTxt->len);
+	}
+
+	/* Set the output value  */
+	*errcmd = mgErr;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+void mg_util_set_txn_string(MgStr  *errTxt, U32 *txnId)
+{
+   mg_zero((errTxt->val), sizeof(errTxt->val));
+   errTxt->len = 0;
+
+   errTxt->val[errTxt->len] = '\"';
+   errTxt->len += 1;
+
+   if (MG_TXN_INVALID == txnId )
+   {
+      mg_mem_copy((&errTxt->val[errTxt->len]), "TransactionId=0", 15);
+      errTxt->len += 15;
+   }           
+
+   errTxt->val[errTxt->len] = '\"';
+   errTxt->len += 1;
+
+     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s:" 
+                     "info, error-text is: %s\n", __PRETTY_FUNCTION__,errTxt->val);
+
+}
+
 
 
 /*****************************************************************************************************************************/
