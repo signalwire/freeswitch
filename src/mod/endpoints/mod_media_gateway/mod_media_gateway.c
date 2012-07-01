@@ -447,7 +447,6 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 						{
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Audit-Value Method \n");
 							handle_mg_audit_cmd(suId, cmd);
-							mg_send_audit_rsp(suId,cmd);
 							break;
 						}
 						break;
