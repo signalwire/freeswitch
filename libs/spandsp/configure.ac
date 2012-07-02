@@ -316,14 +316,32 @@ if test -n "$enable_tests" ; then
     AC_LANG([C])
 fi
 
+
+saved_CFLAGS="$CFLAGS"
 AX_CHECK_EXPORT_CAPABILITY([$host],
     [AC_DEFINE([SPANDSP_USE_EXPORT_CAPABILITY], [1], [Use the library symbol export capability of the compiler])
     SPANDSP_USE_EXPORT_CAPABILITY="#define SPANDSP_USE_EXPORT_CAPABILITY 1"],
     [SPANDSP_USE_EXPORT_CAPABILITY="#undef SPANDSP_USE_EXPORT_CAPABILITY"])
 
+AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
+CFLAGS="$CFLAGS -Wunused-but-set-variable"
+AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
+])
+AC_MSG_RESULT($ac_cv_gcc_unused_but_set_variable)
+CFLAGS="$saved_CFLAGS"
+
+
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
-    COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Wunused-variable -Wunused-but-set-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+
+
+    if test x"$ac_cv_gcc_unused_but_set_variable" = xyes; then
+        COMP_VENDOR_CFLAGS="-Wunused-but-set-variable $COMP_VENDOR_CFLAGS"
+	
+    fi
+
+
     if test "$enable_avx" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
     fi
@@ -384,7 +402,13 @@ sun)
     REMOVE_FROM_VAR(CFLAGS, -Xc)
     ;;
 intel)
-    COMP_VENDOR_CFLAGS="-std=c99 -D_POSIX_C_SOURCE=2 -D_GNU_SOURCE=1 -Wall -Wunused-variable -Wunused-but-set-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    COMP_VENDOR_CFLAGS="-std=c99 -D_POSIX_C_SOURCE=2 -D_GNU_SOURCE=1 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+
+    if test x"$ac_cv_gcc_unused_but_set_variable" = xyes; then
+        COMP_VENDOR_CFLAGS="-Wunused-but-set-variable $COMP_VENDOR_CFLAGS"
+	
+    fi
+
     if test "$enable_avx" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
     fi
