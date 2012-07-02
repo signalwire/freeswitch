@@ -383,7 +383,6 @@ static void hdlc_underflow_handler(void *user_data)
 {
     t38_gateway_state_t *s;
     t38_gateway_hdlc_state_t *t;
-    int old_data_type;
 
     s = (t38_gateway_state_t *) user_data;
     t = &s->core.hdlc_to_modem;
@@ -392,7 +391,6 @@ static void hdlc_underflow_handler(void *user_data)
        underflow must be an end of preamble condition. */
     if ((t->buf[t->out].flags & HDLC_FLAG_PROCEED_WITH_OUTPUT))
     {
-        old_data_type = t->buf[t->out].contents;
         t->buf[t->out].len = 0;
         t->buf[t->out].flags = 0;
         t->buf[t->out].contents = 0;
@@ -2117,6 +2115,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
 
 static int restart_rx_modem(t38_gateway_state_t *s)
 {
+    fax_modems_state_t *t;
     put_bit_func_t put_bit_func;
     void *put_bit_user_data;
 
@@ -2138,19 +2137,20 @@ static int restart_rx_modem(t38_gateway_state_t *s)
              s->core.short_train,
              s->core.ecm_mode);
 
-    hdlc_rx_init(&(s->audio.modems.hdlc_rx), FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, NULL, s);
-    s->audio.modems.rx_signal_present = FALSE;
-    s->audio.modems.rx_trained = FALSE;
+    t = &s->audio.modems;
+    hdlc_rx_init(&t->hdlc_rx, FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, NULL, s);
+    t->rx_signal_present = FALSE;
+    t->rx_trained = FALSE;
     /* Default to the transmit data being V.21, unless a faster modem pops up trained. */
     s->t38x.current_tx_data_type = T38_DATA_V21;
-    fsk_rx_init(&(s->audio.modems.v21_rx), &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) t38_hdlc_rx_put_bit, &(s->audio.modems.hdlc_rx));
+    fsk_rx_init(&t->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) t38_hdlc_rx_put_bit, &t->hdlc_rx);
 #if 0
-    fsk_rx_signal_cutoff(&(s->audio.modems.v21_rx), -45.5f);
+    fsk_rx_signal_cutoff(&t->v21_rx, -45.5f);
 #endif
     if (s->core.image_data_mode  &&  s->core.ecm_mode)
     {
         put_bit_func = (put_bit_func_t) t38_hdlc_rx_put_bit;
-        put_bit_user_data = (void *) &(s->audio.modems.hdlc_rx);
+        put_bit_user_data = (void *) &t->hdlc_rx;
     }
     else
     {
@@ -2166,26 +2166,26 @@ static int restart_rx_modem(t38_gateway_state_t *s)
     s->core.to_t38.octets_per_data_packet = 1;
     switch (s->core.fast_rx_modem)
     {
-    case FAX_MODEM_V17_RX:
-        v17_rx_restart(&s->audio.modems.fast_modems.v17_rx, s->core.fast_bit_rate, s->core.short_train);
-        v17_rx_set_put_bit(&s->audio.modems.fast_modems.v17_rx, put_bit_func, put_bit_user_data);
-        set_rx_handler(s, &v17_v21_rx, &v17_v21_rx_fillin, s);
-        s->core.fast_rx_active = FAX_MODEM_V17_RX;
-        break;
     case FAX_MODEM_V27TER_RX:
-        v27ter_rx_restart(&s->audio.modems.fast_modems.v27ter_rx, s->core.fast_bit_rate, FALSE);
-        v27ter_rx_set_put_bit(&s->audio.modems.fast_modems.v27ter_rx, put_bit_func, put_bit_user_data);
+        v27ter_rx_restart(&t->fast_modems.v27ter_rx, s->core.fast_bit_rate, FALSE);
+        v27ter_rx_set_put_bit(&t->fast_modems.v27ter_rx, put_bit_func, put_bit_user_data);
         set_rx_handler(s, &v27ter_v21_rx, &v27ter_v21_rx_fillin, s);
         s->core.fast_rx_active = FAX_MODEM_V27TER_RX;
         break;
     case FAX_MODEM_V29_RX:
-        v29_rx_restart(&s->audio.modems.fast_modems.v29_rx, s->core.fast_bit_rate, FALSE);
-        v29_rx_set_put_bit(&s->audio.modems.fast_modems.v29_rx, put_bit_func, put_bit_user_data);
+        v29_rx_restart(&t->fast_modems.v29_rx, s->core.fast_bit_rate, FALSE);
+        v29_rx_set_put_bit(&t->fast_modems.v29_rx, put_bit_func, put_bit_user_data);
         set_rx_handler(s, &v29_v21_rx, &v29_v21_rx_fillin, s);
         s->core.fast_rx_active = FAX_MODEM_V29_RX;
         break;
+    case FAX_MODEM_V17_RX:
+        v17_rx_restart(&t->fast_modems.v17_rx, s->core.fast_bit_rate, s->core.short_train);
+        v17_rx_set_put_bit(&t->fast_modems.v17_rx, put_bit_func, put_bit_user_data);
+        set_rx_handler(s, &v17_v21_rx, &v17_v21_rx_fillin, s);
+        s->core.fast_rx_active = FAX_MODEM_V17_RX;
+        break;
     default:
-        set_rx_handler(s, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &(s->audio.modems.v21_rx));
+        set_rx_handler(s, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &t->v21_rx);
         s->core.fast_rx_active = FAX_MODEM_NONE;
         break;
     }

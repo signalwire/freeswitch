@@ -567,9 +567,11 @@ SPAN_DECLARE(uint8_t) v18_decode_baudot(v18_state_t *s, uint8_t ch)
 
 static void v18_rx_dtmf(void *user_data, const char digits[], int len)
 {
+#if 0
     v18_state_t *s;
 
     s = (v18_state_t *) user_data;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 

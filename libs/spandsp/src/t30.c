@@ -2534,7 +2534,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
            we sent - which would have been a T30_MCF - If the block is for the previous
            page, or the previous block of the current page, we can assume we have hit this
            condition. */
-        if (((s->rx_page_number & 0xFF) == page  &&  (s->ecm_block & 0xFF) == block)
+        if (((s->rx_page_number & 0xFF) == page  &&  ((s->ecm_block - 1) & 0xFF) == block)
             ||
             (((s->rx_page_number - 1) & 0xFF) == page  &&  s->ecm_block == 0))
         {
@@ -2568,7 +2568,6 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
         for (j = 0;  j < 8;  j++)
         {
             frame_no = (i << 3) + j;
-#if defined(VET_ALL_FCD_FRAMES)
             if (s->ecm_len[frame_no] >= 0)
             {
                 /* The correct pattern of frame lengths is they will all be 64 or 256 octets long, except the
@@ -2598,7 +2597,6 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
                     }
                 }
             }            
-#endif
             if (s->ecm_len[frame_no] < 0)
             {
                 s->ecm_frame_map[i + 3] |= (1 << j);

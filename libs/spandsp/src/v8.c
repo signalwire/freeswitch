@@ -124,7 +124,7 @@ SPAN_DECLARE(const char *) v8_call_function_to_str(int call_function)
     case V8_CALL_FUNCTION_EXTENSION:
         return "Call function is in extension octet";
     }
-    return "???";
+    return "Unknown call function";
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -199,7 +199,7 @@ SPAN_DECLARE(const char *) v8_pstn_access_to_str(int pstn_access)
     case V8_PSTN_ACCESS_DCE_ON_DIGITAL | V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR | V8_PSTN_ACCESS_CALL_DCE_CELLULAR:
         return "DCE on digital, and answering and calling modems on cellular";
     }
-    return "???";
+    return "PSTN access unknown";
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -235,7 +235,7 @@ SPAN_DECLARE(const char *) v8_pcm_modem_availability_to_str(int pcm_modem_availa
     case V8_PSTN_PCM_MODEM_V91 | V8_PSTN_PCM_MODEM_V90_V92_DIGITAL | V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE:
         return "V.91 and V.90/V.92 digital/analogue available";
     }
-    return "???";
+    return "PCM availability unknown";
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -374,6 +374,7 @@ static const uint8_t *process_pstn_access(v8_state_t *s, const uint8_t *p)
 
 static const uint8_t *process_non_standard_facilities(v8_state_t *s, const uint8_t *p)
 {
+    /* TODO: This is wrong */
     s->result.nsf = (*p >> 5) & 0x07;
     span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_nsf_to_str(s->result.nsf));
     return p;

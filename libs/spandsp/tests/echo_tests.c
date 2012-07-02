@@ -633,20 +633,20 @@ static int perform_test_sanity(void)
     int16_t tx;
     int16_t clean;
     int far_tx;
-    int16_t far_sound[SAMPLE_RATE];
+    //int16_t far_sound[SAMPLE_RATE];
     int16_t result_sound[64000];
     int result_cur;
     int outframes;
-    int local_cur;
-    int far_cur;
+    //int local_cur;
+    //int far_cur;
     //int32_t coeffs[200][128];
     //int coeff_index;
 
     print_test_title("Performing basic sanity test\n");
     ctx = echo_can_init(TEST_EC_TAPS, 0);
 
-    local_cur = 0;
-    far_cur = 0;
+    //local_cur = 0;
+    //far_cur = 0;
     result_cur = 0;
 
     echo_can_flush(ctx);
@@ -684,7 +684,7 @@ static int perform_test_sanity(void)
             far_tx = 0;
         }
 #else
-        far_sound[0] = 0;
+        //far_sound[0] = 0;
         far_tx = 0;
 #endif
         rx = channel_model(&chan_model, tx, far_tx);

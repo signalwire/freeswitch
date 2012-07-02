@@ -307,7 +307,7 @@ static void itu_compliance_tests(void)
             /* Get the upper reference output data */
             len_comp_upper = get_test_vector(decode_test_files[file + 4], itu_ref_upper, MAX_TEST_VECTOR_LEN);
 
-            if (len_data != len_comp_lower  ||  len_data != len_comp_lower)
+            if (len_data != len_comp_lower  ||  len_data != len_comp_upper)
             {
                 printf("Test data length mismatch\n");
                 exit(2);
