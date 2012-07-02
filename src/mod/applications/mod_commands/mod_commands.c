@@ -1721,8 +1721,8 @@ SWITCH_STANDARD_API(lan_addr_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#include "switch_private.h"
 #ifndef WIN32
+#include "switch_private.h"
 #ifdef HAVE_SETRLIMIT
 #include <sys/resource.h>
 #endif
