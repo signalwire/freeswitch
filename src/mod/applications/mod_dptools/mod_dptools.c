@@ -2870,7 +2870,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		}
 
 		if (!zstr(moh) && !strcasecmp(moh, "silence")) { 
-			moh = NULL;
+			moh = "silence_stream://0";
 		}
 
 		do {
