@@ -2221,10 +2221,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	const char *var;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *expanded = NULL;
-	const char *app;
+	const char *app, *app_uuid_var;
 	switch_core_session_message_t msg = { 0 };
 	char delim = ',';
 	int scope = 0;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char *app_uuid = uuid_str;
+	
+	if ((app_uuid_var = switch_channel_get_variable(channel, "app_uuid"))) {
+		app_uuid = (char *)app_uuid_var;
+		switch_channel_set_variable(channel, "app_uuid", NULL);
+	} else {
+		switch_uuid_str(uuid_str, sizeof(uuid_str));
+	}
 
 	switch_assert(application_interface);
 
@@ -2304,6 +2313,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID", app_uuid);
 		switch_event_fire(&event);
 	}
 
@@ -2327,6 +2337,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Response", resp ? resp : "_none_");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID", app_uuid);
 		switch_event_fire(&event);
 	}
 

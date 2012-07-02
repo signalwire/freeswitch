@@ -530,6 +530,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 	if (cmd_hash == CMD_EXECUTE) {
 		char *app_name = switch_event_get_header(event, "execute-app-name");
+		char *event_uuid = switch_event_get_header(event, "event-uuid");
 		char *app_arg = switch_event_get_header(event, "execute-app-arg");
 		char *content_type = switch_event_get_header(event, "content-type");
 		char *loop_h = switch_event_get_header(event, "loops");
@@ -598,6 +599,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n",
 								  switch_channel_get_name(channel), app_name, switch_str_nil(app_arg));
 				b4 = switch_micro_time_now();
+
+				if (event_uuid) {
+					switch_channel_set_variable(channel, "app_uuid", event_uuid);
+				}
+
+
 				if (switch_core_session_execute_application(session, app_name, app_arg) != SWITCH_STATUS_SUCCESS) {
 					if (!inner || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) switch_channel_clear_flag(channel, CF_BROADCAST);
 					goto done;
