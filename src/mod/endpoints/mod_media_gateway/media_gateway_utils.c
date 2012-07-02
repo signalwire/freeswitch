@@ -316,7 +316,11 @@ void mg_util_set_ctxt_string ( MgStr  *errTxt, MgMgcoContextId     *ctxtId)
       }
       else if((ctxtId->type.val == MGT_CXTID_OTHER) && (ctxtId->val.pres != NOTPRSNT))
       {
+#ifdef BIT_64
          sprintf((char*)&errTxt->val[errTxt->len], "%d", ctxtId->val.val);
+#else
+         sprintf((char*)&errTxt->val[errTxt->len], "%lu", ctxtId->val.val);
+#endif
          errTxt->len += cmStrlen((U8*)(&errTxt->val[errTxt->len]));
       }
 
