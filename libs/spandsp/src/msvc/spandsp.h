@@ -118,6 +118,7 @@
 #include <spandsp/t38_terminal.h>
 #include <spandsp/t31.h>
 #include <spandsp/adsi.h>
+#include <spandsp/ademco_contactid.h>
 #include <spandsp/oki_adpcm.h>
 #include <spandsp/ima_adpcm.h>
 #include <spandsp/g722.h>

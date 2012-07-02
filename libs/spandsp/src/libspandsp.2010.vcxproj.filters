@@ -253,6 +253,12 @@
     <ClCompile Include="msvc\gettimeofday.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="timezone.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ademco_contactid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="spandsp\adsi.h">
@@ -658,6 +664,14 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="spandsp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\t4_t6_decode.h" />
+    <ClInclude Include="spandsp\t4_t6_encode.h" />
+    <ClInclude Include="spandsp\ademco_contactid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\private\ademco_contactid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
