@@ -528,10 +528,45 @@
       <prompt phrase="Y U NO Silent Drill?!" filename="ivr-yuno_silent_drill.wav"/>
       <prompt phrase="Beacuase, the voices where pretty good" filename="ivr-beacuase.wav"/>
       <!-- The following phrases still need to be recorded -->
-      <prompt phrase="Day mode." filename="ivr-day_mode.wav"/>
-      <prompt phrase="Night mode." filename="ivr-night_mode.wav"/>
-      <prompt phrase="Lunch mode." filename="ivr-lunch_mode.wav"/>
+      <prompt phrase="Day mode..." filename="ivr-day_mode.wav"/>
+      <prompt phrase="Night mode..." filename="ivr-night_mode.wav"/>
+      <prompt phrase="Lunch mode..." filename="ivr-lunch_mode.wav"/>
       <prompt phrase="Custom mode number..." filename="ivr-custom_mode_number.wav"/>
+      <prompt phrase="You do not have permission to edit..." filename="ivr-not_have_permission_to_edit.wav"/>
+      <prompt phrase="This feature." filename="ivr-this_feature.wav"/>
+      <prompt phrase="Feature." filename="ivr-feature.wav"/>
+      <prompt phrase="Automated attendants." filename="ivr-automated_attendants.wav"/>
+      <prompt phrase="Automated attendant." filename="ivr-automated_attendant.wav"/>
+      <prompt phrase="Please enter the extension number of the..." filename="ivr-please_enter_extension_number_of.wav"/>
+      <prompt phrase="...that you would like to modify." filename="ivr-that_you_would_like_to_modify.wav"/>
+      <prompt phrase="Invalid extension - please try again." filename="ivr-invalid_extension_try_again.wav"/>
+      <prompt phrase="To modify main prompts..." filename="ivr-modify_main_prompts.wav"/>
+      <prompt phrase="To modify option prompts..." filename="ivr-modify_option_prompts.wav"/>
+      <prompt phrase="To hear usage statistics..." filename="ivr-hear_usage_stats.wav"/>
+      <prompt phrase="At the tone..." filename="ivr-at_the_tone.wav"/>
+      <prompt phrase="Please record the prompt." filename="ivr-record_prompt.wav"/>
+      <prompt phrase="Please record the short greeting." filename="ivr-record_short_greeting.wav"/>
+      <prompt phrase="Please record the invalid sound prompt." filename="ivr-record_invalid_sound.wav"/>
+      <prompt phrase="Please record the exit sound prompt." filename="ivr-record_exit_sound.wav"/>
+      <prompt phrase="When finished, press any key." filename="ivr-when_finished_press_any_key.wav"/>
+      <prompt phrase="Press the key of the prompt you would like to modify." filename="ivr-press_key_of_prompt_to_modify.wav"/>
+      <prompt phrase="Key..." filename="ivr-key.wav"/>
+      <prompt phrase="...does not contain a recording." filename="ivr-does_not_contain_a_recording.wav"/>
+      <prompt phrase="...already contains a recording." filename="ivr-already_contains_a_recording.wav"/>
+      <prompt phrase="Option..." filename="ivr-option.wav"/>
+      <prompt phrase="...has had..." filename="ivr-has_had.wav"/>
+      <prompt phrase="...visitors." filename="ivr-visitors.wav"/>
+      <prompt phrase="...visitor." filename="ivr-visitor.wav"/>
+      <prompt phrase="To reset usage totals..." filename="ivr-reset_usage_totals.wav"/>
+      <prompt phrase="You have chosen to reset usage totals." filename="ivr-reset_usage_totals_confirm.wav"/>
+      <prompt phrase="...to confirm." filename="ivr-to_confirm.wav"/>
+      <prompt phrase="Usage totals have been reset to zero." filename="ivr-usage_totals_have_been_reset.wav"/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="Everyone is koo koo for CudaTel!" filename="misc-koo_koo_for_cudatel.wav"/>
+      <prompt phrase="I'm pretty sure CudaTel's patented Automagicatronical configuration takes care of it." filename="misc-cudatel_automagicatronical.wav"/>
 
     </ivr>
     <misc>
