@@ -403,7 +403,7 @@ SWITCH_STANDARD_API(start_send_tdd_api)
 	}
 
 
-    if (!(psession = switch_core_session_locate(cmd))) {
+    if (!(psession = switch_core_session_locate(puuid))) {
         stream->write_function(stream, "-ERR Cannot locate session\n");
         goto end;
     }
@@ -735,6 +735,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
     SWITCH_ADD_API(api_interface, "stop_tdd_detect", "Stop background tdd detection", stop_tdd_detect_api, "<uuid>");
 
     SWITCH_ADD_API(api_interface, "uuid_send_tdd", "send tdd data to a uuid", start_send_tdd_api, "<uuid> <text>");
+
+	switch_console_set_complete("add uuid_send_tdd ::console::list_uuid");
 
 
 
