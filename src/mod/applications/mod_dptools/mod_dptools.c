@@ -2865,12 +2865,12 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			camp_data = (char *) data;
 		}
 
-		if (!(moh = switch_channel_get_hold_music(caller_channel))) {
-			moh = switch_channel_get_variable(caller_channel, "campon_hold_music");
+		if (!(moh = switch_channel_get_variable(caller_channel, "campon_hold_music"))) {
+			moh = switch_channel_get_hold_music(caller_channel);
 		}
 
 		if (!zstr(moh) && !strcasecmp(moh, "silence")) { 
-			moh = "silence_stream://0";
+			moh = NULL;
 		}
 
 		do {
