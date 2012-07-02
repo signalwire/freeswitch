@@ -215,23 +215,25 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 
 static switch_status_t modify_mid(char* mid)
 {
-	char* 			dup = NULL;
+	char 			dup[64];
 	char* 			val[10];
 	int 			count;
 
 	switch_assert(mid);
 
+	memset(&dup[0],0,sizeof(dup));
+
 	/* If MID type is IP then add mid into [] brackets ,
 	 * If MID type is domain then add mid into <> brackets *
 	 */
 
-	dup = strdup(mid);
-	count = switch_split(dup, '.', val);
+	strcpy(&dup[0],mid);
+	count = switch_split(&dup[0], '.', val);
 
 	if(!count) {
 		/* Input string is not separated by '.', check if its separated by '-' as format could be xxx-xx-xxx/xxx-xx-xx-xxx  */
-		free(dup);
-		dup = strdup(mid);
+		memset(&dup[0],0,sizeof(dup));
+		strcpy(&dup[0],mid);
 		if(0 == (count = switch_split(dup, '-', val))){
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid input MID string[%s]\n",mid);
 			return SWITCH_STATUS_FALSE;
@@ -239,29 +241,27 @@ static switch_status_t modify_mid(char* mid)
 	}
 
 	if(('<' == val[0][0]) || ('[' == val[0][0])){
-		free(dup);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MID[%s] is already prefixed with proper brackets \n",mid);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MID = %s is already prefixed with proper brackets \n",mid);
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
 	/*first check could be if count is 3 means domain name as generally we have xxx-xx-xxx/xxx.xx.xxx domain */
 	if(3 == count){
 		/* domain-type, add value into <> */
-		free(dup);
-		dup = strdup(mid);
+		memset(&dup[0],0,sizeof(dup));
+		strcpy(&dup[0],mid);
 		sprintf(mid,"<%s>",dup);
 	}else if(4 == count){
 		/* IP address in xxx.xxx.xxx.xxx format */
-		free(dup);
-		dup = strdup(mid);
+		memset(&dup[0],0,sizeof(dup));
+		strcpy(&dup[0],mid);
 		sprintf(mid,"[%s]",dup);
 	}else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid input MID string[%s]\n",mid);
-		free(dup);
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added proper brackets to MID = %s \n",mid);
 
-	free(dup);
 	return SWITCH_STATUS_SUCCESS;
 }
