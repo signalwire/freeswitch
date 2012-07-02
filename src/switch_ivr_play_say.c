@@ -1882,7 +1882,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	int term_required = 0;
 	
 
-	if (*valid_terminators == '=') {
+	if (valid_terminators && *valid_terminators == '=') {
 		term_required = 1;
 	}
 
