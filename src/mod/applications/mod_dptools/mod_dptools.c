@@ -3515,6 +3515,10 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 	name = switch_core_session_sprintf(nsession, "pickup/%s", pickup);
 	switch_channel_set_name(nchannel, name);
 	switch_channel_set_variable(nchannel, "process_cdr", "false");
+	switch_channel_set_variable(nchannel, "presence_id", NULL);
+
+	switch_event_del_header(var_event, "presence_id");
+
 	pickup_add_session(nsession, pickup);
 	switch_channel_set_flag(nchannel, CF_PICKUP);
 	
@@ -3565,7 +3569,7 @@ SWITCH_STANDARD_APP(pickup_function)
 			
 			switch_channel_set_flag(pickup_channel, CF_CHANNEL_SWAP);
 			switch_channel_set_variable(pickup_channel, "channel_swap_uuid", switch_core_session_get_uuid(session));
-
+			
 			name = caller_profile->caller_id_name;
 			num = caller_profile->caller_id_number;
 
