@@ -120,6 +120,7 @@ static void put_text_msg(void *user_data, const uint8_t *msg, int len)
         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", "mod_spandsp");
         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "tdd");
         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "TDD MESSAGE");
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "TDD-Data", (char *)msg);
         switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(pvt->session));
         switch_event_add_body(event, "%s\n\n", (char *)msg);
 
