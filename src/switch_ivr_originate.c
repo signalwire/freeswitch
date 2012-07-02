@@ -2331,7 +2331,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					q = !q;
 				}
 
-				if (end && p < end && *p == ',') {
+				if (end && p < end && *p == ',' && *(p-1) != '\\') {
 					
 					if (q || alt) {
 						*p = QUOTED_ESC_COMMA;

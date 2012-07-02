@@ -87,7 +87,8 @@ INCLUDES = -I$(top_builddir)
 
 lib_LTLIBRARIES = libspandsp.la
 
-libspandsp_la_SOURCES = adsi.c \
+libspandsp_la_SOURCES = ademco_contactid.c \
+                        adsi.c \
                         async.c \
                         at_interpreter.c \
                         awgn.c \
@@ -173,7 +174,8 @@ libspandsp_la_SOURCES = adsi.c \
 
 libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
 
-nobase_include_HEADERS = spandsp/adsi.h \
+nobase_include_HEADERS = spandsp/ademco_contactid.h \
+                         spandsp/adsi.h \
                          spandsp/async.h \
                          spandsp/arctan2.h \
                          spandsp/at_interpreter.h \
@@ -257,6 +259,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/vector_float.h \
                          spandsp/vector_int.h \
                          spandsp/version.h \
+                         spandsp/private/ademco_contactid.h \
                          spandsp/private/adsi.h \
                          spandsp/private/async.h \
                          spandsp/private/at_interpreter.h \

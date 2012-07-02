@@ -50,7 +50,8 @@ INCLUDES = -I$(top_builddir)/src -I$(top_builddir)/spandsp-sim -DDATADIR="\"$(pk
 
 LIBDIR = -L$(top_builddir)/src
 
-noinst_PROGRAMS =   adsi_tests \
+noinst_PROGRAMS =   ademco_contactid_tests \
+                    adsi_tests \
                     async_tests \
                     at_interpreter_tests \
                     awgn_tests \
@@ -133,6 +134,9 @@ noinst_HEADERS =    echo_monitor.h \
                     modem_monitor.h \
                     pcap_parse.h \
                     udptl.h
+
+ademco_contactid_tests_SOURCES = ademco_contactid_tests.c
+ademco_contactid_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 adsi_tests_SOURCES = adsi_tests.c
 adsi_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp

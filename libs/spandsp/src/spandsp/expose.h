@@ -93,6 +93,7 @@
 #include <spandsp/private/t31.h>
 #include <spandsp/private/v18.h>
 #include <spandsp/private/adsi.h>
+#include <spandsp/private/ademco_contactid.h>
 
 #endif
 /*- End of file ------------------------------------------------------------*/

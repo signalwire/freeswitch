@@ -271,14 +271,11 @@ static void non_ecm_rx_status(void *user_data, int status)
 
 static void non_ecm_put_bit(void *user_data, int bit)
 {
-    faxtester_state_t *s;
-
     if (bit < 0)
     {
         non_ecm_rx_status(user_data, bit);
         return;
     }
-    s = (faxtester_state_t *) user_data;
 }
 /*- End of function --------------------------------------------------------*/
 

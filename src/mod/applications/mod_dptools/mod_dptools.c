@@ -2869,6 +2869,10 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			moh = switch_channel_get_variable(caller_channel, "campon_hold_music");
 		}
 
+		if (!zstr(moh) && !strcasecmp(moh, "silence")) { 
+			moh = NULL;
+		}
+
 		do {
 			fail = 0;
 

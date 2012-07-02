@@ -34,6 +34,7 @@
 
 #include <switch.h>
 #include <switch_event.h>
+
 //#define SWITCH_EVENT_RECYCLE
 #define DISPATCH_QUEUE_LEN 100
 //#define DEBUG_DISPATCH_QUEUES
@@ -87,7 +88,6 @@ static uint64_t EVENT_SEQUENCE_NR = 0;
 static switch_queue_t *EVENT_RECYCLE_QUEUE = NULL;
 static switch_queue_t *EVENT_HEADER_RECYCLE_QUEUE = NULL;
 #endif
-static void launch_dispatch_threads(uint32_t max, switch_memory_pool_t *pool);
 
 static char *my_dup(const char *s)
 {
@@ -305,7 +305,7 @@ static switch_status_t switch_event_queue_dispatch_event(switch_event_t **eventp
 		
 		if (launch) {
 			if (SOFT_MAX_DISPATCH + 1 < MAX_DISPATCH) {
-				launch_dispatch_threads(SOFT_MAX_DISPATCH + 1, RUNTIME_POOL);
+				switch_event_launch_dispatch_threads(SOFT_MAX_DISPATCH + 1);
 			}
 		}
 
@@ -515,12 +515,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void launch_dispatch_threads(uint32_t max, switch_memory_pool_t *pool)
+SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max)
 {
 	switch_threadattr_t *thd_attr;
 	uint32_t index = 0;
 	int launched = 0;
 	uint32_t sanity = 200;
+
+	switch_memory_pool_t *pool = RUNTIME_POOL;
 
 	if (max > MAX_DISPATCH) {
 		return;
@@ -532,6 +534,7 @@ static void launch_dispatch_threads(uint32_t max, switch_memory_pool_t *pool)
 
 	for (index = SOFT_MAX_DISPATCH; index < max && index < MAX_DISPATCH; index++) {
 		if (EVENT_DISPATCH_QUEUE_THREADS[index]) {
+			printf("Index exists continue\n");
 			continue;
 		}
 
@@ -540,13 +543,13 @@ static void launch_dispatch_threads(uint32_t max, switch_memory_pool_t *pool)
 		switch_threadattr_priority_increase(thd_attr);
 		switch_thread_create(&EVENT_DISPATCH_QUEUE_THREADS[index], thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE, pool);
 		while(--sanity && !EVENT_DISPATCH_QUEUE_RUNNING[index]) switch_yield(10000);
+
 		if (index == 1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Create event dispatch thread %d\n", index);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Create event dispatch thread %d\n", index);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Create additional event dispatch thread %d\n", index);
 		}
 		launched++;
-		break;
 	}
 
 	SOFT_MAX_DISPATCH = index;
@@ -598,7 +601,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	//switch_threadattr_priority_increase(thd_attr);
 
 	switch_queue_create(&EVENT_DISPATCH_QUEUE, DISPATCH_QUEUE_LEN * MAX_DISPATCH, pool);
-	launch_dispatch_threads(1, RUNTIME_POOL);
+	switch_event_launch_dispatch_threads(1);
 
 	//switch_thread_create(&EVENT_QUEUE_THREADS[0], thd_attr, switch_event_thread, EVENT_QUEUE[0], RUNTIME_POOL);
 	//switch_thread_create(&EVENT_QUEUE_THREADS[1], thd_attr, switch_event_thread, EVENT_QUEUE[1], RUNTIME_POOL);

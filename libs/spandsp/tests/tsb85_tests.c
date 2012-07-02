@@ -80,6 +80,8 @@ int test_local_interrupt = FALSE;
 
 const char *output_tiff_file_name;
 
+int log_audio = FALSE;
+
 fax_state_t *fax;
 faxtester_state_t state;
 
@@ -1058,10 +1060,8 @@ static void exchange(faxtester_state_t *s)
     int len;
     int i;
     int total_audio_time;
-    int log_audio;
     logging_state_t *logging;
 
-    log_audio = TRUE;
     output_tiff_file_name = OUTPUT_TIFF_FILE_NAME;
 
     if (log_audio)
@@ -1295,10 +1295,14 @@ int main(int argc, char *argv[])
 
     xml_file_name = "../spandsp/tsb85.xml";
     test_name = "MRGN01";
-    while ((opt = getopt(argc, argv, "x:")) != -1)
+    log_audio = FALSE;
+    while ((opt = getopt(argc, argv, "lx:")) != -1)
     {
         switch (opt)
         {
+        case 'l':
+            log_audio = TRUE;
+            break;
         case 'x':
             xml_file_name = optarg;
             break;

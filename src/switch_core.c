@@ -1538,7 +1538,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_log_init(runtime.memory_pool, runtime.colorize_console);
 
 	if (flags & SCF_MINIMAL) return SWITCH_STATUS_SUCCESS;
-													   
+			
 	runtime.tipping_point = 0;
 	runtime.timer_affinity = -1;
 	runtime.microseconds_per_tick = 20000;
@@ -1813,6 +1813,23 @@ static void switch_load_core_config(const char *file)
 					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
 					runtime.tipping_point = atoi(val);
+				} else if (!strcasecmp(var, "initial-event-threads") && !zstr(val)) {
+					int tmp = atoi(val);
+
+
+					if (tmp > runtime.cpu_count / 2) {
+						tmp = runtime.cpu_count / 2;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "This value cannot be higher than %d so setting it to that value\n", 
+										  runtime.cpu_count / 2);
+					}
+
+					if (tmp < 1) {
+						tmp = 1;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "This value cannot be lower than 1 so setting it to that level\n");
+					}
+
+					switch_event_launch_dispatch_threads(tmp);
+
 				} else if (!strcasecmp(var, "1ms-timer") && switch_true(val)) {
 					runtime.microseconds_per_tick = 1000;
 				} else if (!strcasecmp(var, "timer-affinity") && !zstr(val)) {

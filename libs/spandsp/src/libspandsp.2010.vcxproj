@@ -155,6 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ademco_contactid.c" />
     <ClCompile Include="adsi.c" />
     <ClCompile Include="async.c" />
     <ClCompile Include="at_interpreter.c" />
@@ -239,6 +240,7 @@
     <ClCompile Include="msvc\gettimeofday.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="spandsp\ademco_contactid.h" />
     <ClInclude Include="spandsp\adsi.h" />
     <ClInclude Include="spandsp\async.h" />
     <ClInclude Include="spandsp\arctan2.h" />
@@ -279,6 +281,7 @@
     <ClInclude Include="spandsp\playout.h" />
     <ClInclude Include="spandsp\plc.h" />
     <ClInclude Include="spandsp\power_meter.h" />
+    <ClInclude Include="spandsp\private\ademco_contactid.h" />
     <ClInclude Include="spandsp\queue.h" />
     <ClInclude Include="spandsp\saturated.h" />
     <ClInclude Include="spandsp\schedule.h" />

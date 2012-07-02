@@ -112,9 +112,11 @@ static const int year_lengths[2] =
     DAYS_PER_LEAP_YEAR
 };
 
-static int increment_overflow(int *number, int delta)
+static int add_with_overflow_detection(int *number, int delta)
 {
-    int last_number;
+    /* This needs to be considered volatile, or clever optimisation destroys
+       the effect of the the rollover detection logic */
+    volatile int last_number;
 
     last_number = *number;
     *number += delta;
@@ -209,7 +211,7 @@ static struct tm *time_sub(const time_t * const timep, const long int offset, co
         if (idelta == 0)
             idelta = (tdays < 0)  ?  -1  :  1;
         newy = y;
-        if (increment_overflow(&newy, idelta))
+        if (add_with_overflow_detection(&newy, idelta))
             return NULL;
         leapdays = leaps_thru_end_of(newy - 1) - leaps_thru_end_of(y - 1);
         tdays -= ((time_t) newy - y)*DAYS_PER_NON_LEAP_YEAR;
@@ -234,18 +236,18 @@ static struct tm *time_sub(const time_t * const timep, const long int offset, co
     }
     while (idays < 0)
     {
-        if (increment_overflow(&y, -1))
+        if (add_with_overflow_detection(&y, -1))
             return NULL;
         idays += year_lengths[isleap(y)];
     }
     while (idays >= year_lengths[isleap(y)])
     {
         idays -= year_lengths[isleap(y)];
-        if (increment_overflow(&y, 1))
+        if (add_with_overflow_detection(&y, 1))
             return NULL;
     }
     tmp->tm_year = y;
-    if (increment_overflow(&tmp->tm_year, -TM_YEAR_BASE))
+    if (add_with_overflow_detection(&tmp->tm_year, -TM_YEAR_BASE))
         return NULL;
     tmp->tm_yday = idays;
     /* The "extra" mods below avoid overflow problems. */

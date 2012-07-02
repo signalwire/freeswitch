@@ -634,7 +634,7 @@ do
 done
 echo v27ter_tests completed OK
 
-for OPTS in "-b 9600 -s -42 -n -62" "-b 7200 -s -42 -n -58" "-b 4800 -s -42 -n -55"
+for OPTS in "-b 9600 -s -42 -n -62" "-b 7200 -s -42 -n -59" "-b 4800 -s -42 -n -55"
 do
     ./v29_tests ${OPTS} >$STDOUT_DEST 2>$STDERR_DEST
     RETVAL=$?

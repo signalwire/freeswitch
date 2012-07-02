@@ -89,7 +89,7 @@ int decode_test = FALSE;
 int rx_bits = 0;
 
 t30_state_t t30_dummy;
-t4_state_t t4_state;
+t4_state_t t4_rx_state;
 int t4_up = FALSE;
 
 hdlc_rx_state_t hdlcrx;
@@ -291,12 +291,12 @@ static void t4_begin(void)
     int i;
 
     //printf("Begin T.4 - %d %d %d %d\n", line_encoding, x_resolution, y_resolution, image_width);
-    t4_rx_set_rx_encoding(&t4_state, line_encoding);
-    t4_rx_set_x_resolution(&t4_state, x_resolution);
-    t4_rx_set_y_resolution(&t4_state, y_resolution);
-    t4_rx_set_image_width(&t4_state, image_width);
+    t4_rx_set_rx_encoding(&t4_rx_state, line_encoding);
+    t4_rx_set_x_resolution(&t4_rx_state, x_resolution);
+    t4_rx_set_y_resolution(&t4_rx_state, y_resolution);
+    t4_rx_set_image_width(&t4_rx_state, image_width);
 
-    t4_rx_start_page(&t4_state);
+    t4_rx_start_page(&t4_rx_state);
     t4_up = TRUE;
 
     for (i = 0;  i < 256;  i++)
@@ -316,13 +316,13 @@ static void t4_end(void)
         for (i = 0;  i < 256;  i++)
         {
             if (ecm_len[i] > 0)
-                t4_rx_put_chunk(&t4_state, ecm_data[i], ecm_len[i]);
+                t4_rx_put_chunk(&t4_rx_state, ecm_data[i], ecm_len[i]);
             fprintf(stderr, "%d", (ecm_len[i] <= 0)  ?  0  :  1);
         }
         fprintf(stderr, "\n");
     }
-    t4_rx_end_page(&t4_state);
-    t4_rx_get_transfer_statistics(&t4_state, &stats);
+    t4_rx_end_page(&t4_rx_state);
+    t4_rx_get_transfer_statistics(&t4_rx_state, &stats);
     fprintf(stderr, "Pages = %d\n", stats.pages_transferred);
     fprintf(stderr, "Image size = %dx%d\n", stats.width, stats.length);
     fprintf(stderr, "Image resolution = %dx%d\n", stats.x_resolution, stats.y_resolution);
@@ -378,7 +378,7 @@ static void v17_put_bit(void *user_data, int bit)
     }
     else
     {
-        if (t4_rx_put_bit(&t4_state, bit))
+        if (t4_rx_put_bit(&t4_rx_state, bit))
         {
             t4_end();
             fprintf(stderr, "End of page detected\n");
@@ -414,7 +414,7 @@ static void v29_put_bit(void *user_data, int bit)
     }
     else
     {
-        if (t4_rx_put_bit(&t4_state, bit))
+        if (t4_rx_put_bit(&t4_rx_state, bit))
         {
             t4_end();
             fprintf(stderr, "End of page detected\n");
@@ -450,7 +450,7 @@ static void v27ter_put_bit(void *user_data, int bit)
     }
     else
     {
-        if (t4_rx_put_bit(&t4_state, bit))
+        if (t4_rx_put_bit(&t4_rx_state, bit))
         {
             t4_end();
             fprintf(stderr, "End of page detected\n");
@@ -527,7 +527,7 @@ int main(int argc, char *argv[])
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
 #endif
 
-    if (t4_rx_init(&t4_state, "fax_decode.tif", T4_COMPRESSION_ITU_T4_2D) == NULL)
+    if (t4_rx_init(&t4_rx_state, "fax_decode.tif", T4_COMPRESSION_ITU_T4_2D) == NULL)
     {
         fprintf(stderr, "Failed to init\n");
         exit(0);
@@ -543,7 +543,7 @@ int main(int argc, char *argv[])
         v29_rx(v29, amp, len);
         //v27ter_rx(v27ter, amp, len);
     }
-    t4_rx_release(&t4_state);
+    t4_rx_release(&t4_rx_state);
 
     if (sf_close(inhandle))
     {
