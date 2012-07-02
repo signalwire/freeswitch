@@ -13,6 +13,9 @@ libtool
 ltmain.sh
 missing
 
+ptlib
+opal
+
 *_manifest.rc
 *.pc
 
