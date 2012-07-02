@@ -132,6 +132,7 @@ switch_status_t mg_send_audit_rsp(SuId suId, MgMgcoCommand *req);
 switch_status_t handle_mg_audit_cmd(SuId suId, MgMgcoCommand *auditReq);
 
 switch_status_t mg_send_modify_rsp(SuId suId, MgMgcoCommand *req);
+switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req);
 void mg_util_set_term_string ( MgStr  *errTxt, MgMgcoTermId   *termId); 
 MgMgcoTermIdLst *mg_get_term_id_list(MgMgcoCommand *cmd);
 switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq);

@@ -182,7 +182,7 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                 case MGT_TXNREQ:
                 {
                     MgMgcoTxnReq* txnReq; 
-                    MgMgcoTransId transId; /* XXX */
+                    /*MgMgcoTransId transId; *//* XXX */
                     int axnIter;
                     txnReq = &(msg->body.u.tl.txns[txnIter]->u.req);
 
@@ -207,14 +207,13 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                             MgMgcoCommand mgCmd;
 			    memset(&mgCmd, 0, sizeof(mgCmd));
                             mgCmd.peerId = msg->lcl.id;
-                            mgCmd.transId = transId;
                             mgCmd.u.mgCmdInd[0] = cmdReq;
                             
                             
                             /* XXX Handle choose context before this */
                             
                             mgCmd.contextId = ctxId;
-                            mgCmd.transId = transId;
+                            /*mgCmd.transId = transId;*/
 
                             mgCmd.cmdStatus.pres = PRSNT_NODEF;
                             
@@ -353,7 +352,7 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
 /*****************************************************************************************************************************/
 void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 {
-	uint32_t txn_id = 0x00;
+	U32 txn_id = 0x00;
 	MgMgcoInd  *mgErr;
 	MgStr      errTxt;
 	MgMgcoContextId   ctxtId;
@@ -373,7 +372,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 		ctxtId.type.pres = NOTPRSNT;
 		ctxtId.val.pres  = NOTPRSNT;
 
-		mg_util_set_txn_string(&errTxt, (U32*)&txn_id);
+		mg_util_set_txn_string(&errTxt, &txn_id);
 
 		if (SWITCH_STATUS_SUCCESS == mg_build_mgco_err_request(&mgErr, txn_id, &ctxtId,
 						MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER, &errTxt)) {
@@ -427,6 +426,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 					case MGT_SUB:
 						{
 							/*MgMgcoSubAudReq *addReq = &cmdReq->cmd.u.sub;*/
+							mg_send_subtract_rsp(suId, cmd);
+							break;
 						}
 					case MGT_SVCCHG:
 						{
