@@ -430,7 +430,7 @@ bootstrap_libs_post() {
     ldns)
       cd $BASEDIR/libs/ldns
       if test ! -x install-sh; then
-        ex automake --add-missing --copy
+        ex ${AUTOMAKE:-automake} --add-missing --copy
         ex rm -rf autom4te*.cache
       fi
       ;;
