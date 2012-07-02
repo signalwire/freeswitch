@@ -1935,12 +1935,14 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			ldl_session_destroy(&tech_pvt->dlsession);
 		}
 
-		switch_thread_rwlock_unlock(tech_pvt->profile->rwlock);
-
-		if (tech_pvt->profile->purge) {
-			mdl_profile_t *profile = tech_pvt->profile;
-			if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
+		if (tech_pvt->profile) {
+			switch_thread_rwlock_unlock(tech_pvt->profile->rwlock);
+			
+			if (tech_pvt->profile->purge) {
+				mdl_profile_t *profile = tech_pvt->profile;
+				if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
+				}
 			}
 		}
 	}
@@ -2450,6 +2452,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
 			}
 
+			
+
+
 			if (!ldl_handle_ready(mdl_profile->handle)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "Doh! we are not logged in yet!\n");
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -2473,6 +2478,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			tech_pvt->profile = mdl_profile;
 			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			tech_pvt->flags |= globals.flags;
 			tech_pvt->flags |= mdl_profile->flags;
@@ -2563,7 +2569,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 		switch_safe_free(f_cid_msg);
 
-		tech_pvt->profile = mdl_profile;
+
 		ldl_session_set_private(dlsession, *new_session);
 		ldl_session_set_value(dlsession, "dnis", dnis);
 		ldl_session_set_value(dlsession, "caller_id_name", outbound_profile->caller_id_name);
