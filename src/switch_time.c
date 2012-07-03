@@ -70,6 +70,9 @@ static int MONO = 1;
 static int MONO = 0;
 #endif
 
+
+static int SYSTEM_TIME = 0;
+
 /* clock_nanosleep works badly on some kernels but really well on others.
    timerfd seems to work well as long as it exists so if you have timerfd we'll also enable clock_nanosleep by default.
 */
@@ -139,6 +142,8 @@ struct timer_matrix {
 typedef struct timer_matrix timer_matrix_t;
 
 static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
+
+static switch_time_t time_now(int64_t offset);
 
 SWITCH_DECLARE(void) switch_os_yield(void)
 {
@@ -313,6 +318,11 @@ SWITCH_DECLARE(switch_time_t) switch_micro_time_now(void)
 	return (globals.RUNNING == 1 && runtime.timestamp) ? runtime.timestamp : switch_time_now();
 }
 
+SWITCH_DECLARE(switch_time_t) switch_mono_micro_time_now(void)
+{
+	return time_now(-1);
+}
+
 
 SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t)
 {
@@ -331,6 +341,12 @@ SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 #else
 	MONO = 0;
 #endif
+}
+
+
+SWITCH_DECLARE(void) switch_time_set_use_system_time(switch_bool_t enable)
+{
+	SYSTEM_TIME = enable;
 }
 
 
@@ -376,9 +392,15 @@ static switch_time_t time_now(int64_t offset)
 	if (MONO) {
 #ifndef WIN32
 		struct timespec ts;
-		clock_gettime(CLOCK_MONOTONIC, &ts);
+		clock_gettime(offset ? CLOCK_MONOTONIC : CLOCK_REALTIME, &ts);
+		if (offset < 0) offset = 0;
 		now = ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec / 1000) + offset;
 #else
+		if (offset == 0) {
+			return switch_time_now();
+		} else if (offset < 0) offset = 0;
+		
+
 		if (win32_use_qpc) {
 			/* Use QueryPerformanceCounter */
 			uint64_t count = 0;
@@ -431,10 +453,22 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 
 	runtime.reference = switch_time_now();
 
-	runtime.offset = runtime.reference - time_now(0);
-	runtime.reference = time_now(runtime.offset);
+	if (SYSTEM_TIME) {
+		runtime.reference = time_now(0);
+		runtime.mono_reference = time_now(-1);
+		runtime.offset = 0;
+	} else {
+		runtime.offset = runtime.reference - time_now(0);
+		runtime.reference = time_now(runtime.offset);
+	}
+
+
 	if (runtime.reference - last_time > 1000000 || last_time == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Clock synchronized to system time.\n");
+		if (SYSTEM_TIME) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Clock is already configured to always report system time.\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Clock synchronized to system time.\n");
+		}
 	}
 	last_time = runtime.reference;
 

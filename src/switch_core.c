@@ -1560,6 +1560,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	runtime.running = 1;
 	runtime.initiated = switch_time_now();
+	runtime.mono_initiated = switch_mono_micro_time_now();
 	
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 
@@ -1779,6 +1780,8 @@ static void switch_load_core_config(const char *file)
 					if (tmp > 0) {
 						switch_core_default_dtmf_duration((uint32_t) tmp);
 					}
+				} else if (!strcasecmp(var, "enable-use-system-time")) {
+					switch_time_set_use_system_time(switch_true(val));
 				} else if (!strcasecmp(var, "enable-monotonic-timing")) {
 					switch_time_set_monotonic(switch_true(val));
 				} else if (!strcasecmp(var, "enable-softtimer-timerfd")) {
@@ -1990,7 +1993,7 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
 
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 {
-	return switch_micro_time_now() - runtime.initiated;
+	return switch_mono_micro_time_now() - runtime.mono_initiated;
 }
 
 

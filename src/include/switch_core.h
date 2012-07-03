@@ -2107,6 +2107,7 @@ SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_m
  \return the current epoch time in microseconds
 */
 SWITCH_DECLARE(switch_time_t) switch_micro_time_now(void);
+SWITCH_DECLARE(switch_time_t) switch_mono_micro_time_now(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void);
@@ -2130,6 +2131,7 @@ SWITCH_DECLARE(void) switch_time_set_timerfd(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_nanosleep(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_matrix(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable);
+SWITCH_DECLARE(void) switch_time_set_use_system_time(switch_bool_t enable);
 SWITCH_DECLARE(uint32_t) switch_core_min_dtmf_duration(uint32_t duration);
 SWITCH_DECLARE(uint32_t) switch_core_max_dtmf_duration(uint32_t duration);
 SWITCH_DECLARE(double) switch_core_min_idle_cpu(double new_limit);
