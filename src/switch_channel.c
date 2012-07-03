@@ -606,6 +606,10 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 	const char *call_info = NULL;
 	char *call_info_state = "active";
 
+	if (switch_channel_test_flag(channel, CF_NO_PRESENCE)) {
+		return;
+	}
+
 	if (!status) {
 		type = SWITCH_EVENT_PRESENCE_OUT;
 	}

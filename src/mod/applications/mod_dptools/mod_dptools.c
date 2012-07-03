@@ -3521,6 +3521,7 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 
 	pickup_add_session(nsession, pickup);
 	switch_channel_set_flag(nchannel, CF_PICKUP);
+	switch_channel_set_flag(nchannel, CF_NO_PRESENCE);
 	
 	goto done;
 
