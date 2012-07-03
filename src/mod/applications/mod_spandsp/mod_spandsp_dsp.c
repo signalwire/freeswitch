@@ -146,6 +146,36 @@ static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 
 }
 
+static int get_v18_mode(switch_core_session_t *session)
+{
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    const char *var;
+    int r = V18_MODE_BELL103;
+
+    if ((var = switch_channel_get_variable(channel, "v18_mode"))) {
+        if (!strcasecmp(var, "5BIT_45") || !strcasecmp(var, "baudot")) {
+            r = V18_MODE_5BIT_45;
+        } else if (!strcasecmp(var, "5BIT_50")) {
+            r = V18_MODE_5BIT_50;
+        } else if (!strcasecmp(var, "DTMF")) {
+            r = V18_MODE_DTMF;
+        } else if (!strcasecmp(var, "EDT")) {
+            r = V18_MODE_EDT;
+        } else if (!strcasecmp(var, "BELL103") || !strcasecmp(var, "ascii")) {
+            r = V18_MODE_BELL103;
+        } else if (!strcasecmp(var, "V23VIDEOTEX")) {
+            r = V18_MODE_V23VIDEOTEX;
+        } else if (!strcasecmp(var, "V21TEXTPHONE")) {
+            r = V18_MODE_V21TEXTPHONE;
+        } else if (!strcasecmp(var, "V18TEXTPHONE")) {
+            r = V18_MODE_V18TEXTPHONE;
+        }
+    }
+
+    return r;
+}
+
+
 switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const char *text)
 {
     v18_state_t *tdd_state;
@@ -176,9 +206,9 @@ switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const c
         return SWITCH_STATUS_FALSE;
     }
 
-    tdd_state = v18_init(NULL, TRUE, V18_MODE_5BIT_45, put_text_msg, NULL);
+    tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), put_text_msg, NULL);
 
-
+    
 	v18_put(tdd_state, text, -1);
 
     while(switch_channel_ready(channel)) {
@@ -223,7 +253,7 @@ switch_status_t spandsp_tdd_encode_session(switch_core_session_t *session, const
 	}
 
 	pvt->session = session;
-	pvt->tdd_state = v18_init(NULL, TRUE, V18_MODE_5BIT_45, put_text_msg, NULL);
+	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), put_text_msg, NULL);
     pvt->head_lead = TDD_LEAD;
 
 	v18_put(pvt->tdd_state, text, -1);
@@ -301,7 +331,7 @@ switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session)
 	}
 
 	pvt->session = session;
-	pvt->tdd_state = v18_init(NULL, FALSE, V18_MODE_5BIT_45, put_text_msg, pvt);
+	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), put_text_msg, pvt);
 
 	if ((status = switch_core_media_bug_add(session, "spandsp_tdd_decode", NULL,
                                             tdd_decode_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
