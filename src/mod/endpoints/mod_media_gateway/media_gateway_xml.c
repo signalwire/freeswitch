@@ -12,7 +12,7 @@
 static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) ;
 static switch_xml_config_item_t *get_peer_instructions(mg_peer_profile_t *profile) ;
 static int mg_sap_id;
-static switch_status_t modify_mid(char* mid);
+static switch_status_t modify_mid(char** pmid);
 
 /****************************************************************************************************************************/
 switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
@@ -59,9 +59,10 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 			profile->total_peers++;
 		}
 
-		if(SWITCH_STATUS_FALSE == (status = modify_mid(profile->mid))){
+		if(SWITCH_STATUS_FALSE == (status = modify_mid(&profile->mid))){
 			goto done;
 		}
+
 
 		profile->idx = ++mg_sap_id;
 
@@ -100,7 +101,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 					goto done;
 				}
 
-				if(SWITCH_STATUS_FALSE == (status = modify_mid(peer_profile->mid))){
+				if(SWITCH_STATUS_FALSE == (status = modify_mid(&peer_profile->mid))){
 					goto done;
 				}
 
@@ -215,55 +216,57 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 
 /****************************************************************************************************************************/
 
-static switch_status_t modify_mid(char* mid)
+static switch_status_t modify_mid(char** pmid)
 {
-	char* 			dup = NULL;
+	char*			mid = *pmid;
+	char*			dup;
 	char* 			val[10];
 	int 			count;
-
+	switch_status_t		status = SWITCH_STATUS_FALSE;
 	switch_assert(mid);
+
+	dup = strdup(mid);
 
 	/* If MID type is IP then add mid into [] brackets ,
 	 * If MID type is domain then add mid into <> brackets *
 	 */
 
-	dup = strdup(mid);
 	count = switch_split(dup, '.', val);
 
 	if(!count) {
 		/* Input string is not separated by '.', check if its separated by '-' as format could be xxx-xx-xxx/xxx-xx-xx-xxx  */
-		free(dup);
-		dup = strdup(mid);
 		if(0 == (count = switch_split(dup, '-', val))){
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid input MID string[%s]\n",mid);
-			return SWITCH_STATUS_FALSE;
+			goto done;
 		}
 	}
 
 	if(('<' == val[0][0]) || ('[' == val[0][0])){
-		free(dup);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MID[%s] is already prefixed with proper brackets \n",mid);
-		return SWITCH_STATUS_SUCCESS;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MID = %s is already prefixed with proper brackets \n",mid);
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 	
 	/*first check could be if count is 3 means domain name as generally we have xxx-xx-xxx/xxx.xx.xxx domain */
 	if(3 == count){
 		/* domain-type, add value into <> */
-		free(dup);
-		dup = strdup(mid);
-		sprintf(mid,"<%s>",dup);
+		*pmid = switch_mprintf("<%s>", mid);
+		free(mid);
+		mid = *pmid;
 	}else if(4 == count){
 		/* IP address in xxx.xxx.xxx.xxx format */
-		free(dup);
-		dup = strdup(mid);
-		sprintf(mid,"[%s]",dup);
+		*pmid = switch_mprintf("[%s]", mid);
+		free(mid);
+		mid = *pmid;
 	}else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid input MID string[%s]\n",mid);
-		free(dup);
-		return SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added proper brackets to MID = %s \n",mid);
 
-	free(dup);
-	return SWITCH_STATUS_SUCCESS;
+	status = SWITCH_STATUS_SUCCESS;
+
+done:
+	return status;
 }

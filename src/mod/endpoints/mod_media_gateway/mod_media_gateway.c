@@ -18,6 +18,7 @@ static sng_mg_event_interface_t sng_event;
 SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown);
 SWITCH_MODULE_DEFINITION(mod_media_gateway, mod_media_gateway_load, mod_media_gateway_shutdown, NULL);
+
 switch_status_t handle_mg_add_cmd(SuId suId, MgMgcoCommand *req, MgMgcoAmmReq *addReq);
 switch_status_t mg_stack_free_mem(MgMgcoMsg* msg);
 switch_status_t mg_stack_free_mem(MgMgcoMsg* msg);
@@ -287,8 +288,6 @@ static switch_status_t mgco_parse_local_sdp(mg_termination_t *term, CmSdpInfoSet
     }
 }
 
-/*****************************************************************************************************************************/
-
 void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
 {
     size_t txnIter;
@@ -307,7 +306,7 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                 case MGT_TXNREQ:
                 {
                     MgMgcoTxnReq* txnReq; 
-                    MgMgcoTransId transId; /* XXX */
+                    /*MgMgcoTransId transId; *//* XXX */
                     int axnIter;
                     txnReq = &(msg->body.u.tl.txns[txnIter]->u.req);
 
@@ -332,14 +331,13 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                             MgMgcoCommand mgCmd;
 			    memset(&mgCmd, 0, sizeof(mgCmd));
                             mgCmd.peerId = msg->lcl.id;
-                            mgCmd.transId = transId;
                             mgCmd.u.mgCmdInd[0] = cmdReq;
                             
                             
                             /* XXX Handle choose context before this */
                             
                             mgCmd.contextId = ctxId;
-                            mgCmd.transId = transId;
+                            /*mgCmd.transId = transId;*/
 
                             mgCmd.cmdStatus.pres = PRSNT_NODEF;
                             
@@ -478,31 +476,30 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
 /*****************************************************************************************************************************/
 void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 {
-	uint32_t txn_id = 0x00;
+	U32 txn_id = 0x00;
 	MgMgcoInd  *mgErr;
 	MgStr      errTxt;
 	MgMgcoContextId   ctxtId;
+	MgMgcoTermIdLst*  termLst;
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
 
 	/* validate Transaction Id */
-	if (NOTPRSNT != cmd->transId.pres)
+	if (NOTPRSNT != cmd->transId.pres){
 		txn_id = cmd->transId.val;
-	else
-	{
+	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Transaction Id not present, rejecting\n", __PRETTY_FUNCTION__);	
 		
 		/*-- Send Error to MG Stack --*/
-		mg_zero(&ctxtId, sizeof(MgMgcoContextId));
+		MG_ZERO(&ctxtId, sizeof(MgMgcoContextId));
 		ctxtId.type.pres = NOTPRSNT;
 		ctxtId.val.pres  = NOTPRSNT;
 
 		mg_util_set_txn_string(&errTxt, &txn_id);
 
-		if (SWITCH_STATUS_FALSE == mg_build_mgco_err_request(&mgErr, txn_id, &ctxtId,
-						MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER, &errTxt))
-		{
+		if (SWITCH_STATUS_SUCCESS == mg_build_mgco_err_request(&mgErr, txn_id, &ctxtId,
+						MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER, &errTxt)) {
 			sng_mgco_send_err(suId, mgErr);
 		}
 
@@ -511,7 +508,16 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 		return ;	
 	}
 
-	mgAccEvntPrntMgMgcoCommand(cmd, stdout);
+	/* Get the termination Id list from the command(Note: GCP_2_1 has termination list , else it will be termination Id)  */
+	termLst = mg_get_term_id_list(cmd);
+	if ((NULL == termLst) || (NOTPRSNT == termLst->num.pres)) {
+		/* termination-id not present , error */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination-Id Not received..rejecting command \n");
+		mg_free_cmd(cmd);
+		return ;	
+	}
+
+	/*mgAccEvntPrntMgMgcoCommand(cmd, stdout);*/
 
 	switch(cmd->cmdType.val)
 	{
@@ -531,6 +537,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 					case MGT_MODIFY:
 						{
 							/*MgMgcoAmmReq *addReq = &cmdReq->cmd.u.mod;*/
+							mg_send_modify_rsp(suId, cmd);
 							break;
 						}
 					case MGT_MOVE:
@@ -542,11 +549,33 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 					case MGT_SUB:
 						{
 							/*MgMgcoSubAudReq *addReq = &cmdReq->cmd.u.sub;*/
+							mg_send_subtract_rsp(suId, cmd);
+							break;
 						}
 					case MGT_SVCCHG:
+						{
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Service-Change Method Not Yet Supported\n");
+							break;
+						}
 					case MGT_NTFY:
+						{
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NOTIFY Method Not Yet Supported\n");
+							break;
+						}
 					case MGT_AUDITCAP:
+						{
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Audit-Capability Method Not Yet Supported\n");
+							break;
+						}
 					case MGT_AUDITVAL:
+						{
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Audit-Value Method \n");
+							handle_mg_audit_cmd(suId, cmd);
+							/*need to call this for other types of audit..
+							 * ideally from the request apis we should send response..keeping now here just to send dummy responses*/
+							mg_send_audit_rsp(suId, cmd);
+							break;
+						}
 						break;
 				}
 
@@ -605,6 +634,7 @@ void handle_mgco_audit_cfm(Pst *pst, SuId suId, MgMgtAudit* audit, Reason reason
 
 
 /*****************************************************************************************************************************/
+
 /*
 *
 *       Fun:   mg_get_term_id_list
@@ -1069,7 +1099,6 @@ void mg_util_set_txn_string(MgStr  *errTxt, U32 *txnId)
 
 
 /*****************************************************************************************************************************/
-
 /* For Emacs:
  * Local Variables:
  * mode:c
