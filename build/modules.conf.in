@@ -7,6 +7,7 @@ applications/mod_hash
 applications/mod_spandsp
 dialplans/mod_dialplan_xml
 endpoints/mod_sofia
+#endpoints/mod_media_gateway
 ../../libs/freetdm/mod_freetdm
 xml_int/mod_xml_cdr
 event_handlers/mod_event_socket
