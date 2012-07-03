@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 	switch_codec_t codec = { 0 };
 	char buf[2048];
 	switch_size_t len = sizeof(buf)/2;
-	switch_memory_pool_t *pool;
+	switch_memory_pool_t *pool = NULL;
 	int bitrate = 0;
 	int blocksize;
 	
