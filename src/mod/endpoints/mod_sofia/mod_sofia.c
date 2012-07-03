@@ -491,6 +491,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		char reason[128] = "";
 		char *bye_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_BYE_HEADER_PREFIX);
 		const char *val = NULL;
+		const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 
 		val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
 
@@ -537,14 +538,56 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				const char *phrase;
 				char *added_headers = NULL;
 
-				if (tech_pvt->respond_code) {
-					sip_cause = tech_pvt->respond_code;
-				}
 
 				if (tech_pvt->respond_phrase) {
 					phrase = su_strdup(nua_handle_home(tech_pvt->nh), tech_pvt->respond_phrase);
 				} else {
 					phrase = sip_status_phrase(sip_cause);
+				}
+
+				if (tech_pvt->respond_code) {
+					sip_cause = tech_pvt->respond_code;
+					switch (sip_cause) {
+					case 401:
+					case 407:
+						{
+							const char *to_host = switch_channel_get_variable(channel, "sip_challenge_realm"); 
+
+							if (zstr(to_host)) {
+								to_host = switch_channel_get_variable(channel, "sip_to_host"); 
+							}
+							
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Challenging call\n");
+							sofia_reg_auth_challenge(tech_pvt->profile, tech_pvt->nh, NULL, REG_INVITE, to_host, 0);						
+							*reason = '\0';
+						}
+						break;
+						
+					case 484:
+						{
+							const char *to = switch_channel_get_variable(channel, "sip_to_uri");
+							char *to_uri = NULL;
+
+							if (to) {
+								char *p;
+								to_uri = switch_core_session_sprintf(session, "sip:%s", to);
+								if ((p = strstr(to_uri, ":5060"))) {
+									*p = '\0';
+								}
+								
+								tech_pvt->respond_dest = to_uri;
+								
+							}
+
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", sip_cause, phrase);
+							
+						}
+						break;
+
+					default:
+						break;
+
+					}
 				}
 				
 				if (tech_pvt->respond_dest && !sofia_test_pflag(tech_pvt->profile, PFLAG_MANUAL_REDIRECT)) {
@@ -572,6 +615,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 								TAG_IF(!zstr(resp_headers), SIPTAG_HEADER_STR(resp_headers)), 
 								TAG_IF(!zstr(added_headers), SIPTAG_HEADER_STR(added_headers)), 
 								TAG_IF(tech_pvt->respond_dest, SIPTAG_CONTACT_STR(tech_pvt->respond_dest)),
+								TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), 
 								TAG_END());
 
 					switch_safe_free(resp_headers);
@@ -2415,44 +2459,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					}
 				}
 
-				if (code == 407 && !msg->numeric_arg) {
-					const char *to_uri = switch_channel_get_variable(channel, "sip_to_uri");
-					const char *to_host = reason;
-
-					if (zstr(to_host)) {
-						to_host = switch_channel_get_variable(channel, "sip_to_host");
-					}
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Challenging call %s\n", to_uri);
-					sofia_reg_auth_challenge(tech_pvt->profile, tech_pvt->nh, NULL, REG_INVITE, to_host, 0);
-					switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
-				} else if (code == 484 && msg->numeric_arg) {
-					const char *to = switch_channel_get_variable(channel, "sip_to_uri");
-					const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
-					char *cid = generate_pai_str(tech_pvt);
-					char *to_uri = NULL;
-
-					if (to) {
-						char *p;
-						to_uri = switch_core_session_sprintf(session, "sip:%s", to);
-						if ((p = strstr(to_uri, ":5060"))) {
-							*p = '\0';
-						}
-					}
-
-					if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-						char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", code, reason);
-
-						nua_respond(tech_pvt->nh, code, su_strdup(nua_handle_home(tech_pvt->nh), reason), TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
-									SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
-									TAG_IF(cid, SIPTAG_HEADER_STR(cid)),
-									TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-									TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
-
-						sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
-						switch_safe_free(extra_headers);
-					}
-				} else if (code == 302 && !zstr(msg->string_arg)) {
+				if (code == 302 && !zstr(msg->string_arg)) {
 					char *p;
 
 					if ((p = strchr(msg->string_arg, ' '))) {
@@ -2522,9 +2529,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						} else {
 							if (msg->numeric_arg) {
 								if (code > 399) {
+									switch_call_cause_t cause = sofia_glue_sip_cause_to_freeswitch(code);
+									if (code == 401 || cause == 407) cause = SWITCH_CAUSE_USER_CHALLENGE;
+
 									tech_pvt->respond_code = code;
 									tech_pvt->respond_phrase = switch_core_session_strdup(tech_pvt->session, reason);
-									switch_channel_hangup(tech_pvt->channel, sofia_glue_sip_cause_to_freeswitch(code));
+									switch_channel_hangup(tech_pvt->channel, cause);
 								} else {
 									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Cannot respond.\n");
 								}
