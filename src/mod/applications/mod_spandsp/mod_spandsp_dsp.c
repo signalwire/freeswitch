@@ -150,7 +150,7 @@ static int get_v18_mode(switch_core_session_t *session)
 {
     switch_channel_t *channel = switch_core_session_get_channel(session);
     const char *var;
-    int r = V18_MODE_BELL103;
+    int r = V18_MODE_5BIT_45;
 
     if ((var = switch_channel_get_variable(channel, "v18_mode"))) {
         if (!strcasecmp(var, "5BIT_45") || !strcasecmp(var, "baudot")) {
