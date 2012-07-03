@@ -2647,6 +2647,30 @@ SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_han
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, switch_size_t *max)
+{
+#ifdef HAVE_SETRLIMIT
+	struct rlimit rlp;
+
+	memset(&rlp, 0, sizeof(rlp));
+	getrlimit(RLIMIT_STACK, &rlp);
+
+	*cur = rlp.rlim_cur;
+	*max = rlp.rlim_max;
+
+	return SWITCH_STATUS_SUCCESS;
+
+#else
+
+	return SWITCH_STATUS_FALSE;
+
+#endif
+
+
+
+}
+
+
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream)
 {
 #ifdef WIN32
