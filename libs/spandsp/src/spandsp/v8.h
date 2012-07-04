@@ -118,6 +118,8 @@ struct v8_parms_s
 {
     int status;
     int modem_connect_tone;
+    int send_ci;
+    int v92;
     int call_function;
     unsigned int modulations;
     int protocol;

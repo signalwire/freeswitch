@@ -26,7 +26,7 @@
 #if !defined(_SPANDSP_PRIVATE_SUPER_TONE_RX_H_)
 #define _SPANDSP_PRIVATE_SUPER_TONE_RX_H_
 
-#define BINS            128
+#define SUPER_TONE_BINS             128
 
 struct super_tone_rx_segment_s
 {
@@ -41,7 +41,7 @@ struct super_tone_rx_descriptor_s
 {
     int used_frequencies;
     int monitored_frequencies;
-    int pitches[BINS/2][2];
+    int pitches[SUPER_TONE_BINS/2][2];
     int tones;
     super_tone_rx_segment_t **tone_list;
     int *tone_segs;
@@ -55,7 +55,7 @@ struct super_tone_rx_state_s
     int detected_tone;
     int rotation;
     tone_report_func_t tone_callback;
-    void (*segment_callback)(void *data, int f1, int f2, int duration);
+    tone_segment_func_t segment_callback;
     void *callback_data;
     super_tone_rx_segment_t segments[11];
     goertzel_state_t state[];

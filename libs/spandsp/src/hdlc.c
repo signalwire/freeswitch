@@ -154,7 +154,8 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                         s->rx_frames++;
                         s->rx_bytes += s->len - s->crc_bytes;
                         s->len -= s->crc_bytes;
-                        s->frame_handler(s->frame_user_data, s->buffer, s->len, TRUE);
+                        if (s->frame_handler)
+                            s->frame_handler(s->frame_user_data, s->buffer, s->len, TRUE);
                     }
                     else
                     {
@@ -162,7 +163,8 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                         if (s->report_bad_frames)
                         {
                             s->len -= s->crc_bytes;
-                            s->frame_handler(s->frame_user_data, s->buffer, s->len, FALSE);
+                            if (s->frame_handler)
+                                s->frame_handler(s->frame_user_data, s->buffer, s->len, FALSE);
                         }
                     }
                 }
@@ -177,7 +179,8 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                             s->len -= s->crc_bytes;
                         else
                             s->len = 0;
-                        s->frame_handler(s->frame_user_data, s->buffer, s->len, FALSE);
+                        if (s->frame_handler)
+                            s->frame_handler(s->frame_user_data, s->buffer, s->len, FALSE);
                     }
                     s->rx_length_errors++;
                 }

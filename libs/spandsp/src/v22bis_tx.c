@@ -310,8 +310,8 @@ static __inline__ int get_scrambled_bit(v22bis_state_t *s)
 
 static complexf_t training_get(v22bis_state_t *s)
 {
-    complexf_t z;
     int bits;
+    static const complexf_t zero = {0.0f, 0.0f};
 
     /* V.22bis training sequence */
     switch (s->tx.training)
@@ -329,20 +329,17 @@ static complexf_t training_get(v22bis_state_t *s)
     case V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE:
         /* Silence */
         s->tx.constellation_state = 0;
-        z = complex_setf(0.0f, 0.0f);
-        break;
+        return zero;
     case V22BIS_TX_TRAINING_STAGE_U11:
         /* Send continuous unscrambled ones at 1200bps (i.e. 270 degree phase steps). */
         /* Only the answering modem sends unscrambled ones. It is the first thing exchanged between the modems. */
         s->tx.constellation_state = (s->tx.constellation_state + phase_steps[3]) & 3;
-        z = v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
-        break;
+        return v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
     case V22BIS_TX_TRAINING_STAGE_U0011:
         /* Continuous unscrambled double dibit 00 11 at 1200bps. This is termed the S1 segment in
            the V.22bis spec. It is only sent to request or accept 2400bps mode, and lasts 100+-3ms. After this
            timed burst, we unconditionally change to sending scrambled ones at 1200bps. */
         s->tx.constellation_state = (s->tx.constellation_state + phase_steps[3*(s->tx.training_count & 1)]) & 3;
-        z = v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
         if (++s->tx.training_count >= ms_to_symbols(100))
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting S11 after U0011\n");
@@ -357,7 +354,7 @@ static complexf_t training_get(v22bis_state_t *s)
                 s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
             }
         }
-        break;
+        return v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
     case V22BIS_TX_TRAINING_STAGE_TIMED_S11:
         /* A timed period of scrambled ones at 1200bps. */
         if (++s->tx.training_count >= ms_to_symbols(756))
@@ -383,8 +380,7 @@ static complexf_t training_get(v22bis_state_t *s)
         bits = scramble(s, 1);
         bits = (bits << 1) | scramble(s, 1);
         s->tx.constellation_state = (s->tx.constellation_state + phase_steps[bits]) & 3;
-        z = v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
-        break;
+        return v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
     case V22BIS_TX_TRAINING_STAGE_S1111:
         /* Scrambled ones at 2400bps. We send a timed 200ms burst, and switch to normal operation at 2400bps */
         bits = scramble(s, 1);
@@ -392,7 +388,6 @@ static complexf_t training_get(v22bis_state_t *s)
         s->tx.constellation_state = (s->tx.constellation_state + phase_steps[bits]) & 3;
         bits = scramble(s, 1);
         bits = (bits << 1) | scramble(s, 1);
-        z = v22bis_constellation[(s->tx.constellation_state << 2) | bits];
         if (++s->tx.training_count >= ms_to_symbols(200))
         {
             /* We have completed training. Now handle some real work. */
@@ -402,13 +397,9 @@ static complexf_t training_get(v22bis_state_t *s)
             v22bis_report_status_change(s, SIG_STATUS_TRAINING_SUCCEEDED);
             s->tx.current_get_bit = s->get_bit;
         }
-        break;
-    case V22BIS_TX_TRAINING_STAGE_PARKED:
-    default:
-        z = complex_setf(0.0f, 0.0f);
-        break;
+        return v22bis_constellation[(s->tx.constellation_state << 2) | bits];
     }
-    return z;
+    return zero;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -476,12 +467,12 @@ SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
             x.im += tx_pulseshaper[39 - s->tx.baud_phase][i]*s->tx.rrc_filter[i + s->tx.rrc_filter_step].im;
         }
         /* Now create and modulate the carrier */
-        z = dds_complexf(&(s->tx.carrier_phase), s->tx.carrier_phase_rate);
+        z = dds_complexf(&s->tx.carrier_phase, s->tx.carrier_phase_rate);
         famp = (x.re*z.re - x.im*z.im)*s->tx.gain;
         if (s->tx.guard_phase_rate  &&  (s->tx.rrc_filter[s->tx.rrc_filter_step].re != 0.0f  ||  s->tx.rrc_filter[s->tx.rrc_filter_step].im != 0.0f))
         {
             /* Add the guard tone */
-            famp += dds_modf(&(s->tx.guard_phase), s->tx.guard_phase_rate, s->tx.guard_level, 0);
+            famp += dds_modf(&s->tx.guard_phase, s->tx.guard_phase_rate, s->tx.guard_tone_gain, 0);
         }
         /* Don't bother saturating. We should never clip. */
         amp[sample] = (int16_t) lfastrintf(famp);
@@ -499,20 +490,20 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power)
         l = 1.6f*powf(10.0f, (power - 1.0f - DBM0_MAX_POWER)/20.0f);
         s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
         l = powf(10.0f, (power - 1.0f - 3.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.guard_level = l*32768.0f;
+        s->tx.guard_tone_gain = l*32768.0f;
     }
     else if(s->tx.guard_phase_rate == dds_phase_ratef(1800.0f))
     {
         l = 1.6f*powf(10.0f, (power - 1.0f - 1.0f - DBM0_MAX_POWER)/20.0f);
         s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
         l = powf(10.0f, (power - 1.0f - 6.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.guard_level = l*32768.0f;
+        s->tx.guard_tone_gain = l*32768.0f;
     }
     else
     {
         l = 1.6f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f);
         s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
-        s->tx.guard_level = 0;
+        s->tx.guard_tone_gain = 0;
     }
 }
 /*- End of function --------------------------------------------------------*/

@@ -209,7 +209,7 @@ struct v22bis_state_s
         uint32_t guard_phase;
         /*! \brief The update rate for the phase of the guard tone (i.e. the DDS increment). */
         int32_t guard_phase_rate;
-        float guard_level;
+        float guard_tone_gain;
         /*! \brief The current fractional phase of the baud timing. */
         int baud_phase;
         /*! \brief The code number for the current position in the constellation. */

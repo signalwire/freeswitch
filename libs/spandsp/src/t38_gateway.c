@@ -440,9 +440,9 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         /* There is a handler queued, so that is the next one. */
         set_tx_handler(s, t->next_tx_handler, t->next_tx_user_data);
         set_next_tx_handler(s, NULL, NULL);
-        if (t->tx_handler == (span_tx_handler_t) &(silence_gen)
+        if (t->tx_handler == (span_tx_handler_t) &silence_gen
             ||
-            t->tx_handler == (span_tx_handler_t) &(tone_gen))
+            t->tx_handler == (span_tx_handler_t) &tone_gen)
         {
             set_rx_active(s, TRUE);
         }

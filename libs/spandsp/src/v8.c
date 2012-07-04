@@ -63,7 +63,8 @@
 
 enum
 {
-    V8_WAIT_1S,
+    V8_WAIT_1S,         /* Start point when sending CI */
+    V8_AWAIT_ANSAM,     /* Start point when sending initial silence */
     V8_CI_ON,
     V8_CI_OFF,
     V8_HEARD_ANSAM,
@@ -100,7 +101,8 @@ enum
 enum
 {
     V8_CI_SYNC_OCTET = 0x00,
-    V8_CM_JM_SYNC_OCTET = 0xE0
+    V8_CM_JM_SYNC_OCTET = 0xE0,
+    V8_V92_SYNC_OCTET = 0x55
 };
 
 SPAN_DECLARE(const char *) v8_call_function_to_str(int call_function)
@@ -755,7 +757,24 @@ SPAN_DECLARE_NONSTD(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void v8_send_ci(v8_state_t *s)
+static void send_v92(v8_state_t *s)
+{
+    int i;
+
+    if (s->result.v92 >= 0)
+    {
+        /* Send 2 V.92 packets */
+        for (i = 0;  i < 2;  i++)
+        {
+            v8_put_preamble(s);
+            v8_put_byte(s, V8_V92_SYNC_OCTET);
+            v8_put_byte(s, s->result.v92);
+        }
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static void send_ci(v8_state_t *s)
 {
     int i;
 
@@ -810,7 +829,7 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
         if ((s->negotiation_timer -= len) > 0)
             break;
         fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
-        v8_send_ci(s);
+        send_ci(s);
         s->state = V8_CI_ON;
         s->fsk_tx_on = TRUE;
         break;
@@ -851,11 +870,17 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             {
                 /* Try again */
                 fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
-                v8_send_ci(s);
+                send_ci(s);
                 s->state = V8_CI_ON;
                 s->fsk_tx_on = TRUE;
             }
         }
+        break;
+    case V8_AWAIT_ANSAM:
+        residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
+        /* Check if an ANSam or ANSam/ tone has been detected */
+        if ((tone = modem_connect_tones_rx_get(&s->ansam_rx)) != MODEM_CONNECT_TONES_NONE)
+            handle_modem_connect_tone(s, tone);
         break;
     case V8_HEARD_ANSAM:
         /* We have heard the ANSam or ANSam/ signal, but we still need to wait for the
@@ -865,6 +890,7 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             v8_decode_init(s);
             s->negotiation_timer = ms_to_samples(5000);
             fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
+            send_v92(s);
             send_cm_jm(s);
             s->state = V8_CM_ON;
             s->fsk_tx_on = TRUE;
@@ -1015,9 +1041,16 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, int calling_party, v8_parms_t *parms
     s->calling_party = calling_party;
     if (s->calling_party)
     {
-        s->state = V8_WAIT_1S;
-        s->negotiation_timer = ms_to_samples(1000);
-        s->ci_count = 0;
+        if (s->result.send_ci)
+        {
+            s->state = V8_WAIT_1S;
+            s->negotiation_timer = ms_to_samples(1000);
+            s->ci_count = 0;
+        }
+        else
+        {
+            s->state = V8_AWAIT_ANSAM;
+        }
         modem_connect_tones_rx_init(&s->ansam_rx, MODEM_CONNECT_TONES_ANS_PR, NULL, NULL);
         fsk_tx_init(&s->v21tx, &preset_fsk_specs[FSK_V21CH1], get_bit, s);
     }

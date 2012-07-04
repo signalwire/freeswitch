@@ -31,7 +31,7 @@
 
 #define UDPTL_BUF_MASK              15
 
-typedef int (udptl_rx_packet_handler_t) (void *user_data, const uint8_t msg[], int len, int seq_no);
+typedef int (*udptl_rx_packet_handler_t) (void *user_data, const uint8_t msg[], int len, int seq_no);
 
 typedef struct
 {
@@ -51,7 +51,7 @@ typedef struct
 
 struct udptl_state_s
 {
-    udptl_rx_packet_handler_t *rx_packet_handler;
+    udptl_rx_packet_handler_t rx_packet_handler;
     void *user_data;
 
     /*! This option indicates the error correction scheme used in transmitted UDPTL

@@ -52,6 +52,9 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
+#include "spandsp/fast_convert.h"
+#include "spandsp/math_fixed.h"
+#include "spandsp/saturated.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
@@ -77,12 +80,12 @@
 #include "v22bis_rx_2400_floating_rrc.h"
 #endif
 
-#define ms_to_symbols(t)        (((t)*600)/1000)
+#define ms_to_symbols(t)                (((t)*600)/1000)
 
 /*! The adaption rate coefficient for the equalizer */
-#define EQUALIZER_DELTA         0.25f
+#define EQUALIZER_DELTA                 0.25f
 /*! The number of phase shifted coefficient set for the pulse shaping/bandpass filter */
-#define PULSESHAPER_COEFF_SETS  12
+#define PULSESHAPER_COEFF_SETS          12
 
 /*
 The basic method used by the V.22bis receiver is:
