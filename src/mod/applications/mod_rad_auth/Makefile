@@ -10,5 +10,20 @@ RADCLIENT_LA=${RADCLIENT_LIBDIR}/libfreeradius-client.la
 LOCAL_CFLAGS=-I$(RADCLIENT_DIR)/include
 LOCAL_LIBADD=$(RADCLIENT_LA)
 
+
 include $(switch_srcdir)/build/modmake.rules
+
+$(RADCLIENT_DIR):
+	$(GETLIB) $(RADCLIENT).tar.gz
+
+$(RADCLIENT_BUILDDIR)/Makefile: $(RADCLIENT_DIR)
+	mkdir -p $(RADCLIENT_BUILDDIR)
+	cd $(RADCLIENT_BUILDDIR) && $(DEFAULT_VARS) $(RADCLIENT_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(RADCLIENT_DIR)
+	$(TOUCH_TARGET)
+
+$(RADCLIENT_LA): $(RADCLIENT_BUILDDIR)/Makefile
+	cd $(RADCLIENT_BUILDDIR) && CFLAGS="$(CFLAGS)" $(MAKE)
+	$(TOUCH_TARGET)
+
+
 

@@ -547,6 +547,8 @@ typedef struct {
 typedef struct {
 	uint32_t packet_count;
 	uint32_t octet_count;
+
+	uint32_t peer_ssrc;
 } switch_rtcp_numbers_t;
 
 typedef struct {
@@ -769,7 +771,6 @@ typedef struct {
 	unsigned type:8;			/* packet type                       */
 	unsigned length:16;			/* length in 32-bit words - 1        */
 } switch_rtcp_hdr_t;
-
 #else /*  BIG_ENDIAN */
 
 typedef struct {

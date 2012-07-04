@@ -13,3 +13,4 @@ xml_int/mod_xml_cdr
 event_handlers/mod_event_socket
 codecs/mod_sangoma_codec
 event_handlers/mod_radius_cdr
+applications/mod_rad_auth
