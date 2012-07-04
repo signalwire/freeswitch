@@ -64,7 +64,7 @@ switch_status_t mg_stack_get_mem(MgMgcoMsg* msg, Ptr* _memPtr, Size _memSize )
 
 /*****************************************************************************************************************************/
 
-switch_status_t mg_stack_free_mem(MgMgcoMsg* msg)
+switch_status_t mg_stack_free_mem(void* msg)
 {
         if ( !msg )
         {
@@ -430,5 +430,68 @@ void mg_util_set_term_string ( MgStr  *errTxt, MgMgcoTermId   *termId)
 
      switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s:" 
                      "info, error-text is: %s\n", __PRETTY_FUNCTION__,errTxt->val);
+}
+/*****************************************************************************************************************************/
+MgMgcoMediaDesc* get_default_media_desc()
+{
+	MgMgcoMediaDesc   *media = NULL;
+	MgMgcoMediaPar    *mediaPar = NULL;
+	MgMgcoTermStateParm *trmStPar = NULL;
+
+	mg_stack_alloc_mem((Ptr)&media, sizeof(MgMgcoMediaDesc));
+
+	if (!media) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		return NULL;	
+	}
+	media->num.pres = PRSNT_NODEF;
+	media->num.val = 1;
+	mg_stack_alloc_mem((Ptr)&mediaPar, sizeof(MgMgcoMediaPar));
+
+	if (!mediaPar) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		mg_stack_free_mem(media);
+		return NULL;	
+	}
+	mg_stack_alloc_mem((Ptr)&media->parms, sizeof(MgMgcoMediaPar *));
+
+	if (!media->parms) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		mg_stack_free_mem((void*)mediaPar);
+		mg_stack_free_mem((void*)media);
+		return NULL;	
+	}
+	mediaPar->type.pres = PRSNT_NODEF;
+	mediaPar->type.val = MGT_MEDIAPAR_TERMST;
+	mediaPar->u.tstate.numComp.pres = PRSNT_NODEF;
+	mediaPar->u.tstate.numComp.val = 1;
+	mg_stack_alloc_mem((Ptr)&trmStPar, sizeof(MgMgcoTermStateParm));
+
+	if (!trmStPar) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		mg_stack_free_mem((void*)mediaPar);
+		mg_stack_free_mem((void*)media->parms);
+		mg_stack_free_mem((void*)media);
+		return NULL;	
+	}
+	mg_stack_alloc_mem((Ptr)&mediaPar->u.tstate.trmStPar, sizeof(MgMgcoTermStateParm *));
+	if (!mediaPar->u.tstate.trmStPar) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		mg_stack_free_mem((void*)trmStPar);
+		mg_stack_free_mem((void*)mediaPar);
+		mg_stack_free_mem((void*)media->parms);
+		mg_stack_free_mem((void*)media);
+		return NULL;	
+	}
+	trmStPar->type.pres = PRSNT_NODEF;
+	trmStPar->type.val = MGT_TERMST_SVCST;
+	trmStPar->u.svcState.pres = PRSNT_NODEF;
+	/*TODO - ADD CHECK if term is in svc or not */
+	trmStPar->u.svcState.val = MGT_SVCST_INSVC;
+
+	mediaPar->u.tstate.trmStPar[0] = trmStPar; 
+	media->parms[0] = mediaPar;
+
+	return media;
 }
 /*****************************************************************************************************************************/

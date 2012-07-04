@@ -258,6 +258,14 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 	MgMgcoAuditItem  *audit_item;
 	int 		  i;
 	int 		  err_code;
+	MgMgcoCommand     reply;
+        MgMgcoAuditReply  *adtRep = NULLP;
+        U16               numOfParms;
+        MgMgcoMediaDesc*  media;
+	MgMgcoCtxt     ctxt;
+	switch_status_t  ret;
+
+	memset(&reply, 0, sizeof(reply));
 
 	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
 
@@ -269,8 +277,8 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 	audit_desc = &audit->audit;
 
 	if((NOTPRSNT == audit_desc->pres.pres) || ( NOTPRSNT == audit_desc->num.pres)){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit Descriptor not present..rejecting \n");
-		return SWITCH_STATUS_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit Descriptor not present.. Could be HeartBeat message\n");
+		return mg_send_heartbeat_audit_rsp(suId, auditReq);
 	}
 
 	/* dump AUDIT message information */
@@ -283,6 +291,9 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 	term_list = mg_get_term_id_list(auditReq);
 	termId    = term_list->terms[0];
 
+     /*********************************************************************************************************************/
+     /**************************** Validating Audit Request ***************************************************************/
+     /*********************************************************************************************************************/
 	/*-- Start with Context level checks --*/
 	/*-- CHOOSE Context not allowed --*/
 	if ((NOTPRSNT != ctxtId->type.pres)          &&
@@ -322,7 +333,38 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 		goto error;
 	}
 
-	/* validation done , now processing command */
+     /*********************************************************************************************************************/
+     /**************************** Preparing Response Structure ***********************************************************/
+     /*********************************************************************************************************************/
+	/*copy transaction-id*/
+        memcpy(&reply.transId, &auditReq->transId,sizeof(MgMgcoTransId));
+        /*copy context-id*/
+        memcpy(&reply.contextId, &auditReq->contextId,sizeof(MgMgcoContextId));
+        /*copy peer identifier */
+        memcpy(&reply.peerId, &auditReq->peerId,sizeof(TknU32));
+
+        /*fill response structue */
+        if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&reply.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
+                return ret;
+        }
+
+	reply.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
+	reply.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
+	reply.u.mgCmdRsp[0]->type.val = MGT_AUDITVAL;
+
+
+	adtRep = &(reply.u.mgCmdRsp[0]->u.aval);
+
+	adtRep->type.pres = PRSNT_NODEF;
+	adtRep->type.val = MGT_TERMAUDIT;
+	adtRep->u.other.pres.pres = PRSNT_NODEF;
+	mgUtlAllocMgMgcoTermIdLst(&adtRep->u.other.termIdLst, term_list);
+
+	/* NOW for each requested AUDIT descriptor we need to add entry to adtRep->u.other.audit.parms list */
+
+     /*********************************************************************************************************************/
+     /**************************** Processing Audit Request Descriptors **************************************************/
+     /*********************************************************************************************************************/
 
 	for (i = 0; i < audit_desc->num.val; i++) {
 
@@ -342,6 +384,25 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 				case MGT_MEDIADESC:
 					{  
 						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing MEDIA \n");
+
+						/* Grow the list of reply parameters */
+						if (mgUtlGrowList((void ***)&adtRep->u.other.audit.parms, sizeof(MgMgcoAudRetParm),
+									&adtRep->u.other.audit.num, &reply.u.mgCmdRsp[0]->memCp) != ROK)
+						{
+							switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+							return SWITCH_STATUS_FALSE;
+						}
+
+						numOfParms = adtRep->u.other.audit.num.val;
+						adtRep->u.other.audit.parms[numOfParms - 1]->type.pres = PRSNT_NODEF;
+						adtRep->u.other.audit.parms[numOfParms - 1]->type.val  = MGT_MEDIADESC;
+
+						media = get_default_media_desc();
+						if(!media){
+							return SWITCH_STATUS_FALSE;
+						}
+						mgUtlCpyMgMgcoMediaDesc(&adtRep->u.other.audit.parms[numOfParms - 1]->u.media, media, &reply.u.mgCmdRsp[0]->memCp);
+
 						break;
 					}
 				case MGT_MODEMDESC:
@@ -387,7 +448,22 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 				case MGT_PKGSDESC:
 					{  
 						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing  Packages \n");
-						handle_pkg_audit(suId, auditReq);
+						/* Grow the list of reply parameters */
+						if (mgUtlGrowList((void ***)&adtRep->u.other.audit.parms, sizeof(MgMgcoAudRetParm),
+									&adtRep->u.other.audit.num, &reply.u.mgCmdRsp[0]->memCp) != ROK)
+						{
+							switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+							return SWITCH_STATUS_FALSE;
+						}
+
+						numOfParms = adtRep->u.other.audit.num.val;
+						adtRep->u.other.audit.parms[numOfParms - 1]->type.pres = PRSNT_NODEF;
+						adtRep->u.other.audit.parms[numOfParms - 1]->type.val  = MGT_PKGSDESC;
+
+						if(SWITCH_STATUS_FALSE == mg_build_pkg_desc(&adtRep->u.other.audit.parms[numOfParms - 1]->u.pkgs)){
+							return SWITCH_STATUS_FALSE;
+						}
+
 						break;
 					}
 				case MGT_INDAUD_TERMAUDDESC:
@@ -405,6 +481,26 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 		}/*if (NOTPRSNT != audit_item->auditItem.pres)*/
 	}/*for loop - audit_desc->num.val */
 
+     /*********************************************************************************************************************/
+     /**************************** Send Audit Command  Reply***************************************************************/
+     /*********************************************************************************************************************/
+	reply.cmdStatus.pres = PRSNT_NODEF;
+	reply.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
+	reply.cmdType.pres = PRSNT_NODEF;
+	reply.cmdType.val  = CH_CMD_TYPE_RSP;
+
+	/* send command reply */
+	sng_mgco_send_cmd(suId, &reply);
+
+	/* send indication to stack , so he can send response back to peer */
+	memcpy(&ctxt.transId,&auditReq->transId,sizeof(MgMgcoTransId));
+	memcpy(&ctxt.cntxtId, &auditReq->contextId,sizeof(MgMgcoContextId));
+	memcpy(&ctxt.peerId, &auditReq->peerId,sizeof(TknU32));
+	ctxt.cmdStatus.pres = PRSNT_NODEF;
+	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
+	sng_mgco_send_axn_req(suId, &ctxt);
+	/***********************************************************************************************************************************/
+
 	return SWITCH_STATUS_SUCCESS;
 
 error:
@@ -418,6 +514,181 @@ error:
 }
 
 /*****************************************************************************************************************************/
+switch_status_t mg_send_heartbeat_audit_rsp( SuId suId, MgMgcoCommand *auditReq)
+{
+	MgMgcoCtxt     ctxt;
+	switch_status_t  ret;
+	MgMgcoCommand    reply;
+	MgMgcoTermIdLst  *term_list;
+	MgMgcoTermId     *termId;
+	MgMgcoSubAudReq  *audit;
+	MgMgcoAuditReply  *adtRep = NULLP;
+
+	memset(&reply, 0, sizeof(reply));
+	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
+
+	if(NOTPRSNT == audit->pres.pres){
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/*-- Get termination list --*/
+	term_list = mg_get_term_id_list(auditReq);
+	termId    = term_list->terms[0];
+
+
+	/*copy transaction-id*/
+	memcpy(&reply.transId, &auditReq->transId,sizeof(MgMgcoTransId));
+	/*copy context-id*/
+	memcpy(&reply.contextId, &auditReq->contextId,sizeof(MgMgcoContextId));
+	/*copy peer identifier */
+	memcpy(&reply.peerId, &auditReq->peerId,sizeof(TknU32));
+
+	/*fill response structue */
+	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&reply.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
+		return ret;
+	}
+
+	reply.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
+	reply.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
+	reply.u.mgCmdRsp[0]->type.val = MGT_AUDITVAL;
+
+
+	adtRep = &(reply.u.mgCmdRsp[0]->u.aval);
+
+	adtRep->type.pres = PRSNT_NODEF;
+	adtRep->type.val = MGT_TERMAUDIT;
+	adtRep->u.other.pres.pres = PRSNT_NODEF;
+	adtRep->u.other.audit.num.pres = 0x00;
+	mgUtlAllocMgMgcoTermIdLst(&adtRep->u.other.termIdLst, term_list);
+
+
+	/* We will always send one command at a time..*/
+	reply.cmdStatus.pres = PRSNT_NODEF;
+	reply.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
+
+	reply.cmdType.pres = PRSNT_NODEF;
+	reply.cmdType.val  = CH_CMD_TYPE_RSP;
+
+	ret = sng_mgco_send_cmd(suId, &reply);
+
+	/*will send once all audit done*/
+	memcpy(&ctxt.transId,&auditReq->transId,sizeof(MgMgcoTransId)); 
+	memcpy(&ctxt.cntxtId, &auditReq->contextId,sizeof(MgMgcoContextId));
+	memcpy(&ctxt.peerId, &auditReq->peerId,sizeof(TknU32));
+	ctxt.cmdStatus.pres = PRSNT_NODEF;
+	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
+	ret = sng_mgco_send_axn_req(suId, &ctxt);
+
+	return ret;
+}
+
+/*****************************************************************************************************************************/
+switch_status_t handle_media_audit( SuId suId, MgMgcoCommand *auditReq)
+{
+	switch_status_t  ret;
+	MgMgcoCommand    reply;
+	MgMgcoTermIdLst  *term_list;
+	MgMgcoTermId     *termId;
+	MgMgcoSubAudReq  *audit;
+	MgMgcoAuditDesc  *audit_desc;
+	MgMgcoAuditReply  *adtRep = NULLP;
+	U16                    numOfParms;
+	MgMgcoMediaDesc* media;
+
+
+	memset(&reply, 0, sizeof(reply));
+	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
+
+	if(NOTPRSNT == audit->pres.pres){
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	audit_desc = &audit->audit;
+
+	if((NOTPRSNT == audit_desc->pres.pres) || ( NOTPRSNT == audit_desc->num.pres)){
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit Descriptor not present..rejecting \n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* dump AUDIT message information */
+	/*mgAccEvntPrntMgMgcoSubAudReq(auditReq,stdout);*/
+
+	/*-- Get termination list --*/
+	term_list = mg_get_term_id_list(auditReq);
+	termId    = term_list->terms[0];
+
+
+	/*copy transaction-id*/
+	memcpy(&reply.transId, &auditReq->transId,sizeof(MgMgcoTransId));
+	/*copy context-id*/
+	memcpy(&reply.contextId, &auditReq->contextId,sizeof(MgMgcoContextId));
+	/*copy peer identifier */
+	memcpy(&reply.peerId, &auditReq->peerId,sizeof(TknU32));
+
+	/*fill response structue */
+	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&reply.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
+		return ret;
+	}
+
+	reply.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
+	reply.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
+	reply.u.mgCmdRsp[0]->type.val = MGT_AUDITVAL;
+
+
+	adtRep = &(reply.u.mgCmdRsp[0]->u.aval);
+
+	adtRep->type.pres = PRSNT_NODEF;
+	adtRep->type.val = MGT_TERMAUDIT;
+	adtRep->u.other.pres.pres = PRSNT_NODEF;
+	mgUtlAllocMgMgcoTermIdLst(&adtRep->u.other.termIdLst, term_list);
+
+	/* Grow the list of reply parameters */
+	if (mgUtlGrowList((void ***)&adtRep->u.other.audit.parms, sizeof(MgMgcoAudRetParm),
+				&adtRep->u.other.audit.num, &reply.u.mgCmdRsp[0]->memCp) != ROK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	numOfParms = adtRep->u.other.audit.num.val;
+	adtRep->u.other.audit.parms[numOfParms - 1]->type.pres = PRSNT_NODEF;
+	adtRep->u.other.audit.parms[numOfParms - 1]->type.val  = MGT_MEDIADESC;
+
+	media = get_default_media_desc();
+	if(!media){
+		return SWITCH_STATUS_FALSE;
+	}
+	mgUtlCpyMgMgcoMediaDesc(&adtRep->u.other.audit.parms[numOfParms - 1]->u.media, media, &reply.u.mgCmdRsp[0]->memCp);
+
+	/* We will always send one command at a time..*/
+	reply.cmdStatus.pres = PRSNT_NODEF;
+	reply.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
+
+	reply.cmdType.pres = PRSNT_NODEF;
+	reply.cmdType.val  = CH_CMD_TYPE_RSP;
+
+
+	ret = sng_mgco_send_cmd(suId, &reply);
+
+#if 0
+	/*will send once all audit done*/
+	memcpy(&ctxt.transId,&auditReq->transId,sizeof(MgMgcoTransId)); 
+	memcpy(&ctxt.cntxtId, &auditReq->contextId,sizeof(MgMgcoContextId));
+	memcpy(&ctxt.peerId, &auditReq->peerId,sizeof(TknU32));
+	ctxt.cmdStatus.pres = PRSNT_NODEF;
+	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
+	ret = sng_mgco_send_axn_req(suId, &ctxt);
+#endif
+
+	return ret;
+
+
+
+}
+
+/*****************************************************************************************************************************/
 switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq)
 {
 	switch_status_t  ret;
@@ -428,7 +699,6 @@ switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq)
 	MgMgcoAuditDesc  *audit_desc;
 	MgMgcoAuditReply  *adtRep = NULLP;
 	U16                    numOfParms;
-	MgMgcoCtxt     ctxt;
 
 	memset(&reply, 0, sizeof(reply));
 	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
@@ -503,12 +773,15 @@ switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq)
 
 	ret = sng_mgco_send_cmd(suId, &reply);
 
+#if 0
+	/*will send once all audit done*/
 	memcpy(&ctxt.transId,&auditReq->transId,sizeof(MgMgcoTransId)); 
 	memcpy(&ctxt.cntxtId, &auditReq->contextId,sizeof(MgMgcoContextId));
 	memcpy(&ctxt.peerId, &auditReq->peerId,sizeof(TknU32));
 	ctxt.cmdStatus.pres = PRSNT_NODEF;
 	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
 	ret = sng_mgco_send_axn_req(suId, &ctxt);
+#endif
 
 	return ret;
 
