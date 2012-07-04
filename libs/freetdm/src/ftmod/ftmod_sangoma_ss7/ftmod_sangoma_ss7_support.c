@@ -643,7 +643,7 @@ ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *r
 
 ftdm_status_t copy_access_transport_from_sngss7(ftdm_channel_t *ftdmchan, SiAccTrnspt *accTrnspt)
 {
-	char val[(MF_SIZE_TKNSTRE + 7) & 0xff8];
+	char val[3*((MF_SIZE_TKNSTRE + 7) & 0xff8)];
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
 
 	if (accTrnspt->eh.pres != PRSNT_NODEF || accTrnspt->infoElmts.pres !=PRSNT_NODEF) {
