@@ -56,16 +56,16 @@
 #define DBOV_MAX_SINE_POWER         (-3.02f)
 
 /*! \brief A handler for pure receive. The buffer cannot be altered. */
-typedef int (span_rx_handler_t)(void *s, const int16_t amp[], int len);
+typedef int (*span_rx_handler_t)(void *s, const int16_t amp[], int len);
 
 /*! \brief A handler for receive, where the buffer can be altered. */
-typedef int (span_mod_handler_t)(void *s, int16_t amp[], int len);
+typedef int (*span_mod_handler_t)(void *s, int16_t amp[], int len);
 
 /*! \brief A handler for missing receive data fill-in. */
-typedef int (span_rx_fillin_handler_t)(void *s, int len);
+typedef int (*span_rx_fillin_handler_t)(void *s, int len);
 
 /*! \brief A handler for transmit, where the buffer will be filled. */
-typedef int (span_tx_handler_t)(void *s, int16_t amp[], int max_len);
+typedef int (*span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 
 #define ms_to_samples(t)            ((t)*(SAMPLE_RATE/1000))
 #define us_to_samples(t)            ((t)/(1000000/SAMPLE_RATE))

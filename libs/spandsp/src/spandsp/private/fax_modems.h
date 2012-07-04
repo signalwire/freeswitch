@@ -95,18 +95,18 @@ struct fax_modems_state_s
     int rx_frame_received;
 
     /*! \brief The current receive signal handler */
-    span_rx_handler_t *rx_handler;
+    span_rx_handler_t rx_handler;
     /*! \brief The current receive missing signal fill-in handler */
-    span_rx_fillin_handler_t *rx_fillin_handler;
+    span_rx_fillin_handler_t rx_fillin_handler;
     void *rx_user_data;
 
     /*! \brief The current transmit signal handler */
-    span_tx_handler_t *tx_handler;
+    span_tx_handler_t tx_handler;
     void *tx_user_data;
 
     /*! The next transmit signal handler, for two stage transmit operations.
         E.g. a short silence followed by a modem signal. */
-    span_tx_handler_t *next_tx_handler;
+    span_tx_handler_t next_tx_handler;
     void *next_tx_user_data;
 
     /*! The current bit rate of the transmitter. */

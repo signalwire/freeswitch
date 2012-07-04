@@ -787,7 +787,7 @@ static void generate_ad_edd(void)
     float offset;
     float amp;
     float phase;
-    float delay;
+    //float delay;
     float pw;
 #if defined(HAVE_FFTW3_H)
     double in[FFT_SIZE][2];
@@ -836,7 +836,7 @@ static void generate_ad_edd(void)
                     amp = (1.0 - offset)*ad[l - 1].ad[j] + offset*ad[l].ad[j];
                     amp = pow(10.0, -amp/20.0);
                 }
-                delay = 0.0f;
+                //delay = 0.0f;
                 for (l = 0;  l < (int) (sizeof(edd)/sizeof(edd[0]));  l++)
                 {
                     if (f < edd[l].freq)
@@ -845,7 +845,7 @@ static void generate_ad_edd(void)
                 if (l < (int) (sizeof(edd)/sizeof(edd[0])))
                 {
                     offset = (f - edd[l - 1].freq)/(edd[l].freq - edd[l - 1].freq);
-                    delay = (1.0f - offset)*edd[l - 1].edd[k] + offset*edd[l].edd[k];
+                    //delay = (1.0f - offset)*edd[l - 1].edd[k] + offset*edd[l].edd[k];
                 }
                 //phase = 2.0f*M_PI*f*delay*0.001f;
                 phase = 0.0f;
@@ -915,7 +915,7 @@ static void generate_proakis(void)
     float offset;
     float amp;
     float phase;
-    float delay;
+    //float delay;
     float pw;
     int index;
     int i;
@@ -953,7 +953,7 @@ static void generate_proakis(void)
 
         /* Linear interpolation */
         amp = ((1.0f - offset)*proakis[index].amp + offset*proakis[index + 1].amp)/2.3f;
-        delay = (1.0f - offset)*proakis[index].delay + offset*proakis[index + 1].delay;
+        //delay = (1.0f - offset)*proakis[index].delay + offset*proakis[index + 1].delay;
         //phase = 2.0f*M_PI*f*delay*0.001f;
         phase = 0.0f;
 #if defined(HAVE_FFTW3_H)

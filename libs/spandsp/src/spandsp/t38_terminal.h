@@ -123,7 +123,7 @@ SPAN_DECLARE(int) t38_terminal_restart(t38_terminal_state_t *s,
     \return A pointer to the termination mode T.38 context, or NULL if there was a problem. */
 SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
                                                        int calling_party,
-                                                       t38_tx_packet_handler_t *tx_packet_handler,
+                                                       t38_tx_packet_handler_t tx_packet_handler,
                                                        void *tx_packet_user_data);
 
 /*! Release a termination mode T.38 context.

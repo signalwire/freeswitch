@@ -1040,7 +1040,7 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, int calling_party, v8_parms_t *parms
 SPAN_DECLARE(v8_state_t *) v8_init(v8_state_t *s,
                                    int calling_party,
                                    v8_parms_t *parms,
-                                   v8_result_handler_t *result_handler,
+                                   v8_result_handler_t result_handler,
                                    void *user_data)
 {
     if (s == NULL)

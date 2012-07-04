@@ -61,8 +61,8 @@ typedef struct
     fax_modems_state_t modems;
     /*! \brief The current receive signal handler. Actual receiving hops between this
                and a dummy receive routine. */
-    span_rx_handler_t *base_rx_handler;
-    span_rx_fillin_handler_t *base_rx_fillin_handler;
+    span_rx_handler_t base_rx_handler;
+    span_rx_fillin_handler_t base_rx_fillin_handler;
 } t38_gateway_audio_state_t;
 
 /*!
@@ -183,7 +183,7 @@ typedef struct
 
     /*! \brief A pointer to a callback routine to be called when frames are
         exchanged. */
-    t38_gateway_real_time_frame_handler_t *real_time_frame_handler;
+    t38_gateway_real_time_frame_handler_t real_time_frame_handler;
     /*! \brief An opaque pointer supplied in real time frame callbacks. */
     void *real_time_frame_user_data;
 } t38_gateway_core_state_t;

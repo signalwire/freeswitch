@@ -102,14 +102,12 @@ int rows_read = 0;
 
 static void dump_image_as_xxx(t4_state_t *state)
 {
-    uint8_t *s;
     int i;
     int j;
     int k;
 
     /* Dump the entire image as text 'X's and spaces */
     printf("Image (%d x %d):\n", receive_state.image_width, receive_state.image_length);
-    s = state->image_buffer;
     for (i = 0;  i < state->image_length;  i++)
     {
         for (j = 0;  j < state->bytes_per_row;  j++)
@@ -305,7 +303,7 @@ int main(int argc, char *argv[])
     int compression;
     int compression_step;
     int add_page_headers;
-    int overlay_page_headers;
+    //int overlay_page_headers;
     int min_row_bits;
     int restart_pages;
     int block_size;
@@ -329,7 +327,7 @@ int main(int argc, char *argv[])
     compression = -1;
     compression_step = 0;
     add_page_headers = FALSE;
-    overlay_page_headers = FALSE;
+    //overlay_page_headers = FALSE;
     restart_pages = FALSE;
     in_file_name = IN_FILE_NAME;
     decode_file_name = NULL;
@@ -395,11 +393,11 @@ int main(int argc, char *argv[])
             break;
         case 'h':
             add_page_headers = TRUE;
-            overlay_page_headers = FALSE;
+            //overlay_page_headers = FALSE;
             break;
         case 'H':
             add_page_headers = TRUE;
-            overlay_page_headers = TRUE;
+            //overlay_page_headers = TRUE;
             break;
         case 'r':
             restart_pages = TRUE;

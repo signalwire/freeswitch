@@ -42,7 +42,7 @@ modems in spandsp.
 */
 typedef struct t31_state_s t31_state_t;
 
-typedef int (t31_modem_control_handler_t)(t31_state_t *s, void *user_data, int op, const char *num);
+typedef int (*t31_modem_control_handler_t)(t31_state_t *s, void *user_data, int op, const char *num);
 
 #define T31_TX_BUF_LEN          (4096)
 #define T31_TX_BUF_HIGH_TIDE    (4096 - 1024)
@@ -133,11 +133,11 @@ SPAN_DECLARE(t38_core_state_t *) t31_get_t38_core_state(t31_state_t *s);
     \param tx_t38_packet_user_data ???
     \return A pointer to the T.31 context. */
 SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
-                                     at_tx_handler_t *at_tx_handler,
+                                     at_tx_handler_t at_tx_handler,
                                      void *at_tx_user_data,
-                                     t31_modem_control_handler_t *modem_control_handler,
+                                     t31_modem_control_handler_t modem_control_handler,
                                      void *modem_control_user_data,
-                                     t38_tx_packet_handler_t *tx_t38_packet_handler,
+                                     t38_tx_packet_handler_t tx_t38_packet_handler,
                                      void *tx_t38_packet_user_data);
 
 /*! Release a T.31 context.

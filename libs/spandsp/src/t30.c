@@ -6345,11 +6345,11 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
 
 SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
                                      int calling_party,
-                                     t30_set_handler_t *set_rx_type_handler,
+                                     t30_set_handler_t set_rx_type_handler,
                                      void *set_rx_type_user_data,
-                                     t30_set_handler_t *set_tx_type_handler,
+                                     t30_set_handler_t set_tx_type_handler,
                                      void *set_tx_type_user_data,
-                                     t30_send_hdlc_handler_t *send_hdlc_handler,
+                                     t30_send_hdlc_handler_t send_hdlc_handler,
                                      void *send_hdlc_user_data)
 {
     if (s == NULL)

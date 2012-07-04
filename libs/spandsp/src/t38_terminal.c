@@ -1446,7 +1446,7 @@ static int t38_terminal_t38_fe_restart(t38_terminal_state_t *t)
 /*- End of function --------------------------------------------------------*/
 
 static int t38_terminal_t38_fe_init(t38_terminal_state_t *t,
-                                    t38_tx_packet_handler_t *tx_packet_handler,
+                                    t38_tx_packet_handler_t tx_packet_handler,
                                     void *tx_packet_user_data)
 {
     t38_terminal_front_end_state_t *s;
@@ -1495,7 +1495,7 @@ SPAN_DECLARE(int) t38_terminal_restart(t38_terminal_state_t *s,
 
 SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
                                                        int calling_party,
-                                                       t38_tx_packet_handler_t *tx_packet_handler,
+                                                       t38_tx_packet_handler_t tx_packet_handler,
                                                        void *tx_packet_user_data)
 {
     if (tx_packet_handler == NULL)
