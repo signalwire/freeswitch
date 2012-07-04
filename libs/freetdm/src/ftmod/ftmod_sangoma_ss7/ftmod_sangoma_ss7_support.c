@@ -644,7 +644,7 @@ ftdm_status_t copy_redirgInfo_to_sngss7(ftdm_channel_t *ftdmchan, SiRedirInfo *r
 
 ftdm_status_t copy_access_transport_from_sngss7(ftdm_channel_t *ftdmchan, SiAccTrnspt *accTrnspt)
 {
-	char *val=NULL;
+	char val[3*((MF_SIZE_TKNSTRE + 7) & 0xff8)];
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
 
 	if (accTrnspt->eh.pres != PRSNT_NODEF || accTrnspt->infoElmts.pres !=PRSNT_NODEF) {
@@ -652,10 +652,8 @@ ftdm_status_t copy_access_transport_from_sngss7(ftdm_channel_t *ftdmchan, SiAccT
 		return FTDM_SUCCESS;
 	}
 
-	val = ftdm_malloc(3*accTrnspt->infoElmts.len);
 	ftdm_url_encode((const char*)accTrnspt->infoElmts.val, val, accTrnspt->infoElmts.len);
 	sngss7_add_var (sngss7_info, "ss7_access_transport_urlenc", val);
-	ftdm_safe_free(val);
 	
 	return FTDM_SUCCESS;
 }
