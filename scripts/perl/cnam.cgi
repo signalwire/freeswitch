@@ -11,7 +11,7 @@ use Fcntl;
 
 my %params = map { $_ => get_data( $_ ) } param;
 
-$ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0 });
+$ua = LWP::UserAgent->new(ssl_opts => { verify_hostname => 0, timeout => 3 });
 
 sub get_data {
     my $name   = shift;
@@ -29,8 +29,6 @@ my $number = $params{number};
 
 
 if($number =~ m/1?\d{10}/) {
-
-
     if($number =~ m/^1(\d{10})$/) {
 	$number = $1;
     }
@@ -42,21 +40,15 @@ if($number =~ m/1?\d{10}/) {
     }
 
     my $url = "https://api.opencnam.com/v1/phone/$number?format=text";
-
-
     my $res = $ua->get( $url );
+    my $code = $res->code;
 
-    if ($res->is_success) {
+    if ($code eq '200') {
 	my $content = $res->decoded_content;
-	if ($content =~ m/^Invalid/) {
-	    # API shouldn't return this crap.
-	    print "UNKNOWN";
-	} else {
-	    # Cache the entry.
-	    $cache{"$number"} = $content;
-	    # print the entry.
-	    print $content;
-	}
+	$cache{"$number"} = $content;
+	print $content;
+    } else {
+	print "UNKNOWN";
     }
 }
 
