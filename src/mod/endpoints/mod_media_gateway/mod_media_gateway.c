@@ -571,9 +571,6 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 						{
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Audit-Value Method \n");
 							handle_mg_audit_cmd(suId, cmd);
-							/*need to call this for other types of audit..
-							 * ideally from the request apis we should send response..keeping now here just to send dummy responses*/
-							mg_send_audit_rsp(suId, cmd);
 							break;
 						}
 						break;

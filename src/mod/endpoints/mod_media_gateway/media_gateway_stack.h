@@ -121,9 +121,10 @@ switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoCont
 void mgco_print_sdp(CmSdpInfoSet *sdp);
 void mg_util_set_ctxt_string ( MgStr  *errTxt, MgMgcoContextId     *ctxtId);
 switch_status_t handle_mg_add_cmd(MgMgcoAmmReq *addReq);
-switch_status_t mg_stack_free_mem(MgMgcoMsg* msg);
-switch_status_t mg_stack_free_mem(MgMgcoMsg* msg);
+switch_status_t mg_stack_free_mem(void* msg);
 switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize );
+MgMgcoMediaDesc* get_default_media_desc(void);
+switch_status_t handle_media_audit( SuId suId, MgMgcoCommand *auditReq);
 switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req);
 S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, CONSTANT U8   *str, CmMemListCp   *memCp);
 void mg_util_set_txn_string(MgStr  *errTxt, U32 *txnId);
@@ -137,6 +138,7 @@ void mg_util_set_term_string ( MgStr  *errTxt, MgMgcoTermId   *termId);
 MgMgcoTermIdLst *mg_get_term_id_list(MgMgcoCommand *cmd);
 switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq);
 switch_status_t mg_build_pkg_desc(MgMgcoPkgsDesc* pkg);
+switch_status_t mg_send_heartbeat_audit_rsp( SuId suId, MgMgcoCommand *auditReq);
 
 
 
