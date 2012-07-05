@@ -95,6 +95,28 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
 /**********************************************************************************/
+		}else if(!strcmp(argv[2], "send")) {
+/**********************************************************************************/
+			/* mg profile <profile-name> send sc <term-id> <method> <reason>*/
+			printf("count = %d \n",argc);
+			if(argc < 7){
+				goto usage;
+			}
+			if(zstr(argv[3]) || zstr(argv[4]) || zstr(argv[5]) || zstr(argv[6])){
+				goto usage;
+			}
+
+			if (profile) {
+				printf("Input to Send Service Change command : "
+						"Profile Name[%s], term-id[%s] method[%s] reason[%s] \n",
+						profile->name, argv[4], argv[5], argv[6]);
+
+				megaco_profile_release(profile);
+				mg_send_service_change(profile->idx, argv[4], atoi(argv[5]), atoi(argv[6]));
+			} else {
+				stream->write_function(stream, "-ERR No such profile\n");
+			}
+/**********************************************************************************/
 		}else {
 /**********************************************************************************/
 			goto usage;

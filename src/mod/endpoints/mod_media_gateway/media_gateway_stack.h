@@ -60,6 +60,13 @@ typedef struct _mgPackage
 
 extern MgPackage_t mg_pkg_list[];
 
+/* Service change Reason  */
+typedef enum { 
+   MG_SVC_REASON_NOTUSED = 0,
+   MG_SVC_REASON_900_RESTORED = 1,
+   MG_SVC_REASON_905_TERM_OOS = 2,
+   MG_SVC_REASON_LAST = 4
+} MgServiceChangeReason_e;
 
 #define MG_TXN_INVALID 0
 
@@ -73,6 +80,12 @@ extern MgPackage_t mg_pkg_list[];
 #define MG_SET_VAL_PRES(tkn,_val)    \
    MG_SET_PRES((tkn).pres);          \
    (tkn).val = _val;                        
+
+#define MG_SET_TKN_VAL_PRES(_tkn, _val, _pres)                       \
+{                                                                   \
+   (_tkn)->val  = _val;                                             \
+   (_tkn)->pres = _pres;                                            \
+}
 
 
 #define MG_MEM_COPY(_dst, _src, _len) \
@@ -126,7 +139,7 @@ switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize );
 MgMgcoMediaDesc* get_default_media_desc(void);
 switch_status_t handle_media_audit( SuId suId, MgMgcoCommand *auditReq);
 switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req);
-S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, CONSTANT U8   *str, CmMemListCp   *memCp);
+S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, CmMemListCp   *memCp);
 void mg_util_set_txn_string(MgStr  *errTxt, U32 *txnId);
 switch_status_t mg_build_mgco_err_request(MgMgcoInd  **errcmd,U32  trans_id, MgMgcoContextId   *ctxt_id, U32  err, MgStr  *errTxt);
 switch_status_t mg_send_audit_rsp(SuId suId, MgMgcoCommand *req);
@@ -139,6 +152,11 @@ MgMgcoTermIdLst *mg_get_term_id_list(MgMgcoCommand *cmd);
 switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq);
 switch_status_t mg_build_pkg_desc(MgMgcoPkgsDesc* pkg);
 switch_status_t mg_send_heartbeat_audit_rsp( SuId suId, MgMgcoCommand *auditReq);
+void mg_get_time_stamp(MgMgcoTimeStamp *timeStamp);
+switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, const char  *reason);
+void mg_fill_null_context(MgMgcoContextId* ctxt);
+switch_status_t mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason);
+switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, uint8_t cmdType);
 
 
 

@@ -9,6 +9,15 @@
 #include "mod_media_gateway.h"
 #include "media_gateway_stack.h"
 
+U32 outgoing_txn_id;
+
+/*****************************************************************************************************************************/
+const char *mg_service_change_reason[] = {
+	"\"NOT USED\"",
+	"\"900 ServiceRestored\"",
+	"\"905 Termination taken out of service\"",
+	0
+};
 
 /*****************************************************************************************************************************/
 
@@ -134,7 +143,7 @@ switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req)
 #else
 	termId = &(cmd.u.mgCmdRsp[0]->u.add.termId);
 #endif
-	mg_fill_mgco_termid(termId, (CONSTANT U8*)"term1",&req->u.mgCmdRsp[0]->memCp);
+	/*mg_fill_mgco_termid(termId, (char*)"term1",&req->u.mgCmdRsp[0]->memCp);*/
 
 	/* We will always send one command at a time..*/
 	cmd.cmdStatus.pres = PRSNT_NODEF;
@@ -197,7 +206,7 @@ switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoCont
 
 switch_status_t mg_build_mgco_err_request(MgMgcoInd  **errcmd,U32  trans_id, MgMgcoContextId   *ctxt_id, U32  err, MgStr  *errTxt)
 {
-	MgMgcoInd     *mgErr;   
+	MgMgcoInd     *mgErr = NULL;   
 	S16            ret;
 
 	mgErr = NULLP;
@@ -584,6 +593,8 @@ switch_status_t mg_send_heartbeat_audit_rsp( SuId suId, MgMgcoCommand *auditReq)
 }
 
 /*****************************************************************************************************************************/
+#if 0
+/* Kapil - Not using any more */
 switch_status_t handle_media_audit( SuId suId, MgMgcoCommand *auditReq)
 {
 	switch_status_t  ret;
@@ -788,7 +799,10 @@ switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq)
 
 
 }
+#endif
 /*****************************************************************************************************************************/
+#if 0
+/* Kapil - Not using any more */
 switch_status_t mg_send_audit_rsp(SuId suId, MgMgcoCommand *req)
 {
 	MgMgcoCommand  cmd;
@@ -858,6 +872,7 @@ switch_status_t mg_send_audit_rsp(SuId suId, MgMgcoCommand *req)
 
 	return ret;
 }
+#endif
 
 /*****************************************************************************************************************************/
 switch_status_t mg_send_modify_rsp(SuId suId, MgMgcoCommand *req)
@@ -897,7 +912,7 @@ switch_status_t mg_send_modify_rsp(SuId suId, MgMgcoCommand *req)
 #else
 	termId = &(cmd.u.mgCmdRsp[0]->u.mod.termId);
 #endif
-	mg_fill_mgco_termid(termId, (CONSTANT U8*)"term1",&req->u.mgCmdRsp[0]->memCp);
+	/*mg_fill_mgco_termid(termId, (char*)"term1",&req->u.mgCmdRsp[0]->memCp);*/
 
 	/* We will always send one command at a time..*/
 	cmd.cmdStatus.pres = PRSNT_NODEF;
@@ -958,7 +973,7 @@ switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req)
 #else
 	termId = &(cmd.u.mgCmdRsp[0]->u.sub.termId);
 #endif
-	mg_fill_mgco_termid(termId, (CONSTANT U8*)"term1",&req->u.mgCmdRsp[0]->memCp);
+	/*mg_fill_mgco_termid(termId, (char *)"term1",&req->u.mgCmdRsp[0]->memCp);*/
 
 	/* We will always send one command at a time..*/
 	cmd.cmdStatus.pres = PRSNT_NODEF;
@@ -979,3 +994,94 @@ switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req)
 
 	return ret;
 }
+/*****************************************************************************************************************************/
+U32 get_txn_id(){
+	outgoing_txn_id++;
+	return outgoing_txn_id;
+}
+/*****************************************************************************************************************************/
+/* Note : API to send Service Change */
+/* INPUT : 
+*	method 			- Service change method type (can be MGT_SVCCHGMETH_RESTART/MGT_SVCCHGMETH_FORCED (please refer to sng_ss7/cm/mgt.h for more values))
+*	MgServiceChangeReason_e - Service Change reason 	
+*	SuId 			- Service User ID for MG SAP - it will be same like mg_profile_t->idx (refer to media_gateway_xml.c->mg_sap_id)
+*	term_name 		- String format defined termination name
+*/
+switch_status_t mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason)
+{
+	MgMgcoSvcChgPar srvPar;
+	MgMgcoTermId*   termId;
+	switch_status_t ret;
+	MgMgcoCommand   request;
+	MgMgcoSvcChgReq      *svc;
+
+	MG_ZERO(&srvPar, sizeof(MgMgcoSvcChgPar));
+	MG_ZERO(&request, sizeof(request));
+
+	
+
+	if(SWITCH_STATUS_FALSE == (ret = mg_create_mgco_command(&request, CH_CMD_TYPE_REQ, MGT_SVCCHG))){
+		goto err;
+	}
+
+	/*fill txn id */
+	request.transId.pres = PRSNT_NODEF;
+	request.transId.val  = get_txn_id();
+
+	request.contextId.type.pres = PRSNT_NODEF;
+	request.contextId.type.val = MGT_CXTID_NULL;
+
+#if 0
+	/* TODO - fill of below fields */
+#ifdef GCP_MGCO
+#ifdef GCP_VER_2_1
+	MgMgcoSegNum          segNum;
+	MgMgcoSegCmpl         segCmpl;
+#endif
+#endif  /* GCP_MGCO */
+#endif
+	request.cmdStatus.pres = PRSNT_NODEF;
+	request.cmdStatus.val = CH_CMD_STATUS_END_OF_TXN;
+
+	request.cmdType.pres = PRSNT_NODEF;
+	request.cmdType.val  = CH_CMD_TYPE_REQ;
+
+	svc = &request.u.mgCmdReq[0]->cmd.u.svc;
+
+	if(SWITCH_STATUS_FALSE == (ret = mg_fill_svc_change(&svc->parm, method, mg_service_change_reason[reason]))){
+		return ret;
+	}
+
+	/*mgUtlCpyMgMgcoSvcChgPar(&svc->parm, &srvPar, &request.u.mgCmdReq[0]->memCp);*/
+
+	printf("reason[%p = %s], len[%d]\n",svc->parm.reason.val, svc->parm.reason.val, svc->parm.reason.len);
+
+
+	if (mgUtlGrowList((void ***)&svc->termIdLst.terms, sizeof(MgMgcoTermIdLst),
+				&svc->termIdLst.num, &request.u.mgCmdReq[0]->memCp) != ROK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+#ifdef GCP_VER_2_1
+	termId = svc->termIdLst.terms[0];
+#else
+	termId = &(svc->termId);
+#endif
+
+
+	mg_fill_mgco_termid(termId, (char*)term_name ,strlen(term_name), &request.u.mgCmdReq[0]->memCp);
+
+
+	printf("reason[%p = %s], len[%d]\n",svc->parm.reason.val, svc->parm.reason.val, svc->parm.reason.len);
+
+	sng_mgco_send_cmd(suId, &request);
+
+	return SWITCH_STATUS_SUCCESS;
+
+err:
+	mgUtlDelMgMgcoSvcChgPar(&srvPar);
+	return ret;
+}
+/*****************************************************************************************************************************/
