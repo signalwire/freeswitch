@@ -442,7 +442,13 @@ static switch_time_t time_now(int64_t offset)
 
 SWITCH_DECLARE(switch_time_t) switch_time_ref(void)
 {
-	return time_now(0);
+	if (SYSTEM_TIME) {
+		/* Return system time reference */
+		return time_now(0);
+	} else {
+		/* Return monotonic time reference (when available) */
+		return time_now(-1);
+	}
 }
 
 static switch_time_t last_time = 0;
@@ -458,7 +464,7 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 		runtime.mono_reference = time_now(-1);
 		runtime.offset = 0;
 	} else {
-		runtime.offset = runtime.reference - time_now(0);
+		runtime.offset = runtime.reference - time_now(-1); /* Get the offset between system time and the monotonic clock (when available) */
 		runtime.reference = time_now(runtime.offset);
 	}
 
@@ -844,7 +850,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	if (MONO) {
 		int loops;
 		for (loops = 0; loops < 3; loops++) {
-			ts = time_now(0);
+			ts = switch_time_ref();
 			/* if it returns the same value every time it won't be of much use. */
 			if (ts == last) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Broken MONOTONIC Clock Detected!, Support Disabled.\n");
@@ -1287,6 +1293,8 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabled Windows monotonic clock, using timeGetTime()\n");
 		}
+
+		runtime.mono_initiated = switch_mono_micro_time_now(); /* Update mono_initiated, since now is the first time the real clock is enabled */
 	}
 
 	/* No need to calibrate clock in Win32, we will only sleep ms anyway, it's just not accurate enough */
