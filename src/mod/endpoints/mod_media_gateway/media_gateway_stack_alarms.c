@@ -208,6 +208,9 @@ void handle_mg_alarm(Pst *pst, MgMngmt *usta)
 		case LMG_EVENT_PEER_ENABLED:
 			{
 				len = len + sprintf(prBuf+len, "gateway enabled");
+				/* gateway enabled now we can send termination service change */
+				/*TODO - probably we cannt immediate send Service change - we have to find proper place */
+				/*mg_send_service_change(0x01, "A01", MGT_SVCCHGMETH_RESTART,MG_SVC_REASON_900_RESTORED );*/
 				break;
 			}
 		case LMG_EVENT_PEER_DISCOVERED:
