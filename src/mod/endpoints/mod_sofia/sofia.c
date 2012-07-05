@@ -5640,6 +5640,10 @@ void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void 
 		if ((uuid = switch_channel_get_partner_uuid(channel)) && (other_session = switch_core_session_locate(uuid))) {
 			if (switch_core_session_compare(session, other_session)) {
 				sofia_set_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
+
+				switch_yield(100000);
+				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+				
 				switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE);
 
 				if (tech_pvt->rtp_session) {
@@ -6227,7 +6231,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_core_session_message_t *msg;
 						private_object_t *other_tech_pvt;
 
-						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
+						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && (profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD)) {
 							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
 								tech_pvt->hold_laps = 1;
 								switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
