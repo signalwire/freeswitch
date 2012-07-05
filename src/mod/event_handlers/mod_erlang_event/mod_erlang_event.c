@@ -411,14 +411,20 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	switch_thread_rwlock_rdlock(globals.bindings_rwlock);
 
-	for (ptr = bindings.head; ptr; ptr = ptr->next) {
-		if (ptr->section != section)
-			continue;
+	/* Keep the listener from getting pulled out from under us */
+	switch_thread_rwlock_rdlock(globals.listener_rwlock);
 
+	for (ptr = bindings.head; ptr; ptr = ptr->next) {
+		/* If we got listener_rwlock while a listner thread was dying after removing the listener
+		   from listener_list but before locking for the bindings removal (now pending our lock) check
+		   if it already closed the socket.  Our listener pointer should still be good (pointed at an orphan
+		   listener) until it is removed from the binding...*/
 		if (!ptr->listener) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NULL pointer binding!\n");
-			switch_thread_rwlock_unlock(globals.bindings_rwlock);
-			goto cleanup; /* our pointer is trash */
+			continue;
+		}
+
+		if (ptr->section != section) {
+			continue;
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "binding for %s in section %s with key %s and value %s requested from node %s\n", tag_name, sectionstr, key_name, key_value, ptr->process.pid.node);
@@ -445,11 +451,14 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 		   on our condition before the action starts. */
 
 		switch_mutex_lock(ptr->listener->sock_mutex);
-		ei_sendto(ptr->listener->ec, ptr->listener->sockfd, &ptr->process, &buf);
+ 		if (ptr->listener->sockfd) {
+			ei_sendto(ptr->listener->ec, ptr->listener->sockfd, &ptr->process, &buf);
+		}
 		switch_mutex_unlock(ptr->listener->sock_mutex);
 	}
 
 	switch_thread_rwlock_unlock(globals.bindings_rwlock);
+	switch_thread_rwlock_unlock(globals.listener_rwlock);
 
 	ei_x_free(&buf);
 
@@ -1243,9 +1252,11 @@ void destroy_listener(listener_t * listener)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
 	switch_thread_rwlock_wrlock(listener->rwlock);
 
+	switch_mutex_lock(listener->sock_mutex);
 	if (listener->sockfd) {
 		close_socket(&listener->sockfd);
 	}
+	switch_mutex_unlock(listener->sock_mutex);
 
 	switch_core_hash_destroy(&listener->event_hash);
 
