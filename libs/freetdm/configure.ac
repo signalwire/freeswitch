@@ -313,7 +313,7 @@ AC_MSG_RESULT([checking whether to build ftmod_sangoma_isdn... ${HAVE_SNG_ISDN}]
 AM_CONDITIONAL([HAVE_SNG_ISDN], [test "${HAVE_SNG_ISDN}" = "yes"])
 
 if test "${HAVE_SNG_ISDN}" = "yes"; then
-	if test "${build}" == "${host}"
+	if test "${build}" = "${host}"
 	then
 		case "${host}" in
 		x86_64-*)
@@ -334,7 +334,7 @@ AC_MSG_RESULT([checking whether to build ftmod_sangoma_ss7... ${HAVE_SNG_SS7}])
 AM_CONDITIONAL([HAVE_SNG_SS7], [test "${HAVE_SNG_SS7}" = "yes"])
 
 if test "${HAVE_SNG_SS7}" = "yes"; then
-	if test "${build}" == "${host}"
+	if test "${build}" = "${host}"
 	then
 		case "${host}" in
 		x86_64-*)
