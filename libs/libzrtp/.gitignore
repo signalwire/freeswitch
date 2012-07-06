@@ -1,5 +1,9 @@
 # -*- mode:conf -*-
+/*.a
+/*.dat
+/*.o
 /.cproject
+/.deps
 /.project
 /.stamp-doc
 /Makefile
@@ -7,7 +11,7 @@
 /_configs.sed
 /aclocal.m4
 /autom4te.cache/*
-/build/
+/cache_test
 /config.*
 /config/*
 /configure

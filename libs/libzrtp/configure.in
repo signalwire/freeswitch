@@ -105,4 +105,4 @@ AM_CONDITIONAL([HAVE_DOXYGEN],
 
 #
 # Genearte Makefiles
-AC_OUTPUT([Makefile build/Makefile build/test/Makefile])
+AC_OUTPUT([Makefile])
