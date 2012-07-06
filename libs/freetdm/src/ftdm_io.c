@@ -4181,6 +4181,9 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_get_iterator(ftdm_iterator_type_t type, ftdm_
 
 FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *span, ftdm_iterator_t *iter)
 {
+	if (!span->chan_count) {
+		return NULL;
+	}
 	if (!(iter = ftdm_get_iterator(FTDM_ITERATOR_CHANS, iter))) {
 		return NULL;
 	}
@@ -4671,7 +4674,7 @@ static ftdm_status_t load_config(void)
 					*name++ = '\0';
 				}
 
-				/* Verify is trunk_type was specified for previous span */
+				/* Verify if trunk_type was specified for previous span */
 				if (span && span->trunk_type == FTDM_TRUNK_NONE) {
 					ftdm_log(FTDM_LOG_ERROR, "trunk_type not specified for span %d (%s)\n", span->span_id, span->name);
 					ret = FTDM_FAIL;
