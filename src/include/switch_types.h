@@ -712,7 +712,7 @@ typedef enum {
 	*/
 
 
-	RTP_BUG_GEN_ONE_GEN_ALL = (1 << 8)
+	RTP_BUG_GEN_ONE_GEN_ALL = (1 << 8),
 
 	/*
 	  Some RTP endpoints (and by some we mean *cough* _SONUS_!) do not like it when the timestamps jump forward or backwards in time.
@@ -726,6 +726,12 @@ typedef enum {
 
 	 */
 
+	RTP_BUG_NEVER_CHANGE_SSRC_ON_MARKER = (1 << 9)
+
+	/*
+	  By default FS will change the SSRC when the marker is set and it detects a timestamp reset.
+	  If this setting is enabled it will NOT do this (old behaviour).
+	 */
 
 } switch_rtp_bug_flag_t;
 

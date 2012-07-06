@@ -4062,6 +4062,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		send_msg->header.m = (m && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) ? 1 : 0;
 
+		/* If the marker was set, and the timestamp seems to have started over - set a new SSRC, to indicate this is a new stream */
+		if (send_msg->header.m && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_CHANGE_SSRC_ON_MARKER) && (rtp_session->last_write_ts == RTP_TS_RESET ||
+			(rtp_session->ts <= rtp_session->last_write_ts && rtp_session->last_write_ts > 0))) {
+				switch_rtp_set_ssrc(rtp_session, (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL)));
+		}
+
 		memcpy(send_msg->body, data, datalen);
 		bytes = datalen + rtp_header_len;
 	}

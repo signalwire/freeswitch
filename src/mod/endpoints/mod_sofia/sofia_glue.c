@@ -7022,6 +7022,14 @@ void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str
 	if (switch_stristr("~GEN_ONE_GEN_ALL", str)) {
 		*flag_pole &= ~RTP_BUG_GEN_ONE_GEN_ALL;
 	}
+
+	if (switch_stristr("NEVER_CHANGE_SSRC_ON_MARKER", str)) {
+		*flag_pole |= RTP_BUG_NEVER_CHANGE_SSRC_ON_MARKER;
+	}
+
+	if (switch_stristr("~NEVER_CHANGE_SSRC_ON_MARKER", str)) {
+		*flag_pole &= ~RTP_BUG_NEVER_CHANGE_SSRC_ON_MARKER;
+	}
 }
 
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np)
