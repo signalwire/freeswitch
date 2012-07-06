@@ -1897,7 +1897,6 @@ static void switch_load_core_config(const char *file)
 SWITCH_DECLARE(const char *) switch_core_banner(void)
 {
 
-
 	return ("\n"
 			"   _____              ______        _____ _____ ____ _   _  \n"
 			"  |  ___| __ ___  ___/ ___\\ \\      / /_ _|_   _/ ___| | | | \n"
@@ -1909,7 +1908,8 @@ SWITCH_DECLARE(const char *) switch_core_banner(void)
 			"* Anthony Minessale II, Michael Jerris, Brian West, Others *\n"
 			"* FreeSWITCH (http://www.freeswitch.org)                   *\n"
 			"* Paypal Donations Appreciated: paypal@freeswitch.org      *\n"
-			"* Brought to you by ClueCon http://www.cluecon.com/        *\n" "************************************************************\n" "\n");
+			"* Brought to you by ClueCon http://www.cluecon.com/        *\n" "************************************************************\n" 
+			"\n");
 }
 
 
@@ -1917,6 +1917,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 {
 	switch_event_t *event;
 	char *cmd;
+#include "cc.h"
+
 
 	if (switch_core_init(flags, console, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
@@ -1951,7 +1953,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		switch_event_fire(&event);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s", switch_core_banner());
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s", switch_core_banner(), cc);
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
