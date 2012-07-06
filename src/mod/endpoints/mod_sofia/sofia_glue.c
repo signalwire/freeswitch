@@ -438,6 +438,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 	if (!force && !ip && zstr(sr)
 		&& (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA))) {
+		switch_safe_free(buf);
 		return;
 	}
 
@@ -449,6 +450,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 	if (!ip) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s NO IP!\n", switch_channel_get_name(tech_pvt->channel));
+		switch_safe_free(buf);
 		return;
 	}
 
@@ -460,6 +462,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 	if (!port) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s NO PORT!\n", switch_channel_get_name(tech_pvt->channel));
+		switch_safe_free(buf);
 		return;
 	}
 
@@ -776,6 +779,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	}
 
 	sofia_glue_tech_set_local_sdp(tech_pvt, buf, SWITCH_TRUE);
+
+	switch_safe_free(buf);
 }
 
 const char *sofia_glue_get_codec_string(private_object_t *tech_pvt)
@@ -4022,7 +4027,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		ptime = dptime;
 		if (m->m_type == sdp_media_image && m->m_port) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), ",t38");
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",t38");
 		} else if (m->m_type == sdp_media_audio && m->m_port) {
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 				if (zstr(attr->a_name)) {
@@ -4063,7 +4068,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 						}
 
 						if (match) {
-							add_audio_codec(map, ptime, buf, SDPBUFLEN);
+							add_audio_codec(map, ptime, buf, sizeof(buf));
 							break;
 						}
 					
@@ -4092,7 +4097,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 						}
 
 						if (match) {
-							add_audio_codec(map, ptime, buf, SDPBUFLEN);
+							add_audio_codec(map, ptime, buf, sizeof(buf));
 							break;
 						}
 					}
@@ -4131,10 +4136,10 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 
 					if (match) {
 						if (ptime > 0) {
-							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), ",%s@%uh@%di", imp->iananame, (unsigned int) map->rm_rate,
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (unsigned int) map->rm_rate,
 											ptime);
 						} else {
-							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), ",%s@%uh", imp->iananame, (unsigned int) map->rm_rate);
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh", imp->iananame, (unsigned int) map->rm_rate);
 						}
 						already_did[imp->ianacode] = 1;
 						break;
@@ -4396,7 +4401,7 @@ switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, swi
 						}
 					}
 
-					switch_snprintf(buf, SDPBUFLEN, "%d", map->rm_pt);
+					switch_snprintf(buf, sizeof(buf), "%d", map->rm_pt);
 
 					if (br) {
 						switch_snprintf(key, sizeof(key), "%s:%s", map->rm_encoding, br);
