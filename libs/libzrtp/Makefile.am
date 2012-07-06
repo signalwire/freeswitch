@@ -5,48 +5,43 @@
 # Viktor Krikun <v.krikun@soft-industry.com> <v.krikun@gmail.com>
 #
 
-TEST_DIR=$(top_srcdir)/test
-TOP_SRCDIR=$(top_srcdir)/include
-THIRD_DIR=$(top_srcdir)/third_party
-
 libzrtp_includedir=$(includedir)/libzrtp
-
 libzrtp_include_HEADERS = \
-					$(TOP_SRCDIR)/zrtp.h \
-					$(TOP_SRCDIR)/zrtp_base.h \
-					$(TOP_SRCDIR)/zrtp_config.h \
-					$(TOP_SRCDIR)/zrtp_config_user.h \
-					$(TOP_SRCDIR)/zrtp_config_unix.h \
-					$(TOP_SRCDIR)/zrtp_crypto.h \
-					$(TOP_SRCDIR)/zrtp_engine.h \
-					$(TOP_SRCDIR)/zrtp_error.h \
-					$(TOP_SRCDIR)/zrtp_iface.h \
-					$(TOP_SRCDIR)/zrtp_iface_scheduler.h \
-					$(TOP_SRCDIR)/zrtp_iface_cache.h \
-					$(TOP_SRCDIR)/zrtp_iface_system.h \
-					$(TOP_SRCDIR)/zrtp_legal.h \
-					$(TOP_SRCDIR)/zrtp_list.h \
-					$(TOP_SRCDIR)/zrtp_log.h \
-					$(TOP_SRCDIR)/zrtp_pbx.h \
-					$(TOP_SRCDIR)/zrtp_protocol.h \
-					$(TOP_SRCDIR)/zrtp_srtp.h \
-					$(TOP_SRCDIR)/zrtp_srtp_builtin.h \
-					$(TOP_SRCDIR)/zrtp_string.h \
-					$(TOP_SRCDIR)/zrtp_types.h \
-					$(TOP_SRCDIR)/zrtp_version.h \
+					$(top_srcdir)/include/zrtp.h \
+					$(top_srcdir)/include/zrtp_base.h \
+					$(top_srcdir)/include/zrtp_config.h \
+					$(top_srcdir)/include/zrtp_config_user.h \
+					$(top_srcdir)/include/zrtp_config_unix.h \
+					$(top_srcdir)/include/zrtp_crypto.h \
+					$(top_srcdir)/include/zrtp_engine.h \
+					$(top_srcdir)/include/zrtp_error.h \
+					$(top_srcdir)/include/zrtp_iface.h \
+					$(top_srcdir)/include/zrtp_iface_scheduler.h \
+					$(top_srcdir)/include/zrtp_iface_cache.h \
+					$(top_srcdir)/include/zrtp_iface_system.h \
+					$(top_srcdir)/include/zrtp_legal.h \
+					$(top_srcdir)/include/zrtp_list.h \
+					$(top_srcdir)/include/zrtp_log.h \
+					$(top_srcdir)/include/zrtp_pbx.h \
+					$(top_srcdir)/include/zrtp_protocol.h \
+					$(top_srcdir)/include/zrtp_srtp.h \
+					$(top_srcdir)/include/zrtp_srtp_builtin.h \
+					$(top_srcdir)/include/zrtp_string.h \
+					$(top_srcdir)/include/zrtp_types.h \
+					$(top_srcdir)/include/zrtp_version.h \
 					\
-					$(THIRD_DIR)/bnlib/bn.h \
+					$(top_srcdir)/third_party/bnlib/bn.h \
 					\
-					$(THIRD_DIR)/bgaes/aes.h \
-					$(THIRD_DIR)/bgaes/aesopt.h \
-					$(THIRD_DIR)/bgaes/aestab.h \
-					$(THIRD_DIR)/bgaes/bg2zrtp.h \
-					$(THIRD_DIR)/bgaes/brg_types.h \
-					$(THIRD_DIR)/bgaes/sha1.h \
-					$(THIRD_DIR)/bgaes/sha2.h
+					$(top_srcdir)/third_party/bgaes/aes.h \
+					$(top_srcdir)/third_party/bgaes/aesopt.h \
+					$(top_srcdir)/third_party/bgaes/aestab.h \
+					$(top_srcdir)/third_party/bgaes/bg2zrtp.h \
+					$(top_srcdir)/third_party/bgaes/brg_types.h \
+					$(top_srcdir)/third_party/bgaes/sha1.h \
+					$(top_srcdir)/third_party/bgaes/sha2.h
 
 if ZRTP_BUILD_ENTERPRISE
-libzrtp_include_HEADERS += $(TOP_SRCDIR)/zrtp_ec.h
+libzrtp_include_HEADERS += $(top_srcdir)/include/zrtp_ec.h
 endif
 
 SUBDIRS =  third_party/bnlib
@@ -62,3 +57,4 @@ endif
 uninstall:
 	rm -rf $(prefix)/include/libzrtp
 	rm -f $(prefix)/lib/libzrtp.a
+

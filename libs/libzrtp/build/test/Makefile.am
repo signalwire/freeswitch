@@ -7,23 +7,22 @@
 
 
 
-TOP_SRCDIR=$(top_srcdir)
-INCLUDES = 	-I$(TOP_SRCDIR)/include \
-			-I$(TOP_SRCDIR)/include/enterprise \
-			-I$(TOP_SRCDIR)/. \
-			-I$(TOP_SRCDIR)/test \
-			-I$(TOP_SRCDIR)/test/cmockery \
-			-I$(TOP_SRCDIR)/third_party/bgaes \
-			-I$(TOP_SRCDIR)/third_party/bnlib
+INCLUDES = 	-I$(top_srcdir)/include \
+			-I$(top_srcdir)/include/enterprise \
+			-I$(top_srcdir)/. \
+			-I$(top_srcdir)/test \
+			-I$(top_srcdir)/test/cmockery \
+			-I$(top_srcdir)/third_party/bgaes \
+			-I$(top_srcdir)/third_party/bnlib
 
 
 check_PROGRAMS = cache_test
 
 ### ZRTP Cache testing
 
-cache_test_SOURCES = $(TOP_SRCDIR)/test/cmockery/cmockery.c \
-					 $(TOP_SRCDIR)/test/cache_test.c
-cache_test_LDADD   = ../libzrtp.a  $(TOP_SRCDIR)/third_party/bnlib/libbn.a -lpthread
+cache_test_SOURCES = $(top_srcdir)/test/cmockery/cmockery.c \
+					 $(top_srcdir)/test/cache_test.c
+cache_test_LDADD   = ../libzrtp.a  $(top_srcdir)/third_party/bnlib/libbn.a -lpthread
 
 
 SUBDIRS = .
