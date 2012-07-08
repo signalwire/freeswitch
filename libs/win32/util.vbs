@@ -262,6 +262,58 @@ Sub FindReplaceInFile(FileName, sFind, sReplace)
 	fNewFile.Close
 End Sub
 
+Function ExecAndGetResult(tmpFolder, VersionDir, execStr)
+	
+	Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpExec.Bat", True)
+	MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
+	MyFile.WriteLine("@" & execStr)
+	MyFile.Close
+	
+	Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpExec.Bat" & quote)
+	
+	ExecAndGetResult = Trim(OExec.StdOut.ReadLine())
+
+	Do
+	Loop While Not OExec.StdOut.atEndOfStream
+	
+	FSO.DeleteFile(tmpFolder & "tmpExec.Bat")
+
+End Function
+
+Function ExecAndGetExitCode(tmpFolder, VersionDir, execStr)
+	
+	Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpExec.Bat", True)
+	MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
+	MyFile.WriteLine("@" & execStr)
+	MyFile.WriteLine("@exit %ERRORLEVEL%")
+	MyFile.Close
+	
+	ExecAndGetExitCode = WshShell.Run("cmd /C " & quote & tmpFolder & "tmpExec.Bat" & quote, 0, True)
+	
+	FSO.DeleteFile(tmpFolder & "tmpExec.Bat")
+
+End Function
+
+Function pd(n, totalDigits)
+	If totalDigits > len(n) then
+		pd = String(totalDigits-len(n),"0") & n
+	Else
+		pd = n
+	End If
+End Function
+
+Function GetTimeUTC()
+
+    iOffset = WshShell.RegRead("HKLM\System\CurrentControlSet\Control\TimeZoneInformation\ActiveTimeBias")
+    
+    If IsNumeric(iOffset) Then
+    	GetTimeUTC = DateAdd("n", iOffset, Now())
+    Else
+    	GetTimeUTC = Now()
+    End If
+
+End Function
+
 Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	Dim oExec
 	
@@ -276,29 +328,47 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	End If
 
 	Dim sLastFile
-	Const ForReading       =  1
+	Const ForReading = 1
 
-	'Try To read revision from git, if it was not found in "configure.in" already
-	If strVerRev = "" Then
-		If FSO.FolderExists(VersionDir & ".git") Then
-			VersionCmd="git log --format=" & quote & "%%h %%ci" & quote & " -1 HEAD"
-			Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
-			MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
-			MyFile.WriteLine("@" & VersionCmd)
-			MyFile.Close
-			Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
-			Do
-				strFromProc = Trim(OExec.StdOut.ReadLine())
-				VERSION="git-" & strFromProc
-			Loop While Not OExec.StdOut.atEndOfStream
-			sLastVersion = ""
-			Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
-			If Not sLastFile.atEndOfStream Then
-				sLastVersion = sLastFile.ReadLine()
-			End If
-			sLastFile.Close
-			VERSION = Replace(VERSION, ":", "-")
+	'Try To read revision from git
+	If FSO.FolderExists(VersionDir & ".git") Then
+		'Get timestamp for last commit
+		strFromProc = ExecAndGetResult(tmpFolder, VersionDir, "git log -n1 --format=" & quote & "%%ct" & quote & " HEAD")
+		If IsNumeric(strFromProc) Then
+			lastChangedDateTime = DateAdd("s", strFromProc, "01/01/1970 00:00:00")
+			strLastCommit = YEAR(lastChangedDateTime) & Pd(Month(lastChangedDateTime), 2) & Pd(DAY(lastChangedDateTime), 2) & "T" & Pd(Hour(lastChangedDateTime), 2) & Pd(Minute(lastChangedDateTime), 2) & Pd(Second(lastChangedDateTime), 2) & "Z"
+		Else
+			strLastCommit = "UNKNOWN"
 		End If
+
+		'Get revision hash
+		strRevision = ExecAndGetResult(tmpFolder, VersionDir, "git rev-list -n1 --abbrev=10 --abbrev-commit HEAD")
+		
+		If strRevision = "" Then
+			strRevision = "UNKNOWN"
+		End If
+
+		'Bild version string
+		strGitVer="git~" & strLastCommit & "~" & strRevision
+
+		'Check for local changes, if found, append to git revision string
+		If ExecAndGetExitCode(tmpFolder, VersionDir, "git diff-index --quiet HEAD") <> 0 Then
+			lastChangedDateTime = GetTimeUTC()
+			strGitVer = strGitVer & "+unclean~" & YEAR(lastChangedDateTime) & Pd(Month(lastChangedDateTime), 2) & Pd(DAY(lastChangedDateTime), 2) & "T" & Pd(Hour(lastChangedDateTime), 2) & Pd(Minute(lastChangedDateTime), 2) & Pd(Second(lastChangedDateTime), 2) & "Z"
+		End If
+
+		If strVerRev = "" Then
+			VERSION=strGitVer
+		Else
+			VERSION=VERSION & "+" & strGitVer
+		End If
+
+		sLastVersion = ""
+		Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
+		If Not sLastFile.atEndOfStream Then
+			sLastVersion = sLastFile.ReadLine()
+		End If
+		sLastFile.Close
 	End If
 	
 	If VERSION = "" Then
@@ -315,7 +385,6 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		FindReplaceInFile includedest, "@SWITCH_VERSION_MAJOR@", strVerMajor
 		FindReplaceInFile includedest, "@SWITCH_VERSION_MINOR@", strVerMinor
 		FindReplaceInFile includedest, "@SWITCH_VERSION_MICRO@", strVerMicro
-
 	End If
 	
 End Sub
