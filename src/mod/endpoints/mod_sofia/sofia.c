@@ -1074,6 +1074,8 @@ static void our_sofia_event_callback(nua_event_t event,
 
 	case nua_i_cancel:
 
+		switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_cancel");
+
 		if (sip && channel && sip->sip_reason) {
 			char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
 			
