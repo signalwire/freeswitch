@@ -7316,6 +7316,16 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			switch_ivr_session_transfer(b_session, exten, NULL, NULL);
 			switch_core_session_rwunlock(b_session);
 		} else {
+			switch_event_t *event;
+
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR)) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Error-Type", "attended_transfer");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Transfer-Exten", exten);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Full-Refer-To", full_ref_to);
+				
+				switch_channel_event_set_data(channel, event);
+			}
+
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Blind Transfer 1 Legged calls\n");
 			switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 			nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
