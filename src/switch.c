@@ -360,13 +360,19 @@ static const char const usage[] =
 	"\t-ncwait                -- do not output to a console and background but wait until the system is ready before exiting (implies -nc)\n"
 #endif
 	"\t-c                     -- output to a console and stay in the foreground\n"
-	"\t-conf [confdir]        -- specify an alternate config dir\n"
-	"\t-log [logdir]          -- specify an alternate log dir\n"
-	"\t-run [rundir]          -- specify an alternate run dir\n"
-	"\t-db [dbdir]            -- specify an alternate db dir\n"
-	"\t-mod [moddir]          -- specify an alternate mod dir\n"
-	"\t-htdocs [htdocsdir]    -- specify an alternate htdocs dir\n"
-	"\t-scripts [scriptsdir]  -- specify an alternate scripts dir\n";
+	"\n\tOptions to control locations of files:\n"
+	"\t-conf [confdir]         -- alternate directory for FreeSWITCH configuration files\n"
+	"\t-log [logdir]           -- alternate directory for logfiles\n"
+	"\t-run [rundir]           -- alternate directory for runtime files\n"
+	"\t-db [dbdir]             -- alternate directory for the internal database\n"
+	"\t-mod [moddir]           -- alternate directory for modules\n"
+	"\t-htdocs [htdocsdir]     -- alternate directory for htdocs\n"
+	"\t-scripts [scriptsdir]   -- alternate directory for scripts\n"
+	"\t-temp [directory]       -- alternate directory for temporary files\n"
+	"\t-grammar [directory]    -- alternate directory for grammar files\n"
+	"\t-recordings [directory] -- alternate directory for recordings\n"
+	"\t-storage [directory]    -- alternate directory for voicemail storage\n"
+	"\t-sounds [directory]     -- alternate directory for sound files\n";
 
 
 /**
@@ -755,6 +761,82 @@ int main(int argc, char *argv[])
 			}
 			strcpy(SWITCH_GLOBAL_dirs.htdocs_dir, local_argv[x]);
 		}
+
+		else if (!strcmp(local_argv[x], "-temp")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -temp you must specify a temp directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.temp_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.temp_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.temp_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-storage")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -storage you must specify a storage directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.storage_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.storage_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-recordings")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -recordings you must specify a recording directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.recordings_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.recordings_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.recordings_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-grammar")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -grammar you must specify a grammar directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.grammar_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.grammar_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.grammar_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-sounds")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -sounds you must specify a sounds directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.sounds_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.sounds_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.sounds_dir, local_argv[x]);
+		}
+
 		/* Unknown option (always last!) */
 		else {
 			fprintf(stderr, "Unknown option '%s', see '%s -help' for a list of valid options\n",
