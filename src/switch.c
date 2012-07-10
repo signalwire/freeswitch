@@ -236,75 +236,68 @@ void WINAPI service_main(DWORD numArgs, char **args)
 
 #else
 
-void daemonize(int do_wait)
+static void daemonize(int do_wait)
 {
 	int fd;
 	pid_t pid;
 
 	if (!do_wait) {
 		switch (fork()) {
-		case 0:
+		case 0:		/* child process */
 			break;
 		case -1:
 			fprintf(stderr, "Error Backgrounding (fork)! %d - %s\n", errno, strerror(errno));
-			exit(0);
+			exit(EXIT_SUCCESS);
 			break;
-		default:
-			exit(0);
+		default:	/* parent process */
+			exit(EXIT_SUCCESS);
 		}
 
 		if (setsid() < 0) {
 			fprintf(stderr, "Error Backgrounding (setsid)! %d - %s\n", errno, strerror(errno));
-			exit(0);
+			exit(EXIT_SUCCESS);
 		}
 	}
 
 	pid = fork();
 
 	switch (pid) {
-	case 0:
+	case 0:		/* child process */
 		break;
 	case -1:
 		fprintf(stderr, "Error Backgrounding (fork2)! %d - %s\n", errno, strerror(errno));
-		exit(0);
+		exit(EXIT_SUCCESS);
 		break;
-	default:
-		{
-			fprintf(stderr, "%d Backgrounding.\n", (int) pid);
+	default:	/* parent process */
+		fprintf(stderr, "%d Backgrounding.\n", (int) pid);
 
+		if (do_wait) {
+			unsigned int sanity = 60;
+			char *o;
 
-			if (do_wait) {
-				unsigned int sanity = 60;
-				char *o;
-
-				if ((o = getenv("FREESWITCH_BG_TIMEOUT"))) {
-					int tmp = atoi(o);
-					if (tmp > 0) {
-						sanity = tmp;
-					}
+			if ((o = getenv("FREESWITCH_BG_TIMEOUT"))) {
+				int tmp = atoi(o);
+				if (tmp > 0) {
+					sanity = tmp;
 				}
-
-				while(--sanity && !system_ready) {
-				
-					if (sanity % 2 == 0) {
-						printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", (int)getpid(), (int) pid);
-					}
-					sleep(1);
-				}
-
-				if (system_ready == 1) {
-					printf("FreeSWITCH[%d] System Ready pid:%d\n", (int) getpid(), (int) pid);
-				} else {
-					printf("FreeSWITCH[%d] Error starting system! pid:%d\n", (int)getpid(), (int) pid);
-					kill(pid, 9);
-					exit(-1);
-				}
-			
 			}
 
-		}
+			while (--sanity && !system_ready) {
 
-		exit(0);
+				if (sanity % 2 == 0) {
+					printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", (int)getpid(), (int) pid);
+				}
+				sleep(1);
+			}
+			if (!system_ready) {
+				printf("FreeSWITCH[%d] Error starting system! pid:%d\n", (int)getpid(), (int) pid);
+				kill(pid, 9);
+				exit(EXIT_FAILURE);
+			}
+
+			printf("FreeSWITCH[%d] System Ready pid:%d\n", (int) getpid(), (int) pid);
+		}
+		exit(EXIT_SUCCESS);
 	}
 
 	if (do_wait) {
@@ -317,11 +310,13 @@ void daemonize(int do_wait)
 		dup2(fd, 0);
 		close(fd);
 	}
+
 	fd = open("/dev/null", O_WRONLY);
 	if (fd != 1) {
 		dup2(fd, 1);
 		close(fd);
 	}
+
 	fd = open("/dev/null", O_WRONLY);
 	if (fd != 2) {
 		dup2(fd, 2);
