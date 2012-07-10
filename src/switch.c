@@ -416,7 +416,6 @@ int main(int argc, char *argv[])
 	switch_file_t *fd;
 	switch_memory_pool_t *pool = NULL;
 #ifdef HAVE_SETRLIMIT
-	struct rlimit rlp;
 	switch_bool_t waste = SWITCH_FALSE;
 #endif
 
@@ -573,6 +572,7 @@ int main(int argc, char *argv[])
 #endif
 #ifdef HAVE_SETRLIMIT
 		else if (!strcmp(local_argv[x], "-core")) {
+			struct rlimit rlp;
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = RLIM_INFINITY;
 			rlp.rlim_max = RLIM_INFINITY;
@@ -789,7 +789,7 @@ int main(int argc, char *argv[])
 
 #if defined(HAVE_SETRLIMIT) && !defined(__sun)
 	if (!waste && !(flags & SCF_VG)) {
-		//int x;
+		struct rlimit rlp;
 
 		memset(&rlp, 0, sizeof(rlp));
 		getrlimit(RLIMIT_STACK, &rlp);
