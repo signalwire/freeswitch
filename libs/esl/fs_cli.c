@@ -916,15 +916,18 @@ static const char *banner =
 	"* Paypal Donations Appreciated: paypal@freeswitch.org *\n"
 	"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
 	"*******************************************************\n"
-	"\n"
-	"Type /help <enter> to see a list of commands\n\n\n";
+	"\n";
+
+static const char *inf = "Type /help <enter> to see a list of commands\n\n\n";
 
 static void print_banner(FILE *stream)
 {
+#include <cc.h>
+
 #ifndef WIN32
-	fprintf(stream, "%s%s", output_text_color, banner);
+	fprintf(stream, "%s%s%s\n%s", output_text_color, banner, cc, inf);
 #else
-	fprintf(stream, "%s", banner);
+	fprintf(stream, "%s%s\n%s", banner, cc, inf);
 #endif
 }
 
