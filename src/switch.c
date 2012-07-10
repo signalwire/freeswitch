@@ -858,7 +858,9 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 	if (runas_user || runas_group) {
 		if (change_user_group(runas_user, runas_group) < 0) {
-			fprintf(stderr, "Failed to switch user / group\n");
+			fprintf(stderr, "Failed to switch user [%s] / group [%s]\n",
+				switch_strlen_zero(runas_user)  ? "-" : runas_user,
+				switch_strlen_zero(runas_group) ? "-" : runas_group);
 			return 255;
 		}
 	}
