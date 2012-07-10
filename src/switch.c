@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
 			if (local_argv[x] && !strcmp(local_argv[x], "-service")) {
 				/* New installs will always have the service name specified, but keep a default for compat */
 				x++;
-				if (local_argv[x] && strlen(local_argv[x])) {
+				if (!switch_strlen_zero(local_argv[x])) {
 					switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
 				} else {
 					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 				char exePath[1024];
 				char servicePath[1024];
 				x++;
-				if (local_argv[x] && strlen(local_argv[x])) {
+				if (!switch_strlen_zero(local_argv[x])) {
 					switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
 				} else {
 					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
@@ -485,7 +485,7 @@ int main(int argc, char *argv[])
 
 			if (local_argv[x] && !strcmp(local_argv[x], "-uninstall")) {
 				x++;
-				if (local_argv[x] && strlen(local_argv[x])) {
+				if (!switch_strlen_zero(local_argv[x])) {
 					switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
 				} else {
 					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
 #else
 		if (local_argv[x] && !strcmp(local_argv[x], "-u")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
+			if (!switch_strlen_zero(local_argv[x])) {
 				runas_user = local_argv[x];
 			}
 			known_opt++;
@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-g")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
+			if (!switch_strlen_zero(local_argv[x])) {
 				runas_group = local_argv[x];
 			}
 			known_opt++;
@@ -641,7 +641,7 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-conf")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
+			if (!switch_strlen_zero(local_argv[x])) {
 				SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.conf_dir) {
 					fprintf(stderr, "Allocation error\n");
@@ -658,7 +658,7 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-mod")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
+			if (!switch_strlen_zero(local_argv[x])) {
 				SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.mod_dir) {
 					fprintf(stderr, "Allocation error\n");
@@ -674,7 +674,7 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-log")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
+			if (!switch_strlen_zero(local_argv[x])) {
 				SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.log_dir) {
 					fprintf(stderr, "Allocation error\n");
@@ -692,7 +692,7 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-run")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
+			if (!switch_strlen_zero(local_argv[x])) {
 				SWITCH_GLOBAL_dirs.run_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.run_dir) {
 					fprintf(stderr, "Allocation error\n");
@@ -709,7 +709,7 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-db")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
+			if (!switch_strlen_zero(local_argv[x])) {
 				SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.db_dir) {
 					fprintf(stderr, "Allocation error\n");
@@ -726,7 +726,7 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-scripts")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
+			if (!switch_strlen_zero(local_argv[x])) {
 				SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.script_dir) {
 					fprintf(stderr, "Allocation error\n");
@@ -742,7 +742,7 @@ int main(int argc, char *argv[])
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-htdocs")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
+			if (!switch_strlen_zero(local_argv[x])) {
 				SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 				if (!SWITCH_GLOBAL_dirs.htdocs_dir) {
 					fprintf(stderr, "Allocation error\n");
