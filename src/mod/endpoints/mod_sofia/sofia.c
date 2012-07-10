@@ -1074,13 +1074,15 @@ static void our_sofia_event_callback(nua_event_t event,
 
 	case nua_i_cancel:
 
-		switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_cancel");
+		if (sip && channel) {
+			switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_cancel");
 
-		if (sip && channel && sip->sip_reason) {
-			char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
+			if (sip->sip_reason) {
+				char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
 			
-			if (!zstr(reason_header)) {
-				switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
+				if (!zstr(reason_header)) {
+					switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
+				}
 			}
 		}
 
