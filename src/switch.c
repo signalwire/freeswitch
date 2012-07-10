@@ -331,6 +331,50 @@ void daemonize(int do_wait)
 
 #endif
 
+static const char const usage[] =
+	"Usage: freeswitch [OPTIONS]\n\n"
+	"These are the optional arguments you can pass to freeswitch:\n"
+#ifdef WIN32
+	"\t-service [name]        -- start freeswitch as a service, cannot be used if loaded as a console app\n"
+	"\t-install [name]        -- install freeswitch as a service, with optional service name\n"
+	"\t-uninstall             -- remove freeswitch as a service\n"
+	"\t-monotonic-clock       -- use monotonic clock as timer source\n"
+#else
+	"\t-nf                    -- no forking\n"
+	"\t-u [user]              -- specify user to switch to\n"
+	"\t-g [group]             -- specify group to switch to\n"
+#endif
+#ifdef HAVE_SETRLIMIT
+	"\t-waste                 -- allow memory waste\n"
+	"\t-core                  -- dump cores\n"
+#endif
+	"\t-help                  -- this message\n"
+	"\t-version               -- print the version and exit\n"
+	"\t-rp                    -- enable high(realtime) priority settings\n"
+	"\t-lp                    -- enable low priority settings\n"
+	"\t-np                    -- enable normal priority settings (system defaults)\n"
+	"\t-vg                    -- run under valgrind\n"
+	"\t-nosql                 -- disable internal sql scoreboard\n"
+	"\t-heavy-timer           -- Heavy Timer, possibly more accurate but at a cost\n"
+	"\t-nonat                 -- disable auto nat detection\n"
+	"\t-nonatmap              -- disable auto nat port mapping\n"
+	"\t-nocal                 -- disable clock calibration\n"
+	"\t-nort                  -- disable clock clock_realtime\n"
+	"\t-stop                  -- stop freeswitch\n"
+	"\t-nc                    -- do not output to a console and background\n"
+#ifndef WIN32
+	"\t-ncwait                -- do not output to a console and background but wait until the system is ready before exiting (implies -nc)\n"
+#endif
+	"\t-c                     -- output to a console and stay in the foreground\n"
+	"\t-conf [confdir]        -- specify an alternate config dir\n"
+	"\t-log [logdir]          -- specify an alternate log dir\n"
+	"\t-run [rundir]          -- specify an alternate run dir\n"
+	"\t-db [dbdir]            -- specify an alternate db dir\n"
+	"\t-mod [moddir]          -- specify an alternate mod dir\n"
+	"\t-htdocs [htdocsdir]    -- specify an alternate htdocs dir\n"
+	"\t-scripts [scriptsdir]  -- specify an alternate scripts dir\n";
+
+
 /* the main application entry point */
 int main(int argc, char *argv[])
 {
@@ -354,7 +398,6 @@ int main(int argc, char *argv[])
 	char *local_argv[1024] = { 0 };
 	int local_argc = argc;
 	char *arg_argv[128] = { 0 };
-	char *usageDesc;
 	int alt_dirs = 0, log_set = 0, run_set = 0, do_kill = 0;
 	int known_opt;
 	int priority = 0;
@@ -392,46 +435,16 @@ int main(int argc, char *argv[])
 		nc++;
 	}
 
-	usageDesc = "these are the optional arguments you can pass to freeswitch\n"
-#ifdef WIN32
-		"\t-service [name]        -- start freeswitch as a service, cannot be used if loaded as a console app\n"
-		"\t-install [name]        -- install freeswitch as a service, with optional service name\n"
-		"\t-uninstall             -- remove freeswitch as a service\n"
-		"\t-monotonic-clock       -- use monotonic clock as timer source\n"
-#else
-		"\t-nf                    -- no forking\n"
-		"\t-u [user]              -- specify user to switch to\n" "\t-g [group]             -- specify group to switch to\n"
-#endif
-		"\t-help                  -- this message\n" "\t-version               -- print the version and exit\n"
-#ifdef HAVE_SETRLIMIT
-		"\t-waste                 -- allow memory waste\n" 
-		"\t-core                  -- dump cores\n"
-#endif
-		"\t-rp                    -- enable high(realtime) priority settings\n"
-		"\t-lp                    -- enable low priority settings\n"
-		"\t-np                    -- enable normal priority settings (system defaults)\n"
-		"\t-vg                    -- run under valgrind\n"
-		"\t-nosql                 -- disable internal sql scoreboard\n"
-		"\t-heavy-timer           -- Heavy Timer, possibly more accurate but at a cost\n"
-		"\t-nonat                 -- disable auto nat detection\n"
-		"\t-nonatmap              -- disable auto nat port mapping\n"
-		"\t-nocal                 -- disable clock calibration\n"
-		"\t-nort                  -- disable clock clock_realtime\n"
-		"\t-stop                  -- stop freeswitch\n"
-		"\t-nc                    -- do not output to a console and background\n"
-#ifndef WIN32
-		"\t-ncwait                -- do not output to a console and background but wait until the system is ready before exiting (implies -nc)\n"
-#endif
-		"\t-c                     -- output to a console and stay in the foreground\n"
-		"\t-conf [confdir]        -- specify an alternate config dir\n"
-		"\t-log [logdir]          -- specify an alternate log dir\n"
-		"\t-run [rundir]          -- specify an alternate run dir\n"
-		"\t-db [dbdir]            -- specify an alternate db dir\n"
-		"\t-mod [moddir]          -- specify an alternate mod dir\n"
-		"\t-htdocs [htdocsdir]    -- specify an alternate htdocs dir\n" "\t-scripts [scriptsdir]  -- specify an alternate scripts dir\n";
-
 	for (x = 1; x < local_argc; x++) {
 		known_opt = 0;
+
+		if (switch_strlen_zero(local_argv[x]))
+			continue;
+
+		if (!strcmp(local_argv[x], "-help") || !strcmp(local_argv[x], "-h") || !strcmp(local_argv[x], "-?")) {
+			printf("%s\n", usage);
+			exit(EXIT_SUCCESS);
+		}
 #ifdef WIN32
 		if (x == 1) {
 			if (local_argv[x] && !strcmp(local_argv[x], "-service")) {
@@ -756,9 +769,10 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (!known_opt || (local_argv[x] && (!strcmp(local_argv[x], "-help") || !strcmp(local_argv[x], "-h") || !strcmp(local_argv[x], "-?")))) {
-			printf("%s\n", usageDesc);
-			exit(0);
+		if (!known_opt) {
+			fprintf(stderr, "Unknown option '%s', see '%s -help' for a list of valid options\n",
+				local_argv[x], local_argv[0]);
+			exit(EXIT_FAILURE);
 		}
 	}
 
