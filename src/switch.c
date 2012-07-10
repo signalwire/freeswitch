@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Pawel Pierscionek <pawel@voiceworks.pl>
@@ -100,7 +100,6 @@ static void handle_SIGCHLD(int sig)
 	if (sig) {};
 
 	pid = wait(&status);
-	
 	if (pid > 0) {
 		system_ready = -1;
 	}
@@ -798,27 +797,26 @@ int main(int argc, char *argv[])
 		if (rlp.rlim_cur != SWITCH_THREAD_STACKSIZE) {
 			char buf[1024] = "";
 			int i = 0;
+
 			fprintf(stderr, "Error: stacksize %d is not optimal: run ulimit -s %d from your shell before starting the application.\nauto-adjusting stack size for optimal performance...\n",
 					(int) (rlp.rlim_cur / 1024), SWITCH_THREAD_STACKSIZE / 1024);
-			
+
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
 			rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
 			setrlimit(RLIMIT_STACK, &rlp);
-			
+
 			apr_terminate();
 			ret = (int) execv(argv[0], argv);
-			
+
 			for (i = 0; i < argc; i++) {
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[i]);
 			}
-			
-			return system(buf);
 
+			return system(buf);
 		}
 	}
 #endif
-
 
 	signal(SIGILL, handle_SIGILL);
 	signal(SIGTERM, handle_SIGILL);
@@ -828,7 +826,7 @@ int main(int argc, char *argv[])
 		signal(SIGCHLD, handle_SIGCHLD);
 	}
 #endif
-	
+
 	if (nc) {
 #ifdef WIN32
 		FreeConsole();
@@ -839,8 +837,7 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-
-	switch(priority) {
+	switch (priority) {
 	case 2:
 		set_realtime_priority();
 		break;
