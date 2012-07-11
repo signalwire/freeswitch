@@ -4764,7 +4764,7 @@ static ftdm_status_t load_config(void)
 						configured += chans_configured;
 					}
 				} else {
-					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "fxs-channel")) {
 				if (span->trunk_type == FTDM_TRUNK_NONE) {
@@ -4780,7 +4780,7 @@ static ftdm_status_t load_config(void)
 						configured += chans_configured;
 					}
 				} else {
-					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "em-channel")) {
 				if (span->trunk_type == FTDM_TRUNK_NONE) {
@@ -4796,19 +4796,33 @@ static ftdm_status_t load_config(void)
 						configured += chans_configured;
 					}
 				} else {
-					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
-				unsigned chans_configured = 0;
-				chan_config.type = FTDM_CHAN_TYPE_B;
-				if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
-					configured += chans_configured;
+				if (span->trunk_type == FTDM_TRUNK_NONE) {
+					ftdm_log(FTDM_LOG_ERROR, "No trunk type specified in configuration file\n");
+					break;
+				}
+				if (FTDM_SPAN_IS_DIGITAL(span)) {
+					unsigned chans_configured = 0;
+					chan_config.type = FTDM_CHAN_TYPE_B;
+					if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
+						configured += chans_configured;
+					}
+				} else {
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add B channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "d-channel")) {
-				if (d) {
-					ftdm_log(FTDM_LOG_WARNING, "ignoring extra d-channel\n");
-				} else {
+				if (span->trunk_type == FTDM_TRUNK_NONE) {
+					ftdm_log(FTDM_LOG_ERROR, "No trunk type specified in configuration file\n");
+					break;
+				}
+				if (FTDM_SPAN_IS_DIGITAL(span)) {
 					unsigned chans_configured = 0;
+					if (d) {
+						ftdm_log(FTDM_LOG_WARNING, "ignoring extra d-channel\n");
+						continue;
+					}
 					if (!strncasecmp(val, "lapd:", 5)) {
 						chan_config.type = FTDM_CHAN_TYPE_DQ931;
 						val += 5;
@@ -4819,6 +4833,8 @@ static ftdm_status_t load_config(void)
 						configured += chans_configured;
 					}
 					d++;
+				} else {
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add D channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "cas-channel")) {
 				unsigned chans_configured = 0;

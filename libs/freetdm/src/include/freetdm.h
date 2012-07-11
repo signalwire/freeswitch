@@ -204,6 +204,15 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t)
 	                                (fchan)->span->trunk_type == FTDM_TRUNK_BRI || \
 	                                (fchan)->span->trunk_type == FTDM_TRUNK_BRI_PTMP)
 
+/*! \brief Test if a span is digital */
+#define FTDM_SPAN_IS_DIGITAL(span) \
+	((span)->trunk_type == FTDM_TRUNK_E1 || \
+	 (span)->trunk_type == FTDM_TRUNK_T1 || \
+	 (span)->trunk_type == FTDM_TRUNK_J1 || \
+	 (span)->trunk_type == FTDM_TRUNK_BRI || \
+	 (span)->trunk_type == FTDM_TRUNK_BRI_PTMP)
+
+
 /*! \brief Logging function prototype to be used for all FreeTDM logs 
  *  you should use ftdm_global_set_logger to set your own logger
  */
