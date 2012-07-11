@@ -582,7 +582,7 @@ static void conference_cdr_rejected(conference_obj_t *conference, switch_channel
 	rp->cp = switch_caller_profile_dup(conference->pool, cp);
 }
 
-static char *conference_rfc4579_render(conference_obj_t *conference, switch_event_t *event)
+static char *conference_rfc4579_render(conference_obj_t *conference, switch_event_t *event, switch_event_t *revent)
 {
 	switch_xml_t xml, x_tag, x_tag1, x_tag2, x_tag3, x_tag4;
 	char tmp[30];
@@ -660,6 +660,10 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 	}
 	switch_snprintf(tmp, sizeof(tmp), "%u", conference->count);
 	switch_xml_set_txt_d(x_tag1, tmpp);	
+
+	if (conference->count == 0) {
+		switch_event_add_header(revent, SWITCH_STACK_BOTTOM, "notfound", "true");
+	}
 
 	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "active", off1++))) {
 		abort();
@@ -1247,7 +1251,7 @@ static void send_rfc_event(conference_obj_t *conference)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "conference-name", name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
 		
-		body = conference_rfc4579_render(conference, NULL);
+		body = conference_rfc4579_render(conference, NULL, event);
 		switch_event_add_body(event, body);
 		free(body);
 		switch_event_fire(&event);
@@ -8076,29 +8080,20 @@ static void conf_data_event_handler(switch_event_t *event)
 	conference_obj_t *conference = NULL;
 	char *body = NULL;
 
-
-	switch_event_dup(&revent, event);
-	revent->event_id = SWITCH_EVENT_CONFERENCE_DATA;
-	revent->flags |= EF_UNIQ_HEADERS;
-	switch_event_add_header(revent, SWITCH_STACK_TOP, "Event-Name", "CONFERENCE_DATA");
-
-
 	if (!zstr(name) && (conference = conference_find(name, domain))) {
 		if (switch_test_flag(conference, CFLAG_RFC4579)) {
-			body = conference_rfc4579_render(conference, event);
+			switch_event_dup(&revent, event);
+			revent->event_id = SWITCH_EVENT_CONFERENCE_DATA;
+			revent->flags |= EF_UNIQ_HEADERS;
+			switch_event_add_header(revent, SWITCH_STACK_TOP, "Event-Name", "CONFERENCE_DATA");
+
+			body = conference_rfc4579_render(conference, event, revent);
 			switch_event_add_body(revent, body);
+			switch_event_fire(&revent);
+			switch_safe_free(body);	
 		}
 		switch_thread_rwlock_unlock(conference->rwlock);
 	}
-
-	if (!body) {
-		switch_event_add_body(revent, "CONFERENCE NOT FOUND");
-		//switch_event_add_header(revent, SWITCH_STACK_BOTTOM, "notfound", "true");
-	}
-	
-	switch_event_fire(&revent);
-	switch_safe_free(body);	
-
 }
 
 
