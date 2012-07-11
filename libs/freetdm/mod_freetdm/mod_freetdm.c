@@ -35,13 +35,6 @@
 #include "freetdm.h"
 
 //#define CUDATEL_DEBUG
-#ifdef CUDATEL_DEBUG
-#ifndef _BSD_SOURCE
-#define _BSD_SOURCE
-#endif
-#include <execinfo.h>
-#include <syscall.h>
-#endif
 
 #ifndef __FUNCTION__
 #define __FUNCTION__ __SWITCH_FUNC__
@@ -499,6 +492,21 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#ifdef CUDATEL_DEBUG
+struct cudatel_trace_priv {
+	const char *name;
+	int span_id;
+	int chan_id;
+};
+
+static void cudatel_trace(const int tid, const void *addr, const char *symbol, void *priv)
+{
+	struct cudatel_trace_priv *data = priv;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d][tid:%d] %s -> %s\n",
+			data->span_id, data->chan_id, tid, data->name, symbol);
+}
+#endif
+
 static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
@@ -558,19 +566,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 #ifdef CUDATEL_DEBUG
 	{
-		pid_t tid = 0;
-		size_t size = 0;
-		char **symbols = NULL;
-		void *stacktrace[50];
-		int si = 0;
-		size = backtrace(stacktrace, ftdm_array_len(stacktrace));
-		symbols = backtrace_symbols(stacktrace, size);
-		tid = syscall(SYS_gettid);
-		for (si = 0; si < size; si++) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d][tid:%d] %s -> %s\n",
-					span_id, chan_id, tid, name, symbols[si]);
-		}
-		free(symbols);
+		struct cudatel_trace_priv trace_data;
+		trace_data.name = name;
+		trace_data.span_id = span_id;
+		trace_data.chan_id = chan_id;
+		ftdm_backtrace_walk(&cudatel_trace, &trace_data);
 	}
 #endif
 
