@@ -43,30 +43,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
 SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shutdown, NULL);
 
-typedef struct conference_cdr_node_s {
-	switch_caller_profile_t *cp;
-	char *record_path;
-	switch_time_t join_time;
-	switch_time_t leave_time;
-	uint32_t flags;
-	struct conference_cdr_node_s *next;
-} conference_cdr_node_t;
-
-typedef enum {
-	CDRR_LOCKED = 1,
-	CDRR_PIN,
-	CDRR_MAXMEMBERS
-} cdr_reject_reason_t;
-
-typedef struct conference_cdr_reject_s {
-	switch_caller_profile_t *cp;
-	switch_time_t reject_time;
-	cdr_reject_reason_t reason;
-	struct conference_cdr_reject_s *next;
-} conference_cdr_reject_t;
-
-
-
 typedef enum {
 	CONF_SILENT_REQ = (1 << 0),
 	CONF_SILENT_DONE = (1 << 1)
@@ -121,12 +97,39 @@ static struct {
 	uint32_t id_pool;
 	int32_t running;
 	uint32_t threads;
-	switch_event_node_t *node;
 } globals;
 
 /* forward declaration for conference_obj and caller_control */
 struct conference_member;
 typedef struct conference_member conference_member_t;
+
+
+typedef struct conference_cdr_node_s {
+	switch_caller_profile_t *cp;
+	char *record_path;
+	switch_time_t join_time;
+	switch_time_t leave_time;
+	uint32_t flags;
+	uint32_t id;
+	conference_member_t *member;
+	struct conference_cdr_node_s *next;
+} conference_cdr_node_t;
+
+typedef enum {
+	CDRR_LOCKED = 1,
+	CDRR_PIN,
+	CDRR_MAXMEMBERS
+} cdr_reject_reason_t;
+
+typedef struct conference_cdr_reject_s {
+	switch_caller_profile_t *cp;
+	switch_time_t reject_time;
+	cdr_reject_reason_t reason;
+	struct conference_cdr_reject_s *next;
+} conference_cdr_reject_t;
+
+
+
 
 struct call_list {
 	char *string;
@@ -190,7 +193,8 @@ typedef enum {
 	CFLAG_ENTER_SOUND = (1 << 13),
 	CFLAG_VIDEO_BRIDGE = (1 << 14),
 	CFLAG_AUDIO_ALWAYS = (1 << 15),
-	CFLAG_ENDCONF_FORCED = (1 << 16)
+	CFLAG_ENDCONF_FORCED = (1 << 16),
+	CFLAG_RFC4579 = (1 << 17)
 } conf_flag_t;
 
 typedef enum {
@@ -263,6 +267,7 @@ struct vid_helper {
 /* Conference Object */
 typedef struct conference_obj {
 	char *name;
+	char *desc;
 	char *timer_name;
 	char *tts_engine;
 	char *tts_voice;
@@ -288,6 +293,7 @@ typedef struct conference_obj {
 	char *record_filename;
 	uint32_t terminate_on_silence;
 	uint32_t max_members;
+	uint32_t doc_version;
 	char *maxmember_sound;
 	uint32_t announce_count;
 	char *pin;
@@ -476,11 +482,11 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 										  char *cid_num,
 										  char *profile,
 										  switch_call_cause_t *cause,
-										  switch_call_cause_t *cancel_cause);
+										  switch_call_cause_t *cancel_cause, switch_event_t *var_event);
 static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 											 char *conference_name,
 											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name,
-											 const char *cid_num, const char *call_uuid, const char *profile, switch_call_cause_t *cancel_cause);
+											 const char *cid_num, const char *call_uuid, const char *profile, switch_call_cause_t *cancel_cause, switch_event_t **var_event);
 SWITCH_STANDARD_APP(conference_function);
 static void launch_conference_thread(conference_obj_t *conference);
 static void launch_conference_video_thread(conference_obj_t *conference);
@@ -522,6 +528,7 @@ static void conference_cdr_del(conference_member_t *member)
 {
 	member->cdr_node->leave_time = switch_epoch_time_now(NULL);
 	member->cdr_node->flags = member->flags;
+	member->cdr_node->member = NULL;
 }
 
 static void conference_cdr_add(conference_member_t *member)
@@ -535,6 +542,7 @@ static void conference_cdr_add(conference_member_t *member)
 	np->next = member->conference->cdr_nodes;
 	member->conference->cdr_nodes = member->cdr_node = np;
 	member->cdr_node->join_time = switch_epoch_time_now(NULL);
+	member->cdr_node->member = member;
 
 	if (!member->session) {
 		member->cdr_node->record_path = switch_core_strdup(member->conference->pool, member->rec_path);
@@ -548,6 +556,11 @@ static void conference_cdr_add(conference_member_t *member)
 	}
 
 	member->cdr_node->cp = switch_caller_profile_dup(member->conference->pool, cp);
+
+	member->cdr_node->id = member->id;
+	
+
+	
 }
 
 static void conference_cdr_rejected(conference_obj_t *conference, switch_channel_t *channel, cdr_reject_reason_t reason)
@@ -567,6 +580,246 @@ static void conference_cdr_rejected(conference_obj_t *conference, switch_channel
 	}
 
 	rp->cp = switch_caller_profile_dup(conference->pool, cp);
+}
+
+static char *conference_rfc4579_render(conference_obj_t *conference, switch_event_t *event)
+{
+	switch_xml_t xml, x_tag, x_tag1, x_tag2, x_tag3, x_tag4;
+	char tmp[30];
+	const char *domain;	const char *name;
+	char *dup_domain = NULL;
+	char *uri;
+	int off = 0, off1 = 0, off2 = 0, off3 = 0, off4 = 0;
+	conference_cdr_node_t *np;
+	char *tmpp = tmp;
+	char *xml_text = NULL;
+
+	if (!(xml = switch_xml_new("conference-info"))) {
+		abort();
+	}
+	
+	switch_mutex_lock(conference->mutex);
+	switch_snprintf(tmp, sizeof(tmp), "%u", conference->doc_version);
+	conference->doc_version++;
+	switch_mutex_unlock(conference->mutex);
+
+	if (!event || !(name = switch_event_get_header(event, "conference-name"))) {
+		if (!(name = conference->name)) {
+			name = "conference";
+		}
+	}
+
+	if (!event || !(domain = switch_event_get_header(event, "conference-domain"))) {
+		if (!(domain = conference->domain)) {
+			dup_domain = switch_core_get_variable_dup("domain");
+			if (!(domain = dup_domain)) {
+				domain = "cluecon.com";
+			}
+		}
+	}
+		
+	switch_xml_set_attr_d(xml, "version", tmpp);
+
+	switch_xml_set_attr_d(xml, "state", "full");
+	switch_xml_set_attr_d(xml, "xmlns", "urn:ietf:params:xml:ns:conference-info");
+	
+
+	uri = switch_mprintf("sip:%s@%s", name, domain);
+	switch_xml_set_attr_d(xml, "entity", uri);
+
+	if (!(x_tag = switch_xml_add_child_d(xml, "conference-description", off++))) {
+		abort();
+	}
+
+	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "display-text", off1++))) {
+		abort();
+	}
+	switch_xml_set_txt_d(x_tag1, conference->desc ? conference->desc : "FreeSWITCH Conference");
+
+
+	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "conf-uris", off1++))) {
+		abort();
+	}
+
+	if (!(x_tag2 = switch_xml_add_child_d(x_tag1, "entry", off2++))) {
+		abort();
+	}
+
+	if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "uri", off3++))) {
+		abort();
+	}
+	switch_xml_set_txt_d(x_tag3, uri);
+
+
+
+	if (!(x_tag = switch_xml_add_child_d(xml, "conference-state", off++))) {
+		abort();
+	}
+	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "user-count", off1++))) {
+		abort();
+	}
+	switch_snprintf(tmp, sizeof(tmp), "%u", conference->count);
+	switch_xml_set_txt_d(x_tag1, tmpp);	
+
+	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "active", off1++))) {
+		abort();
+	}
+	switch_xml_set_txt_d(x_tag1, "true");	
+	
+	off1 = off2 = off3 = off4 = 0;
+
+	if (!(x_tag = switch_xml_add_child_d(xml, "users", off++))) {
+		abort();
+	}
+	
+	switch_mutex_lock(conference->member_mutex);
+	
+	for (np = conference->cdr_nodes; np; np = np->next) {
+		char *user_uri;
+		
+		if (!np->cp || (np->member && !np->member->session) || np->leave_time) { /* for now we'll remove participants when the leave */
+			continue;
+		}
+
+		if (!(x_tag1 = switch_xml_add_child_d(x_tag, "user", off1++))) {
+			abort();
+		}
+
+		user_uri = switch_mprintf("sip:%s@%s", np->cp->caller_id_number, domain);
+		
+		
+		switch_xml_set_attr_d(x_tag1, "state", "full");
+		switch_xml_set_attr_d(x_tag1, "entity", user_uri);
+
+		if (!(x_tag2 = switch_xml_add_child_d(x_tag1, "display-text", off2++))) {
+			abort();
+		}
+		switch_xml_set_txt_d(x_tag2, np->cp->caller_id_name);
+		
+
+		if (!(x_tag2 = switch_xml_add_child_d(x_tag1, "endpoint", off2++))) {
+			abort();
+		}
+		switch_xml_set_attr_d(x_tag2, "entity", user_uri);
+		
+
+		if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "display-text", off3++))) {
+			abort();
+		}
+		switch_xml_set_txt_d(x_tag3, np->cp->caller_id_name);
+
+
+		if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "status", off3++))) {
+			abort();
+		}
+		switch_xml_set_txt_d(x_tag3, np->leave_time ? "disconnected" : "connected");
+
+
+		if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "joining-info", off3++))) {
+			abort();
+		}
+		if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "when", off4++))) {
+			abort();
+		} else {
+			switch_time_exp_t tm;
+			switch_size_t retsize;
+			const char *fmt = "%Y-%m-%dT%H:%M:%S%z";
+			char *p;
+
+			switch_time_exp_lt(&tm, (switch_time_t) conference->start_time * 1000000);
+			switch_strftime_nocheck(tmp, &retsize, sizeof(tmp), fmt, &tm);			
+			p = end_of_p(tmpp) -1;
+			snprintf(p, 4, ":00");
+
+
+			switch_xml_set_txt_d(x_tag4, tmpp);
+		}
+
+
+		
+
+		/** ok so this is in the rfc but not the xsd 
+		if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "joining-method", off3++))) {
+			abort();
+		}
+		switch_xml_set_txt_d(x_tag3, np->cp->direction == SWITCH_CALL_DIRECTION_INBOUND ? "dialed-in" : "dialed-out");
+		*/
+
+		if (np->member) {
+			switch_channel_t *channel = switch_core_session_get_channel(np->member->session);
+			const char *var;
+
+			if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "media", off3++))) {
+				abort();
+			}
+			
+			snprintf(tmp, sizeof(tmp), "%ua", np->member->id);
+			switch_xml_set_attr_d(x_tag3, "id", tmpp);
+
+
+			if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "type", off4++))) {
+				abort();
+			}
+			switch_xml_set_txt_d(x_tag4, "audio");
+
+			if ((var = switch_channel_get_variable(channel, "rtp_use_ssrc"))) {
+				if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "src-id", off4++))) {
+					abort();
+				}
+				switch_xml_set_txt_d(x_tag4, var);
+			}
+			
+			if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "status", off4++))) {
+				abort();
+			}
+			switch_xml_set_txt_d(x_tag4, switch_channel_test_flag(channel, CF_HOLD) ? "sendonly" : "sendrecv");
+			
+			
+			if (switch_channel_test_flag(channel, CF_VIDEO)) {
+				off4 = 0;
+
+				if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "media", off3++))) {
+					abort();
+				}
+				
+				snprintf(tmp, sizeof(tmp), "%uv", np->member->id);
+				switch_xml_set_attr_d(x_tag3, "id", tmpp);
+
+
+				if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "type", off4++))) {
+					abort();
+				}
+				switch_xml_set_txt_d(x_tag4, "video");
+
+				if ((var = switch_channel_get_variable(channel, "rtp_use_video_ssrc"))) {
+					if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "src-id", off4++))) {
+						abort();
+					}
+					switch_xml_set_txt_d(x_tag4, var);
+				}
+				
+				if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "status", off4++))) {
+					abort();
+				}
+				switch_xml_set_txt_d(x_tag4, switch_channel_test_flag(channel, CF_HOLD) ? "sendonly" : "sendrecv");
+				
+			}
+		}
+		
+		switch_safe_free(user_uri);
+	}
+
+	switch_mutex_unlock(conference->member_mutex);
+
+	off1 = off2 = off3 = off4 = 0;
+
+	xml_text = switch_xml_toxml(xml, SWITCH_TRUE);
+	switch_xml_free(xml);
+	
+	switch_safe_free(dup_domain);
+	switch_safe_free(uri);	
+
+	return xml_text;
 }
 
 static void conference_cdr_render(conference_obj_t *conference)
@@ -966,6 +1219,45 @@ static switch_status_t member_del_relationship(conference_member_t *member, uint
 	return status;
 }
 
+static void send_rfc_event(conference_obj_t *conference)
+{
+	switch_event_t *event;
+	char *body;
+	char *name = NULL, *domain = NULL, *dup_domain = NULL;
+	
+	if (!switch_test_flag(conference, CFLAG_RFC4579)) {
+		return;
+	}
+
+	if (!(name = conference->name)) {
+		name = "conference";
+	}
+
+	if (!(domain = conference->domain)) {
+		dup_domain = switch_core_get_variable_dup("domain");
+		if (!(domain = dup_domain)) {
+			domain = "cluecon.com";
+		}
+	}
+
+
+	if (switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA) == SWITCH_STATUS_SUCCESS) {
+		event->flags |= EF_UNIQ_HEADERS;
+
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "conference-name", name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
+		
+		body = conference_rfc4579_render(conference, NULL);
+		switch_event_add_body(event, body);
+		free(body);
+		switch_event_fire(&event);
+	}
+
+	switch_safe_free(dup_domain);
+
+}
+
+
 /* Gain exclusive access and add the member to the list */
 static switch_status_t conference_add_member(conference_obj_t *conference, conference_member_t *member)
 {
@@ -1109,8 +1401,13 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_mutex_unlock(member->audio_out_mutex);
 	switch_mutex_unlock(member->audio_in_mutex);
 
+	send_rfc_event(conference);
+
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
+
+	
+
 
 	return status;
 }
@@ -1248,6 +1545,11 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	unlock_member(member);
 	switch_mutex_unlock(member->audio_out_mutex);
 	switch_mutex_unlock(member->audio_in_mutex);
+
+
+	send_rfc_event(conference);
+	
+
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
 
@@ -3089,7 +3391,7 @@ static void conference_loop_output(conference_member_t *member)
 				char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
 				switch_assert(dial_str);
 				conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num, NULL, 
-									  profile, &member->conference->cancel_cause);
+									  profile, &member->conference->cancel_cause, NULL);
 				switch_safe_free(dial_str);
 			}
 			switch_safe_free(cpstr);
@@ -5229,9 +5531,9 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
 	}
 
 	if (conference) {
-		conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL);
+		conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL, NULL);
 	} else {
-		conference_outcall(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL);
+		conference_outcall(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], NULL, &cause, NULL, NULL);
 	}
 	stream->write_function(stream, "Call Requested: result: [%s]\n", switch_channel_cause2str(cause));
 
@@ -5254,9 +5556,9 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_
 	switch_uuid_format(uuid_str, &uuid);
 
 	if (conference) {
-		conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL, NULL);
+		conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL, NULL, NULL);
 	} else {
-		conference_outcall_bg(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL, NULL);
+		conference_outcall_bg(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], uuid_str, NULL, NULL, NULL);
 	}
 
 	stream->write_function(stream, "OK Job-UUID: %s\n", uuid_str);
@@ -5777,7 +6079,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 										  char *cid_num,
 										  char *profile,
 										  switch_call_cause_t *cause,
-										  switch_call_cause_t *cancel_cause)
+										  switch_call_cause_t *cancel_cause, switch_event_t *var_event)
 {
 	switch_core_session_t *peer_session = NULL;
 	switch_channel_t *peer_channel;
@@ -5792,7 +6094,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 
 	if (conference == NULL) {
 		char *dialstr = switch_mprintf("{ignore_early_media=true}%s", bridgeto);
-		status = switch_ivr_originate(NULL, &peer_session, cause, dialstr, 60, NULL, cid_name, cid_num, NULL, NULL, SOF_NO_LIMITS, NULL);
+		status = switch_ivr_originate(NULL, &peer_session, cause, dialstr, 60, NULL, cid_name, cid_num, NULL, var_event, SOF_NO_LIMITS, NULL);
 		switch_safe_free(dialstr);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
@@ -5828,7 +6130,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	switch_mutex_lock(conference->mutex);
 	conference->originating++;
 	switch_mutex_unlock(conference->mutex);
-	status = switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NO_LIMITS, cancel_cause);
+	status = switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, var_event, SOF_NO_LIMITS, cancel_cause);
 	switch_mutex_lock(conference->mutex);
 	conference->originating--;
 	switch_mutex_unlock(conference->mutex);
@@ -5920,6 +6222,7 @@ struct bg_call {
 	char *uuid;
 	char *profile;
 	switch_call_cause_t *cancel_cause;
+	switch_event_t *var_event;
 	switch_memory_pool_t *pool;
 };
 
@@ -5931,8 +6234,10 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 		switch_call_cause_t cause;
 		switch_event_t *event;
 
+
 		conference_outcall(call->conference, call->conference_name,
-						   call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, call->profile, &cause, call->cancel_cause);
+						   call->session, call->bridgeto, call->timeout, 
+						   call->flags, call->cid_name, call->cid_num, call->profile, &cause, call->cancel_cause, call->var_event);
 
 		if (call->conference && test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -5942,6 +6247,11 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", call->uuid);
 			switch_event_fire(&event);
 		}
+
+		if (call->var_event) {
+			switch_event_destroy(&call->var_event);
+		}
+
 		switch_safe_free(call->bridgeto);
 		switch_safe_free(call->flags);
 		switch_safe_free(call->cid_name);
@@ -5961,7 +6271,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 											 char *conference_name,
 											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name,
-											 const char *cid_num, const char *call_uuid, const char *profile, switch_call_cause_t *cancel_cause)
+											 const char *cid_num, const char *call_uuid, const char *profile, switch_call_cause_t *cancel_cause, switch_event_t **var_event)
 {
 	struct bg_call *call = NULL;
 	switch_thread_t *thread;
@@ -5976,6 +6286,11 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	call->session = session;
 	call->timeout = timeout;
 	call->cancel_cause = cancel_cause;
+
+	if (var_event) {
+		call->var_event = *var_event;
+		var_event = NULL;
+	}
 
 	if (conference) {
 		pool = conference->pool;
@@ -6152,7 +6467,11 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_VIDEO_BRIDGE;
 			} else if (!strcasecmp(argv[i], "audio-always")) {
 				*f |= CFLAG_AUDIO_ALWAYS;
+			} else if (!strcasecmp(argv[i], "rfc-4579")) {
+				*f |= CFLAG_RFC4579;
 			}
+
+			
 		}		
 
 		free(dup);
@@ -6403,29 +6722,33 @@ SWITCH_STANDARD_APP(conference_function)
 		switch_channel_set_app_flag_key("conf_silent", channel, CONF_SILENT_REQ);
 	}
 
+	switch_channel_set_flag(channel, CF_CONFERENCE);
+
 	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel answer failed.\n");
-        return;
+        goto end;
 	}
 
 	/* Save the original read codec. */
 	if (!(read_codec = switch_core_session_get_read_codec(session))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel has no media!\n");
-		return;
+		goto end;
 	}
 
 
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Invalid arguments\n");
-		return;
+		goto end;
 	}
 
 	mydata = switch_core_session_strdup(session, data);
 
 	if (!mydata) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Pool Failure\n");
-		return;
+		goto end;
 	}
+
+	
 
 	if ((flags_str = strstr(mydata, flags_prefix))) {
 		char *p;
@@ -6764,7 +7087,7 @@ SWITCH_STANDARD_APP(conference_function)
 	/* if we're using "bridge:" make an outbound call and bridge it in */
 	if (!zstr(bridgeto) && strcasecmp(bridgeto, "none")) {
 		switch_call_cause_t cause;
-		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, NULL, &cause, NULL) != SWITCH_STATUS_SUCCESS) {
+		if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, NULL, &cause, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
 	} else {
@@ -6913,6 +7236,11 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	switch_channel_set_variable(channel, "last_transfered_conference", NULL);
+
+ end:
+
+	switch_channel_clear_flag(channel, CF_CONFERENCE);
+
 }
 
 /* Create a thread for the conference and launch it */
@@ -7123,6 +7451,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_xml_t xml_kvp;
 	char *timer_name = NULL;
 	char *domain = NULL;
+	char *desc = NULL;
 	char *name_domain = NULL;
 	char *tts_engine = NULL;
 	char *tts_voice = NULL;
@@ -7246,6 +7575,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				}
 			} else if (!strcasecmp(var, "domain") && !zstr(val)) {
 				domain = val;
+			} else if (!strcasecmp(var, "description") && !zstr(val)) {
+				desc = val;
 			} else if (!force_interval_i && !strcasecmp(var, "interval") && !zstr(val)) {
 				uint32_t tmp = atoi(val);
 
@@ -7606,6 +7937,11 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	if (!zstr(auto_record)) {
 		conference->auto_record = switch_core_strdup(conference->pool, auto_record);
 	}
+
+	if (!zstr(desc)) {
+		conference->desc = switch_core_strdup(conference->pool, desc);
+	}
+
 	if (!zstr(terminate_on_silence)) {
 		conference->terminate_on_silence = atoi(terminate_on_silence);
 	}
@@ -7679,6 +8015,89 @@ static void conference_send_presence(conference_obj_t *conference)
 		switch_event_fire(&event);
 	}
 	
+}
+
+static void call_setup_event_handler(switch_event_t *event)
+{
+	char *conf;
+	char *dial_str;
+	char *action;
+	conference_obj_t *conference = NULL;
+
+	if (!switch_test_flag(conference, CFLAG_RFC4579)) {
+		return;
+	}
+	
+	conf = switch_event_get_header(event, "Target-Component");
+	dial_str = switch_event_get_header(event, "Request-Target");
+	action = switch_event_get_header(event, "Request-Action");
+
+	
+	if (!zstr(conf) && !zstr(dial_str) && !zstr(action) && (conference = conference_find(conf))) {
+		switch_event_t *var_event;
+		switch_event_header_t *hp;
+	
+		if (!strcasecmp(action, "call")) {
+	
+			if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+				abort();
+			}
+			
+			for(hp = event->headers; hp; hp = hp->next) {
+				if (!strncasecmp(hp->name, "var_", 4)) {
+					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
+				}
+			}
+			
+			switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "conference_dial_str", dial_str);
+
+			conference_outcall_bg(conference, NULL, NULL, dial_str, 60, NULL, NULL, NULL, NULL, NULL, NULL, &var_event);
+
+		} else if (!strcasecmp(action, "end")) {
+			switch_core_session_hupall_matching_var("conference_dial_str", dial_str, SWITCH_CAUSE_NORMAL_CLEARING);
+		}
+
+		switch_thread_rwlock_unlock(conference->rwlock);
+	}
+
+}
+
+static void conf_data_event_handler(switch_event_t *event)
+{
+	switch_event_t *revent;
+	char *name = switch_event_get_header(event, "conference-name");
+	conference_obj_t *conference = NULL;
+	char *body = NULL;
+
+	switch_event_dup(&revent, event);
+	revent->event_id = SWITCH_EVENT_CONFERENCE_DATA;
+	revent->flags |= EF_UNIQ_HEADERS;
+	switch_event_add_header(revent, SWITCH_STACK_TOP, "Event-Name", "CONFERENCE_DATA");
+
+	if (!zstr(name) && (conference = conference_find(name))) {
+		if (switch_test_flag(conference, CFLAG_RFC4579)) {
+			body = conference_rfc4579_render(conference, event);
+		}
+		switch_thread_rwlock_unlock(conference->rwlock);
+
+	}
+
+	if (!body) {
+		char *domain = switch_event_get_header(event, "conference-domain");
+		
+		if (zstr(domain)) {
+			domain = "cluecon.com";
+		}
+
+		body = switch_mprintf("<conference-info xmlns=\"urn:ietf:params:xml:ns:conference-info\" "
+							  "entity=\"sip:%s@%s\" state=\"full\"/>\n", name, domain);
+		switch_event_add_header(revent, SWITCH_STACK_BOTTOM, "notfound", "true");
+	}
+
+	switch_event_add_body(revent, body);
+	
+	switch_event_fire(&revent);
+	switch_safe_free(body);	
 }
 
 
@@ -7997,10 +8416,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	switch_mutex_init(&globals.setup_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 
 	/* Subscribe to presence request events */
-	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL, &globals.node) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't subscribe to presence request events!\n");
-		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_bind(modname, SWITCH_EVENT_CONFERENCE_DATA_QUERY, SWITCH_EVENT_SUBCLASS_ANY, conf_data_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't subscribe to conference data query events!\n");
+	}
+
+	if (switch_event_bind(modname, SWITCH_EVENT_CALL_SETUP_REQ, SWITCH_EVENT_SUBCLASS_ANY, call_setup_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't subscribe to conference data query events!\n");
 	}
 
 	SWITCH_ADD_API(api_interface, "conference", "Conference module commands", conf_api_main, p);
@@ -8031,7 +8456,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown)
 			switch_yield(100000);
 		}
 
-		switch_event_unbind(&globals.node);
+		switch_event_unbind_callback(pres_event_handler);
+		switch_event_unbind_callback(conf_data_event_handler);
+		switch_event_unbind_callback(call_setup_event_handler);
 		switch_event_free_subclass(CONF_EVENT_MAINT);
 
 		/* free api interface help ".syntax" field string */

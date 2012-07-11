@@ -1145,6 +1145,18 @@ SWITCH_STANDARD_APP(set_name_function)
 SWITCH_STANDARD_APP(answer_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *arg = (char *) data;
+
+	if (zstr(arg)) {
+		arg = switch_channel_get_variable(channel, "answer_flags");
+	}
+
+	if (!zstr(arg)) {
+		if (!switch_stristr("is_conference", arg)) {
+			switch_channel_set_flag(channel, CF_CONFERENCE);
+		}
+	}
+
 	switch_channel_answer(channel);
 }
 

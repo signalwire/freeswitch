@@ -1000,13 +1000,14 @@ int nua_refer_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 static
 int nua_refer_server_report(nua_server_request_t *sr, tagi_t const *tags)
 {
-  nua_handle_t *nh = sr->sr_owner;
+	//nua_handle_t *nh = sr->sr_owner;
   struct notifier_usage *nu = nua_dialog_usage_private(sr->sr_usage);
   sip_t const *sip = sr->sr_request.sip;
   sip_referred_by_t *by = sip->sip_referred_by, default_by[1];
   sip_event_t const *o = sr->sr_usage->du_event;
   enum nua_substate substate = nua_substate_terminated;
-  int initial = sr->sr_initial, retval;
+  //int initial = sr->sr_initial, retval;
+  int retval;
 
   if (nu) {
     if (!sr->sr_terminating)
@@ -1029,13 +1030,14 @@ int nua_refer_server_report(nua_server_request_t *sr, tagi_t const *tags)
   if (retval >= 2 || nu == NULL)
     return retval;
 
+#if 0
   if (initial)
     nua_stack_post_signal(nh,
 			  nua_r_notify,
 			  SIPTAG_EVENT(o),
 			  SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 			  SIPTAG_PAYLOAD_STR("SIP/2.0 100 Trying\r\n"),
-			  TAG_END());
-
+		  TAG_END());
+#endif
   return retval;
 }
