@@ -2462,8 +2462,14 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 	memset(isdn_data, 0, sizeof(*isdn_data));
 
 	/* set some default values */
-	isdn_data->mode = PRI_CPE;
 	isdn_data->ton  = PRI_UNKNOWN;
+
+	/* Use span's trunk_mode as a reference for the default libpri mode */
+	if (ftdm_span_get_trunk_mode(span) == FTDM_TRUNK_MODE_NET) {
+		isdn_data->mode = PRI_NETWORK;
+	} else {
+		isdn_data->mode = PRI_CPE;
+	}
 
 	switch (ftdm_span_get_trunk_type(span)) {
 	case FTDM_TRUNK_BRI:
@@ -2516,8 +2522,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 
 		if (!strcasecmp(var, "node") || !strcasecmp(var, "mode")) {
 			if ((isdn_data->mode = parse_mode(val)) == -1) {
-				ftdm_log(FTDM_LOG_ERROR, "Unknown node type '%s', defaulting to CPE mode\n", val);
-				isdn_data->mode = PRI_CPE;
+				ftdm_log(FTDM_LOG_ERROR, "Unknown node type '%s'\n", val);
+				goto error;
 			}
 		}
 		else if (!strcasecmp(var, "switch") || !strcasecmp(var, "dialect")) {
@@ -2561,6 +2567,16 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_libpri_configure_span)
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			goto error;
 		}
+	}
+
+	/* Check if modes match and log a message if they do not. Just to be on the safe side. */
+	if (isdn_data->mode == PRI_CPE && ftdm_span_get_trunk_mode(span) == FTDM_TRUNK_MODE_NET) {
+		ftdm_log(FTDM_LOG_WARNING, "Span '%s' signalling set up for TE/CPE/USER mode, while port is running in NT/NET mode. You may want to check your 'trunk_mode' settings.\n",
+			ftdm_span_get_name(span));
+	}
+	else if (isdn_data->mode == PRI_NETWORK && ftdm_span_get_trunk_mode(span) == FTDM_TRUNK_MODE_CPE) {
+		ftdm_log(FTDM_LOG_WARNING, "Span '%s' signalling set up for NT/NET mode, while port is running in TE/CPE/USER mode. You may want to check your 'trunk_mode' settings.\n",
+			ftdm_span_get_name(span));
 	}
 
 	span->start = ftdm_libpri_start;
