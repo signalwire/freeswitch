@@ -467,7 +467,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 static void conference_send_all_dtmf(conference_member_t *member, conference_obj_t *conference, const char *dtmf);
 static switch_status_t conference_say(conference_obj_t *conference, const char *text, uint32_t leadin);
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
-static conference_obj_t *conference_find(char *name);
+static conference_obj_t *conference_find(char *name, char *domain);
 static void member_bind_controls(conference_member_t *member, const char *controls);
 static void conference_send_presence(conference_obj_t *conference);
 
@@ -6023,7 +6023,7 @@ SWITCH_STANDARD_API(conf_api_main)
 	if (argc && argv[0]) {
 		conference_obj_t *conference = NULL;
 
-		if ((conference = conference_find(argv[0]))) {
+		if ((conference = conference_find(argv[0], NULL))) {
 			if (argc >= 2) {
 				conf_api_dispatch(conference, stream, argc, argv, cmd, 1);
 			} else {
@@ -6838,7 +6838,7 @@ SWITCH_STANDARD_APP(conference_function)
 			conf_name = uuid;
 		}
 
-		if ((conference = conference_find(conf_name))) {
+		if ((conference = conference_find(conf_name, NULL))) {
 			switch_thread_rwlock_unlock(conference->rwlock);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Conference %s already exists!\n", conf_name);
 			goto done;
@@ -6878,7 +6878,7 @@ SWITCH_STANDARD_APP(conference_function)
 			enforce_security = switch_true(pvar);
 		}
 
-		if ((conference = conference_find(conf_name))) {
+		if ((conference = conference_find(conf_name, NULL))) {
 			if (locked) {
 				switch_mutex_unlock(globals.setup_mutex);
 				locked = 0;
@@ -7395,7 +7395,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		switch_copy_string(name, to, sizeof(name));
 	}
 
-	if (!(conference = conference_find(name))) {
+	if (!(conference = conference_find(name, NULL))) {
 		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL, NULL);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -7421,7 +7421,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static conference_obj_t *conference_find(char *name)
+static conference_obj_t *conference_find(char *name, char *domain)
 {
 	conference_obj_t *conference;
 
@@ -7430,6 +7430,10 @@ static conference_obj_t *conference_find(char *name)
 		if (switch_test_flag(conference, CFLAG_DESTRUCT)) {
 			switch_core_hash_delete(globals.conference_hash, conference->name);
 			switch_clear_flag(conference, CFLAG_INHASH);
+			conference = NULL;
+		}
+
+		if (!zstr(domain) && conference->domain && strcasecmp(domain, conference->domain)) {
 			conference = NULL;
 		}
 	}
@@ -8021,11 +8025,12 @@ static void call_setup_event_handler(switch_event_t *event)
 {
 	conference_obj_t *conference = NULL;
 	char *conf = switch_event_get_header(event, "Target-Component");
+	char *domain = switch_event_get_header(event, "Target-Domain");
 	char *dial_str = switch_event_get_header(event, "Request-Target");
 	char *action = switch_event_get_header(event, "Request-Action");
 
 	
-	if (!zstr(conf) && !zstr(dial_str) && !zstr(action) && (conference = conference_find(conf))) {
+	if (!zstr(conf) && !zstr(dial_str) && !zstr(action) && (conference = conference_find(conf, domain))) {
 		switch_event_t *var_event;
 		switch_event_header_t *hp;
 
@@ -8059,38 +8064,33 @@ static void conf_data_event_handler(switch_event_t *event)
 {
 	switch_event_t *revent;
 	char *name = switch_event_get_header(event, "conference-name");
+	char *domain = switch_event_get_header(event, "conference-domain");
 	conference_obj_t *conference = NULL;
 	char *body = NULL;
+
 
 	switch_event_dup(&revent, event);
 	revent->event_id = SWITCH_EVENT_CONFERENCE_DATA;
 	revent->flags |= EF_UNIQ_HEADERS;
 	switch_event_add_header(revent, SWITCH_STACK_TOP, "Event-Name", "CONFERENCE_DATA");
 
-	if (!zstr(name) && (conference = conference_find(name))) {
+
+	if (!zstr(name) && (conference = conference_find(name, domain))) {
 		if (switch_test_flag(conference, CFLAG_RFC4579)) {
 			body = conference_rfc4579_render(conference, event);
+			switch_event_add_body(revent, body);
 		}
 		switch_thread_rwlock_unlock(conference->rwlock);
-
 	}
 
 	if (!body) {
-		char *domain = switch_event_get_header(event, "conference-domain");
-		
-		if (zstr(domain)) {
-			domain = "cluecon.com";
-		}
-
-		body = switch_mprintf("<conference-info xmlns=\"urn:ietf:params:xml:ns:conference-info\" "
-							  "entity=\"sip:%s@%s\" state=\"full\"/>\n", name, domain);
+		switch_event_add_body(revent, "CONFERENCE NOT FOUND");
 		switch_event_add_header(revent, SWITCH_STACK_BOTTOM, "notfound", "true");
 	}
-
-	switch_event_add_body(revent, body);
 	
 	switch_event_fire(&revent);
 	switch_safe_free(body);	
+
 }
 
 
@@ -8119,7 +8119,7 @@ static void pres_event_handler(switch_event_t *event)
 	dup_conf_name = switch_mprintf("%q@%q", conf_name, domain_name);
 	
 
-	if ((conference = conference_find(conf_name)) || (conference = conference_find(dup_conf_name))) {
+	if ((conference = conference_find(conf_name, NULL)) || (conference = conference_find(dup_conf_name, NULL))) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
