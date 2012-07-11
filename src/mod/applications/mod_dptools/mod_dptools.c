@@ -1152,7 +1152,7 @@ SWITCH_STANDARD_APP(answer_function)
 	}
 
 	if (!zstr(arg)) {
-		if (!switch_stristr("is_conference", arg)) {
+		if (switch_stristr("is_conference", arg)) {
 			switch_channel_set_flag(channel, CF_CONFERENCE);
 		}
 	}
