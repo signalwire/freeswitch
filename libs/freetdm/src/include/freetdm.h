@@ -484,10 +484,22 @@ typedef enum {
 	FTDM_TRUNK_GSM,
 	FTDM_TRUNK_NONE
 } ftdm_trunk_type_t;
-#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "EM", "GSM", "NONE"
+#define TRUNK_TYPE_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "EM", "GSM", "NONE"
 
 /*! \brief Move from string to ftdm_trunk_type_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_trunk_type, ftdm_trunk_type2str, ftdm_trunk_type_t)
+
+/*! \brief Span trunk modes */
+typedef enum {
+	FTDM_TRUNK_MODE_CPE,
+	FTDM_TRUNK_MODE_NET,
+	FTDM_TRUNK_MODE_INVALID
+} ftdm_trunk_mode_t;
+#define TRUNK_MODE_STRINGS "CPE", "NET", "INVALID"
+
+/*! \brief Move from string to ftdm_trunk_mode_t and viceversa */
+FTDM_STR2ENUM_P(ftdm_str2ftdm_trunk_mode, ftdm_trunk_mode2str, ftdm_trunk_mode_t)
+
 
 /*! \brief Basic channel configuration provided to ftdm_configure_span_channels */
 typedef struct ftdm_channel_config {
@@ -1744,6 +1756,28 @@ FT_DECLARE(ftdm_trunk_type_t) ftdm_span_get_trunk_type(const ftdm_span_t *span);
 /*! \brief For display debugging purposes you can display this string which describes the trunk type of a span */
 FT_DECLARE(const char *) ftdm_span_get_trunk_type_str(const ftdm_span_t *span);
 
+/*!
+ * Set the trunk mode for a span
+ * \note	This must be called before configuring any channels within the span!
+ * \param[in]	span	The span
+ * \param[in]	type	The trunk mode
+ */
+FT_DECLARE(void) ftdm_span_set_trunk_mode(ftdm_span_t *span, ftdm_trunk_mode_t mode);
+
+/*!
+ * Get the trunk mode for a span
+ * \param[in]	span	The span
+ * \return	Span trunk mode
+ */
+FT_DECLARE(ftdm_trunk_mode_t) ftdm_span_get_trunk_mode(const ftdm_span_t *span);
+
+/*!
+ * Get the trunk mode of a span in textual form
+ * \param[in]	span	The span
+ * \return	Span mode name as a string
+ */
+FT_DECLARE(const char *) ftdm_span_get_trunk_mode_str(const ftdm_span_t *span);
+
 /*! 
  * \brief Return the channel identified by the provided id
  *
@@ -1813,6 +1847,40 @@ FT_DECLARE(void) ftdm_global_set_config_directory(const char *path);
 
 /*! \brief Check if the FTDM library is initialized and running */
 FT_DECLARE(ftdm_bool_t) ftdm_running(void);
+
+/**
+ * Generate a stack trace and invoke a callback function for each entry
+ * \param[in]	callback	Callback function, that is invoked for each stack symbol
+ * \param[in]	priv		(User-)Private data passed to the callback
+ * \retval
+ *	FTDM_SUCCESS	On success
+ *	FTDM_NOTIMPL	Backtraces are not available
+ *	FTDM_EINVAL	Invalid arguments (callback was NULL)
+ */
+FT_DECLARE(ftdm_status_t) ftdm_backtrace_walk(void (* callback)(const int tid, const void *addr, const char *symbol, void *priv), void *priv);
+
+/**
+ * Convenience function to print a backtrace for a span.
+ * \note	The backtrace is generated with FTDM_LOG_DEBUG log level.
+ * \param[in]	span	Span object
+ * \retval
+ *	FTDM_SUCCESS	On success
+ *	FTDM_NOTIMPL	Backtraces are not available
+ *	FTDM_EINVAL	Invalid arguments (e.g. span was NULL)
+ */
+FT_DECLARE(ftdm_status_t) ftdm_backtrace_span(ftdm_span_t *span);
+
+/**
+ * Convenience function to print a backtrace for a channel.
+ * \note	The backtrace is generated with FTDM_LOG_DEBUG log level.
+ * \param[in]	chan	Channel object
+ * \retval
+ *	FTDM_SUCCESS	On success
+ *	FTDM_NOTIMPL	Backtraces are not available
+ *	FTDM_EINVAL	Invalid arguments (e.g. chan was NULL)
+ */
+FT_DECLARE(ftdm_status_t) ftdm_backtrace_chan(ftdm_channel_t *chan);
+
 
 FT_DECLARE_DATA extern ftdm_logger_t ftdm_log;
 

@@ -79,7 +79,8 @@ libfreetdm_la_SOURCES = \
 	$(SRC)/ftdm_buffer.c \
 	$(SRC)/ftdm_threadmutex.c \
 	$(SRC)/ftdm_dso.c \
-	$(SRC)/ftdm_cpu_monitor.c
+	$(SRC)/ftdm_cpu_monitor.c \
+	$(SRC)/ftdm_backtrace.c
 
 library_include_HEADERS = \
 	$(SRC)/include/freetdm.h \

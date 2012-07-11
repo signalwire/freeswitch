@@ -1432,12 +1432,12 @@ static ftdm_status_t misdn_open_range(ftdm_span_t *span, ftdm_chan_type_t type, 
 
 	switch (ftdm_span_get_trunk_type(span)) {
 	case FTDM_TRUNK_E1:
-		d_protocol = ISDN_P_TE_E1;
+		d_protocol = ftdm_span_get_trunk_mode(span) == FTDM_TRUNK_MODE_NET ? ISDN_P_NT_E1 : ISDN_P_TE_E1;
 		d_channel  = 16;
 		break;
 	case FTDM_TRUNK_BRI:
 	case FTDM_TRUNK_BRI_PTMP:
-		d_protocol = ISDN_P_TE_S0;
+		d_protocol = ftdm_span_get_trunk_mode(span) == FTDM_TRUNK_MODE_NET ? ISDN_P_NT_S0 : ISDN_P_TE_S0;
 		d_channel  = 0;
 		break;
 	default:

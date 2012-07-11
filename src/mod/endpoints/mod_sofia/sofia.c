@@ -1074,13 +1074,15 @@ static void our_sofia_event_callback(nua_event_t event,
 
 	case nua_i_cancel:
 
-		switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_cancel");
+		if (sip && channel) {
+			switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_cancel");
 
-		if (sip && channel && sip->sip_reason) {
-			char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
+			if (sip->sip_reason) {
+				char *reason_header = sip_header_as_string(nh->nh_home, (void *) sip->sip_reason);
 			
-			if (!zstr(reason_header)) {
-				switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
+				if (!zstr(reason_header)) {
+					switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
+				}
 			}
 		}
 
@@ -5039,11 +5041,13 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 	} else if (sofia_test_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL) && (status != 200 && status != 486) && sip && sip->sip_to) {
 		char *sql;
 		time_t now = switch_epoch_time_now(NULL);
+		const char *call_id = sip->sip_call_id->i_id;
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n",
 						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 
-		sql = switch_mprintf("update sip_registrations set expires=%ld where sip_user='%s' and sip_host='%s'",
-							 (long) now, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
+		sql = switch_mprintf("update sip_registrations set expires=%ld where sip_user='%s' and sip_host='%s' and call_id='%q'",
+							 (long) now, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 	}
 }

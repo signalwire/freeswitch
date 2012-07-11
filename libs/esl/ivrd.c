@@ -35,6 +35,15 @@
 #include <stdlib.h>
 #include <esl.h>
 #include <errno.h>
+#include <sys/wait.h>
+
+static void handle_SIGCHLD(int sig)
+{
+	int status = 0;
+
+	wait(&status);
+	return;
+}
 
 static void my_forking_callback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
 {
@@ -42,6 +51,8 @@ static void my_forking_callback(esl_socket_t server_sock, esl_socket_t client_so
 	char path_buffer[1024] = { 0 };
 	const char *path;
 	char arg[64] = { 0 };
+
+	signal(SIGCHLD, handle_SIGCHLD);
 
 	if (fork()) {
 		close(client_sock);
