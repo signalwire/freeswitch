@@ -1310,6 +1310,14 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		switch_channel_set_variable(channel, "conference_recording", conference->record_filename);
 		switch_channel_set_variable(channel, CONFERENCE_UUID_VARIABLE, conference->uuid_str);
 		
+
+		if (!switch_channel_get_variable(channel, "conference_dial_str")) {
+			char *key = switch_core_session_sprintf(member->session, "conf_%s_%s_%s", 
+													conference->name, conference->domain, switch_channel_get_variable(channel, "caller_id_number"));
+			switch_channel_set_variable(channel, "conference_dial_str", key);
+		}
+
+
 		if (switch_test_flag(conference, CFLAG_WAIT_MOD) && switch_test_flag(member, MFLAG_MOD)) {
 			switch_clear_flag(conference, CFLAG_WAIT_MOD);
 		}
@@ -1512,6 +1520,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	member->conference = NULL;
 
 	if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
+		switch_channel_t *channel = switch_core_session_get_channel(member->session);
 		conference->count--;
 
 		if (switch_test_flag(member, MFLAG_ENDCONF)) {
@@ -1523,17 +1532,18 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 
 		conference_send_presence(conference);
+		switch_channel_set_variable(channel, "conference_dial_str", NULL);
 
 		if ((conference->min && switch_test_flag(conference, CFLAG_ENFORCE_MIN) && conference->count < conference->min)
 			|| (switch_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0)) {
 			switch_set_flag(conference, CFLAG_DESTRUCT);
 		} else {
 			if (!exit_sound && conference->exit_sound && switch_test_flag(conference, CFLAG_EXIT_SOUND)) {
-				conference_play_file(conference, conference->exit_sound, 0, switch_core_session_get_channel(member->session), 0);
+				conference_play_file(conference, conference->exit_sound, 0, channel, 0);
 			}
 			if (conference->count == 1 && conference->alone_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
 				conference_stop_file(conference, FILE_STOP_ASYNC);
-				conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session), 1);
+				conference_play_file(conference, conference->alone_sound, 0, channel, 1);
 			}
 		}
 
@@ -8025,6 +8035,35 @@ static void conference_send_presence(conference_obj_t *conference)
 	
 }
 
+static void kickall_matching_var(conference_obj_t *conference, const char *var, const char *val)
+{
+	conference_member_t *member = NULL;
+	const char *vval = NULL;
+	switch_mutex_lock(conference->mutex);
+	switch_mutex_lock(conference->member_mutex);
+
+	for (member = conference->members; member; member = member->next) {
+		switch_channel_t *channel = NULL;
+
+		if (switch_test_flag(member, MFLAG_NOCHANNEL)) {
+			continue;
+		}
+
+		channel = switch_core_session_get_channel(member->session);		
+		vval = switch_channel_get_variable(channel, var);
+
+		if (vval && !strcmp(vval, val)) {
+			switch_set_flag_locked(member, MFLAG_KICKED);
+			switch_clear_flag_locked(member, MFLAG_RUNNING);
+			switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);			
+		}
+
+	}	
+
+	switch_mutex_unlock(conference->member_mutex);
+	switch_mutex_unlock(conference->mutex);
+}
+
 static void call_setup_event_handler(switch_event_t *event)
 {
 	conference_obj_t *conference = NULL;
@@ -8062,7 +8101,8 @@ static void call_setup_event_handler(switch_event_t *event)
 				conference_outcall_bg(conference, NULL, NULL, dial_str, 60, NULL, NULL, NULL, NULL, NULL, NULL, &var_event);
 
 			} else if (!strcasecmp(action, "end")) {
-				switch_core_session_hupall_matching_var("conference_dial_str", key, SWITCH_CAUSE_NORMAL_CLEARING);
+				//switch_core_session_hupall_matching_var("conference_dial_str", key, SWITCH_CAUSE_NORMAL_CLEARING);
+				kickall_matching_var(conference, "conference_dial_str", key);
 			}
 		}
 
