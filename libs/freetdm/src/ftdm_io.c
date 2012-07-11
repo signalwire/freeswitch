@@ -4664,7 +4664,9 @@ static ftdm_status_t load_config(void)
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
 		return FTDM_FAIL;
 	}
-	ftdm_log(FTDM_LOG_DEBUG, "Reading FreeTDM configuration file\n");	
+
+	ftdm_log(FTDM_LOG_DEBUG, "Reading FreeTDM configuration file\n");
+
 	while (ftdm_config_next_pair(&cfg, &var, &val)) {
 		if (*cfg.category == '#') {
 			if (cfg.catno != catno) {
@@ -4675,14 +4677,14 @@ static ftdm_status_t load_config(void)
 			if (cfg.catno != catno) {
 				char *type = cfg.category + 4;
 				char *name;
-				
+
 				if (*type == ' ') {
 					type++;
 				}
-				
+
 				ftdm_log(FTDM_LOG_DEBUG, "found config for span\n");
 				catno = cfg.catno;
-				
+
 				if (ftdm_strlen_zero(type)) {
 					ftdm_log(FTDM_LOG_CRIT, "failure creating span, no type specified.\n");
 					span = NULL;
@@ -4720,11 +4722,11 @@ static ftdm_status_t load_config(void)
 			}
 
 			ftdm_log(FTDM_LOG_DEBUG, "span %d [%s]=[%s]\n", span->span_id, var, val);
-			
+
 			if (!strcasecmp(var, "trunk_type")) {
 				ftdm_trunk_type_t trtype = ftdm_str2ftdm_trunk_type(val);
 				ftdm_span_set_trunk_type(span, trtype);
-				ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s'\n", ftdm_trunk_type2str(trtype)); 
+				ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s'\n", ftdm_trunk_type2str(trtype));
 			} else if (!strcasecmp(var, "trunk_mode")) {
 				ftdm_trunk_mode_t trmode = ftdm_str2ftdm_trunk_mode(val);
 				ftdm_span_set_trunk_mode(span, trmode);
@@ -4745,7 +4747,7 @@ static ftdm_status_t load_config(void)
 				if (span->trunk_type == FTDM_TRUNK_FXS || span->trunk_type == FTDM_TRUNK_FXO || span->trunk_type == FTDM_TRUNK_EM) {
 					if ((tmp = ftdm_str2ftdm_analog_start_type(val)) != FTDM_ANALOG_START_NA) {
 						span->start_type = tmp;
-						ftdm_log(FTDM_LOG_DEBUG, "changing start type to '%s'\n", ftdm_analog_start_type2str(span->start_type)); 
+						ftdm_log(FTDM_LOG_DEBUG, "changing start type to '%s'\n", ftdm_analog_start_type2str(span->start_type));
 					}
 				} else {
 					ftdm_log(FTDM_LOG_ERROR, "This option is only valid on analog trunks!\n");
@@ -4839,7 +4841,6 @@ static ftdm_status_t load_config(void)
 			} else if (!strcasecmp(var, "cas-channel")) {
 				unsigned chans_configured = 0;
 				chan_config.type = FTDM_CHAN_TYPE_CAS;
-				
 				if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
 					configured += chans_configured;
 				}
@@ -4961,7 +4962,7 @@ done:
 	if (!configured) {
 		ret = FTDM_FAIL;
 	}
-	
+
 	return ret;
 }
 
