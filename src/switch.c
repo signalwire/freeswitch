@@ -68,6 +68,10 @@ static switch_core_flag_t service_flags = SCF_NONE;
 
 /* event to signal shutdown (for you unix people, this is like a pthread_cond) */
 static HANDLE shutdown_event;
+
+#ifndef PATH_MAX
+#define PATH_MAX 256
+#endif
 #endif
 
 /* signal handler for when freeswitch is running in background mode.
@@ -325,7 +329,7 @@ static void daemonize(int do_wait)
 
 #endif
 
-static const char const usage[] =
+static const char usage[] =
 	"Usage: freeswitch [OPTIONS]\n\n"
 	"These are the optional arguments you can pass to freeswitch:\n"
 #ifdef WIN32
