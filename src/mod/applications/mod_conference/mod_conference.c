@@ -8028,11 +8028,17 @@ static void call_setup_event_handler(switch_event_t *event)
 	char *domain = switch_event_get_header(event, "Target-Domain");
 	char *dial_str = switch_event_get_header(event, "Request-Target");
 	char *action = switch_event_get_header(event, "Request-Action");
+	char *ext = switch_event_get_header(event, "Request-Target-Extension");
 
-	
+
+	if (!ext) ext = dial_str;
+
 	if (!zstr(conf) && !zstr(dial_str) && !zstr(action) && (conference = conference_find(conf, domain))) {
 		switch_event_t *var_event;
 		switch_event_header_t *hp;
+		char *key = NULL;
+
+		key = switch_mprintf("conf_%s_%s_%s", conference->name, conference->domain, ext);
 
 		if (switch_test_flag(conference, CFLAG_RFC4579)) {
 			if (!strcasecmp(action, "call")) {
@@ -8047,14 +8053,16 @@ static void call_setup_event_handler(switch_event_t *event)
 					}
 				}
 			
-				switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "conference_dial_str", dial_str);
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_dial_str", key);
 
 				conference_outcall_bg(conference, NULL, NULL, dial_str, 60, NULL, NULL, NULL, NULL, NULL, NULL, &var_event);
 
 			} else if (!strcasecmp(action, "end")) {
-				switch_core_session_hupall_matching_var("conference_dial_str", dial_str, SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_core_session_hupall_matching_var("conference_dial_str", key, SWITCH_CAUSE_NORMAL_CLEARING);
 			}
 		}
+
+		switch_safe_free(key);
 		switch_thread_rwlock_unlock(conference->rwlock);
 	}
 

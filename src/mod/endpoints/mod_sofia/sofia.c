@@ -1192,12 +1192,15 @@ static void our_sofia_event_callback(nua_event_t event,
 		if (session) {
 			sofia_handle_sip_i_refer(nua, profile, nh, session, sip, de, tags);
 		} else {
-			const char *req_user = NULL, *req_host = NULL, *action = NULL, *ref_by_user = NULL;
+			const char *req_user = NULL, *req_host = NULL, *action = NULL, *ref_by_user = NULL, *ref_to_user = NULL, *ref_to_host = NULL;
 			char *refer_to = NULL, *referred_by = NULL, *method = NULL;
 			char *params = NULL;
 			switch_event_t *event;
 
 			if (sip->sip_refer_to) {
+				ref_to_user = sip->sip_refer_to->r_url->url_user;
+				ref_to_host = sip->sip_refer_to->r_url->url_host;
+
 				refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to);
 				if ((params = strchr(refer_to, ';'))) {
 					*params++ = '\0';
@@ -1232,6 +1235,8 @@ static void our_sofia_event_callback(nua_event_t event,
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Target-Domain", req_host);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Action", action);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Target", "sofia/%s/%s", profile->name, refer_to);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Extension", ref_to_user);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Domain", ref_to_host);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Sender", "sofia/%s/%s", profile->name, referred_by);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "var_origination_caller_id_number", ref_by_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "var_origination_caller_id_name", ref_by_user);
