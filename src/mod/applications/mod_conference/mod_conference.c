@@ -1248,11 +1248,11 @@ static void send_rfc_event(conference_obj_t *conference)
 	if (switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA) == SWITCH_STATUS_SUCCESS) {
 		event->flags |= EF_UNIQ_HEADERS;
 
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "conference-name", name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
-		
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-name", name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
+
 		body = conference_rfc4579_render(conference, NULL, event);
-		switch_event_add_body(event, body);
+		switch_event_add_body(event, "%s", body);
 		free(body);
 		switch_event_fire(&event);
 	}
@@ -8092,7 +8092,7 @@ static void call_setup_event_handler(switch_event_t *event)
 			
 				for(hp = event->headers; hp; hp = hp->next) {
 					if (!strncasecmp(hp->name, "var_", 4)) {
-						switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
+						switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
 					}
 				}
 			
@@ -8128,9 +8128,9 @@ static void conf_data_event_handler(switch_event_t *event)
 			switch_event_add_header(revent, SWITCH_STACK_TOP, "Event-Name", "CONFERENCE_DATA");
 
 			body = conference_rfc4579_render(conference, event, revent);
-			switch_event_add_body(revent, body);
+			switch_event_add_body(revent, "%s", body);
 			switch_event_fire(&revent);
-			switch_safe_free(body);	
+			switch_safe_free(body);
 		}
 		switch_thread_rwlock_unlock(conference->rwlock);
 	}
