@@ -8085,7 +8085,7 @@ static void conf_data_event_handler(switch_event_t *event)
 
 	if (!body) {
 		switch_event_add_body(revent, "CONFERENCE NOT FOUND");
-		switch_event_add_header(revent, SWITCH_STACK_BOTTOM, "notfound", "true");
+		//switch_event_add_header(revent, SWITCH_STACK_BOTTOM, "notfound", "true");
 	}
 	
 	switch_event_fire(&revent);
