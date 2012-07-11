@@ -8019,44 +8019,37 @@ static void conference_send_presence(conference_obj_t *conference)
 
 static void call_setup_event_handler(switch_event_t *event)
 {
-	char *conf;
-	char *dial_str;
-	char *action;
 	conference_obj_t *conference = NULL;
-
-	if (!switch_test_flag(conference, CFLAG_RFC4579)) {
-		return;
-	}
-	
-	conf = switch_event_get_header(event, "Target-Component");
-	dial_str = switch_event_get_header(event, "Request-Target");
-	action = switch_event_get_header(event, "Request-Action");
+	char *conf = switch_event_get_header(event, "Target-Component");
+	char *dial_str = switch_event_get_header(event, "Request-Target");
+	char *action = switch_event_get_header(event, "Request-Action");
 
 	
 	if (!zstr(conf) && !zstr(dial_str) && !zstr(action) && (conference = conference_find(conf))) {
 		switch_event_t *var_event;
 		switch_event_header_t *hp;
+
+		if (switch_test_flag(conference, CFLAG_RFC4579)) {
+			if (!strcasecmp(action, "call")) {
 	
-		if (!strcasecmp(action, "call")) {
-	
-			if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
-				abort();
-			}
-			
-			for(hp = event->headers; hp; hp = hp->next) {
-				if (!strncasecmp(hp->name, "var_", 4)) {
-					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
+				if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+					abort();
 				}
-			}
 			
-			switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "conference_dial_str", dial_str);
+				for(hp = event->headers; hp; hp = hp->next) {
+					if (!strncasecmp(hp->name, "var_", 4)) {
+						switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
+					}
+				}
+			
+				switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "conference_dial_str", dial_str);
 
-			conference_outcall_bg(conference, NULL, NULL, dial_str, 60, NULL, NULL, NULL, NULL, NULL, NULL, &var_event);
+				conference_outcall_bg(conference, NULL, NULL, dial_str, 60, NULL, NULL, NULL, NULL, NULL, NULL, &var_event);
 
-		} else if (!strcasecmp(action, "end")) {
-			switch_core_session_hupall_matching_var("conference_dial_str", dial_str, SWITCH_CAUSE_NORMAL_CLEARING);
+			} else if (!strcasecmp(action, "end")) {
+				switch_core_session_hupall_matching_var("conference_dial_str", dial_str, SWITCH_CAUSE_NORMAL_CLEARING);
+			}
 		}
-
 		switch_thread_rwlock_unlock(conference->rwlock);
 	}
 
