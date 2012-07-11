@@ -92,7 +92,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 
 	diff = fchan->history[hindex].end_time - fchan->history[hindex].time;
 
-	ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Completed state change from %s to %s in %llums\n", 
+	ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Completed state change from %s to %s in %"FTDM_TIME_FMT" ms\n",
 			ftdm_channel_state2str(fchan->last_state), ftdm_channel_state2str(state), diff);
 	
 
@@ -209,7 +209,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_cancel_state(const char *file, const char
 	/* NOTE
 	 * we could potentially also take out the channel from the pendingchans queue, but I believe is easier just leave it,
 	 * the only side effect will be a call to ftdm_channel_advance_states() for a channel that has nothing to advance */
-	ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Cancelled state change from %s to %s in %llums\n", 
+	ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Cancelled state change from %s to %s in %"FTDM_TIME_FMT" ms\n",
 			ftdm_channel_state2str(last_state), ftdm_channel_state2str(state), diff);
 	
 	return FTDM_SUCCESS;

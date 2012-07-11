@@ -216,7 +216,7 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t)
 /*! \brief Logging function prototype to be used for all FreeTDM logs 
  *  you should use ftdm_global_set_logger to set your own logger
  */
-typedef void (*ftdm_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...);
+typedef void (*ftdm_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...) __ftdm_check_printf(5, 6);
 
 /*! \brief Data queue operation functions
  *  you can use ftdm_global_set_queue_handler if you want to override the default implementation (not recommended)

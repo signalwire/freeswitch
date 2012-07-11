@@ -1143,7 +1143,7 @@ static ftdm_status_t misdn_handle_incoming(ftdm_channel_t *ftdmchan, const char 
 	assert(priv);
 
 	if (msg_len < sizeof(*hh)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN message to small (%d < %d bytes)\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "mISDN message to small (%d < %"FTDM_SIZE_FMT" bytes)\n",
 			msg_len, sizeof(*hh));
 		return FTDM_FAIL;
 	}

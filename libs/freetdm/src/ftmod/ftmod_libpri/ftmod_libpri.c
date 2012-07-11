@@ -1221,7 +1221,7 @@ static int on_info(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	ftdm_caller_data_t *caller_data = NULL;
 
 	if (!chan) {
-		ftdm_log(FTDM_LOG_CRIT, "-- Info on channel %d:%d %s but it's not in use?\n", ftdm_span_get_id(span), pevent->ring.channel);
+		ftdm_log(FTDM_LOG_CRIT, "-- Info on channel %d:%d but it's not in use?\n", ftdm_span_get_id(span), pevent->ring.channel);
 		return 0;
 	}
 
@@ -1284,7 +1284,7 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->hangup.channel);
 
 	if (!chan) {
-		ftdm_log(FTDM_LOG_CRIT, "-- Hangup on channel %d:%d %s but it's not in use?\n", ftdm_span_get_id(spri->span), pevent->hangup.channel);
+		ftdm_log(FTDM_LOG_CRIT, "-- Hangup on channel %d:%d but it's not in use?\n", ftdm_span_get_id(spri->span), pevent->hangup.channel);
 		return 0;
 	}
 

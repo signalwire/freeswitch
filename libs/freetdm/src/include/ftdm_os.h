@@ -53,6 +53,8 @@ extern "C" {
 
 /*! \brief time data type */
 typedef uint64_t ftdm_time_t; 
+/*! format string for ftdm_time_t */
+#define FTDM_TIME_FMT FTDM_UINT64_FMT
 
 /*! \brief sleep x amount of milliseconds */
 #ifdef __WINDOWS__
