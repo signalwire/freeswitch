@@ -280,6 +280,43 @@ struct switch_rtp {
 
 };
 
+struct switch_rtcp_source {
+       unsigned ssrc1:32;
+       unsigned fraction_lost:8;
+       unsigned cumulative_lost:24;
+       unsigned hi_seq_recieved:32;
+       unsigned interarrival_jitter:32;
+       unsigned lsr:32;
+       unsigned lsr_delay:32;
+};
+
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+struct switch_rtcp_s_desc_head {
+       unsigned v:2;
+       unsigned padding:1;
+       unsigned sc:5;
+       unsigned pt:8;
+       unsigned length:16;
+};
+
+#else /*  BIG_ENDIAN */
+struct switch_rtcp_s_desc_head {
+       unsigned sc:5;
+       unsigned padding:1;
+       unsigned v:2;
+       unsigned pt:8;
+       unsigned length:16;
+};
+#endif
+
+struct switch_rtcp_s_desc_trunk {
+       unsigned ssrc:32;
+       unsigned cname:8;
+       unsigned length:8;
+       char text[1]; 
+};
+
+
 struct switch_rtcp_senderinfo {
 	unsigned ssrc:32;
 	unsigned ntp_msw:32;
@@ -287,6 +324,10 @@ struct switch_rtcp_senderinfo {
 	unsigned ts:32;
 	unsigned pc:32;
 	unsigned oc:32;
+       struct switch_rtcp_source sr_source;
+       struct switch_rtcp_s_desc_head sr_desc_head;
+       struct switch_rtcp_s_desc_trunk sr_desc_ssrc;
+
 };
 
 typedef enum {
@@ -945,10 +986,12 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU) &&
 		rtp_session->rtcp_interval && (rtp_session->stats.read_count % rtp_session->rtcp_interval) == 0) {
 		struct switch_rtcp_senderinfo *sr = (struct switch_rtcp_senderinfo*) rtp_session->rtcp_send_msg.body;
+		const char* str_cname=NULL;
+		
 		//rtp_msg_t *send_msg = &rtp_session->send_msg;
 		switch_size_t rtcp_bytes;
 		switch_byte_t *ptr = (switch_byte_t *)rtp_session->rtcp_send_msg.body;
-		struct switch_rtcp_report_block *rb;
+		switch_time_t when;
 
 		rtp_session->rtcp_send_msg.header.version = 2;
 		rtp_session->rtcp_send_msg.header.p = 0;
@@ -970,28 +1013,49 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 				when = switch_time_now();
 			}
 
-			sr->ntp_msw = htonl((u_long)when / 1000000 + 2208988800UL);
+			sr->ntp_msw = htonl((u_long)(when / 1000000 + 2208988800UL));
+			/*
 			sr->ntp_lsw = htonl((u_long)(when % 1000000 * ((UINT_MAX * 1.0)/ 1000000.0)));
+			*/
+			sr->ntp_lsw = htonl((u_long)(rtp_session->send_time % 1000000 * 4294.967296));
 			sr->ts = htonl(rtp_session->last_write_ts);
 			sr->pc = htonl(rtp_session->stats.outbound.packet_count);
 			sr->oc = htonl((rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(srtp_hdr_t)));
 
-			rtcp_bytes = sizeof(switch_rtcp_hdr_t) + sizeof(struct switch_rtcp_senderinfo);
-			ptr += sizeof(struct switch_rtcp_senderinfo);
 		}
 
 		/* TBD need to put more accurate stats here. */
 
-		rb = (struct switch_rtcp_report_block *) ptr;
-		rb->ssrc = rtp_session->recv_msg.header.ssrc;
-		rb->fraction = 0;
-		rb->lost = rtp_session->stats.inbound.skip_packet_count;
-		rb->highest_sequence_number_received = rtp_session->recv_msg.header.seq;
-		rb->jitter = 0;
-		rb->lsr = 0;
-		rb->dlsr = 0;
-		rtcp_bytes += sizeof(struct switch_rtcp_report_block);
+		sr->sr_source.ssrc1 = htonl(rtp_session->stats.rtcp.peer_ssrc);
+		sr->sr_source.fraction_lost = 0;
+		sr->sr_source.cumulative_lost = htonl(rtp_session->stats.inbound.skip_packet_count);
+		sr->sr_source.hi_seq_recieved = htonl(rtp_session->recv_msg.header.seq);
+		sr->sr_source.interarrival_jitter = htonl(0);
+		sr->sr_source.lsr = htonl(0);
+		sr->sr_source.lsr_delay = htonl(0);
 
+		sr->sr_desc_head.v = 0x02;
+		sr->sr_desc_head.padding = 0;
+		sr->sr_desc_head.sc = 1;
+		sr->sr_desc_head.pt = 202;
+		sr->sr_desc_head.length = htons(5);
+
+		sr->sr_desc_ssrc.ssrc = htonl(rtp_session->ssrc);
+		sr->sr_desc_ssrc.cname = 0x1; 
+		{
+			char bufa[30];
+			str_cname = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_local_addr);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting RTCP src-1 to %s\n", str_cname);
+			sr->sr_desc_ssrc.length = strlen(str_cname);
+			memcpy ((char*)sr->sr_desc_ssrc.text, str_cname, strlen(str_cname));
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting RTCP src-1 LENGTH  to %d (%d, %s)\n", sr->sr_desc_ssrc.length, sr->sr_desc_head.length, str_cname);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting msw = %d, lsw = %d \n", sr->ntp_msw, sr->ntp_lsw);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "now = %lld, now lo = %d, now hi = %d\n", (int64_t)when, (int32_t)(when&0xFFFFFFFF), (int32_t)((when>>32&0xFFFFFFFF)));
+
+		rtcp_bytes = sizeof(switch_rtcp_hdr_t) + sizeof(struct switch_rtcp_senderinfo) + sr->sr_desc_ssrc.length -1 ;
 		rtp_session->rtcp_send_msg.header.length = htons((u_short)(rtcp_bytes / 4) - 1); 
 		
 
@@ -3070,6 +3134,7 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 
 				rtp_session->stats.rtcp.packet_count += sr->pc;
 				rtp_session->stats.rtcp.octet_count += sr->oc;
+				rtp_session->stats.rtcp.peer_ssrc = ntohl(sr->ssrc);
 
 				/* sender report */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Received a SR with %d report blocks, " \
