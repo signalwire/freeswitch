@@ -5691,7 +5691,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 	}
 }
 
-
 /* Pure black magic, if you can't understand this code you are lucky.........*/
 void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -5704,10 +5703,12 @@ void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void 
 
 		if ((uuid = switch_channel_get_partner_uuid(channel)) && (other_session = switch_core_session_locate(uuid))) {
 			if (switch_core_session_compare(session, other_session)) {
+				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 				sofia_set_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 
-				switch_yield(100000);
+				switch_yield(250000);
 				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 				
 				switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE);
 
@@ -5737,6 +5738,8 @@ static void launch_media_on_hold(switch_core_session_t *session)
 	switch_threadattr_priority_increase(thd_attr);
 	switch_thread_create(&thread, thd_attr, media_on_hold_thread_run, session, switch_core_session_get_pool(session));
 }
+
+
 
 static void mark_transfer_record(switch_core_session_t *session, const char *br_a, const char *br_b)
 {
@@ -6342,9 +6345,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 												SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 												SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->local_sdp_str), TAG_END());
 								}
+
+								switch_channel_set_flag(channel, CF_PROXY_MODE);
+								switch_yield(250000);
 								launch_media_on_hold(session);
 
-								switch_core_session_rwunlock(other_session);
 								goto done;
 							}
 						}
