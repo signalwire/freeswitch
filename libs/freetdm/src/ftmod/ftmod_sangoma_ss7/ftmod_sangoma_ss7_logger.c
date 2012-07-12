@@ -280,7 +280,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %d\n",
+			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %s\n",
 										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										DECODE_DISC_REASON(sta->t.usta.evntParm[1]));

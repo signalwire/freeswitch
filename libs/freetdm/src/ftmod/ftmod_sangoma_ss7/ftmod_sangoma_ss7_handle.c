@@ -293,9 +293,9 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	case (FTDM_CHANNEL_STATE_HANGUP_COMPLETE):
 handle_glare:
 		/* the core already has plans for this channel...glare */
-		SS7_INFO_CHAN(ftdmchan, "Got IAM on channel that is already inuse (state=%s|inuse=%d)...glare!\n", 
+		SS7_INFO_CHAN(ftdmchan, "Got IAM on channel that is already inuse (state=%s|inuse=%c)...glare!\n",
 								ftdm_channel_state2str (ftdmchan->state),
-								ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE));
+								ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE) ? 'Y' : 'N');
 
 		/* save the info so that we can use it later on */
 		sngss7_info->glare.spInstId = spInstId;
@@ -739,7 +739,7 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		 * ITU Q.784 Test Number 3.8
 		 * Collision of REL messages
 		 */
-		SS7_DEBUG_CHAN(ftdmchan, "Collision of REL messages. Rx REL while waiting for RLC.\n", " ");
+		SS7_DEBUG_CHAN(ftdmchan, "Collision of REL messages. Rx REL while waiting for RLC.%s\n", " ");
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_LOCAL_REL) && 
 			!sngss7_test_ckt_flag (sngss7_info, FLAG_REMOTE_REL)) {
 			/* locally requested hangup completed, wait for remote RLC */
@@ -1897,7 +1897,7 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			/* go to DOWN */
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		} else {
-			SS7_ERROR("Received RSC-RLC but we're not waiting on a RSC-RLC on CIC #, dropping\n", sngss7_info->circuit->cic);
+			SS7_ERROR("Received RSC-RLC but we're not waiting on a RSC-RLC on CIC #%d, dropping\n", sngss7_info->circuit->cic);
 		}
 
 		break;
