@@ -4520,6 +4520,7 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 	switch_clear_flag_locked(member, MFLAG_TALKING);
 
 	switch_set_flag(member, MFLAG_INDICATE_MUTE);
+	member->score_iir = 0;
 
 	if (stream != NULL) {
 		stream->write_function(stream, "OK mute %u\n", member->id);
