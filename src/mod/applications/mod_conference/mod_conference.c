@@ -681,16 +681,31 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 	
 	for (np = conference->cdr_nodes; np; np = np->next) {
 		char *user_uri;
+		switch_channel_t *channel = NULL;
 		
 		if (!np->cp || (np->member && !np->member->session) || np->leave_time) { /* for now we'll remove participants when the leave */
 			continue;
+		}
+
+		if (np->member && np->member->session) {
+			channel = switch_core_session_get_channel(np->member->session);
 		}
 
 		if (!(x_tag1 = switch_xml_add_child_d(x_tag, "user", off1++))) {
 			abort();
 		}
 
-		user_uri = switch_mprintf("sip:%s@%s", np->cp->caller_id_number, domain);
+		if (channel) {
+			const char *uri = switch_channel_get_variable_dup(channel, "conference_invite_uri", SWITCH_FALSE, -1);
+
+			if (uri) {
+				user_uri = strdup(uri);
+			}
+		}
+		
+		if (!user_uri) {
+			user_uri = switch_mprintf("sip:%s@%s", np->cp->caller_id_number, domain);
+		}
 		
 		
 		switch_xml_set_attr_d(x_tag1, "state", "full");
@@ -707,7 +722,6 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 		}
 		switch_xml_set_attr_d(x_tag2, "entity", user_uri);
 		
-
 		if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "display-text", off3++))) {
 			abort();
 		}
@@ -751,8 +765,11 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 		*/
 
 		if (np->member) {
-			switch_channel_t *channel = switch_core_session_get_channel(np->member->session);
 			const char *var;
+			//char buf[1024];
+
+			//switch_snprintf(buf, sizeof(buf), "conf_%s_%s_%s", conference->name, conference->domain, np->cp->caller_id_number);
+			//switch_channel_set_variable(channel, "conference_call_key", buf);
 
 			if (!(x_tag3 = switch_xml_add_child_d(x_tag2, "media", off3++))) {
 				abort();
@@ -8077,16 +8094,16 @@ static void call_setup_event_handler(switch_event_t *event)
 	char *conf = switch_event_get_header(event, "Target-Component");
 	char *domain = switch_event_get_header(event, "Target-Domain");
 	char *dial_str = switch_event_get_header(event, "Request-Target");
+	char *dial_uri = switch_event_get_header(event, "Request-Target-URI");
 	char *action = switch_event_get_header(event, "Request-Action");
 	char *ext = switch_event_get_header(event, "Request-Target-Extension");
-
+	
 
 	if (!ext) ext = dial_str;
 
 	if (!zstr(conf) && !zstr(dial_str) && !zstr(action) && (conference = conference_find(conf, domain))) {
 		switch_event_t *var_event;
 		switch_event_header_t *hp;
-		
 
 		if (switch_test_flag(conference, CFLAG_RFC4579)) {
 			char *key = switch_mprintf("conf_%s_%s_%s", conference->name, conference->domain, ext);
@@ -8106,6 +8123,8 @@ static void call_setup_event_handler(switch_event_t *event)
 			
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_call_key", key);
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_destination_number", ext);
+
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_invite_uri", dial_uri);
 
 				if (!strncasecmp(ostr, "url+", 4)) {
 					ostr += 4;

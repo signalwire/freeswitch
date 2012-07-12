@@ -1235,6 +1235,7 @@ static void our_sofia_event_callback(nua_event_t event,
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Target-Domain", req_host);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Action", action);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Target", "sofia/%s/%s", profile->name, refer_to);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Target-URI", "%s", refer_to);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Extension", ref_to_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Domain", ref_to_host);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Sender", "sofia/%s/%s", profile->name, referred_by);
