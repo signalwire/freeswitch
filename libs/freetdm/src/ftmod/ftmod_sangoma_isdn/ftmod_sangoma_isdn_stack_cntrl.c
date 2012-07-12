@@ -234,7 +234,7 @@ ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trac
 				sngisdn_clear_trace_flag(signal_data, SNGISDN_TRACE_Q921);
 				
 				if (sngisdn_cntrl_q921(span, ADISIMM, SATRC) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to disable q921 trace\n");
+					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to disable q921 trace\n", signal_data->link_id);
 				}
 			}
 			if (sngisdn_test_trace_flag(signal_data, SNGISDN_TRACE_Q931)) {
@@ -242,7 +242,7 @@ ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trac
 				sngisdn_clear_trace_flag(signal_data, SNGISDN_TRACE_Q931);
 
 				if (sngisdn_cntrl_q931(span, ADISIMM, SATRC) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to disable q931 trace\n");
+					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to disable q931 trace\n", signal_data->link_id);
 				}
 			}
 			break;
@@ -252,7 +252,7 @@ ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trac
 				sngisdn_set_trace_flag(signal_data, SNGISDN_TRACE_Q921);
 
 				if (sngisdn_cntrl_q921(span, AENA, SATRC) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to enable q921 trace\n");
+					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to enable q921 trace\n", signal_data->link_id);
 				}
 			}
 			break;
@@ -262,7 +262,7 @@ ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trac
 				sngisdn_set_trace_flag(signal_data, SNGISDN_TRACE_Q931);
 				
 				if (sngisdn_cntrl_q931(span, AENA, SATRC) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to enable q931 trace\n");
+					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to enable q931 trace\n", signal_data->link_id);
 				}
 			}
 			break;

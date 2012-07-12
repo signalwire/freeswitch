@@ -130,7 +130,7 @@ static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span
 			 /* can be > 1 for some BRI variants */
 			break;
 		default:
-			ftdm_log(FTDM_LOG_ERROR, "%s:Unsupported trunktype:%s\n", span->name, switch_name, ftdm_trunk_type2str(span->trunk_type));
+			ftdm_log(FTDM_LOG_ERROR, "%s:Unsupported trunktype:%s\n", span->name, ftdm_trunk_type2str(span->trunk_type));
 			return FTDM_FAIL;
 	}
 	/* see if we have profile with this switch_type already */

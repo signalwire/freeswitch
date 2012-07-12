@@ -452,17 +452,17 @@ static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj)
 
 	/* get an interrupt queue for this span */
 	if (ftdm_queue_get_interrupt(span->pendingchans, &ftdm_sangoma_isdn_int[0]) != FTDM_SUCCESS) {
- 		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to get a ftdm_interrupt for span = %s!\n", span->name);
+ 		ftdm_log(FTDM_LOG_CRIT, "Failed to get a ftdm_interrupt for span = %s!\n", span->name);
 		goto ftdm_sangoma_isdn_run_exit;
 	}
 	
 	if (ftdm_queue_get_interrupt(span->pendingsignals, &ftdm_sangoma_isdn_int[1]) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to get a signal interrupt for span = %s!\n", span->name);
+		ftdm_log(FTDM_LOG_CRIT, "Failed to get a signal interrupt for span = %s!\n", span->name);
 		goto ftdm_sangoma_isdn_run_exit;
 	}
 
 	if (ftdm_queue_get_interrupt(signal_data->event_queue, &ftdm_sangoma_isdn_int[2]) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to get a event interrupt for span = %s!\n", span->name);
+		ftdm_log(FTDM_LOG_CRIT, "Failed to get a event interrupt for span = %s!\n", span->name);
 		goto ftdm_sangoma_isdn_run_exit;
 	}
 

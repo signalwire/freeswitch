@@ -910,7 +910,7 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 	}
 
 	if (!ftdmchan->iostats.tx.packets) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "First packet write stats: Tx queue len: %d, Tx queue size: %d, Tx idle: %d\n", 
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "First packet write stats: Tx queue len: %d, Tx queue size: %d, Tx idle: %"FTDM_UINT64_FMT"\n", 
 				ftdmchan->iostats.tx.queue_len, 
 				ftdmchan->iostats.tx.queue_size,
 				ftdmchan->iostats.tx.idle_packets);
@@ -956,11 +956,11 @@ static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx
 	}
 
 	if (ftdmchan->iostats.rx.queue_len >= (0.8 * ftdmchan->iostats.rx.queue_size)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length exceeded 80% threshold (%d/%d)\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length exceeded 80%% threshold (%d/%d)\n",
 					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
 		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
 	} else if (ftdm_test_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES)){
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length reduced 80% threshold (%d/%d)\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length reduced 80%% threshold (%d/%d)\n",
 					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
 		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
 	}
@@ -1516,10 +1516,10 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 					if (fchan->dtmfdetect.duration_ms) {
 						ftdm_time_t diff = ftdm_current_time_in_ms() - fchan->dtmfdetect.start_time;
 						if (diff > fchan->dtmfdetect.duration_ms) {
-							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c (duration:%"FTDM_TIME_FMT" min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
 							ftdm_channel_queue_dtmf(fchan, tmp_dtmf);
 						} else {
-							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c (duration:%"FTDM_TIME_FMT" min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
 						}
 					} else if (!fchan->dtmfdetect.trigger_on_start) {
 						ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
@@ -1617,7 +1617,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 					ftdm_clear_flag_locked(span->channels[i], FTDM_CHANNEL_FLASH);
 					ftdm_set_flag_locked(span->channels[i], FTDM_CHANNEL_OFFHOOK);
 					event_id = FTDM_OOB_OFFHOOK;
-					ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Diff since last event = %llums, delivering %s now\n", diff, ftdm_oob_event2str(event_id));
+					ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Diff since last event = %"FTDM_TIME_FMT" ms, delivering %s now\n", diff, ftdm_oob_event2str(event_id));
 					goto event;
 				}
 			}
@@ -1636,7 +1636,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 
 						sangoma_tdm_txsig_onhook(ftdmchan->sockfd,&tdm_api);
 					}
-					ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Diff since last event = %llums, delivering %s now\n", diff, ftdm_oob_event2str(event_id));
+					ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Diff since last event = %"FTDM_TIME_FMT" ms, delivering %s now\n", diff, ftdm_oob_event2str(event_id));
 					goto event;
 				}
 			}

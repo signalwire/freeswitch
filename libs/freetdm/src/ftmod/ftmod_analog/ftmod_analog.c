@@ -473,7 +473,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
 	
-	ftdm_assert(interval != 0, NULL);
+	ftdm_assert(interval != 0, "Invalid interval");
 
 	if (!dial_timeout) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Not waiting for dial tone to dial number %s\n", ftdmchan->caller_data.dnis.digits);

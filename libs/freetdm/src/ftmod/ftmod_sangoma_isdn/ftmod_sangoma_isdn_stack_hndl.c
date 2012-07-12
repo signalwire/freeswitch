@@ -480,7 +480,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 						if (cnStEvnt->sndCmplt.eh.pres || num_digits >= min_digits) {
 							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 						} else {
-							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "received %d of %d digits\n", num_digits, min_digits);
+							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "received %"FTDM_SIZE_FMT" of %"FTDM_SIZE_FMT" digits\n", num_digits, min_digits);
 						}
 					}
 					break;
@@ -496,7 +496,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing SETUP but channel in RESET state, ignoring\n");
 						break;
 					default:
-						ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "\n", suId, suInstId, spInstId);
+						ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled INFO (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 						break;
 				}
 			}

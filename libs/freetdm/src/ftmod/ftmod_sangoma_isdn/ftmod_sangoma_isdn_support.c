@@ -453,7 +453,7 @@ ftdm_status_t get_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 	}
 	memset(subaddress, 0, sizeof(subaddress));
 	if(cgPtySad->sadInfo.len >= sizeof(subaddress)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Calling Party Subaddress exceeds local size limit (len:%d max:%d)\n", cgPtySad->sadInfo.len, sizeof(subaddress));
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Calling Party Subaddress exceeds local size limit (len:%d max:%"FTDM_SIZE_FMT")\n", cgPtySad->sadInfo.len, sizeof(subaddress));
 		cgPtySad->sadInfo.len = sizeof(subaddress)-1;
 	}
 		
@@ -1190,7 +1190,7 @@ void sngisdn_restart_timeout(void *p_signal_data)
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;
 
-	ftdm_log(FTDM_LOG_DEBUG, "s%d:Did not receive a RESTART from remote switch in %d ms - restarting\n", span->name, signal_data->restart_timeout);
+	ftdm_log(FTDM_LOG_DEBUG, "s%s:Did not receive a RESTART from remote switch in %d ms - restarting\n", span->name, signal_data->restart_timeout);
 
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {

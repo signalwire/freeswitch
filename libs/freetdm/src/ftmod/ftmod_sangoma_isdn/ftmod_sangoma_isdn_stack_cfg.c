@@ -1181,7 +1181,7 @@ uint8_t sng_isdn_stack_switchtype(sngisdn_switchtype_t switchtype)
 		case SNGISDN_SWITCH_INSNET:
 			return SW_INSNET;
 		case SNGISDN_SWITCH_INVALID:
-			ftdm_log(FTDM_LOG_ERROR, "%s:Invalid switchtype:%d\n", switchtype);
+			ftdm_log(FTDM_LOG_ERROR, "Invalid switchtype: %d\n", switchtype);
 			break;
 	}
 	return 0;

@@ -152,7 +152,7 @@ static ftdm_status_t att_courtesy_vru(ftdm_channel_t *ftdmchan, sngisdn_transfer
 					goto done;
 				}
 				if (strlen(val) > COURTESY_TRANSFER_MAX_DATA_SIZE) {
-					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Data exceeds max size (len:%d max:%d), cannot perform transfer\n", strlen(val), COURTESY_TRANSFER_MAX_DATA_SIZE);
+					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Data exceeds max size (len:%"FTDM_SIZE_FMT" max:%d), cannot perform transfer\n", strlen(val), COURTESY_TRANSFER_MAX_DATA_SIZE);
 					goto done;
 				}
 				memcpy(sngisdn_info->transfer_data.tdata.att_courtesy_vru.data, val, strlen(val));
