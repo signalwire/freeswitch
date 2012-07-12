@@ -695,7 +695,7 @@ FT_DECLARE(ftdm_status_t) ftdm_sigmsg_set_raw_data(ftdm_sigmsg_t *sigmsg, void *
 */
 #define ftdm_assert(assertion, msg) \
 	if (!(assertion)) { \
-		ftdm_log(FTDM_LOG_CRIT, msg); \
+		ftdm_log(FTDM_LOG_CRIT, "%s", msg); \
 		if (g_ftdm_crash_policy & FTDM_CRASH_ON_ASSERT) { \
 			ftdm_abort();  \
 		} \
@@ -706,7 +706,7 @@ FT_DECLARE(ftdm_status_t) ftdm_sigmsg_set_raw_data(ftdm_sigmsg_t *sigmsg, void *
 */
 #define ftdm_assert_return(assertion, retval, msg) \
 	if (!(assertion)) { \
-		ftdm_log(FTDM_LOG_CRIT, msg); \
+		ftdm_log(FTDM_LOG_CRIT, "%s", msg); \
 		if (g_ftdm_crash_policy & FTDM_CRASH_ON_ASSERT) { \
 			ftdm_abort();  \
 		} else { \
