@@ -4611,15 +4611,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_channel_set_variable(nchannel, "sip_route_uri", gateway_ptr->outbound_sticky_proxy);
 		}
 
-		if (gateway_ptr->ob_vars) {
-			switch_event_header_t *hp;
-			for (hp = gateway_ptr->ob_vars->headers; hp; hp = hp->next) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
-								  switch_channel_get_name(nchannel), hp->name, hp->value);
-				switch_channel_set_variable(nchannel, hp->name, hp->value);
-			}
-		}
-
 	} else {
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL\n");
@@ -4780,8 +4771,27 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	not_const = (char *) caller_profile->caller_id_number;
 	caller_profile->caller_id_number = switch_sanitize_number(not_const);
 
+
 	//caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest_num);
 	switch_channel_set_caller_profile(nchannel, caller_profile);
+
+
+	if (gateway_ptr && gateway_ptr->ob_vars) {
+		switch_event_header_t *hp;
+		for (hp = gateway_ptr->ob_vars->headers; hp; hp = hp->next) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
+							  switch_channel_get_name(nchannel), hp->name, hp->value);
+			if (!strncmp(hp->name, "p:", 2)) {
+				switch_channel_set_profile_var(nchannel, hp->name + 2, hp->value);
+			} else {
+				switch_channel_set_variable(nchannel, hp->name, hp->value);
+			}
+		}
+	}
+
+
+
+
 	sofia_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 	sofia_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
 	if (switch_channel_get_state(nchannel) == CS_NEW) {
