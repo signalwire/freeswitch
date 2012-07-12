@@ -718,7 +718,7 @@ static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
 					gsm_data->call_id = g_outbound_call_id++;				
 					wat_con_event_t con_event;
 					memset(&con_event, 0, sizeof(con_event));
-					sprintf(con_event.called_num.digits, ftdmchan->caller_data.dnis.digits);
+					ftdm_set_string(con_event.called_num.digits, ftdmchan->caller_data.dnis.digits);
 					ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s\n", con_event.called_num.digits);
 					wat_con_req(ftdmchan->span->span_id, gsm_data->call_id , &con_event);
  
@@ -945,7 +945,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 		var = ftdm_parameters[paramindex].var;
 		val = ftdm_parameters[paramindex].val;
 		if (!ftdm_strlen_zero_buf(val)) {
-			ftdm_log(FTDM_LOG_WARNING, "Ignoring empty GSM parameter %s for span %s\n", var, val, span->name);
+			ftdm_log(FTDM_LOG_WARNING, "Ignoring empty GSM parameter %s for span %s\n", var, span->name);
 			continue;
 		}
 		ftdm_log(FTDM_LOG_DEBUG, "Reading GSM parameter %s=%s for span %s\n", var, val, span->name);
