@@ -680,7 +680,7 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 	switch_mutex_lock(conference->member_mutex);
 	
 	for (np = conference->cdr_nodes; np; np = np->next) {
-		char *user_uri;
+		char *user_uri = NULL;
 		switch_channel_t *channel = NULL;
 		
 		if (!np->cp || (np->member && !np->member->session) || np->leave_time) { /* for now we'll remove participants when the leave */
