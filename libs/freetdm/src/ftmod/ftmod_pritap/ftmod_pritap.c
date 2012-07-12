@@ -782,7 +782,7 @@ static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, 
 		return FTDM_FAIL;
 	}
 	if (sizeread != size) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "read from peer channel only %d bytes!\n", sizeread);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "read from peer channel only %"FTDM_SIZE_FMT" bytes!\n", sizeread);
 		return FTDM_FAIL;
 	}
 
@@ -854,7 +854,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 	}
 
 	if (!dchan) {
-		ftdm_log(FTDM_LOG_ERROR, "No d-channel specified in freetdm.conf!\n", ftdm_trunk_type2str(span->trunk_type));
+		ftdm_log(FTDM_LOG_ERROR, "No d-channel specified in freetdm.conf!\n");
 		return FTDM_FAIL;
 	}
 	
