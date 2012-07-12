@@ -214,7 +214,7 @@ extern "C" {
 			ftdm_mutex_lock(obj->mutex);					\
 		}									\
 		if(!__safety) {								\
-			ftdm_log(FTDM_LOG_CRIT, "flag %d was never cleared\n", flag);	\
+			ftdm_log(FTDM_LOG_CRIT, "flag %"FTDM_UINT64_FMT" was never cleared\n", (uint64_t)flag);	\
 		}									\
 	} while(0);
 
