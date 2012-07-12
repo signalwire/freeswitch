@@ -124,7 +124,7 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event);
 static void wp_swap16(char *data, int datalen)
 {
 	int i = 0;
-	uint16_t *samples = data;
+	uint16_t *samples = (uint16_t *)data;
 	for (i = 0; i < datalen/2; i++) {
 		uint16_t sample = ((samples[i]  & 0x00FF) << 8) | ((samples[i]  & 0xFF00) >> 8); 
 		samples[i] =  sample;
