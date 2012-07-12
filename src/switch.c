@@ -788,7 +788,7 @@ int main(int argc, char *argv[])
 				return 255;
 			}
 
-			SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			SWITCH_GLOBAL_dirs.storage_dir = (char *) malloc(strlen(local_argv[x]) + 1);
 			if (!SWITCH_GLOBAL_dirs.storage_dir) {
 				fprintf(stderr, "Allocation error\n");
 				return 255;
