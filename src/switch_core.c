@@ -2125,6 +2125,13 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	case SCSC_SYNC_CLOCK_WHEN_IDLE:
 		newintval = switch_core_session_sync_clock();
 		break;
+	case SCSC_SQL:
+		if (oldintval) {
+			switch_core_sqldb_start_thread();
+		} else {
+			switch_core_sqldb_stop_thread();
+		}
+		break;
 	case SCSC_PAUSE_ALL:
 		if (oldintval) {
 			switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);

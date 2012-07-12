@@ -1915,6 +1915,16 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_DEBUG_SQL, &x);
 			stream->write_function(stream, "+OK SQL DEBUG [%s]\n", x ? "on" : "off");			
 
+		} else if (!strcasecmp(argv[0], "sql")) {
+			if (argv[1]) {
+				int x = 0;
+				if (!strcasecmp(argv[1], "start")) {
+					x = 1;
+				}
+				switch_core_session_ctl(SCSC_SQL, &x);
+				stream->write_function(stream, "+OK\n");			
+			}
+
 		} else if (!strcasecmp(argv[0], "reclaim_mem")) {
 			switch_core_session_ctl(SCSC_RECLAIM, &arg);
 			stream->write_function(stream, "+OK\n");

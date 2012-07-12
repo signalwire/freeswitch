@@ -1775,6 +1775,7 @@ typedef enum {
 	SCSC_THREADED_SYSTEM_EXEC,
 	SCSC_SYNC_CLOCK_WHEN_IDLE,
 	SCSC_DEBUG_SQL,
+	SCSC_SQL,
 } switch_session_ctl_t;
 
 typedef enum {
