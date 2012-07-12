@@ -273,6 +273,11 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		}
 	}
 
+	if (fd > -1) {
+		close(fd);
+	}
+
+
 	switch_core_session_set_read_codec(session, NULL);
 	switch_core_codec_destroy(&codec);
 
