@@ -291,6 +291,7 @@ typedef struct conference_obj {
 	char *special_announce;
 	char *auto_record;
 	char *record_filename;
+	char *outcall_templ;
 	uint32_t terminate_on_silence;
 	uint32_t max_members;
 	uint32_t doc_version;
@@ -1311,10 +1312,10 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		switch_channel_set_variable(channel, CONFERENCE_UUID_VARIABLE, conference->uuid_str);
 		
 
-		if (!switch_channel_get_variable(channel, "conference_dial_str")) {
+		if (!switch_channel_get_variable(channel, "conference_call_key")) {
 			char *key = switch_core_session_sprintf(member->session, "conf_%s_%s_%s", 
 													conference->name, conference->domain, switch_channel_get_variable(channel, "caller_id_number"));
-			switch_channel_set_variable(channel, "conference_dial_str", key);
+			switch_channel_set_variable(channel, "conference_call_key", key);
 		}
 
 
@@ -1532,7 +1533,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 
 		conference_send_presence(conference);
-		switch_channel_set_variable(channel, "conference_dial_str", NULL);
+		switch_channel_set_variable(channel, "conference_call_key", NULL);
 
 		if ((conference->min && switch_test_flag(conference, CFLAG_ENFORCE_MIN) && conference->count < conference->min)
 			|| (switch_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0)) {
@@ -7500,6 +7501,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *conference_flags = NULL;
 	char *perpetual_sound = NULL;
 	char *moh_sound = NULL;
+	char *outcall_templ = NULL;
 	uint32_t max_members = 0;
 	uint32_t announce_count = 0;
 	char *maxmember_sound = NULL;
@@ -7618,6 +7620,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				tts_voice = val;
 			} else if (!strcasecmp(var, "enter-sound") && !zstr(val)) {
 				enter_sound = val;
+			} else if (!strcasecmp(var, "outcall-templ") && !zstr(val)) {
+				outcall_templ = val;
 			} else if (!strcasecmp(var, "exit-sound") && !zstr(val)) {
 				exit_sound = val;
 			} else if (!strcasecmp(var, "alone-sound") && !zstr(val)) {
@@ -7784,6 +7788,9 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);
 	conference->caller_controls = switch_core_strdup(conference->pool, caller_controls);
 	conference->moderator_controls = switch_core_strdup(conference->pool, moderator_controls);
+	if (outcall_templ) {
+		conference->outcall_templ = switch_core_strdup(conference->pool, outcall_templ);
+	}
 	conference->run_time = switch_epoch_time_now(NULL);
 
 	if (!zstr(conference_log_dir)) {
@@ -8079,11 +8086,12 @@ static void call_setup_event_handler(switch_event_t *event)
 	if (!zstr(conf) && !zstr(dial_str) && !zstr(action) && (conference = conference_find(conf, domain))) {
 		switch_event_t *var_event;
 		switch_event_header_t *hp;
-		char *key = NULL;
-
-		key = switch_mprintf("conf_%s_%s_%s", conference->name, conference->domain, ext);
+		
 
 		if (switch_test_flag(conference, CFLAG_RFC4579)) {
+			char *key = switch_mprintf("conf_%s_%s_%s", conference->name, conference->domain, ext);
+			char *expanded = NULL, *ostr = dial_str;;
+			
 			if (!strcasecmp(action, "call")) {
 	
 				if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
@@ -8096,17 +8104,32 @@ static void call_setup_event_handler(switch_event_t *event)
 					}
 				}
 			
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_dial_str", key);
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_call_key", key);
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_destination_number", ext);
 
-				conference_outcall_bg(conference, NULL, NULL, dial_str, 60, NULL, NULL, NULL, NULL, NULL, NULL, &var_event);
+				if (!strncasecmp(ostr, "url+", 4)) {
+					ostr += 4;
+				} else if (conference->outcall_templ) {
+					if ((expanded = switch_event_expand_headers(var_event, conference->outcall_templ))) {
+						ostr = expanded;
+					}
+				}
 
+				conference_outcall_bg(conference, NULL, NULL, ostr, 60, NULL, NULL, NULL, NULL, NULL, NULL, &var_event);
+
+				if (expanded && expanded != conference->outcall_templ) {
+					switch_safe_free(expanded);
+				}
+				
 			} else if (!strcasecmp(action, "end")) {
-				//switch_core_session_hupall_matching_var("conference_dial_str", key, SWITCH_CAUSE_NORMAL_CLEARING);
-				kickall_matching_var(conference, "conference_dial_str", key);
+				//switch_core_session_hupall_matching_var("conference_call_key", key, SWITCH_CAUSE_NORMAL_CLEARING);
+				kickall_matching_var(conference, "conference_call_key", key);
 			}
+
+			switch_safe_free(key);
 		}
 
-		switch_safe_free(key);
+
 		switch_thread_rwlock_unlock(conference->rwlock);
 	}
 
