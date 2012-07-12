@@ -365,6 +365,7 @@ static const char usage[] =
 #endif
 	"\t-c                     -- output to a console and stay in the foreground\n"
 	"\n\tOptions to control locations of files:\n"
+	"\t-base [basedir]         -- alternate prefix directory\n"
 	"\t-conf [confdir]         -- alternate directory for FreeSWITCH configuration files\n"
 	"\t-log [logdir]           -- alternate directory for logfiles\n"
 	"\t-run [rundir]           -- alternate directory for runtime files\n"
@@ -764,6 +765,21 @@ int main(int argc, char *argv[])
 				return 255;
 			}
 			strcpy(SWITCH_GLOBAL_dirs.htdocs_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-base")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -base you must specify a base directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.base_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.base_dir, local_argv[x]);
 		}
 
 		else if (!strcmp(local_argv[x], "-temp")) {
