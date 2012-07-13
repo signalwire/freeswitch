@@ -516,6 +516,7 @@ static switch_status_t conf_api_sub_deaf(conference_member_t *member, switch_str
 static switch_status_t conf_api_sub_undeaf(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conference_add_event_data(conference_obj_t *conference, switch_event_t *event);
 static switch_status_t conference_add_event_member_data(conference_member_t *member, switch_event_t *event);
+static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 
 
 #define lock_member(_member) switch_mutex_lock(_member->write_mutex); switch_mutex_lock(_member->read_mutex)
@@ -2395,6 +2396,13 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	switch_mutex_unlock(globals.hash_mutex);
 
 	return NULL;
+}
+
+static void conference_loop_fn_floor_toggle(conference_member_t *member, caller_control_action_t *action)
+{
+	if (member == NULL) return;
+
+	conf_api_sub_floor(member, NULL, NULL);
 }
 
 static void conference_loop_fn_mute_toggle(conference_member_t *member, caller_control_action_t *action)
@@ -4889,6 +4897,51 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 	return ret_status;
 }
 
+static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	switch_mutex_lock(member->conference->mutex);
+
+	if (member->conference->floor_holder == member) {
+		member->conference->floor_holder = NULL;
+		if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE)) {
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+			conference_add_event_data(member->conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d", member->id);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "none");
+			switch_event_fire(&event);
+			if (stream != NULL) {
+				stream->write_function(stream, "OK floor none\n");
+			}
+		}
+	} else if (member->conference->floor_holder == NULL) {
+		member->conference->floor_holder = member;
+		if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE)) {
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+			conference_add_event_data(member->conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "none");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", member->id);
+			switch_event_fire(&event);
+			if (stream != NULL) {
+				stream->write_function(stream, "OK floor %u\n", member->id);
+			}
+		}
+	} else {
+		if (stream != NULL) {
+			stream->write_function(stream, "ERR floor is held by %u\n", member->conference->floor_holder->id);
+		}
+	}
+
+	switch_mutex_unlock(member->conference->mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static switch_xml_t add_x_tag(switch_xml_t x_member, const char *name, const char *value, int off)
 {
@@ -5901,6 +5954,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"nopin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "nopin", ""},
 	{"get", (void_fn_t) & conf_api_sub_get, CONF_API_SUB_ARGS_SPLIT, "get", "<parameter-name>"},
 	{"set", (void_fn_t) & conf_api_sub_set, CONF_API_SUB_ARGS_SPLIT, "set", "<parameter-name> <value>"},
+	{"floor", (void_fn_t) & conf_api_sub_floor, CONF_API_SUB_MEMBER_TARGET, "floor", "<member_id|last|non_moderator>"},
 };
 
 #define CONFFUNCAPISIZE (sizeof(conf_api_sub_commands)/sizeof(conf_api_sub_commands[0]))
@@ -8363,7 +8417,8 @@ static struct _mapping control_mappings[] = {
     {"event", conference_loop_fn_event},
     {"lock", conference_loop_fn_lock_toggle},
     {"transfer", conference_loop_fn_transfer},
-    {"execute_application", conference_loop_fn_exec_app}
+    {"execute_application", conference_loop_fn_exec_app},
+    {"floor", conference_loop_fn_floor_toggle},
 };
 #define MAPPING_LEN (sizeof(control_mappings)/sizeof(control_mappings[0]))
 
