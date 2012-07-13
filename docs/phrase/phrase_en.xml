@@ -561,10 +561,11 @@
       <prompt phrase="You have chosen to reset usage totals." filename="ivr-reset_usage_totals_confirm.wav"/>
       <prompt phrase="...to confirm." filename="ivr-to_confirm.wav"/>
       <prompt phrase="Usage totals have been reset to zero." filename="ivr-usage_totals_have_been_reset.wav"/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
+      <prompt phrase="To modify..." filename="ivr-to_modify.wav"/>
+      <prompt phrase="To modify main prompt..." filename="ivr-to_modify_main_prompt.wav"/>
+      <prompt phrase="...the short greeting." filename="ivr-short_greeting.wav"/>
+      <prompt phrase="...the invalid sound prompt." filename="ivr-ivalid_sound_prompt.wav"/>
+      <prompt phrase="...the exit sound prompt." filename="ivr-exit_sound_prompt.wav"/>
       <prompt phrase="Everyone is koo koo for CudaTel!" filename="misc-koo_koo_for_cudatel.wav"/>
       <prompt phrase="I'm pretty sure CudaTel's patented Automagicatronical configuration takes care of it." filename="misc-cudatel_automagicatronical.wav"/>
 
