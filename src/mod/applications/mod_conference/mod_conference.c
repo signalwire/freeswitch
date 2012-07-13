@@ -173,7 +173,8 @@ typedef enum {
 	MFLAG_INDICATE_UNMUTE = (1 << 18),
 	MFLAG_NOMOH = (1 << 19),
 	MFLAG_VIDEO_BRIDGE = (1 << 20),
-	MFLAG_INDICATE_MUTE_DETECT = (1 << 21)
+	MFLAG_INDICATE_MUTE_DETECT = (1 << 21),
+	MFLAG_PAUSE_RECORDING = (1 << 22)
 } member_flag_t;
 
 typedef enum {
@@ -251,6 +252,12 @@ typedef struct conference_file_node {
 	struct conference_file_node *next;
 	char *file;
 } conference_file_node_t;
+
+typedef enum {
+	REC_ACTION_STOP = 1,
+	REC_ACTION_PAUSE,
+	REC_ACTION_RESUME
+} recording_action_type_t;
 
 /* conference xml config sections */
 typedef struct conf_xml_cfg {
@@ -1182,6 +1189,40 @@ static switch_status_t conference_record_stop(conference_obj_t *conference, char
 			count++;
 		}
 	}
+	switch_mutex_unlock(conference->member_mutex);
+	return count;
+}
+/* stop/pause/resume the specified recording */
+static switch_status_t conference_record_action(conference_obj_t *conference, char *path, recording_action_type_t action)
+{
+	conference_member_t *member = NULL;
+	int count = 0;
+	//switch_file_handle_t *fh = NULL;
+
+	switch_assert(conference != NULL);
+	switch_mutex_lock(conference->member_mutex);
+	for (member = conference->members; member; member = member->next)
+	{
+		if (switch_test_flag(member, MFLAG_NOCHANNEL) && (!path || !strcmp(path, member->rec_path)))
+		{
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,	"Action: %d\n", action);
+			switch (action)
+			{
+				case REC_ACTION_STOP:
+						switch_clear_flag_locked(member, MFLAG_RUNNING);
+						count++;
+						break;
+				case REC_ACTION_PAUSE:
+						switch_set_flag_locked(member, MFLAG_PAUSE_RECORDING);
+						count = 1;
+						break;
+				case REC_ACTION_RESUME:
+						switch_clear_flag_locked(member, MFLAG_PAUSE_RECORDING);
+						count = 1;
+						break;
+					}
+				}
+			}
 	switch_mutex_unlock(conference->member_mutex);
 	return count;
 }
@@ -3854,11 +3895,13 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 			len = (switch_size_t) samples;
 		}
 
-		if (!len || switch_core_file_write(&fh, data_buf, &len) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed\n");
-			switch_clear_flag_locked(member, MFLAG_RUNNING);
+		if (!switch_test_flag(member, MFLAG_PAUSE_RECORDING)) {
+			if (!len || switch_core_file_write(&fh, data_buf, &len) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed\n");
+				switch_clear_flag_locked(member, MFLAG_RUNNING);
+			}
 		}
-		
+
 	loop:
 
 		switch_core_timer_next(&timer);
@@ -5065,6 +5108,9 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 				*/
 
 				x_tag = switch_xml_add_child_d(x_member, "record_path", count++);
+				if (switch_test_flag(member, MFLAG_PAUSE_RECORDING)) {
+					switch_xml_set_attr_d(x_tag, "status", "paused");
+				}
 				switch_xml_set_txt_d(x_tag, member->rec_path);
 
 				x_tag = switch_xml_add_child_d(x_member, "join_time", count++);
@@ -5778,6 +5824,85 @@ static switch_status_t conf_api_sub_norecord(conference_obj_t *conference, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t conf_api_sub_pauserec(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	switch_event_t *event;
+	recording_action_type_t action;
+
+	switch_assert(conference != NULL);
+	switch_assert(stream != NULL);
+
+	if (argc <= 2)
+		return SWITCH_STATUS_GENERR;
+
+	if (strcasecmp(argv[1], "pause") == 0) {
+		action = REC_ACTION_PAUSE;
+	} else if (strcasecmp(argv[1], "resume") == 0) {
+		action = REC_ACTION_RESUME;
+	} else {
+		return SWITCH_STATUS_GENERR;
+	}
+	stream->write_function(stream, "%s recording file %s\n",
+			action == REC_ACTION_PAUSE ? "Pause" : "Resume", argv[2]);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,	"%s recording file %s\n",
+			action == REC_ACTION_PAUSE ? "Pause" : "Resume", argv[2]);
+
+	if (!conference_record_action(conference, argv[2], action)) {
+		stream->write_function(stream, "non-existant recording '%s'\n", argv[2]);
+	} else {
+		if (test_eflag(conference, EFLAG_RECORD) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS)
+		{
+			conference_add_event_data(conference, event);
+			if (action == REC_ACTION_PAUSE) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "pause-recording");
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "resume-recording");
+			}
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", argv[2]);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Recordings", conference->record_count ? "true" : "false");
+			switch_event_fire(&event);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t conf_api_sub_recording(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	switch_assert(conference != NULL);
+	switch_assert(stream != NULL);
+
+	if (argc <= 3) {
+		/* It means that old syntax is used */
+		return conf_api_sub_record(conference,stream,argc,argv);
+	} else {
+		/* for new syntax call existing functions with fixed parameter list */
+		if (strcasecmp(argv[2], "start") == 0) {
+			argv[1] = argv[2];
+			argv[2] = argv[3];
+			return conf_api_sub_record(conference,stream,4,argv);
+		} else if (strcasecmp(argv[2], "stop") == 0) {
+			argv[1] = argv[2];
+			argv[2] = argv[3];
+			return conf_api_sub_norecord(conference,stream,4,argv);
+		} else if (strcasecmp(argv[2], "check") == 0) {
+			argv[1] = argv[2];
+			argv[2] = argv[3];
+			return conf_api_sub_check_record(conference,stream,4,argv);
+		} else if (strcasecmp(argv[2], "pause") == 0) {
+			argv[1] = argv[2];
+			argv[2] = argv[3];
+			return conf_api_sub_pauserec(conference,stream,4,argv);
+		} else if (strcasecmp(argv[2], "resume") == 0) {
+			argv[1] = argv[2];
+			argv[2] = argv[3];
+			return conf_api_sub_pauserec(conference,stream,4,argv);
+		} else {
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+}
+
 static switch_status_t conf_api_sub_pin(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	switch_assert(conference != NULL);
@@ -5948,6 +6073,9 @@ static api_command_t conf_api_sub_commands[] = {
 	{"record", (void_fn_t) & conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "record", "<filename>"},
 	{"chkrecord", (void_fn_t) & conf_api_sub_check_record, CONF_API_SUB_ARGS_SPLIT, "chkrecord", "<confname>"},
 	{"norecord", (void_fn_t) & conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "norecord", "<[filename|all]>"},
+	{"pause", (void_fn_t) & conf_api_sub_pauserec, CONF_API_SUB_ARGS_SPLIT, "pause", "<filename>"},
+	{"resume", (void_fn_t) & conf_api_sub_pauserec, CONF_API_SUB_ARGS_SPLIT, "resume", "<filename>"},
+	{"recording", (void_fn_t) & conf_api_sub_recording, CONF_API_SUB_ARGS_SPLIT, "recording", "[start|stop|check|pause|resume] [<filename>|all]"},
 	{"exit_sound", (void_fn_t) & conf_api_sub_exit_sound, CONF_API_SUB_ARGS_SPLIT, "exit_sound", "on|off|none|file <filename>"},
 	{"enter_sound", (void_fn_t) & conf_api_sub_enter_sound, CONF_API_SUB_ARGS_SPLIT, "enter_sound", "on|off|none|file <filename>"},
 	{"pin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "pin", "<pin#>"},
