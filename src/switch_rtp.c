@@ -2947,7 +2947,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 #endif
 			
 #ifdef ENABLE_SRTP
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV) && rtp_session->rtp_recv_msg.header.version == 2) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV) && rtp_session->recv_msg.header.version == 2) {
 				int sbytes = (int) *bytes;
 				err_status_t stat = 0;
 
@@ -3066,7 +3066,7 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 	}
 
 #ifdef ENABLE_SRTP
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV) && rtp_session->rtp_recv_msg.header.version == 2) {
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV) && rtp_session->recv_msg.header.version == 2) {
 		int sbytes = (int) *bytes;
 		err_status_t stat = 0;
 
