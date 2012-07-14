@@ -465,7 +465,8 @@ int main(int argc, char *argv[])
     fsk_rx_state_t *fsk;
     v17_rx_state_t *v17;
     v29_rx_state_t *v29;
-    v27ter_rx_state_t *v27ter;
+    v27ter_rx_state_t *v27ter_4800;
+    v27ter_rx_state_t *v27ter_2400;
     int16_t amp[SAMPLES_PER_CHUNK];
     SNDFILE *inhandle;
     SF_INFO info;
@@ -504,11 +505,14 @@ int main(int argc, char *argv[])
     v17 = v17_rx_init(NULL, 14400, v17_put_bit, NULL);
     v29 = v29_rx_init(NULL, 9600, v29_put_bit, NULL);
     //v29 = v29_rx_init(NULL, 7200, v29_put_bit, NULL);
-    v27ter = v27ter_rx_init(NULL, 4800, v27ter_put_bit, NULL);
+    v27ter_4800 = v27ter_rx_init(NULL, 4800, v27ter_put_bit, NULL);
+    v27ter_2400 = v27ter_rx_init(NULL, 2400, v27ter_put_bit, NULL);
+
     fsk_rx_signal_cutoff(fsk, -45.5);
     v17_rx_signal_cutoff(v17, -45.5);
     v29_rx_signal_cutoff(v29, -45.5);
-    v27ter_rx_signal_cutoff(v27ter, -40.0);
+    v27ter_rx_signal_cutoff(v27ter_4800, -40.0);
+    v27ter_rx_signal_cutoff(v27ter_2400, -40.0);
 
 #if 1
     logging = v17_rx_get_logging_state(v17);
@@ -521,9 +525,14 @@ int main(int argc, char *argv[])
     span_log_set_protocol(logging, "V.29");
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
 
-    logging = v27ter_rx_get_logging_state(v27ter);
+    logging = v27ter_rx_get_logging_state(v27ter_4800);
     span_log_init(logging, SPAN_LOG_FLOW, NULL);
-    span_log_set_protocol(logging, "V.27ter");
+    span_log_set_protocol(logging, "V.27ter-4800");
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
+
+    logging = v27ter_rx_get_logging_state(v27ter_2400);
+    span_log_init(logging, SPAN_LOG_FLOW, NULL);
+    span_log_set_protocol(logging, "V.27ter-2400");
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
 #endif
 
@@ -541,7 +550,8 @@ int main(int argc, char *argv[])
         fsk_rx(fsk, amp, len);
         v17_rx(v17, amp, len);
         v29_rx(v29, amp, len);
-        //v27ter_rx(v27ter, amp, len);
+        v27ter_rx(v27ter_4800, amp, len);
+        v27ter_rx(v27ter_2400, amp, len);
     }
     t4_rx_release(&t4_rx_state);
 
