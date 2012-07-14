@@ -322,6 +322,7 @@ static size_t get_file_callback(void *ptr, size_t size, size_t nmemb, void *get)
 static char *trim(char *str)
 {
 	size_t len;
+	int i;
 
 	if (zstr(str)) {
 		return str;
@@ -329,7 +330,7 @@ static char *trim(char *str)
 	len = strlen(str);
 
 	/* strip whitespace from front */
-	for (int i = 0; i < len; i++) {
+	for (i = 0; i < len; i++) {
 		if (!isspace(str[i])) {
 			str = &str[i];
 			len -= i;
@@ -341,7 +342,7 @@ static char *trim(char *str)
 	}
 	
 	/* strip whitespace from end */
-	for (int i = len - 1; i >= 0; i--) {
+	for (i = len - 1; i >= 0; i--) {
 		if (!isspace(str[i])) {
 			break;
 		}
@@ -359,6 +360,7 @@ static void process_cache_control_header(cached_url_t *url, char *data)
 {
 	char *max_age_str;
 	switch_time_t max_age;
+	int i;
 
 	/* trim whitespace and check if empty */
 	data = trim(data);
@@ -377,7 +379,7 @@ static void process_cache_control_header(cached_url_t *url, char *data)
 	if (zstr(max_age_str)) {
 		return;
 	}
-	for (int i = 0; i < strlen(max_age_str); i++) {
+	for (i = 0; i < strlen(max_age_str); i++) {
 		if (!isdigit(max_age_str[i])) {
 			max_age_str[i] = '\0';
 			break;
@@ -458,10 +460,12 @@ static void url_cache_unlock(url_cache_t *cache, switch_core_session_t *session)
  */
 static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session)
 {
+	int i;
+
 	url_cache_lock(cache, session);
 
 	// remove each cached URL from the hash and the queue
-	for (int i = 0; i < cache->queue.max_size; i++) {
+	for (i = 0; i < cache->queue.max_size; i++) {
 		cached_url_t *url = cache->queue.data[i];
 		if (url) {
 			switch_core_hash_delete(cache->map, url->url);
@@ -825,10 +829,12 @@ static switch_status_t http_get(url_cache_t *cache, cached_url_t *url, switch_co
  */
 static void setup_dir(url_cache_t *cache)
 {
+	int i;
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting up %s\n", cache->location);
 	switch_dir_make_recursive(cache->location, SWITCH_DEFAULT_DIR_PERMS, cache->pool);
 
-	for (int i = 0x00; i <= 0xff; i++) {
+	for (i = 0x00; i <= 0xff; i++) {
 		switch_dir_t *dir = NULL;
 		char *dirname = switch_mprintf("%s%s%02x", cache->location, SWITCH_PATH_SEPARATOR, i);
 		if (switch_dir_open(&dir, dirname, cache->pool) == SWITCH_STATUS_SUCCESS) {
@@ -1153,6 +1159,8 @@ done:
 SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 {
 	switch_api_interface_t *api;
+	int i;
+
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_API(api, "http_get", "HTTP GET", http_cache_get, HTTP_GET_SYNTAX);
@@ -1182,7 +1190,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 
 	/* Start the prefetch threads */
 	switch_queue_create(&gcache.prefetch_queue, gcache.prefetch_queue_size, gcache.pool);
-	for (int i = 0; i < gcache.prefetch_thread_count; i++) {
+	for (i = 0; i < gcache.prefetch_thread_count; i++) {
 		int started = 0;
 		switch_thread_t *thread;
 		switch_threadattr_t *thd_attr = NULL;
