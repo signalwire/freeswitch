@@ -580,7 +580,6 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	if (!do_skip && !switch_stristr("GLOBAL", dest_proto)) {
 		if ((ci = switch_loadable_module_get_chat_interface(dest_proto)) && ci->chat_send) {
 			status = ci->chat_send(message_event);
-					printf("FRICK\n");
 
 			UNPROTECT_INTERFACE(ci);
 		} else {
