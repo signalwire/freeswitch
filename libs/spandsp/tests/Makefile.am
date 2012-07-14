@@ -109,6 +109,8 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     t38_decode \
                     t38_non_ecm_buffer_tests \
                     t4_tests \
+                    t81_t82_arith_coding_tests \
+                    t85_tests \
                     time_scale_tests \
                     timezone_tests \
                     tone_detect_tests \
@@ -311,6 +313,12 @@ t38_non_ecm_buffer_tests_LDADD = $(LIBDIR) -lspandsp
 
 t4_tests_SOURCES = t4_tests.c
 t4_tests_LDADD = $(LIBDIR) -lspandsp
+
+t81_t82_arith_coding_tests_SOURCES = t81_t82_arith_coding_tests.c
+t81_t82_arith_coding_tests_LDADD = $(LIBDIR) -lspandsp
+
+t85_tests_SOURCES = t85_tests.c
+t85_tests_LDADD = $(LIBDIR) -lspandsp
 
 time_scale_tests_SOURCES = time_scale_tests.c
 time_scale_tests_LDADD = $(LIBDIR) -lspandsp

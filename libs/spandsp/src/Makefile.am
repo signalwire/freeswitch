@@ -153,6 +153,9 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         t38_core.c \
                         t38_gateway.c \
                         t38_non_ecm_buffer.c \
+                        t81_t82_arith_coding.c \
+                        t85_decode.c \
+                        t85_encode.c \
                         t38_terminal.c \
                         testcpuid.c \
                         time_scale.c \
@@ -241,6 +244,8 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/t4_tx.h \
                          spandsp/t4_t6_decode.h \
                          spandsp/t4_t6_encode.h \
+                         spandsp/t81_t82_arith_coding.h \
+                         spandsp/t85.h \
                          spandsp/telephony.h \
                          spandsp/time_scale.h \
                          spandsp/timezone.h \
@@ -305,6 +310,8 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/t4_tx.h \
                          spandsp/private/t4_t6_decode.h \
                          spandsp/private/t4_t6_encode.h \
+                         spandsp/private/t81_t82_arith_coding.h \
+                         spandsp/private/t85.h \
                          spandsp/private/time_scale.h \
                          spandsp/private/timezone.h \
                          spandsp/private/tone_detect.h \
