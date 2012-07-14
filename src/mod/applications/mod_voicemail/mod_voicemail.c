@@ -3535,11 +3535,11 @@ SWITCH_STANDARD_APP(voicemail_function)
 		if (argv[x] && !strcasecmp(argv[x], "check")) {
 			check++;
 			x++;
-		} else if (argv[x] && !strcasecmp(argv[x], "auth")) {
-			auth++;
-			x++;
 		} else if (argv[x] && !strcasecmp(argv[x], "auth_only")) {
 			auth = 2;
+			x++;
+		} else if (argv[x] && !strcasecmp(argv[x], "auth")) {
+			auth++;
 			x++;
 		} else {
 			break;
@@ -3584,7 +3584,7 @@ SWITCH_STANDARD_APP(voicemail_function)
 		return;
 	}
 
-	if (check) {
+	if (check || auth == 2) {
 		if (argv[x]) {
 			uuid = argv[x++];
 		}
