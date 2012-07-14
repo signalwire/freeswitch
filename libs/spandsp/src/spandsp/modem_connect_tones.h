@@ -76,9 +76,11 @@ enum
                This is only valid as a tone type to receive. It is never reported as a detected tone
                type. The report will either be for FAX preamble or CED/ANS tone. */
     MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE = 7,
+    /*! \brief Bell ANS tone is a pure continuous 2225Hz+-15Hz tone for 3.3s+-0.7s. */
+    MODEM_CONNECT_TONES_BELL_ANS = 8,
     /*! \brief Calling tone is a pure 1300Hz tone, in 0.6s bursts, with 2s silences in between. The
                bursts repeat for as long as is required. */
-    MODEM_CONNECT_TONES_CALLING_TONE = 8
+    MODEM_CONNECT_TONES_CALLING_TONE = 9
 };
 
 /*! \brief FAX CED tone is the same as ANS tone. */

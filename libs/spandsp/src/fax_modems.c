@@ -336,6 +336,7 @@ SPAN_DECLARE(int) fax_modems_free(fax_modems_state_t *s)
 {
     if (s)
         free(s);
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -110,7 +110,8 @@ enum
     FSK_BELL103CH2,
     FSK_BELL202,
     FSK_WEITBRECHT,     /* 45.45 baud version, used for TDD (Telecom Device for the Deaf) */
-    FSK_WEITBRECHT50    /* 50 baud version, used for TDD (Telecom Device for the Deaf) */
+    FSK_WEITBRECHT50,   /* 50 baud version, used for TDD (Telecom Device for the Deaf) */
+    FSK_V21CH1_110      /* 110 bps version of V.21 channel 1, as used by V.18 */
 };
 
 enum
@@ -119,7 +120,8 @@ enum
     FSK_FRAME_MODE_SYNC = 1,
     FSK_FRAME_MODE_5N1_FRAMES = 7,      /* 5 bits of data + start bit + stop bit */
     FSK_FRAME_MODE_7N1_FRAMES = 9,      /* 7 bits of data + start bit + stop bit */
-    FSK_FRAME_MODE_8N1_FRAMES = 10      /* 8 bits of data + start bit + stop bit */
+    FSK_FRAME_MODE_7E1_FRAMES = 10,     /* 7 bits of data + even parity + start bit + stop bit */
+    FSK_FRAME_MODE_7E2_FRAMES = 11      /* 7 bits of data + even parity + start bit + 2 stop bits */
 };
 
 SPAN_DECLARE_DATA extern const fsk_spec_t preset_fsk_specs[];

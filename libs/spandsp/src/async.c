@@ -179,27 +179,30 @@ SPAN_DECLARE_NONSTD(void) async_rx_put_bit(void *user_data, int bit)
         {
             /* Align the received value */
             if (s->data_bits < 8)
-                s->byte_in_progress >>= (8 - s->data_bits);
+                s->byte_in_progress = (s->byte_in_progress & 0xFF) >> (8 - s->data_bits);
             s->put_byte(s->user_data, s->byte_in_progress);
             s->bitpos = 0;
-        }
-        else if (s->use_v14)
-        {
-            /* This is actually the start bit for the next character, and
-               the stop bit has been dropped from the stream. This is the
-               rate adaption specified in V.14 */
-            /* Align the received value */
-            if (s->data_bits < 8)
-                s->byte_in_progress >>= (8 - s->data_bits);
-            s->put_byte(s->user_data, s->byte_in_progress);
-            s->bitpos = 1;
-            s->parity_bit = 0;
-            s->byte_in_progress = 0;
         }
         else
         {
-            s->framing_errors++;
-            s->bitpos = 0;
+            if (s->use_v14)
+            {
+                /* This is actually the start bit for the next character, and
+                   the stop bit has been dropped from the stream. This is the
+                   rate adaption specified in V.14 */
+                /* Align the received value */
+                if (s->data_bits < 8)
+                    s->byte_in_progress = (s->byte_in_progress & 0xFF) >> (8 - s->data_bits);
+                s->put_byte(s->user_data, s->byte_in_progress);
+                s->bitpos = 1;
+                s->parity_bit = 0;
+                s->byte_in_progress = 0;
+            }
+            else
+            {
+                s->framing_errors++;
+                s->bitpos = 0;
+            }
         }
     }
 }

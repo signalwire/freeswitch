@@ -69,6 +69,55 @@
 
 #include <stdlib.h>
 
+/*
+    Ways in which a V.18 call may start
+    -----------------------------------
+    
+    Originate:
+        ANS
+            Silence for 0.5s then send TXP
+        DTMF
+            Proceed as Annex B
+        1650Hz (V21 ch 2 low)
+            Proceed as Annex F in call mode
+        1300Hz (Calling tone)
+            Proceed as Annex E in call mode
+        1400Hz/1800Hz (Weitbrecht)
+            Detect rate and proceed as Annex A
+        980Hz/1180Hz (V21 ch 1)
+            Start timer Tr
+        2225Hz (Bell ANS)
+            Proceed as Annex D call mode
+        1270Hz (Bell103 ch 2 high)
+            Proceed as Annex D answer mode
+        390Hz (V23 ch 2 low)
+            Proceed as Annex E answer mode
+
+    Answer:
+        ANS
+            Monitor as caller for 980Hz or 1300Hz
+        CI/XCI
+            Respond with ANSam
+        1300Hz
+            Probe
+        Timer Ta (3s)
+            Probe
+        1400Hz/1800Hz (Weitbrecht)
+            Detect rate and proceed as Annex A
+        DTMF
+            Proceed as Annex B
+        980Hz (V21 ch 1 low)
+            Start timer Te
+        1270Hz (Bell103 ch 2 high)
+            Proceed as Annex D answer mode
+        2225Hz (Bell ANS)
+            Proceed as Annex D call mode
+        1650Hz (V21 ch 2 low)
+            Proceed as Annex F answer mode
+        ANSam
+            Proceed as V.8 caller Annex G
+*/
+
 /*! The baudot code to shift from alpha to digits and symbols */
 #define BAUDOT_FIGURE_SHIFT     0x1B
 /*! The baudot code to shift from digits and symbols to alpha */
@@ -310,6 +359,20 @@ static const char *ascii_to_dtmf[128] =
     "*0"        /* DEL >> BACK SPACE */
 };
 
+static const uint8_t txp[] = "1111111111000101011100001101110000010101";
+
+/* XCI is:
+    400 ms mark;
+    XCI marker;
+    800 ms mark;
+    XCI marker;
+    800 ms mark;
+    XCI marker;
+    800 ms mark;
+    XCI marker;
+    100 ms mark. */
+static const uint8_t xci[] = "01111111110111111111";
+
 static int cmp(const void *s, const void *t)
 {
     const char *ss;
@@ -319,6 +382,7 @@ static int cmp(const void *s, const void *t)
     tt = (struct dtmf_to_ascii_s *) t;
     return strncmp(ss, tt->dtmf, strlen(tt->dtmf));
 }
+/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v18_encode_dtmf(v18_state_t *s, char dtmf[], const char msg[])
 {
@@ -525,14 +589,14 @@ SPAN_DECLARE(uint16_t) v18_encode_baudot(v18_state_t *s, uint8_t ch)
     /* Need to allow for a possible character set change. */
     if ((ch & 0x80))
     {
-        if (s->baudot_tx_shift == 1)
+        if (!s->repeat_shifts  &&  s->baudot_tx_shift == 1)
             return ch & 0x1F;
         s->baudot_tx_shift = 1;
         shift = BAUDOT_FIGURE_SHIFT;
     }
     else
     {
-        if (s->baudot_tx_shift == 0)
+        if (!s->repeat_shifts  &&  s->baudot_tx_shift == 0)
             return ch & 0x1F;
         s->baudot_tx_shift = 0;
         shift = BAUDOT_LETTER_SHIFT;
@@ -592,13 +656,18 @@ static int v18_tdd_get_async_byte(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
+static int v18_edt_get_async_byte(void *user_data)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 static void v18_tdd_put_async_byte(void *user_data, int byte)
 {
     v18_state_t *s;
     uint8_t octet;
     
     s = (v18_state_t *) user_data;
-    //printf("Rx byte %x\n", byte);
     if (byte < 0)
     {
         /* Special conditions */
@@ -626,7 +695,8 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
         }
         return;
     }
-    if ((octet = v18_decode_baudot(s, (uint8_t) (byte & 0x1F))))
+    span_log(&s->logging, SPAN_LOG_FLOW, "Rx byte %x\n", byte);
+    if ((octet = v18_decode_baudot(s, byte)))
         s->rx_msg[s->rx_msg_len++] = octet;
     if (s->rx_msg_len >= 256)
     {
@@ -637,24 +707,44 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void v18_edt_put_async_byte(void *user_data, int byte)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
+static void v18_bell103_put_async_byte(void *user_data, int byte)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
+static void v18_videotex_put_async_byte(void *user_data, int byte)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
+static void v18_textphone_put_async_byte(void *user_data, int byte)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE_NONSTD(int) v18_tx(v18_state_t *s, int16_t *amp, int max_len)
 {
     int len;
     int lenx;
 
-    len = tone_gen(&(s->alert_tone_gen), amp, max_len);
+    len = tone_gen(&s->alert_tone_gen, amp, max_len);
     if (s->tx_signal_on)
     {
         switch (s->mode)
         {
         case V18_MODE_DTMF:
             if (len < max_len)
-                len += dtmf_tx(&(s->dtmftx), amp, max_len - len);
+                len += dtmf_tx(&s->dtmftx, amp, max_len - len);
             break;
         default:
             if (len < max_len)
             {
-                if ((lenx = fsk_tx(&(s->fsktx), amp + len, max_len - len)) <= 0)
+                if ((lenx = fsk_tx(&s->fsktx, amp + len, max_len - len)) <= 0)
                     s->tx_signal_on = FALSE;
                 len += lenx;
             }
@@ -674,10 +764,10 @@ SPAN_DECLARE_NONSTD(int) v18_rx(v18_state_t *s, const int16_t amp[], int len)
         s->in_progress -= len;
         if (s->in_progress <= 0)
             s->rx_msg_len = 0;
-        dtmf_rx(&(s->dtmfrx), amp, len);
+        dtmf_rx(&s->dtmfrx, amp, len);
         break;
     default:
-        fsk_rx(&(s->fskrx), amp, len);
+        fsk_rx(&s->fskrx, amp, len);
         break;
     }
     return 0;
@@ -744,45 +834,62 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
     }
     memset(s, 0, sizeof(*s));
     s->calling_party = calling_party;
-    s->mode = mode;
+    s->mode = mode & 0xFF;
     s->put_msg = put_msg;
     s->user_data = user_data;
 
     switch (s->mode)
     {
     case V18_MODE_5BIT_45:
-        fsk_tx_init(&(s->fsktx), &preset_fsk_specs[FSK_WEITBRECHT], async_tx_get_bit, &(s->asynctx));
-        async_tx_init(&(s->asynctx), 5, ASYNC_PARITY_NONE, 2, FALSE, v18_tdd_get_async_byte, s);
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_WEITBRECHT], async_tx_get_bit, &s->asynctx);
+        async_tx_init(&s->asynctx, 5, ASYNC_PARITY_NONE, 2, FALSE, v18_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_tx_shift = 2;
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
            ride over the fraction. */
-        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_WEITBRECHT], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_WEITBRECHT], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
         s->baudot_rx_shift = 0;
+        s->repeat_shifts = mode & 0x100;
         break;
     case V18_MODE_5BIT_50:
-        fsk_tx_init(&(s->fsktx), &preset_fsk_specs[FSK_WEITBRECHT50], async_tx_get_bit, &(s->asynctx));
-        async_tx_init(&(s->asynctx), 5, ASYNC_PARITY_NONE, 2, FALSE, v18_tdd_get_async_byte, s);
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_WEITBRECHT50], async_tx_get_bit, &s->asynctx);
+        async_tx_init(&s->asynctx, 5, ASYNC_PARITY_NONE, 2, FALSE, v18_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_tx_shift = 2;
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
            ride over the fraction. */
-        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_WEITBRECHT50], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_WEITBRECHT50], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
         s->baudot_rx_shift = 0;
+        s->repeat_shifts = mode & 0x100;
         break;
     case V18_MODE_DTMF:
-        dtmf_tx_init(&(s->dtmftx));
-        dtmf_rx_init(&(s->dtmfrx), v18_rx_dtmf, s);
+        dtmf_tx_init(&s->dtmftx);
+        dtmf_rx_init(&s->dtmfrx, v18_rx_dtmf, s);
         break;
     case V18_MODE_EDT:
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_V21CH1_110], async_tx_get_bit, &s->asynctx);
+        async_tx_init(&s->asynctx, 7, ASYNC_PARITY_EVEN, 2, FALSE, v18_edt_get_async_byte, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_V21CH1_110], FSK_FRAME_MODE_7E2_FRAMES, v18_edt_put_async_byte, s);
         break;
     case V18_MODE_BELL103:
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_BELL103CH1], async_tx_get_bit, &s->asynctx);
+        async_tx_init(&s->asynctx, 7, ASYNC_PARITY_EVEN, 1, FALSE, v18_edt_get_async_byte, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_BELL103CH2], FSK_FRAME_MODE_7E1_FRAMES, v18_bell103_put_async_byte, s);
         break;
     case V18_MODE_V23VIDEOTEX:
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_V23CH1], async_tx_get_bit, &s->asynctx);
+        async_tx_init(&s->asynctx, 7, ASYNC_PARITY_EVEN, 1, FALSE, v18_edt_get_async_byte, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_V23CH2], FSK_FRAME_MODE_7E1_FRAMES, v18_videotex_put_async_byte, s);
         break;
     case V18_MODE_V21TEXTPHONE:
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_V21CH1], async_tx_get_bit, &s->asynctx);
+        async_tx_init(&s->asynctx, 7, ASYNC_PARITY_EVEN, 1, FALSE, v18_edt_get_async_byte, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_V21CH1], FSK_FRAME_MODE_7E1_FRAMES, v18_textphone_put_async_byte, s);
         break;
     case V18_MODE_V18TEXTPHONE:
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_V21CH1], async_tx_get_bit, &s->asynctx);
+        async_tx_init(&s->asynctx, 7, ASYNC_PARITY_EVEN, 1, FALSE, v18_edt_get_async_byte, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_V21CH1], FSK_FRAME_MODE_7E1_FRAMES, v18_textphone_put_async_byte, s);
         break;
     }
     queue_init(&s->queue.queue, 128, QUEUE_READ_ATOMIC | QUEUE_WRITE_ATOMIC);
@@ -805,7 +912,7 @@ SPAN_DECLARE(int) v18_free(v18_state_t *s)
 
 SPAN_DECLARE(const char *) v18_mode_to_str(int mode)
 {
-    switch (mode)
+    switch (mode & 0xFF)
     {
     case V18_MODE_NONE:
         return "None";

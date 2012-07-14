@@ -94,6 +94,8 @@ SPAN_DECLARE(const char *) modem_connect_tone_to_str(int tone)
         return "FAX preamble";
     case MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE:
         return "FAX CED or preamble";
+    case MODEM_CONNECT_TONES_BELL_ANS:
+        return "Bell ANS";
     case MODEM_CONNECT_TONES_CALLING_TONE:
         return "Calling tone";
     }
@@ -206,6 +208,20 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *
         }
         s->duration_timer -= len;
         break;
+    case MODEM_CONNECT_TONES_BELL_ANS:
+        if (s->duration_timer < len)
+            len = s->duration_timer;
+        if (s->duration_timer > ms_to_samples(2600))
+        {
+            /* There is some initial silence to be generated. */
+            if ((i = s->duration_timer - ms_to_samples(2600)) > len)
+                i = len;
+            memset(amp, 0, sizeof(int16_t)*i);
+        }
+        for (  ;  i < len;  i++)
+            amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, s->level, 0);
+        s->duration_timer -= len;
+        break;
     case MODEM_CONNECT_TONES_CALLING_TONE:
         for (  ;  i < len;  i++)
         {
@@ -300,6 +316,17 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
         s->tone_phase = 0;
         s->mod_phase = 0;
         s->hop_timer = ms_to_samples(450);
+        break;
+    case MODEM_CONNECT_TONES_BELL_ANS:
+        /* 0.2s of silence, then 2.6s to 4s of 2225Hz+-15Hz tone, then 75ms of silence. */
+        s->tone_phase_rate = dds_phase_rate(2225.0);
+        s->level = dds_scaling_dbm0(-11);
+        s->mod_phase_rate = 0;
+        s->mod_level = 0;
+        s->duration_timer = ms_to_samples(200 + 2600);
+        s->tone_phase = 0;
+        s->mod_phase = 0;
+        s->hop_timer = 0;
         break;
     case MODEM_CONNECT_TONES_CALLING_TONE:
         /* 0.6s of 1300Hz+-15Hz + 2.0s of silence repeating. */
@@ -441,7 +468,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
             /* A Cauer notch at 1100Hz, spread just wide enough to meet our detection bandwidth
                criteria. */
             /* Poles 0.736618498*exp(+-1047/4000 * PI * j)
-               Zeroes exp(+-1099.5 * PI * j) */
+               Zeroes exp(+-1099.5/4000 * PI * j) */
             v1 = 0.792928f*famp + 1.0018744927985f*s->znotch_1 - 0.54196833412465f*s->znotch_2;
             famp = v1 - 1.2994747954630f*s->znotch_1 + s->znotch_2;
             s->znotch_2 = s->znotch_1;
@@ -487,7 +514,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
             famp = amp[i];
             /* A Cauer bandpass at 15Hz, with which we demodulate the AM signal. */
             /* Poles 0.9983989*exp(+-15/4000 * PI * j)
-               Zeroes exp(0 * PI * j) */
+               Zeroes exp(0/4000 * PI * j) */
             v1 = fabs(famp) + 1.996667f*s->z15hz_1 - 0.9968004f*s->z15hz_2;
             filtered = 0.001599787f*(v1 - s->z15hz_2);
             s->z15hz_2 = s->z15hz_1;
@@ -497,8 +524,8 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
             /* A Cauer notch at 2100Hz, spread just wide enough to meet our detection bandwidth
                criteria. */
             /* Poles 0.7144255*exp(+-2105.612/4000 * PI * j)
-               Zeroes exp(+-2099.9 * PI * j) */
-            v1 = 0.76000f*famp - 0.1183852f*s->znotch_1 - 0.5104039f*s->znotch_2;
+               Zeroes exp(+-2099.9/4000 * PI * j) */
+            v1 = 0.7552f*famp - 0.1183852f*s->znotch_1 - 0.5104039f*s->znotch_2;
             famp = v1 + 0.1567596f*s->znotch_1 + s->znotch_2;
             s->znotch_2 = s->znotch_1;
             s->znotch_1 = v1;
@@ -585,6 +612,44 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
             }
         }
         break;
+    case MODEM_CONNECT_TONES_BELL_ANS:
+        for (i = 0;  i < len;  i++)
+        {
+            famp = amp[i];
+            /* A Cauer notch at 2225Hz, spread just wide enough to meet our detection bandwidth
+               criteria. */
+            /* Poles 0.7144255*exp(+-2230.612/4000 * PI * j)
+               Zeroes exp(+-2224.9/4000 * PI * j) */
+            v1 = 0.739651f*famp - 0.257384f*s->znotch_1 - 0.510404f*s->znotch_2;
+            famp = v1 + 0.351437f*s->znotch_1 + s->znotch_2;
+            s->znotch_2 = s->znotch_1;
+            s->znotch_1 = v1;
+            notched = (int16_t) lfastrintf(famp);
+
+            /* Estimate the overall energy in the channel, and the energy in
+               the notch (i.e. overall channel energy - tone energy => noise).
+               Use abs instead of multiply for speed (is it really faster?). */
+            s->channel_level += ((abs(amp[i]) - s->channel_level) >> 5);
+            s->notch_level += ((abs(notched) - s->notch_level) >> 5);
+            if (s->channel_level > 70  &&  s->notch_level*6 < s->channel_level)
+            {
+                /* There is adequate energy in the channel, and it is mostly at 2225Hz. */
+                if (s->tone_present != MODEM_CONNECT_TONES_BELL_ANS)
+                {
+                    if (++s->tone_cycle_duration >= ms_to_samples(415))
+                        report_tone_state(s, MODEM_CONNECT_TONES_BELL_ANS, lfastrintf(log10f(s->channel_level/32768.0f)*20.0f + DBM0_MAX_POWER + 0.8f));
+                }
+            }
+            else
+            {
+                /* If the signal looks wrong, even for a moment, we consider this the
+                   end of the tone. */
+                if (s->tone_present == MODEM_CONNECT_TONES_BELL_ANS)
+                    report_tone_state(s, MODEM_CONNECT_TONES_NONE, -99);
+                s->tone_cycle_duration = 0;
+            }
+        }
+        break;
     case MODEM_CONNECT_TONES_CALLING_TONE:
         for (i = 0;  i < len;  i++)
         {
@@ -592,7 +657,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
             /* A Cauer notch at 1300Hz, spread just wide enough to meet our detection bandwidth
                criteria. */
             /* Poles 0.736618498*exp(+-1247/4000 * PI * j)
-               Zeroes exp(+-1299.5 * PI * j) */
+               Zeroes exp(+-1299.5/4000 * PI * j) */
             v1 = 0.755582f*famp + 0.820887174515f*s->znotch_1 - 0.541968324778f*s->znotch_2;
             famp = v1 - 1.0456667108f*s->znotch_1 + s->znotch_2;
             s->znotch_2 = s->znotch_1;

@@ -19,8 +19,6 @@
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 
-MAINTAINERCLEANFILES = Makefile.in
-
 DISTCLEANFILES = $(srcdir)/at_interpreter_dictionary.h \
                  $(srcdir)/math_fixed_tables.h \
                  $(srcdir)/v17_v32bis_rx_fixed_rrc.h \
@@ -45,6 +43,10 @@ DISTCLEANFILES = $(srcdir)/at_interpreter_dictionary.h \
                  $(srcdir)/v29rx_floating_rrc.h \
                  $(srcdir)/v29tx_fixed_rrc.h \
                  $(srcdir)/v29tx_floating_rrc.h
+
+CLEANFILES = ${DISTCLEANFILES}
+MOSTLYCLEANFILES = ${DISTCLEANFILES}
+MAINTAINERCLEANFILES = ${DISTCLEANFILES}
 
 EXTRA_DIST = floating_fudge.h \
              libspandsp.dsp \
@@ -322,7 +324,8 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
 
 nodist_include_HEADERS = spandsp.h
 
-noinst_HEADERS = faxfont.h \
+noinst_HEADERS = cielab_luts.h \
+                 faxfont.h \
                  filter_tools.h \
                  gsm0610_local.h \
                  lpc10_encdecs.h \

@@ -62,7 +62,7 @@ t4_state_t receive_state;
 #define FILL_670     FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_70
 #define FILL_980     FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_80
 
-static const char t4_test_patterns[][1728 + 1] =
+static const char t4_t6_test_patterns[][1728 + 1] =
 {
     "XXXXXX              " FILL_980 "  XXX  XXX X                  " FILL_670 "                        XXXX",
     "XXXXXX              " FILL_980 "     XXX   X                  " FILL_670 "                        XXXX",
@@ -145,7 +145,7 @@ static int row_read_handler(void *user_data, uint8_t buf[], size_t len)
     /* Send the test pattern. */
     if (rows_read >= 16)
         return 0;
-    s = t4_test_patterns[rows_read++];
+    s = t4_t6_test_patterns[rows_read++];
     memset(buf, 0, len);
     for (i = 0;  i < len;  i++)
     {
@@ -171,7 +171,7 @@ static int row_write_handler(void *user_data, const uint8_t buf[], size_t len)
     /* Verify that what is received matches the test pattern. */
     if (len == 0)
         return 0;
-    s = t4_test_patterns[rows_written++];
+    s = t4_t6_test_patterns[rows_written++];
     memset(ref, 0, len);
     for (i = 0;  i < len;  i++)
     {

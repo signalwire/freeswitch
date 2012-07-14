@@ -479,7 +479,7 @@ int main(int argc, char *argv[])
     int attack_packets;
     int opt;
 
-    attack_packets = 10000000;
+    attack_packets = 100000;
     while ((opt = getopt(argc, argv, "a:")) != -1)
     {
         switch (opt)

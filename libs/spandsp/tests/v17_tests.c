@@ -227,11 +227,13 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 #endif
 #if defined(ENABLE_GUI)
             if (use_gui)
+            {
 #if defined(SPANDSP_USE_FIXED_POINTx)
                 qam_monitor_update_int_equalizer(qam_monitor, coeffs, len);
 #else
                 qam_monitor_update_equalizer(qam_monitor, coeffs, len);
 #endif
+            }
 #endif
             update_interval = 100;
         }
