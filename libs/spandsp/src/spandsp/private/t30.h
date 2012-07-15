@@ -37,8 +37,8 @@ struct t30_state_s
     /*! \brief T.4 context for reading or writing image data. */
     union
     {
-        t4_state_t rx;
-        t4_state_t tx;
+        t4_rx_state_t rx;
+        t4_tx_state_t tx;
     } t4;
     /*! \brief The type of FAX operation currently in progress */
     int operation_in_progress;

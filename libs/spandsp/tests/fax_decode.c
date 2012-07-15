@@ -89,7 +89,7 @@ int decode_test = FALSE;
 int rx_bits = 0;
 
 t30_state_t t30_dummy;
-t4_state_t t4_rx_state;
+t4_rx_state_t t4_rx_state;
 int t4_up = FALSE;
 
 hdlc_rx_state_t hdlcrx;

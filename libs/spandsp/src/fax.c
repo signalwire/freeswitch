@@ -74,12 +74,8 @@
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t81_t82_arith_coding.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t85.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/t42.h"
 #endif
@@ -112,12 +108,8 @@
 #include "spandsp/private/hdlc.h"
 #include "spandsp/private/fax_modems.h"
 #include "spandsp/private/timezone.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t85.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/private/t42.h"
 #endif
@@ -547,6 +539,16 @@ static void fax_set_tx_type(void *user_data, int type, int bit_rate, int short_t
         fax_modems_set_next_tx_handler(s, (span_tx_handler_t) &fsk_tx, &t->v21_tx);
         t->transmit = TRUE;
         break;
+    case T30_MODEM_V17:
+        silence_gen_alter(&t->silence_gen, ms_to_samples(75));
+        /* For any fast modem, set 200ms of preamble flags */
+        hdlc_tx_flags(&t->hdlc_tx, bit_rate/(8*5));
+        v17_tx_restart(&t->fast_modems.v17_tx, bit_rate, t->use_tep, short_train);
+        v17_tx_set_get_bit(&t->fast_modems.v17_tx, get_bit_func, get_bit_user_data);
+        fax_modems_set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
+        fax_modems_set_next_tx_handler(s, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
+        t->transmit = TRUE;
+        break;
     case T30_MODEM_V27TER:
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         /* For any fast modem, set 200ms of preamble flags */
@@ -565,16 +567,6 @@ static void fax_set_tx_type(void *user_data, int type, int bit_rate, int short_t
         v29_tx_set_get_bit(&t->fast_modems.v29_tx, get_bit_func, get_bit_user_data);
         fax_modems_set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(s, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
-        t->transmit = TRUE;
-        break;
-    case T30_MODEM_V17:
-        silence_gen_alter(&t->silence_gen, ms_to_samples(75));
-        /* For any fast modem, set 200ms of preamble flags */
-        hdlc_tx_flags(&t->hdlc_tx, bit_rate/(8*5));
-        v17_tx_restart(&t->fast_modems.v17_tx, bit_rate, t->use_tep, short_train);
-        v17_tx_set_get_bit(&t->fast_modems.v17_tx, get_bit_func, get_bit_user_data);
-        fax_modems_set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
-        fax_modems_set_next_tx_handler(s, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
         t->transmit = TRUE;
         break;
     case T30_MODEM_DONE:

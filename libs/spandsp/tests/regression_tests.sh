@@ -508,19 +508,18 @@ then
 fi
 echo t4_tests completed OK
 
-#rm -f t4_t6_tests_receive.tif
-#./t4_t6_tests >$STDOUT_DEST 2>$STDERR_DEST
-#RETVAL=$?
-#if [ $RETVAL != 0 ]
-#then
-#    echo t4_t6_tests failed!
-#    exit $RETVAL
-#fi
-#echo t4_t6_tests completed OK
-echo t4_t6_tests not enabled
+rm -f t4_t6_tests_receive.tif
+./t4_t6_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo t4_t6_tests failed!
+    exit $RETVAL
+fi
+echo t4_t6_tests completed OK
 
 rm -f t81_t82_arith_coding_tests_receive.tif
-./t4_tests >$STDOUT_DEST 2>$STDERR_DEST
+./t81_t82_arith_coding_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -578,6 +577,22 @@ echo tone_detect_tests not enabled
 #echo tone_generate_tests completed OK
 echo tone_generate_tests not enabled
 
+./tsb85_tests.sh >/dev/null
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo ./tsb85_tests.sh failed!
+    exit $RETVAL
+fi
+./tsb85_extra_tests.sh
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo ./tsb85_extra_tests.sh failed!
+    exit $RETVAL
+fi
+echo tsb85_tests.sh completed OK
+
 for OPTS in "-b 14400 -s -42 -n -66" "-b 12000 -s -42 -n -61" "-b 9600 -s -42 -n -59" "-b 7200 -s -42 -n -56"
 do
     ./v17_tests ${OPTS} >$STDOUT_DEST 2>$STDERR_DEST
@@ -615,7 +630,7 @@ do
 done
 echo v27ter_tests completed OK
 
-for OPTS in "-b 9600 -s -42 -n -62" "-b 7200 -s -42 -n -59" "-b 4800 -s -42 -n -55"
+for OPTS in "-b 9600 -s -42 -n -62" "-b 7200 -s -42 -n -59" "-b 4800 -s -42 -n -54"
 do
     ./v29_tests ${OPTS} >$STDOUT_DEST 2>$STDERR_DEST
     RETVAL=$?

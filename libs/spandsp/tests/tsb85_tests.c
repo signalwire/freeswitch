@@ -630,7 +630,7 @@ static int next_step(faxtester_state_t *s)
     int compression_type;
     int timer;
     int len;
-    t4_state_t t4_tx_state;
+    t4_tx_state_t t4_tx_state;
     t30_state_t *t30;
 
     if (s->cur == NULL)

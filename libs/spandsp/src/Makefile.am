@@ -143,6 +143,8 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         super_tone_rx.c \
                         super_tone_tx.c \
                         swept_tone.c \
+                        t4_t6_decode.c \
+                        t4_t6_encode.c \
                         t4_rx.c \
                         t4_tx.c \
                         t30.c \
@@ -153,10 +155,10 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         t38_core.c \
                         t38_gateway.c \
                         t38_non_ecm_buffer.c \
+                        t38_terminal.c \
                         t81_t82_arith_coding.c \
                         t85_decode.c \
                         t85_encode.c \
-                        t38_terminal.c \
                         testcpuid.c \
                         time_scale.c \
                         timezone.c \

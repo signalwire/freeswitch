@@ -203,7 +203,7 @@ typedef enum
     T.4 FAX compression/decompression descriptor. This defines the working state
     for a single instance of a T.4 FAX compression or decompression channel.
 */
-typedef struct t4_state_s t4_state_t;
+typedef struct t4_rx_state_s t4_rx_state_t;
 
 /*!
     T.4 FAX compression/decompression statistics.
@@ -241,108 +241,109 @@ extern "C" {
     \param file The name of the file to be received.
     \param output_encoding The output encoding.
     \return A pointer to the context, or NULL if there was a problem. */
-SPAN_DECLARE(t4_state_t *) t4_rx_init(t4_state_t *s, const char *file, int output_encoding);
+SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int output_encoding);
 
 /*! \brief Prepare to receive the next page of the current document.
     \param s The T.4 context.
     \return zero for success, -1 for failure. */
-SPAN_DECLARE(int) t4_rx_start_page(t4_state_t *s);
+SPAN_DECLARE(int) t4_rx_start_page(t4_rx_state_t *s);
 
 /*! \brief Put a bit of the current document page.
     \param s The T.4 context.
     \param bit The data bit.
     \return TRUE when the bit ends the document page, otherwise FALSE. */
-SPAN_DECLARE(int) t4_rx_put_bit(t4_state_t *s, int bit);
+SPAN_DECLARE(int) t4_rx_put_bit(t4_rx_state_t *s, int bit);
 
 /*! \brief Put a byte of the current document page.
     \param s The T.4 context.
     \param byte The data byte.
     \return TRUE when the byte ends the document page, otherwise FALSE. */
-SPAN_DECLARE(int) t4_rx_put_byte(t4_state_t *s, uint8_t byte);
+SPAN_DECLARE(int) t4_rx_put_byte(t4_rx_state_t *s, uint8_t byte);
 
 /*! \brief Put a byte of the current document page.
     \param s The T.4 context.
     \param buf The buffer containing the chunk.
     \param len The length of the chunk.
     \return TRUE when the byte ends the document page, otherwise FALSE. */
-SPAN_DECLARE(int) t4_rx_put_chunk(t4_state_t *s, const uint8_t buf[], int len);
+SPAN_DECLARE(int) t4_rx_put_chunk(t4_rx_state_t *s, const uint8_t buf[], int len);
 
 /*! \brief Complete the reception of a page.
     \param s The T.4 receive context.
     \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_rx_end_page(t4_state_t *s);
+SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s);
 
 /*! \brief End reception of a document. Tidy up and close the file.
            This should be used to end T.4 reception started with
            t4_rx_init.
     \param s The T.4 receive context.
     \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_rx_release(t4_state_t *s);
+SPAN_DECLARE(int) t4_rx_release(t4_rx_state_t *s);
 
 /*! \brief End reception of a document. Tidy up, close the file and
            free the context. This should be used to end T.4 reception
            started with t4_rx_init.
     \param s The T.4 receive context.
     \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_rx_free(t4_state_t *s);
+SPAN_DECLARE(int) t4_rx_free(t4_rx_state_t *s);
 
 /*! \brief Set the row write handler for a T.4 receive context.
     \param s The T.4 receive context.
     \param handler A pointer to the handler routine.
     \param user_data An opaque pointer passed to the handler routine.
     \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_rx_set_row_write_handler(t4_state_t *s, t4_row_write_handler_t handler, void *user_data);
+SPAN_DECLARE(int) t4_rx_set_row_write_handler(t4_rx_state_t *s, t4_row_write_handler_t handler, void *user_data);
 
 /*! \brief Set the encoding for the received data.
     \param s The T.4 context.
-    \param encoding The encoding. */
-SPAN_DECLARE(void) t4_rx_set_rx_encoding(t4_state_t *s, int encoding);
+    \param encoding The encoding.
+    \return 0 for success, otherwise -1. */
+SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding);
 
 /*! \brief Set the expected width of the received image, in pixel columns.
     \param s The T.4 context.
     \param width The number of pixels across the image. */
-SPAN_DECLARE(void) t4_rx_set_image_width(t4_state_t *s, int width);
+SPAN_DECLARE(void) t4_rx_set_image_width(t4_rx_state_t *s, int width);
 
 /*! \brief Set the row-to-row (y) resolution to expect for a received image.
     \param s The T.4 context.
     \param resolution The resolution, in pixels per metre. */
-SPAN_DECLARE(void) t4_rx_set_y_resolution(t4_state_t *s, int resolution);
+SPAN_DECLARE(void) t4_rx_set_y_resolution(t4_rx_state_t *s, int resolution);
 
 /*! \brief Set the column-to-column (x) resolution to expect for a received image.
     \param s The T.4 context.
     \param resolution The resolution, in pixels per metre. */
-SPAN_DECLARE(void) t4_rx_set_x_resolution(t4_state_t *s, int resolution);
+SPAN_DECLARE(void) t4_rx_set_x_resolution(t4_rx_state_t *s, int resolution);
 
 /*! \brief Set the DCS information of the fax, for inclusion in the file.
     \param s The T.4 context.
     \param dcs The DCS information, formatted as an ASCII string. */
-SPAN_DECLARE(void) t4_rx_set_dcs(t4_state_t *s, const char *dcs);
+SPAN_DECLARE(void) t4_rx_set_dcs(t4_rx_state_t *s, const char *dcs);
 
 /*! \brief Set the sub-address of the fax, for inclusion in the file.
     \param s The T.4 context.
     \param sub_address The sub-address string. */
-SPAN_DECLARE(void) t4_rx_set_sub_address(t4_state_t *s, const char *sub_address);
+SPAN_DECLARE(void) t4_rx_set_sub_address(t4_rx_state_t *s, const char *sub_address);
 
 /*! \brief Set the identity of the remote machine, for inclusion in the file.
     \param s The T.4 context.
     \param ident The identity string. */
-SPAN_DECLARE(void) t4_rx_set_far_ident(t4_state_t *s, const char *ident);
+SPAN_DECLARE(void) t4_rx_set_far_ident(t4_rx_state_t *s, const char *ident);
 
 /*! \brief Set the vendor of the remote machine, for inclusion in the file.
     \param s The T.4 context.
     \param vendor The vendor string, or NULL. */
-SPAN_DECLARE(void) t4_rx_set_vendor(t4_state_t *s, const char *vendor);
+SPAN_DECLARE(void) t4_rx_set_vendor(t4_rx_state_t *s, const char *vendor);
 
 /*! \brief Set the model of the remote machine, for inclusion in the file.
     \param s The T.4 context.
     \param model The model string, or NULL. */
-SPAN_DECLARE(void) t4_rx_set_model(t4_state_t *s, const char *model);
+SPAN_DECLARE(void) t4_rx_set_model(t4_rx_state_t *s, const char *model);
 
 /*! Get the current image transfer statistics. 
     \brief Get the current transfer statistics.
     \param s The T.4 context.
     \param t A pointer to a statistics structure. */
-SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_state_t *s, t4_stats_t *t);
+SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t);
 
 /*! Get the short text name of an encoding format. 
     \brief Get the short text name of an encoding format.

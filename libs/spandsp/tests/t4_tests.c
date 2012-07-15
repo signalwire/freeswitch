@@ -52,8 +52,8 @@ in ITU specifications T.4 and T.6.
 
 #define XSIZE           1728
 
-t4_state_t send_state;
-t4_state_t receive_state;
+t4_tx_state_t send_state;
+t4_rx_state_t receive_state;
 
 /* The following are some test cases from T.4 */
 #define FILL_70      "                                                                      "
@@ -100,27 +100,31 @@ static const char t4_t6_test_patterns[][1728 + 1] =
 int rows_written = 0;
 int rows_read = 0;
 
-static void dump_image_as_xxx(t4_state_t *state)
+static void dump_image_as_xxx(t4_rx_state_t *state)
 {
+#if 0
+    uint8_t *s;
     int i;
     int j;
     int k;
 
     /* Dump the entire image as text 'X's and spaces */
-    printf("Image (%d x %d):\n", receive_state.image_width, receive_state.image_length);
-    for (i = 0;  i < state->image_length;  i++)
+    printf("Image (%d x %d):\n", state->t4_t6.image_width, state->t4_t6.image_length);
+    s = state->image_buffer;
+    for (i = 0;  i < state->t4_t6.image_length;  i++)
     {
-        for (j = 0;  j < state->bytes_per_row;  j++)
+        for (j = 0;  j < state->t4_t6.bytes_per_row;  j++)
         {
             for (k = 0;  k < 8;  k++)
-                printf((state->image_buffer[i*state->bytes_per_row + j] & (0x80 >> k))  ?  "X"  :  " ");
+                printf((state->image_buffer[i*state->t4_t6.bytes_per_row + j] & (0x80 >> k))  ?  "X"  :  " ");
         }
         printf("\n");
     }
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
-static void display_page_stats(t4_state_t *s)
+static void display_page_stats(t4_rx_state_t *s)
 {
     t4_stats_t stats;
 
@@ -132,7 +136,7 @@ static void display_page_stats(t4_state_t *s)
     printf("Image resolution = %d pels/m x %d pels/m\n", stats.x_resolution, stats.y_resolution);
     printf("Bad rows = %d\n", stats.bad_rows);
     printf("Longest bad row run = %d\n", stats.longest_bad_row_run);
-    printf("Bits per row - min %d, max %d\n", s->min_row_bits, s->max_row_bits);
+    printf("Bits per row - min %d, max %d\n", s->decoder.t4_t6.min_row_bits, s->decoder.t4_t6.max_row_bits);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -288,10 +292,8 @@ int main(int argc, char *argv[])
 #if defined(SPANDSP_SUPPORT_T43x)
         T4_COMPRESSION_ITU_T43,
 #endif          
-#if defined(SPANDSP_SUPPORT_T85)
         T4_COMPRESSION_ITU_T85,
         T4_COMPRESSION_ITU_T85_L0,
-#endif
         //T4_COMPRESSION_ITU_T45,
         -1
     };
@@ -303,7 +305,7 @@ int main(int argc, char *argv[])
     int compression;
     int compression_step;
     int add_page_headers;
-    //int overlay_page_headers;
+    int overlay_page_headers;
     int min_row_bits;
     int restart_pages;
     int block_size;
@@ -327,7 +329,7 @@ int main(int argc, char *argv[])
     compression = -1;
     compression_step = 0;
     add_page_headers = FALSE;
-    //overlay_page_headers = FALSE;
+    overlay_page_headers = FALSE;
     restart_pages = FALSE;
     in_file_name = IN_FILE_NAME;
     decode_file_name = NULL;
@@ -377,13 +379,11 @@ int main(int argc, char *argv[])
                 compression_step = -1;
             }
 #endif
-#if defined(SPANDSP_SUPPORT_T85)
             else if (strcmp(optarg, "T85") == 0)
             {
                 compression = T4_COMPRESSION_ITU_T85;
                 compression_step = -1;
             }
-#endif
             break;
         case 'd':
             decode_file_name = optarg;
@@ -393,11 +393,11 @@ int main(int argc, char *argv[])
             break;
         case 'h':
             add_page_headers = TRUE;
-            //overlay_page_headers = FALSE;
+            overlay_page_headers = FALSE;
             break;
         case 'H':
             add_page_headers = TRUE;
-            //overlay_page_headers = TRUE;
+            overlay_page_headers = TRUE;
             break;
         case 'r':
             restart_pages = TRUE;
@@ -542,18 +542,19 @@ int main(int argc, char *argv[])
 #if 1
         printf("Testing image_function->compress->decompress->image_function\n");
         /* Send end gets image from a function */
-        if (t4_tx_init(&send_state, in_file_name, -1, -1) == NULL)
+        if (t4_tx_init(&send_state, FALSE, -1, -1) == NULL)
         {
             printf("Failed to init T.4 tx\n");
             exit(2);
         }
         span_log_set_level(&send_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
         t4_tx_set_row_read_handler(&send_state, row_read_handler, NULL);
+        t4_tx_set_image_width(&send_state, 1728);
         t4_tx_set_min_bits_per_row(&send_state, min_row_bits);
-        t4_tx_set_local_ident(&send_state, "111 2222 3333");
+        t4_tx_set_max_2d_rows_per_1d_row(&send_state, 2);
 
         /* Receive end puts TIFF to a function. */
-        if (t4_rx_init(&receive_state, OUT_FILE_NAME, T4_COMPRESSION_ITU_T4_2D) == NULL)
+        if (t4_rx_init(&receive_state, NULL, T4_COMPRESSION_ITU_T4_2D) == NULL)
         {
             printf("Failed to init T.4 rx\n");
             exit(2);
@@ -701,7 +702,7 @@ int main(int argc, char *argv[])
                 if (tz_init(&tz, page_header_tz))
                     t4_tx_set_header_tz(&send_state, &tz);
             }
-            //t4_tx_set_header_overlays_image(&send_state, overlay_page_headers);
+            t4_tx_set_header_overlays_image(&send_state, overlay_page_headers);
             if (restart_pages  &&  (sends & 1))
             {
                 /* Use restart, to send the page a second time */

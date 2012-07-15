@@ -372,9 +372,9 @@ SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
 
 SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
                                  int filter_dialtone,
-                                 int twist,
-                                 int reverse_twist,
-                                 int threshold)
+                                 float twist,
+                                 float reverse_twist,
+                                 float threshold)
 {
     float x;
 

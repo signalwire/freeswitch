@@ -152,15 +152,15 @@ SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
     \param s The DTMF receiver context.
     \param filter_dialtone TRUE to enable filtering of dialtone, FALSE
            to disable, < 0 to leave unchanged.
-    \param twist Acceptable twist, in dB. < 0 to leave unchanged.
-    \param reverse_twist Acceptable reverse twist, in dB. < 0 to leave unchanged.
+    \param twist Acceptable twist, in dB. < 0.0 to leave unchanged.
+    \param reverse_twist Acceptable reverse twist, in dB. < 0.0 to leave unchanged.
     \param threshold The minimum acceptable tone level for detection, in dBm0.
-           <= -99 to leave unchanged. */
+           <= -99.0 to leave unchanged. */
 SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
                                  int filter_dialtone,
-                                 int twist,
-                                 int reverse_twist,
-                                 int threshold);
+                                 float twist,
+                                 float reverse_twist,
+                                 float threshold);
 
 /*! Process a block of received DTMF audio samples.
     \brief Process a block of received DTMF audio samples.
