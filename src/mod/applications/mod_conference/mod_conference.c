@@ -5267,6 +5267,9 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		x_tag = switch_xml_add_child_d(x_flags, "has_video", count++);
 		switch_xml_set_txt_d(x_tag, switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO) ? "true" : "false");
 
+		x_tag = switch_xml_add_child_d(x_flags, "video_bridge", count++);
+		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_VIDEO_BRIDGE) ? "true" : "false");
+
 		x_tag = switch_xml_add_child_d(x_flags, "has_floor", count++);
 		switch_xml_set_txt_d(x_tag, (member == member->conference->floor_holder) ? "true" : "false");
 
