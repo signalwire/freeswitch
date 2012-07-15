@@ -208,6 +208,8 @@
     <ClCompile Include="super_tone_tx.c" />
     <ClCompile Include="swept_tone.c" />
     <ClCompile Include="t4_rx.c" />
+    <ClCompile Include="t4_t6_decode.c" />
+    <ClCompile Include="t4_t6_encode.c" />
     <ClCompile Include="t4_tx.c" />
     <ClCompile Include="t30.c" />
     <ClCompile Include="t30_api.c" />
@@ -218,6 +220,9 @@
     <ClCompile Include="t38_gateway.c" />
     <ClCompile Include="t38_non_ecm_buffer.c" />
     <ClCompile Include="t38_terminal.c" />
+    <ClCompile Include="t81_t82_arith_coding.c" />
+    <ClCompile Include="t85_decode.c" />
+    <ClCompile Include="t85_encode.c" />
     <ClCompile Include="testcpuid.c" />
     <ClCompile Include="time_scale.c" />
     <ClCompile Include="timezone.c" />
@@ -282,6 +287,8 @@
     <ClInclude Include="spandsp\plc.h" />
     <ClInclude Include="spandsp\power_meter.h" />
     <ClInclude Include="spandsp\private\ademco_contactid.h" />
+    <ClInclude Include="spandsp\private\t81_t82_arith_coding.h" />
+    <ClInclude Include="spandsp\private\t85.h" />
     <ClInclude Include="spandsp\queue.h" />
     <ClInclude Include="spandsp\saturated.h" />
     <ClInclude Include="spandsp\schedule.h" />
@@ -304,6 +311,8 @@
     <ClInclude Include="spandsp\t38_gateway.h" />
     <ClInclude Include="spandsp\t38_non_ecm_buffer.h" />
     <ClInclude Include="spandsp\t38_terminal.h" />
+    <ClInclude Include="spandsp\t81_t82_arith_coding.h" />
+    <ClInclude Include="spandsp\t85.h" />
     <ClInclude Include="spandsp\telephony.h" />
     <ClInclude Include="spandsp\time_scale.h" />
     <ClInclude Include="spandsp\timing.h" />

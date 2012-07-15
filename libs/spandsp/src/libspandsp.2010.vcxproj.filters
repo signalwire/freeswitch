@@ -259,6 +259,21 @@
     <ClCompile Include="ademco_contactid.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="t81_t82_arith_coding.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="t85_decode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="t85_encode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="t4_t6_decode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="t4_t6_encode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="spandsp\adsi.h">
@@ -672,6 +687,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="spandsp\private\ademco_contactid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\private\t81_t82_arith_coding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\private\t85.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\t81_t82_arith_coding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\t85.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

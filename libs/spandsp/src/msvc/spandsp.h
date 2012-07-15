@@ -104,6 +104,8 @@
 #include <spandsp/t4_tx.h>
 #include <spandsp/t4_t6_decode.h>
 #include <spandsp/t4_t6_encode.h>
+#include <spandsp/t81_t82_arith_coding.h>
+#include <spandsp/t85.h>
 #include <spandsp/t30.h>
 #include <spandsp/t30_api.h>
 #include <spandsp/t30_fcf.h>

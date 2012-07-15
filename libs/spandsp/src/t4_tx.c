@@ -81,6 +81,10 @@
 
 #include "faxfont.h"
 
+#ifndef UINT32_MAX
+#define UINT32_MAX 0xffffffff
+#endif
+
 /*! The number of centimetres in one inch */
 #define CM_PER_INCH                 2.54f
 
