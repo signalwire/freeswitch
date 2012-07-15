@@ -606,7 +606,7 @@ SCGI_DECLARE(scgi_status_t) scgi_accept(scgi_socket_t server_sock, scgi_socket_t
 	clntLen = sizeof(*echoClntAddr);
     
 	if ((client_sock = accept(server_sock, (struct sockaddr *) echoClntAddr, &clntLen)) == SCGI_SOCK_INVALID) {
-		printf("FRICK %s\n", strerror(errno));
+		//printf("FRICK %s\n", strerror(errno));
 		status = SCGI_FAIL;
 	} else {
 		*client_sock_p = client_sock;
