@@ -524,6 +524,7 @@ static switch_status_t conf_api_sub_undeaf(conference_member_t *member, switch_s
 static switch_status_t conference_add_event_data(conference_obj_t *conference, switch_event_t *event);
 static switch_status_t conference_add_event_member_data(conference_member_t *member, switch_event_t *event);
 static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+static switch_status_t conf_api_sub_enforce_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 
 
 #define lock_member(_member) switch_mutex_lock(_member->write_mutex); switch_mutex_lock(_member->read_mutex)
@@ -2444,6 +2445,13 @@ static void conference_loop_fn_floor_toggle(conference_member_t *member, caller_
 	if (member == NULL) return;
 
 	conf_api_sub_floor(member, NULL, NULL);
+}
+
+static void conference_loop_fn_enforce_floor(conference_member_t *member, caller_control_action_t *action)
+{
+	if (member == NULL) return;
+
+	conf_api_sub_enforce_floor(member, NULL, NULL);
 }
 
 static void conference_loop_fn_mute_toggle(conference_member_t *member, caller_control_action_t *action)
@@ -5057,10 +5065,56 @@ static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_st
 			if (stream != NULL) {
 				stream->write_function(stream, "OK floor %u\n", member->id);
 			}
+
+			if (switch_core_session_read_lock(member->session) == SWITCH_STATUS_SUCCESS) {
+				/* Tell the channel to request a fresh vid frame */
+				switch_channel_set_flag(switch_core_session_get_channel(member->session), CF_VIDEO_REFRESH_REQ);
+				switch_core_session_rwunlock(member->session);
+			}
 		}
 	} else {
 		if (stream != NULL) {
 			stream->write_function(stream, "ERR floor is held by %u\n", member->conference->floor_holder->id);
+		}
+	}
+
+	switch_mutex_unlock(member->conference->mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t conf_api_sub_enforce_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+	switch_event_t *event;
+
+	if (member == NULL)
+		return SWITCH_STATUS_GENERR;
+
+	switch_mutex_lock(member->conference->mutex);
+
+	if (member->conference->floor_holder != member) {
+		conference_member_t *old_member = member->conference->floor_holder;
+		member->conference->floor_holder = member;
+		if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE)) {
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+			conference_add_event_data(member->conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
+			if (old_member == NULL) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "none");
+			} else {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d", old_member->id);
+			}
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", member->id);
+			switch_event_fire(&event);
+			if (stream != NULL) {
+				stream->write_function(stream, "OK floor %u\n", member->id);
+			}
+		}
+
+		if (switch_core_session_read_lock(member->session) == SWITCH_STATUS_SUCCESS) {
+			/* Tell the channel to request a fresh vid frame */
+			switch_channel_set_flag(switch_core_session_get_channel(member->session), CF_VIDEO_REFRESH_REQ);
+			switch_core_session_rwunlock(member->session);
 		}
 	}
 
@@ -6180,7 +6234,8 @@ static api_command_t conf_api_sub_commands[] = {
 	{"nopin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "nopin", ""},
 	{"get", (void_fn_t) & conf_api_sub_get, CONF_API_SUB_ARGS_SPLIT, "get", "<parameter-name>"},
 	{"set", (void_fn_t) & conf_api_sub_set, CONF_API_SUB_ARGS_SPLIT, "set", "<parameter-name> <value>"},
-	{"floor", (void_fn_t) & conf_api_sub_floor, CONF_API_SUB_MEMBER_TARGET, "floor", "<member_id|last|non_moderator>"},
+	{"floor", (void_fn_t) & conf_api_sub_floor, CONF_API_SUB_MEMBER_TARGET, "floor", "<member_id|last>"},
+	{"enforce_floor", (void_fn_t) & conf_api_sub_enforce_floor, CONF_API_SUB_MEMBER_TARGET, "enforce_floor", "<member_id|last>"},
 };
 
 #define CONFFUNCAPISIZE (sizeof(conf_api_sub_commands)/sizeof(conf_api_sub_commands[0]))
@@ -8645,6 +8700,7 @@ static struct _mapping control_mappings[] = {
     {"transfer", conference_loop_fn_transfer},
     {"execute_application", conference_loop_fn_exec_app},
     {"floor", conference_loop_fn_floor_toggle},
+    {"enforce_floor", conference_loop_fn_enforce_floor},
 };
 #define MAPPING_LEN (sizeof(control_mappings)/sizeof(control_mappings[0]))
 
