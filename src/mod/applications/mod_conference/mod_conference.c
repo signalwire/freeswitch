@@ -4903,13 +4903,96 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 	if (conference == NULL) {
 		switch_mutex_lock(globals.hash_mutex);
 		for (hi = switch_hash_first(NULL, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
+			int fcount = 0;
 			switch_hash_this(hi, NULL, NULL, &val);
 			conference = (conference_obj_t *) val;
 
-			stream->write_function(stream, "Conference %s (%u member%s rate: %u%s)\n",
+			stream->write_function(stream, "Conference %s (%u member%s rate: %u%s flags: ",
 								   conference->name,
 								   conference->count,
 								   conference->count == 1 ? "" : "s", conference->rate, switch_test_flag(conference, CFLAG_LOCKED) ? " locked" : "");
+
+			if (switch_test_flag(conference, CFLAG_LOCKED)) {
+				stream->write_function(stream, "%slocked", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_DESTRUCT)) {
+				stream->write_function(stream, "%sdestruct", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_WAIT_MOD)) {
+				stream->write_function(stream, "%swait_mod", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_AUDIO_ALWAYS)) {
+				stream->write_function(stream, "%saudio_always", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_RUNNING)) {
+				stream->write_function(stream, "%srunning", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_ANSWERED)) {
+				stream->write_function(stream, "%sanswered", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_ENFORCE_MIN)) {
+				stream->write_function(stream, "%senforce_min", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_BRIDGE_TO)) {
+				stream->write_function(stream, "%sbridge_to", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_DYNAMIC)) {
+				stream->write_function(stream, "%sdynamic", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_EXIT_SOUND)) {
+				stream->write_function(stream, "%sexit_sound", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_ENTER_SOUND)) {
+				stream->write_function(stream, "%senter_sound", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (conference->record_count > 0) {
+				stream->write_function(stream, "%srecording", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
+				stream->write_function(stream, "%svideo_bridge", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_VID_FLOOR)) {
+				stream->write_function(stream, "%svideo_floor_only", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (switch_test_flag(conference, CFLAG_RFC4579)) {
+				stream->write_function(stream, "%svideo_rfc4579", fcount ? "|" : "");
+				fcount++;
+			}
+
+			if (!fcount) {
+				stream->write_function(stream, "none");
+			}
+
+			stream->write_function(stream, ")\n");
+
 			count++;
 			if (!summary) {
 				if (pretty) {
@@ -5074,6 +5157,18 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		switch_xml_set_attr_d(x_conference, "endconf_grace_time", ival);
 	}
 
+	if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
+		switch_xml_set_attr_d(x_conference, "video_bridge", "true");
+	}
+
+	if (switch_test_flag(conference, CFLAG_VID_FLOOR)) {
+		switch_xml_set_attr_d(x_conference, "video_floor_only", "true");
+	}
+
+	if (switch_test_flag(conference, CFLAG_RFC4579)) {
+		switch_xml_set_attr_d(x_conference, "video_rfc4579", "true");
+	}
+
 	switch_snprintf(i, sizeof(i), "%d", switch_epoch_time_now(NULL) - conference->run_time);
 	switch_xml_set_attr_d(x_conference, "run_time", ival);
 
@@ -5171,6 +5266,9 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 
 		x_tag = switch_xml_add_child_d(x_flags, "has_video", count++);
 		switch_xml_set_txt_d(x_tag, switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO) ? "true" : "false");
+
+		x_tag = switch_xml_add_child_d(x_flags, "video_bridge", count++);
+		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_VIDEO_BRIDGE) ? "true" : "false");
 
 		x_tag = switch_xml_add_child_d(x_flags, "has_floor", count++);
 		switch_xml_set_txt_d(x_tag, (member == member->conference->floor_holder) ? "true" : "false");

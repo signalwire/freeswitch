@@ -698,6 +698,7 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url)
 	char *dirname = NULL;
 	cached_url_t *u = NULL;
 	const char *file_extension = "";
+	const char *ext = NULL;
 
 	if (zstr(url)) {
 		return NULL;
@@ -716,7 +717,7 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url)
 	switch_dir_make_recursive(dirname, SWITCH_DEFAULT_DIR_PERMS, cache->pool);
 	
 	/* find extension on the end of URL */
-	for(const char *ext = &url[strlen(url) - 1]; ext != url; ext--) {
+	for (ext = &url[strlen(url) - 1]; ext != url; ext--) {
 		if (*ext == '/' || *ext == '\\') {
 			break;
 		}

@@ -634,7 +634,7 @@ static switch_status_t handle_msg_api(listener_t *listener, erlang_msg * msg, in
 	ei_get_type(buf->buff, &buf->index, &type, &size);
 	arg = malloc(size + 1);
 
-	if (ei_decode_string(buf->buff, &buf->index, arg)) {
+	if (ei_decode_string_or_binary(buf->buff, &buf->index, size, arg)) {
 		fail = SWITCH_TRUE;
 	}
 
@@ -664,7 +664,7 @@ static switch_status_t handle_msg_bgapi(listener_t *listener, erlang_msg * msg, 
 {
 	char api_cmd[MAXATOMLEN];
 	char arg[1024];
-	if (arity < 3 || ei_decode_atom(buf->buff, &buf->index, api_cmd) || ei_decode_string(buf->buff, &buf->index, arg)) {
+	if (arity < 3 || ei_decode_atom(buf->buff, &buf->index, api_cmd) || ei_decode_string_or_binary(buf->buff, &buf->index, 1023, arg)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
