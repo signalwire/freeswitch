@@ -527,7 +527,6 @@
       <prompt phrase="Congratulations! You've earned 1500 Trollover minutes this month!" filename="ivr-trollover_minutes.wav"/>
       <prompt phrase="Y U NO Silent Drill?!" filename="ivr-yuno_silent_drill.wav"/>
       <prompt phrase="Beacuase, the voices where pretty good" filename="ivr-beacuase.wav"/>
-      <!-- The following phrases still need to be recorded -->
       <prompt phrase="Day mode..." filename="ivr-day_mode.wav"/>
       <prompt phrase="Night mode..." filename="ivr-night_mode.wav"/>
       <prompt phrase="Lunch mode..." filename="ivr-lunch_mode.wav"/>
@@ -566,8 +565,15 @@
       <prompt phrase="...the short greeting." filename="ivr-short_greeting.wav"/>
       <prompt phrase="...the invalid sound prompt." filename="ivr-ivalid_sound_prompt.wav"/>
       <prompt phrase="...the exit sound prompt." filename="ivr-exit_sound_prompt.wav"/>
-      <prompt phrase="Everyone is koo koo for CudaTel!" filename="misc-koo_koo_for_cudatel.wav"/>
-      <prompt phrase="I'm pretty sure CudaTel's patented Automagicatronical configuration takes care of it." filename="misc-cudatel_automagicatronical.wav"/>
+      <!-- The following phrases still need to be recorded -->
+      <prompt phrase="That person does not accept anonymous calls." filename="ivr-not_accept_anonymous_calls.wav"/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
 
     </ivr>
     <misc>
@@ -590,6 +596,8 @@
       <prompt phrase="CudaTel! You know you want one!" filename="misc-cudatel_you_know_you_want_one.wav"/>
       <prompt phrase="FreeSWITCH is open source software that is sponsored by OSTAG - the Open Source Telephony Advancement Group." filename="misc-freeswitch_sponsored_by_ostag.wav"/>
       <prompt phrase="OSTAG is advancing the next generation of telephony through open-source software. Learn more at www.ostag.org." filename="misc-ostag_learn_more.wav"/>
+      <prompt phrase="Everyone is koo koo for CudaTel!" filename="misc-koo_koo_for_cudatel.wav"/>
+      <prompt phrase="I'm pretty sure CudaTel's patented Automagicatronical configuration takes care of it." filename="misc-cudatel_automagicatronical.wav"/>
     </misc>
     <zrtp>
       <!-- base256 prompts for SAS -->
