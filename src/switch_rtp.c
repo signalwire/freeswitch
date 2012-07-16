@@ -4109,7 +4109,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting RTCP src-1 LENGTH  to %d (%d, %s)\n", sr->sr_desc_ssrc.length, sr->sr_desc_head.length, str_cname);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting msw = %d, lsw = %d \n", sr->ntp_msw, sr->ntp_lsw);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "now = %lld, now lo = %d, now hi = %d\n", (int64_t)now, (int32_t)(now&0xFFFFFFFF), (int32_t)((now>>32&0xFFFFFFFF)));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "now = %"SWITCH_TIME_T_FMT", now lo = %d, now hi = %d\n", (int64_t)now, (int32_t)(now&0xFFFFFFFF), (int32_t)((now>>32&0xFFFFFFFF)));
 			
 			
 			rtcp_bytes = sizeof(switch_rtcp_hdr_t) + sizeof(struct switch_rtcp_senderinfo) + sr->sr_desc_ssrc.length -1 ;
