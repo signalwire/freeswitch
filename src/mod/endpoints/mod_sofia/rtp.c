@@ -37,6 +37,10 @@
 #define kLOCALPORT "local_port"
 #define kREMOTEADDR "remote_addr"
 #define kREMOTEPORT "remote_port"
+#define kCODEC "codec"
+#define kPTIME "ptime"
+#define kRFC2833PT "rfc2833_pt"
+#define kMODE "mode"
 
 static struct {
     switch_memory_pool_t *pool;
@@ -53,14 +57,16 @@ typedef struct {
     switch_rtp_t *rtp_session;
     
     const char *bind_address;
-    
+    const char *codec;
+    int ptime;
     
     const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
 	int num_negotiated_codecs;
     
     char *origin;
     
-    int local_port;
+    switch_port_t local_port;
+    switch_port_t remote_port;
 
 } crtp_private_t;
 
@@ -89,15 +95,11 @@ switch_io_routines_t crtp_io_routines = {
     .send_dtmf = channel_send_dtmf
 };
 
-SWITCH_STANDARD_API(test_function)
-{
-    return SWITCH_STATUS_SUCCESS;
-}
 
 void crtp_init(switch_loadable_module_interface_t *module_interface)
 {
     switch_endpoint_interface_t *endpoint_interface;
-    switch_api_interface_t *api_interface;
+    //switch_api_interface_t *api_interface;
     
     crtp.pool = module_interface->pool;
     endpoint_interface = switch_loadable_module_create_interface(module_interface, SWITCH_ENDPOINT_INTERFACE);
@@ -106,7 +108,7 @@ void crtp_init(switch_loadable_module_interface_t *module_interface)
     endpoint_interface->state_handler = &crtp_state_handlers;
     crtp.endpoint_interface = endpoint_interface;
     
-    SWITCH_ADD_API(api_interface, "rtp_test", "test", test_function, "");
+    //SWITCH_ADD_API(api_interface, "rtp_test", "test", test_function, "");
 }
 
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
@@ -120,11 +122,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     const char *dname = "PCMU";
     uint32_t interval = 20;
     crtp_private_t *tech_pvt = NULL;
-#if 0
-    const char *r_sdp = switch_event_get_header(var_event, kRSDP);
-#endif
-    const char *l_sdp = switch_event_get_header(var_event, kLSDP);
-    const char *codec_string = switch_event_get_header_nil(var_event, kCODECSTRING);
+    //const char *l_sdp = switch_event_get_header(var_event, kLSDP);
+    //const char *codec_string = switch_event_get_header_nil(var_event, kCODECSTRING);
 
     
     if (!(*new_session = switch_core_session_request(crtp.endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, 0, pool))) {
@@ -142,9 +141,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->bind_address = switch_core_session_strdup(*new_session, switch_event_get_header_nil(var_event, kBINDADDRESS));
     switch_core_session_set_private(*new_session, tech_pvt);
     
-    if (setup_local_rtp(tech_pvt, l_sdp, codec_string) != SWITCH_STATUS_SUCCESS) {
-        goto fail;
-    }
     
     snprintf(name, sizeof(name), "rtp/ctrl"); /* TODO add addresses */
 	switch_channel_set_name(channel, name);
