@@ -2092,6 +2092,17 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 		return 0;
 	}
 
+
+	if (*buf == '^' && *(buf+1) == '^') {
+		char *p = buf + 2;
+		
+		if (p && *p && *(p+1)) {
+			buf = p;
+			delim = *buf++;
+		}
+	}
+
+
 	memset(array, 0, arraylen * sizeof(*array));
 
 	return (delim == ' ' ? separate_string_blank_delim(buf, array, arraylen) : separate_string_char_delim(buf, delim, array, arraylen));
