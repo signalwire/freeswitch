@@ -742,7 +742,7 @@ switch_status_t callprogress_detector_start(switch_core_session_t *session, cons
 	/* start listening for tones */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Starting tone detection for '%s'\n", switch_channel_get_name(channel), name);
 	switch_core_media_bug_add(session, "spandsp_tone_detect", NULL,
-                              callprogress_detector_process_buffer, detector, 0 /* stop time */, SMBF_READ_STREAM, &bug);
+                              callprogress_detector_process_buffer, detector, 0 /* stop time */, SMBF_READ_REPLACE, &bug);
 	if (!bug) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -761,28 +761,26 @@ switch_status_t callprogress_detector_start(switch_core_session_t *session, cons
  */
 static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
-	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-	switch_frame_t frame = { 0 };
 	tone_detector_t *detector = (tone_detector_t *)user_data;
 	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	frame.data = data;
-	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	switch(type) {
 	case SWITCH_ABC_TYPE_INIT:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) initializing tone detector\n", switch_channel_get_name(channel));
 		tone_detector_init(detector);
 		break;
-	case SWITCH_ABC_TYPE_READ:
+	case SWITCH_ABC_TYPE_READ_REPLACE:
 	{
+        switch_frame_t *frame;
+
+
 		const char *detected_tone = NULL;
 		if (!detector->spandsp_detector) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) detector is destroyed\n", switch_channel_get_name(channel));
 			return SWITCH_FALSE;
 		}
-		if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
+		if (!(frame = switch_core_media_bug_get_read_replace_frame(bug))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) error reading frame\n", switch_channel_get_name(channel));
 			return SWITCH_FALSE;
 		}
