@@ -233,6 +233,9 @@ static switch_status_t mgco_parse_local_sdp(mg_termination_t *term, CmSdpInfoSet
 }
 #endif
 
+/* KAPIL- NOTE : We are using Command mode operation of MEGACO stack, so we will always get command indication instead of transaction */
+/* Below API is not useful ... just leaving as it is...*/
+
 void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
 {
     size_t txnIter;
@@ -425,8 +428,12 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	MgMgcoInd  *mgErr;
 	MgStr      errTxt;
 	MgMgcoContextId   ctxtId;
+	MgMgcoContextId   *inc_context;
 	MgMgcoTermIdLst*  termLst;
-
+	MgMgcoTermId     *termId;
+	int 		  count;
+	int 		  err_code;
+	megaco_profile_t* mg_profile;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
 
@@ -442,15 +449,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 		ctxtId.val.pres  = NOTPRSNT;
 
 		mg_util_set_txn_string(&errTxt, &txn_id);
-
-		if (SWITCH_STATUS_SUCCESS == mg_build_mgco_err_request(&mgErr, txn_id, &ctxtId,
-						MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER, &errTxt)) {
-			sng_mgco_send_err(suId, mgErr);
-		}
-
-		/* deallocate the msg */
-		mg_free_cmd(cmd);
-		return ;	
+		err_code = MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER;
+		goto error;
 	}
 
 	/* Get the termination Id list from the command(Note: GCP_2_1 has termination list , else it will be termination Id)  */
@@ -458,11 +458,79 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	if ((NULL == termLst) || (NOTPRSNT == termLst->num.pres)) {
 		/* termination-id not present , error */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination-Id Not received..rejecting command \n");
-		mg_free_cmd(cmd);
-		return ;	
+
+		/*-- Send Error to MG Stack --*/
+		MG_ZERO(&ctxtId, sizeof(MgMgcoContextId));
+		ctxtId.type.pres = NOTPRSNT;
+		ctxtId.val.pres  = NOTPRSNT;
+		mg_util_set_txn_string(&errTxt, &txn_id);
+		err_code = MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER;
+		goto error;
 	}
 
+	termId  = termLst->terms[0];
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination-Id received..value[%s] type[%d] \n", termId->name.lcl.val, termId->type.val);
+
+	/* Not sure - IF Stack fills term type properly..but adding code just to be sure ...*/
+	if ((PRSNT_NODEF == termId->type.pres) &&
+			(MGT_TERMID_OTHER == termId->type.val)) {
+		/* Checking the $ in the pathname    */
+		if ((PRSNT_NODEF == termId->name.pres.pres) &&
+				(PRSNT_NODEF == termId->name.lcl.pres)) {
+			for (count = 0; count < termId->name.lcl.len; count++) {
+				if (termId->name.lcl.val[count] == '$') {
+					termId->type.val = MGT_TERMID_CHOOSE;
+					break;
+				}
+
+				if (termId->name.lcl.val[count] == '*') {
+					termId->type.val = MGT_TERMID_ALL;
+					break;
+				}
+			}
+		}
+	}
+
+	/*If term type is other then check if that term is configured with us..for term type CHOOSE/ALL , no need to check */
+	if (MGT_TERMID_OTHER == termId->type.val){
+		if(SWITCH_STATUS_FALSE != mg_stack_termination_is_in_service((char*)termId->name.lcl.val, termId->name.lcl.len)){
+			mg_util_set_term_string(&errTxt, termId);
+			err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
+			goto error;
+		}
+	}
+
+
+	/* Validate Context - if context is specified then check if its present with us */
+	inc_context = &cmd->contextId;
+	MG_ZERO(&ctxtId, sizeof(MgMgcoContextId));
+	memcpy(&ctxtId, inc_context, sizeof(MgMgcoContextId));
+
+	if(NOTPRSNT == inc_context->type.pres){
+		goto ctxt_error;
+
+	}else if(MGT_CXTID_OTHER == inc_context->type.pres){
+
+		if(NOTPRSNT != inc_context->val.pres){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Context specific request for contextId[%d]\n",inc_context->val.val);
+			/* check if context present with us */
+			if(NULL == megaco_find_context_by_suid(suId, inc_context->val.val)){
+				goto ctxt_error;
+			}		
+		}else{
+			/* context id value not present - in case of type OTHER we should have context value */
+			goto ctxt_error;
+		}
+	}
+	
+
 	/*mgAccEvntPrntMgMgcoCommand(cmd, stdout);*/
+
+	/*get mg profile associated with SuId */
+	if(NULL == (mg_profile = megaco_get_profile_by_suId(suId))){
+		goto error1;
+	}
 
 	switch(cmd->cmdType.val)
 	{
@@ -475,7 +543,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 				{
 					case MGT_ADD:
 						{
-							handle_mg_add_cmd(&cmd->u.mgCmdInd[0]->cmd.u.add);
+							handle_mg_add_cmd(mg_profile, cmd);
 							mg_send_add_rsp(suId, cmd);
 							break;
 						}
@@ -488,9 +556,10 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 						}
 					case MGT_MOVE:
 						{
-							/*MgMgcoAmmReq *addReq = &cmdReq->cmd.u.move;*/
-							break;
-
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MOVE Method Not Yet Supported\n");
+							err_code = MGT_MGCO_RSP_CODE_UNSUPPORTED_CMD;
+							mg_util_set_cmd_name_string(&errTxt, cmd);
+							goto error;
 						}
 					case MGT_SUB:
 						{
@@ -511,7 +580,9 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 					case MGT_AUDITCAP:
 						{
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Audit-Capability Method Not Yet Supported\n");
-							break;
+							err_code = MGT_MGCO_RSP_CODE_UNSUPPORTED_CMD;
+							mg_util_set_cmd_name_string(&errTxt, cmd);
+							goto error;
 						}
 					case MGT_AUDITVAL:
 						{
@@ -541,6 +612,18 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			return;
 	}
 
+	return;
+
+ctxt_error:
+	err_code = MGT_MGCO_RSP_CODE_UNKNOWN_CTXT;
+
+error:
+	if (SWITCH_STATUS_SUCCESS == 
+			mg_build_mgco_err_request(&mgErr, txn_id, &ctxtId, err_code, &errTxt)) {
+		sng_mgco_send_err(suId, mgErr);
+	}
+error1:
+	mg_free_cmd(cmd);
 	return;
 }
 

@@ -46,6 +46,63 @@ void megaco_peer_profile_release(mg_peer_profile_t *profile)
 	switch_thread_rwlock_unlock(profile->rwlock);
 }
 
+megaco_profile_t*  megaco_get_profile_by_suId(SuId suId)
+{
+	megaco_profile_t*    profile = NULL;
+	void 		*val = NULL;
+	switch_hash_index_t *hi = NULL;
+	int found = 0x00;
+	const void *var;
+
+	/*iterate through profile list to get requested suID profile */
+	for (hi = switch_hash_first(NULL, megaco_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		profile = (megaco_profile_t *) val;
+		if (profile->idx == suId) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got profile[%s] associated with suId[%d]\n",profile->name, suId);
+			found = 0x01;
+			break;
+		}
+	}
+
+	if(!found){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Not able to find profile associated with suId[%d]\n",suId);
+		return NULL;
+	}
+
+	return profile;
+}
+
+mg_context_t *megaco_find_context_by_suid(SuId suId, uint32_t context_id)
+{
+    mg_context_t *result = NULL;
+    megaco_profile_t*    profile = NULL;
+    
+    if(NULL == (profile = megaco_get_profile_by_suId(suId))){
+	    return NULL;
+    }
+
+    
+    if (context_id > MG_MAX_CONTEXTS) {
+        return NULL;
+    }
+    
+    switch_thread_rwlock_rdlock(profile->contexts_rwlock);
+    
+    /* Context exists */
+    if (profile->contexts_bitmap[context_id % 8] & (1 << (context_id / 8))) {
+        for (result = profile->contexts[context_id % MG_CONTEXT_MODULO]; result; result = result->next) {
+            if (result->context_id == context_id) {
+                break;
+            }
+        }
+    }
+    
+    switch_thread_rwlock_unlock(profile->contexts_rwlock);
+    
+    return result;
+}
+
 mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
 {
     mg_context_t *result = NULL;

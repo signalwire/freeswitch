@@ -29,16 +29,65 @@ const char *mg_service_change_reason[] = {
 *
 *
 */
-switch_status_t handle_mg_add_cmd(MgMgcoAmmReq *addReq)
+switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd)
 {
-	int descId;
-	for (descId = 0; descId < addReq->dl.num.val; descId++) {
-		switch (addReq->dl.descs[descId]->type.val) {
+	MgMgcoContextId  *ctxtId;
+	int 		  descId;
+	MgStr      	  errTxt;
+	MgMgcoInd  	  *mgErr;
+	MgMgcoTermId     *termId;
+	MgMgcoTermIdLst*  termLst;
+	int 		  err_code;
+	MgMgcoAmmReq 	  *cmd = &inc_cmd->u.mgCmdInd[0]->cmd.u.add;
+	U32 		   txn_id = inc_cmd->transId.val;
+
+	/********************************************************************/
+	ctxtId  = &inc_cmd->contextId;
+	termLst = mg_get_term_id_list(inc_cmd);
+	termId  = termLst->terms[0];
+
+	/********************************************************************/
+	/* Validating ADD request *******************************************/
+
+	/*-- NULL Context & ALL Context not applicable for ADD request --*/
+	if ((NOTPRSNT != ctxtId->type.pres)          &&
+			((MGT_CXTID_ALL == ctxtId->type.val)     ||
+			 (MGT_CXTID_NULL == ctxtId->type.val))) {
+
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," ADD Request processing failed, Context ALL/NULL not allowed\n");
+
+		mg_util_set_ctxt_string(&errTxt, ctxtId);
+		err_code = MGT_MGCO_RSP_CODE_PROT_ERROR;
+		goto error;
+	}
+
+	/********************************************************************/
+	/* Allocate context - if context type is CHOOSE */
+	if ((NOTPRSNT != ctxtId->type.pres)  &&
+			(MGT_CXTID_CHOOSE == ctxtId->type.val)){
+
+		/* TODO - Matt */
+	}
+
+	/********************************************************************/
+	/* Allocate new RTP termination - If term type is CHOOSE */
+	if ((NOTPRSNT != termId->type.pres)   &&
+			(MGT_TERMID_CHOOSE == termId->type.val)){
+
+		/* TODO - Matt */
+		/* allocate rtp term and associated the same to context */
+	}
+
+	/********************************************************************/
+
+
+	for (descId = 0; descId < cmd->dl.num.val; descId++) {
+		switch (cmd->dl.descs[descId]->type.val) {
 			case MGT_MEDIADESC:
 				{
 					int mediaId;
-					for (mediaId = 0; mediaId < addReq->dl.descs[descId]->u.media.num.val; mediaId++) {
-						MgMgcoMediaPar *mediaPar = addReq->dl.descs[descId]->u.media.parms[mediaId];
+					for (mediaId = 0; mediaId < cmd->dl.descs[descId]->u.media.num.val; mediaId++) {
+						MgMgcoMediaPar *mediaPar = cmd->dl.descs[descId]->u.media.parms[mediaId];
 						switch (mediaPar->type.val) {
 							case MGT_MEDIAPAR_LOCAL:
 								{
@@ -94,6 +143,13 @@ switch_status_t handle_mg_add_cmd(MgMgcoAmmReq *addReq)
 
 
 	return SWITCH_STATUS_SUCCESS;	
+error:
+	if (SWITCH_STATUS_SUCCESS == 
+			mg_build_mgco_err_request(&mgErr, txn_id, ctxtId, err_code, &errTxt)) {
+		sng_mgco_send_err(mg_profile->idx, mgErr);
+	}
+	mg_free_cmd(cmd);
+	return SWITCH_STATUS_FALSE;	
 }
 
 /*****************************************************************************************************************************/

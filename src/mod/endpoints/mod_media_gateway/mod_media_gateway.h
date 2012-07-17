@@ -139,6 +139,9 @@ mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
 mg_context_t *megaco_choose_context(megaco_profile_t *profile);
 void megaco_release_context(mg_context_t *ctx);
 
+megaco_profile_t*  megaco_get_profile_by_suId(SuId suId);
+mg_context_t *megaco_find_context_by_suid(SuId suId, uint32_t context_id);
+
 switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload);
 switch_status_t sng_mgco_start(megaco_profile_t* profile);
 switch_status_t sng_mgco_stop(megaco_profile_t* profile);
