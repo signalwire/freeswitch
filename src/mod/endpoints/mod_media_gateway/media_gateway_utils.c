@@ -80,6 +80,14 @@ switch_status_t mg_stack_free_mem(void* msg)
 
 /*****************************************************************************************************************************/
 
+/* TODO - Matt - to see if term is in service or not */
+switch_status_t mg_stack_termination_is_in_service(char* term_str,int len)
+{
+        return SWITCH_STATUS_SUCCESS;
+}
+
+/*****************************************************************************************************************************/
+
 S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, CmMemListCp   *memCp)
 {
 #ifdef GCP_ASN       
@@ -351,6 +359,55 @@ void mg_util_set_ctxt_string ( MgStr  *errTxt, MgMgcoContextId     *ctxtId)
 			"info, error-text is: %s\n", __PRETTY_FUNCTION__,errTxt->val);
 }
 
+/*****************************************************************************************************************************/
+
+void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd)
+{
+	MG_ZERO((errTxt->val), sizeof(errTxt->val));
+	errTxt->len = 0;
+
+	if ((!cmd) && (!cmd->u.mgCmdInd[0])) {
+		switch(cmd->u.mgCmdInd[0]->cmd.type.val)
+		{
+			case MGT_AUDITCAP:
+				errTxt->val[0]='\"';
+				errTxt->val[1]='A';
+				errTxt->val[2]='u';
+				errTxt->val[3]='d';
+				errTxt->val[4]='i';
+				errTxt->val[5]='t';
+				errTxt->val[6]='C';
+				errTxt->val[7]='a';
+				errTxt->val[8]='p';
+				errTxt->val[9]='a';
+				errTxt->val[10]='b';
+				errTxt->val[11]='i';
+				errTxt->val[12]='l';
+				errTxt->val[13]='i';
+				errTxt->val[14]='t';
+				errTxt->val[15]='y';
+				errTxt->val[16]='\"';
+				errTxt->len = 17;
+				break;
+
+			case MGT_MOVE:
+				errTxt->val[0]='\"';
+				errTxt->val[1]='M';
+				errTxt->val[2]='o';
+				errTxt->val[3]='v';
+				errTxt->val[4]='e';
+				errTxt->val[5]='\"';
+				errTxt->len = 6;
+				break;
+
+			default:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Not expected command Type[%d]\n",
+						__PRETTY_FUNCTION__,cmd->u.mgCmdInd[0]->cmd.type.val);
+
+				break;
+		}
+	}
+}
 
 /*****************************************************************************************************************************/
 void mgco_print_sdp(CmSdpInfoSet *sdp)
