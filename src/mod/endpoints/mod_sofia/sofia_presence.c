@@ -3979,10 +3979,10 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 		gw_sub_ptr->state = SUB_STATE_FAILED;
 
 		if (sofia_private) {
-			if (sofia_private->gateway->sub_nh) {
-				nua_handle_bind(sofia_private->gateway->sub_nh, NULL);
-				nua_handle_destroy(sofia_private->gateway->sub_nh);
-				sofia_private->gateway->sub_nh = NULL;
+			if (gw_sub_ptr->nh) {
+				nua_handle_bind(gw_sub_ptr->nh, NULL);
+				nua_handle_destroy(gw_sub_ptr->nh);
+				gw_sub_ptr->nh = NULL;
 			}
 		} else {
 			nua_handle_destroy(nh);
