@@ -137,8 +137,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
                 *szremote_port = switch_event_get_header_nil(var_event, kREMOTEPORT),
                 *codec  = switch_event_get_header_nil(var_event, kCODEC),
                 *szptime  = switch_event_get_header_nil(var_event, kPTIME),
-                *mode  = switch_event_get_header_nil(var_event, kMODE),
-                *szrfc2833_pt = switch_event_get_header_nil(var_event, kRFC2833PT),
+                //*mode  = switch_event_get_header_nil(var_event, kMODE),
+                //*szrfc2833_pt = switch_event_get_header_nil(var_event, kRFC2833PT),
                 *szrate = switch_event_get_header_nil(var_event, kRATE),
                 *szpt = switch_event_get_header_nil(var_event, kPT);
     
@@ -147,7 +147,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
                  remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
     
     int ptime  = !zstr(szptime) ? atoi(szptime) : 0,
-        rfc2833_pt = !zstr(szrfc2833_pt) ? atoi(szrfc2833_pt) : 0,
+        //rfc2833_pt = !zstr(szrfc2833_pt) ? atoi(szrfc2833_pt) : 0,
         rate = !zstr(szrate) ? atoi(szrate) : 8000,
         pt = !zstr(szpt) ? atoi(szpt) : 0;
 
@@ -196,7 +196,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 								   rate,
 								   ptime,
 								   1,
-								   SWITCH_CODEC_FLAG_ENCODE /*| SWITCH_CODEC_FLAG_DECODE*/,
+								   SWITCH_CODEC_FLAG_ENCODE /*| SWITCH_CODEC_FLAG_DECODE*/, 
 								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
             goto fail;
@@ -304,7 +304,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
         goto cng;
     }
     
-done:
     *frame = &tech_pvt->read_frame;
     return SWITCH_STATUS_SUCCESS;
     
