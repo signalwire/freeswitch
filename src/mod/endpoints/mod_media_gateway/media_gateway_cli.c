@@ -26,6 +26,7 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 	int 			argc;
 	char* 			argv[10];
 	char* 			dup = NULL;
+	int                     wild = 0x00;
 	megaco_profile_t* 	profile = NULL;
 
 	if (zstr(cmd)) {
@@ -107,12 +108,16 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 			}
 
 			if (profile) {
+				if(!zstr(argv[7]) && !strcasecmp(argv[7],"wild")){
+					wild = 0x01;
+				}
+
 				printf("Input to Send Service Change command : "
 						"Profile Name[%s], term-id[%s] method[%s] reason[%s] \n",
 						profile->name, argv[4], argv[5], argv[6]);
 
 				megaco_profile_release(profile);
-				mg_send_service_change(profile->idx, argv[4], atoi(argv[5]), atoi(argv[6]));
+				mg_send_service_change(profile->idx, argv[4], atoi(argv[5]), atoi(argv[6]),wild);
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}

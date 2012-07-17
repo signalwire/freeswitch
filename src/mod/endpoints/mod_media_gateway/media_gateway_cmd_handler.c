@@ -273,10 +273,14 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
         MgMgcoMediaDesc*  media;
 	MgMgcoCtxt     ctxt;
 	switch_status_t  ret;
+	uint8_t          wild = 0x00;
 
 	memset(&reply, 0, sizeof(reply));
 
 	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
+	wild 	   = auditReq->u.mgCmdReq[0]->wild.pres;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"%s :: wild card request = %s \n",__FUNCTION__,(1==wild)?"TRUE":"FALSE");
 
 	if(NOTPRSNT == audit->pres.pres){
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
@@ -497,6 +501,11 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 	reply.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
 	reply.cmdType.pres = PRSNT_NODEF;
 	reply.cmdType.val  = CH_CMD_TYPE_RSP;
+
+	if(wild){                
+		reply.u.mgCmdRsp[0]->wild.pres = PRSNT_NODEF;
+	}
+
 
 	/* send command reply */
 	sng_mgco_send_cmd(suId, &reply);
@@ -942,8 +951,11 @@ switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req)
 	int ret = 0x00;
 	MgMgcoTermId  *termId;
 	MgMgcoCtxt     ctxt;
+	uint8_t        wild = 0x00;
 
 	memset(&cmd,0, sizeof(cmd));
+
+	wild = req->u.mgCmdReq[0]->wild.pres;
 
 	/*copy transaction-id*/
 	memcpy(&cmd.transId, &req->transId,sizeof(MgMgcoTransId));
@@ -957,6 +969,10 @@ switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req)
 	/*fill response structue */
 	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&cmd.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
 		return ret;
+	}
+
+	if(wild){
+		cmd.u.mgCmdRsp[0]->wild.pres = PRSNT_NODEF;
 	}
 
 	cmd.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
@@ -1007,7 +1023,7 @@ U32 get_txn_id(){
 *	SuId 			- Service User ID for MG SAP - it will be same like mg_profile_t->idx (refer to media_gateway_xml.c->mg_sap_id)
 *	term_name 		- String format defined termination name
 */
-switch_status_t mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason)
+switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason,uint8_t wild) 
 {
 	MgMgcoSvcChgPar srvPar;
 	MgMgcoTermId*   termId;
@@ -1054,9 +1070,6 @@ switch_status_t mg_send_service_change(SuId suId, const char* term_name, uint8_t
 
 	/*mgUtlCpyMgMgcoSvcChgPar(&svc->parm, &srvPar, &request.u.mgCmdReq[0]->memCp);*/
 
-	printf("reason[%p = %s], len[%d]\n",svc->parm.reason.val, svc->parm.reason.val, svc->parm.reason.len);
-
-
 	if (mgUtlGrowList((void ***)&svc->termIdLst.terms, sizeof(MgMgcoTermIdLst),
 				&svc->termIdLst.num, &request.u.mgCmdReq[0]->memCp) != ROK)
 	{
@@ -1073,8 +1086,12 @@ switch_status_t mg_send_service_change(SuId suId, const char* term_name, uint8_t
 
 	mg_fill_mgco_termid(termId, (char*)term_name ,strlen(term_name), &request.u.mgCmdReq[0]->memCp);
 
+	if(wild){
+		request.u.mgCmdReq[0]->wild.pres = PRSNT_NODEF;
+	}
 
-	printf("reason[%p = %s], len[%d]\n",svc->parm.reason.val, svc->parm.reason.val, svc->parm.reason.len);
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Sending %s Service Change for termId[%s] with reason[%s], len[%d]\n",
+			((1==wild)?"WildCard":"Non Wild Card"), term_name, svc->parm.reason.val, svc->parm.reason.len);
 
 	sng_mgco_send_cmd(suId, &request);
 

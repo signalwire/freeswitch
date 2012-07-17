@@ -74,6 +74,7 @@ mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
 mg_context_t *megaco_choose_context(megaco_profile_t *profile)
 {
     mg_context_t *ctx;
+    int i = 0x0;;
     
     switch_thread_rwlock_wrlock(profile->contexts_rwlock);
     /* Try the next one */
@@ -86,7 +87,7 @@ mg_context_t *megaco_choose_context(megaco_profile_t *profile)
         if ((profile->contexts_bitmap[profile->next_context_id % 8] & (1 << (profile->next_context_id / 8))) == 0) {
             /* Found! */
             profile->contexts_bitmap[profile->next_context_id % 8] |= 1 << (profile->next_context_id / 8);
-            int i = profile->next_context_id % MG_CONTEXT_MODULO;
+            i = profile->next_context_id % MG_CONTEXT_MODULO;
             ctx = malloc(sizeof *ctx);
             ctx->context_id = profile->next_context_id;
             ctx->profile = profile;
