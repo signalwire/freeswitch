@@ -2489,9 +2489,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			tech_pvt->transports[LDL_TPORT_RTP].codec_index = -1;
 			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index = -1;
 
+			switch_set_flag(tech_pvt, TFLAG_SECURE);
 			mdl_build_crypto(tech_pvt, LDL_TPORT_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
 			mdl_build_crypto(tech_pvt, LDL_TPORT_VIDEO_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
-			switch_set_flag(tech_pvt, TFLAG_SECURE);
+
 
 
 			if (!(tech_pvt->transports[LDL_TPORT_RTP].local_port = switch_rtp_request_port(mdl_profile->ip))) {
