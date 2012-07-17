@@ -784,7 +784,7 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) error reading frame\n", switch_channel_get_name(channel));
 			return SWITCH_FALSE;
 		}
-		tone_detector_process_buffer(detector, frame.data, frame.samples, &detected_tone);
+		tone_detector_process_buffer(detector, frame->data, frame->samples, &detected_tone);
 		if (detected_tone) {
 			switch_event_t *event = NULL;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) DETECTED TONE: %s\n", switch_channel_get_name(channel), detected_tone);
@@ -796,20 +796,14 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 		}
 		break;
 	}
-	case SWITCH_ABC_TYPE_WRITE:
-		break;
-	case SWITCH_ABC_TYPE_WRITE_REPLACE:
-		break;
-	case SWITCH_ABC_TYPE_READ_REPLACE:
-		break;
-	case SWITCH_ABC_TYPE_READ_PING:
-		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		if (detector->spandsp_detector) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) destroying tone detector\n", switch_channel_get_name(channel));
 			tone_detector_destroy(detector);
 		}
 		break;
+    default:
+        break;
 	}
 	return SWITCH_TRUE;
 }
