@@ -492,8 +492,6 @@ switch_status_t load_configuration(switch_bool_t reload)
     spandsp_globals.ident = "SpanDSP Fax Ident";
     spandsp_globals.header = "SpanDSP Fax Header";
     spandsp_globals.timezone = "";
-
-	/* TODO make configuration param */
 	spandsp_globals.tonedebug = 0;
 
 	if ((xml = switch_xml_open_cfg("spandsp.conf", &cfg, NULL)) || (xml = switch_xml_open_cfg("fax.conf", &cfg, NULL))) {
@@ -592,6 +590,16 @@ switch_status_t load_configuration(switch_bool_t reload)
 
         /* Configure call progress detector */
         if ((callprogress = switch_xml_child(cfg, "descriptors"))) {
+			/* check if debugging is enabled */
+			const char *debug = switch_xml_attr(callprogress, "debug-level");
+			if (!zstr(debug) && switch_is_number(debug)) {
+				int debug_val = atoi(debug);
+				if (debug_val > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting tone detector debug-level to : %d\n", debug_val);
+					spandsp_globals.tonedebug = debug_val;
+				}
+			}
+
             for (xdescriptor = switch_xml_child(callprogress, "descriptor"); xdescriptor; xdescriptor = switch_xml_next(xdescriptor)) {
                 const char *name = switch_xml_attr(xdescriptor, "name");
                 const char *tone_name = NULL;
