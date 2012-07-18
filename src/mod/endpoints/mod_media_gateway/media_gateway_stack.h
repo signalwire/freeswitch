@@ -160,6 +160,9 @@ void mg_fill_null_context(MgMgcoContextId* ctxt);
 switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason,uint8_t wild); 
 switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, uint8_t cmdType);
 
+switch_status_t mg_send_oos_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);
+switch_status_t mg_send_ins_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);
+
 
 
 /****************************************************************************************************************/

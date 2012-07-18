@@ -521,6 +521,7 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 				(MGT_TERMID_ROOT == termId->type.val))  &&
 			((NOTPRSNT != ctxtId->type.pres)        &&
 			 (MGT_CXTID_OTHER == ctxtId->type.val))) {
+
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,	
 				"failed, Term: Invalid combination, ROOT Term with OTHER CONTEXT\n");
 
@@ -1197,6 +1198,37 @@ switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req)
 U32 get_txn_id(){
 	outgoing_txn_id++;
 	return outgoing_txn_id;
+}
+/*****************************************************************************************************************************/
+/* Note : API to send Service Change when termination is coming up(in-service) */
+/* INPUT : MG Profile structure and termination name */
+/* wild flag will tell if service change request needs to be in W-SC format as we can have W-SC=A01* or SC=A01* */
+switch_status_t mg_send_ins_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild)
+{
+	switch_assert(term_name);
+	switch_assert(mg_profile);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+			  "Sending In-Service Service Change for termination[%s] configured in mg profile[%s], suId[%d]\n", 
+			   term_name, mg_profile->name, mg_profile->idx);
+
+	return mg_send_service_change(mg_profile->idx, term_name, MGT_SVCCHGMETH_RESTART, MG_SVC_REASON_900_RESTORED, wild);
+}
+
+/*****************************************************************************************************************************/
+/* Note : API to send Service Change when termination is going down (out-of-service) */
+/* INPUT : MG Profile structure and termination name */
+/* wild flag will tell if service change request needs to be in W-SC format as we can have W-SC=A01* or SC=A01* */
+switch_status_t mg_send_oos_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild)
+{
+	switch_assert(term_name);
+	switch_assert(mg_profile);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+			  "Sending Out-Of-Service Service Change for termination[%s] configured in mg profile[%s], suId[%d]\n", 
+			   term_name, mg_profile->name, mg_profile->idx);
+
+	return mg_send_service_change(mg_profile->idx, term_name, MGT_SVCCHGMETH_FORCED, MG_SVC_REASON_905_TERM_OOS, wild);
 }
 /*****************************************************************************************************************************/
 /* Note : API to send Service Change */
