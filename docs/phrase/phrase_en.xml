@@ -382,6 +382,7 @@
       <prompt phrase="Please enter the phone number." filename="ivr-please_enter_the_phone_number.wav"/>
       <prompt phrase="Please state your name and the reason for your call." filename="ivr-please_state_your_name_and_reason_for_calling.wav"/>
       <prompt phrase="To accept, press 1. To reject, press 2. To send to voicemail, press 3." filename="ivr-accept_reject_voicemail.wav"/>
+      <prompt phrase="To accept, press 1." filename="ivr-to_accept_press_one.wav"/>
       <prompt phrase="Incoming call." filename="ivr-incoming_call.wav"/>
       <prompt phrase="Thank you for calling." filename="ivr-thank_you_for_calling.wav"/>
       <prompt phrase="Please stay on the line. Your call will be answered momentarily." filename="ivr-stay_on_line_call_answered_momentarily.wav"/>
@@ -567,9 +568,9 @@
       <prompt phrase="...the exit sound prompt." filename="ivr-exit_sound_prompt.wav"/>
       <!-- The following phrases still need to be recorded -->
       <prompt phrase="That person does not accept anonymous calls." filename="ivr-not_accept_anonymous_calls.wav"/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
+      <prompt phrase="To accept, press..." filename="ivr-to_accept_press.wav"/>
+      <prompt phrase="To reject..." filename="ivr-to_reject.wav"/>
+      <prompt phrase="...hang up." filename="ivr-hang_up.wav"/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
