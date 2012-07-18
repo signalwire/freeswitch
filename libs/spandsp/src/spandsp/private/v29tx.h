@@ -47,21 +47,23 @@ struct v29_tx_state_s
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 
+#if defined(SPANDSP_USE_FIXED_POINT)
     /*! \brief Gain required to achieve the specified output power, not allowing
                for the size of the current constellation. */
     float base_gain;
     /*! \brief Gain required to achieve the specified output power, allowing
                for the size of the current constellation. */
-#if defined(SPANDSP_USE_FIXED_POINT)
     int32_t gain;
-#else
-    float gain;
-#endif
-
-    /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
-#if defined(SPANDSP_USE_FIXED_POINT)
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
     complexi16_t rrc_filter[2*V29_TX_FILTER_STEPS];
 #else
+    /*! \brief Gain required to achieve the specified output power, not allowing
+               for the size of the current constellation. */
+    float base_gain;
+    /*! \brief Gain required to achieve the specified output power, allowing
+               for the size of the current constellation. */
+    float gain;
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
     complexf_t rrc_filter[2*V29_TX_FILTER_STEPS];
 #endif
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */

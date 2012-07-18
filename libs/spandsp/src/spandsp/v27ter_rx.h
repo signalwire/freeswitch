@@ -126,7 +126,11 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx_fillin(v27ter_rx_state_t *s, int len);
     \brief Get a snapshot of the current equalizer coefficients.
     \param coeffs The vector of complex coefficients.
     \return The number of coefficients in the vector. */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+SPAN_DECLARE(int) v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexi16_t **coeffs);
+#else
 SPAN_DECLARE(int) v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexf_t **coeffs);
+#endif
 
 /*! Get the current received carrier frequency.
     \param s The modem context.

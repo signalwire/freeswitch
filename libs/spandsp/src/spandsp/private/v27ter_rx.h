@@ -70,7 +70,7 @@ struct v27ter_rx_state_s
     void *qam_user_data;
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
     int16_t agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     int16_t agc_scaling_save;
@@ -95,7 +95,7 @@ struct v27ter_rx_state_s
     /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
     int16_t rrc_filter[V27TER_RX_FILTER_STEPS];
 #else
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
     float agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     float agc_scaling_save;

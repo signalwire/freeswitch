@@ -99,6 +99,7 @@ struct fax_modems_state_s
     /*! \brief The current receive missing signal fill-in handler */
     span_rx_fillin_handler_t rx_fillin_handler;
     void *rx_user_data;
+    void *rx_fillin_user_data;
 
     /*! \brief The current transmit signal handler */
     span_tx_handler_t tx_handler;
@@ -109,12 +110,12 @@ struct fax_modems_state_s
     span_tx_handler_t next_tx_handler;
     void *next_tx_user_data;
 
-    /*! The current bit rate of the transmitter. */
+    /*! \brief The current bit rate of the transmitter. */
     int tx_bit_rate;
-    /*! The current bit rate of the receiver. */
+    /*! \brief The current bit rate of the receiver. */
     int rx_bit_rate;
 
-    /*! If TRUE, transmission is in progress */
+    /*! \brief If TRUE, transmission is in progress */
     int transmit;
     /*! \brief Audio logging file handle for received audio. */
     int audio_rx_log;

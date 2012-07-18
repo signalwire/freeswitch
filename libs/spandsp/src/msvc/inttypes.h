@@ -43,6 +43,9 @@ typedef __int64		        int64_t;
 #if !defined(UINT16_MAX)
 #define UINT16_MAX  0xFFFF
 #endif
+#if !defined(UINT32_MAX)
+#define UINT32_MAX	0xFFFFFFFF
+#endif
 
 #if !defined(INT16_MAX)
 #define INT16_MAX   0x7FFF 
