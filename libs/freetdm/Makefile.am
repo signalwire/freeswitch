@@ -151,7 +151,7 @@ ftmod_zt_la_LIBADD  = libfreetdm.la
 
 ftmod_skel_la_SOURCES = $(SRC)/ftmod/ftmod_skel/ftmod_skel.c
 ftmod_skel_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS)
-ftmod_skel_la_LDFLAGS = -module -avoid-version
+ftmod_skel_la_LDFLAGS = -shared -module -avoid-version
 ftmod_skel_la_LIBADD  = libfreetdm.la
 
 ftmod_analog_la_SOURCES = $(SRC)/ftmod/ftmod_analog/ftmod_analog.c
