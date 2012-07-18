@@ -4646,7 +4646,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 
 static ftdm_status_t load_config(void)
 {
-	const char const cfg_name[] = "freetdm.conf";
+	const char cfg_name[] = "freetdm.conf";
 	ftdm_config_t cfg;
 	char *var, *val;
 	int catno = -1;

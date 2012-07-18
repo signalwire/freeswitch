@@ -73,7 +73,7 @@ struct v17_rx_state_s
     void *qam_user_data;
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
     float agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     float agc_scaling_save;
@@ -110,7 +110,7 @@ struct v17_rx_state_s
     /*! \brief A pointer to the current constellation. */
     const complexi16_t *constellation;
 #else
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
     float agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     float agc_scaling_save;
@@ -150,7 +150,7 @@ struct v17_rx_state_s
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
 
-    /*! \brief The state of the differential decoder */
+    /*! \brief The current state of the differential decoder */
     int diff;
     /*! \brief The register for the data scrambler. */
     uint32_t scramble_reg;
@@ -228,7 +228,6 @@ struct v17_rx_state_s
                from the last states of the trellis. */
     float distances[8];
 #endif
-
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };

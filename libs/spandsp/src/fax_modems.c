@@ -100,6 +100,7 @@ SPAN_DECLARE_NONSTD(int) fax_modems_v17_v21_rx(void *user_data, const int16_t am
         s->rx_handler = (span_rx_handler_t) &fsk_rx;
         s->rx_fillin_handler = (span_rx_fillin_handler_t) &fsk_rx_fillin;
         s->rx_user_data = &s->v21_rx;
+        s->rx_fillin_user_data = &s->v21_rx;
     }
     /*endif*/
     return 0;
@@ -131,6 +132,7 @@ SPAN_DECLARE_NONSTD(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t
         s->rx_handler = (span_rx_handler_t) &fsk_rx;
         s->rx_fillin_handler = (span_rx_fillin_handler_t) &fsk_rx_fillin;
         s->rx_user_data = &s->v21_rx;
+        s->rx_fillin_user_data = &s->v21_rx;
     }
     /*endif*/
     return 0;
@@ -162,6 +164,7 @@ SPAN_DECLARE_NONSTD(int) fax_modems_v29_v21_rx(void *user_data, const int16_t am
         s->rx_handler = (span_rx_handler_t) &fsk_rx;
         s->rx_fillin_handler = (span_rx_fillin_handler_t) &fsk_rx_fillin;
         s->rx_user_data = &s->v21_rx;
+        s->rx_fillin_user_data = &s->v21_rx;
     }
     /*endif*/
     return 0;
@@ -201,6 +204,7 @@ static void v17_rx_status_handler(void *user_data, int status)
         s->rx_handler = (span_rx_handler_t) &v17_rx;
         s->rx_fillin_handler = (span_rx_fillin_handler_t) &v17_rx_fillin;
         s->rx_user_data = &s->fast_modems.v17_rx;
+        s->rx_fillin_user_data = &s->fast_modems.v17_rx;
         break;
     }
     /*endswitch*/
@@ -219,6 +223,7 @@ static void v27ter_rx_status_handler(void *user_data, int status)
         s->rx_handler = (span_rx_handler_t) &v27ter_rx;
         s->rx_fillin_handler = (span_rx_fillin_handler_t) &v27ter_rx_fillin;
         s->rx_user_data = &s->fast_modems.v27ter_rx;
+        s->rx_fillin_user_data = &s->fast_modems.v27ter_rx;
         break;
     }
     /*endswitch*/
@@ -237,6 +242,7 @@ static void v29_rx_status_handler(void *user_data, int status)
         s->rx_handler = (span_rx_handler_t) &v29_rx;
         s->rx_fillin_handler = (span_rx_fillin_handler_t) &v29_rx_fillin;
         s->rx_user_data = &s->fast_modems.v29_rx;
+        s->rx_fillin_user_data = &s->fast_modems.v29_rx;
         break;
     }
     /*endswitch*/
@@ -326,6 +332,7 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
     s->rx_handler = (span_rx_handler_t) &span_dummy_rx;
     s->rx_fillin_handler = (span_rx_fillin_handler_t) &span_dummy_rx;
     s->rx_user_data = NULL;
+    s->rx_fillin_user_data = NULL;
     s->tx_handler = (span_tx_handler_t) &silence_gen;
     s->tx_user_data = &s->silence_gen;
     return s;

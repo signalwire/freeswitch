@@ -65,6 +65,12 @@ enum
     V22BIS_TX_TRAINING_STAGE_PARKED
 };
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+extern const complexi16_t v22bis_constellation[16];
+#else
+extern const complexf_t v22bis_constellation[16];
+#endif
+
 /*!
     V.22bis modem descriptor. This defines the working state for a single instance
     of a V.22bis modem.
@@ -93,10 +99,11 @@ struct v22bis_state_s
     /* Receive section */
     struct
     {
-        /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
+        /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
         int16_t rrc_filter[V22BIS_RX_FILTER_STEPS];
 #else
+        /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
         float rrc_filter[V22BIS_RX_FILTER_STEPS];
 #endif
         /*! \brief Current offset into the RRC pulse shaping filter buffer. */
@@ -156,7 +163,9 @@ struct v22bis_state_s
         /*! \brief The equalizer signal buffer. */
         complexi_t eq_buf[V22BIS_EQUALIZER_MASK + 1];
 #else
+        /*! \brief The adaptive equalizer coefficients. */
         complexf_t eq_coeff[2*V22BIS_EQUALIZER_LEN + 1];
+        /*! \brief The equalizer signal buffer. */
         complexf_t eq_buf[V22BIS_EQUALIZER_MASK + 1];
 #endif
         /*! \brief Current offset into the equalizer buffer. */
@@ -186,7 +195,7 @@ struct v22bis_state_s
         /*! \brief The gain factor needed to achieve the specified output power. */
         float gain;
 
-        /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
+        /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
         complexf_t rrc_filter[2*V22BIS_TX_FILTER_STEPS];
         /*! \brief Current offset into the RRC pulse shaping filter buffer. */
         int rrc_filter_step;

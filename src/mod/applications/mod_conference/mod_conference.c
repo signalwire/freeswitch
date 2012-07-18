@@ -8290,14 +8290,14 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	conference->name = switch_core_strdup(conference->pool, name);
 
-	if (presence_id && (name_domain = strchr(presence_id, '@'))) {
-		name_domain++;
-		conference->domain = switch_core_strdup(conference->pool, name_domain);
-	} else if ((name_domain = strchr(conference->name, '@'))) {
+	if ((name_domain = strchr(conference->name, '@'))) {
 		name_domain++;
 		conference->domain = switch_core_strdup(conference->pool, name_domain);
 	} else if (domain) {
 		conference->domain = switch_core_strdup(conference->pool, domain);
+	} else if (presence_id && (name_domain = strchr(presence_id, '@'))) {
+		name_domain++;
+		conference->domain = switch_core_strdup(conference->pool, name_domain);
 	} else {
 		conference->domain = "cluecon.com";
 	}

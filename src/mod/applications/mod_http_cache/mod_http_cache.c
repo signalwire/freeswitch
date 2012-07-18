@@ -934,7 +934,7 @@ SWITCH_STANDARD_API(http_cache_tryget)
 	switch_memory_pool_t *pool = NULL;
 	char *filename;
 
-	if (zstr(cmd) || strncmp("http://", cmd, strlen("http://"))) {
+	if (!isUrl(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", HTTP_GET_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}

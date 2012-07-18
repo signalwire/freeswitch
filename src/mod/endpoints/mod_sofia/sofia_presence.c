@@ -3732,7 +3732,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 				now = switch_epoch_time_now(NULL);
 				sql = switch_mprintf("insert into sip_dialogs (sip_from_user,sip_from_host,call_info,call_info_state,hostname,expires,rcd,profile_name) "
-									 "values ('%q','%q','%q','seized','%q',%ld,%ld,'%q')",
+									 "values ('%q','%q','%q','seized','%q',%"SWITCH_TIME_T_FMT",%ld,'%q')",
 									 to_user, to_host, switch_str_nil(p), mod_sofia_globals.hostname, 
 									 switch_epoch_time_now(NULL) + exp_delta, (long)now, profile->name);
 
@@ -3979,10 +3979,10 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 		gw_sub_ptr->state = SUB_STATE_FAILED;
 
 		if (sofia_private) {
-			if (sofia_private->gateway->sub_nh) {
-				nua_handle_bind(sofia_private->gateway->sub_nh, NULL);
-				nua_handle_destroy(sofia_private->gateway->sub_nh);
-				sofia_private->gateway->sub_nh = NULL;
+			if (gw_sub_ptr->nh) {
+				nua_handle_bind(gw_sub_ptr->nh, NULL);
+				nua_handle_destroy(gw_sub_ptr->nh);
+				gw_sub_ptr->nh = NULL;
 			}
 		} else {
 			nua_handle_destroy(nh);

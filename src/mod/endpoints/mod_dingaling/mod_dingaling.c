@@ -2489,9 +2489,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			tech_pvt->transports[LDL_TPORT_RTP].codec_index = -1;
 			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index = -1;
 
+			switch_set_flag(tech_pvt, TFLAG_SECURE);
 			mdl_build_crypto(tech_pvt, LDL_TPORT_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
 			mdl_build_crypto(tech_pvt, LDL_TPORT_VIDEO_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
-			switch_channel_set_flag(tech_pvt->channel, TFLAG_SECURE);
 
 
 
@@ -4101,7 +4101,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 				mdl_build_crypto(tech_pvt, LDL_TPORT_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
 				mdl_build_crypto(tech_pvt, LDL_TPORT_VIDEO_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
-				switch_channel_set_flag(tech_pvt->channel, TFLAG_SECURE);
+				switch_set_flag(tech_pvt, TFLAG_SECURE);
 
 				if (!(tech_pvt->transports[LDL_TPORT_RTP].local_port = switch_rtp_request_port(profile->ip))) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "No RTP port available!\n");

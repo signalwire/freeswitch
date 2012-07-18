@@ -417,11 +417,11 @@ static int msn_filter_foreach(ftdm_libpri_data_t *isdn_data, int (* func)(const 
 	ftdm_mutex_lock(isdn_data->msn_mutex);
 
 	for (iter = hashtable_first(isdn_data->msn_hash); iter; iter = hashtable_next(iter)) {
-		const char *msn = NULL;
+		const void *msn = NULL;
 
-		hashtable_this(iter, (const void **)&msn, NULL, NULL);
+		hashtable_this(iter, &msn, NULL, NULL);
 
-		if (ftdm_strlen_zero(msn))
+		if (ftdm_strlen_zero((const char *)msn))
 			break;
 		if ((ret = func(msn, data)) != FTDM_SUCCESS)
 			break;

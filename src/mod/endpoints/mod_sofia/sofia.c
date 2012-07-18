@@ -2510,6 +2510,7 @@ static void parse_gateway_subscriptions(sofia_profile_t *profile, sofia_gateway_
 
 		if ((gw_sub = switch_core_alloc(profile->pool, sizeof(*gw_sub)))) {
 			char *expire_seconds = "3600", *retry_seconds = "30", *content_type = "NO_CONTENT_TYPE";
+			uint32_t username_in_request = 0;
 			char *event = (char *) switch_xml_attr_soft(subscription_tag, "event");
 			gw_sub->event = switch_core_strdup(gateway->pool, event);
 			gw_sub->gateway = gateway;
@@ -2524,6 +2525,8 @@ static void parse_gateway_subscriptions(sofia_profile_t *profile, sofia_gateway_
 					retry_seconds = val;
 				} else if (!strcmp(var, "content-type")) {
 					content_type = val;
+				} else if (!strcmp(var, "username-in-request")) {
+					username_in_request = switch_true(val);
 				}
 			}
 
@@ -2539,6 +2542,13 @@ static void parse_gateway_subscriptions(sofia_profile_t *profile, sofia_gateway_
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Freq: %d.  Setting Register-Frequency to 3600\n", gw_sub->freq);
 				gw_sub->freq = 3600;
 			}
+
+			if(username_in_request) {
+				gw_sub->request_uri = gateway->register_to;
+			} else {
+				gw_sub->request_uri = gateway->register_url;
+			}
+
 			gw_sub->freq -= 2;
 			gw_sub->content_type = switch_core_strdup(gateway->pool, content_type);
 			gw_sub->next = gateway->subscriptions;
@@ -2741,12 +2751,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				su_guid_generate(guid);
 				su_guid_sprintf(str_guid, su_guid_strlen + 1, guid);
 				str_rfc_5626 = switch_core_sprintf(gateway->pool, ";reg-id=%s;+sip.instance=\"<urn:uuid:%s>\"",reg_id,str_guid);
-			}
-
-
-			if ((gw_subs_tag = switch_xml_child(gateway_tag, "subscriptions"))) {
-				parse_gateway_subscriptions(profile, gateway, gw_subs_tag);
-			}
+			}			
 
 			if (zstr(realm)) {
 				if (zstr(proxy)) {
@@ -2960,7 +2965,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				gateway->freq = 3600;
 			}
 
-
+			if ((gw_subs_tag = switch_xml_child(gateway_tag, "subscriptions"))) {
+				parse_gateway_subscriptions(profile, gateway, gw_subs_tag);
+			}
+			
 			sofia_reg_add_gateway(profile, gateway->name, gateway);
 			
 		}
@@ -7406,6 +7414,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Transfer-Exten", exten);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Full-Refer-To", full_ref_to);
 				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Blind Transfer 1 Legged calls\n");

@@ -34,7 +34,7 @@
 	<param name="file-prefix"	value="faxrx"/>
     </fax-settings>
 
-    <descriptors>
+    <descriptors debug-level="0">
 
      <!-- These tones are defined in Annex to ITU Operational Bulletin No. 781 - 1.II.2003 -->
      <!-- Various Tones Used in National Networks (According to ITU-T Recommendation E.180)(03/1998) -->

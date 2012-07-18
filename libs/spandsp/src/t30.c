@@ -5633,7 +5633,7 @@ SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_
         break;
     default:
         span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get_chunk in bad state %d\n", s->state);
-        len = 0;
+        len = -1;
         break;
     }
     return len;

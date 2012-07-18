@@ -46,10 +46,6 @@
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 
-#ifndef UINT32_MAX
-#define UINT32_MAX 0xffffffff
-#endif
-
 /* Image length update status */
 enum
 {
