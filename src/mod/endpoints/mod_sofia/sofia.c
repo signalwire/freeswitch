@@ -7414,6 +7414,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Transfer-Exten", exten);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Full-Refer-To", full_ref_to);
 				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot Blind Transfer 1 Legged calls\n");
