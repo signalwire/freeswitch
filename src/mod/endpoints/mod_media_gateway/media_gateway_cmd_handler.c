@@ -280,6 +280,271 @@ error:
 }
 
 /*****************************************************************************************************************************/
+
+/*
+*
+*       Fun:  handle_mg_modify_cmd
+*
+*       Desc: this api will handle the Modify request received from MG stack 
+*
+*
+*/
+switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd)
+{
+	MgMgcoContextId  *ctxtId;
+	int 		  descId;
+	MgStr      	  errTxt;
+	MgMgcoInd  	  *mgErr;
+	MgMgcoTermId     *termId;
+	MgMgcoTermIdLst*  termLst;
+	int 		  err_code;
+	int 		  i;
+	int 		  j;
+	int 		  fmtCnt;
+	MgMgcoAmmReq 	  *cmd = &inc_cmd->u.mgCmdInd[0]->cmd.u.mod;
+	U32 		   txn_id = inc_cmd->transId.val;
+	MgMgcoLocalDesc   *local;
+	MgMgcoRemoteDesc  *remote;
+	MgMgcoLclCtlDesc  *locCtl;
+	CmSdpInfo 	  *sdp;
+	MgMgcoLocalParm   *lclParm;
+	MgMgcoTermStateDesc  *tstate;
+	CmSdpMedFmtRtpList      *fmt_list;
+	MgMgcoTermStateParm *tsp;
+	TknU8 *fmt;
+	CmSdpMedProtoFmts *format;
+
+	/********************************************************************/
+	ctxtId  = &inc_cmd->contextId;
+	termLst = mg_get_term_id_list(inc_cmd);
+	termId  = termLst->terms[0];
+	/* For Matt - termId->name.lcl.val - to get the termination id name */
+
+	/********************************************************************/
+	/* Validation *******************************************/
+	/********************************************************************/
+
+	/*** CHOOSE Context NOT ALLOWED ***/
+	if ((NOTPRSNT != ctxtId->type.pres)          &&
+			(MGT_CXTID_CHOOSE == ctxtId->type.val))
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+				"Modify request processing failure,  CHOOSE Context should not present in Modify\n");
+
+		err_code = MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER;
+		mg_util_set_ctxt_string(&errTxt, ctxtId);
+		goto error;
+	}
+	/***  CHOOSE Termination NOT ALLOWED **/
+	else if ((NOTPRSNT != termId->type.pres)          &&
+			(MGT_TERMID_CHOOSE == termId->type.val))
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+				"Modify request processing failure,  CHOOSE Termination should not present in Modify\n");
+		
+		err_code = MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER;
+		mg_util_set_term_string(&errTxt,termId);
+		goto error;
+	}
+
+	/********************************************************************/
+	/* context id presence check is already being done, we are here it means context-id requested in megaco message is present */ 
+
+	/* Matt - to check if we have terminations in the context */
+
+	/* TODO - Matt */
+
+	/* Matt to indicate ERROR - If there is no terminations in requested context */ 
+
+	/* Kapil - If there is an error - send response back to MG stack with MGT_MGCO_RSP_CODE_NO_TERM_CTXT error code*/
+
+	/********************************************************************/
+	
+
+	for (descId = 0; descId < cmd->dl.num.val; descId++) {
+		switch (cmd->dl.descs[descId]->type.val) {
+			case MGT_MEDIADESC:
+				{
+					int mediaId;
+					for (mediaId = 0; mediaId < cmd->dl.descs[descId]->u.media.num.val; mediaId++) {
+						MgMgcoMediaPar *mediaPar = cmd->dl.descs[descId]->u.media.parms[mediaId];
+						switch (mediaPar->type.val) {
+							case MGT_MEDIAPAR_LOCAL:
+								{
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCAL");
+									/* Matt - check local descriptor processing */
+									local = &mediaPar->u.local;
+									sdp = local->sdp.info[0];
+									for (i = 0; i < sdp->mediaDescSet.numComp.val; i++) {
+										/* sdp formats  */
+										for (j = 0; j <
+												sdp->mediaDescSet.mediaDesc[i]->field.par.numProtFmts.val; j++)
+										{
+											format = sdp->mediaDescSet.mediaDesc[i]->field.par.pflst[j];
+											/* Matt - format has field for T38 also  */
+											if ((format->protType.pres != NOTPRSNT) &&
+													(format->protType.val == CM_SDP_MEDIA_PROTO_RTP)) {
+
+												/* protocol type RTP */
+												fmt_list = &format->u.rtp;
+
+												/* print format */
+												for(fmtCnt = 0; fmtCnt <  fmt_list->num.val; fmtCnt++){
+													fmt = &fmt_list->fmts[i]->val;
+													if(fmt->pres == NOTPRSNT) continue;
+													printf("Format [%d]\n", fmt->val);
+												}
+											}
+										}
+									}
+
+									break;
+								}
+
+							case MGT_MEDIAPAR_REMOTE:
+								{
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_REMOTE");
+									/* Matt - check remote descriptor processing */
+									remote = &mediaPar->u.remote;
+									sdp = remote->sdp.info[0];
+									/* for Matt - same like local descriptor */
+									break;
+								}
+
+							case MGT_MEDIAPAR_LOCCTL:
+								{
+									/* Matt - check Local Control descriptor processing */
+									locCtl = &mediaPar->u.locCtl;
+									for (i = 0; i < locCtl->num.val; i++){
+										lclParm = locCtl->parms[i];
+										if (PRSNT_NODEF == lclParm->type.pres){
+											switch(lclParm->type.val)
+											{
+												case MGT_LCLCTL_MODE:
+													{
+														/* Mode Property */
+														printf("MGT_LCLCTL_MODE - Mode value [%d]\n", lclParm->u.mode.val);
+														break;
+													}
+												case MGT_LCLCTL_RESVAL:
+													{
+														/* Reserve Value */
+														printf("MGT_LCLCTL_RESVAL: Reserve Value[%d] \n", lclParm->u.resVal.val);
+														break;
+													}
+												case MGT_LCLCTL_RESGRP:
+													{
+														/* Reserve group */
+														printf("MGT_LCLCTL_RESGRP: Reserve Group[%d]\n", lclParm->u.resGrp.val);
+														break;
+													}
+												case MGT_LCLCTL_PROPPARM:
+													{
+														/* Properties (of a termination) */
+														/* Matt - See how we can apply this to a termination */
+														printf("MGT_LCLCTL_PROPPARM: \n");
+														break;
+													}
+												default:
+													printf("Invalid local control descriptor type[%d]\n",lclParm->type.val);
+													break;
+											}
+										}
+									}
+
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCCTL");
+									break;
+								}
+							case MGT_MEDIAPAR_TERMST:
+								{
+									/* Matt - apply termination state descriptor */
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_TERMST");
+									tstate = &mediaPar->u.tstate;	
+									for (i = 0; i < tstate->numComp.val; i++)
+									{
+										/* Matt to see how to apply below descriptors to a termination */
+										tsp = tstate->trmStPar[i];
+										if (PRSNT_NODEF == tsp->type.pres) {
+											switch(tsp->type.val)
+											{
+												case MGT_TERMST_PROPLST:
+													{
+														/* Matt to see how to apply properties to a termination */
+														/* Properties of a termination */
+														printf("MGT_TERMST_PROPLST:\n");
+														break;
+													}
+												case MGT_TERMST_EVTBUFCTL:
+													{
+														/* Event /buffer Control Properties */
+														printf(" MGT_TERMST_EVTBUFCTL: value[%d]\n", tsp->u.evtBufCtl.val);
+														break;
+													}
+												case MGT_TERMST_SVCST:
+													{
+														/* Service State Properties */
+														printf(" MGT_TERMST_SVCST: value[%d]\n", tsp->u.svcState.val);
+														break;
+													}
+												default:
+													printf("Invalid termination state descriptor type[%d]\n",tsp->type.val);
+													break;
+											}
+										}
+									}
+									break;
+								}
+							case MGT_MEDIAPAR_STRPAR:
+								{
+									MgMgcoStreamDesc *mgStream = &mediaPar->u.stream;
+
+									if (mgStream->sl.remote.pres.pres) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
+										mgco_print_sdp(&mgStream->sl.remote.sdp);
+									}
+
+									if (mgStream->sl.local.pres.pres) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
+										mgco_print_sdp(&mgStream->sl.local.sdp);
+									}
+
+									break;
+								}
+						}
+					}
+				}
+			case MGT_MODEMDESC:
+			case MGT_MUXDESC:
+			case MGT_REQEVTDESC:
+			case MGT_EVBUFDESC:
+			case MGT_SIGNALSDESC:
+			case MGT_DIGMAPDESC:
+			case MGT_AUDITDESC:
+			case MGT_STATSDESC:
+				break;
+		}
+	}
+
+	/* Matt - to provide the response SDP structure which needs to fill in Modify command response */
+
+	/* Matt - to indicate if there is any failure while processing add message */
+	
+	/* Kapil - to return error if there is any failure based on Matt's indication */
+
+	/* Kapil - to fill the response structure and call the response API to send Modify response */
+	
+
+	return SWITCH_STATUS_SUCCESS;	
+error:
+	if (SWITCH_STATUS_SUCCESS == 
+			mg_build_mgco_err_request(&mgErr, txn_id, ctxtId, err_code, &errTxt)) {
+		sng_mgco_send_err(mg_profile->idx, mgErr);
+	}
+	mg_free_cmd(cmd);
+	return SWITCH_STATUS_FALSE;	
+}
+
+/*****************************************************************************************************************************/
 /*
 *
 *       Fun:  mg_send_add_rsp
