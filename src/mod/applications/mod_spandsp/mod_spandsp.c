@@ -266,19 +266,30 @@ SWITCH_STANDARD_API(start_tone_detect_api)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_core_session_t *psession = NULL;
+	char *puuid = NULL, *descriptor = NULL;
 
 	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR missing uuid\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	puuid = strdup((char *)cmd);
+
+	if ((descriptor = strchr(puuid, ' '))) {
+		*descriptor++ = '\0';
+	}
+
+	if (zstr(descriptor)) {
 		stream->write_function(stream, "-ERR missing descriptor name\n");
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
-	if (!(psession = switch_core_session_locate(cmd))) {
+	if (!(psession = switch_core_session_locate(puuid))) {
 		stream->write_function(stream, "-ERR Cannot locate session\n");
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
-
-	status = callprogress_detector_start(psession, cmd);
+	status = callprogress_detector_start(psession, descriptor);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK started\n");
@@ -288,10 +299,12 @@ SWITCH_STANDARD_API(start_tone_detect_api)
 
 	switch_core_session_rwunlock(psession);
 
+ end:
+
+	switch_safe_free(puuid);
+
 	return status;
 }
-
-
 
 /**
  * Stop tone detector application
@@ -319,7 +332,7 @@ SWITCH_STANDARD_API(stop_tone_detect_api)
 	switch_core_session_t *psession = NULL;
 
 	if (zstr(cmd)) {
-		stream->write_function(stream, "-ERR missing descriptor name\n");
+		stream->write_function(stream, "-ERR missing session UUID\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -732,10 +745,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 	if (mod_spandsp_dsp_load(module_interface, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load or process spandsp.conf, not adding tone_detect applications\n");
 	} else {
-		SWITCH_ADD_APP(app_interface, "start_tone_detect", "Start background tone detection with cadence", "", start_tone_detect_app, "[name]", SAF_NONE);
+		SWITCH_ADD_APP(app_interface, "start_tone_detect", "Start background tone detection with cadence", "", start_tone_detect_app, "<name>", SAF_NONE);
 		SWITCH_ADD_APP(app_interface, "stop_tone_detect", "Stop background tone detection with cadence", "", stop_tone_detect_app, "", SAF_NONE);
-		SWITCH_ADD_API(api_interface, "start_tone_detect", "Start background tone detection with cadence", start_tone_detect_api, "[name]");
-		SWITCH_ADD_API(api_interface, "stop_tone_detect", "Stop background tone detection with cadence", stop_tone_detect_api, "");
+		SWITCH_ADD_API(api_interface, "start_tone_detect", "Start background tone detection with cadence", start_tone_detect_api, "<uuid> <name>");
+		SWITCH_ADD_API(api_interface, "stop_tone_detect", "Stop background tone detection with cadence", stop_tone_detect_api, "<uuid>");
 	}
 
 
