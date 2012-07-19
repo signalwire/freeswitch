@@ -40,8 +40,8 @@
 typedef struct {
 	switch_core_session_t *session;
 	v18_state_t *tdd_state;
-    int head_lead;
-    int tail_lead;
+	int head_lead;
+	int tail_lead;
 } switch_tdd_t;
 
 static switch_bool_t tdd_encode_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
@@ -63,22 +63,22 @@ static switch_bool_t tdd_encode_callback(switch_media_bug_t *bug, void *user_dat
 		if ((frame = switch_core_media_bug_get_write_replace_frame(bug))) {
 			int len;
 
-            if (pvt->tail_lead) {
-                if (!--pvt->tail_lead) {
-                    r = SWITCH_FALSE;
-                }
-                memset(frame->data, 0, frame->datalen);
+			if (pvt->tail_lead) {
+				if (!--pvt->tail_lead) {
+					r = SWITCH_FALSE;
+				}
+				memset(frame->data, 0, frame->datalen);
 
-            } else if (pvt->head_lead) {
-                pvt->head_lead--;
-                memset(frame->data, 0, frame->datalen);
-            } else {
-                len = v18_tx(pvt->tdd_state, frame->data, frame->samples);
+			} else if (pvt->head_lead) {
+				pvt->head_lead--;
+				memset(frame->data, 0, frame->datalen);
+			} else {
+				len = v18_tx(pvt->tdd_state, frame->data, frame->samples);
 
-                if (!len) {
-                    pvt->tail_lead = TDD_LEAD;
-                }
-            }
+				if (!len) {
+					pvt->tail_lead = TDD_LEAD;
+				}
+			}
 
 			switch_core_media_bug_set_write_replace_frame(bug, frame);
 		}
@@ -106,135 +106,135 @@ switch_status_t spandsp_stop_tdd_encode_session(switch_core_session_t *session)
 
 static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 {
-    switch_tdd_t *pvt = (switch_tdd_t *) user_data;
-    switch_event_t *event, *clone;
-    switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
-    switch_core_session_t *other_session;
+	switch_tdd_t *pvt = (switch_tdd_t *) user_data;
+	switch_event_t *event, *clone;
+	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
+	switch_core_session_t *other_session;
 
 
-    switch_channel_add_variable_var_check(channel, "tdd_messages", (char *)msg, SWITCH_FALSE, SWITCH_STACK_PUSH);
-
-    
-    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_TDD_RECV_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-        
-        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", "mod_spandsp");
-        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "tdd");
-        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "TDD MESSAGE");
-        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "TDD-Data", (char *)msg);
-        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(pvt->session));
-        switch_event_add_body(event, "%s\n\n", (char *)msg);
-
-        if (switch_core_session_get_partner(pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
-        
-            if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-                switch_core_session_receive_event(other_session, &clone);
-            }
-
-            if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-                switch_core_session_queue_event(other_session, &clone);
-            }
-
-            switch_core_session_rwunlock(other_session);
-        }
-
-        switch_event_fire(&event);
+	switch_channel_add_variable_var_check(channel, "tdd_messages", (char *)msg, SWITCH_FALSE, SWITCH_STACK_PUSH);
 
 
-    }
-    
-    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "%s got TDD Message [%s]\n", switch_channel_get_name(channel), (char *)msg);
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_TDD_RECV_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", "mod_spandsp");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "tdd");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "TDD MESSAGE");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "TDD-Data", (char *)msg);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(pvt->session));
+		switch_event_add_body(event, "%s\n\n", (char *)msg);
+
+		if (switch_core_session_get_partner(pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
+
+			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+				switch_core_session_receive_event(other_session, &clone);
+			}
+
+			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+				switch_core_session_queue_event(other_session, &clone);
+			}
+
+			switch_core_session_rwunlock(other_session);
+		}
+
+		switch_event_fire(&event);
+
+
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "%s got TDD Message [%s]\n", switch_channel_get_name(channel), (char *)msg);
 
 }
 
 static int get_v18_mode(switch_core_session_t *session)
 {
-    switch_channel_t *channel = switch_core_session_get_channel(session);
-    const char *var;
-    int r = V18_MODE_5BIT_45;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *var;
+	int r = V18_MODE_5BIT_45;
 
-    if ((var = switch_channel_get_variable(channel, "v18_mode"))) {
-        if (!strcasecmp(var, "5BIT_45") || !strcasecmp(var, "baudot")) {
-            r = V18_MODE_5BIT_45;
-        } else if (!strcasecmp(var, "5BIT_50")) {
-            r = V18_MODE_5BIT_50;
-        } else if (!strcasecmp(var, "DTMF")) {
-            r = V18_MODE_DTMF;
-        } else if (!strcasecmp(var, "EDT")) {
-            r = V18_MODE_EDT;
-        } else if (!strcasecmp(var, "BELL103") || !strcasecmp(var, "ascii")) {
-            r = V18_MODE_BELL103;
-        } else if (!strcasecmp(var, "V23VIDEOTEX")) {
-            r = V18_MODE_V23VIDEOTEX;
-        } else if (!strcasecmp(var, "V21TEXTPHONE")) {
-            r = V18_MODE_V21TEXTPHONE;
-        } else if (!strcasecmp(var, "V18TEXTPHONE")) {
-            r = V18_MODE_V18TEXTPHONE;
-        }
-    }
+	if ((var = switch_channel_get_variable(channel, "v18_mode"))) {
+		if (!strcasecmp(var, "5BIT_45") || !strcasecmp(var, "baudot")) {
+			r = V18_MODE_5BIT_45;
+		} else if (!strcasecmp(var, "5BIT_50")) {
+			r = V18_MODE_5BIT_50;
+		} else if (!strcasecmp(var, "DTMF")) {
+			r = V18_MODE_DTMF;
+		} else if (!strcasecmp(var, "EDT")) {
+			r = V18_MODE_EDT;
+		} else if (!strcasecmp(var, "BELL103") || !strcasecmp(var, "ascii")) {
+			r = V18_MODE_BELL103;
+		} else if (!strcasecmp(var, "V23VIDEOTEX")) {
+			r = V18_MODE_V23VIDEOTEX;
+		} else if (!strcasecmp(var, "V21TEXTPHONE")) {
+			r = V18_MODE_V21TEXTPHONE;
+		} else if (!strcasecmp(var, "V18TEXTPHONE")) {
+			r = V18_MODE_V18TEXTPHONE;
+		}
+	}
 
-    return r;
+	return r;
 }
 
 
 switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const char *text)
 {
-    v18_state_t *tdd_state;
-    switch_frame_t *read_frame, write_frame = { 0 };
-    uint8_t write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	v18_state_t *tdd_state;
+	switch_frame_t *read_frame, write_frame = { 0 };
+	uint8_t write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_codec_t write_codec = { 0 };
-    switch_channel_t *channel = switch_core_session_get_channel(session);
-    switch_status_t status;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status;
 
 	switch_core_session_get_read_impl(session, &read_impl);
-    
-    if (switch_core_codec_init(&write_codec,
-                               "L16",
-                               NULL,
-                               read_impl.actual_samples_per_second,
-                               read_impl.microseconds_per_packet / 1000,
-                               read_impl.number_of_channels,
-                               SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-                               switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-        write_frame.data = write_buf;
-        write_frame.buflen = sizeof(write_buf);
-        write_frame.datalen = read_impl.decoded_bytes_per_packet;
-        write_frame.samples = write_frame.datalen / 2;
-        write_frame.codec = &write_codec;
-        switch_core_session_set_read_codec(session, &write_codec);
-    } else {
-        return SWITCH_STATUS_FALSE;
-    }
 
-    tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), put_text_msg, NULL);
+	if (switch_core_codec_init(&write_codec,
+				"L16",
+				NULL,
+				read_impl.actual_samples_per_second,
+				read_impl.microseconds_per_packet / 1000,
+				read_impl.number_of_channels,
+				SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+				switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+				write_frame.data = write_buf;
+				write_frame.buflen = sizeof(write_buf);
+				write_frame.datalen = read_impl.decoded_bytes_per_packet;
+				write_frame.samples = write_frame.datalen / 2;
+				write_frame.codec = &write_codec;
+		switch_core_session_set_read_codec(session, &write_codec);
+	} else {
+		return SWITCH_STATUS_FALSE;
+	}
 
-    
+	tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), put_text_msg, NULL);
+
+
 	v18_put(tdd_state, text, -1);
 
-    while(switch_channel_ready(channel)) {
+	while(switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
-        
 
-        if (!v18_tx(tdd_state, (void *)write_buf, write_frame.samples)) {
-            break;
-        }
 
-        if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-            break;
-        }
+		if (!v18_tx(tdd_state, (void *)write_buf, write_frame.samples)) {
+			break;
+		}
 
-    }
+		if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
 
-    switch_core_codec_destroy(&write_codec);
-    switch_core_session_set_read_codec(session, NULL);
+	}
 
-    v18_free(tdd_state);
+	switch_core_codec_destroy(&write_codec);
+	switch_core_session_set_read_codec(session, NULL);
 
-    return SWITCH_STATUS_SUCCESS;
+	v18_free(tdd_state);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -254,12 +254,12 @@ switch_status_t spandsp_tdd_encode_session(switch_core_session_t *session, const
 
 	pvt->session = session;
 	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), put_text_msg, NULL);
-    pvt->head_lead = TDD_LEAD;
+	pvt->head_lead = TDD_LEAD;
 
 	v18_put(pvt->tdd_state, text, -1);
 
 	if ((status = switch_core_media_bug_add(session, "spandsp_tdd_encode", NULL,
-                                            tdd_encode_callback, pvt, 0, SMBF_WRITE_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
+						tdd_encode_callback, pvt, 0, SMBF_WRITE_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		v18_free(pvt->tdd_state);
 		return status;
 	}
@@ -290,7 +290,7 @@ static switch_bool_t tdd_decode_callback(switch_media_bug_t *bug, void *user_dat
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 		if ((frame = switch_core_media_bug_get_read_replace_frame(bug))) {
 
-            v18_rx(pvt->tdd_state, frame->data, frame->samples);
+			v18_rx(pvt->tdd_state, frame->data, frame->samples);
 
 			switch_core_media_bug_set_read_replace_frame(bug, frame);
 		}
@@ -334,7 +334,7 @@ switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session)
 	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), put_text_msg, pvt);
 
 	if ((status = switch_core_media_bug_add(session, "spandsp_tdd_decode", NULL,
-                                            tdd_decode_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
+						tdd_decode_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		v18_free(pvt->tdd_state);
 		return status;
 	}
@@ -505,7 +505,7 @@ switch_status_t spandsp_inband_dtmf_session(switch_core_session_t *session)
 	}
 
 	if ((status = switch_core_media_bug_add(session, "spandsp_dtmf_detect", NULL,
-                                            inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
+						inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -584,9 +584,9 @@ int tone_descriptor_add_tone(tone_descriptor_t *descriptor, const char *key)
 	}
 	switch_set_string(descriptor->tone_keys[id], key);
 
-    if (id > descriptor->idx) {
-        descriptor->idx = id;
-    }
+	if (id > descriptor->idx) {
+		descriptor->idx = id;
+	}
 
 	return id;
 }
@@ -742,7 +742,7 @@ switch_status_t callprogress_detector_start(switch_core_session_t *session, cons
 	/* start listening for tones */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Starting tone detection for '%s'\n", switch_channel_get_name(channel), name);
 	switch_core_media_bug_add(session, "spandsp_tone_detect", NULL,
-                              callprogress_detector_process_buffer, detector, 0 /* stop time */, SMBF_READ_REPLACE, &bug);
+				callprogress_detector_process_buffer, detector, 0 /* stop time */, SMBF_READ_REPLACE, &bug);
 	if (!bug) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -772,9 +772,7 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
 	{
-        switch_frame_t *frame;
-
-
+		switch_frame_t *frame;
 		const char *detected_tone = NULL;
 		if (!detector->spandsp_detector) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) detector is destroyed\n", switch_channel_get_name(channel));
@@ -802,8 +800,8 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 			tone_detector_destroy(detector);
 		}
 		break;
-    default:
-        break;
+	default:
+		break;
 	}
 	return SWITCH_TRUE;
 }
@@ -838,7 +836,7 @@ switch_status_t mod_spandsp_dsp_load(switch_loadable_module_interface_t **module
  */
 void mod_spandsp_dsp_shutdown(void)
 {
-    return;
+	return;
 }
 
 

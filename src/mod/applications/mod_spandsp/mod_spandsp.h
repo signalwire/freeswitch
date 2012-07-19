@@ -60,9 +60,9 @@ struct spandsp_globals {
 	short int use_ecm;
 	short int verbose;
 	short int disable_v17;
-    short int enable_t38;
-    short int enable_t38_request;
-    short int enable_t38_insist;
+	short int enable_t38;
+	short int enable_t38_request;
+	short int enable_t38_insist;
 	char *ident;
 	char *header;
 	char *timezone;
@@ -84,7 +84,7 @@ extern struct spandsp_globals spandsp_globals;
 typedef enum {
 	FUNCTION_TX,
 	FUNCTION_RX,
-    FUNCTION_GW
+	FUNCTION_GW
 } mod_spandsp_fax_application_mode_t;
 
 /******************************************************************************
@@ -107,7 +107,7 @@ struct tone_descriptor {
 
 	/** The mapping of tone id to key */
 	char tone_keys[MAX_TONES][STRLEN];
-    int idx;
+	int idx;
 
 };
 typedef struct tone_descriptor tone_descriptor_t;
