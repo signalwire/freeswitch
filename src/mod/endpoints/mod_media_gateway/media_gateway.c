@@ -55,6 +55,8 @@ megaco_profile_t*  megaco_get_profile_by_suId(SuId suId)
 	const void *var;
 
 	/*iterate through profile list to get requested suID profile */
+
+    switch_thread_rwlock_rdlock(megaco_globals.profile_rwlock);
 	for (hi = switch_hash_first(NULL, megaco_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
 		profile = (megaco_profile_t *) val;
@@ -66,11 +68,170 @@ megaco_profile_t*  megaco_get_profile_by_suId(SuId suId)
 	}
 
 	if(!found){
+        profile = NULL;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Not able to find profile associated with suId[%d]\n",suId);
-		return NULL;
 	}
+    
+    switch_thread_rwlock_unlock(megaco_globals.profile_rwlock);
 
 	return profile;
+}
+
+/*
+ * Creates a freeswitch channel for the specified termination. 
+ * The channel will be parked until future actions are taken 
+ */
+switch_status_t megaco_activate_termination(mg_termination_t *term)
+{
+    switch_event_t *var_event = NULL;
+    switch_core_session_t *session = NULL;
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
+    char dialstring[100];
+    switch_call_cause_t cause;
+    
+    if (!zstr(term->uuid)) {
+        /* A UUID is present, check if the channel still exists */
+        switch_core_session_t *session;
+        if ((session = switch_core_session_locate(term->uuid))) {
+            switch_core_session_rwunlock(session);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel [%s] already exists for termination [%s]\n", term->uuid, term->name);
+            return SWITCH_STATUS_SUCCESS;
+        }
+        
+        /* The referenced channel doesn't exist anymore, clear it */
+        term->uuid = NULL;
+    }
+
+    switch_event_create(&var_event, SWITCH_EVENT_CLONE);
+    
+    if (term->type == MG_TERM_RTP) {
+        switch_snprintf(dialstring, sizeof dialstring, "rtp/%s", term->name);
+        
+        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kLOCALADDR, term->u.rtp.local_addr);
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kLOCALPORT, "%d", term->u.rtp.local_port);
+        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kREMOTEADDR, term->u.rtp.remote_addr);
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kREMOTEPORT, "%d", term->u.rtp.remote_port);
+        
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kPTIME, "%d", term->u.rtp.ptime);
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kPT, "%d", term->u.rtp.pt);
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kRFC2833PT, "%d", term->u.rtp.rfc2833_pt);
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kRATE, "%d", term->u.rtp.rate);
+        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kCODEC, term->u.rtp.codec);
+    } else if (term->type == MG_TERM_TDM) {
+        switch_snprintf(dialstring, sizeof dialstring, "tdm/%s", term->name);
+        
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kSPAN_ID, "%d", term->u.tdm.span);
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kCHAN_ID, "%d", term->u.tdm.channel);
+    }
+    
+    /* Set common variables on the channel */
+    switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
+
+    if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_CAUSE_SUCCESS) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to instanciate termination [%s]: %s\n", term->name, switch_channel_cause2str(cause));   
+        status = SWITCH_STATUS_FALSE;
+        goto done;
+    }
+    
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));
+    
+done:
+    if (session) {
+        switch_core_session_rwunlock(session);
+    }
+    switch_event_destroy(&var_event);
+}
+
+mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix)
+{
+    mg_termination_type_t termtype;
+    
+    /* Check the termination type by prefix */
+    if (strncasecmp(prefix, profile->rtp_termination_id_prefix, strlen(profile->rtp_termination_id_prefix)) == 0) {
+        termtype = MG_TERM_RTP;
+    } else {
+        /* TODO Math: look through TDM channels */
+        return NULL;
+    }
+    
+    
+}
+
+mg_termination_t *megaco_find_termination(megaco_profile_t *profile, const char *name)
+{
+    mg_termination_t *term = switch_core_hash_find_rdlock(profile->terminations, name, profile->terminations_rwlock);
+    return term;
+
+}
+
+void megaco_termination_destroy(mg_termination_t *term)
+{
+    /* Lookup the FS session and hang it up */
+    switch_core_session_t *session;
+    switch_channel_t *channel;
+    
+    if ((session = switch_core_session_locate(term->uuid))) {
+        channel = switch_core_session_get_channel(session);
+        switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+        switch_core_session_rwunlock(session);
+        term->uuid = NULL;
+    }
+    
+    switch_core_hash_delete_wrlock(term->profile->terminations, term->name, term->profile->terminations_rwlock);
+}
+
+switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination_t *term)
+{
+
+    switch_assert(ctx != NULL);
+    switch_assert(term != NULL);
+    
+    /* Check if the current context has existing terminations */
+    if (ctx->terminations[0] && ctx->terminations[1]) {
+        /* Context is full */
+        return SWITCH_STATUS_FALSE;
+    }
+    
+    if (ctx->terminations[0]) {
+        ctx->terminations[1] = term;
+    } else if (ctx->terminations[1]) {
+        ctx->terminations[0] = term;
+    } else {
+        ctx->terminations[0] = term;
+    }
+    
+    if (ctx->terminations[0] && ctx->terminations[1]) {
+        if (zstr(ctx->terminations[0]->uuid)) {
+            megaco_activate_termination(ctx->terminations[0]);
+        }
+        if (zstr(ctx->terminations[1]->uuid)) {
+            megaco_activate_termination(ctx->terminations[1]);
+        }
+        
+        switch_ivr_uuid_bridge(ctx->terminations[0]->uuid, ctx->terminations[1]->uuid);
+    }
+}
+
+
+switch_status_t megaco_context_sub_termination(mg_context_t *ctx, mg_termination_t *term)
+{
+    switch_assert(ctx != NULL);
+    switch_assert(term != NULL);
+    
+    /* Channels will automatically go to park once the bridge ends */
+    if (ctx->terminations[0] == term) {
+        ctx->terminations[0] = NULL;
+    } else if (ctx->terminations[1] == term) {
+        ctx->terminations[1] = NULL;
+    }
+    
+    megaco_termination_destroy(term);
+}
+
+
+switch_status_t megaco_context_move_termination(mg_context_t *dst, mg_termination_t *term) 
+{
+    
 }
 
 mg_context_t *megaco_find_context_by_suid(SuId suId, uint32_t context_id)
@@ -87,20 +248,7 @@ mg_context_t *megaco_find_context_by_suid(SuId suId, uint32_t context_id)
         return NULL;
     }
     
-    switch_thread_rwlock_rdlock(profile->contexts_rwlock);
-    
-    /* Context exists */
-    if (profile->contexts_bitmap[context_id % 8] & (1 << (context_id / 8))) {
-        for (result = profile->contexts[context_id % MG_CONTEXT_MODULO]; result; result = result->next) {
-            if (result->context_id == context_id) {
-                break;
-            }
-        }
-    }
-    
-    switch_thread_rwlock_unlock(profile->contexts_rwlock);
-    
-    return result;
+    return megaco_get_context(profile, context_id);
 }
 
 mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
@@ -213,8 +361,9 @@ switch_status_t megaco_profile_start(const char *profilename)
 	switch_thread_rwlock_create(&profile->rwlock, pool);
     
     switch_thread_rwlock_create(&profile->contexts_rwlock, pool);
+    switch_thread_rwlock_create(&profile->terminations_rwlock, pool);
 
-//    switch_core_hash_init(&profile->contexts_hash, pool);
+    switch_core_hash_init(&profile->terminations, pool);
     
 	if (SWITCH_STATUS_SUCCESS != config_profile(profile, SWITCH_FALSE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error configuring profile %s\n", profile->name);
@@ -235,7 +384,7 @@ switch_status_t megaco_profile_start(const char *profilename)
 fail:
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_FALSE;	
-}
+}   
 
 
 switch_status_t megaco_profile_destroy(megaco_profile_t **profile) 

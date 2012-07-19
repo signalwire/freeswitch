@@ -64,25 +64,46 @@ typedef enum {
 typedef struct megaco_profile_s megaco_profile_t;
 typedef struct mg_context_s mg_context_t;
 
+/* RTP parameters understood by the controllable channel */
+#define kLOCALADDR "local_addr"
+#define kLOCALPORT "local_port"
+#define kREMOTEADDR "remote_addr"
+#define kREMOTEPORT "remote_port"
+#define kCODEC "codec"
+#define kPTIME "ptime"
+#define kPT "pt"
+#define kRFC2833PT "rfc2833_pt"
+#define kMODE "mode"
+#define kRATE "rate"
+
+/* TDM parameters understood by the controllable channel */
+#define kSPAN_ID "span"
+#define kCHAN_ID "chan"
+
 typedef struct mg_termination_s {
     mg_termination_type_t type;
-    const char *uuid;
-    mg_context_t *context;
+    const char *name; /*!< Megaco Name */    
+    const char *uuid; /*!< UUID of the associated FS channel, or NULL if it's not activated */
+    mg_context_t *context; /*!< Context in which this termination is connected, or NULL */
+    megaco_profile_t *profile; /*!< Parent MG profile */
     
     union {
         struct {
-            const char *codec;
-            int ptime;
-            const char *remote_address;
-            switch_port_t remote_port;
+            /* The RTP termination will automatically operate as "sendonly" or "recvonly" as soon as
+             * one of the network addresses are NULL */
+            const char *local_addr;
             switch_port_t local_port;
             
-            CmSdpInfoSet *local_sdp;
-            CmSdpInfoSet *remote_sdp;
-            
-            unsigned mode:2;
-            unsigned :0;
+            const char *remote_addr;
+            switch_port_t remote_port;
+
+            int ptime;
+            int pt;
+            int rfc2833_pt;
+            int rate;
+            const char *codec;
         } rtp;
+        
         struct {
             int span;
             int channel;
@@ -93,7 +114,7 @@ typedef struct mg_termination_s {
 
 struct mg_context_s {
     uint32_t context_id;
-    mg_termination_t terminations[MG_CONTEXT_MAX_TERMS];
+    mg_termination_t *terminations[MG_CONTEXT_MAX_TERMS];
     megaco_profile_t *profile;
     mg_context_t *next;
     switch_memory_pool_t *pool;
@@ -101,6 +122,7 @@ struct mg_context_s {
 
 #define MG_CONTEXT_MODULO 16
 #define MG_MAX_CONTEXTS 32768
+
 
 struct megaco_profile_s {
 	char 				*name;
@@ -125,6 +147,9 @@ struct megaco_profile_s {
     uint32_t next_context_id;
     uint8_t contexts_bitmap[MG_MAX_CONTEXTS/8]; /* Availability matrix, enough bits for a 32768 bitmap */    
     mg_context_t *contexts[MG_CONTEXT_MODULO];
+    
+    switch_hash_t *terminations;
+    switch_thread_rwlock_t *terminations_rwlock;
 };
 
 

@@ -75,7 +75,11 @@ typedef struct {
     switch_port_t remote_port;
     switch_payload_t agreed_pt; /*XXX*/
     sofia_dtmf_t dtmf_type;
-
+    enum {
+        RTP_SENDONLY,
+        RTP_RECVONLY,
+        RTP_SENDRECV
+    } mode;
 } crtp_private_t;
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
@@ -128,8 +132,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     switch_channel_t *channel;
     char name[128];
     crtp_private_t *tech_pvt = NULL;    
+    switch_caller_profile_t *caller_profile;
     
     const char *err;
+
     
     const char  *local_addr = switch_event_get_header_nil(var_event, kLOCALADDR),
                 *szlocal_port = switch_event_get_header_nil(var_event, kLOCALPORT),
@@ -150,8 +156,16 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
         //rfc2833_pt = !zstr(szrfc2833_pt) ? atoi(szrfc2833_pt) : 0,
         rate = !zstr(szrate) ? atoi(szrate) : 8000,
         pt = !zstr(szpt) ? atoi(szpt) : 0;
-
-
+    
+        if (
+            ((zstr(remote_addr) || remote_port == 0) && (zstr(local_addr) || local_port == 0)) ||
+            zstr(codec) ||
+            zstr(szpt)) {
+        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required arguments\n");
+        goto fail;
+    }
+    
     
     if (!(*new_session = switch_core_session_request(crtp.endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, 0, pool))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't request session.\n");
@@ -171,10 +185,21 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->agreed_pt = pt;
     tech_pvt->dtmf_type = DTMF_2833; /* XXX */
     
+    if (zstr(local_addr) || local_port == 0) {
+        tech_pvt->mode = RTP_SENDONLY;
+    } else if (zstr(remote_addr) || remote_port == 0) {
+        tech_pvt->mode = RTP_SENDRECV;
+    } else {
+        
+    }
+    
     switch_core_session_set_private(*new_session, tech_pvt);
     
+    caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+    switch_channel_set_caller_profile(channel, caller_profile);
     
-    snprintf(name, sizeof(name), "rtp/ctrl");
+    
+    snprintf(name, sizeof(name), "rtp/%s", outbound_profile->destination_number);
 	switch_channel_set_name(channel, name);
     
     switch_channel_set_state(channel, CS_INIT);
@@ -251,7 +276,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
     
     switch_channel_t *channel = switch_core_session_get_channel(session);
     
-    switch_channel_set_state(channel, CS_ROUTING);
+    switch_channel_set_state(channel, CS_CONSUME_MEDIA);
     
     return SWITCH_STATUS_SUCCESS;
 }
@@ -290,7 +315,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
     if (!tech_pvt->rtp_session) {
         goto cng;
     }
-    
+        
     if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
         switch_dtmf_t dtmf = { 0 };
         switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, &dtmf);
@@ -319,7 +344,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 {
     crtp_private_t *tech_pvt;
     switch_channel_t *channel;
-    int frames = 0, bytes = 0, samples = 0;
+    //int frames = 0, bytes = 0, samples = 0;
     
     channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -328,6 +353,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	assert(tech_pvt != NULL);
     
     
+#if 0
     if (!switch_test_flag(frame, SFF_CNG) && !switch_test_flag(frame, SFF_PROXY_PACKET)) {
 		if (tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
 			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet;
@@ -339,6 +365,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
     
     tech_pvt->timestamp_send += samples;
+#endif
+    
 	switch_rtp_write_frame(tech_pvt->rtp_session, frame);
 
     return SWITCH_STATUS_SUCCESS;
@@ -369,6 +397,120 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
+    crtp_private_t *tech_pvt = NULL;
+    
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+    
+    switch (msg->message_id) {
+        case SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO:
+        {
+            if (switch_rtp_ready(tech_pvt->rtp_session) && !zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+                int32_t flags = 0;
+                if (!strcasecmp(msg->string_array_arg[0], "read")) {
+                    flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ;
+                } else if (!strcasecmp(msg->string_array_arg[0], "write")) {
+                    flags |= SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
+                } else if (!strcasecmp(msg->string_array_arg[0], "both")) {
+                    flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ | SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
+                }
+                
+                if (flags) {
+                    if (switch_true(msg->string_array_arg[1])) {
+                        switch_rtp_set_flag(tech_pvt->rtp_session, flags);
+                    } else {
+                        switch_rtp_clear_flag(tech_pvt->rtp_session, flags);
+                    }
+                } else {
+                    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Options\n");
+                }
+            }
+            break;
+        }
+        case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
+            if (switch_rtp_ready(tech_pvt->rtp_session)) {
+                rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
+            }
+            break;
+        case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
+		{
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				int len = 0, maxlen = 0, qlen = 0, maxqlen = 50, max_drift = 0;
+                
+				if (msg->string_arg) {
+					char *p, *q;
+					const char *s;
+                    
+					if (!strcasecmp(msg->string_arg, "pause")) {
+						switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_TRUE);
+						goto end;
+					} else if (!strcasecmp(msg->string_arg, "resume")) {
+						switch_rtp_pause_jitter_buffer(tech_pvt->rtp_session, SWITCH_FALSE);
+						goto end;
+					} else if (!strncasecmp(msg->string_arg, "debug:", 6)) {
+						s = msg->string_arg + 6;
+						if (s && !strcmp(s, "off")) {
+							s = NULL;
+						}
+                        switch_rtp_debug_jitter_buffer(tech_pvt->rtp_session, s);
+						goto end;
+					}
+                    
+					
+					if ((len = atoi(msg->string_arg))) {
+						qlen = len / (tech_pvt->read_codec.implementation->microseconds_per_packet / 1000);
+						if (qlen < 1) {
+							qlen = 3;
+						}
+					}
+					
+					if (qlen) {
+						if ((p = strchr(msg->string_arg, ':'))) {
+							p++;
+							maxlen = atol(p);
+							if ((q = strchr(p, ':'))) {
+								q++;
+								max_drift = abs(atol(q));
+							}
+						}
+					}
+                    
+                    
+					if (maxlen) {
+						maxqlen = maxlen / (tech_pvt->read_codec.implementation->microseconds_per_packet / 1000);
+					}
+				}
+                
+				if (qlen) {
+					if (maxqlen < qlen) {
+						maxqlen = qlen * 5;
+					}
+					if (switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen, maxqlen,
+														  tech_pvt->read_codec.implementation->samples_per_packet, 
+														  tech_pvt->read_codec.implementation->samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames) (%d max drift)\n", 
+										  len, qlen, maxqlen, max_drift);
+						switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
+						if (!switch_false(switch_channel_get_variable(tech_pvt->channel, "sip_jitter_buffer_plc"))) {
+							switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER_PLC);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+										  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+					}
+					
+				} else {
+					switch_rtp_deactivate_jitter_buffer(tech_pvt->rtp_session);
+				}
+			}
+		}
+            break;
+
+        default:
+            break;
+    }
+end:
     return SWITCH_STATUS_SUCCESS;
 }
 
