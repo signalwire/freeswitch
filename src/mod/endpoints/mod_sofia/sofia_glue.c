@@ -7021,12 +7021,12 @@ void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str
 		*flag_pole &= ~RTP_BUG_GEN_ONE_GEN_ALL;
 	}
 
-	if (switch_stristr("NEVER_CHANGE_SSRC_ON_MARKER", str)) {
-		*flag_pole |= RTP_BUG_NEVER_CHANGE_SSRC_ON_MARKER;
+	if (switch_stristr("CHANGE_SSRC_ON_MARKER", str)) {
+		*flag_pole |= RTP_BUG_CHANGE_SSRC_ON_MARKER;
 	}
 
-	if (switch_stristr("~NEVER_CHANGE_SSRC_ON_MARKER", str)) {
-		*flag_pole &= ~RTP_BUG_NEVER_CHANGE_SSRC_ON_MARKER;
+	if (switch_stristr("~CHANGE_SSRC_ON_MARKER", str)) {
+		*flag_pole &= ~RTP_BUG_CHANGE_SSRC_ON_MARKER;
 	}
 }
 

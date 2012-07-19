@@ -727,7 +727,7 @@ typedef enum {
 
 	 */
 
-	RTP_BUG_NEVER_CHANGE_SSRC_ON_MARKER = (1 << 9)
+	RTP_BUG_CHANGE_SSRC_ON_MARKER = (1 << 9)
 
 	/*
 	  By default FS will change the SSRC when the marker is set and it detects a timestamp reset.
