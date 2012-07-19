@@ -464,6 +464,7 @@ switch_status_t ldns_lookup(const char *number, const char *root, char *server_n
 	char *name = NULL;
 	struct timeval to = { 0, 0};
 	int inameserver = 0;
+	int added_server = 0;
 
 	if (!(name = reverse_number(number, root))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parse Error!\n");
@@ -473,22 +474,24 @@ switch_status_t ldns_lookup(const char *number, const char *root, char *server_n
 	if (!(domain = ldns_dname_new_frm_str(name))) {
 		goto end;
 	}
-
+	
 	if (server_name) {
 		res = ldns_resolver_new();
 		switch_assert(res);
 		
 		for(inameserver=0; inameserver<ENUM_MAXNAMESERVERS; inameserver++) {
-			if ( server_name[inameserver] != NULL )
-			{
+			if ( server_name[inameserver] != NULL ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Nameserver [%s]\n", server_name[inameserver]);
 				if ((serv_rdf = ldns_rdf_new_addr_frm_str( server_name[inameserver] ))) {
 					s = ldns_resolver_push_nameserver(res, serv_rdf);
 					ldns_rdf_deep_free(serv_rdf);
+					added_server = 1;
 				}
-			};
+			} 
 		}
-
-	} else {
+	} 
+	if (!added_server) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Nameservers specified, using host default\n");
 		/* create a new resolver from /etc/resolv.conf */
 		s = ldns_resolver_new_frm_file(&res, NULL);
 	}
