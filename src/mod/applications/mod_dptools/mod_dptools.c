@@ -3510,7 +3510,7 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 
 	tech_pvt = switch_core_session_alloc(nsession, sizeof(*tech_pvt));
 	tech_pvt->key = switch_core_session_strdup(nsession, pickup);
-	switch_event_dup(&tech_pvt->vars, var_event);
+
 
 	switch_core_session_set_private(nsession, tech_pvt);
 	
@@ -3534,7 +3534,9 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 	pickup_add_session(nsession, pickup);
 	switch_channel_set_flag(nchannel, CF_PICKUP);
 	switch_channel_set_flag(nchannel, CF_NO_PRESENCE);
-	
+
+	switch_event_dup(&tech_pvt->vars, var_event);
+
 	goto done;
 
   error:

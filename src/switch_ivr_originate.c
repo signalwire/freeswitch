@@ -2580,6 +2580,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					local_clobber = switch_true(lc);
 				}
 
+				if (switch_channel_test_flag(originate_status[i].peer_channel, CF_NO_PRESENCE)) {
+					if (var_event) {
+						switch_event_del_header(var_event, "presence_id");
+					}
+					if (local_var_event) {
+						switch_event_del_header(local_var_event, "presence_id");
+					}
+				}
+
+
 				if (local_clobber) {
 					if (var_event) {
 						switch_event_header_t *header;
