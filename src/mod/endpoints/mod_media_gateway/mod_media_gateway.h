@@ -91,17 +91,17 @@ typedef struct mg_termination_s {
         struct {
             /* The RTP termination will automatically operate as "sendonly" or "recvonly" as soon as
              * one of the network addresses are NULL */
-            const char *local_addr;
-            switch_port_t local_port;
+            const char *local_addr; /*!< RTP Session's Local IP address  */
+            switch_port_t local_port; /*!< RTP Session's Local IP address  */
             
-            const char *remote_addr;
-            switch_port_t remote_port;
+            const char *remote_addr; /*!< RTP Session's Remote IP address  */
+            switch_port_t remote_port; /*!< RTP Session's Remote IP address  */
 
-            int ptime;
-            int pt;
-            int rfc2833_pt;
-            int rate;
-            const char *codec;
+            int ptime;  /*!< Packetization Interval, in miliseconds. The default is 20, but it has to be set */
+            int pt;     /*!< Payload type */
+            int rfc2833_pt; /*!< If the stream is using rfc2833 for dtmf events, this has to be set to its negotiated payload type */
+            int rate;       /*!< Sampling rate */
+            const char *codec; /*!< Codec to use, using the freeswitch nomenclature. This could be "PCMU" for G711.U, "PCMA" for G711.A, or "G729" for g729 */
         } rtp;
         
         struct {
