@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -538,10 +538,13 @@ struct tone_detector {
 
 	/** The debug level */
 	int debug;
+
+	/** The session that owns this detector */
+	switch_core_session_t *session;
 };
 typedef struct tone_detector tone_detector_t;
 
-static switch_status_t tone_detector_create(tone_detector_t **detector, tone_descriptor_t *descriptor, switch_memory_pool_t *memory_pool);
+static switch_status_t tone_detector_create(switch_core_session_t *session, tone_detector_t **detector, tone_descriptor_t *descriptor);
 static switch_bool_t tone_detector_process_buffer(tone_detector_t *detector, void *data, unsigned int len, const char **key);
 static void tone_detector_destroy(tone_detector_t *detector);
 
@@ -622,7 +625,7 @@ static void tone_report_callback(void *user_data, int code, int level, int delay
 {
 	tone_detector_t *detector = (tone_detector_t *)user_data;
 	if (detector->debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Tone report: code = %d, level = %d, delay = %d\n", code, level, delay);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(detector->session), SWITCH_LOG_DEBUG, "Tone report: code = %d, level = %d, delay = %d\n", code, level, delay);
 	}
 	detector->detected_tone = code;
 }
@@ -639,28 +642,30 @@ static void tone_segment_callback(void *user_data, int f1, int f2, int duration)
 {
 	tone_detector_t *detector = (tone_detector_t *)user_data;
 	if (detector->debug > 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Tone segment: f1 = %d, f2 = %d, duration = %d\n", f1, f2, duration);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(detector->session), SWITCH_LOG_DEBUG, "Tone segment: f1 = %d, f2 = %d, duration = %d\n", f1, f2, duration);
 	}
 }
 
 /**
  * Allocate the tone detector
  *
+ * @param session the session that owns the detector
  * @param detector the detector to create
  * @param descriptor the descriptor to use
  * @param memory_pool the pool to use
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t tone_detector_create(tone_detector_t **detector, tone_descriptor_t *descriptor, switch_memory_pool_t *memory_pool)
+static switch_status_t tone_detector_create(switch_core_session_t *session, tone_detector_t **detector, tone_descriptor_t *descriptor)
 {
 	tone_detector_t *ldetector = NULL;
-	ldetector = switch_core_alloc(memory_pool, sizeof(tone_detector_t));
+	ldetector = switch_core_session_alloc(session, sizeof(tone_detector_t));
 	if (!ldetector) {
 		return SWITCH_STATUS_FALSE;
 	}
 	memset(ldetector, 0, sizeof(tone_detector_t));
 	ldetector->descriptor = descriptor;
 	ldetector->debug = spandsp_globals.tonedebug;
+	ldetector->session = session;
 	*detector = ldetector;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -734,13 +739,13 @@ switch_status_t callprogress_detector_start(switch_core_session_t *session, cons
 	/* find the tone descriptor with the matching name and create the detector */
 	descriptor = switch_core_hash_find(spandsp_globals.tones, name);
 	if (!descriptor) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) no tone descriptor defined with name '%s'.  Update configuration. \n", switch_channel_get_name(channel), name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "no tone descriptor defined with name '%s'.  Update configuration. \n", name);
 		return SWITCH_STATUS_FALSE;
 	}
-	tone_detector_create(&detector, descriptor, switch_core_session_get_pool(session));
+	tone_detector_create(session, &detector, descriptor);
 
 	/* start listening for tones */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Starting tone detection for '%s'\n", switch_channel_get_name(channel), name);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Starting tone detection for '%s'\n", name);
 	switch_core_media_bug_add(session, "spandsp_tone_detect", NULL,
 				callprogress_detector_process_buffer, detector, 0 /* stop time */, SMBF_READ_REPLACE, &bug);
 	if (!bug) {
@@ -762,12 +767,11 @@ switch_status_t callprogress_detector_start(switch_core_session_t *session, cons
 static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	tone_detector_t *detector = (tone_detector_t *)user_data;
-	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
-	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_core_session_t *session = detector->session;
 
 	switch(type) {
 	case SWITCH_ABC_TYPE_INIT:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) initializing tone detector\n", switch_channel_get_name(channel));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "initializing tone detector\n");
 		tone_detector_init(detector);
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
@@ -775,17 +779,17 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 		switch_frame_t *frame;
 		const char *detected_tone = NULL;
 		if (!detector->spandsp_detector) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) detector is destroyed\n", switch_channel_get_name(channel));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "detector is destroyed\n");
 			return SWITCH_FALSE;
 		}
 		if (!(frame = switch_core_media_bug_get_read_replace_frame(bug))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) error reading frame\n", switch_channel_get_name(channel));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "error reading frame\n");
 			return SWITCH_FALSE;
 		}
 		tone_detector_process_buffer(detector, frame->data, frame->samples, &detected_tone);
 		if (detected_tone) {
 			switch_event_t *event = NULL;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) DETECTED TONE: %s\n", switch_channel_get_name(channel), detected_tone);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "DETECTED TONE: %s\n", detected_tone);
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Tone", detected_tone);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
@@ -796,7 +800,7 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 	}
 	case SWITCH_ABC_TYPE_CLOSE:
 		if (detector->spandsp_detector) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) destroying tone detector\n", switch_channel_get_name(channel));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "destroying tone detector\n");
 			tone_detector_destroy(detector);
 		}
 		break;
