@@ -753,7 +753,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 		}
 	}
 
-	if (oglobals->hups + pickups == len) {
+	if (oglobals->hups > 0 && oglobals->hups + pickups == len) {
 		rval = 0;
 	} else {
 		rval = 1;
