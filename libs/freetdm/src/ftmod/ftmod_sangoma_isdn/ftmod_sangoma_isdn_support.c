@@ -847,6 +847,26 @@ ftdm_status_t set_calling_subaddr(ftdm_channel_t *ftdmchan, CgPtySad *cgPtySad)
 	return FTDM_SUCCESS;
 }
 
+ftdm_status_t set_called_subaddr(ftdm_channel_t *ftdmchan, CdPtySad *cdPtySad)
+{
+	const char* cld_subaddr = NULL;
+	cld_subaddr = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "isdn.called_subaddr");
+	if (!ftdm_strlen_zero(cld_subaddr)) {
+		unsigned len = strlen (cld_subaddr);
+		cdPtySad->eh.pres = PRSNT_NODEF;
+		cdPtySad->typeSad.pres = 1;
+		cdPtySad->typeSad.val = 0; /* NSAP */
+		cdPtySad->oddEvenInd.pres = 1;
+		cdPtySad->oddEvenInd.val = 0;
+
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending Called Party Subaddress:%s\n", cld_subaddr);
+		cdPtySad->sadInfo.pres = 1;
+		cdPtySad->sadInfo.len = len;
+		memcpy(cdPtySad->sadInfo.val, cld_subaddr, len);
+	}
+	return FTDM_SUCCESS;
+}
+
 ftdm_status_t set_facility_ie(ftdm_channel_t *ftdmchan, FacilityStr *facilityStr)
 {
 	ftdm_status_t status;
