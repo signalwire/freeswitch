@@ -133,7 +133,8 @@ int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, megaco_profile_t* mg_cfg, m
 switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoContextId* ctxtId, TknU32* peerId);
 void mgco_print_sdp(CmSdpInfoSet *sdp);
 void mg_util_set_ctxt_string ( MgStr  *errTxt, MgMgcoContextId     *ctxtId);
-switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *addReq);
+switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *cmd);
+switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *cmd);
 switch_status_t mg_stack_free_mem(void* msg);
 switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize );
 MgMgcoMediaDesc* get_default_media_desc(void);
@@ -159,6 +160,9 @@ switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, c
 void mg_fill_null_context(MgMgcoContextId* ctxt);
 switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason,uint8_t wild); 
 switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, uint8_t cmdType);
+
+switch_status_t mg_send_oos_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);
+switch_status_t mg_send_ins_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);
 
 
 

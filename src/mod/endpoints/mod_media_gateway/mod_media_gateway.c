@@ -551,6 +551,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 					case MGT_MODIFY:
 						{
 							/*MgMgcoAmmReq *addReq = &cmdReq->cmd.u.mod;*/
+							handle_mg_modify_cmd(mg_profile, cmd);
 							mg_send_modify_rsp(suId, cmd);
 							break;
 						}
