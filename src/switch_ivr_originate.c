@@ -701,6 +701,9 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 			!switch_channel_test_flag(originate_status[i].peer_channel, CF_ORIGINATING)
 			) {
 			(oglobals->hups)++;
+			if (switch_channel_test_flag(originate_status[i].peer_channel, CF_PICKUP)) {
+				pickups--;
+			}
 		} else if ((switch_channel_test_flag(originate_status[i].peer_channel, CF_ANSWERED) ||
 					(oglobals->early_ok && switch_channel_test_flag(originate_status[i].peer_channel, CF_EARLY_MEDIA)) ||
 					(oglobals->ring_ready && oglobals->return_ring_ready && len == 1 &&
