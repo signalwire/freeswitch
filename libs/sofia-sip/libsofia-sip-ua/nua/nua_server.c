@@ -295,31 +295,43 @@ int nua_base_server_preprocess(nua_server_request_t *sr)
 
 void nua_server_request_destroy(nua_server_request_t *sr)
 {
+  nua_server_request_t *sr0 = NULL;
+
   if (sr == NULL)
     return;
 
   if (SR_HAS_SAVED_SIGNAL(sr))
     nua_destroy_signal(sr->sr_signal);
 
-  if (sr->sr_irq) {
-    if (sr->sr_method == sip_method_bye && sr->sr_status < 200) {
-      nta_incoming_treply(sr->sr_irq, SIP_200_OK, TAG_END());
-    }
-    nta_incoming_destroy(sr->sr_irq), sr->sr_irq = NULL;
-  }
-
-  if (sr->sr_request.msg)
-    msg_destroy(sr->sr_request.msg), sr->sr_request.msg = NULL;
-
-  if (sr->sr_response.msg)
-    msg_destroy(sr->sr_response.msg), sr->sr_response.msg = NULL;
-
   if (sr->sr_prev) {
     /* Allocated from heap */
     if ((*sr->sr_prev = sr->sr_next))
       sr->sr_next->sr_prev = sr->sr_prev;
-    su_free(sr->sr_owner->nh_home, sr);
+	sr0 = sr;
   }
+
+  if (sr->sr_irq) {
+	nta_incoming_t *irq = sr->sr_irq;
+    if (sr->sr_method == sip_method_bye && sr->sr_status < 200) {
+      nta_incoming_treply(sr->sr_irq, SIP_200_OK, TAG_END());
+    }
+	sr->sr_irq = NULL;
+    nta_incoming_destroy(irq);
+  }
+
+  if (sr->sr_request.msg) {
+	msg_t *msg = sr->sr_request.msg;
+	sr->sr_request.msg = NULL;
+    msg_destroy(msg);
+  }
+
+  if (sr->sr_response.msg) {
+	msg_t *msg = sr->sr_response.msg;
+	sr->sr_response.msg = NULL;
+    msg_destroy(msg); 
+  }
+
+  if (sr0) su_free(sr->sr_owner->nh_home, sr0);
 }
 
 /**@fn void nua_respond(nua_handle_t *nh, int status, char const *phrase, tag_type_t tag, tag_value_t value, ...);

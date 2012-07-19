@@ -2321,19 +2321,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 		if (!zstr(msg->string_arg)) {
 
-			int status = 0;
-
-			if (tech_pvt->nh && tech_pvt->nh->nh_ds && tech_pvt->nh->nh_ds->ds_sr && nua_server_request_is_pending(tech_pvt->nh->nh_ds->ds_sr)) {
-				status = tech_pvt->nh->nh_ds->ds_sr->sr_status;
-			}
-
-			if (status == 0 || status > 199 || tech_pvt->nh->nh_destroyed) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Cannot call respond on handle at status %d\n", 
-								  switch_channel_get_name(channel), status);
-				goto end_lock;
-			}
-
-
 			if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *dest = (char *) msg->string_arg;
 				char *argv[128] = { 0 };
@@ -2417,17 +2404,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_RESPOND:
 		{
-			int status = 0;
-
-			if (tech_pvt->nh && tech_pvt->nh->nh_ds && tech_pvt->nh->nh_ds->ds_sr && nua_server_request_is_pending(tech_pvt->nh->nh_ds->ds_sr)) {
-				status = tech_pvt->nh->nh_ds->ds_sr->sr_status;
-			}
-
-			if (status == 0 || status > 199 || tech_pvt->nh->nh_destroyed) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Cannot call respond on handle at status %d\n", 
-								  switch_channel_get_name(channel), status);
-				goto end_lock;
-			}
 
 			if (msg->numeric_arg || msg->string_arg) {
 				int code = msg->numeric_arg;
