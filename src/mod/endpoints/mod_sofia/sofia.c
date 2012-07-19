@@ -1204,14 +1204,17 @@ static void our_sofia_event_callback(nua_event_t event,
 				refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to);
 				if ((params = strchr(refer_to, ';'))) {
 					*params++ = '\0';
-					if ((method = switch_find_parameter(params, "method", NULL))) {
-						if (!strcasecmp(method, "INVITE")) {
-							action = "call";
-						} else if (!strcasecmp(method, "BYE")) {
-							action = "end";
-						} else {
-							action = method;
-						}
+
+					if (!(method = switch_find_parameter(params, "method", NULL))) {
+						method = strdup("INVITE");
+					}
+
+					if (!strcasecmp(method, "INVITE")) {
+						action = "call";
+					} else if (!strcasecmp(method, "BYE")) {
+						action = "end";
+					} else {
+						action = method;
 					}
 				}
 
