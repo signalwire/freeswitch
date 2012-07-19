@@ -685,11 +685,11 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	switch_assert(channel);
 
 	if ((tmp = switch_channel_get_variable(channel, "t38_gateway_redundancy"))) {
-			int tmp_value;
-			tmp_value = atoi(tmp);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX changing redundancy from %d:%d to %d:%d\n", fec_span, fec_entries, tmp_value, tmp_value );
-			fec_entries = tmp_value;
-			fec_span = tmp_value;
+		int tmp_value;
+		tmp_value = atoi(tmp);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX changing redundancy from %d:%d to %d:%d\n", fec_span, fec_entries, tmp_value, tmp_value );
+		fec_entries = tmp_value;
+		fec_span = tmp_value;
 	}
 
 	switch (trans_mode) {
@@ -721,62 +721,62 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		}
 		break;
 	case T38_MODE:
-	{
-		switch_core_session_message_t msg = { 0 };
+		{
+			switch_core_session_message_t msg = { 0 };
 
-		if (pvt->t38_state == NULL) {
-			pvt->t38_state = (t38_terminal_state_t *) switch_core_session_alloc(pvt->session, sizeof(t38_terminal_state_t));
-		}
-		if (pvt->t38_state == NULL) {
-			return SWITCH_STATUS_FALSE;
-		}
-		if (pvt->udptl_state == NULL) {
-			pvt->udptl_state = (udptl_state_t *) switch_core_session_alloc(pvt->session, sizeof(udptl_state_t));
-		}
-		if (pvt->udptl_state == NULL) {
-			t38_terminal_free(pvt->t38_state);
-			pvt->t38_state = NULL;
-			return SWITCH_STATUS_FALSE;
-		}
+			if (pvt->t38_state == NULL) {
+				pvt->t38_state = (t38_terminal_state_t *) switch_core_session_alloc(pvt->session, sizeof(t38_terminal_state_t));
+			}
+			if (pvt->t38_state == NULL) {
+				return SWITCH_STATUS_FALSE;
+			}
+			if (pvt->udptl_state == NULL) {
+				pvt->udptl_state = (udptl_state_t *) switch_core_session_alloc(pvt->session, sizeof(udptl_state_t));
+			}
+			if (pvt->udptl_state == NULL) {
+				t38_terminal_free(pvt->t38_state);
+				pvt->t38_state = NULL;
+				return SWITCH_STATUS_FALSE;
+			}
 
-		t38 = pvt->t38_state;
-		t30 = t38_terminal_get_t30_state(t38);
+			t38 = pvt->t38_state;
+			t30 = t38_terminal_get_t30_state(t38);
 
-		memset(t38, 0, sizeof(t38_terminal_state_t));
+			memset(t38, 0, sizeof(t38_terminal_state_t));
 
-		if (t38_terminal_init(t38, pvt->caller, t38_tx_packet_handler, pvt) == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my T.38 structs\n");
-			return SWITCH_STATUS_FALSE;
-		}
+			if (t38_terminal_init(t38, pvt->caller, t38_tx_packet_handler, pvt) == NULL) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my T.38 structs\n");
+				return SWITCH_STATUS_FALSE;
+			}
 
-		pvt->t38_core = t38_terminal_get_t38_core_state(pvt->t38_state);
+			pvt->t38_core = t38_terminal_get_t38_core_state(pvt->t38_state);
 
-		if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries, 
-				(udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
-			return SWITCH_STATUS_FALSE;
-		}
+			if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries, 
+					(udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
+				return SWITCH_STATUS_FALSE;
+			}
 
-		msg.from = __FILE__;
-		msg.message_id = SWITCH_MESSAGE_INDICATE_UDPTL_MODE;
-		switch_core_session_receive_message(pvt->session, &msg);
+			msg.from = __FILE__;
+			msg.message_id = SWITCH_MESSAGE_INDICATE_UDPTL_MODE;
+			switch_core_session_receive_message(pvt->session, &msg);
 
-		/* add to timer thread processing */
-		if (!add_pvt(pvt)) {
-			if (channel) {
-			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			/* add to timer thread processing */
+			if (!add_pvt(pvt)) {
+				if (channel) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				}
+			}
+
+			span_log_set_message_handler(&t38->logging, spanfax_log_message, NULL);
+			span_log_set_message_handler(&t30->logging, spanfax_log_message, NULL);
+
+			if (pvt->verbose) {
+				span_log_set_level(&t38->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+				span_log_set_level(&t30->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 			}
 		}
-
-		span_log_set_message_handler(&t38->logging, spanfax_log_message, NULL);
-		span_log_set_message_handler(&t30->logging, spanfax_log_message, NULL);
-
-		if (pvt->verbose) {
-			span_log_set_level(&t38->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-			span_log_set_level(&t30->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-		}
-	}
-	break;
+		break;
 	case T38_GATEWAY_MODE:
 		if (pvt->t38_gateway_state == NULL) {
 			pvt->t38_gateway_state = (t38_gateway_state_t *) switch_core_session_alloc(pvt->session, sizeof(t38_gateway_state_t));
@@ -959,9 +959,9 @@ static t38_mode_t configure_t38(pvt_t *pvt)
 
 	if (t38_options->T38FaxRateManagement) { 
 		if (!strcasecmp(t38_options->T38FaxRateManagement, "transferredTCF")) {
-		method = 2;
+			method = 2;
 		} else {
-		method = 1;
+			method = 1;
 		}
 	}
 

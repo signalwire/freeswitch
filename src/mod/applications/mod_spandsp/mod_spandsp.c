@@ -227,12 +227,12 @@ SWITCH_STANDARD_APP(t38_gateway_function)
 	} else {
 		if ((var = switch_channel_get_variable(channel, "t38_gateway_detect_timeout"))) {
 			long to = atol(var);
-		if (to > -1) {
-			timeout = (time_t) (switch_epoch_time_now(NULL) + to);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s invalid timeout value.\n", switch_channel_get_name(channel));
+			if (to > -1) {
+				timeout = (time_t) (switch_epoch_time_now(NULL) + to);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s invalid timeout value.\n", switch_channel_get_name(channel));
+			}
 		}
-	}
 
 		//switch_ivr_tone_detect_session(session, "t38", "1100.0", "rw", timeout, 1, direction, NULL, t38_gateway_start);
 		spandsp_fax_detect_session(session, "rw", timeout, MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE, 1, direction, NULL, t38_gateway_start);
@@ -461,8 +461,8 @@ void mod_spandsp_indicate_data(switch_core_session_t *session, switch_bool_t sel
 		switch_core_session_queue_message(target_session, msg);
 
 		if (locked) {
-		switch_core_session_rwunlock(target_session);
-		locked = 0;
+			switch_core_session_rwunlock(target_session);
+			locked = 0;
 		}
 	}
 }

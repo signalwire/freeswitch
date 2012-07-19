@@ -151,3 +151,14 @@ switch_status_t spandsp_tdd_encode_session(switch_core_session_t *session, const
 switch_status_t spandsp_stop_tdd_decode_session(switch_core_session_t *session);
 switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session);
 switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const char *text);
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */

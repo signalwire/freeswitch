@@ -79,20 +79,20 @@ static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf,
 	switch_size_t wrote;
 	wrote = write(modem->master, buf, len);
 #else
-		DWORD wrote;
-		OVERLAPPED o;
-		o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	DWORD wrote;
+	OVERLAPPED o;
+	o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-		/* Initialize the rest of the OVERLAPPED structure to zero. */
-		o.Internal = 0;
-		o.InternalHigh = 0;
-		o.Offset = 0;
-		o.OffsetHigh = 0;
-		assert(o.hEvent);
-		if (!WriteFile(modem->master, buf, (DWORD)len, &wrote, &o)) {
-			GetOverlappedResult(modem->master, &o, &wrote, TRUE);
-		}
-		CloseHandle (o.hEvent);
+	/* Initialize the rest of the OVERLAPPED structure to zero. */
+	o.Internal = 0;
+	o.InternalHigh = 0;
+	o.Offset = 0;
+	o.OffsetHigh = 0;
+	assert(o.hEvent);
+	if (!WriteFile(modem->master, buf, (DWORD)len, &wrote, &o)) {
+		GetOverlappedResult(modem->master, &o, &wrote, TRUE);
+	}
+	CloseHandle (o.hEvent);
 #endif
 
 	if (wrote != len) {
@@ -244,12 +244,12 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 	snprintf(modem->devlink, sizeof(modem->devlink), "COM%d", modem->slot);
 
 	modem->master = CreateFile(modem->devlink,
-	GENERIC_READ | GENERIC_WRITE,
-	0,
-	0,
-	OPEN_EXISTING,
-	FILE_FLAG_OVERLAPPED,
-	0);
+					GENERIC_READ | GENERIC_WRITE,
+					0,
+					0,
+					OPEN_EXISTING,
+					FILE_FLAG_OVERLAPPED,
+					0);
 	if(modem->master==INVALID_HANDLE_VALUE) {
 		status = SWITCH_STATUS_FALSE;
 		if(GetLastError()==ERROR_FILE_NOT_FOUND) {
@@ -1463,3 +1463,14 @@ void modem_global_shutdown(void)
 }
 
 #endif
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */
