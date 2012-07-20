@@ -50,12 +50,13 @@ struct v29_tx_state_s
 #if defined(SPANDSP_USE_FIXED_POINT)
     /*! \brief Gain required to achieve the specified output power, not allowing
                for the size of the current constellation. */
-    float base_gain;
+    int16_t base_gain;
     /*! \brief Gain required to achieve the specified output power, allowing
                for the size of the current constellation. */
-    int32_t gain;
+    int16_t gain;
     /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
-    complexi16_t rrc_filter[2*V29_TX_FILTER_STEPS];
+    int16_t rrc_filter_re[V29_TX_FILTER_STEPS];
+    int16_t rrc_filter_im[V29_TX_FILTER_STEPS];
 #else
     /*! \brief Gain required to achieve the specified output power, not allowing
                for the size of the current constellation. */
@@ -64,8 +65,10 @@ struct v29_tx_state_s
                for the size of the current constellation. */
     float gain;
     /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
-    complexf_t rrc_filter[2*V29_TX_FILTER_STEPS];
+    float rrc_filter_re[V29_TX_FILTER_STEPS];
+    float rrc_filter_im[V29_TX_FILTER_STEPS];
 #endif
+
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
 

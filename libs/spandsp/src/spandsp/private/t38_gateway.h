@@ -86,8 +86,8 @@ typedef struct
     uint16_t crc;
     /*! \brief TRUE if non-ECM fill bits are to be stripped when sending image data. */
     int fill_bit_removal;
-    /*! \brief The number of octets to send in each image packet (non-ECM or ECM) at the current
-               rate and the current specified packet interval. */
+    /*! \brief The number of octets to send in each image packet (non-ECM or ECM) at
+               the current rate and the current specified packet interval. */
     int octets_per_data_packet;
 
     /*! \brief Bits into the non-ECM buffer */
