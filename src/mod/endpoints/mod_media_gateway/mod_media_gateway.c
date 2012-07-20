@@ -424,6 +424,7 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
 /*****************************************************************************************************************************/
 void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 {
+	MgMgcoContextId  out_ctxt;
 	U32 txn_id = 0x00;
 	MgMgcoInd  *mgErr;
 	MgStr      errTxt;
@@ -434,6 +435,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	int 		  count;
 	int 		  err_code;
 	megaco_profile_t* mg_profile;
+
+    memset(&out_ctxt,0,sizeof(out_ctxt));
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
 
@@ -532,6 +535,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 		goto error1;
 	}
 
+    memcpy(&out_ctxt, inc_context,sizeof(MgMgcoContextId));
+
 	switch(cmd->cmdType.val)
 	{
 		case CH_CMD_TYPE_IND:
@@ -543,8 +548,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 				{
 					case MGT_ADD:
 						{
-							handle_mg_add_cmd(mg_profile, cmd);
-							mg_send_add_rsp(suId, cmd);
+							handle_mg_add_cmd(mg_profile, cmd, &out_ctxt);
+							/*mg_send_add_rsp(suId, cmd);*/
 							break;
 						}
 
@@ -565,7 +570,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 					case MGT_SUB:
 						{
 							/*MgMgcoSubAudReq *addReq = &cmdReq->cmd.u.sub;*/
-							mg_send_subtract_rsp(suId, cmd);
+							handle_mg_subtract_cmd(mg_profile, cmd);
+							/*mg_send_subtract_rsp(suId, cmd);*/
 							break;
 						}
 					case MGT_SVCCHG:
@@ -612,6 +618,12 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid command type[%d]\n",cmd->cmdType.val);
 			return;
 	}
+
+    /* END OF TXN received - means last command in txn to process. 
+     * Send response to peer */
+    if(CH_CMD_STATUS_END_OF_TXN == cmd->cmdStatus.val){
+        mg_send_end_of_axn(suId, &cmd->transId, &out_ctxt, &cmd->peerId);
+    }
 
 	return;
 

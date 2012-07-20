@@ -47,10 +47,11 @@ MgPackage_t mg_pkg_list [] =
       1,              /* Version 1 */
       "tdmc",                 /* Package name */
    },
+   /* TODO - not sure IF we need this */
    {  /* INDEX : 7 */
-      MGT_PKG_QTY_ALT,        /*55*/  
+      MGT_PKG_SEGMENTATION,    
       1,              /* Version 1 */
-      "qac",                  /* Package name */
+      "seg",                  /* Package name */
    },
    {  /* INDEX : 8 */
       MGT_PKG_EN_ALERT,       /*59*/  
@@ -58,9 +59,9 @@ MgPackage_t mg_pkg_list [] =
       "alert",                /* Package name */
    },
    {  /* INDEX : 9 */
-      MGT_PKG_AN_DISP,        /*60*/  
+      MGT_PKG_CONTINUITY,        /*60*/  
       2,              /* Version 1 */
-      "andisp",               /* Package name */
+      "ct",               /* Package name */
    },
    {  /* INDEX : 10 */
       MGT_PKG_INACTTIMER,     /*69*/  
@@ -96,6 +97,31 @@ MgPackage_t mg_pkg_list [] =
       MGT_PKG_ETSI_NR,
       1,              /* Version 1 */
       "etsi_nr",              /* Package name */
+   },
+   {  /* INDEX : 17 */
+      MGT_PKG_TONEGEN,
+      1,              /* Version 1 */
+      "tonegen",              /* Package name */
+   },
+   {  /* INDEX : 18 */
+      MGT_PKG_DTMFGEN,
+      1,              /* Version 1 */
+      "tonegen",              /* Package name */
+   },
+   {  /* INDEX : 19 */
+      MGT_PKG_CALLPROGGEN,
+      1,              /* Version 1 */
+      "tonegen",              /* Package name */
+   },
+   {  /* INDEX : 20 */
+      MGT_PKG_CALLPROGDET,
+      1,              /* Version 1 */
+      "tonedet",              /* Package name */
+   },
+   {  /* INDEX : 21 */
+      MGT_PKG_ANALOG,
+      1,              /* Version 1 */
+      "analog",              /* Package name */
    },
   /* Add more packages */
 };

@@ -140,6 +140,8 @@ done:
         switch_core_session_rwunlock(session);
     }
     switch_event_destroy(&var_event);
+
+    return SWITCH_STATUS_SUCCESS;
 }
 
 mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix)
@@ -239,7 +241,7 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
         
         switch_ivr_uuid_bridge(ctx->terminations[0]->uuid, ctx->terminations[1]->uuid);
     }
-    
+
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -257,19 +259,19 @@ switch_status_t megaco_context_sub_termination(mg_context_t *ctx, mg_termination
     }
     
     megaco_termination_destroy(term);
-    
+
     return SWITCH_STATUS_SUCCESS;
 }
 
 
 switch_status_t megaco_context_move_termination(mg_context_t *dst, mg_termination_t *term) 
 {
-    
+
+        return SWITCH_STATUS_SUCCESS;
 }
 
 mg_context_t *megaco_find_context_by_suid(SuId suId, uint32_t context_id)
 {
-    mg_context_t *result = NULL;
     megaco_profile_t*    profile = NULL;
     
     if(NULL == (profile = megaco_get_profile_by_suId(suId))){
