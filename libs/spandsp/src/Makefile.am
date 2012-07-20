@@ -143,10 +143,6 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         super_tone_rx.c \
                         super_tone_tx.c \
                         swept_tone.c \
-                        t4_t6_decode.c \
-                        t4_t6_encode.c \
-                        t4_rx.c \
-                        t4_tx.c \
                         t30.c \
                         t30_api.c \
                         t30_logging.c \
@@ -156,6 +152,11 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         t38_gateway.c \
                         t38_non_ecm_buffer.c \
                         t38_terminal.c \
+                        t4_t6_decode.c \
+                        t4_t6_encode.c \
+                        t4_rx.c \
+                        t4_tx.c \
+                        t42.c \
                         t81_t82_arith_coding.c \
                         t85_decode.c \
                         t85_encode.c \
@@ -246,6 +247,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/t4_tx.h \
                          spandsp/t4_t6_decode.h \
                          spandsp/t4_t6_encode.h \
+                         spandsp/t42.h \
                          spandsp/t81_t82_arith_coding.h \
                          spandsp/t85.h \
                          spandsp/telephony.h \
@@ -312,6 +314,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/t4_tx.h \
                          spandsp/private/t4_t6_decode.h \
                          spandsp/private/t4_t6_encode.h \
+                         spandsp/private/t42.h \
                          spandsp/private/t81_t82_arith_coding.h \
                          spandsp/private/t85.h \
                          spandsp/private/time_scale.h \
