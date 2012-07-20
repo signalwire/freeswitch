@@ -9,6 +9,8 @@
 #include <sys/wait.h>
 #include <time.h>
 
+static int show_unclean = 0;
+
 static int sys(char *buf, int buflen, char *cmd) {
   int i, p[2];
   if (pipe(p)) return 255;
@@ -50,7 +52,7 @@ int main(int argc, char **argv) {
   if ((sys1(xcommit,sizeof(xcommit),"git rev-list -n1 --abbrev=10 --abbrev-commit HEAD")))
     return 1;
   snprintf(xver,sizeof(xver),"+git~%s~%s",xfdate,xcommit);
-  if ((sys(NULL,0,"git diff-index --quiet HEAD"))) {
+  if (show_unclean && (sys(NULL,0,"git diff-index --quiet HEAD"))) {
     char buf[256], now[256]; time_t now_t=time(NULL); struct tm *now_tm;
     if (!(now_tm=gmtime(&now_t))) return 1;
     strftime(now,sizeof(now),"%Y%m%dT%H%M%SZ",now_tm);
