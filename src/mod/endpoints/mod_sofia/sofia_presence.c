@@ -2846,7 +2846,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						if (!zstr(op)) {
 							//switch_snprintf(status_line, sizeof(status_line), "%sing", what);
 							//} else {
-							switch_snprintf(status_line, sizeof(status_line), "%s %s", what, op);
+							if (sofia_test_pflag(profile, PFLAG_PRESENCE_PRIVACY)) {
+								switch_snprintf(status_line, sizeof(status_line), "%s", what);
+							} else {
+								switch_snprintf(status_line, sizeof(status_line), "%s %s", what, op);
+							}
 						}
 
 						rpid = "on-the-phone";
@@ -2875,7 +2879,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					if (!term && !strcmp(status, "hold")) {
 						rpid = "on-the-phone";
 						if (!zstr(op)) {
-							switch_snprintf(status_line, sizeof(status_line), "Hold %s", op);
+							if (sofia_test_pflag(profile, PFLAG_PRESENCE_PRIVACY)) {
+								switch_snprintf(status_line, sizeof(status_line), "Hold");
+							} else {
+								switch_snprintf(status_line, sizeof(status_line), "Hold %s", op);
+							}
 							force_status = 1;
 						}
 					}
