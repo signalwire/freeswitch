@@ -1648,6 +1648,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(_In_ switch_file_handle_t 
 SWITCH_DECLARE(switch_status_t) switch_core_file_write(_In_ switch_file_handle_t *fh, void *data, switch_size_t *len);
 
 /*! 
+  \brief Write media to a file handle
+  \param fh the file handle to write to
+  \param data the buffer to write
+  \param len the amount of data to write from the buffer
+  \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(_In_ switch_file_handle_t *fh, void *data, switch_size_t *len);
+
+/*!
   \brief Seek a position in a file
   \param fh the file handle to seek
   \param cur_pos the current position in the file

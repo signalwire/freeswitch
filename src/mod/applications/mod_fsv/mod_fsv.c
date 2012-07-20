@@ -703,30 +703,30 @@ static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, 
 	return status;
 }
 
-// static switch_status_t fsv_file_write_video(switch_file_handle_t *handle, void *data, size_t *len)
-// {
-// 	uint32_t datalen = *len;
-// 	uint32_t bytes = datalen | VID_BIT;
-// 	size_t size;
-// 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+static switch_status_t fsv_file_write_video(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	uint32_t datalen = *len;
+	uint32_t bytes = datalen | VID_BIT;
+	size_t size;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-// 	fsv_file_context *context = handle->private_info;
-// 	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing: %ld\n", (long)(*len)); */
+	fsv_file_context *context = handle->private_info;
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing: %ld\n", (long)(*len)); */
 
-// 	switch_mutex_lock(context->mutex);
+	switch_mutex_lock(context->mutex);
 
-// 	size = sizeof(bytes);
-// 	if (switch_file_write(context->fd, &bytes, &size) != SWITCH_STATUS_SUCCESS) {
-// 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "write error\n");
-// 		return SWITCH_STATUS_FALSE;
-// 	}
+	size = sizeof(bytes);
+	if (switch_file_write(context->fd, &bytes, &size) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "write error\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
-// 	*len = datalen;
-// 	status =  switch_file_write(context->fd, data, len);
-// 	switch_mutex_unlock(context->mutex);
+	*len = datalen;
+	status =  switch_file_write(context->fd, data, len);
+	switch_mutex_unlock(context->mutex);
 
-// 	return status;
-// }
+	return status;
+}
 
 static switch_status_t fsv_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
 {
@@ -760,7 +760,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fsv_load)
 	file_interface->file_truncate = fsv_file_truncate;
 	file_interface->file_read = fsv_file_read;
 	file_interface->file_write = fsv_file_write;
-	// file_interface->file_write_video = fsv_file_write_video;
+	file_interface->file_write_video = fsv_file_write_video;
 	file_interface->file_seek = fsv_file_seek;
 	file_interface->file_set_string = fsv_file_set_string;
 	file_interface->file_get_string = fsv_file_get_string;
