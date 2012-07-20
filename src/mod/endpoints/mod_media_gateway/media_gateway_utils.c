@@ -410,55 +410,656 @@ void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd)
 }
 
 /*****************************************************************************************************************************/
+void mgco_print_sdp_attr_set(CmSdpAttrSet *s)
+{
+    int i=0x00;
+    if (s->numComp.pres) {
+        for (i = 0; i < s->numComp.val; i++) {
+            CmSdpAttr *a = s->attr[i];
+
+            if(NOTPRSNT == a->type.pres) continue;
+
+
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Attribute Type[%d]\n",a->type.val);
+
+            switch(a->type.val)
+            {
+                case CM_SDP_ATTR_GENERIC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_CAT:
+                    {
+                        break;
+                    }
+
+                case CM_SDP_ATTR_KEYWDS:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_TOOL:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_PTIME:
+                    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t PTIME  = %d \n", 
+                                (NOTPRSNT != a->u.ptime.pres)?a->u.ptime.val:-1);
+                        break;
+                    }
+                case CM_SDP_ATTR_RECVONLY:
+                    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t CM_SDP_ATTR_RECVONLY: \n");
+                        break;
+                    }
+                case CM_SDP_ATTR_SENDRECV:
+                    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t CM_SDP_ATTR_SENDRECV: \n");
+                        break;
+                    }
+                case CM_SDP_ATTR_SENDONLY:
+                    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t CM_SDP_ATTR_SENDONLY: \n");
+                        break;
+                    }
+                case CM_SDP_ATTR_ORIENT:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_TYPE:
+                    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t CM_SDP_ATTR_TYPE: \n");
+                        break;
+                    }
+                case CM_SDP_ATTR_CHARSET:
+                    {
+                        break;
+                    }
+
+                case CM_SDP_ATTR_SDPLANG:
+                    {
+                        break;
+                    }
+
+                case CM_SDP_ATTR_LANG:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_FRAMERATE:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_QUALITY:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_FMTP:
+                    {
+                        CmSdpAttrFmtp* f = &a->u.fmtp;
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t CM_SDP_ATTR_FMTP: \n");
+
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Format Type = %d \n",(NOTPRSNT == f->type.pres)?f->type.val:-1);
+
+                        break;
+                    }
+                case CM_SDP_ATTR_RTPMAP:
+                    {
+                        CmSdpAttrRtpMap* r = &a->u.rtpmap;
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t CM_SDP_ATTR_RTPMAP: \n");
+
+                        if(NOTPRSNT != r->pres.pres){
+
+                            /* payload type */
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Payload Type = %d \n",
+                                    (NOTPRSNT != r->pay.type.pres)?r->pay.type.val:-1);
+
+                            /* payload value */
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Payload Value = %d \n",
+                                    (NOTPRSNT != r->pay.val.pres)?r->pay.val.val:-1);
+
+                            /* encoding name */
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Encoding Name value = %d \n",
+                                    (NOTPRSNT != r->enc.val.pres)?r->enc.val.val:-1);
+
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Encoding Name name = %s \n",
+                                    (NOTPRSNT != r->enc.name.pres)?(char*)r->enc.name.val:"Not Present");
+
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Clock Rate = %d \n",
+                                    (NOTPRSNT != r->clk.pres)?r->clk.val:-1);
+
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Encoding Parameters = %s \n",
+                                    (NOTPRSNT != r->parms.pres)?(char*)r->parms.val:"Not Present");
+                        }
+                        break;
+                    }
+                case CM_SDP_ATTR_INACTIVE:
+                    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t CM_SDP_ATTR_INACTIVE: \n");
+                        break;
+                    }
+                case CM_SDP_ATTR_CONTROL:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_RANGE:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_ETAG:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_ATMMAP:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_EECID:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_AALTYPE:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_SILENCESUPP:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_ECAN:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_GC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_PROFILEDESC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_VSEL:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_DSEL:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_FSEL:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_CAPABILITY:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_QOSCLASS:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_BCOB:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_STC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_UPCC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_ATMQOSPARMS:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_AAL2QOSFPARMS:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_AAL2QOSBPARMS:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_ATMTRFCDESC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_AAL2FTRFCDESC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_AAL2BTRFCDESC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_ABRPARMS:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_CLKREC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_FEC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_PRTFL:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_BEARERTYPE:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_STRUCTURE:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_SBC:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_CPSSDUSIZE:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_AAL2CPS:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_ANYCAST:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_WTP:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_CACHE:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_CHAIN:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_PHONECONTEXT:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_CLIR:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_DIRECTION:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_MAXPTIME:
+                    {
+                        break;
+                    }
+                case CM_SDP_ATTR_T38_FAX:
+                    {
+                        break;
+                    }
+                default:
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Not supported Type[%d]\n",a->type.val);
+                    break;
+            }
+        }
+    }else{
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "a-line not present \n");
+    }
+
+
+}
+
+void mgco_print_sdp_c_line(CmSdpConn *s)
+{
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "********** SDP connection line ****** \n");
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Net Type = %d \n", 
+            (NOTPRSNT != s->netType.type.pres)?s->netType.type.val:-1);
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Address Type = %d \n", 
+            (NOTPRSNT != s->addrType.pres)?s->addrType.val:-1);
+
+    if (s->addrType.pres && s->addrType.val == CM_SDP_ADDR_TYPE_IPV4 &&
+            s->netType.type.val == CM_SDP_NET_TYPE_IN &&
+            s->u.ip4.addrType.val == CM_SDP_IPV4_IP_UNI) {
+
+        if (s->u.ip4.addrType.pres) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Address: %d.%d.%d.%d\n",
+                    s->u.ip4.u.uniIp.b[0].val,
+                    s->u.ip4.u.uniIp.b[1].val,
+                    s->u.ip4.u.uniIp.b[2].val,
+                    s->u.ip4.u.uniIp.b[3].val);
+        }
+    }
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "**************** \n");
+}
+
+void mgco_print_CmSdpU8OrNil(CmSdpU8OrNil* p)
+{
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"CmSdpU8OrNil: Type = %d \n", (NOTPRSNT != p->type.pres)?p->type.val:-1); 
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"CmSdpU8OrNil: Value = %d \n", (NOTPRSNT != p->val.pres)?p->val.val:-1); 
+}
+
+void mgco_print_sdp_media_param(CmSdpMedPar *s)
+{
+    int i=0x00;
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "***** Media Parameter *********** \n");
+    if (s->numProtFmts.pres) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Media Formats = %d \n", s->numProtFmts.val);
+        for (i = 0; i < s->numProtFmts.val; i++) {
+            CmSdpMedProtoFmts *a = s->pflst[i];
+
+            /*Prot*/
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " Proto Type = %d \n", (NOTPRSNT != a->prot.type.pres)?a->prot.type.val:-1);
+            switch(a->prot.type.val)
+            {
+                case CM_SDP_MEDIA_PROTO_UNKNOWN:
+                    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " Proto Type Unknown , name = %s \n", 
+                                (NOTPRSNT != a->prot.u.name.pres)?(char*)a->prot.u.name.val:"Not Present ");
+                        break;
+                    }
+                case CM_SDP_MEDIA_PROTO_RTP:
+                    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " Proto Type RTP , subtype = %d \n", 
+                                (NOTPRSNT != a->prot.u.subtype.type.pres)?a->prot.u.subtype.type.val: -1);
+                        break;
+                    }
+            }
+
+            /*repeated from "prot" field */
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " Proto Type  = %d \n", 
+                    (NOTPRSNT != a->protType.pres)?a->protType.val: -1);
+
+            switch(a->protType.val)
+            {
+                case CM_SDP_MEDIA_PROTO_RTP:
+                    {
+                        CmSdpMedFmtRtpList* r = &a->u.rtp;
+                        int i = 0x00;
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " CM_SDP_MEDIA_PROTO_RTP: \n"); 
+                        if(NOTPRSNT != r->num.pres){
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " Number of Formats[%d] \n", r->num.val); 
+
+                            for(i=0;i<r->num.val;i++){
+                                mgco_print_CmSdpU8OrNil(r->fmts[i]);
+                            }
+                        }
+                        break;
+                    }
+
+                case CM_SDP_UDPTL_FMT_T38:
+                    {
+                        /*CmSdpMedFmtUdptlList* t = &a->u.t38;*/
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " CM_SDP_UDPTL_FMT_T38: \n"); 
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+    }
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "**************** \n");
+}
+
 void mgco_print_sdp(CmSdpInfoSet *sdp)
 {
-	int i;
+    int i;
 
 
-	if (sdp->numComp.pres == NOTPRSNT) {
-		return;
-	}
+    if (sdp->numComp.pres == NOTPRSNT) {
+        return;
+    }
 
-	for (i = 0; i < sdp->numComp.val; i++) {
-		CmSdpInfo *s = sdp->info[i];
-		int mediaId;
+    for (i = 0; i < sdp->numComp.val; i++) {
+        CmSdpInfo *s = sdp->info[i];
+        int mediaId;
 
-		if (s->conn.addrType.pres && s->conn.addrType.val == CM_SDP_ADDR_TYPE_IPV4 &&
-				s->conn.netType.type.val == CM_SDP_NET_TYPE_IN &&
-				s->conn.u.ip4.addrType.val == CM_SDP_IPV4_IP_UNI) {
+        /************************************************************************************************************************/
+        /* info presence check */
+        if(NOTPRSNT == s->pres.pres) continue;
 
-			if (s->conn.u.ip4.addrType.pres) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Address: %d.%d.%d.%d\n",
-						s->conn.u.ip4.u.uniIp.b[0].val,
-						s->conn.u.ip4.u.uniIp.b[1].val,
-						s->conn.u.ip4.u.uniIp.b[2].val,
-						s->conn.u.ip4.u.uniIp.b[3].val);
-			}
-			if (s->attrSet.numComp.pres) {
-				for (mediaId = 0; mediaId < s->attrSet.numComp.val; mediaId++) {
-					/*CmSdpAttr *a = s->attrSet.attr[mediaId];*/
+        /************************************************************************************************************************/
+        /* Version */
+        if(NOTPRSNT != s->ver.pres) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " SDP Version = %d \n", s->ver.val);
+        }
+
+        /************************************************************************************************************************/
+        /* Orig */
+        if(NOTPRSNT != s->orig.pres.pres) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "********** SDP orig line ****** \n \t Type = %d \n", s->orig.type.val);
+
+            if(NOTPRSNT != s->orig.orig.pres.pres) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t User Name = %s \n", 
+                        (NOTPRSNT != s->orig.orig.usrName.pres)?(char*)s->orig.orig.usrName.val:"Not Present");
+
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Session Id = %s \n", 
+                        (NOTPRSNT != s->orig.orig.sessId.pres)?(char*)s->orig.orig.sessId.val:"Not Present");
+
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Session Version = %s \n", 
+                        (NOTPRSNT != s->orig.orig.sessVer.pres)?(char*)s->orig.orig.sessVer.val:"Not Present");
+
+                /* sdpAddr */
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Net Type = %d \n", 
+                        (NOTPRSNT != s->orig.orig.sdpAddr.netType.type.pres)?s->orig.orig.sdpAddr.netType.type.val:-1);
+
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Address Type = %d \n", 
+                        (NOTPRSNT != s->orig.orig.sdpAddr.addrType.pres)?s->orig.orig.sdpAddr.addrType.val:-1);
+
+                /* print IPV4 address */
+                if (s->orig.orig.sdpAddr.addrType.pres && s->orig.orig.sdpAddr.addrType.val == CM_SDP_ADDR_TYPE_IPV4 &&
+                        s->orig.orig.sdpAddr.netType.type.val == CM_SDP_NET_TYPE_IN &&
+                        s->orig.orig.sdpAddr.u.ip4.addrType.val == CM_SDP_IPV4_IP_UNI) {
+
+                    if (s->orig.orig.sdpAddr.u.ip4.addrType.pres) {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Address: %d.%d.%d.%d\n",
+                                s->orig.orig.sdpAddr.u.ip4.u.ip.b[0].val,
+                                s->orig.orig.sdpAddr.u.ip4.u.ip.b[1].val,
+                                s->orig.orig.sdpAddr.u.ip4.u.ip.b[2].val,
+                                s->orig.orig.sdpAddr.u.ip4.u.ip.b[3].val);
+                    }
+
+                }else{
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t O-line not present \n"); 
+                }
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "********** ****** \n");
+            }
+        } else{
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t O-line not present \n"); 
+        }
+        /************************************************************************************************************************/
+        /* Session Name (s = line) */
+
+        if(NOTPRSNT != s->sessName.pres) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Session Name = %s \n", s->sessName.val); 
+        } else{
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t s-line not present \n"); 
+        }
+
+        /************************************************************************************************************************/
+        /* Session Info(i= line) */
+
+        if(NOTPRSNT != s->info.pres) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Session Info = %s \n", s->info.val); 
+        } else{
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t i-line not present \n"); 
+        }
+
+        /************************************************************************************************************************/
+        /* Session Uri */
+
+        if(NOTPRSNT != s->uri.pres) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Session Uri = %s \n", s->uri.val); 
+        } else{
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t uri not present \n"); 
+        }
+
+        /************************************************************************************************************************/
+        /* E-Mail */
+        /* TODO */
 
 
-				}
-			}
+        /************************************************************************************************************************/
+        /* Phone */
+        /* TODO */
 
-			if (s->mediaDescSet.numComp.pres) {
-				for (mediaId = 0; mediaId < s->mediaDescSet.numComp.val; mediaId++) {
-					CmSdpMediaDesc *desc = s->mediaDescSet.mediaDesc[mediaId];
 
-					if (desc->field.mediaType.val == CM_SDP_MEDIA_AUDIO &&
-							desc->field.id.type.val ==  CM_SDP_VCID_PORT &&
-							desc->field.id.u.port.type.val == CM_SDP_PORT_INT &&
-							desc->field.id.u.port.u.portInt.port.type.val == CM_SDP_SPEC) {
-						int port = desc->field.id.u.port.u.portInt.port.val.val;
+        /************************************************************************************************************************/
+        /* connection line */
 
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Port: %d\n", port);
+        mgco_print_sdp_c_line(&s->conn);
+        /************************************************************************************************************************/
+        /* Bandwidth */
+        /* TODO */
 
-					}
-				}
-			}
-		}
-	}
+        /************************************************************************************************************************/
+        /* SDP Time (t= line)*/
+
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "*** t-line **************** \n");
+        if(NOTPRSNT != s->sdpTime.pres.pres) {
+            if(NOTPRSNT != s->sdpTime.sdpOpTimeSet.numComp.pres) {
+                int i = 0x00;
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "SDP op time present with total component[%d]\n", s->sdpTime.sdpOpTimeSet.numComp.val);
+                for (i = 0;i<s->sdpTime.sdpOpTimeSet.numComp.val;i++){
+                    CmSdpOpTime* t = s->sdpTime.sdpOpTimeSet.sdpOpTime[i];
+                    if(NOTPRSNT == t->pres.pres) continue;
+
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Start Time = %s \n", 
+                            (NOTPRSNT != t->startTime.pres)?(char*)t->startTime.val:"Not Present");
+
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Stop Time = %s \n", 
+                            (NOTPRSNT != t->stopTime.pres)?(char*)t->stopTime.val:"Not Present");
+
+                    /*repeat time repFieldSet */
+
+                    if(NOTPRSNT != t->repFieldSet.numComp.pres) {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "SDP repeat time present with total component[%d]\n", 
+                                t->repFieldSet.numComp.val);
+
+                        /*TODO - print repeat fields */
+                    }else{
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "SDP repeat time not present \n");
+                    }
+                } /* sdpOpTimeSet.numComp for loop -- end */
+            }else{/*sdpOpTimeSet.numComp.pres if -- end */
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "SDP op time not present \n");
+            }
+
+            /*TODO - zoneAdjSet */
+        }else{
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "t-line not present \n");
+        }
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "**************** \n");
+
+
+        /************************************************************************************************************************/
+        /* key type (k= line)*/
+
+        if(NOTPRSNT != s->keyType.pres.pres) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Key Type = %d \n", 
+                    (NOTPRSNT != s->keyType.keyType.pres)?s->keyType.keyType.val:-1);
+
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Key Data = %s \n", 
+                    (NOTPRSNT != s->keyType.key_data.pres)?(char*)s->keyType.key_data.val:"Not Present");
+        }else{
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "k-line not present \n");
+        }
+
+        /************************************************************************************************************************/
+        /* Attribute Set */
+
+        mgco_print_sdp_attr_set(&s->attrSet);
+        
+        /************************************************************************************************************************/
+        /* Media Descriptor Set */
+
+        if (s->mediaDescSet.numComp.pres) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "****** Media Descriptor Set present with numComp[%d]\n", s->mediaDescSet.numComp.val);
+            for (mediaId = 0; mediaId < s->mediaDescSet.numComp.val; mediaId++) {
+                CmSdpMediaDesc *desc = s->mediaDescSet.mediaDesc[mediaId];
+
+                if(NOTPRSNT == desc->pres.pres) continue;
+
+                /* Media Field */
+                {
+                    CmSdpMediaField* f = &desc->field; 
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Media Type = %d \n",(NOTPRSNT == f->mediaType.pres)?f->mediaType.val:-1);
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Media  = %s \n",(NOTPRSNT == f->media.pres)?(char*)f->media.val:"Not Present");
+                    /* Channel ID */
+                    if(NOTPRSNT != f->id.type.pres){
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t VcId Type = %d \n", f->id.type.val);
+                        switch(f->id.type.val){
+                            case CM_SDP_VCID_PORT:
+                                {
+                                    CmSdpPort         *p = &f->id.u.port;
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "CM_SDP_VCID_PORT:\n");
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t SDP port type = %d \n", (NOTPRSNT == p->type.pres)?p->type.val:-1);
+                                    switch(p->type.val)
+                                    {
+                                        case CM_SDP_PORT_INT:
+                                            {
+                                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t CM_SDP_PORT_INT: SDP port = %d  type = %d \n", p->u.portInt.port.val.val, p->u.portInt.port.type.val);
+                                                break;
+                                            }
+                                        case CM_SDP_PORT_VPCID:
+                                            {
+                                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t CM_SDP_PORT_VPCID: \n"); 
+                                                break;
+                                            }
+                                        default:
+                                            break;
+                                    }
+                                    break;
+                                }
+                            default:
+                                break;
+                        }
+                    }
+                    mgco_print_sdp_media_param(&f->par);
+                }
+
+                /*info */
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Info  = %s \n",(NOTPRSNT == desc->info.pres)?(char*)desc->info.val:"Not Present");
+
+                /*connection set */
+                {
+                    int cnt=0x00;
+                    if(NOTPRSNT != desc->connSet.numComp.pres){
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Number of Connection component[%d]\n",desc->connSet.numComp.val); 
+                        for(cnt=0;cnt<desc->connSet.numComp.val;cnt++){
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "************************\n");
+                            mgco_print_sdp_c_line(desc->connSet.connSet[cnt]);
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "************************\n");
+                        }
+                    }
+                }
+
+                /* attribute set */
+                mgco_print_sdp_attr_set(&desc->attrSet);
+
+
+                if (desc->field.mediaType.val == CM_SDP_MEDIA_AUDIO &&
+                        desc->field.id.type.val ==  CM_SDP_VCID_PORT &&
+                        desc->field.id.u.port.type.val == CM_SDP_PORT_INT &&
+                        desc->field.id.u.port.u.portInt.port.type.val == CM_SDP_SPEC) {
+                    int port = desc->field.id.u.port.u.portInt.port.val.val;
+
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Port: %d\n", port);
+
+                }
+            }
+        }
+    }
 }
 
 /*****************************************************************************************************************************/
