@@ -1959,7 +1959,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-					  "\nFreeSWITCH Version %s Started.\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL,
+					  "\nFreeSWITCH Version %s (%s) Started.\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n",
+					  SWITCH_VERSION_FULL, SWITCH_VERSION_FULL_HUMAN,
 					  switch_core_session_limit(0),
 					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
 

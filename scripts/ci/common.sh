@@ -98,15 +98,18 @@ parse_version () {
 }
 
 set_fs_ver () {
-  local ver="$1" major="$2" minor="$3" micro="$4" rev="$5"
+  local ver="$1" major="$2" minor="$3" micro="$4" rev="$5" hrev="$6"
   sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
     -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$ver\2|" \
     -i configure.in
   if [ -n "$rev" ]; then
+    [ -n "$hrev" ] || hrev="$rev"
     sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
+      -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, \[\).*\(\])\)|\1$hrev\2|" \
       -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
+      -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN\)|\1|" \
       -i configure.in
   fi
 }

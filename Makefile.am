@@ -422,7 +422,10 @@ src/include/switch_version.h: src/include/switch_version.h.in Makefile build/pri
 	@cat $< > $@; \
 	if [ -d .git ] && [ -n "$$(which git)" ]; then \
 	  xver="$$(./build/print_git_revision)"; \
-	  sed -e "/#define *SWITCH_VERSION_REVISION/{s/\"\([^\"]*\)\"/\"\1$$xver\"/;}" \
+	  xhver="$$(./build/print_git_revision -h)"; \
+	  sed \
+	    -e "/#define *SWITCH_VERSION_REVISION\W/{s/\"\([^\"]*\)\"/\"\1$$xver\"/;}" \
+	    -e "/#define *SWITCH_VERSION_REVISION_HUMAN\W/{s/\"\([^\"]*\)\"/\"\1$$xhver\"/;}" \
 	    $< > $@; \
 	fi;
 

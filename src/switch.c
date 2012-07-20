@@ -577,7 +577,7 @@ int main(int argc, char *argv[])
 		}
 
 		else if (!strcmp(local_argv[x], "-version")) {
-			fprintf(stdout, "FreeSWITCH version: %s\n", SWITCH_VERSION_FULL);
+			fprintf(stdout, "FreeSWITCH version: %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_FULL_HUMAN);
 			exit(EXIT_SUCCESS);
 		}
 #endif
