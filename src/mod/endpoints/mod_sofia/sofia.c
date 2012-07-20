@@ -3456,6 +3456,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							profile->ndlb &= ~PFLAG_NDLB_ALLOW_BAD_IANANAME;
 						}
+					} else if (!strcasecmp(var, "NDLB-allow-crypto-in-avp")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP;
+						} else {
+							profile->ndlb &= ~PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP;
+						}
 					} else if (!strcasecmp(var, "NDLB-allow-nondup-sdp")) {
 						if (switch_true(val)) {
 							profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
