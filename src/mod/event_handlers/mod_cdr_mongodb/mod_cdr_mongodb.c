@@ -360,7 +360,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_mongodb_load)
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 	if (load_config(pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Unable to load or parse config!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to load or parse config!\n");
+		return SWITCH_STATUS_FALSE;
 	}
 
 	db_status = mongo_connect(globals.mongo_conn, globals.mongo_host, globals.mongo_port);
