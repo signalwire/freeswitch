@@ -145,16 +145,40 @@ done:
 mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix)
 {
     mg_termination_type_t termtype;
+    switch_memory_pool_t *pool;
+    mg_termination_t *term = NULL;
+    char name[100];
+    int term_id;
     
     /* Check the termination type by prefix */
     if (strncasecmp(prefix, profile->rtp_termination_id_prefix, strlen(profile->rtp_termination_id_prefix)) == 0) {
         termtype = MG_TERM_RTP;
+        term_id = mg_rtp_request_id(profile);
+        switch_snprintf(name, sizeof name, "%s/%d", profile->rtp_termination_id_prefix, term_id);
     } else {
         /* TODO Math: look through TDM channels */
         return NULL;
     }
     
+    switch_core_new_memory_pool(&pool);
+    term = switch_core_alloc(pool, sizeof *term);
+    term->pool = pool;
+    term->type = termtype;
     
+    if (termtype == MG_TERM_RTP) {
+        /* Fill in local address and reserve an rtp port */
+        term->u.rtp.local_addr = profile->my_ipaddr;
+        term->u.rtp.local_port = switch_rtp_request_port(term->u.rtp.local_addr);
+        term->u.rtp.codec = megaco_codec_str(profile->default_codec);
+        term->u.rtp.term_id = term_id;
+        term->name = switch_core_strdup(term->pool, name);
+    } else if (termtype == MG_TERM_TDM) {
+        /* XXX initialize tdm-specific fields */
+    }
+    
+    switch_core_hash_insert_wrlock(profile->terminations, term->name, term, profile->terminations_rwlock);
+    
+    return term;
 }
 
 mg_termination_t *megaco_find_termination(megaco_profile_t *profile, const char *name)
@@ -177,7 +201,12 @@ void megaco_termination_destroy(mg_termination_t *term)
         term->uuid = NULL;
     }
     
+    if (term->type == MG_TERM_RTP && term->u.rtp.local_port != 0) {
+        switch_rtp_release_port(term->u.rtp.local_addr, term->u.rtp.local_port);
+    }
+    
     switch_core_hash_delete_wrlock(term->profile->terminations, term->name, term->profile->terminations_rwlock);
+    switch_core_destroy_memory_pool(&term->pool);
 }
 
 switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination_t *term)
@@ -210,6 +239,8 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
         
         switch_ivr_uuid_bridge(ctx->terminations[0]->uuid, ctx->terminations[1]->uuid);
     }
+    
+    return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -226,6 +257,8 @@ switch_status_t megaco_context_sub_termination(mg_context_t *ctx, mg_termination
     }
     
     megaco_termination_destroy(term);
+    
+    return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -341,6 +374,27 @@ void megaco_release_context(mg_context_t *ctx)
     free(ctx);
     
     switch_thread_rwlock_unlock(profile->contexts_rwlock);
+}
+
+uint32_t mg_rtp_request_id(megaco_profile_t *profile)
+{
+    if (profile->rtpid_next >= MG_MAX_RTPID || profile->rtpid_next == 0) {
+        profile->rtpid_next = 1;
+    }
+
+    for (; profile->rtpid_next < MG_MAX_RTPID; profile->rtpid_next++) {
+        if ((profile->rtpid_bitmap[profile->rtpid_next % 8] & (1 << (profile->rtpid_next / 8))) == 0) {
+            profile->rtpid_bitmap[profile->rtpid_next % 8] |= 1 << (profile->rtpid_next / 8);
+            return profile->rtpid_next;
+        }
+    }
+    
+    return 0;
+}
+
+void mg_rtp_release_id(megaco_profile_t *profile, uint32_t id)
+{
+    profile->rtpid_bitmap[id % 8] &= ~(1 << (id / 8));
 }
 
 switch_status_t megaco_profile_start(const char *profilename)

@@ -40,6 +40,9 @@ typedef enum {
 	MEGACO_CODEC_G729,
 	MEGACO_CODEC_G723_1,
 	MEGACO_CODEC_ILBC,
+    
+    /* Nothing below this line */
+    MEGACO_CODEC_INVALID = 0xFFFFFFFF
 } megaco_codec_t;
 
 typedef struct mg_peer_profile_s{
@@ -81,6 +84,7 @@ typedef struct mg_context_s mg_context_t;
 #define kCHAN_ID "chan"
 
 typedef struct mg_termination_s {
+    switch_memory_pool_t *pool;
     mg_termination_type_t type;
     const char *name; /*!< Megaco Name */    
     const char *uuid; /*!< UUID of the associated FS channel, or NULL if it's not activated */
@@ -102,6 +106,7 @@ typedef struct mg_termination_s {
             int rfc2833_pt; /*!< If the stream is using rfc2833 for dtmf events, this has to be set to its negotiated payload type */
             int rate;       /*!< Sampling rate */
             const char *codec; /*!< Codec to use, using the freeswitch nomenclature. This could be "PCMU" for G711.U, "PCMA" for G711.A, or "G729" for g729 */
+            int term_id;
         } rtp;
         
         struct {
@@ -122,6 +127,7 @@ struct mg_context_s {
 
 #define MG_CONTEXT_MODULO 16
 #define MG_MAX_CONTEXTS 32768
+#define MG_MAX_RTPID 32768
 
 
 struct megaco_profile_s {
@@ -148,9 +154,46 @@ struct megaco_profile_s {
     uint8_t contexts_bitmap[MG_MAX_CONTEXTS/8]; /* Availability matrix, enough bits for a 32768 bitmap */    
     mg_context_t *contexts[MG_CONTEXT_MODULO];
     
+    uint8_t rtpid_bitmap[MG_MAX_CONTEXTS/8];
+    uint32_t rtpid_next;
     switch_hash_t *terminations;
     switch_thread_rwlock_t *terminations_rwlock;
 };
+
+static inline const char *megaco_codec_str(megaco_codec_t codec)
+{
+    switch (codec) {
+        case MEGACO_CODEC_PCMU:
+            return "PCMU";
+        case MEGACO_CODEC_PCMA:
+            return "PCMA";
+        case MEGACO_CODEC_G729:
+            return "G729";
+        case MEGACO_CODEC_G723_1:
+            return "G723"; /* XXX double check this */
+        case MEGACO_CODEC_ILBC:
+            return "ILBC";
+        case MEGACO_CODEC_INVALID:
+        default:
+            return NULL;
+    }
+}
+
+static inline megaco_codec_t megaco_codec_parse(const char *codec) {
+    if (!strcasecmp(codec, "PCMU")) {
+        return MEGACO_CODEC_PCMU;
+    } else if (!strcasecmp(codec, "PCMA")) {
+        return MEGACO_CODEC_PCMA;
+    } else if (!strcasecmp(codec, "G729")) {
+        return MEGACO_CODEC_G729;
+    } else if (!strcasecmp(codec, "G723")) {
+        return MEGACO_CODEC_G723_1;
+    } else if (!strcasecmp(codec, "ILBC")) {
+        return MEGACO_CODEC_ILBC;
+    } else {
+        return MEGACO_CODEC_INVALID;
+    }
+}
 
 
 megaco_profile_t *megaco_profile_locate(const char *name);
@@ -160,9 +203,16 @@ void megaco_profile_release(megaco_profile_t *profile);
 switch_status_t megaco_profile_start(const char *profilename);
 switch_status_t megaco_profile_destroy(megaco_profile_t **profile);
 
+uint32_t mg_rtp_request_id(megaco_profile_t *profile);
+void mg_rtp_release_id(megaco_profile_t *profile, uint32_t id);
+
 mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id);
 mg_context_t *megaco_choose_context(megaco_profile_t *profile);
 void megaco_release_context(mg_context_t *ctx);
+
+mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix);
+mg_termination_t *megaco_find_termination(megaco_profile_t *profile, const char *name);
+void megaco_termination_destroy(mg_termination_t *term);
 
 megaco_profile_t*  megaco_get_profile_by_suId(SuId suId);
 mg_context_t *megaco_find_context_by_suid(SuId suId, uint32_t context_id);
