@@ -13,7 +13,7 @@
     <!-- synchronisation sequence == 250ms of zeros. = 450 bytes at 14400, 375 at 12000, 300 at 9600, 225 at 7200, 150 at 4800 or 75 at 2400 -->
     <!-- fast HDLC inter-frame flag sequence == 1 flag byte -->
     <!-- fast HDLC end flag sequence == 10 flag bytes -->
-    <!-- STAIRSTEP image is 1728x1728 pixels. Its is about 15k, so an average of 68.2 bits per row. To
+    <!-- STAIRSTEP image is 1728x1728 pixels. It is about 15k, so an average of 68.2 bits per row. To
          cook it as a 31k page requires a min_bits of 141. To cook it as a 63k page requires a min_bits of
          286. To cook it as a 64k page requires a min_bits of 291 -->
 </messages>
@@ -1253,7 +1253,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1265,7 +1265,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1287,7 +1287,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_white.tif"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_white.tif" frame_size="64"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1335,7 +1335,7 @@
         <!-- First page -->
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.17/14400"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1347,7 +1347,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.17/14400"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1359,7 +1359,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.17/14400"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" block="1" crc_error="356"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" block="1" crc_error="356"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1371,7 +1371,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.17/14400"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" block="1"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" block="1"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1384,7 +1384,7 @@
         <!-- Second page -->
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.17/14400"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="214"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="214"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1396,7 +1396,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.17/14400"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1440,7 +1440,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1462,7 +1462,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1484,7 +1484,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1506,7 +1506,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1536,7 +1536,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1583,7 +1583,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1605,7 +1605,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1627,7 +1627,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1649,7 +1649,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1679,7 +1679,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1726,7 +1726,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1748,11 +1748,11 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" block="1" crc_error="256"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 00 FF"/>
+        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 80 DC"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <possible-step>
@@ -1765,16 +1765,16 @@
             <step dir="T" type="POSTAMBLE"/>
         </possible-step>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 ff ff ff ff"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" block="1" crc_error="256"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 00 FF"/>
+        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 80 DC"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <possible-step>
@@ -1787,16 +1787,16 @@
             <step dir="T" type="POSTAMBLE"/>
         </possible-step>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 ff ff ff ff"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" block="1" crc_error="256"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 00 FF"/>
+        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 80 DC"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <possible-step>
@@ -1809,16 +1809,16 @@
             <step dir="T" type="POSTAMBLE"/>
         </possible-step>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 ff ff ff ff"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="141" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141" block="1" crc_error="256"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 00 FF"/>
+        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 80 DC"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <possible-step>
@@ -1831,7 +1831,7 @@
             <step dir="T" type="POSTAMBLE"/>
         </possible-step>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 ff ff ff ff"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
@@ -1869,7 +1869,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1891,7 +1891,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1913,7 +1913,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1935,7 +1935,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -1965,7 +1965,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -2011,7 +2011,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -2033,7 +2033,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -2055,7 +2055,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -2077,7 +2077,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" crc_error="0"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -2132,7 +2132,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -2154,7 +2154,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -2201,7 +2201,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="303" frame_size="256"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="256" min_bits="303"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -2213,7 +2213,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
-        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" min_bits="293" frame_size="256"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="256" min_bits="293"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
@@ -4982,7 +4982,7 @@
         <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="180000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="180000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-NULL+" value="FF C8 FD 00 ..."/>
 
         <step type="WAIT" value="75"/>
@@ -4990,7 +4990,7 @@
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="180000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="180000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-MPS+" value="FF C8 FD F2 ..."/>
 
         <step type="WAIT" value="75"/>
@@ -4998,7 +4998,7 @@
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
 
         <step type="WAIT" value="75"/>
@@ -5028,15 +5028,17 @@
         <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="180000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="180000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-NULL+" value="FF C8 FD 00 ..."/>
 
+        <!-- Treat last frame as bad -->
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
+        <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01"/>
+
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-NULL+" value="FF C8 FD 00 ..."/>
 
         <step type="WAIT" value="75"/>
@@ -5044,15 +5046,16 @@
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-MPS+" value="FF C8 FD F2 ..."/>
 
+        <!-- Treat first frame as bad -->
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
+        <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 01 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-MPS+" value="FF C8 FD F2 ..."/>
 
         <step type="WAIT" value="75"/>
@@ -5060,15 +5063,16 @@
         <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" value="etsi_300_242_a4_white.tif" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" value="etsi_300_242_a4_white.tif" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
 
+        <!-- Treat 5 frames somewhere in the middle as bad -->
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
+        <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 03 E0 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
 
         <step type="WAIT" value="75"/>
@@ -5098,7 +5102,7 @@
         <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
 
         <step type="WAIT" value="75"/>
@@ -5290,7 +5294,7 @@
         <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5299,7 +5303,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5308,7 +5312,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5317,7 +5321,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5334,7 +5338,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="CTR" value="FF C8 23"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5343,7 +5347,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5352,7 +5356,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5361,7 +5365,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5402,7 +5406,7 @@
         <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5411,7 +5415,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5420,7 +5424,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5429,7 +5433,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" value="etsi_300_242_a4_white.tif" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" value="etsi_300_242_a4_white.tif" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5446,7 +5450,7 @@
         <step dir="T" type="HDLC" tag="CTR" value="FF C8 23"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
 
         <step type="WAIT" value="75"/>
@@ -5476,7 +5480,7 @@
         <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" value="etsi_300_242_a4_impress.tif" timeout="180000"/>
+        <step dir="R" type="PP" modem="V.27ter/4800" value="etsi_300_242_a4_impress.tif" frame_size="64" timeout="180000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
 
         <step type="WAIT" value="75"/>
