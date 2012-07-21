@@ -59,9 +59,11 @@
 #include "spandsp/private/v27ter_tx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
+#define FP_SCALE                        FP_Q_6_10
 #include "v27ter_tx_4800_fixed_rrc.h"
 #include "v27ter_tx_2400_fixed_rrc.h"
 #else
+#define FP_SCALE(x)                     (x)
 #include "v27ter_tx_4800_floating_rrc.h"
 #include "v27ter_tx_2400_floating_rrc.h"
 #endif
@@ -149,32 +151,22 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
         0, 2, 6, 4
     };
 #if defined(SPANDSP_USE_FIXED_POINT)
-    static const complexi16_t constellation[8] =
-    {
-        {FP_Q_6_10( 1.414f), FP_Q_6_10( 0.0f)},     /*   0deg */
-        {FP_Q_6_10( 1.0f),   FP_Q_6_10( 1.0f)},     /*  45deg */
-        {FP_Q_6_10( 0.0f),   FP_Q_6_10( 1.414f)},   /*  90deg */
-        {FP_Q_6_10(-1.0f),   FP_Q_6_10( 1.0f)},     /* 135deg */
-        {FP_Q_6_10(-1.414f), FP_Q_6_10( 0.0f)},     /* 180deg */
-        {FP_Q_6_10(-1.0f),   FP_Q_6_10(-1.0f)},     /* 225deg */
-        {FP_Q_6_10( 0.0f),   FP_Q_6_10(-1.414f)},   /* 270deg */
-        {FP_Q_6_10( 1.0f),   FP_Q_6_10(-1.0f)}      /* 315deg */
-    };
     static const complexi16_t zero = {0, 0};
+    static const complexi16_t constellation[8] =
 #else
-    static const complexf_t constellation[8] =
-    {
-        { 1.414f,  0.0f},       /*   0deg */
-        { 1.0f,    1.0f},       /*  45deg */
-        { 0.0f,    1.414f},     /*  90deg */
-        {-1.0f,    1.0f},       /* 135deg */
-        {-1.414f,  0.0f},       /* 180deg */
-        {-1.0f,   -1.0f},       /* 225deg */
-        { 0.0f,   -1.414f},     /* 270deg */
-        { 1.0f,   -1.0f}        /* 315deg */
-    };
     static const complexf_t zero = {0.0f, 0.0f};
+    static const complexf_t constellation[8] =
 #endif
+    {
+        {FP_SCALE( 1.414f), FP_SCALE( 0.0f)},       /*   0deg */
+        {FP_SCALE( 1.0f),   FP_SCALE( 1.0f)},       /*  45deg */
+        {FP_SCALE( 0.0f),   FP_SCALE( 1.414f)},     /*  90deg */
+        {FP_SCALE(-1.0f),   FP_SCALE( 1.0f)},       /* 135deg */
+        {FP_SCALE(-1.414f), FP_SCALE( 0.0f)},       /* 180deg */
+        {FP_SCALE(-1.0f),   FP_SCALE(-1.0f)},       /* 225deg */
+        {FP_SCALE( 0.0f),   FP_SCALE(-1.414f)},     /* 270deg */
+        {FP_SCALE( 1.0f),   FP_SCALE(-1.0f)}        /* 315deg */
+    };
     int bits;
 
     if (s->in_training)

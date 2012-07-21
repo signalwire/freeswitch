@@ -169,7 +169,7 @@ static int v29getbit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static void qam_report(void *user_data, const complexi16_t *constel, const complexi16_t *target, int symbol)
 #else
 static void qam_report(void *user_data, const complexf_t *constel, const complexf_t *target, int symbol)
@@ -200,7 +200,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 #if defined(ENABLE_GUI)
         if (use_gui)
         {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
             constel_point.re = constel->re/4096.0;
             constel_point.im = constel->im/4096.0;
             qam_monitor_update_constel(qam_monitor, &constel_point);
@@ -214,7 +214,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 #endif
         printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %9.4f %7.3f %7.4f\n",
                symbol_no,
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
                constel->re/4096.0,
                constel->im/4096.0,
                target->re/4096.0,

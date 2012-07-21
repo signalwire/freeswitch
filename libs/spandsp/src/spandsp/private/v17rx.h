@@ -74,12 +74,12 @@ struct v17_rx_state_s
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
     /*! \brief The scaling factor assessed by the AGC algorithm. */
-    float agc_scaling;
+    int16_t agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
-    float agc_scaling_save;
+    int16_t agc_scaling_save;
 
     /*! \brief The current delta factor for updating the equalizer coefficients. */
-    float eq_delta;
+    int16_t eq_delta;
     /*! \brief The adaptive equalizer coefficients. */
     complexi16_t eq_coeff[V17_EQUALIZER_LEN];
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
@@ -98,12 +98,12 @@ struct v17_rx_state_s
 
     /*! \brief A measure of how much mismatch there is between the real constellation,
         and the decoded symbol positions. */
-    float training_error;
+    int32_t training_error;
 
     /*! \brief The proportional part of the carrier tracking filter. */
-    float carrier_track_p;
+    int32_t carrier_track_p;
     /*! \brief The integral part of the carrier tracking filter. */
-    float carrier_track_i;
+    int32_t carrier_track_i;
     /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
     int16_t rrc_filter[V17_RX_FILTER_STEPS];
 

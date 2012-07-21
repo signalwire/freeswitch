@@ -863,10 +863,22 @@ int main(int argc, char *argv[])
                                     | T30_SUPPORT_300_600_RESOLUTION
                                     | T30_SUPPORT_400_800_RESOLUTION
                                     | T30_SUPPORT_600_1200_RESOLUTION);
-
         t30_set_ecm_capability(t30_state[i], use_ecm);
         if (use_ecm)
-            t30_set_supported_compressions(t30_state[i], T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
+        {
+            t30_set_supported_compressions(t30_state[i],
+                                           T30_SUPPORT_T4_1D_COMPRESSION
+                                         | T30_SUPPORT_T4_2D_COMPRESSION
+                                         | T30_SUPPORT_T6_COMPRESSION
+                                         | T30_SUPPORT_T85_COMPRESSION
+                                         | T30_SUPPORT_T85_L0_COMPRESSION);
+        }
+        else
+        {
+            t30_set_supported_compressions(t30_state[i],
+                                           T30_SUPPORT_T4_1D_COMPRESSION
+                                         | T30_SUPPORT_T4_2D_COMPRESSION);
+        }
         t30_set_minimum_scan_line_time(t30_state[i], scan_line_time);
 
         if (mode[i] == T38_GATEWAY_FAX)
