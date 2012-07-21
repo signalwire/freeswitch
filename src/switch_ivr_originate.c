@@ -2380,8 +2380,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				while (*chan_type == '[') {
 					char *parsed = NULL;
-					
-					for (p = chan_type; p && *p && *p != ']'; p++) {
+					char *bend = switch_find_end_paren(chan_type, '[', ']');					
+
+					for (p = chan_type + 1; p && p < bend && *p; p++) {
 						if (*p == QUOTED_ESC_COMMA) {
 							*p = ',';
 						}
@@ -2392,8 +2393,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
 						switch_goto_status(SWITCH_STATUS_GENERR, done);
 					}
-					
-					chan_type = parsed;
+				
+					if (chan_type == parsed) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error!\n");
+						switch_goto_status(SWITCH_STATUS_GENERR, done);						
+					} else {
+						chan_type = parsed;
+					}
 				}
 				
 				
