@@ -62,7 +62,7 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v22bis.h"
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 #define FP_SCALE    FP_Q_6_10
 #include "v22bis_tx_fixed_rrc.h"
 #else
@@ -248,7 +248,7 @@ static const int phase_steps[4] =
     1, 0, 2, 3
 };
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 const complexi16_t v22bis_constellation[16] =
 #else
 const complexf_t v22bis_constellation[16] =
@@ -314,7 +314,7 @@ static __inline__ int get_scrambled_bit(v22bis_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static complexi16_t training_get(v22bis_state_t *s)
 #else
 static complexf_t training_get(v22bis_state_t *s)
@@ -417,13 +417,13 @@ static complexf_t training_get(v22bis_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static complexi16_t getbaud(v22bis_state_t *s)
 #else
 static complexf_t getbaud(v22bis_state_t *s)
 #endif
 {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     static const complexi16_t zero = {0, 0};
 #else
     static const complexf_t zero = {0.0f, 0.0f};
@@ -464,7 +464,7 @@ static complexf_t getbaud(v22bis_state_t *s)
 
 SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
 {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t v;
     complexi32_t x;
     complexi32_t z;
@@ -490,7 +490,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
             if (++s->tx.rrc_filter_step >= V22BIS_TX_FILTER_STEPS)
                 s->tx.rrc_filter_step = 0;
         }
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
         /* Root raised cosine pulse shaping at baseband */
         x.re = vec_circular_dot_prodi16(s->tx.rrc_filter_re, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->tx.baud_phase], V22BIS_TX_FILTER_STEPS, s->tx.rrc_filter_step) >> 14;
         x.im = vec_circular_dot_prodi16(s->tx.rrc_filter_im, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->tx.baud_phase], V22BIS_TX_FILTER_STEPS, s->tx.rrc_filter_step) >> 14;
@@ -551,7 +551,7 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power)
     }
     sig_gain = 0.4490f*powf(10.0f, (sig_power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
     guard_tone_gain = powf(10.0f, (guard_tone_power - DBM0_MAX_POWER)/20.0f)*32768.0f;
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     s->tx.gain = (int16_t) sig_gain;
     s->tx.guard_tone_gain = (int16_t) guard_tone_gain;
 #else
@@ -563,7 +563,7 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power)
 
 static int v22bis_tx_restart(v22bis_state_t *s)
 {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     vec_zeroi16(s->tx.rrc_filter_re, sizeof(s->tx.rrc_filter_re)/sizeof(s->tx.rrc_filter_re[0]));
     vec_zeroi16(s->tx.rrc_filter_im, sizeof(s->tx.rrc_filter_im)/sizeof(s->tx.rrc_filter_im[0]));
 #else
