@@ -1243,7 +1243,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\spandsp\t81_t82_arith_coding.h"
+				RelativePath=".\spandsp\private\t42.h"
+				>
+			</File>
+			<File
+				RelativePath=".\spandsp\t42.h"
 				>
 			</File>
 			<File
@@ -1251,11 +1255,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\spandsp\t85.h"
+				RelativePath=".\spandsp\t81_t82_arith_coding.h"
 				>
 			</File>
 			<File
 				RelativePath=".\spandsp\private\t85.h"
+				>
+			</File>
+			<File
+				RelativePath=".\spandsp\t85.h"
 				>
 			</File>
 		</Filter>

@@ -701,6 +701,12 @@
     <ClInclude Include="spandsp\t85.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="spandsp\t42.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\private\t42.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="msvc\spandsp.h" />

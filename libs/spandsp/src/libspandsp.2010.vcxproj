@@ -287,6 +287,7 @@
     <ClInclude Include="spandsp\plc.h" />
     <ClInclude Include="spandsp\power_meter.h" />
     <ClInclude Include="spandsp\private\ademco_contactid.h" />
+    <ClInclude Include="spandsp\private\t42.h" />
     <ClInclude Include="spandsp\private\t81_t82_arith_coding.h" />
     <ClInclude Include="spandsp\private\t85.h" />
     <ClInclude Include="spandsp\queue.h" />
@@ -297,6 +298,7 @@
     <ClInclude Include="spandsp\super_tone_rx.h" />
     <ClInclude Include="spandsp\super_tone_tx.h" />
     <ClInclude Include="spandsp\swept_tone.h" />
+    <ClInclude Include="spandsp\t42.h" />
     <ClInclude Include="spandsp\t4_rx.h" />
     <ClInclude Include="spandsp\t4_tx.h" />
     <ClInclude Include="spandsp\t4_t6_decode.h" />
