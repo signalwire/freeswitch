@@ -501,7 +501,9 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	ei_decode_string_or_binary(rep->buff, &rep->index, size, xmlstr);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds from %s for %s!\n", xmlstr, (int) (switch_micro_time_now() - now) / 1000, p->winner, uuid_str);
+	if (globals.debug) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds from %s for %s!\n", xmlstr, (int) (switch_micro_time_now() - now) / 1000, p->winner, uuid_str);
+	}
 
 	if (zstr(xmlstr)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
@@ -1677,9 +1679,20 @@ SWITCH_STANDARD_API(erlang_cmd)
 		if (!found)
 			stream->write_function(stream, "Could not find a listener for %s\n", argv[1]);
 
+	} else if (!strcasecmp(argv[0], "debug")) {
+		if (argc == 2) {
+			if (!strcasecmp(argv[1], "on")) {
+				globals.debug = 1;
+			} else {
+				globals.debug = 0;
+			}
+		}
+		stream->write_function(stream, "+OK debug %s\n", globals.debug ? "on" : "off");
+
 	} else {
 		stream->write_function(stream,  "USAGE: erlang sessions <nodename>\n"
-										"       erlang listeners\n");
+										"       erlang listeners\n"
+										"       erlang debug <on|off>\n");
 		goto done;
 	}
 

@@ -174,6 +174,7 @@ struct globals_struct {
 	unsigned int reference2;
 	char TIMEOUT;				/* marker for a timed out request */
 	char WAITING;				/* marker for a request waiting for a response */
+	int debug;
 };
 typedef struct globals_struct globals_t;
 
