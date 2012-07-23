@@ -1682,7 +1682,7 @@ static void setup_codecs(struct private_object *tech_pvt)
 	}
 
 
-	if (!payloads[1].id) {
+	if (!payloads[1].id && tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port) {
 		switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port);
 		tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port = 0;
 	}
@@ -2846,7 +2846,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		} else if (val && !strcasecmp(val, "md5")) {
 			profile->user_flags |= LDL_FLAG_SASL_MD5;
 		}
-	} else if (!strcasecmp(var, "use-jingle") && !zstr(val)) {
+	} else if (!strcasecmp(var, "use-jingle") && switch_true(val)) {
 		profile->user_flags |= LDL_FLAG_JINGLE;
 	} else if (!strcasecmp(var, "exten") && !zstr(val)) {
 		profile->exten = switch_core_strdup(module_pool, val);

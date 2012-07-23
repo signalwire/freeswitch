@@ -174,7 +174,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(switch_core
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int even = switch_test_flag(alloc, SPF_EVEN);
 	int odd = switch_test_flag(alloc, SPF_ODD);
-	int index = port - alloc->start;
+	int index;
+
+	if (port < alloc->start) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	index = port - alloc->start;
 
 	if (!(even && odd)) {
 		index /= 2;

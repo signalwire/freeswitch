@@ -1229,7 +1229,7 @@ SWITCH_DECLARE(void) switch_rtp_release_port(const char *ip, switch_port_t port)
 {
 	switch_core_port_allocator_t *alloc = NULL;
 
-	if (!ip) {
+	if (!ip || !port) {
 		return;
 	}
 
