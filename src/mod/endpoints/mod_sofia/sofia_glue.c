@@ -4832,7 +4832,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					int crypto_tag;
 
 					if (!(tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP) && 
-						!switch_true(switch_channel_get_variable(tech_pvt->channel, "sip_allow_crypto_in_sdp"))) {
+						!switch_true(switch_channel_get_variable(tech_pvt->channel, "sip_allow_crypto_in_avp"))) {
 						if (m->m_proto != sdp_proto_srtp) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "a=crypto in RTP/AVP, refer to rfc3711\n");
 							match = 0;
