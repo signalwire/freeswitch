@@ -815,7 +815,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 		ftdmchan = isdn_data->channels_remote_crv[gen->CRV];
 	}
 
-	ftdm_log(FTDM_LOG_DEBUG, "ftdmchan %x (%d:%d) source isdn_data->channels_%s_crv[%#hx]\n",
+	ftdm_log(FTDM_LOG_DEBUG, "ftdmchan %p (%d:%d) source isdn_data->channels_%s_crv[%#hx]\n",
 			ftdmchan,
 			((ftdmchan) ? ftdm_channel_get_span_id(ftdmchan) : -1),
 			((ftdmchan) ? ftdm_channel_get_id(ftdmchan) : -1),
