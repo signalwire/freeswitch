@@ -210,6 +210,8 @@ void mg_rtp_release_id(megaco_profile_t *profile, uint32_t id);
 mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id);
 mg_context_t *megaco_choose_context(megaco_profile_t *profile);
 void megaco_release_context(mg_context_t *ctx);
+switch_status_t megaco_context_sub_termination(mg_context_t *ctx, mg_termination_t *term);
+switch_status_t megaco_context_sub_all_termination(mg_context_t *ctx);
 
 mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix);
 mg_termination_t *megaco_find_termination(megaco_profile_t *profile, const char *name);
@@ -225,6 +227,8 @@ switch_status_t mg_config_cleanup(megaco_profile_t* profile);
 switch_status_t mg_peer_config_cleanup(mg_peer_profile_t* profile);
 switch_status_t megaco_peer_profile_destroy(mg_peer_profile_t **profile); 
 switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stream);
+switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination_t *term);
+switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination_t *term);
 
 
 #endif /* MOD_MEGACO_H */

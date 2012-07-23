@@ -500,7 +500,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
 	/*If term type is other then check if that term is configured with us..for term type CHOOSE/ALL , no need to check */
 	if (MGT_TERMID_OTHER == termId->type.val){
-		if(SWITCH_STATUS_FALSE != mg_stack_termination_is_in_service((char*)termId->name.lcl.val, termId->name.lcl.len)){
+		if(SWITCH_STATUS_FALSE == mg_stack_termination_is_in_service((char*)termId->name.lcl.val, termId->name.lcl.len)){
 			mg_util_set_term_string(&errTxt, termId);
 			err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
 			goto error;

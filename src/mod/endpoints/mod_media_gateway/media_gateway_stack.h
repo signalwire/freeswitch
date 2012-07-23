@@ -132,6 +132,7 @@ void handle_mg_alarm(Pst *pst, MgMngmt *sta);
 void handle_tucl_alarm(Pst *pst, HiMngmt *sta);
 int mg_enable_logging(void);
 int mg_disable_logging(void);
+void mg_util_set_err_string ( MgStr  *errTxt, char* str);
 
 
 switch_status_t sng_mgco_cfg(megaco_profile_t* profile);

@@ -319,6 +319,13 @@ void mg_util_set_txn_string(MgStr  *errTxt, U32 *txnId)
 }
 
 /*****************************************************************************************************************************/
+void mg_util_set_err_string ( MgStr  *errTxt, char* str)
+{
+    MG_ZERO((errTxt->val), sizeof(errTxt->val));
+    errTxt->len = strlen(str);
+    strcpy((char*)&errTxt->val, str);
+}
+/*****************************************************************************************************************************/
 void mg_util_set_ctxt_string ( MgStr  *errTxt, MgMgcoContextId     *ctxtId)
 {
 	MG_ZERO((errTxt->val), sizeof(errTxt->val));

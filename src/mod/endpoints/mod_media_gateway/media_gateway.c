@@ -167,6 +167,7 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
     term->pool = pool;
     term->type = termtype;
     term->active_events = NULL;
+    term->profile = profile;
     
     if (termtype == MG_TERM_RTP) {
         /* Fill in local address and reserve an rtp port */
@@ -212,6 +213,23 @@ void megaco_termination_destroy(mg_termination_t *term)
     switch_core_destroy_memory_pool(&term->pool);
 }
 
+switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination_t *term)
+{
+
+    switch_assert(ctx != NULL);
+    switch_assert(term != NULL);
+
+    if (ctx->terminations[0] && (term == ctx->terminations[0])) {
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+    if (ctx->terminations[1] && (term == ctx->terminations[1])) {
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+    return SWITCH_STATUS_FALSE;
+}
+
 switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination_t *term)
 {
 
@@ -246,6 +264,21 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
     return SWITCH_STATUS_SUCCESS;
 }
 
+
+switch_status_t megaco_context_sub_all_termination(mg_context_t *ctx)
+{
+    switch_assert(ctx != NULL);
+    
+    /* Channels will automatically go to park once the bridge ends */
+    if (ctx->terminations[0]) {
+        megaco_termination_destroy(ctx->terminations[0]);
+        ctx->terminations[0] = NULL;
+    } else if (ctx->terminations[1]) {
+        megaco_termination_destroy(ctx->terminations[1]);
+    }
+    
+    return SWITCH_STATUS_SUCCESS;
+}
 
 switch_status_t megaco_context_sub_termination(mg_context_t *ctx, mg_termination_t *term)
 {
@@ -315,7 +348,8 @@ mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
 mg_context_t *megaco_choose_context(megaco_profile_t *profile)
 {
     mg_context_t *ctx;
-    int i = 0x0;;
+    int i = 0x0;
+    int j = 0x0;
     
     switch_thread_rwlock_wrlock(profile->contexts_rwlock);
     /* Try the next one */
@@ -332,7 +366,10 @@ mg_context_t *megaco_choose_context(megaco_profile_t *profile)
             ctx = malloc(sizeof *ctx);
             ctx->context_id = profile->next_context_id;
             ctx->profile = profile;
-            
+            for(j = 0; j< MG_CONTEXT_MAX_TERMS; j++){
+                ctx->terminations[j] = NULL;
+            }
+
             if (!profile->contexts[i]) {
                 profile->contexts[i] = ctx;
             } else {
