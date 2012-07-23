@@ -42,6 +42,7 @@
     <!--<load module="mod_ilbc"/>-->
     <load module="mod_speex"/>
     <load module="mod_h26x"/>
+    <load module="mod_vp8"/>
     <!--<load module="mod_siren"/>-->
 
     <!-- Timers -->
