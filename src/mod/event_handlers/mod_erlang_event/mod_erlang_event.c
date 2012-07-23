@@ -1612,7 +1612,12 @@ SWITCH_STANDARD_API(erlang_cmd)
 
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
-		"erlang listeners\n" "erlang sessions <node_name>\n" "--------------------------------------------------------------------------------\n";
+		"erlang listeners\n"
+		"erlang sessions <node_name>\n"
+		"erlang bindings\n"
+		"erlang handlers\n"
+		"erlang debug <on|off>\n"
+		"--------------------------------------------------------------------------------\n";
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", usage_string);
@@ -1679,6 +1684,73 @@ SWITCH_STANDARD_API(erlang_cmd)
 		if (!found)
 			stream->write_function(stream, "Could not find a listener for %s\n", argv[1]);
 
+	} else if (!strcasecmp(argv[0], "handlers")) {
+			listener_t *l;
+
+			switch_thread_rwlock_rdlock(globals.listener_rwlock);
+
+			if (listen_list.listeners) {
+				for (l = listen_list.listeners; l; l = l->next) {
+					int x;
+					switch_hash_index_t *iter;
+					const void *key;
+					void *val;
+
+					stream->write_function(stream, "Listener %s:\n--------------------------------\n", l->peer_nodename);
+
+					for (x = SWITCH_EVENT_CUSTOM + 1; x < SWITCH_EVENT_ALL; x++) {
+						if (l->event_list[x] == 1) {
+							stream->write_function(stream, "%s\n", switch_event_name(x));
+						}
+					}
+					stream->write_function(stream, "CUSTOM:\n", switch_event_name(x));
+
+					for (iter = switch_hash_first(NULL, l->event_hash); iter; iter = switch_hash_next(iter)) {
+						switch_hash_this(iter, &key, NULL, &val);
+						stream->write_function(stream, "\t%s\n", (char *)key);
+					}
+					stream->write_function(stream, "\n", (char *)key);
+				}
+			} else {
+				stream->write_function(stream, "No active handlers\n");
+			}
+
+			switch_thread_rwlock_unlock(globals.listener_rwlock);
+
+	} else if (!strcasecmp(argv[0], "bindings")) {
+		int found = 0;
+		struct erlang_binding *ptr;
+		switch_thread_rwlock_wrlock(globals.bindings_rwlock);
+		switch_xml_set_binding_sections(bindings.search_binding, SWITCH_XML_SECTION_MAX);
+
+		for (ptr = bindings.head; ptr; ptr = ptr->next) {
+
+			if (ptr->process.type == ERLANG_PID) {
+				stream->write_function(stream, "%s ", ptr->process.pid.node);
+			}
+
+			if (ptr->section == SWITCH_XML_SECTION_CONFIG) {
+				stream->write_function(stream, "config\n");
+			}else if (ptr->section == SWITCH_XML_SECTION_DIRECTORY) {
+				stream->write_function(stream, "directory\n");
+			} else if (ptr->section == SWITCH_XML_SECTION_DIALPLAN) {
+				stream->write_function(stream, "dialplan\n");
+			} else if (ptr->section == SWITCH_XML_SECTION_PHRASES) {
+				stream->write_function(stream, "phrases\n");
+			} else if (ptr->section == SWITCH_XML_SECTION_CHATPLAN) {
+				stream->write_function(stream, "chatplan\n");
+			} else {
+				stream->write_function(stream, "unknown %d\n", ptr->section);
+			}
+			found++;
+		}
+
+		switch_thread_rwlock_unlock(globals.bindings_rwlock);
+
+		if (!found) {
+			stream->write_function(stream, "No bindings\n");
+		}
+
 	} else if (!strcasecmp(argv[0], "debug")) {
 		if (argc == 2) {
 			if (!strcasecmp(argv[1], "on")) {
@@ -1690,9 +1762,7 @@ SWITCH_STANDARD_API(erlang_cmd)
 		stream->write_function(stream, "+OK debug %s\n", globals.debug ? "on" : "off");
 
 	} else {
-		stream->write_function(stream,  "USAGE: erlang sessions <nodename>\n"
-										"       erlang listeners\n"
-										"       erlang debug <on|off>\n");
+		stream->write_function(stream,  usage_string);
 		goto done;
 	}
 
