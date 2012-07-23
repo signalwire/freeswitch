@@ -438,6 +438,9 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
     memset(&out_ctxt,0,sizeof(out_ctxt));
 
+	inc_context = &cmd->contextId;
+    memcpy(&out_ctxt, inc_context,sizeof(MgMgcoContextId));
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
 
 	/* validate Transaction Id */
@@ -506,7 +509,6 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
 
 	/* Validate Context - if context is specified then check if its present with us */
-	inc_context = &cmd->contextId;
 	MG_ZERO(&ctxtId, sizeof(MgMgcoContextId));
 	memcpy(&ctxtId, inc_context, sizeof(MgMgcoContextId));
 
@@ -535,7 +537,6 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 		goto error1;
 	}
 
-    memcpy(&out_ctxt, inc_context,sizeof(MgMgcoContextId));
 
 	switch(cmd->cmdType.val)
 	{
@@ -557,7 +558,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 						{
 							/*MgMgcoAmmReq *addReq = &cmdReq->cmd.u.mod;*/
 							handle_mg_modify_cmd(mg_profile, cmd);
-							mg_send_modify_rsp(suId, cmd);
+							/*mg_send_modify_rsp(suId, cmd);*/
 							break;
 						}
 					case MGT_MOVE:
@@ -619,9 +620,10 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			return;
 	}
 
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "cmd->cmdStatus.val[%d]\n",cmd->cmdStatus.val);
     /* END OF TXN received - means last command in txn to process. 
      * Send response to peer */
-    if(CH_CMD_STATUS_END_OF_TXN == cmd->cmdStatus.val){
+    /*if(CH_CMD_STATUS_END_OF_TXN == cmd->cmdStatus.val)*/{
         mg_send_end_of_axn(suId, &cmd->transId, &out_ctxt, &cmd->peerId);
     }
 
@@ -635,6 +637,9 @@ error:
 			mg_build_mgco_err_request(&mgErr, txn_id, &ctxtId, err_code, &errTxt)) {
 		sng_mgco_send_err(suId, mgErr);
 	}
+    if(CH_CMD_STATUS_END_OF_TXN == cmd->cmdStatus.val){
+        mg_send_end_of_axn(suId, &cmd->transId, &out_ctxt, &cmd->peerId);
+    }
 error1:
 	mg_free_cmd(cmd);
 	return;
@@ -654,7 +659,7 @@ void handle_mgco_txn_sta_ind(Pst *pst, SuId suId, MgMgcoInd* txn_sta_ind)
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
    
     /*dump information*/
-    /*mgAccEvntPrntMgMgcoInd(txn_sta_ind, stdout);*/
+    mgAccEvntPrntMgMgcoInd(txn_sta_ind, stdout);
 }
 
 /*****************************************************************************************************************************/

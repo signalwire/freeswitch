@@ -166,6 +166,7 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
     term = switch_core_alloc(pool, sizeof *term);
     term->pool = pool;
     term->type = termtype;
+    term->active_events = NULL;
     
     if (termtype == MG_TERM_RTP) {
         /* Fill in local address and reserve an rtp port */

@@ -42,7 +42,7 @@ typedef enum {
 	MEGACO_CODEC_ILBC,
     
     /* Nothing below this line */
-    MEGACO_CODEC_INVALID = 0xFFFFFFFF
+    MEGACO_CODEC_INVALID = 0xFFFFFF
 } megaco_codec_t;
 
 typedef struct mg_peer_profile_s{
@@ -90,6 +90,7 @@ typedef struct mg_termination_s {
     const char *uuid; /*!< UUID of the associated FS channel, or NULL if it's not activated */
     mg_context_t *context; /*!< Context in which this termination is connected, or NULL */
     megaco_profile_t *profile; /*!< Parent MG profile */
+    MgMgcoReqEvtDesc  *active_events;     /* !< active megaco events */
     
     union {
         struct {

@@ -112,6 +112,15 @@ typedef enum {
    cmMemcpy((U8 *)(_tkn)->val, (CONSTANT U8 *)(_val), (_len));            \
 }
 
+#define MG_SET_TKNSTROSXL(_tkn, _len, _val, _mem)\
+{\
+   (_tkn).pres = PRSNT_NODEF;\
+   (_tkn).len = (_len);\
+   cmGetMem((Ptr)_mem, (Size)((_len)*sizeof(U8)), (Ptr*)&((_tkn).val));\
+   cmMemcpy((U8*)((_tkn).val), (U8*)(_val), _len);\
+}
+
+switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd, mg_termination_t* term);
 void handle_sng_log(uint8_t level, char *fmt, ...);
 void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* msg);
 void handle_mgco_txn_sta_ind(Pst *pst, SuId suId, MgMgcoInd* msg);
