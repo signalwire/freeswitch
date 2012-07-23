@@ -2055,10 +2055,13 @@ static void *ftdm_isdn_run(ftdm_thread_t *me, void *obj)
 			break;
 		default:
 			{
-				errs = 0;
 				if (flags & FTDM_READ) {
 					len = sizeof(frame);
-					if (ftdm_channel_read(isdn_data->dchan, frame, &len) == FTDM_SUCCESS) {
+					if (ftdm_channel_read(isdn_data->dchan, frame, &len) != FTDM_SUCCESS) {
+						ftdm_log_chan_msg(isdn_data->dchan, FTDM_LOG_ERROR, "Failed to read from D-Channel\n");
+						continue;
+					}
+					if (len > 0) {
 #ifdef HAVE_PCAP
 						if (isdn_pcap_capture_both(isdn_data)) {
 							isdn_pcap_write(isdn_data, frame, len, ISDN_PCAP_INCOMING);
@@ -2066,6 +2069,9 @@ static void *ftdm_isdn_run(ftdm_thread_t *me, void *obj)
 #endif
 						Q921QueueHDLCFrame(&isdn_data->q921, frame, (int)len);
 						Q921Rx12(&isdn_data->q921);
+
+						/* Successful read, reset error counter */
+						errs = 0;
 					}
 				} else {
 					ftdm_log(FTDM_LOG_DEBUG, "No Read FLAG!\n");
