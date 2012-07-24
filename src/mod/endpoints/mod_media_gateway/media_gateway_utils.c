@@ -96,27 +96,33 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, C
 	S16               ret = ROK;
 
 	termId->type.pres = PRSNT_NODEF;
-	termId->type.val  = MGT_TERMID_OTHER;
 
-	termId->name.dom.pres = NOTPRSNT;  
-	termId->name.dom.len = 0x00;  
+    if(!strcmp(term_str,"ROOT")){
+        /* ROOT Termination */
+        termId->type.val  = MGT_TERMID_ROOT;
+    } else {
+        termId->type.val  = MGT_TERMID_OTHER;
 
-	termId->name.pres.pres = PRSNT_NODEF;
-	termId->name.lcl.pres = PRSNT_NODEF;
-	termId->name.lcl.len = term_len;
-	/*MG_GETMEM(termId->name.lcl.val, termId->name.lcl.len , memCp, ret);*/
-	ret = mg_stack_alloc_mem((Ptr*)&termId->name.lcl.val,term_len);
+        termId->name.dom.pres = NOTPRSNT;  
+        termId->name.dom.len = 0x00;  
 
-	printf("termId->name.lcl.val[%p]\n",termId->name.lcl.val);
+        termId->name.pres.pres = PRSNT_NODEF;
+        termId->name.lcl.pres = PRSNT_NODEF;
+        termId->name.lcl.len = term_len;
+        /*MG_GETMEM(termId->name.lcl.val, termId->name.lcl.len , memCp, ret);*/
+        ret = mg_stack_alloc_mem((Ptr*)&termId->name.lcl.val,term_len);
 
-	if( ret != ROK)
-		RETVALUE(ret);          
+        printf("termId->name.lcl.val[%p]\n",termId->name.lcl.val);
 
-	/*cmMemcpy((U8*)(termId->name.lcl.val), (CONSTANT U8*)term_str,termId->name.lcl.len);*/
-	strncpy((char*)(termId->name.lcl.val), term_str, termId->name.lcl.len);
-	termId->name.lcl.val[termId->name.lcl.len] = '\0';
+        if( ret != ROK)
+            RETVALUE(ret);          
 
-	printf("mg_fill_mgco_termid: name.lcl.val[%s], len[%d], term_str[%s], term_len[%d]\n",termId->name.lcl.val, termId->name.lcl.len, term_str,term_len);
+        /*cmMemcpy((U8*)(termId->name.lcl.val), (CONSTANT U8*)term_str,termId->name.lcl.len);*/
+        strncpy((char*)(termId->name.lcl.val), term_str, termId->name.lcl.len);
+        termId->name.lcl.val[termId->name.lcl.len] = '\0';
+
+        printf("mg_fill_mgco_termid: name.lcl.val[%s], len[%d], term_str[%s], term_len[%d]\n",termId->name.lcl.val, termId->name.lcl.len, term_str,term_len);
+    }
 	      
 
 #ifdef GCP_ASN

@@ -2134,6 +2134,36 @@ err:
 	mgUtlDelMgMgcoSvcChgPar(&srvPar);
 	return ret;
 }
+
+/*****************************************************************************************************************************/
+/* API to send In-Activity Timeout NOTIFY to MGC */
+switch_status_t  mg_send_ito_notify(megaco_profile_t* mg_profile )
+{
+    MgMgcoObsEvt *oevt;
+
+	switch_assert(mg_profile);
+
+    mg_stack_alloc_mem((Ptr*)&oevt, sizeof(MgMgcoObsEvt));
+
+    oevt->pres.pres = PRSNT_NODEF;
+
+    mg_get_time_stamp(&oevt->time);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.pkgType), MGT_PKG_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.valType), MGT_PKG_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.u.val), MGT_PKG_INACTTIMER);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->name.type),MGT_GEN_TYPE_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->name.u.val),(U8)MGT_PKG_ENUM_REQEVT_INACTTIMER_INACT_TIMOUT);
+
+    oevt->pl.num.pres = PRSNT_NODEF;
+    oevt->pl.num.val = 0x00;
+
+    return mg_send_notify(mg_profile, "ROOT", oevt);
+}
 /*****************************************************************************************************************************/
 /* API to send DTMF Digits Notification */
 
@@ -2255,23 +2285,29 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
     MG_ZERO(&request, sizeof(request));
     MG_ZERO(&reqId, sizeof(reqId));
 
-    term = megaco_find_termination(mg_profile, (char*)term_name);
+    if(strcmp(term_name, "ROOT")){
+        /* Not ROOT term then --- */
+        term = megaco_find_termination(mg_profile, (char*)term_name);
 
-    if(!term){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No termination configured for given name[%s] !\n", term_name);
-        return SWITCH_STATUS_FALSE;
-    }
+        if(!term){
+            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No termination configured for given name[%s] !\n", term_name);
+            return SWITCH_STATUS_FALSE;
+        }
 
-    if(NULL == term->active_events){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No Active events observed on given termination[%s] !\n", term_name);
-        /* return SWITCH_STATUS_FALSE; */
-        /*TODO - ideally we should return ...
-         * as of now not returning .. if we dont have active signals then
-         * setting default request id and sending notification to MGC */
-        MG_SET_DEF_REQID(&reqId);
+        if(NULL == term->active_events){
+            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No Active events observed on given termination[%s] !\n", term_name);
+            /* return SWITCH_STATUS_FALSE; */
+            /*TODO - ideally we should return ...
+             * as of now not returning .. if we dont have active signals then
+             * setting default request id and sending notification to MGC */
+            MG_SET_DEF_REQID(&reqId);
+        }else{
+            MG_MEM_COPY(&reqId, &term->active_events->reqId, sizeof(MgMgcoRequestId));
+        }
     }else{
-        MG_MEM_COPY(&reqId, &term->active_events->reqId, sizeof(MgMgcoRequestId));
+            MG_SET_DEF_REQID(&reqId);
     }
+    
 
 
     if(SWITCH_STATUS_FALSE == (ret = mg_create_mgco_command(&request, CH_CMD_TYPE_REQ, MGT_NTFY))){
