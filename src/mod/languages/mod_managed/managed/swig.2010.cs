@@ -2570,8 +2570,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_cond_next();
   }
 
-  public static switch_status_t switch_core_chat_send_args(string dest_proto, string proto, string from, string to, string subject, string body, string type, string hint) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_chat_send_args(dest_proto, proto, from, to, subject, body, type, hint);
+  public static switch_status_t switch_core_chat_send_args(string dest_proto, string proto, string from, string to, string subject, string body, string type, string hint, switch_bool_t blocking) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_chat_send_args(dest_proto, proto, from, to, subject, body, type, hint, (int)blocking);
     return ret;
   }
 
@@ -9031,7 +9031,7 @@ class freeswitchPINVOKE {
   public static extern void switch_cond_next();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_chat_send_args")]
-  public static extern int switch_core_chat_send_args(string jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8);
+  public static extern int switch_core_chat_send_args(string jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, int jarg9);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_chat_send")]
   public static extern int switch_core_chat_send(string jarg1, HandleRef jarg2);

@@ -10624,7 +10624,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_cond_next() {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send_args(char * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7, char * jarg8) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send_args(char * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7, char * jarg8, int jarg9) {
   int jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -10634,6 +10634,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send_args(char * jarg1, char 
   char *arg6 = (char *) 0 ;
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
+  switch_bool_t arg9 ;
   switch_status_t result;
   
   arg1 = (char *)jarg1; 
@@ -10644,7 +10645,8 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_chat_send_args(char * jarg1, char 
   arg6 = (char *)jarg6; 
   arg7 = (char *)jarg7; 
   arg8 = (char *)jarg8; 
-  result = (switch_status_t)switch_core_chat_send_args((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8);
+  arg9 = (switch_bool_t)jarg9; 
+  result = (switch_status_t)switch_core_chat_send_args((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9);
   jresult = result; 
   return jresult;
 }
