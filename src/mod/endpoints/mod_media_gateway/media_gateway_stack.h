@@ -120,6 +120,13 @@ typedef enum {
    cmMemcpy((U8*)((_tkn).val), (U8*)(_val), _len);\
 }
 
+#define MG_SET_DEF_REQID(_reqId)                \
+   (_reqId)->type.pres = PRSNT_NODEF;               \
+   (_reqId)->type.val = MGT_REQID_OTHER;            \
+   (_reqId)->id.pres = PRSNT_NODEF;                 \
+   (_reqId)->id.val = 0xFFFFFFFF;
+
+
 switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd, mg_termination_t* term);
 void handle_sng_log(uint8_t level, char *fmt, ...);
 void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* msg);
@@ -174,6 +181,9 @@ switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, ui
 
 switch_status_t mg_send_oos_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);
 switch_status_t mg_send_ins_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);
+switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_name, MgMgcoObsEvt* oevt);
+switch_status_t  mg_send_dtmf_notify(megaco_profile_t* mg_profile, const char* term_name, char* digits, int num_of_collected_digits);
+switch_status_t  mg_util_build_obs_evt_desc (MgMgcoObsEvt *obs_event, MgMgcoRequestId *request_id, MgMgcoObsEvtDesc **ptr_obs_desc);
 
 
 

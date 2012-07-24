@@ -1353,3 +1353,39 @@ void mg_fill_null_context(MgMgcoContextId* ctxt)
 	MG_SET_TKN_VAL_PRES(&ctxt->type, MGT_CXTID_NULL, PRSNT_NODEF);
 }	
 /*****************************************************************************************************************************/
+switch_status_t  mg_util_build_obs_evt_desc (MgMgcoObsEvt *obs_event, MgMgcoRequestId *request_id, MgMgcoObsEvtDesc **ptr_obs_desc)
+{
+   MgMgcoObsEvtDesc *obs_desc = NULL;
+ 
+   /* Check for valid request Id, if not then fill default value */
+   if (NOTPRSNT == request_id->type.pres)
+   {
+      MG_SET_DEF_REQID(request_id);
+   }
+ 
+   mg_stack_alloc_mem((Ptr*)&obs_desc, sizeof(MgMgcoObsEvtDesc));
+   if (NULL == obs_desc)
+   {
+       switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Failed to allocate MgMgcoObsEvtDesc!\n");
+       return SWITCH_STATUS_FALSE;
+   }
+
+   obs_desc->pres.pres = PRSNT_NODEF;
+   MG_MEM_COPY(&obs_desc->reqId, request_id, sizeof(MgMgcoRequestId));
+   obs_desc->el.num.pres = PRSNT_NODEF;
+   obs_desc->el.num.val = 1;
+
+   mg_stack_alloc_mem((Ptr*)&obs_desc->el.evts, sizeof(MgMgcoObsEvt*));
+   if (NULL == obs_desc->el.evts)
+   {
+       switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Failed to allocate MgMgcoObsEvt!\n");
+       return SWITCH_STATUS_FALSE;
+   }
+
+   MG_MEM_COPY(obs_desc->el.evts[0], obs_event, sizeof(obs_event));
+
+   *ptr_obs_desc = obs_desc;
+
+   return SWITCH_STATUS_SUCCESS;
+}
+/*****************************************************************************************************************************/

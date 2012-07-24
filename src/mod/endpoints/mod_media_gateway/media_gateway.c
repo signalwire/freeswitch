@@ -208,6 +208,11 @@ void megaco_termination_destroy(mg_termination_t *term)
     if (term->type == MG_TERM_RTP && term->u.rtp.local_port != 0) {
         switch_rtp_release_port(term->u.rtp.local_addr, term->u.rtp.local_port);
     }
+
+    if(term->active_events){
+        free(term->active_events);
+        term->active_events = NULL;
+    }
     
     switch_core_hash_delete_wrlock(term->profile->terminations, term->name, term->profile->terminations_rwlock);
     switch_core_destroy_memory_pool(&term->pool);
