@@ -1170,6 +1170,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABL
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_EXECUTE_ON_POST_ORIGINATE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("execute_on_post_originate");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -1225,6 +1235,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE_ge
   char *result = 0 ;
   
   result = (char *)("api_on_originate");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_POST_ORIGINATE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("api_on_post_originate");
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -3121,6 +3141,28 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_rtcp_numbers_t_octet_count_ge
   
   arg1 = (switch_rtcp_numbers_t *)jarg1; 
   result = (uint32_t) ((arg1)->octet_count);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtcp_numbers_t_peer_ssrc_set(void * jarg1, unsigned long jarg2) {
+  switch_rtcp_numbers_t *arg1 = (switch_rtcp_numbers_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_rtcp_numbers_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->peer_ssrc = arg2;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_rtcp_numbers_t_peer_ssrc_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_rtcp_numbers_t *arg1 = (switch_rtcp_numbers_t *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_rtcp_numbers_t *)jarg1; 
+  result = (uint32_t) ((arg1)->peer_ssrc);
   jresult = (unsigned long)result; 
   return jresult;
 }
@@ -9434,6 +9476,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_file_write(void * jarg1, void * ja
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_file_write_video(void * jarg1, void * jarg2, void * jarg3) {
+  int jresult ;
+  switch_file_handle_t *arg1 = (switch_file_handle_t *) 0 ;
+  void *arg2 = (void *) 0 ;
+  switch_size_t *arg3 = (switch_size_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_file_handle_t *)jarg1; 
+  arg2 = (void *)jarg2; 
+  arg3 = (switch_size_t *)jarg3; 
+  result = (switch_status_t)switch_core_file_write_video(arg1,arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_file_seek(void * jarg1, void * jarg2, long long jarg3, int jarg4) {
   int jresult ;
   switch_file_handle_t *arg1 = (switch_file_handle_t *) 0 ;
@@ -10255,6 +10313,16 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_micro_time_now() {
 }
 
 
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_mono_micro_time_now() {
+  void * jresult ;
+  switch_time_t result;
+  
+  result = switch_mono_micro_time_now();
+  jresult = new switch_time_t((const switch_time_t &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_memory_reclaim() {
   switch_core_memory_reclaim();
 }
@@ -10416,6 +10484,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_cond_yield(int jarg1) {
   
   arg1 = (switch_bool_t)jarg1; 
   switch_time_set_cond_yield(arg1);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_use_system_time(int jarg1) {
+  switch_bool_t arg1 ;
+  
+  arg1 = (switch_bool_t)jarg1; 
+  switch_time_set_use_system_time(arg1);
 }
 
 
@@ -10613,6 +10689,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_preprocess_session(void * jarg1, ch
   result = (switch_status_t)switch_ivr_preprocess_session(arg1,(char const *)arg2);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_sqldb_stop_thread() {
+  switch_core_sqldb_stop_thread();
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_sqldb_start_thread() {
+  switch_core_sqldb_start_thread();
 }
 
 
@@ -11331,6 +11417,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_thread_set_cpu_affinity(int jarg1)
 
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_os_yield() {
   switch_os_yield();
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_get_stacksizes(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_size_t *arg1 = (switch_size_t *) 0 ;
+  switch_size_t *arg2 = (switch_size_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_size_t *)jarg1; 
+  arg2 = (switch_size_t *)jarg2; 
+  result = (switch_status_t)switch_core_get_stacksizes(arg1,arg2);
+  jresult = result; 
+  return jresult;
 }
 
 
@@ -17892,6 +17992,50 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_interface_file_write_get(void *
   
   arg1 = (switch_file_interface *)jarg1; 
   result = (switch_status_t (*)(switch_file_handle_t *,void *,switch_size_t *)) ((arg1)->file_write);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_interface_file_read_video_set(void * jarg1, void * jarg2) {
+  switch_file_interface *arg1 = (switch_file_interface *) 0 ;
+  switch_status_t (*arg2)(switch_file_handle_t *,void *,switch_size_t *) = (switch_status_t (*)(switch_file_handle_t *,void *,switch_size_t *)) 0 ;
+  
+  arg1 = (switch_file_interface *)jarg1; 
+  arg2 = (switch_status_t (*)(switch_file_handle_t *,void *,switch_size_t *))jarg2; 
+  if (arg1) (arg1)->file_read_video = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_interface_file_read_video_get(void * jarg1) {
+  void * jresult ;
+  switch_file_interface *arg1 = (switch_file_interface *) 0 ;
+  switch_status_t (*result)(switch_file_handle_t *,void *,switch_size_t *) = 0 ;
+  
+  arg1 = (switch_file_interface *)jarg1; 
+  result = (switch_status_t (*)(switch_file_handle_t *,void *,switch_size_t *)) ((arg1)->file_read_video);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_interface_file_write_video_set(void * jarg1, void * jarg2) {
+  switch_file_interface *arg1 = (switch_file_interface *) 0 ;
+  switch_status_t (*arg2)(switch_file_handle_t *,void *,switch_size_t *) = (switch_status_t (*)(switch_file_handle_t *,void *,switch_size_t *)) 0 ;
+  
+  arg1 = (switch_file_interface *)jarg1; 
+  arg2 = (switch_status_t (*)(switch_file_handle_t *,void *,switch_size_t *))jarg2; 
+  if (arg1) (arg1)->file_write_video = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_interface_file_write_video_get(void * jarg1) {
+  void * jresult ;
+  switch_file_interface *arg1 = (switch_file_interface *) 0 ;
+  switch_status_t (*result)(switch_file_handle_t *,void *,switch_size_t *) = 0 ;
+  
+  arg1 = (switch_file_interface *)jarg1; 
+  result = (switch_status_t (*)(switch_file_handle_t *,void *,switch_size_t *)) ((arg1)->file_write_video);
   jresult = (void *)result; 
   return jresult;
 }
@@ -27235,6 +27379,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_event_add_presence_data_cols(void * ja
   arg2 = (switch_event_t *)jarg2; 
   arg3 = (char *)jarg3; 
   switch_event_add_presence_data_cols(arg1,arg2,(char const *)arg3);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_event_launch_dispatch_threads(unsigned long jarg1) {
+  uint32_t arg1 ;
+  
+  arg1 = (uint32_t)jarg1; 
+  switch_event_launch_dispatch_threads(arg1);
 }
 
 
