@@ -128,6 +128,9 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	char *route_uri = NULL;
 	const char *network_ip = NULL, *network_port = NULL, *from_proto;
 	char *extra_headers = NULL;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	int mstatus = 0, sanity = 0;
+
 	
 	proto = switch_event_get_header(message_event, "proto");
 	from_proto = switch_event_get_header(message_event, "from_proto");
@@ -324,6 +327,12 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		
 		switch_snprintf(header, sizeof(header), "X-FS-Sending-Message: %s", switch_core_get_uuid());
 
+		switch_uuid_str(uuid_str, sizeof(uuid_str));
+
+		switch_mutex_lock(profile->flag_mutex);
+		switch_core_hash_insert(profile->chat_hash, uuid_str, &mstatus);
+		switch_mutex_unlock(profile->flag_mutex);
+
 		nua_message(msg_nh,
 					TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)),
 					TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
@@ -331,13 +340,27 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 					SIPTAG_FROM_STR(from),
 					TAG_IF(contact, NUTAG_URL(contact)),
 					SIPTAG_TO_STR(dup_dest),
-
+					SIPTAG_CALL_ID_STR(uuid_str),
 					TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 					SIPTAG_CONTENT_TYPE_STR(ct),
 					SIPTAG_PAYLOAD_STR(body),
 					SIPTAG_HEADER_STR(header),
 					TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 					TAG_END());
+
+
+		sanity = 200;
+		while(!mstatus && --sanity) {
+			switch_yield(100000);
+		}
+
+		if (!(mstatus > 199 && mstatus < 300)) {
+			status = SWITCH_STATUS_FALSE;
+		}
+		
+		switch_mutex_lock(profile->flag_mutex);
+		switch_core_hash_delete(profile->chat_hash, uuid_str);
+		switch_mutex_unlock(profile->flag_mutex);
 
 		sofia_glue_free_destination(dst);
 		switch_safe_free(dup_dest);

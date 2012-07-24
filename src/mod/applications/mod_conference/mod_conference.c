@@ -7764,7 +7764,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	}
 
 	if (!(conference = conference_find(name, NULL))) {
-		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL, NULL);
+		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL, NULL, SWITCH_FALSE);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -7782,7 +7782,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 	switch_safe_free(lbuf);
 
-	switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL, NULL);
+	switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL, NULL, SWITCH_FALSE);
 	switch_safe_free(stream.data);
 	switch_thread_rwlock_unlock(conference->rwlock);
 

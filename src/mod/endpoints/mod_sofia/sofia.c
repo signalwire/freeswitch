@@ -745,6 +745,24 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 
 void sofia_handle_sip_r_message(int status, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip)
 {
+	const char *call_id;
+	int *mstatus;
+
+	if (!sip && sip->sip_call_id) {
+		return;
+	}
+
+	call_id = sip->sip_call_id->i_id;
+
+
+	switch_mutex_lock(profile->flag_mutex);
+	mstatus = switch_core_hash_find(profile->chat_hash, call_id);
+	switch_mutex_unlock(profile->flag_mutex);
+
+	if (mstatus) {
+		*mstatus = status;
+	}
+
 }
 
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout)

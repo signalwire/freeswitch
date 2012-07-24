@@ -580,7 +580,6 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	if (!do_skip && !switch_stristr("GLOBAL", dest_proto)) {
 		if ((ci = switch_loadable_module_get_chat_interface(dest_proto)) && ci->chat_send) {
 			status = ci->chat_send(message_event);
-
 			UNPROTECT_INTERFACE(ci);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid chat interface [%s]!\n", dest_proto);
@@ -599,17 +598,20 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	return status;
 }
 
-static void chat_process_event(switch_event_t **eventp)
+static switch_status_t chat_process_event(switch_event_t **eventp)
 {
 	switch_event_t *event;
+	switch_status_t status;
 
 	switch_assert(eventp);
 
 	event = *eventp;
 	*eventp = NULL;
 
-	do_chat_send(event);
+	status = do_chat_send(event);
 	switch_event_destroy(&event);
+
+	return status;
 }
 
 
@@ -743,7 +745,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_execute_chat_app(switch_event_t *mes
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_proto, const char *proto, const char *from, const char *to,
-														   const char *subject, const char *body, const char *type, const char *hint)
+														   const char *subject, const char *body, const char *type, const char *hint, switch_bool_t blocking)
 {
 	switch_event_t *message_event;
 	switch_status_t status;
@@ -768,8 +770,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_prot
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
 	}
 
-	chat_queue_message(&message_event);
-	status = SWITCH_STATUS_SUCCESS;
+	
+	if (blocking) {
+		status = chat_process_event(&message_event);
+	} else {
+		chat_queue_message(&message_event);
+		status = SWITCH_STATUS_SUCCESS;
+	}
 
 	return status;
 	
