@@ -613,6 +613,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			}
 		case CH_CMD_TYPE_CFM:
 			{
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Received Command txn[%d] Response/Confirmation \n",txn_id);
 				break;
 			}
 		default:
@@ -623,7 +624,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "cmd->cmdStatus.val[%d]\n",cmd->cmdStatus.val);
     /* END OF TXN received - means last command in txn to process. 
      * Send response to peer */
-    /*if(CH_CMD_STATUS_END_OF_TXN == cmd->cmdStatus.val)*/{
+    if(CH_CMD_TYPE_IND == cmd->cmdType.val){ 
+    /*if(CH_CMD_STATUS_END_OF_TXN == cmd->cmdStatus.val)*/
         mg_send_end_of_axn(suId, &cmd->transId, &out_ctxt, &cmd->peerId);
     }
 

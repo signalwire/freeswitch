@@ -98,29 +98,80 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 /**********************************************************************************/
 		}else if(!strcmp(argv[2], "send")) {
 /**********************************************************************************/
-			/* mg profile <profile-name> send sc <term-id> <method> <reason>*/
 			printf("count = %d \n",argc);
-			if(argc < 7){
-				goto usage;
-			}
-			if(zstr(argv[3]) || zstr(argv[4]) || zstr(argv[5]) || zstr(argv[6])){
-				goto usage;
-			}
 
-			if (profile) {
-				if(!zstr(argv[7]) && !strcasecmp(argv[7],"wild")){
-					wild = 0x01;
-				}
+            if (profile) {
 
-				printf("Input to Send Service Change command : "
-						"Profile Name[%s], term-id[%s] method[%s] reason[%s] \n",
-						profile->name, argv[4], argv[5], argv[6]);
+                switch(argc)
+                {
+                    case 7:
+                        {
+                            /* mg profile <profile-name> send sc <term-id> <method> <reason>*/
+                            printf("ARGC = 7 \n");
+                            if(zstr(argv[3]) || zstr(argv[4]) || zstr(argv[5]) || zstr(argv[6])){
+                                goto usage;
+                            }
 
-				megaco_profile_release(profile);
-				mg_send_service_change(profile->idx, argv[4], atoi(argv[5]), atoi(argv[6]),wild);
-			} else {
-				stream->write_function(stream, "-ERR No such profile\n");
-			}
+                            if(!zstr(argv[7]) && !strcasecmp(argv[7],"wild")){
+                                wild = 0x01;
+                            }
+
+                            printf("Input to Send Service Change command : "
+                                    "Profile Name[%s], term-id[%s] method[%s] reason[%s] \n",
+                                    profile->name, argv[4], argv[5], argv[6]);
+
+                            megaco_profile_release(profile);
+                            mg_send_service_change(profile->idx, argv[4], atoi(argv[5]), atoi(argv[6]),wild);
+
+                            break;
+                        }
+                    case 6:
+                        {
+                            /* mg profile <profile-name> send notify <term-id> <digits>*/
+                            if(zstr(argv[3]) || zstr(argv[4]) || zstr(argv[5])){
+                                goto usage;
+                            }
+
+                            if(strcasecmp(argv[3],"notify")){
+                                stream->write_function(stream, "-ERR wrong input \n");
+                                goto usage;
+                            }
+
+                            printf("Sending DTMF digits[%s] NOTIFY for termination[%s]\n", argv[5], argv[4]);
+
+                            megaco_profile_release(profile);
+                            mg_send_dtmf_notify(profile, argv[4], (char*)argv[5], (int)strlen(argv[5]));
+
+                            break;
+                        }
+                    case 5:
+                        {
+                            /* mg profile <profile-name> send ito notify */
+                            if(zstr(argv[3])){
+                                goto usage;
+                            }
+
+                            if(strcasecmp(argv[3],"ito")){
+                                stream->write_function(stream, "-ERR wrong input \n");
+                                goto usage;
+                            }
+
+                            printf("Sending In-Activity  NOTIFY \n");
+
+                            megaco_profile_release(profile);
+                            mg_send_ito_notify(profile);
+
+                            break;
+                        }
+                    default:
+                        {
+                            goto usage;
+                        }
+                }
+            }else{
+                stream->write_function(stream, "-ERR No such profile\n");
+            }
+
 /**********************************************************************************/
 		}else {
 /**********************************************************************************/
@@ -154,6 +205,7 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 	goto done;
 
 usage:
+    megaco_profile_release(profile);
 	stream->write_function(stream, "-ERR Usage: \n""\t"MEGACO_CLI_SYNTAX" \n \t"MEGACO_FUNCTION_SYNTAX"\n \t" MEGACO_LOGGING_CLI_SYNTAX "\n");
 
 done:

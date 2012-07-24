@@ -2132,4 +2132,237 @@ err:
 	mgUtlDelMgMgcoSvcChgPar(&srvPar);
 	return ret;
 }
+
 /*****************************************************************************************************************************/
+/* API to send In-Activity Timeout NOTIFY to MGC */
+switch_status_t  mg_send_ito_notify(megaco_profile_t* mg_profile )
+{
+    MgMgcoObsEvt *oevt;
+
+	switch_assert(mg_profile);
+
+    mg_stack_alloc_mem((Ptr*)&oevt, sizeof(MgMgcoObsEvt));
+
+    oevt->pres.pres = PRSNT_NODEF;
+
+    mg_get_time_stamp(&oevt->time);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.pkgType), MGT_PKG_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.valType), MGT_PKG_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.u.val), MGT_PKG_INACTTIMER);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->name.type),MGT_GEN_TYPE_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->name.u.val),(U8)MGT_PKG_ENUM_REQEVT_INACTTIMER_INACT_TIMOUT);
+
+    oevt->pl.num.pres = PRSNT_NODEF;
+    oevt->pl.num.val = 0x00;
+
+    return mg_send_notify(mg_profile, "ROOT", oevt);
+}
+/*****************************************************************************************************************************/
+/* API to send DTMF Digits Notification */
+
+switch_status_t  mg_send_dtmf_notify(megaco_profile_t* mg_profile, const char* term_name, char* digits, int num_of_collected_digits )
+{
+    MgMgcoObsEvt *oevt;
+    MgMgcoEvtPar* param;
+    int           ascii = 0x00;
+    int           cnt = 0x00;
+
+	switch_assert(term_name);
+	switch_assert(mg_profile);
+	switch_assert(digits);
+
+    if(0 == num_of_collected_digits ){
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"num_of_collected_digits cannt be ZERO \n");
+        return SWITCH_STATUS_FALSE;
+    }
+
+    mg_stack_alloc_mem((Ptr*)&oevt, sizeof(MgMgcoObsEvt));
+
+    oevt->pres.pres = PRSNT_NODEF;
+
+    mg_get_time_stamp(&oevt->time);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.pkgType), MGT_PKG_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.valType), MGT_PKG_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.u.val), MGT_PKG_EXT_DTMF);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->name.type),MGT_GEN_TYPE_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->name.u.val),(U8)MGT_PKG_ENUM_REQEVT_EXT_DTMF_EXT_CE);
+
+    if (mgUtlGrowList((void ***)&oevt->pl.parms, sizeof(MgMgcoEvtPar), &oevt->pl.num, NULL) != ROK) {
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        return SWITCH_STATUS_FALSE;
+    }
+
+    param = oevt->pl.parms[0];
+
+    MG_INIT_TOKEN_VALUE(&(param->type),(U8)MGT_EVTPAR_OTHER);
+
+    MG_INIT_TOKEN_VALUE(&(param->u.other.name.type),MGT_GEN_TYPE_KNOWN);
+    MG_INIT_TOKEN_VALUE(&(param->u.other.name.u.val),MGT_PKG_ENUM_OBSEVTOTHER_EXT_DTMF_EXT_CE_DGT_STR);
+
+    MG_INIT_TOKEN_VALUE(&(param->u.other.val.type),MGT_VALUE_EQUAL);
+    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.type),MGT_VALTYPE_OCTSTRXL);
+
+    mg_stack_alloc_mem((Ptr*)&param->u.other.val.u.eq.u.osxl.val, num_of_collected_digits+2);
+
+    param->u.other.val.u.eq.u.osxl.pres = 0x01; 
+    param->u.other.val.u.eq.u.osxl.len = num_of_collected_digits+2;
+
+    param->u.other.val.u.eq.u.osxl.val[0] = '\"';
+
+    /* copy collected DTMF digits */
+    if(ascii)
+    {
+        for(cnt = 1; cnt< num_of_collected_digits; cnt++){
+            /* convert values to ascii */
+            if(digits[cnt-1] <= 9){
+                param->u.other.val.u.eq.u.osxl.val[cnt] = digits[cnt-1] + '0';
+            }else{
+                /* 10 for decimal equivalent of A */
+                param->u.other.val.u.eq.u.osxl.val[cnt] = digits[cnt-1] + 'A' - 10;
+            }
+        }
+    } else {
+        /* If incoming digits are already in ascii format .. simply copy */
+        for(cnt = 1; cnt< num_of_collected_digits; cnt++){
+                param->u.other.val.u.eq.u.osxl.val[cnt] = digits[cnt-1];
+        }
+    }
+
+
+    param->u.other.val.u.eq.u.osxl.val[num_of_collected_digits+1] = '\"';
+
+    if (mgUtlGrowList((void ***)&oevt->pl.parms, sizeof(MgMgcoEvtPar), &oevt->pl.num, NULL) != ROK) {
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        return SWITCH_STATUS_FALSE;
+    }
+
+    param = oevt->pl.parms[1];
+
+
+    /* Set method */
+    MG_INIT_TOKEN_VALUE(&(param->type),MGT_EVTPAR_OTHER);
+    MG_INIT_TOKEN_VALUE(&(param->u.other.name.type),MGT_GEN_TYPE_KNOWN);
+    MG_INIT_TOKEN_VALUE(&(param->u.other.name.u.val),MGT_PKG_ENUM_OBSEVTOTHER_EXT_DTMF_EXT_CE_TERM_METH);
+
+    MG_INIT_TOKEN_VALUE(&(param->u.other.val.type),MGT_VALUE_EQUAL);
+    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.type),MGT_VALTYPE_ENUM);
+    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHER_EXT_DTMF_EXT_CE_TERM_METHFM);
+
+    return mg_send_notify(mg_profile, term_name, oevt);
+}
+
+/*****************************************************************************************************************************/
+
+/* Note : API to send NOTIFY Message */
+/* INPUT : 
+*           mg_profile          - MG profile structure pointer
+*	        term_name 			- Termination Name(as specified for MEGACO )
+*	        oevt                - Observed Event structure pointer
+*/
+switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_name, MgMgcoObsEvt* oevt)
+{
+    switch_status_t ret;
+    MgMgcoCommand   request;
+    MgMgcoTermId*   termId;
+    mg_termination_t* term = NULL;
+    MgMgcoObsEvtDesc  *obs_desc = NULL;
+    MgMgcoRequestId    reqId;               
+
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "Sending Notify Message for termination[%s] !\n", term_name);
+
+    MG_ZERO(&request, sizeof(request));
+    MG_ZERO(&reqId, sizeof(reqId));
+
+    if(strcmp(term_name, "ROOT")){
+        /* Not ROOT term then --- */
+        term = megaco_find_termination(mg_profile, (char*)term_name);
+
+        if(!term){
+            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No termination configured for given name[%s] !\n", term_name);
+            return SWITCH_STATUS_FALSE;
+        }
+
+        if(NULL == term->active_events){
+            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No Active events observed on given termination[%s] !\n", term_name);
+            /* return SWITCH_STATUS_FALSE; */
+            /*TODO - ideally we should return ...
+             * as of now not returning .. if we dont have active signals then
+             * setting default request id and sending notification to MGC */
+            MG_SET_DEF_REQID(&reqId);
+        }else{
+            MG_MEM_COPY(&reqId, &term->active_events->reqId, sizeof(MgMgcoRequestId));
+        }
+    }else{
+            MG_SET_DEF_REQID(&reqId);
+    }
+    
+
+
+    if(SWITCH_STATUS_FALSE == (ret = mg_create_mgco_command(&request, CH_CMD_TYPE_REQ, MGT_NTFY))){
+        return SWITCH_STATUS_FALSE;
+    }
+
+    if (mgUtlGrowList((void ***)&request.u.mgCmdReq[0]->cmd.u.ntfy.obs.el.evts, sizeof(MgMgcoObsEvtLst),
+                &request.u.mgCmdReq[0]->cmd.u.ntfy.obs.el.num, &request.u.mgCmdReq[0]->memCp) != ROK) {
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        return SWITCH_STATUS_FALSE;
+    }
+
+    obs_desc = &request.u.mgCmdReq[0]->cmd.u.ntfy.obs;
+
+    MG_INIT_TOKEN_VALUE(&(obs_desc->pres), PRSNT_NODEF);
+
+    /* copy request id */
+    MG_MEM_COPY(&obs_desc->reqId, &reqId, sizeof(MgMgcoRequestId));
+
+    /* copy observe event */
+    /*MG_MEM_COPY(obs_desc->el.evts[0], oevt, sizeof(MgMgcoObsEvt));*/
+
+    obs_desc->el.evts[0] = oevt;
+
+
+    /*fill txn id */
+    request.transId.pres = PRSNT_NODEF;
+    request.transId.val  = get_txn_id();
+
+    request.contextId.type.pres = PRSNT_NODEF;
+    request.contextId.type.val  = MGT_CXTID_NULL;
+
+    request.cmdStatus.pres = PRSNT_NODEF;
+    request.cmdStatus.val = CH_CMD_STATUS_END_OF_TXN;
+
+    request.cmdType.pres = PRSNT_NODEF;
+    request.cmdType.val  = CH_CMD_TYPE_REQ;
+
+    /* fill termination */
+    if (mgUtlGrowList((void ***)&request.u.mgCmdReq[0]->cmd.u.ntfy.termIdLst.terms, sizeof(MgMgcoTermIdLst),
+                &request.u.mgCmdReq[0]->cmd.u.ntfy.termIdLst.num, &request.u.mgCmdReq[0]->memCp) != ROK)
+    {
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        return SWITCH_STATUS_FALSE;
+    }
+
+#ifdef GCP_VER_2_1
+    termId = request.u.mgCmdReq[0]->cmd.u.ntfy.termIdLst.terms[0];
+#else
+    termId = &(request.u.mgCmdReq[0]->cmd.u.ntfy.termId);
+#endif
+
+    mg_fill_mgco_termid(termId, (char*)term_name ,strlen(term_name), &request.u.mgCmdReq[0]->memCp);
+
+    sng_mgco_send_cmd(mg_profile->idx, &request);
+
+    return SWITCH_STATUS_SUCCESS;
+}
+/*****************************************************************************************************************************/
+
