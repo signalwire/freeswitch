@@ -78,6 +78,16 @@ typedef uint64_t ftdm_time_t;
 /*! \brief array len helper */
 #define ftdm_array_len(array) sizeof(array)/sizeof(array[0])
 
+/*! \brief Get smaller value */
+#define ftdm_min(x,y) ((x) < (y) ? (x) : (y))
+
+/*! \brief Get larger value */
+#define ftdm_max(x,y) ((x) > (y) ? (x) : (y))
+
+/*! \brief Get value that is in range [vmin,vmax] */
+#define ftdm_clamp(val,vmin,vmax) ftdm_max(vmin,ftdm_min(val,vmax))
+
+
 /*! \brief The memory handler. 
     Do not use directly this variable, use the memory macros and ftdm_global_set_memory_handler to override */	
 FT_DECLARE_DATA extern ftdm_memory_handler_t g_ftdm_mem_handler;
