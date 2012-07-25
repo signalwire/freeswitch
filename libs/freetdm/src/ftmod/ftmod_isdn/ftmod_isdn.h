@@ -67,9 +67,6 @@ struct ftdm_isdn_data {
 	int32_t mode;
 	int32_t digit_timeout;
 	ftdm_isdn_opts_t opts;
-	ftdm_caller_data_t *outbound_crv[32768];
-	ftdm_channel_t *channels_local_crv[32768];
-	ftdm_channel_t *channels_remote_crv[32768];
 #ifdef HAVE_PCAP
 	struct pcap_context *pcap;
 #endif
