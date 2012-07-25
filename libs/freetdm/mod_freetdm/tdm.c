@@ -97,8 +97,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_memory_pool_t **pool,
 													switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
-    const char  *szspanid = switch_event_get_header(var_event, kSPAN_ID),
-                *szchanid = switch_event_get_header(var_event, kCHAN_ID),
+    const char  *szchanid = switch_event_get_header(var_event, kCHAN_ID),
                 *span_name = switch_event_get_header(var_event, kSPAN_NAME);
     int chan_id;
     int span_id;
@@ -113,22 +112,20 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     
     ctdm_private_t *tech_pvt = NULL;
     
-    if (zstr(szchanid) || (zstr(szspanid) && zstr(span_name))) {
+    if (zstr(szchanid) || zstr(span_name)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Both ["kSPAN_ID"] and ["kCHAN_ID"] have to be set.\n");
         goto fail;
     }
     
     chan_id = atoi(szchanid);
-    span_id = atoi(szspanid);
-
     
-    if (!span_id) {
-        if (ftdm_span_find_by_name(span_name, &span) == FTDM_SUCCESS) {
-             span_id = ftdm_span_get_id(span);   
-        } else {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find span [%s]\n");
-        }
+
+    if (ftdm_span_find_by_name(span_name, &span) == FTDM_SUCCESS) {
+         span_id = ftdm_span_get_id(span);   
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find span [%s]\n");
     }
+
     
     if (!(*new_session = switch_core_session_request(ctdm.endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, 0, pool))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't request session.\n");
