@@ -20,11 +20,18 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	 sounds_version=`grep $$base_sound_dir $(switch_srcdir)/build/sounds_version.txt | cut -d ' '  -f2`;\
 	 soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$moh_version.tar.gz`; \
 	 echo $$full_sound_dir | grep  music  >/dev/null || soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$sounds_version.tar.gz`; \
-         if test "$$target" = "install"; then $(MAKE) $(AM_MAKEFLAGS) core_install; else $(MAKE) $(AM_MAKEFLAGS) core ; fi; \
          if test "$$target_prefix" = "sounds"; then \
-	   if test "$$target" = "install"; then $(GETSOUNDS) $$soundfile $(DESTDIR)$(soundsdir)/; else $(GETSOUNDS) $$soundfile ; fi; \
+	   if test "$$target" = "install"; then \
+	      $(GETSOUNDS) $$soundfile $(DESTDIR)$(soundsdir)/;\
+	   else \
+	      $(GETSOUNDS) $$soundfile ; \
+	   fi; \
 	 else \
-	   cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
+	   if test "$$target" = "install"; then \
+	      $(MAKE) $(AM_MAKEFLAGS) core_install && cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ; \
+	   else \
+	      $(MAKE) $(AM_MAKEFLAGS) core && cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
+	   fi; \
 	 fi
 
 sounds: sounds-en-us-callie-8000
@@ -64,7 +71,7 @@ cd-moh-install: uhd-moh-install sounds-music-48000-install
 all-recursive: libfreeswitch.la
 clean-recusive: clean_core
 install-recursive: install-libLTLIBRARIES install-binPROGRAMS
-$(RECURSIVE_TARGETS):
+$(RECURSIVE_TARGETS): freeswitch
 	@failcom='exit 1'; \
 	for f in x $$MAKEFLAGS; do \
 	  case $$f in \
@@ -147,7 +154,16 @@ libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
 endif
 
 if ENABLE_ZRTP
-libfreeswitch_la_LDFLAGS += -lzrtp -lbn
+CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bgaes
+CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bnlib
+CORE_CFLAGS += -isystem $(switch_srcdir)/libs/libzrtp/include
+ZRTP_LDFLAGS = -L$(switch_srcdir)/libs/libzrtp/third_party/bnlib
+ZRTP_LDFLAGS += -L$(switch_srcdir)/libs/libzrtp/projects/gnu/build
+ZRTP_LIBS = -lbn -lzrtp
+libfreeswitch_la_LDFLAGS += $(ZRTP_LDFLAGS)
+libfreeswitch_la_LIBADD += $(ZRTP_LIBS)
+CORE_LIBS += libs/libzrtp/projects/gnu/build/libzrtp.a
+LIBS += libs/libzrtp/third_party/bnlib/libbn.a
 endif
 
 library_includedir      = $(includedir)
@@ -402,8 +418,8 @@ $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 src/include/switch_version.h: src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@have_version=1 ; \
 	force=0 ; \
-	grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h.in > /dev/null  && have_version=0 ; \
-	test ! -f src/include/switch_version.h || grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h > /dev/null && force=1 ; \
+	grep -- "@SWITCH_VERSION_REVISION@" src/include/switch_version.h.in > /dev/null || have_version=0 ; \
+	test ! -f src/include/switch_version.h || grep -- "@SWITCH_VERSION_REVISION@" src/include/switch_version.h > /dev/null && force=1 ; \
 	if test $$have_version = 1 ; then \
 	  cat src/include/switch_version.h.in > src/include/switch_version.h ; \
 	  touch .version ; \
@@ -428,6 +444,9 @@ src/include/switch_version.h: src/include/switch_version.h.in .version $(libfree
 ##
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
+
+libs/libzrtp/projects/gnu/build/libzrtp.a:
+	cd libs/libzrtp/projects/gnu && $(MAKE)
 
 libs/curl/Makefile:
 	cd libs/curl && sh ./configure.gnu --prefix=$(prefix)
@@ -459,7 +478,6 @@ libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
 libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
-
 
 ##
 ## helper targets

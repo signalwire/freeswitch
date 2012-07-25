@@ -1,5 +1,4 @@
 ######################################################################################################################
-######################################################################################################################
 #
 # spec file for package freeswitch
 #
@@ -11,20 +10,20 @@
 #
 # This file is part of:
 # FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-# Copyright (C) 2005-2010, Anthony Minessale II <anthm@freeswitch.org>
+# Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
 #
 # This file and all modifications and additions to the pristine package are under the same license as the package itself.
 #
 # Contributor(s): Mike Jerris
-#				  Brian West
-#				  Raul Fragoso
-#				  Rupa Shomaker
-#				  Marc Olivier Chouinard
-#				  Raymond Chandler
-#				  Anthony Minessale II <anthm@freeswitch.org>
+#                 Brian West
+#                 Anthony Minessale II <anthm@freeswitch.org>
+#                 Raul Fragoso
+#                 Rupa Shomaker
+#                 Marc Olivier Chouinard
+#                 Raymond Chandler
+#                 Ken Rice <krice@freeswitch.org>
 #
-#
-# Maintainer(s): Michal Bielicki <michal.bielicki (at) ++nospam_please++ seventhsignal.de
+# Maintainer(s): Ken Rice <krice@freeswitch.org>
 #
 ######################################################################################################################
 # Module build settings
@@ -1434,7 +1433,7 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
 if test ! -f Makefile.in 
 then 
-   ./bootstrap.sh -j
+   ./bootstrap.sh
 fi
 
 %configure -C \
@@ -1594,6 +1593,7 @@ fi
 #################################### Basic Directory Structure #######################################################
 #
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}
+%dir %attr(0750, freeswitch, daemon) %{LOCALSTATEDIR}
 %dir %attr(0750, freeswitch, daemon) %{DBDIR}
 %dir %attr(0750, freeswitch, daemon) %{GRAMMARDIR}
 %dir %attr(0750, freeswitch, daemon) %{HTDOCSDIR}
@@ -1757,6 +1757,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_cdr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_curl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_rpc.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_scgi.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/zeroconf.conf.xml
 ######################################################################################################################
 #						Chatplans

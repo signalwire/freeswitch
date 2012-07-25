@@ -145,6 +145,12 @@ typedef unsigned long long bnword64;
 #define BNWORD64 bnword64
 #endif
 
+/*Workaround for windows for now. */
+#ifdef WIN32
+typedef unsigned long long bnword64;
+#define BNWORD64 bnword64
+#endif
+
 /* We don't even try to find a 128-bit type at the moment */
 
 #endif /* !LBN_H */

@@ -1,6 +1,6 @@
 /*
  * STFU (S)ort (T)ransportable (F)ramed (U)tterances
- * Copyright (c) 2007 Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (c) 2007-2012 Anthony Minessale II <anthm@freeswitch.org>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -461,7 +461,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
         i->sync_in = 0;
     } else {
 
-        if ((ts && ts == i->last_rd_ts + i->samples_per_packet) || (i->last_rd_ts > 4294900000 && ts < 5000)) {
+        if ((ts && ts == i->last_rd_ts + i->samples_per_packet) || (i->last_rd_ts > 4294900000u && ts < 5000)) {
             good_ts = 1;
         }
 

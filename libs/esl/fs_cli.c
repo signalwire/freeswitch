@@ -58,6 +58,7 @@ typedef struct {
 	const char *console_fnkeys[12];
 	char loglevel[128];
 	int quiet;
+	int batch_mode;
 	char prompt_color[12];
 	char input_text_color[12];
 	char output_text_color[12];
@@ -109,6 +110,7 @@ static void sleep_s(int secs) { _sleep_ns(secs, 0); }
 static int process_command(esl_handle_t *handle, const char *cmd);
 
 static void clear_cli(void) {
+	if (global_profile->batch_mode) return;
 	putchar('\r');
 	printf("\033[%dC", bare_prompt_str_len);
 	printf("\033[K");
@@ -402,7 +404,9 @@ static BOOL console_readConsole(HANDLE conIn, char *buf, int len, int *pRed, int
 {
 	DWORD recordIndex, bufferIndex, toRead, red;
 	PINPUT_RECORD pInput;
-	GetNumberOfConsoleInputEvents(conIn, &toRead);
+	if (GetNumberOfConsoleInputEvents(conIn, &toRead) == 0) {
+		return(FALSE);
+	}
 	if (len < (int)toRead) {
 		toRead = len;
 	}
@@ -549,6 +553,7 @@ static const char *usage_str =
 	"  -r, --retry                     Retry connection on failure\n"
 	"  -R, --reconnect                 Reconnect if disconnected\n"
 	"  -d, --debug=level               Debug Level (0 - 7)\n"
+	"  -b, --batchmode                 Batch mode\n"
 	"  -t, --timeout                   Timeout for API commands (in miliseconds)\n\n";
 
 static int usage(char *name){
@@ -598,6 +603,7 @@ static int write_char(int c) {
 #ifdef WIN32
 static void clear_line(void)
 {
+	if (global_profile->batch_mode) return;
 	putchar('\r');
 	printf("\033[K");
 	fflush(stdout);
@@ -606,6 +612,7 @@ static void clear_line(void)
 #else
 static void clear_line(void)
 {
+	if (global_profile->batch_mode) return;
 	if (!(write_char('\r'))) goto done;
 	if (!(write_str("\033[K"))) goto done;
  done:
@@ -618,6 +625,7 @@ static void redisplay(void)
 #ifndef WIN32
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
+	if (global_profile->batch_mode) return;
 	if (!(write_str(prompt_str))) goto done;
 	while (c < lf->lastchar && *c) {
 		if (!(write_char(*c))) goto done;
@@ -643,7 +651,9 @@ static int output_printf(const char *fmt, ...)
 	int r;
 	va_start(ap, fmt);
 #ifndef WIN32
-	printf("%s", output_text_color);
+	if (!(global_profile->batch_mode)) {
+		printf("%s", output_text_color);
+	}
 #endif
 	r = vprintf(fmt, ap);
 	va_end(ap);
@@ -681,15 +691,23 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 #ifndef WIN32
 							if (aok) {
 								if (feature_level) clear_line();
-								printf("%s%s", colors[level], handle->last_event->body);
-								if (!feature_level) printf("%s", ESL_SEQ_DEFAULT_COLOR);
+								if(!(global_profile->batch_mode)) {
+									printf("%s%s", colors[level], handle->last_event->body);
+									if (!feature_level) printf("%s", ESL_SEQ_DEFAULT_COLOR);
+								} else {
+									printf("%s", handle->last_event->body);
+								}
 								if (feature_level) redisplay();
 							}
 #else
 							if (aok) {
-								SetConsoleTextAttribute(hStdout, colors[level]);
+								if(!(global_profile->batch_mode)) {
+									SetConsoleTextAttribute(hStdout, colors[level]);
+								}
 								WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
-								SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+								if(!(global_profile->batch_mode)) {
+									SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+								}
 							}
 #endif
 						}
@@ -832,20 +850,27 @@ static int get_profile(const char *name, cli_profile_t **profile)
 	return -1;
 }
 
-#ifndef HAVE_EDITLINE
 static char command_buf[CMD_BUFLEN+1] = "";
 
 static const char *basic_gets(int *cnt)
 {
-#ifndef _MSC_VER
 	int x = 0;
+#ifdef _MSC_VER
+	int read, key;
+	char keys[CMD_BUFLEN];
+	HANDLE stdinHandle;
+	if (global_profile->batch_mode) {
+#endif
 	printf("%s", prompt_str);
+	if (global_profile->batch_mode) fflush(stdout);
 	memset(&command_buf, 0, sizeof(command_buf));
 	for (x = 0; x < (sizeof(command_buf) - 1); x++) {
 		int c = getchar();
 		if (c < 0) {
-			int y = read(fileno(stdin), command_buf, sizeof(command_buf) - 1);
-			command_buf[y - 1] = '\0';
+			if (fgets(command_buf, sizeof(command_buf) - 1, stdin) != command_buf) {
+				break;
+			}
+			command_buf[strlen(command_buf)-1] = '\0'; /* remove endline */
 			break;
 		}
 		command_buf[x] = (char) c;
@@ -855,27 +880,28 @@ static const char *basic_gets(int *cnt)
 		}
 	}
 	*cnt = x;
-#else
-	int read, key;
-	char keys[CMD_BUFLEN];
-	HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
-	console_bufferInput (0, 0, prompt_str, PROMPT_OP);
-	printf("%s", prompt_str);
-	*cnt = 0;
-	memset(&command_buf, 0, sizeof(command_buf));
-	while (!*cnt) {
-		if (console_readConsole(stdinHandle, keys, (int)sizeof(keys), &read, &key)) {
-			*cnt = console_bufferInput(keys, read, command_buf, key);
-			if (!strcmp(command_buf, "Empty")) {
-				command_buf[0] = 0;
+#ifdef _MSC_VER
+	} else {
+		stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+		console_bufferInput (0, 0, prompt_str, PROMPT_OP);
+		printf("%s", prompt_str);
+		if (global_profile->batch_mode) fflush(stdout);
+		*cnt = 0;
+		memset(&command_buf, 0, sizeof(command_buf));
+		while (!*cnt) {
+			if (console_readConsole(stdinHandle, keys, (int)sizeof(keys), &read, &key)) {
+				*cnt = console_bufferInput(keys, read, command_buf, key);
+				if (global_profile->batch_mode) fflush(stdout);
+				if (!strcmp(command_buf, "Empty")) {
+					command_buf[0] = 0;
+				}
 			}
+			sleep_ms(20);
 		}
-		sleep_ms(20);
 	}
 #endif
 	return command_buf;
 }
-#endif
 
 static void print_banner(FILE *stream)
 {
@@ -1067,6 +1093,8 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				if (pt > 0) {
 					profiles[pcount-1].port = (esl_port_t)pt;
 				}
+			} else if (!strcasecmp(var, "batchmode")) {
+				profiles[pcount-1].batch_mode = esl_true(val);
 			} else if (!strcasecmp(var, "debug")) {
 				int dt = atoi(val);
 				if (dt > -1 && dt < 8){
@@ -1100,6 +1128,7 @@ static void clear_el_buffer(void) {
 #ifdef HAVE_EDITLINE
 	const LineInfo *lf = el_line(el);
 	int len = (int)(lf->lastchar - lf->buffer);
+	if (global_profile->batch_mode) return;
 	el_deletestr(el, len);
 	memset((char*)lf->buffer, 0, len);
 #endif
@@ -1134,6 +1163,7 @@ int main(int argc, char *argv[])
 		{"execute", 1, 0, 'x'},
 		{"loglevel", 1, 0, 'l'},
 		{"quiet", 0, 0, 'q'},
+		{"batchmode", 0, 0, 'b'},
 		{"retry", 0, 0, 'r'},
 		{"interrupt", 0, 0, 'i'},
 		{"reconnect", 0, 0, 'R'},
@@ -1154,6 +1184,7 @@ int main(int argc, char *argv[])
 	char argv_command[1024] = "";
 	char argv_loglevel[128] = "";
 	int argv_quiet = 0;
+	int argv_batch = 0;
 	int loops = 2, reconnect = 0, timeout = 0;
 
 
@@ -1186,7 +1217,7 @@ int main(int argc, char *argv[])
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:t:qrRhi?", options, &option_index);
+		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:t:qrRhib?", options, &option_index);
 		if (opt == -1) break;
 		switch (opt) {
 			case 'H':
@@ -1228,6 +1259,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'q':
 				argv_quiet = 1;
+				break;
+			case 'b':
+				argv_batch = 1;
 				break;
 			case 'i':
 				allow_ctl_c = 1;
@@ -1278,6 +1312,10 @@ int main(int argc, char *argv[])
 	}
 	if (argv_pass) {
 		esl_set_string(profile->pass, temp_pass);
+	}
+	if (argv_batch || profile->batch_mode) {
+		profile->batch_mode = 1;
+		feature_level=0;
 	}
 	if (*argv_loglevel) {
 		esl_set_string(profile->loglevel, argv_loglevel);
@@ -1423,6 +1461,9 @@ int main(int argc, char *argv[])
 		snprintf(cmd_str, sizeof(cmd_str), "log %s\n\n", profile->loglevel);
 		esl_send_recv(&handle, cmd_str);
 	}
+	if (global_profile->batch_mode) {
+		setvbuf(stdout, (char*)NULL, _IONBF, 0);
+	}
 	print_banner(stdout);
 
 	esl_log(ESL_LOG_INFO, "Netborder SS7 CLI Ready.\nenter /help for a list of commands.\n");
@@ -1431,9 +1472,13 @@ int main(int argc, char *argv[])
 	while (running > 0) {
 		int r;
 #ifdef HAVE_EDITLINE
-		line = el_gets(el, &count);
-#else
+		if (!(global_profile->batch_mode)) {
+			line = el_gets(el, &count);
+		} else {
+#endif
 		line = basic_gets(&count);
+#ifdef HAVE_EDITLINE
+		}
 #endif
 		if (count > 1 && !esl_strlen_zero(line)) {
 			char *p, *cmd = strdup(line);

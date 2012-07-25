@@ -36,6 +36,7 @@
   <ItemGroup>
     <Compile Include="Fragments\FreeSWITCHConfFiles.wxs" />
     <Compile Include="Fragments\FreeSWITCHSoundFiles8.wxs" />
+    <Compile Include="FreeSWITCHConsole.wxs" />
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
@@ -791,6 +792,7 @@
       <Project>{1af3a893-f7be-43dd-b697-8ab2397c0d67}</Project>
       <Private>True</Private>
       <DoNotHarvest>
+         True
       </DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLLOCATION</RefTargetDir>

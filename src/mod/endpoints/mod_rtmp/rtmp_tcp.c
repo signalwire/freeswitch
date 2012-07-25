@@ -1,6 +1,6 @@
 /* 
  * mod_rtmp for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2011, Barracuda Networks Inc.
+ * Copyright (C) 2011-2012, Barracuda Networks Inc.
  *
  * Version: MPL 1.1
  *

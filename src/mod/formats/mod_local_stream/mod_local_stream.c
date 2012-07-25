@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -94,14 +94,10 @@ struct local_stream_source {
 
 typedef struct local_stream_source local_stream_source_t;
 
-static unsigned int S = 0;
-
 static int do_rand(void)
 {
 	double r;
 	int index;
-	unsigned int seed = ++S + getpid();
-	srand(seed);
 	r = ((double) rand() / ((double) (RAND_MAX) + (double) (1)));
 	index = (int) (r * 9) + 1;
 	return index;
@@ -756,10 +752,11 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	char *mycmd = NULL, *argv[8] = { 0 };
-	char *local_stream_name = NULL, *path = NULL, *timer_name = NULL;
+	char *local_stream_name = NULL, *path = NULL, *timer_name = NULL, *chime_list = NULL, *list_dup = NULL;
 	uint32_t prebuf = 1;
-	int rate = 8000, interval = 20;
+	int rate = 8000, shuffle = 1, interval = 20, chime_freq = 30;
 	uint8_t channels = 1;
+	uint32_t chime_max = 0;
 	int argc = 0;
 	char *cf = "local_stream.conf";
 	switch_xml_t cfg, xml, directory, param;
@@ -790,7 +787,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 		}
 	}
 
-	//shuffle = argv[3] ? switch_true(argv[3]) : 1;
+	shuffle = argv[3] ? switch_true(argv[3]) : 1;
 	prebuf = argv[4] ? atoi(argv[4]) : DEFAULT_PREBUFFER_SIZE;
 
 	if (argv[5]) {
@@ -833,8 +830,8 @@ SWITCH_STANDARD_API(start_local_stream_function)
 						if (tmp == 8000 || tmp == 16000 || tmp == 32000) {
 							rate = tmp;
 						}
-						//} else if (!strcasecmp(var, "shuffle")) {
-						//shuffle = switch_true(val);
+					} else if (!strcasecmp(var, "shuffle")) {
+						shuffle = switch_true(val);
 					} else if (!strcasecmp(var, "prebuf")) {
 						tmp = atoi(val);
 						if (tmp > 0) {
@@ -855,6 +852,18 @@ SWITCH_STANDARD_API(start_local_stream_function)
 						}
 					} else if (!strcasecmp(var, "timer-name")) {
 						timer_name = strdup(val);
+					} else if (!strcasecmp(var, "chime-freq")) {
+						tmp = atoi(val);
+						if (tmp > 1) {
+							chime_freq = (uint32_t) tmp;
+						}
+					} else if (!strcasecmp(var, "chime-max")) {
+						tmp = atoi(val);
+						if (tmp > 1) {
+							chime_max = (uint32_t) tmp;
+						}
+					} else if (!strcasecmp(var, "chime-list")) {
+		                                chime_list = val;
 					}
 				}
 				break;
@@ -877,7 +886,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	switch_mutex_unlock(globals.mutex);
 	if (source) {
 		source->stopped = 0;
-		stream->write_function(stream, "+OK");
+		stream->write_function(stream, "+OK stream: %s[%s] %s", source->name, source->location, source->shuffle ? "shuffle" : "no shuffle");
 		goto done;
 	}
 
@@ -897,9 +906,19 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	source->interval = interval;
 	source->channels = channels;
 	source->timer_name = switch_core_strdup(source->pool, timer_name ? timer_name : (argv[7] ? argv[7] : "soft"));
+	list_dup = switch_core_strdup(source->pool, chime_list);
+	source->chime_total = switch_separate_string(list_dup, ',', source->chime_list, (sizeof(source->chime_list) / sizeof(source->chime_list[0])));
+	if (source->chime_total) {
+		source->chime_freq = chime_freq;
+
+		if (chime_max) {
+			source->chime_max = chime_max * source->rate;
+		}
+	}
+	source->chime_counter = source->rate * source->chime_freq;
 	source->prebuf = prebuf;
 	source->stopped = 0;
-
+	source->shuffle = shuffle;
 	source->samples = switch_samples_per_packet(source->rate, source->interval);
 
 	switch_mutex_init(&source->mutex, SWITCH_MUTEX_NESTED, source->pool);
@@ -909,7 +928,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, read_stream_thread, source, source->pool);
 
-	stream->write_function(stream, "+OK");
+	stream->write_function(stream, "+OK stream: %s[%s] %s", source->name, source->location, source->shuffle ? "shuffle" : "no shuffle");
 	goto done;
 
   usage:

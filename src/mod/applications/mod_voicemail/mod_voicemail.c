@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -629,6 +629,7 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "email_date-fmt", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->date_fmt, "%A, %B %d %Y, %I:%M %p", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "odbc-dsn", SWITCH_CONFIG_STRING, 0, &profile->odbc_dsn, NULL, &profile->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "dbname", SWITCH_CONFIG_STRING, 0, &profile->dbname, NULL, &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM_CALLBACK(profile->config[i++], "email_template-file", SWITCH_CONFIG_CUSTOM, CONFIG_RELOADABLE,
 									NULL, NULL, profile, vm_config_email_callback, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM_CALLBACK(profile->config[i++], "email_notify-template-file", SWITCH_CONFIG_CUSTOM, CONFIG_RELOADABLE,
@@ -722,7 +723,9 @@ static vm_profile_t *load_profile(const char *profile_name)
 			}
 		}
 
-		profile->dbname = switch_core_sprintf(profile->pool, "voicemail_%s", profile_name);
+		if (zstr(profile->dbname)) {
+			profile->dbname = switch_core_sprintf(profile->pool, "voicemail_%s", profile_name);
+		}
 
 		if (!(dbh = vm_get_db_handle(profile))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
@@ -1544,7 +1547,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 	char cid_buf[1024] = "";
 
 	if (switch_channel_ready(channel)) {
-		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_number, cbt->cid_name);
+		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cbt->cid_name, cbt->cid_number);
 
 		msg.from = __FILE__;
 		msg.string_arg = cid_buf;
@@ -2194,8 +2197,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						
 						if (fail) {
 							/* add feedback for user - let him/her know that the password they tried to change to is not allowed */
-							/* change the following macro to VM_CHANGE_PASS_FAIL_MACRO when new prompts have been recorded */
-							switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
+							switch_ivr_phrase_macro(session, VM_CHANGE_PASS_FAIL_MACRO, NULL, NULL, NULL);
 						} else {
 							sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
 							vm_execute_sql(profile, sql, profile->mutex);
@@ -2583,8 +2585,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
-	int del_file = 0;
-
 	
 	if (!params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
@@ -2901,10 +2901,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 				switch_safe_free(headers);
 			}
 		}
-
-		if (!insert_db) {
-			del_file = 1;
-		}
 	}
 
 	if (session) {
@@ -2926,7 +2922,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
   failed:
 
-	if (del_file && file_path && switch_file_exists(file_path, pool)) {
+	if (!insert_db && file_path && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		if (unlink(file_path) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 		}
@@ -4899,6 +4895,8 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 				profile->name, SWITCH_PATH_SEPARATOR, domain, SWITCH_PATH_SEPARATOR, id);
 		char *final_file_path = switch_core_sprintf(pool, "%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, slot, profile->file_ext);
 
+		switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool);
+
 		if (file_path) {
 			if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
 				stream->write_function(stream, "-ERR Filename doesn't exist\n");
@@ -4993,6 +4991,8 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 				profile->name, SWITCH_PATH_SEPARATOR, domain, SWITCH_PATH_SEPARATOR, id);
 		char *final_file_path = switch_core_sprintf(pool, "%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
 
+		switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool);
+
 		if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "-ERR Filename doesn't exist\n");
 			profile_rwunlock(profile);
@@ -5000,6 +5000,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 		}
 
 		switch_file_rename(file_path, final_file_path, pool);
+
 		if (atoi(res) == 0) {
 			sql = switch_mprintf("INSERT INTO voicemail_prefs (username, domain, name_path) VALUES('%q', '%q', '%q')", id, domain, final_file_path);
 		} else {

@@ -1,4 +1,5 @@
 #!/bin/sh
+##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
 TAR=@TAR@
 ZCAT=@ZCAT@
@@ -8,39 +9,39 @@ WGET=@WGET@
 CURL=@CURL@
 
 if [ -f "$WGET" ]; then
-    DOWNLOAD_CMD=$WGET
+  DOWNLOAD_CMD=$WGET
 elif [ -f "$CURL" ]; then
-    DOWNLOAD_CMD="$CURL -O"
+  DOWNLOAD_CMD="$CURL -O"
 fi
 
 if [ -n "`echo $1 | grep '://'`" ]; then
-    base=$1/
-    tarfile=$2
+  base=$1/
+  tarfile=$2
 else
-    base=http://files.freeswitch.org/downloads/libs/
-    tarfile=$1
+  base=http://files.freeswitch.org/downloads/libs/
+  tarfile=$1
 fi
 
 uncompressed=`echo $tarfile | sed 's/\(\(\.tar\.gz\|\.tar\.bz2\|\.tar\.xz\)\|\(\.tgz\|\.tbz2\)\)$//'`
 
 case `echo $tarfile | sed 's/^.*\.//'` in
-    bz2|tbz2) UNZIPPER=$BZIP ;;
-    xz) UNZIPPER=$XZ ;;
-    gz|tgz|*) UNZIPPER=$ZCAT ;;
+  bz2|tbz2) UNZIPPER=$BZIP ;;
+  xz) UNZIPPER=$XZ ;;
+  gz|tgz|*) UNZIPPER=$ZCAT ;;
 esac
 
 if [ ! -d $tarfile ]; then
+  if [ ! -f $tarfile ]; then
+    rm -fr $uncompressed
+    $DOWNLOAD_CMD $base$tarfile
     if [ ! -f $tarfile ]; then
-        rm -fr $uncompressed
-        $DOWNLOAD_CMD $base$tarfile
-        if [ ! -f $tarfile ]; then
-            echo cannot find $tarfile
-            exit 1
-        fi
+      echo cannot find $tarfile
+      exit 1
     fi
-    if [ ! -d $uncompressed ]; then
-        $UNZIPPER -c -d $tarfile | $TAR -xf -
-    fi
+  fi
+  if [ ! -d $uncompressed ]; then
+    $UNZIPPER -c -d $tarfile | $TAR -xf -
+  fi
 fi
 
 exit 0

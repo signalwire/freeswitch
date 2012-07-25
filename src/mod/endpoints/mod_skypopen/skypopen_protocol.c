@@ -1,3 +1,37 @@
+/*
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthm@freeswitch.org>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This module (mod_gsmopen) has been contributed by:
+ *
+ * Giovanni Maruzzelli <gmaruzz@gmail.com>
+ *
+ * Maintainer: Giovanni Maruzzelli <gmaruzz@gmail.com>
+ *
+ * skypopen_protocol.c -- Low Level Interface for mod_skypopen
+ *
+ */
+
+
 #include "skypopen.h"
 
 #ifdef ASTERISK
@@ -356,7 +390,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						}
 					}
 					if (!found) {
-						DEBUGA_SKYPE("why we do not have a chats slot free? we have more than %d chats in parallel?\n", SKYPOPEN_P_LOG, MAX_CHATS);
+						ERRORA("why we do not have a chats slot free? we have more than %d chats in parallel?\n", SKYPOPEN_P_LOG, MAX_CHATS);
 					}
 
 					DEBUGA_SKYPE("CHAT %s is in position %d in the chats array, chatname=%s, dialog_partner=%s\n", SKYPOPEN_P_LOG, id, i,
@@ -378,109 +412,120 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				skypopen_strncpy(prop, where, sizeof(prop) - 1);
 				skypopen_strncpy(value, *stringp, sizeof(value) - 1);
 
-				if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "RECEIVED")) {
-					DEBUGA_SKYPE("RECEIVED CHATMESSAGE %s, let's see which type it is\n", SKYPOPEN_P_LOG, id);
-					sprintf(msg_to_skype, "GET CHATMESSAGE %s TYPE", id);
-					skypopen_signaling_write(tech_pvt, msg_to_skype);
-				}
-
-				if (!strcasecmp(prop, "TYPE") && !strcasecmp(value, "SAID")) {
-					DEBUGA_SKYPE("CHATMESSAGE %s is of type SAID, let's get the other infos\n", SKYPOPEN_P_LOG, id);
-					found = 0;
-					for (i = 0; i < MAX_CHATMESSAGES; i++) {
-						if (strlen(tech_pvt->chatmessages[i].id) == 0) {
-							strncpy(tech_pvt->chatmessages[i].id, id, sizeof(tech_pvt->chatmessages[i].id));
-							strncpy(tech_pvt->chatmessages[i].type, value, sizeof(tech_pvt->chatmessages[i].type));
-							found = 1;
-							break;
-						}
-					}
-					if (!found) {
-						DEBUGA_SKYPE("why we do not have a chatmessages slot free? we have more than %d chatmessages in parallel?\n", SKYPOPEN_P_LOG,
-									 MAX_CHATMESSAGES);
-					} else {
-						DEBUGA_SKYPE("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s\n", SKYPOPEN_P_LOG, id, i,
-									 tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id);
-						sprintf(msg_to_skype, "GET CHATMESSAGE %s CHATNAME", id);
-						skypopen_signaling_write(tech_pvt, msg_to_skype);
-						//skypopen_sleep(1000);
-						sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_HANDLE", id);
-						skypopen_signaling_write(tech_pvt, msg_to_skype);
-						//skypopen_sleep(1000);
-						sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_DISPNAME", id);
-						skypopen_signaling_write(tech_pvt, msg_to_skype);
-						//skypopen_sleep(1000);
-						sprintf(msg_to_skype, "GET CHATMESSAGE %s BODY", id);
+				if (!tech_pvt->report_incoming_chatmessages) {
+					if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "RECEIVED")) {
+						sprintf(msg_to_skype, "SET CHATMESSAGE %s SEEN", id);
 						skypopen_signaling_write(tech_pvt, msg_to_skype);
 					}
-				}
-
-				if (!strcasecmp(prop, "CHATNAME")) {
-					DEBUGA_SKYPE("CHATMESSAGE %s belongs to the CHAT %s\n", SKYPOPEN_P_LOG, id, value);
-					found = 0;
-					for (i = 0; i < MAX_CHATMESSAGES; i++) {
-						if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
-							strncpy(tech_pvt->chatmessages[i].chatname, value, sizeof(tech_pvt->chatmessages[i].chatname));
-							found = 1;
-							break;
-						}
-					}
-					if (!found) {
-						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPOPEN_P_LOG, id);
-					}
-				}
-				if (!strcasecmp(prop, "FROM_HANDLE")) {
-					DEBUGA_SKYPE("CHATMESSAGE %s was sent by FROM_HANDLE %s\n", SKYPOPEN_P_LOG, id, value);
-					found = 0;
-					for (i = 0; i < MAX_CHATMESSAGES; i++) {
-						if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
-							strncpy(tech_pvt->chatmessages[i].from_handle, value, sizeof(tech_pvt->chatmessages[i].from_handle));
-							found = 1;
-							break;
-						}
-					}
-					if (!found) {
-						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPOPEN_P_LOG, id);
+				} else {
+					if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "RECEIVED")) {
+						DEBUGA_SKYPE("RECEIVED CHATMESSAGE %s, let's see which type it is\n", SKYPOPEN_P_LOG, id);
+						sprintf(msg_to_skype, "GET CHATMESSAGE %s TYPE", id);
+						skypopen_signaling_write(tech_pvt, msg_to_skype);
 					}
 
-				}
-				if (!strcasecmp(prop, "FROM_DISPNAME")) {
-					DEBUGA_SKYPE("CHATMESSAGE %s was sent by FROM_DISPNAME %s\n", SKYPOPEN_P_LOG, id, value);
-					found = 0;
-					for (i = 0; i < MAX_CHATMESSAGES; i++) {
-						if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
-							strncpy(tech_pvt->chatmessages[i].from_dispname, value, sizeof(tech_pvt->chatmessages[i].from_dispname));
-							found = 1;
-							break;
+					if (!strcasecmp(prop, "TYPE") && !strcasecmp(value, "SAID")) {
+						DEBUGA_SKYPE("CHATMESSAGE %s is of type SAID, let's get the other infos\n", SKYPOPEN_P_LOG, id);
+						found = 0;
+						for (i = 0; i < MAX_CHATMESSAGES; i++) {
+							if (strlen(tech_pvt->chatmessages[i].id) == 0) {
+								strncpy(tech_pvt->chatmessages[i].id, id, sizeof(tech_pvt->chatmessages[i].id));
+								strncpy(tech_pvt->chatmessages[i].type, value, sizeof(tech_pvt->chatmessages[i].type));
+								found = 1;
+								break;
+							}
 						}
-					}
-					if (!found) {
-						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPOPEN_P_LOG, id);
-					}
-
-				}
-				if (!strcasecmp(prop, "BODY")) {
-					DEBUGA_SKYPE("CHATMESSAGE %s has BODY %s\n", SKYPOPEN_P_LOG, id, value);
-					found = 0;
-					for (i = 0; i < MAX_CHATMESSAGES; i++) {
-						if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
-							strncpy(tech_pvt->chatmessages[i].body, value, sizeof(tech_pvt->chatmessages[i].body));
-							found = 1;
-							break;
-						}
-					}
-					if (!found) {
-						DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPOPEN_P_LOG, id);
-					} else {
-						DEBUGA_SKYPE
-							("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s, chatname=%s, from_handle=%s, from_dispname=%s, body=%s\n",
-							 SKYPOPEN_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id, tech_pvt->chatmessages[i].chatname,
-							 tech_pvt->chatmessages[i].from_handle, tech_pvt->chatmessages[i].from_dispname, tech_pvt->chatmessages[i].body);
-						if (strcmp(tech_pvt->chatmessages[i].from_handle, tech_pvt->skype_user)) {	//if the message was not sent by myself
-							incoming_chatmessage(tech_pvt, i);
+						if (!found) {
+							ERRORA("why we do not have a chatmessages slot free? we have more than %d chatmessages in parallel?\n", SKYPOPEN_P_LOG,
+								   MAX_CHATMESSAGES);
+						} else {
+							DEBUGA_SKYPE("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s\n", SKYPOPEN_P_LOG, id, i,
+										 tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id);
+							sprintf(msg_to_skype, "GET CHATMESSAGE %s CHATNAME", id);
+							skypopen_signaling_write(tech_pvt, msg_to_skype);
+							//skypopen_sleep(1000);
+							sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_HANDLE", id);
+							skypopen_signaling_write(tech_pvt, msg_to_skype);
+							//skypopen_sleep(1000);
+							sprintf(msg_to_skype, "GET CHATMESSAGE %s FROM_DISPNAME", id);
+							skypopen_signaling_write(tech_pvt, msg_to_skype);
+							//skypopen_sleep(1000);
+							sprintf(msg_to_skype, "GET CHATMESSAGE %s BODY", id);
+							skypopen_signaling_write(tech_pvt, msg_to_skype);
 						}
 					}
 
+					if (!strcasecmp(prop, "CHATNAME")) {
+						DEBUGA_SKYPE("CHATMESSAGE %s belongs to the CHAT %s\n", SKYPOPEN_P_LOG, id, value);
+						found = 0;
+						for (i = 0; i < MAX_CHATMESSAGES; i++) {
+							if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
+								strncpy(tech_pvt->chatmessages[i].chatname, value, sizeof(tech_pvt->chatmessages[i].chatname));
+								found = 1;
+								break;
+							}
+						}
+						if (!found) {
+							DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPOPEN_P_LOG, id);
+						}
+					}
+					if (!strcasecmp(prop, "FROM_HANDLE")) {
+						DEBUGA_SKYPE("CHATMESSAGE %s was sent by FROM_HANDLE %s\n", SKYPOPEN_P_LOG, id, value);
+						found = 0;
+						for (i = 0; i < MAX_CHATMESSAGES; i++) {
+							if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
+								strncpy(tech_pvt->chatmessages[i].from_handle, value, sizeof(tech_pvt->chatmessages[i].from_handle));
+								found = 1;
+								break;
+							}
+						}
+						if (!found) {
+							DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPOPEN_P_LOG, id);
+						}
+
+					}
+					if (!strcasecmp(prop, "FROM_DISPNAME")) {
+						DEBUGA_SKYPE("CHATMESSAGE %s was sent by FROM_DISPNAME %s\n", SKYPOPEN_P_LOG, id, value);
+						found = 0;
+						for (i = 0; i < MAX_CHATMESSAGES; i++) {
+							if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
+								strncpy(tech_pvt->chatmessages[i].from_dispname, value, sizeof(tech_pvt->chatmessages[i].from_dispname));
+								found = 1;
+								break;
+							}
+						}
+						if (!found) {
+							DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPOPEN_P_LOG, id);
+						}
+
+					}
+					if (!strcasecmp(prop, "BODY")) {
+						DEBUGA_SKYPE("CHATMESSAGE %s has BODY %s\n", SKYPOPEN_P_LOG, id, value);
+						found = 0;
+						for (i = 0; i < MAX_CHATMESSAGES; i++) {
+							if (!strcmp(tech_pvt->chatmessages[i].id, id)) {
+								strncpy(tech_pvt->chatmessages[i].body, value, sizeof(tech_pvt->chatmessages[i].body));
+								found = 1;
+								break;
+							}
+						}
+						if (!found) {
+							DEBUGA_SKYPE("why chatmessage %s was not found in the chatmessages array??\n", SKYPOPEN_P_LOG, id);
+						} else {
+							DEBUGA_SKYPE
+								("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s, chatname=%s, from_handle=%s, from_dispname=%s, body=%s\n",
+								 SKYPOPEN_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id, tech_pvt->chatmessages[i].chatname,
+								 tech_pvt->chatmessages[i].from_handle, tech_pvt->chatmessages[i].from_dispname, tech_pvt->chatmessages[i].body);
+							if (strcmp(tech_pvt->chatmessages[i].from_handle, tech_pvt->skype_user)) {	//if the message was not sent by myself
+								incoming_chatmessage(tech_pvt, i);
+								memset(&tech_pvt->chatmessages[i], '\0', sizeof(&tech_pvt->chatmessages[i]));
+
+								sprintf(msg_to_skype, "SET CHATMESSAGE %s SEEN", id);
+								skypopen_signaling_write(tech_pvt, msg_to_skype);
+							}
+						}
+
+					}
 				}
 
 			}
@@ -885,7 +930,7 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
 
 					//unsigned int fdselect;
-					int rt=1;
+					int rt = 1;
 					//fd_set fs;
 					//struct timeval to;
 					int nospace;
@@ -1022,7 +1067,7 @@ void *skypopen_do_tcp_cli_thread_func(void *obj)
 		if (!(running && tech_pvt->running))
 			break;
 		FD_ZERO(&fsgio);
-		togio.tv_usec = MS_SKYPOPEN * 1000 * 3;	
+		togio.tv_usec = MS_SKYPOPEN * 1000 * 3;
 		togio.tv_sec = 0;
 		fdselectgio = s;
 		FD_SET(fdselectgio, &fsgio);
@@ -1137,7 +1182,7 @@ int skypopen_senddigit(private_t *tech_pvt, char digit)
 	char msg_to_skype[1024];
 
 	DEBUGA_SKYPE("DIGIT received: %c\n", SKYPOPEN_P_LOG, digit);
-	if(digit != 'a' && digit != 'A'  && digit != 'b' && digit != 'B' && digit != 'c' && digit != 'C' && digit != 'd' && digit != 'D'){
+	if (digit != 'a' && digit != 'A' && digit != 'b' && digit != 'B' && digit != 'c' && digit != 'C' && digit != 'd' && digit != 'D') {
 		sprintf(msg_to_skype, "SET CALL %s DTMF %c", tech_pvt->skype_call_id, digit);
 		skypopen_signaling_write(tech_pvt, msg_to_skype);
 	} else {
@@ -1690,7 +1735,7 @@ void skypopen_clean_disp(void *data)
 		DEBUGA_SKYPE("NOT destroyed disp\n", SKYPOPEN_P_LOG);
 	}
 	DEBUGA_SKYPE("OUT destroyed disp\n", SKYPOPEN_P_LOG);
-	skypopen_sleep(20000); 
+	skypopen_sleep(20000);
 }
 
 void *skypopen_do_skypeapi_thread_func(void *obj)
@@ -1750,7 +1795,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 			if (session) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 
-				if(channel){
+				if (channel) {
 
 					switch_mutex_lock(tech_pvt->flag_mutex);
 					switch_clear_flag(tech_pvt, TFLAG_IO);
@@ -1787,7 +1832,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 
 
-				if(channel){
+				if (channel) {
 					switch_mutex_lock(tech_pvt->flag_mutex);
 					switch_clear_flag(tech_pvt, TFLAG_IO);
 					switch_clear_flag(tech_pvt, TFLAG_VOICE);
@@ -1899,7 +1944,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 						case ClientMessage:
 
 							if (an_event.xclient.format != 8) {
-								//skypopen_sleep(1000);	//0.1 msec
+								//skypopen_sleep(1000); //0.1 msec
 								break;
 							}
 
@@ -1959,11 +2004,10 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 								//XFlush(disp);
 								there_were_continues = 0;
 							}
-
-							//skypopen_sleep(1000);	//0.1 msec
+							//skypopen_sleep(1000); //0.1 msec
 							break;
 						default:
-							//skypopen_sleep(1000);	//0.1 msec
+							//skypopen_sleep(1000); //0.1 msec
 							break;
 						}		//switch event.type
 					}			//while XPending

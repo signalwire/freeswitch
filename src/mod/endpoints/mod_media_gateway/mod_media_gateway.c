@@ -102,35 +102,40 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown)
 {
-	void 		*val = NULL;
-        const void 	*key = NULL;
-        switch_ssize_t   keylen;
-	switch_hash_index_t *hi = NULL;
-	megaco_profile_t*    profile = NULL;
-	mg_peer_profile_t*    peer_profile = NULL;
+    void 		*val = NULL;
+    const void 	*key = NULL;
+    switch_ssize_t   keylen;
+    switch_hash_index_t *hi = NULL;
+    megaco_profile_t*    profile = NULL;
+    mg_peer_profile_t*    peer_profile = NULL;
 
-	/* destroy all the mg profiles */
-	while ((hi = switch_hash_first(NULL, megaco_globals.profile_hash))) {
-		switch_hash_this(hi, &key, &keylen, &val);
-		profile = (megaco_profile_t *) val;
-		megaco_profile_destroy(&profile);
-		profile = NULL;
-	}
+    /* destroy all the mg profiles */
+    while ((hi = switch_hash_first(NULL, megaco_globals.profile_hash))) {
+        switch_hash_this(hi, &key, &keylen, &val);
+        profile = (megaco_profile_t *) val;
+        if(profile->inact_tmr_task_id){
+            switch_scheduler_del_task_id(profile->inact_tmr_task_id);
+            profile->inact_tmr_task_id = 0x00;
+        }
+        megaco_profile_destroy(&profile);
+        profile = NULL;
+    }
 
-	hi = NULL;
-	key = NULL;
-	val = NULL;
-	/* destroy all the mg peer profiles */
-	while ((hi = switch_hash_first(NULL, megaco_globals.peer_profile_hash))) {
-		switch_hash_this(hi, &key, &keylen, &val);
-		peer_profile = (mg_peer_profile_t *) val;
-		megaco_peer_profile_destroy(&peer_profile);
-		peer_profile = NULL;
-	}
+    hi = NULL;
+    key = NULL;
+    val = NULL;
+    /* destroy all the mg peer profiles */
+    while ((hi = switch_hash_first(NULL, megaco_globals.peer_profile_hash))) {
+        switch_hash_this(hi, &key, &keylen, &val);
+        peer_profile = (mg_peer_profile_t *) val;
+        megaco_peer_profile_destroy(&peer_profile);
+        peer_profile = NULL;
+    }
 
-	sng_mgco_stack_shutdown();
+    sng_mgco_stack_shutdown();
 
-	return SWITCH_STATUS_SUCCESS;
+
+    return SWITCH_STATUS_SUCCESS;
 }
 
 /*****************************************************************************************************************************/
@@ -443,6 +448,14 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
 
+    /*get mg profile associated with SuId */
+    if(NULL == (mg_profile = megaco_get_profile_by_suId(suId))){
+        goto error1;
+    }
+
+    /* first thing - restart ito timer */
+    mg_restart_inactivity_timer(mg_profile);
+
 	/* validate Transaction Id */
 	if (NOTPRSNT != cmd->transId.pres){
 		txn_id = cmd->transId.val;
@@ -518,7 +531,11 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	}else if(MGT_CXTID_OTHER == inc_context->type.pres){
 
 		if(NOTPRSNT != inc_context->val.pres){
+#ifdef BIT_64
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Context specific request for contextId[%d]\n",inc_context->val.val);
+#else
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Context specific request for contextId[%ld]\n",inc_context->val.val);
+#endif
 			/* check if context present with us */
 			if(NULL == megaco_find_context_by_suid(suId, inc_context->val.val)){
 				goto ctxt_error;
@@ -532,12 +549,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
 	/*mgAccEvntPrntMgMgcoCommand(cmd, stdout);*/
 
-	/*get mg profile associated with SuId */
-	if(NULL == (mg_profile = megaco_get_profile_by_suId(suId))){
-		goto error1;
-	}
-
-
+	
 	switch(cmd->cmdType.val)
 	{
 		case CH_CMD_TYPE_IND:
@@ -613,11 +625,119 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			}
 		case CH_CMD_TYPE_CFM:
 			{
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Received Command txn[%d] Response/Confirmation \n",txn_id);
-				break;
+#ifdef BIT_64
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Received Command[%s] txn[%d] Response/Confirmation \n",
+                        PRNT_MG_CMD(cmd->u.mgCmdCfm[0]->type.val), txn_id);
+#else
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Received Command[%s] txn[%ld] Response/Confirmation \n",
+                        PRNT_MG_CMD(cmd->u.mgCmdCfm[0]->type.val), txn_id);
+#endif
+                switch(cmd->u.mgCmdCfm[0]->type.val)
+                {
+                    case MGT_NTFY:
+                        {
+                            MgMgcoNtfyReply*  ntfy = &cmd->u.mgCmdCfm[0]->u.ntfy;
+                            MgMgcoTermId*     term = NULL;
+                            char              term_name[32]; 
+                            memset(&term_name[0], 32, 0x00);
+
+                            strcpy(&term_name[0], "Invalid");
+
+#ifdef GCP_VER_2_1   
+                            if((NOTPRSNT != ntfy->termIdLst.num.pres) && 
+                                    (0 != ntfy->termIdLst.num.val)){
+                                term = ntfy->termIdLst.terms[0];
+                            }
+#else
+                            term = &ntfy->termId;
+
+#endif
+                            if(NOTPRSNT != term->type.pres){
+                                if(MGT_TERMID_ROOT == term->type.val){
+                                    strcpy(&term_name[0],"ROOT");
+                                }
+                                else if(MGT_TERMID_OTHER == term->type.val){
+                                    strcpy(&term_name[0], (char*)term->name.lcl.val);
+                                }else if(MGT_TERMID_ALL == term->type.val){
+                                    strcpy(&term_name[0],"ALL Termination"); 
+                                }else if(MGT_TERMID_CHOOSE == term->type.val){
+                                    strcpy(&term_name[0],"CHOOSE Termination"); 
+                                }
+                            }
+
+                            if(NOTPRSNT != ntfy->pres.pres){
+                                if((NOTPRSNT != ntfy->err.pres.pres) && 
+                                        (NOTPRSNT != ntfy->err.code.pres)){
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+                                            "Received NOTIFY command response with ErroCode[%d] for Termination[%s] \n", 
+                                            ntfy->err.code.val, &term_name[0]);
+                                }
+                                else{
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+                                            "Received Successful NOTIFY command response for Termination[%s] \n", &term_name[0]);
+                                }
+                            }
+
+                            break;
+                        }
+                    case MGT_SVCCHG:
+                        {
+                            MgMgcoSvcChgReply*  svc = &cmd->u.mgCmdCfm[0]->u.svc;
+                            MgMgcoTermId*     term = NULL;
+                            char              term_name[32]; 
+                            memset(&term_name[0], 32, 0x00);
+
+                            strcpy(&term_name[0], "Invalid");
+
+#ifdef GCP_VER_2_1   
+                            if((NOTPRSNT != svc->termIdLst.num.pres) && 
+                                    (0 != svc->termIdLst.num.val)){
+                                term = svc->termIdLst.terms[0];
+                            }
+#else
+                            term = &svc->termId;
+
+#endif
+                            if(NOTPRSNT != term->type.pres){
+                                if(MGT_TERMID_ROOT == term->type.val){
+                                    strcpy(&term_name[0],"ROOT");
+                                }
+                                else if(MGT_TERMID_OTHER == term->type.val){
+                                    strcpy(&term_name[0], (char*)term->name.lcl.val);
+                                }else if(MGT_TERMID_ALL == term->type.val){
+                                    strcpy(&term_name[0],"ALL Termination"); 
+                                }else if(MGT_TERMID_CHOOSE == term->type.val){
+                                    strcpy(&term_name[0],"CHOOSE Termination"); 
+                                }
+                            }
+
+                            if(NOTPRSNT != svc->pres.pres){ 
+
+                                if((NOTPRSNT != svc->res.type.pres) && 
+                                        (MGT_ERRDESC == svc->res.type.val)){
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+                                            "Received Service-Change command response with ErroCode[%d] for Termination[%s] \n", 
+                                            svc->res.u.err.code.val, &term_name[0]);
+                                }
+                                else{
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+                                            "Received Successful Service-Change command response for Termination[%s] \n", &term_name[0]);
+                                }
+                            }
+
+                            break;
+                        }
+                    default:
+                        break;
+                }
+                break;
 			}
 		default:
+#ifdef BIT_64
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid command type[%d]\n",cmd->cmdType.val);
+#else
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid command type[%d]\n",cmd->cmdType.val);
+#endif
 			return;
 	}
 

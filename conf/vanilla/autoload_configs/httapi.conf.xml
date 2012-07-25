@@ -119,7 +119,7 @@
 	<!-- <param name="cookie-file" value="/tmp/cookie-mod_xml_curl.txt"/> -->
 
 	<!-- one or more of these imply you want to pick the exact variables that are transmitted -->
-	<!--<param name="enable-post-var" value="Unique-ID"/>-->
+	<!--<param name="enable-post-var" value="Caller-Unique-ID"/>-->
       </params>
 
     </profile>

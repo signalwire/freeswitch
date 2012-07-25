@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Ken Rice <krice@freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  *
@@ -90,6 +90,9 @@ struct presence_helper {
 	switch_event_t *event;
 	switch_stream_handle_t stream;
 	char last_uuid[512];
+	int hup;
+	int calls_up;
+
 };
 
 switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
@@ -555,11 +558,11 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	}
 
 	if (for_everyone) {
-		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q' "
+		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q',call_id "
 							 "from sip_registrations where hostname='%q' and profile_name='%q' and mwi_user='%q' and mwi_host='%q'", 
 							 stream.data, mod_sofia_globals.hostname, profile->name, user, host);
 	} else if (call_id) {
-		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q' "
+		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q',call_id "
 							 "from sip_registrations where hostname='%q' and profile_name='%q' and call_id='%q'", 
 							 stream.data, mod_sofia_globals.hostname, profile->name, call_id);
 	}
@@ -1112,6 +1115,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 										 "sip_user='%q' and sip_host='%q'",
 										 rpid, status, mod_sofia_globals.hostname, profile->name, euser, host);
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+					proto = SOFIA_CHAT_PROTO;
 				}
 
 				if (zstr(uuid)) {
@@ -1167,6 +1171,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					}
 				}
 #endif
+				
 
 				if (zstr(call_id) && (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status)))) {
 					goto done;
@@ -1250,87 +1255,90 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 										 switch_str_nil(status), switch_str_nil(rpid), host,
 										 dh.status,dh.rpid,dh.presence_id, mod_sofia_globals.hostname, profile->name, call_id);
 
-			}
+				}
 			
-
-			helper.profile = profile;
-			helper.event = event;
-			SWITCH_STANDARD_STREAM(helper.stream);
-			switch_assert(helper.stream.data);
+				helper.hup = hup;
+				helper.calls_up = dh.hits;
+				helper.profile = profile;
+				helper.event = event;
+				SWITCH_STANDARD_STREAM(helper.stream);
+				switch_assert(helper.stream.data);
 					
-			if (mod_sofia_globals.debug_presence > 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s START_PRESENCE_SQL (%s)\n",
-								  event->event_id == SWITCH_EVENT_PRESENCE_IN ? "IN" : "OUT", profile->name);
-			}
-
-			if (mod_sofia_globals.debug_presence) {
-				char *buf;
-				switch_event_serialize(event, &buf, SWITCH_FALSE);
-				switch_assert(buf);
-				if (mod_sofia_globals.debug_presence > 1) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DUMP PRESENCE SQL:\n%s\nEVENT DUMP:\n%s\n", sql, buf);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EVENT DUMP:\n%s\n", buf);
+				if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s START_PRESENCE_SQL (%s)\n",
+									  event->event_id == SWITCH_EVENT_PRESENCE_IN ? "IN" : "OUT", profile->name);
 				}
-				free(buf);
-			}
 
-			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper);
-			switch_safe_free(sql);
-			
-			if (mod_sofia_globals.debug_presence > 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END_PRESENCE_SQL (%s)\n",
-								  event->event_id == SWITCH_EVENT_PRESENCE_IN ? "IN" : "OUT", profile->name);
-			}
-
-
-			if (hup) { 
-				/* so many phones get confused when whe hangup we have to reprobe to get them all to reset to absolute states so the lights stay correct */
-				switch_event_t *s_event;
-				
-				if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", euser, host);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", euser, host);
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
-					switch_event_fire(&s_event);
+				if (mod_sofia_globals.debug_presence) {
+					char *buf;
+					switch_event_serialize(event, &buf, SWITCH_FALSE);
+					switch_assert(buf);
+					if (mod_sofia_globals.debug_presence > 1) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DUMP PRESENCE SQL:\n%s\nEVENT DUMP:\n%s\n", sql, buf);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EVENT DUMP:\n%s\n", buf);
+					}
+					free(buf);
 				}
-			}
+
+				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper);
+				switch_safe_free(sql);
 			
-			if (!zstr((char *) helper.stream.data)) {
-				char *this_sql = (char *) helper.stream.data;
-				char *next = NULL;
-				char *last = NULL;
+				if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END_PRESENCE_SQL (%s)\n",
+									  event->event_id == SWITCH_EVENT_PRESENCE_IN ? "IN" : "OUT", profile->name);
+				}
+
+
+				if (hup && dh.hits < 1) { 
+					/* so many phones get confused when whe hangup we have to reprobe to get them all to reset to absolute states so the lights stay correct */
+					switch_event_t *s_event;
+
+					if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
+						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", euser, host);
+						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", euser, host);
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+						switch_event_fire(&s_event);
+					}
+				}
+			
+		
+				if (!zstr((char *) helper.stream.data)) {
+					char *this_sql = (char *) helper.stream.data;
+					char *next = NULL;
+					char *last = NULL;
 						
-				do {
-					if ((next = strchr(this_sql, ';'))) {
-						*next++ = '\0';
-						while (*next == '\n' || *next == ' ' || *next == '\r') {
+					do {
+						if ((next = strchr(this_sql, ';'))) {
 							*next++ = '\0';
+							while (*next == '\n' || *next == ' ' || *next == '\r') {
+								*next++ = '\0';
+							}
 						}
-					}
 							
-					if (!zstr(this_sql) && (!last || strcmp(last, this_sql))) {
-						sofia_glue_execute_sql(profile, &this_sql, SWITCH_FALSE);
-						last = this_sql;
-					}
-					this_sql = next;
-				} while (this_sql);
-			}
-			switch_safe_free(helper.stream.data);
-			helper.stream.data = NULL;
+						if (!zstr(this_sql) && (!last || strcmp(last, this_sql))) {
+							sofia_glue_execute_sql(profile, &this_sql, SWITCH_FALSE);
+							last = this_sql;
+						}
+						this_sql = next;
+					} while (this_sql);
+				}
+				switch_safe_free(helper.stream.data);
+				helper.stream.data = NULL;
 				
-			sofia_glue_release_profile(profile);
+				sofia_glue_release_profile(profile);
+			}
 		}
+		switch_console_free_matches(&matches);
 	}
-	switch_console_free_matches(&matches);
-}
 
-done:
-switch_safe_free(sql);
-switch_safe_free(user);
+ done:
+
+	switch_safe_free(sql);
+	switch_safe_free(user);
 }
 
 static int EVENT_THREAD_RUNNING = 0;
@@ -1752,6 +1760,20 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 		}
 		remote_uri = buf_to_free;
 		strcpy(remote_display_buf, "park");
+		remote_user = to_user;
+		remote_host = local_host;
+	}
+	else if (proto && !strcasecmp(proto, "pickup")) {
+		local_user = to_user;
+		local_user_param = switch_mprintf(";proto=%s", proto);
+		event_status = "hold";
+		if (skip_proto) {
+			buf_to_free = switch_mprintf("sip:%s", to_user);
+		} else {
+			buf_to_free = switch_mprintf("sip:pickup+%s", to_user);
+		}
+		remote_uri = buf_to_free;
+		strcpy(remote_display_buf, "pickup");
 		remote_user = to_user;
 		remote_host = local_host;
 	}
@@ -2414,6 +2436,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 	is_dialog = !strcmp(event, "dialog");
 
+	if (helper->hup && helper->calls_up > 0 && (!is_dialog || !user_agent || !switch_stristr("polycom", user_agent) || !switch_stristr("snom", user_agent))) {
+		goto end;
+	}
+
 	if (helper->event) {
 		switch_stream_handle_t stream = { 0 };
 		const char *direction = switch_str_nil(switch_event_get_header(helper->event, "presence-call-direction"));
@@ -2433,6 +2459,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		int force_status = 0;
 		const char *call_state = switch_event_get_header(helper->event, "channel-state");
 		char *call_info_state = switch_event_get_header(helper->event, "presence-call-info-state");
+		int term = 0;
 
 		if (user_agent && switch_stristr("snom", user_agent) && uuid) {
 			default_dialog = "full" ;
@@ -2440,18 +2467,21 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		
 		if (call_state && !strcasecmp(call_state, "cs_hangup")) {
 			astate = "hangup";
-		}
+			holding = 0;
+			term = 1;
+		} else {
 
-		if (event_status && !strncasecmp(event_status, "hold", 4)) {
-			holding = 1;
-		}
+			if (event_status && !strncasecmp(event_status, "hold", 4)) {
+				holding = 1;
+			}
 
-		if (force_event_status && !event_status) {
-			event_status = force_event_status;
-		}
+			if (force_event_status && !event_status) {
+				event_status = force_event_status;
+			}
 
-		if (event_status && !strncasecmp(event_status, "hold", 4)) {
-			holding = 1;
+			if (event_status && !strncasecmp(event_status, "hold", 4)) {
+				holding = 1;
+			}
 		}
 
 		if (!strcasecmp(direction, "inbound")) {
@@ -2545,7 +2575,13 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				}
 
 				if (holding) {
-					astate = "early";
+					if (profile->pres_held_type == PRES_HELD_CONFIRMED) {
+						astate = "confirmed";
+					} else if (profile->pres_held_type == PRES_HELD_TERMINATED) {
+						astate = "terminated";
+					} else {
+						astate = "early";
+					}
 				}
 
 
@@ -2614,6 +2650,18 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 							stream.write_function(&stream, "<target uri=\"sip:park+%s\"/>\n", uuid);
 						}
 						stream.write_function(&stream, "</remote>\n");
+					} else if (!strcasecmp(proto, "pickup")) {
+						stream.write_function(&stream, "<local>\n<identity display=\"pickup\">sip:%s@%s;proto=pickup</identity>\n",
+											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
+						stream.write_function(&stream, "<target uri=\"sip:%s@%s;proto=pickup\">\n", !zstr(clean_to_user) ? clean_to_user : "unknown", host);
+						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"no\"/>\n</target>\n</local>\n");
+						stream.write_function(&stream, "<remote>\n<identity display=\"pickup\">sip:%s</identity>\n", uuid);
+						if (skip_proto) {
+							stream.write_function(&stream, "<target uri=\"sip:%s\"/>\n", uuid);
+						} else {
+							stream.write_function(&stream, "<target uri=\"sip:pickup+%s\"/>\n", uuid);
+						}
+						stream.write_function(&stream, "</remote>\n");
 					} else if (!strcasecmp(proto, "conf")) {
 						stream.write_function(&stream, "<local>\n<identity display=\"conference\">sip:%s@%s;proto=conference</identity>\n",
 											  !zstr(clean_to_user) ? clean_to_user : "unknown", host);
@@ -2647,7 +2695,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		if (!zstr(astate) && !zstr(uuid) && 
 			helper && helper->stream.data && strcmp(helper->last_uuid, uuid) && strcasecmp(astate, "terminated") && strchr(uuid, '-')) {
 			helper->stream.write_function(&helper->stream, "update sip_dialogs set state='%s' where hostname='%q' and profile_name='%q' and uuid='%s';", 
-										  mod_sofia_globals.hostname, profile->name, astate, uuid);
+										  astate, mod_sofia_globals.hostname, profile->name, uuid);
 			switch_copy_string(helper->last_uuid, uuid, sizeof(helper->last_uuid));
 		}
 
@@ -2660,8 +2708,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				open = "open";
 
 				if (switch_false(resub)) {
-					int term;
-
 					const char *direction = switch_event_get_header(helper->event, "Caller-Direction");
 					const char *op, *what = "Ring";
 				
@@ -2703,9 +2749,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						rpid = "on-the-phone";
 						force_status = 1;
 					} else if (!strcmp(astate, "terminated") || !strcmp(astate, "hangup")) {
-						rpid = "online";
-						dialog_rpid = "";
-						force_event_status = "Available";
+						//rpid = "online";
+						//dialog_rpid = "";
+						//force_event_status = "Available";
 						term = 1;
 					}
 						
@@ -2778,8 +2824,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		
 		if (!zstr(uuid) && strchr(uuid, '-') && !zstr(status_line) && !zstr(rpid) && (zstr(register_source) || strcasecmp(register_source, "register"))) {
 		    char *sql = switch_mprintf("update sip_dialogs set rpid='%q',status='%q' where hostname='%q' and profile_name='%q' and uuid='%q'", 
-									   mod_sofia_globals.hostname, profile->name,
-									   rpid, status_line, uuid);
+									   rpid, status_line,
+									   mod_sofia_globals.hostname, profile->name, uuid);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
 	}
@@ -2868,6 +2914,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	const char *body = argv[5];
 	const char *o_contact = argv[2];
 	const char *network_ip = argv[4];
+	const char *call_id = argv[6];
 
 	char *profile_name = argv[3];
 	struct mwi_helper *h = (struct mwi_helper *) pArg;
@@ -2879,7 +2926,11 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 		}
 	}
 
-	sofia_glue_send_notify(profile, user, host, event, contenttype, body, o_contact, network_ip);
+	if (!sofia_test_pflag(profile, PFLAG_MWI_USE_REG_CALLID)) {
+		call_id = NULL;
+	}
+
+	sofia_glue_send_notify(profile, user, host, event, contenttype, body, o_contact, network_ip, call_id);
 
 	if (ext_profile) {
 		sofia_glue_release_profile(ext_profile);
@@ -3379,9 +3430,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								  "sub del sql: %s\n", sql);		
 			}
 			
-			switch_mutex_lock(profile->ireg_mutex);
 			switch_assert(sql != NULL);
-			sofia_glue_actually_execute_sql(profile, sql, NULL);
+			sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
 			switch_safe_free(sql);
 			
 			sstr = switch_mprintf("terminated;reason=noresource");
@@ -3420,7 +3470,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			sstr = switch_mprintf("active;expires=%ld", exp_delta);
 		}
 		
-		switch_mutex_unlock(profile->ireg_mutex);
 	}
 
 	if (status < 200) {
@@ -3588,8 +3637,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								  " from sip_subscriptions where hostname='%q' and profile_name='%q' and "
 								  "event='message-summary' and sip_user='%q' "
 								  "and (sip_host='%q' or presence_hosts like '%%%q%%')", 
-								  mod_sofia_globals.hostname, profile->name,
-								  to_host, to_user, to_host, to_host))) {
+								  to_host, mod_sofia_globals.hostname, profile->name,
+								  to_user, to_host, to_host))) {
 			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
 
 			switch_safe_free(sql);
@@ -3880,16 +3929,24 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				open_closed = basic->txt;
 			}
 
-			if ((person = switch_xml_child(xml, "dm:person")) && (note = switch_xml_child(person, "dm:note"))) {
-				note_txt = note->txt;
+			if ((person = switch_xml_child(xml, "dm:person"))) {
+				if ((note = switch_xml_child(person, "dm:note"))) {
+					note_txt = note->txt;
+				} else if ((note = switch_xml_child(person, "rpid:note"))) {
+					note_txt = note->txt;
+				}
+				if ((act = switch_xml_child(person, "rpid:activities")) && act->child && act->child->name) {
+					if ((rpid = strchr(act->child->name, ':'))) {
+						rpid++;
+					} else {
+						rpid = act->child->name;
+					}
+				}
+				if (zstr(note_txt)) note_txt = rpid;
 			}
 
-			if (person && (act = switch_xml_child(person, "rpid:activities")) && act->child && act->child->name) {
-				if ((rpid = strchr(act->child->name, ':'))) {
-					rpid++;
-				} else {
-					rpid = act->child->name;
-				}
+			if (!strcasecmp(open_closed, "closed")) {
+				rpid = note_txt = "Unregistered";
 			}
 
 			if (sofia_test_pflag(profile, PFLAG_MULTIREG) && !open) {
@@ -3901,7 +3958,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 
 			event_type = sip_header_as_string(nh->nh_home, (void *) sip->sip_event);
 
-			if (count < 2) {
+			if (count != 1) {
 				if ((sql = switch_mprintf("delete from sip_presence where sip_user='%q' and sip_host='%q' "
 										  " and profile_name='%q' and hostname='%q'", 
 										  from_user, from_host, profile->name, mod_sofia_globals.hostname))) {
@@ -3928,7 +3985,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 									 
 									 switch_str_nil(payload->pl_data), 
 									 mod_sofia_globals.hostname, profile->name,
-									 from_user, from_host, event_type);
+									 from_user, from_host, event_type, contact_str);
 									 
 				sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_send_sql, &cb);
 				switch_safe_free(sql);

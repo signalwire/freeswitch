@@ -205,7 +205,8 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 	goto done;
 
 usage:
-    megaco_profile_release(profile);
+    if(profile)
+        megaco_profile_release(profile);
 	stream->write_function(stream, "-ERR Usage: \n""\t"MEGACO_CLI_SYNTAX" \n \t"MEGACO_FUNCTION_SYNTAX"\n \t" MEGACO_LOGGING_CLI_SYNTAX "\n");
 
 done:

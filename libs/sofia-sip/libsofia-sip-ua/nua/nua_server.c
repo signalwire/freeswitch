@@ -261,11 +261,12 @@ int nua_stack_process_request(nua_handle_t *nh,
   }
 
   if (sr->sr_status <= 100) {
-    SR_STATUS1(sr, SIP_100_TRYING);
+	  	  SR_STATUS1(sr, SIP_100_TRYING);
     if (method == sip_method_invite || sip->sip_timestamp) {
-      nta_incoming_treply(irq, SIP_100_TRYING,
-			  SIPTAG_USER_AGENT_STR(user_agent),
-			  TAG_END());
+		nta_incoming_treply(irq, SIP_100_TRYING,
+							SIPTAG_USER_AGENT_STR(user_agent),
+							TAG_END());
+
     }
   }
   else {

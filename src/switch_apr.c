@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1241,6 +1241,10 @@ SWITCH_DECLARE(int) switch_atomic_dec(volatile switch_atomic_t *mem)
 #endif
 }
 
+SWITCH_DECLARE(char *) switch_strerror(switch_status_t statcode, char *buf, switch_size_t bufsize)
+{
+       return apr_strerror(statcode, buf, bufsize);
+}
 
 /* For Emacs:
  * Local Variables:

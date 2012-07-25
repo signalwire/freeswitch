@@ -1,0 +1,661 @@
+# -*- mode:debian-control -*-
+##### Author: Travis Cross <tc@traviscross.com>
+
+## mod/applications
+
+Module: applications/mod_abstraction
+Description: Abstraction layer for APIs
+ This module provides a way to create new API functions via regex
+ rewriting.
+
+Module: applications/mod_avmd
+Description: Advanced voicemail detection
+ This module attempts to determine when a voicemail system has
+ answered the call.
+
+Module: applications/mod_blacklist
+Description: Blacklist helper
+ This module provides tools to blacklist callers.
+
+Module: applications/mod_callcenter
+Description: Call center
+ This module implements Automated Call Distribution (ACD) queues.
+
+Module: applications/mod_cidlookup
+Description: Caller ID name lookup
+ This module provides an API for querying caller ID name and location
+ data.
+
+Module: applications/mod_cluechoo
+Description: Clue Choo
+ This demo module renders a Clue Choo train on the FreeSWITCH console.
+
+Module: applications/mod_commands
+Description: Command module
+ This module provides miscellaneous API commands.
+
+Module: applications/mod_conference
+Description: Conference
+ This module provides multi-party conferencing.
+
+Module: applications/mod_curl
+Description: cURL
+ This module provides an API for making HTTP requests with cURL.
+
+Module: applications/mod_db
+Description: DB
+ This module implements simple db API, group support, and limit db
+ backend.
+
+Module: applications/mod_directory
+Description: Dial by name directory
+ This module implements a dial-by-name directory IVR.
+
+Module: applications/mod_distributor
+Description: Load distributor
+ This module implements a mechanism for performing load balancing.
+
+Module: applications/mod_dptools
+Description: Dialplan tools
+ This module implements basic dialplan tools.
+
+Module: applications/mod_easyroute
+Description: Easyroute
+ This module does destination lookup based on DID.
+
+Module: applications/mod_enum
+Description: ENUM
+ This module implements ENUM support.
+
+Module: applications/mod_esf
+Description: Multicast support
+ This module adds multi-cast support.
+
+Module: applications/mod_esl
+Description: Single ESL
+ This module adds an API for generating one-off ESL requests.
+
+Module: applications/mod_expr
+Description: Expr
+ This module adds expr support for expression evaluation.
+
+Module: applications/mod_fax
+Description: Fax
+ This module adds fax support provided by Steve Underwood's SpanDSP.
+
+Module: applications/mod_fifo
+Description: FIFO
+ This module adds a first-in first-out queue system.
+
+Module: applications/mod_fsk
+Description: Frequency-shift keying
+ This module adds frequency-shift keying support which can be used to
+ send and receive caller ID.
+
+Module: applications/mod_fsv
+Description: FSV
+ This module provides dialplan applications for recording and playing
+ FSV videos.
+
+Module: applications/mod_hash
+Description: Hash
+ This module provides a hash API, a key-value in-memory datastore.
+
+Module: applications/mod_httapi
+Description: HT-TAPI Hypertext Telephony API
+ This module provides an API for controlling the switch by responding
+ to HTTP requests.
+
+Module: applications/mod_http_cache
+Description: HTTP GET with caching
+ This module provides an API for making HTTP GET requests where the
+ result is cached.
+
+Module: applications/mod_ladspa
+Description: LADSPA
+ This module provides an API for accessing LADSPA plugins.
+Build-Depends: ladspa-sdk
+Suggests: tap-plugins, swh-plugins, autotalent
+
+Module: applications/mod_lcr
+Description: LCR
+ This module adds a facility for least-cost routing.
+
+Module: applications/mod_limit
+Description: Limit compatibility module
+ This module provides a backward-compatible interface to the DB limit
+ system.
+
+Module: applications/mod_memcache
+Description: Memcache
+ This module provides an interface to memcache servers.
+
+Module: applications/mod_mongo
+Description: MongoDB
+ This module provides an interface to MongoDB.
+Build-Depends: scons, libboost-dev, libboost-system-dev,
+ libboost-date-time-dev, libboost-thread-dev, libboost-filesystem-dev
+
+Module: applications/mod_mp4
+Section: contrib/comm
+Description: MP4 video support
+ This module adds support for MP4 video playback.
+Build-Depends: libmp4v2-dev
+
+Module: applications/mod_nibblebill
+Description: Nibblebill
+ This module allows for real-time accounting of a cash balance and
+ using that information for call routing.
+
+Module: applications/mod_osp
+Description: Open Settlement Protocol
+ This module adds support for the Open Settlement Protocol (OSP).
+Build-Depends: libosptk3-dev
+
+Module: applications/mod_rad_auth
+Description: RADIUS AA
+ This module implements RADIUS Authentication and Authorization.
+
+Module: applications/mod_random
+Description: Entropy extraction
+ This module extracts entropy from FreeSWITCH and feeds it into
+ /dev/random.
+
+Module: applications/mod_redis
+Description: Redis limit backend
+ This module provides a mechanism to use Redis as a backend data
+ store.
+
+Module: applications/mod_rss
+Description: RSS browser
+ This module provides an RSS browser.
+
+Module: applications/mod_skel
+Description: Framework demo module
+ This module demonstrates how to build an add-on module.
+
+Module: applications/mod_sms
+Description: Astract SMS
+ This module provides an abstract facility for interfacing with SMS
+ systems.
+
+Module: applications/mod_snapshot
+Description: Snapshot
+ This module can record a sliding window of audio and take snapshots
+ to disk.
+
+Module: applications/mod_snipe_hunt
+Description: Snipe hunt
+ This is a framework demo module.
+
+Module: applications/mod_snom
+Description: SNOM specific features
+ This module implements features specific to SNOM phones.
+
+Module: applications/mod_soundtouch
+Description: Soundtouch
+ This module implements example media bugs.
+
+Module: applications/mod_spandsp
+Description: SpanDSP
+ This module implements spandsp fax, dsp, and codec functionality.
+
+Module: applications/mod_spy
+Description: UserSpy
+ This module adds the ability to monitor the audio of a channel.
+
+Module: applications/mod_stress
+Description: Voice stress detection
+ This module attempts to detect voice stress on an audio channel.
+
+Module: applications/mod_valet_parking
+Description: Valet parking
+ This module implements the valet call parking strategy.
+
+Module: applications/mod_vmd
+Description: Voicemail detection
+ This module detects voicemail beeps at any frequency in O(1) time.
+
+Module: applications/mod_voicemail
+Description: Voicemail
+ This module provides a voicemail system.
+
+Module: applications/mod_voicemail_ivr
+Description: Voicemail IVR
+ This module provides an extensible voicemail IVR system.
+
+## mod/asr_tts
+
+Module: asr_tts/mod_cepstral
+Description: mod_cepstral
+ Adds mod_cepstral.
+
+Module: asr_tts/mod_flite
+Description: mod_flite
+ Adds mod_flite.
+
+Module: asr_tts/mod_pocketsphinx
+Description: mod_pocketsphinx
+ Adds mod_pocketsphinx.
+
+Module: asr_tts/mod_tts_commandline
+Description: mod_tts_commandline
+ Adds mod_tts_commandline.
+
+Module: asr_tts/mod_unimrcp
+Description: mod_unimrcp
+ Adds mod_unimrcp.
+
+## mod/codecs
+
+Module: codecs/mod_amr
+Description: mod_amr
+ Adds mod_amr.
+
+Module: codecs/mod_amrwb
+Description: mod_amrwb
+ Adds mod_amrwb.
+
+Module: codecs/mod_bv
+Description: mod_bv
+ Adds mod_bv.
+
+Module: codecs/mod_celt
+Description: mod_celt
+ Adds mod_celt.
+
+Module: codecs/mod_codec2
+Description: mod_codec2
+ Adds mod_codec2.
+
+Module: codecs/mod_com_g729
+Description: mod_com_g729
+ Adds mod_com_g729.
+
+Module: codecs/mod_dahdi_codec
+Description: mod_dahdi_codec
+ Adds mod_dahdi_codec.
+
+Module: codecs/mod_g723_1
+Description: mod_g723_1
+ Adds mod_g723_1.
+
+Module: codecs/mod_g729
+Description: mod_g729
+ Adds mod_g729.
+
+Module: codecs/mod_h26x
+Description: mod_h26x
+ Adds mod_h26x.
+
+Module: codecs/mod_ilbc
+Section: non-free/comm
+Description: mod_ilbc
+ Adds mod_ilbc.
+
+Module: codecs/mod_isac
+Description: mod_isac
+ Adds mod_isac.
+
+Module: codecs/mod_mp4v
+Description: mod_mp4v
+ Adds mod_mp4v.
+
+Module: codecs/mod_opus
+Description: mod_opus
+ Adds mod_opus.
+
+Module: codecs/mod_sangoma_codec
+Description: mod_sangoma_codec
+ Adds mod_sangoma_codec.
+
+Module: codecs/mod_silk
+Description: mod_silk
+ Adds mod_silk.
+
+Module: codecs/mod_siren
+Section: non-free/comm
+Description: mod_siren
+ Adds mod_siren.
+
+Module: codecs/mod_skel_codec
+Description: mod_skel_codec
+ Adds mod_skel_codec.
+
+Module: codecs/mod_speex
+Description: mod_speex
+ Adds mod_speex.
+Build-Depends: libogg-dev
+
+Module: codecs/mod_theora
+Description: mod_theora
+ Adds mod_theora.
+
+Module: codecs/mod_voipcodecs
+Description: mod_voipcodecs
+ Adds mod_voipcodecs.
+
+## mod/dialplans
+
+Module: dialplans/mod_dialplan_asterisk
+Description: mod_dialplan_asterisk
+ Adds mod_dialplan_asterisk.
+
+Module: dialplans/mod_dialplan_directory
+Description: mod_dialplan_directory
+ Adds mod_dialplan_directory.
+
+Module: dialplans/mod_dialplan_xml
+Description: mod_dialplan_xml
+ Adds mod_dialplan_xml.
+
+## mod/directories
+
+Module: directories/mod_ldap
+Description: mod_ldap
+ Adds mod_ldap.
+
+## mod/endpoints
+
+Module: endpoints/mod_alsa
+Description: mod_alsa
+ Adds mod_alsa.
+Build-Depends: libasound2-dev
+
+Module: endpoints/mod_dingaling
+Description: mod_dingaling
+ Adds mod_dingaling.
+
+Module: endpoints/mod_gsmopen
+Description: mod_gsmopen
+ Adds mod_gsmopen.
+Build-Depends: libx11-dev
+
+Module: endpoints/mod_h323
+Description: mod_h323
+ Adds mod_h323.
+Build-Depends: libopenh323-dev, libpt-dev
+
+Module: endpoints/mod_khomp
+Description: mod_khomp
+ Adds mod_khomp.
+
+Module: endpoints/mod_loopback
+Description: mod_loopback
+ Adds mod_loopback.
+
+Module: endpoints/mod_opal
+Description: mod_opal
+ Adds mod_opal.
+
+Module: endpoints/mod_portaudio
+Description: mod_portaudio
+ Adds mod_portaudio.
+
+Module: endpoints/mod_reference
+Description: mod_reference
+ Adds mod_reference.
+
+Module: endpoints/mod_rtmp
+Description: mod_rtmp
+ Adds mod_rtmp.
+
+Module: endpoints/mod_skinny
+Description: mod_skinny
+ Adds mod_skinny.
+
+Module: endpoints/mod_skypopen
+Description: mod_skypopen
+ Adds mod_skypopen.
+Build-Depends: libx11-dev
+
+Module: endpoints/mod_sofia
+Description: mod_sofia
+ Adds mod_sofia.
+
+Module: endpoints/mod_unicall
+Description: mod_unicall
+ Adds mod_unicall.
+
+## mod/event_handlers
+
+Module: event_handlers/mod_cdr_csv
+Description: mod_cdr_csv
+ Adds mod_cdr_csv.
+
+Module: event_handlers/mod_cdr_mongodb
+Description: mod_cdr_mongodb
+ Adds mod_cdr_mongodb.
+
+Module: event_handlers/mod_cdr_pg_csv
+Description: mod_cdr_pg_csv
+ Adds mod_cdr_pg_csv.
+Build-Depends: libpq-dev
+
+Module: event_handlers/mod_cdr_sqlite
+Description: mod_cdr_sqlite
+ Adds mod_cdr_sqlite.
+
+Module: event_handlers/mod_erlang_event
+Description: mod_erlang_event
+ Adds mod_erlang_event.
+Build-Depends: erlang-dev
+
+Module: event_handlers/mod_event_multicast
+Description: mod_event_multicast
+ Adds mod_event_multicast.
+Build-Depends: libssl-dev
+
+Module: event_handlers/mod_event_socket
+Description: mod_event_socket
+ Adds mod_event_socket.
+
+Module: event_handlers/mod_event_test
+Description: mod_event_test
+ Adds mod_event_test.
+
+Module: event_handlers/mod_event_zmq
+Description: mod_event_zmq
+ Adds mod_event_zmq.
+
+Module: event_handlers/mod_json_cdr
+Description: mod_json_cdr
+ Adds mod_json_cdr.
+
+Module: event_handlers/mod_radius_cdr
+Description: mod_radius_cdr
+ Adds mod_radius_cdr.
+
+Module: event_handlers/mod_snmp
+Description: mod_snmp
+ Adds mod_snmp.
+Build-Depends: libsnmp-dev
+
+## mod/formats
+
+Module: formats/mod_local_stream
+Description: mod_local_stream
+ Adds mod_local_stream.
+
+Module: formats/mod_native_file
+Description: mod_native_file
+ Adds mod_native_file.
+
+Module: formats/mod_portaudio_stream
+Description: mod_portaudio_stream
+ Adds mod_portaudio_stream.
+
+Module: formats/mod_shell_stream
+Description: mod_shell_stream
+ Adds mod_shell_stream.
+
+Module: formats/mod_shout
+Description: mod_shout
+ Adds mod_shout.
+Build-Depends: libogg-dev, libvorbis-dev
+
+Module: formats/mod_sndfile
+Description: mod_sndfile
+ Adds mod_sndfile.
+
+Module: formats/mod_tone_stream
+Description: mod_tone_stream
+ Adds mod_tone_stream.
+
+Module: formats/mod_vlc
+Description: VLC streaming
+ This module provides VLC streaming.
+Build-Depends: libvlc-dev (>= 2.0.0)
+Distro-Conflicts: squeeze
+
+## mod/languages
+
+Module: languages/mod_java
+Description: mod_java
+ Adds mod_java.
+Build-Depends: default-jdk, gcj-jdk
+
+Module: languages/mod_lua
+Description: mod_lua
+ Adds mod_lua.
+
+Module: languages/mod_managed
+Description: mod_managed
+ Adds mod_managed.
+Build-Depends: libmono-2.0-dev, mono-gmcs
+
+Module: languages/mod_perl
+Description: mod_perl
+ Adds mod_perl.
+Build-Depends: libperl-dev
+
+Module: languages/mod_python
+Description: mod_python
+ Adds mod_python.
+Build-Depends: python-dev
+
+Module: languages/mod_spidermonkey
+Description: mod_spidermonkey
+ Adds mod_spidermonkey.
+Build-Depends: unixodbc-dev
+
+Module: languages/mod_yaml
+Description: mod_yaml
+ Adds mod_yaml.
+Build-Depends: libyaml-dev
+
+## mod/loggers
+
+Module: loggers/mod_console
+Description: mod_console
+ Adds mod_console.
+
+Module: loggers/mod_logfile
+Description: mod_logfile
+ Adds mod_logfile.
+
+Module: loggers/mod_syslog
+Description: mod_syslog
+ Adds mod_syslog.
+
+## mod/say
+
+Module: say/mod_say_de
+Description: mod_say_de
+ Adds mod_say_de.
+
+Module: say/mod_say_en
+Description: mod_say_en
+ Adds mod_say_en.
+
+Module: say/mod_say_es
+Description: mod_say_es
+ Adds mod_say_es.
+
+Module: say/mod_say_fa
+Description: mod_say_fa
+ Adds mod_say_fa.
+
+Module: say/mod_say_fr
+Description: mod_say_fr
+ Adds mod_say_fr.
+
+Module: say/mod_say_he
+Description: mod_say_he
+ Adds mod_say_he.
+
+Module: say/mod_say_hr
+Description: mod_say_hr
+ Adds mod_say_hr.
+
+Module: say/mod_say_hu
+Description: mod_say_hu
+ Adds mod_say_hu.
+
+Module: say/mod_say_it
+Description: mod_say_it
+ Adds mod_say_it.
+
+Module: say/mod_say_ja
+Description: mod_say_ja
+ Adds mod_say_ja.
+
+Module: say/mod_say_nl
+Description: mod_say_nl
+ Adds mod_say_nl.
+
+Module: say/mod_say_pt
+Description: mod_say_pt
+ Adds mod_say_pt.
+
+Module: say/mod_say_ru
+Description: mod_say_ru
+ Adds mod_say_ru.
+
+Module: say/mod_say_th
+Description: mod_say_th
+ Adds mod_say_th.
+
+Module: say/mod_say_zh
+Description: mod_say_zh
+ Adds mod_say_zh.
+
+## mod/sdk
+
+Module: sdk/autotools
+Description: autotools
+ Adds autotools.
+
+## mod/timers
+
+Module: timers/mod_posix_timer
+Description: mod_posix_timer
+ Adds mod_posix_timer.
+
+Module: timers/mod_timerfd
+Description: mod_timerfd
+ Adds mod_timerfd.
+
+## mod/xml_int
+
+Module: xml_int/mod_xml_cdr
+Description: mod_xml_cdr
+ Adds mod_xml_cdr.
+
+Module: xml_int/mod_xml_curl
+Description: mod_xml_curl
+ Adds mod_xml_curl.
+
+Module: xml_int/mod_xml_ldap
+Description: mod_xml_ldap
+ Adds mod_xml_ldap.
+Build-Depends: libsasl2-dev
+
+Module: xml_int/mod_xml_rpc
+Description: mod_xml_rpc
+ Adds mod_xml_rpc.
+
+Module: xml_int/mod_xml_scgi
+Description: mod_xml_scgi
+ Adds mod_xml_scgi.
+

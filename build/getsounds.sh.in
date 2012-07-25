@@ -1,4 +1,5 @@
 #!/bin/sh
+##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
 TAR=@TAR@
 ZCAT=@ZCAT@
@@ -7,11 +8,11 @@ CURL=@CURL@
 
 DIR=`pwd`
 
-if [ -x "$WGET" ] ; then
-    DOWNLOAD_CMD=$WGET
+if [ -x "$WGET" ]; then
+  DOWNLOAD_CMD=$WGET
 fi
 if [ "x${DOWNLOAD_CMD}" = "x" -a -x "$CURL" ] ; then
-    DOWNLOAD_CMD="$CURL -O"
+  DOWNLOAD_CMD="$CURL -O"
 fi
 
 base=http://files.freeswitch.org/
@@ -22,17 +23,22 @@ echo -n "#"
 pwd
 echo "# $0 $1 $2"
 
-if [ ! -f $tarfile ] ; then
-    $DOWNLOAD_CMD $base$tarfile
-    if [ ! -f $tarfile ] ; then
-        echo cannot find $tarfile
-	exit 1
-    fi
+if [ -n "$FS_SOUNDS_DIR" ]; then
+  [ -d $FS_SOUNDS_DIR ] || mkdir -p $FS_SOUNDS_DIR
+  DIR=$FS_SOUNDS_DIR
 fi
 
-if [ ! -z $install ] ; then
-   test -d $install || mkdir $install
-   cd $install && $ZCAT -c -d $DIR/$tarfile | $TAR xf -
+if [ ! -f $DIR/$tarfile ]; then
+  (cd $DIR && $DOWNLOAD_CMD $base$tarfile)
+  if [ ! -f $DIR/$tarfile ]; then
+    echo "cannot find $tarfile"
+    exit 1
+  fi
+fi
+
+if [ ! -z "$install" ]; then
+  test -d $install || mkdir $install
+  (cd $install && $ZCAT -c -d $DIR/$tarfile | $TAR xf -)
 fi
 
 exit 0

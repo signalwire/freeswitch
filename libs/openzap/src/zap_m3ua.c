@@ -6,7 +6,7 @@
  *  Copyright 2008 Shane Burrell. All rights reserved.
  *
  * 
- * Copyright (c) 2007, Anthony Minessale II, Nenad Corbic * 
+ * Copyright (c) 2007-2012, Anthony Minessale II, Nenad Corbic * 
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

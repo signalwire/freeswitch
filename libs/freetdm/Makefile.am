@@ -1,4 +1,4 @@
-# Copyright (c) 2007, Anthony Minessale II
+# Copyright (c) 2007-2012, Anthony Minessale II
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -248,6 +248,14 @@ ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c  $(SRC)/ftmod/ftmod_r2/ft
 ftmod_r2_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS)
 ftmod_r2_la_LDFLAGS = -shared -module -avoid-version -lopenr2
 ftmod_r2_la_LIBADD  = libfreetdm.la
+endif
+
+if HAVE_WAT
+mod_LTLIBRARIES += ftmod_gsm.la
+ftmod_gsm_la_SOURCES = $(SRC)/ftmod/ftmod_gsm/ftmod_gsm.c 
+ftmod_gsm_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS)
+ftmod_gsm_la_LDFLAGS = -shared -module -avoid-version -lwat
+ftmod_gsm_la_LIBADD  = libfreetdm.la
 endif
 
 if HAVE_MISDN

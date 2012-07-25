@@ -409,8 +409,10 @@ static int
 li_scope6(struct in6_addr const *ip6)
 {
   if (IN6_IS_ADDR_V4MAPPED(ip6) || IN6_IS_ADDR_V4COMPAT(ip6)) {
-    uint32_t ip4 = *(uint32_t *)(ip6->s6_addr + 12);
-    return li_scope4(ip4);
+	  uint32_t *u = (uint32_t *)(ip6->s6_addr + 12);
+
+	  uint32_t ip4 = *u;
+	  return li_scope4(ip4);
   }
   else if (IN6_IS_ADDR_LOOPBACK(ip6))
     return LI_SCOPE_HOST;

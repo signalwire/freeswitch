@@ -448,6 +448,8 @@ switch_status_t megaco_profile_start(const char *profilename)
 	profile->pool = pool;
 	profile->name = switch_core_strdup(pool, profilename);
     profile->next_context_id++;
+	profile->inact_tmr = 0x00;
+	profile->inact_tmr_task_id = 0x00;
 	
 	switch_thread_rwlock_create(&profile->rwlock, pool);
     

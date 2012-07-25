@@ -68,7 +68,9 @@
 
 /* Define if vsnprintf() function available */
 #define HAVE_VSNPRINTF 1
+#ifndef WIN32
 #define vsnprintf _vsnprintf
+#endif// WIN32
 
 /* The number of bytes in a unsigned int.  */
 #define SIZEOF_UNSIGNED_INT 4

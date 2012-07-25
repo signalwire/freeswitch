@@ -528,6 +528,11 @@
       <prompt phrase="Y U NO Silent Drill?!" filename="ivr-yuno_silent_drill.wav"/>
       <prompt phrase="Beacuase, the voices where pretty good" filename="ivr-beacuase.wav"/>
       <!-- The following phrases still need to be recorded -->
+      <prompt phrase="Day mode." filename="ivr-day_mode.wav"/>
+      <prompt phrase="Night mode." filename="ivr-night_mode.wav"/>
+      <prompt phrase="Lunch mode." filename="ivr-lunch_mode.wav"/>
+      <prompt phrase="Custom mode number..." filename="ivr-custom_mode_number.wav"/>
+
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>

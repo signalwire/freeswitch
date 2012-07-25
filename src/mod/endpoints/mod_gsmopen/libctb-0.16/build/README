@@ -1,0 +1,169 @@
+
+CTB (Communication toolbox library)          			08.02.2010
+======================================================================
+
+Website: http://www.iftools.com/opensource/ctb.en.php
+Version: 0.16
+
+
+Linux GCC compiliation
+----------------------------------------------------------------
+
+Type 'make DEBUG=x GPIB=x' or 'make -f GNUmakefile DEBUG=x GPIB=x'
+
+Type the same command with an additional install as root to copy the
+headers and libs to there according system places
+(i.e. /usr/local/include/ctb-0.16 and /usr/local/lib/libctb-0.16.a)
+like:
+
+sudo make DEBUG=x GPIB=x install
+
+
+Microsoft MingW32 compilation
+----------------------------------------------------------------
+
+Type mingw32-make -f makefile.gcc DEBUG=x GPIB=x
+
+Please note! Currently only a shared ctb library will be created.
+You have to copy the ctb-VERSION.dll in the application path of
+your application linked with ctb or in a global dll folder (but
+not recommented!)
+
+
+Microsoft Visual C++ compilation
+----------------------------------------------------------------
+
+Type 'nmake -f makefile.vc DEBUG=x GPIB=x'
+
+To create all libs (debug/release with and without gpib support)
+just input: ./buildall.bat in the build folder.
+	
+
+Borland C++ 5.0/5.5 compilation
+----------------------------------------------------------------
+
+Type 'make -f makefile.bcc DEBUG=x GPIB=x'
+
+
+Watcom C++ 10.6/11 and OpenWatcom compilation
+----------------------------------------------------------------
+
+Type 'wmake -f makefile.wat'
+
+
+Python support
+--------------
+
+Since version 0.9 ctb also includes a python module ctb.py.
+To build the python module by yourself, your system has to satisfy
+the following requirements:
+
+- the SWIG program, you get it at http://www.swig.org/ (for linux,
+  take a look in your favorite distribution package manager).
+  The current ctb module was build with SWIG version 1.3.29 (linux)
+  and version 1.3.40 (Windows)
+- the develop files for python (means the header and the library
+  files). I tested it with Python 2.4. You will get it at:
+  http://www.python.org/ftp/python/2.4.4/python-2.4.4.msi
+- if you want to communicate via GPIB, a GPIB installation (GPIB 
+  controller and software, for instance a Nation Instruments or 
+  Keithley card). On Linux the libgpib.
+
+Like the building of the wxctb C++ library, you also can choose
+between GPIB and non GPIB (default) support.
+
+Compile the python module
+
+Linux
+cd in the python/src/linux folder and type:
+./makepy.sh USE_GPIB
+or
+./makepy.sh
+if you don't need any GPIB support
+
+Windows
+cd in the python/src/windows folder. Open the makepy.bat with your
+favorite editor and set the commented enviroment variables. See the
+makepy.bat file for more information, how you can do that.
+After that, just type:
+
+./makepy.sh USE_GPIB
+(for GPIB support) or
+./makepy.sh
+if you don't need any GPIB support
+
+At last set the python modul path to the ctb-0.15/python/module
+path.
+On linux:
+
+export PYTHONPATH=somepath/ctb-0.15/python/module/linux
+
+On Windows:
+
+set PYTHONPATH=drive:\somepath\ctb-0.15\python\module\win32
+
+
+ChangeLog
+---------
+
+0.16
+    - added port scan function.
+    - bug fixes for MingW build.
+
+0.15
+    - added ctb namespace and removed all wx prefix (also in the header
+	 path).
+    - Linux: A serial port cannot opened twice or more any longer.
+    - 9 bit data transmission support using the parity bit as ninth bit.
+    - improved documentation
+    - Some more documentation
+
+0.14
+    - Support for non-standard baudrates (depends on the used UART
+	 or USB to RS232 converter.
+
+0.13
+    - remove the expect and match mechanism. They didn't work very
+	 well, and a future implementation should be done as a
+      independent library. If someone missed this functions, please
+      let me know.
+
+0.12
+    - more documentation for doxygen
+    - replace the ugly GetSettingsAsString methods by a more intuitive
+	 one.
+    - wxGPIB::Read now checks the MAV bit before reading. This resolves
+	 some stderr stuff on linux.
+
+0.11
+    - the gpib sources are no longer depending on the OS. They are
+	 identical for linux and windows.  
+    - add the current version to the ctb include path, so you can
+	 handle a parallel installation of different versions.
+	 For instance: The header path wx/ctb is replaced by wx/ctb-0.11
+
+0.10
+    - replace the former gpib async io access with the standard
+	 NI-488 functions (ibrd,ibwrt). To avoid blocking, the internal
+	 gpib timeout was set to the lowest value, whereas the wxIOBase
+	 methods handles the timeout in a global and transparent manner.
+    - add a FindListener method in the wxGPIB class to look for all
+	 connected gpib devices (listeners).
+    - The Read and Readv method of the python wxIOBase class returns
+	 additional zero bytes, fixed. 
+
+0.9
+    - added python support for both, serial and gpib 
+
+0.8
+    - added bakefile support
+	 
+0.7 
+    - added GPIB (Nation Instruments GPIB cards) support
+	 
+
+Authors' info
+-------------
+
+Joachim Buermann          jbuermann@iftools.com
+ 

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -226,7 +226,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	bytes = 16;
 	switch_socket_sendto(socket, control_packet_addr, 0, (void *) &control_packet, &bytes);
 
-	for (;;) {
+	while (switch_channel_ready(channel)) {
 
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 

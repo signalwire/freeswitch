@@ -46,12 +46,7 @@
 #	Voice Platform
 ### END INIT INFO
 # 
-# Check for missing binaries (stale symlinks should not happen)
-# Note: Special treatment of stop for LSB conformance
 FREESWITCH_BIN=/opt/freeswitch/bin/freeswitch
-test -x $FREESWITCH_BIN || { echo "$FREESWITCH_BIN not installed"; 
-	if [ "$1" = "stop" ]; then exit 0;
-	else exit 5; fi; }
 
 # Check for existence of needed config file and read it
 FREESWITCH_CONFIG=/etc/sysconfig/freeswitch
@@ -61,6 +56,12 @@ test -r $FREESWITCH_CONFIG || { echo "$FREESWITCH_CONFIG not existing";
 
 # Read config	
 . $FREESWITCH_CONFIG
+
+# Check for missing binaries (stale symlinks should not happen)
+# Note: Special treatment of stop for LSB conformance
+test -x $FREESWITCH_BIN || { echo "$FREESWITCH_BIN not installed"; 
+	if [ "$1" = "stop" ]; then exit 0;
+	else exit 5; fi; }
 
 # Source LSB init functions
 # providing start_daemon, killproc, pidofproc, 
@@ -202,7 +203,7 @@ case "$1" in
 	## argument to this init script which is required for a reload.
 	## Note: probe is not (yet) part of LSB (as of 1.9)
 
-	test /opt/freeswitch/conf/freeswitch.xml -nt /opt/freeswitch/run/freeswitch.pid && echo reload
+	test ${FREESWITCH_HOME}/conf/freeswitch.xml -nt ${FREESWITCH_HOME}/run/freeswitch.pid && echo reload
 	;;
     *)
 	echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload|probe}"

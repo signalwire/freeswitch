@@ -77,6 +77,7 @@ BuildArch: noarch
 BuildRequires: sox
 Requires: freeswitch
 Requires: freeswitch-sounds-en-us-callie-48000
+Requires: sox
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description

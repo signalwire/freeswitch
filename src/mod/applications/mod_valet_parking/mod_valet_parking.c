@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -618,7 +618,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			char tmp[512] = "";
 			switch_snprintf(tmp, sizeof(tmp), "%s:%s", lot_name, ext);
 
-			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			if ((uuid = switch_channel_get_partner_uuid(channel))) {
 				switch_core_session_t *b_session;
 
 				if ((b_session = switch_core_session_locate(uuid))) {

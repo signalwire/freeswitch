@@ -1,6 +1,6 @@
 /* 
  * mod_rtmp for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2011, Barracuda Networks Inc.
+ * Copyright (C) 2011-2012, Barracuda Networks Inc.
  *
  * Version: MPL 1.1
  *
@@ -539,7 +539,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_transfer)
 	}
 	
 	if ((tech_pvt = rtmp_locate_private(rsession, uuid))) {
-		const char *other_uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *other_uuid = switch_channel_get_partner_uuid(tech_pvt->channel);
 		switch_core_session_t *session;
 		
 		if (!zstr(other_uuid) && (session = switch_core_session_locate(other_uuid))) {
@@ -570,8 +570,8 @@ RTMP_INVOKE_FUNCTION(rtmp_i_join)
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	if ((other_uuid[0] = switch_channel_get_variable(tech_pvt[0]->channel, SWITCH_SIGNAL_BOND_VARIABLE)) &&
-	    (other_uuid[1] = switch_channel_get_variable(tech_pvt[1]->channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+	if ((other_uuid[0] = switch_channel_get_partner_uuid(tech_pvt[0]->channel)) &&
+	    (other_uuid[1] = switch_channel_get_partner_uuid(tech_pvt[1]->channel))) {
 
 #ifndef RTMP_DONT_HOLD
 		if (switch_test_flag(tech_pvt[0], TFLAG_DETACHED)) {
@@ -725,8 +725,8 @@ RTMP_INVOKE_FUNCTION(rtmp_i_three_way)
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	if (!(other_uuid[0] = switch_channel_get_variable(tech_pvt[0]->channel, SWITCH_SIGNAL_BOND_VARIABLE)) ||
-	    !(other_uuid[1] = switch_channel_get_variable(tech_pvt[1]->channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+	if (!(other_uuid[0] = switch_channel_get_partner_uuid(tech_pvt[0]->channel)) ||
+	    !(other_uuid[1] = switch_channel_get_partner_uuid(tech_pvt[1]->channel))) {
 		return SWITCH_STATUS_FALSE; /* Both calls aren't bridged */
 	}
 
