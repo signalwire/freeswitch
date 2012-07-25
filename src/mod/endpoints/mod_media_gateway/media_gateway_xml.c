@@ -121,15 +121,12 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
             mg_termination_t *term;
             // <map  termination-id-prefix="Term1/" termination-id-base="1" tech="freetdm" channel-prefix="wp2" channel-map"1-15,17-31"/>
             const char *prefix = switch_xml_attr(mg_term, "termination-id-prefix");
-            const char *sztermination_id_base = switch_xml_attr(mg_term, "termination-id-base");
-            const char *tech =  switch_xml_attr(mg_term, "tech");
+            //const char *sztermination_id_base = switch_xml_attr(mg_term, "termination-id-base");
+            //const char *tech =  switch_xml_attr(mg_term, "tech");
             const char *channel_prefix = switch_xml_attr(mg_term, "channel-prefix");
             const char *channel_map = switch_xml_attr(mg_term, "channel-map");
             const char *szspan_id = switch_xml_attr(mg_term, "span-id");
             const int span_id = !zstr(szspan_id) ? atoi(szspan_id) : 0;
-            
-            int term_id = 1;
-            int chan_id = 1;
             
             
             if (!zstr(channel_map)) {
