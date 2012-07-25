@@ -13,6 +13,8 @@
 
 #define MAX_MID_LEN    30
 
+#define MG_INACTIVITY_TMR_RESOLUTION   100          /* mit in ito package is experessed in 10ms steps */
+
 typedef enum{
         SNG_MG_TPT_NONE,
         SNG_MG_TPT_UDP,
@@ -147,6 +149,7 @@ switch_status_t sng_mgco_init(sng_mg_event_interface_t* event);
 switch_status_t sng_mgco_stack_shutdown(void);
 int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, megaco_profile_t* mg_cfg, mg_peer_profile_t* mg_peer);
 
+switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *cmd);
 switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoContextId* ctxtId, TknU32* peerId);
 void mgco_print_sdp(CmSdpInfoSet *sdp);
 void mg_util_set_ctxt_string ( MgStr  *errTxt, MgMgcoContextId     *ctxtId);
@@ -185,6 +188,8 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
 switch_status_t  mg_send_dtmf_notify(megaco_profile_t* mg_profile, const char* term_name, char* digits, int num_of_collected_digits);
 switch_status_t  mg_send_ito_notify(megaco_profile_t* mg_profile);
 switch_status_t  mg_util_build_obs_evt_desc (MgMgcoObsEvt *obs_event, MgMgcoRequestId *request_id, MgMgcoObsEvtDesc **ptr_obs_desc);
+void mg_print_time();
+switch_status_t mg_activate_ito_timer(megaco_profile_t* profile);
 
 
 

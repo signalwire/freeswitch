@@ -15,6 +15,7 @@
 
 #define MG_MAX_PEERS    5
 
+
 #define MG_CONTEXT_MAX_TERMS 3
 
 #define MEGACO_CLI_SYNTAX "profile|logging"
@@ -149,6 +150,7 @@ struct megaco_profile_s {
 	char*					rtp_termination_id_prefix;
 	int						rtp_termination_id_len;
 	char*                	peer_list[MG_MAX_PEERS];     /* MGC Peer ID LIST */
+	int						inact_tmr;                   /* inactivity timer value */
     
     switch_thread_rwlock_t  *contexts_rwlock;
     uint32_t next_context_id;

@@ -19,6 +19,159 @@ const char *mg_service_change_reason[] = {
 	0
 };
 
+
+/*****************************************************************************************************************************/
+switch_status_t mg_activate_ito_timer(megaco_profile_t* profile)
+{
+
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Starting IT/ITO Timer \n");
+    mg_print_time();
+
+    switch_scheduler_add_task(switch_epoch_time_now(NULL)+profile->inact_tmr, mg_inactivity_timer_exp,"","media_gateway",0,profile,0);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/*****************************************************************************************************************************/
+static void mg_inactivity_timer_exp(switch_scheduler_task_t *task)
+{
+    megaco_profile_t* profile = (megaco_profile_t*) task->cmd_arg;
+    /* TODO */
+
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," mg_inactivity_timer_exp for profile[%s]\n", profile->name);
+    mg_print_time();
+
+    mg_send_ito_notify(profile);
+
+    /*task->runtime = switch_epoch_time_now(NULL)+100; */ /* interval in seconds */
+}
+
+/*****************************************************************************************************************************/
+switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *cmd)
+{
+    int 		  descId = 0x00;
+    MgMgcoAmmReq* desc = NULL;
+
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"cmd->cmdType.val[%d]\n",cmd->cmdType.val);
+
+    if(CH_CMD_TYPE_IND != cmd->cmdType.val)
+        return SWITCH_STATUS_FALSE;
+
+    if(MGT_MODIFY != cmd->u.mgCmdInd[0]->cmd.type.val)
+        return SWITCH_STATUS_FALSE;
+
+    desc = &cmd->u.mgCmdInd[0]->cmd.u.mod;
+
+    if(NULL == desc){
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"No Valid descriptor found \n");
+        return SWITCH_STATUS_FALSE;
+    }
+
+    if(NOTPRSNT == desc->dl.num.pres){
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"No descriptor found in-coming megaco request \n");
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+
+    for (descId = 0; descId < desc->dl.num.val; descId++) {
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"descriptors[%d] type in-coming megaco request \n", desc->dl.descs[descId]->type.val); 
+        switch (desc->dl.descs[descId]->type.val) {
+            case MGT_MEDIADESC:
+                {
+                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Media descriptor on ROOT termination..Not Supporting now\n");
+                    break;
+                }
+
+            case MGT_REQEVTDESC:
+                {
+                    MgMgcoReqEvtDesc* evts = &desc->dl.descs[descId]->u.evts; 
+                    MgMgcoEvtPar     *reqEvtPar;
+                    MgMgcoReqEvt     *evt;
+                    int              numEvts = 0;
+                    int              i;
+
+                    /* As of now only handling ito package */
+
+                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Requested Event descriptor\n");
+
+                    if (evts->el.num.pres)
+                        numEvts = evts->el.num.val;
+
+                    for (i = 0; i < numEvts; i++)
+                    {
+                        evt = evts->el.revts[i];
+                        if (evt->pl.num.pres)
+                        {
+                            /* Check for the package */
+                            if((MGT_PKG_KNOWN == evt->pkg.valType.val) &&
+                                    (MGT_PKG_INACTTIMER != evt->pkg.u.val.val))
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                if((MGT_GEN_TYPE_KNOWN == evt->name.type.val) &&
+                                   (MGT_PKG_ENUM_REQEVT_INACTTIMER_INACT_TIMOUT == 
+                                        evt->name.u.val.val)){
+
+                                    if((evt->pl.num.pres != NOTPRSNT) &&
+                                            (evt->pl.num.val != 0)) {
+
+                                        reqEvtPar = evt->pl.parms[0];
+
+                                        if((NULL != reqEvtPar) &&
+                                                (reqEvtPar->type.val == MGT_EVTPAR_OTHER)      &&
+                                                (reqEvtPar->u.other.name.type.pres == PRSNT_NODEF) &&
+                                                (reqEvtPar->u.other.name.type.val == MGT_GEN_TYPE_KNOWN) &&
+                                                (reqEvtPar->u.other.name.u.val.pres == PRSNT_NODEF)  &&
+                                                (reqEvtPar->u.other.name.u.val.val ==
+                                                 MGT_PKG_ENUM_REQEVTOTHER_INACTTIMER_INACT_TIMOUT_MAX_IATIME)&&
+                                                (reqEvtPar->u.other.val.type.pres == PRSNT_NODEF) &&
+                                                (reqEvtPar->u.other.val.type.val == MGT_VALUE_EQUAL) &&
+                                                (reqEvtPar->u.other.val.u.eq.type.pres == PRSNT_NODEF) &&
+                                                (reqEvtPar->u.other.val.u.eq.type.val == MGT_VALTYPE_UINT32))
+                                        {
+                                            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Received Inactivity timer value [%d]\n", 
+                                                    reqEvtPar->u.other.val.u.eq.u.decInt.val); 
+
+                                            mg_profile->inact_tmr = reqEvtPar->u.other.val.u.eq.u.decInt.val/MG_INACTIVITY_TMR_RESOLUTION;
+
+                                            if(0 == mg_profile->inact_tmr){
+                                                /* value ZERO means MGC wantes  to disable ito timer */
+
+                                                /* TODO - check and stop  currently running ito timer  */
+                                            } else {
+                                                mg_activate_ito_timer(mg_profile);
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    break;
+                }
+            case MGT_SIGNALSDESC:
+                {
+                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Signal descriptor on ROOT termination..Not Supporting now\n");
+                    break;
+                }
+            case MGT_MODEMDESC:
+            case MGT_MUXDESC:
+            case MGT_EVBUFDESC:
+            case MGT_DIGMAPDESC:
+            case MGT_AUDITDESC:
+            case MGT_STATSDESC:
+                break;
+
+        }
+    }
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
 /*****************************************************************************************************************************/
 
 /*
@@ -773,6 +926,10 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
     if(MGT_TERMID_ROOT == termId->type.val){
         switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
                 "Modify request is for ROOT termination \n");
+
+        /* check if we have ito packg request */
+        mg_is_ito_pkg_req(mg_profile, inc_cmd);
+
         /* TODO */
 
 	/********************************************************************/

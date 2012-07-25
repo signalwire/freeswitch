@@ -1405,3 +1405,11 @@ switch_status_t  mg_util_build_obs_evt_desc (MgMgcoObsEvt *obs_event, MgMgcoRequ
    return SWITCH_STATUS_SUCCESS;
 }
 /*****************************************************************************************************************************/
+void mg_print_time()
+{
+    time_t now;
+    time(&now);
+
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Current Time = %s", ctime(&now));
+}
+/*****************************************************************************************************************************/
