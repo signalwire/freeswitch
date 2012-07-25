@@ -21,17 +21,6 @@ const char *mg_service_change_reason[] = {
 
 
 /*****************************************************************************************************************************/
-switch_status_t mg_activate_ito_timer(megaco_profile_t* profile)
-{
-
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Starting IT/ITO Timer \n");
-    mg_print_time();
-
-    switch_scheduler_add_task(switch_epoch_time_now(NULL)+profile->inact_tmr, mg_inactivity_timer_exp,"","media_gateway",0,profile,0);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-/*****************************************************************************************************************************/
 static void mg_inactivity_timer_exp(switch_scheduler_task_t *task)
 {
     megaco_profile_t* profile = (megaco_profile_t*) task->cmd_arg;
@@ -43,6 +32,17 @@ static void mg_inactivity_timer_exp(switch_scheduler_task_t *task)
     mg_send_ito_notify(profile);
 
     /*task->runtime = switch_epoch_time_now(NULL)+100; */ /* interval in seconds */
+}
+
+/*****************************************************************************************************************************/
+switch_status_t mg_activate_ito_timer(megaco_profile_t* profile)
+{
+
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Starting IT/ITO Timer \n");
+    mg_print_time();
+
+    switch_scheduler_add_task(switch_epoch_time_now(NULL)+profile->inact_tmr, mg_inactivity_timer_exp,"","media_gateway",0,profile,0);
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /*****************************************************************************************************************************/

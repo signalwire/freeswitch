@@ -74,6 +74,16 @@ void handle_mg_alarm(Pst *pst, MgMngmt *usta)
 	len = len + sprintf(prBuf+len, " Event ( ");
 	switch (usta->t.usta.alarm.event)
 	{
+        case LMG_EVENT_ALL_MGC_FAILED:
+            {
+                len = len + sprintf(prBuf+len, "ALL MGC Failed ");
+                break;
+            }
+        case LMG_EVENT_MGC_FAILED:
+            {
+                len = len + sprintf(prBuf+len, "MGC Failed ");
+                break;
+            }
 		case LMG_EVENT_TSAP_RECVRY_SUCCESS:
 			{
 				len = len + sprintf(prBuf+len, "TSAP recovery success");
