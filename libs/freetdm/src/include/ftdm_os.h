@@ -87,6 +87,45 @@ typedef uint64_t ftdm_time_t;
 /*! \brief Get value that is in range [vmin,vmax] */
 #define ftdm_clamp(val,vmin,vmax) ftdm_max(vmin,ftdm_min(val,vmax))
 
+/*!
+ * \brief Get offset of member in structure
+ * \param[in]	type	Type of struct
+ * \param[in]	member	Name of struct member
+ * \code
+ * 	struct a {
+ *		int foo;
+ * 		int bar;
+ * 	};
+ *
+ *	int offset_a_bar = ftdm_offset_of(struct a, bar); // 4 byte offset
+ * \endcode
+ */
+#define ftdm_offset_of(type,member) (uintptr_t)&(((type *)0)->member)
+
+/*!
+ * \brief Get pointer to enclosing structrure from pointer to embedded member
+ * \param[in]	ptr	Pointer to embedded member
+ * \param[in]	type	Type of parent/container structure
+ * \param[in]	member	Name of embedded member in parent/container struct
+ * \code
+ *	struct engine {
+ *		int nr_cyl;
+ *	};
+ *
+ *	struct car {
+ *		char model[10];
+ *		struct engine eng;	// struct engine embedded in car(!)
+ *	};
+ *
+ *	int somefunc(struct engine *e) {
+ *		struct car *c = ftdm_container_of(e, struct car, eng);
+ *
+ *		... do something with car ...
+ *	}
+ * \endcode
+ */
+#define ftdm_container_of(ptr,type,member) (type *)((uintptr_t)(ptr) - ftdm_offset_of(type, member))
+
 
 /*! \brief The memory handler. 
     Do not use directly this variable, use the memory macros and ftdm_global_set_memory_handler to override */	
