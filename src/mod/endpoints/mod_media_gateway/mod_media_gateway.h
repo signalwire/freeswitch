@@ -83,7 +83,10 @@ typedef struct mg_context_s mg_context_t;
 #define kSPAN_ID "span"
 #define kCHAN_ID "chan"
 
-typedef struct mg_termination_s {
+
+typedef struct mg_termination_s mg_termination_t;
+
+struct mg_termination_s {
     switch_memory_pool_t *pool;
     mg_termination_type_t type;
     const char *name; /*!< Megaco Name */    
@@ -91,6 +94,7 @@ typedef struct mg_termination_s {
     mg_context_t *context; /*!< Context in which this termination is connected, or NULL */
     megaco_profile_t *profile; /*!< Parent MG profile */
     MgMgcoReqEvtDesc  *active_events;     /* !< active megaco events */
+    mg_termination_t *next; /*!< List for physical terminations */
     
     union {
         struct {
@@ -115,7 +119,7 @@ typedef struct mg_termination_s {
             int channel;
         } tdm;
     } u;
-} mg_termination_t;
+};
 
 
 struct mg_context_s {
@@ -149,6 +153,7 @@ struct megaco_profile_s {
 	char*					rtp_termination_id_prefix;
 	int						rtp_termination_id_len;
 	char*                	peer_list[MG_MAX_PEERS];     /* MGC Peer ID LIST */
+    char*                   codec_prefs;
     
     switch_thread_rwlock_t  *contexts_rwlock;
     uint32_t next_context_id;

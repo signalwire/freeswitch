@@ -158,8 +158,8 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
         term_id = mg_rtp_request_id(profile);
         switch_snprintf(name, sizeof name, "%s/%d", profile->rtp_termination_id_prefix, term_id);
     } else {
-        /* TODO Math: look through TDM channels */
-        return NULL;
+        
+        return term;
     }
     
     switch_core_new_memory_pool(&pool);
@@ -176,8 +176,6 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
         term->u.rtp.codec = megaco_codec_str(profile->default_codec);
         term->u.rtp.term_id = term_id;
         term->name = switch_core_strdup(term->pool, name);
-    } else if (termtype == MG_TERM_TDM) {
-        /* XXX initialize tdm-specific fields */
     }
     
     switch_core_hash_insert_wrlock(profile->terminations, term->name, term, profile->terminations_rwlock);
@@ -214,8 +212,10 @@ void megaco_termination_destroy(mg_termination_t *term)
         term->active_events = NULL;
     }
     
-    switch_core_hash_delete_wrlock(term->profile->terminations, term->name, term->profile->terminations_rwlock);
-    switch_core_destroy_memory_pool(&term->pool);
+    if (term->type == MG_TERM_RTP) {
+        switch_core_hash_delete_wrlock(term->profile->terminations, term->name, term->profile->terminations_rwlock);
+        switch_core_destroy_memory_pool(&term->pool);   
+    }
 }
 
 switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination_t *term)
@@ -276,10 +276,11 @@ switch_status_t megaco_context_sub_all_termination(mg_context_t *ctx)
     
     /* Channels will automatically go to park once the bridge ends */
     if (ctx->terminations[0]) {
-        megaco_termination_destroy(ctx->terminations[0]);
-        ctx->terminations[0] = NULL;
-    } else if (ctx->terminations[1]) {
-        megaco_termination_destroy(ctx->terminations[1]);
+        megaco_context_sub_termination(ctx, ctx->terminations[0]);
+    }
+    
+    if (ctx->terminations[1]) {
+        megaco_context_sub_termination(ctx, ctx->terminations[1]);
     }
     
     return SWITCH_STATUS_SUCCESS;
@@ -316,11 +317,6 @@ mg_context_t *megaco_find_context_by_suid(SuId suId, uint32_t context_id)
     if(NULL == (profile = megaco_get_profile_by_suId(suId))){
 	    return NULL;
     }
-
-    
-    if (context_id > MG_MAX_CONTEXTS) {
-        return NULL;
-    }
     
     return megaco_get_context(profile, context_id);
 }
@@ -353,8 +349,6 @@ mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
 mg_context_t *megaco_choose_context(megaco_profile_t *profile)
 {
     mg_context_t *ctx;
-    int i = 0x0;
-    int j = 0x0;
     
     switch_thread_rwlock_wrlock(profile->contexts_rwlock);
     /* Try the next one */
@@ -366,14 +360,12 @@ mg_context_t *megaco_choose_context(megaco_profile_t *profile)
     for (; profile->next_context_id < MG_MAX_CONTEXTS; profile->next_context_id++) {
         if ((profile->contexts_bitmap[profile->next_context_id % 8] & (1 << (profile->next_context_id / 8))) == 0) {
             /* Found! */
+            int i = profile->next_context_id % MG_CONTEXT_MODULO;
             profile->contexts_bitmap[profile->next_context_id % 8] |= 1 << (profile->next_context_id / 8);
-            i = profile->next_context_id % MG_CONTEXT_MODULO;
             ctx = malloc(sizeof *ctx);
+            memset(ctx, 0, sizeof *ctx);
             ctx->context_id = profile->next_context_id;
             ctx->profile = profile;
-            for(j = 0; j< MG_CONTEXT_MAX_TERMS; j++){
-                ctx->terminations[j] = NULL;
-            }
 
             if (!profile->contexts[i]) {
                 profile->contexts[i] = ctx;
