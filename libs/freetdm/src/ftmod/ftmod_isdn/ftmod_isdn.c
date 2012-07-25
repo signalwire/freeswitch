@@ -2659,10 +2659,23 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(isdn_configure_span)
 
 	isdn_data = malloc(sizeof(*isdn_data));
 	assert(isdn_data != NULL);
-	memset(isdn_data, 0, sizeof(*isdn_data));
 
-	isdn_data->mode = Q931_TE;
+	memset(isdn_data, 0, sizeof(*isdn_data));
 	dialect = Q931_Dialect_Q931;
+
+	/* Use trunk_mode span parameter to set default */
+	switch (ftdm_span_get_trunk_mode(span)) {
+	case FTDM_TRUNK_MODE_NET:
+		ftdm_log(FTDM_LOG_INFO, "Span '%s' [s%d] defaulting to NET mode\n",
+			ftdm_span_get_name(span), ftdm_span_get_id(span));
+		isdn_data->mode = Q931_NT;
+		break;
+	default:
+		ftdm_log(FTDM_LOG_INFO, "Span '%s' [s%d] defaulting to USER mode\n",
+			ftdm_span_get_name(span), ftdm_span_get_id(span));
+		isdn_data->mode = Q931_TE;
+		break;
+	}
 
 	for (i = 0; ftdm_parameters[i].var; i++) {
 		const char *var = ftdm_parameters[i].var;
@@ -2725,6 +2738,16 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(isdn_configure_span)
 
 	if (!digit_timeout) {
 		digit_timeout = DEFAULT_DIGIT_TIMEOUT;
+	}
+
+	/* Check if modes match and log a message if they do not. Just to be on the safe side. */
+	if (isdn_data->mode == Q931_TE && ftdm_span_get_trunk_mode(span) == FTDM_TRUNK_MODE_NET) {
+		ftdm_log(FTDM_LOG_WARNING, "Span '%s' signalling set up for TE/CPE/USER mode, while port is running in NT/NET mode. You may want to check your 'trunk_mode' settings.\n",
+			ftdm_span_get_name(span));
+	}
+	else if (isdn_data->mode == Q931_NT && ftdm_span_get_trunk_mode(span) == FTDM_TRUNK_MODE_CPE) {
+		ftdm_log(FTDM_LOG_WARNING, "Span '%s' signalling set up for NT/NET mode, while port is running in TE/CPE/USER mode. You may want to check your 'trunk_mode' settings.\n",
+			ftdm_span_get_name(span));
 	}
 
 	/* allocate per b-chan data */
