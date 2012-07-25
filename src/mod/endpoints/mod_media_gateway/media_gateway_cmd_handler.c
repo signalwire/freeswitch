@@ -540,8 +540,14 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         MG_SET_VAL_PRES(new_ctxtId->val, mg_ctxt->context_id);
     }
     else {
-        /* context already present */
-        memcpy(new_ctxtId, &inc_cmd->contextId,sizeof(MgMgcoContextId));
+	    /* context already present */
+	    memcpy(new_ctxtId, &inc_cmd->contextId,sizeof(MgMgcoContextId));
+	    mg_ctxt =  megaco_get_context(mg_profile, inc_cmd->contextId.val.val);
+	    if(NULL == mg_ctxt){
+		    mg_util_set_err_string(&errTxt, " Resource Failure ");
+		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+		    goto error;
+	    }
     }
 
     /********************************************************************/
@@ -565,6 +571,17 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         /* allocate rtp term and associated the same to context */
         /********************************************************************/
     }else{  /* Physical termination */
+	   printf("termId->name.lcl.val[%s]\n",termId->name.lcl.val);
+	    term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
+
+	    if(NULL == term){
+		    mg_util_set_err_string(&errTxt, " Resource Failure ");
+		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+		    goto error;
+	    }
+
+	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
+
         
         /* get physical termination */
     }
@@ -672,9 +689,10 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 		MgMgcoLocalDesc   *local;
 		CmSdpInfoSet *psdp;
 		char* ipAddress[4];// = "192.168.1.1";
+		char* dup = strdup((char*)term->u.rtp.local_addr);
 		MgMgcoMediaDesc* media = &desc->u.media;
 
-		switch_split((char*)term->u.rtp.local_addr,'.',ipAddress);
+		switch_split(dup,'.',ipAddress);
 
 		printf("ipAddress[0]=%s, ipAddress[1]=%s, ipAddress[2]=%s,ipAddress[3]=%s\n",ipAddress[0],ipAddress[1],ipAddress[2],ipAddress[3]);
 
@@ -812,8 +830,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
 			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
 			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.type), CM_SDP_SPEC);
-			//MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
-			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), 2904);
+			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
 
 			if (mgUtlGrowList((void ***)&media->field.par.pflst, sizeof(CmSdpMedProtoFmts),
 						&media->field.par.numProtFmts, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
@@ -852,6 +869,8 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 				MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[0]->u.ptime), term->u.rtp.ptime);
 			}
 		}
+
+		free(dup);
 	}
 
 

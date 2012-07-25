@@ -119,7 +119,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     
     chan_id = atoi(szchanid);
     
-
     if (ftdm_span_find_by_name(span_name, &span) == FTDM_SUCCESS) {
          span_id = ftdm_span_get_id(span);   
     } else {

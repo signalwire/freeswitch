@@ -431,6 +431,8 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
     } else {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received unknown command [%s] in event.\n", !command ? "null" : command);
     }
+
+    return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
