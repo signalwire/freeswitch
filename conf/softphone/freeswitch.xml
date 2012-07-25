@@ -3,7 +3,7 @@
   <X-PRE-PROCESS cmd="set" data="auto_answer=false"/>
   <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
-  <X-PRE-PROCESS cmd="set" data="codec_prefs=CELT@48000h,G7221@32000h,G7221@16000h,G722,PCMU,PCMA,GSM"/>
+  <X-PRE-PROCESS cmd="set" data="codec_prefs=CELT@48000h,G722,PCMU,PCMA,GSM"/>
   <X-PRE-PROCESS cmd="set" data="external_rtp_ip=stun:stun.freeswitch.org"/>
   <X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.freeswitch.org"/>
   <X-PRE-PROCESS cmd="set" data="outbound_caller_name=FreeSWITCH"/>
@@ -86,10 +86,8 @@
 	<load module="mod_dptools"/>
 	<load module="mod_dialplan_xml"/>
 	<load module="mod_voipcodecs"/>
-	<load module="mod_ilbc"/>
 	<load module="mod_speex"/>
 	<load module="mod_celt"/>
-	<load module="mod_siren"/>
 	<load module="mod_sndfile"/>
 	<load module="mod_tone_stream"/>
 	<load module="mod_local_stream"/>

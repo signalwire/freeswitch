@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1344,7 +1344,8 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			}
 		}
 
-		if (switch_test_flag(listener, LFLAG_HANDLE_DISCO) && switch_epoch_time_now(NULL) > listener->linger_timeout) {
+		if (switch_test_flag(listener, LFLAG_HANDLE_DISCO) && 
+			listener->linger_timeout != (time_t) -1 && switch_epoch_time_now(NULL) > listener->linger_timeout) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_DEBUG, "linger timeout, closing socket\n");
 			status = SWITCH_STATUS_FALSE;
 			break;
@@ -1353,21 +1354,26 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		if (channel && switch_channel_down(channel) && !switch_test_flag(listener, LFLAG_HANDLE_DISCO)) {
 			switch_set_flag_locked(listener, LFLAG_HANDLE_DISCO);
 			if (switch_test_flag(listener, LFLAG_LINGER)) {
-				char message[128] = "";
 				char disco_buf[512] = "";
-
-				switch_snprintf(message, sizeof(message),
-								"Channel %s has disconnected, lingering by request from remote.\n", switch_channel_get_name(channel));
-				mlen = strlen(message);
-
+				
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_DEBUG, "%s Socket Linger %d\n", 
+								  switch_channel_get_name(channel), (int)listener->linger_timeout);
+				
 				switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
 								"Controlled-Session-UUID: %s\n"
-								"Content-Disposition: linger\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), (int) mlen);
+								"Content-Disposition: linger\n" 
+								"Channel-Name: %s\n"
+								"Linger-Time: %d\n"
+								"Content-Length: 0\n\n", 
+								switch_core_session_get_uuid(listener->session), switch_channel_get_name(channel), (int)listener->linger_timeout);
 
+
+				if (listener->linger_timeout != (time_t) -1) {
+					listener->linger_timeout += switch_epoch_time_now(NULL);
+				}
+				
 				len = strlen(disco_buf);
 				switch_socket_send(listener->sock, disco_buf, &len);
-				len = mlen;
-				switch_socket_send(listener->sock, message, &len);
 			} else {
 				status = SWITCH_STATUS_FALSE;
 				break;
@@ -2267,15 +2273,20 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 	} else if (!strncasecmp(cmd, "linger", 6)) {
 		if (listener->session) {
-			uint32_t linger_time = 600; /* sounds reasonable? */
+			time_t linger_time = 600; /* sounds reasonable? */
 			if (*(cmd+6) == ' ' && *(cmd+7)) { /*how long do you want to linger?*/
-				linger_time = (uint32_t)atoi(cmd+7);
+				linger_time = (time_t) atoi(cmd+7);
+			} else {
+				linger_time = (time_t) -1;
 			}
 
-			/*do we need a mutex to update linger_timeout ?*/
-			listener->linger_timeout = switch_epoch_time_now(NULL) + linger_time;
+			listener->linger_timeout = linger_time;
 			switch_set_flag_locked(listener, LFLAG_LINGER);
-			switch_snprintf(reply, reply_len, "+OK will linger %d seconds", linger_time);
+			if (listener->linger_timeout != (time_t) -1) {
+				switch_snprintf(reply, reply_len, "+OK will linger %d seconds", linger_time);
+			} else {
+				switch_snprintf(reply, reply_len, "+OK will linger");
+			}
 		} else {
 			switch_snprintf(reply, reply_len, "-ERR not controlling a session");
 		}

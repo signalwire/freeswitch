@@ -1,0 +1,84 @@
+FreeSWITCH Open Settlement Protocol (OSP) module
+
+This module provides OSP based call authentication, authorization, routing lookup and call detail record (CDR) collection services using standard FreeSWITCH application and dailplan interfaces.
+
+The OSP module can be configured by the following parameters in osp.conf.xml:
+
+Global parameters:
+
+<settings>
+	<param name="*NAME*" value="*VALUE*"/>
+</settings>
+
+Global parameter names and values can be:
+
+debug-info: Flag to show OSP module debug information. The default is "disabled".
+log-level: At which log level to show OSP module debug information. The default is "info".
+crypto-hardware: If to use hardware for OpenSSL. The default is "disabled".
+sip: Used SIP module and profile. The default is "sofia" and "external".
+h323: Used H.323 module and profile. The default is "h323" and "external". This option has not been implemented.
+iax: Used IAX2 module and profile. The default is "iax" and "external". This option has not been implemented.
+skype: Used Skype module and profile. The default is "skypopen" and "external". This option has not been implemented.
+default-protocol: The VoIP protocol for destinations with unknown/undefined protocol. The default is "sip".
+
+OSP provider parameters:
+
+<profiles>
+	<profile name="default">
+		<param name="*NAME*" value="*VALUE*"/>
+	</profile>
+</profiles>
+
+OSP provider parameter names ane values cab be:
+
+profile: OSP provider profile name.
+service-point-url: OSP service point URL. This parameter must be defined. Up to 8 URLs are allowed.
+device-ip: FreeSWITCH IP for OSP module. This parameter must be defined.
+ssl-lifetime: SSL lifetime. The default is 300 in seconds.
+http-max-connections: HTTP max connections. The default is 20.
+http-persistence: HTTP persistence. The default is 60 in seconds.
+http-retry-delay: HTTP retry delay. The default is 0 in seconds.
+http-retry-limit: HTTP retry times. The default is 2.
+http-timeout: HTTP timeout. The default is 10000 in ms.
+work-mode: OSP module work mode (direct and indirect). The default is "direct".
+service-type: OSP service type (voice and npquery). The default is "voice".
+max-destinations: Max destinations OSP server will return. It is up to 12. The default is 12.
+
+The OSP application is called in dial plan like this:
+
+<action application="osp" data="<profilename>"/>
+
+The OSP dialplan is called in dial plan like this:
+
+<param name="dialplan" value="osp:<profilename>"/>
+
+For both OSP application and dialplan, the <profilename> is an OSP service provider name configured in osp.conf.xml. If it is empty, profile "default" is used.
+
+Both OSP application and dialplan accept a set of inbound channel variables that are used to pass additional call information to OSP module. These channel variables include:
+
+osp_source_device: Actual source device IP address channel variable. It is only for FreeSWITH OSP module running in indirect mode.
+osp_source_nid: Source device network ID channel variable.
+osp_custom_info_N: Up to 8 custom info channel variables. N is the index starting from 1.
+osp_networkid_userparam: The URI user parameter name that is used to present destination network ID.
+osp_networkid_uriparam: The URI parameter name that is used to present destination network ID.
+osp_user_phone: Flag to add "user=phone" URI parameter. The default is "disabled".
+osp_outbound_proxy: Outbound proxy IP address channel variable.
+
+Both OSP application and dialplan also export a set of channel variables for outbound channels and FreeSWITCH dial plan logic (for OSP dialplan, some exported channel variables are not visible for dial plan). These channel variables include:
+
+osp_profile: Used OSP profile name. Used by outbound channels.
+osp_transaction_id: OSP transaction ID. Used by outbound channels.
+osp_calling: Original inbound calling number. Used by outbound channels.
+osp_called: Original inbound called number. Used by outbound channels.
+osp_start_time: Inbound call start time. Used by outbound channels.
+osp_source_device: Actual source device. Used by outbound channels. It is only for FreeSWITH OSP module running in indirect mode.
+osp_source_nid: Source network ID. Used by outbound channels.
+osp_destination_total: Total number of destinations from OSP servers. Used by outbound channels.
+osp_destination_count: Destination index. Used by outbound channels.
+osp_destination_ip: Destination IP. Used by outbound channels.
+osp_destination_nid: Destination network ID. Used by outbound channels.
+osp_authreq_status: Authorization request result status.
+osp_route_count: Number of supported destinations.
+osp_route_N: Destination route string. N is the index starting from 1.
+osp_auto_route: Bridge route string.
+

@@ -599,7 +599,7 @@ struct Transfer<T, false>
                 return SWITCH_STATUS_FALSE;
         }
 
-        switch_core_session_t *peer_session = switch_core_session_locate(switch_channel_get_variable(chan,SWITCH_SIGNAL_BOND_VARIABLE));
+        switch_core_session_t *peer_session = switch_core_session_locate(switch_channel_get_partner_uuid(chan));
 
         if(!peer_session)
         {
@@ -662,7 +662,7 @@ struct Transfer<T, false>
             switch_channel_t * peer = switch_core_session_get_channel(peer_session);
 
             /* put the channel in hold */
-            //switch_core_session_t *session = switch_core_session_locate(switch_channel_get_variable(chan,SWITCH_SIGNAL_BOND_VARIABLE));
+            //switch_core_session_t *session = switch_core_session_locate(switch_channel_get_partner_uuid(chan));
             //switch_channel_t *chan_core = switch_core_session_get_channel(session);
 
             const char *stream;
@@ -709,7 +709,7 @@ struct Transfer<T, false>
             switch_core_session_rwunlock(pvt->session());
             switch_core_session_rwunlock(peer_session);
 
-            //switch_ivr_unhold_uuid(switch_channel_get_variable(chan,SWITCH_SIGNAL_BOND_VARIABLE));
+            //switch_ivr_unhold_uuid(switch_channel_get_partner_uuid(chan));
         }
         catch (ScopedLockFailed & err)
         {

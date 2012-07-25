@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -41,6 +41,7 @@
 #define SWITCH_IVR_H
 
 #include <switch.h>
+#include "switch_json.h"
 
 SWITCH_BEGIN_EXTERN_C struct switch_unicast_conninfo {
 	switch_core_session_t *session;
@@ -82,6 +83,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 															char *local_ip,
 															switch_port_t local_port,
 															char *remote_ip, switch_port_t remote_port, char *transport, char *flags);
+/*!
+  \brief Generate an JSON CDR report.
+  \param session the session to get the data from.
+  \param json_cdr pointer to the json object
+  \return SWITCH_STATUS_SUCCESS if successful
+  \note on success the json object must be freed
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session_t *session, cJSON **json_cdr, switch_bool_t urlencode);
 
 /*!
   \brief Generate an XML CDR report.
@@ -268,6 +277,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_start_input_timers(swit
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, uint32_t limit, switch_file_handle_t *fh);
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_pop_eavesdropper(switch_core_session_t *session, switch_core_session_t **sessionp);
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_exec_all(switch_core_session_t *session, const char *app, const char *arg);
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_update_display(switch_core_session_t *session, const char *name, const char *number);
 
 /*!
   \brief Eavesdrop on a another session
@@ -956,6 +970,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_insert_file(switch_core_session_t *se
 SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t **reply, switch_event_t *message, const char *new_proto);
 SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name, const char *domain_name);
 SWITCH_DECLARE(switch_status_t) switch_ivr_kill_uuid(const char *uuid, switch_call_cause_t cause);
+SWITCH_DECLARE(switch_status_t) switch_ivr_blind_transfer_ack(switch_core_session_t *session, switch_bool_t success);
 
 /** @} */
 

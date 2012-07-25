@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -230,13 +230,14 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 #if USE_OPENPTY
     if (openpty(&modem->master, &modem->slave, NULL, NULL, NULL)) {
 
-	if (modem->master < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to initialize pty\n");
-		status = SWITCH_STATUS_FALSE;
-		goto end;
-    }
+		if (modem->master < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to initialize pty\n");
+			status = SWITCH_STATUS_FALSE;
+			goto end;
+		}
 
-	modem->stty = ttyname(modem->slave);
+		modem->stty = ttyname(modem->slave);
+	}
 #else
 #if WIN32
 	modem->slot = 4+globals.NEXT_ID++; /* need work here we start at COM4 for now*/

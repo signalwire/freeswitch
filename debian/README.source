@@ -1,0 +1,64 @@
+FreeSWITCH for Debian
+--------------
+
+You may be reading this because you're wondering where all the files
+are in debian/, such as control.
+
+Because FreeSWITCH has so many modules it was necessary to create a
+system to autogenerate the majority of the packaging.  This in done
+mostly in the file debian/bootstrap.sh.  This bootstrap needs to run
+before any other step of the packaging, though we do try to
+autogenerate it when possible.
+
+The build dependencies, runtime dependencies, and other details about
+modules can be configured in the debian/control-modules file.  Even
+though this file looks a bit like a debian control file and has a
+similar format, we are parsing this file ourselves so the format is a
+bit more restricted.
+
+debian/control-modules currently supports the following fields:
+
+  # lines that begin with the hash character are comments
+  #
+  # every block must start with a Module field
+  Module: <category>/<module_name>
+  Description: <short description>
+   <long description> # empty lines with "."s are not yet supported
+  Build-Depends: <build deps for this module>
+  Depends: <runtime deps for this module>
+  Recommends: <recommended packages>
+  Suggests: <suggested packages>
+  Distro-Conflicts: <distributions on which this module should not be built> # not yet implemented
+
+During bootstrap we build a file control-modules.gen.  If the
+control-modules file is properly formatted, this generated file should
+be identical.  This is a sanity check mechanism for our parsing, as
+well as a way to automatically reorganize the file.
+
+If the file debian/modules.conf is present, we read that file and only
+build and package the files listed there.  Otherwise, we build every
+module except the ones that either should not be packaged, or for
+which we don't yet have good packaging.
+
+The format of debian/modules.conf is:
+
+  ## comments should start with two hash characters
+  <category>/<module_name>
+
+To build this package, I recommend running the following from the root
+directory of your FS git working tree:
+
+  distro=sid
+  ver="$(cat build/next-release.txt | sed -e 's/-/~/g')~n$(date +%Y%m%dT%H%M%SZ)-1~${distro}+1"
+  git clean -fdx && git reset --hard HEAD
+  ./build/set-fs-version.sh "$ver"
+  git add configure.in && git commit -m "bump to custom v$ver"
+  (cd debian && ./bootstrap.sh -c $distro)
+  dch -b -m -v "$ver" --force-distribution -D "$suite" "Custom build."
+  git-buildpackage -b -us -uc \
+    --git-verbose \
+    --git-pbuilder --git-dist=$distro \
+    --git-compression-level=1v --git-compression=xz
+  git reset --hard HEAD^
+
+ -- Travis Cross <tc@traviscross.com>, Thu, 24 May 2012 16:35:57 +0000

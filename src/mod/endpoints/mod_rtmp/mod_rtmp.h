@@ -616,7 +616,7 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 void rtmp_send_event(rtmp_session_t *rsession, switch_event_t *event);
 void rtmp_notify_call_state(switch_core_session_t *session);
 void rtmp_send_display_update(switch_core_session_t *session);
-void rtmp_send_incoming_call(switch_core_session_t *session);
+void rtmp_send_incoming_call(switch_core_session_t *session, switch_event_t *var_event);
 void rtmp_send_onhangup(switch_core_session_t *session);
 void rtmp_add_registration(rtmp_session_t *rsession, const char *auth, const char *nickname);
 void rtmp_clear_registration(rtmp_session_t *rsession, const char *auth, const char *nickname);

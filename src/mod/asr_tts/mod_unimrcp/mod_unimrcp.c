@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2009-2010, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2009-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -27,6 +27,8 @@
  * Brian West <brian@freeswitch.org>
  * Christopher M. Rienzo <chris@rienzo.net>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
+ *
+ * Maintainer: Christopher M. Rienzo <chris@rienzo.net>
  *
  * mod_unimrcp.c -- UniMRCP module (MRCP client)
  *

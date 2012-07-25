@@ -48,7 +48,7 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 int main(void)
 {
 	esl_global_set_default_logger(7);
-	esl_listen("localhost", 8084, mycallback, 100000);
+	esl_listen_threaded("localhost", 8084, mycallback, 100000);
 	
 	return 0;
 }

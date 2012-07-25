@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -120,6 +120,7 @@ struct switch_core_session {
 	switch_codec_t *video_write_codec;
 
 	switch_codec_implementation_t read_impl;
+	switch_codec_implementation_t real_read_impl;
 	switch_codec_implementation_t write_impl;
 	switch_codec_implementation_t video_read_impl;
 	switch_codec_implementation_t video_write_impl;
@@ -171,6 +172,8 @@ struct switch_core_session {
 	uint32_t soft_lock;
 	switch_ivr_dmachine_t *dmachine[2];
 	plc_state_t *plc;
+	uint8_t recur_buffer[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_size_t recur_buffer_len;
 };
 
 struct switch_media_bug {
@@ -199,6 +202,7 @@ struct switch_media_bug {
 	uint32_t record_pre_buffer_count;
 	uint32_t record_pre_buffer_max;
 	switch_frame_t *ping_frame;
+	switch_frame_t *read_demux_frame;
 	struct switch_media_bug *next;
 };
 
@@ -261,6 +265,10 @@ struct switch_runtime {
 	uint32_t db_handle_timeout;
 	int cpu_count;
 	uint32_t time_sync;
+	char *core_db_pre_trans_execute;
+	char *core_db_post_trans_execute;
+	char *core_db_inner_pre_trans_execute;
+	char *core_db_inner_post_trans_execute;
 };
 
 extern struct switch_runtime runtime;

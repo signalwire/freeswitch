@@ -2,7 +2,7 @@
 ##########################################################################
 #  rss2ivr.pl -- A Script to turn an RSS feed into audio files.
 #
-#  Copyright (C) 2006, Anthony Minessale
+#  Copyright (C) 2006-2012, Anthony Minessale
 #
 #  Anthony Minessale <anthm@freeswitch.org>
 #

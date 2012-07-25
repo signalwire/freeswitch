@@ -267,6 +267,9 @@ NoCopy &NoCopy::operator=(NoCopy &n)
 {
   cerr << "ABORT: NoCopy::operator= used" << endl;
   abort();
+#ifdef WIN32
+  return n;
+#endif //WIN32
 }
 
 #endif // NDEBUG

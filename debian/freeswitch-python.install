@@ -1,5 +1,0 @@
-opt/freeswitch/conf/autoload_configs/python.conf.xml
-opt/freeswitch/mod/mod_python.so*
-usr/lib/python2.*/*-packages/freeswitch.py*
-usr/lib/python2.*/*-packages/ESL.py*
-usr/lib/python2.*/*-packages/_ESL.so*

@@ -1,3 +1,18 @@
+freeswitch (1.2.0)
+	config: add screen_confirm macro to lang/en/ivr/sounds.xml  (r:9ea3ce66)
+	config: support for --with-logfilesdir, --with-dbdir, --with-htdocsdir, --with-soundsdir, --with-grammardir, --with-scriptdir and --with-recordin
+	gsdir (r:7ae3f5b7/FS-302)
+	core: Add RECORD_STEREO_SWAP to reverse the record channels (r:d5042f2c/FS-3069)
+	core: api_on_startup (r:e164b76c)
+	mod_conference: Add auto-record filename to conference_recording channel variable and ability to pull filename from API (r:b9295fd5/FS-1573)
+	mod_conference: Convenience feature in mod_conference: apply sub cmds to non_moderator members (r:04295ac9/FS-3249)
+	mod_conference: New conference commands: get and set (r:ab5f3f28/FS-3254)
+	mod_commands: allow system API command to capture output from the executed command  (r:d7a37e97)
+	mod_posix_timer: New timer module mod_posix_timer (r:9d7e9e67/FS-3731)
+	mod_sofia: Add presence-privacy parameter to exclude extension numbers from the distributed presence string (r:c6633fa3/FS-849)
+	mod_spandsp:  Add T31 modem support to mod_spandsp - similar to iaxmodem only wired into FS.  Also merge configs into single spandsp.conf.xml --see in tree example--  (r:d91f67d0)
+	mod_valet_parking: add orbit feature to valet_parking similar to mod_fifo (r:09725e2b)
+
 freeswitch (1.0.7)
 
 	build: Add mod_silk to windows build

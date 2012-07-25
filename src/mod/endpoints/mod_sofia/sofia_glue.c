@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Ken Rice <krice@freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Eliot Gable <egable AT.AT broadvox.com>
@@ -184,7 +184,6 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	int rate;
 	int already_did[128] = { 0 };
 	int ptime = 0, noptime = 0;
-	const char *zrtp;
 
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP", 
 					port, secure ? "S" : "");
@@ -344,8 +343,11 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=ptime:%d\n", cur_ptime);
 	}
 
-	if ((zrtp = switch_channel_get_variable(tech_pvt->channel, "sdp_zrtp_hash_string"))) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=zrtp-hash:%s\n", zrtp); 
+	if (tech_pvt->local_sdp_audio_zrtp_hash) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Adding audio a=zrtp-hash:%s\n",
+						  tech_pvt->local_sdp_audio_zrtp_hash);
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=zrtp-hash:%s\n",
+						tech_pvt->local_sdp_audio_zrtp_hash);
 	}
 
 	if (sr) {
@@ -391,7 +393,6 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
 	int verbose_sdp = 0;
-	const char *zrtp;
 
 	sofia_glue_check_dtmf_type(tech_pvt);
 
@@ -545,8 +546,12 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
 		}
 
-		if ((zrtp = switch_channel_get_variable(tech_pvt->channel, "sdp_zrtp_hash_string"))) {
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=zrtp-hash:%s\n", zrtp); 
+
+		if (tech_pvt->local_sdp_audio_zrtp_hash) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Adding audio a=zrtp-hash:%s\n",
+							  tech_pvt->local_sdp_audio_zrtp_hash);
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=zrtp-hash:%s\n",
+							tech_pvt->local_sdp_audio_zrtp_hash);
 		}
 
 		if (sr) {
@@ -683,7 +688,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 					pass_fmtp = NULL;
 
-					if (switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) {
+					if (switch_channel_get_partner_uuid(tech_pvt->channel)) {
 						if ((of = switch_channel_get_variable_partner(tech_pvt->channel, "sip_video_fmtp"))) {
 							pass_fmtp = of;
 						}
@@ -746,6 +751,13 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 					}
 				}
 				
+			}
+
+			if (tech_pvt->local_sdp_video_zrtp_hash) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Adding video a=zrtp-hash:%s\n",
+								  tech_pvt->local_sdp_video_zrtp_hash);
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=zrtp-hash:%s\n",
+								tech_pvt->local_sdp_video_zrtp_hash);
 			}
 		}
 	}
@@ -1614,7 +1626,6 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	char vport_buf[25] = "";
 	char *new_sdp;
 	int bad = 0;
-	int skip_video = 0, skip_audio = 0, skip_image = 0;
 
 	if (zstr(tech_pvt->local_sdp_str)) {
 		return;
@@ -1648,14 +1659,6 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	pe = p + strlen(p);
 	qe = q + len - 1;
 
-
-	if (switch_stristr("m=video 0", p)) {
-		skip_video = 1;
-	} else if (switch_stristr("m=audio 0", p)) {
-		skip_audio = 1;
-	} else if (switch_stristr("m=image 0", p)) {
-		skip_image = 1;
-	}
 
 	while (p && *p) {
 		if (p >= pe) {
@@ -1748,7 +1751,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 			}
 
-		} else if ((!skip_audio && !strncmp("m=audio ", p, 8)) || (!skip_image && !strncmp("m=image ", p, 8))) {
+		} else if ((!strncmp("m=audio ", p, 8) && *(p + 8) != '0') || (!strncmp("m=image ", p, 8) && *(p + 8) != '0')) {
 			strncpy(q, p, 8);
 			p += 8;
 
@@ -1784,7 +1787,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 			has_audio++;
 
-		} else if (!skip_video && !strncmp("m=video ", p, 8)) {
+		} else if (!strncmp("m=video ", p, 8) && *(p + 8) != '0') {
 			if (!has_video) {
 				sofia_glue_tech_choose_video_port(tech_pvt, 1);
 				tech_pvt->video_rm_encoding = "PROXY-VID";
@@ -2066,6 +2069,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *mp = NULL, *mp_type = NULL;
 	char *record_route = NULL;
 	const char *recover_via = NULL;
+	int require_timer = 1;
+
 
 	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
 		const char *recover_contact = switch_channel_get_variable(tech_pvt->channel, "sip_recover_contact");
@@ -2082,7 +2087,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 
-	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
+	if ((rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER))) {
+		switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, NULL);
+	}
 
 	switch_assert(tech_pvt != NULL);
 
@@ -2093,6 +2100,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (!caller_profile) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
+	}
+
+
+	if ((val = switch_channel_get_variable_dup(channel, "sip_require_timer", SWITCH_FALSE, -1)) && switch_false(val)) {
+		require_timer = 0;
 	}
 
 
@@ -2355,28 +2367,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "sip_to_host", sofia_glue_get_host(to_str, switch_core_session_get_pool(session)));
 		switch_channel_set_variable(channel, "sip_from_host", sofia_glue_get_host(from_str, switch_core_session_get_pool(session)));
 
-		if (!switch_channel_get_variable(channel, "presence_id")) {
-			char *from = switch_core_session_strdup(session, from_str);
-			const char *s;
-
-			if ((s = switch_stristr("<", from))) {
-				from = (char *)s + 1;
-			}
-
-			if (!strncasecmp(from, "sip:", 4)) {
-				from += 4;
-			}
-
-			if (!strncasecmp(from, "sips:", 5)) {
-				from += 5;
-			}
-
-			if ((p = strchr(from, ':')) || (p = strchr(from, ';')) || (p = strchr(from, '>'))) {
-				*p++ = '\0';
-			}
-			
-			switch_channel_set_variable(channel, "presence_id", from);
-		}
 
 		if (!(tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 										NUTAG_URL(url_str),
@@ -2638,6 +2628,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE)),
 				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL)),
 				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),
+				   TAG_IF(!require_timer, NUTAG_TIMER_AUTOREQUIRE(0)),
 				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_HOLD(holdstr)), TAG_END());
 	} else {
 		nua_invite(tech_pvt->nh,
@@ -2663,6 +2654,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),
 				   TAG_IF(!zstr(invite_route_uri), NUTAG_INITIAL_ROUTE_STR(invite_route_uri)),
 				   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
+				   TAG_IF(!require_timer, NUTAG_TIMER_AUTOREQUIRE(0)),
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
 				   NUTAG_MEDIA_ENABLE(0),
 				   SIPTAG_CONTENT_TYPE_STR(mp_type ? mp_type : "application/sdp"),
@@ -3153,6 +3145,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	uint32_t rtp_hold_timeout_sec = tech_pvt->profile->rtp_hold_timeout_sec;
 	char *timer_name = NULL;
 	const char *var;
+	uint32_t delay = tech_pvt->profile->rtp_digit_delay;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -3168,10 +3161,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	if ((var = switch_channel_get_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
 		sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
-	}
-
-	if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_liberal_dtmf")) && switch_true(var)) {
-		sofia_set_flag_locked(tech_pvt, TFLAG_LIBERAL_DTMF);
 	}
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
@@ -3554,6 +3543,20 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			tech_pvt->cng_pt = 0;
 		}
 
+		if (((val = switch_channel_get_variable(tech_pvt->channel, "rtp_digit_delay")))) {
+			int delayi = atoi(val);
+			if (delayi < 0) delayi = 0;
+			delay = (uint32_t) delayi;
+		}
+
+
+		if (delay) {
+			switch_rtp_set_interdigit_delay(tech_pvt->rtp_session, delay);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+							  "%s Set rtp dtmf delay to %u\n", switch_channel_get_name(tech_pvt->channel), delay);
+			
+		}
+
 		if (tech_pvt->cng_pt && !sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", tech_pvt->cng_pt);
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
@@ -3574,9 +3577,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 
 
-		if (switch_channel_test_flag(tech_pvt->channel, CF_ZRTP_PASS)) {
+		if (switch_channel_test_flag(tech_pvt->channel, CF_ZRTP_PASSTHRU)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "Activating ZRTP PROXY MODE\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Disable NOTIMER_DURING_BRIDGE\n");
 			sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Activating audio UDPTL mode\n");
 			switch_rtp_udptl_mode(tech_pvt->rtp_session);
 		}
 
@@ -3763,7 +3768,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 						}
 					}
 				}
-
+				if (switch_channel_test_flag(tech_pvt->channel, CF_ZRTP_PASSTHRU)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Activating video UDPTL mode\n");
+					switch_rtp_udptl_mode(tech_pvt->video_rtp_session);
+				}
 
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
@@ -3848,7 +3856,93 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 
 }
 
+void sofia_glue_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session)
+{
+	switch_channel_t *aleg_channel = switch_core_session_get_channel(aleg_session);
+	private_object_t *aleg_tech_pvt = switch_core_session_get_private(aleg_session);
+	switch_channel_t *bleg_channel = switch_core_session_get_channel(bleg_session);
+	private_object_t *bleg_tech_pvt = switch_core_session_get_private(bleg_session);
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Deciding whether to pass zrtp-hash between a-leg and b-leg\n");
+	if (!(switch_channel_test_flag(aleg_tech_pvt->channel, CF_ZRTP_PASSTHRU_REQ))) {
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "CF_ZRTP_PASSTHRU_REQ not set on a-leg, so not propagating zrtp-hash\n");
+		return;
+	}
+	if (aleg_tech_pvt->remote_sdp_audio_zrtp_hash) {
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Passing a-leg remote zrtp-hash (audio) to b-leg\n");
+		bleg_tech_pvt->local_sdp_audio_zrtp_hash = switch_core_session_strdup(bleg_tech_pvt->session, aleg_tech_pvt->remote_sdp_audio_zrtp_hash);
+		switch_channel_set_variable(bleg_channel, "l_sdp_audio_zrtp_hash", bleg_tech_pvt->local_sdp_audio_zrtp_hash);
+	}
+	if (aleg_tech_pvt->remote_sdp_video_zrtp_hash) {
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Passing a-leg remote zrtp-hash (video) to b-leg\n");
+		bleg_tech_pvt->local_sdp_video_zrtp_hash = switch_core_session_strdup(bleg_tech_pvt->session, aleg_tech_pvt->remote_sdp_video_zrtp_hash);
+		switch_channel_set_variable(bleg_channel, "l_sdp_video_zrtp_hash", bleg_tech_pvt->local_sdp_video_zrtp_hash);
+	}
+	if (bleg_tech_pvt->remote_sdp_audio_zrtp_hash) {
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Passing b-leg remote zrtp-hash (audio) to a-leg\n");
+		aleg_tech_pvt->local_sdp_audio_zrtp_hash = switch_core_session_strdup(aleg_tech_pvt->session, bleg_tech_pvt->remote_sdp_audio_zrtp_hash);
+		switch_channel_set_variable(aleg_channel, "l_sdp_audio_zrtp_hash", aleg_tech_pvt->local_sdp_audio_zrtp_hash);
+	}
+	if (bleg_tech_pvt->remote_sdp_video_zrtp_hash) {
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Passing b-leg remote zrtp-hash (video) to a-leg\n");
+		aleg_tech_pvt->local_sdp_video_zrtp_hash = switch_core_session_strdup(aleg_tech_pvt->session, bleg_tech_pvt->remote_sdp_video_zrtp_hash);
+		switch_channel_set_variable(aleg_channel, "l_sdp_video_zrtp_hash", aleg_tech_pvt->local_sdp_video_zrtp_hash);
+	}
+}
 
+void sofia_glue_pass_zrtp_hash(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	switch_core_session_t *other_session;
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Deciding whether to pass zrtp-hash between legs\n");
+	if (!(switch_channel_test_flag(tech_pvt->channel, CF_ZRTP_PASSTHRU_REQ))) {
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "CF_ZRTP_PASSTHRU_REQ not set, so not propagating zrtp-hash\n");
+		return;
+	} else if (!(switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "No partner channel found, so not propagating zrtp-hash\n");
+		return;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Found peer channel; propagating zrtp-hash if set\n");
+		sofia_glue_pass_zrtp_hash2(session, other_session);
+		switch_core_session_rwunlock(other_session);
+	}
+}
+
+static void find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	sdp_media_t *m;
+	sdp_attribute_t *attr;
+	int got_audio = 0, got_video = 0;
+
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Looking for zrtp-hash\n");
+	for (m = sdp->sdp_media; m; m = m->m_next) {
+		if (got_audio && got_video) break;
+		if (m->m_port && ((m->m_type == sdp_media_audio && !got_audio)
+						  || (m->m_type == sdp_media_video && !got_video))) {
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (zstr(attr->a_name)) continue;
+				if (strcasecmp(attr->a_name, "zrtp-hash") || !(attr->a_value)) continue;
+				if (m->m_type == sdp_media_audio) {
+					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
+									  "Found audio zrtp-hash; setting r_sdp_audio_zrtp_hash=%s\n", attr->a_value);
+					switch_channel_set_variable(channel, "r_sdp_audio_zrtp_hash", attr->a_value);
+					tech_pvt->remote_sdp_audio_zrtp_hash = switch_core_session_strdup(tech_pvt->session, attr->a_value);
+					got_audio++;
+				} else if (m->m_type == sdp_media_video) {
+					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
+									  "Found video zrtp-hash; setting r_sdp_video_zrtp_hash=%s\n", attr->a_value);
+					switch_channel_set_variable(channel, "r_sdp_video_zrtp_hash", attr->a_value);
+					tech_pvt->remote_sdp_video_zrtp_hash = switch_core_session_strdup(tech_pvt->session, attr->a_value);
+					got_video++;
+				}
+				switch_channel_set_flag(channel, CF_ZRTP_HASH);
+				break;
+			}
+		}
+	}
+}
 
 void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp)
 {
@@ -3892,12 +3986,14 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 		if (zstr(attr->a_name)) {
 			continue;
 		}
-
 		if (!strcasecmp(attr->a_name, "ptime")) {
 			dptime = atoi(attr->a_value);
 			break;
 		}
 	}
+
+	find_zrtp_hash(session, sdp);
+	sofia_glue_pass_zrtp_hash(session);
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		ptime = dptime;
@@ -4060,6 +4156,10 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 {
 	int changed = 0;
 
+	if (sofia_test_flag(tech_pvt, TFLAG_SLA_BARGE) || sofia_test_flag(tech_pvt, TFLAG_SLA_BARGING)) {
+		return 0;
+	}
+
 	if (sendonly && switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
 		if (!sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 			const char *stream;
@@ -4091,9 +4191,9 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				if (!strcasecmp(stream, "indicate_hold")) {
 					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);
 					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);
-					switch_ivr_hold_uuid(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), NULL, 0);
+					switch_ivr_hold_uuid(switch_channel_get_partner_uuid(tech_pvt->channel), NULL, 0);
 				} else {
-					switch_ivr_broadcast(switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE), stream,
+					switch_ivr_broadcast(switch_channel_get_partner_uuid(tech_pvt->channel), stream,
 										 SMF_ECHO_ALEG | SMF_LOOP | SMF_PRIORITY);
 					switch_yield(250000);
 				}
@@ -4119,7 +4219,7 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 			}
 
-			if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(uuid))) {
+			if ((uuid = switch_channel_get_partner_uuid(tech_pvt->channel)) && (b_session = switch_core_session_locate(uuid))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 
 				if (switch_channel_test_flag(tech_pvt->channel, CF_HOLD)) {
@@ -4490,6 +4590,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		}
 	}
 
+	if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_liberal_dtmf")) && switch_true(val)) {
+		sofia_set_flag_locked(tech_pvt, TFLAG_LIBERAL_DTMF);
+	}
+
 	if ((m = sdp->sdp_media) && 
 		(m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive || 
 		 (m->m_connections && m->m_connections->c_address && !strcmp(m->m_connections->c_address, "0.0.0.0")))) {
@@ -4568,6 +4672,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		switch_stristr("T38FaxTranscodingJBIG:", r_sdp)) {
 		switch_channel_set_variable(tech_pvt->channel, "t38_broken_boolean", "true");
 	}
+
+	find_zrtp_hash(session, sdp);
+	sofia_glue_pass_zrtp_hash(session);
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
@@ -4690,9 +4797,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
 					maxptime = atoi(attr->a_value);
-				} else if (!strcasecmp(attr->a_name, "zrtp-hash") && attr->a_value) {
-					switch_channel_set_variable(tech_pvt->channel, "sdp_zrtp_hash_string", attr->a_value);
-					switch_channel_set_flag(tech_pvt->channel, CF_ZRTP_HASH);
 				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 					int crypto_tag;
 
@@ -4875,12 +4979,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
 				
 				if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
-					ptime = codec_ms = 30;
+					codec_ms = 30;
 				}
 				
 				if (zstr(map->rm_fmtp)) {
 					if (!strcasecmp(map->rm_encoding, "ilbc")) {
-						ptime = codec_ms = 30;
+						codec_ms = 30;
 						map_bit_rate = 13330;
 					}
 				} else {
@@ -5228,7 +5332,7 @@ void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 	switch_core_session_t *other_session;
 	switch_channel_t *other_channel;
 
-	if ((val = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE))
+	if ((val = switch_channel_get_partner_uuid(tech_pvt->channel))
 		&& (other_session = switch_core_session_locate(val))) {
 		other_channel = switch_core_session_get_channel(other_session);
 		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
@@ -5802,7 +5906,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 		}
 
-		if (switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) {
+		if (switch_channel_get_partner_uuid(channel)) {
 			sofia_set_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE);
 		} else {
 			switch_xml_t callflow, param, x_extension;
@@ -5849,6 +5953,7 @@ int sofia_glue_recover(switch_bool_t flush)
 		for (m = matches->head; m; m = m->next) {
 			if ((profile = sofia_glue_find_profile(m->val))) {
 				r += sofia_glue_profile_recover(profile, flush);
+				sofia_glue_release_profile(profile);
 			}
 		}
 		switch_console_free_matches(&matches);
@@ -5959,7 +6064,7 @@ void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *sess
 	}
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
-		xml_cdr_text = switch_xml_toxml(cdr, SWITCH_FALSE);
+		xml_cdr_text = switch_xml_toxml_nolock(cdr, SWITCH_FALSE);
 		switch_xml_free(cdr);
 	}
 
@@ -6634,7 +6739,7 @@ void sofia_glue_free_destination(sofia_destination_t *dst)
 }
 
 switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *user, const char *host, const char *event, const char *contenttype,
-									   const char *body, const char *o_contact, const char *network_ip)
+									   const char *body, const char *o_contact, const char *network_ip, const char *call_id)
 {
 	char *id = NULL;
 	nua_handle_t *nh;
@@ -6697,6 +6802,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 			   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 			   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
 			   TAG_IF(event, SIPTAG_EVENT_STR(event)),
+			   TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
 			   TAG_IF(contenttype, SIPTAG_CONTENT_TYPE_STR(contenttype)), TAG_IF(body, SIPTAG_PAYLOAD_STR(body)), TAG_END());
 
 	switch_safe_free(contact);
@@ -6722,7 +6828,7 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 
 
 
-	if ((uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE))
+	if ((uuid = switch_channel_get_partner_uuid(tech_pvt->channel))
 		&& (other_session = switch_core_session_locate(uuid))) {
 
 		other_channel = switch_core_session_get_channel(other_session);
@@ -7030,14 +7136,17 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		
 
 		if (contact->m_url->url_params) {
-			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s;%s>%s",
+			contact_str = switch_mprintf("%s <sip:%s%s%s%s%s%s;%s>%s",
 										 display, contact->m_url->url_user,
+										 contact->m_url->url_user ? "@" : "",
 										 ipv6 ? "[" : "",
 										 contact_host, ipv6 ? "]" : "", new_port, contact->m_url->url_params, np->is_nat ? ";fs_nat=yes" : "");
 		} else {
-			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s>%s",
+			contact_str = switch_mprintf("%s <sip:%s%s%s%s%s%s>%s",
 										 display,
-										 contact->m_url->url_user, ipv6 ? "[" : "", contact_host, ipv6 ? "]" : "", new_port, np->is_nat ? ";fs_nat=yes" : "");
+										 contact->m_url->url_user,
+										 contact->m_url->url_user ? "@" : "",
+										 ipv6 ? "[" : "", contact_host, ipv6 ? "]" : "", new_port, np->is_nat ? ";fs_nat=yes" : "");
 		}
 	}
 		

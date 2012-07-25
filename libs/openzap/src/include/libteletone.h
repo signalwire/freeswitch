@@ -1,6 +1,6 @@
 /* 
  * libteletone
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -37,7 +37,7 @@
  * source code outside the scope of the openzap library will nullify the
  * following license and reinact the MPL 1.1 as stated above.
  *
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2005-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -314,8 +314,6 @@ static void destroy_session_elem(session_elem_t *session_element)
 		switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);
 		switch_core_session_rwunlock(session);
 	}
-	/* this allows the application threads to exit */
-	switch_clear_flag_locked(session_element, LFLAG_SESSION_ALIVE);
 	switch_core_destroy_memory_pool(&session_element->pool);
 	/*switch_safe_free(s); */
 }
@@ -821,7 +819,7 @@ static void listener_main_loop(listener_t *listener)
 
 		/* do we need the mutex when reading? */
 		/*switch_mutex_lock(listener->sock_mutex); */
-		status = ei_xreceive_msg_tmo(listener->sockfd, &msg, &buf, 100);
+		status = ei_xreceive_msg_tmo(listener->sockfd, &msg, &buf, 10);
 		/*switch_mutex_unlock(listener->sock_mutex); */
 
 		switch (status) {
@@ -1285,7 +1283,6 @@ session_elem_t *attach_call_to_registered_process(listener_t *listener, char *re
 
 	session_element->process.type = ERLANG_REG_PROCESS;
 	session_element->process.reg_name = switch_core_session_strdup(session, reg_name);
-	switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 	/* attach the session to the listener */
 	add_session_elem_to_listener(listener, session_element);
 
@@ -1299,7 +1296,6 @@ session_elem_t *attach_call_to_pid(listener_t *listener, erlang_pid * pid, switc
 
 	session_element->process.type = ERLANG_PID;
 	memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
-	switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 	/* attach the session to the listener */
 	add_session_elem_to_listener(listener, session_element);
 	ei_link(listener, ei_self(listener->ec), pid);
@@ -1381,7 +1377,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	memcpy(&session_element->process.pid, p->pid, sizeof(erlang_pid));
 	session_element->spawn_reply = NULL;
 
-	switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 	switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
 	switch_clear_flag(session_element, LFLAG_WAITING_FOR_PID);
 
@@ -1416,8 +1411,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 	char *reg_name = NULL, *node, *module = NULL, *function = NULL;
 	listener_t *listener;
 	int argc = 0, argc2 = 0;
-	char *argv[80] = { 0 }, *argv2[80] = {
-	0};
+	char *argv[80] = { 0 }, *argv2[80] = { 0 };
 	char *mydata, *myarg;
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	switch_bool_t new_session = SWITCH_FALSE;
@@ -1487,19 +1481,9 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		}
 
 		if (session_element) {
-
 			switch_ivr_park(session, NULL);
-
-			/* keep app thread running for lifetime of session */
-			if (switch_channel_down(switch_core_session_get_channel(session))) {
-				if ((session_element = switch_channel_get_private(switch_core_session_get_channel(session), "_erlang_session_"))) {
-					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "outbound session all done\n");
-					switch_clear_flag_locked(session_element, LFLAG_SESSION_ALIVE);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "outbound session already done\n");
-				}
-			}
 		}
+
 	}
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "exit erlang_outbound_function\n");
 }
@@ -1822,6 +1806,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 		if ((clientfd = ei_accept_tmo(&ec, (int) listen_list.sockfd, &conn, 500)) == ERL_ERROR) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
+				break;
 			} else if (erl_errno == ETIMEDOUT) {
 				continue;
 #ifdef WIN32
@@ -1835,9 +1820,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 				/* if errno didn't get set, assume nothing *too* horrible occured */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 								  "Ignorable error in ei_accept - probable bad client version, bad cookie or bad nodename\n");
-				continue;
 			}
-			break;
+			continue;
 		}
 
 		listener = new_listener(&ec, clientfd);

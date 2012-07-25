@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -170,7 +170,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 ///\}
 
 SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples);
-
+SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples);
 SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, uint32_t channels);
 
 SWITCH_END_EXTERN_C
