@@ -77,8 +77,6 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
                 //const char *tech =  switch_xml_attr(mg_term, "tech");
                 const char *channel_prefix = switch_xml_attr(mg_term, "channel-prefix");
                 const char *channel_map = switch_xml_attr(mg_term, "channel-map");
-                const char *szspan_id = switch_xml_attr(mg_term, "span-id");
-                const int span_id = !zstr(szspan_id) ? atoi(szspan_id) : 0;
                 
                 
                 if (!zstr(channel_map)) {
@@ -102,12 +100,14 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
                                 term->type = MG_TERM_TDM;
                                 term->profile = profile;
                                 term->name = switch_core_sprintf(pool, "%s%d", prefix, j);
-                                term->u.tdm.span = span_id;
                                 term->u.tdm.channel = j;
+                                term->u.tdm.span_name = switch_core_strdup(pool, channel_prefix);
                                 
                                 switch_core_hash_insert_wrlock(profile->terminations, term->name, term, profile->terminations_rwlock);
+                                term->next = profile->physical_terminations;
+                                profile->physical_terminations = term;
                                 
-                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Mapped termination [%s] to freetdm span: %d chan: %d\n", term->name, term->u.tdm.span, term->u.tdm.channel);
+                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Mapped termination [%s] to freetdm span: %s chan: %d\n", term->name, term->u.tdm.span_name, term->u.tdm.channel);
                             }
                         }
                     }
