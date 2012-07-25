@@ -518,7 +518,11 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	}else if(MGT_CXTID_OTHER == inc_context->type.pres){
 
 		if(NOTPRSNT != inc_context->val.pres){
+#ifdef BIT_64
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Context specific request for contextId[%d]\n",inc_context->val.val);
+#else
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Context specific request for contextId[%ld]\n",inc_context->val.val);
+#endif
 			/* check if context present with us */
 			if(NULL == megaco_find_context_by_suid(suId, inc_context->val.val)){
 				goto ctxt_error;
@@ -613,11 +617,19 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			}
 		case CH_CMD_TYPE_CFM:
 			{
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Received Command txn[%d] Response/Confirmation \n",txn_id);
+#ifdef BIT_64
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Received Command txn[%d] Response/Confirmation \n",txn_id);
+#else
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Received Command txn[%ld] Response/Confirmation \n",txn_id);
+#endif
 				break;
 			}
 		default:
+#ifdef BIT_64
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid command type[%d]\n",cmd->cmdType.val);
+#else
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid command type[%d]\n",cmd->cmdType.val);
+#endif
 			return;
 	}
 

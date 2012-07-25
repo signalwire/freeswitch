@@ -456,8 +456,13 @@ void mgco_print_sdp_attr_set(CmSdpAttrSet *s)
                     }
                 case CM_SDP_ATTR_PTIME:
                     {
+#ifdef BIT_64
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t PTIME  = %d \n", 
                                 (NOTPRSNT != a->u.ptime.pres)?a->u.ptime.val:-1);
+#else
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t PTIME  = %ld \n", 
+                                (NOTPRSNT != a->u.ptime.pres)?a->u.ptime.val:-1);
+#endif
                         break;
                     }
                 case CM_SDP_ATTR_RECVONLY:
@@ -537,8 +542,13 @@ void mgco_print_sdp_attr_set(CmSdpAttrSet *s)
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Encoding Name name = %s \n",
                                     (NOTPRSNT != r->enc.name.pres)?(char*)r->enc.name.val:"Not Present");
 
+#ifdef BIT_64
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Clock Rate = %d \n",
                                     (NOTPRSNT != r->clk.pres)?r->clk.val:-1);
+#else
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Clock Rate = %ld \n",
+                                    (NOTPRSNT != r->clk.pres)?r->clk.val:-1);
+#endif
 
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t Encoding Parameters = %s \n",
                                     (NOTPRSNT != r->parms.pres)?(char*)r->parms.val:"Not Present");

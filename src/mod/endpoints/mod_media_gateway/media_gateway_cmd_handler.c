@@ -778,9 +778,15 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	/********************************************************************/
     } else if(MGT_TERMID_OTHER == termId->type.val){
         /********************************************************************/
+#ifdef BIT_64
         switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
                 "Modify request is for termination[%s] and context: type[%d], value[%d] \n", 
                 termId->name.lcl.val, ctxtId->type.val, ctxtId->val.val);
+#else
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+                "Modify request is for termination[%s] and context: type[%d], value[%ld] \n", 
+                termId->name.lcl.val, ctxtId->type.val, ctxtId->val.val);
+#endif
 
         term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
 
@@ -976,7 +982,11 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
 
     if (MGT_CXTID_OTHER == ctxtId->type.val){
 
+#ifdef BIT_64
         switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," SUB Request for Context[%d] \n", ctxtId->val.val);
+#else
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," SUB Request for Context[%ld] \n",  ctxtId->val.val);
+#endif
 
         /*find context based on received context-id */
         mg_ctxt = megaco_get_context(mg_profile, ctxtId->val.val);
