@@ -2779,6 +2779,7 @@ struct cb_helper {
 	uint32_t row_process;
 	sofia_profile_t *profile;
 	switch_stream_handle_t *stream;
+	switch_bool_t dedup;
 };
 
 
@@ -3771,11 +3772,20 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 {
 	struct cb_helper *cb = (struct cb_helper *) pArg;
 	char *contact;
-
+	
 	cb->row_process++;
-
+	
 	if (!zstr(argv[0]) && (contact = sofia_glue_get_url_from_contact(argv[0], 1))) {
-		cb->stream->write_function(cb->stream, "%ssofia/%s/sip:%s,", argv[2], argv[1], sofia_glue_strip_proto(contact));
+		if (cb->dedup) {
+			char *tmp = switch_mprintf("%ssofia/%s/sip:%s", argv[2], argv[1], sofia_glue_strip_proto(contact));
+			
+			if (!strstr((char *)cb->stream->data, tmp)) {
+				cb->stream->write_function(cb->stream, "%s,", tmp);
+				free(tmp);
+			}
+		} else {
+			cb->stream->write_function(cb->stream, "%ssofia/%s/sip:%s,", argv[2], argv[1], sofia_glue_strip_proto(contact));
+		}
 		free(contact);
 	}
 
@@ -3978,7 +3988,8 @@ static void select_from_profile(sofia_profile_t *profile,
 								const char *domain,
 								const char *concat,
 								const char *exclude_contact, 
-								switch_stream_handle_t *stream)
+								switch_stream_handle_t *stream,
+								switch_bool_t dedup)
 {
 	struct cb_helper cb;
 	char *sql;
@@ -3987,15 +3998,16 @@ static void select_from_profile(sofia_profile_t *profile,
 
 	cb.profile = profile;
 	cb.stream = stream;
+	cb.dedup = dedup;
 
 	if (exclude_contact) {
 		sql = switch_mprintf("select contact, profile_name, '%q' "
-							 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%') "
-							 "and contact not like '%%%s%%'", (concat != NULL) ? concat : "", user, domain, domain, exclude_contact);
+							 "from sip_registrations where profile_name='%q' and sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%') "
+							 "and contact not like '%%%s%%'", (concat != NULL) ? concat : "", profile->name, user, domain, domain, exclude_contact);
 	} else {
 		sql = switch_mprintf("select contact, profile_name, '%q' "
-							 "from sip_registrations where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
-							 (concat != NULL) ? concat : "", user, domain, domain);
+							 "from sip_registrations where profile_name='%q' and sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')",
+							 (concat != NULL) ? concat : "", profile->name, user, domain, domain);
 	}
 
 	switch_assert(sql);
@@ -4080,7 +4092,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			domain = profile->domain_name;
 		}
 			
-		select_from_profile(profile, user, domain, concat, exclude_contact, &mystream);
+		select_from_profile(profile, user, domain, concat, exclude_contact, &mystream, SWITCH_FALSE);
 		sofia_glue_release_profile(profile);
 	
 	} else if (!zstr(domain)) {
@@ -4093,7 +4105,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, &var, NULL, &val);
 				if ((profile = (sofia_profile_t *) val) && !strcmp((char *)var, profile->name)) {
-					select_from_profile(profile, user, domain, concat, exclude_contact, &mystream);			
+					select_from_profile(profile, user, domain, concat, exclude_contact, &mystream, SWITCH_TRUE);			
 					profile = NULL;
 				}
 			}
