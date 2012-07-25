@@ -93,6 +93,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg);
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf);
+static switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event);
 
 switch_state_handler_table_t crtp_state_handlers = {
 	.on_init = channel_on_init,
@@ -104,6 +105,7 @@ switch_io_routines_t crtp_io_routines = {
 	.read_frame = channel_read_frame,
 	.write_frame = channel_write_frame,
 	.receive_message = channel_receive_message,
+    .receive_event = channel_receive_event,
     .send_dtmf = channel_send_dtmf
 };
 
@@ -393,6 +395,42 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
     }
     
     return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_bool_t compare_var(switch_event_t *event, switch_channel_t *channel, const char *varname)
+{
+    const char *chan_val = switch_channel_get_variable_dup(channel, varname, SWITCH_FALSE, -1);
+    const char *event_val = switch_event_get_header(event, varname);
+    
+    return strcasecmp(chan_val, event_val);
+}
+
+static switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event)
+{
+    const char *command = switch_event_get_header(event, "command");
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    
+    if (!zstr(command) && !strcasecmp(command, "media_modify")) {
+        /* Compare parameters */
+        if (compare_var(event, channel, kREMOTEADDR) ||
+            compare_var(event, channel, kREMOTEPORT) ||
+            compare_var(event, channel, kLOCALADDR) ||
+            compare_var(event, channel, kLOCALPORT)) {
+            /* We need to reset the rtp session */
+            
+        }
+        
+        if (compare_var(event, channel, kCODEC) ||
+            compare_var(event, channel, kPTIME) ||
+            compare_var(event, channel, kPT) ||
+            compare_var(event, channel, kRATE)) {
+            /* Reset codec */
+            
+        }
+        
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received unknown command [%s] in event.\n", !command ? "null" : command);
+    }
 }
 
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)

@@ -88,19 +88,6 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     char dialstring[100];
     switch_call_cause_t cause;
-    
-    if (!zstr(term->uuid)) {
-        /* A UUID is present, check if the channel still exists */
-        switch_core_session_t *session;
-        if ((session = switch_core_session_locate(term->uuid))) {
-            switch_core_session_rwunlock(session);
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel [%s] already exists for termination [%s]\n", term->uuid, term->name);
-            return SWITCH_STATUS_SUCCESS;
-        }
-        
-        /* The referenced channel doesn't exist anymore, clear it */
-        term->uuid = NULL;
-    }
 
     switch_event_create(&var_event, SWITCH_EVENT_CLONE);
     
@@ -126,14 +113,35 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
     
     /* Set common variables on the channel */
     switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
+    
+    if (!zstr(term->uuid)) {
+        /* A UUID is present, check if the channel still exists */
+        switch_core_session_t *session;
+        if ((session = switch_core_session_locate(term->uuid))) {
+            switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "command", "media_modify");
+            
+            switch_core_session_receive_event(session, &var_event);
 
-    if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_CAUSE_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to instanciate termination [%s]: %s\n", term->name, switch_channel_cause2str(cause));   
-        status = SWITCH_STATUS_FALSE;
-        goto done;
+            switch_core_session_rwunlock(session);
+            
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sent refresh to channel [%s], for termination [%s]\n", term->uuid, term->name);
+            
+            return SWITCH_STATUS_SUCCESS;
+        }
+        
+        /* The referenced channel doesn't exist anymore, clear it */
+        term->uuid = NULL;
     }
     
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));
+    if (!zstr(term->uuid)) {    
+        if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_CAUSE_SUCCESS) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to instanciate termination [%s]: %s\n", term->name, switch_channel_cause2str(cause));   
+            status = SWITCH_STATUS_FALSE;
+            goto done;
+        }
+        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));   
+    }
     
     switch_set_flag(term, MGT_ACTIVE);
     
@@ -162,7 +170,7 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
         switch_snprintf(name, sizeof name, "%s/%d", profile->rtp_termination_id_prefix, term_id);
     } else {
         for (term = profile->physical_terminations; term; term = term->next) {
-            if (!strncasecmp(prefix, term->name, prefixlen) && !switch_test_flag(term, MGT_ALLOCATED)) {
+            if (!switch_test_flag(term, MGT_ALLOCATED) && !strncasecmp(prefix, term->name, prefixlen)) {
                 switch_set_flag(term, MGT_ALLOCATED);
                 return term;
             }
@@ -185,6 +193,7 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
         term->u.rtp.local_port = switch_rtp_request_port(term->u.rtp.local_addr);
         term->u.rtp.codec = megaco_codec_str(profile->default_codec);
         term->u.rtp.term_id = term_id;
+        term->u.rtp.ptime = 20;
         term->name = switch_core_strdup(term->pool, name);
     }
     
