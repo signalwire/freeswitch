@@ -70,18 +70,6 @@
 //#define MISDN_DEBUG_EVENTS
 //#define MISDN_DEBUG_IO
 
-#ifndef MIN
-#define MIN(x,y)	(((x) < (y)) ? (x) : (y))
-#endif
-
-#ifndef MAX
-#define MAX(x,y)	(((x) > (y)) ? (x) : (y))
-#endif
-
-#ifndef CLAMP
-#define CLAMP(val,min,max)	(MIN(max,MAX(min,val)))
-#endif
-
 
 typedef enum {
 	MISDN_CAPS_NONE = 0,
@@ -1302,7 +1290,7 @@ static FIO_READ_FUNCTION(misdn_read)
 		}
 
 		if (hh->prim == PH_DATA_IND) {
-			*datalen = CLAMP(retval - MISDN_HEADER_LEN, 0, bytes);
+			*datalen = ftdm_clamp(retval - MISDN_HEADER_LEN, 0, bytes);
 #ifdef MISDN_DEBUG_IO
 			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "misdn_read() received '%s', id: %#x, with %d bytes from channel socket %d [dev.ch: %d.%d]\n",
 				misdn_event2str(hh->prim), hh->id, retval - MISDN_HEADER_LEN, ftdmchan->sockfd, addr.dev, addr.channel);
@@ -1451,7 +1439,7 @@ static FIO_WRITE_FUNCTION(misdn_write)
 		hh->id   = MISDN_ID_ANY;
 
 		/* Avoid buffer overflow */
-		size = MIN(size, MAX_DATA_MEM - MISDN_HEADER_LEN);
+		size = ftdm_min(size, MAX_DATA_MEM - MISDN_HEADER_LEN);
 
 		memcpy(wbuf + MISDN_HEADER_LEN, data, size);
 		size += MISDN_HEADER_LEN;
