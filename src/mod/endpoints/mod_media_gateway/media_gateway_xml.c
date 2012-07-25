@@ -123,7 +123,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
             const char *prefix = switch_xml_attr(mg_term, "termination-id-prefix");
             //const char *sztermination_id_base = switch_xml_attr(mg_term, "termination-id-base");
             //const char *tech =  switch_xml_attr(mg_term, "tech");
-            const char *channel_prefix = switch_xml_attr(mg_term, "channel-prefix");
+            //const char *channel_prefix = switch_xml_attr(mg_term, "channel-prefix");
             const char *channel_map = switch_xml_attr(mg_term, "channel-map");
             const char *szspan_id = switch_xml_attr(mg_term, "span-id");
             const int span_id = !zstr(szspan_id) ? atoi(szspan_id) : 0;

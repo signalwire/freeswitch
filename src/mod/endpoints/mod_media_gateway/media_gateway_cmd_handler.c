@@ -143,7 +143,7 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
                                                 (reqEvtPar->u.other.val.u.eq.type.val == MGT_VALTYPE_UINT32))
                                         {
                                             switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Received Inactivity timer value [%d]\n", 
-                                                    reqEvtPar->u.other.val.u.eq.u.decInt.val); 
+                                                    (int)reqEvtPar->u.other.val.u.eq.u.decInt.val); 
 
                                             mg_profile->inact_tmr = reqEvtPar->u.other.val.u.eq.u.decInt.val/MG_INACTIVITY_TMR_RESOLUTION;
 
