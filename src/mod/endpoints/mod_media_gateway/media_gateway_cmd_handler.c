@@ -21,27 +21,39 @@ const char *mg_service_change_reason[] = {
 
 
 /*****************************************************************************************************************************/
+void mg_restart_inactivity_timer(megaco_profile_t* profile)
+{
+    /* NOTE - For Restart - we are deleting existing task and adding it again  */
+    if(profile->inact_tmr_task_id)
+        switch_scheduler_del_task_id(profile->inact_tmr_task_id);
+
+    if(profile->inact_tmr) {
+        mg_activate_ito_timer(profile); 
+    }
+}
+
+/*****************************************************************************************************************************/
 static void mg_inactivity_timer_exp(switch_scheduler_task_t *task)
 {
     megaco_profile_t* profile = (megaco_profile_t*) task->cmd_arg;
-    /* TODO */
 
     switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," mg_inactivity_timer_exp for profile[%s]\n", profile->name);
     mg_print_time();
 
     mg_send_ito_notify(profile);
 
-    /*task->runtime = switch_epoch_time_now(NULL)+100; */ /* interval in seconds */
+    /* resetting task_id */
+    profile->inact_tmr_task_id = 0x00;
 }
 
 /*****************************************************************************************************************************/
 switch_status_t mg_activate_ito_timer(megaco_profile_t* profile)
 {
-
     switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Starting IT/ITO Timer \n");
     mg_print_time();
 
-    switch_scheduler_add_task(switch_epoch_time_now(NULL)+profile->inact_tmr, mg_inactivity_timer_exp,"","media_gateway",0,profile,0);
+    profile->inact_tmr_task_id = switch_scheduler_add_task(switch_epoch_time_now(NULL)+profile->inact_tmr, mg_inactivity_timer_exp,"","media_gateway",0,profile,0);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -137,8 +149,7 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
 
                                             if(0 == mg_profile->inact_tmr){
                                                 /* value ZERO means MGC wantes  to disable ito timer */
-
-                                                /* TODO - check and stop  currently running ito timer  */
+                                                switch_scheduler_del_task_id(mg_profile->inact_tmr_task_id) ;
                                             } else {
                                                 mg_activate_ito_timer(mg_profile);
                                             }

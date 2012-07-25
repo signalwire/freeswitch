@@ -151,6 +151,7 @@ struct megaco_profile_s {
 	int						rtp_termination_id_len;
 	char*                	peer_list[MG_MAX_PEERS];     /* MGC Peer ID LIST */
 	int						inact_tmr;                   /* inactivity timer value */
+    uint32_t                inact_tmr_task_id;                 /* FS timer scheduler task-id */
     
     switch_thread_rwlock_t  *contexts_rwlock;
     uint32_t next_context_id;

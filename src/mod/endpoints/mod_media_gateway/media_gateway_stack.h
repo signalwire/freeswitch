@@ -191,6 +191,7 @@ switch_status_t  mg_util_build_obs_evt_desc (MgMgcoObsEvt *obs_event, MgMgcoRequ
 void mg_print_time();
 switch_status_t mg_activate_ito_timer(megaco_profile_t* profile);
 
+void mg_restart_inactivity_timer(megaco_profile_t* profile);
 
 
 /****************************************************************************************************************/
