@@ -245,14 +245,10 @@ struct misdn_span_private {
 	pthread_cond_t  event_cond;
 };
 
-#define MISDN_CHAN_STATE_CLOSED 0
-#define MISDN_CHAN_STATE_OPEN   1
-
 struct misdn_event_queue;
 
 struct misdn_chan_private {
 	/* */
-	int state;
 	int debugfd;
 	int active;
 
@@ -470,7 +466,50 @@ static inline int ts_before(struct timespec *a, struct timespec *b)
 	return 0;
 }
 
-static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan, int activate)
+/*
+ * Asynchronous channel (de-)activation
+ */
+static ftdm_status_t _misdn_toggle_channel_nowait(ftdm_channel_t *chan, int activate)
+{
+	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
+	char buf[MAX_DATA_MEM] = { 0 };
+	struct mISDNhead *hh = (struct mISDNhead *) buf;
+	int retval;
+
+	/* NOTE: sending PH_DEACTIVATE_REQ to closed b-channels kills the d-channel (hfcsusb)... */
+	if ((activate && priv->active) || (!activate && !priv->active))
+		return FTDM_SUCCESS;
+
+	ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN sending %s request\n",
+		(activate) ? "activation" : "deactivation");
+
+	/* prepare + send request primitive */
+	hh->prim = (activate) ? PH_ACTIVATE_REQ : PH_DEACTIVATE_REQ;
+	hh->id   = MISDN_ID_ANY;
+
+	if ((retval = sendto(chan->sockfd, hh, sizeof(*hh), 0, NULL, 0)) < sizeof(*hh)) {
+		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN failed to send activation request: %s\n",
+			strerror(errno));
+		return FTDM_FAIL;
+	}
+
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t misdn_activate_channel_nowait(ftdm_channel_t *chan)
+{
+	return _misdn_toggle_channel_nowait(chan, 1);
+}
+
+static ftdm_status_t misdn_deactivate_channel_nowait(ftdm_channel_t *chan)
+{
+	return _misdn_toggle_channel_nowait(chan, 0);
+}
+
+/*
+ * Synchronous channel (de-)activation
+ */
+static ftdm_status_t _misdn_toggle_channel(ftdm_channel_t *chan, int activate)
 {
 	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
 	char buf[MAX_DATA_MEM] = { 0 };
@@ -588,6 +627,16 @@ out:
 	ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN received %s confirmation\n",
 		(activate) ? "activation" : "deactivation");
 	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t misdn_activate_channel(ftdm_channel_t *chan)
+{
+	return _misdn_toggle_channel(chan, 1);
+}
+
+static ftdm_status_t misdn_deactivate_channel(ftdm_channel_t *chan)
+{
+	return _misdn_toggle_channel(chan, 0);
 }
 
 
@@ -917,7 +966,7 @@ static FIO_OPEN_FUNCTION(misdn_open)
 	assert(chan_priv);
 	assert(span_priv);
 
-	if (chan_priv->state == MISDN_CHAN_STATE_OPEN) {
+	if (chan_priv->active) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "mISDN channel is already open, skipping activation\n");
 		return FTDM_SUCCESS;
 	}
@@ -928,24 +977,27 @@ static FIO_OPEN_FUNCTION(misdn_open)
 	/*
 	 * Send activation request
 	 */
-	ret = misdn_activate_channel(ftdmchan, 1);
+	ret = misdn_activate_channel(ftdmchan);
 	if (ret != FTDM_SUCCESS) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to activate channel (socket: %d)\n",
 			ftdmchan->sockfd);
-		return FTDM_FAIL;
-	}
+		/*
+		 * Ignore error, ftdm_channel_open() does not correctly handle return FTDM_FAIL cases.
+		 * We will try to activate the channel later.
+		 */
+	} else {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "mISDN channel activation request sent\n");
 
-	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "mISDN channel activation request sent\n");
-
-	switch (ftdmchan->type) {
-	case FTDM_CHAN_TYPE_B:
-	case FTDM_CHAN_TYPE_DQ921:
-		chan_priv->state = MISDN_CHAN_STATE_OPEN;
-		break;
-	default:
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN invalid channel type '%s'\n",
-			ftdm_channel_get_type_str(ftdmchan));
-		break;
+		switch (ftdmchan->type) {
+		case FTDM_CHAN_TYPE_B:
+		case FTDM_CHAN_TYPE_DQ921:
+			chan_priv->active = 1;
+			break;
+		default:
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "mISDN invalid channel type '%s'\n",
+				ftdm_channel_get_type_str(ftdmchan));
+			break;
+		}
 	}
 	return FTDM_SUCCESS;
 }
@@ -964,21 +1016,25 @@ static FIO_CLOSE_FUNCTION(misdn_close)
 	ftdm_log_chan(ftdmchan, FTDM_LOG_NOTICE, "mISDN trying to close %c-channel\n",
 		ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
 
-	/* deactivate b-channels on close */
-	if (ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B) {
-		/*
-		 * Send deactivation request (don't wait for answer)
-		 */
-		ret = misdn_activate_channel(ftdmchan, 0);
+	if (chan_priv->active) {
+
+		if (ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B) {
+			ret = misdn_deactivate_channel(ftdmchan);
+		} else {
+			/* Don't wait for D-Channel deactivation */
+			ret = misdn_deactivate_channel_nowait(ftdmchan);
+		}
+
 		if (ret != FTDM_SUCCESS) {
 			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to deactivate %c-channel\n",
 				ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
-			return FTDM_FAIL;
+			/* Ignore error, channel might be closed already */
+		} else {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "mISDN %c-channel deactivated\n",
+				ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
 		}
 
-		ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "mISDN %c-channel deactivated\n",
-			ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_B ? 'B' : 'D');
-		chan_priv->state = MISDN_CHAN_STATE_CLOSED;
+		chan_priv->active = 0;
 	}
 
 	return FTDM_SUCCESS;
@@ -1214,7 +1270,7 @@ static FIO_READ_FUNCTION(misdn_read)
 	int retval;
 	int maxretry = 10;
 
-	if (priv->state == MISDN_CHAN_STATE_CLOSED) {
+	if (!priv->active) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "mISDN ignoring read on closed channel\n");
 		/* ignore */
 		*datalen = 0;
@@ -1370,6 +1426,13 @@ static FIO_WRITE_FUNCTION(misdn_write)
 	switch (ftdm_channel_get_type(ftdmchan)) {
 	case FTDM_CHAN_TYPE_B:
 		/*
+		 * Check state, send activation request (async) if channel is not open
+		 */
+		if (!priv->active) {
+			misdn_activate_channel_nowait(ftdmchan);
+			return FTDM_SUCCESS;	/* eat data */
+		}
+		/*
 		 * Write to audio pipe, misdn_read() will pull
 		 * from there as needed and send it to the b-channel
 		 *
@@ -1392,6 +1455,17 @@ static FIO_WRITE_FUNCTION(misdn_write)
 
 		memcpy(wbuf + MISDN_HEADER_LEN, data, size);
 		size += MISDN_HEADER_LEN;
+
+		/*
+		 * Check state, send activation request (sync) if channel is not open
+		 */
+		if (!priv->active) {
+			retval = misdn_activate_channel(ftdmchan);
+			if (retval) {
+				*datalen = 0;
+				return FTDM_FAIL;
+			}
+		}
 
 		/* wait for channel to get ready */
 		wflags = FTDM_WRITE;
@@ -1563,7 +1637,7 @@ static ftdm_status_t misdn_open_range(ftdm_span_t *span, ftdm_chan_type_t type, 
 
 		} else {
 			/* early activate D-Channel */
-			misdn_activate_channel(ftdmchan, 1);
+			misdn_activate_channel(ftdmchan);
 			ftdmchan->native_codec = ftdmchan->effective_codec = FTDM_CODEC_NONE;
 		}
 		num_configured++;
