@@ -915,7 +915,8 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 								ftdm_channel_get_span_id(ftdmchan),
 								ftdm_channel_get_id(ftdmchan));
 					} else {
-						ftdm_log(FTDM_LOG_DEBUG, "Ignoring %s on channel %d\n", what, ftdm_channel_get_id(ftdmchan));
+						ftdm_log(FTDM_LOG_DEBUG, "Ignoring %s on channel %d in state %s\n", what,
+							 ftdm_channel_get_id(ftdmchan), ftdm_channel_get_state_str(ftdmchan));
 					}
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "Received %s with no matching channel %d\n", what, chan_id);
@@ -1032,7 +1033,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 					}
 				}
 
-				if (!callednum || !strlen((char *)callednum->Digit)) {
+				if (!callednum || ftdm_strlen_zero((char *)callednum->Digit)) {
 					if (FTDM_SPAN_IS_NT(span)) {
 						ftdm_log(FTDM_LOG_NOTICE, "No destination number found, assuming overlap dial\n");
 						overlap_dial++;
@@ -1119,7 +1120,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 					}
 
 					if (ftdmchan) {
-						ftdm_log(FTDM_LOG_CRIT, "Channel is busy\n");
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Channel is busy\n");
 					} else {
 						ftdm_log(FTDM_LOG_CRIT, "Failed to open channel for new setup message\n");
 					}
@@ -1176,7 +1177,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 		case Q931mes_CALL_PROCEEDING:
 			{
 				if (ftdmchan) {
-					ftdm_log(FTDM_LOG_CRIT, "Received CALL PROCEEDING message for channel %d\n", ftdm_channel_get_id(ftdmchan));
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Received CALL PROCEEDING message for channel\n");
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "Received CALL PROCEEDING with no matching channel %d\n", chan_id);
@@ -1186,7 +1187,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 		case Q931mes_CONNECT_ACKNOWLEDGE:
 			{
 				if (ftdmchan) {
-					ftdm_log(FTDM_LOG_DEBUG, "Received CONNECT_ACK message for channel %d\n", ftdm_channel_get_id(ftdmchan));
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Received CONNECT_ACK message for channel\n");
 				} else {
 					ftdm_log(FTDM_LOG_DEBUG, "Received CONNECT_ACK with no matching channel %d\n", chan_id);
 				}
@@ -1196,7 +1197,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 		case Q931mes_INFORMATION:
 			{
 				if (ftdmchan) {
-					ftdm_log(FTDM_LOG_CRIT, "Received INFORMATION message for channel %d\n", ftdm_channel_get_id(ftdmchan));
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Received INFORMATION message for channel\n");
 
 					if (ftdm_channel_get_state(ftdmchan) == FTDM_CHANNEL_STATE_DIALTONE) {
 						char digit = '\0';
