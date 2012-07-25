@@ -34,10 +34,6 @@
 #include "private/ftdm_core.h"
 #include "ftmod_libpri.h"
 
-#ifndef MIN
-#define MIN(x,y)	(((x) < (y)) ? (x) : (y))
-#endif
-
 
 static ftdm_status_t ftdm_libpri_start(ftdm_span_t *span);
 static ftdm_io_interface_t ftdm_libpri_interface;
@@ -1236,7 +1232,7 @@ static int on_info(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 		if (!ftdm_strlen_zero(pevent->ring.callednum)) {
 			int digits = strlen(pevent->ring.callednum);
 			int offset = strlen(caller_data->dnis.digits);
-			int len    = MIN(sizeof(caller_data->dnis.digits) - 1 - offset, digits);	/* max. length without terminator */
+			int len    = ftdm_min(sizeof(caller_data->dnis.digits) - 1 - offset, digits);	/* max. length without terminator */
 
 			if (len < digits) {
 				ftdm_log_chan(chan, FTDM_LOG_WARNING, "Length %d of digit string exceeds available space %d of DNIS, truncating!\n",
