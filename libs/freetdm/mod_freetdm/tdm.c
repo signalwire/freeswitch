@@ -124,6 +124,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
          span_id = ftdm_span_get_id(span);   
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find span [%s]\n", span_name);
+        goto fail;
     }
 
     
