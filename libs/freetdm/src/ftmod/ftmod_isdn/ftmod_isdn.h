@@ -79,6 +79,7 @@ typedef struct ftdm_isdn_data ftdm_isdn_data_t;
 struct ftdm_isdn_bchan_data
 {
 	int32_t digit_timeout;
+	int offset;	/* offset in teletone buffer */
 };
 
 typedef struct ftdm_isdn_bchan_data ftdm_isdn_bchan_data_t;

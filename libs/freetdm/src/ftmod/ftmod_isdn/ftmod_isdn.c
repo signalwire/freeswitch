@@ -1797,7 +1797,6 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 	teletone_generation_session_t ts = {{{{0}}}};;
 	unsigned char frame[1024];
 	int x, interval;
-	int offset = 0;
 
 	ftdm_log(FTDM_LOG_DEBUG, "ISDN tones thread starting.\n");
 	ftdm_set_flag(isdn_data, FTDM_ISDN_TONES_RUNNING);
@@ -1842,6 +1841,7 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 		for (x = 1; x <= ftdm_span_get_chan_count(span); x++) {
 			ftdm_channel_t *chan = ftdm_span_get_channel(span, x);
 			ftdm_size_t len = sizeof(frame), rlen;
+			ftdm_isdn_bchan_data_t *data = chan->call_data;
 
 			if (ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_DQ921) {
 				continue;
@@ -1855,7 +1855,6 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 			switch (ftdm_channel_get_state(chan)) {
 			case FTDM_CHANNEL_STATE_DIALTONE:
 				{
-					ftdm_isdn_bchan_data_t *data = (ftdm_isdn_bchan_data_t *)chan->call_data;
 					ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
 
 					/* check overlap dial timeout first before generating tone */
@@ -1933,7 +1932,7 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 			}
 
 			/* seek to current offset */
-			ftdm_buffer_seek(dt_buffer, offset);
+			ftdm_buffer_seek(dt_buffer, data->offset);
 
 			rlen = ftdm_buffer_read_loop(dt_buffer, frame, len);
 
@@ -1953,7 +1952,22 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 					goto done;
 				}
 			}
-			ftdm_channel_write(chan, frame, sizeof(frame), &rlen);
+
+			if (ftdm_channel_write(chan, frame, sizeof(frame), &rlen) == FTDM_SUCCESS) {
+				/*
+				 * Advance offset in teletone buffer by amount
+				 * of data actually written to channel.
+				 */
+				if (chan->effective_codec != FTDM_CODEC_SLIN) {
+					data->offset += rlen << 1;	/* teletone buffer is slin (= len * 2) */
+				} else {
+					data->offset += rlen;
+				}
+
+				if (data->offset >= ts.rate) {
+					data->offset = 0;
+				}
+			}
 		}
 
 		/*
@@ -1961,11 +1975,6 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 		 */
 		if (!gated) {
 			ftdm_sleep(interval);
-		}
-
-		offset += (ts.rate / (1000 / interval)) << 1;
-		if (offset >= ts.rate) {
-			offset = 0;
 		}
 	}
 
