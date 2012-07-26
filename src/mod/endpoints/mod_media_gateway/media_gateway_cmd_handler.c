@@ -498,6 +498,10 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     /*MgMgcoStreamDesc*   inc_strm_desc;*/
     MgMgcoAudRetParm *desc;
     mg_context_t* mg_ctxt;
+    int mediaId;
+    MgMgcoLocalDesc   *local = NULL;
+    CmSdpInfoSet      *psdp  = NULL;
+
 
     /* TODO - Kapil dummy line , will need to add with proper code */
     inc_med_desc = &cmd->dl.descs[0]->u.media;
@@ -686,18 +690,25 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         }
 
         /* copy media descriptor */
-
         desc = rsp.u.mgCmdRsp[0]->u.add.audit.parms[rsp.u.mgCmdRsp[0]->u.add.audit.num.val-1];
         desc->type.pres = PRSNT_NODEF;
         desc->type.val = MGT_MEDIADESC;
         mgUtlCpyMgMgcoMediaDesc(&desc->u.media, inc_med_desc, &rsp.u.mgCmdRsp[0]->memCp);
+	/* see if we have received local descriptor */
+	if((NOTPRSNT != desc->u.media.num.pres) && 
+			(0 != desc->u.media.num.val))
+	{
+		for(mediaId=0; mediaId<desc->u.media.num.val; mediaId++) {
+			if(MGT_MEDIAPAR_LOCAL == desc->u.media.parms[mediaId]->type.val) {
+				local  = &desc->u.media.parms[mediaId]->u.local;
+			}
+		}
+	}
 
 	/* only for RTP */
 	if(is_rtp){
 		/* build local descriptors */
 		/*MgMgcoStreamDesc *stream;*/
-		MgMgcoLocalDesc   *local;
-		CmSdpInfoSet *psdp;
 		char* ipAddress[4];// = "192.168.1.1";
 		char* dup = strdup((char*)term->u.rtp.local_addr);
 		MgMgcoMediaDesc* media = &desc->u.media;
@@ -705,45 +716,47 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 		switch_split(dup,'.',ipAddress);
 
 		/* Most probably we need to add local descriptor */
+		if(!local){
 
-		/* allocating mem for local descriptor */
-		if (mgUtlGrowList((void ***)&media->parms, sizeof(MgMgcoMediaPar),
-					&media->num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-		{
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-			return SWITCH_STATUS_FALSE;
-		}
+			/* allocating mem for local descriptor */
+			if (mgUtlGrowList((void ***)&media->parms, sizeof(MgMgcoMediaPar),
+						&media->num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
 
 #if 0
-		/* Kapil - NOT REQUIRED..keeping now just for ref..will delete  asap  */
-		media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
-		/*media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_STRPAR;*/
+			/* Kapil - NOT REQUIRED..keeping now just for ref..will delete  asap  */
+			media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
+			/*media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_STRPAR;*/
 
-		printf("media->num.val[%d]\n",media->num.val);
+			printf("media->num.val[%d]\n",media->num.val);
 
-		stream = &media->parms[media->num.val-1]->u.stream;
-		stream->pres.pres = PRSNT_NODEF;
-		stream->pres.val = 0x01;
+			stream = &media->parms[media->num.val-1]->u.stream;
+			stream->pres.pres = PRSNT_NODEF;
+			stream->pres.val = 0x01;
 #if 0
-		if(inc_med_desc->num.pres && inc_med_desc->num.val){
-			/* TODO - check stream descriptor type for all medias */
-			inc_strm_desc = &inc_med_desc->parms[0]->u.stream;
-			memcpy(&stream->streamId, &inc_strm_desc->streamId, sizeof(MgMgcoStreamId));
+			if(inc_med_desc->num.pres && inc_med_desc->num.val){
+				/* TODO - check stream descriptor type for all medias */
+				inc_strm_desc = &inc_med_desc->parms[0]->u.stream;
+				memcpy(&stream->streamId, &inc_strm_desc->streamId, sizeof(MgMgcoStreamId));
+			}
+#endif
+
+			MG_INIT_TOKEN_VALUE(&(stream->streamId), 1);
+
+
+			stream->sl.pres.pres = PRSNT_NODEF;
+			stream->sl.pres.val = 0x01;
+
+			local  = &stream->sl.local;
+#endif
+			media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
+			media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_LOCAL;
+
+			local  = &media->parms[media->num.val-1]->u.local;
 		}
-#endif
-
-		MG_INIT_TOKEN_VALUE(&(stream->streamId), 1);
-
-
-		stream->sl.pres.pres = PRSNT_NODEF;
-		stream->sl.pres.val = 0x01;
-
-		local  = &stream->sl.local;
-#endif
-		media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
-		media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_LOCAL;
-
-		local  = &media->parms[media->num.val-1]->u.local;
 
 		local->pres.pres = PRSNT_NODEF;
 

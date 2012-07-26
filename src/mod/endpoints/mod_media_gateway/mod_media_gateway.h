@@ -111,8 +111,8 @@ struct mg_termination_s {
     megaco_profile_t *profile; /*!< Parent MG profile */
     MgMgcoReqEvtDesc  *active_events;     /* !< active megaco events */
     mg_termination_t *next; /*!< List for physical terminations */
-    uint32_t flags;
     mg_context_t* mg_ctxt;
+    uint32_t flags;
     
     union {
         struct {

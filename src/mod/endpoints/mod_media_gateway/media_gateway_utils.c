@@ -112,8 +112,6 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, C
         /*MG_GETMEM(termId->name.lcl.val, termId->name.lcl.len , memCp, ret);*/
         ret = mg_stack_alloc_mem((Ptr*)&termId->name.lcl.val,term_len);
 
-        printf("termId->name.lcl.val[%p]\n",termId->name.lcl.val);
-
         if( ret != ROK)
             RETVALUE(ret);          
 
@@ -121,7 +119,7 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, C
         strncpy((char*)(termId->name.lcl.val), term_str, termId->name.lcl.len);
         termId->name.lcl.val[termId->name.lcl.len] = '\0';
 
-        printf("mg_fill_mgco_termid: name.lcl.val[%s], len[%d], term_str[%s], term_len[%d]\n",termId->name.lcl.val, termId->name.lcl.len, term_str,term_len);
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"mg_fill_mgco_termid: name.lcl.val[%s], len[%d], term_str[%s], term_len[%d]\n",termId->name.lcl.val, termId->name.lcl.len, term_str,term_len);
     }
 	      
 
@@ -742,8 +740,8 @@ void mgco_print_sdp_attr_set(CmSdpAttrSet *s)
 
 void mgco_handle_sdp_c_line(CmSdpConn *s, mg_termination_t* term, mgco_sdp_types_e sdp_type)
 {
-    char ipadd[12];
-    memset(ipadd, 0, 12);
+    char ipadd[32];
+    memset(ipadd, 0, sizeof(ipadd));
 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "********** SDP connection line ****** \n");
 
@@ -770,11 +768,10 @@ void mgco_handle_sdp_c_line(CmSdpConn *s, mg_termination_t* term, mgco_sdp_types
 				    s->u.ip4.u.uniIp.b[1].val,
 				    s->u.ip4.u.uniIp.b[2].val,
 				    s->u.ip4.u.uniIp.b[3].val);
-		printf("Remote ip = %s \n", ipadd);
 		    /* update remote ip */
 		    if(MG_TERM_RTP == term->type){
-			    term->u.rtp.remote_addr = strdup(ipadd); 
-			    printf("Update remote ip to [%s]\n", term->u.rtp.remote_addr);
+			    term->u.rtp.remote_addr = switch_core_strdup(term->pool,ipadd); 
+			    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Update remote ip to [%s]\n", term->u.rtp.remote_addr);
 		    }
 	    }
 	}
