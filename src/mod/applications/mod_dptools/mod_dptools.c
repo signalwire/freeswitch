@@ -2126,6 +2126,32 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t tmp_hanguphook(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+
+	if (state == CS_HANGUP || state == CS_ROUTING) {
+		const char *bond = switch_channel_get_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE);
+
+		if (!zstr(bond)) {
+			switch_core_session_t *b_session;
+			
+			if ((b_session = switch_core_session_locate(bond))) {
+				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+				if (switch_channel_up(b_channel)) {
+					switch_channel_set_flag(b_channel, CF_REDIRECT);
+				}
+				switch_core_session_rwunlock(b_session);
+			}
+		}
+
+		switch_core_event_hook_remove_state_change(session, tmp_hanguphook);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t hanguphook(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -2160,14 +2186,13 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_channel_t *channel, *peer_channel = NULL;
 	const char *bond = NULL;
 	switch_core_session_t *b_session = NULL;
-
+	
 	channel = switch_core_session_get_channel(session);
 
-	if ((bond = switch_channel_get_partner_uuid(channel))) {
-		bond = switch_core_session_strdup(session, bond);
-	}
-
+	bond = switch_channel_get_partner_uuid(channel);
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
+	switch_core_event_hook_add_state_change(session, tmp_hanguphook);
+
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL)
 		!= SWITCH_STATUS_SUCCESS || !peer_session) {
@@ -2226,6 +2251,9 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_core_session_rwunlock(peer_session);
 
   end:
+
+	switch_core_event_hook_remove_state_change(session, tmp_hanguphook);
+
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, NULL);
 	switch_channel_clear_flag(channel, CF_XFER_ZOMBIE);
 }
