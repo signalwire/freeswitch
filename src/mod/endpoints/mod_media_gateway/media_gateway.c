@@ -134,7 +134,7 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
     }
     
     if (zstr(term->uuid)) {    
-        if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_CAUSE_SUCCESS) {
+        if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_STATUS_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to instanciate termination [%s]: %s\n", term->name, switch_channel_cause2str(cause));   
             status = SWITCH_STATUS_FALSE;
             goto done;
