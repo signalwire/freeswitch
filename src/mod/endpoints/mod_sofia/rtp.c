@@ -419,10 +419,11 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
             char *remote_addr = switch_event_get_header(event, kREMOTEADDR);
             char *szremote_port = switch_event_get_header(event, kREMOTEADDR);
             switch_port_t remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
+            const char *err;
+
             
             switch_channel_set_variable(channel, kREMOTEADDR, remote_addr);
             switch_channel_set_variable(channel, kREMOTEPORT, szremote_port);
-            const char *err;
             
             if (switch_rtp_set_remote_address(tech_pvt->rtp_session, remote_addr, remote_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error setting RTP remote address: %s\n", err);
@@ -438,7 +439,6 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
             /* Reset codec */
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Switching codec not yet implemented\n");
         }
-        
     } else {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received unknown command [%s] in event.\n", !command ? "null" : command);
     }
