@@ -34,8 +34,6 @@
 //#define RTP_DEBUG_WRITE_DELTA
 //#define DEBUG_MISSED_SEQ
 
-typedef unsigned long u_long;
-
 #include <switch.h>
 #include <switch_stun.h>
 #include <apr_network_io.h>
