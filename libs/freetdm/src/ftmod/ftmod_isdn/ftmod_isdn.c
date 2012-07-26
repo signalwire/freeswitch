@@ -1964,9 +1964,7 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 					data->offset += rlen;
 				}
 
-				if (data->offset >= ts.rate) {
-					data->offset = 0;
-				}
+				data->offset %= (ts.rate << 1);
 			}
 		}
 
