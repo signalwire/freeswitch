@@ -140,6 +140,7 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
             goto done;
         }
         
+        term->uuid = switch_core_strdup(term->pool, switch_core_session_get_uuid(session));
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));   
     }
     
