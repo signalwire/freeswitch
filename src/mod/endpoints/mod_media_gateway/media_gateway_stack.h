@@ -15,6 +15,11 @@
 
 #define MG_INACTIVITY_TMR_RESOLUTION   100          /* mit in ito package is experessed in 10ms steps */
 
+/* rtp/avp profiles */
+#define MG_RTP_AVP_PROFILE_A_LAW 8
+#define MG_RTP_AVP_PROFILE_U_LAW 0
+
+
 typedef enum{
 	MG_SDP_NONE,
 	MG_SDP_LOCAL,

@@ -566,6 +566,10 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
             goto error;
         }
 
+	if(!term->mg_ctxt){
+		term->mg_ctxt = mg_ctxt;
+	}
+
         switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
 
         is_rtp = 0x01;
@@ -577,6 +581,15 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	    if(NULL == term){
 		    mg_util_set_err_string(&errTxt, " Resource Failure ");
 		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+		    goto error;
+	    }
+
+	    if(!term->mg_ctxt){
+		    term->mg_ctxt = mg_ctxt;
+	    } else {
+		    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Termination[%s] already in context..rejecting ADD \n", term->name);
+		    mg_util_set_err_string(&errTxt, " Term already is in call ");
+		    err_code = MGT_MGCP_RSP_CODE_PROT_ERROR;
 		    goto error;
 	    }
 

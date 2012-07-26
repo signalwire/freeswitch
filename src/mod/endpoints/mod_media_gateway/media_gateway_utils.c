@@ -789,7 +789,7 @@ void mgco_print_CmSdpU8OrNil(CmSdpU8OrNil* p)
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"CmSdpU8OrNil: Value = %d \n", (NOTPRSNT != p->val.pres)?p->val.val:-1); 
 }
 
-void mgco_print_sdp_media_param(CmSdpMedPar *s)
+void mgco_print_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sdp_types_e sdp_type)
 {
     int i=0x00;
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "***** Media Parameter *********** \n");
@@ -832,6 +832,12 @@ void mgco_print_sdp_media_param(CmSdpMedPar *s)
 
                             for(i=0;i<r->num.val;i++){
                                 mgco_print_CmSdpU8OrNil(r->fmts[i]);
+
+				if(MG_RTP_AVP_PROFILE_A_LAW == r->fmts[i]->val.val){
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " MG_RTP_AVP_PROFILE_A_LAW: \n"); 
+				}else if(MG_RTP_AVP_PROFILE_U_LAW == r->fmts[i]->val.val){
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " MG_RTP_AVP_PROFILE_U_LAW: \n"); 
+				}
                             }
                         }
                         break;
@@ -1074,7 +1080,7 @@ void mgco_handle_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sdp_types_e
 								break;
 						}
 					}
-					mgco_print_sdp_media_param(&f->par);
+					mgco_print_sdp_media_param(&f->par, term, sdp_type);
 				}
 
 				/*info */

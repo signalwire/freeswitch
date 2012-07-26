@@ -99,6 +99,8 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
                                 term->pool = pool;
                                 term->type = MG_TERM_TDM;
                                 term->profile = profile;
+                                term->mg_ctxt = NULL;
+				term->active_events = NULL;
                                 term->name = switch_core_sprintf(pool, "%s%d", prefix, j);
                                 term->u.tdm.channel = j;
                                 term->u.tdm.span_name = switch_core_strdup(pool, channel_prefix);
