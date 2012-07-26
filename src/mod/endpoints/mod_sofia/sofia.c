@@ -1222,7 +1222,11 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to);
 				if ((params = strchr(refer_to, ';'))) {
-					*params++ = '\0';
+					if (*refer_to == '<') {
+						*params++ = '\0';
+					} else {
+						*params++ = '>';
+					}
 
 					if (!(method = switch_find_parameter(params, "method", NULL))) {
 						method = strdup("INVITE");
@@ -1260,7 +1264,11 @@ static void our_sofia_event_callback(nua_event_t event,
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Target-URI", "%s", refer_to);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Extension", ref_to_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Domain", ref_to_host);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Sender", "sofia/%s/%s", profile->name, referred_by);
+
+				if (!zstr(referred_by)) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Sender", "sofia/%s/%s", profile->name, referred_by);
+				}
+
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "var_origination_caller_id_number", ref_by_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "var_origination_caller_id_name", ref_by_user);
 				switch_event_fire(&event);
