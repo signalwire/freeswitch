@@ -410,15 +410,25 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 {
     const char *command = switch_event_get_header(event, "command");
     switch_channel_t *channel = switch_core_session_get_channel(session);
+    crtp_private_t *tech_pvt = switch_core_session_get_private(session);
     
     if (!zstr(command) && !strcasecmp(command, "media_modify")) {
         /* Compare parameters */
         if (compare_var(event, channel, kREMOTEADDR) ||
-            compare_var(event, channel, kREMOTEPORT) ||
-            compare_var(event, channel, kLOCALADDR) ||
-            compare_var(event, channel, kLOCALPORT)) {
-            /* We need to reset the rtp session */
+            compare_var(event, channel, kREMOTEPORT)) {
+            char *remote_addr = switch_event_get_header(event, kREMOTEADDR);
+            char *szremote_port = switch_event_get_header(event, kREMOTEADDR);
+            switch_port_t remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
             
+            switch_channel_set_variable(channel, kREMOTEADDR, remote_addr);
+            switch_channel_set_variable(channel, kREMOTEPORT, szremote_port);
+            const char *err;
+            
+            if (switch_rtp_set_remote_address(tech_pvt->rtp_session, remote_addr, remote_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error setting RTP remote address: %s\n", err);
+            } else {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set RTP remote: %s:%d\n", remote_addr, (int)remote_port);
+            }
         }
         
         if (compare_var(event, channel, kCODEC) ||
@@ -426,7 +436,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
             compare_var(event, channel, kPT) ||
             compare_var(event, channel, kRATE)) {
             /* Reset codec */
-            
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Switching codec not yet implemented\n");
         }
         
     } else {
