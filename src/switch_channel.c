@@ -717,6 +717,16 @@ SWITCH_DECLARE(const char *) switch_channel_get_hold_music(switch_channel_t *cha
 		var = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE);
 	}
 
+	if (!zstr(var)) {
+		char *expanded = switch_channel_expand_variables(channel, var);
+		
+		if (expanded != var) {
+			var = switch_core_session_strdup(channel->session, expanded);
+			free(expanded);
+		}
+	}
+
+
 	return var;
 }
 
