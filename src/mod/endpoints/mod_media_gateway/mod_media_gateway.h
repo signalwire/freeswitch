@@ -83,9 +83,16 @@ typedef struct mg_context_s mg_context_t;
 /* TDM parameters understood by the controllable channel */
 #define kSPAN_ID "span"
 #define kCHAN_ID "chan"
+#define kSPAN_NAME "span_name"
 
 
 typedef struct mg_termination_s mg_termination_t;
+
+enum {
+    MGT_ALLOCATED = (1 << 0),
+    MGT_ACTIVE = (1 << 1),
+    
+} mg_termination_flags;
 
 struct mg_termination_s {
     switch_memory_pool_t *pool;
@@ -96,6 +103,7 @@ struct mg_termination_s {
     megaco_profile_t *profile; /*!< Parent MG profile */
     MgMgcoReqEvtDesc  *active_events;     /* !< active megaco events */
     mg_termination_t *next; /*!< List for physical terminations */
+    uint32_t flags;
     
     union {
         struct {
@@ -116,8 +124,8 @@ struct mg_termination_s {
         } rtp;
         
         struct {
-            int span;
             int channel;
+            const char *span_name;
         } tdm;
     } u;
 };
@@ -165,6 +173,9 @@ struct megaco_profile_s {
     
     uint8_t rtpid_bitmap[MG_MAX_CONTEXTS/8];
     uint32_t rtpid_next;
+    
+    mg_termination_t *physical_terminations;
+    
     switch_hash_t *terminations;
     switch_thread_rwlock_t *terminations_rwlock;
 };
