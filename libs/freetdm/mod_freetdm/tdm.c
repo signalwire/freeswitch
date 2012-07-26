@@ -269,9 +269,9 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->write_codec.implementation) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
+        
+        ftdm_channel_close(&tech_pvt->ftdm_channel);
 	}
-    
-    ftdm_channel_close(&tech_pvt->ftdm_channel);
 
     return SWITCH_STATUS_SUCCESS;
 }
