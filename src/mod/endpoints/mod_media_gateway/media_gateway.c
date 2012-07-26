@@ -134,12 +134,13 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
     }
     
     if (zstr(term->uuid)) {    
-        if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_CAUSE_SUCCESS) {
+        if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_STATUS_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to instanciate termination [%s]: %s\n", term->name, switch_channel_cause2str(cause));   
             status = SWITCH_STATUS_FALSE;
             goto done;
         }
         
+        term->uuid = switch_core_strdup(term->pool, switch_core_session_get_uuid(session));
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));   
     }
     
@@ -284,6 +285,10 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
         if (zstr(ctx->terminations[1]->uuid)) {
             megaco_activate_termination(ctx->terminations[1]);
         }
+        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bridging: %s (%s) <> %s (%s)\n", 
+                          ctx->terminations[0]->name, ctx->terminations[0]->uuid,
+                          ctx->terminations[1]->name, ctx->terminations[1]->uuid);
         
         switch_ivr_uuid_bridge(ctx->terminations[0]->uuid, ctx->terminations[1]->uuid);
     }

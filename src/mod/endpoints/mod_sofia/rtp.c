@@ -188,11 +188,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->dtmf_type = DTMF_2833; /* XXX */
     
     if (zstr(local_addr) || local_port == 0) {
-        tech_pvt->mode = RTP_SENDONLY;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "The local address and port must be set\n");
+        goto fail;
     } else if (zstr(remote_addr) || remote_port == 0) {
-        tech_pvt->mode = RTP_SENDRECV;
+        tech_pvt->mode = RTP_RECVONLY;
     } else {
-        
+        tech_pvt->mode = RTP_SENDRECV;
     }
     
     switch_core_session_set_private(*new_session, tech_pvt);
@@ -314,7 +315,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
     
-    if (!tech_pvt->rtp_session) {
+    if (!tech_pvt->rtp_session || tech_pvt->mode == RTP_RECVONLY) {
         goto cng;
     }
         
@@ -325,6 +326,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
     }
     
     tech_pvt->read_frame.flags = SFF_NONE;
+    tech_pvt->read_frame.codec = &tech_pvt->read_codec;
     status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
 
     if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -409,15 +411,27 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 {
     const char *command = switch_event_get_header(event, "command");
     switch_channel_t *channel = switch_core_session_get_channel(session);
+    crtp_private_t *tech_pvt = switch_core_session_get_private(session);
     
     if (!zstr(command) && !strcasecmp(command, "media_modify")) {
         /* Compare parameters */
         if (compare_var(event, channel, kREMOTEADDR) ||
-            compare_var(event, channel, kREMOTEPORT) ||
-            compare_var(event, channel, kLOCALADDR) ||
-            compare_var(event, channel, kLOCALPORT)) {
-            /* We need to reset the rtp session */
+            compare_var(event, channel, kREMOTEPORT)) {
+            char *remote_addr = switch_event_get_header(event, kREMOTEADDR);
+            char *szremote_port = switch_event_get_header(event, kREMOTEADDR);
+            switch_port_t remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
+            const char *err;
+
             
+            switch_channel_set_variable(channel, kREMOTEADDR, remote_addr);
+            switch_channel_set_variable(channel, kREMOTEPORT, szremote_port);
+            
+            if (switch_rtp_set_remote_address(tech_pvt->rtp_session, remote_addr, remote_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error setting RTP remote address: %s\n", err);
+            } else {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set RTP remote: %s:%d\n", remote_addr, (int)remote_port);
+                tech_pvt->mode = RTP_SENDRECV;
+            }
         }
         
         if (compare_var(event, channel, kCODEC) ||
@@ -425,9 +439,17 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
             compare_var(event, channel, kPT) ||
             compare_var(event, channel, kRATE)) {
             /* Reset codec */
-            
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Switching codec not yet implemented\n");
         }
         
+        if (compare_var(event, channel, kRFC2833PT)) {
+            const char *szpt = switch_channel_get_variable(channel, kRFC2833PT);
+            int pt = !zstr(szpt) ? atoi(szpt) : 0;
+            
+            switch_channel_set_variable(channel, kRFC2833PT, szpt);
+            switch_rtp_set_telephony_event(tech_pvt->rtp_session, pt);
+        }
+    
     } else {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received unknown command [%s] in event.\n", !command ? "null" : command);
     }

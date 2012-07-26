@@ -52,6 +52,8 @@ typedef struct {
     switch_core_session_t *session;
     switch_codec_t read_codec, write_codec;
     switch_frame_t read_frame;
+    
+	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 } ctdm_private_t;
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
@@ -101,7 +103,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
                 *span_name = switch_event_get_header(var_event, kSPAN_NAME);
     int chan_id;
     int span_id;
-    
+    switch_caller_profile_t *caller_profile;
     ftdm_span_t *span;
     ftdm_channel_t *chan;
     switch_channel_t *channel;
@@ -147,7 +149,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->span_id = span_id;
     tech_pvt->ftdm_channel = chan;
     tech_pvt->session = *new_session;
+    tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
+    tech_pvt->read_frame.data = tech_pvt->databuf;
     switch_core_session_set_private(*new_session, tech_pvt);
+    
+    
+    caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+    switch_channel_set_caller_profile(channel, caller_profile);
     
     snprintf(name, sizeof(name), "tdm/%d:%d", span_id, chan_id);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
@@ -228,6 +236,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
         goto fail;
     }
     
+    switch_channel_mark_answered(channel);
+    
     return SWITCH_CAUSE_SUCCESS;
 
 fail:
@@ -254,6 +264,9 @@ fail:
 
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    
+    switch_channel_set_state(channel, CS_CONSUME_MEDIA);   
     return SWITCH_STATUS_SUCCESS;   
 }
 
@@ -328,6 +341,7 @@ top:
     *frame = &tech_pvt->read_frame;
     tech_pvt->read_frame.datalen = (uint32_t)len;
     tech_pvt->read_frame.samples = tech_pvt->read_frame.datalen;
+    tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
     if (ftdm_channel_get_codec(tech_pvt->ftdm_channel) == FTDM_CODEC_SLIN) {
         tech_pvt->read_frame.samples /= 2;
