@@ -758,6 +758,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_prot
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "type", type);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
+		if (blocking) {
+			switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "blocking", "true");
+		}
 		
 		if (body) {
 			switch_event_add_body(message_event, "%s", body);

@@ -130,8 +130,9 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	char *extra_headers = NULL;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int mstatus = 0, sanity = 0;
+	const char *blocking;
+	int is_blocking = 0;
 
-	
 	proto = switch_event_get_header(message_event, "proto");
 	from_proto = switch_event_get_header(message_event, "from_proto");
 	from = switch_event_get_header(message_event, "from");
@@ -140,7 +141,9 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	body = switch_event_get_body(message_event);
 	type = switch_event_get_header(message_event, "type");
 	from_full = switch_event_get_header(message_event, "from_full");
-	
+	blocking = switch_event_get_header(message_event, "blocking");
+	is_blocking = switch_true(blocking);
+
 	network_ip = switch_event_get_header(message_event, "to_sip_ip");
 	network_port = switch_event_get_header(message_event, "to_sip_port");
 
@@ -328,11 +331,13 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		switch_snprintf(header, sizeof(header), "X-FS-Sending-Message: %s", switch_core_get_uuid());
 
 		switch_uuid_str(uuid_str, sizeof(uuid_str));
-
-		switch_mutex_lock(profile->flag_mutex);
-		switch_core_hash_insert(profile->chat_hash, uuid_str, &mstatus);
-		switch_mutex_unlock(profile->flag_mutex);
-
+		
+		if (is_blocking) {
+			switch_mutex_lock(profile->flag_mutex);
+			switch_core_hash_insert(profile->chat_hash, uuid_str, &mstatus);
+			switch_mutex_unlock(profile->flag_mutex);
+		}
+		
 		nua_message(msg_nh,
 					TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)),
 					TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
@@ -347,20 +352,23 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 					SIPTAG_HEADER_STR(header),
 					TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 					TAG_END());
-
-
-		sanity = 200;
-		while(!mstatus && --sanity) {
-			switch_yield(100000);
-		}
-
-		if (!(mstatus > 199 && mstatus < 300)) {
-			status = SWITCH_STATUS_FALSE;
-		}
 		
-		switch_mutex_lock(profile->flag_mutex);
-		switch_core_hash_delete(profile->chat_hash, uuid_str);
-		switch_mutex_unlock(profile->flag_mutex);
+
+		if (is_blocking) {
+			sanity = 200;
+
+			while(!mstatus && --sanity) {
+				switch_yield(100000);
+			}
+			
+			if (!(mstatus > 199 && mstatus < 300)) {
+				status = SWITCH_STATUS_FALSE;
+			}
+		
+			switch_mutex_lock(profile->flag_mutex);
+			switch_core_hash_delete(profile->chat_hash, uuid_str);
+			switch_mutex_unlock(profile->flag_mutex);
+		}
 
 		sofia_glue_free_destination(dst);
 		switch_safe_free(dup_dest);

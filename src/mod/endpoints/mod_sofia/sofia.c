@@ -755,6 +755,7 @@ void sofia_handle_sip_r_message(int status, sofia_profile_t *profile, nua_handle
 	call_id = sip->sip_call_id->i_id;
 
 
+
 	switch_mutex_lock(profile->flag_mutex);
 	mstatus = switch_core_hash_find(profile->chat_hash, call_id);
 	switch_mutex_unlock(profile->flag_mutex);
