@@ -101,7 +101,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
                 *span_name = switch_event_get_header(var_event, kSPAN_NAME);
     int chan_id;
     int span_id;
-    
+    switch_caller_profile_t *caller_profile;
     ftdm_span_t *span;
     ftdm_channel_t *chan;
     switch_channel_t *channel;
@@ -148,6 +148,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->ftdm_channel = chan;
     tech_pvt->session = *new_session;
     switch_core_session_set_private(*new_session, tech_pvt);
+    
+    
+    caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+    switch_channel_set_caller_profile(channel, caller_profile);
     
     snprintf(name, sizeof(name), "tdm/%d:%d", span_id, chan_id);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
