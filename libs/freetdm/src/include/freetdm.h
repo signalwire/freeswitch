@@ -181,9 +181,10 @@ typedef enum {
 	FTDM_CHAN_TYPE_FXO, /*!< FXO analog channel */
 	FTDM_CHAN_TYPE_EM, /*!< E & M channel */
 	FTDM_CHAN_TYPE_CAS, /*!< CAS channel */
+	FTDM_CHAN_TYPE_CLEAR, /* Clear channnel - no signalling module */
 	FTDM_CHAN_TYPE_COUNT /*!< Count of channel types */
 } ftdm_chan_type_t;
-#define CHAN_TYPE_STRINGS "B", "DQ921", "DQ931", "FXS", "FXO", "EM", "CAS", "INVALID"
+#define CHAN_TYPE_STRINGS "B", "DQ921", "DQ931", "FXS", "FXO", "EM", "CAS", "CLEAR", "INVALID"
 /*! \brief transform from channel type to string and from string to channel type 
  * ftdm_str2ftdm_chan_type transforms a channel string (ie: "FXO" to FTDM_CHAN_TYPE_FXO) 
  * ftdm_chan_type2str transforms a channel type to string (ie: FTDM_CHAN_TYPE_B to "B")
