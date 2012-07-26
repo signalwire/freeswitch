@@ -2196,6 +2196,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		}
 	}
 
+	switch_xml_set_attr_d(cdr, "core-uuid", switch_core_get_uuid());
+
 	if (!(x_channel_data = switch_xml_add_child_d(cdr, "channel_data", cdr_off++))) {
 		goto error;
 	}
