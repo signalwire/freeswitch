@@ -301,6 +301,8 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                         }
                                     }
 
+				    mgco_handle_sdp(&local->sdp, term, MG_SDP_LOCAL);
+
                                     break;
                                 }
 
@@ -311,6 +313,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                     remote = &mediaPar->u.remote;
                                     sdp = remote->sdp.info[0];
                                     /* for Matt - same like local descriptor */
+				    mgco_handle_sdp(&remote->sdp, term, MG_SDP_REMOTE);
                                     break;
                                 }
 
@@ -403,12 +406,12 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
 
                                     if (mgStream->sl.remote.pres.pres) {
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
-                                        mgco_print_sdp(&mgStream->sl.remote.sdp);
+                                        mgco_handle_sdp(&mgStream->sl.remote.sdp, term, MG_SDP_LOCAL);
                                     }
 
                                     if (mgStream->sl.local.pres.pres) {
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
-                                        mgco_print_sdp(&mgStream->sl.local.sdp);
+                                        mgco_handle_sdp(&mgStream->sl.local.sdp, term, MG_SDP_REMOTE);
                                     }
 
                                     break;
@@ -567,11 +570,8 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
         is_rtp = 0x01;
 
-        /* TODO - Matt */
-        /* allocate rtp term and associated the same to context */
-        /********************************************************************/
+    /********************************************************************/
     }else{  /* Physical termination */
-	   printf("termId->name.lcl.val[%s]\n",termId->name.lcl.val);
 	    term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
 
 	    if(NULL == term){
@@ -581,9 +581,6 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	    }
 
 	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
-
-        
-        /* get physical termination */
     }
     /********************************************************************/
     /* associate physical termination to context  */
@@ -693,8 +690,6 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 		MgMgcoMediaDesc* media = &desc->u.media;
 
 		switch_split(dup,'.',ipAddress);
-
-		printf("ipAddress[0]=%s, ipAddress[1]=%s, ipAddress[2]=%s,ipAddress[3]=%s\n",ipAddress[0],ipAddress[1],ipAddress[2],ipAddress[3]);
 
 		/* Most probably we need to add local descriptor */
 
@@ -918,8 +913,8 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	MgMgcoInd  	  *mgErr;
 	MgMgcoTermId     *termId;
 	MgMgcoTermIdLst*  termLst;
-    mg_termination_t* term = NULL;
-    switch_status_t  ret;
+	mg_termination_t* term = NULL;
+	switch_status_t  ret;
 	int 		  err_code;
 	/*MgMgcoAmmReq 	  *cmd = &inc_cmd->u.mgCmdInd[0]->cmd.u.mod;*/
 	U32 		   txn_id = inc_cmd->transId.val;
@@ -1033,6 +1028,9 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
         ret = mg_prc_descriptors(mg_profile, inc_cmd, term);
 
+	/* SDP updated to termination */
+	
+	megaco_activate_termination(term);
     }
 
 	/********************************************************************/

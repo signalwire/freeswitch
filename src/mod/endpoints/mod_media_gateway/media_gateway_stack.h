@@ -16,6 +16,13 @@
 #define MG_INACTIVITY_TMR_RESOLUTION   100          /* mit in ito package is experessed in 10ms steps */
 
 typedef enum{
+	MG_SDP_NONE,
+	MG_SDP_LOCAL,
+	MG_SDP_REMOTE,
+}mgco_sdp_types_e;
+
+
+typedef enum{
         SNG_MG_TPT_NONE,
         SNG_MG_TPT_UDP,
         SNG_MG_TPT_TCP,
@@ -151,7 +158,7 @@ int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, megaco_profile_t* mg_cfg, m
 
 switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *cmd);
 switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoContextId* ctxtId, TknU32* peerId);
-void mgco_print_sdp(CmSdpInfoSet *sdp);
+void mgco_handle_sdp(CmSdpInfoSet *sdp,mg_termination_t* term, mgco_sdp_types_e sdp_type);
 void mg_util_set_ctxt_string ( MgStr  *errTxt, MgMgcoContextId     *ctxtId);
 switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd, MgMgcoContextId* new_ctxtId);
 switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd);

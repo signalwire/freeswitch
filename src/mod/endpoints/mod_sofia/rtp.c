@@ -315,7 +315,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
     
-    if (!tech_pvt->rtp_session || tech_pvt->mode == RTP_RECVONLY) {
+    if (!tech_pvt->rtp_session || tech_pvt->mode == RTP_SENDONLY) {
+	switch_yield(20000); /* replace by local timer XXX */
         goto cng;
     }
         
@@ -338,6 +339,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
     
 cng:
     *frame = &tech_pvt->read_frame;
+    tech_pvt->read_frame.codec = &tech_pvt->read_codec;
     tech_pvt->read_frame.flags |= SFF_CNG;
     tech_pvt->read_frame.datalen = 0;
     
@@ -370,8 +372,11 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
     
     tech_pvt->timestamp_send += samples;
 #endif
-    
-	switch_rtp_write_frame(tech_pvt->rtp_session, frame);
+    if (tech_pvt->mode == RTP_RECVONLY) {
+	return SWITCH_STATUS_SUCCESS;
+    }
+
+    switch_rtp_write_frame(tech_pvt->rtp_session, frame);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -403,7 +408,11 @@ static switch_bool_t compare_var(switch_event_t *event, switch_channel_t *channe
 {
     const char *chan_val = switch_channel_get_variable_dup(channel, varname, SWITCH_FALSE, -1);
     const char *event_val = switch_event_get_header(event, varname);
-    
+
+    if (zstr(chan_val) || zstr(event_val)) {
+	return 1;
+    }    
+
     return strcasecmp(chan_val, event_val);
 }
 
@@ -418,7 +427,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
         if (compare_var(event, channel, kREMOTEADDR) ||
             compare_var(event, channel, kREMOTEPORT)) {
             char *remote_addr = switch_event_get_header(event, kREMOTEADDR);
-            char *szremote_port = switch_event_get_header(event, kREMOTEADDR);
+            char *szremote_port = switch_event_get_header(event, kREMOTEPORT);
             switch_port_t remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
             const char *err;
 
