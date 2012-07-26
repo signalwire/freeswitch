@@ -227,6 +227,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
         goto fail;
     }
     
+    switch_channel_mark_answered(channel);
+    
     return SWITCH_CAUSE_SUCCESS;
 
 fail:
@@ -253,6 +255,9 @@ fail:
 
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    
+    switch_channel_set_state(channel, CS_CONSUME_MEDIA);   
     return SWITCH_STATUS_SUCCESS;   
 }
 

@@ -34,6 +34,8 @@
 //#define RTP_DEBUG_WRITE_DELTA
 //#define DEBUG_MISSED_SEQ
 
+typedef unsigned long u_long;
+
 #include <switch.h>
 #include <switch_stun.h>
 #include <apr_network_io.h>
@@ -1451,7 +1453,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 														  uint32_t index, switch_rtp_crypto_key_type_t type, unsigned char *key, switch_size_t keylen)
 {
 #ifndef ENABLE_SRTP
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "SRTP NOT SUPPORTED IN THIS BUILD!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SRTP NOT SUPPORTED IN THIS BUILD!\n");
 	return SWITCH_STATUS_FALSE;
 #else
 	switch_rtp_crypto_key_t *crypto_key;
