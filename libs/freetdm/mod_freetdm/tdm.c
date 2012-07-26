@@ -337,7 +337,7 @@ top:
     *frame = &tech_pvt->read_frame;
     tech_pvt->read_frame.datalen = (uint32_t)len;
     tech_pvt->read_frame.samples = tech_pvt->read_frame.datalen;
-    tech_pvt->read_frame = &tech_pvt->read_codec;
+    tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
     if (ftdm_channel_get_codec(tech_pvt->ftdm_channel) == FTDM_CODEC_SLIN) {
         tech_pvt->read_frame.samples /= 2;
