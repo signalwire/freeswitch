@@ -4154,8 +4154,8 @@ SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid(switch_channel_t *c
 {
 	const char *uuid = NULL;
 
-	if (!(uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-		uuid = switch_channel_get_variable(channel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE);
+	if (!(uuid = switch_channel_get_variable_dup(channel, SWITCH_SIGNAL_BOND_VARIABLE, SWITCH_FALSE, -1))) {
+		uuid = switch_channel_get_variable_dup(channel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE, SWITCH_FALSE, -1);
 	}
 
 	return uuid;

@@ -94,6 +94,14 @@ enum {
     
 } mg_termination_flags;
 
+struct mg_context_s {
+    uint32_t context_id;
+    mg_termination_t *terminations[MG_CONTEXT_MAX_TERMS];
+    megaco_profile_t *profile;
+    mg_context_t *next;
+    switch_memory_pool_t *pool;
+};
+
 struct mg_termination_s {
     switch_memory_pool_t *pool;
     mg_termination_type_t type;
@@ -103,6 +111,7 @@ struct mg_termination_s {
     megaco_profile_t *profile; /*!< Parent MG profile */
     MgMgcoReqEvtDesc  *active_events;     /* !< active megaco events */
     mg_termination_t *next; /*!< List for physical terminations */
+    mg_context_t* mg_ctxt;
     uint32_t flags;
     
     union {
@@ -131,13 +140,7 @@ struct mg_termination_s {
 };
 
 
-struct mg_context_s {
-    uint32_t context_id;
-    mg_termination_t *terminations[MG_CONTEXT_MAX_TERMS];
-    megaco_profile_t *profile;
-    mg_context_t *next;
-    switch_memory_pool_t *pool;
-};
+
 
 #define MG_CONTEXT_MODULO 16
 #define MG_MAX_CONTEXTS 32768
@@ -231,6 +234,7 @@ mg_context_t *megaco_choose_context(megaco_profile_t *profile);
 void megaco_release_context(mg_context_t *ctx);
 switch_status_t megaco_context_sub_termination(mg_context_t *ctx, mg_termination_t *term);
 switch_status_t megaco_context_sub_all_termination(mg_context_t *ctx);
+switch_status_t megaco_activate_termination(mg_termination_t *term);
 
 mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix);
 mg_termination_t *megaco_find_termination(megaco_profile_t *profile, const char *name);

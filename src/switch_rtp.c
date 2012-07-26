@@ -34,8 +34,6 @@
 //#define RTP_DEBUG_WRITE_DELTA
 //#define DEBUG_MISSED_SEQ
 
-typedef unsigned long u_long;
-
 #include <switch.h>
 #include <switch_stun.h>
 #include <apr_network_io.h>
@@ -2165,7 +2163,7 @@ SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 	}
 
 	switch_mutex_lock(rtp_session->flag_mutex);
-	ret = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock_input && rtp_session->sock_output && rtp_session->remote_addr
+	ret = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) && rtp_session->sock_input /* && rtp_session->sock_output && rtp_session->remote_addr */
 		   && rtp_session->ready == 2) ? 1 : 0;
 	switch_mutex_unlock(rtp_session->flag_mutex);
 

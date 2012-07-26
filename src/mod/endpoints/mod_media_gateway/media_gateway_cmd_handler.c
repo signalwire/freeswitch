@@ -301,6 +301,8 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                         }
                                     }
 
+				    mgco_handle_sdp(&local->sdp, term, MG_SDP_LOCAL);
+
                                     break;
                                 }
 
@@ -311,6 +313,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                     remote = &mediaPar->u.remote;
                                     sdp = remote->sdp.info[0];
                                     /* for Matt - same like local descriptor */
+				    mgco_handle_sdp(&remote->sdp, term, MG_SDP_REMOTE);
                                     break;
                                 }
 
@@ -403,12 +406,12 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
 
                                     if (mgStream->sl.remote.pres.pres) {
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
-                                        mgco_print_sdp(&mgStream->sl.remote.sdp);
+                                        mgco_handle_sdp(&mgStream->sl.remote.sdp, term, MG_SDP_LOCAL);
                                     }
 
                                     if (mgStream->sl.local.pres.pres) {
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
-                                        mgco_print_sdp(&mgStream->sl.local.sdp);
+                                        mgco_handle_sdp(&mgStream->sl.local.sdp, term, MG_SDP_REMOTE);
                                     }
 
                                     break;
@@ -495,6 +498,10 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     /*MgMgcoStreamDesc*   inc_strm_desc;*/
     MgMgcoAudRetParm *desc;
     mg_context_t* mg_ctxt;
+    int mediaId;
+    MgMgcoLocalDesc   *local = NULL;
+    CmSdpInfoSet      *psdp  = NULL;
+
 
     /* TODO - Kapil dummy line , will need to add with proper code */
     inc_med_desc = &cmd->dl.descs[0]->u.media;
@@ -540,8 +547,14 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         MG_SET_VAL_PRES(new_ctxtId->val, mg_ctxt->context_id);
     }
     else {
-        /* context already present */
-        memcpy(new_ctxtId, &inc_cmd->contextId,sizeof(MgMgcoContextId));
+	    /* context already present */
+	    memcpy(new_ctxtId, &inc_cmd->contextId,sizeof(MgMgcoContextId));
+	    mg_ctxt =  megaco_get_context(mg_profile, inc_cmd->contextId.val.val);
+	    if(NULL == mg_ctxt){
+		    mg_util_set_err_string(&errTxt, " Resource Failure ");
+		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+		    goto error;
+	    }
     }
 
     /********************************************************************/
@@ -557,16 +570,34 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
             goto error;
         }
 
+	if(!term->mg_ctxt){
+		term->mg_ctxt = mg_ctxt;
+	}
+
         switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
 
         is_rtp = 0x01;
 
-        /* TODO - Matt */
-        /* allocate rtp term and associated the same to context */
-        /********************************************************************/
+    /********************************************************************/
     }else{  /* Physical termination */
-        
-        /* get physical termination */
+	    term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
+
+	    if(NULL == term){
+		    mg_util_set_err_string(&errTxt, " Resource Failure ");
+		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+		    goto error;
+	    }
+
+	    if(!term->mg_ctxt){
+		    term->mg_ctxt = mg_ctxt;
+	    } else {
+		    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Termination[%s] already in context..rejecting ADD \n", term->name);
+		    mg_util_set_err_string(&errTxt, " Term already is in call ");
+		    err_code = MGT_MGCP_RSP_CODE_PROT_ERROR;
+		    goto error;
+	    }
+
+	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
     }
     /********************************************************************/
     /* associate physical termination to context  */
@@ -659,65 +690,73 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         }
 
         /* copy media descriptor */
-
         desc = rsp.u.mgCmdRsp[0]->u.add.audit.parms[rsp.u.mgCmdRsp[0]->u.add.audit.num.val-1];
         desc->type.pres = PRSNT_NODEF;
         desc->type.val = MGT_MEDIADESC;
         mgUtlCpyMgMgcoMediaDesc(&desc->u.media, inc_med_desc, &rsp.u.mgCmdRsp[0]->memCp);
+	/* see if we have received local descriptor */
+	if((NOTPRSNT != desc->u.media.num.pres) && 
+			(0 != desc->u.media.num.val))
+	{
+		for(mediaId=0; mediaId<desc->u.media.num.val; mediaId++) {
+			if(MGT_MEDIAPAR_LOCAL == desc->u.media.parms[mediaId]->type.val) {
+				local  = &desc->u.media.parms[mediaId]->u.local;
+			}
+		}
+	}
 
 	/* only for RTP */
 	if(is_rtp){
 		/* build local descriptors */
 		/*MgMgcoStreamDesc *stream;*/
-		MgMgcoLocalDesc   *local;
-		CmSdpInfoSet *psdp;
 		char* ipAddress[4];// = "192.168.1.1";
+		char* dup = strdup((char*)term->u.rtp.local_addr);
 		MgMgcoMediaDesc* media = &desc->u.media;
 
-		switch_split((char*)term->u.rtp.local_addr,'.',ipAddress);
-
-		printf("ipAddress[0]=%s, ipAddress[1]=%s, ipAddress[2]=%s,ipAddress[3]=%s\n",ipAddress[0],ipAddress[1],ipAddress[2],ipAddress[3]);
+		switch_split(dup,'.',ipAddress);
 
 		/* Most probably we need to add local descriptor */
+		if(!local){
 
-		/* allocating mem for local descriptor */
-		if (mgUtlGrowList((void ***)&media->parms, sizeof(MgMgcoMediaPar),
-					&media->num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-		{
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-			return SWITCH_STATUS_FALSE;
-		}
+			/* allocating mem for local descriptor */
+			if (mgUtlGrowList((void ***)&media->parms, sizeof(MgMgcoMediaPar),
+						&media->num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
 
 #if 0
-		/* Kapil - NOT REQUIRED..keeping now just for ref..will delete  asap  */
-		media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
-		/*media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_STRPAR;*/
+			/* Kapil - NOT REQUIRED..keeping now just for ref..will delete  asap  */
+			media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
+			/*media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_STRPAR;*/
 
-		printf("media->num.val[%d]\n",media->num.val);
+			printf("media->num.val[%d]\n",media->num.val);
 
-		stream = &media->parms[media->num.val-1]->u.stream;
-		stream->pres.pres = PRSNT_NODEF;
-		stream->pres.val = 0x01;
+			stream = &media->parms[media->num.val-1]->u.stream;
+			stream->pres.pres = PRSNT_NODEF;
+			stream->pres.val = 0x01;
 #if 0
-		if(inc_med_desc->num.pres && inc_med_desc->num.val){
-			/* TODO - check stream descriptor type for all medias */
-			inc_strm_desc = &inc_med_desc->parms[0]->u.stream;
-			memcpy(&stream->streamId, &inc_strm_desc->streamId, sizeof(MgMgcoStreamId));
+			if(inc_med_desc->num.pres && inc_med_desc->num.val){
+				/* TODO - check stream descriptor type for all medias */
+				inc_strm_desc = &inc_med_desc->parms[0]->u.stream;
+				memcpy(&stream->streamId, &inc_strm_desc->streamId, sizeof(MgMgcoStreamId));
+			}
+#endif
+
+			MG_INIT_TOKEN_VALUE(&(stream->streamId), 1);
+
+
+			stream->sl.pres.pres = PRSNT_NODEF;
+			stream->sl.pres.val = 0x01;
+
+			local  = &stream->sl.local;
+#endif
+			media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
+			media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_LOCAL;
+
+			local  = &media->parms[media->num.val-1]->u.local;
 		}
-#endif
-
-		MG_INIT_TOKEN_VALUE(&(stream->streamId), 1);
-
-
-		stream->sl.pres.pres = PRSNT_NODEF;
-		stream->sl.pres.val = 0x01;
-
-		local  = &stream->sl.local;
-#endif
-		media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
-		media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_LOCAL;
-
-		local  = &media->parms[media->num.val-1]->u.local;
 
 		local->pres.pres = PRSNT_NODEF;
 
@@ -812,8 +851,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
 			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
 			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.type), CM_SDP_SPEC);
-			//MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
-			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), 2904);
+			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
 
 			if (mgUtlGrowList((void ***)&media->field.par.pflst, sizeof(CmSdpMedProtoFmts),
 						&media->field.par.numProtFmts, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
@@ -852,6 +890,8 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 				MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[0]->u.ptime), term->u.rtp.ptime);
 			}
 		}
+
+		free(dup);
 	}
 
 
@@ -899,8 +939,8 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	MgMgcoInd  	  *mgErr;
 	MgMgcoTermId     *termId;
 	MgMgcoTermIdLst*  termLst;
-    mg_termination_t* term = NULL;
-    switch_status_t  ret;
+	mg_termination_t* term = NULL;
+	switch_status_t  ret;
 	int 		  err_code;
 	/*MgMgcoAmmReq 	  *cmd = &inc_cmd->u.mgCmdInd[0]->cmd.u.mod;*/
 	U32 		   txn_id = inc_cmd->transId.val;
@@ -1014,6 +1054,9 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
         ret = mg_prc_descriptors(mg_profile, inc_cmd, term);
 
+	/* SDP updated to termination */
+	
+	megaco_activate_termination(term);
     }
 
 	/********************************************************************/
