@@ -52,6 +52,8 @@ typedef struct {
     switch_core_session_t *session;
     switch_codec_t read_codec, write_codec;
     switch_frame_t read_frame;
+    
+	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 } ctdm_private_t;
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
@@ -146,6 +148,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->span_id = span_id;
     tech_pvt->ftdm_channel = chan;
     tech_pvt->session = *new_session;
+    tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
+    tech_pvt->read_frame.data = tech_pvt->databuf;
     switch_core_session_set_private(*new_session, tech_pvt);
     
     
