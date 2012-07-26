@@ -306,8 +306,7 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 			if (type == FTDM_CHAN_TYPE_FXS 
 			|| type == FTDM_CHAN_TYPE_FXO 
 			|| type == FTDM_CHAN_TYPE_CAS
-			|| type == FTDM_CHAN_TYPE_B 
-			|| type == FTDM_CHAN_TYPE_CLEAR) {
+			|| type == FTDM_CHAN_TYPE_B) {
 				int err;
 				
 				hwec_str = "unavailable";
