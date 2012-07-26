@@ -3781,8 +3781,10 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 			
 			if (!strstr((char *)cb->stream->data, tmp)) {
 				cb->stream->write_function(cb->stream, "%s,", tmp);
-				free(tmp);
 			}
+
+			free(tmp);
+
 		} else {
 			cb->stream->write_function(cb->stream, "%ssofia/%s/sip:%s,", argv[2], argv[1], sofia_glue_strip_proto(contact));
 		}
