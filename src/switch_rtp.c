@@ -1834,6 +1834,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		goto end;
 	}
 
+#if 0
 	if (zstr(tx_host)) {
 		*err = "Missing remote host";
 		goto end;
@@ -1843,6 +1844,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		*err = "Missing remote port";
 		goto end;
 	}
+#endif
 
 	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
 		goto end;
@@ -1856,7 +1858,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		goto end;
 	}
 
-	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, 0, SWITCH_TRUE, err) != SWITCH_STATUS_SUCCESS) {
+	if (!zstr(tx_host) && switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, 0, SWITCH_TRUE, err) != SWITCH_STATUS_SUCCESS) {
 		switch_mutex_unlock(rtp_session->flag_mutex);
 		rtp_session = NULL;
 		goto end;
