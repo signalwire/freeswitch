@@ -1570,6 +1570,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
+	switch_core_set_variable("core_uuid", runtime.uuid_str);
 
 
 	return SWITCH_STATUS_SUCCESS;
