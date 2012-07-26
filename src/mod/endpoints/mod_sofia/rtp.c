@@ -325,6 +325,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
     }
     
     tech_pvt->read_frame.flags = SFF_NONE;
+    tech_pvt->read_frame.codec = &tech_pvt->read_codec;
     status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
 
     if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
