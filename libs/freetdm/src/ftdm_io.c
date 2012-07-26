@@ -1470,7 +1470,7 @@ FT_DECLARE(ftdm_status_t) ftdm_group_channel_use_count(ftdm_group_t *group, uint
 
 static __inline__ int chan_is_avail(ftdm_channel_t *check)
 {
-	if (check->type == FTDM_CHAN_TYPE_CLEAR) {
+	if (check->span->signal_type == FTDM_SIGTYPE_NONE) {
 		if (!ftdm_test_flag(check, FTDM_CHANNEL_READY) ||
 			ftdm_test_flag(check, FTDM_CHANNEL_INUSE) ||
 			ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) ||
@@ -5138,12 +5138,6 @@ static ftdm_status_t load_config(void)
 					}
 				} else {
 					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
-				}
-			} else if (!strcasecmp(var, "clear-channel")) {
-				unsigned chans_configured = 0;
-				chan_config.type = FTDM_CHAN_TYPE_CLEAR;
-				if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
-					configured += chans_configured;
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
 				unsigned chans_configured = 0;
