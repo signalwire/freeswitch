@@ -671,9 +671,11 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 	switch_snprintf(tmp, sizeof(tmp), "%u", conference->count);
 	switch_xml_set_txt_d(x_tag1, tmpp);	
 
+#if 0
 	if (conference->count == 0) {
 		switch_event_add_header(revent, SWITCH_STACK_BOTTOM, "notfound", "true");
 	}
+#endif
 
 	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "active", off1++))) {
 		abort();
