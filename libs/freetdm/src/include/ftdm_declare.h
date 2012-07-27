@@ -192,6 +192,7 @@ typedef __int8 int8_t;
 #define FTDM_SIZE_FMT "Id"
 #define FTDM_INT64_FMT "lld"
 #define FTDM_UINT64_FMT "llu"
+#define FTDM_XINT64_FMT "llx"
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
 #define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
 #else
@@ -203,9 +204,11 @@ typedef __int8 int8_t;
 #if (defined(__SIZEOF_LONG__) && (__SIZEOF_LONG__ == 8)) || defined(__LP64__) || defined(__LLP64__)
 #define FTDM_INT64_FMT "ld"
 #define FTDM_UINT64_FMT "lu"
+#define FTDM_XINT64_FMT "lx"
 #else
 #define FTDM_INT64_FMT "lld"
 #define FTDM_UINT64_FMT "llu"
+#define FTDM_XINT64_FMT "llx"
 #endif
 #define FTDM_INVALID_SOCKET -1
 typedef int ftdm_socket_t;
