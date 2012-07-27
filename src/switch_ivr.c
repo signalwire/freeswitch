@@ -1690,6 +1690,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 
+		/* Set CF_TRANSFER flag before hanging up bleg to avoid race condition */
+		switch_channel_set_flag(channel, CF_TRANSFER);
+
 		/* If HANGUP_AFTER_BRIDGE is set to 'true', SWITCH_SIGNAL_BRIDGE_VARIABLE 
 		 * will not have a value, so we need to check SWITCH_BRIDGE_VARIABLE */
 
@@ -1725,8 +1728,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		}
 
 		switch_channel_set_caller_profile(channel, new_profile);
-		switch_channel_set_flag(channel, CF_TRANSFER);
-		
+
 		switch_channel_set_state(channel, CS_ROUTING);
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSFER;
