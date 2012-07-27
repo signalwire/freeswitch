@@ -1699,17 +1699,18 @@ switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_term
 	/* loop through coddec list and remove un-supported codec */ 
 	for(i = 0; i <  fmtList->num.val; i++)
 	{
+		foundCodec = 0x00;
 		fmt = fmtList->fmts[i];
 
 		if((NOTPRSNT == fmt->type.pres) || (NOTPRSNT == fmt->val.pres)) continue;
 
 		if(CM_SDP_SPEC != fmt->type.val) continue;  /* TODO - need to see for other cases like CM_SDP_NIL/CM_SDP_CHOICE etc not sure as of now */ 
 
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "codec[%d] number \n", fmt->val.val);
 
 		/* see if received codec is present in our codec supported list */
 		for (id = 0; codecs[id] && id < codec_count; id++) {
 			int pt = codecs[id]->ianacode;
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "Matching recv codec[%d] with supported codec[%d] \n", fmt->val.val, pt);
 			//const char *name = codecs[id]->iananame;
 			if(pt == fmt->val.val){
 				foundCodec = 0x01;
@@ -1749,6 +1750,14 @@ switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_term
 				}
 			}
 		}
+	}
+
+	if(0 == fmtList->num.val) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No Supported codec found in offer, Rejecting request \n");
+		term->mg_error_code = switch_core_alloc(term->pool, sizeof(term->mg_error_code));
+		*term->mg_error_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
+		
+		return SWITCH_STATUS_FALSE;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1799,6 +1808,12 @@ switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_
 			for(i=0; i<out->num.val; i++) {
 				if(MGT_MEDIAPAR_LOCAL == out->parms[i]->type.val) {
 					local  = &out->parms[i]->u.local;
+					break;
+				} else if(MGT_MEDIAPAR_STRPAR == out->parms[i]->type.val){
+					MgMgcoStreamDesc *stream = &out->parms[i]->u.stream;
+					if((NOTPRSNT != stream->sl.pres.pres) && (NOTPRSNT !=  stream->sl.local.pres.pres)){
+						local  = &stream->sl.local;
+					}
 				}
 			}
 		}
@@ -1823,12 +1838,9 @@ switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_
 					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.type), CM_SDP_SPEC);
 					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.orig.pres), 1);
 
-					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.usrName, 1, "-",
-							NULL);
-					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessId, 1, "0",
-							NULL);
-					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessVer, 1, "0",
-							NULL);
+					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.usrName, 1, "-", memCp);
+					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessId, 1, "0", memCp);
+					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessVer, 1, "0", memCp);
 					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.netType.type),
 							CM_SDP_NET_TYPE_IN);
 					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.addrType), 

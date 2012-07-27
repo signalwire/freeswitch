@@ -707,7 +707,13 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 	/* only for RTP */
 	if(is_rtp){
-		mg_build_sdp(&desc->u.media, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp);
+		if(SWITCH_STATUS_FALSE == mg_build_sdp(&desc->u.media, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp)) {
+			if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+				mg_util_set_err_string(&errTxt, " Unsupported Codec ");
+				err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
+				goto error;
+			}
+		}
 	}
 #if 0
 	if(is_rtp){
