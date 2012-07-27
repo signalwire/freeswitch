@@ -3808,6 +3808,9 @@ static void actual_message_query_handler(switch_event_t *event)
 			if (globals.message_query_exact_match) {
 				if ((profile = (vm_profile_t *) switch_core_hash_find(globals.profile_hash, domain))) {
 					parse_profile();
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+									  "Cound not find a profile for domain: [%s] Returning 0 messages\nWhen message-query-exact-match is enabled you must have a dedicated vm profile per distinct domain name you wish to use.\n", domain);
 				}
 			} else {
 				for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
