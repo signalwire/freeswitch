@@ -155,6 +155,48 @@ done:
     return SWITCH_STATUS_SUCCESS;
 }
 
+
+/*
+ * Originate a channel so the target technology gets to run initialization code
+ */
+switch_status_t megaco_prepare_termination(mg_termination_t *term)
+{
+    switch_event_t *var_event = NULL;
+    switch_core_session_t *session = NULL;
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
+    char dialstring[100];
+    switch_call_cause_t cause;
+    switch_channel_t *channel;
+    switch_event_create(&var_event, SWITCH_EVENT_CLONE);
+    
+    if (term->type == MG_TERM_RTP) {
+    } else if (term->type == MG_TERM_TDM) {
+        switch_snprintf(dialstring, sizeof dialstring, "tdm/%s", term->name);
+
+        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ftdm_start_only",  "true");
+        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kSPAN_NAME,  term->u.tdm.span_name);
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kCHAN_ID, "%d", term->u.tdm.channel);
+    }
+    
+    /* Set common variables on the channel */
+    switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
+    if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_STATUS_SUCCESS) {
+        status = SWITCH_STATUS_FALSE;	
+        goto done;
+    }
+    channel = switch_core_session_get_channel(session);
+    switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+
+done:
+    if (session) {
+        switch_core_session_rwunlock(session);
+    }
+    switch_event_destroy(&var_event);
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
 mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix)
 {
     mg_termination_type_t termtype;
