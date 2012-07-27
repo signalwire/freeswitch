@@ -1703,7 +1703,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, c
 		switch_channel_t *rchannel = switch_core_session_get_channel(rsession);
 		const char *brto;
 
-		if ((brto = switch_channel_get_variable(rchannel, "orignate_signal_bond")) || 
+		if ((brto = switch_channel_get_variable(rchannel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE)) || 
 			(brto = switch_channel_get_partner_uuid(rchannel))) {
 			switch_copy_string(b_uuid, brto, blen);
 			status = SWITCH_STATUS_SUCCESS;
