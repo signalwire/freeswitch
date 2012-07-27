@@ -1080,6 +1080,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
 		mg_util_set_err_string(&errTxt, " Unsupported Codec ");
 		err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
+		/* TODO delete RTP termination */
 		goto error;
 	}
 
