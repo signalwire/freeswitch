@@ -322,7 +322,8 @@ typedef enum {
 	SCF_THREADED_SYSTEM_EXEC = (1 << 18),
 	SCF_SYNC_CLOCK_REQUESTED = (1 << 19),
 	SCF_CORE_ODBC_REQ = (1 << 20),
-	SCF_DEBUG_SQL = (1 << 21)
+	SCF_DEBUG_SQL = (1 << 21),
+	SCF_API_EXPANSION = (1 << 22)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -1776,6 +1777,7 @@ typedef enum {
 	SCSC_SYNC_CLOCK_WHEN_IDLE,
 	SCSC_DEBUG_SQL,
 	SCSC_SQL,
+	SCSC_API_EXPANSION
 } switch_session_ctl_t;
 
 typedef enum {

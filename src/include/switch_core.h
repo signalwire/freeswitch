@@ -323,6 +323,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(_In_ switch
 SWITCH_DECLARE(void) switch_core_port_allocator_destroy(_Inout_ switch_core_port_allocator_t **alloc);
 ///\}
 
+
+SWITCH_DECLARE(int) switch_core_test_flag(int flag);
+
 ///\defgroup ss Startup/Shutdown
 ///\ingroup core1
 ///\{

@@ -34,6 +34,7 @@
 #include <switch.h>
 #include <switch_channel.h>
 
+
 struct switch_cause_table {
 	const char *name;
 	switch_call_cause_t cause;
@@ -3591,7 +3592,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 
 					if ((sub_val = (char *) switch_channel_get_variable_dup(channel, vname, SWITCH_TRUE, idx))) {
 						if (var_list && !switch_event_check_permission_list(var_list, vname)) {
-							sub_val = "INVALID";
+							sub_val = "<Variable Expansion Permission Denied>";
 						}
 
 						if ((expanded_sub_val = switch_channel_expand_variables_check(channel, sub_val, var_list, api_list, recur+1)) == sub_val) {
@@ -3645,9 +3646,9 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 							vval = expanded;
 						}
 
-						if (api_list && !switch_event_check_permission_list(api_list, vname)) {
-							func_val = "INVALID";
-							sub_val = "INVALID";
+						if (!switch_core_test_flag(SCF_API_EXPANSION) || (api_list && !switch_event_check_permission_list(api_list, vname))) {
+							func_val = NULL;
+							sub_val = "<API Execute Permission Denied>";
 						} else {
 							if (switch_api_execute(vname, vval, channel->session, &stream) == SWITCH_STATUS_SUCCESS) {
 								func_val = stream.data;

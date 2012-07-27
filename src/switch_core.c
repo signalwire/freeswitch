@@ -1405,6 +1405,12 @@ static void switch_core_set_serial(void)
 }
 
 
+SWITCH_DECLARE(int) switch_core_test_flag(int flag)
+{
+	return switch_test_flag((&runtime), flag);
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_uuid_t uuid;
@@ -1433,6 +1439,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_set_flag((&runtime.dummy_cng_frame), SFF_CNG);
 	switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
 	switch_set_flag((&runtime), SCF_CLEAR_SQL);
+	switch_set_flag((&runtime), SCF_API_EXPANSION);
 #ifdef WIN32
 	switch_set_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
 #endif
@@ -1749,6 +1756,12 @@ static void switch_load_core_config(const char *file)
 						switch_set_flag((&runtime), SCF_CLEAR_SQL);
 					} else {
 						switch_clear_flag((&runtime), SCF_CLEAR_SQL);
+					}
+				} else if (!strcasecmp(var, "api-expansion")) {
+					if (switch_true(val)) {
+						switch_set_flag((&runtime), SCF_API_EXPANSION);
+					} else {
+						switch_clear_flag((&runtime), SCF_API_EXPANSION);
 					}
 				} else if (!strcasecmp(var, "enable-early-hangup") && switch_true(val)) {
 					switch_set_flag((&runtime), SCF_EARLY_HANGUP);
@@ -2097,6 +2110,18 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 				}
 			}
 			newintval = switch_test_flag((&runtime), SCF_VERBOSE_EVENTS);
+		}
+		break;
+	case SCSC_API_EXPANSION:
+		if (intval) {
+			if (oldintval > -1) {
+				if (oldintval) {
+					switch_set_flag((&runtime), SCF_API_EXPANSION);
+				} else {
+					switch_clear_flag((&runtime), SCF_API_EXPANSION);
+				}
+			}
+			newintval = switch_test_flag((&runtime), SCF_API_EXPANSION);
 		}
 		break;
 	case SCSC_THREADED_SYSTEM_EXEC:

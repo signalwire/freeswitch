@@ -35,6 +35,7 @@
 #include <switch.h>
 #include <switch_event.h>
 
+
 //#define SWITCH_EVENT_RECYCLE
 #define DISPATCH_QUEUE_LEN 100
 //#define DEBUG_DISPATCH_QUEUES
@@ -2109,7 +2110,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 						}
 
 						if (var_list && !switch_event_check_permission_list(var_list, vname)) {
-							sub_val = "INVALID";
+							sub_val = "<Variable Expansion Permission Denied>";
 						}
 
 
@@ -2161,9 +2162,9 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 							vval = expanded;
 						}
 
-						if (api_list && !switch_event_check_permission_list(api_list, vname)) {
-							func_val = "INVALID";
-							sub_val = "INVALID";
+						if (!switch_core_test_flag(SCF_API_EXPANSION) || (api_list && !switch_event_check_permission_list(api_list, vname))) {
+							func_val = NULL;
+							sub_val = "<API execute Permission Denied>";
 						} else {
 							if (switch_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 								func_val = stream.data;

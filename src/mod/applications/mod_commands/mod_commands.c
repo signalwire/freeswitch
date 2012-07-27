@@ -1854,6 +1854,15 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_VERBOSE_EVENTS, &arg);
 
 			stream->write_function(stream, "+OK verbose_events is %s \n", arg ? "on" : "off");
+		} else if (!strcasecmp(argv[0], "api_expansion")) {
+			arg = -1;
+			if (argv[1]) {
+				arg = switch_true(argv[1]);
+			}
+
+			switch_core_session_ctl(SCSC_API_EXPANSION, &arg);
+
+			stream->write_function(stream, "+OK api_expansion is %s \n", arg ? "on" : "off");
 		} else if (!strcasecmp(argv[0], "threaded_system_exec")) {
 			arg = -1;
 			if (argv[1]) {
