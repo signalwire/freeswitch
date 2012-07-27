@@ -1222,10 +1222,10 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to);
 				if ((params = strchr(refer_to, ';'))) {
-					if (*refer_to == '<') {
-						*params++ = '\0';
-					} else {
+					if (strchr(refer_to, '<')) {
 						*params++ = '>';
+					} else {
+						*params++ = '\0';
 					}
 
 					if (!(method = switch_find_parameter(params, "method", NULL))) {
