@@ -876,6 +876,7 @@ void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sd
 								r->fmts[0]->val.val, name); 
 						if(MG_TERM_RTP == term->type){
 							term->u.rtp.codec = name;
+							term->u.rtp.pt = r->fmts[0]->val.val;
 						}
 					}else{
 						/* ERROR */

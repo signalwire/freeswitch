@@ -421,17 +421,26 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
     const char *command = switch_event_get_header(event, "command");
     switch_channel_t *channel = switch_core_session_get_channel(session);
     crtp_private_t *tech_pvt = switch_core_session_get_private(session);
-    
+    char *codec  = switch_event_get_header_nil(event, kCODEC);
+    char *szptime  = switch_event_get_header_nil(event, kPTIME);
+    char *szrate = switch_event_get_header_nil(event, kRATE);
+    char *szpt = switch_event_get_header_nil(event, kPT);
+
+    int ptime  = !zstr(szptime) ? atoi(szptime) : 0,
+		rate = !zstr(szrate) ? atoi(szrate) : 8000,
+		pt = !zstr(szpt) ? atoi(szpt) : 0;
+
+
     if (!zstr(command) && !strcasecmp(command, "media_modify")) {
         /* Compare parameters */
         if (compare_var(event, channel, kREMOTEADDR) ||
             compare_var(event, channel, kREMOTEPORT)) {
-            char *remote_addr = switch_event_get_header(event, kREMOTEADDR);
-            char *szremote_port = switch_event_get_header(event, kREMOTEPORT);
-            switch_port_t remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
-            const char *err;
+		char *remote_addr = switch_event_get_header(event, kREMOTEADDR);
+		char *szremote_port = switch_event_get_header(event, kREMOTEPORT);
+		switch_port_t remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
+		const char *err;
 
-            
+
             switch_channel_set_variable(channel, kREMOTEADDR, remote_addr);
             switch_channel_set_variable(channel, kREMOTEPORT, szremote_port);
             
@@ -446,10 +455,47 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
         if (compare_var(event, channel, kCODEC) ||
             compare_var(event, channel, kPTIME) ||
             compare_var(event, channel, kPT) ||
-            compare_var(event, channel, kRATE)) {
-            /* Reset codec */
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Switching codec not yet implemented\n");
-        }
+	    compare_var(event, channel, kRATE)) {
+		/* Reset codec */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Switching codec updating \n");
+
+		if (switch_core_codec_init(&tech_pvt->read_codec,
+					codec,
+					NULL,
+					rate,
+					ptime,
+					1,
+					/*SWITCH_CODEC_FLAG_ENCODE |*/ SWITCH_CODEC_FLAG_DECODE,
+					NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
+			goto fail;
+		} else {
+			if (switch_core_codec_init(&tech_pvt->write_codec,
+						codec,
+						NULL,
+						rate,
+						ptime,
+						1,
+						SWITCH_CODEC_FLAG_ENCODE /*| SWITCH_CODEC_FLAG_DECODE*/, 
+						NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
+				goto fail;
+			}
+		}
+
+		if (switch_core_session_set_read_codec(session, &tech_pvt->read_codec) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set read codec?\n");
+			goto fail;
+		}
+
+		if (switch_core_session_set_write_codec(session, &tech_pvt->write_codec) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set write codec?\n");
+			goto fail;
+		}
+
+		switch_rtp_set_default_payload(tech_pvt->rtp_session, pt);
+		switch_rtp_set_recv_pt(tech_pvt->rtp_session, pt);
+	}
         
         if (compare_var(event, channel, kRFC2833PT)) {
             const char *szpt = switch_channel_get_variable(channel, kRFC2833PT);
@@ -464,6 +510,22 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
     }
 
     return SWITCH_STATUS_SUCCESS;
+fail:
+     if (tech_pvt) {
+        if (tech_pvt->read_codec.implementation) {
+			switch_core_codec_destroy(&tech_pvt->read_codec);
+		}
+		
+		if (tech_pvt->write_codec.implementation) {
+			switch_core_codec_destroy(&tech_pvt->write_codec);
+		}
+    }
+    
+    if (session) {
+        switch_core_session_destroy(&session);
+    }
+    return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+
 }
 
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)

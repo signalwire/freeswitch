@@ -111,7 +111,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     const char *dname;
     ftdm_codec_t codec;
     uint32_t interval;
-    ftdm_status_t fstatus;
+    /*ftdm_status_t fstatus;*/
     const char *ftdm_start_only = switch_event_get_header(var_event, "ftdm_start_only");
     ctdm_private_t *tech_pvt = NULL;
     
@@ -129,10 +129,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
         goto fail;
     }
 
+#if 0
     if ((fstatus = ftdm_span_start(span)) != FTDM_SUCCESS && fstatus != FTDM_EINVAL) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't start span %s.\n", span_name);
         goto fail;
     }
+#endif
 
     if (!zstr(ftdm_start_only) && switch_true(ftdm_start_only)) {
 	goto fail;
