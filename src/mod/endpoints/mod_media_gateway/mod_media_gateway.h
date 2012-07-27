@@ -237,6 +237,7 @@ void megaco_release_context(mg_context_t *ctx);
 switch_status_t megaco_context_sub_termination(mg_context_t *ctx, mg_termination_t *term);
 switch_status_t megaco_context_sub_all_termination(mg_context_t *ctx);
 switch_status_t megaco_activate_termination(mg_termination_t *term);
+switch_status_t megaco_prepare_termination(mg_termination_t *term);
 
 mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix);
 mg_termination_t *megaco_find_termination(megaco_profile_t *profile, const char *name);
