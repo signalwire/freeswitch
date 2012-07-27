@@ -142,8 +142,13 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
                                                 (reqEvtPar->u.other.val.u.eq.type.pres == PRSNT_NODEF) &&
                                                 (reqEvtPar->u.other.val.u.eq.type.val == MGT_VALTYPE_UINT32))
                                         {
+#ifdef BIT_64
                                             switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Received Inactivity timer value [%d]\n", 
-                                                    (int)reqEvtPar->u.other.val.u.eq.u.decInt.val); 
+                                                    reqEvtPar->u.other.val.u.eq.u.decInt.val); 
+#else
+                                            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Received Inactivity timer value [%ld]\n", 
+                                                    reqEvtPar->u.other.val.u.eq.u.decInt.val); 
+#endif
 
                                             mg_profile->inact_tmr = reqEvtPar->u.other.val.u.eq.u.decInt.val/MG_INACTIVITY_TMR_RESOLUTION;
 
@@ -296,6 +301,8 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                         }
                                     }
 
+				    mgco_handle_sdp(&local->sdp, term, MG_SDP_LOCAL);
+
                                     break;
                                 }
 
@@ -306,6 +313,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                     remote = &mediaPar->u.remote;
                                     sdp = remote->sdp.info[0];
                                     /* for Matt - same like local descriptor */
+				    mgco_handle_sdp(&remote->sdp, term, MG_SDP_REMOTE);
                                     break;
                                 }
 
@@ -398,12 +406,12 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
 
                                     if (mgStream->sl.remote.pres.pres) {
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
-                                        mgco_print_sdp(&mgStream->sl.remote.sdp);
+                                        mgco_handle_sdp(&mgStream->sl.remote.sdp, term, MG_SDP_LOCAL);
                                     }
 
                                     if (mgStream->sl.local.pres.pres) {
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
-                                        mgco_print_sdp(&mgStream->sl.local.sdp);
+                                        mgco_handle_sdp(&mgStream->sl.local.sdp, term, MG_SDP_REMOTE);
                                     }
 
                                     break;
@@ -490,6 +498,10 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     /*MgMgcoStreamDesc*   inc_strm_desc;*/
     MgMgcoAudRetParm *desc;
     mg_context_t* mg_ctxt;
+    int mediaId;
+    MgMgcoLocalDesc   *local = NULL;
+    CmSdpInfoSet      *psdp  = NULL;
+
 
     /* TODO - Kapil dummy line , will need to add with proper code */
     inc_med_desc = &cmd->dl.descs[0]->u.media;
@@ -535,8 +547,14 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         MG_SET_VAL_PRES(new_ctxtId->val, mg_ctxt->context_id);
     }
     else {
-        /* context already present */
-        memcpy(new_ctxtId, &inc_cmd->contextId,sizeof(MgMgcoContextId));
+	    /* context already present */
+	    memcpy(new_ctxtId, &inc_cmd->contextId,sizeof(MgMgcoContextId));
+	    mg_ctxt =  megaco_get_context(mg_profile, inc_cmd->contextId.val.val);
+	    if(NULL == mg_ctxt){
+		    mg_util_set_err_string(&errTxt, " Resource Failure ");
+		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+		    goto error;
+	    }
     }
 
     /********************************************************************/
@@ -544,7 +562,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     if ((NOTPRSNT != termId->type.pres)   &&
             (MGT_TERMID_CHOOSE == termId->type.val)){
 
-        term = megaco_choose_termination(mg_profile, "RTP"); /* TODO - RTP string has be configured one */
+        term = megaco_choose_termination(mg_profile, mg_profile->rtp_termination_id_prefix);
 
         if(NULL == term){
             mg_util_set_err_string(&errTxt, " Resource Failure ");
@@ -552,16 +570,34 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
             goto error;
         }
 
+	if(!term->mg_ctxt){
+		term->mg_ctxt = mg_ctxt;
+	}
+
         switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
 
         is_rtp = 0x01;
 
-        /* TODO - Matt */
-        /* allocate rtp term and associated the same to context */
-        /********************************************************************/
+    /********************************************************************/
     }else{  /* Physical termination */
-        
-        /* get physical termination */
+	    term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
+
+	    if(NULL == term){
+		    mg_util_set_err_string(&errTxt, " Resource Failure ");
+		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+		    goto error;
+	    }
+
+	    if(!term->mg_ctxt){
+		    term->mg_ctxt = mg_ctxt;
+	    } else {
+		    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Termination[%s] already in context..rejecting ADD \n", term->name);
+		    mg_util_set_err_string(&errTxt, " Term already is in call ");
+		    err_code = MGT_MGCP_RSP_CODE_PROT_ERROR;
+		    goto error;
+	    }
+
+	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
     }
     /********************************************************************/
     /* associate physical termination to context  */
@@ -654,195 +690,209 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         }
 
         /* copy media descriptor */
-
         desc = rsp.u.mgCmdRsp[0]->u.add.audit.parms[rsp.u.mgCmdRsp[0]->u.add.audit.num.val-1];
         desc->type.pres = PRSNT_NODEF;
         desc->type.val = MGT_MEDIADESC;
         mgUtlCpyMgMgcoMediaDesc(&desc->u.media, inc_med_desc, &rsp.u.mgCmdRsp[0]->memCp);
+	/* see if we have received local descriptor */
+	if((NOTPRSNT != desc->u.media.num.pres) && 
+			(0 != desc->u.media.num.val))
+	{
+		for(mediaId=0; mediaId<desc->u.media.num.val; mediaId++) {
+			if(MGT_MEDIAPAR_LOCAL == desc->u.media.parms[mediaId]->type.val) {
+				local  = &desc->u.media.parms[mediaId]->u.local;
+			}
+		}
+	}
 
-        {
-            /* build local descriptors */
-            /*MgMgcoStreamDesc *stream;*/
-            MgMgcoLocalDesc   *local; 
-            CmSdpInfoSet *psdp;
-            char* ipAddress = "192.168.1.1";
-            MgMgcoMediaDesc* media = &desc->u.media;
+	/* only for RTP */
+	if(is_rtp){
+		/* build local descriptors */
+		/*MgMgcoStreamDesc *stream;*/
+		char* ipAddress[4];// = "192.168.1.1";
+		char* dup = strdup((char*)term->u.rtp.local_addr);
+		MgMgcoMediaDesc* media = &desc->u.media;
 
-            /* Most probably we need to add local descriptor */
+		switch_split(dup,'.',ipAddress);
 
-            /* allocating mem for local descriptor */
-            if (mgUtlGrowList((void ***)&media->parms, sizeof(MgMgcoMediaPar),
-                        &media->num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-            {
-                switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-                return SWITCH_STATUS_FALSE;
-            }
+		/* Most probably we need to add local descriptor */
+		if(!local){
+
+			/* allocating mem for local descriptor */
+			if (mgUtlGrowList((void ***)&media->parms, sizeof(MgMgcoMediaPar),
+						&media->num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
 
 #if 0
-            /* Kapil - NOT REQUIRED..keeping now just for ref..will delete  asap  */
-            media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
-            /*media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_STRPAR;*/
+			/* Kapil - NOT REQUIRED..keeping now just for ref..will delete  asap  */
+			media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
+			/*media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_STRPAR;*/
 
-            printf("media->num.val[%d]\n",media->num.val);
+			printf("media->num.val[%d]\n",media->num.val);
 
-            stream = &media->parms[media->num.val-1]->u.stream;
-            stream->pres.pres = PRSNT_NODEF;
-            stream->pres.val = 0x01;
+			stream = &media->parms[media->num.val-1]->u.stream;
+			stream->pres.pres = PRSNT_NODEF;
+			stream->pres.val = 0x01;
 #if 0
-            if(inc_med_desc->num.pres && inc_med_desc->num.val){
-                /* TODO - check stream descriptor type for all medias */
-                inc_strm_desc = &inc_med_desc->parms[0]->u.stream;
-                memcpy(&stream->streamId, &inc_strm_desc->streamId, sizeof(MgMgcoStreamId));
-            }
+			if(inc_med_desc->num.pres && inc_med_desc->num.val){
+				/* TODO - check stream descriptor type for all medias */
+				inc_strm_desc = &inc_med_desc->parms[0]->u.stream;
+				memcpy(&stream->streamId, &inc_strm_desc->streamId, sizeof(MgMgcoStreamId));
+			}
 #endif
 
-            MG_INIT_TOKEN_VALUE(&(stream->streamId), 1);
+			MG_INIT_TOKEN_VALUE(&(stream->streamId), 1);
 
 
-            stream->sl.pres.pres = PRSNT_NODEF;
-            stream->sl.pres.val = 0x01;
+			stream->sl.pres.pres = PRSNT_NODEF;
+			stream->sl.pres.val = 0x01;
 
-            local  = &stream->sl.local;
+			local  = &stream->sl.local;
 #endif
-            media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
-            media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_LOCAL;
+			media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
+			media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_LOCAL;
 
-            local  = &media->parms[media->num.val-1]->u.local;
+			local  = &media->parms[media->num.val-1]->u.local;
+		}
 
-            local->pres.pres = PRSNT_NODEF;
+		local->pres.pres = PRSNT_NODEF;
 
-            psdp = &(local->sdp);
+		psdp = &(local->sdp);
 
-            if (mgUtlGrowList((void ***)&psdp->info, sizeof(CmSdpInfo),
-                        &psdp->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-            {
-                switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-                return SWITCH_STATUS_FALSE;
-            }
+		if (mgUtlGrowList((void ***)&psdp->info, sizeof(CmSdpInfo),
+					&psdp->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+			return SWITCH_STATUS_FALSE;
+		}
 
-            psdp->info[psdp->numComp.val-1]->pres.pres = PRSNT_NODEF;
+		psdp->info[psdp->numComp.val-1]->pres.pres = PRSNT_NODEF;
 
-            /* fill version */
-            /*memcpy(&psdp->info[0]->ver, &prsdp->info[0]->ver, sizeof(TknU16)); */
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->ver),1);
+		/* fill version */
+		/*memcpy(&psdp->info[0]->ver, &prsdp->info[0]->ver, sizeof(TknU16)); */
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->ver),1);
 
-            /* fill orig */
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.pres), 1);
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.type), CM_SDP_SPEC);
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.orig.pres), 1);
+		/* fill orig */
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.pres), 1);
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.type), CM_SDP_SPEC);
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.orig.pres), 1);
 
-            MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.usrName, 1, "-",
-                    &rsp.u.mgCmdRsp[0]->memCp);
-            MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessId, 1, "0",
-                    &rsp.u.mgCmdRsp[0]->memCp);
-            MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessVer, 1, "0",
-                    &rsp.u.mgCmdRsp[0]->memCp);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.netType.type),
-                    CM_SDP_NET_TYPE_IN);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.addrType), 
-                    CM_SDP_ADDR_TYPE_IPV4);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType), 
-                    CM_SDP_IPV4_IP_UNI);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType),
-                    CM_SDP_IPV4_IP_UNI);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[0]),
-                    ipAddress[0]);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[1]),
-                    ipAddress[1]);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[2]),
-                    ipAddress[2]);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[3]),
-                    ipAddress[3]);
+		MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.usrName, 1, "-",
+				&rsp.u.mgCmdRsp[0]->memCp);
+		MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessId, 1, "0",
+				&rsp.u.mgCmdRsp[0]->memCp);
+		MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessVer, 1, "0",
+				&rsp.u.mgCmdRsp[0]->memCp);
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.netType.type),
+				CM_SDP_NET_TYPE_IN);
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.addrType), 
+				CM_SDP_ADDR_TYPE_IPV4);
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType), 
+				CM_SDP_IPV4_IP_UNI);
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType),
+				CM_SDP_IPV4_IP_UNI);
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[0]),
+				atoi(ipAddress[0]));
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[1]),
+				atoi(ipAddress[1]));
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[2]),
+				atoi(ipAddress[2]));
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[3]),
+				atoi(ipAddress[3]));
 
-            /* fill session name */
-            /* TODO - need to fill proper session name or skip it..*/
-            MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->sessName, 8, "SANGOMA",&rsp.u.mgCmdRsp[0]->memCp);
+		/* fill session name */
+		/* TODO - need to fill proper session name or skip it..*/
+		MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->sessName, 8, "SANGOMA",&rsp.u.mgCmdRsp[0]->memCp);
 
 
-            /* Fill the SDP Connection Info */
-            /* "c=" line - ipaddress */
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.netType.type),CM_SDP_NET_TYPE_IN);
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.addrType), CM_SDP_ADDR_TYPE_IPV4);
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.u.ip4.addrType), CM_SDP_IPV4_IP_UNI);
+		/* Fill the SDP Connection Info */
+		/* "c=" line - ipaddress */
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.netType.type),CM_SDP_NET_TYPE_IN);
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.addrType), CM_SDP_ADDR_TYPE_IPV4);
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.u.ip4.addrType), CM_SDP_IPV4_IP_UNI);
 
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[0]), ipAddress[0]);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[1]), ipAddress[1]);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[2]), ipAddress[2]);
-            MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[3]), ipAddress[3]);
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[0]), atoi(ipAddress[0]));
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[1]), atoi(ipAddress[1]));
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[2]), atoi(ipAddress[2]));
+		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[3]), atoi(ipAddress[3]));
 
-            /* t= line */
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.pres),1);
+
+		/* t= line */
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.pres),1);
 #if 0
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.sdpOpTimeSet.numComp),0);
-            MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.zoneAdjSet.numComp),0);
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.sdpOpTimeSet.numComp),0);
+		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.zoneAdjSet.numComp),0);
 #endif
 
-            /* fill media descriptors */
-            {
-                CmSdpMediaDescSet* med = &psdp->info[psdp->numComp.val-1]->mediaDescSet;
-                CmSdpMediaDesc*    media;
+		/* fill media descriptors */
+		{
+			CmSdpMediaDescSet* med = &psdp->info[psdp->numComp.val-1]->mediaDescSet;
+			CmSdpMediaDesc*    media;
 
-                if (mgUtlGrowList((void ***)&med->mediaDesc, sizeof(CmSdpMediaDesc),
-                            &med->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-                {
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-                    return SWITCH_STATUS_FALSE;
-                }
+			if (mgUtlGrowList((void ***)&med->mediaDesc, sizeof(CmSdpMediaDesc),
+						&med->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
 
-                media = med->mediaDesc[med->numComp.val-1];
+			media = med->mediaDesc[med->numComp.val-1];
 
-                MG_INIT_TOKEN_VALUE(&(media->pres),1);
+			MG_INIT_TOKEN_VALUE(&(media->pres),1);
 
-                /* Fill CmSdpMediaField */
-                MG_INIT_TOKEN_VALUE(&(media->field.pres),1);
-                MG_INIT_TOKEN_VALUE(&(media->field.mediaType),CM_SDP_MEDIA_AUDIO);
+			/* Fill CmSdpMediaField */
+			MG_INIT_TOKEN_VALUE(&(media->field.pres),1);
+			MG_INIT_TOKEN_VALUE(&(media->field.mediaType),CM_SDP_MEDIA_AUDIO);
 
-                MG_INIT_TOKEN_VALUE(&(media->field.id.type),CM_SDP_VCID_PORT);
-                MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
-                MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
-                MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.type), CM_SDP_SPEC);
-                MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), 2904);
+			MG_INIT_TOKEN_VALUE(&(media->field.id.type),CM_SDP_VCID_PORT);
+			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
+			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
+			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.type), CM_SDP_SPEC);
+			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
 
-                if (mgUtlGrowList((void ***)&media->field.par.pflst, sizeof(CmSdpMedProtoFmts),
-                            &media->field.par.numProtFmts, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-                {
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-                    return SWITCH_STATUS_FALSE;
-                }
+			if (mgUtlGrowList((void ***)&media->field.par.pflst, sizeof(CmSdpMedProtoFmts),
+						&media->field.par.numProtFmts, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
 
-                /* CmSdpMedProtoFmts */
-                MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->prot.type), CM_SDP_MEDIA_PROTO_RTP)
-                MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->prot.u.subtype.type), CM_SDP_PROTO_RTP_AVP);
-                MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->protType), CM_SDP_MEDIA_PROTO_RTP);
+			/* CmSdpMedProtoFmts */
+			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->prot.type), CM_SDP_MEDIA_PROTO_RTP)
+				MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->prot.u.subtype.type), CM_SDP_PROTO_RTP_AVP);
+			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->protType), CM_SDP_MEDIA_PROTO_RTP);
 
 
-                if (mgUtlGrowList((void ***)&media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts, sizeof(CmSdpU8OrNil),
-                            &media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-                {
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-                    return SWITCH_STATUS_FALSE;
-                }
+			if (mgUtlGrowList((void ***)&media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts, sizeof(CmSdpU8OrNil),
+						&media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
 
-                MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->type), CM_SDP_SPEC);
+			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->type), CM_SDP_SPEC);
 
-                MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->val), 4);
+			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->val), 4);
 
-                /* Fill attribute if reqd */
-                {
-                    if (mgUtlGrowList((void ***)&media->attrSet.attr, sizeof(CmSdpAttr),
-                                &media->attrSet.numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-                    {
-                        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-                        return SWITCH_STATUS_FALSE;
-                    }
+			/* Fill attribute if reqd */
+			{
+				if (mgUtlGrowList((void ***)&media->attrSet.attr, sizeof(CmSdpAttr),
+							&media->attrSet.numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+				{
+					switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+					return SWITCH_STATUS_FALSE;
+				}
 
-                    MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[0]->type),CM_SDP_ATTR_PTIME);
-                    MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[0]->u.ptime),30);
-                }
+				MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[0]->type),CM_SDP_ATTR_PTIME);
+				MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[0]->u.ptime), term->u.rtp.ptime);
+			}
+		}
 
-            }
-
-        }
+		free(dup);
+	}
 
 
         /* We will always send one command at a time..*/
@@ -889,8 +939,8 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	MgMgcoInd  	  *mgErr;
 	MgMgcoTermId     *termId;
 	MgMgcoTermIdLst*  termLst;
-    mg_termination_t* term = NULL;
-    switch_status_t  ret;
+	mg_termination_t* term = NULL;
+	switch_status_t  ret;
 	int 		  err_code;
 	/*MgMgcoAmmReq 	  *cmd = &inc_cmd->u.mgCmdInd[0]->cmd.u.mod;*/
 	U32 		   txn_id = inc_cmd->transId.val;
@@ -1004,6 +1054,9 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
         ret = mg_prc_descriptors(mg_profile, inc_cmd, term);
 
+	/* SDP updated to termination */
+	
+	megaco_activate_termination(term);
     }
 
 	/********************************************************************/

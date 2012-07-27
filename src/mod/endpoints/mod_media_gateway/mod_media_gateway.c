@@ -639,7 +639,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
                             MgMgcoNtfyReply*  ntfy = &cmd->u.mgCmdCfm[0]->u.ntfy;
                             MgMgcoTermId*     term = NULL;
                             char              term_name[32]; 
-                            memset(&term_name[0], 32, 0x00);
+                            memset(&term_name[0], 0x00,32);
 
                             strcpy(&term_name[0], "Invalid");
 
@@ -685,7 +685,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
                             MgMgcoSvcChgReply*  svc = &cmd->u.mgCmdCfm[0]->u.svc;
                             MgMgcoTermId*     term = NULL;
                             char              term_name[32]; 
-                            memset(&term_name[0], 32, 0x00);
+                            memset(&term_name[0], 0x00, 32);
 
                             strcpy(&term_name[0], "Invalid");
 
