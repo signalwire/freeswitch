@@ -155,6 +155,9 @@ int mg_enable_logging(void);
 int mg_disable_logging(void);
 void mg_util_set_err_string ( MgStr  *errTxt, char* str);
 
+switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp);
+switch_status_t mg_add_local_descriptor(MgMgcoMediaDesc* media, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp  *memCp);
+
 
 switch_status_t sng_mgco_cfg(megaco_profile_t* profile);
 switch_status_t sng_mgco_init(sng_mg_event_interface_t* event);
@@ -193,6 +196,9 @@ switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, c
 void mg_fill_null_context(MgMgcoContextId* ctxt);
 switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason,uint8_t wild); 
 switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, uint8_t cmdType);
+switch_status_t mg_add_lcl_media(CmSdpMediaDescSet* med, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp);
+switch_status_t mg_add_supported_media_codec(CmSdpMediaDesc* media, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp);
+switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_termination_t* term, CmSdpMedFmtRtpList  *fmtList, CmSdpAttrSet  *attrSet, CmMemListCp     *memCp);
 
 switch_status_t mg_send_oos_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);
 switch_status_t mg_send_ins_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);

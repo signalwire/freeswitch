@@ -500,7 +500,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     mg_context_t* mg_ctxt;
     int mediaId;
     MgMgcoLocalDesc   *local = NULL;
-    CmSdpInfoSet      *psdp  = NULL;
+    /*CmSdpInfoSet      *psdp  = NULL;*/
 
 
     /* TODO - Kapil dummy line , will need to add with proper code */
@@ -707,6 +707,11 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 	/* only for RTP */
 	if(is_rtp){
+		mg_build_sdp(&desc->u.media, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp);
+	}
+#if 0
+	if(is_rtp){
+		mg_build_sdp(desc, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp);
 		/* build local descriptors */
 		/*MgMgcoStreamDesc *stream;*/
 		char* ipAddress[4];// = "192.168.1.1";
@@ -762,11 +767,14 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 		psdp = &(local->sdp);
 
-		if (mgUtlGrowList((void ***)&psdp->info, sizeof(CmSdpInfo),
-					&psdp->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-		{
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-			return SWITCH_STATUS_FALSE;
+		if((NOTPRSNT == local->sdp.numComp.pres) || (0 == local->sdp.numComp.val)){
+
+			if (mgUtlGrowList((void ***)&psdp->info, sizeof(CmSdpInfo),
+						&psdp->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
 		}
 
 		psdp->info[psdp->numComp.val-1]->pres.pres = PRSNT_NODEF;
@@ -875,7 +883,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->type), CM_SDP_SPEC);
 
-			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->val), 4);
+			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->val), 8);
 
 			/* Fill attribute if reqd */
 			{
@@ -893,6 +901,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 		free(dup);
 	}
+#endif
 
 
         /* We will always send one command at a time..*/
@@ -1055,9 +1064,10 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
         ret = mg_prc_descriptors(mg_profile, inc_cmd, term);
 
 	/* SDP updated to termination */
-	
 	megaco_activate_termination(term);
     }
+
+	/* TODO - copy inc descriptor...not sure if we need to do this.. */
 
 	/********************************************************************/
 
