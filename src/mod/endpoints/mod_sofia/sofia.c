@@ -1212,7 +1212,7 @@ static void our_sofia_event_callback(nua_event_t event,
 			sofia_handle_sip_i_refer(nua, profile, nh, session, sip, de, tags);
 		} else {
 			const char *req_user = NULL, *req_host = NULL, *action = NULL, *ref_by_user = NULL, *ref_to_user = NULL, *ref_to_host = NULL;
-			char *refer_to = NULL, *referred_by = NULL, *method = NULL;
+			char *refer_to = NULL, *referred_by = NULL, *method = NULL, *full_url = NULL;
 			char *params = NULL;
 			switch_event_t *event;
 
@@ -1231,6 +1231,8 @@ static void our_sofia_event_callback(nua_event_t event,
 					if (!(method = switch_find_parameter(params, "method", NULL))) {
 						method = strdup("INVITE");
 					}
+					
+					full_url = switch_find_parameter(params, "full_url", NULL);
 
 					if (!strcasecmp(method, "INVITE")) {
 						action = "call";
@@ -1264,6 +1266,10 @@ static void our_sofia_event_callback(nua_event_t event,
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Target-URI", "%s", refer_to);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Extension", ref_to_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Domain", ref_to_host);
+				if (switch_true(full_url)) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "full-url", "true");
+				}
+
 
 				if (!zstr(referred_by)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Sender", "sofia/%s/%s", profile->name, referred_by);
@@ -1276,6 +1282,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			switch_safe_free(method);
+			switch_safe_free(full_url);
 
 		}
 		break;
@@ -6941,13 +6948,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		goto done;
 	}
 
-	printf("DICK %d\n", __LINE__);
-
 	if (!sip->sip_cseq || !(etmp = switch_mprintf("refer;id=%u", sip->sip_cseq->cs_seq))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
 		goto done;
 	}
-	printf("DICK %d\n", __LINE__);
+
 	from = sip->sip_from;
 	//to = sip->sip_to;
 
@@ -6980,11 +6985,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			rep = (char *) switch_stristr("Replaces=", refer_to->r_url->url_headers);
 		}
 
-		printf("WTFX %s\n", rep);
 
-		if (!rep) {
-			printf("WTF [%s]\n", refer_to->r_url->url_headers);
-		} else {
+		if (rep) {
 			sip_replaces_t *replaces;
 			nua_handle_t *bnh = NULL;
 

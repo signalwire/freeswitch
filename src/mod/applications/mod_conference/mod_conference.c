@@ -8433,7 +8433,7 @@ static void call_setup_event_handler(switch_event_t *event)
 	char *dial_uri = switch_event_get_header(event, "Request-Target-URI");
 	char *action = switch_event_get_header(event, "Request-Action");
 	char *ext = switch_event_get_header(event, "Request-Target-Extension");
-	
+	char *full_url = switch_event_get_header(event, "full_url");
 
 	if (!ext) ext = dial_str;
 
@@ -8464,7 +8464,7 @@ static void call_setup_event_handler(switch_event_t *event)
 
 				if (!strncasecmp(ostr, "url+", 4)) {
 					ostr += 4;
-				} else if (conference->outcall_templ) {
+				} else if (!switch_true(full_url) && conference->outcall_templ) {
 					if ((expanded = switch_event_expand_headers(var_event, conference->outcall_templ))) {
 						ostr = expanded;
 					}
