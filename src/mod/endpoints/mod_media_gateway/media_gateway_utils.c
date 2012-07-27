@@ -421,7 +421,7 @@ void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd)
 }
 
 /*****************************************************************************************************************************/
-void mgco_print_sdp_attr_set(CmSdpAttrSet *s)
+void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
 {
     int i=0x00;
     if (s->numComp.pres) {
@@ -461,6 +461,9 @@ void mgco_print_sdp_attr_set(CmSdpAttrSet *s)
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\t PTIME  = %ld \n", 
                                 (NOTPRSNT != a->u.ptime.pres)?a->u.ptime.val:-1);
 #endif
+			if(MG_TERM_RTP == term->type){
+				term->u.rtp.ptime = a->u.ptime.val;
+			}
                         break;
                     }
                 case CM_SDP_ATTR_RECVONLY:
@@ -786,7 +789,30 @@ void mgco_print_CmSdpU8OrNil(CmSdpU8OrNil* p)
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"CmSdpU8OrNil: Value = %d \n", (NOTPRSNT != p->val.pres)?p->val.val:-1); 
 }
 
-void mgco_print_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sdp_types_e sdp_type)
+const char* mg_get_codec_name(megaco_profile_t* mg_profile, int iana_code)
+{
+	int i = 0x00;      
+	const switch_codec_implementation_t *codecs[16];
+	char *codec_prefs[16] = { 0 };
+	char *szcodec_prefs;
+	int codec_count;
+
+	szcodec_prefs = strdup(mg_profile->codec_prefs);
+	codec_count = switch_split(szcodec_prefs, ',', codec_prefs);
+
+	/* Get the list of codecs, by preference */
+	switch_loadable_module_get_codecs_sorted(codecs, switch_arraylen(codecs), codec_prefs, switch_arraylen(codec_prefs));
+	/* see if received codec is present in our codec supported list */
+	for (i = 0; codecs[i] && i < codec_count; i++) {
+		if(iana_code == codecs[i]->ianacode){
+			return codecs[i]->iananame;
+		}
+	}
+
+	return NULL;
+}
+
+void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sdp_types_e sdp_type, megaco_profile_t* mg_profile, CmSdpAttrSet  *attrSet, CmMemListCp     *memCp)
 {
     int i=0x00;
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "***** Media Parameter *********** \n");
@@ -837,6 +863,26 @@ void mgco_print_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sdp
 				}
                             }
                         }
+
+			/* Ideally remote descriptor should have supported codec..but just in case calling remove un-supported codecs api */
+			mg_rem_unsupported_codecs(mg_profile, term , r, attrSet, memCp);
+
+			
+			/* now whatever we have , that will be suported one */
+			if((NOTPRSNT != r->num.pres) && (0 != r->num.val) && (NULL != r->fmts[0])){
+					const char* name =  mg_get_codec_name(mg_profile, r->fmts[0]->val.val);
+					if(name){
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, " Updating codec to[%d], name[%s] \n", 
+								r->fmts[0]->val.val, name); 
+						if(MG_TERM_RTP == term->type){
+							term->u.rtp.codec = name;
+						}
+					}else{
+						/* ERROR */
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " NO Codec Name found against iana[%d] \n", r->fmts[0]->val.val); 
+					}
+			}
+
                         break;
                     }
 
@@ -854,7 +900,7 @@ void mgco_print_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sdp
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "**************** \n");
 }
 
-void mgco_handle_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sdp_types_e sdp_type)
+void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sdp_types_e sdp_type, megaco_profile_t* mg_profile, CmMemListCp     *memCp)
 {
 	int i;
 
@@ -1021,7 +1067,7 @@ void mgco_handle_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sdp_types_e
 		/************************************************************************************************************************/
 		/* Attribute Set */
 
-		mgco_print_sdp_attr_set(&s->attrSet);
+		mgco_handle_sdp_attr_set(&s->attrSet, term);
 
 		/************************************************************************************************************************/
 		/* Media Descriptor Set */
@@ -1077,7 +1123,7 @@ void mgco_handle_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sdp_types_e
 								break;
 						}
 					}
-					mgco_print_sdp_media_param(&f->par, term, sdp_type);
+					mgco_handle_sdp_media_param(&f->par, term, sdp_type, mg_profile, &desc->attrSet, memCp);
 				}
 
 				/*info */
@@ -1097,7 +1143,7 @@ void mgco_handle_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sdp_types_e
 				}
 
 				/* attribute set */
-				mgco_print_sdp_attr_set(&desc->attrSet);
+				mgco_handle_sdp_attr_set(&desc->attrSet, term);
 
 
 				if (desc->field.mediaType.val == CM_SDP_MEDIA_AUDIO &&
