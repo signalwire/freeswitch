@@ -7799,9 +7799,7 @@ static conference_obj_t *conference_find(char *name, char *domain)
 			switch_core_hash_delete(globals.conference_hash, conference->name);
 			switch_clear_flag(conference, CFLAG_INHASH);
 			conference = NULL;
-		}
-
-		if (!zstr(domain) && conference->domain && strcasecmp(domain, conference->domain)) {
+		} else if (!zstr(domain) && conference->domain && strcasecmp(domain, conference->domain)) {
 			conference = NULL;
 		}
 	}
