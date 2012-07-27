@@ -112,7 +112,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     ftdm_codec_t codec;
     uint32_t interval;
     ftdm_status_t fstatus;
-    
+    const char *ftdm_start_only = switch_event_get_header(var_event, "ftdm_start_only");
     ctdm_private_t *tech_pvt = NULL;
     
     if (zstr(szchanid) || zstr(span_name)) {
@@ -129,6 +129,15 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
         goto fail;
     }
 
+    if ((fstatus = ftdm_span_start(span)) != FTDM_SUCCESS && fstatus != FTDM_EINVAL) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't start span %s.\n", span_name);
+        goto fail;
+    }
+
+    if (!zstr(ftdm_start_only) && switch_true(ftdm_start_only)) {
+	goto fail;
+    }
+    
     
     if (!(*new_session = switch_core_session_request(ctdm.endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, 0, pool))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't request session.\n");
@@ -136,11 +145,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     }
     
     channel = switch_core_session_get_channel(*new_session);
-    
-    if ((fstatus = ftdm_span_start(span)) != FTDM_SUCCESS && fstatus != FTDM_EINVAL) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't start span %s.\n", span_name);
-        goto fail;
-    }
     
     if (ftdm_channel_open(span_id, chan_id, &chan) != FTDM_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't open span or channel.\n"); 
