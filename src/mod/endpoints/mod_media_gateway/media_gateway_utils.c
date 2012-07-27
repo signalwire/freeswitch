@@ -1441,3 +1441,503 @@ void mg_print_time()
     switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Current Time = %s", ctime(&now));
 }
 /*****************************************************************************************************************************/
+switch_status_t mg_add_local_descriptor(MgMgcoMediaDesc* media, megaco_profile_t* mg_profile, mg_termination_t* term,CmMemListCp     *memCp)
+{
+	char* ipAddress[4];
+	MgMgcoLocalDesc   *local; 
+	CmSdpInfoSet      *psdp  = NULL;
+	char		   * dup = NULL;
+	switch_status_t    ret = SWITCH_STATUS_SUCCESS;
+	CmSdpMediaDescSet* med = NULL;
+
+	switch_assert(media);
+	switch_assert(mg_profile);
+	switch_assert(term);
+
+	dup = strdup((char*)term->u.rtp.local_addr);
+	switch_split(dup,'.',ipAddress);
+
+	/* allocating mem for local descriptor */
+	if (mgUtlGrowList((void ***)&media->parms, sizeof(MgMgcoMediaPar), &media->num, memCp) != ROK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
+	media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_LOCAL;
+
+	local  = &media->parms[media->num.val-1]->u.local;
+
+	local->pres.pres = PRSNT_NODEF;
+
+	psdp = &(local->sdp);
+
+	if (mgUtlGrowList((void ***)&psdp->info, sizeof(CmSdpInfo), &psdp->numComp, memCp) != ROK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	psdp->info[psdp->numComp.val-1]->pres.pres = PRSNT_NODEF;
+
+	/* fill version */
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->ver),1);
+
+	/* fill orig */
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.pres), 1);
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.type), CM_SDP_SPEC);
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.orig.pres), 1);
+
+	MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.usrName, 1, "-",
+			memCp);	
+	MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessId, 1, "0",
+			memCp);
+	MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessVer, 1, "0",
+			memCp);	
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.netType.type),
+			CM_SDP_NET_TYPE_IN);
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.addrType), 
+			CM_SDP_ADDR_TYPE_IPV4);
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType), 
+			CM_SDP_IPV4_IP_UNI);
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType),
+			CM_SDP_IPV4_IP_UNI);
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[0]),
+			atoi(ipAddress[0]));
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[1]),
+			atoi(ipAddress[1]));
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[2]),
+			atoi(ipAddress[2]));
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[3]),
+			atoi(ipAddress[3]));
+
+	/* fill session name */
+	MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->sessName, 8, "SANGOMA", memCp);
+
+
+	/* Fill the SDP Connection Info */
+	/* "c=" line - ipaddress */
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.netType.type),CM_SDP_NET_TYPE_IN);
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.addrType), CM_SDP_ADDR_TYPE_IPV4);
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.u.ip4.addrType), CM_SDP_IPV4_IP_UNI);
+
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[0]), atoi(ipAddress[0]));
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[1]), atoi(ipAddress[1]));
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[2]), atoi(ipAddress[2]));
+	MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[3]), atoi(ipAddress[3]));
+
+
+	/* t= line */
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.pres),1);
+#if 0
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.sdpOpTimeSet.numComp),0);
+	MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.zoneAdjSet.numComp),0);
+#endif
+
+	med = &psdp->info[psdp->numComp.val-1]->mediaDescSet;
+	ret = mg_add_lcl_media(med, mg_profile, term, memCp);
+
+	return ret;
+}
+/*****************************************************************************************************************************/
+switch_status_t mg_add_supported_media_codec(CmSdpMediaDesc* media, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp)
+{
+	const switch_codec_implementation_t *codecs[16];
+	char *codec_prefs[16] = { 0 };
+	char *szcodec_prefs;
+	int codec_count;
+	int i;
+	int fmt= 0x00;
+
+	switch_assert(media);
+	switch_assert(mg_profile);
+	switch_assert(term);
+	switch_assert(memCp);
+
+	szcodec_prefs = strdup(mg_profile->codec_prefs);
+	codec_count = switch_split(szcodec_prefs, ',', codec_prefs);
+
+	/* Get the list of codecs, by preference */
+	switch_loadable_module_get_codecs_sorted(codecs, switch_arraylen(codecs), codec_prefs, switch_arraylen(codec_prefs));
+	for (i = 0; codecs[i] && i < codec_count; i++) {
+		int pt = codecs[i]->ianacode;
+		const char *name = codecs[i]->iananame;
+
+		printf("Preference %d is %s/%d\n", i, name, pt);
+
+
+		if (mgUtlGrowList((void ***)&media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts, sizeof(CmSdpU8OrNil),
+					&media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.num, memCp) != ROK)
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		fmt = media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.num.val-1;
+
+		MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[fmt]->type), CM_SDP_SPEC);
+
+		MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[fmt]->val), pt);
+
+		/* add associated attributes */
+		{
+			if (mgUtlGrowList((void ***)&media->attrSet.attr, sizeof(CmSdpAttr), &media->attrSet.numComp, memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
+
+			MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[media->attrSet.numComp.val-1]->type),CM_SDP_ATTR_RTPMAP);
+			MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[media->attrSet.numComp.val-1]->u.rtpmap.pres), 1);
+			MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[media->attrSet.numComp.val-1]->u.rtpmap.pay.type), CM_SDP_SPEC);
+			MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[media->attrSet.numComp.val-1]->u.rtpmap.pay.val), pt);
+			MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[media->attrSet.numComp.val-1]->u.rtpmap.enc.val), CM_SDP_ENC_UNKNOWN);
+			MG_SET_TKNSTROSXL((media->attrSet.attr[media->attrSet.numComp.val-1]->u.rtpmap.enc.name), strlen(name), name, memCp);
+			MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[media->attrSet.numComp.val-1]->u.rtpmap.clk), codecs[i]->samples_per_second);
+			/* encoding parameter not required to fill */
+		}
+
+	}
+	free(szcodec_prefs);
+	return SWITCH_STATUS_SUCCESS;
+}
+/*****************************************************************************************************************************/
+switch_status_t mg_add_lcl_media(CmSdpMediaDescSet* med, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp)
+{
+	CmSdpMediaDesc*    media;
+
+	switch_assert(med);
+	switch_assert(mg_profile);
+	switch_assert(term);
+	switch_assert(memCp);
+
+	if (mgUtlGrowList((void ***)&med->mediaDesc, sizeof(CmSdpMediaDesc),
+				&med->numComp, memCp) != ROK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	media = med->mediaDesc[med->numComp.val-1];
+
+	MG_INIT_TOKEN_VALUE(&(media->pres),1);
+
+	/* Fill CmSdpMediaField */
+	MG_INIT_TOKEN_VALUE(&(media->field.pres),1);
+	MG_INIT_TOKEN_VALUE(&(media->field.mediaType),CM_SDP_MEDIA_AUDIO);
+
+	MG_INIT_TOKEN_VALUE(&(media->field.id.type),CM_SDP_VCID_PORT);
+	MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
+	MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
+	MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.type), CM_SDP_SPEC);
+	MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
+
+	if (mgUtlGrowList((void ***)&media->field.par.pflst, sizeof(CmSdpMedProtoFmts),
+				&media->field.par.numProtFmts, memCp) != ROK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* CmSdpMedProtoFmts */
+	MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->prot.type), CM_SDP_MEDIA_PROTO_RTP);
+	MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->prot.u.subtype.type), CM_SDP_PROTO_RTP_AVP);
+	MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->protType), CM_SDP_MEDIA_PROTO_RTP);
+
+
+	/***************************************************************************************************************************************************************/
+	/* Fill ptime attribute */
+	{
+		if (mgUtlGrowList((void ***)&media->attrSet.attr, sizeof(CmSdpAttr), &media->attrSet.numComp, memCp) != ROK)
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+		MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[media->attrSet.numComp.val-1]->type),CM_SDP_ATTR_PTIME);
+		MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[media->attrSet.numComp.val-1]->u.ptime), term->u.rtp.ptime);
+	}
+	/***************************************************************************************************************************************************************/
+	/* fill codec info */
+	mg_add_supported_media_codec(media, mg_profile, term, memCp);
+			
+	return SWITCH_STATUS_SUCCESS;
+}
+/***************************************************************************************************************************************************************/
+
+switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_termination_t* term, CmSdpMedFmtRtpList  *fmtList, CmSdpAttrSet  *attrSet, CmMemListCp     *memCp)
+{
+	int i = 0x00;      
+	int id = 0x00;      
+	int j = 0x00;         
+	int a = 0x00;         
+	CmSdpU8OrNil *fmt = NULL;    
+	int foundCodec = 0x00;
+	const switch_codec_implementation_t *codecs[16];
+	char *codec_prefs[16] = { 0 };
+	char *szcodec_prefs;
+	int codec_count;
+	CmSdpAttr      *attr = NULL;
+	CmSdpAttrRtpMap   *rtp = NULL;
+
+	/* Check if code list is present */
+	if (!fmtList ||  (NOTPRSNT == fmtList->num.pres))
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "codec List Not present\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	szcodec_prefs = strdup(mg_profile->codec_prefs);
+	codec_count = switch_split(szcodec_prefs, ',', codec_prefs);
+
+	/* Get the list of codecs, by preference */
+	switch_loadable_module_get_codecs_sorted(codecs, switch_arraylen(codecs), codec_prefs, switch_arraylen(codec_prefs));
+
+
+	/* codec type is specified one */
+
+	/* loop through coddec list and remove un-supported codec */ 
+	for(i = 0; i <  fmtList->num.val; i++)
+	{
+		fmt = fmtList->fmts[i];
+
+		if((NOTPRSNT == fmt->type.pres) || (NOTPRSNT == fmt->val.pres)) continue;
+
+		if(CM_SDP_SPEC != fmt->type.val) continue;  /* TODO - need to see for other cases like CM_SDP_NIL/CM_SDP_CHOICE etc not sure as of now */ 
+
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "codec[%d] number \n", fmt->val.val);
+
+		/* see if received codec is present in our codec supported list */
+		for (id = 0; codecs[id] && id < codec_count; id++) {
+			int pt = codecs[id]->ianacode;
+			//const char *name = codecs[id]->iananame;
+			if(pt == fmt->val.val){
+				foundCodec = 0x01;
+				break;
+			}
+		}
+
+		/* IF codec not found in list, remove it */
+		if(!foundCodec) {
+
+			for(j = i; j <  fmtList->num.val - 1; j++)
+			{
+				fmtList->fmts[j] = fmtList->fmts[j +1];
+			}
+			mgUtlShrinkList((Void ***)&fmtList->fmts, sizeof(CmSdpU8OrNil), &fmtList->num, memCp);
+			i-- ;
+
+			/* remove associated a= , if present */
+			if((NOTPRSNT != attrSet->numComp.pres) && (0 != attrSet->numComp.val)){
+				for(a = 0; a < attrSet->numComp.val; a++) {
+					attr = attrSet->attr[a];
+
+					if(CM_SDP_ATTR_RTPMAP != attr->type.val) continue; /* as of now only checking RTPMAP */
+
+					rtp = &attr->u.rtpmap;
+
+					if((NOTPRSNT != rtp->pres.pres) && (fmt->val.val == rtp->pay.val.val)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "a line found against codec[%d]..Removing a line  \n", fmt->val.val);
+
+						/* mgUtlShrinkList API will delete last node from list, hence suffling list nodes */
+						for(j = a; j <  attrSet->numComp.val - 1; j++)
+						{
+							attrSet->attr[j] = attrSet->attr[j +1];
+						}
+						mgUtlShrinkList((Void ***)&attrSet->attr, sizeof(CmSdpAttr), &attrSet->numComp, memCp);
+					}
+				}
+			}
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+/*****************************************************************************************************************************/
+switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp)
+{
+	CmSdpU8OrNil 	   *fmt = NULL;    
+	CmSdpInfoSet       *psdp  = NULL;
+	char* 		   ipAddress[4];
+	int 		   i = 0x00;
+	int 		   j = 0x00;
+	int 		   choose_codec = 0x00;
+	int 		   k = 0x00;
+	MgMgcoLocalDesc   *local = NULL; 
+	int		   fresh_sdp = 0x00;
+	char* 		   dup = NULL; 
+	CmSdpMedProtoFmts *format=NULL;
+
+
+	switch_assert(out);
+	switch_assert(inc);
+	switch_assert(mg_profile);
+	switch_assert(term);
+
+	dup = strdup((char*)term->u.rtp.local_addr);
+	switch_split(dup,'.',ipAddress);
+
+
+	if((NOTPRSNT == inc->num.pres) || (0 == inc->num.val)){
+		fresh_sdp = 0x01;
+	}
+
+	/* if its fresh sdp then add only local descriptor */
+	if(fresh_sdp) {
+		mg_add_local_descriptor(out, mg_profile, term, memCp);
+	} else {
+		/* incoming has sdp, so copy that sdp and overwrite only local sdp */
+		mgUtlCpyMgMgcoMediaDesc(out, inc, memCp);
+
+		/* now see if we have local descriptor, then pick up that and modify the fields  */
+
+		if((NOTPRSNT != out->num.pres) && (0 != out->num.val))
+		{
+			for(i=0; i<out->num.val; i++) {
+				if(MGT_MEDIAPAR_LOCAL == out->parms[i]->type.val) {
+					local  = &out->parms[i]->u.local;
+				}
+			}
+		}
+	}
+
+	if(!local || (NOTPRSNT == local->sdp.numComp.pres) || (0 == local->sdp.numComp.val)){
+		/* local sdp is not part of media descriptor, then add local sdp*/
+		mg_add_local_descriptor(out, mg_profile, term, memCp);
+	}else{
+		/* local sdp is present..  now go over the local descriptor and modify fields */
+			psdp = &(local->sdp);
+
+			for(i=0; i< psdp->numComp.val; i++) {
+/**********************************************************************************************************************************/
+				/* version - let it be same, if present else use version 1 */
+				if(NOTPRSNT == psdp->info[psdp->numComp.val-1]->ver.pres) {
+					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->ver),1);
+				}
+/**********************************************************************************************************************************/
+					/* orig (o- line) fill with our info */
+					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.pres), 1);
+					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.type), CM_SDP_SPEC);
+					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.orig.pres), 1);
+
+					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.usrName, 1, "-",
+							NULL);
+					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessId, 1, "0",
+							NULL);
+					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessVer, 1, "0",
+							NULL);
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.netType.type),
+							CM_SDP_NET_TYPE_IN);
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.addrType), 
+							CM_SDP_ADDR_TYPE_IPV4);
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType), 
+							CM_SDP_IPV4_IP_UNI);
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType),
+							CM_SDP_IPV4_IP_UNI);
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[0]),
+							atoi(ipAddress[0]));
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[1]),
+							atoi(ipAddress[1]));
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[2]),
+							atoi(ipAddress[2]));
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[3]),
+							atoi(ipAddress[3]));
+
+/**********************************************************************************************************************************/
+					/* session-name , let it be like this if present, else skip it */
+/**********************************************************************************************************************************/
+					/* "c=" line - ipaddress */
+					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.netType.type),CM_SDP_NET_TYPE_IN);
+					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.addrType), CM_SDP_ADDR_TYPE_IPV4);
+					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.u.ip4.addrType), CM_SDP_IPV4_IP_UNI);
+
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[0]), atoi(ipAddress[0]));
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[1]), atoi(ipAddress[1]));
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[2]), atoi(ipAddress[2]));
+					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[3]), atoi(ipAddress[3]));
+
+/**********************************************************************************************************************************/
+					/* t= line */
+					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.pres),1);
+/**********************************************************************************************************************************/
+					/* fill media descriptors */
+					{
+						CmSdpMediaDescSet* med = &psdp->info[psdp->numComp.val-1]->mediaDescSet;
+						CmSdpMediaDesc*    media;
+
+						if((NOTPRSNT == med->numComp.pres) || (0 == med->numComp.val)){
+							mg_add_lcl_media(med, mg_profile, term, memCp);
+						}else{
+							for(j =0;j < med->numComp.val; j++){
+								media = med->mediaDesc[j];
+								/* check for choose port and fill the port */
+								if(NOTPRSNT != media->field.id.type.pres){
+									if(CM_SDP_VCID_CHOOSE == media->field.id.type.val){
+										MG_INIT_TOKEN_VALUE(&(media->field.id.type),CM_SDP_VCID_PORT);
+										MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
+										MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
+										MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.type), CM_SDP_SPEC);
+										MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
+
+									}
+								}
+
+								/* check for codec */
+								if((NOTPRSNT == media->field.par.numProtFmts.pres) || 
+										(0 == media->field.par.numProtFmts.val)){
+									switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"No codec specified in incoming local descriptor \n");
+									mg_add_supported_media_codec(media, mg_profile, term, memCp );	
+								}else{
+									/* check for media format/codec  */
+									for(k =0;k < media->field.par.numProtFmts.val; k++){
+										format = media->field.par.pflst[k];
+										if ((NOTPRSNT != format->protType.pres) &&
+												(CM_SDP_MEDIA_PROTO_RTP == format->protType.val))
+										{
+											if((NOTPRSNT != format->u.rtp.num.pres)
+													&&(0 != format->u.rtp.num.val))
+											{
+												/* If the codec type is CHOOSE then we need to fill our list */
+												for(i = 0; i <  format->u.rtp.num.val; i++)
+												{
+													fmt = format->u.rtp.fmts[i];
+
+													if((NOTPRSNT == fmt->type.pres) || (NOTPRSNT == fmt->val.pres)) continue;
+
+													 if(CM_SDP_CHOOSE == fmt->type.val){
+														choose_codec = 0x1;
+													}
+												}
+												if(choose_codec){
+														switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "CHOOSE codec is requested fill out supported codecs \n");
+
+													/* delete existing rtp format list..TODO find better way  */
+														for(i = 0; i <  format->u.rtp.num.val; i++)
+														{
+															mgUtlShrinkList((Void ***)&format->u.rtp.fmts, sizeof(CmSdpU8OrNil), &format->u.rtp.num, memCp);
+														}
+														/* If the codec type is CHOOSE then we need to fill our list */
+														mg_add_supported_media_codec(media, mg_profile, term, memCp);
+												}
+												else if (!choose_codec && (SWITCH_STATUS_FALSE == mg_rem_unsupported_codecs(mg_profile, term , &format->u.rtp, &media->attrSet, memCp)))
+												{
+													return SWITCH_STATUS_FALSE;
+												}
+											}
+										}
+								}
+							}
+						}
+					}
+/**********************************************************************************************************************************/
+				}
+
+			}
+
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+

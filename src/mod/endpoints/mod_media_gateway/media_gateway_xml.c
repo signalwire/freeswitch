@@ -74,7 +74,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
                 // <map  termination-id-prefix="Term1/" termination-id-base="1" tech="freetdm" channel-prefix="wp2" channel-map"1-15,17-31"/>
                 const char *prefix = switch_xml_attr(mg_term, "termination-id-prefix");
                 //const char *sztermination_id_base = switch_xml_attr(mg_term, "termination-id-base");
-                //const char *tech =  switch_xml_attr(mg_term, "tech");
+                const char *tech =  switch_xml_attr(mg_term, "tech");
                 const char *channel_prefix = switch_xml_attr(mg_term, "channel-prefix");
                 const char *channel_map = switch_xml_attr(mg_term, "channel-map");
                 
@@ -100,7 +100,8 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
                                 term->type = MG_TERM_TDM;
                                 term->profile = profile;
                                 term->mg_ctxt = NULL;
-				term->active_events = NULL;
+								term->tech = switch_core_strdup(pool, tech);
+								term->active_events = NULL;
                                 term->name = switch_core_sprintf(pool, "%s%d", prefix, j);
                                 term->u.tdm.channel = j;
                                 term->u.tdm.span_name = switch_core_strdup(pool, channel_prefix);
@@ -260,6 +261,7 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		SWITCH_CONFIG_ITEM("rtp-port-range", SWITCH_CONFIG_STRING, CONFIG_REQUIRED, &profile->rtp_port_range, "1-65535", &switch_config_string_strdup, "", "rtp port range"),
 		SWITCH_CONFIG_ITEM("rtp-termination-id-prefix", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->rtp_termination_id_prefix, "", &switch_config_string_strdup, "", "rtp termination prefix"),
 		SWITCH_CONFIG_ITEM("rtp-termination-id-len", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->rtp_termination_id_len, "", &opt_termination_id_len, "", "rtp termination id"),
+		SWITCH_CONFIG_ITEM("codec-prefs", SWITCH_CONFIG_STRING, 0, &profile->codec_prefs, "", &switch_config_string_strdup, "", "codec preferences, coma-separated"),
 		SWITCH_CONFIG_ITEM_END()
 	};
 	
