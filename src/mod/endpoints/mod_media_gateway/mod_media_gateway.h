@@ -256,7 +256,8 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination_t *term);
 switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination_t *term);
 
-
+switch_status_t megaco_prepare_tdm_termination(mg_termination_t *term);
+switch_status_t megaco_check_tdm_termination(mg_termination_t *term);
 #endif /* MOD_MEGACO_H */
 
 

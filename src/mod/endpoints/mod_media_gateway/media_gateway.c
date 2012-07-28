@@ -155,47 +155,38 @@ done:
     return SWITCH_STATUS_SUCCESS;
 }
 
-
-/*
- * Originate a channel so the target technology gets to run initialization code
- */
-switch_status_t megaco_prepare_termination(mg_termination_t *term)
+switch_status_t megaco_prepare_tdm_termination(mg_termination_t *term)
 {
-    switch_event_t *var_event = NULL;
-    switch_core_session_t *session = NULL;
-    switch_status_t status = SWITCH_STATUS_SUCCESS;
-    char dialstring[100];
-    switch_call_cause_t cause;
-    switch_channel_t *channel;
-    switch_event_create(&var_event, SWITCH_EVENT_CLONE);
-    
-    if (term->type == MG_TERM_RTP) {
-    } else if (term->type == MG_TERM_TDM) {
-        switch_snprintf(dialstring, sizeof dialstring, "tdm/%s", term->name);
+	switch_event_t *event = NULL;
+	if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create NOTIFY event\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
-        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ftdm_start_only",  "true");
-        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kSPAN_NAME,  term->u.tdm.span_name);
-        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kCHAN_ID, "%d", term->u.tdm.channel);
-    }
-    
-    /* Set common variables on the channel */
-    switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, "true");
-    if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_STATUS_SUCCESS) {
-        status = SWITCH_STATUS_FALSE;	
-        goto done;
-    }
-    channel = switch_core_session_get_channel(session);
-    switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s",  term->u.tdm.span_name);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", term->u.tdm.channel);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "mg-tdm-prepare");
 
-done:
-    if (session) {
-        switch_core_session_rwunlock(session);
-    }
-    switch_event_destroy(&var_event);
-
+	switch_event_fire(&event);
     return SWITCH_STATUS_SUCCESS;
 }
 
+/*  @Kapil Call this function once H.248 link is up  */
+switch_status_t megaco_check_tdm_termination(mg_termination_t *term)
+{
+	switch_event_t *event = NULL;
+	if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create NOTIFY event\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s",  term->u.tdm.span_name);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", term->u.tdm.channel);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "mg-tdm-check");
+
+	switch_event_fire(&event);
+	return SWITCH_STATUS_SUCCESS;
+}
 
 mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix)
 {

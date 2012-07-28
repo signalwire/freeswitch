@@ -56,6 +56,35 @@ static switch_status_t list_profiles(const char *line, const char *cursor, switc
 	return status;
 }
 
+static void mg_event_handler(switch_event_t *event)
+{
+	switch(event->event_id) {
+		case SWITCH_EVENT_TRAP:
+			{
+				const char *span_name = NULL;
+				const char *chan_number = NULL;
+				const char *cond = NULL;
+
+				cond = switch_event_get_header(event, "condition");
+				if (zstr(cond)) {
+					return;
+				}
+
+				span_name = switch_event_get_header(event, "span-name");
+				chan_number = switch_event_get_header(event, "chan-number");
+				
+				if (!strcmp(cond, "ftdm-alarm-trap")) {
+					/* @KAPIL: TDM is in alarm, notify MGC */
+				} else if (!strcmp(cond, "ftdm-alarm-clear")) {
+					/* @KAPIL: TDM alarm cleared, notify MGC */
+				}
+			}
+		break;
+		default:
+			break;
+	}
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 {
 	switch_api_interface_t *api_interface;
@@ -82,7 +111,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 	switch_console_set_complete("add mg logging ::mg::list_profiles disable");
 	switch_console_add_complete_func("::mg::list_profiles", list_profiles);
 
-
 	/* Initialize MEGACO Stack */
 	sng_event.mg.sng_mgco_txn_ind  		= handle_mgco_txn_ind;
 	sng_event.mg.sng_mgco_cmd_ind  		= handle_mgco_cmd_ind;
@@ -95,6 +123,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 	sng_event.sm.sng_tucl_alarm  		= handle_tucl_alarm;
 	/* Log */
 	sng_event.sm.sng_log  			= handle_sng_log;
+
+	switch_event_bind("mod_media_gateway", SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, mg_event_handler, NULL);
 
 	/* initualize MEGACO stack */
 	return sng_mgco_init(&sng_event);

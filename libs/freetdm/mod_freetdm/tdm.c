@@ -68,6 +68,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg);
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf);
 
+
+static ftdm_status_t ctdm_span_prepare(ftdm_span_t *span);
+
 switch_state_handler_table_t ctdm_state_handlers = {
 	.on_init = channel_on_init,
 	.on_destroy = channel_on_destroy
@@ -81,6 +84,115 @@ switch_io_routines_t ctdm_io_routines = {
 	.receive_message = channel_receive_message
 };
 
+static void ctdm_report_alarms(ftdm_channel_t *channel)
+{
+	switch_event_t *event = NULL;
+	ftdm_alarm_flag_t alarmflag = 0;
+
+	if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+		ftdm_log(FTDM_LOG_ERROR, "failed to create alarms events\n");
+		return;
+	}
+	
+	if (ftdm_channel_get_alarms(channel, &alarmflag) != FTDM_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to retrieve alarms %s:%d\n", ftdm_channel_get_span_name(channel), ftdm_channel_get_id(channel));
+		return;
+	}
+
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", ftdm_channel_get_span_name(channel));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", ftdm_channel_get_span_id(channel));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", ftdm_channel_get_id(channel));
+	
+	if (alarmflag) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-clear");
+	} else {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-trap");
+	}
+
+	if (alarmflag & FTDM_ALARM_RED) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "red");
+	}
+	if (alarmflag & FTDM_ALARM_YELLOW) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "yellow");
+	}
+	if (alarmflag & FTDM_ALARM_RAI) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "rai");
+	}
+	if (alarmflag & FTDM_ALARM_BLUE) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "blue");
+	}
+	if (alarmflag & FTDM_ALARM_AIS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "ais");
+	}
+	if (alarmflag & FTDM_ALARM_GENERAL) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "general");
+	}
+
+	switch_event_fire(&event);
+	return;
+}
+
+
+
+static void ctdm_event_handler(switch_event_t *event)
+{
+	ftdm_status_t status = FTDM_FAIL;
+	switch(event->event_id) {
+		case SWITCH_EVENT_TRAP:
+			{
+				ftdm_span_t *span = NULL;
+				ftdm_channel_t *channel = NULL;
+				const char *span_name = NULL;
+				const char *chan_number = NULL;
+				uint32_t chan_id = 0;
+				const char *cond = switch_event_get_header(event, "condition");
+				
+				if (zstr(cond)) {
+					return;
+				}
+
+				span_name = switch_event_get_header(event, "span-name");
+				chan_number = switch_event_get_header(event, "chan-number");
+
+				if (ftdm_span_find_by_name(span_name, &span) != FTDM_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find span [%s]\n", span_name);
+					return;
+				}
+
+				if (!strcmp(cond, "mg-tdm-prepare")) {
+					status = ctdm_span_prepare(span);
+					if (status == FTDM_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Span %s prepared successfully\n", span_name);
+					} else if (status != FTDM_EINVAL) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to prepare span %s.\n", span_name);
+					}
+				} else if (!strcmp(cond, "mg-tdm-check")) {
+					if (zstr(chan_number)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channel number specified\n");
+						return;
+					}
+					chan_id = atoi(chan_number);
+					if (!chan_id) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid channel number:%s\n", chan_number);
+						return;
+					}
+
+					channel = ftdm_span_get_channel(span, chan_id);
+					if (!channel) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find channel\n");
+						return;
+					}
+
+					ctdm_report_alarms(channel);
+				}
+			}
+			break;
+		default:
+			break;
+	}
+	return;
+}
+
 void ctdm_init(switch_loadable_module_interface_t *module_interface)
 {
     switch_endpoint_interface_t *endpoint_interface;
@@ -90,7 +202,82 @@ void ctdm_init(switch_loadable_module_interface_t *module_interface)
     endpoint_interface->io_routines = &ctdm_io_routines;
     endpoint_interface->state_handler = &ctdm_state_handlers;
     ctdm.endpoint_interface = endpoint_interface;
-    
+
+	switch_event_bind("mod_freetdm", SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, ctdm_event_handler, NULL);
+}
+
+static FIO_SIGNAL_CB_FUNCTION(on_signal_cb)
+{
+	uint32_t chanid, spanid;
+	switch_event_t *event = NULL;
+	ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
+
+	chanid = ftdm_channel_get_id(sigmsg->channel);
+	spanid = ftdm_channel_get_span_id(sigmsg->channel);
+	
+	switch(sigmsg->event_id) {
+		case FTDM_SIGEVENT_ALARM_CLEAR:
+		case FTDM_SIGEVENT_ALARM_TRAP:
+			{
+				if (ftdm_channel_get_alarms(sigmsg->channel, &alarmbits) != FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_ERROR, "failed to retrieve alarms\n");
+					return FTDM_FAIL;
+				}
+
+				if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+					ftdm_log(FTDM_LOG_ERROR, "failed to create alarms events\n");
+					return FTDM_FAIL;
+				}
+				if (sigmsg->event_id == FTDM_SIGEVENT_ALARM_CLEAR) {
+					ftdm_log(FTDM_LOG_NOTICE, "Alarm cleared on channel %d:%d\n", spanid, chanid);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-clear");
+				} else {
+					ftdm_log(FTDM_LOG_NOTICE, "Alarm raised on channel %d:%d\n", spanid, chanid);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-trap");
+				}
+			}
+			break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unhandled event %d\n", sigmsg->event_id);
+			break;
+	}
+
+	if (event) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", ftdm_channel_get_span_name(sigmsg->channel));
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", ftdm_channel_get_span_id(sigmsg->channel));
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", ftdm_channel_get_id(sigmsg->channel));
+
+		if (alarmbits & FTDM_ALARM_RED) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "red");
+		}
+		if (alarmbits & FTDM_ALARM_YELLOW) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "yellow");
+		}
+		if (alarmbits & FTDM_ALARM_RAI) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "rai");
+		}
+		if (alarmbits & FTDM_ALARM_BLUE) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "blue");
+		}
+		if (alarmbits & FTDM_ALARM_AIS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "ais");
+		}
+		if (alarmbits & FTDM_ALARM_GENERAL) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "general");
+		}
+
+		switch_event_fire(&event);
+	}
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t ctdm_span_prepare(ftdm_span_t *span)
+{
+	if (ftdm_span_register_signal_cb(span, on_signal_cb) != FTDM_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register signal CB\n");
+		return FTDM_FAIL;
+	}
+	return ftdm_span_start(span);
 }
 
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
@@ -111,10 +298,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     const char *dname;
     ftdm_codec_t codec;
     uint32_t interval;
-    /*ftdm_status_t fstatus;*/
-    const char *ftdm_start_only = switch_event_get_header(var_event, "ftdm_start_only");
     ctdm_private_t *tech_pvt = NULL;
-    
+
     if (zstr(szchanid) || zstr(span_name)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Both ["kSPAN_ID"] and ["kCHAN_ID"] have to be set.\n");
         goto fail;
@@ -129,18 +314,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
         goto fail;
     }
 
-#if 0
-    if ((fstatus = ftdm_span_start(span)) != FTDM_SUCCESS && fstatus != FTDM_EINVAL) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't start span %s.\n", span_name);
-        goto fail;
-    }
-#endif
-
-    if (!zstr(ftdm_start_only) && switch_true(ftdm_start_only)) {
-	goto fail;
-    }
-    
-    
     if (!(*new_session = switch_core_session_request(ctdm.endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, 0, pool))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't request session.\n");
         goto fail;

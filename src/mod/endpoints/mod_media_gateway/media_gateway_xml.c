@@ -111,6 +111,8 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
                                 profile->physical_terminations = term;
                                 
                                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Mapped termination [%s] to freetdm span: %s chan: %d\n", term->name, term->u.tdm.span_name, term->u.tdm.channel);
+
+								megaco_prepare_tdm_termination(term);
                             }
                         }
                     }

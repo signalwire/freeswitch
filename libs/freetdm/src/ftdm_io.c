@@ -5653,6 +5653,12 @@ static void *ftdm_span_service_events(ftdm_thread_t *me, void *obj)
 	return NULL;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_span_register_signal_cb(ftdm_span_t *span, fio_signal_cb_t sig_cb)
+{
+	span->signal_cb = sig_cb;
+	return FTDM_SUCCESS;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 {
 	ftdm_status_t status = FTDM_FAIL;
@@ -5670,7 +5676,8 @@ FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 			goto done;
 		}
 
-		status = ftdm_report_initial_channels_alarms(span);
+		//ftdm_report_initial_channels_alarms(span);		
+		ftdm_set_flag_locked(span, FTDM_SPAN_STARTED);
 		goto done;
 	}
 
@@ -5872,8 +5879,10 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 
 static ftdm_status_t ftdm_span_trigger_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
-	ftdm_status_t status = span->signal_cb(sigmsg);
-	return status;
+	if (!span->signal_cb) {
+		return FTDM_FAIL;
+	}
+	return span->signal_cb(sigmsg);
 }
 
 static ftdm_status_t ftdm_span_queue_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
