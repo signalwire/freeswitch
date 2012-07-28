@@ -213,7 +213,7 @@ ftdm_status_t copy_cdPtyNum_from_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cd
 
 ftdm_status_t copy_cdPtyNum_to_sngss7(ftdm_channel_t *ftdmchan, SiCdPtyNum *cdPtyNum)
 {
-	char	*val = NULL;
+	const char	*val = NULL;
 	ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 
