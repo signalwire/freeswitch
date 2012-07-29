@@ -64,9 +64,18 @@ static void mg_event_handler(switch_event_t *event)
 				const char *span_name = NULL;
 				const char *chan_number = NULL;
 				const char *cond = NULL;
+				const char *mg_profile_name = NULL;
+
 
 				cond = switch_event_get_header(event, "condition");
 				if (zstr(cond)) {
+					printf("Condition NULL, returning \n");
+					return;
+				}
+
+				mg_profile_name = switch_event_get_header(event, "mg-profile-name");
+				if (zstr(mg_profile_name)) {
+					printf("mg_profile_name NULL, returning \n");
 					return;
 				}
 
@@ -74,9 +83,19 @@ static void mg_event_handler(switch_event_t *event)
 				chan_number = switch_event_get_header(event, "chan-number");
 				
 				if (!strcmp(cond, "ftdm-alarm-trap")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+					 "ftdm-alarm-trap for span_name[%s] chan_number[%s] associated with  MG profile[%s]\n",
+					span_name,chan_number, mg_profile_name);
 					/* @KAPIL: TDM is in alarm, notify MGC */
+					mg_send_term_service_change(
+						(char*)mg_profile_name, (char*)span_name, (char*)chan_number, MG_TERM_SERVICE_STATE_OUT_OF_SERVICE);
 				} else if (!strcmp(cond, "ftdm-alarm-clear")) {
-					/* @KAPIL: TDM alarm cleared, notify MGC */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+					 "ftdm-alarm-clear for span_name[%s] chan_number[%s] associated with  MG profile[%s] \n",
+					 span_name,chan_number, mg_profile_name);
+					/* TDM alarm cleared, notify MGC */
+					mg_send_term_service_change(
+						(char*)mg_profile_name, (char*)span_name, (char*)chan_number, MG_TERM_SERVICE_STATE_IN_SERVICE);
 				}
 			}
 		break;

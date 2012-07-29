@@ -25,8 +25,8 @@ void handle_mg_alarm(Pst *pst, MgMngmt *usta)
 
 	memset(&prBuf[0], 0, sizeof(prBuf));
 
-	len = len + sprintf(prBuf+len,"MG Status Indication: received with Category = %d, Event = %d, Cause = %d \n",
-			usta->t.usta.alarm.category, usta->t.usta.alarm.event, 
+	len = len + sprintf(prBuf+len,"MG Status Indication: received for sapId[%d] with Category = %d, Event = %d, Cause = %d \n",
+			usta->t.usta.alarmInfo.sapId, usta->t.usta.alarm.category, usta->t.usta.alarm.event, 
 			usta->t.usta.alarm.cause);
 
 	len = len + sprintf(prBuf+len, "Category ( ");
@@ -218,9 +218,8 @@ void handle_mg_alarm(Pst *pst, MgMngmt *usta)
 		case LMG_EVENT_PEER_ENABLED:
 			{
 				len = len + sprintf(prBuf+len, "gateway enabled");
-				/* gateway enabled now we can send termination service change */
-				/*TODO - probably we cannt immediate send Service change - we have to find proper place */
-				/*mg_send_service_change(0x01, "A01", MGT_SVCCHGMETH_RESTART,MG_SVC_REASON_900_RESTORED );*/
+				/* gateway enabled now we can send termination service change  for all terminations */
+				mgco_init_ins_service_change( usta->t.usta.alarmInfo.sapId );
 				break;
 			}
 		case LMG_EVENT_PEER_DISCOVERED:

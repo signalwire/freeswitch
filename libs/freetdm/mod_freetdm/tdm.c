@@ -84,7 +84,7 @@ switch_io_routines_t ctdm_io_routines = {
 	.receive_message = channel_receive_message
 };
 
-static void ctdm_report_alarms(ftdm_channel_t *channel)
+static void ctdm_report_alarms(ftdm_channel_t *channel, const char* mg_profile_name)
 {
 	switch_event_t *event = NULL;
 	ftdm_alarm_flag_t alarmflag = 0;
@@ -109,6 +109,8 @@ static void ctdm_report_alarms(ftdm_channel_t *channel)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-trap");
 	}
 
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "mg-profile-name", mg_profile_name);
+
 	if (alarmflag & FTDM_ALARM_RED) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "red");
 	}
@@ -128,6 +130,7 @@ static void ctdm_report_alarms(ftdm_channel_t *channel)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "general");
 	}
 
+
 	switch_event_fire(&event);
 	return;
 }
@@ -146,6 +149,7 @@ static void ctdm_event_handler(switch_event_t *event)
 				const char *chan_number = NULL;
 				uint32_t chan_id = 0;
 				const char *cond = switch_event_get_header(event, "condition");
+				const char *mg_profile_name = switch_event_get_header(event, "mg-profile-name");
 				
 				if (zstr(cond)) {
 					return;
@@ -183,7 +187,7 @@ static void ctdm_event_handler(switch_event_t *event)
 						return;
 					}
 
-					ctdm_report_alarms(channel);
+					ctdm_report_alarms(channel, mg_profile_name);
 				}
 			}
 			break;

@@ -52,6 +52,13 @@ typedef enum{
         SNG_MG_ENCODING_TEXT,
 }sng_mg_encoding_types_e;
 
+typedef enum{
+	MG_TERM_SERVICE_STATE_UNKNOWN,
+	MG_TERM_SERVICE_STATE_IN_SERVICE,
+	MG_TERM_SERVICE_STATE_OUT_OF_SERVICE,
+	MG_TERM_SERVICE_STATE_INVALID,
+}mg_term_states_e;
+
 #define PRNT_ENCODING_TYPE(_val)\
 	((_val == SNG_MG_ENCODING_TEXT)?"SNG_MG_ENCODING_TEXT":\
 	 (_val == SNG_MG_ENCODING_BINARY)?"SNG_MG_ENCODING_BINARY":\
@@ -157,6 +164,8 @@ void mg_util_set_err_string ( MgStr  *errTxt, char* str);
 
 switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp);
 switch_status_t mg_add_local_descriptor(MgMgcoMediaDesc* media, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp  *memCp);
+switch_status_t mg_send_term_service_change(char* mg_profile_name, char *span_name, char *chan_number, mg_term_states_e term_state); 
+mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile , char *span_name, char *chan_number);
 
 
 switch_status_t sng_mgco_cfg(megaco_profile_t* profile);
@@ -183,6 +192,7 @@ switch_status_t mg_send_audit_rsp(SuId suId, MgMgcoCommand *req);
 switch_status_t handle_mg_audit_cmd(SuId suId, MgMgcoCommand *auditReq);
 switch_status_t mg_stack_termination_is_in_service(char* term_str, int len);
 void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd);
+switch_status_t mgco_init_ins_service_change(SuId suId);
 
 switch_status_t mg_send_modify_rsp(SuId suId, MgMgcoCommand *req);
 switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req);

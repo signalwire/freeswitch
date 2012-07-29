@@ -84,7 +84,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
                     char *channel_map_dup = strdup(channel_map);
                     char *chanmap[24];
                     int chanmap_count, i;
-                    chanmap_count = switch_split(channel_map_dup, ' ', chanmap);
+                    chanmap_count = switch_split(channel_map_dup, ',', chanmap);
                     for (i = 0; i < chanmap_count; i++) {
                         char *p = strchr(chanmap[i], '-');
                         if (p) {

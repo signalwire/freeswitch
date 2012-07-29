@@ -2288,6 +2288,45 @@ U32 get_txn_id(){
 	return outgoing_txn_id;
 }
 /*****************************************************************************************************************************/
+switch_status_t mg_send_term_service_change(char* mg_profile_name,char *span_name, char *chan_number, mg_term_states_e term_state)
+{
+	mg_termination_t* term = NULL;
+	switch_status_t  ret = SWITCH_STATUS_SUCCESS;
+	megaco_profile_t *profile = NULL;
+
+	switch_assert(span_name);
+	switch_assert(chan_number);
+
+	profile = megaco_profile_locate(mg_profile_name);
+
+	term = 	megaco_find_termination_by_span_chan(profile, span_name, chan_number);
+
+	if(!term || !term->profile){
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch(term_state)
+	{
+		case MG_TERM_SERVICE_STATE_IN_SERVICE:
+			{
+				ret = mg_send_ins_service_change(term->profile, term->name, 0x00 );
+				break;
+			}
+		case MG_TERM_SERVICE_STATE_OUT_OF_SERVICE:
+			{
+				ret = mg_send_oos_service_change(term->profile, term->name, 0x00 );
+				break;
+			}
+		default:
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Invalid term_state[%d]\n", term_state);
+				return SWITCH_STATUS_FALSE;
+			}
+	}
+
+	return ret;
+}
+/*****************************************************************************************************************************/
 /* Note : API to send Service Change when termination is coming up(in-service) */
 /* INPUT : MG Profile structure and termination name */
 /* wild flag will tell if service change request needs to be in W-SC format as we can have W-SC=A01* or SC=A01* */
