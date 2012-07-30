@@ -22,6 +22,8 @@ megaco_profile_t *megaco_profile_locate(const char *name)
 	return profile;
 }
 
+
+
 mg_peer_profile_t *megaco_peer_profile_locate(const char *name)
 {
 	mg_peer_profile_t *profile = switch_core_hash_find_rdlock(megaco_globals.peer_profile_hash, name, megaco_globals.peer_profile_rwlock);
@@ -171,7 +173,6 @@ switch_status_t megaco_prepare_tdm_termination(mg_termination_t *term)
     return SWITCH_STATUS_SUCCESS;
 }
 
-/*  @Kapil Call this function once H.248 link is up  */
 switch_status_t megaco_check_tdm_termination(mg_termination_t *term)
 {
 	switch_event_t *event = NULL;
@@ -186,7 +187,6 @@ switch_status_t megaco_check_tdm_termination(mg_termination_t *term)
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s",  term->u.tdm.span_name);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", term->u.tdm.channel);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "mg-tdm-check");
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "mg-profile-name", term->profile->name);
 
 	switch_event_fire(&event);
 	return SWITCH_STATUS_SUCCESS;
@@ -241,7 +241,34 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
     return term;
 }
 
-mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile, char *span_name, char *chan_number)
+mg_termination_t *megaco_term_locate_by_span_chan_id(const char *span_name, const char *chan_number)
+{
+	void                	*val = NULL;
+	switch_hash_index_t 	*hi = NULL;
+	mg_termination_t 	*term = NULL;
+	megaco_profile_t 	*profile = NULL;
+	const void 		*var;
+
+	switch_assert(span_name);
+	switch_assert(chan_number);
+
+	/* span + chan will be unique across all the mg_profiles  *
+	 * loop through all profiles and then all terminations to *
+	 * get the mg termination associated with input span+chan */
+
+	switch_thread_rwlock_rdlock(megaco_globals.profile_rwlock);
+	for (hi = switch_hash_first(NULL, megaco_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		profile = (megaco_profile_t *) val;
+
+		if(NULL != (term = megaco_find_termination_by_span_chan(profile, span_name, chan_number))) break;
+	}
+	switch_thread_rwlock_unlock(megaco_globals.profile_rwlock);
+
+	return term;
+}
+
+mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile, const char *span_name, const char *chan_number)
 {
 	void                *val = NULL;
 	switch_hash_index_t *hi = NULL;
@@ -262,7 +289,8 @@ mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile
 
 		if ((!strcasecmp(span_name, term->u.tdm.span_name))&& (atoi(chan_number) == term->u.tdm.channel)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
-					"Got term[%s] associated with span[%s], channel[%s]\n",term->name, span_name, chan_number);
+					"Got term[%s] associated with span[%s], channel[%s] in MG profile[%s]\n",
+					 term->name, span_name, chan_number, profile->name);
 			found = 0x01;
 			break;
 		}
@@ -271,7 +299,8 @@ mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile
 	if(!found){
 		term = NULL;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-				" Not able to find termination associated with span[%s], channel[%s]\n", span_name, chan_number); 
+				" MG profile[%s] does not have termination associated with span[%s], channel[%s]\n", 
+				 profile->name, span_name, chan_number); 
 	}
 
 	return term;
@@ -549,8 +578,9 @@ switch_status_t megaco_profile_start(const char *profilename)
 	switch_core_new_memory_pool(&pool);
 	profile = switch_core_alloc(pool, sizeof(*profile));
 	profile->pool = pool;
+	profile->physical_terminations = NULL;
 	profile->name = switch_core_strdup(pool, profilename);
-    profile->next_context_id++;
+	profile->next_context_id++;
 	profile->inact_tmr = 0x00;
 	profile->inact_tmr_task_id = 0x00;
 	
