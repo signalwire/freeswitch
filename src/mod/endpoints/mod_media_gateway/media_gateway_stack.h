@@ -181,14 +181,14 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
 switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *cmd);
 switch_status_t mg_stack_free_mem(void* msg);
 switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize );
-MgMgcoMediaDesc* get_default_media_desc(void);
+MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTermId* termId);
 switch_status_t handle_media_audit( SuId suId, MgMgcoCommand *auditReq);
 switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req);
 S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, CmMemListCp   *memCp);
 void mg_util_set_txn_string(MgStr  *errTxt, U32 *txnId);
 switch_status_t mg_build_mgco_err_request(MgMgcoInd  **errcmd,U32  trans_id, MgMgcoContextId   *ctxt_id, U32  err, MgStr  *errTxt);
 switch_status_t mg_send_audit_rsp(SuId suId, MgMgcoCommand *req);
-switch_status_t handle_mg_audit_cmd(SuId suId, MgMgcoCommand *auditReq);
+switch_status_t handle_mg_audit_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *auditReq);
 switch_status_t mg_stack_termination_is_in_service(megaco_profile_t* mg_profile, char* term_str, int len);
 void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char *channel_prefix, const char *prefix, int j);
 void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd);

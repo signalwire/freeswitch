@@ -1526,7 +1526,7 @@ switch_status_t mg_build_mgco_err_request(MgMgcoInd  **errcmd,U32  trans_id, MgM
 
 
 /*****************************************************************************************************************************/
-switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
+switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand *auditReq)
 {
 	MgMgcoContextId  *ctxtId;
 	MgMgcoTermIdLst  *term_list;
@@ -1562,7 +1562,7 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 
 	if((NOTPRSNT == audit_desc->pres.pres) || ( NOTPRSNT == audit_desc->num.pres)){
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit Descriptor not present.. Could be HeartBeat message\n");
-		return mg_send_heartbeat_audit_rsp(suId, auditReq);
+		return mg_send_heartbeat_audit_rsp(mg_profile->idx, auditReq);
 	}
 
 	/* dump AUDIT message information */
@@ -1682,7 +1682,7 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 						adtRep->u.other.audit.parms[numOfParms - 1]->type.pres = PRSNT_NODEF;
 						adtRep->u.other.audit.parms[numOfParms - 1]->type.val  = MGT_MEDIADESC;
 
-						media = get_default_media_desc();
+						media = get_default_media_desc(mg_profile, termId);
 						if(!media){
 							return SWITCH_STATUS_FALSE;
 						}
@@ -1780,7 +1780,7 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 
 
 	/* send command reply */
-	sng_mgco_send_cmd(suId, &reply);
+	sng_mgco_send_cmd(mg_profile->idx, &reply);
 
 	/* send indication to stack , so he can send response back to peer */
 	memcpy(&ctxt.transId,&auditReq->transId,sizeof(MgMgcoTransId));
@@ -1788,14 +1788,14 @@ switch_status_t handle_mg_audit_cmd( SuId suId, MgMgcoCommand *auditReq)
 	memcpy(&ctxt.peerId, &auditReq->peerId,sizeof(TknU32));
 	ctxt.cmdStatus.pres = PRSNT_NODEF;
 	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
-	sng_mgco_send_axn_req(suId, &ctxt);
+	sng_mgco_send_axn_req(mg_profile->idx, &ctxt);
 	/***********************************************************************************************************************************/
 
 	return SWITCH_STATUS_SUCCESS;
 
 error:
 	if (SWITCH_STATUS_SUCCESS == mg_build_mgco_err_request(&mgErr, auditReq->transId.val, ctxtId, err_code, &errTxt)) {
-		sng_mgco_send_err(suId, mgErr);
+		sng_mgco_send_err(mg_profile->idx, mgErr);
 	}
 
 	/* deallocate the msg */

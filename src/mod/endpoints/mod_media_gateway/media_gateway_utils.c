@@ -1214,7 +1214,7 @@ void mg_util_set_term_string ( MgStr  *errTxt, MgMgcoTermId   *termId)
 			"info, error-text is: %s\n", __PRETTY_FUNCTION__,errTxt->val);
 }
 /*****************************************************************************************************************************/
-MgMgcoMediaDesc* get_default_media_desc()
+MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTermId* termId)
 {
 	MgMgcoMediaDesc   *media = NULL;
 	MgMgcoMediaPar    *mediaPar = NULL;
@@ -1268,8 +1268,20 @@ MgMgcoMediaDesc* get_default_media_desc()
 	trmStPar->type.pres = PRSNT_NODEF;
 	trmStPar->type.val = MGT_TERMST_SVCST;
 	trmStPar->u.svcState.pres = PRSNT_NODEF;
-	/*TODO - ADD CHECK if term is in svc or not */
-	trmStPar->u.svcState.val = MGT_SVCST_INSVC;
+
+	if ((NOTPRSNT != termId->type.pres)   &&
+			(MGT_TERMID_ROOT == termId->type.val)){
+		trmStPar->u.svcState.val = MGT_SVCST_INSVC;
+	}else{
+		/*not root termination */
+		mg_termination_t* term = NULL;
+		term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
+		if(term && switch_test_flag(term, MG_OUT_OF_SERVICE)){
+			trmStPar->u.svcState.val = MGT_SVCST_OUTOFSVC;
+		}else{
+			trmStPar->u.svcState.val = MGT_SVCST_INSVC;
+		}
+	}
 
 	mediaPar->u.tstate.trmStPar[0] = trmStPar; 
 	media->parms[0] = mediaPar;

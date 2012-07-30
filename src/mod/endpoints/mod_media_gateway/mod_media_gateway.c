@@ -546,8 +546,10 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	}
 
 	/*If term type is other then check if that term is configured with us..for term type CHOOSE/ALL , no need to check */
+	/* check is only if command is not AUDIT */
 	if ((CH_CMD_TYPE_IND == cmd->cmdType.val) &&
-			(MGT_TERMID_OTHER == termId->type.val)){
+			(MGT_TERMID_OTHER == termId->type.val) && 
+			(MGT_AUDITVAL != cmd->u.mgCmdInd[0]->cmd.type.val)){
 		if(SWITCH_STATUS_FALSE == mg_stack_termination_is_in_service(mg_profile, (char*)termId->name.lcl.val, termId->name.lcl.len)){
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination[%s] not in service \n", (char*)termId->name.lcl.val);
 			mg_util_set_term_string(&errTxt, termId);
@@ -643,7 +645,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 					case MGT_AUDITVAL:
 						{
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Audit-Value Method \n");
-							handle_mg_audit_cmd(suId, cmd);
+							handle_mg_audit_cmd(mg_profile, cmd);
 							break;
 						}
 						break;
