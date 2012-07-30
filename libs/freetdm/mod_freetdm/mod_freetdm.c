@@ -2097,7 +2097,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 {
 	uint32_t chanid, spanid;
-	switch_event_t *event = NULL;	
+	switch_event_t *event = NULL;
 	ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
 
 	chanid = ftdm_channel_get_id(sigmsg->channel);
@@ -2200,9 +2200,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 		break;
 	}
 
-	if (event) {
-
-		
+	if (event) {	
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", ftdm_channel_get_span_name(sigmsg->channel));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", ftdm_channel_get_span_id(sigmsg->channel));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", ftdm_channel_get_id(sigmsg->channel));

@@ -112,7 +112,9 @@ struct mg_termination_s {
     MgMgcoReqEvtDesc  *active_events;     /* !< active megaco events */
     mg_termination_t *next; /*!< List for physical terminations */
     mg_context_t* mg_ctxt;
+    int  *mg_error_code; /* MEGACO error code */
     uint32_t flags;
+    const char *tech; /* Endpoint controlling the TDM interface - only FreeTDM tested so far */
     
     union {
         struct {
@@ -235,6 +237,7 @@ void megaco_release_context(mg_context_t *ctx);
 switch_status_t megaco_context_sub_termination(mg_context_t *ctx, mg_termination_t *term);
 switch_status_t megaco_context_sub_all_termination(mg_context_t *ctx);
 switch_status_t megaco_activate_termination(mg_termination_t *term);
+switch_status_t megaco_prepare_termination(mg_termination_t *term);
 
 mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix);
 mg_termination_t *megaco_find_termination(megaco_profile_t *profile, const char *name);
@@ -253,7 +256,8 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination_t *term);
 switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination_t *term);
 
-
+switch_status_t megaco_prepare_tdm_termination(mg_termination_t *term);
+switch_status_t megaco_check_tdm_termination(mg_termination_t *term);
 #endif /* MOD_MEGACO_H */
 
 

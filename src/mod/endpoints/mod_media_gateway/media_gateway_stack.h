@@ -52,6 +52,13 @@ typedef enum{
         SNG_MG_ENCODING_TEXT,
 }sng_mg_encoding_types_e;
 
+typedef enum{
+	MG_TERM_SERVICE_STATE_UNKNOWN,
+	MG_TERM_SERVICE_STATE_IN_SERVICE,
+	MG_TERM_SERVICE_STATE_OUT_OF_SERVICE,
+	MG_TERM_SERVICE_STATE_INVALID,
+}mg_term_states_e;
+
 #define PRNT_ENCODING_TYPE(_val)\
 	((_val == SNG_MG_ENCODING_TEXT)?"SNG_MG_ENCODING_TEXT":\
 	 (_val == SNG_MG_ENCODING_BINARY)?"SNG_MG_ENCODING_BINARY":\
@@ -141,7 +148,7 @@ typedef enum {
    (_reqId)->id.val = 0xFFFFFFFF;
 
 
-switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd, mg_termination_t* term);
+switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd, mg_termination_t* term, CmMemListCp     *memCp);
 void handle_sng_log(uint8_t level, char *fmt, ...);
 void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* msg);
 void handle_mgco_txn_sta_ind(Pst *pst, SuId suId, MgMgcoInd* msg);
@@ -155,6 +162,11 @@ int mg_enable_logging(void);
 int mg_disable_logging(void);
 void mg_util_set_err_string ( MgStr  *errTxt, char* str);
 
+switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp);
+switch_status_t mg_add_local_descriptor(MgMgcoMediaDesc* media, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp  *memCp);
+switch_status_t mg_send_term_service_change(char* mg_profile_name, char *span_name, char *chan_number, mg_term_states_e term_state); 
+mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile , char *span_name, char *chan_number);
+
 
 switch_status_t sng_mgco_cfg(megaco_profile_t* profile);
 switch_status_t sng_mgco_init(sng_mg_event_interface_t* event);
@@ -163,7 +175,7 @@ int sng_mgco_mg_get_status(int elemId, MgMngmt* cfm, megaco_profile_t* mg_cfg, m
 
 switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *cmd);
 switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoContextId* ctxtId, TknU32* peerId);
-void mgco_handle_sdp(CmSdpInfoSet *sdp,mg_termination_t* term, mgco_sdp_types_e sdp_type);
+void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp,mg_termination_t* term, mgco_sdp_types_e sdp_type, megaco_profile_t* mg_profile, CmMemListCp     *memCp);
 void mg_util_set_ctxt_string ( MgStr  *errTxt, MgMgcoContextId     *ctxtId);
 switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd, MgMgcoContextId* new_ctxtId);
 switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd);
@@ -180,6 +192,7 @@ switch_status_t mg_send_audit_rsp(SuId suId, MgMgcoCommand *req);
 switch_status_t handle_mg_audit_cmd(SuId suId, MgMgcoCommand *auditReq);
 switch_status_t mg_stack_termination_is_in_service(char* term_str, int len);
 void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd);
+switch_status_t mgco_init_ins_service_change(SuId suId);
 
 switch_status_t mg_send_modify_rsp(SuId suId, MgMgcoCommand *req);
 switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req);
@@ -193,6 +206,9 @@ switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, c
 void mg_fill_null_context(MgMgcoContextId* ctxt);
 switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason,uint8_t wild); 
 switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, uint8_t cmdType);
+switch_status_t mg_add_lcl_media(CmSdpMediaDescSet* med, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp);
+switch_status_t mg_add_supported_media_codec(CmSdpMediaDesc* media, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp);
+switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_termination_t* term, CmSdpMedFmtRtpList  *fmtList, CmSdpAttrSet  *attrSet, CmMemListCp     *memCp);
 
 switch_status_t mg_send_oos_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);
 switch_status_t mg_send_ins_service_change(megaco_profile_t* mg_profile, const char* term_name, int wild);

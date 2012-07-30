@@ -1612,6 +1612,17 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span(ftdm_span_t *span, const char *typ
 FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(ftdm_span_t *span, const char *type, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *parameters);
 
 /*! 
+ * \brief Register callback to listen for incoming events
+ * \note  This function should only be used when there is no signalling module
+ * \param span The span to register to
+ * \param sig_cb The callback that the signaling stack will use to notify about events
+ *
+ * \retval FTDM_SUCCESS success
+ * \retval FTDM_FAIL failure
+ */
+FT_DECLARE(ftdm_status_t) ftdm_span_register_signal_cb(ftdm_span_t *span, fio_signal_cb_t sig_cb);
+
+/*! 
  * \brief Start the span signaling (must call ftdm_configure_span_signaling first)
  *
  * \note Even before this function returns you may receive signaling events!
@@ -1625,7 +1636,6 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(ftdm_span_t *span, const
  * \retval FTDM_FAIL failure 
  */
 FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span);
-
 
 /*! 
  * \brief Stop the span signaling (must call ftdm_span_start first)

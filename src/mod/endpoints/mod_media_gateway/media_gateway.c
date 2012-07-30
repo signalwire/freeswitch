@@ -155,6 +155,43 @@ done:
     return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t megaco_prepare_tdm_termination(mg_termination_t *term)
+{
+	switch_event_t *event = NULL;
+	if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create NOTIFY event\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s",  term->u.tdm.span_name);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", term->u.tdm.channel);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "mg-tdm-prepare");
+
+	switch_event_fire(&event);
+    return SWITCH_STATUS_SUCCESS;
+}
+
+/*  @Kapil Call this function once H.248 link is up  */
+switch_status_t megaco_check_tdm_termination(mg_termination_t *term)
+{
+	switch_event_t *event = NULL;
+
+	if(!term || !term->profile) return SWITCH_STATUS_FALSE;
+
+	if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create NOTIFY event\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s",  term->u.tdm.span_name);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", term->u.tdm.channel);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "mg-tdm-check");
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "mg-profile-name", term->profile->name);
+
+	switch_event_fire(&event);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const char *prefix)
 {
     mg_termination_type_t termtype;
@@ -202,6 +239,42 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
     switch_core_hash_insert_wrlock(profile->terminations, term->name, term, profile->terminations_rwlock);
     
     return term;
+}
+
+mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile, char *span_name, char *chan_number)
+{
+	void                *val = NULL;
+	switch_hash_index_t *hi = NULL;
+	mg_termination_t *term = NULL;
+	int found = 0x00;
+	const void *var;
+
+	if(!span_name || !chan_number){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Invalid span_name/chan_number \n");
+		return NULL;
+	}
+
+	for (hi = switch_hash_first(NULL, profile->terminations); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		term = (mg_termination_t *) val;
+		if(!term) continue;
+		if(MG_TERM_TDM != term->type) continue;
+
+		if ((!strcasecmp(span_name, term->u.tdm.span_name))&& (atoi(chan_number) == term->u.tdm.channel)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+					"Got term[%s] associated with span[%s], channel[%s]\n",term->name, span_name, chan_number);
+			found = 0x01;
+			break;
+		}
+	}
+
+	if(!found){
+		term = NULL;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+				" Not able to find termination associated with span[%s], channel[%s]\n", span_name, chan_number); 
+	}
+
+	return term;
 }
 
 mg_termination_t *megaco_find_termination(megaco_profile_t *profile, const char *name)
@@ -533,6 +606,35 @@ switch_status_t megaco_profile_destroy(megaco_profile_t **profile)
 	switch_core_destroy_memory_pool(&(*profile)->pool);
 	
 	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t mgco_init_ins_service_change(SuId suId)
+{
+    megaco_profile_t*    profile = NULL;
+    void                *val = NULL;
+    const void  *key = NULL;
+    switch_ssize_t   keylen;
+    switch_hash_index_t *hi = NULL;
+    mg_termination_t *term = NULL;
+
+
+    if(NULL == (profile = megaco_get_profile_by_suId(suId))){
+        return SWITCH_STATUS_FALSE;
+    }
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+            "mgco_init_ins_service_change : Initiating terminations service change for profile: %s\n", profile->name);
+
+    /* loop through all termination and post get status Event  */
+    for (hi = switch_hash_first(NULL,  profile->terminations); hi; hi = switch_hash_next(hi)) {
+        switch_hash_this(hi, &key, &keylen, &val);
+        term = (mg_termination_t *) val;
+	if(!term) continue;
+	megaco_check_tdm_termination(term);
+    }
+
+    return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t megaco_peer_profile_destroy(mg_peer_profile_t **profile) 

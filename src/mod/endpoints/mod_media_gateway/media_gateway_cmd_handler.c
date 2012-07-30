@@ -198,7 +198,7 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
 *
 *
 */
-switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *cmd, mg_termination_t* term)
+switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *cmd, mg_termination_t* term, CmMemListCp     *memCp)
 {
     CmSdpMedProtoFmts *format;
     TknU8 *fmt;
@@ -301,7 +301,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                         }
                                     }
 
-				    mgco_handle_sdp(&local->sdp, term, MG_SDP_LOCAL);
+				    mgco_handle_incoming_sdp(&local->sdp, term, MG_SDP_LOCAL, mg_profile, memCp);
 
                                     break;
                                 }
@@ -313,7 +313,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                     remote = &mediaPar->u.remote;
                                     sdp = remote->sdp.info[0];
                                     /* for Matt - same like local descriptor */
-				    mgco_handle_sdp(&remote->sdp, term, MG_SDP_REMOTE);
+				    mgco_handle_incoming_sdp(&remote->sdp, term, MG_SDP_REMOTE, mg_profile, memCp);
                                     break;
                                 }
 
@@ -406,12 +406,12 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
 
                                     if (mgStream->sl.remote.pres.pres) {
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
-                                        mgco_handle_sdp(&mgStream->sl.remote.sdp, term, MG_SDP_LOCAL);
+                                        mgco_handle_incoming_sdp(&mgStream->sl.remote.sdp, term, MG_SDP_LOCAL, mg_profile, memCp);
                                     }
 
                                     if (mgStream->sl.local.pres.pres) {
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
-                                        mgco_handle_sdp(&mgStream->sl.local.sdp, term, MG_SDP_REMOTE);
+                                        mgco_handle_incoming_sdp(&mgStream->sl.local.sdp, term, MG_SDP_REMOTE, mg_profile, memCp);
                                     }
 
                                     break;
@@ -500,7 +500,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     mg_context_t* mg_ctxt;
     int mediaId;
     MgMgcoLocalDesc   *local = NULL;
-    CmSdpInfoSet      *psdp  = NULL;
+    /*CmSdpInfoSet      *psdp  = NULL;*/
 
 
     /* TODO - Kapil dummy line , will need to add with proper code */
@@ -610,7 +610,14 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
     /********************************************************************/
 
-    ret = mg_prc_descriptors(mg_profile, inc_cmd, term);
+    ret = mg_prc_descriptors(mg_profile, inc_cmd, term, &inc_cmd->u.mgCmdInd[0]->memCp);
+
+    /* IF there is any error , return */
+    if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+	    mg_util_set_err_string(&errTxt, " Unsupported Codec ");
+	    err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
+	    goto error;
+    }
 
     /* TODO - locally assigned SDP must be the part of termination...which we can use to fill responses*/
 
@@ -707,6 +714,17 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 	/* only for RTP */
 	if(is_rtp){
+		if(SWITCH_STATUS_FALSE == mg_build_sdp(&desc->u.media, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp)) {
+			if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+				mg_util_set_err_string(&errTxt, " Unsupported Codec ");
+				err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
+				goto error;
+			}
+		}
+	}
+#if 0
+	if(is_rtp){
+		mg_build_sdp(desc, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp);
 		/* build local descriptors */
 		/*MgMgcoStreamDesc *stream;*/
 		char* ipAddress[4];// = "192.168.1.1";
@@ -762,11 +780,14 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 		psdp = &(local->sdp);
 
-		if (mgUtlGrowList((void ***)&psdp->info, sizeof(CmSdpInfo),
-					&psdp->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-		{
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-			return SWITCH_STATUS_FALSE;
+		if((NOTPRSNT == local->sdp.numComp.pres) || (0 == local->sdp.numComp.val)){
+
+			if (mgUtlGrowList((void ***)&psdp->info, sizeof(CmSdpInfo),
+						&psdp->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
 		}
 
 		psdp->info[psdp->numComp.val-1]->pres.pres = PRSNT_NODEF;
@@ -875,7 +896,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->type), CM_SDP_SPEC);
 
-			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->val), 4);
+			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->val), 8);
 
 			/* Fill attribute if reqd */
 			{
@@ -893,6 +914,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 		free(dup);
 	}
+#endif
 
 
         /* We will always send one command at a time..*/
@@ -1052,12 +1074,21 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
         /********************************************************************/
 
-        ret = mg_prc_descriptors(mg_profile, inc_cmd, term);
+        ret = mg_prc_descriptors(mg_profile, inc_cmd, term, &inc_cmd->u.mgCmdInd[0]->memCp);
+
+	/* IF there is any error , return */
+	if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+		mg_util_set_err_string(&errTxt, " Unsupported Codec ");
+		err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
+		/* TODO delete RTP termination */
+		goto error;
+	}
 
 	/* SDP updated to termination */
-	
 	megaco_activate_termination(term);
     }
+
+	/* TODO - copy inc descriptor...not sure if we need to do this.. */
 
 	/********************************************************************/
 
@@ -2255,6 +2286,45 @@ switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req)
 U32 get_txn_id(){
 	outgoing_txn_id++;
 	return outgoing_txn_id;
+}
+/*****************************************************************************************************************************/
+switch_status_t mg_send_term_service_change(char* mg_profile_name,char *span_name, char *chan_number, mg_term_states_e term_state)
+{
+	mg_termination_t* term = NULL;
+	switch_status_t  ret = SWITCH_STATUS_SUCCESS;
+	megaco_profile_t *profile = NULL;
+
+	switch_assert(span_name);
+	switch_assert(chan_number);
+
+	profile = megaco_profile_locate(mg_profile_name);
+
+	term = 	megaco_find_termination_by_span_chan(profile, span_name, chan_number);
+
+	if(!term || !term->profile){
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch(term_state)
+	{
+		case MG_TERM_SERVICE_STATE_IN_SERVICE:
+			{
+				ret = mg_send_ins_service_change(term->profile, term->name, 0x00 );
+				break;
+			}
+		case MG_TERM_SERVICE_STATE_OUT_OF_SERVICE:
+			{
+				ret = mg_send_oos_service_change(term->profile, term->name, 0x00 );
+				break;
+			}
+		default:
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Invalid term_state[%d]\n", term_state);
+				return SWITCH_STATUS_FALSE;
+			}
+	}
+
+	return ret;
 }
 /*****************************************************************************************************************************/
 /* Note : API to send Service Change when termination is coming up(in-service) */

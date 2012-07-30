@@ -5618,14 +5618,66 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(ftdm_span_t *span, const
 	return status;
 }
 
+static void *ftdm_span_service_events(ftdm_thread_t *me, void *obj)
+{
+	int i;
+	unsigned waitms;
+	ftdm_event_t *event;
+	ftdm_status_t status = FTDM_SUCCESS;
+	ftdm_span_t *span = (ftdm_span_t*) obj;
+	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
+
+	memset(poll_events, 0, sizeof(short) * span->chan_count);
+
+	for(i = 1; i <= span->chan_count; i++) {
+		poll_events[i] |= FTDM_EVENTS;
+	}
+
+	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
+		waitms = 1000;
+		status = ftdm_span_poll_event(span, waitms, poll_events);
+		switch (status) {
+			case FTDM_FAIL:
+				ftdm_log(FTDM_LOG_CRIT, "%s:Failed to poll span for events\n", span->name);
+				break;
+			case FTDM_TIMEOUT:
+				break;
+			case FTDM_SUCCESS:
+				/* Check if there are any channels that have events available */
+				while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS);
+				break;
+			default:
+				ftdm_log(FTDM_LOG_CRIT, "%s:Unhandled IO event\n", span->name);
+		}
+	}
+	return NULL;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_span_register_signal_cb(ftdm_span_t *span, fio_signal_cb_t sig_cb)
+{
+	span->signal_cb = sig_cb;
+	return FTDM_SUCCESS;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 {
 	ftdm_status_t status = FTDM_FAIL;
-
 	ftdm_mutex_lock(span->mutex);
 
 	if (ftdm_test_flag(span, FTDM_SPAN_STARTED)) {
 		status = FTDM_EINVAL;
+		goto done;
+	}
+	if (span->signal_type == FTDM_SIGTYPE_NONE) {
+		/* If there is no signalling component, start a thread to poll events */
+		status = ftdm_thread_create_detached(ftdm_span_service_events, span);
+		if (status != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_CRIT,"Failed to start span event monitor thread!\n");
+			goto done;
+		}
+
+		//ftdm_report_initial_channels_alarms(span);		
+		ftdm_set_flag_locked(span, FTDM_SPAN_STARTED);
 		goto done;
 	}
 
@@ -5643,7 +5695,6 @@ FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 	if (status == FTDM_SUCCESS) {
 		ftdm_set_flag_locked(span, FTDM_SPAN_STARTED);
 	}
-
 done:
 	ftdm_mutex_unlock(span->mutex);
 	return status;
@@ -5828,8 +5879,10 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 
 static ftdm_status_t ftdm_span_trigger_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
-	ftdm_status_t status = span->signal_cb(sigmsg);
-	return status;
+	if (!span->signal_cb) {
+		return FTDM_FAIL;
+	}
+	return span->signal_cb(sigmsg);
 }
 
 static ftdm_status_t ftdm_span_queue_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
