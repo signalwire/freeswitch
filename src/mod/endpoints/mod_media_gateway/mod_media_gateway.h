@@ -89,8 +89,10 @@ typedef struct mg_context_s mg_context_t;
 typedef struct mg_termination_s mg_termination_t;
 
 enum {
-    MGT_ALLOCATED = (1 << 0),
-    MGT_ACTIVE = (1 << 1),
+    MGT_ALLOCATED 	= (1 << 0),
+    MGT_ACTIVE    	= (1 << 1),
+    MG_IN_SERVICE 	= (1 << 2),
+    MG_OUT_OF_SERVICE 	= (1 << 3),
     
 } mg_termination_flags;
 
@@ -222,8 +224,10 @@ static inline megaco_codec_t megaco_codec_parse(const char *codec) {
 
 
 megaco_profile_t *megaco_profile_locate(const char *name);
+mg_termination_t *megaco_term_locate_by_span_chan_id(const char *span_name, const char *chan_number);
 mg_peer_profile_t *megaco_peer_profile_locate(const char *name);
 void megaco_profile_release(megaco_profile_t *profile);
+mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile, const char *span_name, const char *chan_number);
 
 switch_status_t megaco_profile_start(const char *profilename);
 switch_status_t megaco_profile_destroy(megaco_profile_t **profile);

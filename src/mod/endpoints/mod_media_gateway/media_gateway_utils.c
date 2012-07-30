@@ -80,10 +80,16 @@ switch_status_t mg_stack_free_mem(void* msg)
 
 /*****************************************************************************************************************************/
 
-/* TODO - Matt - to see if term is in service or not */
-switch_status_t mg_stack_termination_is_in_service(char* term_str,int len)
+/* To see if term is in service or not */
+switch_status_t mg_stack_termination_is_in_service(megaco_profile_t* mg_profile, char* term_str,int len)
 {
-        return SWITCH_STATUS_SUCCESS;
+	mg_termination_t* term = NULL;
+	term = megaco_find_termination(mg_profile, term_str);
+	if(switch_test_flag(term, MG_IN_SERVICE)){
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		return SWITCH_STATUS_FALSE;
+	}
 }
 
 /*****************************************************************************************************************************/
