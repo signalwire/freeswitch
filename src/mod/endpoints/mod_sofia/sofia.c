@@ -748,7 +748,8 @@ void sofia_handle_sip_r_message(int status, sofia_profile_t *profile, nua_handle
 	const char *call_id;
 	int *mstatus;
 
-	if (!sip && sip->sip_call_id) {
+	if (!(sip && sip->sip_call_id)) {
+		nua_handle_destroy(nh);
 		return;
 	}
 

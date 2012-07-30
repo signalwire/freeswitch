@@ -357,7 +357,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		if (is_blocking) {
 			sanity = 200;
 
-			while(!mstatus && --sanity) {
+			while(!mstatus && --sanity && !msg_nh->nh_destroyed) {
 				switch_yield(100000);
 			}
 			
