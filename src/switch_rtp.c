@@ -3310,8 +3310,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			if (!SWITCH_STATUS_IS_BREAK(poll_status) && poll_status != SWITCH_STATUS_TIMEOUT) {
 				char tmp[128] = "";
-				strerror_r(poll_status, tmp, sizeof(tmp));
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Poll failed with error: %d [%s]\n", poll_status, tmp);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Poll failed with error: %d [%s]\n",
+					poll_status, strerror_r(poll_status, tmp, sizeof(tmp)));
 				ret = -1;
 				goto end;
 			}
