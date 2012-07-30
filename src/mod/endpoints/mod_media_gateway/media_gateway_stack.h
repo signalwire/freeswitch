@@ -167,6 +167,9 @@ switch_status_t mg_add_local_descriptor(MgMgcoMediaDesc* media, megaco_profile_t
 switch_status_t mg_send_term_service_change(char *span_name, char *chan_number, mg_term_states_e term_state); 
 
 
+switch_status_t  mg_send_t38_cng_notify(megaco_profile_t* mg_profile, const char* term_name);
+
+
 switch_status_t sng_mgco_cfg(megaco_profile_t* profile);
 switch_status_t sng_mgco_init(sng_mg_event_interface_t* event);
 switch_status_t sng_mgco_stack_shutdown(void);

@@ -2480,6 +2480,53 @@ switch_status_t  mg_send_ito_notify(megaco_profile_t* mg_profile )
 
     return mg_send_notify(mg_profile, "ROOT", oevt);
 }
+
+/*****************************************************************************************************************************/
+/* API to send T.38 CNG tone Notification */
+
+switch_status_t  mg_send_t38_cng_notify(megaco_profile_t* mg_profile, const char* term_name)
+{
+    MgMgcoObsEvt *oevt;
+    MgMgcoEvtPar* param;
+
+	switch_assert(term_name);
+	switch_assert(mg_profile);
+
+    mg_stack_alloc_mem((Ptr*)&oevt, sizeof(MgMgcoObsEvt));
+
+    oevt->pres.pres = PRSNT_NODEF;
+
+    mg_get_time_stamp(&oevt->time);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.pkgType), MGT_PKG_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.valType), MGT_PKG_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->pkg.u.val), MGT_PKG_CALL_TYP_DISCR);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->name.type),MGT_GEN_TYPE_KNOWN);
+
+    MG_INIT_TOKEN_VALUE(&(oevt->name.u.val),(U8)MGT_PKG_ENUM_OBSEVTOTHERCALLTYPDISCRDISCTONEDETDISCTONETYPCNG);
+
+    if (mgUtlGrowList((void ***)&oevt->pl.parms, sizeof(MgMgcoEvtPar), &oevt->pl.num, NULL) != ROK) {
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        return SWITCH_STATUS_FALSE;
+    }
+
+    param = oevt->pl.parms[0];
+
+    MG_INIT_TOKEN_VALUE(&(param->type),(U8)MGT_EVTPAR_OTHER);
+
+    MG_INIT_TOKEN_VALUE(&(param->u.other.name.type),MGT_GEN_TYPE_KNOWN);
+    MG_INIT_TOKEN_VALUE(&(param->u.other.name.u.val), MGT_PKG_ENUM_OBSEVTOTHERCALLTYPDISCRDISCTONEDETDISCTONETYP);
+
+    MG_INIT_TOKEN_VALUE(&(param->u.other.val.type),MGT_VALUE_EQUAL);
+    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.type),MGT_VALTYPE_ENUM);
+    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERCALLTYPDISCRDISCTONEDETDISCTONETYPCNG);
+
+
+    return mg_send_notify(mg_profile, term_name, oevt);
+}
 /*****************************************************************************************************************************/
 /* API to send DTMF Digits Notification */
 
