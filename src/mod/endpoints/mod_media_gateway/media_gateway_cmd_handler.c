@@ -2306,18 +2306,22 @@ switch_status_t mg_send_term_service_change(char *span_name, char *chan_number, 
 	{
 		case MG_TERM_SERVICE_STATE_IN_SERVICE:
 			{
-				/* set INS flag...clear oos flag */
-				switch_clear_flag(term, MG_OUT_OF_SERVICE);
-				switch_set_flag(term, MG_IN_SERVICE);
-				ret = mg_send_ins_service_change(term->profile, term->name, 0x00 );
+				if(switch_test_flag(term, MG_OUT_OF_SERVICE)){
+					/* set INS flag...clear oos flag */
+					switch_clear_flag(term, MG_OUT_OF_SERVICE);
+					switch_set_flag(term, MG_IN_SERVICE);
+					ret = mg_send_ins_service_change(term->profile, term->name, 0x00 );
+				}
 				break;
 			}
 		case MG_TERM_SERVICE_STATE_OUT_OF_SERVICE:
 			{
-				/* set OOS flag...clear ins flag */
-				switch_clear_flag(term, MG_IN_SERVICE);
-				switch_set_flag(term, MG_OUT_OF_SERVICE);
-				ret = mg_send_oos_service_change(term->profile, term->name, 0x00 );
+				if(switch_test_flag(term, MG_IN_SERVICE)){
+					/* set OOS flag...clear ins flag */
+					switch_clear_flag(term, MG_IN_SERVICE);
+					switch_set_flag(term, MG_OUT_OF_SERVICE);
+					ret = mg_send_oos_service_change(term->profile, term->name, 0x00 );
+				}
 				break;
 			}
 		default:

@@ -578,8 +578,9 @@ switch_status_t megaco_profile_start(const char *profilename)
 	switch_core_new_memory_pool(&pool);
 	profile = switch_core_alloc(pool, sizeof(*profile));
 	profile->pool = pool;
+	profile->physical_terminations = NULL;
 	profile->name = switch_core_strdup(pool, profilename);
-    profile->next_context_id++;
+	profile->next_context_id++;
 	profile->inact_tmr = 0x00;
 	profile->inact_tmr_task_id = 0x00;
 	

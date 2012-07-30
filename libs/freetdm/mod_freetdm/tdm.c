@@ -128,6 +128,8 @@ static void ctdm_report_alarms(ftdm_channel_t *channel)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm", "general");
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reporting [%s] alarms for %s:%d\n", 
+			(alarmflag?"ftdm-alarm-clear":"ftdm-alarm-trap"), ftdm_channel_get_span_name(channel), ftdm_channel_get_id(channel));
 
 	switch_event_fire(&event);
 	return;
@@ -183,6 +185,9 @@ static void ctdm_event_handler(switch_event_t *event)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find channel\n");
 						return;
 					}
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting alarm status for %s:%d\n", 
+							ftdm_channel_get_span_name(channel), ftdm_channel_get_id(channel));
 
 					ctdm_report_alarms(channel);
 				}

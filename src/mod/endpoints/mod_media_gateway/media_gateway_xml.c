@@ -213,6 +213,7 @@ void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char 
 	term->name = switch_core_sprintf(pool, "%s%d", prefix, chan_num);
 	term->u.tdm.channel = chan_num;
 	term->u.tdm.span_name = switch_core_strdup(pool, channel_prefix);
+	switch_set_flag(term, MG_OUT_OF_SERVICE);
 
 	switch_core_hash_insert_wrlock(profile->terminations, term->name, term, profile->terminations_rwlock);
 	term->next = profile->physical_terminations;
@@ -222,7 +223,6 @@ void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char 
 			"Mapped termination [%s] to freetdm span: %s chan: %d\n", 
 			term->name, term->u.tdm.span_name, term->u.tdm.channel);
 	megaco_prepare_tdm_termination(term);
-
 }
 /****************************************************************************************************************************/
 switch_status_t mg_config_cleanup(megaco_profile_t* profile)
