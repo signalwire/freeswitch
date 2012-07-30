@@ -123,6 +123,21 @@ MgPackage_t mg_pkg_list [] =
       1,              /* Version 1 */
       "analog",              /* Package name */
    },
+   {  /* INDEX : 22 */
+      MGT_PKG_FAX_TONE_DET,
+      1,              /* Version 1 */
+      "ftmd",              /* Package name */
+   },
+   {  /* INDEX : 24 */
+      MGT_PKG_CALL_TYP_DISCR,
+      1,              /* Version 1 */
+      "ctype",              /* Package name */
+   },
+   {  /* INDEX : 25 */
+      MGT_PKG_IP_FAX,
+      1,              /* Version 1 */
+      "ipfax",              /* Package name */
+   },
   /* Add more packages */
 };
 
