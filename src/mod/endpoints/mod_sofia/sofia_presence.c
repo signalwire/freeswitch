@@ -904,7 +904,7 @@ static void send_conference_data(sofia_profile_t *profile, switch_event_t *event
 	const char *notfound = switch_event_get_header(event, "notfound");
 	const char *body = switch_event_get_body(event);
 	const char *type = "application/conference-info+xml";
-	int final = switch_true(switch_event_get_header(event, "final");
+	const char *final = switch_event_get_header(event, "final");
 							
 	if (!event_str) {
 		event_str = "conference";
