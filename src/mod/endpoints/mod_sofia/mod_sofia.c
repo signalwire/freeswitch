@@ -4568,9 +4568,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				dest_to = NULL;
 			}
 		}
-
+		
 		if (params) {
 			tech_pvt->invite_contact = switch_core_session_sprintf(nsession, "%s;%s", gateway_ptr->register_contact, params);
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "%s;%s", tech_pvt->dest, params);
 		} else {
 			tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
 		}
