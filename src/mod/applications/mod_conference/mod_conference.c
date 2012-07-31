@@ -1325,6 +1325,49 @@ static void send_rfc_event(conference_obj_t *conference)
 }
 
 
+
+static void send_conference_notify(conference_obj_t *conference, const char *status, switch_bool_t final)
+{
+	switch_event_t *event;
+	char *name = NULL, *domain = NULL, *dup_domain = NULL;
+	
+	if (!switch_test_flag(conference, CFLAG_RFC4579)) {
+		return;
+	}
+
+	if (!(name = conference->name)) {
+		name = "conference";
+	}
+
+	if (!(domain = conference->domain)) {
+		dup_domain = switch_core_get_variable_dup("domain");
+		if (!(domain = dup_domain)) {
+			domain = "cluecon.com";
+		}
+	}
+
+
+	if (switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA) == SWITCH_STATUS_SUCCESS) {
+		event->flags |= EF_UNIQ_HEADERS;
+
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-name", name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
+
+		if (final) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "final", "true");
+		}
+
+
+		switch_event_add_body(event, "%s", status);
+		switch_event_fire(&event);
+	}
+
+	switch_safe_free(dup_domain);
+
+}
+
+
 /* Gain exclusive access and add the member to the list */
 static switch_status_t conference_add_member(conference_obj_t *conference, conference_member_t *member)
 {
@@ -6459,6 +6502,11 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	int rdlock = 0;
 	switch_bool_t have_flags = SWITCH_FALSE;
 	const char *outcall_flags;
+	int track = 0;
+
+	if (var_event && switch_true(switch_event_get_header(var_event, "conference_track_status"))) {
+		track++;
+	}
 
 	*cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
@@ -6500,6 +6548,12 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	switch_mutex_lock(conference->mutex);
 	conference->originating++;
 	switch_mutex_unlock(conference->mutex);
+
+	if (track) {
+		send_conference_notify(conference, "SIP/2.0 100 Trying\r\n", SWITCH_FALSE);
+	}
+
+
 	status = switch_ivr_originate(session, &peer_session, cause, bridgeto, timeout, NULL, cid_name, cid_num, NULL, var_event, SOF_NO_LIMITS, cancel_cause);
 	switch_mutex_lock(conference->mutex);
 	conference->originating--;
@@ -6511,7 +6565,16 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 		if (caller_channel) {
 			switch_channel_hangup(caller_channel, *cause);
 		}
+
+		if (track) {
+			send_conference_notify(conference, "SIP/2.0 481 Failure\r\n", SWITCH_TRUE);
+		}
+
 		goto done;
+	}
+
+	if (track) {
+		send_conference_notify(conference, "SIP/2.0 200 OK\r\n", SWITCH_TRUE);
 	}
 
 	rdlock = 1;
@@ -8461,6 +8524,8 @@ static void call_setup_event_handler(switch_event_t *event)
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_destination_number", ext);
 
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_invite_uri", dial_uri);
+
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_status", "true");
 
 				if (!strncasecmp(ostr, "url+", 4)) {
 					ostr += 4;

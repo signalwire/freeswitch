@@ -900,8 +900,20 @@ static void send_conference_data(sofia_profile_t *profile, switch_event_t *event
 	const char *call_id = switch_event_get_header(event, "call_id");
 	const char *from_user = switch_event_get_header(event, "conference-name");
 	const char *from_host = switch_event_get_header(event, "conference-domain");
+	const char *event_str = switch_event_get_header(event, "conference-event");
 	const char *notfound = switch_event_get_header(event, "notfound");
 	const char *body = switch_event_get_body(event);
+	const char *type = "application/conference-info+xml";
+	int final = switch_true(switch_event_get_header(event, "final");
+							
+	if (!event_str) {
+		event_str = "conference";
+	}
+
+	if (!strcasecmp(event_str, "refer")) {
+		type = "message/sipfrag";
+	}
+
 
 	if (!(from_user && from_host)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event information not given\n");
@@ -910,34 +922,49 @@ static void send_conference_data(sofia_profile_t *profile, switch_event_t *event
 
 	if (switch_true(notfound)) {
 		sql = switch_mprintf("update sip_subscriptions set expires=%ld where "
-							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='conference'",
+							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
 							 (long)switch_epoch_time_now(NULL),
 							 mod_sofia_globals.hostname, profile->name,
-							 from_user, from_host);
+							 from_user, from_host, event_str);
 
 		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 	}
 
 
+	if (switch_true(final)) {
+		sql = switch_mprintf("delete from sip_subscriptions where "
+							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
+							 mod_sofia_globals.hostname, profile->name,
+							 from_user, from_host, event_str);
+
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+	}
+
+
+
+
+
 	if (call_id) {
 		sql = switch_mprintf("select full_to, full_from, contact %q ';_;isfocus', expires, call_id, event, network_ip, network_port, "
-							 "'application/conference-info+xml' as ct,'%q' as pt "
+							 "'%q' as ct,'%q' as pt "
 							 " from sip_subscriptions where "
-							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='conference'"
+							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'"
 							 "and call_id = '%q' ", 
 							 switch_sql_concat(),
+							 type,
 							 switch_str_nil(body),
 							 mod_sofia_globals.hostname, profile->name,
-							 from_user, from_host, call_id);
+							 from_user, from_host, event_str, call_id);
 	} else {
 		sql = switch_mprintf("select full_to, full_from, contact %q ';_;isfocus', expires, call_id, event, network_ip, network_port, "
-							 "'application/conference-info+xml' as ct,'%q' as pt "
+							 "'%q' as ct,'%q' as pt "
 							 " from sip_subscriptions where "
-							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='conference'",
+							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
 							 switch_sql_concat(),
+							 type,
 							 switch_str_nil(body),
 							 mod_sofia_globals.hostname, profile->name,
-							 from_user, from_host);
+							 from_user, from_host, event_str);
 	}
 
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_send_sql, &cb);

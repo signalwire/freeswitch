@@ -1289,10 +1289,72 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "var_origination_caller_id_number", ref_by_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "var_origination_caller_id_name", ref_by_user);
-				DUMP_EVENT(event);
 				switch_event_fire(&event);
 			}
 
+
+
+			if (sip) {
+				char *sql;
+				sofia_nat_parse_t np = { { 0 } };
+				char *contact_str;
+				char *proto = "sip", *orig_proto = "sip";
+				const char *call_id, *full_from, *full_to, *full_via, *from_user = NULL, *from_host = NULL, *to_user, *to_host, *full_agent;
+				char to_tag[13] = "";
+				char *event_str = "refer";
+
+				np.fs_path = 1;
+				contact_str = sofia_glue_gen_contact_str(profile, sip, nh, de, &np);
+				
+				call_id = sip->sip_call_id->i_id;
+				full_from = sip_header_as_string(nh->nh_home, (void *) sip->sip_from);
+				full_to = sip_header_as_string(nh->nh_home, (void *) sip->sip_to);
+				full_via = sip_header_as_string(nh->nh_home, (void *) sip->sip_via);
+
+				full_agent = sip_header_as_string(nh->nh_home, (void *) sip->sip_user_agent);
+				
+				switch_stun_random_string(to_tag, 12, NULL);
+
+				if (sip->sip_from) {
+					from_user = sip->sip_from->a_url->url_user;
+					from_host = sip->sip_from->a_url->url_host;
+				} else {
+					from_user = "n/a";
+					from_host = "n/a";
+				}
+
+				if (sip->sip_to) {
+					to_user = sip->sip_to->a_url->url_user;
+					to_host = sip->sip_to->a_url->url_host;
+				} else {
+					to_user = "n/a";
+					to_host = "n/a";
+				}
+				
+				sql = switch_mprintf("insert into sip_subscriptions "
+									 "(proto,sip_user,sip_host,sub_to_user,sub_to_host,presence_hosts,event,contact,call_id,full_from,"
+									 "full_via,expires,user_agent,accept,profile_name,hostname,network_port,network_ip,version,orig_proto, full_to) "
+									 "values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'%q','%q','%q','%q','%d','%q',-1,'%q','%q;tag=%q')",
+									 proto, from_user, from_host, to_user, to_host, profile->presence_hosts ? profile->presence_hosts : "",
+									 event_str, contact_str, call_id, full_from, full_via,
+									 (long) switch_epoch_time_now(NULL) + 60,
+									 full_agent, accept, profile->name, mod_sofia_globals.hostname, 
+									 np.network_port, np.network_ip, orig_proto, full_to, to_tag);
+				
+				switch_assert(sql != NULL);
+				
+				
+				if (1 || mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s REFER SUBSCRIBE %s@%s %s@%s\n%s\n",
+									  profile->name, from_user, from_host, to_user, to_host, sql);
+				}
+				
+				
+				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+
+				sip_to_tag(nh->nh_home, sip->sip_to, to_tag);
+			}
+			
 			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			switch_safe_free(method);
 			switch_safe_free(full_url);
