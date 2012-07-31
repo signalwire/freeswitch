@@ -1216,38 +1216,49 @@ static void our_sofia_event_callback(nua_event_t event,
 			char *refer_to = NULL, *referred_by = NULL, *method = NULL, *full_url = NULL;
 			char *params = NULL;
 			switch_event_t *event;
+			char *tmp;
 
 			if (sip->sip_refer_to) {
 				ref_to_user = sip->sip_refer_to->r_url->url_user;
 				ref_to_host = sip->sip_refer_to->r_url->url_host;
 
-				refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to);
-				if ((params = strchr(refer_to, ';'))) {
-					if (strchr(refer_to, '<')) {
-						*params++ = '>';
-					} else {
+				if ((refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to))) {
+
+					if ((params = strrchr(refer_to, ';'))) {
 						*params++ = '\0';
 					}
-
-					if (!(method = switch_find_parameter(params, "method", NULL))) {
-						method = strdup("INVITE");
-					}
 					
-					full_url = switch_find_parameter(params, "full_url", NULL);
-
-					if (!strcasecmp(method, "INVITE")) {
-						action = "call";
-					} else if (!strcasecmp(method, "BYE")) {
-						action = "end";
-					} else {
-						action = method;
+					if ((tmp = sofia_glue_get_url_from_contact(refer_to, 0))) {
+						refer_to = tmp;
 					}
 				}
 
-				refer_to = sofia_glue_get_url_from_contact(refer_to, 0);
-					
+				if (!params || !switch_stristr("method=", params)) {
+					if ((params = strchr(refer_to, ';'))) {
+						*params++ = '\0';
+					}
+				}
+
+				if (params) {
+					method = switch_find_parameter(params, "method", NULL);
+					full_url = switch_find_parameter(params, "full_url", NULL);
+				}
+
+
 			}
 			
+			if (!method) {
+				method = strdup("INVITE");
+			}
+
+			if (!strcasecmp(method, "INVITE")) {
+				action = "call";
+			} else if (!strcasecmp(method, "BYE")) {
+				action = "end";
+			} else {
+				action = method;
+			}
+
 			if (sip->sip_referred_by) {
 				referred_by = sofia_glue_get_url_from_contact(sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_referred_by), 0);
 				ref_by_user = sip->sip_referred_by->b_url->url_user;
@@ -1278,6 +1289,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "var_origination_caller_id_number", ref_by_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "var_origination_caller_id_name", ref_by_user);
+				DUMP_EVENT(event);
 				switch_event_fire(&event);
 			}
 
