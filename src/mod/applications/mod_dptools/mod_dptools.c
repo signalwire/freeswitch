@@ -1403,7 +1403,7 @@ SWITCH_STANDARD_APP(export_function)
 			}
 		}
 
-		switch_channel_export_variable(channel, var, val, SWITCH_EXPORT_VARS_VARIABLE);
+		switch_channel_export_variable_var_check(channel, var, val, SWITCH_EXPORT_VARS_VARIABLE, SWITCH_FALSE);
 	}
 }
 
