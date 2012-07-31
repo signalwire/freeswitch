@@ -2156,18 +2156,17 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 		switch_queue_create(&sql_manager.sql_queue[0], SWITCH_SQL_QUEUE_LEN, sql_manager.memory_pool);
 		switch_queue_create(&sql_manager.sql_queue[1], SWITCH_SQL_QUEUE_LEN, sql_manager.memory_pool);
+
+		switch_threadattr_create(&thd_attr, sql_manager.memory_pool);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+
+		switch_core_sqldb_start_thread();
+		switch_thread_create(&sql_manager.db_thread, thd_attr, switch_core_sql_db_thread, NULL, sql_manager.memory_pool);
+
+		while (sql_manager.manage && !sql_manager.thread_running && --sanity) {
+			switch_yield(10000);
+		}
 	}
-
-	switch_threadattr_create(&thd_attr, sql_manager.memory_pool);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-
-	switch_core_sqldb_start_thread();
-	switch_thread_create(&sql_manager.db_thread, thd_attr, switch_core_sql_db_thread, NULL, sql_manager.memory_pool);
-
-	while (sql_manager.manage && !sql_manager.thread_running && --sanity) {
-		switch_yield(10000);
-	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2263,7 +2262,7 @@ void switch_core_sqldb_stop(void)
 	switch_core_sqldb_stop_thread();
 
 
-	if (sql_manager.thread && sql_manager.db_thread_running) {
+	if (sql_manager.db_thread && sql_manager.db_thread_running) {
 		sql_manager.db_thread_running = -1;
 		switch_thread_join(&st, sql_manager.db_thread);
 	}
