@@ -1344,7 +1344,7 @@ static void our_sofia_event_callback(nua_event_t event,
 				switch_assert(sql != NULL);
 				
 				
-				if (1 || mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
+				if (mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s REFER SUBSCRIBE %s@%s %s@%s\n%s\n",
 									  profile->name, from_user, from_host, to_user, to_host, sql);
 				}
