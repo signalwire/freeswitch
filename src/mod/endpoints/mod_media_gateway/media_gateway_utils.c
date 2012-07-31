@@ -2017,4 +2017,4 @@ switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
-
+/*****************************************************************************************************************************/

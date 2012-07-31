@@ -187,6 +187,58 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
     return SWITCH_STATUS_SUCCESS;
 }
 
+/*****************************************************************************************************************************/
+switch_status_t mg_prc_sig_desc(MgMgcoSignalsReq* req, megaco_profile_t* mg_profile, mg_termination_t* term)
+{
+    MgMgcoSigPar *p   = NULL;
+    MgMgcoSigOther* o = NULL;
+    int sig = 0x00;
+
+	switch_assert(req);
+	switch_assert(mg_profile);
+	switch_assert(term);
+
+
+    /* As of now only checking T.38 CED tone */
+
+    /* Modify message will have following signal descriptor *
+    *  Signals{ctyp/ANS{anstype=ans}} *
+    */
+
+    /* check for T.38 CED tone package i.e. MGT_PKG_CALL_TYP_DISCR */
+    if((MGT_PKG_KNOWN == req->pkg.valType.val) &&
+            (NOTPRSNT != req->pkg.u.val.pres) &&
+            (MGT_PKG_CALL_TYP_DISCR == req->pkg.u.val.val) && 
+            (NOTPRSNT != req->name.type.pres) && 
+            (MGT_GEN_TYPE_KNOWN == req->name.type.val))
+       {
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Received Signal Descriptor : T.38 ctyp package\n");
+
+        if((NOTPRSNT != req->pl.num.pres) && (NOTPRSNT != req->pl.num.val)){
+            for(sig = 0x00; sig < req->pl.num.val; sig++){
+                p = req->pl.parms[sig];
+
+                if(NOTPRSNT == p->type.pres) continue;
+
+                if((MGT_SIGPAR_OTHER == p->type.val) && 
+                        (NULL != (o = &p->u.other)) &&
+                        (NOTPRSNT != o->name.type.pres) && 
+                        (MGT_GEN_TYPE_KNOWN == o->name.type.val) && 
+                        (MGT_PKG_ENUM_SIGOTHERCALLTYPDISCRANSSIGANSTYP == o->name.u.val.val) && 
+                        (MGT_VALUE_EQUAL == o->val.type.val) && 
+                        (NOTPRSNT != o->val.u.eq.type.pres) && 
+                        (MGT_VALTYPE_ENUM == o->val.u.eq.type.val) && 
+                        (MGT_PKG_ENUM_SIGOTHERCALLTYPDISCRANSSIGANSTYPANS == o->val.u.eq.u.enume.val)){
+                            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Signal Descriptor :  T.38 CED/ANS TONE \n");
+                            /* apply CED/ANS tone to specify channel */
+                }
+            }
+        }
+    }
+
+
+    return SWITCH_STATUS_SUCCESS;
+}
 
 /*****************************************************************************************************************************/
 
@@ -313,7 +365,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                     remote = &mediaPar->u.remote;
                                     sdp = remote->sdp.info[0];
                                     /* for Matt - same like local descriptor */
-				    mgco_handle_incoming_sdp(&remote->sdp, term, MG_SDP_REMOTE, mg_profile, memCp);
+                                    mgco_handle_incoming_sdp(&remote->sdp, term, MG_SDP_REMOTE, mg_profile, memCp);
                                     break;
                                 }
 
@@ -453,7 +505,50 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                 }
             case MGT_SIGNALSDESC:
                 {
+                    MgMgcoSignalsDesc* sig = &desc->dl.descs[descId]->u.sig; 
+                    MgMgcoSignalsParm* param = NULL;
+                    int i = 0x00;
                     switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Requested Signal descriptor\n");
+
+                    if((NOTPRSNT != sig->pres.pres) && (NOTPRSNT != sig->num.pres) && (0 != sig->num.val)){
+
+                        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Total number of Signal descriptors[%d]\n", sig->num.val);
+
+                        for(i=0; i< sig->num.val; i++){
+                                param = sig->parms[i];
+
+                                if(NOTPRSNT == param->type.pres) continue;
+
+                                switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Signal Descriptor[%d] type[%s]\n",
+                                        i, ((MGT_SIGSPAR_LST == param->type.val)?"MGT_SIGSPAR_LST":"MGT_SIGSPAR_REQ"));
+                                
+                                switch(param->type.val)
+                                {
+                                    case MGT_SIGSPAR_LST:
+                                        {
+                                            MgMgcoSignalsLst* lst = &param->u.lst;
+                                            int sigId = 0x00;
+
+                                            if((NOTPRSNT == lst->pl.num.pres) || (0 == lst->pl.num.val)) break;
+
+                                            for(sigId = 0; sigId < lst->pl.num.val; sigId++){
+                                                mg_prc_sig_desc(lst->pl.reqs[sigId], mg_profile, term);
+                                            }
+
+                                            break;
+                                        }
+                                    case MGT_SIGSPAR_REQ:
+                                        {
+                                            MgMgcoSignalsReq* req = &param->u.req;
+                                            mg_prc_sig_desc(req, mg_profile, term);
+                                            break;
+                                        }
+                                    default:
+                                        break;
+                                }
+                        }
+                    }
+
                     break;
                 }
             case MGT_MODEMDESC:
