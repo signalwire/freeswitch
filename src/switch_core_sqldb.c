@@ -156,9 +156,9 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 			if (dbh_ptr->hash == hash && !dbh_ptr->use_count && !switch_test_flag(dbh_ptr, CDF_PRUNE) && 
 				switch_mutex_trylock(dbh_ptr->mutex) == SWITCH_STATUS_SUCCESS) {
 				r = dbh_ptr;
-			break;
-		}
-	}	
+				break;
+			}
+		}	
 	}
 	
 	if (r) {
@@ -210,9 +210,9 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 	}
 
 	/* I *think* we can do without this now, if not let me know 
-	if (r == SWITCH_STATUS_SUCCESS && !(*dbh)->io_mutex) {
-		(*dbh)->io_mutex = sql_manager.io_mutex;
-	}
+	   if (r == SWITCH_STATUS_SUCCESS && !(*dbh)->io_mutex) {
+	   (*dbh)->io_mutex = sql_manager.io_mutex;
+	   }
 	*/
 
 	return r;
@@ -1018,16 +1018,16 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	switch_mutex_lock(sql_manager.cond_mutex);
 
 	switch (sql_manager.event_db->type) {
-		case SCDB_TYPE_ODBC:
-			break;
-		case SCDB_TYPE_CORE_DB:
-			{
-				switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA synchronous=OFF;", NULL);
-				switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA count_changes=OFF;", NULL);
-				switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA temp_store=MEMORY;", NULL);
-				switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA journal_mode=OFF;", NULL);
-			}
-			break;
+	case SCDB_TYPE_ODBC:
+		break;
+	case SCDB_TYPE_CORE_DB:
+		{
+			switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA synchronous=OFF;", NULL);
+			switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA count_changes=OFF;", NULL);
+			switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA temp_store=MEMORY;", NULL);
+			switch_cache_db_execute_sql(sql_manager.event_db, "PRAGMA journal_mode=OFF;", NULL);
+		}
+		break;
 	}
 
 	while (sql_manager.thread_running == 1) {
@@ -1494,7 +1494,7 @@ static void core_event_handler(switch_event_t *event)
 			} 
 
 			new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' or uuid='%s'",
-										   switch_event_get_header_nil(event, "channel-call-uuid"), a_uuid, b_uuid);
+									   switch_event_get_header_nil(event, "channel-call-uuid"), a_uuid, b_uuid);
 			
 
 			new_sql() = switch_mprintf("insert into calls (call_uuid,call_created,call_created_epoch,"
@@ -1721,7 +1721,7 @@ static char create_registrations_sql[] =
 	"   reg_user      VARCHAR(256),\n"
 	"   realm     VARCHAR(256),\n"
 	"   token     VARCHAR(256),\n"
-/* If url is modified please check for code in switch_core_sqldb_start for dependencies for MSSQL" */
+	/* If url is modified please check for code in switch_core_sqldb_start for dependencies for MSSQL" */
 	"   url      TEXT,\n"
 	"   expires  INTEGER,\n"
 	"   network_ip VARCHAR(256),\n"
