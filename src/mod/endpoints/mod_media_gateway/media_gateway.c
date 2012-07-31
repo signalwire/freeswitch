@@ -480,7 +480,7 @@ mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
 /* Returns a fresh new context */
 mg_context_t *megaco_choose_context(megaco_profile_t *profile)
 {
-    mg_context_t *ctx;
+    mg_context_t *ctx=NULL;
     
     switch_thread_rwlock_wrlock(profile->contexts_rwlock);
     /* Try the next one */
