@@ -129,7 +129,7 @@ static void ctdm_report_alarms(ftdm_channel_t *channel)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reporting [%s] alarms for %s:%d\n", 
-			(alarmflag?"ftdm-alarm-clear":"ftdm-alarm-trap"), ftdm_channel_get_span_name(channel), ftdm_channel_get_id(channel));
+			(alarmflag?"ftdm-alarm-trap":"ftdm-alarm-clear"), ftdm_channel_get_span_name(channel), ftdm_channel_get_id(channel));
 
 	switch_event_fire(&event);
 	return;
