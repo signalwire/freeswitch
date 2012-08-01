@@ -802,6 +802,7 @@ const char* mg_get_codec_name(megaco_profile_t* mg_profile, int iana_code)
 	char *codec_prefs[16] = { 0 };
 	char *szcodec_prefs;
 	int codec_count;
+    const char *name = NULL;
 
 	szcodec_prefs = strdup(mg_profile->codec_prefs);
 	codec_count = switch_split(szcodec_prefs, ',', codec_prefs);
@@ -811,11 +812,12 @@ const char* mg_get_codec_name(megaco_profile_t* mg_profile, int iana_code)
 	/* see if received codec is present in our codec supported list */
 	for (i = 0; codecs[i] && i < codec_count; i++) {
 		if(iana_code == codecs[i]->ianacode){
-			return codecs[i]->iananame;
+			name = codecs[i]->iananame;
+            break;
 		}
 	}
 
-	return NULL;
+	return name;
 }
 
 void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sdp_types_e sdp_type, megaco_profile_t* mg_profile, CmSdpAttrSet  *attrSet, CmMemListCp     *memCp)
