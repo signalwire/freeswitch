@@ -104,9 +104,9 @@ static void ctdm_report_alarms(ftdm_channel_t *channel)
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", ftdm_channel_get_id(channel));
 	
 	if (alarmflag) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-clear");
-	} else {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-trap");
+	} else {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "ftdm-alarm-clear");
 	}
 
 	if (alarmflag & FTDM_ALARM_RED) {
