@@ -342,6 +342,7 @@ static switch_status_t interface_exists(char *the_interface)
 static switch_status_t remove_interface(char *the_interface)
 {
 	int x = 10;
+	int fd;
 #ifdef WIN32
 	switch_size_t howmany = 8;
 #else
@@ -389,6 +390,8 @@ static switch_status_t remove_interface(char *the_interface)
 		DEBUGA_GSMOPEN("interface '%s' is busy\n", GSMOPEN_P_LOG, the_interface);
 		goto end;
 	}
+
+        LOKKA(tech_pvt->controldev_lock);
 
 	globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 
@@ -441,6 +444,42 @@ static switch_status_t remove_interface(char *the_interface)
 		switch_thread_join(&status, globals.GSMOPEN_INTERFACES[interface_id].gsmopen_api_thread);
 	}
 
+
+
+			fd = tech_pvt->controldevfd;
+			//DEBUGA_GSMOPEN("SHUTDOWN tech_pvt->controldevfd=%d\n", GSMOPEN_P_LOG, tech_pvt->controldevfd);
+			if (fd) {
+				//close(fd);
+				tech_pvt->controldevfd = -1;
+				DEBUGA_GSMOPEN("SHUTDOWN tech_pvt->controldevfd=%d\n", GSMOPEN_P_LOG, tech_pvt->controldevfd);
+			}
+
+			serial_audio_shutdown(tech_pvt);
+
+			int res;
+			res = tech_pvt->serialPort_serial_control->Close();
+			DEBUGA_GSMOPEN("serial_shutdown res=%d (controldevfd is %d)\n", GSMOPEN_P_LOG, res, tech_pvt->controldevfd);
+
+#ifndef WIN32
+			shutdown(tech_pvt->audiogsmopenpipe[0], 2);
+			close(tech_pvt->audiogsmopenpipe[0]);
+			shutdown(tech_pvt->audiogsmopenpipe[1], 2);
+			close(tech_pvt->audiogsmopenpipe[1]);
+			shutdown(tech_pvt->audiopipe[0], 2);
+			close(tech_pvt->audiopipe[0]);
+			shutdown(tech_pvt->audiopipe[1], 2);
+			close(tech_pvt->audiopipe[1]);
+			shutdown(tech_pvt->GSMopenHandles.fdesc[0], 2);
+			close(tech_pvt->GSMopenHandles.fdesc[0]);
+			shutdown(tech_pvt->GSMopenHandles.fdesc[1], 2);
+			close(tech_pvt->GSMopenHandles.fdesc[1]);
+#endif /* WIN32 */
+
+
+
+
+
+        UNLOCKA(tech_pvt->controldev_lock);
 	switch_mutex_lock(globals.mutex);
 	if (globals.gsm_console == &globals.GSMOPEN_INTERFACES[interface_id]) {
 		DEBUGA_GSMOPEN("interface '%s' no more console\n", GSMOPEN_P_LOG, the_interface);
@@ -454,6 +493,7 @@ static switch_status_t remove_interface(char *the_interface)
 
 	DEBUGA_GSMOPEN("interface '%s' deleted successfully\n", GSMOPEN_P_LOG, the_interface);
 	globals.GSMOPEN_INTERFACES[interface_id].running = 1;
+
   end:
 	//running = 1;
 	return SWITCH_STATUS_SUCCESS;
