@@ -2551,7 +2551,7 @@ SWITCH_STANDARD_API(sk_function)
 				ob_failed += globals.SKYPOPEN_INTERFACES[i].ob_failed_calls;
 
 				stream->write_function(stream,
-									   "%c %d\t[%s]\t%3u/%u\t%6u/%u\t%s\t%s\t%s\n",
+									   "%c %d\t[%6s]\t%3u/%u\t%6u/%u\t%s\t%s\t%s\n",
 									   next_flag_char,
 									   i, globals.SKYPOPEN_INTERFACES[i].name,
 									   globals.SKYPOPEN_INTERFACES[i].ib_failed_calls,

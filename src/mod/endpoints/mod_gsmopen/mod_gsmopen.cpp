@@ -2292,31 +2292,45 @@ SWITCH_STANDARD_API(gsm_function)
 
 	if (!strcasecmp(argv[0], "list")) {
 		int i;
+		unsigned int ib = 0;
+		unsigned int ib_failed = 0;
+		unsigned int ob = 0;
+		unsigned int ob_failed = 0;
 		char next_flag_char = ' ';
 
 		stream->write_function(stream, "F ID\t    Name    \tIB (F/T)    OB (F/T)\tState\tCallFlw\t\tUUID\n");
 		stream->write_function(stream, "= ====\t  ========  \t=======     =======\t======\t============\t======\n");
 
 		for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
-			next_flag_char = i == globals.next_interface ? '*' : ' ';
 
 			if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
+				next_flag_char = i == globals.next_interface ? '*' : ' ';
+				ib += globals.GSMOPEN_INTERFACES[i].ib_calls;
+				ib_failed += globals.GSMOPEN_INTERFACES[i].ib_failed_calls;
+				ob += globals.GSMOPEN_INTERFACES[i].ob_calls;
+				ob_failed += globals.GSMOPEN_INTERFACES[i].ob_failed_calls;
+
+
 				stream->write_function(stream,
-									   "%c %d\t[%s]\t%3ld/%ld\t%6ld/%ld\t%s\t%s\t%s\n",
-									   next_flag_char,
-									   i, globals.GSMOPEN_INTERFACES[i].name,
-									   globals.GSMOPEN_INTERFACES[i].ib_failed_calls,
-									   globals.GSMOPEN_INTERFACES[i].ib_calls,
-									   globals.GSMOPEN_INTERFACES[i].ob_failed_calls,
-									   globals.GSMOPEN_INTERFACES[i].ob_calls,
-									   interface_status[globals.GSMOPEN_INTERFACES[i].interface_state],
-									   phone_callflow[globals.GSMOPEN_INTERFACES[i].phone_callflow], globals.GSMOPEN_INTERFACES[i].session_uuid_str);
+						//"%c %d\t[%s]\t%3ld/%ld\t%6ld/%ld\t%s\t%s\t%s\n",
+						"%c %d\t[%6s]\t%3u/%u\t%6u/%u\t%s\t%s\t%s\n",
+						next_flag_char,
+						i, globals.GSMOPEN_INTERFACES[i].name,
+						globals.GSMOPEN_INTERFACES[i].ib_failed_calls,
+						globals.GSMOPEN_INTERFACES[i].ib_calls,
+						globals.GSMOPEN_INTERFACES[i].ob_failed_calls,
+						globals.GSMOPEN_INTERFACES[i].ob_calls,
+						interface_status[globals.GSMOPEN_INTERFACES[i].interface_state],
+						phone_callflow[globals.GSMOPEN_INTERFACES[i].phone_callflow], globals.GSMOPEN_INTERFACES[i].session_uuid_str);
 			} else if (argc > 1 && !strcasecmp(argv[1], "full")) {
-				stream->write_function(stream, "%c\t%d\n", next_flag_char, i);
+				stream->write_function(stream, "%c %d\n", next_flag_char, i);
+				//stream->write_function(stream, "%c\t%d\n", next_flag_char, i);
 			}
 
 		}
-		stream->write_function(stream, "\nTotal: %d\n", globals.real_interfaces - 1);
+		//stream->write_function(stream, "\nTotal: %d\n", globals.real_interfaces - 1);
+		stream->write_function(stream, "\nTotal Interfaces: %d  IB Calls(Failed/Total): %u/%u  OB Calls(Failed/Total): %u/%u\n",
+							   globals.real_interfaces > 0 ? globals.real_interfaces - 1 : 0, ib_failed, ib, ob_failed, ob);
 
 	} else if (!strcasecmp(argv[0], "console")) {
 		int i;
