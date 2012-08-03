@@ -899,7 +899,6 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 						 */
 						Q931ie_Cause *cause = Q931GetIEPtr(gen->Cause, gen->buf);
 						ftdm_sigmsg_t sig;
-						ftdm_status_t status;
 
 						memset(&sig, 0, sizeof(sig));
 						sig.span_id = ftdm_channel_get_span_id(ftdmchan);
@@ -908,7 +907,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 						sig.channel->caller_data.hangup_cause = (cause) ? cause->Value : FTDM_CAUSE_NORMAL_UNSPECIFIED;
 
 						sig.event_id = FTDM_SIGEVENT_STOP;
-						status = ftdm_span_send_signal(span, &sig);
+						ftdm_span_send_signal(span, &sig);
 
 						ftdm_log(FTDM_LOG_DEBUG, "Received %s in state %s, requested hangup for channel %d:%d\n", what,
 								ftdm_channel_get_state_str(ftdmchan),
