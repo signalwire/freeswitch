@@ -1344,14 +1344,12 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
 #endif
-    case T4_COMPRESSION_ITU_T85:
-        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_MODE);
-        clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_L0_MODE);
+    case T4_COMPRESSION_ITU_T85_L0:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_L0_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_ITU_T85:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_MODE);
-        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_L0_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
     case T4_COMPRESSION_ITU_T6:
@@ -2360,12 +2358,13 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     s->image_width = widths[i][dcs_frame[5] & (DISBIT2 | DISBIT1)];
 
     /* Check which compression we will use. */
-    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_MODE))
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_L0_MODE))
     {
-        if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_L0_MODE))
-            s->line_encoding = T4_COMPRESSION_ITU_T85_L0;
-        else
-            s->line_encoding = T4_COMPRESSION_ITU_T85;
+        s->line_encoding = T4_COMPRESSION_ITU_T85_L0;
+    }
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_MODE))
+    {
+        s->line_encoding = T4_COMPRESSION_ITU_T85;
     }
     else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T6_MODE))
     {
