@@ -59,6 +59,7 @@ typedef struct sng_m2ua_cfg{
 	char 	    		 name[MAX_NAME_LEN];
 	uint32_t    		 flags;
 	uint32_t    		 id;		/* ID */
+	uint32_t    		 iid;		/* ID */
 	uint8_t    		 nodeType; 	/*Node Type SG/ASP */
 	uint8_t    		 end_point_opened; /* flag to check is end-point already opened */	
 	uint16_t    		 clusterId;	/* idx to m2ua_cluster profile */

@@ -242,6 +242,12 @@ static int ftmod_ss7_parse_m2ua_interface(ftdm_conf_node_t *m2ua_interface)
 
 			SS7_DEBUG("Found an m2ua cluster_id = %d\n", sng_m2ua.clusterId);
 		/**********************************************************************/
+		} else if (!strcasecmp(parm->var, "interface-identifier")) {
+		/**********************************************************************/
+			sng_m2ua.iid=atoi(parm->val);
+
+			SS7_DEBUG("Found an m2ua interface-identifier = %d\n", sng_m2ua.iid);
+		/**********************************************************************/
 		} else {
 		/**********************************************************************/
 			SS7_ERROR("Found an invalid parameter %s!\n", parm->var);
@@ -271,6 +277,7 @@ static int ftmod_ss7_fill_in_m2ua_interface(sng_m2ua_cfg_t *m2ua_iface)
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].id		= m2ua_iface->id;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].nodeType 	= m2ua_iface->nodeType;
 	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].clusterId 	= m2ua_iface->clusterId;
+	g_ftdm_sngss7_data.cfg.g_m2ua_cfg.m2ua[i].iid 		= m2ua_iface->iid;
 	sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_M2UA_PRESENT);
 
 	return 0;

@@ -1039,7 +1039,7 @@ static int ftmod_m2ua_dlsap_config(int id)
 
    cfg.t.cfg.s.dlSapCfg.lnkNmb 	= id; /* SapId */
    cfg.t.cfg.s.dlSapCfg.intfId.type = LMW_INTFID_INT;
-   cfg.t.cfg.s.dlSapCfg.intfId.id.intId = id;
+   cfg.t.cfg.s.dlSapCfg.intfId.id.intId = m2ua->iid;
    
    cfg.t.cfg.s.dlSapCfg.swtch = LMW_SAP_ITU;
 
