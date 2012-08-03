@@ -80,9 +80,9 @@
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
+#include "spandsp/private/image_translate.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
-#include "spandsp/private/image_translate.h"
 
 static int image_colour16_to_gray8_row(uint8_t mono[], uint16_t colour[], int pixels)
 {
@@ -154,12 +154,14 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[], size_t le
     int input_width;
     int input_length;
     int x;
-    double c1;
-    double c2;
 #if defined(SPANDSP_USE_FIXED_POINT)
+    int c1;
+    int c2;
     int frac_row;
     int frac_col;
 #else
+    double c1;
+    double c2;
     double int_part;
     double frac_row;
     double frac_col;
@@ -200,15 +202,15 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[], size_t le
     }
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-    frac_row = s->raw_output_row*input_length/output_length;
-    frac_row = s->raw_output_row*input_length - frac_row*output_length;
+    frac_row = ((s->raw_output_row*256*input_length)/output_length) & 0xFF;
     for (i = 0;  i < output_width;  i++)
     {
-        x = i*input_width/output_width;
-        frac_col = x - x*output_width;
-        c1 = s->raw_pixel_row[0][x] + (s->raw_pixel_row[0][x + 1] - s->raw_pixel_row[0][x])*frac_col;
-        c2 = s->raw_pixel_row[1][x] + (s->raw_pixel_row[1][x + 1] - s->raw_pixel_row[1][x])*frac_col;
-        buf[i] = saturateu8(c1 + (c2 - c1)*frac_row);
+        x = i*256*input_width/output_width;
+        frac_col = x & 0xFF;
+        x >>= 8;
+        c1 = s->raw_pixel_row[0][x] + (((s->raw_pixel_row[0][x + 1] - s->raw_pixel_row[0][x])*frac_col) >> 8);
+        c2 = s->raw_pixel_row[1][x] + (((s->raw_pixel_row[1][x + 1] - s->raw_pixel_row[1][x])*frac_col) >> 8);
+        buf[i] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
     }
 #else
     frac_row = modf((double) s->raw_output_row*input_length/output_length, &int_part);
@@ -368,6 +370,7 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
                                                              int input_width,
                                                              int input_length,
                                                              int output_width,
+                                                             int output_length,
                                                              t4_row_read_handler_t row_read_handler,
                                                              void *row_read_user_data)
 {
@@ -385,9 +388,19 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
     s->input_width = input_width;
     s->input_length = input_length;
 
-    s->resize = (output_width > 0);
-    s->output_width = (s->resize)  ?  output_width  :  s->input_width;
-    s->output_length = (s->resize)  ?  s->input_length*s->output_width/s->input_width  :  s->input_length;
+    if ((s->resize = (output_width > 0)))
+    {
+        s->output_width = output_width;
+        if (output_length > 0)
+            s->output_length = output_length;
+        else
+            s->output_length = (s->input_length*s->output_width)/s->input_width;
+    }
+    else
+    {
+        s->output_width = s->input_width;
+        s->output_length = s->input_length;
+    }
 
     switch (s->input_format)
     {

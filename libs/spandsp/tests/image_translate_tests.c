@@ -213,7 +213,7 @@ static void dither_tests_gray16(void)
             image[i*im.width + j] = j*1200;
     }
 
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_GRAY_16, im.width, im.length, -1, row_read, &im);
+    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_GRAY_16, im.width, im.length, -1, -1, row_read, &im);
     get_flattened_image(s, TRUE);
 }
 /*- End of function --------------------------------------------------------*/
@@ -239,7 +239,7 @@ static void dither_tests_gray8(void)
         for (j = 0;  j < im.width;  j++)
             image[i*im.width + j] = j*1200/256;
     }
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_GRAY_8, im.width, im.length, -1, row_read, &im);
+    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_GRAY_8, im.width, im.length, -1, -1, row_read, &im);
     get_flattened_image(s, TRUE);
 }
 /*- End of function --------------------------------------------------------*/
@@ -269,7 +269,7 @@ static void dither_tests_colour16(void)
             image[i*3*im.width + 3*j + 2] = j*1200;
         }
     }
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_COLOUR_16, im.width, im.length, -1, row_read, &im);
+    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_COLOUR_16, im.width, im.length, -1, -1, row_read, &im);
     get_flattened_image(s, TRUE);
 }
 /*- End of function --------------------------------------------------------*/
@@ -300,7 +300,7 @@ static void dither_tests_colour8(void)
         }
     }
 
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_COLOUR_8, im.width, im.length, -1, row_read, &im);
+    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_COLOUR_8, im.width, im.length, -1, -1, row_read, &im);
     get_flattened_image(s, TRUE);
 }
 /*- End of function --------------------------------------------------------*/
@@ -331,13 +331,13 @@ static void grow_tests_colour8(void)
         }
     }
 
-    s1 = image_translate_init(s1, IMAGE_TRANSLATE_FROM_COLOUR_8, im.width, im.length, 200, row_read, &im);
+    s1 = image_translate_init(s1, IMAGE_TRANSLATE_FROM_COLOUR_8, im.width, im.length, 200, -1, row_read, &im);
 
     get_flattened_image(s1, FALSE);
 }
 /*- End of function --------------------------------------------------------*/
 
-static void lenna_tests(int output_width, const char *file)
+static void lenna_tests(int output_width, int output_length_scaling, const char *file)
 {
     TIFF *in_file;
     TIFF *out_file;
@@ -355,6 +355,9 @@ static void lenna_tests(int output_width, const char *file)
     image_translate_state_t bw;
     image_translate_state_t *s = &bw;
     image_descriptor_t im;
+    float x_resolution;
+    float y_resolution;
+    uint16_t res_unit;
 
     printf("Dithering Lenna from colour to bi-level test\n");
     if ((in_file = TIFFOpen(INPUT_TIFF_FILE_NAME, "r")) == NULL)
@@ -367,11 +370,17 @@ static void lenna_tests(int output_width, const char *file)
     TIFFGetField(in_file, TIFFTAG_IMAGELENGTH, &image_length);
     if (image_length <= 0)
         return;
+    x_resolution = 200.0;
+    TIFFGetField(in_file, TIFFTAG_XRESOLUTION, &x_resolution);
+    y_resolution = 200.0;
+    TIFFGetField(in_file, TIFFTAG_YRESOLUTION, &y_resolution);
+    res_unit = RESUNIT_INCH;
+    TIFFSetField(in_file, TIFFTAG_RESOLUTIONUNIT, &res_unit);
     bits_per_sample = 0;
     TIFFGetField(in_file, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
     samples_per_pixel = 0;
     TIFFGetField(in_file, TIFFTAG_SAMPLESPERPIXEL, &samples_per_pixel);
-    printf("Original image is %d x %d, %d bits per sample, %d samples per pixel\n", image_width, image_length, bits_per_sample, samples_per_pixel);
+    printf("Original image is %d x %d, %f x %f resolution, %d bits per sample, %d samples per pixel\n", image_width, image_length, x_resolution, y_resolution, bits_per_sample, samples_per_pixel);
     if ((image = malloc(image_width*image_length*samples_per_pixel)) == NULL)
         return;
     for (total = 0, i = 0;  i < 1000;  i++)
@@ -389,13 +398,18 @@ static void lenna_tests(int output_width, const char *file)
     printf("Image size %d %d\n", total, image_width*image_length*samples_per_pixel);
     TIFFClose(in_file);
 
+    if (output_length_scaling > 0)
+        output_length = (double) image_length*output_length_scaling*output_width/image_width;
+    else
+        output_length = -1;
+
     im.image = image;
     im.width = image_width;
     im.length = image_length;
     im.current_row = 0;
     im.bytes_per_pixel = samples_per_pixel;
 
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_COLOUR_8, image_width, image_length, output_width, row_read, &im);
+    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_COLOUR_8, image_width, image_length, output_width, output_length, row_read, &im);
     output_width = image_translate_get_output_width(s);
     output_length = image_translate_get_output_length(s);
 
@@ -403,6 +417,11 @@ static void lenna_tests(int output_width, const char *file)
         return;
     TIFFSetField(out_file, TIFFTAG_IMAGEWIDTH, output_width);
     TIFFSetField(out_file, TIFFTAG_IMAGELENGTH, output_length);
+    TIFFSetField(out_file, TIFFTAG_XRESOLUTION, x_resolution);
+    if (output_length_scaling > 0)
+        y_resolution *= output_length_scaling;
+    TIFFSetField(out_file, TIFFTAG_YRESOLUTION, y_resolution);
+    TIFFSetField(out_file, TIFFTAG_RESOLUTIONUNIT, res_unit);
     TIFFSetField(out_file, TIFFTAG_BITSPERSAMPLE, 1);
     TIFFSetField(out_file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(out_file, TIFFTAG_SAMPLESPERPIXEL, 1);
@@ -441,9 +460,10 @@ int main(int argc, char **argv)
     grow_tests_colour8();
 #endif
 #if 1
-    lenna_tests(0, "lenna-bw.tif");
-    lenna_tests(1728, "lenna-bw-1728.tif");
-    lenna_tests(200, "lenna-bw-200.tif");
+    lenna_tests(0, 0, "lenna-bw.tif");
+    lenna_tests(200, 0, "lenna-bw-200.tif");
+    lenna_tests(1728, 0, "lenna-bw-1728.tif");
+    lenna_tests(1728, 2, "lenna-bw-1728-superfine.tif");
 #endif
     printf("Tests passed.\n");
     return 0;

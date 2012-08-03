@@ -199,6 +199,23 @@ typedef enum
     T4_LENGTH_1200_US_LEGAL = 0
 } t4_image_length_t;
 
+/*! Return values from the T.85 decoder */
+typedef enum
+{
+    /*! More image data is needed */
+    T4_DECODE_MORE_DATA = 0,
+    /*! Image completed successfully */
+    T4_DECODE_OK = -1,
+    /*! The decoder has interrupted */
+    T4_DECODE_INTERRUPT = -2,
+    /*! An abort was found in the image data */
+    T4_DECODE_ABORTED = -3,
+    /*! A memory allocation error occurred */
+    T4_DECODE_NOMEM = -4,
+    /*! The image data is invalid. */
+    T4_DECODE_INVALID_DATA = -5
+} t4_decoder_status_t;
+
 /*!
     T.4 FAX compression/decompression descriptor. This defines the working state
     for a single instance of a T.4 FAX compression or decompression channel.

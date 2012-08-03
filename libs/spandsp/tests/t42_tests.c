@@ -45,7 +45,8 @@
 
 #include "spandsp.h"
 
-#define IN_FILE_NAME    "../test-data/itu/t24/F21_200.TIF"
+//#define IN_FILE_NAME    "../test-data/itu/t24/F21_200.TIF"
+#define IN_FILE_NAME    "../test-data/itu/t24/F21B400.TIF"
 #define OUT_FILE_NAME   "t42_tests_receive.tif"
 
 uint8_t data5[50000000];
@@ -58,55 +59,6 @@ uint8_t xxx[3*256];
 lab_params_t lab_param;
 
 int write_row = 0;
-
-typedef struct
-{
-    float L;
-    float a;
-    float b;
-} cielab_t;
-
-#if 0
-static void generate_luts(void)
-{
-    float r;
-    uint8_t srgb;
-    int i;
-
-    printf("static const float srgb_to_linear[256] =\n");
-    printf("{\n");
-    for (i = 0;  i < 256;  i++)
-    {
-        /* Start with "i" as the sRGB value */
-        r = i/256.0f;
-
-        /* sRGB to Linear RGB */
-        r = (r > 0.04045f)  ?  powf((r + 0.055f)/1.055f, 2.4f)  :  r/12.92f;
-        
-        printf((i < 255)  ?  "    %f,\n"  :  "    %f\n", r);
-    }
-    printf("};\n");
-    
-    printf("static const uint8_t linear_to_srgb[4096] =\n");
-    printf("{\n");
-    for (i = 0;  i < 4096;  i++)
-    {
-        /* Start with "i" as the linear RGB value */
-        /* Linear RGB to sRGB */
-        r = i/4096.0f;
-
-        r = (r > 0.0031308f)  ?  (1.055f*powf(r, 1.0f/2.4f) - 0.055f)  :  r*12.92f;
-
-        r = floorf(r*256.0f);
-
-        srgb = (r < 0)  ?  0  :  (r <= 255)  ?  r  :  255;
-
-        printf((i < 4095)  ?  "    %d,\n"  :  "    %d\n", srgb);
-    }
-    printf("};\n");
-}
-/*- End of function --------------------------------------------------------*/
-#endif
 
 static __inline__ uint16_t pack_16(uint8_t *s)
 {
@@ -159,7 +111,6 @@ static int t85_comment_handler(void *user_data, const uint8_t buf[], size_t len)
 
 int main(int argc, char *argv[])
 {
-    char kk[256];
     TIFF *tif;
     uint32_t w;
     uint32_t h;
@@ -194,17 +145,16 @@ int main(int argc, char *argv[])
     uint16_t *yyya;
     uint16_t *yyyb;
     uint16_t *yyyz;
+    logging_state_t *logging;
 
     printf("Demo of ITU/Lab library.\n");
+
+    logging = span_log_init(NULL, SPAN_LOG_FLOW, "T.42");
 
     TIFF_FX_init();
 
     set_lab_illuminant(&lab_param, 0.9638f, 1.0f, 0.8245f);
     set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
-
-#if 0
-    generate_luts();
-#endif
 
     source_file = (argc > 1)  ?  argv[1]  :  IN_FILE_NAME;
     /* sRGB to ITU */
@@ -307,6 +257,7 @@ int main(int argc, char *argv[])
         printf("Unexpected compression %d\n", compression);
         break;
     }
+
     if (process_raw)
     {
         nstrips = TIFFNumberOfStrips(tif);
@@ -337,7 +288,7 @@ int main(int argc, char *argv[])
             t85_decode_init(&t85_dec, t85_row_write_handler, NULL);
             t85_decode_set_comment_handler(&t85_dec, 1000, t85_comment_handler, NULL);
             result = t85_decode_put_chunk(&t85_dec, data, total_len);
-            if (result == T85_MORE_DATA)
+            if (result == T4_DECODE_MORE_DATA)
                 result = t85_decode_put_byte(&t85_dec, SIG_STATUS_END_OF_DATA);
             len = t85_decode_get_compressed_image_size(&t85_dec);
             printf("Compressed image is %d bytes, %d rows\n", len/8, write_row);
@@ -396,7 +347,7 @@ int main(int argc, char *argv[])
                 len = t85_decode_get_compressed_image_size(&t85_dec);
                 printf("Compressed image is %d bytes, %d rows\n", len/8, write_row);
             }
-            if (result == T85_MORE_DATA)
+            if (result == T4_DECODE_MORE_DATA)
             {
                 printf("More\n");
                 result = t85_decode_put_byte(&t85_dec, SIG_STATUS_END_OF_DATA);
@@ -435,7 +386,7 @@ int main(int argc, char *argv[])
             TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
             TIFFSetField(tif, TIFFTAG_SOFTWARE, "spandsp");
             TIFFSetField(tif, TIFFTAG_IMAGEDESCRIPTION, "Test");
-            TIFFSetField(tif, TIFFTAG_DATETIME, "2011/02/03 12:30:45");
+            TIFFSetField(tif, TIFFTAG_DATETIME, "2012/07/03 12:30:45");
             TIFFSetField(tif, TIFFTAG_MAKE, "soft-switch.org");
             TIFFSetField(tif, TIFFTAG_MODEL, "spandsp");
             TIFFSetField(tif, TIFFTAG_HOSTCOMPUTER, "i7.coppice.org");
@@ -477,9 +428,9 @@ int main(int argc, char *argv[])
         {
             printf("YYY ITULAB\n");
 
-            if (!t42_itulab_to_itulab((tdata_t) &outptr, &outsize, data, off, w, h, kk, 256))
+            if (!t42_itulab_to_itulab(logging, (tdata_t) &outptr, &outsize, data, off, w, h))
             {
-                printf("Failed to convert to ITULAB - %s\n", kk);
+                printf("Failed to convert to ITULAB\n");
                 return 1;
             }
             free(data);
@@ -500,9 +451,9 @@ int main(int argc, char *argv[])
 
             set_lab_illuminant(&lab_param, 0.9638f, 1.0f, 0.8245f);
             set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
-            if (!t42_srgb_to_itulab(&lab_param, (tdata_t) &outptr, &outsize, data, off, w, h, kk, 256))
+            if (!t42_srgb_to_itulab(logging, &lab_param, (tdata_t) &outptr, &outsize, data, off, w, h))
             {
-                printf("Failed to convert to ITULAB - %s\n", kk);
+                printf("Failed to convert to ITULAB\n");
                 return 1;
             }
             end = rdtscll();
@@ -539,7 +490,7 @@ int main(int argc, char *argv[])
     TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
     TIFFSetField(tif, TIFFTAG_SOFTWARE, "spandsp");
     TIFFSetField(tif, TIFFTAG_IMAGEDESCRIPTION, "Test");
-    TIFFSetField(tif, TIFFTAG_DATETIME, "2011/02/03 12:30:45");
+    TIFFSetField(tif, TIFFTAG_DATETIME, "2012/07/03 12:30:45");
     TIFFSetField(tif, TIFFTAG_MAKE, "soft-switch.org");
     TIFFSetField(tif, TIFFTAG_MODEL, "spandsp");
     TIFFSetField(tif, TIFFTAG_HOSTCOMPUTER, "i7.coppice.org");
@@ -564,22 +515,22 @@ int main(int argc, char *argv[])
         start = rdtscll();
         data2 = NULL;
         totdata = 0;
-        t42_itulab_to_JPEG(&lab_param, (void **) &data2, &totdata, data, off, kk, 256);
+        t42_itulab_to_jpeg(logging, &lab_param, (void **) &data2, &totdata, data, off);
         end = rdtscll();
         printf("Duration %" PRIu64 "\n", end - start);
         printf("Compressed length %d (%p)\n", totdata, data2);
         if (TIFFWriteRawStrip(tif, 0, data2, totdata) < 0)
         {
-            printf("Failed to convert from ITULAB - %s\n", kk);
+            printf("Failed to convert from ITULAB\n");
             return 1;
         }
         free(data);
 #else
         data2 = malloc(totdata);
         start = rdtscll();
-        if (!t42_itulab_to_srgb(&lab_param, data2, &off, data, off, &w, &h, kk, 256))
+        if (!t42_itulab_to_srgb(logging, &lab_param, data2, &off, data, off, &w, &h))
         {
-            printf("Failed to convert from ITULAB - %s\n", kk);
+            printf("Failed to convert from ITULAB\n");
             return 1;
         }
         end = rdtscll();

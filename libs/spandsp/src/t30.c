@@ -61,6 +61,7 @@
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
+#include "spandsp/image_translate.h"
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
 #if defined(SPANDSP_SUPPORT_T42)
@@ -89,6 +90,7 @@
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
+#include "spandsp/private/image_translate.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
 #include "spandsp/private/t30.h"
@@ -1179,9 +1181,11 @@ int t30_build_dis_or_dtc(t30_state_t *s)
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SYCC_T81_CAPABLE);
         if ((s->supported_compressions & T30_SUPPORT_T85_COMPRESSION))
         {
-            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE);
+            /* Bit 79 set with bit 78 clear is invalid, so only check for L0
+               support here. */
             if ((s->supported_compressions & T30_SUPPORT_T85_L0_COMPRESSION))
                 set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE);
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE);
         }
         //if ((s->supported_compressions & T30_SUPPORT_T89_COMPRESSION))
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T89_CAPABLE);
@@ -1970,8 +1974,6 @@ static int start_sending_document(t30_state_t *s)
     if (s->use_own_tz)
         t4_tx_set_header_tz(&s->t4.tx, &s->tz);
 
-    s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
-    s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);
     /* The minimum scan time to be used can't be evaluated until we know the Y resolution, and
        must be evaluated before the minimum scan row bits can be evaluated. */
     if ((min_row_bits = set_min_scan_time_code(s)) < 0)
@@ -1984,6 +1986,8 @@ static int start_sending_document(t30_state_t *s)
 
     if (tx_start_page(s))
         return -1;
+    s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
+    s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);
     s->image_width = t4_tx_get_image_width(&s->t4.tx);
     if (s->error_correcting_mode)
     {
@@ -2069,40 +2073,60 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     /* 256 octets per ECM frame */
     s->octets_per_ecm_frame = 256;
     /* Select the compression to use. */
-    if (s->error_correcting_mode
-        &&
-        (s->supported_compressions & T30_SUPPORT_T85_COMPRESSION)
-        &&
-        test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE))
+    if (!s->error_correcting_mode)
     {
-        if (s->supported_compressions & T30_SUPPORT_T85_L0_COMPRESSION
+        /* Without error correction our choices are very limited */
+        if ((s->supported_compressions & T30_SUPPORT_T4_2D_COMPRESSION)
             &&
-            test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE))
+            test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
+        {
+            s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
+        }
+        else
+        {
+            s->line_encoding = T4_COMPRESSION_ITU_T4_1D;
+        }
+    }
+    else
+    {
+#if defined(SPANDSP_SUPPORT_T42x)  ||  defined(SPANDSP_SUPPORT_T43)
+        /* With error correction colour may be possible/required */
+        if (0)
         {
             s->line_encoding = T4_COMPRESSION_ITU_T85_L0;
         }
         else
+#endif
         {
-            s->line_encoding = T4_COMPRESSION_ITU_T85;
+            if ((s->supported_compressions & T30_SUPPORT_T85_L0_COMPRESSION)
+                &&
+                test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE))
+            {
+                s->line_encoding = T4_COMPRESSION_ITU_T85_L0;
+            }
+            else if ((s->supported_compressions & T30_SUPPORT_T85_COMPRESSION)
+                     &&
+                     test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE))
+            {
+                s->line_encoding = T4_COMPRESSION_ITU_T85;
+            }
+            else if ((s->supported_compressions & T30_SUPPORT_T6_COMPRESSION)
+                     &&
+                     test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE))
+            {
+                s->line_encoding = T4_COMPRESSION_ITU_T6;
+            }
+            else if ((s->supported_compressions & T30_SUPPORT_T4_2D_COMPRESSION)
+                     &&
+                     test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
+            {
+                s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
+            }
+            else
+            {
+                s->line_encoding = T4_COMPRESSION_ITU_T4_1D;
+            }
         }
-    }
-    else if (s->error_correcting_mode
-             &&
-             (s->supported_compressions & T30_SUPPORT_T6_COMPRESSION)
-             &&
-             test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE))
-    {
-        s->line_encoding = T4_COMPRESSION_ITU_T6;
-    }
-    else if ((s->supported_compressions & T30_SUPPORT_T4_2D_COMPRESSION)
-             &&
-             test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
-    {
-        s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
-    }
-    else
-    {
-        s->line_encoding = T4_COMPRESSION_ITU_T4_1D;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "Selected compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
     switch (s->far_dis_dtc_frame[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))
@@ -2357,7 +2381,21 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
     s->image_width = widths[i][dcs_frame[5] & (DISBIT2 | DISBIT1)];
 
-    /* Check which compression we will use. */
+    /* Check which compression the far end has decided to use. */
+#if defined(SPANDSP_SUPPORT_T42x)
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE))
+    {
+        s->line_encoding = T4_COMPRESSION_ITU_T42;
+    }
+    else
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T43_MODE))
+    {
+        s->line_encoding = T4_COMPRESSION_ITU_T43;
+    }
+    else
+#endif
     if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_L0_MODE))
     {
         s->line_encoding = T4_COMPRESSION_ITU_T85_L0;

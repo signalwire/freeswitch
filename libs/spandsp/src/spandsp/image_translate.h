@@ -75,9 +75,11 @@ SPAN_DECLARE(int) image_translate_get_output_length(image_translate_state_t *s);
     \param input_format x
     \param input_width The width of the source image, in pixels.
     \param input_length The length of the source image, in pixels.
-    \param output_width The width of the output image, in pixels. The length of the output image
-           will be derived automatically from this and the source image dimension, to main the
-           geometry of the original image.
+    \param output_width The width of the output image, in pixels. If this is set <= 0 the image
+           will not be resized.
+    \param output_length The length of the output image, in pixels. If this is set to <= 0 the
+           output length will be derived automatically from the width, to maintain the geometry
+           of the original image.
     \param row_read_handler A callback routine used to pull rows of pixels from the source image
            into the translation process.
     \param row_read_user_data An opaque point passed to read_row_handler
@@ -87,6 +89,7 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
                                                              int input_width,
                                                              int input_length,
                                                              int output_width,
+                                                             int output_length,
                                                              t4_row_read_handler_t row_read_handler,
                                                              void *row_read_user_data);
 

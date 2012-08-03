@@ -123,11 +123,11 @@ struct t85_decode_state_s
     t4_row_write_handler_t comment_handler;
     /*! An opaque pointer passed to comment_handler() */
     void *comment_user_data;
+    /*! The maximum length of comment to be passed to the comment handler */
+    uint32_t max_comment_len;
 
     uint8_t min_bit_planes;
     uint8_t max_bit_planes;
-    /*! The maximum length of comment to be passed to the comment handler */
-    uint32_t max_comment_len;
     /*! The maximum permitted width of the full image, in pixels */
     uint32_t max_xd;
     /*! The maximum permitted height of the full image, in pixels */

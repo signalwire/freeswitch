@@ -54,6 +54,12 @@ typedef struct
     int image_buffer_size;
     /*! \brief Row counter for playing out the rows of the image. */
     int row;
+
+    /*! \brief Image length of the image in the file. This is used when the
+               image is resized or dithered flat. */
+    int image_length;
+    /*! \brief Row counter used when the image is resized or dithered flat. */
+    int raw_row;
 } t4_tx_tiff_state_t;
 
 /*!
@@ -131,6 +137,8 @@ struct t4_tx_state_s
 #endif
         t85_encode_state_t t85;
     } encoder;
+
+    image_translate_state_t translator;
 
     /* Supporting information, like resolutions, which the backend may want. */
     t4_tx_metadata_t metadata;

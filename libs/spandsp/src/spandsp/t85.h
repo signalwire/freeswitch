@@ -53,24 +53,6 @@ enum
     T85_LRLTWO = 0x40
 };
 
-/*! Return values from the T.85 decoder */
-enum
-{
-    /*! More image data is needed */
-    T85_MORE_DATA = 0,
-    /*! Image completed successfully */
-    T85_OK = -1,
-    /*! The decoder has interrupted */
-    T85_INTERRUPT = -2,
-    /*! An abort was found in the image data */
-    T85_ABORTED = -3,
-    /*! A memory allocation error occurred */
-    T85_NOMEM = -4,
-    /*! The image data is invalid. This includes finding values
-        in the BIH which lie outside the T.85 domain */
-    T85_INVALID_DATA = -5
-};
-
 /*! State of a working instance of the T.85 encoder */
 typedef struct t85_encode_state_s t85_encode_state_t;
 

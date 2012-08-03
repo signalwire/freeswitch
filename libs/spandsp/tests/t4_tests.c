@@ -542,7 +542,7 @@ int main(int argc, char *argv[])
 #if 1
         printf("Testing image_function->compress->decompress->image_function\n");
         /* Send end gets image from a function */
-        if (t4_tx_init(&send_state, FALSE, -1, -1) == NULL)
+        if (t4_tx_init(&send_state, NULL, -1, -1) == NULL)
         {
             printf("Failed to init T.4 tx\n");
             exit(2);
@@ -680,9 +680,6 @@ int main(int argc, char *argv[])
             exit(2);
         }
         span_log_set_level(&receive_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
-        t4_rx_set_x_resolution(&receive_state, t4_tx_get_x_resolution(&send_state));
-        t4_rx_set_y_resolution(&receive_state, t4_tx_get_y_resolution(&send_state));
-        t4_rx_set_image_width(&receive_state, t4_tx_get_image_width(&send_state));
 
         /* Now send and receive all the pages in the source TIFF file */
         sends = 0;
@@ -725,6 +722,9 @@ int main(int argc, char *argv[])
 
                 if (t4_tx_start_page(&send_state))
                     break;
+                t4_rx_set_x_resolution(&receive_state, t4_tx_get_x_resolution(&send_state));
+                t4_rx_set_y_resolution(&receive_state, t4_tx_get_y_resolution(&send_state));
+                t4_rx_set_image_width(&receive_state, t4_tx_get_image_width(&send_state));
             }
             t4_rx_start_page(&receive_state);
             detect_page_end(-1000000, compression);

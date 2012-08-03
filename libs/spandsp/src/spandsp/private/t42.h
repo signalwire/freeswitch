@@ -53,6 +53,9 @@ struct t42_encode_state_s
 
     lab_params_t lab_params;
 
+    /*! \brief The size of the compressed image, in bytes. */
+    int compressed_image_size;
+
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };
@@ -68,6 +71,8 @@ struct t42_decode_state_s
     t4_row_write_handler_t comment_handler;
     /*! An opaque pointer passed to comment_handler() */
     void *comment_user_data;
+    /*! The maximum length of comment to be passed to the comment handler */
+    uint32_t max_comment_len;
 
     lab_params_t lab_params;
 
@@ -77,6 +82,12 @@ struct t42_decode_state_s
     uint8_t *comment;
     /*! Length of data pointed to by comment */
     size_t comment_len;
+
+    /*! \brief The size of the compressed image, in bytes. */
+    int compressed_image_size;
+
+    int buf_size;
+    uint8_t *compressed_buf;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

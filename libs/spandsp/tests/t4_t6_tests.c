@@ -293,26 +293,31 @@ int main(int argc, char *argv[])
        properly. */
     min_row_bits = 50;
     block_size = 0;
-    while ((opt = getopt(argc, argv, "126b:m:")) != -1)
+    while ((opt = getopt(argc, argv, "b:c:m:")) != -1)
     {
         switch (opt)
         {
-        case '1':
-            compression = T4_COMPRESSION_ITU_T4_1D;
-            compression_step = -1;
-            break;
-        case '2':
-            compression = T4_COMPRESSION_ITU_T4_2D;
-            compression_step = -1;
-            break;
-        case '6':
-            compression = T4_COMPRESSION_ITU_T6;
-            compression_step = -1;
-            break;
         case 'b':
             block_size = atoi(optarg);
             if (block_size > 1024)
                 block_size = 1024;
+            break;
+        case 'c':
+            if (strcmp(optarg, "T41D") == 0)
+            {
+                compression = T4_COMPRESSION_ITU_T4_1D;
+                compression_step = -1;
+            }
+            else if (strcmp(optarg, "T42D") == 0)
+            {
+                compression = T4_COMPRESSION_ITU_T4_2D;
+                compression_step = -1;
+            }
+            else if (strcmp(optarg, "T6") == 0)
+            {
+                compression = T4_COMPRESSION_ITU_T6;
+                compression_step = -1;
+            }
             break;
         case 'm':
             min_row_bits = atoi(optarg);

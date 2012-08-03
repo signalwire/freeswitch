@@ -286,13 +286,13 @@ static int check_bih(t85_decode_state_t *s)
 #endif
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Fixed bytes do not contain expected values.\n");
-        return T85_INVALID_DATA;
+        return T4_DECODE_INVALID_DATA;
     }
     /* P - Number of bit planes */
     if (s->buffer[2] < s->min_bit_planes  ||  s->buffer[2] > s->max_bit_planes)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. %d bit planes. Should be %d to %d.\n", s->buffer[2], s->min_bit_planes, s->max_bit_planes);
-        return T85_INVALID_DATA;
+        return T4_DECODE_INVALID_DATA;
     }
     s->bit_planes = s->buffer[2];
     s->current_bit_plane = 0;
@@ -302,38 +302,38 @@ static int check_bih(t85_decode_state_t *s)
     if (s->xd == 0  ||  (s->max_xd  &&  s->xd > s->max_xd))
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Width is %" PRIu32 "\n", s->xd);
-        return T85_INVALID_DATA;
+        return T4_DECODE_INVALID_DATA;
     }
     /* YD - Vertical image size at layer D */
     s->yd = pack_32(&s->buffer[8]);
     if (s->yd == 0  ||  (s->max_yd  &&  s->yd > s->max_yd))
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Length is %" PRIu32 "\n", s->yd);
-        return T85_INVALID_DATA;
+        return T4_DECODE_INVALID_DATA;
     }
     /* L0 - Rows per stripe, at the lowest resolution */
     s->l0 = pack_32(&s->buffer[12]);
     if (s->l0 == 0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. L0 is %" PRIu32 "\n", s->l0);
-        return T85_INVALID_DATA;
+        return T4_DECODE_INVALID_DATA;
     }
     /* MX - Maximum horizontal offset allowed for AT pixel */
     s->mx = s->buffer[16];
     if (s->mx > 127)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. MX is %d\n", s->mx);
-        return T85_INVALID_DATA;
+        return T4_DECODE_INVALID_DATA;
     }
     /* Options byte */
     s->options = s->buffer[19];
     if ((s->options & 0x97))
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Options are 0x%X\n", s->options);
-        return T85_INVALID_DATA;
+        return T4_DECODE_INVALID_DATA;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "BIH is OK. Image is %" PRIu32 "x%" PRIu32 " pixels\n", s->xd, s->yd);
-    return T85_OK;
+    return T4_DECODE_OK;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -368,7 +368,7 @@ SPAN_DECLARE(int) t85_decode_put_byte(t85_decode_state_t *s, int byte)
     if (byte < 0)
     {
         t85_decode_rx_status(s, byte);
-        return (s->y >= s->yd)  ?  T85_OK  :  T85_MORE_DATA;
+        return (s->y >= s->yd)  ?  T4_DECODE_OK  :  T4_DECODE_MORE_DATA;
     }
     data[0] = byte;
     return t85_decode_put_chunk(s, data, 1);
@@ -399,8 +399,8 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
         s->bie_len += i;
         cnt = i;
         if (s->bie_len < 20)
-            return T85_MORE_DATA;
-        if ((ret = check_bih(s)) != T85_OK)
+            return T4_DECODE_MORE_DATA;
+        if ((ret = check_bih(s)) != T4_DECODE_OK)
             return ret;
         /* Set up the two/three row buffer */
         bytes_per_row = (s->xd + 7) >> 3;
@@ -409,7 +409,7 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
         {
             /* We need to expand the 3 row buffer */
             if ((buf = (uint8_t *) realloc(s->row_buf, min_len)) == NULL)
-                return T85_NOMEM;
+                return T4_DECODE_NOMEM;
             s->row_buf = buf;
             s->row_buf_len = min_len;
         }
@@ -500,11 +500,11 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
                 s->buf_len = 0;
 
                 if (s->interrupt)
-                    return T85_INTERRUPT;
+                    return T4_DECODE_INTERRUPT;
                 break;
             case T82_ABORT:
                 s->buf_len = 0;
-                return T85_ABORTED;
+                return T4_DECODE_ABORTED;
             case T82_COMMENT:
                 s->buf_needed = 6;
                 if (s->buf_len < 6)
@@ -531,7 +531,7 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
                 s->buf_len = 0;
 
                 if (s->at_moves >= T85_ATMOVES_MAX)
-                    return T85_INVALID_DATA;
+                    return T4_DECODE_INVALID_DATA;
                 s->at_row[s->at_moves] = pack_32(&s->buffer[2]);
                 s->at_tx[s->at_moves] = s->buffer[6];
                 if (s->at_tx[s->at_moves] > s->mx
@@ -540,7 +540,7 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
                     ||
                     s->buffer[7] != 0)
                 {
-                    return T85_INVALID_DATA;
+                    return T4_DECODE_INVALID_DATA;
                 }
                 s->at_moves++;
                 break;
@@ -552,12 +552,12 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
                 s->buf_len = 0;
 
                 if (!(s->options & T85_VLENGTH))
-                    return T85_INVALID_DATA;
+                    return T4_DECODE_INVALID_DATA;
                 s->options &= ~T85_VLENGTH;
                 y = pack_32(&s->buffer[2]);
                 /* An update to the image length is not allowed to stretch it. */
                 if (y > s->yd)
-                    return T85_INVALID_DATA;
+                    return T4_DECODE_INVALID_DATA;
                 s->yd = y;
                 break;
             case T82_SDNORM:
@@ -567,12 +567,12 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
                     /* A plain SDNORM or SDRST with no peek ahead required */
                     s->buf_len = 0;
                     if (finish_sde(s))
-                        return T85_INTERRUPT;
+                        return T4_DECODE_INTERRUPT;
                     /* Check whether this was the last SDE */
                     if (s->y >= s->yd)
                     {
                         s->compressed_image_size -= (len - cnt);
-                        return T85_OK;
+                        return T4_DECODE_OK;
                     }
                     break;
                 }
@@ -594,12 +594,12 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
                     cnt--;
                     /* Process the T82_SDNORM or T82_SDRST */
                     if (finish_sde(s))
-                        return T85_INTERRUPT;
+                        return T4_DECODE_INTERRUPT;
                     /* Check whether this was the last SDE */
                     if (s->y >= s->yd)
                     {
                         s->compressed_image_size -= (len - cnt);
-                        return T85_OK;
+                        return T4_DECODE_OK;
                     }
                     break;
                 }
@@ -613,12 +613,12 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
 
                     /* Process the T82_SDNORM or T82_SDRST */
                     if (finish_sde(s))
-                        return T85_INTERRUPT;
+                        return T4_DECODE_INTERRUPT;
                     /* Check whether this was the last SDE */
                     if (s->y >= s->yd)
                     {
                         s->compressed_image_size -= (len - cnt);
-                        return T85_OK;
+                        return T4_DECODE_OK;
                     }
                     /* Recycle the two peek-ahead marker sequence bytes to
                        be processed later. */
@@ -639,12 +639,12 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
                 y = pack_32(&s->buffer[4]);
                 /* An update to the image length is not allowed to stretch it. */
                 if (y > s->yd)
-                    return T85_INVALID_DATA;
+                    return T4_DECODE_INVALID_DATA;
                 /* Things look OK, so accept this new length, and proceed. */
                 s->yd = y;
                 /* Now process the T82_SDNORM or T82_SDRST */
                 if (finish_sde(s))
-                    return T85_INTERRUPT;
+                    return T4_DECODE_INTERRUPT;
                 /* We might be at the end of the image now, but even if we are
                    there should still be a final training T82_SDNORM or T82_SDRST
                    that we should pick up. When we do, we won't wait for further
@@ -653,7 +653,7 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
                 break;
             default:
                 s->buf_len = 0;
-                return T85_INVALID_DATA;
+                return T4_DECODE_INVALID_DATA;
             }
         }
         else if (cnt < len  &&  data[cnt] == T82_ESC)
@@ -665,15 +665,15 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
             /* We have found PSCD bytes */
             cnt += decode_pscd(s, data + cnt, len - cnt);
             if (s->interrupt)
-                return T85_INTERRUPT;
+                return T4_DECODE_INTERRUPT;
             /* We should only have stopped processing PSCD if
                we ran out of data, or hit a T82_ESC */
             if (cnt < len  &&  data[cnt] != T82_ESC)
-                return T85_INVALID_DATA;
+                return T4_DECODE_INVALID_DATA;
         }
     }
 
-    return T85_MORE_DATA;
+    return T4_DECODE_MORE_DATA;
 }
 /*- End of function --------------------------------------------------------*/
 

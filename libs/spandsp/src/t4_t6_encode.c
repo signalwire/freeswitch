@@ -82,6 +82,7 @@
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
+#include "spandsp/image_translate.h"
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
 #if defined(SPANDSP_SUPPORT_T42)
@@ -104,6 +105,7 @@
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
+#include "spandsp/private/image_translate.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
 
@@ -544,6 +546,22 @@ static int row_to_run_lengths(uint32_t list[], const uint8_t row[], int width)
             list[entry++] = pos;
         }
     }
+#if defined(T4_STATE_DEBUGGING)
+    /* Dump the runs of black and white for analysis */
+    {
+        int prev;
+        int x;
+
+        printf("Runs (%d)", list[entry - 1]);
+        prev = 0;
+        for (x = 0;  x < entry;  x++)
+        {
+            printf(" %" PRIu32, list[x] - prev);
+            prev = list[x];
+        }
+        printf("\n");
+    }
+#endif
     return entry;
 }
 /*- End of function --------------------------------------------------------*/

@@ -85,6 +85,7 @@
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
+#include "spandsp/image_translate.h"
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
 #if defined(SPANDSP_SUPPORT_T42)
@@ -107,6 +108,7 @@
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
+#include "spandsp/private/image_translate.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
 
@@ -764,9 +766,9 @@ SPAN_DECLARE(int) t4_t6_decode_put_chunk(t4_t6_decode_state_t *s, const uint8_t 
         s->compressed_image_size += 8;
         byte = buf[i];
         if (put_bits(s, byte & 0xFF, 8))
-            return TRUE;
+            return T4_DECODE_OK;
     }
-    return FALSE;
+    return T4_DECODE_MORE_DATA;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -875,10 +877,7 @@ SPAN_DECLARE(int) t4_t6_decode_restart(t4_t6_decode_state_t *s, int image_width)
     if (s->ref_runs)
     {
         memset(s->ref_runs, 0, run_space);
-        s->ref_runs[0] =
-        s->ref_runs[1] =
-        s->ref_runs[2] =
-        s->ref_runs[3] = s->image_width;
+        s->ref_runs[0] = s->image_width;
     }
     if (s->row_buf)
         memset(s->row_buf, 0, s->bytes_per_row);

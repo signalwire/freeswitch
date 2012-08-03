@@ -54,6 +54,7 @@
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
+#include "spandsp/image_translate.h"
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
 #if defined(SPANDSP_SUPPORT_T42)
@@ -77,6 +78,7 @@
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
+#include "spandsp/private/image_translate.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
 
@@ -374,7 +376,7 @@ SPAN_DECLARE(int) t4_rx_put_byte(t4_rx_state_t *s, uint8_t byte)
     case T4_COMPRESSION_ITU_T85_L0:
         return t85_decode_put_byte(&s->decoder.t85, byte);
     }
-    return TRUE;
+    return T4_DECODE_OK;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -399,7 +401,7 @@ SPAN_DECLARE(int) t4_rx_put_chunk(t4_rx_state_t *s, const uint8_t buf[], int len
     case T4_COMPRESSION_ITU_T85_L0:
         return t85_decode_put_chunk(&s->decoder.t85, buf, len);
     }
-    return TRUE;
+    return T4_DECODE_OK;
 }
 /*- End of function --------------------------------------------------------*/
 

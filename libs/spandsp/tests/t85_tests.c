@@ -262,11 +262,11 @@ static int test_cycle(const char *test_id,
         t85_decode_set_comment_handler(&t85_dec, 1000, comment_handler, NULL);
     write_row = 0;
     result = t85_decode_put_chunk(&t85_dec, testbuf, testbuf_len);
-    if (result == T85_MORE_DATA)
+    if (result == T4_DECODE_MORE_DATA)
         result = t85_decode_put_byte(&t85_dec, SIG_STATUS_END_OF_DATA);
     cnt_a = t85_encode_get_compressed_image_size(&t85_enc);
     cnt_b = t85_decode_get_compressed_image_size(&t85_dec);
-    if (cnt_a != cnt_b  ||  cnt_a != testbuf_len*8  ||  result != T85_OK)
+    if (cnt_a != cnt_b  ||  cnt_a != testbuf_len*8  ||  result != T4_DECODE_OK)
     {
         printf("Decode result %d\n", result);
         printf("%ld/%ld bits of %ld bits of BIE read. %lu lines decoded.\n",
@@ -297,19 +297,19 @@ static int test_cycle(const char *test_id,
     if (comment  &&  comment[0] != 'X')
         t85_decode_set_comment_handler(&t85_dec, 1000, comment_handler, NULL);
     write_row = 0;
-    result = T85_MORE_DATA;
+    result = T4_DECODE_MORE_DATA;
     for (l = 0;  l < testbuf_len;  l++)
     {
         result = t85_decode_put_chunk(&t85_dec, &testbuf[l], 1);
-        if (result != T85_MORE_DATA)
+        if (result != T4_DECODE_MORE_DATA)
         {
             l++;
             break;
         }
     }
-    if (result == T85_MORE_DATA)
+    if (result == T4_DECODE_MORE_DATA)
         result = t85_decode_put_byte(&t85_dec, SIG_STATUS_END_OF_DATA);
-    if (l != testbuf_len  ||  result != T85_OK)
+    if (l != testbuf_len  ||  result != T4_DECODE_OK)
     {
         printf("Decode result %d\n", result);
         printf("%ld bytes of %ld bytes of BIE read. %lu lines decoded.\n",

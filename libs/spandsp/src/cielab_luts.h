@@ -1,32 +1,4 @@
-/*
- * SpanDSP - a series of DSP components for telephony
- *
- * cielab_luts.h
- *
- * Written by Steve Underwood <steveu@coppice.org>
- *
- * Copyright (C) 2011 Steve Underwood
- *
- * All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License version 2.1,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-
-/*! \file */
-
-#if defined(T42_USE_LUTS)
-static const float sRGB_to_linear[256] =
+static const float srgb_to_linear[256] =
 {
     0.000000,
     0.000302,
@@ -168,7 +140,7 @@ static const float sRGB_to_linear[256] =
     0.248036,
     0.251995,
     0.255990,
-    0.260021,
+    0.260022,
     0.264090,
     0.268196,
     0.272338,
@@ -267,7 +239,7 @@ static const float sRGB_to_linear[256] =
     0.831396,
     0.839397,
     0.847443,
-    0.855533,
+    0.855534,
     0.863669,
     0.871850,
     0.880075,
@@ -285,8 +257,7 @@ static const float sRGB_to_linear[256] =
     0.982319,
     0.991137
 };
-
-static const uint8_t linear_to_sRGB[4096] =
+static const uint8_t linear_to_srgb[4096] =
 {
     0,
     0,
@@ -4385,5 +4356,3 @@ static const uint8_t linear_to_sRGB[4096] =
     255,
     255
 };
-#endif
-/*- End of file ------------------------------------------------------------*/

@@ -20,6 +20,7 @@ AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 
 DISTCLEANFILES = $(srcdir)/at_interpreter_dictionary.h \
+                 $(srcdir)/cielab_luts.h \
                  $(srcdir)/math_fixed_tables.h \
                  $(srcdir)/v17_v32bis_rx_fixed_rrc.h \
                  $(srcdir)/v17_v32bis_rx_floating_rrc.h \
@@ -58,6 +59,7 @@ EXTRA_DIST = floating_fudge.h \
              libtiff.2008.vcproj \
              filter_tools.c \
              make_at_dictionary.c \
+             make_cielab_luts.c \
              make_math_fixed_tables.c \
              make_modem_filter.c \
              msvc/config.h \
@@ -344,12 +346,16 @@ noinst_HEADERS = cielab_luts.h \
                  mmx_sse_decs.h \
                  t30_local.h \
                  t4_t6_decode_states.h \
+                 t42_t43_local.h \
                  v17_v32bis_rx_constellation_maps.h \
                  v17_v32bis_tx_constellation_maps.h \
                  v29tx_constellation_maps.h
 
 make_at_dictionary$(EXEEXT): $(top_srcdir)/src/make_at_dictionary.c
 	$(CC_FOR_BUILD) -o make_at_dictionary$(EXEEXT) $(top_srcdir)/src/make_at_dictionary.c  -DHAVE_CONFIG_H -I$(top_builddir)/src
+
+make_cielab_luts$(EXEEXT): $(top_srcdir)/src/make_cielab_luts.c
+	$(CC_FOR_BUILD) -o make_cielab_luts$(EXEEXT) $(top_srcdir)/src/make_cielab_luts.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
 
 make_math_fixed_tables$(EXEEXT): $(top_srcdir)/src/make_math_fixed_tables.c
 	$(CC_FOR_BUILD) -o make_math_fixed_tables$(EXEEXT) $(top_srcdir)/src/make_math_fixed_tables.c  -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
@@ -377,6 +383,13 @@ math_fixed_tables.h: make_math_fixed_tables$(EXEEXT)
 t4_rx.$(OBJEXT): spandsp/version.h
 
 t4_rx.lo: spandsp/version.h
+
+t42.$(OBJEXT): cielab_luts.h
+
+t42.lo: cielab_luts.h
+
+cielab_luts.h: make_cielab_luts$(EXEEXT)
+	./make_cielab_luts$(EXEEXT) >cielab_luts.h
 
 V17_V32BIS_RX_INCL = v17_v32bis_rx_fixed_rrc.h \
                      v17_v32bis_rx_floating_rrc.h

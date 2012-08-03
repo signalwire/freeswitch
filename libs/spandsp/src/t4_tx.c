@@ -54,6 +54,7 @@
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
+#include "spandsp/image_translate.h"
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
 #if defined(SPANDSP_SUPPORT_T42)
@@ -76,6 +77,7 @@
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
+#include "spandsp/private/image_translate.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
 
@@ -180,21 +182,39 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     float y_resolution;
     int i;
     t4_tx_tiff_state_t *t;
+    uint16_t bits_per_sample;
+    uint16_t samples_per_pixel;
 
     t = &s->tiff;
     parm16 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &parm16);
-    if (parm16 != 1)
-        return -1;
+    bits_per_sample = parm16;
     parm16 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_SAMPLESPERPIXEL, &parm16);
-    if (parm16 != 1)
+    samples_per_pixel = parm16;
+    if (samples_per_pixel == 1  &&  bits_per_sample == 1)
+        t->image_type = T4_IMAGE_TYPE_BILEVEL;
+    else if (samples_per_pixel == 1  &&  bits_per_sample == 8)
+        t->image_type = T4_IMAGE_TYPE_GRAY_8BIT;
+    else if (samples_per_pixel == 1  &&  bits_per_sample > 8)
+        t->image_type = T4_IMAGE_TYPE_GRAY_12BIT;
+    else if (samples_per_pixel == 3  &&  bits_per_sample == 8)
+        t->image_type = T4_IMAGE_TYPE_COLOUR_8BIT;
+    else if (samples_per_pixel == 3  &&  bits_per_sample > 8)
+        t->image_type = T4_IMAGE_TYPE_COLOUR_12BIT;
+    else
         return -1;
+#if 0
+    /* Limit ourselves to plain black and white pages */
+    if (t->image_type != T4_IMAGE_TYPE_BILEVEL)
+        return -1;
+#endif
     parm32 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm32);
     s->image_width = parm32;
     parm32 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGELENGTH, &parm32);
+    s->tiff.image_length =
     s->image_length = parm32;
     x_resolution = 0.0f;
     TIFFGetField(t->tiff_file, TIFFTAG_XRESOLUTION, &x_resolution);
@@ -206,8 +226,6 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     TIFFGetField(t->tiff_file, TIFFTAG_PHOTOMETRIC, &t->photo_metric);
     /* TIFFGetField(t->tiff_file, TIFFTAG_COMPRESSION, &t->????); */
 
-    if (t->photo_metric != PHOTOMETRIC_MINISWHITE)
-        span_log(&s->logging, SPAN_LOG_FLOW, "%s: Photometric needs swapping.\n", s->tiff.file);
     t->fill_order = FILLORDER_LSB2MSB;
 
     /* Allow a little range for the X resolution in centimeters. The spec doesn't pin down the
@@ -388,25 +406,27 @@ static int open_tiff_input_file(t4_tx_state_t *s, const char *file)
 static int tiff_row_read_handler(void *user_data, uint8_t buf[], size_t len)
 {
     t4_tx_state_t *s;
-    int i;
 
     s = (t4_tx_state_t *) user_data;
     if (s->tiff.row >= s->image_length)
         return 0;
-#if 0
-    if (TIFFReadScanline(s->tiff.tiff_file, buf, s->tiff.row, 0) < 0)
-        span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error reading TIFF row.\n", s->tiff.file);
-#else
     memcpy(buf, &s->tiff.image_buffer[s->tiff.row*len], len);
-#endif
-    if (s->tiff.photo_metric != PHOTOMETRIC_MINISWHITE)
-    {
-        for (i = 0;  i < len;  i++)
-            buf[i] = ~buf[i];
-    }
-    if (s->tiff.fill_order != FILLORDER_LSB2MSB)
-        bit_reverse(buf, buf, len);
     s->tiff.row++;
+    return len;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int row_read(void *user_data, uint8_t buf[], size_t len)
+{
+    t4_tx_state_t *s;
+    
+    s = (t4_tx_state_t *) user_data;
+
+    if (s->tiff.raw_row >= s->tiff.image_length)
+        return 0;
+    if (TIFFReadScanline(s->tiff.tiff_file, buf, s->tiff.raw_row, 0) < 0)
+        return 0;
+    s->tiff.raw_row++;
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -415,34 +435,73 @@ static int read_tiff_image(t4_tx_state_t *s)
 {
     int total_len;
     int len;
-    int bytes_per_row;
     int i;
     uint8_t *t;
+    image_translate_state_t *translator;
+    int mode;
 
-    s->image_width = 0;
-    TIFFGetField(s->tiff.tiff_file, TIFFTAG_IMAGEWIDTH, &s->image_width);
-    s->image_length = 0;
-    TIFFGetField(s->tiff.tiff_file, TIFFTAG_IMAGELENGTH, &s->image_length);
-    bytes_per_row = TIFFScanlineSize(s->tiff.tiff_file);
-    s->tiff.image_size = s->image_length*bytes_per_row;
-    if (s->tiff.image_size >= s->tiff.image_buffer_size)
+    if (s->tiff.image_type != T4_IMAGE_TYPE_BILEVEL)
     {
-        if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
+        /* We need to dither this image down to pure black and white, possibly resizing it
+           along the way. */
+        if (s->tiff.image_type == T4_IMAGE_TYPE_GRAY_8BIT)
+            mode = IMAGE_TRANSLATE_FROM_GRAY_8;
+        else if (s->tiff.image_type == T4_IMAGE_TYPE_GRAY_12BIT)
+            mode = IMAGE_TRANSLATE_FROM_GRAY_16;
+        else if (s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_8BIT)
+            mode = IMAGE_TRANSLATE_FROM_COLOUR_8;
+        else if (s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
+            mode = IMAGE_TRANSLATE_FROM_COLOUR_16;
+        else
             return -1;
-        s->tiff.image_buffer_size += s->tiff.image_size;
-        s->tiff.image_buffer = t;
-    }
-
-#if 1
-    for (i = 0, total_len = 0;  total_len < s->tiff.image_size;  i++, total_len += len)
-    {
-        if ((len = TIFFReadEncodedStrip(s->tiff.tiff_file, i, &s->tiff.image_buffer[total_len], s->tiff.image_size - total_len)) < 0)
+        if ((translator = image_translate_init(NULL, mode, s->image_width, s->image_length, 1728, -1, row_read, s)) == NULL)
+            return -1;
+        s->image_width = image_translate_get_output_width(translator);
+        s->image_length = image_translate_get_output_length(translator);
+        s->metadata.x_resolution = T4_X_RESOLUTION_R8;
+        s->metadata.y_resolution = T4_Y_RESOLUTION_FINE;
+        s->tiff.image_size = (s->image_width*s->image_length + 7)/8;
+        if (s->tiff.image_size >= s->tiff.image_buffer_size)
         {
-            span_log(&s->logging, SPAN_LOG_WARNING, "%s: Read error.\n", s->tiff.file);
-            return -1;
+            if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
+                return -1;
+            s->tiff.image_buffer_size = s->tiff.image_size;
+            s->tiff.image_buffer = t;
         }
+        s->tiff.raw_row = 0;
+        total_len = 0;
+        for (i = 0;  i < s->image_length;  i++)
+            total_len += image_translate_row(translator, &s->tiff.image_buffer[total_len], s->image_width/8);
+        image_translate_free(translator);
     }
-#endif
+    else
+    {
+        s->tiff.image_size = s->image_length*TIFFScanlineSize(s->tiff.tiff_file);
+        if (s->tiff.image_size >= s->tiff.image_buffer_size)
+        {
+            if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
+                return -1;
+            s->tiff.image_buffer_size = s->tiff.image_size;
+            s->tiff.image_buffer = t;
+        }
+
+        for (i = 0, total_len = 0;  total_len < s->tiff.image_size;  i++, total_len += len)
+        {
+            if ((len = TIFFReadEncodedStrip(s->tiff.tiff_file, i, &s->tiff.image_buffer[total_len], s->tiff.image_size - total_len)) < 0)
+            {
+                span_log(&s->logging, SPAN_LOG_WARNING, "%s: Read error.\n", s->tiff.file);
+                return -1;
+            }
+        }
+        if (s->tiff.photo_metric != PHOTOMETRIC_MINISWHITE)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "%s: Photometric needs swapping.\n", s->tiff.file);
+            for (i = 0;  i < s->tiff.image_size;  i++)
+                s->tiff.image_buffer[i] = ~s->tiff.image_buffer[i];
+        }
+        if (s->tiff.fill_order != FILLORDER_LSB2MSB)
+            bit_reverse(s->tiff.image_buffer, s->tiff.image_buffer, s->tiff.image_size);
+    }
     s->tiff.row = 0;
     return s->image_length;
 }
@@ -901,8 +960,6 @@ SPAN_DECLARE(int) t4_tx_get_chunk(t4_tx_state_t *s, uint8_t buf[], int max_len)
 
 SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
 {
-    uint32_t image_length;
-
     span_log(&s->logging, SPAN_LOG_FLOW, "Start tx page %d - compression %s\n", s->current_page, t4_encoding_to_str(s->line_encoding));
     if (s->current_page > s->stop_page)
         return -1;
@@ -911,7 +968,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
         if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page))
             return -1;
         get_tiff_directory_info(s);
-        if ((image_length = read_tiff_image(s)) < 0)
+        if (read_tiff_image(s) < 0)
             return -1;
     }
     else
