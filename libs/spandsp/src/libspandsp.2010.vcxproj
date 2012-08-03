@@ -186,6 +186,7 @@
     <ClCompile Include="gsm0610_rpe.c" />
     <ClCompile Include="gsm0610_short_term.c" />
     <ClCompile Include="hdlc.c" />
+    <ClCompile Include="image_translate.c" />
     <ClCompile Include="ima_adpcm.c" />
     <ClCompile Include="logging.c" />
     <ClCompile Include="lpc10_analyse.c" />
@@ -276,6 +277,7 @@
     <ClInclude Include="spandsp\g726.h" />
     <ClInclude Include="spandsp\gsm0610.h" />
     <ClInclude Include="spandsp\hdlc.h" />
+    <ClInclude Include="spandsp\image_translate.h" />
     <ClInclude Include="spandsp\ima_adpcm.h" />
     <ClInclude Include="spandsp\logging.h" />
     <ClInclude Include="spandsp\lpc10.h" />
@@ -287,6 +289,7 @@
     <ClInclude Include="spandsp\plc.h" />
     <ClInclude Include="spandsp\power_meter.h" />
     <ClInclude Include="spandsp\private\ademco_contactid.h" />
+    <ClInclude Include="spandsp\private\image_translate.h" />
     <ClInclude Include="spandsp\private\t42.h" />
     <ClInclude Include="spandsp\private\t81_t82_arith_coding.h" />
     <ClInclude Include="spandsp\private\t85.h" />

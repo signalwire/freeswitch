@@ -274,6 +274,9 @@
     <ClCompile Include="t4_t6_encode.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="image_translate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="spandsp\adsi.h">
@@ -705,6 +708,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="spandsp\private\t42.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\image_translate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\private\image_translate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

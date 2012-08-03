@@ -471,6 +471,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\image_translate.c"
+				>
+			</File>
+			<File
 				RelativePath="logging.c"
 				>
 			</File>
@@ -694,6 +698,14 @@
 		<Filter
 			Name="Header Files"
 			>
+			<File
+				RelativePath=".\spandsp\image_translate.h"
+				>
+			</File>
+			<File
+				RelativePath=".\spandsp\private\image_translate.h"
+				>
+			</File>
 			<File
 				RelativePath="spandsp.h"
 				>
@@ -1259,11 +1271,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\spandsp\private\t85.h"
+				RelativePath=".\spandsp\t85.h"
 				>
 			</File>
 			<File
-				RelativePath=".\spandsp\t85.h"
+				RelativePath=".\spandsp\private\t85.h"
 				>
 			</File>
 		</Filter>
