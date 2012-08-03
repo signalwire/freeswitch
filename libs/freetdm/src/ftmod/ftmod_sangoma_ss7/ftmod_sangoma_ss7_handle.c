@@ -221,6 +221,9 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			} else {
 				SS7_INFO_CHAN(ftdmchan,"No Called party (DNIS) information in IAM!%s\n", " ");
 			}
+			copy_NatureOfConnection_from_sngss7(ftdmchan, &siConEvnt->natConInd);
+			copy_fwdCallInd_hex_from_sngss7(ftdmchan, &siConEvnt->fwdCallInd);
+			copy_access_transport_from_sngss7(ftdmchan, &siConEvnt->accTrnspt);
 			copy_ocn_from_sngss7(ftdmchan, &siConEvnt->origCdNum);
 			copy_redirgNum_from_sngss7(ftdmchan, &siConEvnt->redirgNum);
 			copy_redirgInfo_from_sngss7(ftdmchan, &siConEvnt->redirInfo);

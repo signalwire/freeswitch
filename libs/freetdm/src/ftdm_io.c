@@ -36,7 +36,6 @@
  * David Yat Sin <dyatsin@sangoma.com>
  *
  */
-
 #define _GNU_SOURCE
 #include "private/ftdm_core.h"
 #include <stdarg.h>
