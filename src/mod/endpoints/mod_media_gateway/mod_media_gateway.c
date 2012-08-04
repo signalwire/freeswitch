@@ -523,7 +523,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
 	termId  = termLst->terms[0];
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination-Id received..value[%s] type[%d] \n", termId->name.lcl.val, termId->type.val);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Termination-Id received..value[%s] type[%d] \n", termId->name.lcl.val, termId->type.val);
 
 	/* Not sure - IF Stack fills term type properly..but adding code just to be sure ...*/
 	if ((PRSNT_NODEF == termId->type.pres) &&

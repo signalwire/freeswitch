@@ -688,7 +688,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	    } else {
 		    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Termination[%s] already in context..rejecting ADD \n", term->name);
 		    mg_util_set_err_string(&errTxt, " Term already is in call ");
-		    err_code = MGT_MGCP_RSP_CODE_PROT_ERROR;
+		    err_code = MGT_MGCO_RSP_CODE_DUP_TERM_CTXT;
 		    goto error;
 	    }
 
@@ -1545,11 +1545,11 @@ switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoCont
 	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
 
 #ifdef BIT_64
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, 
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, 
 			"mg_send_end_of_axn: Sending END_OF_AXN for transId[%d], peerId[%d], context[type = %s, value = %d]\n",
 			transId->val, peerId->val, PRNT_MG_CTXT_TYPE(ctxtId->type.val), ctxtId->val.val);
 #else
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, 
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, 
 			"mg_send_end_of_axn: Sending END_OF_AXN for transId[%lu], peerId[%lu], context[type = %s, value = %lu]\n",
 			transId->val, peerId->val, PRNT_MG_CTXT_TYPE(ctxtId->type.val), ctxtId->val.val);
 
@@ -1646,8 +1646,6 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
 	wild 	   = auditReq->u.mgCmdReq[0]->wild.pres;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"%s :: wild card request = %s \n",__FUNCTION__,(1==wild)?"TRUE":"FALSE");
-
 	if(NOTPRSNT == audit->pres.pres){
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
 		return SWITCH_STATUS_FALSE;
@@ -1656,7 +1654,7 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 	audit_desc = &audit->audit;
 
 	if((NOTPRSNT == audit_desc->pres.pres) || ( NOTPRSNT == audit_desc->num.pres)){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit Descriptor not present.. Could be HeartBeat message\n");
+		//switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit Descriptor not present.. Could be HeartBeat message\n");
 		return mg_send_heartbeat_audit_rsp(mg_profile->idx, auditReq);
 	}
 
