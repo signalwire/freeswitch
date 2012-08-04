@@ -1,0 +1,103 @@
+<configuration name="xml_radius.conf" description="Radius XML Gateway">
+  <!--
+     auth_invite is only called when a directory lookup is done on an inbound invite. Usually that means a digest auth challenge on the invite.
+     
+     auth_reg is only called on the actual registration. 
+     
+     auth_app is used when an invite is in the dialplan. If your profile requires digest auth then this isn't needed.
+              but if your profile is doing only ip authentication this allows you to authenticate the call without the need for digest auth.
+	      
+     acct_start happens when the call goes into the state 'routing' which means it is starting the dialplan
+  -->
+  <auth_invite>
+    <connection name="testing">
+      <param name="authserver" value="127.0.0.1:1812:testing123"/>
+      <param name="radius_timeout" value="10"/>
+      <param name="radius_retries" value="2"/>
+      <param name="radius_deadtime" value="0"/>
+      <param name="dictionary" value="/usr/local/src/freeswitch/src/mod/xml_int/mod_xml_radius/dictionaries/dictionary"/>
+      <param name="seqfile" value="/var/run/radius.seq"/>
+    </connection>
+    <fields>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="ip" format="src-gw-ip=%s"/>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" format="src-gw-name=%s"/>
+      <param vendor="Cisco" name="h323-conf-id" variable="Core-UUID" format="%s"/>
+      <param name="Called-Station-Id" variable="sip_to_user" format="%s"/>
+      <param name="Calling-Station-Id" variable="sip_from_user" format="%s"/>
+    </fields>
+  </auth_invite>
+  <auth_app>
+    <connection name="testing">
+      <param name="authserver" value="127.0.0.1:1812:testing123"/>
+      <param name="radius_timeout" value="10"/>
+      <param name="radius_retries" value="2"/>
+      <param name="radius_deadtime" value="0"/>
+      <param name="dictionary" value="/usr/local/src/freeswitch/src/mod/xml_int/mod_xml_radius/dictionaries/dictionary"/>
+      <param name="seqfile" value="/var/run/radius.seq"/>
+    </connection>
+    <fields>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_network_ip" format="src-gw-ip=%s"/>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" format="src-gw-name=%s"/>
+      <param vendor="Cisco" name="h323-conf-id" variable="Core-UUID" format="%s"/>
+      <param name="Called-Station-Id" variable="sip_to_user" format="%s"/>
+      <param name="Calling-Station-Id" variable="sip_from_user" format="%s"/>
+    </fields>
+  </auth_app>
+  <auth_reg>
+    <connection name="testing">
+      <param name="authserver" value="127.0.0.1:1812:testing123"/>
+      <param name="radius_timeout" value="10"/>
+      <param name="radius_retries" value="2"/>
+      <param name="radius_deadtime" value="0"/>
+      <param name="dictionary" value="/usr/share/freeradius/dictionary.cisco"/>
+      <param name="seqfile" value="/var/run/radius.seq"/>
+    </connection>
+    <fields>      
+    </fields>
+  </auth_reg>
+  <acct_start>
+    <connection name="testing">
+      <param name="acctserver" value="127.0.0.1:1813:testing123"/>
+      <param name="radius_timeout" value="10"/>
+      <param name="radius_retries" value="0"/>
+      <param name="radius_deadtime" value="0"/>
+      <param name="dictionary" value="/usr/local/src/freeswitch/src/mod/xml_int/mod_xml_radius/dictionaries/dictionary"/>
+      <param name="seqfile" value="/var/run/radius.seq"/>
+    </connection>
+    <fields>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_host" format="src-gw-ip=%s"/>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" format="src-gw-name=%s"/>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_host" format="dst-gw-ip=%s"/>
+      <param vendor="Cisco" name="h323-conf-id" variable="uuid" format="%s"/>
+      <param vendor="Cisco" name="h323-setup-time"/>
+      <param vendor="Cisco" name="h323-connect-time"/>
+      <param name="Called-Station-Id" variable="sip_to_user" format="%s"/>
+      <param name="Calling-Station-Id" variable="sip_from_user" format="%s"/>
+    </fields>
+  </acct_start>
+  <acct_end>
+    <connection name="testing">
+      <param name="acctserver" value="127.0.0.1:1813:testing123"/>
+      <param name="radius_timeout" value="10"/>
+      <param name="radius_retries" value="0"/>
+      <param name="radius_deadtime" value="0"/>
+      <param name="dictionary" value="/usr/local/src/freeswitch/src/mod/xml_int/mod_xml_radius/dictionaries/dictionary"/>
+      <param name="seqfile" value="/var/run/radius.seq"/>
+    </connection>
+    <fields>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_host" format="src-gw-ip=%s"/>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" format="src-gw-name=%s"/>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_host" format="dst-gw-ip=%s"/>
+      <param vendor="Cisco" name="h323-conf-id" variable="uuid" format="%s"/>
+      <param vendor="Cisco" name="h323-setup-time"/>
+      <param vendor="Cisco" name="h323-connect-time"/>
+      <param vendor="Cisco" name="h323-disconnect-time"/>
+      <param vendor="Cisco" name="h323-disconnect-cause"/>
+      <param name="Called-Station-Id" variable="sip_to_user" format="%s"/>
+      <param name="Acct-Session-Time" variable="billsec" format="%s"/>
+      <param name="Calling-Station-Id" variable="sip_from_user" format="%s"/>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" format="src-number-out=%s"/>
+      <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_user" format="dst-number-out=%s"/>
+    </fields>
+  </acct_end>
+</configuration>
