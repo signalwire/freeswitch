@@ -72,7 +72,7 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v22bis.h"
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 #define FP_SHIFT_FACTOR                 10
 #define FP_SCALE                        FP_Q_6_10
 #include "v22bis_rx_1200_fixed_rrc.h"
@@ -187,7 +187,7 @@ SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexf_t **coef
 void v22bis_equalizer_coefficient_reset(v22bis_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     static const complexi16_t x = {FP_Q_6_10(3.0f), FP_Q_6_10(0.0f)};
 
     cvec_zeroi16(s->rx.eq_coeff, V22BIS_EQUALIZER_LEN);
@@ -206,7 +206,7 @@ void v22bis_equalizer_coefficient_reset(v22bis_state_t *s)
 static void equalizer_reset(v22bis_state_t *s)
 {
     v22bis_equalizer_coefficient_reset(s);
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     cvec_zeroi16(s->rx.eq_buf, V22BIS_EQUALIZER_LEN);
 #else
     cvec_zerof(s->rx.eq_buf, V22BIS_EQUALIZER_LEN);
@@ -237,7 +237,7 @@ static __inline__ complexf_t equalizer_get(v22bis_state_t *s)
 #endif
 /*- End of function --------------------------------------------------------*/
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static void tune_equalizer(v22bis_state_t *s, const complexi16_t *z, const complexi16_t *target)
 {
     complexi16_t err;
@@ -262,13 +262,13 @@ static void tune_equalizer(v22bis_state_t *s, const complexf_t *z, const complex
 #endif
 /*- End of function --------------------------------------------------------*/
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static __inline__ void track_carrier(v22bis_state_t *s, const complexi16_t *z, const complexi16_t *target)
 #else
 static __inline__ void track_carrier(v22bis_state_t *s, const complexf_t *z, const complexf_t *target)
 #endif
 {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     int32_t error;
 #else
     float error;
@@ -277,7 +277,7 @@ static __inline__ void track_carrier(v22bis_state_t *s, const complexf_t *z, con
     /* For small errors the imaginary part of the difference between the actual and the target
        positions is proportional to the phase error, for any particular target. However, the
        different amplitudes of the various target positions scale things. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     error = ((int32_t) z->im*target->re - (int32_t) z->re*target->im) >> FP_SHIFT_FACTOR;
     s->rx.carrier_phase_rate += (s->rx.carrier_track_i*error);
     s->rx.carrier_phase += (s->rx.carrier_track_p*error);
@@ -376,7 +376,7 @@ static int decode_baudx(v22bis_state_t *s, int nearest)
 
 static __inline__ void symbol_sync(v22bis_state_t *s)
 {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     int32_t p;
     int32_t q;
     complexi16_t a;
@@ -447,13 +447,13 @@ static __inline__ void symbol_sync(v22bis_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static __inline__ void process_half_baud(v22bis_state_t *s, const complexi16_t *sample)
 #else
 static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
 #endif
 {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t z;
     complexi16_t zz;
     const complexi16_t *target;
@@ -490,7 +490,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
     /* Find the constellation point */
     if (s->rx.sixteen_way_decisions)
     {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
         re = (z.re + FP_Q_6_10(3.0f)) >> FP_SHIFT_FACTOR;
         im = (z.im + FP_Q_6_10(3.0f)) >> FP_SHIFT_FACTOR;
 #else
@@ -688,7 +688,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
                     /* Normal reception starts immediately */
                     s->rx.training = V22BIS_RX_TRAINING_STAGE_NORMAL_OPERATION;
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
                     s->rx.carrier_track_i = 8;
 #else
                     s->rx.carrier_track_i = 8000.0f;
@@ -716,7 +716,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                     s->rx.sixteen_way_decisions = TRUE;
                     s->rx.training = V22BIS_RX_TRAINING_STAGE_WAIT_FOR_SCRAMBLED_ONES_AT_2400;
                     s->rx.pattern_repeats = 0;
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
                     s->rx.carrier_track_i = 8;
 #else
                     s->rx.carrier_track_i = 8000.0f;
@@ -782,7 +782,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
 {
     int i;
     int step;
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t z;
     complexi16_t zz;
     complexi16_t sample;
@@ -856,7 +856,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
             if (s->rx.training == V22BIS_RX_TRAINING_STAGE_SYMBOL_ACQUISITION)
             {
                 /* Only AGC during the initial symbol acquisition, and then lock the gain. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
                 s->rx.agc_scaling = saturate16(((int32_t) (1024.0f*1024.0f*0.18f*3.60f))/fixed_sqrt32(power));
 #else
                 s->rx.agc_scaling = 0.18f*3.60f/sqrtf(power);
@@ -872,7 +872,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
             s->rx.eq_put_step += PULSESHAPER_COEFF_SETS*40/(3*2);
             if (s->calling_party)
             {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
                 ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_2400_re[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
                 qq = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_2400_im[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
 #else
@@ -882,7 +882,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
             }
             else
             {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
                 ii = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_1200_re[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
                 qq = vec_circular_dot_prodi16(s->rx.rrc_filter, rx_pulseshaper_1200_im[step], V22BIS_RX_FILTER_STEPS, s->rx.rrc_filter_step) >> 15;
 #else
@@ -893,7 +893,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
             /* Shift to baseband - since this is done in a full complex form, the
                result is clean, and requires no further filtering apart from the
                equalizer. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
             sample.re = (ii*s->rx.agc_scaling) >> FP_SHIFT_FACTOR;
             sample.im = (qq*s->rx.agc_scaling) >> FP_SHIFT_FACTOR;
             z = dds_lookup_complexi16(s->rx.carrier_phase);
@@ -929,7 +929,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx_fillin(v22bis_state_t *s, int len)
         return 0;
     for (i = 0;  i < len;  i++)
     {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
         dds_advance(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
 #else
         dds_advancef(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
@@ -942,7 +942,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx_fillin(v22bis_state_t *s, int len)
 
 int v22bis_rx_restart(v22bis_state_t *s)
 {
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     vec_zeroi16(s->rx.rrc_filter, sizeof(s->rx.rrc_filter)/sizeof(s->rx.rrc_filter[0]));
     s->rx.training_error = 0;
 #else
@@ -978,7 +978,7 @@ int v22bis_rx_restart(v22bis_state_t *s)
     s->rx.baud_phase = 0;
     s->rx.total_baud_timing_correction = 0;
     /* We want the carrier to pull in faster on the answerer side, as it has very little time to adapt. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     s->rx.carrier_track_i = (s->calling_party)  ?  8  :  40;
     s->rx.carrier_track_p = 8000;
 #else

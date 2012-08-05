@@ -86,9 +86,6 @@ SPAN_DECLARE(tone_gen_descriptor_t *) tone_gen_descriptor_init(tone_gen_descript
                                                                int d4,
                                                                int repeat);
 
-/* For backwards compatibility */
-#define make_tone_gen_descriptor    tone_gen_descriptor_init
-
 SPAN_DECLARE(void) tone_gen_descriptor_free(tone_gen_descriptor_t *s);
 
 SPAN_DECLARE_NONSTD(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples);

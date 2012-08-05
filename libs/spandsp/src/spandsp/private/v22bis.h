@@ -65,7 +65,7 @@ enum
     V22BIS_TX_TRAINING_STAGE_PARKED
 };
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 extern const complexi16_t v22bis_constellation[16];
 #else
 extern const complexf_t v22bis_constellation[16];
@@ -137,7 +137,7 @@ struct v22bis_state_s
 
         int constellation_state;
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
         /*! \brief The scaling factor accessed by the AGC algorithm. */
         int16_t agc_scaling;
         /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
