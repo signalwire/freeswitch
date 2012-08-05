@@ -1263,10 +1263,15 @@ static void our_sofia_event_callback(nua_event_t event,
 				referred_by = sofia_glue_get_url_from_contact(sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_referred_by), 0);
 				ref_by_user = sip->sip_referred_by->b_url->url_user;
 			}
+            else if(sip->sip_to && sip->sip_to->a_url)
+            {
+				referred_by = sofia_glue_get_url_from_contact(sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_to), 0);
+                ref_by_user = sip->sip_to->a_url->url_user;
+            }
 
-			if (sip->sip_request && sip->sip_request->rq_url) {
-				req_user = sip->sip_request->rq_url->url_user;
-				req_host = sip->sip_request->rq_url->url_host;
+			if (sip->sip_to && sip->sip_to->a_url) {
+				req_user = sip->sip_to->a_url->url_user;
+				req_host = sip->sip_to->a_url->url_host;
 			}
 
 			if (switch_event_create(&event, SWITCH_EVENT_CALL_SETUP_REQ) == SWITCH_STATUS_SUCCESS) {
@@ -1355,7 +1360,7 @@ static void our_sofia_event_callback(nua_event_t event,
 				sip_to_tag(nh->nh_home, sip->sip_to, to_tag);
 			}
 			
-			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_TO(sip->sip_to), NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			switch_safe_free(method);
 			switch_safe_free(full_url);
 
