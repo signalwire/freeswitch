@@ -52,10 +52,10 @@
 #define SYMBOL_TRACKER_POINTS   12000
 #define CARRIER_TRACKER_POINTS  12000
 
-#define FP_FACTOR               4096
-
 struct qam_monitor_s
 {
+    float constel_scaling;
+
     Fl_Double_Window *w;
     Fl_Group *c_const;
     Fl_Group *c_right;
@@ -189,14 +189,14 @@ int qam_monitor_update_equalizer(qam_monitor_t *s, const complexf_t *coeffs, int
     for (i = 0;  i < len;  i++)
     {
         s->eq_re_plot[2*i] = (i - len/2)/2.0;
-        s->eq_re_plot[2*i + 1] = coeffs[i].re;
+        s->eq_re_plot[2*i + 1] = coeffs[i].re*s->constel_scaling;
         if (min > coeffs[i].re)
             min = coeffs[i].re;
         if (max < coeffs[i].re)
             max = coeffs[i].re;
 
         s->eq_im_plot[2*i] = (i - len/2)/2.0;
-        s->eq_im_plot[2*i + 1] = coeffs[i].im;
+        s->eq_im_plot[2*i + 1] = coeffs[i].im*s->constel_scaling;
         if (min > coeffs[i].im)
             min = coeffs[i].im;
         if (max < coeffs[i].im)
@@ -235,22 +235,22 @@ int qam_monitor_update_int_equalizer(qam_monitor_t *s, const complexi16_t *coeff
         max = coeffs[i].im;
     for (i = 0;  i < len;  i++)
     {
-        s->eq_re_plot[2*i] = (i - len/2)/2.0f;
-        s->eq_re_plot[2*i + 1] = coeffs[i].re/(float) FP_FACTOR;
         if (min > coeffs[i].re)
             min = coeffs[i].re;
         if (max < coeffs[i].re)
             max = coeffs[i].re;
+        s->eq_re_plot[2*i] = (i - len/2)/2.0f;
+        s->eq_re_plot[2*i + 1] = coeffs[i].re*s->constel_scaling;
 
-        s->eq_im_plot[2*i] = (i - len/2)/2.0f;
-        s->eq_im_plot[2*i + 1] = coeffs[i].im/(float) FP_FACTOR;
         if (min > coeffs[i].im)
             min = coeffs[i].im;
         if (max < coeffs[i].im)
             max = coeffs[i].im;
+        s->eq_im_plot[2*i] = (i - len/2)/2.0f;
+        s->eq_im_plot[2*i + 1] = coeffs[i].im*s->constel_scaling;
     }
-    min /= (float) FP_FACTOR;
-    max /= (float) FP_FACTOR;
+    min *= s->constel_scaling;
+    max *= s->constel_scaling;
 
     s->eq_x->minimum(-len/4.0);
     s->eq_x->maximum(len/4.0);
@@ -286,21 +286,21 @@ int qam_monitor_update_symbol_tracking(qam_monitor_t *s, float total_correction)
     max = s->symbol_tracker[0];
     for (i = s->symbol_track_ptr, j = 0;  i < s->symbol_track_points;  i++, j++)
     {
-        s->symbol_track_plot[2*j] = j;
-        s->symbol_track_plot[2*j + 1] = s->symbol_tracker[i];
         if (min > s->symbol_tracker[i])
             min = s->symbol_tracker[i];
         if (max < s->symbol_tracker[i])
             max = s->symbol_tracker[i];
+        s->symbol_track_plot[2*j] = j;
+        s->symbol_track_plot[2*j + 1] = s->symbol_tracker[i];
     }
     for (i = 0;  i < s->symbol_track_ptr;  i++, j++)
     {
-        s->symbol_track_plot[2*j] = j;
-        s->symbol_track_plot[2*j + 1] = s->symbol_tracker[i];
         if (min > s->symbol_tracker[i])
             min = s->symbol_tracker[i];
         if (max < s->symbol_tracker[i])
             max = s->symbol_tracker[i];
+        s->symbol_track_plot[2*j] = j;
+        s->symbol_track_plot[2*j + 1] = s->symbol_tracker[i];
     }
     s->symbol_track_y->maximum((fabs(max - min) < 0.05)  ?  max + 0.05  :  max);
     s->symbol_track_y->minimum(min);
@@ -379,7 +379,7 @@ int qam_monitor_update_carrier_tracking(qam_monitor_t *s, float carrier_freq)
 }
 /*- End of function --------------------------------------------------------*/
 
-qam_monitor_t *qam_monitor_init(float constel_width, const char *tag)
+qam_monitor_t *qam_monitor_init(float constel_width, float constel_scaling, const char *tag)
 {
     char buf[132 + 1];
     float x;
@@ -390,6 +390,8 @@ qam_monitor_t *qam_monitor_init(float constel_width, const char *tag)
         return NULL;
     
     s->w = new Fl_Double_Window(905, 400, (tag)  ?  tag  :  "QAM monitor");
+
+    s->constel_scaling = 1.0/constel_scaling;
 
     s->c_const = new Fl_Group(0, 0, 380, 400);
     s->c_const->box(FL_DOWN_BOX);

@@ -119,6 +119,12 @@ therefore, only tests that bits starting at bit 24 are really ones.
 */
 
 #if defined(SPANDSP_USE_FIXED_POINT)
+#define V29_CONSTELLATION_SCALING_FACTOR        4096.0
+#else
+#define V29_CONSTELLATION_SCALING_FACTOR        1.0
+#endif
+
+#if defined(SPANDSP_USE_FIXED_POINT)
 typedef void (*qam_report_handler_t)(void *user_data, const complexi16_t *constel, const complexi16_t *target, int symbol);
 #else
 typedef void (*qam_report_handler_t)(void *user_data, const complexf_t *constel, const complexf_t *target, int symbol);

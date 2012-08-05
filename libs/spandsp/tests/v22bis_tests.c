@@ -129,14 +129,16 @@ static void v22bis_rx_status(void *user_data, int status)
     case SIG_STATUS_TRAINING_SUCCEEDED:
         bit_rate = v22bis_get_current_bit_rate(s->v22bis);
         printf("Negotiated bit rate: %d\n", bit_rate);
-        len = v22bis_rx_equalizer_state(s->v22bis, &coeffs);
-        printf("Equalizer:\n");
-        for (i = 0;  i < len;  i++)
+        if ((len = v22bis_rx_equalizer_state(s->v22bis, &coeffs)))
+        {
+            printf("Equalizer:\n");
+            for (i = 0;  i < len;  i++)
 #if defined(SPANDSP_USE_FIXED_POINT)
-            printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/1024.0f, coeffs[i].im/1024.0f);
+                printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/V22BIS_CONSTELLATION_SCALING_FACTOR, coeffs[i].im/V22BIS_CONSTELLATION_SCALING_FACTOR);
 #else
-            printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+                printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
 #endif
+        }
         break;
     }
 }
@@ -181,26 +183,25 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
     int len;
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t *coeffs;
-    complexf_t constel_point;
 #else
     complexf_t *coeffs;
 #endif
+    complexf_t constel_point;
+    complexf_t target_point;
     float fpower;
     endpoint_t *s;
 
     s = (endpoint_t *) user_data;
     if (constel)
     {
+        constel_point.re = constel->re/V22BIS_CONSTELLATION_SCALING_FACTOR;
+        constel_point.im = constel->im/V22BIS_CONSTELLATION_SCALING_FACTOR;
+        target_point.re = target->re/V22BIS_CONSTELLATION_SCALING_FACTOR;
+        target_point.im = target->im/V22BIS_CONSTELLATION_SCALING_FACTOR;
 #if defined(ENABLE_GUI)
         if (use_gui)
         {
-#if defined(SPANDSP_USE_FIXED_POINT)
-            constel_point.re = constel->re/1024.0;
-            constel_point.im = constel->im/1024.0;
             qam_monitor_update_constel(s->qam_monitor, &constel_point);
-#else
-            qam_monitor_update_constel(s->qam_monitor, constel);
-#endif
             qam_monitor_update_carrier_tracking(s->qam_monitor, v22bis_rx_carrier_frequency(s->v22bis));
             qam_monitor_update_symbol_tracking(s->qam_monitor, v22bis_rx_symbol_timing_correction(s->v22bis));
         }
@@ -211,17 +212,10 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 
         printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %8.4f\n",
                s->symbol_no,
-#if defined(SPANDSP_USE_FIXED_POINT)
-               constel->re/1024.0,
-               constel->im/1024.0,
-               target->re/1024.0,
-               target->im/1024.0,
-#else
-               constel->re,
-               constel->im,
-               target->re,
-               target->im,
-#endif
+               constel_point.re,
+               constel_point.im,
+               target_point.re,
+               target_point.im,
                symbol,
                fpower,
                s->smooth_power,
@@ -231,24 +225,26 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
     else
     {
         printf("Gardner step %d\n", symbol);
-        len = v22bis_rx_equalizer_state(s->v22bis, &coeffs);
-        printf("Equalizer A:\n");
-        for (i = 0;  i < len;  i++)
+        if ((len = v22bis_rx_equalizer_state(s->v22bis, &coeffs)))
+        {
+            printf("Equalizer A:\n");
+            for (i = 0;  i < len;  i++)
 #if defined(SPANDSP_USE_FIXED_POINT)
-            printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/1024.0f, coeffs[i].im/1024.0f);
+                printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/V22BIS_CONSTELLATION_SCALING_FACTOR, coeffs[i].im/V22BIS_CONSTELLATION_SCALING_FACTOR);
 #else
-            printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+                printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
 #endif
 #if defined(ENABLE_GUI)
-        if (use_gui)
-        {
+            if (use_gui)
+            {
 #if defined(SPANDSP_USE_FIXED_POINT)
-            qam_monitor_update_int_equalizer(s->qam_monitor, coeffs, len);
+                qam_monitor_update_int_equalizer(s->qam_monitor, coeffs, len);
 #else
-            qam_monitor_update_equalizer(s->qam_monitor, coeffs, len);
+                qam_monitor_update_equalizer(s->qam_monitor, coeffs, len);
+#endif
+            }
 #endif
         }
-#endif
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -381,8 +377,8 @@ int main(int argc, char *argv[])
 #if defined(ENABLE_GUI)
     if (use_gui)
     {
-        endpoint[0].qam_monitor = qam_monitor_init(6.0f, "Calling modem");
-        endpoint[1].qam_monitor = qam_monitor_init(6.0f, "Answering modem");
+        endpoint[0].qam_monitor = qam_monitor_init(6.0f, V22BIS_CONSTELLATION_SCALING_FACTOR, "Calling modem");
+        endpoint[1].qam_monitor = qam_monitor_init(6.0f, V22BIS_CONSTELLATION_SCALING_FACTOR, "Answering modem");
     }
 #endif
     if ((model = both_ways_line_model_init(line_model_no,

@@ -48,6 +48,12 @@ or 1200bps if one or both ends to not acknowledge that 2400bps is OK.
 #if !defined(_SPANDSP_V22BIS_H_)
 #define _SPANDSP_V22BIS_H_
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define V22BIS_CONSTELLATION_SCALING_FACTOR     1024.0
+#else
+#define V22BIS_CONSTELLATION_SCALING_FACTOR     1.0
+#endif
+
 enum
 {
     V22BIS_GUARD_TONE_NONE,

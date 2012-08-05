@@ -209,6 +209,12 @@ working only on the most optimal lines, and being widely usable across most phon
 TCM absolutely transformed the phone line modem business.
 */
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define V17_CONSTELLATION_SCALING_FACTOR        1024.0
+#else
+#define V17_CONSTELLATION_SCALING_FACTOR        1.0
+#endif
+
 /*!
     V.17 modem receive side descriptor. This defines the working state for a
     single instance of a V.17 modem receiver.

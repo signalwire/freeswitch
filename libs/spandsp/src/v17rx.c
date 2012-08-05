@@ -202,10 +202,11 @@ SPAN_DECLARE(int) v17_rx_equalizer_state(v17_rx_state_t *s, complexf_t **coeffs)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     *coeffs = NULL;
+    return 0;
 #else
     *coeffs = s->eq_coeff;
-#endif
     return V17_EQUALIZER_LEN;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 

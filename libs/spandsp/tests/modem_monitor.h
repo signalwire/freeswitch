@@ -50,7 +50,7 @@ extern "C"
 {
 #endif
 
-qam_monitor_t *qam_monitor_init(float constel_width, const char *tag);
+qam_monitor_t *qam_monitor_init(float constel_width, float constel_scaling, const char *tag);
 int qam_monitor_clear_constel(qam_monitor_t *s);
 int qam_monitor_update_constel(qam_monitor_t *s, const complexf_t *pt);
 int qam_monitor_update_equalizer(qam_monitor_t *s, const complexf_t *coeffs, int len);
