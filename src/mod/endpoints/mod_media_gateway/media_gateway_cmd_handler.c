@@ -1374,8 +1374,10 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
             megaco_context_sub_termination(mg_ctxt, term);
         }
 
-        /* release context*/
-        megaco_release_context(mg_ctxt);
+        if ((NULL == mg_ctxt->terminations[0]) && (NULL == mg_ctxt->terminations[1])) {
+            /* release context*/
+            megaco_release_context(mg_ctxt);
+        }
     }
 
     /************************************************************************************************************************************************************/

@@ -102,7 +102,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 							if(i && chanmap[0] && chanmap[1]) {
 								startchan = atoi(chanmap[0]);
 								endchan   = atoi(chanmap[1]);
-								for (j = startchan; j < endchan; j++) {
+								for (j = startchan; j <= endchan; j++) {
 									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j);
 								}
 							}
@@ -122,7 +122,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 								startchan = atoi(chanmap[i]);
 								endchan = atoi(p);
 
-								for (j = startchan; j < endchan; j++) {
+								for (j = startchan; j <= endchan; j++) {
 									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j);
 								}
 							}

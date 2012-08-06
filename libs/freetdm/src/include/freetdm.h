@@ -1374,6 +1374,8 @@ FT_DECLARE(uint32_t) ftdm_group_get_id(const ftdm_group_t *group);
  */
 FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan);
 
+FT_DECLARE(ftdm_status_t) ftdm_raw_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan);
+
 /*! 
  * \brief Hunts and opens a channel specifying the span id only
  *
