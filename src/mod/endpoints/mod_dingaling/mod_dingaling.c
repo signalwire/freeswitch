@@ -1061,6 +1061,11 @@ static void try_secure(struct private_object *tech_pvt, ldl_transport_type_t tty
 	}
 
 
+	if (tech_pvt->transports[ttype].crypto_recv_type) {
+		tech_pvt->transports[ttype].crypto_type = tech_pvt->transports[ttype].crypto_recv_type;
+	}
+
+
 	//if (tech_pvt->transports[ttype].crypto_type) {
 		switch_rtp_add_crypto_key(tech_pvt->transports[ttype].rtp_session, 
 								  SWITCH_RTP_CRYPTO_SEND, 1, tech_pvt->transports[ttype].crypto_type, 
