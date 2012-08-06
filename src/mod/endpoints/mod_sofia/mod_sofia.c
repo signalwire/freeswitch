@@ -374,6 +374,11 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA DESTROY\n", switch_channel_get_name(channel));
 
 	if (tech_pvt) {
+		
+		if (tech_pvt->respond_phrase) {
+			switch_yield(100000);
+		}
+
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 		}
@@ -540,7 +545,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 
 				if (tech_pvt->respond_phrase) {
-					phrase = su_strdup(nua_handle_home(tech_pvt->nh), tech_pvt->respond_phrase);
+					//phrase = su_strdup(nua_handle_home(tech_pvt->nh), tech_pvt->respond_phrase);
+					phrase = tech_pvt->respond_phrase;
 				} else {
 					phrase = sip_status_phrase(sip_cause);
 				}
