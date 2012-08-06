@@ -85,7 +85,10 @@ switch_status_t mg_stack_termination_is_in_service(megaco_profile_t* mg_profile,
 {
 	mg_termination_t* term = NULL;
 	term = megaco_find_termination(mg_profile, term_str);
-	if(term && (MG_TERM_TDM == term->type) && 
+
+	if(term && MG_TERM_RTP == term->type) {
+		return SWITCH_STATUS_SUCCESS;
+	}else if(term && (MG_TERM_TDM == term->type) &&
 			switch_test_flag(term, MG_IN_SERVICE)){
 		return SWITCH_STATUS_SUCCESS;
 	} else {
