@@ -2140,6 +2140,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 
 		if (*event) {
+			switch_event_prep_for_delivery(*event);
 			switch_event_fire(event);
 		}
 		switch_snprintf(reply, reply_len, "+OK %s", uuid_str);
