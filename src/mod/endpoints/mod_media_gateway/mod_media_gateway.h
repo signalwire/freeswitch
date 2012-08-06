@@ -229,6 +229,7 @@ mg_peer_profile_t *megaco_peer_profile_locate(const char *name);
 void megaco_profile_release(megaco_profile_t *profile);
 mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile, const char *span_name, const char *chan_number);
 
+switch_status_t megaco_start_all_profiles(void);
 switch_status_t megaco_profile_start(const char *profilename);
 switch_status_t megaco_profile_destroy(megaco_profile_t **profile);
 

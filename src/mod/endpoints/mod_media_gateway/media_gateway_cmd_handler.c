@@ -1179,6 +1179,23 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 		goto error;
 	}
 
+	if(MG_TERM_RTP == term->type){
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"MODIFY REQUEST - Updated RTP attributes:"
+				" local_addr[%s] local_port[%d] remote_addr[%s], remote_port[%d], ptime[%d] pt[%d], "
+				" rfc2833_pt[%d] rate[%d], codec[%s], term_id[%d]\n",
+				((NULL != term->u.rtp.local_addr)?term->u.rtp.local_addr:NULL),
+				term->u.rtp.local_port,
+				((NULL != term->u.rtp.remote_addr)?term->u.rtp.remote_addr:NULL),
+				term->u.rtp.remote_port,
+				term->u.rtp.ptime,
+				term->u.rtp.pt,
+				term->u.rtp.rfc2833_pt,
+				term->u.rtp.rate,
+				((NULL != term->u.rtp.codec)?term->u.rtp.codec:NULL),
+				term->u.rtp.term_id);
+	}
+
+
 	/* SDP updated to termination */
 	megaco_activate_termination(term);
     }

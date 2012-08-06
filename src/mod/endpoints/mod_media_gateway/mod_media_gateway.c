@@ -92,20 +92,20 @@ static void mg_event_handler(switch_event_t *event)
 SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 {
 	switch_api_interface_t *api_interface;
-	
+
 	memset(&megaco_globals, 0, sizeof(megaco_globals));
 	megaco_globals.pool = pool;
-	
+
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-		
+
 	switch_core_hash_init(&megaco_globals.profile_hash, pool);
 	switch_thread_rwlock_create(&megaco_globals.profile_rwlock, pool);
 
 	switch_core_hash_init(&megaco_globals.peer_profile_hash, pool);
 	switch_thread_rwlock_create(&megaco_globals.peer_profile_rwlock, pool);
-	
+
 	SWITCH_ADD_API(api_interface, "mg", "media_gateway", megaco_function, MEGACO_FUNCTION_SYNTAX);
-	
+
 	switch_console_set_complete("add mg profile ::mg::list_profiles start");
 	switch_console_set_complete("add mg profile ::mg::list_profiles stop");
 	switch_console_set_complete("add mg profile ::mg::list_profiles status");
@@ -131,7 +131,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 	switch_event_bind("mod_media_gateway", SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, mg_event_handler, NULL);
 
 	/* initualize MEGACO stack */
-	return sng_mgco_init(&sng_event);
+	if(SWITCH_STATUS_FALSE ==  sng_mgco_init(&sng_event)){
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if(SWITCH_STATUS_FALSE == megaco_start_all_profiles()){
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown)
@@ -170,6 +178,44 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown)
 
 
     return SWITCH_STATUS_SUCCESS;
+}
+
+/*****************************************************************************************************************************/
+switch_status_t megaco_start_all_profiles()
+{
+	switch_xml_t cfg, xml, mg_interfaces, mg_interface ;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	const char *file = "media_gateway.conf";
+
+	if (!(xml = switch_xml_open_cfg(file, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open %s\n", file);
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	if (!(mg_interfaces = switch_xml_child(cfg, "mg_profiles"))) {
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	for (mg_interface = switch_xml_child(mg_interfaces, "mg_profile"); mg_interface; mg_interface = mg_interface->next) {
+		const char *name = switch_xml_attr_soft(mg_interface, "name");
+
+		if(SWITCH_STATUS_FALSE == megaco_profile_start(name)){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting MEGACO profile  %s\n", name);
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+	}
+
+	status = SWITCH_STATUS_SUCCESS;
+
+done:
+	if (xml) {
+		switch_xml_free(xml);	
+	}
+
+	return status;
 }
 
 /*****************************************************************************************************************************/
@@ -230,7 +276,7 @@ static switch_status_t mgco_parse_local_sdp(mg_termination_t *term, CmSdpInfoSet
             s->conn.u.ip4.addrType.val == CM_SDP_IPV4_IP_UNI) {
             
             if (s->conn.u.ip4.addrType.pres) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Local address: %d.%d.%d.%d\n",
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local address: %d.%d.%d.%d\n",
                                   s->conn.u.ip4.u.uniIp.b[0].val,
                                   s->conn.u.ip4.u.uniIp.b[1].val,
                                   s->conn.u.ip4.u.uniIp.b[2].val,
@@ -244,7 +290,7 @@ static switch_status_t mgco_parse_local_sdp(mg_termination_t *term, CmSdpInfoSet
                     CmSdpAttr *a = s->attrSet.attr[mediaId];
                     local_sdp->info[i]->attrSet.attr[mediaId] = switch_core_alloc(term->context->pool, sizeof(CmSdpAttr));
                     *(local_sdp->info[i]->attrSet.attr[mediaId]) = *a;
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Media %p\n", (void*)a);
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Media %p\n", (void*)a);
                 }
             }
             
@@ -260,7 +306,7 @@ static switch_status_t mgco_parse_local_sdp(mg_termination_t *term, CmSdpInfoSet
                         desc->field.id.u.port.u.portInt.port.type.val == CM_SDP_SPEC) {
                         int port = desc->field.id.u.port.u.portInt.port.val.val;
                         
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Port: %d\n", port);
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Port: %d\n", port);
                         
                     }
                 }
@@ -363,23 +409,23 @@ void handle_mgco_txn_ind(Pst *pst, SuId suId, MgMgcoMsg* msg)
                                                     switch (mediaPar->type.val) {
                                                         case MGT_MEDIAPAR_LOCAL:
                                                         {
-                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCAL");
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MGT_MEDIAPAR_LOCAL");
                                                             break;
                                                         }
                                                         case MGT_MEDIAPAR_REMOTE:
                                                         {
-                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_REMOTE");
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MGT_MEDIAPAR_REMOTE");
                                                             break;
                                                         }
                                                         
                                                         case MGT_MEDIAPAR_LOCCTL:
                                                         {
-                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCCTL");
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MGT_MEDIAPAR_LOCCTL");
                                                             break;
                                                         }
                                                         case MGT_MEDIAPAR_TERMST:
                                                         {
-                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_TERMST");
+                                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MGT_MEDIAPAR_TERMST");
                                                             break;
                                                         }
                                                         case MGT_MEDIAPAR_STRPAR:
@@ -480,7 +526,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	inc_context = &cmd->contextId;
     memcpy(&out_ctxt, inc_context,sizeof(MgMgcoContextId));
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+		    "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
 
     /*get mg profile associated with SuId */
     if(NULL == (mg_profile = megaco_get_profile_by_suId(suId))){
@@ -494,7 +541,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	if (NOTPRSNT != cmd->transId.pres){
 		txn_id = cmd->transId.val;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Transaction Id not present, rejecting\n", __PRETTY_FUNCTION__);	
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: Transaction Id not present, rejecting\n", __PRETTY_FUNCTION__);	
 		
 		/*-- Send Error to MG Stack --*/
 		MG_ZERO(&ctxtId, sizeof(MgMgcoContextId));
@@ -523,7 +570,6 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
 	termId  = termLst->terms[0];
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Termination-Id received..value[%s] type[%d] \n", termId->name.lcl.val, termId->type.val);
 
 	/* Not sure - IF Stack fills term type properly..but adding code just to be sure ...*/
 	if ((PRSNT_NODEF == termId->type.pres) &&
@@ -544,6 +590,9 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			}
 		}
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+				"Termination-Id received..value[%s] type[%d] \n", termId->name.lcl.val, termId->type.val);
 
 	/*If term type is other then check if that term is configured with us..for term type CHOOSE/ALL , no need to check */
 	/* check is only if command is not AUDIT */
@@ -592,7 +641,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	{
 		case CH_CMD_TYPE_IND:
 			{
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s: Received Command indication for command[%s]\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: Received Command indication for command[%s]\n",
 						__PRETTY_FUNCTION__,PRNT_MG_CMD(cmd->u.mgCmdInd[0]->cmd.type.val));
 
 				switch(cmd->u.mgCmdInd[0]->cmd.type.val)
@@ -644,7 +693,6 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 						}
 					case MGT_AUDITVAL:
 						{
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received Audit-Value Method \n");
 							handle_mg_audit_cmd(mg_profile, cmd);
 							break;
 						}
@@ -664,10 +712,10 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 		case CH_CMD_TYPE_CFM:
 			{
 #ifdef BIT_64
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Received Command[%s] txn[%d] Response/Confirmation \n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received Command[%s] txn[%d] Response/Confirmation \n",
                         PRNT_MG_CMD(cmd->u.mgCmdCfm[0]->type.val), txn_id);
 #else
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Received Command[%s] txn[%ld] Response/Confirmation \n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received Command[%s] txn[%ld] Response/Confirmation \n",
                         PRNT_MG_CMD(cmd->u.mgCmdCfm[0]->type.val), txn_id);
 #endif
                 switch(cmd->u.mgCmdCfm[0]->type.val)
@@ -706,12 +754,12 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
                             if(NOTPRSNT != ntfy->pres.pres){
                                 if((NOTPRSNT != ntfy->err.pres.pres) && 
                                         (NOTPRSNT != ntfy->err.code.pres)){
-                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
                                             "Received NOTIFY command response with ErroCode[%d] for Termination[%s] \n", 
                                             ntfy->err.code.val, &term_name[0]);
                                 }
                                 else{
-                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
                                             "Received Successful NOTIFY command response for Termination[%s] \n", &term_name[0]);
                                 }
                             }
@@ -753,12 +801,12 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
                                 if((NOTPRSNT != svc->res.type.pres) && 
                                         (MGT_ERRDESC == svc->res.type.val)){
-                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
                                             "Received Service-Change command response with ErroCode[%d] for Termination[%s] \n", 
                                             svc->res.u.err.code.val, &term_name[0]);
                                 }
                                 else{
-                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
                                             "Received Successful Service-Change command response for Termination[%s] \n", &term_name[0]);
                                 }
                             }
@@ -772,14 +820,13 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			}
 		default:
 #ifdef BIT_64
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid command type[%d]\n",cmd->cmdType.val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid command type[%d]\n",cmd->cmdType.val);
 #else
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid command type[%d]\n",cmd->cmdType.val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid command type[%d]\n",cmd->cmdType.val);
 #endif
 			return;
 	}
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "cmd->cmdStatus.val[%d]\n",cmd->cmdStatus.val);
     /* END OF TXN received - means last command in txn to process. 
      * Send response to peer */
     if(CH_CMD_TYPE_IND == cmd->cmdType.val){ 
@@ -808,7 +855,7 @@ error1:
 /*****************************************************************************************************************************/
 void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* sta)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);	/*TODO*/
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", __PRETTY_FUNCTION__);	/*TODO*/
 }
 
 /*****************************************************************************************************************************/
@@ -816,7 +863,7 @@ void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* sta)
 void handle_mgco_txn_sta_ind(Pst *pst, SuId suId, MgMgcoInd* txn_sta_ind)
 {
 	/*TODO*/
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", __PRETTY_FUNCTION__);
    
     /*dump information*/
     mgAccEvntPrntMgMgcoInd(txn_sta_ind, stdout);
@@ -826,14 +873,14 @@ void handle_mgco_txn_sta_ind(Pst *pst, SuId suId, MgMgcoInd* txn_sta_ind)
 void handle_mgco_cntrl_cfm(Pst *pst, SuId suId, MgMgtCntrl* cntrl, Reason reason) 
 {
 	/*TODO*/
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", __PRETTY_FUNCTION__);
 }
 
 /*****************************************************************************************************************************/
 void handle_mgco_audit_cfm(Pst *pst, SuId suId, MgMgtAudit* audit, Reason reason) 
 {
 	/*TODO*/
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s\n", __PRETTY_FUNCTION__);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", __PRETTY_FUNCTION__);
 }
 
 
