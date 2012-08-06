@@ -900,6 +900,10 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		if ((tmp = switch_channel_get_variable(channel, "callee_id_number")) && !zstr(tmp)) {
 			number = (char *) tmp;
 		}
+
+		if (zstr(number)) {
+			number = "unknown";
+		}
 	}
 
 	if (zstr(name)) {
@@ -912,7 +916,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		name = (char *) number;
 	}
 
-	if (zstr(name) && zstr(number)) {
+	if (zstr(name) || zstr(number)) {
 		goto end;
 	}
 
