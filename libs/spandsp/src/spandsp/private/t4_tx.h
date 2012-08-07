@@ -90,6 +90,10 @@ struct t4_tx_state_s
     /*! \brief The type of compression used between the FAX machines. */
     int line_encoding;
 
+    int line_encoding_bilevel;
+    int line_encoding_gray;
+    int line_encoding_colour;
+
     /*! \brief The width of the current page, in pixels. */
     uint32_t image_width;
     /*! \brief The length of the current page, in pixels. */
@@ -139,6 +143,9 @@ struct t4_tx_state_s
     } encoder;
 
     image_translate_state_t translator;
+
+    int apply_lab;
+    lab_params_t lab_params;
 
     /* Supporting information, like resolutions, which the backend may want. */
     t4_tx_metadata_t metadata;

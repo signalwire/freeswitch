@@ -373,7 +373,11 @@ enum
     /*! T.81 + T.30 Annex K colour sYCC-JPEG compression */
     T30_SUPPORT_SYCC_T81_COMPRESSION = 0x200,
     /*! T.88 monochrome JBIG2 compression */
-    T30_SUPPORT_T88_COMPRESSION = 0x400
+    T30_SUPPORT_T88_COMPRESSION = 0x400,
+    /*! Dither a gray scale image down a simple bilevel image, with rescaling to fit a FAX page */
+    T30_SUPPORT_GRAY_TO_BILEVEL = 0x40000000,
+    /*! Dither a colour image down a simple bilevel image, with rescaling to fit a FAX page */
+    T30_SUPPORT_COLOUR_TO_BILEVEL = 0x80000000
 };
 
 enum

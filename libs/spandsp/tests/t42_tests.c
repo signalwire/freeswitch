@@ -476,8 +476,8 @@ int main(int argc, char *argv[])
     }
     TIFFSetField(tif, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
     TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, w);
-    // libtiff requires IMAGELENGTH to be set before SAMPLESPERPIXEL,
-    // or StripOffsets and StripByteCounts will have SAMPLESPERPIXEL values
+    /* libtiff requires IMAGELENGTH to be set before SAMPLESPERPIXEL,
+       or StripOffsets and StripByteCounts will have SAMPLESPERPIXEL values */
     TIFFSetField(tif, TIFFTAG_IMAGELENGTH, h);
     TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_JPEG);
     TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);

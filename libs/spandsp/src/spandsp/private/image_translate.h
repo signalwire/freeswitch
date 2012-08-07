@@ -33,6 +33,7 @@ struct image_translate_state_s
     int input_format;
     int input_width;
     int input_length;
+    int output_format;
     int output_width;
     int output_length;
     int resize;

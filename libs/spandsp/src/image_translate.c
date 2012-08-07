@@ -59,9 +59,7 @@
 #include "spandsp/t4_tx.h"
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/t43.h"
 #endif
@@ -72,9 +70,7 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/private/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/private/t43.h"
 #endif
@@ -132,13 +128,13 @@ static int get_and_scrunch_row(image_translate_state_t *s, uint8_t buf[], size_t
     /* Scrunch colour down to gray, and scrunch 16 bit pixels down to 8 bit pixels */
     switch (s->input_format)
     {
-    case IMAGE_TRANSLATE_FROM_GRAY_16:
+    case T4_IMAGE_TYPE_GRAY_12BIT:
         image_gray16_to_gray8_row(buf, (uint16_t *) buf, s->input_width);
         break;
-    case IMAGE_TRANSLATE_FROM_COLOUR_16:
+    case T4_IMAGE_TYPE_COLOUR_12BIT:
         image_colour16_to_gray8_row(buf, (uint16_t *) buf, s->input_width);
         break;
-    case IMAGE_TRANSLATE_FROM_COLOUR_8:
+    case T4_IMAGE_TYPE_COLOUR_8BIT:
         image_colour8_to_gray8_row(buf, buf, s->input_width);
         break;
     }
@@ -235,47 +231,17 @@ static __inline__ uint8_t find_closest_palette_color(int in)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[], size_t len)
+static int floyd_steinberg_dither_row(image_translate_state_t *s, uint8_t buf[], int y)
 {
     int x;
-    int y;
     int i;
     int j;
     int limit;
     int old_pixel;
     int new_pixel;
     int quant_error;
-    uint8_t *p;
     uint8_t xx;
 
-    if (s->output_row < 0)
-        return 0;
-    y = s->output_row++;
-    /* This algorithm works over two rows, and outputs the earlier of the two. To
-       make this work:
-           - At row 0 we grab and scrunch two rows.
-           - From row 1 up to the last row we grab one new additional row each time.
-           - At the last row we dither and output, without getting an extra row in. */
-    for (i = (y == 0)  ?  0  :  1;  i < 2;  i++)
-    {
-        p = s->pixel_row[0];
-        s->pixel_row[0] = s->pixel_row[1];
-        s->pixel_row[1] = p;
-
-        /* If this is the end of the image just ignore that there is now rubbish in pixel_row[1].
-           Mark that the end has occurred. This row will be properly output, and the next one
-           will fail, with the end of image condition (i.e. returning zero length) */
-        if (s->resize)
-        {
-            if (image_resize_row(s, s->pixel_row[1], s->output_width*s->bytes_per_pixel) != s->output_width*s->bytes_per_pixel)
-                s->output_row = -1;
-        }
-        else
-        {
-            if (get_and_scrunch_row(s, s->pixel_row[1], s->output_width*s->bytes_per_pixel) != s->output_width*s->bytes_per_pixel)
-                s->output_row = -1;
-        }
-    }
     /* Apply Floyd-Steinberg dithering to the 8 bit pixels, using a bustrophodontic
        scan, to reduce the grayscale image to pure black and white */
     /* The first and last pixels in each row need special treatment, so we do not
@@ -353,6 +319,46 @@ SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[],
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[], size_t len)
+{
+    int y;
+    int i;
+    uint8_t *p;
+
+    if (s->output_row < 0)
+        return 0;
+    y = s->output_row++;
+    /* This algorithm works over two rows, and outputs the earlier of the two. To
+       make this work:
+           - At row 0 we grab and scrunch two rows.
+           - From row 1 up to the last row we grab one new additional row each time.
+           - At the last row we dither and output, without getting an extra row in. */
+    for (i = (y == 0)  ?  0  :  1;  i < 2;  i++)
+    {
+        p = s->pixel_row[0];
+        s->pixel_row[0] = s->pixel_row[1];
+        s->pixel_row[1] = p;
+
+        /* If this is the end of the image just ignore that there is now rubbish in pixel_row[1].
+           Mark that the end has occurred. This row will be properly output, and the next one
+           will fail, with the end of image condition (i.e. returning zero length) */
+        if (s->resize)
+        {
+            if (image_resize_row(s, s->pixel_row[1], s->output_width*s->bytes_per_pixel) != s->output_width*s->bytes_per_pixel)
+                s->output_row = -1;
+        }
+        else
+        {
+            if (get_and_scrunch_row(s, s->pixel_row[1], s->output_width*s->bytes_per_pixel) != s->output_width*s->bytes_per_pixel)
+                s->output_row = -1;
+        }
+    }
+    if (s->output_format == T4_IMAGE_TYPE_BILEVEL)
+        i = floyd_steinberg_dither_row(s, buf, y);
+    return i;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) image_translate_get_output_width(image_translate_state_t *s)
 {
     return s->output_width;
@@ -369,6 +375,7 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
                                                              int input_format,
                                                              int input_width,
                                                              int input_length,
+                                                             int output_format,
                                                              int output_width,
                                                              int output_length,
                                                              t4_row_read_handler_t row_read_handler,
@@ -384,9 +391,10 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
     memset(s, 0, sizeof(*s));
 
     s->input_format = input_format;
-
     s->input_width = input_width;
     s->input_length = input_length;
+
+    s->output_format = output_format;
 
     if ((s->resize = (output_width > 0)))
     {
@@ -404,16 +412,16 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
 
     switch (s->input_format)
     {
-    case IMAGE_TRANSLATE_FROM_GRAY_8:
+    case T4_IMAGE_TYPE_GRAY_8BIT:
         s->bytes_per_pixel = 1;
         break;
-    case IMAGE_TRANSLATE_FROM_GRAY_16:
+    case T4_IMAGE_TYPE_GRAY_12BIT:
         s->bytes_per_pixel = 2;
         break;
-    case IMAGE_TRANSLATE_FROM_COLOUR_8:
+    case T4_IMAGE_TYPE_COLOUR_8BIT:
         s->bytes_per_pixel = 3;
         break;
-    case IMAGE_TRANSLATE_FROM_COLOUR_16:
+    case T4_IMAGE_TYPE_COLOUR_12BIT:
         s->bytes_per_pixel = 6;
         break;
     default:

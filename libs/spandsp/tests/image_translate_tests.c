@@ -213,7 +213,7 @@ static void dither_tests_gray16(void)
             image[i*im.width + j] = j*1200;
     }
 
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_GRAY_16, im.width, im.length, -1, -1, row_read, &im);
+    s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_12BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
     get_flattened_image(s, TRUE);
 }
 /*- End of function --------------------------------------------------------*/
@@ -239,7 +239,7 @@ static void dither_tests_gray8(void)
         for (j = 0;  j < im.width;  j++)
             image[i*im.width + j] = j*1200/256;
     }
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_GRAY_8, im.width, im.length, -1, -1, row_read, &im);
+    s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_8BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
     get_flattened_image(s, TRUE);
 }
 /*- End of function --------------------------------------------------------*/
@@ -269,7 +269,7 @@ static void dither_tests_colour16(void)
             image[i*3*im.width + 3*j + 2] = j*1200;
         }
     }
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_COLOUR_16, im.width, im.length, -1, -1, row_read, &im);
+    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
     get_flattened_image(s, TRUE);
 }
 /*- End of function --------------------------------------------------------*/
@@ -300,7 +300,7 @@ static void dither_tests_colour8(void)
         }
     }
 
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_COLOUR_8, im.width, im.length, -1, -1, row_read, &im);
+    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
     get_flattened_image(s, TRUE);
 }
 /*- End of function --------------------------------------------------------*/
@@ -331,7 +331,7 @@ static void grow_tests_colour8(void)
         }
     }
 
-    s1 = image_translate_init(s1, IMAGE_TRANSLATE_FROM_COLOUR_8, im.width, im.length, 200, -1, row_read, &im);
+    s1 = image_translate_init(s1, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, 200, -1, row_read, &im);
 
     get_flattened_image(s1, FALSE);
 }
@@ -409,7 +409,7 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     im.current_row = 0;
     im.bytes_per_pixel = samples_per_pixel;
 
-    s = image_translate_init(s, IMAGE_TRANSLATE_FROM_COLOUR_8, image_width, image_length, output_width, output_length, row_read, &im);
+    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_8BIT, image_width, image_length, T4_IMAGE_TYPE_BILEVEL, output_width, output_length, row_read, &im);
     output_width = image_translate_get_output_width(s);
     output_length = image_translate_get_output_length(s);
 

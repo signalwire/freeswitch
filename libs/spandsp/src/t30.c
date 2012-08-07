@@ -64,9 +64,7 @@
 #include "spandsp/image_translate.h"
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/t43.h"
 #endif
@@ -82,9 +80,7 @@
 #include "spandsp/private/timezone.h"
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/private/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/private/t43.h"
 #endif
@@ -2072,7 +2068,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     s->error_correcting_mode = (s->ecm_allowed  &&  (s->far_dis_dtc_frame[6] & DISBIT3) != 0);
     /* 256 octets per ECM frame */
     s->octets_per_ecm_frame = 256;
-    /* Select the compression to use. */
+    /* Now we know if we are going to use ECM, select the compression to use. */
     if (!s->error_correcting_mode)
     {
         /* Without error correction our choices are very limited */
@@ -2091,7 +2087,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     {
 #if defined(SPANDSP_SUPPORT_T42x)  ||  defined(SPANDSP_SUPPORT_T43)
         /* With error correction colour may be possible/required */
-        if (0)
+        if ((0 & (T30_SUPPORT_T43_COMPRESSION | T30_SUPPORT_T45_COMPRESSION | T30_SUPPORT_T81_COMPRESSION | T30_SUPPORT_SYCC_T81_COMPRESSION)))
         {
             s->line_encoding = T4_COMPRESSION_ITU_T85_L0;
         }
@@ -2382,7 +2378,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     s->image_width = widths[i][dcs_frame[5] & (DISBIT2 | DISBIT1)];
 
     /* Check which compression the far end has decided to use. */
-#if defined(SPANDSP_SUPPORT_T42x)
+#if defined(SPANDSP_SUPPORT_T42)
     if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE))
     {
         s->line_encoding = T4_COMPRESSION_ITU_T42;

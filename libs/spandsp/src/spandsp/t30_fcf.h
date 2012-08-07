@@ -114,6 +114,7 @@ enum
 
     /*! Information frame types used for error correction mode, in T.4 */
     T4_FCD = 0x06,          /*! [0110 0000] Facsimile coded data */
+    T4_CCD = 0x46,          /*! [0110 0010] Character coded data */
     T4_RCP = 0x86           /*! [0110 0001] Return to control for partial page */
 };
 

@@ -57,9 +57,7 @@
 #include "spandsp/image_translate.h"
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/t43.h"
 #endif
@@ -69,9 +67,7 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/private/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/private/t43.h"
 #endif
@@ -103,6 +99,8 @@ static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
     {TIFFTAG_STRIPROWCOUNTS, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_LONG, FIELD_CUSTOM, FALSE, TRUE, (char *) "StripRowCounts"},
     {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageLayer"},
 };
+
+static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length);
 
 static TIFFExtendProc _ParentExtender = NULL;
 
@@ -251,30 +249,13 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         }
     }
     t4_tx_set_image_width(s, s->image_width);
+    t4_tx_set_image_length(s, s->image_length);
     switch (s->line_encoding)
     {
     case T4_COMPRESSION_ITU_T4_1D:
     case T4_COMPRESSION_ITU_T4_2D:
     case T4_COMPRESSION_ITU_T6:
-        t4_t6_encode_set_image_width(&s->encoder.t4_t6, s->image_width);
         t4_t6_encode_set_max_2d_rows_per_1d_row(&s->encoder.t4_t6, -s->metadata.y_resolution);
-        break;
-#if defined(SPANDSP_SUPPORT_T42)
-    case T4_COMPRESSION_ITU_T42:
-        t42_encode_set_image_width(&s->encoder.t42, s->image_width);
-        t42_encode_set_image_length(&s->encoder.t42, s->image_length);
-        break;
-#endif
-#if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
-        t43_encode_set_image_width(&s->encoder.t43, s->image_width);
-        t43_encode_set_image_length(&s->encoder.t43, s->image_length);
-        break;
-#endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
-        t85_encode_set_image_width(&s->encoder.t85, s->image_width);
-        t85_encode_set_image_length(&s->encoder.t85, s->image_length);
         break;
     }
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
@@ -426,6 +407,8 @@ static int row_read(void *user_data, uint8_t buf[], size_t len)
         return 0;
     if (TIFFReadScanline(s->tiff.tiff_file, buf, s->tiff.raw_row, 0) < 0)
         return 0;
+    if (s->apply_lab)
+        lab_to_srgb(&s->lab_params, buf, buf, len/3);
     s->tiff.raw_row++;
     return len;
 }
@@ -438,23 +421,12 @@ static int read_tiff_image(t4_tx_state_t *s)
     int i;
     uint8_t *t;
     image_translate_state_t *translator;
-    int mode;
 
     if (s->tiff.image_type != T4_IMAGE_TYPE_BILEVEL)
     {
         /* We need to dither this image down to pure black and white, possibly resizing it
            along the way. */
-        if (s->tiff.image_type == T4_IMAGE_TYPE_GRAY_8BIT)
-            mode = IMAGE_TRANSLATE_FROM_GRAY_8;
-        else if (s->tiff.image_type == T4_IMAGE_TYPE_GRAY_12BIT)
-            mode = IMAGE_TRANSLATE_FROM_GRAY_16;
-        else if (s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_8BIT)
-            mode = IMAGE_TRANSLATE_FROM_COLOUR_8;
-        else if (s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
-            mode = IMAGE_TRANSLATE_FROM_COLOUR_16;
-        else
-            return -1;
-        if ((translator = image_translate_init(NULL, mode, s->image_width, s->image_length, 1728, -1, row_read, s)) == NULL)
+        if ((translator = image_translate_init(NULL, s->tiff.image_type, s->image_width, s->image_length, T4_IMAGE_TYPE_BILEVEL, 1728, -1, row_read, s)) == NULL)
             return -1;
         s->image_width = image_translate_get_output_width(translator);
         s->image_length = image_translate_get_output_length(translator);
@@ -469,6 +441,23 @@ static int read_tiff_image(t4_tx_state_t *s)
             s->tiff.image_buffer = t;
         }
         s->tiff.raw_row = 0;
+        switch (s->tiff.photo_metric)
+        {
+        case PHOTOMETRIC_CIELAB:
+            /* The default luminant is D50 */
+            set_lab_illuminant(&s->lab_params, 0.96422f, 1.0f,  0.82521f);
+            set_lab_gamut(&s->lab_params, 0, 100, -128, 127, -128, 127, TRUE);
+            s->apply_lab = TRUE;
+            break;
+        case PHOTOMETRIC_ITULAB:
+            set_lab_illuminant(&s->lab_params, 0.9638f, 1.0f, 0.8245f);
+            set_lab_gamut(&s->lab_params, 0, 100, -85, 85, -75, 125, FALSE);
+            s->apply_lab = TRUE;
+            break;
+        default:
+            s->apply_lab = FALSE;
+            break;
+        }
         total_len = 0;
         for (i = 0;  i < s->image_length;  i++)
             total_len += image_translate_row(translator, &s->tiff.image_buffer[total_len], s->image_width/8);
@@ -777,6 +766,29 @@ SPAN_DECLARE(void) t4_tx_set_image_width(t4_tx_state_t *s, int image_width)
     case T4_COMPRESSION_ITU_T85:
     case T4_COMPRESSION_ITU_T85_L0:
         t85_encode_set_image_width(&s->encoder.t85, image_width);
+        break;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length)
+{
+    s->image_length = image_length;
+    switch (s->line_encoding)
+    {
+#if defined(SPANDSP_SUPPORT_T42)
+    case T4_COMPRESSION_ITU_T42:
+        t42_encode_set_image_length(&s->encoder.t42, image_length);
+        break;
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+    case T4_COMPRESSION_ITU_T43:
+        t43_encode_set_image_length(&s->encoder.t43, image_length);
+        break;
+#endif
+    case T4_COMPRESSION_ITU_T85:
+    case T4_COMPRESSION_ITU_T85_L0:
+        t85_encode_set_image_length(&s->encoder.t85, image_length);
         break;
     }
 }
