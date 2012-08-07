@@ -553,7 +553,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 
 	do {
 		if (speak) {
-			status = switch_ivr_speak_text(client->session, tts_engine, tts_voice, (char *)body, args);
+			status = switch_ivr_speak_text(client->session, tts_engine, tts_voice, (char *)file, args);
 		} else if (say) {
 			status = switch_ivr_say(client->session, body, say_lang, say_type, say_method, say_gender, args);
 		} else if (play) {
