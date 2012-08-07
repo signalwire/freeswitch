@@ -15,7 +15,9 @@
 switch_status_t megaco_profile_status(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg);
 switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg);
 switch_status_t megaco_profile_peer_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg);
+switch_status_t handle_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile, char* term_id);
 void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm);
+void  megaco_cli_print_usage(switch_stream_handle_t *stream);
 
 /******************************************************************************/
 
@@ -68,6 +70,7 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
+
 /**********************************************************************************/
 		}else if(!strcmp(argv[2], "status")) {
 /**********************************************************************************/
@@ -98,95 +101,105 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 /**********************************************************************************/
 		}else if(!strcmp(argv[2], "send")) {
 /**********************************************************************************/
-			printf("count = %d \n",argc);
+			if (profile) {
+				switch(argc)
+				{
+					case 7:
+						{
+							/* mg profile <profile-name> send sc <term-id> <method> <reason>*/
+							if(zstr(argv[3]) || zstr(argv[4]) || zstr(argv[5]) || zstr(argv[6])){
+								goto usage;
+							}
 
-            if (profile) {
+							if(!zstr(argv[7]) && !strcasecmp(argv[7],"wild")){
+								wild = 0x01;
+							}
 
-                switch(argc)
-                {
-                    case 7:
-                        {
-                            /* mg profile <profile-name> send sc <term-id> <method> <reason>*/
-                            printf("ARGC = 7 \n");
-                            if(zstr(argv[3]) || zstr(argv[4]) || zstr(argv[5]) || zstr(argv[6])){
-                                goto usage;
-                            }
+							printf("Input to Send Service Change command : "
+									"Profile Name[%s], term-id[%s] method[%s] reason[%s] \n",
+									profile->name, argv[4], argv[5], argv[6]);
 
-                            if(!zstr(argv[7]) && !strcasecmp(argv[7],"wild")){
-                                wild = 0x01;
-                            }
+							megaco_profile_release(profile);
+							mg_send_service_change(profile->idx, argv[4], atoi(argv[5]), atoi(argv[6]),wild);
 
-                            printf("Input to Send Service Change command : "
-                                    "Profile Name[%s], term-id[%s] method[%s] reason[%s] \n",
-                                    profile->name, argv[4], argv[5], argv[6]);
+							break;
+						}
+					case 6:
+						{
+							/* mg profile <profile-name> send notify <term-id> <digits>*/
+							if(zstr(argv[3]) || zstr(argv[4]) || zstr(argv[5])){
+								goto usage;
+							}
 
-                            megaco_profile_release(profile);
-                            mg_send_service_change(profile->idx, argv[4], atoi(argv[5]), atoi(argv[6]),wild);
+							if(strcasecmp(argv[3],"notify")){
+								stream->write_function(stream, "-ERR wrong input \n");
+								goto usage;
+							}
 
-                            break;
-                        }
-                    case 6:
-                        {
-                            /* mg profile <profile-name> send notify <term-id> <digits>*/
-                            if(zstr(argv[3]) || zstr(argv[4]) || zstr(argv[5])){
-                                goto usage;
-                            }
+							printf("Sending DTMF digits[%s] NOTIFY for termination[%s]\n", argv[5], argv[4]);
 
-                            if(strcasecmp(argv[3],"notify")){
-                                stream->write_function(stream, "-ERR wrong input \n");
-                                goto usage;
-                            }
+							megaco_profile_release(profile);
+							mg_send_dtmf_notify(profile, argv[4], (char*)argv[5], (int)strlen(argv[5]));
 
-                            printf("Sending DTMF digits[%s] NOTIFY for termination[%s]\n", argv[5], argv[4]);
+							break;
+						}
+					case 5:
+						{
+							if(zstr(argv[3])){
+								goto usage;
+							}
 
-                            megaco_profile_release(profile);
-                            mg_send_dtmf_notify(profile, argv[4], (char*)argv[5], (int)strlen(argv[5]));
+							/*************************************************************************/
+							if(!strcasecmp(argv[3],"ito")){
+								/* mg profile <profile-name> send ito notify */
 
-                            break;
-                        }
-                    case 5:
-                        {
-                            if(zstr(argv[3])){
-                                goto usage;
-                            }
+								printf("Sending In-Activity  NOTIFY \n");
 
-                          /*************************************************************************/
-                            if(!strcasecmp(argv[3],"ito")){
-                                /* mg profile <profile-name> send ito notify */
+								megaco_profile_release(profile);
+								mg_send_ito_notify(profile);
+								/*************************************************************************/
+							}else if(!strcasecmp(argv[3],"cng")){
+								/*************************************************************************/
+								/* mg profile <profile-name> send cng <term-id> */
 
-                                printf("Sending In-Activity  NOTIFY \n");
+								if(zstr(argv[4])){
+									goto usage;
+								}
+								megaco_profile_release(profile);
+								mg_send_t38_cng_notify(profile, argv[4]);
 
-                                megaco_profile_release(profile);
-                                mg_send_ito_notify(profile);
-                          /*************************************************************************/
-                            }else if(!strcasecmp(argv[3],"cng")){
-                          /*************************************************************************/
-                                /* mg profile <profile-name> send cng <term-id> */
+								/*************************************************************************/
+							}else {
+								stream->write_function(stream, "-ERR wrong input \n");
+								goto usage;
+							}
+							/*************************************************************************/
 
-                                if(zstr(argv[4])){
-                                    goto usage;
-                                }
-                                megaco_profile_release(profile);
-                                mg_send_t38_cng_notify(profile, argv[4]);
-                                
-                          /*************************************************************************/
-                            }else {
-                                stream->write_function(stream, "-ERR wrong input \n");
-                                goto usage;
-                            }
-                          /*************************************************************************/
+							break;
+						}
 
-                            break;
-                        }
+					default:
+						{
+							goto usage;
+						}
+				}
+			}else{
+				stream->write_function(stream, "-ERR No such profile\n");
+			}
 
-                    default:
-                        {
-                            goto usage;
-                        }
-                }
-            }else{
-                stream->write_function(stream, "-ERR No such profile\n");
-            }
+/**********************************************************************************/
+		}else if (!strcmp(argv[2], "termstatus")) {
+/**********************************************************************************/
+			/* mg <mg-profile> termstatus <term-id> */
+
+			if (zstr(argv[3])) {
+				goto usage;
+			}
+
+			megaco_profile_release(profile);
+			handle_term_status_cli_cmd(stream, profile, argv[3]);
+
+
 
 /**********************************************************************************/
 		}else {
@@ -212,6 +225,7 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 			goto usage;
 		}
 /**********************************************************************************/
+	
 	}else {
 /**********************************************************************************/
 			goto usage;
@@ -223,11 +237,33 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 usage:
     if(profile)
         megaco_profile_release(profile);
-	stream->write_function(stream, "-ERR Usage: \n""\t"MEGACO_CLI_SYNTAX" \n \t"MEGACO_FUNCTION_SYNTAX"\n \t" MEGACO_LOGGING_CLI_SYNTAX "\n");
+	megaco_cli_print_usage(stream);
 
 done:
 	switch_safe_free(dup);
 	return SWITCH_STATUS_SUCCESS;
+}
+
+/******************************************************************************/
+void  megaco_cli_print_usage(switch_stream_handle_t *stream)
+{
+
+	stream->write_function(stream, "Usage: Profile Specific\n");
+	stream->write_function(stream, "mg profile <profile-name> start \n");
+	stream->write_function(stream, "mg profile <profile-name> stop \n");
+	stream->write_function(stream, "mg profile <profile-name> termstatus <term-id> \n");
+	stream->write_function(stream, "mg profile <profile-name> status \n");
+	stream->write_function(stream, "mg profile <profile-name> xmlstatus \n");
+	stream->write_function(stream, "mg profile <profile-name> peerxmlstatus \n");
+	stream->write_function(stream, "mg profile <profile-name> send sc <term-id> <method> <reason> \n");
+	stream->write_function(stream, "mg profile <profile-name> send notify <term-id> <digits> \n");
+	stream->write_function(stream, "mg profile <profile-name> send ito notify \n");
+	stream->write_function(stream, "mg profile <profile-name> send cng <term-id> \n");
+
+	stream->write_function(stream, "Usage: Logging \n");
+	stream->write_function(stream, "mg logging enable \n");
+	stream->write_function(stream, "mg logging disable \n");
+
 }
 
 /******************************************************************************/
@@ -639,6 +675,66 @@ void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm)
 	}
 #endif
 
+}
+/******************************************************************************/
+
+switch_status_t handle_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile, char* term_id)
+{
+	mg_termination_t* term = NULL;
+
+	if(!mg_profile || !term_id){
+		stream->write_function(stream, "-ERR NULL profile/term pointer \n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	term = 	megaco_find_termination(mg_profile, term_id);
+
+	if(!term || !term->profile){
+		stream->write_function(stream, "-ERR No such termination\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	stream->write_function(stream, "Associated MG Profile Name [%s] \n",term->profile->name);
+	stream->write_function(stream, "MEGACO Termination Name[%s] \n",(NULL != term->name)?term->name:"NULL");
+	stream->write_function(stream, "MEGACO Termination Type[%s] \n",(MG_TERM_RTP != term->type)?"MG_TERM_RTP":"MG_TERM_TDM");
+	stream->write_function(stream, "Termination UUID[%s] \n",(NULL != term->uuid)?term->uuid:"Term Not Activated");
+	if(term->context){
+		stream->write_function(stream, "Associated Context-Id[%d] \n",term->context->context_id);
+		if(term->context->terminations[0] && term->context->terminations[1]){
+			if(term == term->context->terminations[0]){
+				stream->write_function(stream, "Associated Termination Name[%s] \n",
+						(NULL != term->context->terminations[1]->name)?term->context->terminations[1]->name:"NULL");
+			}else {
+				stream->write_function(stream, "Associated Termination Name[%s] \n",
+						(NULL != term->context->terminations[0]->name)?term->context->terminations[0]->name:"NULL");
+			}
+		}
+	}
+	
+
+	if(MG_TERM_RTP == term->type){
+		stream->write_function(stream, "RTP Termination ID [%d] \n",term->u.rtp.term_id);
+		stream->write_function(stream, "RTP Termination Local Address[%s] \n",
+				(NULL != term->u.rtp.local_addr)?term->u.rtp.local_addr:"NULL");
+		stream->write_function(stream, "RTP Termination Local Port[%d] \n",term->u.rtp.local_port);
+		stream->write_function(stream, "RTP Termination Remote Address[%s] \n",
+				(NULL != term->u.rtp.remote_addr)?term->u.rtp.remote_addr:"NULL");
+		stream->write_function(stream, "RTP Termination Remote Port[%d] \n",term->u.rtp.remote_port);
+		stream->write_function(stream, "RTP Termination PTIME [%d] \n",term->u.rtp.ptime);
+		stream->write_function(stream, "RTP Termination PT [%d] \n",term->u.rtp.pt);
+		stream->write_function(stream, "RTP Termination rfc2833_pt [%d] \n",term->u.rtp.rfc2833_pt);
+		stream->write_function(stream, "RTP Termination Sampling Rate [%d] \n",term->u.rtp.rate);
+		stream->write_function(stream, "RTP Termination Codec [%s] \n",
+				(NULL != term->u.rtp.codec)?term->u.rtp.codec:"NULL");
+	}else{
+		stream->write_function(stream, "TDM Termination Service-State [%s] \n",
+					(switch_test_flag(term, MG_IN_SERVICE))?"IN-SERVICE":"OUT-OF-SERVICE");
+		stream->write_function(stream, "TDM Termination channel [%d] \n",term->u.tdm.channel);
+		stream->write_function(stream, "TDM Termination span name [%s] \n",
+				(NULL != term->u.tdm.span_name)?term->u.tdm.span_name:"NULL");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 /******************************************************************************/
 
