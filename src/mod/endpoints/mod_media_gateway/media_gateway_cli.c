@@ -196,10 +196,12 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 				goto usage;
 			}
 
-			megaco_profile_release(profile);
-			handle_term_status_cli_cmd(stream, profile, argv[3]);
-
-
+			if(profile){
+				megaco_profile_release(profile);
+				handle_term_status_cli_cmd(stream, profile, argv[3]);
+			} else {
+				stream->write_function(stream, "-ERR No such profile\n");
+			}
 
 /**********************************************************************************/
 		}else {
@@ -237,6 +239,7 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 usage:
     if(profile)
         megaco_profile_release(profile);
+
 	megaco_cli_print_usage(stream);
 
 done:
