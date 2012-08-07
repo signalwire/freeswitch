@@ -553,7 +553,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 			switch_channel_clear_flag(channel, CF_STOP_BROADCAST);
 
-			if (switch_channel_test_flag(channel, CF_BROADCAST)) {
+			if (!switch_channel_test_flag(channel, CF_BRIDGED) || switch_channel_test_flag(channel, CF_BROADCAST)) {
 				inner++;
 				hold_bleg = NULL;
 			} else {
