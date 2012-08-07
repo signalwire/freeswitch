@@ -885,17 +885,59 @@ void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sd
 			if((NOTPRSNT != r->num.pres) && (0 != r->num.val) && (NULL != r->fmts[0])){
 					const char* name =  mg_get_codec_name(mg_profile, r->fmts[0]->val.val);
 					if(name){
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " Updating codec to[%d], name[%s] \n", 
-								r->fmts[0]->val.val, name); 
 						if(MG_TERM_RTP == term->type){
 							term->u.rtp.codec = name;
 							term->u.rtp.pt = r->fmts[0]->val.val;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Updating pt to [%d]\n", 
-									term->u.rtp.pt);
+							/* Set default value of sampling rate depends on codec */
+							switch(megaco_codec_parse(name))
+							{
+								case MEGACO_CODEC_PCMA:
+									{
+										term->u.rtp.rate = 8000; 
+										break;
+									}
+								case MEGACO_CODEC_PCMU:
+									{
+										/* TODO - proper values */
+										term->u.rtp.rate = 8000; 
+										break;
+									}
+								case MEGACO_CODEC_G729:
+									{
+										/* TODO - proper values */
+										term->u.rtp.rate = 8000; 
+										break;
+									}
+								case MEGACO_CODEC_G723_1:
+									{
+										/* TODO - proper values */
+										term->u.rtp.rate = 8000; 
+										break;
+									}
+								case MEGACO_CODEC_ILBC:
+									{
+										/* TODO - proper values */
+										term->u.rtp.rate = 8000; 
+										break;
+									}
+								default:
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+											" not updating sampling rate \n"); 
+									break;
+							}
+
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									" Updating codec to[%d], name[%s] \n", 
+									r->fmts[0]->val.val, name); 
+									
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+									"Updating pt to [%d], rate to[%d]\n", 
+									term->u.rtp.pt, term->u.rtp.rate);
 						}
 					}else{
 						/* ERROR */
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " NO Codec Name found against iana[%d] \n", r->fmts[0]->val.val); 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+									" NO Codec Name found against iana[%d] \n", r->fmts[0]->val.val); 
 					}
 			}
 
