@@ -972,7 +972,13 @@ static void our_sofia_event_callback(nua_event_t event,
 	if (sofia_private && sofia_private->is_call && sofia_private->de) {
 		sofia_dispatch_event_t *qde = sofia_private->de;
 		sofia_private->de = NULL;
-		sofia_process_dispatch_event(&qde);
+
+		if (event == nua_i_cancel) {
+			nua_destroy_event(qde->event);
+			su_free(nh->nh_home, qde);	
+		} else {
+			sofia_process_dispatch_event(&qde);
+		}
 	}
 
 	profile->last_sip_event = switch_time_now();
