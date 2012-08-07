@@ -63,7 +63,7 @@ megaco_profile_t*  megaco_get_profile_by_suId(SuId suId)
 		switch_hash_this(hi, &var, NULL, &val);
 		profile = (megaco_profile_t *) val;
 		if (profile->idx == suId) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got profile[%s] associated with suId[%d]\n",profile->name, suId);
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got profile[%s] associated with suId[%d]\n",profile->name, suId);
 			found = 0x01;
 			break;
 		}

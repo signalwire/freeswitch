@@ -1563,6 +1563,7 @@ switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoCont
 	ctxt.cmdStatus.pres = PRSNT_NODEF;
 	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
 
+#if 0
 #ifdef BIT_64
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, 
 			"mg_send_end_of_axn: Sending END_OF_AXN for transId[%d], peerId[%d], context[type = %s, value = %d]\n",
@@ -1572,6 +1573,7 @@ switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoCont
 			"mg_send_end_of_axn: Sending END_OF_AXN for transId[%lu], peerId[%lu], context[type = %s, value = %lu]\n",
 			transId->val, peerId->val, PRNT_MG_CTXT_TYPE(ctxtId->type.val), ctxtId->val.val);
 
+#endif
 #endif
 
 	ret = sng_mgco_send_axn_req(suId, &ctxt);

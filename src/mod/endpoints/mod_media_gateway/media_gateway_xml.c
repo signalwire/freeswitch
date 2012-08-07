@@ -103,14 +103,14 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 								startchan = atoi(chanmap[0]);
 								endchan   = atoi(chanmap[1]);
 								for (j = startchan; j <= endchan; j++) {
-									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j);
+									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j, j);
 								}
 							}
 						}else{
 							/* case (i) */ 
 							p = channel_map_dup;	
 							startchan = endchan = atoi(p);
-							mg_create_tdm_term(profile, tech, channel_prefix, prefix, startchan);
+							mg_create_tdm_term(profile, tech, channel_prefix, prefix, startchan, startchan);
 						}
 					}else
 					{
@@ -123,7 +123,10 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 								endchan = atoi(p);
 
 								for (j = startchan; j <= endchan; j++) {
-									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j);
+if (0 == i)
+									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j, j);
+else
+									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j, j-1);
 								}
 							}
 						}
@@ -197,7 +200,7 @@ done:
 }
 
 /****************************************************************************************************************************/
-void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char *channel_prefix, const char *prefix, int chan_num)
+void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char *channel_prefix, const char *prefix, int chan_num, int tdm_chan_num)
 {
 	mg_termination_t *term;
 	switch_memory_pool_t *pool;
@@ -211,7 +214,7 @@ void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char 
 	term->tech = switch_core_strdup(pool, tech);
 	term->active_events = NULL;
 	term->name = switch_core_sprintf(pool, "%s%d", prefix, chan_num);
-	term->u.tdm.channel = chan_num;
+	term->u.tdm.channel = tdm_chan_num;
 	term->u.tdm.span_name = switch_core_strdup(pool, channel_prefix);
 	switch_set_flag(term, MG_OUT_OF_SERVICE);
 

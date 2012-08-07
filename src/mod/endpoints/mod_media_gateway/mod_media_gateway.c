@@ -526,8 +526,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	inc_context = &cmd->contextId;
     memcpy(&out_ctxt, inc_context,sizeof(MgMgcoContextId));
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-		    "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));
+    /*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+		    "%s: Received Command Type[%s] \n", __PRETTY_FUNCTION__, PRNT_MG_CMD_TYPE(cmd->cmdType.val));*/
 
     /*get mg profile associated with SuId */
     if(NULL == (mg_profile = megaco_get_profile_by_suId(suId))){
@@ -591,8 +591,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-				"Termination-Id received..value[%s] type[%d] \n", termId->name.lcl.val, termId->type.val);
+	/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+				"Termination-Id received..value[%s] type[%d] \n", termId->name.lcl.val, termId->type.val);*/
 
 	/*If term type is other then check if that term is configured with us..for term type CHOOSE/ALL , no need to check */
 	/* check is only if command is not AUDIT */

@@ -193,7 +193,7 @@ switch_status_t mg_build_mgco_err_request(MgMgcoInd  **errcmd,U32  trans_id, MgM
 switch_status_t mg_send_audit_rsp(SuId suId, MgMgcoCommand *req);
 switch_status_t handle_mg_audit_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *auditReq);
 switch_status_t mg_stack_termination_is_in_service(megaco_profile_t* mg_profile, char* term_str, int len);
-void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char *channel_prefix, const char *prefix, int j);
+void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char *channel_prefix, const char *prefix, int j, int k);
 void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd);
 switch_status_t mgco_init_ins_service_change(SuId suId);
 
