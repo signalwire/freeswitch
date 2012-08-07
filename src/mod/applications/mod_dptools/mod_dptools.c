@@ -1326,6 +1326,33 @@ static void base_set (switch_core_session_t *session, const char *data, switch_s
 	}
 }
 
+SWITCH_STANDARD_APP(multiset_function)
+{
+	char delim = ' ';
+	char *arg = (char *) data;
+
+	if (!zstr(arg) && *arg == '^' && *(arg+1) == '^') {
+		arg += 2;
+		delim = *arg++;
+	}
+
+	if (arg) {
+		char *array[256] = {0};
+		int i, argc;
+
+		arg = switch_core_session_strdup(session, arg);
+		argc = switch_split(arg, delim, array);
+		
+		for(i = 0; i < argc; i++) {
+			base_set(session, array[i], SWITCH_STACK_BOTTOM);
+		}
+		
+
+	} else {
+		base_set(session, data, SWITCH_STACK_BOTTOM);
+	}
+}
+
 SWITCH_STANDARD_APP(set_function)
 {
 	base_set(session, data, SWITCH_STACK_BOTTOM);
@@ -4670,6 +4697,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "bridge_export", "Export a channel variable across a bridge", EXPORT_LONG_DESC, bridge_export_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel variable", SET_LONG_DESC, set_function, "<varname>=<value>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+
+	SWITCH_ADD_APP(app_interface, "multiset", "Set many channel variables", SET_LONG_DESC, multiset_function, "[^^<delim>]<varname>=<value> <var2>=<val2>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 
 	SWITCH_ADD_APP(app_interface, "push", "Set a channel variable", SET_LONG_DESC, push_function, "<varname>=<value>",
