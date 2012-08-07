@@ -696,7 +696,7 @@ switch_status_t handle_term_status_cli_cmd(switch_stream_handle_t *stream, megac
 
 	stream->write_function(stream, "Associated MG Profile Name [%s] \n",term->profile->name);
 	stream->write_function(stream, "MEGACO Termination Name[%s] \n",(NULL != term->name)?term->name:"NULL");
-	stream->write_function(stream, "MEGACO Termination Type[%s] \n",(MG_TERM_RTP != term->type)?"MG_TERM_RTP":"MG_TERM_TDM");
+	stream->write_function(stream, "MEGACO Termination Type[%s] \n",(MG_TERM_RTP == term->type)?"MG_TERM_RTP":"MG_TERM_TDM");
 	stream->write_function(stream, "Termination UUID[%s] \n",(NULL != term->uuid)?term->uuid:"Term Not Activated");
 	if(term->context){
 		stream->write_function(stream, "Associated Context-Id[%d] \n",term->context->context_id);
