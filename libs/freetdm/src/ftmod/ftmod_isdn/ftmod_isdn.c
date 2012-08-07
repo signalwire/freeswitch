@@ -599,7 +599,9 @@ static void ftdm_isdn_call_event(struct Q931_Call *call, struct Q931_CallEvent *
 						return;
 					}
 
-					if (ftdm_channel_get_state(ftdmchan) != FTDM_CHANNEL_STATE_DOWN) {
+					if (ftdm_channel_get_state(ftdmchan) != FTDM_CHANNEL_STATE_DOWN &&
+					    ftdm_channel_get_state(ftdmchan) != FTDM_CHANNEL_STATE_HANGUP_COMPLETE)
+					{
 						ftdm_log(FTDM_LOG_DEBUG, "Channel %d:%d not in DOWN state, cleaning up\n",
 									ftdm_channel_get_span_id(ftdmchan),
 									ftdm_channel_get_id(ftdmchan));
@@ -1320,6 +1322,9 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 	sig.chan_id = ftdm_channel_get_id(ftdmchan);
 	sig.channel = ftdmchan;
 
+	/* Acknowledge channel state change */
+	ftdm_channel_complete_state(ftdmchan);
+
 	switch (ftdm_channel_get_state(ftdmchan)) {
 	case FTDM_CHANNEL_STATE_DOWN:
 		{
@@ -1336,7 +1341,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS;
 				if ((status = ftdm_span_send_signal(ftdm_channel_get_span(ftdmchan), &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else {
 				gen->MesType = Q931mes_CALL_PROCEEDING;
@@ -1379,7 +1384,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_START;
 				if ((status = ftdm_span_send_signal(span, &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			}
 		}
@@ -1389,7 +1394,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_UNSPECIFIED;
 			sig.event_id = FTDM_SIGEVENT_RESTART;
 			status = ftdm_span_send_signal(span, &sig);
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
@@ -1397,12 +1402,12 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
 				if ((status = ftdm_span_send_signal(span, &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else {
 				if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 					if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 						return;
 					}
 				}
@@ -1416,12 +1421,12 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_UP;
 				if ((status = ftdm_span_send_signal(span, &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else {
 				if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 					if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 						return;
 					}
 				}
@@ -1564,7 +1569,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 
 				Q931Rx43(&isdn_data->q931, gen, gen->Size);
 			}
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
 	case FTDM_CHANNEL_STATE_HANGUP:
@@ -1572,7 +1577,8 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(ftdmchan);
 			Q931ie_Cause cause;
 
-			ftdm_log(FTDM_LOG_DEBUG, "Hangup: Direction %s\n", ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? "Outbound" : "Inbound");
+			ftdm_log(FTDM_LOG_DEBUG, "Hangup: Call direction %s\n",
+				ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? "Outbound" : "Inbound");
 
 			cause.IEId = Q931ie_CAUSE;
 			cause.Size = sizeof(Q931ie_Cause);
@@ -1589,7 +1595,13 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				 * inbound call [was: number unknown (= not found in routing state)]
 				 * (in Q.931 spec terms: Reject request)
 				 */
-				gen->MesType = Q931mes_RELEASE_COMPLETE;
+				if (!FTDM_SPAN_IS_NT(span)) {
+					gen->MesType = Q931mes_RELEASE_COMPLETE;	/* TE mode: Reject call */
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+				} else {
+					gen->MesType = Q931mes_DISCONNECT;		/* NT mode: Disconnect and wait */
+					//ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+				}
 
 				//cause.Value = (unsigned char) FTDM_CAUSE_UNALLOCATED;
 				cause.Value = (unsigned char) caller_data->hangup_cause;
@@ -1598,8 +1610,8 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				Q931Rx43(&isdn_data->q931, gen, gen->Size);
 
 				/* we're done, release channel */
-				//ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+				////ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+				//ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 			}
 			else if (ftdm_channel_get_last_state(ftdmchan) <= FTDM_CHANNEL_STATE_PROGRESS) {
 				/*
@@ -1613,7 +1625,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				Q931Rx43(&isdn_data->q931, gen, gen->Size);
 
 				/* this will be triggered by the RELEASE_COMPLETE reply */
-				/* ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE); */
+				/* ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE); */
 			}
 			else {
 				/*
@@ -1630,7 +1642,8 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		break;
 	case FTDM_CHANNEL_STATE_TERMINATING:
 		{
-			ftdm_log(FTDM_LOG_DEBUG, "Terminating: Direction %s\n", ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? "Outbound" : "Inbound");
+			ftdm_log(FTDM_LOG_DEBUG, "Terminating: Call direction %s\n",
+				ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? "Outbound" : "Inbound");
 
 			sig.event_id = FTDM_SIGEVENT_STOP;
 			status = ftdm_span_send_signal(span, &sig);
@@ -1655,11 +1668,8 @@ static __inline__ void check_state(ftdm_span_t *span)
 
 			if (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
 				ftdm_channel_lock(chan);
-
 				ftdm_clear_flag(chan, FTDM_CHANNEL_STATE_CHANGE);
 				state_advance(chan);
-				ftdm_channel_complete_state(chan);
-
 				ftdm_channel_unlock(chan);
 			}
 		}
