@@ -3935,9 +3935,49 @@ struct holder {
 	uint32_t count;
 	int print_title;
 	switch_xml_t xml;
+	cJSON *json;
 	int rows;
 	int justcount;
 };
+
+static int show_as_json_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct holder *holder = (struct holder *) pArg;
+	cJSON *row;
+	int x;
+
+	if (holder->count == 0) {
+		if (!(holder->json = cJSON_CreateArray())) {
+			return -1;
+		}
+	}
+
+	if (holder->justcount) {
+		holder->count++;
+		return 0;
+	}
+
+	if (!(row = cJSON_CreateObject())) {
+		return -1;
+	}
+
+	cJSON_AddItemToArray(holder->json, row);
+
+	for (x = 0; x < argc; x++) {
+		char *name = columnNames[x];
+		char *val = switch_str_nil(argv[x]);
+
+		if (!name) {
+			name = "undefined";
+		}
+
+		cJSON_AddItemToObject(row, name, cJSON_CreateString(val));
+	}
+
+	holder->count++;
+
+	return 0;
+}
 
 static int show_as_xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -4309,6 +4349,45 @@ SWITCH_STANDARD_API(show_function)
 		} else {
 			holder.stream->write_function(holder.stream, "<result row_count=\"0\"/>\n");
 		}
+	} else if (!strcasecmp(as, "json")) {
+
+		switch_cache_db_execute_sql_callback(db, sql, show_as_json_callback, &holder, &errmsg);
+
+		if (errmsg) {
+			stream->write_function(stream, "-ERR SQL Error [%s]\n", errmsg);
+			free(errmsg);
+			errmsg = NULL;
+		}
+
+		if (holder.json) {
+			cJSON *result;
+
+			if (!(result = cJSON_CreateObject())) {
+				cJSON_Delete(holder.json);
+				holder.json = NULL;
+				holder.stream->write_function(holder.stream, "-ERR Error creating json object!\n");
+			} else {
+				char *json_text;
+
+				cJSON_AddItemToObject(result, "row_count", cJSON_CreateNumber(holder.count));
+				cJSON_AddItemToObject(result, "rows", holder.json);
+
+				json_text = cJSON_PrintUnformatted(result);
+
+				if (!json_text) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+					holder.stream->write_function(holder.stream, "-ERR Memory Error!\n");
+				} else {
+					holder.stream->write_function(holder.stream, json_text);
+				}
+				cJSON_Delete(result);
+				switch_safe_free(json_text);
+			}
+
+		} else {
+			holder.stream->write_function(holder.stream, "{\"row_count\": 0}\n");
+		}
+
 	} else {
 		holder.stream->write_function(holder.stream, "-ERR Cannot find format %s\n", as);
 	}
@@ -4771,6 +4850,8 @@ SWITCH_STANDARD_API(uuid_dump_function)
 							switch_core_session_rwunlock(psession);
 							goto done;
 						}
+					} else if (!strcasecmp(format, "json")) {
+						switch_event_serialize_json(event, &buf);
 					} else {
 						switch_event_serialize(event, &buf, strcasecmp(format, "plain"));
 					}
