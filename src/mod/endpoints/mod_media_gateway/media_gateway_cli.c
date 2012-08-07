@@ -18,6 +18,7 @@ switch_status_t megaco_profile_peer_xmlstatus(switch_stream_handle_t *stream, me
 switch_status_t handle_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile, char* term_id);
 void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm);
 void  megaco_cli_print_usage(switch_stream_handle_t *stream);
+switch_status_t handle_show_activecalls_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile);
 
 /******************************************************************************/
 
@@ -202,6 +203,22 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 			} else {
 				stream->write_function(stream, "-ERR No such profile\n");
 			}
+/**********************************************************************************/
+		}else if (!strcmp(argv[2], "show")) {
+/**********************************************************************************/
+			/* mg <mg-profile> show activecalls*/
+			if(zstr(argv[3])) {
+				goto usage;
+			}
+
+			if(profile){
+				megaco_profile_release(profile);
+				if(!strcasecmp(argv[3], "activecalls")){
+					handle_show_activecalls_cli_cmd(stream, profile);
+				}
+			} else {
+				stream->write_function(stream, "-ERR No such profile\n");
+			}
 
 /**********************************************************************************/
 		}else {
@@ -262,6 +279,7 @@ void  megaco_cli_print_usage(switch_stream_handle_t *stream)
 	stream->write_function(stream, "mg profile <profile-name> send notify <term-id> <digits> \n");
 	stream->write_function(stream, "mg profile <profile-name> send ito notify \n");
 	stream->write_function(stream, "mg profile <profile-name> send cng <term-id> \n");
+	stream->write_function(stream, "mg profile <profile-name> show activecalls  \n");
 
 	stream->write_function(stream, "Usage: Logging \n");
 	stream->write_function(stream, "mg logging enable \n");
@@ -740,4 +758,46 @@ switch_status_t handle_term_status_cli_cmd(switch_stream_handle_t *stream, megac
 	return SWITCH_STATUS_SUCCESS;
 }
 /******************************************************************************/
+switch_status_t handle_show_activecalls_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile)
+{
+	void                	*val = NULL;
+	switch_hash_index_t 	*hi = NULL;
+	mg_termination_t 	*term = NULL;
+	const void 		*var;
+	int 			 found = 0x00;
+
+	if(!mg_profile || !mg_profile->terminations){
+		stream->write_function(stream, "-ERR NULL profile/term pointer \n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	stream->write_function(stream, "\n ------- Active Calls Terminations ------- \n"); 
+	for (hi = switch_hash_first(NULL, mg_profile->terminations); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		term = (mg_termination_t *) val;
+		if(!term) continue;
+		if(NULL == term->uuid) continue;
+
+		found = 0x01;
+		stream->write_function(stream, "\n ********************************* \n"); 
+		stream->write_function(stream, "MEGACO Termination Name[%s] \n",(NULL != term->name)?term->name:"NULL");
+		stream->write_function(stream, "MEGACO Termination Type[%s] \n",(MG_TERM_RTP == term->type)?"MG_TERM_RTP":"MG_TERM_TDM");
+		stream->write_function(stream, "Termination UUID[%s] \n",(NULL != term->uuid)?term->uuid:"Term Not Activated");
+		if(MG_TERM_RTP == term->type){
+			stream->write_function(stream, "RTP Termination ID [%d] \n",term->u.rtp.term_id);
+		}else{
+			stream->write_function(stream, "TDM Termination channel [%d] \n",term->u.tdm.channel);
+			stream->write_function(stream, "TDM Termination span name [%s] \n",
+					(NULL != term->u.tdm.span_name)?term->u.tdm.span_name:"NULL");
+		}
+		stream->write_function(stream, "\n ********************************* \n"); 
+	}
+
+
+	if(!found)
+		stream->write_function(stream, "\n ------- NO Active Calls FOUND ------- \n"); 
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
