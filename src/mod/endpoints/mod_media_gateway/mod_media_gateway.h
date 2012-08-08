@@ -113,7 +113,6 @@ struct mg_termination_s {
     megaco_profile_t *profile; /*!< Parent MG profile */
     MgMgcoReqEvtDesc  *active_events;     /* !< active megaco events */
     mg_termination_t *next; /*!< List for physical terminations */
-    mg_context_t* mg_ctxt;
     int  *mg_error_code; /* MEGACO error code */
     uint32_t flags;
     const char *tech; /* Endpoint controlling the TDM interface - only FreeTDM tested so far */

@@ -210,7 +210,6 @@ void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char 
 	term->pool = pool;
 	term->type = MG_TERM_TDM;
 	term->profile = profile;
-	term->mg_ctxt = NULL;
 	term->tech = switch_core_strdup(pool, tech);
 	term->active_events = NULL;
 	term->name = switch_core_sprintf(pool, "%s%d", prefix, chan_num);

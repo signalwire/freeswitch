@@ -347,7 +347,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                                 for(fmtCnt = 0; fmtCnt <  fmt_list->num.val; fmtCnt++){
                                                     fmt = &fmt_list->fmts[i]->val;
                                                     if(fmt->pres == NOTPRSNT) continue;
-                                                    printf("Format [%d]\n", fmt->val);
+                                                   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Format [%d]\n", fmt->val);
                                                 }
                                             }
                                         }
@@ -381,30 +381,30 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                                 case MGT_LCLCTL_MODE:
                                                     {
                                                         /* Mode Property */
-                                                        printf("MGT_LCLCTL_MODE - Mode value [%d]\n", lclParm->u.mode.val);
+                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_MODE - Mode value [%d]\n", lclParm->u.mode.val);
                                                         break;
                                                     }
                                                 case MGT_LCLCTL_RESVAL:
                                                     {
                                                         /* Reserve Value */
-                                                        printf("MGT_LCLCTL_RESVAL: Reserve Value[%d] \n", lclParm->u.resVal.val);
+                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESVAL: Reserve Value[%d] \n", lclParm->u.resVal.val);
                                                         break;
                                                     }
                                                 case MGT_LCLCTL_RESGRP:
                                                     {
                                                         /* Reserve group */
-                                                        printf("MGT_LCLCTL_RESGRP: Reserve Group[%d]\n", lclParm->u.resGrp.val);
+                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESGRP: Reserve Group[%d]\n", lclParm->u.resGrp.val);
                                                         break;
                                                     }
                                                 case MGT_LCLCTL_PROPPARM:
                                                     {
                                                         /* Properties (of a termination) */
                                                         /* Matt - See how we can apply this to a termination */
-                                                        printf("MGT_LCLCTL_PROPPARM: \n");
+                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_PROPPARM: \n");
                                                         break;
                                                     }
                                                 default:
-                                                    printf("Invalid local control descriptor type[%d]\n",lclParm->type.val);
+                                                   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Invalid local control descriptor type[%d]\n",lclParm->type.val);
                                                     break;
                                             }
                                         }
@@ -429,23 +429,23 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                                     {
                                                         /* Matt to see how to apply properties to a termination */
                                                         /* Properties of a termination */
-                                                        printf("MGT_TERMST_PROPLST:\n");
+                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_TERMST_PROPLST:\n");
                                                         break;
                                                     }
                                                 case MGT_TERMST_EVTBUFCTL:
                                                     {
                                                         /* Event /buffer Control Properties */
-                                                        printf(" MGT_TERMST_EVTBUFCTL: value[%d]\n", tsp->u.evtBufCtl.val);
+                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE," MGT_TERMST_EVTBUFCTL: value[%d]\n", tsp->u.evtBufCtl.val);
                                                         break;
                                                     }
                                                 case MGT_TERMST_SVCST:
                                                     {
                                                         /* Service State Properties */
-                                                        printf(" MGT_TERMST_SVCST: value[%d]\n", tsp->u.svcState.val);
+                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE," MGT_TERMST_SVCST: value[%d]\n", tsp->u.svcState.val);
                                                         break;
                                                     }
                                                 default:
-                                                    printf("Invalid termination state descriptor type[%d]\n",tsp->type.val);
+                                                   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Invalid termination state descriptor type[%d]\n",tsp->type.val);
                                                     break;
                                             }
                                         }
@@ -630,6 +630,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         mg_ctxt = megaco_choose_context(mg_profile);
 
         if(NULL == mg_ctxt){
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," megaco_choose_context failed \n"); 	
             mg_util_set_err_string(&errTxt, " Resource Failure ");
             err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
             goto error;
@@ -646,6 +647,13 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	    memcpy(new_ctxtId, &inc_cmd->contextId,sizeof(MgMgcoContextId));
 	    mg_ctxt =  megaco_get_context(mg_profile, inc_cmd->contextId.val.val);
 	    if(NULL == mg_ctxt){
+#ifdef BIT_64
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+				" megaco_get_context failed for context-id[%d]\n",  inc_cmd->contextId.val.val); 	
+#else
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+				" megaco_get_context failed for context-id[%ld]\n",  inc_cmd->contextId.val.val); 	
+#endif
 		    mg_util_set_err_string(&errTxt, " Resource Failure ");
 		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
 		    goto error;
@@ -660,14 +668,11 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         term = megaco_choose_termination(mg_profile, mg_profile->rtp_termination_id_prefix);
 
         if(NULL == term){
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," megaco_choose_termination failed \n"); 	
             mg_util_set_err_string(&errTxt, " Resource Failure ");
             err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
             goto error;
         }
-
-	if(!term->mg_ctxt){
-		term->mg_ctxt = mg_ctxt;
-	}
 
         switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
 
@@ -678,26 +683,33 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	    term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
 
 	    if(NULL == term){
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+			" megaco_find_termination failed for term-id[%s] \n",(char*)termId->name.lcl.val); 	
 		    mg_util_set_err_string(&errTxt, " Resource Failure ");
 		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
 		    goto error;
 	    }
 
-	    if(!term->mg_ctxt){
-		    term->mg_ctxt = mg_ctxt;
-	    } else {
-		    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Termination[%s] already in context..rejecting ADD \n", term->name);
+
+	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
+    }
+
+    /********************************************************************/
+    /* check if termination already is in call */
+
+	    if(term->context){
+		    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Termination[%p : %s] "
+					"already in context[%p -%d]..rejecting ADD \n", 
+					(void*)term, term->name, (void*)term->context,term->context->context_id);
 		    mg_util_set_err_string(&errTxt, " Term already is in call ");
 		    err_code = MGT_MGCO_RSP_CODE_DUP_TERM_CTXT;
 		    goto error;
 	    }
-
-	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
-    }
     /********************************************************************/
     /* associate physical termination to context  */
 
     if(SWITCH_STATUS_FALSE == megaco_context_add_termination(mg_ctxt, term)){
+	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"megaco_context_add_termination failed \n");
         mg_util_set_err_string(&errTxt, " Resource Failure ");
         err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
         goto error;

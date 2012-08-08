@@ -222,7 +222,6 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
     term->pool = pool;
     term->type = termtype;
     term->active_events = NULL;
-    term->mg_ctxt = NULL;
     term->profile = profile;
     switch_set_flag(term, MGT_ALLOCATED);
     
@@ -335,8 +334,6 @@ void megaco_termination_destroy(mg_termination_t *term)
         term->active_events = NULL;
     }
 
-    term->mg_ctxt = NULL;
-    
     switch_clear_flag(term, MGT_ALLOCATED);
     switch_clear_flag(term, MGT_ACTIVE);
     
