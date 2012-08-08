@@ -159,7 +159,7 @@ static int row_read(void *user_data, uint8_t buf[], size_t len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void get_flattened_image(image_translate_state_t *s, int compare)
+static void get_bilevel_image(image_translate_state_t *s, int compare)
 {
     int i;
     int len;
@@ -191,12 +191,147 @@ static void get_flattened_image(image_translate_state_t *s, int compare)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void get_gray8_image(image_translate_state_t *s, int compare)
+{
+    int i;
+    int j;
+    int len;
+    uint8_t row_buf[5000];
+
+    for (i = 0;  i < s->output_length;  i++)
+    {
+        if ((len = image_translate_row(s, row_buf, s->output_width)) != s->output_width)
+        {
+            printf("Image finished early - %d %d\n", len, s->output_width);
+            exit(2);
+        }
+        if (compare)
+        {
+            for (j = 0;  j < 50;  j++)
+            {
+                if (row_buf[j] != j*1200/256)
+                {
+                    printf("Image mismatch - %d - %d\n", j, row_buf[3*j]);
+                    exit(2);
+                }
+            }
+        }
+    }
+    if ((len = image_translate_row(s, row_buf, s->output_width)) != 0)
+    {
+        printf("Image finished late - %d %d\n", len, s->output_width);
+        exit(2);
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static void get_gray16_image(image_translate_state_t *s, int compare)
+{
+    int i;
+    int j;
+    int len;
+    uint16_t row_buf[5000];
+
+    for (i = 0;  i < s->output_length;  i++)
+    {
+        if ((len = image_translate_row(s, (uint8_t *) row_buf, 2*s->output_width)) != 2*s->output_width)
+        {
+            printf("Image finished early - %d %d\n", len, 2*s->output_width);
+            exit(2);
+        }
+        if (compare)
+        {
+            for (j = 0;  j < 50;  j++)
+            {
+                if (row_buf[j] != j*1200)
+                {
+                    printf("Image mismatch - %d - %d\n", j, row_buf[j]);
+                    exit(2);
+                }
+            }
+        }
+    }
+    if ((len = image_translate_row(s, (uint8_t *) row_buf, 2*s->output_width)) != 0)
+    {
+        printf("Image finished late - %d %d\n", len, 2*s->output_width);
+        exit(2);
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static void get_colour8_image(image_translate_state_t *s, int compare)
+{
+    int i;
+    int j;
+    int len;
+    uint8_t row_buf[5000];
+
+    for (i = 0;  i < s->output_length;  i++)
+    {
+        if ((len = image_translate_row(s, row_buf, 3*s->output_width)) != 3*s->output_width)
+        {
+            printf("Image finished early - %d %d\n", len, 3*s->output_width);
+            exit(2);
+        }
+        if (compare)
+        {
+            for (j = 0;  j < 50;  j++)
+            {
+                if (row_buf[3*j + 0] != j*1200/256  ||  row_buf[3*j + 1] != j*1200/256  ||  row_buf[3*j + 2] != j*1200/256)
+                {
+                    printf("Image mismatch - %d - %d %d %d\n", j, row_buf[3*j + 0], row_buf[3*j + 1], row_buf[3*j + 2]);
+                    exit(2);
+                }
+            }
+        }
+    }
+    if ((len = image_translate_row(s, row_buf, 2*s->output_width)) != 0)
+    {
+        printf("Image finished late - %d %d\n", len, 3*s->output_width);
+        exit(2);
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static void get_colour16_image(image_translate_state_t *s, int compare)
+{
+    int i;
+    int j;
+    int len;
+    uint16_t row_buf[5000];
+
+    for (i = 0;  i < s->output_length;  i++)
+    {
+        if ((len = image_translate_row(s, (uint8_t *) row_buf, 6*s->output_width)) != 6*s->output_width)
+        {
+            printf("Image finished early - %d %d\n", len, 6*s->output_width);
+            exit(2);
+        }
+        if (compare)
+        {
+            for (j = 0;  j < 50;  j++)
+            {
+                if (row_buf[3*j + 0] != j*1200  ||  row_buf[3*j + 1] != j*1200  ||  row_buf[3*j + 2] != j*1200)
+                {
+                    printf("Image mismatch - %d - %d %d %d\n", j, row_buf[3*j + 0], row_buf[3*j + 1], row_buf[3*j + 2]);
+                    exit(2);
+                }
+            }
+        }
+    }
+    if ((len = image_translate_row(s, (uint8_t *) row_buf, 6*s->output_width)) != 0)
+    {
+        printf("Image finished late - %d %d\n", len, 6*s->output_width);
+        exit(2);
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
 static void dither_tests_gray16(void)
 {
     int i;
     int j;
-    image_translate_state_t bw;
-    image_translate_state_t *s = &bw;
+    image_translate_state_t *s;
     uint16_t image[50*50];
     image_descriptor_t im;
 
@@ -213,8 +348,9 @@ static void dither_tests_gray16(void)
             image[i*im.width + j] = j*1200;
     }
 
-    s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_12BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
-    get_flattened_image(s, TRUE);
+    s = image_translate_init(NULL, T4_IMAGE_TYPE_GRAY_12BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
+    get_bilevel_image(s, TRUE);
+    image_translate_free(s);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -222,8 +358,7 @@ static void dither_tests_gray8(void)
 {
     int i;
     int j;
-    image_translate_state_t bw;
-    image_translate_state_t *s = &bw;
+    image_translate_state_t *s;
     uint8_t image[50*50];
     image_descriptor_t im;
 
@@ -239,8 +374,10 @@ static void dither_tests_gray8(void)
         for (j = 0;  j < im.width;  j++)
             image[i*im.width + j] = j*1200/256;
     }
-    s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_8BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
-    get_flattened_image(s, TRUE);
+
+    s = image_translate_init(NULL, T4_IMAGE_TYPE_GRAY_8BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
+    get_bilevel_image(s, TRUE);
+    image_translate_free(s);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -248,8 +385,7 @@ static void dither_tests_colour16(void)
 {
     int i;
     int j;
-    image_translate_state_t bw;
-    image_translate_state_t *s = &bw;
+    image_translate_state_t *s;
     uint16_t image[50*50*3];
     image_descriptor_t im;
 
@@ -264,13 +400,96 @@ static void dither_tests_colour16(void)
     {
         for (j = 0;  j < im.width;  j++)
         {
-            image[i*3*im.width + 3*j + 0] = j*1200;
-            image[i*3*im.width + 3*j + 1] = j*1200;
-            image[i*3*im.width + 3*j + 2] = j*1200;
+            image[i*3*im.width + 3*j + 0] = j*1200 + i;
+            image[i*3*im.width + 3*j + 1] = j*1200 + i;
+            image[i*3*im.width + 3*j + 2] = j*1200 + i;
         }
     }
-    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
-    get_flattened_image(s, TRUE);
+
+    s = image_translate_init(NULL, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
+    get_bilevel_image(s, TRUE);
+
+    printf("Scrunching from a 3x16 bit per sample colour to 8 bit per sample gray scale\n");
+    im.image = (const uint8_t *) image;
+    im.width = 50;
+    im.length = 50;
+    im.bytes_per_pixel = 6;
+    im.current_row = 0;
+
+    for (i = 0;  i < im.length;  i++)
+    {
+        for (j = 0;  j < im.width;  j++)
+        {
+            image[i*3*im.width + 3*j + 0] = j*1200 + i;
+            image[i*3*im.width + 3*j + 1] = j*1200 + i;
+            image[i*3*im.width + 3*j + 2] = j*1200 + i;
+        }
+    }
+
+    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, T4_IMAGE_TYPE_GRAY_8BIT, -1, -1, row_read, &im);
+    get_gray8_image(s, TRUE);
+
+    printf("Scrunching from a 3x16 bit per sample colour to 16 bit per sample gray scale\n");
+    im.image = (const uint8_t *) image;
+    im.width = 50;
+    im.length = 50;
+    im.bytes_per_pixel = 6;
+    im.current_row = 0;
+
+    for (i = 0;  i < im.length;  i++)
+    {
+        for (j = 0;  j < im.width;  j++)
+        {
+            image[i*3*im.width + 3*j + 0] = j*1200 + i;
+            image[i*3*im.width + 3*j + 1] = j*1200 + i;
+            image[i*3*im.width + 3*j + 2] = j*1200 + i;
+        }
+    }
+
+    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, T4_IMAGE_TYPE_GRAY_12BIT, -1, -1, row_read, &im);
+    get_gray16_image(s, TRUE);
+
+    printf("Scrunching from a 3x16 bit per sample colour to 3x8 bit per sample colour\n");
+    im.image = (const uint8_t *) image;
+    im.width = 50;
+    im.length = 50;
+    im.bytes_per_pixel = 6;
+    im.current_row = 0;
+
+    for (i = 0;  i < im.length;  i++)
+    {
+        for (j = 0;  j < im.width;  j++)
+        {
+            image[i*3*im.width + 3*j + 0] = j*1200 + i;
+            image[i*3*im.width + 3*j + 1] = j*1200 + i;
+            image[i*3*im.width + 3*j + 2] = j*1200 + i;
+        }
+    }
+
+    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, T4_IMAGE_TYPE_COLOUR_8BIT, -1, -1, row_read, &im);
+    get_colour8_image(s, TRUE);
+
+    printf("Scrunching from a 3x16 bit per sample colour to 3x16 bit per sample colour\n");
+    im.image = (const uint8_t *) image;
+    im.width = 50;
+    im.length = 50;
+    im.bytes_per_pixel = 6;
+    im.current_row = 0;
+
+    for (i = 0;  i < im.length;  i++)
+    {
+        for (j = 0;  j < im.width;  j++)
+        {
+            image[i*3*im.width + 3*j + 0] = j*1200 + i;
+            image[i*3*im.width + 3*j + 1] = j*1200 + i;
+            image[i*3*im.width + 3*j + 2] = j*1200 + i;
+        }
+    }
+
+    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, T4_IMAGE_TYPE_COLOUR_12BIT, -1, -1, row_read, &im);
+    get_colour16_image(s, TRUE);
+
+    image_translate_free(s);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -278,8 +497,7 @@ static void dither_tests_colour8(void)
 {
     int i;
     int j;
-    image_translate_state_t bw;
-    image_translate_state_t *s = &bw;
+    image_translate_state_t *s;
     uint8_t image[50*50*3];
     image_descriptor_t im;
 
@@ -294,14 +512,15 @@ static void dither_tests_colour8(void)
     {
         for (j = 0;  j < im.width;  j++)
         {
-            image[i*3*im.width + 3*j + 0] = j*1200/256;
-            image[i*3*im.width + 3*j + 1] = j*1200/256;
-            image[i*3*im.width + 3*j + 2] = j*1200/256;
+            image[i*3*im.width + 3*j + 0] = j*1200/256 + i;
+            image[i*3*im.width + 3*j + 1] = j*1200/256 + i;
+            image[i*3*im.width + 3*j + 2] = j*1200/256 + i;
         }
     }
 
-    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
-    get_flattened_image(s, TRUE);
+    s = image_translate_init(NULL, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, -1, -1, row_read, &im);
+    get_bilevel_image(s, TRUE);
+    image_translate_free(s);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -309,8 +528,7 @@ static void grow_tests_colour8(void)
 {
     int i;
     int j;
-    image_translate_state_t resize;
-    image_translate_state_t *s1 = &resize;
+    image_translate_state_t *s;
     uint8_t image[50*50*3];
     image_descriptor_t im;
 
@@ -325,15 +543,15 @@ static void grow_tests_colour8(void)
     {
         for (j = 0;  j < im.width;  j++)
         {
-            image[i*3*im.width + 3*j + 0] = j*1200/256;
-            image[i*3*im.width + 3*j + 1] = j*1200/256;
-            image[i*3*im.width + 3*j + 2] = j*1200/256;
+            image[i*3*im.width + 3*j + 0] = j*1200/256 + i;
+            image[i*3*im.width + 3*j + 1] = j*1200/256 + i;
+            image[i*3*im.width + 3*j + 2] = j*1200/256 + i;
         }
     }
 
-    s1 = image_translate_init(s1, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, 200, -1, row_read, &im);
-
-    get_flattened_image(s1, FALSE);
+    s = image_translate_init(NULL, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, T4_IMAGE_TYPE_BILEVEL, 200, -1, row_read, &im);
+    get_bilevel_image(s, FALSE);
+    image_translate_free(s);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -352,8 +570,7 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     int16_t samples_per_pixel;
     int i;
     int n;
-    image_translate_state_t bw;
-    image_translate_state_t *s = &bw;
+    image_translate_state_t *s;
     image_descriptor_t im;
     float x_resolution;
     float y_resolution;
@@ -375,7 +592,7 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     y_resolution = 200.0;
     TIFFGetField(in_file, TIFFTAG_YRESOLUTION, &y_resolution);
     res_unit = RESUNIT_INCH;
-    TIFFSetField(in_file, TIFFTAG_RESOLUTIONUNIT, &res_unit);
+    TIFFGetField(in_file, TIFFTAG_RESOLUTIONUNIT, &res_unit);
     bits_per_sample = 0;
     TIFFGetField(in_file, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
     samples_per_pixel = 0;
@@ -409,7 +626,7 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     im.current_row = 0;
     im.bytes_per_pixel = samples_per_pixel;
 
-    s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_8BIT, image_width, image_length, T4_IMAGE_TYPE_BILEVEL, output_width, output_length, row_read, &im);
+    s = image_translate_init(NULL, T4_IMAGE_TYPE_COLOUR_8BIT, image_width, image_length, T4_IMAGE_TYPE_BILEVEL, output_width, output_length, row_read, &im);
     output_width = image_translate_get_output_width(s);
     output_length = image_translate_get_output_length(s);
 
@@ -445,6 +662,7 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     TIFFWriteEncodedStrip(out_file, 0, image2, output_width*output_length/8);
     TIFFWriteDirectory(out_file);
     TIFFClose(out_file);
+    image_translate_free(s);
 }
 /*- End of function --------------------------------------------------------*/
 
