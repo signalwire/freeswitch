@@ -85,7 +85,7 @@ static switch_status_t mg_on_dtmf(switch_core_session_t *session, const switch_d
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	mg_termination_t *term = switch_channel_get_private(channel, "_mg_term_");
-	char digit[2] = { dtmf->digit };
+	//char digit[2] = { dtmf->digit };
 	if (!term) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find termination structure for session [%s]\n",
 			switch_core_session_get_uuid(session));
@@ -94,7 +94,7 @@ static switch_status_t mg_on_dtmf(switch_core_session_t *session, const switch_d
 	
 	//switch_status_t  mg_send_dtmf_notify(megaco_profile_t* mg_profile, const char* term_name, char* digits, int num_of_collected_digits);
 	//mg_send_dtmf_notify(term->profile, term->name, digit, 1);
-	switch_log_printf("NOT Sending notify to MGC for dtmf: %c\n", dtmf->digit);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MEGACO DTMF Signaling NOT Sending notify to MGC for dtmf:%c\n",dtmf->digit);
 	return SWITCH_STATUS_SUCCESS;
 }
 

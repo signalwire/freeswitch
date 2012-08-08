@@ -528,7 +528,7 @@ void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
                         CmSdpAttrFmtp* f = &a->u.fmtp;
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_FMTP: \n");
 
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Format Type = %d \n",(NOTPRSNT == f->type.pres)?f->type.val:-1);
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Format Type = %d \n",(NOTPRSNT != f->type.pres)?f->type.val:-1);
 
                         break;
                     }
@@ -540,30 +540,47 @@ void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
                         if(NOTPRSNT != r->pres.pres){
 
                             /* payload type */
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Payload Type = %d \n",
-                                    (NOTPRSNT != r->pay.type.pres)?r->pay.type.val:-1);
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t Payload Type = %d \n",
+		                                 (NOTPRSNT != r->pay.type.pres)?r->pay.type.val:-1);
 
                             /* payload value */
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Payload Value = %d \n",
-                                    (NOTPRSNT != r->pay.val.pres)?r->pay.val.val:-1);
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t Payload Value = %d \n",
+	        	                           (NOTPRSNT != r->pay.val.pres)?r->pay.val.val:-1);
 
                             /* encoding name */
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Encoding Name value = %d \n",
-                                    (NOTPRSNT != r->enc.val.pres)?r->enc.val.val:-1);
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					"\t Encoding Name value = %d \n",
+	                                    (NOTPRSNT != r->enc.val.pres)?r->enc.val.val:-1);
 
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Encoding Name name = %s \n",
-                                    (NOTPRSNT != r->enc.name.pres)?(char*)r->enc.name.val:"Not Present");
+			    if((NOTPRSNT != r->enc.val.pres ) && 
+					    (CM_SDP_ENC_TELEPHONE_EVENT == r->enc.val.val)){
+				
+				    term->u.rtp.rfc2833_pt=r->pay.val.val;
+				    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					" Updating rfc2833_pt to [%d] \n", term->u.rtp.rfc2833_pt);
+			    }
+
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					"\t Encoding Name name = %s \n",
+	                                    (NOTPRSNT != r->enc.name.pres)?
+					   (char*)r->enc.name.val:"Not Present");
 
 #ifdef BIT_64
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Clock Rate = %d \n",
-                                    (NOTPRSNT != r->clk.pres)?r->clk.val:-1);
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t Clock Rate = %d \n",
+		                                    (NOTPRSNT != r->clk.pres)?r->clk.val:-1);
 #else
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Clock Rate = %ld \n",
-                                    (NOTPRSNT != r->clk.pres)?r->clk.val:-1);
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t Clock Rate = %ld \n",
+		                                    (NOTPRSNT != r->clk.pres)?r->clk.val:-1);
 #endif
 
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Encoding Parameters = %s \n",
-                                    (NOTPRSNT != r->parms.pres)?(char*)r->parms.val:"Not Present");
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t Encoding Parameters = %s \n",
+		                                    (NOTPRSNT != r->parms.pres)?
+						    (char*)r->parms.val:"Not Present");
                         }
                         break;
                     }
@@ -1832,8 +1849,11 @@ switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_term
 		/* see if received codec is present in our codec supported list */
 		for (id = 0; codecs[id] && id < codec_count; id++) {
 			int pt = codecs[id]->ianacode;
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "Matching recv codec[%d] with supported codec[%d] \n", fmt->val.val, pt);
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, 
+				"Matching recv codec[%d] with supported codec[%d] \n", fmt->val.val, pt);
 			//const char *name = codecs[id]->iananame;
+			/* anything > 96 is dymanic we should skip codec match */
+			if(fmt->val.val >= 96) {foundCodec = 0x01; break;}
 			if(pt == fmt->val.val){
 				foundCodec = 0x01;
 				break;
