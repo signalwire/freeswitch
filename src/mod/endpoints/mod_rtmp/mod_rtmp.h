@@ -529,6 +529,8 @@ typedef struct rtmp_reg rtmp_reg_t;
 struct rtmp_reg {
 	const char *uuid;	/* < The rtmp session id */
 	const char *nickname;	/* < This instance's nickname, optional */
+	const char *user;
+	const char *domain;
 	rtmp_reg_t *next;	/* < Next entry */
 };
 

@@ -1048,6 +1048,10 @@ void rtmp_add_registration(rtmp_session_t *rsession, const char *auth, const cha
 		
 		dup = strdup(auth);
 		switch_split_user_domain(dup, &user, &domain);
+
+
+		reg->user = switch_core_strdup(rsession->pool, user);
+		reg->domain = switch_core_strdup(rsession->pool, domain);
 			
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User", user);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Domain", domain);
@@ -1072,9 +1076,11 @@ static void rtmp_clear_reg_auth(rtmp_session_t *rsession, const char *auth, cons
 					/* Replace hash entry by its next ptr */
 					switch_core_hash_insert(rsession->profile->reg_hash, auth, reg->next);
 				}
-			
+
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
 					rtmp_event_fill(rsession, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User", reg->user);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Domain", reg->domain);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Nickname", switch_str_nil(reg->nickname));
 					switch_event_fire(&event);
 				}
