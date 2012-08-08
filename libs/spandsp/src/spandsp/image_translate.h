@@ -2,8 +2,9 @@
  * SpanDSP - a series of DSP components for telephony
  *
  * image_translate.h - Image translation routines for reworking colour
- *                     and gray scale images to be bi-level images of an
- *                     appropriate size to be FAX compatible.
+ *                     and gray scale images to be colour, gray scale or
+ *                     bi-level images of an appropriate size to be FAX
+ *                     compatible.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
