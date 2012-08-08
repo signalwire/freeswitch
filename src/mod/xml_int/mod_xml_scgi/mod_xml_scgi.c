@@ -40,6 +40,7 @@ SWITCH_MODULE_DEFINITION(mod_xml_scgi, mod_xml_scgi_load, mod_xml_scgi_shutdown,
 struct xml_binding {
 	char *host;
 	switch_port_t port;
+	char *uri;
 	char *url;
 
 	int timeout;
@@ -144,7 +145,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	switch_stream_handle_t stream = { 0 };
 	char *txt = NULL;
 
-    strncpy(hostname, switch_core_get_switchname(), sizeof(hostname));
+	strncpy(hostname, switch_core_get_switchname(), sizeof(hostname));
 
 	if (!binding) {
 		return NULL;
@@ -157,7 +158,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	switch_assert(data);
 
 	scgi_add_param(&handle, "REQUEST_METHOD", "POST");
-	scgi_add_param(&handle, "REQUEST_URI", binding->url);
+	scgi_add_param(&handle, "REQUEST_URI", binding->uri);
 	scgi_add_body(&handle, data);
 
 	if (scgi_connect(&handle, binding->host, binding->port, binding->timeout * 1000) == SCGI_SUCCESS) {
@@ -318,6 +319,7 @@ static switch_status_t do_config(void)
 		binding->host = switch_core_strdup(globals.pool, host);
 		binding->port = atoi(port);
 		binding->vars_map = vars_map;
+		binding->uri = switch_mprintf("/%s", bname);
 		binding->url = switch_mprintf("scgi://%s:%s/%s", host, port, bname);
 
 		if (server) {
@@ -407,7 +409,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_scgi_shutdown)
 			int x = 3;
 
 			scgi_add_param(&handle, "REQUEST_METHOD", "POST");
-			scgi_add_param(&handle, "REQUEST_URI", bp->url);
+			scgi_add_param(&handle, "REQUEST_URI", bp->uri);
 			scgi_add_body(&handle, "SHUTDOWN");
 
 			while(x--) {
