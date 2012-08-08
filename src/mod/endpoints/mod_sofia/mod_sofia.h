@@ -1190,6 +1190,7 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
 char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);
 void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now);
 void sofia_msg_thread_start(int idx);
+void crtp_init(switch_loadable_module_interface_t *module_interface);
 
 
 /* For Emacs:
