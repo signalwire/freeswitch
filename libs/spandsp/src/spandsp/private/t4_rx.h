@@ -109,9 +109,7 @@ struct t4_rx_state_s
     union
     {
         t4_t6_decode_state_t t4_t6;
-#if defined(SPANDSP_SUPPORT_T42)
         t42_decode_state_t t42;
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
         t43_decode_state_t t43;
 #endif
