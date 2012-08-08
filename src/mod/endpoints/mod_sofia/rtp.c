@@ -74,6 +74,8 @@ typedef struct {
     switch_port_t local_port;
     switch_port_t remote_port;
     switch_payload_t agreed_pt; /*XXX*/
+	switch_payload_t rfc2833_pt;
+	
     sofia_dtmf_t dtmf_type;
     enum {
         RTP_SENDONLY,
@@ -146,7 +148,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
                 *codec  = switch_event_get_header_nil(var_event, kCODEC),
                 *szptime  = switch_event_get_header_nil(var_event, kPTIME),
                 //*mode  = switch_event_get_header_nil(var_event, kMODE),
-                //*szrfc2833_pt = switch_event_get_header_nil(var_event, kRFC2833PT),
+                *szrfc2833_pt = switch_event_get_header_nil(var_event, kRFC2833PT),
                 *szrate = switch_event_get_header_nil(var_event, kRATE),
                 *szpt = switch_event_get_header_nil(var_event, kPT);
     
@@ -155,7 +157,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
                  remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
     
     int ptime  = !zstr(szptime) ? atoi(szptime) : 0,
-        //rfc2833_pt = !zstr(szrfc2833_pt) ? atoi(szrfc2833_pt) : 0,
+        rfc2833_pt = !zstr(szrfc2833_pt) ? atoi(szrfc2833_pt) : 0,
         rate = !zstr(szrate) ? atoi(szrate) : 8000,
         pt = !zstr(szpt) ? atoi(szpt) : 0;
     
@@ -185,7 +187,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->remote_port = remote_port;
     tech_pvt->ptime = ptime;
     tech_pvt->agreed_pt = pt;
-    tech_pvt->dtmf_type = DTMF_2833; /* XXX */
+    tech_pvt->rfc2833_pt = rfc2833_pt;
+    if (rfc2833_pt) {
+    	tech_pvt->dtmf_type = DTMF_2833;
+    } else {
+		tech_pvt->dtmf_type = DTMF_NONE;
+    }
     
     if (zstr(local_addr) || local_port == 0) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "The local address and port must be set\n");
@@ -247,6 +254,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't setup RTP session: [%s]\n", err);
         goto fail;
     }
+
+	if (tech_pvt->dtmf_type == DTMF_2833) {
+		switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->rfc2833_pt);
+	}
     
     if (switch_core_session_thread_launch(*new_session) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't start session thread.\n"); 
@@ -500,11 +511,18 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
         if (compare_var(event, channel, kRFC2833PT)) {
             const char *szpt = switch_channel_get_variable(channel, kRFC2833PT);
             int pt = !zstr(szpt) ? atoi(szpt) : 0;
+
+			tech_pvt->rfc2833_pt = pt;
+
+			if (pt) {
+				tech_pvt->dtmf_type = DTMF_2833;
+			} else {
+				tech_pvt->dtmf_type = DTMF_NONE;
+			}
             
             switch_channel_set_variable(channel, kRFC2833PT, szpt);
             switch_rtp_set_telephony_event(tech_pvt->rtp_session, pt);
         }
-    
     } else {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received unknown command [%s] in event.\n", !command ? "null" : command);
     }

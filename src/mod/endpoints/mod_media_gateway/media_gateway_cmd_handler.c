@@ -705,6 +705,17 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 		    err_code = MGT_MGCO_RSP_CODE_DUP_TERM_CTXT;
 		    goto error;
 	    }
+
+/********************************************************************/
+
+    ret = mg_prc_descriptors(mg_profile, inc_cmd, term, &inc_cmd->u.mgCmdInd[0]->memCp);
+
+    /* IF there is any error , return */
+    if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+	    mg_util_set_err_string(&errTxt, " Unsupported Codec ");
+	    err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
+	    goto error;
+    }
     /********************************************************************/
     /* associate physical termination to context  */
 
@@ -715,16 +726,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         goto error;
     }
 
-    /********************************************************************/
-
-    ret = mg_prc_descriptors(mg_profile, inc_cmd, term, &inc_cmd->u.mgCmdInd[0]->memCp);
-
-    /* IF there is any error , return */
-    if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
-	    mg_util_set_err_string(&errTxt, " Unsupported Codec ");
-	    err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
-	    goto error;
-    }
+    
 
     /* TODO - locally assigned SDP must be the part of termination...which we can use to fill responses*/
 
