@@ -100,7 +100,7 @@ switch_status_t mod_xml_radius_new_handle(rc_handle **new_handle, switch_xml_t x
 switch_status_t do_config() 
 {
 	char *conf = "xml_radius.conf";
-	switch_xml_t xml, cfg, tmp, server;
+	switch_xml_t xml, cfg, tmp, server, param;
 	int serv, timeout, deadtime, retries, dict, seq;
 	/* TODO:
 	   1. read new auth_invite_configs
