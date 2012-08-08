@@ -864,7 +864,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 10);
 	
 	if (!(wflags & FTDM_WRITE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write note ready) in channel %s device %d:%d!\n", name, span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write not ready) in channel %s device %d:%d!\n", name, span_id, chan_id);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
