@@ -2365,6 +2365,10 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 			prpid = "onthephone";
 		}
 
+		if (zstr(open)) {
+			open = "open";
+		}
+
 		ret = switch_mprintf("<?xml version=\"1.0\"?>\n"
 							 "<!DOCTYPE presence PUBLIC \"-//IETF//DTD RFCxxxx XPIDF 1.0//EN\" \"xpidf.dtd\">\n"
 							 "<presence>\n"
@@ -2945,7 +2949,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				open = "closed";
 			}
 
-			if (open_closed) {
+			if (!zstr(open_closed)) {
 				open = open_closed;
 			}
 			
@@ -2977,7 +2981,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			open = "closed";
 		}
 
-		if (open_closed) {
+		if (!zstr(open_closed)) {
 			open = open_closed;
 		}
 
