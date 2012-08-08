@@ -2,7 +2,7 @@
  * SpanDSP - a series of DSP components for telephony
  *
  * private/ima_adpcm.c - Conversion routines between linear 16 bit PCM data
- *		                 and IMA/DVI/Intel ADPCM format.
+ *                       and IMA/DVI/Intel ADPCM format.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
