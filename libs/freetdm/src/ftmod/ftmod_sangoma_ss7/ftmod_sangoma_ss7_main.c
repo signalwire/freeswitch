@@ -338,14 +338,38 @@ static void handle_hw_alarm(ftdm_event_t *e)
 	}
 }
 
+
+static void check_span_oob_events(ftdm_span_t *ftdmspan)
+{
+	ftdm_event_t 		*event = NULL;
+	/* Poll for events, e.g HW DTMF */
+	switch (ftdm_span_poll_event(ftdmspan, 0, NULL)) {
+	/**********************************************************************/
+	case FTDM_SUCCESS:
+		while (ftdm_span_next_event(ftdmspan, &event) == FTDM_SUCCESS) {
+			if (event->e_type == FTDM_EVENT_OOB) {
+				handle_hw_alarm(event);
+			}
+		}
+		break;
+	/**********************************************************************/
+	case FTDM_TIMEOUT:
+		/* No events pending */
+		break;
+	/**********************************************************************/
+	default:
+		SS7_ERROR("%s:Failed to poll span event\n", ftdmspan->name);
+	/**********************************************************************/
+	}
+}
+
 /* MONITIOR THREADS ***********************************************************/
 static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 {
 	ftdm_interrupt_t	*ftdm_sangoma_ss7_int[2];
 	ftdm_span_t 		*ftdmspan = (ftdm_span_t *) obj;
 	ftdm_channel_t 		*ftdmchan = NULL;
-	ftdm_event_t 		*event = NULL;
-	sngss7_event_data_t	*sngss7_event = NULL;
+	sngss7_event_data_t     *sngss7_event = NULL;
 	sngss7_span_data_t	*sngss7_span = (sngss7_span_data_t *)ftdmspan->signal_data;
 
 	int b_alarm_test = 1;
@@ -398,8 +422,7 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 					break;
 					/**********************************************************************/
 			}
-
-
+			check_span_oob_events(ftdmspan);
 		}
 		goto ftdm_sangoma_ss7_stop;
 	}
@@ -514,25 +537,7 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 		/* check each channel on the span to see if it needs to be reconfigured */
 		check_for_reconfig_flag(ftdmspan);
 		
-		/* Poll for events, e.g HW DTMF */
-		switch (ftdm_span_poll_event(ftdmspan, 0, NULL)) {
-		/**********************************************************************/
-		case FTDM_SUCCESS:
-			while (ftdm_span_next_event(ftdmspan, &event) == FTDM_SUCCESS) {
-				if (event->e_type == FTDM_EVENT_OOB) {
-					handle_hw_alarm(event);
-				}
-			}
-			break;
-		/**********************************************************************/
-		case FTDM_TIMEOUT:
-			/* No events pending */
-			break;
-		/**********************************************************************/
-		default:
-			SS7_ERROR("%s:Failed to poll span event\n", ftdmspan->name);
-		/**********************************************************************/
-		}
+		check_span_oob_events(ftdmspan);
 	}
 ftdm_sangoma_ss7_stop:
 
