@@ -409,7 +409,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_scgi_shutdown)
 			int x = 3;
 
 			scgi_add_param(&handle, "REQUEST_METHOD", "POST");
-			scgi_add_param(&handle, "REQUEST_URI", bp->url);
+			scgi_add_param(&handle, "REQUEST_URI", bp->uri);
 			scgi_add_body(&handle, "SHUTDOWN");
 
 			while(x--) {
