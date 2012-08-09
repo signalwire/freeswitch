@@ -96,17 +96,35 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 static switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event);
 
 switch_state_handler_table_t crtp_state_handlers = {
-	.on_init = channel_on_init,
-	.on_destroy = channel_on_destroy
+	/*on_init */channel_on_init,
+	/*on_routing */ NULL,
+	/*on_execute */ NULL,
+	/*on_hangup*/ NULL,
+	/*on_exchange_media*/ NULL,
+	/*on_soft_execute*/ NULL,
+	/*on_consume_media*/ NULL,
+	/*on_hibernate*/ NULL,
+	/*on_reset*/ NULL,
+	/*on_park*/ NULL,
+	/*on_reporting*/ NULL,
+	/*on_destroy*/ channel_on_destroy
+
 };
 
 switch_io_routines_t crtp_io_routines = {
-	.outgoing_channel = channel_outgoing_channel,
-	.read_frame = channel_read_frame,
-	.write_frame = channel_write_frame,
-	.receive_message = channel_receive_message,
-    .receive_event = channel_receive_event,
-    .send_dtmf = channel_send_dtmf
+	/*outgoing_channel*/ channel_outgoing_channel,
+	/*read_frame*/ channel_read_frame,
+	/*write_frame*/ channel_write_frame,
+	/*kill_channel*/ NULL,
+	/*send_dtmf*/ channel_send_dtmf,
+	/*receive_message*/ channel_receive_message,
+	/*receive_event*/ channel_receive_event,
+	/*state_change*/ NULL,
+	/*read_video_frame*/ NULL,
+	/*write_video_frame*/ NULL,
+	/*state_run*/ NULL,
+	/* resurrect_session*/ NULL
+
 };
 
 
