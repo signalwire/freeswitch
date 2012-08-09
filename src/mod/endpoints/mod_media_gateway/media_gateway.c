@@ -84,7 +84,7 @@ megaco_profile_t*  megaco_get_profile_by_suId(SuId suId)
 static switch_status_t mg_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	mg_termination_t *term = switch_channel_get_private(channel, "_mg_term_");
+	mg_termination_t *term = switch_channel_get_private(channel, PVT_MG_TERM);
 	//char digit[2] = { dtmf->digit };
 	if (!term) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find termination structure for session [%s]\n",
@@ -158,7 +158,7 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
     }
     
     if (zstr(term->uuid)) {    
-	switch_channel_t *channel;
+        switch_channel_t *channel;
         if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_STATUS_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to instanciate termination [%s]: %s\n", term->name, switch_channel_cause2str(cause));   
             status = SWITCH_STATUS_FALSE;
@@ -167,9 +167,11 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         
         term->uuid = switch_core_strdup(term->pool, switch_core_session_get_uuid(session));
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));   
-	channel = switch_core_session_get_channel(session);
-	switch_channel_set_private(channel, "_mg_term_", term);
-	switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
+        channel = switch_core_session_get_channel(session);
+        switch_channel_set_private(channel, PVT_MG_TERM, term);
+        switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
+        	
+        switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
     }
     
     switch_set_flag(term, MGT_ACTIVE);

@@ -26,6 +26,22 @@ SWITCH_STANDARD_API(megaco_function)
 	return mg_process_cli_cmd(cmd, stream);
 }
 
+SWITCH_STANDARD_APP(mg_notify_function)
+{
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    mg_termination_t *term = switch_channel_get_private(channel, PVT_MG_TERM);
+    
+    if (!term) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "mg_notify called on a non-supported channel.\n");
+        return;
+    }
+    
+    if (!strcmp(data, "cng")) {
+        mg_send_t38_cng_notify(term->profile, term->name);
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent CNG notify\n");
+    }
+}
+
 static switch_status_t console_complete_hashtable(switch_hash_t *hash, const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
 	switch_hash_index_t *hi;
@@ -92,6 +108,7 @@ static void mg_event_handler(switch_event_t *event)
 SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 {
 	switch_api_interface_t *api_interface;
+    switch_application_interface_t *app_interface;
 
 	memset(&megaco_globals, 0, sizeof(megaco_globals));
 	megaco_globals.pool = pool;
@@ -105,6 +122,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_media_gateway_load)
 	switch_thread_rwlock_create(&megaco_globals.peer_profile_rwlock, pool);
 
 	SWITCH_ADD_API(api_interface, "mg", "media_gateway", megaco_function, MEGACO_FUNCTION_SYNTAX);
+    SWITCH_ADD_APP(app_interface, "mg_notify", "<type>", "sends a notify to the mgc", mg_notify_function, "", 0);
 
 	switch_console_set_complete("add mg profile ::mg::list_profiles start");
 	switch_console_set_complete("add mg profile ::mg::list_profiles stop");
@@ -246,77 +264,7 @@ void handle_sng_log(uint8_t level, char *fmt, ...)
 	va_end(ptr);
 }
 /*****************************************************************************************************************************/
-
-#if 0
-static switch_status_t mgco_parse_local_sdp(mg_termination_t *term, CmSdpInfoSet *sdp)
-{
-    int i;
-    CmSdpInfoSet *local_sdp;
-    /* Parse the local SDP while copying the important bits over to our local structure,
-     * while taking care of editing choose request and replacing them by real values */
     
-    if (!term->u.rtp.local_sdp) {
-        local_sdp = term->u.rtp.local_sdp = switch_core_alloc(term->context->pool, sizeof *term->u.rtp.local_sdp);
-    }
-    
-    
-    if (sdp->numComp.pres == NOTPRSNT) {
-        return SWITCH_STATUS_FALSE;
-    }
-    
-    for (i = 0; i < sdp->numComp.val; i++) {
-        CmSdpInfo *s = sdp->info[i];
-        int mediaId;
-        
-        local_sdp->info[i] = switch_core_alloc(term->context->pool, sizeof *(local_sdp->info[i]));
-        *(local_sdp->info[i]) = *(sdp->info[i]);
-        
-        if (s->conn.addrType.pres && s->conn.addrType.val == CM_SDP_ADDR_TYPE_IPV4 &&
-            s->conn.netType.type.val == CM_SDP_NET_TYPE_IN &&
-            s->conn.u.ip4.addrType.val == CM_SDP_IPV4_IP_UNI) {
-            
-            if (s->conn.u.ip4.addrType.pres) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local address: %d.%d.%d.%d\n",
-                                  s->conn.u.ip4.u.uniIp.b[0].val,
-                                  s->conn.u.ip4.u.uniIp.b[1].val,
-                                  s->conn.u.ip4.u.uniIp.b[2].val,
-                                  s->conn.u.ip4.u.uniIp.b[3].val);
-                
-                /* TODO: Double-check bind address for this profile */
-                
-            }
-            if (s->attrSet.numComp.pres) {
-                for (mediaId = 0; mediaId < s->attrSet.numComp.val; mediaId++) {
-                    CmSdpAttr *a = s->attrSet.attr[mediaId];
-                    local_sdp->info[i]->attrSet.attr[mediaId] = switch_core_alloc(term->context->pool, sizeof(CmSdpAttr));
-                    *(local_sdp->info[i]->attrSet.attr[mediaId]) = *a;
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Media %p\n", (void*)a);
-                }
-            }
-            
-            if (s->mediaDescSet.numComp.pres) {
-                for (mediaId = 0; mediaId < s->mediaDescSet.numComp.val; mediaId++) {
-                    CmSdpMediaDesc *desc = s->mediaDescSet.mediaDesc[mediaId];
-                    local_sdp->info[i]->mediaDescSet.mediaDesc[mediaId] = switch_core_alloc(term->context->pool, sizeof(CmSdpMediaDesc));
-                    *(local_sdp->info[i]->mediaDescSet.mediaDesc[mediaId]) = *desc;
-                    
-                    if (desc->field.mediaType.val == CM_SDP_MEDIA_AUDIO &&
-                        desc->field.id.type.val ==  CM_SDP_VCID_PORT &&
-                        desc->field.id.u.port.type.val == CM_SDP_PORT_INT &&
-                        desc->field.id.u.port.u.portInt.port.type.val == CM_SDP_SPEC) {
-                        int port = desc->field.id.u.port.u.portInt.port.val.val;
-                        
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Port: %d\n", port);
-                        
-                    }
-                }
-            }
-        }
-    }
-
-    return SWITCH_STATUS_SUCCESS;
-}
-#endif
 
 /* KAPIL- NOTE : We are using Command mode operation of MEGACO stack, so we will always get command indication instead of transaction */
 /* Below API is not useful ... just leaving as it is...*/

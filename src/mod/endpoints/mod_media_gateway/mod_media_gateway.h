@@ -22,6 +22,8 @@
 #define MEGACO_LOGGING_CLI_SYNTAX "logging [enable|disable]"
 #define MEGACO_FUNCTION_SYNTAX "profile [name] [start | stop] [status] [xmlstatus] [peerxmlstatus]"
 
+#define PVT_MG_TERM "_mg_term_"
+
 struct megaco_globals {
 	switch_memory_pool_t 		*pool;
 	switch_hash_t 			*profile_hash;
