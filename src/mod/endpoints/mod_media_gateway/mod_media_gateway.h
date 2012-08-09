@@ -160,7 +160,7 @@ struct mg_termination_s {
             int rate;       /*!< Sampling rate */
             const char *codec; /*!< Codec to use, using the freeswitch nomenclature. This could be "PCMU" for G711.U, "PCMA" for G711.A, or "G729" for g729 */
             int term_id;
-            switch_t38_options_t t38_options;
+            switch_t38_options_t *t38_options;
             mg_media_type_t media_type;
         } rtp;
         
