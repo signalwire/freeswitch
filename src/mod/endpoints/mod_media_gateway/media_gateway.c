@@ -125,6 +125,9 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kRFC2833PT, "%d", term->u.rtp.rfc2833_pt);
         switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kRATE, "%d", term->u.rtp.rate);
         switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kCODEC, term->u.rtp.codec);
+        
+        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kMEDIATYPE, mg_media_type2str(term->u.rtp.media_type));
+        
     } else if (term->type == MG_TERM_TDM) {
         switch_snprintf(dialstring, sizeof dialstring, "tdm/%s", term->name);
         

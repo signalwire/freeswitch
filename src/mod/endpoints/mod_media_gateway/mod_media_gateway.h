@@ -79,6 +79,7 @@ typedef struct mg_context_s mg_context_t;
 #define kRFC2833PT "rfc2833_pt"
 #define kMODE "mode"
 #define kRATE "rate"
+#define kMEDIATYPE "media_type"
 
 /* TDM parameters understood by the controllable channel */
 #define kSPAN_ID "span"
@@ -95,6 +96,32 @@ enum {
     MG_OUT_OF_SERVICE 	= (1 << 3),
     
 } mg_termination_flags;
+
+
+typedef enum {
+    MGM_AUDIO = 0,
+    MGM_IMAGE,
+    MGM_INVALID
+} mg_media_type_t;
+
+static inline const char *mg_media_type2str(mg_media_type_t type) {
+    switch (type) {
+        case MGM_AUDIO:
+            return "audio";
+        case MGM_IMAGE:
+            return "image";
+        case MGM_INVALID:
+            return NULL;
+    }
+}
+
+static inline mg_media_type_t mg_media_type_parse(const char *str) {
+    if (!strcasecmp(str, "audio")) {
+        return MGM_AUDIO;
+    } else if (!strcasecmp(str, "image")) {
+        return MGM_IMAGE;
+    }
+}
 
 struct mg_context_s {
     uint32_t context_id;
@@ -133,6 +160,8 @@ struct mg_termination_s {
             int rate;       /*!< Sampling rate */
             const char *codec; /*!< Codec to use, using the freeswitch nomenclature. This could be "PCMU" for G711.U, "PCMA" for G711.A, or "G729" for g729 */
             int term_id;
+            switch_t38_options_t t38_options;
+            mg_media_type_t media_type;
         } rtp;
         
         struct {
