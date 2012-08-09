@@ -231,7 +231,11 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
             {
                 printf("Equalizer B:\n");
                 for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINT)
                     printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/V27TER_CONSTELLATION_SCALING_FACTOR, coeffs[i].im/V27TER_CONSTELLATION_SCALING_FACTOR);
+#else
+                    printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+#endif
 #if defined(ENABLE_GUI)
                 if (use_gui)
                 {
@@ -241,10 +245,10 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
                     qam_monitor_update_equalizer(qam_monitor, coeffs, len);
 #endif
                 }
+#endif
             }
             update_interval = 100;
         }
-#endif
     }
     else
     {
@@ -601,7 +605,7 @@ int main(int argc, char *argv[])
             exit(2);
         }
     }
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/
