@@ -532,6 +532,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download libjpeg", "libs\win32\Download libjpeg.2010.vcxproj", "{652AD5F7-8488-489F-AAD0-7FBE064703B6}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "libs\win32\libjpeg\libjpeg.2010.vcxproj", "{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{652AD5F7-8488-489F-AAD0-7FBE064703B6} = {652AD5F7-8488-489F-AAD0-7FBE064703B6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
