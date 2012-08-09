@@ -1,0 +1,35 @@
+<!-- Speex configuration.  See the Speex Codec Manual for a detailed description
+     of these options.  www.speex.org/docs/manual/speex-manual.pdf -->
+<configuration name="speex.conf" description="Speex codec configuration">
+  <!-- default settings -->
+  <settings name="default">
+    <!-- Integer between 0-10  Higher quality == higher CPU utilization -->
+    <param name="quality" value="5"/>
+    <!-- Integer between 1-10  Higher compression complexity == higher CPU utilization -->
+    <param name="complexity" value="5"/>
+    <!-- enable perception enhancement -->
+    <param name="enhancement" value="true"/>
+    <!-- enable voice activity detection -->
+    <param name="vad" value="false"/>
+    <!-- enable variable bit rate -->
+    <param name="vbr" value="false"/>
+    <!-- Float between 0-10  Higher quality == higher CPU utilization -->
+    <param name="vbr-quality" value="4.0"/>
+    <!-- Average bit rate.  Integer in bps -->
+    <param name="abr" value="0"/>
+    <!-- enable discontinuous transmission -->
+    <param name="dtx" value="false"/>
+    <!-- enable preprocessor -->
+    <param name="preproc" value="false"/>
+    <!-- enable preprocessor vad -->
+    <param name="pp-vad" value="false"/>
+    <!-- enable preprocessor automatic gain control -->
+    <param name="pp-agc" value="false"/>
+    <!-- AGC level -->
+    <param name="pp-agc-level" value="8000.0"/>
+    <!-- enable preprocessor denoiser -->
+    <param name="pp-denoise" value="false"/>
+    <!-- enable preprocessor reverberation removal -->
+    <param name="pp-dereverb" value="false"/>
+  </settings>
+</configuration>
