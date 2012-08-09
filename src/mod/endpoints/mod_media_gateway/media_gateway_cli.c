@@ -735,6 +735,8 @@ switch_status_t handle_term_status_cli_cmd(switch_stream_handle_t *stream, megac
 
 	if(MG_TERM_RTP == term->type){
 		stream->write_function(stream, "RTP Termination ID [%d] \n",term->u.rtp.term_id);
+		stream->write_function(stream, "RTP MEDIA Type [%s] \n",
+				( MGM_IMAGE == term->u.rtp.media_type)?"MGM_IMAGE":"MGM_AUDIO");
 		stream->write_function(stream, "RTP Termination Local Address[%s] \n",
 				(NULL != term->u.rtp.local_addr)?term->u.rtp.local_addr:"NULL");
 		stream->write_function(stream, "RTP Termination Local Port[%d] \n",term->u.rtp.local_port);

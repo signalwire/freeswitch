@@ -972,6 +972,7 @@ void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sd
                     {
                         CmSdpMedFmtRtpList* r = &a->u.rtp;
                         int i = 0x00;
+			term->u.rtp.media_type = MGM_AUDIO;
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " CM_SDP_MEDIA_PROTO_RTP: \n"); 
                         if(NOTPRSNT != r->num.pres){
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
@@ -1064,6 +1065,8 @@ void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sd
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 				" CM_SDP_MEDIA_PROTO_UDPTL: no format defines..\n"); 
 			}
+
+			term->u.rtp.media_type = MGM_IMAGE;
 
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 					" CM_SDP_MEDIA_PROTO_UDPTL: formats[%d]\n", t->num.val); 
