@@ -156,6 +156,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\jpeg-8d\jconfig.h" type "$(ProjectDir)..\..\jpeg-8d\jconfig.vc" &gt; "$(ProjectDir)..\..\jpeg-8d\jconfig.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -175,6 +178,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\jpeg-8d\jconfig.h" type "$(ProjectDir)..\..\jpeg-8d\jconfig.vc" &gt; "$(ProjectDir)..\..\jpeg-8d\jconfig.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
