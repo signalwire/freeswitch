@@ -218,6 +218,7 @@ switch_status_t mg_send_ins_service_change(megaco_profile_t* mg_profile, const c
 switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_name, MgMgcoObsEvt* oevt);
 switch_status_t  mg_send_dtmf_notify(megaco_profile_t* mg_profile, const char* term_name, char* digits, int num_of_collected_digits);
 switch_status_t  mg_send_ito_notify(megaco_profile_t* mg_profile);
+void mg_print_t38_attributes(mg_termination_t* term);
 switch_status_t  mg_util_build_obs_evt_desc (MgMgcoObsEvt *obs_event, MgMgcoRequestId *request_id, MgMgcoObsEvtDesc **ptr_obs_desc);
 void mg_print_time();
 switch_status_t mg_activate_ito_timer(megaco_profile_t* profile);

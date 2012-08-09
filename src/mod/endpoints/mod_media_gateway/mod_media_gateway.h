@@ -113,6 +113,7 @@ static inline const char *mg_media_type2str(mg_media_type_t type) {
         case MGM_INVALID:
             return NULL;
     }
+    return NULL;
 }
 
 static inline mg_media_type_t mg_media_type_parse(const char *str) {
@@ -121,6 +122,7 @@ static inline mg_media_type_t mg_media_type_parse(const char *str) {
     } else if (!strcasecmp(str, "image")) {
         return MGM_IMAGE;
     }
+    return MGM_INVALID;
 }
 
 struct mg_context_s {

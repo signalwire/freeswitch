@@ -431,6 +431,56 @@ void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd)
 }
 
 /*****************************************************************************************************************************/
+void mgco_fill_t38_sdp_attr(CmSdpAttrSet *s, mg_termination_t* term, CmMemListCp *memCp)
+{
+	int i=0x00;
+
+	if(!term->u.rtp.t38_options) return;
+	if (!s->numComp.pres) return ; 
+
+	for (i = 0; i < s->numComp.val; i++) {
+		CmSdpAttr *a = s->attr[i];
+		if(NOTPRSNT == a->type.pres) continue;
+
+		switch(a->type.val)
+		{
+			case CM_SDP_ATTR_T38_FAX:
+				{
+					CmSdpAttrT38Fax* f = &a->u.fax;
+					if(NOTPRSNT == f->type.pres) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								"CM_SDP_ATTR_T38_FAX: TYPE not present \n");
+						break;
+					}
+
+/* NOTE - Ideally i should not change ,whatever is coming we can return..due to
+trillium issue forcefully coping the data...will remove once get trillium fix*/
+if(f->type.val == CM_SDP_ATTR_T38_FAX_UNKNOWN) {
+if((i==0) && term->u.rtp.t38_options->T38FaxRateManagement){
+MG_SET_TKNSTROSXL((f->u.unknown.name),strlen("FaxRateManagement"),"FaxRateManagement", memCp);	
+MG_SET_TKNSTROSXL((f->u.unknown.val),
+		strlen(term->u.rtp.t38_options->T38FaxRateManagement),
+		term->u.rtp.t38_options->T38FaxRateManagement, memCp);	
+}
+if((i==1) && term->u.rtp.t38_options->T38FaxUdpEC){
+MG_SET_TKNSTROSXL((f->u.unknown.name),strlen("FaxUdpEC"),"FaxUdpEC", memCp);	
+MG_SET_TKNSTROSXL((f->u.unknown.val),
+		strlen(term->u.rtp.t38_options->T38FaxUdpEC),
+		term->u.rtp.t38_options->T38FaxUdpEC, memCp);	
+}
+if((i==2)){
+char buf[10] = {0};
+sprintf(buf,"%d",term->u.rtp.t38_options->T38MaxBitRate);
+MG_SET_TKNSTROSXL((f->u.unknown.name),strlen("MaxBitRate"),"MaxBitRate", memCp);	
+MG_SET_TKNSTROSXL((f->u.unknown.val),
+		strlen(buf), buf, memCp);	
+}
+}
+}
+}
+}
+}
+/*****************************************************************************************************************************/
 void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
 {
     int i=0x00;
@@ -754,9 +804,47 @@ void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
                         break;
                     }
                 case CM_SDP_ATTR_T38_FAX:
-                    {
-                        break;
-                    }
+		    {
+			    CmSdpAttrT38Fax* f = &a->u.fax;
+			    if(NOTPRSNT == f->type.pres) {
+				    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						    "CM_SDP_ATTR_T38_FAX: TYPE not present \n");
+				    break;
+			    }
+
+			    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					    "\t CM_SDP_ATTR_T38_FAX: type=%d\n", f->type.val);
+
+			    if(f->type.val == CM_SDP_ATTR_T38_FAX_UNKNOWN) {
+				    if(f->u.unknown.name.pres){
+					    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+							    "T38: Attribute : name[len=%d, value=%s] \n",
+							    f->u.unknown.name.len,(char*)f->u.unknown.name.val);
+				    }
+				    if(f->u.unknown.val.pres){
+					    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+							    "T38: Attribute : value[len=%d, value=%s] \n",
+							    f->u.unknown.val.len,(char*)f->u.unknown.val.val);
+				    }
+			    }
+
+			/* filling default values */
+			if(NULL == term->u.rtp.t38_options){
+				term->u.rtp.t38_options = 
+					switch_core_alloc(term->pool, sizeof *term->u.rtp.t38_options);
+			}
+			term->u.rtp.t38_options->T38FaxVersion = 0x01;
+			term->u.rtp.t38_options->T38MaxBitRate = 14400;
+			term->u.rtp.t38_options->T38FaxRateManagement = 
+				switch_core_strdup(term->pool,"transferredTCF") ;
+			//term->u.rtp.t38_options->T38FaxMaxBuffer = ;
+			//term->u.rtp.t38_options->T38FaxMaxDatagram = ;
+			term->u.rtp.t38_options->T38FaxUdpEC = 
+				switch_core_strdup(term->pool,"t38UDPRedundancy") ;
+			//term->u.rtp.t38_options->T38VendorInfo = 
+
+			break;
+		    }
                 default:
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not supported Type[%d]\n",a->type.val);
                     break;
@@ -765,8 +853,6 @@ void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
     }else{
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "a-line not present \n");
     }
-
-
 }
 
 void mgco_handle_sdp_c_line(CmSdpConn *s, mg_termination_t* term, mgco_sdp_types_e sdp_type)
@@ -852,7 +938,8 @@ void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sd
             CmSdpMedProtoFmts *a = s->pflst[i];
 
             /*Prot*/
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " Proto Type = %d \n", (NOTPRSNT != a->prot.type.pres)?a->prot.type.val:-1);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+				" Proto Type = %d \n", (NOTPRSNT != a->prot.type.pres)?a->prot.type.val:-1);
             switch(a->prot.type.val)
             {
                 case CM_SDP_MEDIA_PROTO_UNKNOWN:
@@ -867,6 +954,12 @@ void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sd
                                 (NOTPRSNT != a->prot.u.subtype.type.pres)?a->prot.u.subtype.type.val: -1);
                         break;
                     }
+		case CM_SDP_MEDIA_PROTO_UDPTL:
+		    {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					" Proto Type T38 -UDPTL , subtype = %d \n", 
+					(NOTPRSNT != a->prot.u.subtype.type.pres)?a->prot.u.subtype.type.val: -1);
+		    }
             }
 
             /*repeated from "prot" field */
@@ -881,7 +974,8 @@ void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sd
                         int i = 0x00;
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " CM_SDP_MEDIA_PROTO_RTP: \n"); 
                         if(NOTPRSNT != r->num.pres){
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " Number of Formats[%d] \n", r->num.val); 
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						" Number of Formats[%d] \n", r->num.val); 
 
                             for(i=0;i<r->num.val;i++){
                                 mgco_print_CmSdpU8OrNil(r->fmts[i]);
@@ -961,10 +1055,31 @@ void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sd
                         break;
                     }
 
-                case CM_SDP_UDPTL_FMT_T38:
+                case CM_SDP_MEDIA_PROTO_UDPTL:
                     {
-                        /*CmSdpMedFmtUdptlList* t = &a->u.t38;*/
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " CM_SDP_UDPTL_FMT_T38: \n"); 
+                        CmSdpMedFmtUdptlList* t = &a->u.t38;
+			int i = 0;
+		
+			if(NOTPRSNT == t->num.pres) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+				" CM_SDP_MEDIA_PROTO_UDPTL: no format defines..\n"); 
+			}
+
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					" CM_SDP_MEDIA_PROTO_UDPTL: formats[%d]\n", t->num.val); 
+
+			for(i=0; i< t->num.val;i++)			
+			{
+				CmSdpT38Fmt* f = t->fmts[i];
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						" f->knownFmt.pres=%d, f->knownFmt.val=%d\n",
+						  f->knownFmt.pres,f->knownFmt.val);
+				if(f->unknownFmt.pres){
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+							"f->unknownFmt.val[%s]\n",f->unknownFmt.val);
+				}
+			}
+
                         break;
                     }
                 default:
@@ -985,7 +1100,8 @@ void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sd
 
 	if (sdp->numComp.pres == NOTPRSNT) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-				  " No %s SDP present \n", (MG_SDP_LOCAL== sdp_type)?"MG_SDP_LOCAL":"MG_SDP_REMOTE");
+				  " No %s SDP present \n", 
+				(MG_SDP_LOCAL== sdp_type)?"MG_SDP_LOCAL":"MG_SDP_REMOTE");
 		return;
 	}
 
@@ -1000,38 +1116,52 @@ void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sd
 		/************************************************************************************************************************/
 		/* Version */
 		if(NOTPRSNT != s->ver.pres) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " SDP Version = %d \n", s->ver.val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					" SDP Version = %d \n", s->ver.val);
 		}
 
 		/************************************************************************************************************************/
 		/* Orig */
 		if(NOTPRSNT != s->orig.pres.pres) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "********** SDP orig line ****** \n \t Type = %d \n", s->orig.type.val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					"********** SDP orig line ****** \n \t Type = %d \n", 
+					s->orig.type.val);
 
 			if(NOTPRSNT != s->orig.orig.pres.pres) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t User Name = %s \n", 
-						(NOTPRSNT != s->orig.orig.usrName.pres)?(char*)s->orig.orig.usrName.val:"Not Present");
+						(NOTPRSNT != s->orig.orig.usrName.pres)?
+						(char*)s->orig.orig.usrName.val:"Not Present");
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Session Id = %s \n", 
-						(NOTPRSNT != s->orig.orig.sessId.pres)?(char*)s->orig.orig.sessId.val:"Not Present");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t Session Id = %s \n", 
+						(NOTPRSNT != s->orig.orig.sessId.pres)?
+						(char*)s->orig.orig.sessId.val:"Not Present");
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Session Version = %s \n", 
-						(NOTPRSNT != s->orig.orig.sessVer.pres)?(char*)s->orig.orig.sessVer.val:"Not Present");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t Session Version = %s \n", 
+						(NOTPRSNT != s->orig.orig.sessVer.pres)?
+						(char*)s->orig.orig.sessVer.val:"Not Present");
 
 				/* sdpAddr */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Net Type = %d \n", 
-						(NOTPRSNT != s->orig.orig.sdpAddr.netType.type.pres)?s->orig.orig.sdpAddr.netType.type.val:-1);
+						(NOTPRSNT != s->orig.orig.sdpAddr.netType.type.pres)?
+						s->orig.orig.sdpAddr.netType.type.val:-1);
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Address Type = %d \n", 
-						(NOTPRSNT != s->orig.orig.sdpAddr.addrType.pres)?s->orig.orig.sdpAddr.addrType.val:-1);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						 "\t Address Type = %d \n", 
+						(NOTPRSNT != s->orig.orig.sdpAddr.addrType.pres)
+						?s->orig.orig.sdpAddr.addrType.val:-1);
 
 				/* print IPV4 address */
-				if (s->orig.orig.sdpAddr.addrType.pres && s->orig.orig.sdpAddr.addrType.val == CM_SDP_ADDR_TYPE_IPV4 &&
+				if (s->orig.orig.sdpAddr.addrType.pres && 
+					s->orig.orig.sdpAddr.addrType.val == CM_SDP_ADDR_TYPE_IPV4 &&
 						s->orig.orig.sdpAddr.netType.type.val == CM_SDP_NET_TYPE_IN &&
-						s->orig.orig.sdpAddr.u.ip4.addrType.val == CM_SDP_IPV4_IP_UNI) {
+						s->orig.orig.sdpAddr.u.ip4.addrType.val == CM_SDP_IPV4_IP_UNI) 
+				    {
 
 					if (s->orig.orig.sdpAddr.u.ip4.addrType.pres) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Address: %d.%d.%d.%d\n",
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								"Address: %d.%d.%d.%d\n",
 								s->orig.orig.sdpAddr.u.ip4.u.ip.b[0].val,
 								s->orig.orig.sdpAddr.u.ip4.u.ip.b[1].val,
 								s->orig.orig.sdpAddr.u.ip4.u.ip.b[2].val,
@@ -1039,18 +1169,20 @@ void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sd
 					}
 
 				}else{
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t O-line not present \n"); 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								"\t O-line not present \n"); 
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "********** ****** \n");
 			}
 		} else{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t O-line not present \n"); 
 		}
-		/************************************************************************************************************************/
+/************************************************************************************************************************/
 		/* Session Name (s = line) */
 
 		if(NOTPRSNT != s->sessName.pres) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Session Name = %s \n", s->sessName.val); 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					   "\t Session Name = %s \n", s->sessName.val); 
 		} else{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t s-line not present \n"); 
 		}
@@ -1059,18 +1191,22 @@ void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sd
 		/* Session Info(i= line) */
 
 		if(NOTPRSNT != s->info.pres) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Session Info = %s \n", s->info.val); 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t Session Info = %s \n", s->info.val); 
 		} else{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t i-line not present \n"); 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t i-line not present \n"); 
 		}
 
 		/************************************************************************************************************************/
 		/* Session Uri */
 
 		if(NOTPRSNT != s->uri.pres) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Session Uri = %s \n", s->uri.val); 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t Session Uri = %s \n", s->uri.val); 
 		} else{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t uri not present \n"); 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t uri not present \n"); 
 		}
 
 		/************************************************************************************************************************/
@@ -1098,26 +1234,34 @@ void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sd
 		if(NOTPRSNT != s->sdpTime.pres.pres) {
 			if(NOTPRSNT != s->sdpTime.sdpOpTimeSet.numComp.pres) {
 				int i = 0x00;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SDP op time present with total component[%d]\n", s->sdpTime.sdpOpTimeSet.numComp.val);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"SDP op time present with total component[%d]\n", 
+						s->sdpTime.sdpOpTimeSet.numComp.val);
 				for (i = 0;i<s->sdpTime.sdpOpTimeSet.numComp.val;i++){
 					CmSdpOpTime* t = s->sdpTime.sdpOpTimeSet.sdpOpTime[i];
 					if(NOTPRSNT == t->pres.pres) continue;
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Start Time = %s \n", 
-							(NOTPRSNT != t->startTime.pres)?(char*)t->startTime.val:"Not Present");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+							"\t Start Time = %s \n", 
+							(NOTPRSNT != t->startTime.pres)?
+							(char*)t->startTime.val:"Not Present");
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Stop Time = %s \n", 
-							(NOTPRSNT != t->stopTime.pres)?(char*)t->stopTime.val:"Not Present");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+							"\t Stop Time = %s \n", 
+							(NOTPRSNT != t->stopTime.pres)?
+							(char*)t->stopTime.val:"Not Present");
 
 					/*repeat time repFieldSet */
 
 					if(NOTPRSNT != t->repFieldSet.numComp.pres) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SDP repeat time present with total component[%d]\n", 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								"SDP repeat time present with total component[%d]\n", 
 								t->repFieldSet.numComp.val);
 
 						/*TODO - print repeat fields */
 					}else{
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SDP repeat time not present \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								 "SDP repeat time not present \n");
 					}
 				} /* sdpOpTimeSet.numComp for loop -- end */
 			}else{/*sdpOpTimeSet.numComp.pres if -- end */
@@ -1139,7 +1283,8 @@ void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sd
 					(NOTPRSNT != s->keyType.keyType.pres)?s->keyType.keyType.val:-1);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Key Data = %s \n", 
-					(NOTPRSNT != s->keyType.key_data.pres)?(char*)s->keyType.key_data.val:"Not Present");
+					(NOTPRSNT != s->keyType.key_data.pres)?
+					(char*)s->keyType.key_data.val:"Not Present");
 		}else{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "k-line not present \n");
 		}
@@ -1153,7 +1298,9 @@ void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sd
 		/* Media Descriptor Set */
 
 		if (s->mediaDescSet.numComp.pres) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "****** Media Descriptor Set present with numComp[%d]\n", s->mediaDescSet.numComp.val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					"****** Media Descriptor Set present with numComp[%d]\n", 
+					s->mediaDescSet.numComp.val);
 			for (mediaId = 0; mediaId < s->mediaDescSet.numComp.val; mediaId++) {
 				CmSdpMediaDesc *desc = s->mediaDescSet.mediaDesc[mediaId];
 
@@ -1162,11 +1309,17 @@ void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sd
 				/* Media Field */
 				{
 					CmSdpMediaField* f = &desc->field; 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Media Type = %d \n",(NOTPRSNT != f->mediaType.pres)?f->mediaType.val:-1);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Media  = %s \n",(NOTPRSNT != f->media.pres)?(char*)f->media.val:"Not Present");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					"\t Media Type = %d \n",
+					(NOTPRSNT != f->mediaType.pres)?f->mediaType.val:-1);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					"\t Media  = %s \n",(NOTPRSNT != f->media.pres)?
+					(char*)f->media.val:"Not Present");
+					
 					/* Channel ID */
 					if(NOTPRSNT != f->id.type.pres){
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t VcId Type = %d \n", f->id.type.val);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						"\t VcId Type = %d \n", f->id.type.val);
 						switch(f->id.type.val){
 							case CM_SDP_VCID_PORT:
 								{
@@ -1208,9 +1361,10 @@ void mgco_handle_incoming_sdp(CmSdpInfoSet *sdp, mg_termination_t* term, mgco_sd
 				}
 
 				/*info */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Info  = %s \n",(NOTPRSNT != desc->info.pres)?(char*)desc->info.val:"Not Present");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+	"\t Info  = %s \n",(NOTPRSNT != desc->info.pres)?(char*)desc->info.val:"Not Present");
 
-				/*connection set */
+	/*connection set */
 				{
 					int cnt=0x00;
 					if(NOTPRSNT != desc->connSet.numComp.pres){
@@ -1976,122 +2130,160 @@ switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_
 				}
 /**********************************************************************************************************************************/
 					/* orig (o- line) fill with our info */
-					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.pres), 1);
-					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.type), CM_SDP_SPEC);
-					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.orig.pres), 1);
+MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.pres), 1);
+MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.type), CM_SDP_SPEC);
+MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.orig.pres), 1);
 
-					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.usrName, 1, "-", memCp);
-					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessId, 1, "0", memCp);
-					MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessVer, 1, "0", memCp);
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.netType.type),
-							CM_SDP_NET_TYPE_IN);
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.addrType), 
+MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.usrName, 1, "-", memCp);
+MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessId, 1, "0", memCp);
+MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessVer, 1, "0", memCp);
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.netType.type),
+CM_SDP_NET_TYPE_IN);
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.addrType), 
 							CM_SDP_ADDR_TYPE_IPV4);
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType), 
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType), 
 							CM_SDP_IPV4_IP_UNI);
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType),
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType),
 							CM_SDP_IPV4_IP_UNI);
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[0]),
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[0]),
 							atoi(ipAddress[0]));
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[1]),
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[1]),
 							atoi(ipAddress[1]));
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[2]),
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[2]),
 							atoi(ipAddress[2]));
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[3]),
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[3]),
 							atoi(ipAddress[3]));
 
 /**********************************************************************************************************************************/
 					/* session-name , let it be like this if present, else skip it */
 /**********************************************************************************************************************************/
 					/* "c=" line - ipaddress */
-					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.netType.type),CM_SDP_NET_TYPE_IN);
-					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.addrType), CM_SDP_ADDR_TYPE_IPV4);
-					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.u.ip4.addrType), CM_SDP_IPV4_IP_UNI);
+MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.netType.type),CM_SDP_NET_TYPE_IN);
+MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.addrType), CM_SDP_ADDR_TYPE_IPV4);
+MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.u.ip4.addrType), CM_SDP_IPV4_IP_UNI);
 
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[0]), atoi(ipAddress[0]));
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[1]), atoi(ipAddress[1]));
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[2]), atoi(ipAddress[2]));
-					MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[3]), atoi(ipAddress[3]));
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[0]), atoi(ipAddress[0]));
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[1]), atoi(ipAddress[1]));
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[2]), atoi(ipAddress[2]));
+MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[3]), atoi(ipAddress[3]));
 
 /**********************************************************************************************************************************/
-					/* t= line */
-					MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.pres),1);
+/* t= line */
+MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.pres),1);
 /**********************************************************************************************************************************/
-					/* fill media descriptors */
-					{
-						CmSdpMediaDescSet* med = &psdp->info[psdp->numComp.val-1]->mediaDescSet;
-						CmSdpMediaDesc*    media;
+/* fill media descriptors */
+{
+CmSdpMediaDescSet* med = &psdp->info[psdp->numComp.val-1]->mediaDescSet;
+CmSdpMediaDesc*    media;
 
-						if((NOTPRSNT == med->numComp.pres) || (0 == med->numComp.val)){
-							mg_add_lcl_media(med, mg_profile, term, memCp);
-						}else{
-							for(j =0;j < med->numComp.val; j++){
-								media = med->mediaDesc[j];
-								/* check for choose port and fill the port */
-								if(NOTPRSNT != media->field.id.type.pres){
-									if(CM_SDP_VCID_CHOOSE == media->field.id.type.val){
-										MG_INIT_TOKEN_VALUE(&(media->field.id.type),CM_SDP_VCID_PORT);
-										MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
-										MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
-										MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.type), CM_SDP_SPEC);
-										MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
+if((NOTPRSNT == med->numComp.pres) || (0 == med->numComp.val)){
+	mg_add_lcl_media(med, mg_profile, term, memCp);
+}else{
+  for(j =0;j < med->numComp.val; j++){
+     media = med->mediaDesc[j];
+     /* check for choose port and fill the port */
+     if(NOTPRSNT != media->field.id.type.pres){
+	     if(CM_SDP_VCID_CHOOSE == media->field.id.type.val){
+		     MG_INIT_TOKEN_VALUE(&(media->field.id.type),CM_SDP_VCID_PORT);
+		     MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
+		     MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
+		     MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.type), CM_SDP_SPEC);
+		     MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
 
-									}
-								}
+	     }
+     }
 
-								/* check for codec */
-								if((NOTPRSNT == media->field.par.numProtFmts.pres) || 
-										(0 == media->field.par.numProtFmts.val)){
-									switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"No codec specified in incoming local descriptor \n");
-									mg_add_supported_media_codec(media, mg_profile, term, memCp );	
-								}else{
-									/* check for media format/codec  */
-									for(k =0;k < media->field.par.numProtFmts.val; k++){
-										format = media->field.par.pflst[k];
-										if ((NOTPRSNT != format->protType.pres) &&
-												(CM_SDP_MEDIA_PROTO_RTP == format->protType.val))
-										{
-											if((NOTPRSNT != format->u.rtp.num.pres)
-													&&(0 != format->u.rtp.num.val))
-											{
-												/* If the codec type is CHOOSE then we need to fill our list */
-												for(i = 0; i <  format->u.rtp.num.val; i++)
-												{
-													fmt = format->u.rtp.fmts[i];
+ /* check for codec */
+if((NOTPRSNT == media->field.par.numProtFmts.pres) || 
+		(0 == media->field.par.numProtFmts.val)){
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+			"No codec specified in incoming local descriptor \n");
+	mg_add_supported_media_codec(media, mg_profile, term, memCp );	
+}else{
+/* check for media format/codec  */
+ for(k =0;k < media->field.par.numProtFmts.val; k++){
+format = media->field.par.pflst[k];
+if ((NOTPRSNT != format->protType.pres) &&
+   (CM_SDP_MEDIA_PROTO_RTP == format->protType.val))
+{
+  if((NOTPRSNT != format->u.rtp.num.pres)
+			&&(0 != format->u.rtp.num.val))
+  {
+    /* If the codec type is CHOOSE then we need to fill our list */
+    for(i = 0; i <  format->u.rtp.num.val; i++) {
+	fmt = format->u.rtp.fmts[i];
+	if((NOTPRSNT == fmt->type.pres) || (NOTPRSNT == fmt->val.pres)) continue;
+	if(CM_SDP_CHOOSE == fmt->type.val){
+		choose_codec = 0x1;
+	}
+  }
+    if(choose_codec){
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, 
+			"CHOOSE codec is requested fill out supported codecs \n");
 
-													if((NOTPRSNT == fmt->type.pres) || (NOTPRSNT == fmt->val.pres)) continue;
-
-													 if(CM_SDP_CHOOSE == fmt->type.val){
-														choose_codec = 0x1;
-													}
-												}
-												if(choose_codec){
-														switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "CHOOSE codec is requested fill out supported codecs \n");
-
-													/* delete existing rtp format list..TODO find better way  */
-														for(i = 0; i <  format->u.rtp.num.val; i++)
-														{
-															mgUtlShrinkList((Void ***)&format->u.rtp.fmts, sizeof(CmSdpU8OrNil), &format->u.rtp.num, memCp);
-														}
-														/* If the codec type is CHOOSE then we need to fill our list */
-														mg_add_supported_media_codec(media, mg_profile, term, memCp);
-												}
-												else if (!choose_codec && (SWITCH_STATUS_FALSE == mg_rem_unsupported_codecs(mg_profile, term , &format->u.rtp, &media->attrSet, memCp)))
-												{
-													return SWITCH_STATUS_FALSE;
-												}
-											}
-										}
-								}
-							}
-						}
-					}
+	/* delete existing rtp format list..TODO find better way  */
+	for(i = 0; i <  format->u.rtp.num.val; i++)
+	{
+		mgUtlShrinkList((Void ***)&format->u.rtp.fmts, sizeof(CmSdpU8OrNil), &format->u.rtp.num, memCp);
+	}
+	/* If the codec type is CHOOSE then we need to fill our list */
+	mg_add_supported_media_codec(media, mg_profile, term, memCp);
+    } else if (!choose_codec && 
+		(SWITCH_STATUS_FALSE == 
+		mg_rem_unsupported_codecs(mg_profile, term , &format->u.rtp, &media->attrSet, memCp)))
+    {
+	    return SWITCH_STATUS_FALSE;
+    }
+  }
+}else if ((NOTPRSNT != format->protType.pres) &&
+   (CM_SDP_MEDIA_PROTO_UDPTL == format->protType.val)){
+/* ideally whatever is received we can send back *
+* due to issue in trillium , we need to manually copy the fields now */
+  mgco_fill_t38_sdp_attr(&media->attrSet, term, memCp);
+}
+}
+}
+}
+}
+}
 /**********************************************************************************************************************************/
-				}
+}
 
-			}
 
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 /*****************************************************************************************************************************/
+void mg_print_t38_attributes(mg_termination_t* term)
+{
+	switch_assert(term);
+
+	if((MG_TERM_RTP == term->type) && (term->u.rtp.t38_options)){
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, 
+				"switch_t38_options_t for termination[%s]\n", term->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38FaxVersion[%d]\n",
+				term->u.rtp.t38_options->T38FaxVersion); 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38MaxBitRate[%d]\n",
+				term->u.rtp.t38_options->T38MaxBitRate); 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38FaxFillBitRemoval[%d]\n",
+				term->u.rtp.t38_options->T38FaxFillBitRemoval); 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38FaxTranscodingMMR[%d]\n",
+				term->u.rtp.t38_options->T38FaxTranscodingMMR); 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38FaxTranscodingJBIG[%d]\n",
+				term->u.rtp.t38_options->T38FaxTranscodingJBIG); 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38FaxRateManagement[%s]\n",
+				(NULL != term->u.rtp.t38_options->T38FaxRateManagement)?
+				term->u.rtp.t38_options->T38FaxRateManagement:"NULL");
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38FaxMaxBuffer[%d]\n",
+				term->u.rtp.t38_options->T38FaxMaxBuffer); 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38FaxMaxDatagram[%d]\n",
+				term->u.rtp.t38_options->T38FaxMaxDatagram); 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38FaxUdpEC[%s]\n",
+				(NULL != term->u.rtp.t38_options->T38FaxUdpEC)?
+				term->u.rtp.t38_options->T38FaxUdpEC:"NULL");
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"T38VendorInfo[%s]\n",
+				(NULL != term->u.rtp.t38_options->T38VendorInfo)?
+				term->u.rtp.t38_options->T38VendorInfo:"NULL");
+	}
+
+}

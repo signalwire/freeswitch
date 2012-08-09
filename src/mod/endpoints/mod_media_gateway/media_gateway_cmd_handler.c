@@ -727,6 +727,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     }
 
     
+    mg_print_t38_attributes(term);
 
     /* TODO - locally assigned SDP must be the part of termination...which we can use to fill responses*/
 
@@ -793,6 +794,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
             mg_fill_mgco_termid(out_termId, (char*)term->name, strlen((char*)term->name), &rsp.u.mgCmdRsp[0]->memCp);
         }
 
+	if(is_rtp){
         /* Whatever Media descriptor we have received, we can copy that and then
          * whatever we want we can modify the fields */
         /* Kapil - TODO - will see if there is any problem of coping the
@@ -822,7 +824,6 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	}
 
 	/* only for RTP */
-	if(is_rtp){
 		if(SWITCH_STATUS_FALSE == mg_build_sdp(&desc->u.media, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp)) {
 			if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
 				mg_util_set_err_string(&errTxt, " Unsupported Codec ");
@@ -1208,6 +1209,8 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 				((NULL != term->u.rtp.codec)?term->u.rtp.codec:NULL),
 				term->u.rtp.term_id);
 	}
+
+	mg_print_t38_attributes(term);
 
 
 	/* SDP updated to termination */
