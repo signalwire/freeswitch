@@ -929,7 +929,7 @@ SPAN_DECLARE(int) t42_srgb_to_itulab(logging_state_t *logging, lab_params_t *s, 
 
     for (pos = 0;  pos < srclen;  pos += compressor.image_width*compressor.num_components)
     {
-        scan_line_in = src + pos;
+        scan_line_in = (JSAMPROW)src + pos;
         srgb_to_lab(s, scan_line_out, scan_line_in, compressor.image_width);
         jpeg_write_scanlines(&compressor, &scan_line_out, 1);
     }
@@ -1033,7 +1033,7 @@ SPAN_DECLARE(int) t42_itulab_to_itulab(logging_state_t *logging, tdata_t *dst, t
 
     for (pos = 0;  pos < srclen;  pos += compressor.image_width*compressor.num_components)
     {
-        scan_line_in = src + pos;
+        scan_line_in = (JSAMPROW)src + pos;
         jpeg_write_scanlines(&compressor, &scan_line_in, 1);
     }
 
@@ -1150,7 +1150,7 @@ SPAN_DECLARE(int) t42_itulab_to_srgb(logging_state_t *logging, lab_params_t *s, 
 
     for (pos = 0;  decompressor.output_scanline < decompressor.output_height;  pos += decompressor.output_width*decompressor.num_components)
     {
-        scan_line_out = dst + pos;
+        scan_line_out = (JSAMPROW)dst + pos;
         jpeg_read_scanlines(&decompressor, &scan_line_in, 1);
         lab_to_srgb(s, scan_line_out, scan_line_in, decompressor.output_width);
     }

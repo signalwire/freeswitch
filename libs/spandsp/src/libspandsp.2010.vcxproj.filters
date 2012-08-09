@@ -277,6 +277,9 @@
     <ClCompile Include="image_translate.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="t42.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="spandsp\adsi.h">

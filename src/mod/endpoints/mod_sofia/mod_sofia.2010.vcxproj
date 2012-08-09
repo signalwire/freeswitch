@@ -138,6 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="mod_sofia.c" />
+    <ClCompile Include="rtp.c" />
     <ClCompile Include="sip-dig.c" />
     <ClCompile Include="sofia.c" />
     <ClCompile Include="sofia_glue.c" />
