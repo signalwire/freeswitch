@@ -509,7 +509,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 	}
         
         if (compare_var(event, channel, kRFC2833PT)) {
-            const char *szpt = switch_channel_get_variable(channel, kRFC2833PT);
+            const char *szpt = switch_event_get_header(event, kRFC2833PT);
             int pt = !zstr(szpt) ? atoi(szpt) : 0;
 
 			tech_pvt->rfc2833_pt = pt;
@@ -525,7 +525,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
         }
 
 	if (compare_var(event, channel, kMEDIATYPE)) {
-		const char *newmode = switch_channel_get_variable(channel, kMEDIATYPE);
+		const char *newmode = switch_event_get_header(event, kMEDIATYPE);
 		
 		if (!strcmp(newmode, "image")) {
 			switch_channel_set_variable(tech_pvt->channel, "has_t38", "true");
