@@ -171,7 +171,9 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         switch_channel_set_private(channel, PVT_MG_TERM, term);
         switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
         	
-        switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
+        if (term->type == MG_TERM_TDM) {
+            switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
+        }
     }
     
     switch_set_flag(term, MGT_ACTIVE);
