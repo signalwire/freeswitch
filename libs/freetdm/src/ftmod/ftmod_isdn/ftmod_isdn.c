@@ -1936,6 +1936,11 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 				continue;
 			}
 
+			/*
+			 * Teletone operates on SLIN data (2 bytes per sample).
+			 * Convert the length of non-SLIN codecs, so we read
+			 * the right amount of samples from the buffer.
+			 */
 			if (chan->effective_codec != FTDM_CODEC_SLIN) {
 				len *= 2;
 			}
@@ -1943,6 +1948,12 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 			/* seek to current offset */
 			ftdm_buffer_seek(dt_buffer, data->offset);
 
+			/*
+			 * ftdm_channel_read() can read up to sizeof(frame) bytes
+			 * (in certain situations). Avoid overflowing the stack (and smashing dt_buffer)
+			 * if the codec is not slin and we had to double the length.
+			 */
+			len  = ftdm_min(len, sizeof(frame));
 			rlen = ftdm_buffer_read_loop(dt_buffer, frame, len);
 
 			if (chan->effective_codec != FTDM_CODEC_SLIN) {
@@ -1954,6 +1965,12 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 					codec_func = fio_slin2alaw;
 				}
 
+				/*
+				 * Convert SLIN to native format (a-law/u-law),
+				 * input size is 2 bytes per sample, output size
+				 * (after conversion) is one byte per sample
+				 * (= max. half the input size).
+				 */
 				if (codec_func) {
 					status = codec_func(frame, sizeof(frame), &rlen);
 				} else {
@@ -1968,11 +1985,12 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 				 * of data actually written to channel.
 				 */
 				if (chan->effective_codec != FTDM_CODEC_SLIN) {
-					data->offset += rlen << 1;	/* teletone buffer is slin (= len * 2) */
+					data->offset += rlen << 1;	/* Teletone buffer is in SLIN (= rlen * 2) */
 				} else {
 					data->offset += rlen;
 				}
 
+				/* Limit offset to [0..Rate(Samples/s)-1] in SLIN (2 bytes per sample) units. */
 				data->offset %= (ts.rate << 1);
 			}
 		}
