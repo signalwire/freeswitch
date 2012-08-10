@@ -39,6 +39,7 @@ SWITCH_STANDARD_APP(mg_notify_function)
     if (!strcmp(data, "cng")) {
         mg_send_t38_cng_notify(term->profile, term->name);
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent CNG notify\n");
+		switch_channel_set_variable(channel, "mg_cng_detected", "true");
     }
 }
 

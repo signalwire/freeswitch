@@ -40,7 +40,7 @@
 #define kPTIME "ptime"
 #define kPT "pt"
 #define kRFC2833PT "rfc2833_pt"
-#define kMODE "mode"
+#define kMEDIATYPE "media_type"
 #define kRATE "rate"
 
 static struct {
@@ -523,6 +523,20 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
             switch_channel_set_variable(channel, kRFC2833PT, szpt);
             switch_rtp_set_telephony_event(tech_pvt->rtp_session, pt);
         }
+
+	if (compare_var(event, channel, kMEDIATYPE)) {
+		const char *newmode = switch_channel_get_variable(channel, kMEDIATYPE);
+		
+		if (!strcmp(newmode, "image")) {
+			switch_channel_set_variable(tech_pvt->channel, "has_t38", "true");
+			switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
+			switch_channel_execute_on(tech_pvt->channel, "rtp_execute_on_image");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got IMAGE description\n");
+		}
+		
+		switch_channel_set_variable(channel, kMEDIATYPE, newmode);
+	}
+	
     } else {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received unknown command [%s] in event.\n", !command ? "null" : command);
     }
@@ -554,6 +568,26 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	assert(tech_pvt != NULL);
     
     switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_UDPTL_MODE:
+		{
+			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
+			if (!t38_options) {
+				goto end;
+			}
+
+			switch_rtp_udptl_mode(tech_pvt->rtp_session);
+			break;
+		}
+	case SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION\n");			
+			break;
+		}
+	case SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA\n");			
+			break;
+		}
         case SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO:
         {
             if (switch_rtp_ready(tech_pvt->rtp_session) && !zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {

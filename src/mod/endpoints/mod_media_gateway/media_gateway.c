@@ -127,7 +127,8 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kCODEC, term->u.rtp.codec);
         
         switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kMEDIATYPE, mg_media_type2str(term->u.rtp.media_type));
-        
+	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "fax_enable_t38", "true");
+	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "rtp_execute_on_image", "t38_gateway peer nocng");
     } else if (term->type == MG_TERM_TDM) {
         switch_snprintf(dialstring, sizeof dialstring, "tdm/%s", term->name);
         
@@ -145,6 +146,10 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
             switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "command", "media_modify");
             
             switch_core_session_receive_event(session, &var_event);
+
+			if (term->u.rtp.t38_options) {
+				switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
+			}
 
             switch_core_session_rwunlock(session);
             
@@ -169,6 +174,11 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));   
         channel = switch_core_session_get_channel(session);
         switch_channel_set_private(channel, PVT_MG_TERM, term);
+
+	if (term->u.rtp.t38_options) {
+		switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
+	}
+	
         switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
         	
         if (term->type == MG_TERM_TDM) {
