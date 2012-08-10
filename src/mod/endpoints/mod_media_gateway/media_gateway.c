@@ -143,6 +143,7 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         /* A UUID is present, check if the channel still exists */
         switch_core_session_t *session;
         if ((session = switch_core_session_locate(term->uuid))) {
+	    switch_channel_t *channel = switch_core_session_get_channel(session);
             switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "command", "media_modify");
             
             switch_core_session_receive_event(session, &var_event);
@@ -373,6 +374,7 @@ void megaco_termination_destroy(mg_termination_t *term)
         free(term->active_events);
         term->active_events = NULL;
     }
+    term->context = NULL;
 
     switch_clear_flag(term, MGT_ALLOCATED);
     switch_clear_flag(term, MGT_ACTIVE);
@@ -412,6 +414,7 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
         return SWITCH_STATUS_FALSE;
     }
     
+    term->context = ctx;
     if (ctx->terminations[0]) {
         ctx->terminations[1] = term;
     } else if (ctx->terminations[1]) {
