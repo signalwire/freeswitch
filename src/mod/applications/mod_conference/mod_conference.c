@@ -448,6 +448,8 @@ typedef struct conference_obj {
 	struct vid_helper mh;
 	conference_record_t *rec_node_head;
 	int last_speech_channels;
+	switch_file_handle_t *record_fh;
+	int video_recording;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -2412,7 +2414,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		//switch_live_array_add_alias(conference->la, switch_core_session_get_uuid(member->session), "conference");
 		adv_la(conference, member, SWITCH_TRUE);
 		switch_live_array_add(conference->la, switch_core_session_get_uuid(member->session), -1, &member->json, SWITCH_FALSE);
-		
+
 	}
 
 
@@ -2427,7 +2429,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
 
-	
+
 
 
 	return status;
@@ -2452,7 +2454,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 			return;
 		} else {			
 			old_member = conference->video_floor_holder;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Dropping video floor %s\n", 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Dropping video floor %s\n",
 							  switch_channel_get_name(old_member->channel));
 		}
 	}
@@ -2469,7 +2471,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 	}
 
 	if (member) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n",
 						  switch_channel_get_name(member->channel));
 		//switch_channel_set_flag(member->channel, CF_VIDEO_PASSIVE);
 		switch_core_session_refresh_video(member->session);
@@ -2994,6 +2996,23 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			switch_core_session_rwunlock(isession);
 		}
 		
+		/* seems we are recording a video file */
+		switch_mutex_lock(conference->mutex);
+		if (conference->record_fh) {
+			switch_size_t len = vid_frame->packetlen;
+			if (!conference->video_recording) {
+				want_refresh++;
+				conference->video_recording++;
+			} else {
+				if (len > 14) { // 14 = 12(rtp) + 2(cng?)
+					switch_core_file_write_video(conference->record_fh, vid_frame->packet, &len);
+				}
+			}
+		} else {
+			conference->video_recording = 0;
+		}
+		switch_mutex_unlock(conference->mutex);
+
 		if (want_refresh && session) {
 			switch_core_session_refresh_video(session);
 			want_refresh = 0;
@@ -5079,6 +5098,11 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_size_t data_buf_len;
 	switch_event_t *event;
 	switch_size_t len = 0;
+	char *ext;
+
+	data_buf_len = samples * sizeof(int16_t);
+
+	switch_zmalloc(data_buf, data_buf_len);
 
 	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
@@ -5137,6 +5161,15 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 	fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
+	/* video recording, only for testing at this time*/
+	if ((ext = strrchr(rec->path, '.')) != NULL) {
+		ext++;
+		if (!strncasecmp(ext, "fsv", 3) || !strncasecmp(ext, "mp4", 3)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disable buffer for video recording\n");
+			fh.pre_buffer_datalen = 0;
+		}
+	}
+
 	if (switch_core_file_open(&fh,
 							  rec->path, (uint8_t) conference->channels, conference->rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
 							  rec->pool) != SWITCH_STATUS_SUCCESS) {
@@ -5155,6 +5188,12 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		goto end;
 	}
 
+	switch_mutex_lock(conference->mutex);
+	if (!conference->record_fh) conference->record_fh = &fh;
+	if (conference->video_floor_holder) {
+		switch_core_session_refresh_video(conference->video_floor_holder->session);
+	}
+	switch_mutex_unlock(conference->mutex);
 
 	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, rec->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success interval: %u  samples: %u\n", conference->interval, samples);
@@ -5258,6 +5297,9 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_buffer_destroy(&member->mux_buffer);
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
+		switch_mutex_lock(conference->mutex);
+		conference->record_fh = NULL;
+		switch_mutex_unlock(conference->mutex);
 		switch_core_file_close(&fh);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recording of %s Stopped\n", rec->path);
