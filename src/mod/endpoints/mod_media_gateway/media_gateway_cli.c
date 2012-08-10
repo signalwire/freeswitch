@@ -16,6 +16,7 @@ switch_status_t megaco_profile_status(switch_stream_handle_t *stream, megaco_pro
 switch_status_t megaco_profile_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg);
 switch_status_t megaco_profile_peer_xmlstatus(switch_stream_handle_t *stream, megaco_profile_t* mg_cfg);
 switch_status_t handle_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile, char* term_id);
+switch_status_t handle_all_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile);
 void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm);
 void  megaco_cli_print_usage(switch_stream_handle_t *stream);
 switch_status_t handle_show_activecalls_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile);
@@ -189,21 +190,6 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 			}
 
 /**********************************************************************************/
-		}else if (!strcmp(argv[2], "termstatus")) {
-/**********************************************************************************/
-			/* mg <mg-profile> termstatus <term-id> */
-
-			if (zstr(argv[3])) {
-				goto usage;
-			}
-
-			if(profile){
-				megaco_profile_release(profile);
-				handle_term_status_cli_cmd(stream, profile, argv[3]);
-			} else {
-				stream->write_function(stream, "-ERR No such profile\n");
-			}
-/**********************************************************************************/
 		}else if (!strcmp(argv[2], "show")) {
 /**********************************************************************************/
 			/* mg <mg-profile> show activecalls*/
@@ -214,12 +200,25 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 			if(profile){
 				megaco_profile_release(profile);
 				if(!strcasecmp(argv[3], "activecalls")){
+					/* mg <mg-profile> show activecalls */
 					handle_show_activecalls_cli_cmd(stream, profile);
-				}
-			} else {
+			     /*******************************************************************/
+				}else if(!strcasecmp(argv[3], "alltermstatus")){
+			     /*******************************************************************/
+					/* mg <mg-profile> show alltermstatus */
+					handle_all_term_status_cli_cmd(stream, profile);
+				}else if(!strcasecmp(argv[3], "termstatus")){
+			     /*******************************************************************/
+					/* mg <mg-profile> show termstatus <term-id> */
+					if (zstr(argv[4])) {
+						goto usage;
+					}
+					handle_term_status_cli_cmd(stream, profile, argv[4]);
+				} else {
+			     /*******************************************************************/
 				stream->write_function(stream, "-ERR No such profile\n");
+				}
 			}
-
 /**********************************************************************************/
 		}else {
 /**********************************************************************************/
@@ -271,7 +270,6 @@ void  megaco_cli_print_usage(switch_stream_handle_t *stream)
 	stream->write_function(stream, "Usage: Profile Specific\n");
 	stream->write_function(stream, "mg profile <profile-name> start \n");
 	stream->write_function(stream, "mg profile <profile-name> stop \n");
-	stream->write_function(stream, "mg profile <profile-name> termstatus <term-id> \n");
 	stream->write_function(stream, "mg profile <profile-name> status \n");
 	stream->write_function(stream, "mg profile <profile-name> xmlstatus \n");
 	stream->write_function(stream, "mg profile <profile-name> peerxmlstatus \n");
@@ -280,6 +278,8 @@ void  megaco_cli_print_usage(switch_stream_handle_t *stream)
 	stream->write_function(stream, "mg profile <profile-name> send ito notify \n");
 	stream->write_function(stream, "mg profile <profile-name> send cng <term-id> \n");
 	stream->write_function(stream, "mg profile <profile-name> show activecalls  \n");
+	stream->write_function(stream, "mg profile <profile-name> show termstatus <term-id> \n");
+	stream->write_function(stream, "mg profile <profile-name> show alltermstatus <term-id> \n");
 
 	stream->write_function(stream, "Usage: Logging \n");
 	stream->write_function(stream, "mg logging enable \n");
@@ -698,7 +698,54 @@ void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm)
 
 }
 /******************************************************************************/
+switch_status_t handle_all_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile)
+{
+	void                *val = NULL;
+	switch_hash_index_t *hi = NULL;
+	mg_termination_t *term = NULL;
+	const void *var;
 
+	if(!mg_profile){
+		stream->write_function(stream, "-ERR NULL profile\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	stream->write_function(stream, " Termination Name"); 
+	stream->write_function(stream, "\t Termination State"); 
+	stream->write_function(stream, "\t Termination Type"); 
+	stream->write_function(stream, "\t Span-Id "); 
+	stream->write_function(stream, "\t Channel-Id "); 
+
+	for (hi = switch_hash_first(NULL, mg_profile->terminations); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		term = (mg_termination_t *) val;
+		if(!term) continue;
+
+		stream->write_function(stream, "\n");
+
+		stream->write_function(stream, " %s",(NULL != term->name)?term->name:"NULL");
+		if(MG_TERM_RTP == term->type){
+			stream->write_function(stream, "\t\t\t IN-SERVICE");
+		}else{
+			stream->write_function(stream, "\t\t\t %s",
+					(switch_test_flag(term, MG_IN_SERVICE))?"IN-SERVICE":"OUT-OF-SERVICE");
+		}
+		stream->write_function(stream, "\t\t %s",(MG_TERM_RTP == term->type)?"MG_TERM_RTP":"MG_TERM_TDM");
+
+		if(MG_TERM_TDM == term->type){
+			stream->write_function(stream, "\t\t %s",
+					(NULL != term->u.tdm.span_name)?term->u.tdm.span_name:"NULL");
+			stream->write_function(stream, "\t\t %d",term->u.tdm.channel);
+		}else{
+			stream->write_function(stream, "\t\t -");
+			stream->write_function(stream, "\t\t -");
+		}
+		stream->write_function(stream, "\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+/******************************************************************************/
 switch_status_t handle_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile, char* term_id)
 {
 	mg_termination_t* term = NULL;
