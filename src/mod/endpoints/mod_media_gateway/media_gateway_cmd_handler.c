@@ -2879,8 +2879,14 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
     request.transId.val  = get_txn_id();
 
     request.contextId.type.pres = PRSNT_NODEF;
-    request.contextId.type.val  = MGT_CXTID_NULL;
-
+    if(term->context){
+	printf("Temrination is in context, adding context-id[%d]\n",term->context->context_id);
+	    request.contextId.type.val  = MGT_CXTID_OTHER;
+	    request.contextId.val.pres  = PRSNT_NODEF;
+	    request.contextId.val.val  = term->context->context_id;
+    } else{
+	    request.contextId.type.val  = MGT_CXTID_NULL;
+    }
     request.cmdStatus.pres = PRSNT_NODEF;
     request.cmdStatus.val = CH_CMD_STATUS_END_OF_TXN;
 

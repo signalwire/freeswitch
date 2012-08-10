@@ -374,6 +374,7 @@ void megaco_termination_destroy(mg_termination_t *term)
         term->active_events = NULL;
     }
 
+
     switch_clear_flag(term, MGT_ALLOCATED);
     switch_clear_flag(term, MGT_ACTIVE);
     
@@ -427,7 +428,7 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
         if (zstr(ctx->terminations[1]->uuid)) {
             megaco_activate_termination(ctx->terminations[1]);
         }
-        
+
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bridging: %s (%s) <> %s (%s)\n", 
                           ctx->terminations[0]->name, ctx->terminations[0]->uuid,
                           ctx->terminations[1]->name, ctx->terminations[1]->uuid);
