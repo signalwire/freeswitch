@@ -1065,7 +1065,7 @@ error:
 */
 switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd)
 {
-    mg_context_t* mg_ctxt = NULL;
+	mg_context_t* mg_ctxt = NULL;
 	MgMgcoContextId  *ctxtId;
 	MgStr      	  errTxt;
 	MgMgcoInd  	  *mgErr;
@@ -1073,7 +1073,11 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	MgMgcoTermIdLst*  termLst;
 	mg_termination_t* term = NULL;
 	switch_status_t  ret;
+	MgMgcoAudRetParm *desc;
+	MgMgcoMediaDesc*   inc_med_desc = NULL;
+	MgMgcoLocalDesc   *local = NULL;
 	int 		  err_code;
+	int mediaId;
 	/*MgMgcoAmmReq 	  *cmd = &inc_cmd->u.mgCmdInd[0]->cmd.u.mod;*/
 	U32 		   txn_id = inc_cmd->transId.val;
 
@@ -1114,108 +1118,108 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	/* context id presence check is already being done, we are here it means context-id requested in megaco message is present */ 
 	/********************************************************************/
 
-    /* MGT_TERMID_ROOT = If ROOT term then there will not be any conext */
+	/* MGT_TERMID_ROOT = If ROOT term then there will not be any conext */
 
-    if(MGT_TERMID_ROOT == termId->type.val){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
-                "Modify request is for ROOT termination \n");
+	if(MGT_TERMID_ROOT == termId->type.val){
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+				"Modify request is for ROOT termination \n");
 
-        /* check if we have ito packg request */
-        mg_is_ito_pkg_req(mg_profile, inc_cmd);
+		/* check if we have ito packg request */
+		mg_is_ito_pkg_req(mg_profile, inc_cmd);
 
-        /* TODO */
+		/* TODO */
 
-	/********************************************************************/
-    } else if(MGT_TERMID_OTHER == termId->type.val){
-        /********************************************************************/
+		/********************************************************************/
+	} else if(MGT_TERMID_OTHER == termId->type.val){
+		/********************************************************************/
 #ifdef BIT_64
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
-                "Modify request is for termination[%s] and context: type[%d], value[%d] \n", 
-                termId->name.lcl.val, ctxtId->type.val, ctxtId->val.val);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+				"Modify request is for termination[%s] and context: type[%d], value[%d] \n", 
+				termId->name.lcl.val, ctxtId->type.val, ctxtId->val.val);
 #else
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
-                "Modify request is for termination[%s] and context: type[%d], value[%ld] \n", 
-                termId->name.lcl.val, ctxtId->type.val, ctxtId->val.val);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+				"Modify request is for termination[%s] and context: type[%d], value[%ld] \n", 
+				termId->name.lcl.val, ctxtId->type.val, ctxtId->val.val);
 #endif
 
-        term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
+		term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
 
-        if(NULL == term){
-            mg_util_set_term_string(&errTxt,termId);
-            err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
-            goto error;
-        }
+		if(NULL == term){
+			mg_util_set_term_string(&errTxt,termId);
+			err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
+			goto error;
+		}
 
-        /* termination specified...context should also be specified */
+		/* termination specified...context should also be specified */
 
-        /* check if we have terminations in the context */
+		/* check if we have terminations in the context */
 
-        if (NOTPRSNT != ctxtId->type.pres) {
-            if(MGT_CXTID_OTHER == ctxtId->type.val) {
-                /*find context based on received context-id */
-                mg_ctxt = megaco_get_context(mg_profile, ctxtId->val.val);
-                if(NULL == mg_ctxt){
-                    mg_util_set_ctxt_string(&errTxt, ctxtId);
-                    err_code = MGT_MGCO_RSP_CODE_UNKNOWN_CTXT;
-                    goto error;
-                }
+		if (NOTPRSNT != ctxtId->type.pres) {
+			if(MGT_CXTID_OTHER == ctxtId->type.val) {
+				/*find context based on received context-id */
+				mg_ctxt = megaco_get_context(mg_profile, ctxtId->val.val);
+				if(NULL == mg_ctxt){
+					mg_util_set_ctxt_string(&errTxt, ctxtId);
+					err_code = MGT_MGCO_RSP_CODE_UNKNOWN_CTXT;
+					goto error;
+				}
 
-                if(SWITCH_STATUS_FALSE == megaco_context_is_term_present(mg_ctxt, term)){
-                    /* ERROR - termination didnt bind with requested context */
-                    mg_util_set_term_string(&errTxt,termId);
-                    err_code = MGT_MGCO_RSP_CODE_NO_TERM_CTXT;
-                    goto error;
-                }
+				if(SWITCH_STATUS_FALSE == megaco_context_is_term_present(mg_ctxt, term)){
+					/* ERROR - termination didnt bind with requested context */
+					mg_util_set_term_string(&errTxt,termId);
+					err_code = MGT_MGCO_RSP_CODE_NO_TERM_CTXT;
+					goto error;
+				}
 
-            }else if(MGT_CXTID_NULL == ctxtId->type.val) {
-                switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
-                        "Modify request is for NULL Context \n");
-                /*TODO - NULL context...nothing to do now...jump to response to send +ve response */
-                goto response;
-            }else if(MGT_CXTID_ALL == ctxtId->type.val) {
-                switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
-                        "Modify request is for ALL Context \n");
-                /*TODO - ALL context...nothing to do now...jump to response to send +ve response */
-                goto response;
-            }
-        }
+			}else if(MGT_CXTID_NULL == ctxtId->type.val) {
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+						"Modify request is for NULL Context \n");
+				/*TODO - NULL context...nothing to do now...jump to response to send +ve response */
+				goto response;
+			}else if(MGT_CXTID_ALL == ctxtId->type.val) {
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+						"Modify request is for ALL Context \n");
+				/*TODO - ALL context...nothing to do now...jump to response to send +ve response */
+				goto response;
+			}
+		}
 
-        /* Not sure if MODIFY can come with Context ALL with specified term */
+		/* Not sure if MODIFY can come with Context ALL with specified term */
 
-        /********************************************************************/
+		/********************************************************************/
 
-        ret = mg_prc_descriptors(mg_profile, inc_cmd, term, &inc_cmd->u.mgCmdInd[0]->memCp);
+		ret = mg_prc_descriptors(mg_profile, inc_cmd, term, &inc_cmd->u.mgCmdInd[0]->memCp);
 
-	/* IF there is any error , return */
-	if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
-		mg_util_set_err_string(&errTxt, " Unsupported Codec ");
-		err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
-		/* TODO delete RTP termination */
-		goto error;
+		/* IF there is any error , return */
+		if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+			mg_util_set_err_string(&errTxt, " Unsupported Codec ");
+			err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
+			/* TODO delete RTP termination */
+			goto error;
+		}
+
+		if(MG_TERM_RTP == term->type){
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"MODIFY REQUEST - Updated RTP attributes:"
+					" local_addr[%s] local_port[%d] remote_addr[%s], remote_port[%d], ptime[%d] pt[%d], "
+					" rfc2833_pt[%d] rate[%d], codec[%s], term_id[%d]\n",
+					((NULL != term->u.rtp.local_addr)?term->u.rtp.local_addr:NULL),
+					term->u.rtp.local_port,
+					((NULL != term->u.rtp.remote_addr)?term->u.rtp.remote_addr:NULL),
+					term->u.rtp.remote_port,
+					term->u.rtp.ptime,
+					term->u.rtp.pt,
+					term->u.rtp.rfc2833_pt,
+					term->u.rtp.rate,
+					((NULL != term->u.rtp.codec)?term->u.rtp.codec:NULL),
+					term->u.rtp.term_id);
+		}
+
+		mg_print_t38_attributes(term);
+
+
+		/* SDP updated to termination */
+		megaco_activate_termination(term);
 	}
-
-	if(MG_TERM_RTP == term->type){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"MODIFY REQUEST - Updated RTP attributes:"
-				" local_addr[%s] local_port[%d] remote_addr[%s], remote_port[%d], ptime[%d] pt[%d], "
-				" rfc2833_pt[%d] rate[%d], codec[%s], term_id[%d]\n",
-				((NULL != term->u.rtp.local_addr)?term->u.rtp.local_addr:NULL),
-				term->u.rtp.local_port,
-				((NULL != term->u.rtp.remote_addr)?term->u.rtp.remote_addr:NULL),
-				term->u.rtp.remote_port,
-				term->u.rtp.ptime,
-				term->u.rtp.pt,
-				term->u.rtp.rfc2833_pt,
-				term->u.rtp.rate,
-				((NULL != term->u.rtp.codec)?term->u.rtp.codec:NULL),
-				term->u.rtp.term_id);
-	}
-
-	mg_print_t38_attributes(term);
-
-
-	/* SDP updated to termination */
-	megaco_activate_termination(term);
-    }
 
 	/* TODO - copy inc descriptor...not sure if we need to do this.. */
 
@@ -1230,54 +1234,97 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	/* Kapil - to fill the response structure and call the response API to send Modify response */
 
 response:
-    { /* send response */
+	{ /* send response */
 
-        MgMgcoCommand  rsp;
-        int ret = 0x00;
+		MgMgcoCommand  rsp;
+		int ret = 0x00;
 
-        memset(&rsp,0, sizeof(rsp));
+		memset(&rsp,0, sizeof(rsp));
 
-        /*copy transaction-id*/
-        memcpy(&rsp.transId, &inc_cmd->transId,sizeof(MgMgcoTransId));
+		/*copy transaction-id*/
+		memcpy(&rsp.transId, &inc_cmd->transId,sizeof(MgMgcoTransId));
 
-        /*copy context-id*/ /*TODO - in case of $ context should be generated by app, we should not simply copy incoming structure */
-        memcpy(&rsp.contextId, &inc_cmd->contextId,sizeof(MgMgcoContextId));
+		/*copy context-id*/ /*TODO - in case of $ context should be generated by app, we should not simply copy incoming structure */
+		memcpy(&rsp.contextId, &inc_cmd->contextId,sizeof(MgMgcoContextId));
 
-        /*copy peer identifier */
-        memcpy(&rsp.peerId, &inc_cmd->peerId,sizeof(TknU32));
+		/*copy peer identifier */
+		memcpy(&rsp.peerId, &inc_cmd->peerId,sizeof(TknU32));
 
-        /*fill response structue */
-        if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&rsp.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
-            return ret;
-        }
+		/*fill response structue */
+		if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&rsp.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
+			return ret;
+		}
 
-        rsp.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
-        rsp.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
-        rsp.u.mgCmdRsp[0]->type.val = MGT_MODIFY;
-        rsp.u.mgCmdRsp[0]->u.mod.pres.pres = PRSNT_NODEF;
-        rsp.u.mgCmdRsp[0]->u.mod.termIdLst.num.pres = PRSNT_NODEF;
-        rsp.u.mgCmdRsp[0]->u.mod.termIdLst.num.val  = 1;
+		rsp.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
+		rsp.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
+		rsp.u.mgCmdRsp[0]->type.val = MGT_MODIFY;
+		rsp.u.mgCmdRsp[0]->u.mod.pres.pres = PRSNT_NODEF;
+		rsp.u.mgCmdRsp[0]->u.mod.termIdLst.num.pres = PRSNT_NODEF;
+		rsp.u.mgCmdRsp[0]->u.mod.termIdLst.num.val  = 1;
 
-        mgUtlAllocMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.mod.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.mod.termIdLst);
+		mgUtlAllocMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.mod.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.mod.termIdLst);
 
 #ifdef GCP_VER_2_1
-        termId = rsp.u.mgCmdRsp[0]->u.mod.termIdLst.terms[0];
+		termId = rsp.u.mgCmdRsp[0]->u.mod.termIdLst.terms[0];
 #else
-        termId = &(rsp.u.mgCmdRsp[0]->u.mod.termId);
+		termId = &(rsp.u.mgCmdRsp[0]->u.mod.termId);
 #endif
-        /*mg_fill_mgco_termid(termId, (char*)"term1",&req->u.mgCmdRsp[0]->memCp);*/
+		/*mg_fill_mgco_termid(termId, (char*)"term1",&req->u.mgCmdRsp[0]->memCp);*/
 
-        /* We will always send one command at a time..*/
-        rsp.cmdStatus.pres = PRSNT_NODEF;
-        rsp.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
+		if((MG_TERM_RTP == term->type) &&
+				((NOTPRSNT != inc_cmd->u.mgCmdInd[0]->cmd.u.mod.dl.num.pres) && 
+				 (0 != inc_cmd->u.mgCmdInd[0]->cmd.u.mod.dl.num.val))) {
+			/* Whatever Media descriptor we have received, we can copy that and then
+			 * whatever we want we can modify the fields */
+			/* Kapil - TODO - will see if there is any problem of coping the
+			 * descriptor */
 
-        rsp.cmdType.pres = PRSNT_NODEF;
-        rsp.cmdType.val  = CH_CMD_TYPE_RSP;
+			inc_med_desc = &inc_cmd->u.mgCmdInd[0]->cmd.u.mod.dl.descs[0]->u.media;
+
+			if (mgUtlGrowList((void ***)&rsp.u.mgCmdRsp[0]->u.mod.audit.parms, sizeof(MgMgcoAudRetParm),
+						&rsp.u.mgCmdRsp[0]->u.mod.audit.num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+			{
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				return SWITCH_STATUS_FALSE;
+			}
+
+			/* copy media descriptor */
+			desc = rsp.u.mgCmdRsp[0]->u.mod.audit.parms[rsp.u.mgCmdRsp[0]->u.mod.audit.num.val-1];
+			desc->type.pres = PRSNT_NODEF;
+			desc->type.val = MGT_MEDIADESC;
+			mgUtlCpyMgMgcoMediaDesc(&desc->u.media, inc_med_desc, &rsp.u.mgCmdRsp[0]->memCp);
+			/* see if we have received local descriptor */
+			if((NOTPRSNT != desc->u.media.num.pres) && 
+					(0 != desc->u.media.num.val))
+			{
+				for(mediaId=0; mediaId<desc->u.media.num.val; mediaId++) {
+					if(MGT_MEDIAPAR_LOCAL == desc->u.media.parms[mediaId]->type.val) {
+						local  = &desc->u.media.parms[mediaId]->u.local;
+					}
+				}
+			}
+
+			/* only for RTP */
+			if(SWITCH_STATUS_FALSE == mg_build_sdp(&desc->u.media, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp)) {
+				if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+					mg_util_set_err_string(&errTxt, " Unsupported Codec ");
+					err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
+					goto error;
+				}
+			}
+		}
+
+		/* We will always send one command at a time..*/
+		rsp.cmdStatus.pres = PRSNT_NODEF;
+		rsp.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
+
+		rsp.cmdType.pres = PRSNT_NODEF;
+		rsp.cmdType.val  = CH_CMD_TYPE_RSP;
 
 
-        ret = sng_mgco_send_cmd(mg_profile->idx, &rsp);
+		ret = sng_mgco_send_cmd(mg_profile->idx, &rsp);
 
-    }
+	}
 
 
 	return SWITCH_STATUS_SUCCESS;	

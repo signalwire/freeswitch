@@ -71,7 +71,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 			for (mg_term = switch_xml_child(mg_phys_terms, "map"); mg_term; mg_term = mg_term->next) {
 				// <map  termination-id-prefix="Term1/" termination-id-base="1" tech="freetdm" channel-prefix="wp2" channel-map"1-15,17-31"/>
 				const char *prefix = switch_xml_attr(mg_term, "termination-id-prefix");
-				//const char *sztermination_id_base = switch_xml_attr(mg_term, "termination-id-base");
+				const char *sztermination_id_base = switch_xml_attr(mg_term, "termination-id-base");
 				const char *tech =  switch_xml_attr(mg_term, "tech");
 				const char *channel_prefix = switch_xml_attr(mg_term, "channel-prefix");
 				const char *channel_map = switch_xml_attr(mg_term, "channel-map");
@@ -84,6 +84,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 					int chanmap_count = 0;
 					int i = 0;
 					int startchan, endchan, j;
+					int mg_term_idx = (sztermination_id_base)?atoi(sztermination_id_base):1; 
 
 					/* we can have following combinations *
 					 * i)   only one channel i.e. channel-map="1"
@@ -103,14 +104,15 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 								startchan = atoi(chanmap[0]);
 								endchan   = atoi(chanmap[1]);
 								for (j = startchan; j <= endchan; j++) {
-									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j, j);
+									mg_create_tdm_term(profile, tech, channel_prefix, prefix, mg_term_idx, j);
+									mg_term_idx++;
 								}
 							}
 						}else{
 							/* case (i) */ 
 							p = channel_map_dup;	
 							startchan = endchan = atoi(p);
-							mg_create_tdm_term(profile, tech, channel_prefix, prefix, startchan, startchan);
+							mg_create_tdm_term(profile, tech, channel_prefix, prefix, mg_term_idx, startchan);
 						}
 					}else
 					{
@@ -124,9 +126,10 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 
 								for (j = startchan; j <= endchan; j++) {
 if (0 == i)
-									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j, j);
+									mg_create_tdm_term(profile, tech, channel_prefix, prefix, mg_term_idx, j);
 else
-									mg_create_tdm_term(profile, tech, channel_prefix, prefix, j, j-1);
+									mg_create_tdm_term(profile, tech, channel_prefix, prefix, mg_term_idx, j-1);
+									mg_term_idx++;
 								}
 							}
 						}
