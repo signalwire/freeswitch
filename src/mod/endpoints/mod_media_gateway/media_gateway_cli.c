@@ -279,7 +279,7 @@ void  megaco_cli_print_usage(switch_stream_handle_t *stream)
 	stream->write_function(stream, "mg profile <profile-name> send cng <term-id> \n");
 	stream->write_function(stream, "mg profile <profile-name> show activecalls  \n");
 	stream->write_function(stream, "mg profile <profile-name> show termstatus <term-id> \n");
-	stream->write_function(stream, "mg profile <profile-name> show alltermstatus <term-id> \n");
+	stream->write_function(stream, "mg profile <profile-name> show alltermstatus \n");
 
 	stream->write_function(stream, "Usage: Logging \n");
 	stream->write_function(stream, "mg logging enable \n");

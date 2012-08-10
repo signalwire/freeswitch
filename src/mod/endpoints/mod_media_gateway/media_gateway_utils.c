@@ -452,24 +452,26 @@ void mgco_fill_t38_sdp_attr(CmSdpAttrSet *s, mg_termination_t* term, CmMemListCp
 								"CM_SDP_ATTR_T38_FAX: TYPE not present \n");
 						break;
 					}
+printf("f->u.unknown.name.val[%s, len=%d]\n", f->u.unknown.name.val, f->u.unknown.name.len);
 
 /* NOTE - Ideally i should not change ,whatever is coming we can return..due to
 trillium issue forcefully coping the data...will remove once get trillium fix*/
 if(f->type.val == CM_SDP_ATTR_T38_FAX_UNKNOWN) {
-if((i==0) && term->u.rtp.t38_options->T38FaxRateManagement){
+if(!strncasecmp((char*)f->u.unknown.name.val,"transferredTCF",14) && term->u.rtp.t38_options->T38FaxRateManagement){
+printf("KAPIL - adding FaxRateManagement \n");
 MG_SET_TKNSTROSXL((f->u.unknown.name),strlen("FaxRateManagement"),"FaxRateManagement", memCp);	
 MG_SET_TKNSTROSXL((f->u.unknown.val),
 		strlen(term->u.rtp.t38_options->T38FaxRateManagement),
 		term->u.rtp.t38_options->T38FaxRateManagement, memCp);	
-}
-if((i==1) && term->u.rtp.t38_options->T38FaxUdpEC){
+}else if((!strncasecmp((char*)f->u.unknown.name.val,"t38UDPRedundancy",16)) && term->u.rtp.t38_options->T38FaxUdpEC){
+printf("KAPIL - adding FaxUdpEC \n");
 MG_SET_TKNSTROSXL((f->u.unknown.name),strlen("FaxUdpEC"),"FaxUdpEC", memCp);	
 MG_SET_TKNSTROSXL((f->u.unknown.val),
 		strlen(term->u.rtp.t38_options->T38FaxUdpEC),
 		term->u.rtp.t38_options->T38FaxUdpEC, memCp);	
-}
-if((i==2)){
+}else if(!strncasecmp((char*)f->u.unknown.name.val,"14400",5)){
 char buf[10] = {0};
+printf("KAPIL - adding MaxBitRate \n");
 sprintf(buf,"%d",term->u.rtp.t38_options->T38MaxBitRate);
 MG_SET_TKNSTROSXL((f->u.unknown.name),strlen("MaxBitRate"),"MaxBitRate", memCp);	
 MG_SET_TKNSTROSXL((f->u.unknown.val),
@@ -2065,16 +2067,19 @@ switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_term
 
 
 /*****************************************************************************************************************************/
+
 switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_profile_t* mg_profile, mg_termination_t* term, CmMemListCp     *memCp)
 {
 	CmSdpU8OrNil 	   *fmt = NULL;    
 	CmSdpInfoSet       *psdp  = NULL;
+	CmSdpInfoSet       *pRsdp  = NULL;
 	char* 		   ipAddress[4];
 	int 		   i = 0x00;
 	int 		   j = 0x00;
 	int 		   choose_codec = 0x00;
 	int 		   k = 0x00;
 	MgMgcoLocalDesc   *local = NULL; 
+	MgMgcoLocalDesc   *remote = NULL; 
 	int		   fresh_sdp = 0x00;
 	char* 		   dup = NULL; 
 	CmSdpMedProtoFmts *format=NULL;
@@ -2107,16 +2112,50 @@ switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_
 			for(i=0; i<out->num.val; i++) {
 				if(MGT_MEDIAPAR_LOCAL == out->parms[i]->type.val) {
 					local  = &out->parms[i]->u.local;
-					break;
 				} else if(MGT_MEDIAPAR_STRPAR == out->parms[i]->type.val){
 					MgMgcoStreamDesc *stream = &out->parms[i]->u.stream;
 					if((NOTPRSNT != stream->sl.pres.pres) && (NOTPRSNT !=  stream->sl.local.pres.pres)){
 						local  = &stream->sl.local;
 					}
+				}else if(MGT_MEDIAPAR_REMOTE == out->parms[i]->type.val) {
+					remote  = &out->parms[i]->u.remote;
 				}
 			}
 		}
 	}
+
+if(remote && (NOTPRSNT != remote->sdp.numComp.pres) && (0 != remote->sdp.numComp.val)){
+pRsdp = &(remote->sdp);
+for(i=0; i< pRsdp->numComp.val; i++) {
+/* fill media descriptors */
+{
+CmSdpMediaDescSet* med = &pRsdp->info[pRsdp->numComp.val-1]->mediaDescSet;
+CmSdpMediaDesc*    media;
+
+if((NOTPRSNT != med->numComp.pres) || (0 != med->numComp.val)){
+  for(j =0;j < med->numComp.val; j++){
+     media = med->mediaDesc[j];
+
+ /* check for codec */
+if((NOTPRSNT != media->field.par.numProtFmts.pres) || 
+		(0 != media->field.par.numProtFmts.val)){
+ for(k =0;k < media->field.par.numProtFmts.val; k++){
+format = media->field.par.pflst[k];
+if ((NOTPRSNT != format->protType.pres) &&
+   (CM_SDP_MEDIA_PROTO_UDPTL == format->protType.val)){
+/* ideally whatever is received we can send back *
+* due to issue in trillium , we need to manually copy the fields now */
+  mgco_fill_t38_sdp_attr(&media->attrSet, term, memCp);
+}
+}
+}
+}
+}
+}
+/**********************************************************************************************************************************/
+}
+}
+
 
 	if(!local || (NOTPRSNT == local->sdp.numComp.pres) || (0 == local->sdp.numComp.val)){
 		/* local sdp is not part of media descriptor, then add local sdp*/
