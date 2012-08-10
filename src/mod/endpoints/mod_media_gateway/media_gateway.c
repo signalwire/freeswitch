@@ -147,6 +147,10 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
             
             switch_core_session_receive_event(session, &var_event);
 
+			if (term->u.rtp.t38_options) {
+				switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
+			}
+
             switch_core_session_rwunlock(session);
             
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sent refresh to channel [%s], for termination [%s]\n", term->uuid, term->name);
@@ -170,6 +174,11 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));   
         channel = switch_core_session_get_channel(session);
         switch_channel_set_private(channel, PVT_MG_TERM, term);
+
+	if (term->u.rtp.t38_options) {
+		switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
+	}
+	
         switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
         	
         if (term->type == MG_TERM_TDM) {

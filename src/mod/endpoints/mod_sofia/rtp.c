@@ -40,7 +40,7 @@
 #define kPTIME "ptime"
 #define kPT "pt"
 #define kRFC2833PT "rfc2833_pt"
-#define kMODE "mode"
+#define kMEDIATYPE "media_type"
 #define kRATE "rate"
 
 static struct {
@@ -524,9 +524,8 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
             switch_rtp_set_telephony_event(tech_pvt->rtp_session, pt);
         }
 
-	if (compare_var(event, channel, kMODE)) {
-		const char *newmode = switch_channel_get_variable(channel, kMODE);
-		const char *mode = switch_channel_get_variable(channel, kMODE);
+	if (compare_var(event, channel, kMEDIATYPE)) {
+		const char *newmode = switch_channel_get_variable(channel, kMEDIATYPE);
 		
 		if (!strcmp(newmode, "image")) {
 			switch_channel_set_variable(tech_pvt->channel, "has_t38", "true");
@@ -535,7 +534,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got IMAGE description\n");
 		}
 		
-		switch_channel_set_variable(channel, kMODE, newmode);
+		switch_channel_set_variable(channel, kMEDIATYPE, newmode);
 	}
 	
     } else {
