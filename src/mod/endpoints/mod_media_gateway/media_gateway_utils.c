@@ -431,58 +431,6 @@ void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd)
 }
 
 /*****************************************************************************************************************************/
-void mgco_fill_t38_sdp_attr(CmSdpAttrSet *s, mg_termination_t* term, CmMemListCp *memCp)
-{
-	int i=0x00;
-
-	if(!term->u.rtp.t38_options) return;
-	if (!s->numComp.pres) return ; 
-
-	for (i = 0; i < s->numComp.val; i++) {
-		CmSdpAttr *a = s->attr[i];
-		if(NOTPRSNT == a->type.pres) continue;
-
-		switch(a->type.val)
-		{
-			case CM_SDP_ATTR_T38_FAX:
-				{
-					CmSdpAttrT38Fax* f = &a->u.fax;
-					if(NOTPRSNT == f->type.pres) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-								"CM_SDP_ATTR_T38_FAX: TYPE not present \n");
-						break;
-					}
-printf("f->u.unknown.name.val[%s, len=%d]\n", f->u.unknown.name.val, f->u.unknown.name.len);
-
-/* NOTE - Ideally i should not change ,whatever is coming we can return..due to
-trillium issue forcefully coping the data...will remove once get trillium fix*/
-if(f->type.val == CM_SDP_ATTR_T38_FAX_UNKNOWN) {
-if(!strncasecmp((char*)f->u.unknown.name.val,"transferredTCF",14) && term->u.rtp.t38_options->T38FaxRateManagement){
-printf("KAPIL - adding FaxRateManagement \n");
-MG_SET_TKNSTROSXL((f->u.unknown.name),strlen("FaxRateManagement"),"FaxRateManagement", memCp);	
-MG_SET_TKNSTROSXL((f->u.unknown.val),
-		strlen(term->u.rtp.t38_options->T38FaxRateManagement),
-		term->u.rtp.t38_options->T38FaxRateManagement, memCp);	
-}else if((!strncasecmp((char*)f->u.unknown.name.val,"t38UDPRedundancy",16)) && term->u.rtp.t38_options->T38FaxUdpEC){
-printf("KAPIL - adding FaxUdpEC \n");
-MG_SET_TKNSTROSXL((f->u.unknown.name),strlen("FaxUdpEC"),"FaxUdpEC", memCp);	
-MG_SET_TKNSTROSXL((f->u.unknown.val),
-		strlen(term->u.rtp.t38_options->T38FaxUdpEC),
-		term->u.rtp.t38_options->T38FaxUdpEC, memCp);	
-}else if(!strncasecmp((char*)f->u.unknown.name.val,"14400",5)){
-char buf[10] = {0};
-printf("KAPIL - adding MaxBitRate \n");
-sprintf(buf,"%d",term->u.rtp.t38_options->T38MaxBitRate);
-MG_SET_TKNSTROSXL((f->u.unknown.name),strlen("MaxBitRate"),"MaxBitRate", memCp);	
-MG_SET_TKNSTROSXL((f->u.unknown.val),
-		strlen(buf), buf, memCp);	
-}
-}
-}
-}
-}
-}
-/*****************************************************************************************************************************/
 void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
 {
     int i=0x00;
@@ -817,24 +765,106 @@ void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
 			    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 					    "\t CM_SDP_ATTR_T38_FAX: type=%d\n", f->type.val);
 
-			    if(f->type.val == CM_SDP_ATTR_T38_FAX_UNKNOWN) {
-				    if(f->u.unknown.name.pres){
-					    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-							    "T38: Attribute : name[len=%d, value=%s] \n",
-							    f->u.unknown.name.len,(char*)f->u.unknown.name.val);
-				    }
-				    if(f->u.unknown.val.pres){
-					    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-							    "T38: Attribute : value[len=%d, value=%s] \n",
-							    f->u.unknown.val.len,(char*)f->u.unknown.val.val);
-				    }
+			    if(NULL == term->u.rtp.t38_options){
+				    term->u.rtp.t38_options = 
+					    switch_core_alloc(term->pool, sizeof *term->u.rtp.t38_options);
+			    }
+			    switch(f->type.val)
+			    {
+				    case CM_SDP_ATTR_T38_FAX_VER:
+					    {
+						    term->u.rtp.t38_options->T38FaxVersion = f->u.num.val;
+						    break;
+					    }
+				    case CM_SDP_ATTR_T38_MAX_BIT_RATE:
+					    {
+						    term->u.rtp.t38_options->T38MaxBitRate = f->u.num.val;
+						    break;
+					    }
+				    case CM_SDP_ATTR_T38_FAX_FILL_BIT_RMVL:
+					    {
+						    term->u.rtp.t38_options->T38FaxFillBitRemoval = f->u.num.val;
+						    break;
+					    }
+				    case CM_SDP_ATTR_T38_FAX_TRNS_MMR:
+					    {
+						    term->u.rtp.t38_options->T38FaxTranscodingMMR = f->u.num.val;
+						    break;
+					    }
+				    case CM_SDP_ATTR_T38_FAX_TRNS_JBIG:
+					    {
+						    term->u.rtp.t38_options->T38FaxTranscodingJBIG = f->u.num.val;
+						    break;
+					    }
+				    case CM_SDP_ATTR_T38_FAX_RATE_MNGMNT:
+					    {
+						    switch(f->u.val.val)
+						    {
+							    case CM_SDP_ATTR_T38_FAX_RATE_MNG_LOC_TCF:
+								    {
+									    term->u.rtp.t38_options->T38FaxRateManagement = 
+										    switch_core_strdup(term->pool,"localTCF") ;
+									    break;
+								    }
+							    case CM_SDP_ATTR_T38_FAX_RATE_MNG_TRANSF_TCF:
+								    {
+									    term->u.rtp.t38_options->T38FaxRateManagement = 
+										    switch_core_strdup(term->pool,"transferredTCF") ;
+									    break;
+								    }
+						    }
+						    break;
+					    }
+				    case CM_SDP_ATTR_T38_FAX_MAX_BFR:
+					    {
+						    term->u.rtp.t38_options->T38FaxMaxBuffer = f->u.num.val;
+						    break;
+					    }
+				    case CM_SDP_ATTR_T38_FAX_MAX_DATAGRAM:
+					    {
+						    term->u.rtp.t38_options->T38FaxMaxDatagram = f->u.num.val;
+						    break;
+					    }
+				    case CM_SDP_ATTR_T38_FAX_UDP_EC:
+					    {
+						    switch(f->u.val.val)
+						    {
+							    case CM_SDP_ATTR_T38_FAX_UDP_EC_UDP_FEC:
+								    {
+									    term->u.rtp.t38_options->T38FaxUdpEC = 
+										    switch_core_strdup(term->pool,"t38UDPNoEC");
+									    break;
+								    }
+							    case CM_SDP_ATTR_T38_FAX_UDP_EC_UDP_RED:
+								    {
+									    term->u.rtp.t38_options->T38FaxUdpEC = 
+										    switch_core_strdup(term->pool,"t38UDPRedundancy") ;
+									    break;
+								    }
+						    }
+						    break;
+					    }
+				    case CM_SDP_ATTR_T38_FAX_UNKNOWN:
+					    {
+					     if(f->u.unknown.name.pres){
+					       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					       "T38: Attribute : name[len=%d, value=%s] \n",
+					         f->u.unknown.name.len,(char*)f->u.unknown.name.val);
+						}
+						if(f->u.unknown.val.pres){
+					         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						 "T38: Attribute : value[len=%d, value=%s] \n",
+						   f->u.unknown.val.len,(char*)f->u.unknown.val.val);
+						  }
+						    break;
+					    }
+
+				    default:
+					    break;
 			    }
 
-			/* filling default values */
-			if(NULL == term->u.rtp.t38_options){
-				term->u.rtp.t38_options = 
-					switch_core_alloc(term->pool, sizeof *term->u.rtp.t38_options);
-			}
+
+#if 0
 			term->u.rtp.t38_options->T38FaxVersion = 0x01;
 			term->u.rtp.t38_options->T38MaxBitRate = 14400;
 			term->u.rtp.t38_options->T38FaxRateManagement = 
@@ -844,6 +874,7 @@ void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
 			term->u.rtp.t38_options->T38FaxUdpEC = 
 				switch_core_strdup(term->pool,"t38UDPRedundancy") ;
 			//term->u.rtp.t38_options->T38VendorInfo = 
+#endif
 
 			break;
 		    }
@@ -2072,7 +2103,6 @@ switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_
 {
 	CmSdpU8OrNil 	   *fmt = NULL;    
 	CmSdpInfoSet       *psdp  = NULL;
-	CmSdpInfoSet       *pRsdp  = NULL;
 	char* 		   ipAddress[4];
 	int 		   i = 0x00;
 	int 		   j = 0x00;
@@ -2123,38 +2153,6 @@ switch_status_t mg_build_sdp(MgMgcoMediaDesc* out, MgMgcoMediaDesc* inc, megaco_
 			}
 		}
 	}
-
-if(remote && (NOTPRSNT != remote->sdp.numComp.pres) && (0 != remote->sdp.numComp.val)){
-pRsdp = &(remote->sdp);
-for(i=0; i< pRsdp->numComp.val; i++) {
-/* fill media descriptors */
-{
-CmSdpMediaDescSet* med = &pRsdp->info[pRsdp->numComp.val-1]->mediaDescSet;
-CmSdpMediaDesc*    media;
-
-if((NOTPRSNT != med->numComp.pres) || (0 != med->numComp.val)){
-  for(j =0;j < med->numComp.val; j++){
-     media = med->mediaDesc[j];
-
- /* check for codec */
-if((NOTPRSNT != media->field.par.numProtFmts.pres) || 
-		(0 != media->field.par.numProtFmts.val)){
- for(k =0;k < media->field.par.numProtFmts.val; k++){
-format = media->field.par.pflst[k];
-if ((NOTPRSNT != format->protType.pres) &&
-   (CM_SDP_MEDIA_PROTO_UDPTL == format->protType.val)){
-/* ideally whatever is received we can send back *
-* due to issue in trillium , we need to manually copy the fields now */
-  mgco_fill_t38_sdp_attr(&media->attrSet, term, memCp);
-}
-}
-}
-}
-}
-}
-/**********************************************************************************************************************************/
-}
-}
 
 
 	if(!local || (NOTPRSNT == local->sdp.numComp.pres) || (0 == local->sdp.numComp.val)){
@@ -2277,11 +2275,6 @@ if ((NOTPRSNT != format->protType.pres) &&
 	    return SWITCH_STATUS_FALSE;
     }
   }
-}else if ((NOTPRSNT != format->protType.pres) &&
-   (CM_SDP_MEDIA_PROTO_UDPTL == format->protType.val)){
-/* ideally whatever is received we can send back *
-* due to issue in trillium , we need to manually copy the fields now */
-  mgco_fill_t38_sdp_attr(&media->attrSet, term, memCp);
 }
 }
 }
