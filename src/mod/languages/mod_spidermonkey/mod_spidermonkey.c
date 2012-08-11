@@ -688,6 +688,35 @@ static JSBool event_fire(JSContext * cx, JSObject * obj, uintN argc, jsval * arg
 	return JS_TRUE;
 }
 
+
+static JSBool event_chat_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
+
+	if (eo) {
+		if (argc > 0) {
+			char *app = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+			char *arg = NULL;
+
+			if (argc > 1) {
+				arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+			}
+
+			goto end;
+		
+			switch_core_execute_chat_app(eo->event, app, arg);
+
+			*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+			return JS_TRUE;
+		}
+	}
+
+ end:
+
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+	return JS_FALSE;
+}
+
 static JSBool event_destroy_(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct event_obj *eo = JS_GetPrivate(cx, obj);
@@ -718,6 +747,7 @@ static JSFunctionSpec event_methods[] = {
 	{"getType", event_get_type, 1},
 	{"serialize", event_serialize, 0},
 	{"fire", event_fire, 0},
+	{"chatExecute", event_chat_execute, 0},
 	{"destroy", event_destroy_, 0},
 	{0}
 };
