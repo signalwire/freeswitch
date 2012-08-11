@@ -253,15 +253,13 @@ SPAN_DECLARE(int) t4_tx_end_page(t4_tx_state_t *s);
            moving forward in the buffer. The document will be padded for the
            current minimum scan line time.
     \param s The T.4 context.
-    \return The next bit (i.e. 0 or 1). For the last bit of data, bit 1 is
-            set (i.e. the returned value is 2 or 3). */
-SPAN_DECLARE(int) t4_tx_check_bit(t4_tx_state_t *s);
+    \return The next bit (i.e. 0 or 1). SIG_STATUS_END_OF_DATA for no more data. */
+SPAN_DECLARE(int) t4_tx_check_if_complete(t4_tx_state_t *s);
 
 /*! \brief Get the next bit of the current document page. The document will
            be padded for the current minimum scan line time.
     \param s The T.4 context.
-    \return The next bit (i.e. 0 or 1). For the last bit of data, bit 1 is
-            set (i.e. the returned value is 2 or 3). */
+    \return The next bit (i.e. 0 or 1). SIG_STATUS_END_OF_DATA for no more data. */
 SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s);
 
 /*! \brief Get the next byte of the current document page. The document will

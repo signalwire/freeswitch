@@ -29,23 +29,31 @@
 #include "config.h"
 #endif
 
-#include <inttypes.h>
 #include <stdlib.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
+#include <memory.h>
 #include <string.h>
-#include <tiffio.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
-#include <time.h>
 #include "floating_fudge.h"
+#include <tiffio.h>
+#include <assert.h>
 #include <jpeglib.h>
 #include <setjmp.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
+#include "spandsp/saturated.h"
 #include "spandsp/async.h"
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
@@ -362,15 +370,10 @@ static __inline__ void itu_to_lab(lab_params_t *s, cielab_t *lab, const uint8_t 
 
 static __inline__ void lab_to_itu(lab_params_t *s, uint8_t out[3], const cielab_t *lab)
 {
-    float val;
-
     /* T.4 E.6.4 */
-    val = floorf(lab->L/s->range_L + s->offset_L);
-    out[0] = (uint8_t) (val < 0.0)  ?  0  :  (val < 256.0)  ?  val  :  255;
-    val = floorf(lab->a/s->range_a + s->offset_a);
-    out[1] = (uint8_t) (val < 0.0)  ?  0  :  (val < 256.0)  ?  val  :  255;
-    val = floorf(lab->b/s->range_b + s->offset_b);
-    out[2] = (uint8_t) (val < 0.0)  ?  0  :  (val < 256.0)  ?  val  :  255;
+    out[0] = saturateu8(floorf(lab->L/s->range_L + s->offset_L));
+    out[1] = saturateu8(floorf(lab->a/s->range_a + s->offset_a));
+    out[2] = saturateu8(floorf(lab->b/s->range_b + s->offset_b));
     if (s->ab_are_signed)
     {
         out[1] -= 128;
@@ -485,13 +488,9 @@ SPAN_DECLARE(void) lab_to_srgb(lab_params_t *s, uint8_t srgb[], const uint8_t la
         g = (g > 0.0031308f)  ?  (1.055f*powf(g, 1.0f/2.4f) - 0.055f)  :  g*12.92f;
         b = (b > 0.0031308f)  ?  (1.055f*powf(b, 1.0f/2.4f) - 0.055f)  :  b*12.92f;
 
-        r = floorf(r*256.0f);
-        g = floorf(g*256.0f);
-        b = floorf(b*256.0f);
-
-        srgb[0] = (r < 0)  ?  0  :  (r <= 255)  ?  r  :  255;
-        srgb[1] = (g < 0)  ?  0  :  (g <= 255)  ?  g  :  255;
-        srgb[2] = (b < 0)  ?  0  :  (b <= 255)  ?  b  :  255;
+        srgb[0] = saturateu8(floorf(r*256.0f));
+        srgb[1] = saturateu8(floorf(g*256.0f));
+        srgb[2] = saturateu8(floorf(b*256.0f));
 #endif
         srgb += 3;
         lab += 3;
@@ -929,7 +928,7 @@ SPAN_DECLARE(int) t42_srgb_to_itulab(logging_state_t *logging, lab_params_t *s, 
 
     for (pos = 0;  pos < srclen;  pos += compressor.image_width*compressor.num_components)
     {
-        scan_line_in = (JSAMPROW)src + pos;
+        scan_line_in = (JSAMPROW) src + pos;
         srgb_to_lab(s, scan_line_out, scan_line_in, compressor.image_width);
         jpeg_write_scanlines(&compressor, &scan_line_out, 1);
     }
@@ -1033,7 +1032,7 @@ SPAN_DECLARE(int) t42_itulab_to_itulab(logging_state_t *logging, tdata_t *dst, t
 
     for (pos = 0;  pos < srclen;  pos += compressor.image_width*compressor.num_components)
     {
-        scan_line_in = (JSAMPROW)src + pos;
+        scan_line_in = (JSAMPROW) src + pos;
         jpeg_write_scanlines(&compressor, &scan_line_in, 1);
     }
 
@@ -1150,7 +1149,7 @@ SPAN_DECLARE(int) t42_itulab_to_srgb(logging_state_t *logging, lab_params_t *s, 
 
     for (pos = 0;  decompressor.output_scanline < decompressor.output_height;  pos += decompressor.output_width*decompressor.num_components)
     {
-        scan_line_out = (JSAMPROW)dst + pos;
+        scan_line_out = (JSAMPROW) dst + pos;
         jpeg_read_scanlines(&decompressor, &scan_line_in, 1);
         lab_to_srgb(s, scan_line_out, scan_line_in, decompressor.output_width);
     }
@@ -1193,6 +1192,12 @@ SPAN_DECLARE(void) t42_encode_abort(t42_encode_state_t *s)
 
 SPAN_DECLARE(void) t42_encode_comment(t42_encode_state_t *s, const uint8_t comment[], size_t len)
 {
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t42_encode_check_if_complete(t42_encode_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

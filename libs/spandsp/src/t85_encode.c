@@ -36,6 +36,7 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
+#include "spandsp/async.h"
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
@@ -577,6 +578,14 @@ SPAN_DECLARE(void) t85_encode_comment(t85_encode_state_t *s, const uint8_t comme
 {
     s->comment = comment;
     s->comment_len = len;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t85_encode_check_if_complete(t85_encode_state_t *s)
+{
+    if (s->y >= s->yd)
+        return SIG_STATUS_END_OF_DATA;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

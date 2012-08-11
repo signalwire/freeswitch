@@ -697,9 +697,7 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
     mask = T30_SUPPORT_T4_1D_COMPRESSION
          | T30_SUPPORT_T4_2D_COMPRESSION
          | T30_SUPPORT_T6_COMPRESSION
-#if defined(SPANDSP_SUPPORT_T42)
-         //| T30_SUPPORT_T42_COMPRESSION
-#endif
+         //| T30_SUPPORT_T81_COMPRESSION
 #if defined(SPANDSP_SUPPORT_T43)
          | T30_SUPPORT_T43_COMPRESSION
 #endif

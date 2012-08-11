@@ -64,8 +64,12 @@ extern "C"
 {
 #endif
 
-/*! \brief Get the next byte of the current document page. The document will
-           be padded for the current minimum scan line time.
+/*! \brief Check if we are at the end of the current document page.
+    \param s The T.85 context.
+    \return 0 for more data to come. SIG_STATUS_END_OF_DATA for no more data. */
+SPAN_DECLARE(int) t85_encode_check_if_complete(t85_encode_state_t *s);
+
+/*! \brief Get the next byte of the current document page.
     \param s The T.85 context.
     \return The next byte. For the last byte of data, bit 8 is
             set. In this case, one or more bits of the byte may be padded with

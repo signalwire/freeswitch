@@ -748,7 +748,7 @@ static int get_partial_ecm_page(t30_state_t *s)
     /* We filled the entire buffer */
     s->ecm_frames = 256;
     span_log(&s->logging, SPAN_LOG_FLOW, "Partial page buffer full (%d per frame)\n", s->octets_per_ecm_frame);
-    s->ecm_at_page_end = ((t4_tx_check_bit(&s->t4.tx) & 2) != 0);
+    s->ecm_at_page_end = (t4_tx_check_if_complete(&s->t4.tx) == SIG_STATUS_END_OF_DATA);
     return 256;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1332,12 +1332,10 @@ static int build_dcs(t30_state_t *s)
     /* Select the compression to use. */
     switch (s->line_encoding)
     {
-#if defined(SPANDSP_SUPPORT_T42)
     case T4_COMPRESSION_ITU_T42:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_ITU_T43:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T43_MODE);
