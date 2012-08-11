@@ -3628,7 +3628,7 @@ static int env_init(JSContext * cx, JSObject * javascript_object)
 	return 1;
 }
 
-static void js_parse_and_execute(switch_core_session_t *session, const char *input_code, struct request_obj *ro)
+static void js_parse_and_execute(switch_core_session_t *session, const char *input_code, struct request_obj *ro, switch_event_t *message)
 {
 	JSObject *javascript_global_object = NULL;
 	char buf[1024], *arg, *argv[512];
@@ -3657,6 +3657,12 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 		if (!(session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags))) {
 			switch_snprintf(buf, sizeof(buf), "~var session = false;");
 			eval_some_js(buf, cx, javascript_global_object, &rval);
+
+			if (message) {
+				new_js_event(message, "message", cx,  javascript_global_object);
+			}
+
+
 		}
 		if (ro) {
 			new_request(cx, javascript_global_object, ro);
@@ -3704,7 +3710,16 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 
 SWITCH_STANDARD_APP(js_dp_function)
 {
-	js_parse_and_execute(session, data, NULL);
+	js_parse_and_execute(session, data, NULL, NULL);
+}
+
+SWITCH_STANDARD_CHAT_APP(js_chat_function)
+{
+
+	js_parse_and_execute(NULL, data, NULL, message);
+
+	return SWITCH_STATUS_SUCCESS;
+
 }
 
 struct js_task {
@@ -3717,7 +3732,7 @@ static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread_t *thread, void *obj
 	struct js_task *task = (struct js_task *) obj;
 	switch_memory_pool_t *pool;
 
-	js_parse_and_execute(NULL, task->code, NULL);
+	js_parse_and_execute(NULL, task->code, NULL, NULL);
 
 	if ((pool = task->pool)) {
 		switch_core_destroy_memory_pool(&pool);
@@ -3775,7 +3790,7 @@ SWITCH_STANDARD_API(jsapi_function)
 	ro.session = session;
 	ro.stream = stream;
 
-	js_parse_and_execute(session, (char *) cmd, &ro);
+	js_parse_and_execute(session, (char *) cmd, &ro, NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -3795,6 +3810,8 @@ SWITCH_STANDARD_API(launch_async)
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 {
 	switch_application_interface_t *app_interface;
+	switch_chat_application_interface_t *chat_app_interface;
+
 	//switch_status_t status;
 
 	//if ((status = init_js()) != SWITCH_STATUS_SUCCESS) {
@@ -3811,6 +3828,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	SWITCH_ADD_API(jsapi_interface, "jsapi", "execute an api call", jsapi_function, "jsapi <script> [additional_vars [...]]");
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]",
 				   SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "javascript", "execute a js script", "execute a js script", js_chat_function, "<script>", SCAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
