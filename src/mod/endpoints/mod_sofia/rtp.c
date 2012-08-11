@@ -542,7 +542,7 @@ fail:
     if (session) {
         switch_core_session_destroy(&session);
     }
-    return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+    return SWITCH_STATUS_FALSE;
 
 }
 
