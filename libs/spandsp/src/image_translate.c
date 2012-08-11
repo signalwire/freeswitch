@@ -163,9 +163,9 @@ static int image_gray16_to_colour16_row(uint16_t colour16[], uint16_t gray16[], 
 
     for (i = pixels - 1;  i >= 0;  i--)
     {
-        colour16[3*i] = saturateu16((gray16[i]*36532) >> 15);
-        colour16[3*i + 1] = saturateu16((gray16[i]*37216) >> 16);
-        colour16[3*i + 2] = saturateu16((gray16[i]*47900) >> 14);
+        colour16[3*i] = saturateu16((gray16[i]*36532U) >> 15);
+        colour16[3*i + 1] = saturateu16((gray16[i]*37216U) >> 16);
+        colour16[3*i + 2] = saturateu16((gray16[i]*47900U) >> 14);
     }
     return pixels;
 }
@@ -177,9 +177,9 @@ static int image_gray16_to_colour8_row(uint8_t colour8[], uint16_t gray16[], int
 
     for (i = pixels - 1;  i >= 0;  i--)
     {
-        colour8[3*i] = saturateu8((gray16[i]*36532) >> 23);
-        colour8[3*i + 1] = saturateu8((gray16[i]*37216) >> 24);
-        colour8[3*i + 2] = saturateu8((gray16[i]*47900) >> 22);
+        colour8[3*i] = saturateu8((gray16[i]*36532U) >> 23);
+        colour8[3*i + 1] = saturateu8((gray16[i]*37216U) >> 24);
+        colour8[3*i + 2] = saturateu8((gray16[i]*47900U) >> 22);
     }
     return pixels;
 }
@@ -557,6 +557,8 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
                                                              void *row_read_user_data)
 {
     int i;
+    int raw_row_size;
+    int row_size;
 
     if (s == NULL)
     {
@@ -624,25 +626,29 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
     }
 
     /* Allocate the two row buffers we need, using the space requirements we now have */
+    raw_row_size = s->input_width*s->input_bytes_per_pixel;
+    row_size = s->output_width*s->output_bytes_per_pixel;
+    if (raw_row_size < row_size)
+        raw_row_size = row_size;
     if (s->resize)
     {
         for (i = 0;  i < 2;  i++)
         {
-            if ((s->raw_pixel_row[i] = (uint8_t *) malloc(s->input_width*s->input_bytes_per_pixel)) == NULL)
+            if ((s->raw_pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
                 return NULL;
-            memset(s->raw_pixel_row[i], 0, s->input_width*s->input_bytes_per_pixel);
-            if ((s->pixel_row[i] = (uint8_t *) malloc(s->output_width*sizeof(uint8_t))) == NULL)
+            memset(s->raw_pixel_row[i], 0, raw_row_size);
+            if ((s->pixel_row[i] = (uint8_t *) malloc(row_size)) == NULL)
                 return NULL;
-            memset(s->pixel_row[i], 0, s->output_width*sizeof(uint8_t));
+            memset(s->pixel_row[i], 0, row_size);
         }
     }
     else
     {
         for (i = 0;  i < 2;  i++)
         {
-            if ((s->pixel_row[i] = (uint8_t *) malloc(s->output_width*s->input_bytes_per_pixel)) == NULL)
+            if ((s->pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
                 return NULL;
-            memset(s->pixel_row[i], 0, s->output_width*s->input_bytes_per_pixel);
+            memset(s->pixel_row[i], 0, raw_row_size);
         }
     }
 

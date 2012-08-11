@@ -900,9 +900,25 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_tx_check_bit(t4_tx_state_t *s)
+SPAN_DECLARE(int) t4_tx_check_if_complete(t4_tx_state_t *s)
 {
-    return t4_t6_encode_check_bit(&s->encoder.t4_t6);
+    switch (s->line_encoding)
+    {
+    case T4_COMPRESSION_ITU_T4_1D:
+    case T4_COMPRESSION_ITU_T4_2D:
+    case T4_COMPRESSION_ITU_T6:
+        return t4_t6_encode_check_bit(&s->encoder.t4_t6);
+    case T4_COMPRESSION_ITU_T42:
+        return t42_encode_check_if_complete(&s->encoder.t42);
+#if defined(SPANDSP_SUPPORT_T43)
+    case T4_COMPRESSION_ITU_T43:
+        return t43_encode_check_if_complete(&s->encoder.t43);
+#endif
+    case T4_COMPRESSION_ITU_T85:
+    case T4_COMPRESSION_ITU_T85_L0:
+        return t85_encode_check_if_complete(&s->encoder.t85);
+    }
+    return SIG_STATUS_END_OF_DATA;
 }
 /*- End of function --------------------------------------------------------*/
 

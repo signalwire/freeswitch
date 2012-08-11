@@ -81,6 +81,11 @@ SPAN_DECLARE(void) t42_encode_abort(t42_encode_state_t *s);
 
 SPAN_DECLARE(void) t42_encode_comment(t42_encode_state_t *s, const uint8_t comment[], size_t len);
 
+/*! \brief Check if we are at the end of the current document page.
+    \param s The T.42 context.
+    \return 0 for more data to come. SIG_STATUS_END_OF_DATA for no more data. */
+SPAN_DECLARE(int) t42_encode_check_if_complete(t42_encode_state_t *s);
+
 SPAN_DECLARE(int) t42_encode_get_byte(t42_encode_state_t *s);
 
 SPAN_DECLARE(int) t42_encode_get_chunk(t42_encode_state_t *s, uint8_t buf[], int max_len);

@@ -38,15 +38,13 @@ extern "C" {
            moving forward in the buffer. The document will be padded for the
            current minimum scan line time.
     \param s The T.4/T.6 context.
-    \return The next bit (i.e. 0 or 1). For the last bit of data, bit 1 is
-            set (i.e. the returned value is 2 or 3). */
+    \return The next bit (i.e. 0 or 1). SIG_STATUS_END_OF_DATA for no more data. */
 SPAN_DECLARE(int) t4_t6_encode_check_bit(t4_t6_encode_state_t *s);
 
 /*! \brief Get the next bit of the current image. The image will
            be padded for the current minimum scan line time. 
     \param s The T.4/T.6 context.
-    \return The next bit (i.e. 0 or 1). For the last bit of data, bit 1 is
-            set (i.e. the returned value is 2 or 3). */
+    \return The next bit (i.e. 0 or 1). SIG_STATUS_END_OF_DATA for no more data. */
 SPAN_DECLARE(int) t4_t6_encode_get_bit(t4_t6_encode_state_t *s);
 
 /*! \brief Get the next byte of the current document page. The document will
