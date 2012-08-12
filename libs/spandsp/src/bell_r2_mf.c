@@ -621,7 +621,7 @@ SPAN_DECLARE(size_t) bell_mf_rx_get(bell_mf_rx_state_t *s, char *buf, int max)
         s->current_digits -= max;
     }
     buf[max] = '\0';
-    return  max;
+    return max;
 }
 /*- End of function --------------------------------------------------------*/
 

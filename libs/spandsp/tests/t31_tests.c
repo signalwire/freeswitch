@@ -934,7 +934,7 @@ int main(int argc, char *argv[])
 
     t30_tests(t38_mode, use_gui, log_audio, test_sending, g1050_model_no, g1050_speed_pattern_no);
     printf("Tests passed\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

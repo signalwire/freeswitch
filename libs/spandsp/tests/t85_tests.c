@@ -229,7 +229,7 @@ static int test_cycle(const char *test_id,
     
     testbuf_len = 0;
     max_len = 100;
-    while ((len = t85_encode_get_chunk(&t85_enc, &testbuf[testbuf_len], max_len)) > 0)
+    while ((len = t85_encode_get(&t85_enc, &testbuf[testbuf_len], max_len)) > 0)
     {
         testbuf_len += len;
         max_len = 100;
@@ -261,9 +261,9 @@ static int test_cycle(const char *test_id,
     if (comment  &&  comment[0] != 'X')
         t85_decode_set_comment_handler(&t85_dec, 1000, comment_handler, NULL);
     write_row = 0;
-    result = t85_decode_put_chunk(&t85_dec, testbuf, testbuf_len);
+    result = t85_decode_put(&t85_dec, testbuf, testbuf_len);
     if (result == T4_DECODE_MORE_DATA)
-        result = t85_decode_put_byte(&t85_dec, SIG_STATUS_END_OF_DATA);
+        result = t85_decode_put(&t85_dec, NULL, 0);
     cnt_a = t85_encode_get_compressed_image_size(&t85_enc);
     cnt_b = t85_decode_get_compressed_image_size(&t85_dec);
     if (cnt_a != cnt_b  ||  cnt_a != testbuf_len*8  ||  result != T4_DECODE_OK)
@@ -300,7 +300,7 @@ static int test_cycle(const char *test_id,
     result = T4_DECODE_MORE_DATA;
     for (l = 0;  l < testbuf_len;  l++)
     {
-        result = t85_decode_put_chunk(&t85_dec, &testbuf[l], 1);
+        result = t85_decode_put(&t85_dec, &testbuf[l], 1);
         if (result != T4_DECODE_MORE_DATA)
         {
             l++;
@@ -308,7 +308,7 @@ static int test_cycle(const char *test_id,
         }
     }
     if (result == T4_DECODE_MORE_DATA)
-        result = t85_decode_put_byte(&t85_dec, SIG_STATUS_END_OF_DATA);
+        result = t85_decode_put(&t85_dec, NULL, 0);
     if (l != testbuf_len  ||  result != T4_DECODE_OK)
     {
         printf("Decode result %d\n", result);

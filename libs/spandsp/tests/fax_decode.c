@@ -316,7 +316,7 @@ static void t4_end(void)
         for (i = 0;  i < 256;  i++)
         {
             if (ecm_len[i] > 0)
-                t4_rx_put_chunk(&t4_rx_state, ecm_data[i], ecm_len[i]);
+                t4_rx_put(&t4_rx_state, ecm_data[i], ecm_len[i]);
             fprintf(stderr, "%d", (ecm_len[i] <= 0)  ?  0  :  1);
         }
         fprintf(stderr, "\n");
@@ -560,7 +560,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot close audio file '%s'\n", filename);
         exit(2);
     }
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

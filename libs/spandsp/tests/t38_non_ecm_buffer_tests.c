@@ -699,7 +699,7 @@ int main(int argc, char *argv[])
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     printf("Tests passed\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

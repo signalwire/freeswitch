@@ -38,22 +38,14 @@ extern "C" {
            moving forward in the buffer. The document will be padded for the
            current minimum scan line time.
     \param s The T.4/T.6 context.
-    \return The next bit (i.e. 0 or 1). SIG_STATUS_END_OF_DATA for no more data. */
-SPAN_DECLARE(int) t4_t6_encode_check_bit(t4_t6_encode_state_t *s);
+    \return 0 for more data to come. SIG_STATUS_END_OF_DATA for no more data. */
+SPAN_DECLARE(int) t4_t6_encode_image_complete(t4_t6_encode_state_t *s);
 
 /*! \brief Get the next bit of the current image. The image will
            be padded for the current minimum scan line time. 
     \param s The T.4/T.6 context.
     \return The next bit (i.e. 0 or 1). SIG_STATUS_END_OF_DATA for no more data. */
 SPAN_DECLARE(int) t4_t6_encode_get_bit(t4_t6_encode_state_t *s);
-
-/*! \brief Get the next byte of the current document page. The document will
-           be padded for the current minimum scan line time.
-    \param s The T.4/T.6 context.
-    \return The next byte. For the last byte of data, bit 8 is
-            set. In this case, one or more bits of the byte may be padded with
-            zeros, to complete the byte. */
-SPAN_DECLARE(int) t4_t6_encode_get_byte(t4_t6_encode_state_t *s);
 
 /*! \brief Get the next chunk of the current document page. The document will
            be padded for the current minimum scan line time.
@@ -62,7 +54,7 @@ SPAN_DECLARE(int) t4_t6_encode_get_byte(t4_t6_encode_state_t *s);
     \param max_len The maximum length of the chunk.
     \return The actual length of the chunk. If this is less than max_len it 
             indicates that the end of the document has been reached. */
-SPAN_DECLARE(int) t4_t6_encode_get_chunk(t4_t6_encode_state_t *s, uint8_t buf[], int max_len);
+SPAN_DECLARE(int) t4_t6_encode_get(t4_t6_encode_state_t *s, uint8_t buf[], int max_len);
 
 /*! \brief Set the row read handler for a T.4/T.6 encode context.
     \param s The T.4/T.6 context.

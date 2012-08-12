@@ -144,10 +144,10 @@ SPAN_DECLARE(int) span_log(logging_state_t *s, int level, const char *format, ..
             __span_message(s->user_data, level, msg);
         /*endif*/
         va_end(arg_ptr);
-        return  1;
+        return 1;
     }
     /*endif*/
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -175,7 +175,7 @@ SPAN_DECLARE(int) span_log_set_level(logging_state_t *s, int level)
 {
     s->level = level;
 
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -183,7 +183,7 @@ SPAN_DECLARE(int) span_log_set_tag(logging_state_t *s, const char *tag)
 {
     s->tag = tag;
 
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -191,7 +191,7 @@ SPAN_DECLARE(int) span_log_set_protocol(logging_state_t *s, const char *protocol
 {
     s->protocol = protocol;
 
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -199,7 +199,7 @@ SPAN_DECLARE(int) span_log_set_sample_rate(logging_state_t *s, int samples_per_s
 {
     s->samples_per_second = samples_per_second;
 
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -207,7 +207,7 @@ SPAN_DECLARE(int) span_log_bump_samples(logging_state_t *s, int samples)
 {
     s->elapsed_samples += samples;
 
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

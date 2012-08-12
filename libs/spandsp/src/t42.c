@@ -1195,19 +1195,13 @@ SPAN_DECLARE(void) t42_encode_comment(t42_encode_state_t *s, const uint8_t comme
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t42_encode_check_if_complete(t42_encode_state_t *s)
+SPAN_DECLARE(int) t42_encode_image_complete(t42_encode_state_t *s)
 {
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t42_encode_get_byte(t42_encode_state_t *s)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t42_encode_get_chunk(t42_encode_state_t *s, uint8_t buf[], int max_len)
+SPAN_DECLARE(int) t42_encode_get(t42_encode_state_t *s, uint8_t buf[], size_t max_len)
 {
     return 0;
 }
@@ -1292,15 +1286,7 @@ SPAN_DECLARE(void) t42_decode_rx_status(t42_decode_state_t *s, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t42_decode_put_byte(t42_decode_state_t *s, int byte)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t42_decode_put_chunk(t42_decode_state_t *s,
-                                       const uint8_t data[],
-                                       size_t len)
+SPAN_DECLARE(int) t42_decode_put(t42_decode_state_t *s, const uint8_t data[], size_t len)
 {
     uint8_t *buf;
 

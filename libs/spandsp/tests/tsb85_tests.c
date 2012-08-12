@@ -989,7 +989,7 @@ static int next_step(faxtester_state_t *s)
                 printf("Test failed\n");
                 exit(2);
             }
-            len = t4_tx_get_chunk(&t4_tx_state, image, sizeof(image));
+            len = t4_tx_get(&t4_tx_state, image, sizeof(image));
             if (bad_rows)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
@@ -1030,7 +1030,7 @@ static int next_step(faxtester_state_t *s)
                 exit(2);
             }
             /*endif*/
-            len = t4_tx_get_chunk(&t4_tx_state, image, sizeof(image));
+            len = t4_tx_get(&t4_tx_state, image, sizeof(image));
             if (bad_rows)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");

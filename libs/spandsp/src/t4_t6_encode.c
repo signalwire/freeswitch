@@ -918,14 +918,14 @@ static int get_next_row(t4_t6_encode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_t6_encode_check_bit(t4_t6_encode_state_t *s)
+SPAN_DECLARE(int) t4_t6_encode_image_complete(t4_t6_encode_state_t *s)
 {
     if (s->bitstream_optr >= s->bitstream_iptr)
     {
         if (get_next_row(s) < 0)
             return SIG_STATUS_END_OF_DATA;
     }
-    return (s->bitstream[s->bitstream_optr] >> (7 - s->bit_pos)) & 1;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -933,8 +933,12 @@ SPAN_DECLARE(int) t4_t6_encode_get_bit(t4_t6_encode_state_t *s)
 {
     int bit;
 
-    if ((bit = t4_t6_encode_check_bit(s)) < 0)
-        return bit;
+    if (s->bitstream_optr >= s->bitstream_iptr)
+    {
+        if (get_next_row(s) < 0)
+            return SIG_STATUS_END_OF_DATA;
+    }
+    bit = (s->bitstream[s->bitstream_optr] >> (7 - s->bit_pos)) & 1;
     if (--s->bit_pos < 0)
     {
         s->bitstream_optr++;
@@ -944,18 +948,7 @@ SPAN_DECLARE(int) t4_t6_encode_get_bit(t4_t6_encode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_t6_encode_get_byte(t4_t6_encode_state_t *s)
-{
-    if (s->bitstream_optr >= s->bitstream_iptr)
-    {
-        if (get_next_row(s) < 0)
-            return 0x100;
-    }
-    return s->bitstream[s->bitstream_optr++];
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t4_t6_encode_get_chunk(t4_t6_encode_state_t *s, uint8_t buf[], int max_len)
+SPAN_DECLARE(int) t4_t6_encode_get(t4_t6_encode_state_t *s, uint8_t buf[], int max_len)
 {
     int len;
     int n;

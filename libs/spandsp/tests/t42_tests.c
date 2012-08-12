@@ -287,9 +287,9 @@ int main(int argc, char *argv[])
                 printf("0x%02x\n", data[i]);
             t85_decode_init(&t85_dec, t85_row_write_handler, NULL);
             t85_decode_set_comment_handler(&t85_dec, 1000, t85_comment_handler, NULL);
-            result = t85_decode_put_chunk(&t85_dec, data, total_len);
+            result = t85_decode_put(&t85_dec, data, total_len);
             if (result == T4_DECODE_MORE_DATA)
-                result = t85_decode_put_byte(&t85_dec, SIG_STATUS_END_OF_DATA);
+                result = t85_decode_put(&t85_dec, NULL, 0);
             len = t85_decode_get_compressed_image_size(&t85_dec);
             printf("Compressed image is %d bytes, %d rows\n", len/8, write_row);
             t85_decode_release(&t85_dec);
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
             t85_dec.min_bit_planes = 1;
             t85_dec.max_bit_planes = 8;
             data5_ptr = 0;
-            result = t85_decode_put_chunk(&t85_dec, data, total_len);
+            result = t85_decode_put(&t85_dec, data, total_len);
             len = t85_decode_get_compressed_image_size(&t85_dec);
             printf("Compressed image is %d bytes, %d rows\n", len/8, write_row);
 
@@ -343,14 +343,14 @@ int main(int argc, char *argv[])
                 t85_decode_new_plane(&t85_dec);
                 data5_ptr = 0;
                 t85_decode_set_comment_handler(&t85_dec, 1000, t85_comment_handler, NULL);
-                result = t85_decode_put_chunk(&t85_dec, data, total_len);
+                result = t85_decode_put(&t85_dec, data, total_len);
                 len = t85_decode_get_compressed_image_size(&t85_dec);
                 printf("Compressed image is %d bytes, %d rows\n", len/8, write_row);
             }
             if (result == T4_DECODE_MORE_DATA)
             {
                 printf("More\n");
-                result = t85_decode_put_byte(&t85_dec, SIG_STATUS_END_OF_DATA);
+                result = t85_decode_put(&t85_dec, NULL, 0);
             }
             len = t85_decode_get_compressed_image_size(&t85_dec);
             printf("Compressed image is %d bytes, %d rows\n", len/8, write_row);

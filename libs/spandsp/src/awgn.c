@@ -101,7 +101,7 @@ SPAN_DECLARE(awgn_state_t *) awgn_init_dbov(awgn_state_t *s, int idum, float lev
     if (s == NULL)
     {
         if ((s = (awgn_state_t *) malloc(sizeof(*s))) == NULL)
-            return  NULL;
+            return NULL;
     }
     if (idum < 0)
         idum = -idum;

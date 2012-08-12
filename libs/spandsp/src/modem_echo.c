@@ -67,21 +67,21 @@ SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_init(int len)
     modem_echo_can_state_t *ec;
 
     if ((ec = (modem_echo_can_state_t *) malloc(sizeof(*ec))) == NULL)
-        return  NULL;
+        return NULL;
     memset(ec, 0, sizeof(*ec));
     ec->taps = len;
     ec->curr_pos = ec->taps - 1;
     if ((ec->fir_taps32 = (int32_t *) malloc(ec->taps*sizeof(int32_t))) == NULL)
     {
         free(ec);
-        return  NULL;
+        return NULL;
     }
     memset(ec->fir_taps32, 0, ec->taps*sizeof(int32_t));
     if ((ec->fir_taps16 = (int16_t *) malloc(ec->taps*sizeof(int16_t))) == NULL)
     {
         free(ec->fir_taps32);
         free(ec);
-        return  NULL;
+        return NULL;
     }
     memset(ec->fir_taps16, 0, ec->taps*sizeof(int16_t));
     if (fir16_create(&ec->fir_state, ec->fir_taps16, ec->taps) == NULL)
@@ -89,9 +89,9 @@ SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_init(int len)
         free(ec->fir_taps16);
         free(ec->fir_taps32);
         free(ec);
-        return  NULL;
+        return NULL;
     }
-    return  ec;
+    return ec;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -170,7 +170,7 @@ SPAN_DECLARE(int16_t) modem_echo_can_update(modem_echo_can_state_t *ec, int16_t 
     if (ec->curr_pos <= 0)
         ec->curr_pos = ec->taps;
     ec->curr_pos--;
-    return  (int16_t) clean_rx;
+    return (int16_t) clean_rx;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

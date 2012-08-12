@@ -553,7 +553,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             bit_reverse(buf2, buf, len);
-            t30_non_ecm_put_chunk(&s->t30, buf2, len);
+            t30_non_ecm_put(&s->t30, buf2, len);
         }
         /*endif*/
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
@@ -573,7 +573,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                 }
                 /*endif*/
                 bit_reverse(buf2, buf, len);
-                t30_non_ecm_put_chunk(&s->t30, buf2, len);
+                t30_non_ecm_put(&s->t30, buf2, len);
             }
             /*endif*/
             /* WORKAROUND: At least some Mediatrix boxes have a bug, where they can send HDLC signal end where
@@ -741,7 +741,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                However, I think the early versions of T.38 said the signal end message should not
                contain data. Hopefully, following the current spec will not cause compatibility
                issues. */
-            len = t30_non_ecm_get_chunk(&s->t30, buf, fe->octets_per_data_packet);
+            len = t30_non_ecm_get(&s->t30, buf, fe->octets_per_data_packet);
             if (len < 0)
                 return -1;
             /*endif*/

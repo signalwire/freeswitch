@@ -246,7 +246,7 @@ static int16_t channel_model(int16_t local, int16_t far)
     /* This mixed echo and far end signal will have been through an A-law munging when it came back into
        the digital network. */
     rx = codec_munger(rx);
-    return  rx;
+    return rx;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
 #endif
 
     printf("Tests passed.\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

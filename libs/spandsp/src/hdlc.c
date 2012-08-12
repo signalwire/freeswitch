@@ -558,7 +558,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
     }
     s->bits--;
     txbit = (s->byte >> s->bits) & 0x01;
-    return  txbit;
+    return txbit;
 }
 /*- End of function --------------------------------------------------------*/
 

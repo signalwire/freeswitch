@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
             bit ^= 1;
         v42_rx_bit(&caller, bit);
     }
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

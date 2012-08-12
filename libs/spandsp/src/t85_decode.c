@@ -351,8 +351,7 @@ SPAN_DECLARE(void) t85_decode_rx_status(t85_decode_state_t *s, int status)
     case SIG_STATUS_CARRIER_DOWN:
     case SIG_STATUS_END_OF_DATA:
         /* Finalise the image */
-        s->end_of_data = 1;
-        t85_decode_put_chunk(s, NULL, 0);
+        t85_decode_put(s, NULL, 0);
         break;
     default:
         span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected rx status - %d!\n", status);
@@ -361,23 +360,7 @@ SPAN_DECLARE(void) t85_decode_rx_status(t85_decode_state_t *s, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t85_decode_put_byte(t85_decode_state_t *s, int byte)
-{
-    uint8_t data[1];
-
-    if (byte < 0)
-    {
-        t85_decode_rx_status(s, byte);
-        return (s->y >= s->yd)  ?  T4_DECODE_OK  :  T4_DECODE_MORE_DATA;
-    }
-    data[0] = byte;
-    return t85_decode_put_chunk(s, data, 1);
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
-                                       const uint8_t data[],
-                                       size_t len)
+SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], size_t len)
 {
     int ret;
     uint32_t y;
@@ -387,6 +370,14 @@ SPAN_DECLARE(int) t85_decode_put_chunk(t85_decode_state_t *s,
     size_t chunk;
     size_t cnt;
     int i;
+
+    if (len == 0)
+    {
+        if (s->y >= s->yd)
+            return T4_DECODE_OK;
+        /* This is the end of image condition */
+        s->end_of_data = 1;
+    }
 
     s->compressed_image_size += len;
     cnt = 0;

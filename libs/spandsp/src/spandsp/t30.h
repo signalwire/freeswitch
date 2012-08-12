@@ -625,19 +625,13 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status);
     \return The next bit to transmit. */
 SPAN_DECLARE_NONSTD(int) t30_non_ecm_get_bit(void *user_data);
 
-/*! Get a byte of received non-ECM image data.
-    \brief Get a byte of received non-ECM image data.
-    \param user_data An opaque pointer, which must point to the T.30 context.
-    \return The next byte to transmit. */
-SPAN_DECLARE(int) t30_non_ecm_get_byte(void *user_data);
-
 /*! Get a chunk of received non-ECM image data.
     \brief Get a bit of received non-ECM image data.
     \param user_data An opaque pointer, which must point to the T.30 context.
     \param buf The buffer to contain the data.
     \param max_len The maximum length of the chunk.
     \return The actual length of the chunk. */
-SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_len);
+SPAN_DECLARE(int) t30_non_ecm_get(void *user_data, uint8_t buf[], int max_len);
 
 /*! Process a bit of received non-ECM image data.
     \brief Process a bit of received non-ECM image data
@@ -645,18 +639,12 @@ SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_
     \param bit The received bit. */
 SPAN_DECLARE_NONSTD(void) t30_non_ecm_put_bit(void *user_data, int bit);
 
-/*! Process a byte of received non-ECM image data.
-    \brief Process a byte of received non-ECM image data
-    \param user_data An opaque pointer, which must point to the T.30 context.
-    \param byte The received byte. */
-SPAN_DECLARE(void) t30_non_ecm_put_byte(void *user_data, int byte);
-
 /*! Process a chunk of received non-ECM image data.
     \brief Process a chunk of received non-ECM image data
     \param user_data An opaque pointer, which must point to the T.30 context.
     \param buf The buffer containing the received data.
     \param len The length of the data in buf. */
-SPAN_DECLARE(void) t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], int len);
+SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len);
 
 /*! Process a received HDLC frame.
     \brief Process a received HDLC frame.

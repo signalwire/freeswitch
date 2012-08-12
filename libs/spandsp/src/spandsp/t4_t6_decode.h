@@ -53,16 +53,10 @@ SPAN_DECLARE(int) t4_t6_decode_put_bit(t4_t6_decode_state_t *s, int bit);
 
 /*! \brief Put a byte of the current document page.
     \param s The T.4/T.6 context.
-    \param byte The data byte.
-    \return TRUE when the byte ends the document page, otherwise FALSE. */
-SPAN_DECLARE(int) t4_t6_decode_put_byte(t4_t6_decode_state_t *s, int byte);
-
-/*! \brief Put a byte of the current document page.
-    \param s The T.4/T.6 context.
     \param buf The buffer containing the chunk.
     \param len The length of the chunk.
-    \return TRUE when the byte ends the document page, otherwise FALSE. */
-SPAN_DECLARE(int) t4_t6_decode_put_chunk(t4_t6_decode_state_t *s, const uint8_t buf[], int len);
+    \return T4_DECODE_MORE_DATA when the image is still in progress. T4_DECODE_OK when the image is complete. */
+SPAN_DECLARE(int) t4_t6_decode_put(t4_t6_decode_state_t *s, const uint8_t buf[], size_t len);
 
 /*! \brief Set the row write handler for a T.4/T.6 decode context.
     \param s The T.4/T.6 context.
