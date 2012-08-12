@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
     }
 
     printf("Tests passed.\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

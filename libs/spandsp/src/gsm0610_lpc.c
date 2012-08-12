@@ -78,7 +78,7 @@ int16_t gsm0610_norm(int32_t x)
     if (x < 0)
     {
         if (x <= -1073741824)
-            return  0;
+            return 0;
         /*endif*/
         x = ~x;
     }
@@ -108,7 +108,7 @@ static int16_t gsm_div(int16_t num, int16_t denom)
 
     assert(num >= 0  &&  denom >= num);
     if (num == 0)
-        return  0;
+        return 0;
     /*endif*/
     num32 = num;
     denom32 = denom;
@@ -128,7 +128,7 @@ static int16_t gsm_div(int16_t num, int16_t denom)
     }
     /*endwhile*/
 
-    return  div;
+    return div;
 }
 /*- End of function --------------------------------------------------------*/
 

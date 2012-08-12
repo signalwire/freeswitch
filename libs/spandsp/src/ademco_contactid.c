@@ -683,7 +683,7 @@ SPAN_DECLARE(ademco_contactid_receiver_state_t *) ademco_contactid_receiver_init
     if (s == NULL)
     {
         if ((s = (ademco_contactid_receiver_state_t *) malloc(sizeof (*s))) == NULL)
-            return  NULL;
+            return NULL;
     }
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
@@ -1020,7 +1020,7 @@ SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ade
     if (s == NULL)
     {
         if ((s = (ademco_contactid_sender_state_t *) malloc(sizeof (*s))) == NULL)
-            return  NULL;
+            return NULL;
     }
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);

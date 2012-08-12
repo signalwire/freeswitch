@@ -84,11 +84,9 @@ SPAN_DECLARE(void) t42_encode_comment(t42_encode_state_t *s, const uint8_t comme
 /*! \brief Check if we are at the end of the current document page.
     \param s The T.42 context.
     \return 0 for more data to come. SIG_STATUS_END_OF_DATA for no more data. */
-SPAN_DECLARE(int) t42_encode_check_if_complete(t42_encode_state_t *s);
+SPAN_DECLARE(int) t42_encode_image_complete(t42_encode_state_t *s);
 
-SPAN_DECLARE(int) t42_encode_get_byte(t42_encode_state_t *s);
-
-SPAN_DECLARE(int) t42_encode_get_chunk(t42_encode_state_t *s, uint8_t buf[], int max_len);
+SPAN_DECLARE(int) t42_encode_get(t42_encode_state_t *s, uint8_t buf[], size_t max_len);
 
 SPAN_DECLARE(uint32_t) t42_encode_get_image_width(t42_encode_state_t *s);
 
@@ -114,11 +112,7 @@ SPAN_DECLARE(int) t42_encode_free(t42_encode_state_t *s);
 
 SPAN_DECLARE(void) t42_decode_rx_status(t42_decode_state_t *s, int status);
 
-SPAN_DECLARE(int) t42_decode_put_byte(t42_decode_state_t *s, int byte);
-
-SPAN_DECLARE(int) t42_decode_put_chunk(t42_decode_state_t *s,
-                                       const uint8_t data[],
-                                       size_t len);
+SPAN_DECLARE(int) t42_decode_put(t42_decode_state_t *s, const uint8_t data[], size_t len);
 
 SPAN_DECLARE(int) t42_decode_set_row_write_handler(t42_decode_state_t *s,
                                                    t4_row_write_handler_t handler,

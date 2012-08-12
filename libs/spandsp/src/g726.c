@@ -1004,7 +1004,7 @@ SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_co
     if (s == NULL)
     {
         if ((s = (g726_state_t *) malloc(sizeof(*s))) == NULL)
-            return  NULL;
+            return NULL;
     }
     s->yl = 34816;
     s->yu = 544;

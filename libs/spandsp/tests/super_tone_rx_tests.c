@@ -198,7 +198,7 @@ static int parse_tone(super_tone_rx_descriptor_t *desc, int tone_id, super_tone_
         cur = cur->next;
     }
     /*endwhile*/
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

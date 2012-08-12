@@ -900,23 +900,23 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_tx_check_if_complete(t4_tx_state_t *s)
+SPAN_DECLARE(int) t4_tx_image_complete(t4_tx_state_t *s)
 {
     switch (s->line_encoding)
     {
     case T4_COMPRESSION_ITU_T4_1D:
     case T4_COMPRESSION_ITU_T4_2D:
     case T4_COMPRESSION_ITU_T6:
-        return t4_t6_encode_check_bit(&s->encoder.t4_t6);
+        return t4_t6_encode_image_complete(&s->encoder.t4_t6);
     case T4_COMPRESSION_ITU_T42:
-        return t42_encode_check_if_complete(&s->encoder.t42);
+        return t42_encode_image_complete(&s->encoder.t42);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_ITU_T43:
-        return t43_encode_check_if_complete(&s->encoder.t43);
+        return t43_encode_image_complete(&s->encoder.t43);
 #endif
     case T4_COMPRESSION_ITU_T85:
     case T4_COMPRESSION_ITU_T85_L0:
-        return t85_encode_check_if_complete(&s->encoder.t85);
+        return t85_encode_image_complete(&s->encoder.t85);
     }
     return SIG_STATUS_END_OF_DATA;
 }
@@ -924,49 +924,28 @@ SPAN_DECLARE(int) t4_tx_check_if_complete(t4_tx_state_t *s)
 
 SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s)
 {
+    /* We only get bit by bit for T.4 1D and T.4 2-D. */
     return t4_t6_encode_get_bit(&s->encoder.t4_t6);
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_tx_get_byte(t4_tx_state_t *s)
+SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
 {
     switch (s->line_encoding)
     {
     case T4_COMPRESSION_ITU_T4_1D:
     case T4_COMPRESSION_ITU_T4_2D:
     case T4_COMPRESSION_ITU_T6:
-        return t4_t6_encode_get_byte(&s->encoder.t4_t6);
+        return t4_t6_encode_get(&s->encoder.t4_t6, buf, max_len);
     case T4_COMPRESSION_ITU_T42:
-        return t42_encode_get_byte(&s->encoder.t42);
+        return t42_encode_get(&s->encoder.t42, buf, max_len);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_ITU_T43:
-        return t43_encode_get_byte(&s->encoder.t43);
+        return t43_encode_get(&s->encoder.t43, buf, max_len);
 #endif
     case T4_COMPRESSION_ITU_T85:
     case T4_COMPRESSION_ITU_T85_L0:
-        return t85_encode_get_byte(&s->encoder.t85);
-    }
-    return SIG_STATUS_END_OF_DATA;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t4_tx_get_chunk(t4_tx_state_t *s, uint8_t buf[], int max_len)
-{
-    switch (s->line_encoding)
-    {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
-        return t4_t6_encode_get_chunk(&s->encoder.t4_t6, buf, max_len);
-    case T4_COMPRESSION_ITU_T42:
-        return t42_encode_get_chunk(&s->encoder.t42, buf, max_len);
-#if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
-        return t43_encode_get_chunk(&s->encoder.t43, buf, max_len);
-#endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
-        return t85_encode_get_chunk(&s->encoder.t85, buf, max_len);
+        return t85_encode_get(&s->encoder.t85, buf, max_len);
     }
     return 0;
 }

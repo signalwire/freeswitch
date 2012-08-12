@@ -581,7 +581,7 @@ SPAN_DECLARE(void) t85_encode_comment(t85_encode_state_t *s, const uint8_t comme
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t85_encode_check_if_complete(t85_encode_state_t *s)
+SPAN_DECLARE(int) t85_encode_image_complete(t85_encode_state_t *s)
 {
     if (s->y >= s->yd)
         return SIG_STATUS_END_OF_DATA;
@@ -589,22 +589,7 @@ SPAN_DECLARE(int) t85_encode_check_if_complete(t85_encode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t85_encode_get_byte(t85_encode_state_t *s)
-{
-    if (s->bitstream_optr >= s->bitstream_iptr)
-    {
-        do
-        {
-            if (get_next_row(s) < 0)
-                return 0x100;
-        }
-        while (s->bitstream_iptr == 0);
-    }
-    return s->bitstream[s->bitstream_optr++];
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t85_encode_get_chunk(t85_encode_state_t *s, uint8_t buf[], int max_len)
+SPAN_DECLARE(int) t85_encode_get(t85_encode_state_t *s, uint8_t buf[], size_t max_len)
 {
     int len;
     int n;

@@ -133,7 +133,7 @@ SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sa
     if (s == NULL)
     {
         if ((s = (time_scale_state_t *) malloc(sizeof (*s))) == NULL)
-            return  NULL;
+            return NULL;
         /*endif*/
         alloced = TRUE;
     }

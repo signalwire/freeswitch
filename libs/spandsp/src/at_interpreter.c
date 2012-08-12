@@ -434,13 +434,13 @@ static int match_element(const char **variant, const char *variants)
         if (len == (int) strlen(*variant)  &&  memcmp(*variant, s, len) == 0)
         {
             *variant += len;
-            return  i;
+            return i;
         }
         s += len;
         if (*s == ',')
             s++;
     }
-    return  -1;
+    return -1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -804,7 +804,7 @@ static int process_class1_cmd(at_state_t *s, const char **t)
     if (val < 0)
     {
         /* It was just a query */
-        return  TRUE;
+        return TRUE;
     }
     /* All class 1 FAX commands are supposed to give an ERROR response, if the phone
        is on-hook. */

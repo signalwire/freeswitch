@@ -198,8 +198,8 @@ static int v29_v21_rx_fillin(void *user_data, int len);
 static int silence_rx(void *user_data, const int16_t amp[], int len);
 static int cng_rx(void *user_data, const int16_t amp[], int len);
 static void non_ecm_put_bit(void *user_data, int bit);
-static void non_ecm_put_chunk(void *user_data, const uint8_t buf[], int len);
-static int non_ecm_get_chunk(void *user_data, uint8_t buf[], int len);
+static void non_ecm_put(void *user_data, const uint8_t buf[], int len);
+static int non_ecm_get(void *user_data, uint8_t buf[], int len);
 static void non_ecm_rx_status(void *user_data, int status);
 static void hdlc_rx_status(void *user_data, int status);
 
@@ -600,7 +600,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             bit_reverse(buf2, buf, len);
-            non_ecm_put_chunk(s, buf, len);
+            non_ecm_put(s, buf, len);
         }
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
         break;
@@ -618,7 +618,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                     s->at_state.rx_signal_present = TRUE;
                 }
                 bit_reverse(buf2, buf, len);
-                non_ecm_put_chunk(s, buf, len);
+                non_ecm_put(s, buf, len);
             }
             /* WORKAROUND: At least some Mediatrix boxes have a bug, where they can send HDLC signal end where
                            they should send non-ECM signal end. It is possible they also do the opposite.
@@ -747,7 +747,7 @@ static int stream_non_ecm(t31_state_t *s)
                However, I think the early versions of T.38 said the signal end message should not
                contain data. Hopefully, following the current spec will not cause compatibility
                issues. */
-            len = non_ecm_get_chunk(s, buf, fe->octets_per_data_packet);
+            len = non_ecm_get(s, buf, fe->octets_per_data_packet);
             if (len > 0)
                 bit_reverse(buf, buf, len);
             if (len < fe->octets_per_data_packet)
@@ -1257,7 +1257,7 @@ static void non_ecm_put_bit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void non_ecm_put_chunk(void *user_data, const uint8_t buf[], int len)
+static void non_ecm_put(void *user_data, const uint8_t buf[], int len)
 {
     t31_state_t *s;
     int i;
@@ -1335,7 +1335,7 @@ static int non_ecm_get_bit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int non_ecm_get_chunk(void *user_data, uint8_t buf[], int len)
+static int non_ecm_get(void *user_data, uint8_t buf[], int len)
 {
     t31_state_t *s;
     int i;

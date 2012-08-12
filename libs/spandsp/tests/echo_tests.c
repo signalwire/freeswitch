@@ -254,7 +254,7 @@ static level_measurement_device_t *level_measurement_device_create(int type)
     dev->factor = expf(-1.0f/((float) SAMPLE_RATE*0.035f));
     dev->power = 0;
     dev->type = type;
-    return  dev;
+    return dev;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1720,7 +1720,7 @@ int main(int argc, char *argv[])
 #endif
 
     printf("Tests passed.\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

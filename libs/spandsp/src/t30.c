@@ -729,7 +729,7 @@ static int get_partial_ecm_page(t30_state_t *s)
         /* These frames contain a frame sequence number within the partial page (one octet) followed
            by some image data. */
         s->ecm_data[i][3] = (uint8_t) i;
-        if ((len = t4_tx_get_chunk(&s->t4.tx, &s->ecm_data[i][4], s->octets_per_ecm_frame)) < s->octets_per_ecm_frame)
+        if ((len = t4_tx_get(&s->t4.tx, &s->ecm_data[i][4], s->octets_per_ecm_frame)) < s->octets_per_ecm_frame)
         {
             /* The image is not big enough to fill the entire buffer */
             /* We need to pad to a full frame, as most receivers expect that. */
@@ -748,7 +748,7 @@ static int get_partial_ecm_page(t30_state_t *s)
     /* We filled the entire buffer */
     s->ecm_frames = 256;
     span_log(&s->logging, SPAN_LOG_FLOW, "Partial page buffer full (%d per frame)\n", s->octets_per_ecm_frame);
-    s->ecm_at_page_end = (t4_tx_check_if_complete(&s->t4.tx) == SIG_STATUS_END_OF_DATA);
+    s->ecm_at_page_end = (t4_tx_image_complete(&s->t4.tx) == SIG_STATUS_END_OF_DATA);
     return 256;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2636,7 +2636,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
         span_log(&s->logging, SPAN_LOG_FLOW, "Partial page OK - committing block %d, %d frames\n", s->ecm_block, s->ecm_frames);
         for (i = 0;  i < s->ecm_frames;  i++)
         {
-            if (t4_rx_put_chunk(&s->t4.rx, s->ecm_data[i], s->ecm_len[i]))
+            if (t4_rx_put(&s->t4.rx, s->ecm_data[i], s->ecm_len[i]))
             {
                 /* This is the end of the document */
                 break;
@@ -5473,7 +5473,7 @@ SPAN_DECLARE_NONSTD(void) t30_non_ecm_put_bit(void *user_data, int bit)
         break;
     case T30_STATE_F_DOC_NON_ECM:
         /* Document transfer */
-        if (t4_rx_put_bit(&s->t4.rx, bit))
+        if (t4_rx_put_bit(&s->t4.rx, bit) == T4_DECODE_OK)
         {
             /* That is the end of the document */
             set_state(s, T30_STATE_F_POST_DOC_NON_ECM);
@@ -5485,48 +5485,7 @@ SPAN_DECLARE_NONSTD(void) t30_non_ecm_put_bit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_non_ecm_put_byte(void *user_data, int byte)
-{
-    t30_state_t *s;
-
-    if (byte < 0)
-    {
-        t30_non_ecm_rx_status(user_data, byte);
-        return;
-    }
-    s = (t30_state_t *) user_data;
-    switch (s->state)
-    {
-    case T30_STATE_F_TCF:
-        /* Trainability test */
-        /* This makes counting zeros fast, but approximate. That really doesn't matter */
-        s->tcf_test_bits += 8;
-        if (byte)
-        {
-            if (s->tcf_current_zeros > s->tcf_most_zeros)
-                s->tcf_most_zeros = s->tcf_current_zeros;
-            s->tcf_current_zeros = 0;
-        }
-        else
-        {
-            s->tcf_current_zeros += 8;
-        }
-        break;
-    case T30_STATE_F_DOC_NON_ECM:
-        /* Document transfer */
-        if (t4_rx_put_byte(&s->t4.rx, (uint8_t) byte))
-        {
-            /* That is the end of the document */
-            set_state(s, T30_STATE_F_POST_DOC_NON_ECM);
-            queue_phase(s, T30_PHASE_D_RX);
-            timer_t2_start(s);
-        }
-        break;
-    }
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(void) t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], int len)
+SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len)
 {
     t30_state_t *s;
     int i;
@@ -5554,7 +5513,7 @@ SPAN_DECLARE(void) t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], i
         break;
     case T30_STATE_F_DOC_NON_ECM:
         /* Document transfer */
-        if (t4_rx_put_chunk(&s->t4.rx, buf, len))
+        if (t4_rx_put(&s->t4.rx, buf, len))
         {
             /* That is the end of the document */
             set_state(s, T30_STATE_F_POST_DOC_NON_ECM);
@@ -5601,42 +5560,7 @@ SPAN_DECLARE_NONSTD(int) t30_non_ecm_get_bit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t30_non_ecm_get_byte(void *user_data)
-{
-    int byte;
-    t30_state_t *s;
-
-    s = (t30_state_t *) user_data;
-    switch (s->state)
-    {
-    case T30_STATE_D_TCF:
-        /* Trainability test. */
-        byte = 0;
-        if ((s->tcf_test_bits -= 8) < 0)
-        {
-            /* Finished sending training test. */
-            byte = 0x100;
-        }
-        break;
-    case T30_STATE_I:
-        /* Transferring real data. */
-        byte = t4_tx_get_byte(&s->t4.tx);
-        break;
-    case T30_STATE_D_POST_TCF:
-    case T30_STATE_II_Q:
-        /* We should be padding out a block of samples if we are here */
-        byte = 0;
-        break;
-    default:
-        span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get_byte in bad state %d\n", s->state);
-        byte = 0x100;
-        break;
-    }
-    return byte;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_len)
+SPAN_DECLARE(int) t30_non_ecm_get(void *user_data, uint8_t buf[], int max_len)
 {
     int len;
     t30_state_t *s;
@@ -5655,7 +5579,7 @@ SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_
         break;
     case T30_STATE_I:
         /* Transferring real data. */
-        len = t4_tx_get_chunk(&s->t4.tx, buf, max_len);
+        len = t4_tx_get(&s->t4.tx, buf, max_len);
         break;
     case T30_STATE_D_POST_TCF:
     case T30_STATE_II_Q:
@@ -5663,7 +5587,7 @@ SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_
         len = 0;
         break;
     default:
-        span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get_chunk in bad state %d\n", s->state);
+        span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get in bad state %d\n", s->state);
         len = -1;
         break;
     }

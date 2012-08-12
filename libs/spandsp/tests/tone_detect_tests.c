@@ -127,7 +127,7 @@ static int periodogram_tests(void)
             }
         }
     }
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
     if (periodogram_tests())
         exit(2);
     printf("Tests passed\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

@@ -491,7 +491,7 @@ SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, 
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "BERT");
 
-    return  s;
+    return s;
 }
 /*- End of function --------------------------------------------------------*/
 

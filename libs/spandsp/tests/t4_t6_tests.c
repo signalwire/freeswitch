@@ -394,27 +394,10 @@ int main(int argc, char *argv[])
                     end_of_page = t4_t6_decode_put_bit(&receive_state, bit & 1);
             }
             break;
-        case 1:
-            do
-            {
-                bit = t4_t6_encode_get_byte(&send_state);
-                if ((bit & 0x100))
-                {
-                    if (++end_marks > 50)
-                    {
-                        printf("Receiver missed the end of page mark\n");
-                        tests_failed++;
-                        break;
-                    }
-                }
-                end_of_page = t4_t6_decode_put_byte(&receive_state, bit & 0xFF);
-            }
-            while (!end_of_page);
-            break;
         default:
             do
             {
-                len = t4_t6_encode_get_chunk(&send_state, chunk_buf, block_size);
+                len = t4_t6_encode_get(&send_state, chunk_buf, block_size);
                 if (len == 0)
                 {
                     if (++end_marks > 50)
@@ -426,7 +409,7 @@ int main(int argc, char *argv[])
                     chunk_buf[0] = 0xFF;
                     len = 1;
                 }
-                end_of_page = t4_t6_decode_put_chunk(&receive_state, chunk_buf, len);
+                end_of_page = t4_t6_decode_put(&receive_state, chunk_buf, len);
             }
             while (!end_of_page);
             break;
