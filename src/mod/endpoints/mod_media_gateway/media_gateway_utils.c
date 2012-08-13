@@ -2223,7 +2223,8 @@ if((NOTPRSNT == med->numComp.pres) || (0 == med->numComp.val)){
      media = med->mediaDesc[j];
      /* check for choose port and fill the port */
      if(NOTPRSNT != media->field.id.type.pres){
-	     if(CM_SDP_VCID_CHOOSE == media->field.id.type.val){
+	     //if(CM_SDP_VCID_CHOOSE == media->field.id.type.val)
+		{
 		     MG_INIT_TOKEN_VALUE(&(media->field.id.type),CM_SDP_VCID_PORT);
 		     MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
 		     MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
