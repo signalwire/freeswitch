@@ -1099,6 +1099,7 @@ AC_CONFIG_SUBDIRS([libs/libcodec2])
 if test "x${enable_zrtp}" = "xyes"; then
    AC_CONFIG_SUBDIRS([libs/libzrtp/projects/gnu])
 fi
+AC_CONFIG_SUBDIRS([libs/libwebsockets])
 
 case $host in
    *-openbsd*)
