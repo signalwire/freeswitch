@@ -73,6 +73,7 @@ dialplans/mod_dialplan_xml
 #endpoints/mod_alsa
 #endpoints/mod_dingaling
 #endpoints/mod_h323
+#endpoints/mod_html5
 #endpoints/mod_khomp
 endpoints/mod_loopback
 #endpoints/mod_opal
