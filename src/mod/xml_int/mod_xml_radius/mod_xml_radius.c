@@ -117,7 +117,7 @@ switch_status_t do_config()
 
 	serv = timeout = deadtime = retries = dict = seq = 0;
 	if ((tmp = switch_xml_dup(switch_xml_child(cfg, "auth_invite"))) != NULL ) {
-		if ( (server = switch_xml_child(xml, "connection")) != NULL) {
+		if ( (server = switch_xml_child(tmp, "connection")) != NULL) {
 				for (param = switch_xml_child(server, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					if ( strncmp(var, "authserver", 10) == 0 ) {
@@ -149,8 +149,8 @@ switch_status_t do_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'auth_invite' section in config file.\n");		
 	}
 	
-	if ((globals.auth_app_configs = switch_xml_dup(switch_xml_child(cfg, "auth_app"))) == NULL ) {
-		if ( (server = switch_xml_child(xml, "connection")) != NULL) {
+	if ((tmp = switch_xml_dup(switch_xml_child(cfg, "auth_app"))) == NULL ) {
+		if ( (server = switch_xml_child(tmp, "connection")) != NULL) {
 				for (param = switch_xml_child(server, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					if ( strncmp(var, "authserver", 10) == 0 ) {
@@ -169,7 +169,7 @@ switch_status_t do_config()
 				}
 				
 				if ( serv && timeout && deadtime && retries && dict && seq ) {
-					globals.auth_invite_configs = tmp;
+					globals.auth_app_configs = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing a require section for radius connections\n");
 					goto err;
@@ -182,8 +182,8 @@ switch_status_t do_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'auth_app' section in config file.\n");		
 	}
 	
-	if ((globals.acct_start_configs = switch_xml_dup(switch_xml_child(cfg, "acct_start"))) == NULL ) {
-		if ( (server = switch_xml_child(xml, "connection")) != NULL) {
+	if (( tmp = switch_xml_dup(switch_xml_child(cfg, "acct_start"))) == NULL ) {
+		if ( (server = switch_xml_child(tmp, "connection")) != NULL) {
 				for (param = switch_xml_child(server, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					if ( strncmp(var, "acctserver", 10) == 0 ) {
@@ -202,7 +202,7 @@ switch_status_t do_config()
 				}
 				
 				if ( serv && timeout && deadtime && retries && dict && seq ) {
-					globals.auth_invite_configs = tmp;
+					globals.acct_start_configs = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing a require section for radius connections\n");
 					goto err;
@@ -215,8 +215,8 @@ switch_status_t do_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'acct_start' section in config file.\n");		
 	}
 	
-	if ((globals.acct_end_configs = switch_xml_dup(switch_xml_child(cfg, "acct_end"))) == NULL ) {
-		if ( (server = switch_xml_child(xml, "connection")) != NULL) {
+	if (( tmp = switch_xml_dup(switch_xml_child(cfg, "acct_end"))) == NULL ) {
+		if ( (server = switch_xml_child(tmp, "connection")) != NULL) {
 				for (param = switch_xml_child(server, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					if ( strncmp(var, "acctserver", 10) == 0 ) {
@@ -235,7 +235,7 @@ switch_status_t do_config()
 				}
 				
 				if ( serv && timeout && deadtime && retries && dict && seq ) {
-					globals.auth_invite_configs = tmp;
+					globals.acct_end_configs = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing a require section for radius connections\n");
 					goto err;
