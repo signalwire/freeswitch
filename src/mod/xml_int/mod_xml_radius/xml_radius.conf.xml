@@ -74,6 +74,11 @@
       <param name="Called-Station-Id" variable="sip_to_user" format="%s"/>
       <param name="Calling-Station-Id" variable="sip_from_user" format="%s"/>
     </fields>
+    <conditions>
+      <condition>
+	<param var="direction" regex="inbound"/>
+      </condition>
+    </conditions>
   </acct_start>
   <acct_end>
     <connection name="testing">
@@ -99,5 +104,10 @@
       <param vendor="Cisco" name="Cisco-AVPair" variable="sip_from_user" format="src-number-out=%s"/>
       <param vendor="Cisco" name="Cisco-AVPair" variable="sip_to_user" format="dst-number-out=%s"/>
     </fields>
+    <conditions>
+      <condition>
+	<param var="direction" regex="inbound"/>
+      </condition>
+    </conditions>
   </acct_end>
 </configuration>
