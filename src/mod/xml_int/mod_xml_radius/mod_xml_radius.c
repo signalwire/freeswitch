@@ -584,7 +584,7 @@ static switch_xml_t mod_xml_radius_directory_search(const char *section, const c
 	if ( auth_method == NULL) {
 		return NULL;
 	}
-	
+
 	if ( strncmp( "INVITE", auth_method, 6) == 0) {
 		xml = mod_xml_radius_auth_invite(params);
 	} else {
@@ -594,14 +594,61 @@ static switch_xml_t mod_xml_radius_directory_search(const char *section, const c
 	return xml;
 }
 
+switch_status_t mod_xml_radius_check_conditions(switch_channel_t *channel, switch_xml_t conditions) {
+	switch_xml_t condition, param;
+	char *channel_var = NULL;
+	char *regex = NULL;
+	int all_matched = 1;
+	
+	if ( (condition = switch_xml_child(conditions, "condition")) == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to locate a condition under the conditions section\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	for (; condition; condition = condition->next) {
+		
+		if ( (param = switch_xml_child(condition, "param")) == NULL) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to locate a param under this condition\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		
+		all_matched = 1;
+		for (; param && all_matched; param = param->next) {
+			channel_var = (char *) switch_xml_attr(param, "var");
+			regex = (char *) switch_xml_attr(param, "regex");
+			
+			if ( channel_var == NULL || regex == NULL ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Improperly constructed mod_radius condition: %s %s\n", channel_var, regex);
+			}
+			
+			if ( switch_regex_match( switch_channel_get_variable(channel, channel_var), regex) != SWITCH_STATUS_SUCCESS) {
+				all_matched = 0;
+			}
+		}
+
+		if ( all_matched ) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+	
+	return SWITCH_STATUS_FALSE;
+}
+
 switch_status_t mod_xml_radius_accounting_start(switch_core_session_t *session){
 	VALUE_PAIR *send = NULL;
 	uint32_t service = PW_STATUS_START;
 	rc_handle *new_handle = NULL;
-	switch_xml_t fields;
+	switch_xml_t fields, conditions;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (GLOBAL_DEBUG ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: starting accounting start\n");
+	}
+
+	/* If there are conditions defined, and none of them pass, then skip this accounting */
+	if ((conditions = switch_xml_child(globals.acct_start_configs, "conditions")) != NULL &&
+		mod_xml_radius_check_conditions(channel, conditions) != SWITCH_STATUS_SUCCESS ) {
+		goto end;
 	}
 	
 	mod_xml_radius_new_handle(&new_handle, globals.acct_start_configs);
@@ -628,7 +675,9 @@ switch_status_t mod_xml_radius_accounting_start(switch_core_session_t *session){
 	}
 
  end:
-	rc_destroy(new_handle);
+	if ( new_handle ) {
+		rc_destroy(new_handle);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -637,11 +686,18 @@ switch_status_t mod_xml_radius_accounting_end(switch_core_session_t *session){
 	VALUE_PAIR *send = NULL;
 	uint32_t service = PW_STATUS_STOP;
 	rc_handle *new_handle = NULL;
-	switch_xml_t fields;
+	switch_xml_t fields = NULL, conditions = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	
 	if (GLOBAL_DEBUG ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: starting accounting stop\n");
 		switch_core_session_execute_application(session, "info", NULL);
+	}
+	
+	/* If there are conditions defined, and none of them pass, then skip this accounting */
+	if ((conditions = switch_xml_child(globals.acct_start_configs, "conditions")) != NULL &&
+		mod_xml_radius_check_conditions(channel, conditions) != SWITCH_STATUS_SUCCESS ) {
+		goto end;
 	}
 	
 	mod_xml_radius_new_handle(&new_handle, globals.acct_end_configs);
