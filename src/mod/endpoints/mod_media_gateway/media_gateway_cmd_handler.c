@@ -1200,8 +1200,9 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
 		if(MG_TERM_RTP == term->type){
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"MODIFY REQUEST - Updated RTP attributes:"
-					" local_addr[%s] local_port[%d] remote_addr[%s], remote_port[%d], ptime[%d] pt[%d], "
+					" Media_Type(%s),local_addr[%s] local_port[%d] remote_addr[%s], remote_port[%d], ptime[%d] pt[%d], "
 					" rfc2833_pt[%d] rate[%d], codec[%s], term_id[%d]\n",
+					mg_media_type2str(term->u.rtp.media_type),
 					((NULL != term->u.rtp.local_addr)?term->u.rtp.local_addr:NULL),
 					term->u.rtp.local_port,
 					((NULL != term->u.rtp.remote_addr)?term->u.rtp.remote_addr:NULL),

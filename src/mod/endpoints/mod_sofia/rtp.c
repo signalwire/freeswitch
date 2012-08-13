@@ -529,8 +529,9 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 		
 		if (!strcmp(newmode, "image")) {
 			switch_channel_set_variable(tech_pvt->channel, "has_t38", "true");
-			switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
 			switch_channel_execute_on(tech_pvt->channel, "rtp_execute_on_image");
+			switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got IMAGE description\n");
 		}
 		
@@ -571,6 +572,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_UDPTL_MODE:
 		{
 			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "SWITCH_MESSAGE_INDICATE_UDPTL_MODE\n");
 			if (!t38_options) {
 				goto end;
 			}

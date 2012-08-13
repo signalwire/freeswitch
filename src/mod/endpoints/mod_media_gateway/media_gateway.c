@@ -128,7 +128,7 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         
         switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kMEDIATYPE, mg_media_type2str(term->u.rtp.media_type));
         switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "fax_enable_t38", "true");
-        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "rtp_execute_on_image", "t38_gateway peer nocng");
+        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "rtp_execute_on_image", "t38_gateway self nocng");
     } else if (term->type == MG_TERM_TDM) {
         switch_snprintf(dialstring, sizeof dialstring, "tdm/%s", term->name);
         
