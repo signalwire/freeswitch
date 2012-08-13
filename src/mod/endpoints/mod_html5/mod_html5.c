@@ -185,6 +185,10 @@ switch_status_t html5_on_destroy(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 
+	if (tech_pvt == NULL) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -412,8 +416,8 @@ SWITCH_STANDARD_API(html5_contact_function)
 	int argc;
 	char *argv[5];
 	char *dup = NULL;
-	char *szprofile = NULL, *user = NULL; 
-	const char *nickname = NULL;
+	//	char *szprofile = NULL, *user = NULL; 
+	//	const char *nickname = NULL;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -426,13 +430,14 @@ SWITCH_STANDARD_API(html5_contact_function)
 		goto usage;
 	}
 	
-	szprofile = argv[0];
+	//	szprofile = argv[0];
+
 	if (!strchr(argv[1], '@')) {
 		goto usage;
 	} 
 	
-	user = argv[1];
-	nickname = argv[2];
+	//	user = argv[1];
+	//	nickname = argv[2];
 	
 	goto done;
 	
