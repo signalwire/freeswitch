@@ -12,7 +12,8 @@
 static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) ;
 static switch_xml_config_item_t *get_peer_instructions(mg_peer_profile_t *profile) ;
 static int mg_sap_id;
-static switch_status_t modify_mid(char** pmid);
+static switch_status_t modify_mg_profile_mid(megaco_profile_t *profile, char** pmid) ;
+static switch_status_t modify_mg_peer_mid(mg_peer_profile_t *peer_profile, char** pmid) ;
 
 /****************************************************************************************************************************/
 switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
@@ -59,7 +60,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 			profile->total_peers++;
 		}
 
-		if(SWITCH_STATUS_FALSE == (status = modify_mid(&profile->mid))){
+		if(SWITCH_STATUS_FALSE == (status = modify_mg_profile_mid(profile, &profile->mid))){
 			goto done;
 		}
 
@@ -176,7 +177,7 @@ else
 					goto done;
 				}
 
-				if (SWITCH_STATUS_FALSE == (status = modify_mid(&peer_profile->mid))) {
+				if (SWITCH_STATUS_FALSE == (status = modify_mg_peer_mid(peer_profile, &peer_profile->mid))) {
 					goto done;
 				}
 
@@ -287,6 +288,7 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		9
 	};
 
+#if 0
 	static switch_xml_config_enum_item_t opt_default_codec_enum[] = {
 		{  "PCMA",  MEGACO_CODEC_PCMA},
 		{  "PCMU",  MEGACO_CODEC_PCMU},
@@ -294,6 +296,7 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		{  "G.723.1",  MEGACO_CODEC_G723_1},
 		{  "ILBC", MEGACO_CODEC_ILBC },
 	};
+#endif
 
 	switch_xml_config_item_t instructions[] = {
 		/* parameter name        type                 reloadable   pointer                         default value     options structure */
@@ -304,10 +307,10 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		SWITCH_CONFIG_ITEM("domain-name", SWITCH_CONFIG_STRING, 0, &profile->my_domain, "", &switch_config_string_strdup, "", "domain name"),
 		SWITCH_CONFIG_ITEM("message-identifier", SWITCH_CONFIG_STRING, 0, &profile->mid, "", &switch_config_string_strdup, "", "message identifier "),
 
-		SWITCH_CONFIG_ITEM("default-codec", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &profile->default_codec, "PCMU", &opt_default_codec_enum, "", "default codec"),
+		//SWITCH_CONFIG_ITEM("default-codec", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &profile->default_codec, "PCMU", &opt_default_codec_enum, "", "default codec"),
 		SWITCH_CONFIG_ITEM("rtp-port-range", SWITCH_CONFIG_STRING, CONFIG_REQUIRED, &profile->rtp_port_range, "1-65535", &switch_config_string_strdup, "", "rtp port range"),
 		SWITCH_CONFIG_ITEM("rtp-termination-id-prefix", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->rtp_termination_id_prefix, "", &switch_config_string_strdup, "", "rtp termination prefix"),
-		SWITCH_CONFIG_ITEM("rtp-termination-id-len", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->rtp_termination_id_len, "", &opt_termination_id_len, "", "rtp termination id"),
+		SWITCH_CONFIG_ITEM("rtp-termination-id-length", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->rtp_termination_id_len, "", &opt_termination_id_len, "", "rtp termination id"),
 		SWITCH_CONFIG_ITEM("codec-prefs", SWITCH_CONFIG_STRING, 0, &profile->codec_prefs, "", &switch_config_string_strdup, "", "codec preferences, coma-separated"),
 		SWITCH_CONFIG_ITEM_END()
 	};
@@ -318,21 +321,56 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 }
 
 /****************************************************************************************************************************/
-
-static switch_status_t modify_mid(char** pmid)
+static switch_status_t modify_mg_peer_mid(mg_peer_profile_t *peer_profile, char** pmid)
 {
 	char*			mid = *pmid;
-	char*			dup;
-	char* 			val[10];
-	int 			count;
-	switch_status_t		status = SWITCH_STATUS_FALSE;
 	switch_assert(mid);
+	switch_assert(peer_profile);
 
+	if(!strcasecmp(mid,"IP-PORT")){
+		*pmid = switch_mprintf("[%s]:%s", peer_profile->ipaddr,peer_profile->port);
+	} else if(!strcasecmp(mid,"IP")){
+		*pmid = switch_mprintf("[%s]", peer_profile->ipaddr);
+	}else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Invalid mid-type[%s] \n",mid);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Updated PEER MID [%s] \n",*pmid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t modify_mg_profile_mid(megaco_profile_t *profile, char** pmid)
+{
+	char*			mid = *pmid;
+	//char*			dup;
+	//char* 			val[10];
+//	int 			count;
+	//switch_status_t		status = SWITCH_STATUS_SUCCESS;
+	switch_assert(mid);
+	switch_assert(profile);
+
+	if(!strcasecmp(mid,"IP-PORT")){
+		*pmid = switch_mprintf("[%s]:%s", profile->my_ipaddr,profile->port);
+	} else if(!strcasecmp(mid,"IP")){
+		*pmid = switch_mprintf("[%s]", profile->my_ipaddr);
+	} else if(!strcasecmp(mid,"DOMAIN")){
+		*pmid = switch_mprintf("<%s>", profile->my_domain);
+	}else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Invalid mid-type[%s] \n",mid);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Updated MG MID [%s] \n",*pmid);
+	return SWITCH_STATUS_SUCCESS;
+#if 0
 	dup = strdup(mid);
 
 	/* If MID type is IP then add mid into [] brackets ,
 	 * If MID type is domain then add mid into <> brackets *
 	 */
+
+	
 
 	count = switch_split(dup, '.', val);
 
@@ -367,9 +405,10 @@ static switch_status_t modify_mid(char** pmid)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added proper brackets to MID = %s \n",mid);
-
 	status = SWITCH_STATUS_SUCCESS;
+
 
 done:
 	return status;
+#endif
 }
