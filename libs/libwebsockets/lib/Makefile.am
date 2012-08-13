@@ -9,7 +9,7 @@ dist_libwebsockets_la_SOURCES=libwebsockets.c \
 				extension.c \
 				extension-deflate-stream.c \
 				private-libwebsockets.h
-				
+
 if EXT_GOOGLE_MUX
 dist_libwebsockets_la_SOURCES += extension-x-google-mux.c
 endif
@@ -19,8 +19,8 @@ else
 dist_libwebsockets_la_SOURCES += md5.c sha-1.c
 endif
 
-libwebsockets_la_CFLAGS:=-Wall -std=gnu99 -pedantic
-libwebsockets_la_LDFLAGS:=
+libwebsockets_la_CFLAGS=-Wall -std=gnu99 -pedantic
+libwebsockets_la_LDFLAGS=
 
 if MINGW
 libwebsockets_la_CFLAGS+= -w -I../win32port/win32helpers -I ../win32port/zlib/
