@@ -755,7 +755,6 @@ void mg_term_set_pre_buffer_size(mg_termination_t *term, int newval)
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sent prebuffer_size event to [%s] to [%d ms]\n", term->uuid, newval);
     }
     
-done:
     switch_event_destroy(&event);
 }
 
