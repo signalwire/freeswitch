@@ -969,7 +969,6 @@ static void our_sofia_event_callback(nua_event_t event,
 	int locked = 0;
 	int check_destroy = 1;
 
-#if 0
 	if (sofia_private && sofia_private->is_call && sofia_private->de) {
 		sofia_dispatch_event_t *qde = sofia_private->de;
 		sofia_private->de = NULL;
@@ -981,7 +980,6 @@ static void our_sofia_event_callback(nua_event_t event,
 			sofia_process_dispatch_event(&qde);
 		}
 	}
-#endif
 
 	profile->last_sip_event = switch_time_now();
 
@@ -1706,9 +1704,8 @@ void sofia_event_callback(nua_event_t event,
 		memset(sofia_private, 0, sizeof(*sofia_private));
 		sofia_private->is_call++;
 		sofia_private->is_static++;
-		//sofia_private->de = de;
+		sofia_private->de = de;
 		nua_handle_bind(nh, sofia_private);
-		sofia_process_dispatch_event(&de);
 		return;
 	}
 	
