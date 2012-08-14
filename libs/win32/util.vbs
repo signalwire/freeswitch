@@ -376,7 +376,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		If strLastCommit <> "" And strLastCommitHuman <> "" And strRevision <> "" Then
 			'Bild version string
 			strGitVer = "git~" & strLastCommit & "~" & strRevision
-			strVerHuman = "; git at commit " & strRevision & " on " & strLastCommitHuman
+			strVerHuman = strVerRev & "; git at commit " & strRevision & " on " & strLastCommitHuman
 
 			'Check for local changes, if found, append to git revision string
 			If ShowUnclean Then
