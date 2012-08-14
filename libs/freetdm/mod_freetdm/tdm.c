@@ -39,6 +39,7 @@ void ctdm_init(switch_loadable_module_interface_t *module_interface);
 #define kSPAN_ID "span"
 #define kCHAN_ID "chan"
 #define kSPAN_NAME "span_name"
+#define kPREBUFFER_LEN "prebuffer_len"
 
 static struct {
     switch_memory_pool_t *pool;
@@ -52,6 +53,7 @@ typedef struct {
     switch_core_session_t *session;
     switch_codec_t read_codec, write_codec;
     switch_frame_t read_frame;
+    int prebuffer_len;
     
 	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 } ctdm_private_t;
@@ -66,6 +68,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg);
+static switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event);
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf);
 
 
@@ -81,7 +84,8 @@ switch_io_routines_t ctdm_io_routines = {
 	.outgoing_channel = channel_outgoing_channel,
 	.read_frame = channel_read_frame,
 	.write_frame = channel_write_frame,
-	.receive_message = channel_receive_message
+	.receive_message = channel_receive_message,
+    .receive_event = channel_receive_event
 };
 
 static void ctdm_report_alarms(ftdm_channel_t *channel)
@@ -293,7 +297,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
     const char  *szchanid = switch_event_get_header(var_event, kCHAN_ID),
-                *span_name = switch_event_get_header(var_event, kSPAN_NAME);
+                *span_name = switch_event_get_header(var_event, kSPAN_NAME),
+                *szprebuffer_len = switch_event_get_header(var_event, kPREBUFFER_LEN);
     int chan_id;
     int span_id;
     switch_caller_profile_t *caller_profile;
@@ -341,6 +346,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->session = *new_session;
     tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
     tech_pvt->read_frame.data = tech_pvt->databuf;
+    tech_pvt->prebuffer_len = zstr(szprebuffer_len) ? 0 : atoi(szprebuffer_len);
     switch_core_session_set_private(*new_session, tech_pvt);
     
     
@@ -362,6 +368,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to retrieve channel interval.\n");
 		return SWITCH_STATUS_GENERR;
 	}
+    
+    if (FTDM_SUCCESS != ftdm_channel_command(chan, FTDM_COMMAND_SET_PRE_BUFFER_SIZE, &tech_pvt->prebuffer_len)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set channel pre buffer size.\n");
+		return SWITCH_STATUS_GENERR;        
+    }
     
 	switch(codec) {
         case FTDM_CODEC_ULAW:
@@ -620,6 +631,28 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
+    return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event)
+{
+    const char *command = switch_event_get_header(event, "command");
+    ctdm_private_t *tech_pvt = switch_core_session_get_private(session);
+    
+    if (!zstr(command) && !strcasecmp(command, kPREBUFFER_LEN)) {
+        const char *szval = switch_event_get_header(event, kPREBUFFER_LEN);
+        int val = !zstr(szval) ? atoi(szval) : 0;
+        
+        if (tech_pvt->prebuffer_len == val) {
+            tech_pvt->prebuffer_len = val;
+            if (FTDM_SUCCESS != ftdm_channel_command(tech_pvt->ftdm_channel, FTDM_COMMAND_SET_PRE_BUFFER_SIZE, &tech_pvt->prebuffer_len)) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set channel pre buffer size.\n");
+                return SWITCH_STATUS_GENERR;        
+            }
+        }
+    }
+    
+    
     return SWITCH_STATUS_SUCCESS;
 }
 

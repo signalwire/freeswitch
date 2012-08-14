@@ -87,7 +87,7 @@ typedef struct mg_context_s mg_context_t;
 #define kSPAN_ID "span"
 #define kCHAN_ID "chan"
 #define kSPAN_NAME "span_name"
-
+#define kPREBUFFER_LEN "prebuffer_len"
 
 typedef struct mg_termination_s mg_termination_t;
 
@@ -200,6 +200,7 @@ struct megaco_profile_s {
 	char*					rtp_port_range;
 	char*					rtp_termination_id_prefix;
 	int						rtp_termination_id_len;
+    int                     tdm_pre_buffer_size;
 	char*                	peer_list[MG_MAX_PEERS];     /* MGC Peer ID LIST */
     char*                   codec_prefs;
 	int						inact_tmr;                   /* inactivity timer value */
@@ -267,6 +268,7 @@ switch_status_t megaco_profile_destroy(megaco_profile_t **profile);
 
 uint32_t mg_rtp_request_id(megaco_profile_t *profile);
 void mg_rtp_release_id(megaco_profile_t *profile, uint32_t id);
+void mg_term_set_pre_buffer_size(mg_termination_t *term, int newval);
 
 mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id);
 mg_context_t *megaco_choose_context(megaco_profile_t *profile);
@@ -295,6 +297,9 @@ switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination
 
 switch_status_t megaco_prepare_tdm_termination(mg_termination_t *term);
 switch_status_t megaco_check_tdm_termination(mg_termination_t *term);
+
+
+
 #endif /* MOD_MEGACO_H */
 
 

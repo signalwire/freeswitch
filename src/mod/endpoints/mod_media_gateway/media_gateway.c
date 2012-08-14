@@ -134,6 +134,7 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         
         switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kSPAN_NAME,  term->u.tdm.span_name);
         switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kCHAN_ID, "%d", term->u.tdm.channel);
+        switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, kPREBUFFER_LEN, "%d", term->profile->tdm_pre_buffer_size);
     }
     
     /* Set common variables on the channel */
@@ -146,9 +147,15 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
             switch_channel_t *channel = switch_core_session_get_channel(session);
             switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "command", "media_modify");
             
-            if (term->u.rtp.t38_options) {
-				switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
-			}
+            if (term->type == MG_TERM_RTP) {
+                if (term->u.rtp.t38_options) {
+                    switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
+                }
+                
+                if (term->u.rtp.media_type == MGM_IMAGE) {
+                    mg_term_set_pre_buffer_size(term, 0);
+                }
+            }
             
             switch_core_session_receive_event(session, &var_event);
 
@@ -176,10 +183,10 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         channel = switch_core_session_get_channel(session);
         switch_channel_set_private(channel, PVT_MG_TERM, term);
 
-	if (term->u.rtp.t38_options) {
-		switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
-	}
-	
+        if (term->type == MG_TERM_RTP && term->u.rtp.t38_options) {
+            switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
+        }
+        
         switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
         	
         if (term->type == MG_TERM_TDM) {
@@ -722,6 +729,34 @@ switch_status_t megaco_peer_profile_destroy(mg_peer_profile_t **profile)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stopped peer profile: %s\n", (*profile)->name);	
 	
 	return SWITCH_STATUS_SUCCESS;	
+}
+
+void mg_term_set_pre_buffer_size(mg_termination_t *term, int newval) 
+{
+    switch_event_t *event = NULL, *event2 = NULL;
+    switch_core_session_t *session, *session2;
+    
+    if (!zstr(term->uuid) && (session = switch_core_session_locate(term->uuid))) {
+        switch_event_create(&event, SWITCH_EVENT_CLONE);
+        
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "command", kPREBUFFER_LEN);
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, kPREBUFFER_LEN, "%d", newval);
+    
+        /* Propagate event to bridged session if there is one */
+        if (switch_core_session_get_partner(session, &session2) == SWITCH_STATUS_SUCCESS) {
+            switch_event_dup(&event2, event);
+            switch_core_session_receive_event(session2, &event2);
+            switch_core_session_rwunlock(session2);
+        }
+        
+        switch_core_session_receive_event(session, &event);
+        switch_core_session_rwunlock(session);
+        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sent prebuffer_size event to [%s] to [%d ms]\n", term->uuid, newval);
+    }
+    
+done:
+    switch_event_destroy(&event);
 }
 
 /* For Emacs:
