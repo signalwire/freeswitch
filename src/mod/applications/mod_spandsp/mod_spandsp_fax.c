@@ -2147,6 +2147,8 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 	switch_media_bug_flag_t bflags = 0;
 	const char *var;
 	switch_codec_implementation_t read_impl = { 0 };
+	switch_bool_t set_private = SWITCH_TRUE;
+
 	switch_core_session_get_read_impl(session, &read_impl);
 
 	if (timeout) {
@@ -2154,8 +2156,9 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 	}
 
 	if (cont) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Max Tones Reached!\n");
-		return SWITCH_STATUS_FALSE;
+		//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Max Tones Reached!\n");
+		set_private = SWITCH_FALSE;
+		cont = NULL;
 	}
 
 	if (!cont && !(cont = switch_core_session_alloc(session, sizeof(*cont)))) {
@@ -2218,8 +2221,9 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 		cont->bug_running = 0;
 		return status;
 	}
-
-	switch_channel_set_private(channel, "_fax_tone_detect_", cont);
+	
+	if (set_private)
+		switch_channel_set_private(channel, "_fax_tone_detect_", cont);
 
 	return SWITCH_STATUS_SUCCESS;
 }

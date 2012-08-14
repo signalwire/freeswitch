@@ -184,6 +184,7 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         	
         if (term->type == MG_TERM_TDM) {
             switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
+            switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
         }
     }
     
