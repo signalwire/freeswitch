@@ -495,6 +495,13 @@ AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs time
 AC_CHECK_FUNCS([sched_setscheduler setpriority setrlimit setgroups initgroups])
 AC_CHECK_FUNCS([wcsncmp setgroups asprintf setenv pselect gettimeofday localtime_r gmtime_r strcasecmp stricmp _stricmp])
 
+# Check availability and return type of strerror_r
+# (NOTE: apr-1-config sets -D_GNU_SOURCE at build-time, need to run the check with it too)
+save_CPPFLAGS="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE"
+AC_FUNC_STRERROR_R
+CPPFLAGS="$save_CPPFLAGS"
+
 AX_HAVE_CPU_SET
 
 AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime()])])
