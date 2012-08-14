@@ -1029,12 +1029,8 @@ static void conference_cdr_render(conference_obj_t *conference)
 		fd = -1;
 	} else {
 		char ebuf[512] = { 0 };
-#ifdef WIN32
-		strerror_s(ebuf, sizeof(ebuf), errno);
-#else
-		strerror_r(errno, ebuf, sizeof(ebuf));
-#endif
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n", path, ebuf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
+				path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
 	}
 
 	

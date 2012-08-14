@@ -880,6 +880,7 @@ missing
 /yaml/tests/run-parser
 /yaml/tests/run-scanner
 /zeromq-*/
+/jpeg-8d/
 
 # build products we should remove
 !/apr-util/xml/expat/conftools/config.guess
