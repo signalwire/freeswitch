@@ -3516,6 +3516,48 @@ static JSBool js_api_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	return JS_TRUE;
 }
 
+static JSBool js_email(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	char *to = NULL, *from = NULL, *headers = NULL, *body = NULL, *file = NULL, *convert_cmd = NULL, *convert_ext = NULL;
+	
+	if (argc > 0) {
+		to = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+	}
+
+	if (argc > 1) {
+		from = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+	}
+
+	if (argc > 2) {
+		headers = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+	}
+
+	if (argc > 3) {
+		body = JS_GetStringBytes(JS_ValueToString(cx, argv[3]));
+	}
+
+	if (argc > 4) {
+		file = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
+	}
+
+	if (argc > 5) {
+		convert_cmd = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
+	}
+
+	if (argc > 6) {
+		convert_ext = JS_GetStringBytes(JS_ValueToString(cx, argv[6]));
+	}
+
+    if (to && from && headers && body && switch_simple_email(to, from, headers, body, file, convert_cmd, convert_ext) == SWITCH_TRUE) {
+		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+		return JS_TRUE;
+    }
+
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+	return JS_FALSE;
+
+}
+
 static JSBool js_bridge(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss_a = NULL, *jss_b = NULL;
@@ -3623,6 +3665,7 @@ static JSFunctionSpec fs_functions[] = {
 	{"exit", js_exit, 0},
 	{"include", js_include, 1},
 	{"bridge", js_bridge, 2},
+	{"email", js_email, 3},
 	{"apiExecute", js_api_execute, 2},
 	{"use", js_api_use, 1},
 	{"msleep", js_api_sleep, 1},
