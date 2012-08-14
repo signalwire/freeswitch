@@ -318,7 +318,7 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		SWITCH_CONFIG_ITEM("rtp-port-range", SWITCH_CONFIG_STRING, CONFIG_REQUIRED, &profile->rtp_port_range, "1-65535", &switch_config_string_strdup, "", "rtp port range"),
 		SWITCH_CONFIG_ITEM("rtp-termination-id-prefix", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->rtp_termination_id_prefix, "", &switch_config_string_strdup, "", "rtp termination prefix"),
 		SWITCH_CONFIG_ITEM("rtp-termination-id-length", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->rtp_termination_id_len, "", &opt_termination_id_len, "", "rtp termination id"),
-		SWITCH_CONFIG_ITEM("rtp-pre-buffer-size", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->tdm_pre_buffer_size, 200, &pre_buffer_len, "", "freetdm pre buffer size"),
+		SWITCH_CONFIG_ITEM("tdm-pre-buffer-size", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->tdm_pre_buffer_size, 200, &pre_buffer_len, "", "freetdm pre buffer size"),
 		SWITCH_CONFIG_ITEM("codec-prefs", SWITCH_CONFIG_STRING, 0, &profile->codec_prefs, "", &switch_config_string_strdup, "", "codec preferences, coma-separated"),
 		SWITCH_CONFIG_ITEM_END()
 	};
