@@ -168,6 +168,8 @@ switch_status_t mg_send_term_service_change(char *span_name, char *chan_number, 
 
 
 switch_status_t  mg_send_t38_cng_notify(megaco_profile_t* mg_profile, const char* term_name);
+switch_status_t  mg_send_t38_ans_notify(megaco_profile_t* mg_profile, const char* term_name);
+switch_status_t  mg_send_t38_v21flag_notify(megaco_profile_t* mg_profile, const char* term_name);
 
 
 switch_status_t sng_mgco_cfg(megaco_profile_t* profile);
