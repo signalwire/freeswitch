@@ -253,12 +253,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				}
 			} else {
 				char ebuf[512] = { 0 };
-#ifdef WIN32
-				strerror_s(ebuf, sizeof(ebuf), errno);
-#else
-				strerror_r(errno, ebuf, sizeof(ebuf));
-#endif
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n", path, ebuf);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
+						path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
 			}
 			switch_safe_free(path);
 		}
@@ -412,12 +408,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 					break;
 				} else {
 					char ebuf[512] = { 0 };
-#ifdef WIN32
-					strerror_s(ebuf, sizeof(ebuf), errno);
-#else
-					strerror_r(errno, ebuf, sizeof(ebuf));
-#endif
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s! [%s]\n", path, ebuf);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s! [%s]\n",
+							path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
 
 				}
 

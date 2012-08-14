@@ -2985,6 +2985,12 @@ SWITCH_DECLARE(char *) switch_strerror_r(int errnum, char *buf, switch_size_t bu
 	}
 	return buf;
 #endif /* STRERROR_R_CHAR_P */
+#elif defined(WIN32)
+	/* WIN32 variant */
+	if (strerror_s(buf, buflen, errnum)) {
+		switch_snprintf(buf, buflen, "Unknown error %d", errnum);
+	}
+	return buf;
 #else
 	/* Fallback, copy string into private buffer */
 	switch_copy_string(buf, strerror(errnum), buflen);
