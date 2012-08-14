@@ -2662,13 +2662,14 @@ switch_status_t  mg_send_ito_notify(megaco_profile_t* mg_profile )
 
 /*****************************************************************************************************************************/
 /* API to send T.38 CNG tone Notification */
-switch_status_t  mg_send_t38_fax_con_change_notify(megaco_profile_t* mg_profile, const char* term_name)
+switch_status_t  mg_send_t38_fax_con_change_notify(megaco_profile_t* mg_profile, const char* term_name, char* state)
 {
     MgMgcoObsEvt *oevt;
     MgMgcoEvtPar* param;
 
     switch_assert(term_name);
     switch_assert(mg_profile);
+    switch_assert(state);
 
     mg_stack_alloc_mem((Ptr*)&oevt, sizeof(MgMgcoObsEvt));
 
@@ -2700,7 +2701,26 @@ switch_status_t  mg_send_t38_fax_con_change_notify(megaco_profile_t* mg_profile,
 
     MG_INIT_TOKEN_VALUE(&(param->u.other.val.type),MGT_VALUE_EQUAL);
     MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.type),MGT_VALTYPE_ENUM);
-    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGCONNECTED);
+    if(!strcasecmp(state,"connected")){
+	    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGCONNECTED);
+    } else if(!strcasecmp(state,"negotiating")){
+	    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGNEGOTIATING);
+    } else if(!strcasecmp(state,"disconnect")){
+	    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGDISCONNECT);
+    } else if(!strcasecmp(state,"prepare")){
+	    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGPREPARE);
+    } else if(!strcasecmp(state,"TrainR")){
+	    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGTRAINR);
+    } else if(!strcasecmp(state,"TrainT")){
+	    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGTRAINT);
+    } else if(!strcasecmp(state,"EOP")){
+	    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGEOP);
+    } else if(!strcasecmp(state,"ProcInterrupt")){
+	    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGPROCINTR);
+    }else{
+	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Invalid input state[%s] param\n", state);
+	    return SWITCH_STATUS_FALSE;
+    }
 
     return mg_send_notify(mg_profile, term_name, oevt);
 }
