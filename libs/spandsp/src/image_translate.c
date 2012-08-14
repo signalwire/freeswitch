@@ -312,6 +312,7 @@ static int get_and_scrunch_row(image_translate_state_t *s, uint8_t buf[])
 static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
 {
     int i;
+    int j;
     int output_width;
     int output_length;
     int input_width;
@@ -329,6 +330,9 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
     double frac_row;
     double frac_col;
 #endif
+    uint8_t *row8[2];
+    uint16_t *row16[2];
+    uint16_t *buf16;
     int row_len;
     int skip;
     uint8_t *p;
@@ -366,26 +370,113 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
 
 #if defined(SPANDSP_USE_FIXED_POINT)
     frac_row = ((s->raw_output_row*256*input_length)/output_length) & 0xFF;
-    for (i = 0;  i < output_width;  i++)
-    {
-        x = i*256*input_width/output_width;
-        frac_col = x & 0xFF;
-        x >>= 8;
-        c1 = s->raw_pixel_row[0][x] + (((s->raw_pixel_row[0][x + 1] - s->raw_pixel_row[0][x])*frac_col) >> 8);
-        c2 = s->raw_pixel_row[1][x] + (((s->raw_pixel_row[1][x + 1] - s->raw_pixel_row[1][x])*frac_col) >> 8);
-        buf[i] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
-    }
 #else
     frac_row = modf((double) s->raw_output_row*input_length/output_length, &int_part);
-    for (i = 0;  i < output_width;  i++)
-    {
-        frac_col = modf((double) i*input_width/output_width, &int_part);
-        x = int_part;
-        c1 = s->raw_pixel_row[0][x] + (s->raw_pixel_row[0][x + 1] - s->raw_pixel_row[0][x])*frac_col;
-        c2 = s->raw_pixel_row[1][x] + (s->raw_pixel_row[1][x + 1] - s->raw_pixel_row[1][x])*frac_col;
-        buf[i] = saturateu8(c1 + (c2 - c1)*frac_row);
-    }
 #endif
+
+    switch (s->output_format)
+    {
+    case T4_IMAGE_TYPE_COLOUR_8BIT:
+        row8[0] = s->raw_pixel_row[0];
+        row8[1] = s->raw_pixel_row[1];
+        for (i = 0;  i < output_width;  i++)
+        {
+#if defined(SPANDSP_USE_FIXED_POINT)
+            x = i*256*input_width/output_width;
+            frac_col = x & 0xFF;
+            x >>= 8;
+            x = 3*x;
+            for (j = 0;  j < 3;  j++)
+            {
+                c1 = row8[0][x + j] + (((row8[0][x + j + 3] - row8[0][x + j])*frac_col) >> 8);
+                c2 = row8[1][x + j] + (((row8[1][x + j + 3] - row8[1][x + j])*frac_col) >> 8);
+                buf[3*i + j] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
+            }
+#else
+            frac_col = modf((double) i*input_width/output_width, &int_part);
+            x = 3*int_part;
+            for (j = 0;  j < 3;  j++)
+            {
+                c1 = row8[0][x + j] + (row8[0][x + j + 3] - row8[0][x + j])*frac_col;
+                c2 = row8[1][x + j] + (row8[1][x + j + 3] - row8[1][x + j])*frac_col;
+                buf[3*i + j] = saturateu8(c1 + (c2 - c1)*frac_row);
+            }
+#endif
+        }
+        break;
+    case T4_IMAGE_TYPE_COLOUR_12BIT:
+        row16[0] = (uint16_t *) s->raw_pixel_row[0];
+        row16[1] = (uint16_t *) s->raw_pixel_row[1];
+        buf16 = (uint16_t *) buf;
+        for (i = 0;  i < output_width;  i++)
+        {
+#if defined(SPANDSP_USE_FIXED_POINT)
+            x = i*256*input_width/output_width;
+            frac_col = x & 0xFF;
+            x >>= 8;
+            x = 3*x;
+            for (j = 0;  j < 3;  j++)
+            {
+                c1 = row16[0][x + j] + (((row16[0][x + j + 3] - row16[0][x + j])*frac_col) >> 8);
+                c2 = row16[1][x + j] + (((row16[1][x + j + 3] - row16[1][x + j])*frac_col) >> 8);
+                buf16[3*i + j] = saturateu16(c1 + (((c2 - c1)*frac_row) >> 8));
+            }
+#else
+            frac_col = modf((double) i*input_width/output_width, &int_part);
+            x = 3*int_part;
+            for (j = 0;  j < 3;  j++)
+            {
+                c1 = row16[0][x + j] + (row16[0][x + j + 3] - row16[0][x + j])*frac_col;
+                c2 = row16[1][x + j] + (row16[1][x + j + 3] - row16[1][x + j])*frac_col;
+                buf16[3*i + j] = saturateu16(c1 + (c2 - c1)*frac_row);
+            }
+#endif
+        }
+        break;
+    case T4_IMAGE_TYPE_GRAY_8BIT:
+        row8[0] = s->raw_pixel_row[0];
+        row8[1] = s->raw_pixel_row[1];
+        for (i = 0;  i < output_width;  i++)
+        {
+#if defined(SPANDSP_USE_FIXED_POINT)
+            x = i*256*input_width/output_width;
+            frac_col = x & 0xFF;
+            x >>= 8;
+            c1 = row8[0][x] + (((row8[0][x + 1] - row8[0][x])*frac_col) >> 8);
+            c2 = row8[1][x] + (((row8[1][x + 1] - row8[1][x])*frac_col) >> 8);
+            buf[i] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
+#else
+            frac_col = modf((double) i*input_width/output_width, &int_part);
+            x = int_part;
+            c1 = row8[0][x] + (row8[0][x + 1] - row8[0][x])*frac_col;
+            c2 = row8[1][x] + (row8[1][x + 1] - row8[1][x])*frac_col;
+            buf[i] = saturateu8(c1 + (c2 - c1)*frac_row);
+#endif
+        }
+        break;
+    case T4_IMAGE_TYPE_GRAY_12BIT:
+        row16[0] = (uint16_t *) s->raw_pixel_row[0];
+        row16[1] = (uint16_t *) s->raw_pixel_row[1];
+        buf16 = (uint16_t *) buf;
+        for (i = 0;  i < output_width;  i++)
+        {
+#if defined(SPANDSP_USE_FIXED_POINT)
+            x = i*256*input_width/output_width;
+            frac_col = x & 0xFF;
+            x >>= 8;
+            c1 = row16[0][x] + (((row16[0][x + 1] - row16[0[x])*frac_col) >> 8);
+            c2 = row16[1][x] + (((row16[1][x + 1] - row16[1][x])*frac_col) >> 8);
+            buf[i] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
+#else
+            frac_col = modf((double) i*input_width/output_width, &int_part);
+            x = int_part;
+            c1 = row16[0][x] + (row16[0][x + 1] - row16[0][x])*frac_col;
+            c2 = row16[1][x] + (row16[1][x + 1] - row16[1][x])*frac_col;
+            buf[i] = saturateu8(c1 + (c2 - c1)*frac_row);
+#endif
+        }
+        break;
+    }
     if (++s->raw_output_row >= s->output_length)
         s->raw_output_row = -1;
     return s->output_width;
@@ -398,9 +489,10 @@ static __inline__ uint8_t find_closest_palette_color(int in)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int floyd_steinberg_dither_row(image_translate_state_t *s, uint8_t buf[], int y)
+static int floyd_steinberg_dither_row(image_translate_state_t *s, uint8_t buf[])
 {
     int x;
+    int y;
     int i;
     int j;
     int limit;
@@ -408,7 +500,35 @@ static int floyd_steinberg_dither_row(image_translate_state_t *s, uint8_t buf[],
     int new_pixel;
     int quant_error;
     uint8_t xx;
+    uint8_t *p;
 
+    y = s->output_row++;
+    /* This algorithm works over two rows, and outputs the earlier of the two. To
+       make this work:
+           - At row 0 we grab and scrunch two rows.
+           - From row 1 up to the last row we grab one new additional row each time.
+           - At the last row we dither and output, without getting an extra row in. */
+    for (i = (y == 0)  ?  0  :  1;  i < 2;  i++)
+    {
+        /* Swap the row buffers */
+        p = s->pixel_row[0];
+        s->pixel_row[0] = s->pixel_row[1];
+        s->pixel_row[1] = p;
+
+        /* If this is the end of the image just ignore that there is now rubbish in pixel_row[1].
+           Mark that the end has occurred. This row will be properly output, and the next one
+           will fail, with the end of image condition (i.e. returning zero length) */
+        if (s->resize)
+        {
+            if (image_resize_row(s, s->pixel_row[1]) != s->output_width)
+                s->output_row = -1;
+        }
+        else
+        {
+            if (get_and_scrunch_row(s, s->pixel_row[1]) != s->output_width)
+                s->output_row = -1;
+        }
+    }
     /* Apply Floyd-Steinberg dithering to the 8 bit pixels, using a bustrophodontic
        scan, to reduce the grayscale image to pure black and white */
     /* The first and last pixels in each row need special treatment, so we do not
@@ -488,47 +608,30 @@ static int floyd_steinberg_dither_row(image_translate_state_t *s, uint8_t buf[],
 
 SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[], size_t len)
 {
-    int y;
     int i;
-    uint8_t *p;
 
     if (s->output_row < 0)
         return 0;
-    y = s->output_row++;
-    /* This algorithm works over two rows, and outputs the earlier of the two. To
-       make this work:
-           - At row 0 we grab and scrunch two rows.
-           - From row 1 up to the last row we grab one new additional row each time.
-           - At the last row we dither and output, without getting an extra row in. */
-    for (i = (y == 0)  ?  0  :  1;  i < 2;  i++)
+    if (s->output_format == T4_IMAGE_TYPE_BILEVEL)
     {
-        /* Swap the row buffers */
-        p = s->pixel_row[0];
-        s->pixel_row[0] = s->pixel_row[1];
-        s->pixel_row[1] = p;
-
-        /* If this is the end of the image just ignore that there is now rubbish in pixel_row[1].
-           Mark that the end has occurred. This row will be properly output, and the next one
-           will fail, with the end of image condition (i.e. returning zero length) */
+        i = floyd_steinberg_dither_row(s, buf);
+    }
+    else
+    {
+        s->output_row++;
         if (s->resize)
         {
-            if (image_resize_row(s, s->pixel_row[1]) != s->output_width)
+            if (image_resize_row(s, buf) != s->output_width)
                 s->output_row = -1;
         }
         else
         {
-            if (get_and_scrunch_row(s, s->pixel_row[1]) != s->output_width)
+            if (get_and_scrunch_row(s, buf) != s->output_width)
                 s->output_row = -1;
         }
-    }
-    if (s->output_format == T4_IMAGE_TYPE_BILEVEL)
-    {
-        i = floyd_steinberg_dither_row(s, buf, y);
-    }
-    else
-    {
+        if (s->output_row < 0)
+            return 0;
         i = s->output_width*s->output_bytes_per_pixel;
-        memcpy(buf, s->pixel_row[0], i);
     }
     return i;
 }
@@ -637,13 +740,12 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
             if ((s->raw_pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
                 return NULL;
             memset(s->raw_pixel_row[i], 0, raw_row_size);
-            if ((s->pixel_row[i] = (uint8_t *) malloc(row_size)) == NULL)
-                return NULL;
-            memset(s->pixel_row[i], 0, row_size);
         }
     }
-    else
+    if (s->output_format == T4_IMAGE_TYPE_BILEVEL)
     {
+        if (s->resize)
+            raw_row_size = row_size;
         for (i = 0;  i < 2;  i++)
         {
             if ((s->pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)

@@ -260,14 +260,14 @@ then
 fi
 echo ima_adpcm_tests completed OK
 
-#./image_translate_tests >$STDOUT_DEST 2>$STDERR_DEST
-#RETVAL=$?
-#if [ $RETVAL != 0 ]
-#then
-#    echo image_translate_tests failed!
-#    exit $RETVAL
-#fi
-#echo image_translate_tests completed OK
+./image_translate_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo image_translate_tests failed!
+    exit $RETVAL
+fi
+echo image_translate_tests completed OK
 
 ./logging_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?

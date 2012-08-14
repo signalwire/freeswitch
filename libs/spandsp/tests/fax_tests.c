@@ -29,13 +29,15 @@
 \section fax_tests_page_sec_1 What does it do?
 These tests exercise the following FAX to FAX paths:
 
-         +--Modems-+---------TDM/RTP---------+-Modems--+
-         |          \                       /          |
-         |           \                     /           |
-T.30 <---+      T.38 gateway        T.38 gateway       +--->T.30
-         |             \                 /             |
-         |              \               /              |
-         +---T.38--------+--UDPTL/RTP--+--------T.38---+
+         +--Modems-+-----------TDM/RTP-----------+-Modems--+
+         |          \                           /          |
+         |           \                         /           |
+T.30 <---+      T.38 gateway            T.38 gateway       +--->T.30
+         |             \                     /             |
+         |              \                   /              |
+         +---T.38---+----+----UDPTL/RTP----+----+---T.38---+
+                     \                         /
+                      +----------TCP----------+
 
 T.30<->Modems<-------------------------TDM/RTP------------------------->Modems<->T.30
 T.30<->Modems<-TDM/RTP->T.38 gateway<-UDPTL/RTP->T.38 gateway<-TDM/RTP->Modems<->T.30
@@ -870,6 +872,7 @@ int main(int argc, char *argv[])
                                            T30_SUPPORT_T4_1D_COMPRESSION
                                          | T30_SUPPORT_T4_2D_COMPRESSION
                                          | T30_SUPPORT_T6_COMPRESSION
+                                         | T30_SUPPORT_T81_COMPRESSION
                                          | T30_SUPPORT_T85_COMPRESSION
                                          | T30_SUPPORT_T85_L0_COMPRESSION);
         }
