@@ -1224,7 +1224,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		} else {
 			const char *req_user = NULL, *req_host = NULL, *action = NULL, *ref_by_user = NULL, *ref_to_user = NULL, *ref_to_host = NULL;
 			char *refer_to = NULL, *referred_by = NULL, *method = NULL, *full_url = NULL;
-			char *params = NULL;
+			char *params = NULL, *iparams = NULL;
 			switch_event_t *event;
 			char *tmp;
 
@@ -1232,20 +1232,23 @@ static void our_sofia_event_callback(nua_event_t event,
 				ref_to_user = sip->sip_refer_to->r_url->url_user;
 				ref_to_host = sip->sip_refer_to->r_url->url_host;
 
-				if ((refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to))) {
+				if (sip->sip_refer_to->r_url->url_params && switch_stristr("method=", sip->sip_refer_to->r_url->url_params)) {
+					params = su_strdup(nua_handle_home(nh), sip->sip_refer_to->r_url->url_params);
+				}
 
-					if ((params = strrchr(refer_to, ';'))) {
-						*params++ = '\0';
-					}
+
+				if ((refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to))) {
 					
 					if ((tmp = sofia_glue_get_url_from_contact(refer_to, 0))) {
 						refer_to = tmp;
 					}
-				}
 
-				if (!params || !switch_stristr("method=", params)) {
-					if ((params = strchr(refer_to, ';'))) {
-						*params++ = '\0';
+					if ((iparams = strrchr(refer_to, ';'))) {
+						*iparams++ = '\0';
+
+						if (!switch_stristr("method=", iparams)) {
+							params = iparams;
+						}
 					}
 				}
 
