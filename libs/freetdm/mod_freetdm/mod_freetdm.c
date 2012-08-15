@@ -2828,7 +2828,7 @@ static uint32_t enable_analog_option(const char *str, uint32_t current_options)
 	
 }
 
-#define CONFIG_ERROR(...) { \
+#define LOAD_ERROR(...) { \
 		ftdm_log(FTDM_LOG_ERROR, __VA_ARGS__); \
 		globals.config_error = 1; \
 	}
@@ -3162,7 +3162,7 @@ static int add_profile_parameters(switch_xml_t cfg, const char *profname, ftdm_c
 
 	profnode = switch_xml_child(cfg, "config_profiles");
 	if (!profnode) {
-		CONFIG_ERROR("cannot find profile '%s', there is no 'config_profiles' XML section\n", profname);
+		LOAD_ERROR("cannot find profile '%s', there is no 'config_profiles' XML section\n", profname);
 		return 0;
 	}
 
@@ -3178,7 +3178,7 @@ static int add_profile_parameters(switch_xml_t cfg, const char *profname, ftdm_c
 	}
 
 	if (!profile) {
-		CONFIG_ERROR("failed to find profile '%s'\n", profname);
+		LOAD_ERROR("failed to find profile '%s'\n", profname);
 		return 0;
 	}
 
@@ -3213,7 +3213,7 @@ static void parse_gsm_spans(switch_xml_t cfg, switch_xml_t spans)
 		unsigned paramindex = 0;
 
 		if (!name && !id) {
-			CONFIG_ERROR("GSM span missing required attribute 'id' or 'name', skipping ...\n");
+			LOAD_ERROR("GSM span missing required attribute 'id' or 'name', skipping ...\n");
 			continue;
 		}
 
@@ -3231,7 +3231,7 @@ static void parse_gsm_spans(switch_xml_t cfg, switch_xml_t spans)
 		}
 
 		if (zstatus != FTDM_SUCCESS) {
-			CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+			LOAD_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 			continue;
 		}
 		
@@ -3254,7 +3254,7 @@ static void parse_gsm_spans(switch_xml_t cfg, switch_xml_t spans)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-				CONFIG_ERROR("Too many parameters for GSM span, ignoring any parameter after %s\n", var);
+				LOAD_ERROR("Too many parameters for GSM span, ignoring any parameter after %s\n", var);
 				break;
 			}
 
@@ -3273,7 +3273,7 @@ static void parse_gsm_spans(switch_xml_t cfg, switch_xml_t spans)
 						  "gsm", 
 						  on_clear_channel_signal,
 						  spanparameters) != FTDM_SUCCESS) {
-			CONFIG_ERROR("Error configuring Sangoma GSM FreeTDM span %d\n", span_id);
+			LOAD_ERROR("Error configuring Sangoma GSM FreeTDM span %d\n", span_id);
 			continue;
 		}
 		SPAN_CONFIG[span_id].span = span;
@@ -3302,7 +3302,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 		unsigned paramindex = 0;
 
 		if (!name && !id) {
-			CONFIG_ERROR("sangoma isdn span missing required attribute 'id' or 'name', skipping ...\n");
+			LOAD_ERROR("sangoma isdn span missing required attribute 'id' or 'name', skipping ...\n");
 			continue;
 		}
 
@@ -3320,7 +3320,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 		}
 
 		if (zstatus != FTDM_SUCCESS) {
-			CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+			LOAD_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 			continue;
 		}
 		
@@ -3348,7 +3348,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-				CONFIG_ERROR("Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
+				LOAD_ERROR("Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
 				break;
 			}
 
@@ -3378,10 +3378,10 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 				int calls;
 				int seconds;
 				if (sscanf(val, "%d/%d", &calls, &seconds) != 2) {
-					CONFIG_ERROR("Invalid %s parameter, format example: 3/1 for 3 calls per second\n", var);
+					LOAD_ERROR("Invalid %s parameter, format example: 3/1 for 3 calls per second\n", var);
 				} else {
 					if (calls < 1 || seconds < 1) {
-						CONFIG_ERROR("Invalid %s parameter value, minimum call limit must be 1 per second\n", var);
+						LOAD_ERROR("Invalid %s parameter value, minimum call limit must be 1 per second\n", var);
 					} else {
 						SPAN_CONFIG[span_id].limit_calls = calls;
 						SPAN_CONFIG[span_id].limit_seconds = seconds;
@@ -3391,7 +3391,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 				if (!strcasecmp(val, "answer")) {
 					SPAN_CONFIG[span_id].limit_reset_event = FTDM_LIMIT_RESET_ON_ANSWER;
 				} else {
-					CONFIG_ERROR("Invalid %s parameter value, only accepted event is 'answer'\n", var);
+					LOAD_ERROR("Invalid %s parameter value, only accepted event is 'answer'\n", var);
 				}
 			} else {
 				spanparameters[paramindex].var = var;
@@ -3404,7 +3404,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 						  "sangoma_isdn", 
 						  on_clear_channel_signal,
 						  spanparameters) != FTDM_SUCCESS) {
-			CONFIG_ERROR("Error configuring Sangoma ISDN FreeTDM span %d\n", span_id);
+			LOAD_ERROR("Error configuring Sangoma ISDN FreeTDM span %d\n", span_id);
 			continue;
 		}
 		SPAN_CONFIG[span_id].span = span;
@@ -3481,11 +3481,11 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 			unsigned paramindex = 0;
 			if (!name && !id) {
-				CONFIG_ERROR("ss7 span missing required attribute 'id' or 'name', skipping ...\n");
+				LOAD_ERROR("ss7 span missing required attribute 'id' or 'name', skipping ...\n");
 				continue;
 			}
 			if (!configname) {
-				CONFIG_ERROR("ss7 span missing required attribute, skipping ...\n");
+				LOAD_ERROR("ss7 span missing required attribute, skipping ...\n");
 				continue;
 			}
 			if (name) {
@@ -3502,7 +3502,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				LOAD_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -3512,7 +3512,7 @@ static switch_status_t load_config(void)
 
 			ss7confnode = _get_ss7_config_node(cfg, configname, operating_mode);
 			if (!ss7confnode) {
-				CONFIG_ERROR("Error finding ss7config '%s' for FreeTDM span id: %s\n", configname, switch_str_nil(id));
+				LOAD_ERROR("Error finding ss7config '%s' for FreeTDM span id: %s\n", configname, switch_str_nil(id));
 				continue;
 			}
 
@@ -3531,7 +3531,7 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-					CONFIG_ERROR("Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
+					LOAD_ERROR("Too many parameters for ss7 span, ignoring any parameter after %s\n", var);
 					break;
 				}
 
@@ -3550,7 +3550,7 @@ static switch_status_t load_config(void)
 						          "sangoma_ss7", 
 						          on_clear_channel_signal,
 							  spanparameters) != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error configuring ss7 FreeTDM span %d\n", span_id);
+				LOAD_ERROR("Error configuring ss7 FreeTDM span %d\n", span_id);
 				continue;
 			}
 			SPAN_CONFIG[span_id].span = span;
@@ -3559,7 +3559,7 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span_id].type, "Sangoma (SS7)", sizeof(SPAN_CONFIG[span_id].type));
 			ftdm_log(FTDM_LOG_DEBUG, "Configured ss7 FreeTDM span %d with config node %s\n", span_id, configname);
 			if(FTDM_SUCCESS != ftdm_span_start(span)){
-				CONFIG_ERROR("Error Starting ss7 FreeTDM span %d\n", span_id);
+				LOAD_ERROR("Error Starting ss7 FreeTDM span %d\n", span_id);
 				continue;
 			}
 		}
@@ -3605,7 +3605,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				LOAD_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -3639,10 +3639,10 @@ static switch_status_t load_config(void)
 					int calls;
 					int seconds;
 					if (sscanf(val, "%d/%d", &calls, &seconds) != 2) {
-						CONFIG_ERROR("Invalid %s parameter, format example: 3/1 for 3 calls per second\n", var);
+						LOAD_ERROR("Invalid %s parameter, format example: 3/1 for 3 calls per second\n", var);
 					} else {
 						if (calls < 1 || seconds < 1) {
-							CONFIG_ERROR("Invalid %s parameter value, minimum call limit must be 1 per second\n", var);
+							LOAD_ERROR("Invalid %s parameter value, minimum call limit must be 1 per second\n", var);
 						} else {
 							SPAN_CONFIG[span_id].limit_calls = calls;
 							SPAN_CONFIG[span_id].limit_seconds = seconds;
@@ -3652,7 +3652,7 @@ static switch_status_t load_config(void)
 					if (!strcasecmp(val, "answer")) {
 						SPAN_CONFIG[span_id].limit_reset_event = FTDM_LIMIT_RESET_ON_ANSWER;
 					} else {
-						CONFIG_ERROR("Invalid %s parameter value, only accepted event is 'answer'\n", var);
+						LOAD_ERROR("Invalid %s parameter value, only accepted event is 'answer'\n", var);
 					}
 				} else if (!strcasecmp(var, "dial-regex")) {
 					dial_regex = val;
@@ -3682,7 +3682,7 @@ static switch_status_t load_config(void)
 			}
 				
 			if (!id && !name) {
-				CONFIG_ERROR("span missing required param 'id'\n");
+				LOAD_ERROR("span missing required param 'id'\n");
 				continue;
 			}
 			
@@ -3712,7 +3712,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				LOAD_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -3733,7 +3733,7 @@ static switch_status_t load_config(void)
 								   "callwaiting", &callwaiting,
 								   "wait_dialtone_timeout", &dialtone_timeout,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error configuring FreeTDM analog span %s\n", ftdm_span_get_name(span));
+				LOAD_ERROR("Error configuring FreeTDM analog span %s\n", ftdm_span_get_name(span));
 				continue;
 			}
 
@@ -3809,7 +3809,7 @@ static switch_status_t load_config(void)
 			}
 				
 			if (!id && !name) {
-				CONFIG_ERROR("span missing required param 'id'\n");
+				LOAD_ERROR("span missing required param 'id'\n");
 				continue;
 			}
 
@@ -3841,7 +3841,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				LOAD_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -3855,7 +3855,7 @@ static switch_status_t load_config(void)
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error starting FreeTDM span %d\n", span_id);
+				LOAD_ERROR("Error starting FreeTDM span %d\n", span_id);
 				continue;
 			}
 
@@ -3892,7 +3892,7 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 
 			if (!name) {
-				CONFIG_ERROR("span missing required attribute 'name'\n");
+				LOAD_ERROR("span missing required attribute 'name'\n");
 				continue;
 			}
 
@@ -3903,7 +3903,7 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-					CONFIG_ERROR("Too many parameters for pri span '%s', ignoring everything after '%s'\n", name, var);
+					LOAD_ERROR("Too many parameters for pri span '%s', ignoring everything after '%s'\n", name, var);
 					break;
 				}
 
@@ -3925,13 +3925,13 @@ static switch_status_t load_config(void)
 
 			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error finding FreeTDM span %s\n", name);
+				LOAD_ERROR("Error finding FreeTDM span %s\n", name);
 				continue;
 			}
 
 			span_id = ftdm_span_get_id(span);
 			if (ftdm_configure_span_signaling(span, "isdn", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error configuring FreeTDM span %s\n", name);
+				LOAD_ERROR("Error configuring FreeTDM span %s\n", name);
 				continue;
 			}
 
@@ -3958,7 +3958,7 @@ static switch_status_t load_config(void)
 			int span_id = 0;
 
 			if (!name) {
-				CONFIG_ERROR("span missing required attribute 'name'\n");
+				LOAD_ERROR("span missing required attribute 'name'\n");
 				continue;
 			}
 
@@ -3969,7 +3969,7 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-					CONFIG_ERROR("Too many parameters for pritap span '%s', ignoring everything after '%s'\n", name, var);
+					LOAD_ERROR("Too many parameters for pritap span '%s', ignoring everything after '%s'\n", name, var);
 					break;
 				}
 
@@ -3986,13 +3986,13 @@ static switch_status_t load_config(void)
 	
 			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error finding FreeTDM span %s\n", name);
+				LOAD_ERROR("Error finding FreeTDM span %s\n", name);
 				continue;
 			}
 
 			span_id = ftdm_span_get_id(span);
 			if (ftdm_configure_span_signaling(span, "pritap", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error configuring FreeTDM span %s\n", name);
+				LOAD_ERROR("Error configuring FreeTDM span %s\n", name);
 				continue;
 			}
 
@@ -4018,7 +4018,7 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0;
 
 			if (!name) {
-				CONFIG_ERROR("span missing required attribute 'name'\n");
+				LOAD_ERROR("span missing required attribute 'name'\n");
 				continue;
 			}
 
@@ -4029,7 +4029,7 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (ftdm_array_len(spanparameters) - 1 == paramindex) {
-					CONFIG_ERROR("Too many parameters for libpri span, ignoring everything after '%s'\n", var);
+					LOAD_ERROR("Too many parameters for libpri span, ignoring everything after '%s'\n", var);
 					break;
 				}
 
@@ -4051,13 +4051,13 @@ static switch_status_t load_config(void)
 
 			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error finding FreeTDM span %s\n", name);
+				LOAD_ERROR("Error finding FreeTDM span %s\n", name);
 				continue;
 			}
 
 			span_id = ftdm_span_get_id(span);
 			if (ftdm_configure_span_signaling(span, "libpri", on_clear_channel_signal, spanparameters) != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error configuring FreeTDM span %s\n", name);
+				LOAD_ERROR("Error configuring FreeTDM span %s\n", name);
 				continue;
 			}
 
@@ -4088,7 +4088,7 @@ static switch_status_t load_config(void)
 			unsigned paramindex = 0;
 
 			if (!name) {
-				CONFIG_ERROR("'name' attribute required for R2 spans!\n");
+				LOAD_ERROR("'name' attribute required for R2 spans!\n");
 				continue;
 			}
 
@@ -4123,13 +4123,13 @@ static switch_status_t load_config(void)
 
 			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error finding FreeTDM R2 Span '%s'\n", name);
+				LOAD_ERROR("Error finding FreeTDM R2 Span '%s'\n", name);
 				continue;
 			}
 			span_id = ftdm_span_get_id(span);
 
 			if (ftdm_configure_span_signaling(span, "r2", on_r2_signal, spanparameters) != FTDM_SUCCESS) {
-				CONFIG_ERROR("Error configuring FreeTDM R2 span %s, error: %s\n", name, ftdm_span_get_last_error(span));
+				LOAD_ERROR("Error configuring FreeTDM R2 span %s, error: %s\n", name, ftdm_span_get_last_error(span));
 				continue;
 			}
 
@@ -4147,7 +4147,7 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span_id].type, "R2", sizeof(SPAN_CONFIG[span_id].type));
 
 			if (ftdm_span_start(span) == FTDM_FAIL) {
-				CONFIG_ERROR("Error starting FreeTDM R2 span %s, error: %s\n", name, ftdm_span_get_last_error(span));
+				LOAD_ERROR("Error starting FreeTDM R2 span %s, error: %s\n", name, ftdm_span_get_last_error(span));
 				continue;
 			}
 		}
