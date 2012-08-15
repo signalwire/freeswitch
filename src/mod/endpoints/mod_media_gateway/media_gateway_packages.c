@@ -138,6 +138,11 @@ MgPackage_t mg_pkg_list [] =
       1,              /* Version 1 */
       "ipfax",              /* Package name */
    },
+   {  /* INDEX : 26 */
+      MGT_PKG_FAX,
+      1,              /* Version 1 */
+      "fax",              /* Package name */
+   },
   /* Add more packages */
 };
 

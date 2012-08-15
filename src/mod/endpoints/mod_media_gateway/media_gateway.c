@@ -413,6 +413,7 @@ switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination
 
 switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination_t *term)
 {
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
 
     switch_assert(ctx != NULL);
     switch_assert(term != NULL);
@@ -434,11 +435,13 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
     
     if (ctx->terminations[0] && ctx->terminations[1]) {
         if (zstr(ctx->terminations[0]->uuid)) {
-            megaco_activate_termination(ctx->terminations[0]);
+            status = megaco_activate_termination(ctx->terminations[0]);
         }
         if (zstr(ctx->terminations[1]->uuid)) {
-            megaco_activate_termination(ctx->terminations[1]);
+            status = megaco_activate_termination(ctx->terminations[1]);
         }
+
+	if(SWITCH_STATUS_SUCCESS != status) return status;
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bridging: %s (%s) <> %s (%s)\n", 
                           ctx->terminations[0]->name, ctx->terminations[0]->uuid,

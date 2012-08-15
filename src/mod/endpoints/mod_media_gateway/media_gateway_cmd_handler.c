@@ -729,20 +729,9 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     
     mg_print_t38_attributes(term);
 
-    /* TODO - locally assigned SDP must be the part of termination...which we can use to fill responses*/
-
     /********************************************************************/
 
-    /* Matt - to provide the response SDP structure which needs to fill in ADD command response */
-
-    /* Matt - to indicate if there is any failure while processing add message */
-
-    /* Kapil - to return error if there is any failure based on Matt's indication */
-
-    /* Kapil - to fill the response structure and call the response API to send ADD response */
-
-    /*************************************************************************************************************************/
-    /* sample resp code -- begin */
+    /* resp code -- begin */
     {
         MgMgcoCommand  rsp;
         int ret = 0x00;
@@ -1050,6 +1039,13 @@ error:
         sng_mgco_send_err(mg_profile->idx, mgErr);
     }
     mg_free_cmd(inc_cmd);
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," ADD Request failed..releasing context/termination(if allocated) \n"); 
+    if(mg_ctxt){
+	    megaco_release_context(mg_ctxt);
+    }
+    if(term){
+	    megaco_termination_destroy(term);
+    }
     return SWITCH_STATUS_FALSE;	
 }
 
@@ -1127,8 +1123,6 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 		/* check if we have ito packg request */
 		mg_is_ito_pkg_req(mg_profile, inc_cmd);
 
-		/* TODO */
-
 		/********************************************************************/
 	} else if(MGT_TERMID_OTHER == termId->type.val){
 		/********************************************************************/
@@ -1194,7 +1188,6 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 		if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
 			mg_util_set_err_string(&errTxt, " Unsupported Codec ");
 			err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
-			/* TODO delete RTP termination */
 			goto error;
 		}
 
@@ -1219,20 +1212,14 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
 
 		/* SDP updated to termination */
-		megaco_activate_termination(term);
+		if(SWITCH_STATUS_SUCCESS != megaco_activate_termination(term)) {
+			mg_util_set_err_string(&errTxt, " Resource Failure ");
+			err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+			goto error;
+		}
 	}
 
-	/* TODO - copy inc descriptor...not sure if we need to do this.. */
-
 	/********************************************************************/
-
-	/* Matt - to provide the response SDP structure which needs to fill in Modify command response */
-
-	/* Matt - to indicate if there is any failure while processing add message */
-
-	/* Kapil - to return error if there is any failure based on Matt's indication */
-
-	/* Kapil - to fill the response structure and call the response API to send Modify response */
 
 response:
 	{ /* send response */
@@ -1272,9 +1259,10 @@ response:
 #endif
 		/*mg_fill_mgco_termid(termId, (char*)"term1",&req->u.mgCmdRsp[0]->memCp);*/
 
-		if((MG_TERM_RTP == term->type) &&
-				((NOTPRSNT != inc_cmd->u.mgCmdInd[0]->cmd.u.mod.dl.num.pres) && 
-				 (0 != inc_cmd->u.mgCmdInd[0]->cmd.u.mod.dl.num.val))) {
+		if((MGT_TERMID_ROOT != termId->type.val) && 
+			(term && (MG_TERM_RTP == term->type) &&
+				 ((NOTPRSNT != inc_cmd->u.mgCmdInd[0]->cmd.u.mod.dl.num.pres) && 
+				 (0 != inc_cmd->u.mgCmdInd[0]->cmd.u.mod.dl.num.val)))) {
 			/* Whatever Media descriptor we have received, we can copy that and then
 			 * whatever we want we can modify the fields */
 			/* Kapil - TODO - will see if there is any problem of coping the
@@ -1335,6 +1323,14 @@ error:
 		sng_mgco_send_err(mg_profile->idx, mgErr);
 	}
 	mg_free_cmd(inc_cmd);
+
+        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Modify Request failed..releasing context/termination \n"); 
+	if(mg_ctxt){
+		megaco_release_context(mg_ctxt);
+	}
+	if(term){
+		megaco_termination_destroy(term);
+	}
 	return SWITCH_STATUS_FALSE;	
 }
 
@@ -3030,7 +3026,7 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
     request.transId.val  = get_txn_id();
 
     request.contextId.type.pres = PRSNT_NODEF;
-    if(term->context){
+    if(term && term->context){
 	printf("Temrination is in context, adding context-id[%d]\n",term->context->context_id);
 	    request.contextId.type.val  = MGT_CXTID_OTHER;
 	    request.contextId.val.pres  = PRSNT_NODEF;
