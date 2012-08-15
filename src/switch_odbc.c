@@ -336,7 +336,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	int result;
 	SQLINTEGER err;
 	int16_t mlen;
-	unsigned char msg[200], stat[10];
+	unsigned char msg[200] = "", stat[10] = "";
 	SQLSMALLINT valueLength = 0;
 	int i = 0;
 
@@ -365,8 +365,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err_str);
 			free(err_str);
 		} else {
-			SQLGetDiagRec(SQL_HANDLE_DBC, handle->con, 1, stat, &err, msg, 100, &mlen);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error SQLConnect=%d errno=%d %s\n", result, (int) err, msg);
+			SQLGetDiagRec(SQL_HANDLE_DBC, handle->con, 1, stat, &err, msg, sizeof(msg), &mlen);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error SQLConnect=%d errno=%d [%s]\n", result, (int) err, msg);
 		}
 
 		/* Deallocate handles again, more chanses to succeed when reconnecting */
