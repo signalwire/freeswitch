@@ -1632,11 +1632,21 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 	char *event_name = argv[5];
 	char *expires = argv[10];
 
+
+
 	if (!strcasecmp(event_name, "message-summary")) {
+
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", user, host);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-sub-call-id", argv[7]);
+
+			if (mod_sofia_globals.debug_presence > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Create MESSAGE QUERY EVENT...\n");
+				DUMP_EVENT(event);
+			}
+
+
 			switch_event_fire(&event);
 		}
 		return 0;
@@ -3826,6 +3836,13 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								  "and (sip_host='%q' or presence_hosts like '%%%q%%')", 
 								  to_host, mod_sofia_globals.hostname, profile->name,
 								  to_user, to_host, to_host))) {
+
+			if (mod_sofia_globals.debug_presence > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+								  "SUBSCRIBE MWI SQL: %s\n", sql);		
+			}
+
+
 			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
 
 			switch_safe_free(sql);
