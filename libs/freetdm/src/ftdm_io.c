@@ -760,11 +760,16 @@ FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span)
 		goto done;
 	}
 
+	/* Stop SIG */
 	status = span->stop(span);
-	if (FTDM_SUCCESS == status) {
+	if (status == FTDM_SUCCESS) {
 		ftdm_clear_flag(span, FTDM_SPAN_STARTED);
 	}
 
+	/* Stop I/O */
+	if (span->fio && span->fio->span_stop) {
+		status = span->fio->span_stop(span);
+	}
 done:
 	ftdm_mutex_unlock(span->mutex);
 
@@ -5309,6 +5314,14 @@ FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 		goto done;
 	}
 
+	/* Start I/O */
+	if (span->fio && span->fio->span_start) {
+		status = span->fio->span_start(span);
+		if (status != FTDM_SUCCESS)
+			goto done;
+	}
+
+	/* Start SIG */
 	status = ftdm_report_initial_channels_alarms(span);
 	if (status != FTDM_SUCCESS) {
 		goto done;
