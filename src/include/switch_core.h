@@ -742,13 +742,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_s
 */
 SWITCH_DECLARE(char *) switch_core_get_uuid(void);
 
-#ifdef SWITCH_DEBUG_RWLOCKS
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line);
-#endif
 
-#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line);
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_force_locate(const char *uuid_str, const char *file, const char *func, int line);
-#endif
+
 
 /*! 
   \brief Locate a session based on it's uuid
@@ -756,11 +753,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_force_locate
   \return the session or NULL
   \note if the session was located it will have a read lock obtained which will need to be released with switch_core_session_rwunlock()
 */
-#ifdef SWITCH_DEBUG_RWLOCKS
+
 #define switch_core_session_locate(uuid_str) switch_core_session_perform_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
-#else
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(_In_z_ const char *uuid_str);
-#endif
 
 /*! 
   \brief Locate a session based on it's uuid even if the channel is not ready
@@ -768,11 +762,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(_In_z_ const 
   \return the session or NULL
   \note if the session was located it will have a read lock obtained which will need to be released with switch_core_session_rwunlock()
 */
-#ifdef SWITCH_DEBUG_RWLOCKS
+
 #define switch_core_session_force_locate(uuid_str) switch_core_session_perform_force_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
-#else
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(_In_z_ const char *uuid_str);
-#endif
+
 
 /*! 
   \brief Retrieve a global variable from the core
@@ -831,7 +823,10 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
   \param partner [out] The session's partner, or NULL if it wasnt found
   \return SWITCH_STATUS_SUCCESS or SWITCH_STATUS_FALSE if this session isn't bridged
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_get_partner(switch_core_session_t *session, switch_core_session_t **partner);
+SWITCH_DECLARE(switch_status_t) switch_core_session_perform_get_partner(switch_core_session_t *session, switch_core_session_t **partner,
+																		const char *file, const char *func, int line);
+
+#define switch_core_session_get_partner(_session, _partner) switch_core_session_perform_get_partner(_session, _partner, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*! 
   \brief Send a message to another session using it's uuid

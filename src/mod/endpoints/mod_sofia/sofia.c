@@ -6240,16 +6240,18 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (!sofia_test_flag(tech_pvt, TFLAG_SDP)) {
 			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+				int r = sofia_test_flag(other_tech_pvt, TFLAG_REINVITED);
+				switch_core_session_rwunlock(other_session);
 
-				if(sofia_test_flag(other_tech_pvt, TFLAG_REINVITED)) {
-
+				if (r) {
 					/* Due to a race between simultaneous reinvites to both legs of a bridge,
 					  an earlier call to nua_invite silently failed.
 					  So we reject the incoming invite with a 491 and redo the failed outgoing invite. */
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg already handling a reinvite, so responding with 491\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+									  "Other leg already handling a reinvite, so responding with 491\n");
+
 					nua_respond(tech_pvt->nh, SIP_491_REQUEST_PENDING, TAG_END());
-					switch_core_session_rwunlock(other_session);
 					sofia_glue_do_invite(session);
 					goto done;
 				}
@@ -6498,6 +6500,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								switch_yield(250000);
 								launch_media_on_hold(session);
 
+								switch_core_session_rwunlock(other_session);
 								goto done;
 							}
 						}
@@ -6516,7 +6519,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							/* The other leg won the reinvite race */
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg already handling reinvite, so responding with 491\n");
 							nua_respond(tech_pvt->nh, SIP_491_REQUEST_PENDING, TAG_END());
-						        switch_core_session_rwunlock(other_session);
+							switch_core_session_rwunlock(other_session);
 							goto done;
 						}
 						sofia_set_flag(tech_pvt, TFLAG_REINVITED);

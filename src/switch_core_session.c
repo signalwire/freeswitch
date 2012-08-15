@@ -105,11 +105,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_s
 }
 
 
-#ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line)
-#else
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *uuid_str)
-#endif
 {
 	switch_core_session_t *session = NULL;
 
@@ -139,11 +135,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 
 
 
-#ifdef SWITCH_DEBUG_RWLOCKS
+
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_force_locate(const char *uuid_str, const char *file, const char *func, int line)
-#else
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(const char *uuid_str)
-#endif
 {
 	switch_core_session_t *session = NULL;
 	switch_status_t status;
@@ -180,12 +173,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(const c
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_get_partner(switch_core_session_t *session, switch_core_session_t **partner)
+SWITCH_DECLARE(switch_status_t) switch_core_session_perform_get_partner(switch_core_session_t *session, switch_core_session_t **partner,
+																		const char *file, const char *func, int line)
 {
 	const char *uuid;
 
 	if ((uuid = switch_channel_get_partner_uuid(session->channel))) {
-		if ((*partner = switch_core_session_locate(uuid))) {
+		if ((*partner = switch_core_session_perform_locate(uuid, file, func, line))) {
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
