@@ -807,6 +807,8 @@ struct ftdm_memory_handler {
 #define FIO_CONFIGURE_SPAN_SIGNALING_ARGS (ftdm_span_t *span, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *ftdm_parameters)
 #define FIO_SIG_UNLOAD_ARGS (void)
 #define FIO_API_ARGS (ftdm_stream_handle_t *stream, const char *data)
+#define FIO_SPAN_START_ARGS (ftdm_span_t *span)
+#define FIO_SPAN_STOP_ARGS (ftdm_span_t *span)
 
 /*! \brief FreeTDM I/O layer interface function typedefs
  * You don't need these unless your implementing an I/O interface module (most users don't) */
@@ -853,6 +855,8 @@ typedef ftdm_status_t (*fio_configure_span_signaling_t) FIO_CONFIGURE_SPAN_SIGNA
 typedef ftdm_status_t (*fio_io_unload_t) FIO_IO_UNLOAD_ARGS ;
 typedef ftdm_status_t (*fio_sig_unload_t) FIO_SIG_UNLOAD_ARGS ;
 typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
+typedef ftdm_status_t (*fio_span_start_t) FIO_SPAN_START_ARGS ;
+typedef ftdm_status_t (*fio_span_stop_t) FIO_SPAN_STOP_ARGS ;
 
 
 /*! \brief FreeTDM I/O layer interface function prototype wrapper macros
@@ -887,6 +891,8 @@ typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
 #define FIO_IO_UNLOAD_FUNCTION(name) ftdm_status_t name FIO_IO_UNLOAD_ARGS
 #define FIO_SIG_UNLOAD_FUNCTION(name) ftdm_status_t name FIO_SIG_UNLOAD_ARGS
 #define FIO_API_FUNCTION(name) ftdm_status_t name FIO_API_ARGS
+#define FIO_SPAN_START_FUNCTION(name) ftdm_status_t name FIO_SPAN_START_ARGS
+#define FIO_SPAN_STOP_FUNCTION(name) ftdm_status_t name FIO_SPAN_STOP_ARGS
 
 /*! \brief FreeTDM I/O layer function prototype wrapper macros
  * You don't need these unless your implementing an I/O interface module (most users don't) */
@@ -907,6 +913,8 @@ struct ftdm_io_interface {
 	fio_span_next_event_t next_event; /*!< Retrieve an event from the span */
 	fio_channel_next_event_t channel_next_event; /*!< Retrieve an event from channel */
 	fio_api_t api; /*!< Execute a text command */
+	fio_span_start_t span_start; /*!< Start span I/O */
+	fio_span_stop_t span_stop; /*!< Stop span I/O */
 };
 
 /*! \brief FreeTDM supported I/O codecs */
