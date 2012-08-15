@@ -203,7 +203,7 @@ done:
     }
     switch_event_destroy(&var_event);
 
-    return SWITCH_STATUS_SUCCESS;
+    return status;
 }
 
 switch_status_t megaco_prepare_tdm_termination(mg_termination_t *term)
