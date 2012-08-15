@@ -3558,7 +3558,10 @@ static switch_status_t load_config(void)
 			switch_copy_string(SPAN_CONFIG[span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span_id].dialplan));
 			switch_copy_string(SPAN_CONFIG[span_id].type, "Sangoma (SS7)", sizeof(SPAN_CONFIG[span_id].type));
 			ftdm_log(FTDM_LOG_DEBUG, "Configured ss7 FreeTDM span %d with config node %s\n", span_id, configname);
-			ftdm_span_start(span);
+			if(FTDM_SUCCESS != ftdm_span_start(span)){
+				CONFIG_ERROR("Error Starting ss7 FreeTDM span %d\n", span_id);
+				continue;
+			}
 		}
 	}
 
