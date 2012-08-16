@@ -650,6 +650,9 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
     ctdm_private_t *tech_pvt = switch_core_session_get_private(session);
     
     if (!zstr(command)) {
+                
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FreeTDM received %s command \n",command);
+		
 		if (!strcasecmp(command, kPREBUFFER_LEN)) {
 	        const char *szval = switch_event_get_header(event, kPREBUFFER_LEN);
 	        int val = !zstr(szval) ? atoi(szval) : 0;
@@ -664,10 +667,15 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 		} else if (!strcasecmp(command, kECHOCANCEL)) {
 			const char *szval = switch_event_get_header(event, kECHOCANCEL);
 			int enabled = !!switch_true(szval);
+		
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FreeTDM sending echo cancel [%s] command \n",enabled ? "enable" : "disable");
 			
 			if (FTDM_SUCCESS != ftdm_channel_command(tech_pvt->ftdm_channel, enabled ? FTDM_COMMAND_ENABLE_ECHOCANCEL : FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL)) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to %s echo cancellation.\n", enabled ? "enable" : "disable");
 			}
+
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FreeTDM received unknown command [%s] \n",command);
 		}
     }
     

@@ -423,6 +423,9 @@ static void *ftdm_sangoma_ss7_run(ftdm_thread_t * me, void *obj)
 					/**********************************************************************/
 			}
 			check_span_oob_events(ftdmspan);
+
+			/* signal the core that sig events are queued for processing */
+			ftdm_span_trigger_signals(ftdmspan);
 		}
 		goto ftdm_sangoma_ss7_stop;
 	}
