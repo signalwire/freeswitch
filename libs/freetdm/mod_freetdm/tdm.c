@@ -666,7 +666,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 			int enabled = !!switch_true(szval);
 			
 			if (FTDM_SUCCESS != ftdm_channel_command(tech_pvt->ftdm_channel, enabled ? FTDM_COMMAND_ENABLE_ECHOCANCEL : FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL)) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to %s echo cancellation.\n", enabled ? "enable" : "disable");
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to %s echo cancellation.\n", enabled ? "enable" : "disable");
 			}
 		}
     }
