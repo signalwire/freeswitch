@@ -3832,7 +3832,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		if ((sql = switch_mprintf("select proto,sip_user,'%q',sub_to_user,sub_to_host,event,contact,call_id,full_from,"
 								  "full_via,expires,user_agent,accept,profile_name,network_ip"
 								  " from sip_subscriptions where hostname='%q' and profile_name='%q' and "
-								  "event='message-summary' and sip_user='%q' "
+								  "event='message-summary' and sub_to_user='%q' "
 								  "and (sip_host='%q' or presence_hosts like '%%%q%%')", 
 								  to_host, mod_sofia_globals.hostname, profile->name,
 								  to_user, to_host, to_host))) {
