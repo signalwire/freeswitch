@@ -336,7 +336,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
 	int silly = 0;
-	uint32_t new_loops = 60000;
+	uint32_t new_loops = 5000;
 
 	/*
 	   Life of the channel. you have channel and pool in your session
