@@ -2147,7 +2147,7 @@ nua_session_server_init(nua_server_request_t *sr)
 		if (request->sip_multipart) {
 			mp = request->sip_multipart;
 		} else {
-			mp = msg_multipart_parse(msg_home(msg),
+			mp = msg_multipart_parse(nua_handle_home(nh),
 									 request->sip_content_type,
 									 (sip_payload_t *)request->sip_payload);
 			request->sip_multipart = mp;
@@ -2162,13 +2162,13 @@ nua_session_server_init(nua_server_request_t *sr)
 					mpp->mp_payload && mpp->mp_payload->pl_data && 
 					su_casenmatch(mpp->mp_content_type->c_type, "application/sdp", 15)) {
 
-					request->sip_content_type = msg_content_type_dup(msg_home(msg), mpp->mp_content_type);
+					request->sip_content_type = msg_content_type_dup(nua_handle_home(nh), mpp->mp_content_type);
 					
 					if (request->sip_content_length) {
 						request->sip_content_length->l_length = mpp->mp_payload->pl_len;
 					}
 					
-					request->sip_payload->pl_data = su_strdup(msg_home(msg), mpp->mp_payload->pl_data);
+					request->sip_payload->pl_data = su_strdup(nua_handle_home(nh), mpp->mp_payload->pl_data);
 					request->sip_payload->pl_len = mpp->mp_payload->pl_len;
 
 					sdp++;

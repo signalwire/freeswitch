@@ -1260,6 +1260,11 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_endpoint_interface_t *endpoint_interface = (*session)->endpoint_interface;
 	int i;
 
+	if (switch_core_session_running(*session) && !switch_test_flag((*session), SSF_DESTROYABLE)) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(*session), SWITCH_LOG_ERROR,
+						  "Cowardly ignoring an attempt to call destroy on a running session.\n");
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(*session), SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n",
 					  switch_channel_get_name((*session)->channel), switch_channel_state_name(switch_channel_get_state((*session)->channel)));
 
@@ -1440,6 +1445,8 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Session %" SWITCH_SIZE_T_FMT " (%s) Ended\n",
 					  session->id, switch_channel_get_name(session->channel));
+
+	switch_set_flag(session, SSF_DESTROYABLE);
 	switch_core_session_destroy(&session);
 	return NULL;
 }
@@ -1454,6 +1461,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_se
 	switch_threadattr_detach_set(thd_attr, 1);
 
 	if (switch_test_flag(session, SSF_THREAD_RUNNING) || switch_test_flag(session, SSF_THREAD_STARTED)) {
+		status = SWITCH_STATUS_INUSE;
 		goto end;
 	}
 
