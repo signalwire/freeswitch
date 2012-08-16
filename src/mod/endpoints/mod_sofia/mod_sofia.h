@@ -154,7 +154,6 @@ typedef struct sofia_dispatch_event_s {
 	int save;
 	switch_core_session_t *session;
 	switch_memory_pool_t *pool;
-	struct sofia_dispatch_event_s *next;
 } sofia_dispatch_event_t;
 
 struct sofia_private {
@@ -167,7 +166,6 @@ struct sofia_private {
 	int is_call;
 	int is_static;
 	sofia_dispatch_event_t *de;
-	sofia_dispatch_event_t *deq;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}

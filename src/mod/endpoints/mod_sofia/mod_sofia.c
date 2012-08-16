@@ -429,10 +429,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		gateway_ptr = sofia_reg_find_gateway(gateway_name);
 	}
 
-	if (!tech_pvt) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
 	rec = sofia_test_flag(tech_pvt, TFLAG_RECOVERING);

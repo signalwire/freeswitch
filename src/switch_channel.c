@@ -576,15 +576,10 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 	while (switch_queue_trypop(channel->dtmf_log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		switch_safe_free(pop);
 	}
-
-	if (channel->private_hash) {
-		switch_core_hash_destroy(&channel->private_hash);
-	}
-
+	switch_core_hash_destroy(&channel->private_hash);
 	if (channel->app_flag_hash) {
 		switch_core_hash_destroy(&channel->app_flag_hash);
 	}
-
 	switch_mutex_lock(channel->profile_mutex);
 	switch_event_destroy(&channel->variables);
 	switch_event_destroy(&channel->api_list);
