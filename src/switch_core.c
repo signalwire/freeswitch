@@ -1914,17 +1914,21 @@ SWITCH_DECLARE(const char *) switch_core_banner(void)
 {
 
 	return ("\n"
-			"   _____              ______        _____ _____ ____ _   _  \n"
-			"  |  ___| __ ___  ___/ ___\\ \\      / /_ _|_   _/ ___| | | | \n"
-			"  | |_ | '__/ _ \\/ _ \\___ \\\\ \\ /\\ / / | |  | || |   | |_| | \n"
-			"  |  _|| | |  __/  __/___) |\\ V  V /  | |  | || |___|  _  | \n"
-			"  |_|  |_|  \\___|\\___|____/  \\_/\\_/  |___| |_| \\____|_| |_| \n"
+			".=============================================================.\n"
+			"|   _____              ______        _____ _____ ____ _   _   |\n"
+			"|  |  ___| __ ___  ___/ ___\\ \\      / /_ _|_   _/ ___| | | |  |\n"
+			"|  | |_ | '__/ _ \\/ _ \\___ \\\\ \\ /\\ / / | |  | || |   | |_| |  |\n"
+			"|  |  _|| | |  __/  __/___) |\\ V  V /  | |  | || |___|  _  |  |\n"
+			"|  |_|  |_|  \\___|\\___|____/  \\_/\\_/  |___| |_| \\____|_| |_|  |\n"
+			"|                                                             |\n"
+			".=============================================================."
 			"\n"
-			"************************************************************\n"
-			"* Anthony Minessale II, Michael Jerris, Brian West, Others *\n"
-			"* FreeSWITCH (http://www.freeswitch.org)                   *\n"
-			"* Paypal Donations Appreciated: paypal@freeswitch.org      *\n"
-			"* Brought to you by ClueCon http://www.cluecon.com/        *\n" "************************************************************\n" 
+
+			"|   Anthony Minessale II, Michael Jerris, Brian West, Others  |\n"
+			"|   FreeSWITCH (http://www.freeswitch.org)                    |\n"
+			"|   Paypal Donations Appreciated: paypal@freeswitch.org       |\n"
+			"|   Brought to you by ClueCon http://www.cluecon.com/         |\n" 
+			".=============================================================.\n" 
 			"\n");
 }
 
@@ -1969,7 +1973,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		switch_event_fire(&event);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s", switch_core_banner(), cc);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s%s%s%s\n\n", 
+					  SWITCH_SEQ_DEFAULT_COLOR,
+					  SWITCH_SEQ_FYELLOW, SWITCH_SEQ_BBLUE,
+					  switch_core_banner(), 
+					  cc, SWITCH_SEQ_DEFAULT_COLOR);
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,

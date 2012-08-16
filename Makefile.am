@@ -659,7 +659,7 @@ cluecon:
 	@clear
 	@echo Thank you for updating. This is going to take a while so relax.
 	@echo Now would be a good time to register for ClueCon!
-	@cat cluecon.tmpl
+	@cat cluecon2.tmpl
 	@echo
 	@echo http://www.cluecon.com
 	@sleep 5
