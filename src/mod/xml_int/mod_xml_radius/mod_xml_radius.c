@@ -34,7 +34,6 @@
 static struct {
 	switch_memory_pool_t *pool;
 	switch_xml_t auth_invite_configs;
-	switch_xml_t auth_reg_configs;
 	switch_xml_t auth_app_configs;
 	switch_xml_t acct_start_configs;
 	switch_xml_t acct_end_configs;
@@ -150,42 +149,7 @@ switch_status_t do_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'auth_invite' section in config file.\n");		
 	}
 	
-	serv = timeout = deadtime = retries = dict = seq = 0;
-	if ((tmp = switch_xml_dup(switch_xml_child(cfg, "auth_reg"))) != NULL ) {
-		if ( (server = switch_xml_child(tmp, "connection")) != NULL) {
-				for (param = switch_xml_child(server, "param"); param; param = param->next) {
-					char *var = (char *) switch_xml_attr_soft(param, "name");
-					if ( strncmp(var, "authserver", 10) == 0 ) {
-						serv = 1;
-					} else if ( strncmp(var, "radius_timeout", 14) == 0 ) {
-						timeout = 1;
-					} else if ( strncmp(var, "radius_deadtime", 15) == 0 ) {
-						deadtime = 1;
-					} else if ( strncmp(var, "radius_retries", 14) == 0 ) {
-						retries = 1;
-					} else if ( strncmp(var, "dictionary", 10) == 0 ) {
-						dict = 1;
-					} else if ( strncmp(var, "seqfile", 7) == 0 ) {
-						seq = 1;
-					}
-				}
-				
-				if ( serv && timeout && deadtime && retries && dict && seq ) {
-					globals.auth_reg_configs = tmp;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing a require section for radius connections\n");
-					goto err;
-				}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find 'connection' section for auth_invite\n");
-			goto err;
-		}		
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'auth_invite' section in config file.\n");		
-	}
-	
-	serv = timeout = deadtime = retries = dict = seq = 0;
-	if ((tmp = switch_xml_dup(switch_xml_child(cfg, "auth_app"))) != NULL ) {
+	if ((tmp = switch_xml_dup(switch_xml_child(cfg, "auth_app"))) == NULL ) {
 		if ( (server = switch_xml_child(tmp, "connection")) != NULL) {
 				for (param = switch_xml_child(server, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -218,8 +182,7 @@ switch_status_t do_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'auth_app' section in config file.\n");		
 	}
 	
-	serv = timeout = deadtime = retries = dict = seq = 0;
-	if (( tmp = switch_xml_dup(switch_xml_child(cfg, "acct_start"))) != NULL ) {
+	if (( tmp = switch_xml_dup(switch_xml_child(cfg, "acct_start"))) == NULL ) {
 		if ( (server = switch_xml_child(tmp, "connection")) != NULL) {
 				for (param = switch_xml_child(server, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -252,8 +215,7 @@ switch_status_t do_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'acct_start' section in config file.\n");		
 	}
 	
-	serv = timeout = deadtime = retries = dict = seq = 0;
-	if (( tmp = switch_xml_dup(switch_xml_child(cfg, "acct_end"))) != NULL ) {
+	if (( tmp = switch_xml_dup(switch_xml_child(cfg, "acct_end"))) == NULL ) {
 		if ( (server = switch_xml_child(tmp, "connection")) != NULL) {
 				for (param = switch_xml_child(server, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -319,11 +281,8 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 		char *var = (char *) switch_xml_attr(param, "name");
 		char *vend = (char *) switch_xml_attr(param, "vendor");
 		char *variable = (char *) switch_xml_attr(param, "variable");
-		char *variable_secondary = (char *) switch_xml_attr(param, "variable_secondary");
-		char *val_default = (char *) switch_xml_attr(param, "default");
 		char *format = (char *) switch_xml_attr(param, "format");
-		char *other_leg = (char *) switch_xml_attr(param, "other_leg");
-
+		
 		attribute = rc_dict_findattr(handle, var);
 		
 		if ( attribute == NULL ) {
@@ -416,36 +375,8 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					}			
 					
 				} else {
-					if ( format == NULL ) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing format attribute for %s variable\n", variable);
-						goto err;
-					}
-
 					if ( attribute->type == 0 ) {
-						const char *val = NULL;
-						
-						if ( other_leg ) {
-							val = switch_channel_get_variable_partner(channel, variable);
-							if ( val == NULL && variable_secondary != NULL) {
-								val = switch_channel_get_variable_partner(channel, variable_secondary);
-							}
-						} else {
-							val = switch_channel_get_variable(channel, variable);
-							if ( val == NULL && variable_secondary != NULL) {
-								val = switch_channel_get_variable(channel, variable_secondary);
-							}
-						}
-						
-						if ( val == NULL && val_default != NULL) {
-							av_value = switch_mprintf(format, val_default);							
-						} else {
-							av_value = switch_mprintf(format, val);
-						}
-						
-						if ( GLOBAL_DEBUG ) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: value: %s\n", (char *) av_value);
-						}
-				
+						av_value = switch_mprintf(format, switch_channel_get_variable(channel, variable));
 						if (rc_avpair_add(handle, send, attr_num, av_value, -1, vend_num) == NULL) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option with val '%s' to handle\n", (char *) av_value);
 							goto err;
@@ -556,110 +487,13 @@ switch_xml_t mod_xml_radius_auth_invite(switch_event_t *params) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: starting invite authentication\n");
 	}
 	
-	if ( mod_xml_radius_new_handle(&new_handle, globals.auth_invite_configs) != SWITCH_STATUS_SUCCESS ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load radius handle\n");
-		goto err;		
-	}
+	mod_xml_radius_new_handle(&new_handle, globals.auth_invite_configs);
 
 	if ( new_handle == NULL ) {
 		goto err;
 	}
 	
 	if ((fields = switch_xml_child(globals.auth_invite_configs, "fields")) == NULL ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find 'fields' section in config file.\n");		
-		goto err;
-	}
-	
-	if ( mod_xml_radius_add_params(NULL, params, new_handle, &send, fields) != SWITCH_STATUS_SUCCESS ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to add params to rc_handle\n");		
-		goto err;
-	}
-	
-	if (rc_avpair_add(new_handle, &send, PW_SERVICE_TYPE, &service, -1, 0) == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option to handle\n");
-		goto err;
-	}
-	
-	result = rc_auth(new_handle, 0, send, &recv, msg);
-	
-	if ( GLOBAL_DEBUG ){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: result(RC=%d) %s \n", result, msg);
-	}
-	
-	if ( result != 0 ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: Failed to authenticate\n");
-		goto err;
-	}
-
-	xml = switch_xml_new("document");
-	switch_xml_set_attr_d(xml, "type", "freeswitch/xml");
-	dir = switch_xml_add_child_d(xml, "section", 0);
-	switch_xml_set_attr_d(dir, "name", "directory");
-	dom = switch_xml_add_child_d(dir, "domain", 0);
-	switch_xml_set_attr_d(dom, "name", switch_event_get_header(params, "domain"));
-	usr = switch_xml_add_child_d(dom, "user", 0);
-	vars = switch_xml_add_child_d(usr, "variables", 0);
-	
-	switch_xml_set_attr_d(usr, "id", switch_event_get_header(params, "user"));
-		
-	service_vp = recv;
-	while (service_vp != NULL) {
-		rc_avpair_tostr(new_handle, service_vp, name, 512, value, 512);
-		if ( GLOBAL_DEBUG )
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "\tattribute (%s)[%s] found in radius packet\n", name, value);
-		var = switch_xml_add_child_d(vars, "variable", param_idx++);
-		strtmp = strdup(name);
-		switch_xml_set_attr_d(var, "name", strtmp);
-		free(strtmp);
-		strtmp = strdup(value);
-		switch_xml_set_attr_d(var, "value", strtmp);
-		free(strtmp);
-		service_vp = service_vp->next;
-	}
-
-	if ( GLOBAL_DEBUG ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XML: %s \n", switch_xml_toxml(xml, 1));
-	}
-	
-	rc_avpair_free(recv);
-	rc_destroy(new_handle);
-	return xml;
- err:
-	if ( recv ) {
-		rc_avpair_free(recv);
-		recv = NULL;
-	}
-	if ( new_handle ) {
-		rc_destroy(new_handle);
-		new_handle = NULL;
-	}
-	
-	return NULL;
-}
-
-switch_xml_t mod_xml_radius_auth_reg(switch_event_t *params) {
-	int result = 0, param_idx = 0;
-	VALUE_PAIR *send = NULL, *recv = NULL, *service_vp = NULL;
-	char msg[512 * 10 + 1] = {0};
-	uint32_t service = PW_AUTHENTICATE_ONLY;
-	rc_handle *new_handle = NULL;
-	switch_xml_t fields, xml, dir, dom, usr, vars, var;
-	char name[512], value[512], *strtmp;
-
-	if (GLOBAL_DEBUG ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: starting registration authentication\n");
-	}
-	
-	if ( mod_xml_radius_new_handle(&new_handle, globals.auth_invite_configs) != SWITCH_STATUS_SUCCESS ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load radius handle\n");
-		goto err;		
-	}
-
-	if ( new_handle == NULL ) {
-		goto err;
-	}
-	
-	if ((fields = switch_xml_child(globals.auth_reg_configs, "fields")) == NULL ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find 'fields' section in config file.\n");		
 		goto err;
 	}
@@ -750,11 +584,9 @@ static switch_xml_t mod_xml_radius_directory_search(const char *section, const c
 	if ( auth_method == NULL) {
 		return NULL;
 	}
-	
+
 	if ( strncmp( "INVITE", auth_method, 6) == 0) {
 		xml = mod_xml_radius_auth_invite(params);
-	} else if ( strncmp( "REGISTER", auth_method, 8) == 0) {
-		xml = mod_xml_radius_auth_reg(params);
 	} else {
 		xml = NULL;
 	}
@@ -790,7 +622,6 @@ switch_status_t mod_xml_radius_check_conditions(switch_channel_t *channel, switc
 			}
 			
 			if ( switch_regex_match( switch_channel_get_variable(channel, channel_var), regex) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Didn't match: %s == %s \n", switch_channel_get_variable(channel, channel_var), regex);
 				all_matched = 0;
 			}
 		}
@@ -812,7 +643,6 @@ switch_status_t mod_xml_radius_accounting_start(switch_core_session_t *session){
 
 	if (GLOBAL_DEBUG ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: starting accounting start\n");
-		switch_core_session_execute_application(session, "info", NULL);
 	}
 
 	/* If there are conditions defined, and none of them pass, then skip this accounting */
@@ -821,10 +651,7 @@ switch_status_t mod_xml_radius_accounting_start(switch_core_session_t *session){
 		goto end;
 	}
 	
-	if ( mod_xml_radius_new_handle(&new_handle, globals.acct_start_configs) != SWITCH_STATUS_SUCCESS ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load radius handle\n");
-		goto end;		
-	}
+	mod_xml_radius_new_handle(&new_handle, globals.acct_start_configs);
 
 	if ((fields = switch_xml_child(globals.acct_start_configs, "fields")) == NULL ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find 'fields' section in config file.\n");		
@@ -873,10 +700,7 @@ switch_status_t mod_xml_radius_accounting_end(switch_core_session_t *session){
 		goto end;
 	}
 	
-	if ( mod_xml_radius_new_handle(&new_handle, globals.acct_end_configs) != SWITCH_STATUS_SUCCESS ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load radius handle\n");
-		goto end;		
-	}
+	mod_xml_radius_new_handle(&new_handle, globals.acct_end_configs);
 
 	if ((fields = switch_xml_child(globals.acct_end_configs, "fields")) == NULL ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find 'fields' section in config file.\n");		
@@ -900,10 +724,8 @@ switch_status_t mod_xml_radius_accounting_end(switch_core_session_t *session){
 	}
 
  end:
-	if ( new_handle) {
-		rc_destroy(new_handle);
-	}
-	
+	rc_destroy(new_handle);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

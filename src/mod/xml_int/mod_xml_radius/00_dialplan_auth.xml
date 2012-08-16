@@ -1,7 +1,7 @@
 <include>
 
   <extension name="auth" continue="true">
-    <condition field="${radius_auth_result}" expression="^$">
+    <condition>
       <action application="radius_auth" inline="true"/>
     </condition>
   </extension>
@@ -18,10 +18,5 @@
     </condition>
   </extension>
 
-  <extension name="originate_leg" continue="true">
-    <condition>
-      <action application="export" data="nolocal:h323-call-origin=originate"/>
-    </condition>
-  </extension>
 </include>
 
