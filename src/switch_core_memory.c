@@ -80,8 +80,8 @@ SWITCH_DECLARE(void *) switch_core_perform_session_alloc(switch_core_session_t *
 
 #ifdef DEBUG_ALLOC
 	if (memory > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Session Allocate %s %d\n", 
-						  apr_pool_tag(session->pool, NULL), (int) memory);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p %p Session Allocate %s %d\n", 
+						  (void *) session->pool, (void *) session, apr_pool_tag(session->pool, NULL), (int) memory);
 #endif
 
 	ptr = apr_palloc(session->pool, memory);
@@ -113,8 +113,8 @@ SWITCH_DECLARE(void *) switch_core_perform_permanent_alloc(switch_size_t memory,
 #endif
 
 #ifdef DEBUG_ALLOC
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Perm Allocate %s %d\n", 
-					  apr_pool_tag(memory_manager.memory_pool, NULL), (int) memory);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Perm Allocate %s %d\n", 
+					  (void *)memory_manager.memory_pool, apr_pool_tag(memory_manager.memory_pool, NULL), (int) memory);
 #endif
 
 	ptr = apr_palloc(memory_manager.memory_pool, memory);
@@ -155,8 +155,8 @@ SWITCH_DECLARE(char *) switch_core_perform_permanent_strdup(const char *todup, c
 	switch_assert(duped != NULL);
 
 #ifdef DEBUG_ALLOC
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Perm Allocate %s %d\n", 
-					  apr_pool_tag(memory_manager.memory_pool, NULL), (int) len);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Perm Allocate %s %d\n", 
+					  (void *) memory_manager.memory_pool, apr_pool_tag(memory_manager.memory_pool, NULL), (int) len);
 #endif
 
 #ifdef LOCK_MORE
@@ -248,8 +248,8 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 #ifdef DEBUG_ALLOC
 	len = strlen(todup);
 	if (len > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Sess Strdup Allocate %s %ld\n", 
-						  apr_pool_tag(session->pool, NULL), strlen(todup));
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p %p Sess Strdup Allocate %s %ld\n", 
+						  (void *) session->pool, (void *)session, apr_pool_tag(session->pool, NULL), strlen(todup));
 #endif
 
 	duped = apr_pstrdup(session->pool, todup);
@@ -287,8 +287,8 @@ SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, co
 
 #ifdef DEBUG_ALLOC
 	if (len > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Core Strdup Allocate %s %d\n", 
-						  apr_pool_tag(pool, NULL), (int)len);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Core Strdup Allocate %s %d\n", 
+						  (void *) pool, apr_pool_tag(pool, NULL), (int)len);
 #endif
 
 	duped = apr_pstrmemdup(pool, todup, len);
@@ -400,7 +400,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 	apr_pool_tag(*pool, tmp);
 
 #ifdef DEBUG_ALLOC2
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "New Pool %s\n", apr_pool_tag(*pool, NULL));
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p New Pool %s\n", (void *) *pool, apr_pool_tag(*pool, NULL));
 #endif
 
 
@@ -416,7 +416,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 	switch_assert(pool != NULL);
 
 #ifdef DEBUG_ALLOC2
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Free Pool %s\n", apr_pool_tag(*pool, NULL));
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Free Pool %s\n", (void *) *pool, apr_pool_tag(*pool, NULL));
 #endif
 
 #ifdef INSTANTLY_DESTROY_POOLS
@@ -458,8 +458,8 @@ SWITCH_DECLARE(void *) switch_core_perform_alloc(switch_memory_pool_t *pool, swi
 
 #ifdef DEBUG_ALLOC
 	if (memory > 500)
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Core Allocate %s %d\n", 
-						  apr_pool_tag(pool, NULL), (int) memory);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Core Allocate %s %d\n", 
+						  (void *) pool, apr_pool_tag(pool, NULL), (int) memory);
 	/*switch_assert(memory < 20000); */
 #endif
 
@@ -525,16 +525,26 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
 #ifdef USE_MEM_LOCK
 				switch_mutex_lock(memory_manager.mem_lock);
 #endif
+
+#ifdef DEBUG_ALLOC
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%p DESTROY POOL\n", (void *) pop);	
+#endif
 				apr_pool_destroy(pop);
 #ifdef USE_MEM_LOCK
 				switch_mutex_unlock(memory_manager.mem_lock);
 #endif
 #else
 				apr_pool_mutex_set(pop, NULL);
+#ifdef DEBUG_ALLOC
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%p DESTROY POOL\n", (void *) pop);	
+#endif
 				apr_pool_clear(pop);
 				if (switch_queue_trypush(memory_manager.pool_recycle_queue, pop) != SWITCH_STATUS_SUCCESS) {
 #ifdef USE_MEM_LOCK
 					switch_mutex_lock(memory_manager.mem_lock);
+#endif
+#ifdef DEBUG_ALLOC
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%p DESTROY POOL\n", (void *) pop);	
 #endif
 					apr_pool_destroy(pop);
 #ifdef USE_MEM_LOCK
