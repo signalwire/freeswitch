@@ -761,6 +761,34 @@ void mg_term_set_pre_buffer_size(mg_termination_t *term, int newval)
     switch_event_destroy(&event);
 }
 
+
+void mg_term_set_ec(mg_termination_t *term, int enable) 
+{
+    switch_event_t *event = NULL, *event2 = NULL;
+    switch_core_session_t *session, *session2;
+    
+    if (!zstr(term->uuid) && (session = switch_core_session_locate(term->uuid))) {
+        switch_event_create(&event, SWITCH_EVENT_CLONE);
+        
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "command", kECHOCANCEL);
+        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, kECHOCANCEL, enable ? "true" : "false");
+    
+        /* Propagate event to bridged session if there is one */
+        if (switch_core_session_get_partner(session, &session2) == SWITCH_STATUS_SUCCESS) {
+            switch_event_dup(&event2, event);
+            switch_core_session_receive_event(session2, &event2);
+            switch_core_session_rwunlock(session2);
+        }
+        
+        switch_core_session_receive_event(session, &event);
+        switch_core_session_rwunlock(session);
+        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sent echo_cancel event to [%s] to [%s]\n", term->uuid, enable ? "enable" : "disable");
+    }
+    
+    switch_event_destroy(&event);
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

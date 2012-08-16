@@ -88,6 +88,7 @@ typedef struct mg_context_s mg_context_t;
 #define kCHAN_ID "chan"
 #define kSPAN_NAME "span_name"
 #define kPREBUFFER_LEN "prebuffer_len"
+#define kECHOCANCEL "echo_cancel"
 
 typedef struct mg_termination_s mg_termination_t;
 
@@ -269,6 +270,7 @@ switch_status_t megaco_profile_destroy(megaco_profile_t **profile);
 uint32_t mg_rtp_request_id(megaco_profile_t *profile);
 void mg_rtp_release_id(megaco_profile_t *profile, uint32_t id);
 void mg_term_set_pre_buffer_size(mg_termination_t *term, int newval);
+void mg_term_set_ec(mg_termination_t *term, int enable);
 
 mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id);
 mg_context_t *megaco_choose_context(megaco_profile_t *profile);

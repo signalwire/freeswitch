@@ -40,6 +40,8 @@ void ctdm_init(switch_loadable_module_interface_t *module_interface);
 #define kCHAN_ID "chan"
 #define kSPAN_NAME "span_name"
 #define kPREBUFFER_LEN "prebuffer_len"
+#define kECHOCANCEL "echo_cancel"
+
 
 static struct {
     switch_memory_pool_t *pool;
@@ -373,6 +375,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set channel pre buffer size.\n");
 		return SWITCH_STATUS_GENERR;        
     }
+
+    if (FTDM_SUCCESS != ftdm_channel_command(tech_pvt->ftdm_channel, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to set enable echo cancellation.\n");
+	}
     
 	switch(codec) {
         case FTDM_CODEC_ULAW:
@@ -476,6 +482,10 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
     ctdm_private_t *tech_pvt = switch_core_session_get_private(session);
     
  	if ((tech_pvt = switch_core_session_get_private(session))) {
+	
+		if (FTDM_SUCCESS != ftdm_channel_command(tech_pvt->ftdm_channel, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to enable echo cancellation.\n");
+		}
         
 		if (tech_pvt->read_codec.implementation) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -639,19 +649,27 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
     const char *command = switch_event_get_header(event, "command");
     ctdm_private_t *tech_pvt = switch_core_session_get_private(session);
     
-    if (!zstr(command) && !strcasecmp(command, kPREBUFFER_LEN)) {
-        const char *szval = switch_event_get_header(event, kPREBUFFER_LEN);
-        int val = !zstr(szval) ? atoi(szval) : 0;
+    if (!zstr(command)) {
+		if (!strcasecmp(command, kPREBUFFER_LEN)) {
+	        const char *szval = switch_event_get_header(event, kPREBUFFER_LEN);
+	        int val = !zstr(szval) ? atoi(szval) : 0;
         
-        if (tech_pvt->prebuffer_len == val) {
-            tech_pvt->prebuffer_len = val;
-            if (FTDM_SUCCESS != ftdm_channel_command(tech_pvt->ftdm_channel, FTDM_COMMAND_SET_PRE_BUFFER_SIZE, &tech_pvt->prebuffer_len)) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set channel pre buffer size.\n");
-                return SWITCH_STATUS_GENERR;        
-            }
-        }
+	        if (tech_pvt->prebuffer_len == val) {
+	            tech_pvt->prebuffer_len = val;
+	            if (FTDM_SUCCESS != ftdm_channel_command(tech_pvt->ftdm_channel, FTDM_COMMAND_SET_PRE_BUFFER_SIZE, &tech_pvt->prebuffer_len)) {
+	                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set channel pre buffer size.\n");
+	                return SWITCH_STATUS_GENERR;        
+	            }
+	        }
+		} else if (!strcasecmp(command, kECHOCANCEL)) {
+			const char *szval = switch_event_get_header(event, kECHOCANCEL);
+			int enabled = !!switch_true(szval);
+			
+			if (FTDM_SUCCESS != ftdm_channel_command(tech_pvt->ftdm_channel, enabled ? FTDM_COMMAND_ENABLE_ECHOCANCEL : FTDM_COMMAND_DISABLE_ECHOCANCEL, NULL)) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to %s echo cancellation.\n", enable ? "enable" : "disable");
+			}
+		}
     }
-    
     
     return SWITCH_STATUS_SUCCESS;
 }

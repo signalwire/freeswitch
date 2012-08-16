@@ -35,13 +35,17 @@ SWITCH_STANDARD_APP(mg_notify_function)
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "mg_notify called on a non-supported channel.\n");
         return;
     }
-    
+
     if (!strcmp(data, "cng")) {
         mg_send_t38_cng_notify(term->profile, term->name);
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent CNG notify\n");
+		/* Disable echo cancellation */
+		mg_term_set_ec(term, 0);
     } else if (!strcmp(data, "ced")) {
-	mg_send_t38_ans_notify(term->profile, term->name);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent CED notify\n");
+		mg_send_t38_ans_notify(term->profile, term->name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent CED notify\n");
+		/* Disable echo cancellation */
+		mg_term_set_ec(term, 0);
     }
 }
 
