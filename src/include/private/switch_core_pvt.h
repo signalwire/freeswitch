@@ -98,7 +98,8 @@ typedef enum {
 	SSF_READ_TRANSCODE = (1 << 5),
 	SSF_WRITE_TRANSCODE = (1 << 6),
 	SSF_READ_CODEC_RESET = (1 << 7),
-	SSF_WRITE_CODEC_RESET = (1 << 8)
+	SSF_WRITE_CODEC_RESET = (1 << 8),
+	SSF_DESTROYABLE = (1 << 9)
 } switch_session_flag_t;
 
 
