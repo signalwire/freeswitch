@@ -435,13 +435,15 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
     
     if (ctx->terminations[0] && ctx->terminations[1]) {
         if (zstr(ctx->terminations[0]->uuid)) {
-            status = megaco_activate_termination(ctx->terminations[0]);
+            if(SWITCH_STATUS_SUCCESS != (status = megaco_activate_termination(ctx->terminations[0]))){
+                return status;
+            }
         }
         if (zstr(ctx->terminations[1]->uuid)) {
-            status = megaco_activate_termination(ctx->terminations[1]);
+            if(SWITCH_STATUS_SUCCESS != (status = megaco_activate_termination(ctx->terminations[1]))){
+                return status;
+            }
         }
-
-	if(SWITCH_STATUS_SUCCESS != status) return status;
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bridging: %s (%s) <> %s (%s)\n", 
                           ctx->terminations[0]->name, ctx->terminations[0]->uuid,
