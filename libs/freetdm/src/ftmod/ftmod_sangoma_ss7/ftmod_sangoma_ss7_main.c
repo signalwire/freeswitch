@@ -2552,6 +2552,11 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_ss7_span_config)
 		return FTDM_FAIL;
 	}
 
+	if(SNG_SS7_OPR_MODE_M2UA_SG == g_ftdm_operating_mode){
+		ftdm_log (FTDM_LOG_INFO, "FreeTDM running as M2UA_SG mode, Setting Span type to FTDM_SIGTYPE_M2UA\n"); 
+		span->signal_type = FTDM_SIGTYPE_M2UA;
+	}
+
 	if (ft_to_sngss7_cfg_all()) {	/* configure libsngss7 */
 		ftdm_log (FTDM_LOG_CRIT, "Failed to configure LibSngSS7!\n");
 		ftdm_sleep (100);
