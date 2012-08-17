@@ -969,25 +969,6 @@ static void our_sofia_event_callback(nua_event_t event,
 	int locked = 0;
 	int check_destroy = 1;
 
-	if (sofia_private && sofia_private->is_call) {
-		sofia_dispatch_event_t *qde = NULL;
-
-		switch_mutex_lock(profile->flag_mutex);
-		if (sofia_private->de) {
-			qde = sofia_private->de;
-			sofia_private->de = NULL;
-		}
-		switch_mutex_unlock(profile->flag_mutex);
-
-		if (qde) {
-			sofia_process_dispatch_event(&qde);
-		}
-	}
-
-	if (sofia_private && (sofia_private->destroy_me == 12)) {
-		return;
-	}
-
 	profile->last_sip_event = switch_time_now();
 
 	/* sofia_private will be == &mod_sofia_globals.keep_private whenever a request is done with a new handle that has to be 
@@ -1532,7 +1513,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 {
-	sofia_dispatch_event_t *de = *dep, *deq = NULL;
+	sofia_dispatch_event_t *de = *dep;
 	nua_handle_t *nh = de->nh;
 	nua_t *nua = de->nua;
 	sofia_profile_t *profile = de->profile;
@@ -1547,37 +1528,8 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 
 	switch_mutex_lock(profile->flag_mutex);
 	profile->queued_events--;
-	if (sofia_private && sofia_private->is_call && sofia_private->deq) {
-		deq = sofia_private->deq;
-		sofia_private->deq = NULL;
-	}
 	switch_mutex_unlock(profile->flag_mutex);
 
-	if (deq) {
-		for (;;) {
-			switch_mutex_lock(profile->flag_mutex);
-			if ((de = deq)) {
-				deq = deq->next;
-				de->next = NULL;
-			}
-			switch_mutex_unlock(profile->flag_mutex);
-
-			if (!de) {
-				break;
-			}
-
-			our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
-									 de->nh, sofia_private, de->sip, de, (tagi_t *) de->data->e_tags);
-			
-			nua_destroy_event(de->event);	
-			su_free(nh->nh_home, de);
-			nua_handle_unref(nh);
-			nua_stack_unref(nua);
-			
-		}
-	}
-
-	
 	nua_handle_unref(nh);
 	nua_stack_unref(nua);
 	switch_os_yield();
@@ -1741,47 +1693,27 @@ void sofia_event_callback(nua_event_t event,
 		memset(sofia_private, 0, sizeof(*sofia_private));
 		sofia_private->is_call++;
 		sofia_private->is_static++;
-		switch_mutex_lock(profile->flag_mutex);
-		sofia_private->de = de;
-		switch_mutex_unlock(profile->flag_mutex);
 		nua_handle_bind(nh, sofia_private);
+		sofia_process_dispatch_event(&de);
 		return;
 	}
 	
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
 		switch_core_session_t *session;
 
-		if (zstr(sofia_private->uuid)) {
-			if (sofia_private->is_call && !sofia_private->de) {
-				sofia_dispatch_event_t *dep;
-
-				switch_mutex_lock(profile->flag_mutex);
-
-				if (!sofia_private->deq) {
-					sofia_private->deq = de;
-				} else {
-					for (dep = sofia_private->deq; dep && dep->next; dep = dep->next);
-					dep->next = de;
-				}
-
-				switch_mutex_unlock(profile->flag_mutex);
-				return;
+		if ((session = switch_core_session_locate(sofia_private->uuid))) {
+			if (switch_core_session_running(session)) {
+				switch_core_session_queue_signal_data(session, de);
+			} else {
+				switch_core_session_message_t msg = { 0 };
+				msg.message_id = SWITCH_MESSAGE_INDICATE_SIGNAL_DATA;
+				msg.from = __FILE__;
+				msg.pointer_arg = de;	
+				
+				switch_core_session_receive_message(session, &msg);
 			}
-		} else {
-			if ((session = switch_core_session_locate(sofia_private->uuid))) {
-				if (switch_core_session_running(session)) {
-					switch_core_session_queue_signal_data(session, de);
-				} else {
-					switch_core_session_message_t msg = { 0 };
-					msg.message_id = SWITCH_MESSAGE_INDICATE_SIGNAL_DATA;
-					msg.from = __FILE__;
-					msg.pointer_arg = de;	
-
-					switch_core_session_receive_message(session, &msg);
-				}
-				switch_core_session_rwunlock(session);
-				return;
-			}
+			switch_core_session_rwunlock(session);
+			return;
 		}
 	}
 	

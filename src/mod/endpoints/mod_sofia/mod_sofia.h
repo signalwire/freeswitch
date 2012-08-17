@@ -166,8 +166,6 @@ struct sofia_private {
 	int destroy_me;
 	int is_call;
 	int is_static;
-	sofia_dispatch_event_t *de;
-	sofia_dispatch_event_t *deq;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
