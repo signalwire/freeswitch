@@ -84,6 +84,8 @@ TAGS
 /Debug/
 /bin/
 /Release/
+/ipch/
+/*.log
 
 /build/config/compile
 /build/config/config.guess

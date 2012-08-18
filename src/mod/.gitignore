@@ -28,6 +28,7 @@
 /asr_tts/mod_unimrcp/Makefile
 /asr_tts/mod_unimrcp/Makefile.in
 /asr_tts/mod_unimrcp/mod_unimrcp.log
+/asr_tts/mod_flite/*/*/mod_flite_manifest.rc
 /dialplans/mod_dialplan_asterisk/Makefile
 /dialplans/mod_dialplan_xml/Makefile
 /endpoints/mod_portaudio/Makefile
@@ -42,6 +43,8 @@
 /endpoints/mod_sofia/Makefile
 /endpoints/mod_sofia/Makefile.in
 /endpoints/mod_sofia/mod_sofia.log
+/endpoints/mod_html5/Makefile
+/endpoints/mod_html5/Makefile.in
 /event_handlers/mod_erlang_event/Makefile
 /event_handlers/mod_event_socket/Makefile
 /formats/mod_native_file/Makefile
