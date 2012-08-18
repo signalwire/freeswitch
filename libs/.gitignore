@@ -21,6 +21,8 @@ opal
 
 /*.tar.*
 
+/*/*.dSYM/
+
 /apr/apr-1-config
 /apr/apr.exp
 /apr/build/apr_rules.mk
@@ -581,6 +583,7 @@ opal
 /spandsp/test-data/Makefile.in
 /spandsp/tests/Makefile
 /spandsp/tests/Makefile.in
+/spandsp/src/make_cielab_luts
 /speex/config.h
 /speex/include/Makefile
 /speex/include/Makefile.in
