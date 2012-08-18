@@ -925,6 +925,9 @@ static void print_banner(FILE *stream)
 {
 #include <cc.h>
 
+#ifdef WIN32
+	fprintf(stream, "%s%s\n%s\n", banner, cc, inf);
+#else
 	fprintf(stream,
 			"%s%s%s%s%s%s\n%s\n", 
 			ESL_SEQ_DEFAULT_COLOR,
@@ -932,8 +935,6 @@ static void print_banner(FILE *stream)
 			banner,
 			cc, ESL_SEQ_DEFAULT_COLOR, inf);
 
-
-#ifndef WIN32
 	fprintf(stream, "%s", output_text_color);
 #endif
 }

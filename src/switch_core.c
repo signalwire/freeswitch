@@ -1973,11 +1973,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		switch_event_fire(&event);
 	}
 
+#ifdef WIN32
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s\n\n", switch_core_banner(), cc);
+#else
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s%s%s%s\n\n", 
 					  SWITCH_SEQ_DEFAULT_COLOR,
 					  SWITCH_SEQ_FYELLOW, SWITCH_SEQ_BBLUE,
 					  switch_core_banner(), 
 					  cc, SWITCH_SEQ_DEFAULT_COLOR);
+#endif
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
