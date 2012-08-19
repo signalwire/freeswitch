@@ -1,0 +1,50 @@
+--- ../../../../libs/freeradius-client-1.1.6/lib/config.c	2012-08-18 22:13:13.000000000 -0700
++++ ./config.c	2012-08-18 22:14:08.000000000 -0700
+@@ -301,6 +301,8 @@
+ 	int i;
+ 	SERVER *authservers;
+ 	SERVER *acctservers;
++	OPTION *acct;
++	OPTION *auth;
+ 
+         rh->config_options = malloc(sizeof(config_options_default));
+         if (rh->config_options == NULL) 
+@@ -311,8 +313,8 @@
+         }
+         memcpy(rh->config_options, &config_options_default, sizeof(config_options_default));
+ 
+-        authservers = rc_conf_srv(rh, "authserver"); 
+-	acctservers = rc_conf_srv(rh, "acctserver");
++	acct = find_option(rh, "acctserver", OT_ANY);
++	auth = find_option(rh, "authserver", OT_ANY);
+ 	authservers = malloc(sizeof(SERVER));
+ 	acctservers = malloc(sizeof(SERVER));
+ 
+@@ -334,6 +336,8 @@
+ 		acctservers->name[i] = NULL;
+ 		acctservers->secret[i] = NULL;
+ 	} 
++	acct->val = acctservers;
++	auth->val = authservers;
+ 	return rh;
+ }
+ 
+@@ -894,11 +898,15 @@
+ 			continue;
+ 		if (rh->config_options[i].type == OT_SRV) {
+ 		        serv = (SERVER *)rh->config_options[i].val;
+-			for (j = 0; j < serv->max; j++)
++			for (j = 0; j < serv->max; j++) {
+ 				free(serv->name[j]);
+-			free(serv);
+-		} else {
++				free(serv->secret[j]);
++			}
+ 			free(rh->config_options[i].val);
++			rh->config_options[i].val = NULL;
++			
++		} else {
++		  free(rh->config_options[i].val);
+ 		}
+ 	}
+ 	free(rh->config_options);

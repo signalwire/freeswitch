@@ -50,15 +50,11 @@ static int GLOBAL_DEBUG = 0;
 switch_status_t mod_xml_radius_new_handle(rc_handle **new_handle, switch_xml_t xml) {
 	switch_xml_t server, param;
 
-	*new_handle = rc_new();
-	
-	if ( *new_handle == NULL ) {
+	if ( (*new_handle = rc_new()) == NULL ) {
 		goto err;
 	}
 
-	*new_handle = rc_config_init(*new_handle);
-
-	if ( *new_handle == NULL ) {
+	if ( rc_config_init(*new_handle) == NULL ) {
 		goto err;
 	}
 	
@@ -103,12 +99,16 @@ switch_status_t do_config()
 	char *conf = "xml_radius.conf";
 	switch_xml_t xml, cfg, tmp, server, param;
 	int serv, timeout, deadtime, retries, dict, seq;
+
 	/* TODO:
-	   1. read new auth_invite_configs
-	   2. Create replacement xml and vas objects
-	   3. Get the write lock. 
-	   4. Replace xml and vas objects
-	   5. unlock and return.
+	   1. Fix read/write lock on configs
+	      a. read new configs
+	      b. Create replacement xml and vas objects
+		  c. Get the write lock.
+		  d. Replace xml and vas objects
+		  e. unlock and return.
+	   2. Don't manually check for proper configs. Use the function in the client library
+	   3. Add api that would reload configs
 	 */
 
 	if (!(xml = switch_xml_open_cfg(conf, &cfg, NULL))) {
@@ -288,6 +288,7 @@ switch_status_t do_config()
 	
 	if ( xml ) {
 		switch_xml_free(xml);
+		xml = NULL;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -296,6 +297,7 @@ switch_status_t do_config()
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: Configuration error\n");
 	if ( xml ) {
 		switch_xml_free(xml);
+		xml = NULL;
 	}
 	
 	return SWITCH_STATUS_GENERR;
@@ -304,6 +306,7 @@ switch_status_t do_config()
 switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch_event_t *params, rc_handle *handle, VALUE_PAIR **send, switch_xml_t fields) 
 {
 	switch_xml_t param;
+	void *av_value = NULL;
 	
 	if ( (param = switch_xml_child(fields, "param")) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to locate a param under the fields section\n");
@@ -314,7 +317,6 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 		DICT_ATTR *attribute = NULL;
 		DICT_VENDOR *vendor = NULL;
 		int attr_num = 0, vend_num = 0;
-		void *av_value = NULL;
 		
 		char *var = (char *) switch_xml_attr(param, "name");
 		char *vend = (char *) switch_xml_attr(param, "vendor");
@@ -447,14 +449,16 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 						}
 				
 						if (rc_avpair_add(handle, send, attr_num, av_value, -1, vend_num) == NULL) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option with val '%s' to handle\n", (char *) av_value);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+											  "mod_xml_radius: failed to add option with val '%s' to handle\n", (char *) av_value);
 							goto err;
 						}			
 					} else if ( attribute->type == 1 ) {
 						int number = atoi(switch_channel_get_variable(channel, variable));
 						
 						if (rc_avpair_add(handle, send, attr_num, &number, -1, vend_num) == NULL) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option with value '%d' to handle\n", number);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+											  "mod_xml_radius: failed to add option with value '%d' to handle\n", number);
 							goto err;
 						}						
 					}
@@ -486,11 +490,16 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 		}
 		if ( av_value != NULL ) {
 			free(av_value);
+			av_value  = NULL;
 		}
 	}
-
+	
 	return SWITCH_STATUS_SUCCESS;
  err:
+	if ( av_value != NULL ) {
+		free(av_value);
+		av_value  = NULL;
+	}
 	return SWITCH_STATUS_GENERR;
 	
 }
@@ -538,7 +547,14 @@ SWITCH_STANDARD_API(mod_xml_radius_connect_test)
 		rc_avpair_free(recv);
 		recv = NULL;
 	}
-	rc_destroy(new_handle);
+	if ( send ) {
+		rc_avpair_free(send);
+		send = NULL;
+	}
+	if ( new_handle ) {
+		rc_destroy(new_handle);
+		new_handle = NULL;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -621,13 +637,27 @@ switch_xml_t mod_xml_radius_auth_invite(switch_event_t *params) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XML: %s \n", switch_xml_toxml(xml, 1));
 	}
 	
-	rc_avpair_free(recv);
-	rc_destroy(new_handle);
+	if ( recv ) {
+		rc_avpair_free(recv);
+		recv = NULL;
+	}
+	if ( send ) {
+		rc_avpair_free(send);
+		send = NULL;
+	}
+	if ( new_handle ) {
+		rc_destroy(new_handle);
+		new_handle = NULL;
+	}
 	return xml;
  err:
 	if ( recv ) {
 		rc_avpair_free(recv);
 		recv = NULL;
+	}
+	if ( send ) {
+		rc_avpair_free(send);
+		send = NULL;
 	}
 	if ( new_handle ) {
 		rc_destroy(new_handle);
@@ -715,13 +745,28 @@ switch_xml_t mod_xml_radius_auth_reg(switch_event_t *params) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XML: %s \n", switch_xml_toxml(xml, 1));
 	}
 	
-	rc_avpair_free(recv);
-	rc_destroy(new_handle);
+	if ( recv ) {
+		rc_avpair_free(recv);
+		recv = NULL;
+	}
+	if ( send ) {
+		rc_avpair_free(send);
+		send = NULL;
+	}
+	if ( new_handle ) {
+		rc_destroy(new_handle);
+		new_handle = NULL;
+	}
+
 	return xml;
  err:
 	if ( recv ) {
 		rc_avpair_free(recv);
 		recv = NULL;
+	}
+	if ( send ) {
+		rc_avpair_free(send);
+		send = NULL;
 	}
 	if ( new_handle ) {
 		rc_destroy(new_handle);
@@ -848,8 +893,13 @@ switch_status_t mod_xml_radius_accounting_start(switch_core_session_t *session){
 	}
 
  end:
+	if ( send ) {
+		rc_avpair_free(send);
+		send = NULL;
+	}
 	if ( new_handle ) {
 		rc_destroy(new_handle);
+		new_handle = NULL;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -900,8 +950,13 @@ switch_status_t mod_xml_radius_accounting_end(switch_core_session_t *session){
 	}
 
  end:
+	if ( send ) {
+		rc_avpair_free(send);
+		send = NULL;
+	}
 	if ( new_handle) {
 		rc_destroy(new_handle);
+		new_handle = NULL;
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
@@ -910,14 +965,13 @@ switch_status_t mod_xml_radius_accounting_end(switch_core_session_t *session){
 SWITCH_STANDARD_APP(radius_auth_handle)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
 	int result = 0;
 	VALUE_PAIR *send = NULL, *recv = NULL, *service_vp = NULL;
 	char msg[512 * 10 + 1] = {0};
 	uint32_t service = PW_AUTHENTICATE_ONLY;
 	rc_handle *new_handle = NULL;
 	switch_xml_t fields;
-	char name[512], value[512];
+	char name[512], value[512], *temp = NULL;
 
 	if (GLOBAL_DEBUG ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: starting app authentication\n");
@@ -949,8 +1003,10 @@ SWITCH_STANDARD_APP(radius_auth_handle)
 	if ( GLOBAL_DEBUG ){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: result(RC=%d) %s \n", result, msg);
 	}
-	
-	switch_channel_set_variable(channel, "radius_auth_result", switch_mprintf("%d",result));	
+	temp = switch_mprintf("%d",result);	
+	switch_channel_set_variable(channel, "radius_auth_result", temp);
+	free(temp);
+	temp = NULL;
 
 	if ( result != 0 ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: Failed to authenticate\n");
@@ -968,19 +1024,33 @@ SWITCH_STANDARD_APP(radius_auth_handle)
 		service_vp = service_vp->next;
 	}
 
-	rc_avpair_free(recv);
-	rc_destroy(new_handle);
-	return;
- err:
 	if ( recv ) {
 		rc_avpair_free(recv);
 		recv = NULL;
+	}
+	if ( send ) {
+		rc_avpair_free(send);
+		send = NULL;
 	}
 	if ( new_handle ) {
 		rc_destroy(new_handle);
 		new_handle = NULL;
 	}
 	
+	return;
+ err:
+	if ( recv ) {
+		rc_avpair_free(recv);
+		recv = NULL;
+	}
+	if ( send ) {
+		rc_avpair_free(send);
+		send = NULL;
+	}
+	if ( new_handle ) {
+		rc_destroy(new_handle);
+		new_handle = NULL;
+	}
 	return;
 }
 
@@ -1042,6 +1112,18 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_radius_shutdown)
 
 	if ( globals.auth_invite_configs ) {
 		switch_xml_free(globals.auth_invite_configs);
+	}
+	if ( globals.auth_reg_configs ) {
+		switch_xml_free(globals.auth_reg_configs);
+	}
+	if ( globals.auth_app_configs ) {
+		switch_xml_free(globals.auth_app_configs);
+	}
+	if ( globals.acct_start_configs ) {
+		switch_xml_free(globals.acct_start_configs);
+	}
+	if ( globals.acct_end_configs ) {
+		switch_xml_free(globals.acct_end_configs);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
