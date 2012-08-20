@@ -608,6 +608,7 @@ uint32_t mg_rtp_request_id(megaco_profile_t *profile)
     for (; profile->rtpid_next < MG_MAX_RTPID; profile->rtpid_next++) {
         if ((profile->rtpid_bitmap[profile->rtpid_next % 8] & (1 << (profile->rtpid_next / 8))) == 0) {
             profile->rtpid_bitmap[profile->rtpid_next % 8] |= 1 << (profile->rtpid_next / 8);
+            profile->rtpid_next++;
             return profile->rtpid_next;
         }
     }
