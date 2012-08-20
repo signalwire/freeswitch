@@ -2209,7 +2209,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					if (x <= file_sample_len) {
 						main_frame[x] = (int32_t) bptr[x];
 					} else {
-						main_frame[x] = 255;
+						memset(&main_frame[x], 255, sizeof(main_frame[x]));
 					}
 				}
 			}
@@ -3279,7 +3279,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 		/* skip frames that are not actual media or when we are muted or silent */
 		if ((switch_test_flag(member, MFLAG_TALKING) || member->energy_level == 0 || switch_test_flag(member->conference, CFLAG_AUDIO_ALWAYS)) 
-			&& switch_test_flag(member, MFLAG_CAN_SPEAK) &&	!switch_test_flag(member->conference, CFLAG_WAIT_MOD)) {
+			&& switch_test_flag(member, MFLAG_CAN_SPEAK) &&	!switch_test_flag(member->conference, CFLAG_WAIT_MOD) && member->conference->count > 1) {
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;
 			uint32_t datalen;
