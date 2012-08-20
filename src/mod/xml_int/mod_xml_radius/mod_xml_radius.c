@@ -849,7 +849,6 @@ switch_status_t mod_xml_radius_check_conditions(switch_channel_t *channel, switc
 }
 
 switch_status_t mod_xml_radius_accounting_start(switch_core_session_t *session){
-	switch_channel_t *channel = switch_core_session_get_channel(session);
 	VALUE_PAIR *send = NULL;
 	uint32_t service = PW_STATUS_START;
 	rc_handle *new_handle = NULL;
@@ -869,7 +868,7 @@ switch_status_t mod_xml_radius_accounting_start(switch_core_session_t *session){
 	
 	if ( mod_xml_radius_new_handle(&new_handle, globals.acct_start_configs) != SWITCH_STATUS_SUCCESS || new_handle == NULL ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new accounting_start handle for call: %s\n",
-						  swich_channel_get_variable(channel, "uuid"));
+						  switch_channel_get_variable(channel, "uuid"));
 		goto end;		
 	}
 
@@ -927,7 +926,7 @@ switch_status_t mod_xml_radius_accounting_end(switch_core_session_t *session){
 	
 	if ( mod_xml_radius_new_handle(&new_handle, globals.acct_end_configs) != SWITCH_STATUS_SUCCESS || new_handle == NULL ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new accounting_end handle for call: %s\n",
-						  swich_channel_get_variable(channel, "uuid"));
+						  switch_channel_get_variable(channel, "uuid"));
 		goto end;		
 	}
 
@@ -982,7 +981,7 @@ SWITCH_STANDARD_APP(radius_auth_handle)
 
 	if ( mod_xml_radius_new_handle(&new_handle, globals.auth_app_configs) != SWITCH_STATUS_SUCCESS || new_handle == NULL ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new authentication handle for call: %s\n",
-						  swich_channel_get_variable(channel, "uuid"));
+						  switch_channel_get_variable(channel, "uuid"));
 		goto err;
 	}
 	
