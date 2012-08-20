@@ -1102,8 +1102,14 @@ static t38_mode_t request_t38(pvt_t *pvt)
 		enabled = 0;
 	}
 
+
+
 	if (enabled) {
-		t38_options = switch_core_session_alloc(session, sizeof(*t38_options));
+
+        if (!(t38_options = switch_channel_get_private(channel, "_preconfigured_t38_options"))) {
+            t38_options = switch_core_session_alloc(session, sizeof(*t38_options));
+            switch_channel_set_private(channel, "_preconfigured_t38_options", NULL);
+        }
 
 		t38_options->T38MaxBitRate = (pvt->disable_v17) ? 9600 : 14400;
 		t38_options->T38FaxVersion = 0;
