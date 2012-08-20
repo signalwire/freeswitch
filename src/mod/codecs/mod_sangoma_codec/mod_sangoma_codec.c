@@ -578,8 +578,10 @@ static switch_status_t switch_sangoma_encode(switch_codec_t *codec, switch_codec
 			if (sess->encoder.rtp_queue[sess->encoder.queue_rindex].datalen) {
 				/* if there is something where we want to write, we're dropping it */
 				sess->encoder.rxdiscarded++;
+#if 0
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Discarding encoded frame of %d bytes from RTP session %lu, windex = %d, rindex = %d\n", 
 						sess->encoder.rtp_queue[sess->encoder.queue_rindex].datalen, sess->sessid, sess->encoder.queue_windex, sess->encoder.queue_rindex);
+#endif
 				SAFE_INDEX_INC(sess->encoder.rtp_queue, sess->encoder.queue_rindex);
 				sess->encoder.queue_size--;
 			}
@@ -766,8 +768,10 @@ static switch_status_t switch_sangoma_decode(switch_codec_t *codec,	/* codec ses
 			if (sess->decoder.rtp_queue[sess->decoder.queue_rindex].datalen) {
 				/* if there is something where we want to write, we're dropping it */
 				sess->decoder.rxdiscarded++;
+#if 0
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Discarding decoded frame of %d bytes from RTP session %lu, windex = %d, rindex = %d\n", 
 						sess->decoder.rtp_queue[sess->decoder.queue_rindex].datalen, sess->sessid, sess->decoder.queue_windex, sess->decoder.queue_rindex);
+#endif
 				SAFE_INDEX_INC(sess->decoder.rtp_queue, sess->decoder.queue_rindex);
 				sess->decoder.queue_size--;
 			}
