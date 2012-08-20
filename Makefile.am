@@ -424,8 +424,8 @@ src/include/switch_version.h: src/include/switch_version.h.in Makefile build/pri
 	  xver="$$(./build/print_git_revision)"; \
 	  xhver="$$(./build/print_git_revision -h)"; \
 	  sed \
-	    -e "/#define *SWITCH_VERSION_REVISION\W/{s/\"\([^\"]*\)\"/\"\1$$xver\"/;}" \
-	    -e "/#define *SWITCH_VERSION_REVISION_HUMAN\W/{s/\"\([^\"]*\)\"/\"\1$$xhver\"/;}" \
+	    -e "/#define *SWITCH_VERSION_REVISION[^a-zA-Z0-9_]/{s/\"\([^\"]*\)\"/\"\1$$xver\"/;}" \
+	    -e "/#define *SWITCH_VERSION_REVISION_HUMAN[^a-zA-Z0-9_]/{s/\"\([^\"]*\)\"/\"\1$$xhver\"/;}" \
 	    $< > $@; \
 	fi;
 
