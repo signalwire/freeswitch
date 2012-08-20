@@ -2,7 +2,8 @@ FreeSWITCH for Debian
 --------------
 
 You may be reading this because you're wondering where all the files
-are in debian/, such as control.
+are in debian/, such as control.  You may also be here looking for the
+sound or music packages.  Read on.
 
 Because FreeSWITCH has so many modules it was necessary to create a
 system to autogenerate the majority of the packaging.  This in done
@@ -61,4 +62,16 @@ directory of your FS git working tree:
     --git-compression-level=1v --git-compression=xz
   git reset --hard HEAD^
 
- -- Travis Cross <tc@traviscross.com>, Thu, 24 May 2012 16:35:57 +0000
+The source packages for sounds and music on hold are maintained in a
+separate repository.  Each set of sounds has a separate version number
+and the processing of the sounds is quite different from what we're
+doing here, so trying to maintain a merged debian/ between FreeSWITCH
+and the sounds and music would be a mess.
+
+To build the Debian packages for freeswitch-sounds-* and
+freeswitch-music-*:
+
+  git clone https://github.com/traviscross/freeswitch-sounds.git
+  cd freeswitch-sounds && cat debian/README.source
+
+ -- Travis Cross <tc@traviscross.com>, Mon, 20 Aug 2012 08:14:49 +0000
