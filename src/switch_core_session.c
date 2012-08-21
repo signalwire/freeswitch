@@ -2202,7 +2202,11 @@ void switch_core_session_uninit(void)
 {
 	switch_core_hash_destroy(&session_manager.session_table);
 	session_manager.ready = 0;
-	switch_queue_interrupt_all(session_manager.thread_queue);
+
+	while(session_manager.running) {
+		switch_queue_interrupt_all(session_manager.thread_queue);
+		switch_yield(100000);
+	}
 	
 }
 
