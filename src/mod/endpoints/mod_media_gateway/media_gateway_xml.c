@@ -281,12 +281,14 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		3
 	};
 
+#if 0
 	static switch_xml_config_int_options_t opt_termination_id_len = {
 		SWITCH_TRUE,  /* enforce min */
 		1,
 		SWITCH_TRUE, /* enforce Max */
 		9
 	};
+#endif
 
     static switch_xml_config_int_options_t pre_buffer_len = {
 		SWITCH_TRUE,  /* enforce min */
