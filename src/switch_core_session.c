@@ -2200,10 +2200,12 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 
 void switch_core_session_uninit(void)
 {
+	int sanity = 100;
+
 	switch_core_hash_destroy(&session_manager.session_table);
 	session_manager.ready = 0;
 
-	while(session_manager.running) {
+	while(session_manager.running && --sanity > 0) {
 		switch_queue_interrupt_all(session_manager.thread_queue);
 		switch_yield(100000);
 	}
