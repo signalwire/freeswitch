@@ -475,8 +475,10 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	int 		  count;
 	int 		  err_code;
 	megaco_profile_t* mg_profile;
+	char prnt_buf[128];
 
     memset(&out_ctxt,0,sizeof(out_ctxt));
+    memset(&prnt_buf,0,sizeof(prnt_buf));
 
 	inc_context = &cmd->contextId;
     memcpy(&out_ctxt, inc_context,sizeof(MgMgcoContextId));
@@ -486,7 +488,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
     /*get mg profile associated with SuId */
     if(NULL == (mg_profile = megaco_get_profile_by_suId(suId))){
-        goto error1;
+        goto done;
     }
 
     /* first thing - restart ito timer */
@@ -555,7 +557,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			(MGT_TERMID_OTHER == termId->type.val) && 
 			(MGT_AUDITVAL != cmd->u.mgCmdInd[0]->cmd.type.val)){
 		if(SWITCH_STATUS_FALSE == mg_stack_termination_is_in_service(mg_profile, (char*)termId->name.lcl.val, termId->name.lcl.len)){
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination[%s] not in service \n", (char*)termId->name.lcl.val);
+			snprintf(prnt_buf,termId->name.lcl.len,"%s",(char*)termId->name.lcl.val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination[%s] not in service \n",(strlen(prnt_buf))?prnt_buf:"NULL");
 			mg_util_set_term_string(&errTxt, termId);
 			err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
 			goto error;
@@ -591,7 +594,6 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
 	/*mgAccEvntPrntMgMgcoCommand(cmd, stdout);*/
 
-	
 	switch(cmd->cmdType.val)
 	{
 		case CH_CMD_TYPE_IND:
@@ -784,12 +786,12 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 
     /* END OF TXN received - means last command in txn to process. 
      * Send response to peer */
-    if(CH_CMD_TYPE_IND == cmd->cmdType.val){ 
+    if(CH_CMD_TYPE_IND == cmd->cmdType.val){
     /*if(CH_CMD_STATUS_END_OF_TXN == cmd->cmdStatus.val)*/
         mg_send_end_of_axn(suId, &cmd->transId, &out_ctxt, &cmd->peerId);
     }
 
-	return;
+    goto done;
 
 ctxt_error:
 	err_code = MGT_MGCO_RSP_CODE_UNKNOWN_CTXT;
@@ -802,9 +804,13 @@ error:
     if(CH_CMD_STATUS_END_OF_TXN == cmd->cmdStatus.val){
         mg_send_end_of_axn(suId, &cmd->transId, &out_ctxt, &cmd->peerId);
     }
-error1:
-	mg_free_cmd(cmd);
-	return;
+done:
+    if(CH_CMD_TYPE_IND == cmd->cmdType.val){
+	    mg_free_cmd(cmd->u.mgCmdReq[0]);
+    }else if(CH_CMD_TYPE_CFM == cmd->cmdType.val){
+	    mg_free_cmd(cmd->u.mgCmdCfm[0]);
+    }
+    return;
 }
 
 /*****************************************************************************************************************************/
@@ -822,6 +828,8 @@ void handle_mgco_txn_sta_ind(Pst *pst, SuId suId, MgMgcoInd* txn_sta_ind)
    
     /*dump information*/
     mgAccEvntPrntMgMgcoInd(txn_sta_ind, stdout);
+
+    mg_free_cmd(txn_sta_ind);
 }
 
 /*****************************************************************************************************************************/

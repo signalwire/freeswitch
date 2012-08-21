@@ -218,6 +218,7 @@ void handle_mg_alarm(Pst *pst, MgMngmt *usta)
 		case LMG_EVENT_PEER_ENABLED:
 			{
 				len = len + sprintf(prBuf+len, "gateway enabled");
+
 				/* gateway enabled now we can send termination service change  for all terminations */
 				mgco_init_ins_service_change( usta->t.usta.alarmInfo.sapId );
 				break;

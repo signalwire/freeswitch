@@ -207,7 +207,7 @@ switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq);
 switch_status_t mg_build_pkg_desc(MgMgcoPkgsDesc* pkg);
 switch_status_t mg_send_heartbeat_audit_rsp( SuId suId, MgMgcoCommand *auditReq);
 void mg_get_time_stamp(MgMgcoTimeStamp *timeStamp);
-switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, const char  *reason);
+switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, const char  *reason,CmMemListCp   *memCp);
 void mg_fill_null_context(MgMgcoContextId* ctxt);
 switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason,uint8_t wild); 
 switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, uint8_t cmdType);

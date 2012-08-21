@@ -207,6 +207,7 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 			     /*******************************************************************/
 					/* mg <mg-profile> show alltermstatus */
 					handle_all_term_status_cli_cmd(stream, profile);
+			     /*******************************************************************/
 				}else if(!strcasecmp(argv[3], "termstatus")){
 			     /*******************************************************************/
 					/* mg <mg-profile> show termstatus <term-id> */
@@ -214,6 +215,17 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 						goto usage;
 					}
 					handle_term_status_cli_cmd(stream, profile, argv[4]);
+			     /*******************************************************************/
+				}else if(!strcasecmp(argv[3], "stackmem")){
+			     /*******************************************************************/
+					sng_mg_reg_info_show();
+			     /*******************************************************************/
+#ifdef LEAK_TEST
+				}else if(!strcasecmp(argv[3], "leak-report")){
+			     /*******************************************************************/
+					mgPrntLeakReport();
+			     /*******************************************************************/
+#endif
 				} else {
 			     /*******************************************************************/
 				stream->write_function(stream, "-ERR No such profile\n");
@@ -280,6 +292,7 @@ void  megaco_cli_print_usage(switch_stream_handle_t *stream)
 	stream->write_function(stream, "mg profile <profile-name> show activecalls  \n");
 	stream->write_function(stream, "mg profile <profile-name> show termstatus <term-id> \n");
 	stream->write_function(stream, "mg profile <profile-name> show alltermstatus \n");
+	stream->write_function(stream, "mg profile <profile-name> show stackmem  \n");
 
 	stream->write_function(stream, "Usage: Logging \n");
 	stream->write_function(stream, "mg logging enable \n");

@@ -307,7 +307,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
         return SWITCH_STATUS_FALSE;
     }
 
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"descriptors[%d] found in-coming megaco request \n", desc->dl.num.val);
+    //switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"descriptors[%d] found in-coming megaco request \n", desc->dl.num.val);
 
     if(NOTPRSNT == desc->dl.num.pres){
         switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"No descriptor found in-coming megaco request \n");
@@ -316,7 +316,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
 
 
     for (descId = 0; descId < desc->dl.num.val; descId++) {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"descriptors[%d] type in-coming megaco request \n", desc->dl.descs[descId]->type.val); 
+        //switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"descriptors[%d] type in-coming megaco request \n", desc->dl.descs[descId]->type.val); 
         switch (desc->dl.descs[descId]->type.val) {
             case MGT_MEDIADESC:
                 {
@@ -381,26 +381,26 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                                                 case MGT_LCLCTL_MODE:
                                                     {
                                                         /* Mode Property */
-                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_MODE - Mode value [%d]\n", lclParm->u.mode.val);
+                                                       //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_MODE - Mode value [%d]\n", lclParm->u.mode.val);
                                                         break;
                                                     }
                                                 case MGT_LCLCTL_RESVAL:
                                                     {
                                                         /* Reserve Value */
-                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESVAL: Reserve Value[%d] \n", lclParm->u.resVal.val);
+                                                       //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESVAL: Reserve Value[%d] \n", lclParm->u.resVal.val);
                                                         break;
                                                     }
                                                 case MGT_LCLCTL_RESGRP:
                                                     {
                                                         /* Reserve group */
-                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESGRP: Reserve Group[%d]\n", lclParm->u.resGrp.val);
+                                                       //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESGRP: Reserve Group[%d]\n", lclParm->u.resGrp.val);
                                                         break;
                                                     }
                                                 case MGT_LCLCTL_PROPPARM:
                                                     {
                                                         /* Properties (of a termination) */
                                                         /* Matt - See how we can apply this to a termination */
-                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_PROPPARM: \n");
+                                                       //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_PROPPARM: \n");
                                                         break;
                                                     }
                                                 default:
@@ -578,7 +578,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
 */
 switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd, MgMgcoContextId* new_ctxtId)
 {
-	switch_status_t ret;
+    switch_status_t ret;
     MgMgcoContextId  *ctxtId;
     MgStr      	  errTxt;
     MgMgcoInd  	  *mgErr;
@@ -596,7 +596,6 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     int mediaId;
     MgMgcoLocalDesc   *local = NULL;
     /*CmSdpInfoSet      *psdp  = NULL;*/
-
 
     /* TODO - Kapil dummy line , will need to add with proper code */
     inc_med_desc = &cmd->dl.descs[0]->u.media;
@@ -771,6 +770,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         }else{
             /* ADD request is for RTP term we need to create termination */ 
 
+
             /* Grow the list of reply parameters */
             if (mgUtlGrowList((void ***)&rsp.u.mgCmdRsp[0]->u.add.termIdLst.terms, sizeof(MgMgcoTermId),
                         &rsp.u.mgCmdRsp[0]->u.add.termIdLst.num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
@@ -781,6 +781,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
             out_termId = rsp.u.mgCmdRsp[0]->u.add.termIdLst.terms[rsp.u.mgCmdRsp[0]->u.add.termIdLst.num.val-1];
             mg_fill_mgco_termid(out_termId, (char*)term->name, strlen((char*)term->name), &rsp.u.mgCmdRsp[0]->memCp);
+
         }
 
 	if(is_rtp){
@@ -795,6 +796,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
             switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
             return SWITCH_STATUS_FALSE;
         }
+
 
         /* copy media descriptor */
         desc = rsp.u.mgCmdRsp[0]->u.add.audit.parms[rsp.u.mgCmdRsp[0]->u.add.audit.num.val-1];
@@ -812,6 +814,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 		}
 	}
 
+
 	/* only for RTP */
 		if(SWITCH_STATUS_FALSE == mg_build_sdp(&desc->u.media, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp)) {
 			if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
@@ -821,6 +824,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 			}
 		}
 	}
+
 #if 0
 	if(is_rtp){
 		mg_build_sdp(desc, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp);
@@ -1026,7 +1030,6 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         ret = sng_mgco_send_cmd( mg_profile->idx, &rsp);
 
         return ret;
-
     }
     /* sample resp code -- end */
     /*************************************************************************************************************************/
@@ -1038,7 +1041,6 @@ error:
             mg_build_mgco_err_request(&mgErr, txn_id, ctxtId, err_code, &errTxt)) {
         sng_mgco_send_err(mg_profile->idx, mgErr);
     }
-    mg_free_cmd(inc_cmd);
     switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," ADD Request failed..releasing context/termination(if allocated) \n"); 
     if(mg_ctxt){
 	    megaco_release_context(mg_ctxt);
@@ -1322,7 +1324,6 @@ error:
 			mg_build_mgco_err_request(&mgErr, txn_id, ctxtId, err_code, &errTxt)) {
 		sng_mgco_send_err(mg_profile->idx, mgErr);
 	}
-	mg_free_cmd(inc_cmd);
 
         switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Modify Request failed..releasing context/termination \n"); 
 	if(mg_ctxt){
@@ -1538,7 +1539,6 @@ error:
             mg_build_mgco_err_request(&mgErr, txn_id, ctxtId, err_code, &errTxt)) {
         sng_mgco_send_err(mg_profile->idx, mgErr);
     }
-    mg_free_cmd(inc_cmd);
     return SWITCH_STATUS_FALSE;	
 }
 
@@ -1973,8 +1973,6 @@ error:
 		sng_mgco_send_err(mg_profile->idx, mgErr);
 	}
 
-	/* deallocate the msg */
-	mg_free_cmd(auditReq);
 	return SWITCH_STATUS_FALSE; 
 }
 
@@ -2588,7 +2586,7 @@ switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_
 
 	svc = &request.u.mgCmdReq[0]->cmd.u.svc;
 
-	if(SWITCH_STATUS_FALSE == (ret = mg_fill_svc_change(&svc->parm, method, mg_service_change_reason[reason]))){
+	if(SWITCH_STATUS_FALSE == (ret = mg_fill_svc_change(&svc->parm, method, mg_service_change_reason[reason], &request.u.mgCmdReq[0]->memCp))){
 		return ret;
 	}
 

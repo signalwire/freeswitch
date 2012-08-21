@@ -15,8 +15,8 @@ switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize )
 {
 	Mem sMem;
 
-	sMem.region = 0;
-	sMem.pool = 0;
+	sMem.region = S_REG;
+	sMem.pool = S_POOL;
 
 	if ( _memSize <= 0 )
 	{
@@ -119,8 +119,8 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, C
         termId->name.pres.pres = PRSNT_NODEF;
         termId->name.lcl.pres = PRSNT_NODEF;
         termId->name.lcl.len = term_len;
-        /*MG_GETMEM(termId->name.lcl.val, termId->name.lcl.len , memCp, ret);*/
-        ret = mg_stack_alloc_mem((Ptr*)&termId->name.lcl.val,term_len);
+        MG_GETMEM(termId->name.lcl.val, termId->name.lcl.len , memCp, ret);
+        //ret = mg_stack_alloc_mem((Ptr*)&termId->name.lcl.val,term_len);
 
         if( ret != ROK)
             RETVALUE(ret);          
@@ -1554,8 +1554,9 @@ MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTerm
 }
 /*****************************************************************************************************************************/
 
-switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, const char  *reason)
+switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, const char  *reason, CmMemListCp   *memCp)
 {
+	S16               ret = ROK;
 	MG_SET_TKN_VAL_PRES(&srvPar->pres, 0, PRSNT_NODEF);
 	MG_SET_TKN_VAL_PRES(&srvPar->meth.pres, 0, PRSNT_NODEF);
 	MG_SET_TKN_VAL_PRES(&srvPar->meth.type, method, PRSNT_NODEF);
@@ -1564,7 +1565,7 @@ switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, c
 	srvPar->reason.pres = PRSNT_NODEF;
 	srvPar->reason.len  = cmStrlen((const U8 *)reason);
 
-	mg_stack_alloc_mem((Ptr*)&srvPar->reason.val, srvPar->reason.len);
+        MG_GETMEM(srvPar->reason.val, srvPar->reason.len , memCp, ret);
 	if (NULL == srvPar->reason.val)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n");
