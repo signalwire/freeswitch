@@ -336,7 +336,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
 	int silly = 0;
-	uint32_t new_loops = 5000;
+	//	uint32_t new_loops = 5000;
 
 	/*
 	   Life of the channel. you have channel and pool in your session
@@ -468,6 +468,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		endstate = switch_channel_get_state(session->channel);
 
 		if (endstate == switch_channel_get_running_state(session->channel)) {
+			/**
 			if (endstate == CS_NEW) {
 				switch_cond_next();
 				switch_ivr_parse_all_events(session);
@@ -477,6 +478,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					switch_channel_hangup(session->channel, SWITCH_CAUSE_INVALID_CALL_REFERENCE);
 				}
 			} else {
+			**/
 				switch_ivr_parse_all_events(session);
 				switch_ivr_parse_all_events(session);
 
@@ -490,7 +492,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 				switch_ivr_parse_all_events(session);
 				switch_ivr_parse_all_events(session);
-			}
+				//}
 		}
 	}
   done:
