@@ -989,7 +989,9 @@ static void our_sofia_event_callback(nua_event_t event,
 				return;
 			}
 		} else if (!zstr(sofia_private->uuid)) {
-			if ((session = de->session) || (session = switch_core_session_locate(sofia_private->uuid))) {
+			if ((session = de->init_session)) {
+				de->init_session = NULL;
+			} else if ((session = de->session) || (session = switch_core_session_locate(sofia_private->uuid))) {
 				tech_pvt = switch_core_session_get_private(session);
 				channel = switch_core_session_get_channel(session);
 				if (tech_pvt) {
@@ -1026,20 +1028,6 @@ static void our_sofia_event_callback(nua_event_t event,
 		}
 	}
 	
-	if ((event == nua_i_invite) && (!session)) {
-		uint32_t sess_count = switch_core_session_count();
-		uint32_t sess_max = switch_core_session_limit(0);
-		
-		if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
-			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
-
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No more sessions allowed at this time.\n");
-
-			goto done;
-		}
-	}
-	
-
 	if (sofia_test_pflag(profile, PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip && (event < nua_r_set_params || event > nua_r_authenticate)) {
 		sip_authorization_t const *authorization = NULL;
 
@@ -1174,10 +1162,11 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_options(status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
 		break;
 	case nua_i_invite:
-		if (session) {
+		if (session && sofia_private->is_call > 1) {
 			sofia_handle_sip_i_reinvite(session, nua, profile, nh, sofia_private, sip, de, tags);
 		} else {
-			sofia_handle_sip_i_invite(nua, profile, nh, sofia_private, sip, de, tags);
+			sofia_private->is_call++;
+			sofia_handle_sip_i_invite(session, nua, profile, nh, sofia_private, sip, de, tags);
 		}
 		break;
 	case nua_i_publish:
@@ -1518,6 +1507,7 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	nua_t *nua = de->nua;
 	sofia_profile_t *profile = de->profile;
 	sofia_private_t *sofia_private = nua_handle_magic(de->nh);
+	switch_core_session_t *session = de->session;
 	*dep = NULL;
 
 	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
@@ -1532,6 +1522,11 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 
 	nua_handle_unref(nh);
 	nua_stack_unref(nua);
+
+	if (session) {
+		switch_ivr_parse_all_signal_data(session);
+	}
+
 	switch_os_yield();
 }
 
@@ -1659,17 +1654,25 @@ void sofia_event_callback(nua_event_t event,
 	sofia_dispatch_event_t *de;
 	int critical = (((SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues) * 900) / 1000);
 
+	uint32_t sess_count = switch_core_session_count();
+	uint32_t sess_max = switch_core_session_limit(0);
+	
+	if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
+		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+		goto end;
+	}
+
 
 	if (switch_queue_size(mod_sofia_globals.msg_queue) > critical) {
 		nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
-		return;
+		goto end;
 	}
 
 	if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
 		if (event < nua_r_set_params || event > nua_r_authenticate) {
 			nua_respond(nh, 503, "System Paused", TAG_END());
 		}
-		return;
+		goto end;
 	}
 
 	switch_mutex_lock(profile->flag_mutex);
@@ -1686,6 +1689,8 @@ void sofia_event_callback(nua_event_t event,
 	de->nua = nua_stack_ref(nua);
 
 	if (event == nua_i_invite && !sofia_private) {
+		switch_core_session_t *session;
+
 		if (!(sofia_private = su_alloc(nh->nh_home, sizeof(*sofia_private)))) {
 			abort();
 		}
@@ -1694,31 +1699,69 @@ void sofia_event_callback(nua_event_t event,
 		sofia_private->is_call++;
 		sofia_private->is_static++;
 		nua_handle_bind(nh, sofia_private);
-		sofia_process_dispatch_event(&de);
-		return;
+
+		if (sofia_test_pflag(profile, PFLAG_CALLID_AS_UUID)) {
+			session = switch_core_session_request_uuid(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL, sip->sip_call_id->i_id);
+		} else {
+			session = switch_core_session_request(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL);
+		}
+
+		if (session) {
+			private_object_t *tech_pvt;
+
+			tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t));
+			
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			switch_mutex_init(&tech_pvt->sofia_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			switch_core_session_set_private(session, tech_pvt);
+
+		} else {
+			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			nua_destroy_event(de->event);	
+			su_free(nh->nh_home, de);
+			
+			switch_mutex_lock(profile->flag_mutex);
+			profile->queued_events--;
+			switch_mutex_unlock(profile->flag_mutex);
+			
+			nua_handle_unref(nh);
+			nua_stack_unref(nua);
+
+			goto end;
+		}
+
+		if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
+			if (!switch_core_session_running(session)) {
+				nua_handle_bind(nh, NULL);
+				sofia_private_free(sofia_private);
+				switch_core_session_destroy(&session);
+				nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			}			
+			goto end;
+		}
+
+		switch_copy_string(sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(sofia_private->uuid));
+
+		de->init_session = session;
+		switch_core_session_queue_signal_data(session, de);
+		goto end;
 	}
 	
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
 		switch_core_session_t *session;
 
 		if ((session = switch_core_session_locate(sofia_private->uuid))) {
-			if (switch_core_session_running(session)) {
-				switch_core_session_queue_signal_data(session, de);
-			} else {
-				switch_core_session_message_t msg = { 0 };
-				msg.message_id = SWITCH_MESSAGE_INDICATE_SIGNAL_DATA;
-				msg.from = __FILE__;
-				msg.pointer_arg = de;	
-				
-				switch_core_session_receive_message(session, &msg);
-			}
+			switch_core_session_queue_signal_data(session, de);
 			switch_core_session_rwunlock(session);
-			return;
+			goto end;
 		}
 	}
 	
 	sofia_queue_message(de);
+
+ end:
 	switch_os_yield();
+	return;
 }
 
 
@@ -6024,9 +6067,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 		}
 
-		//		if (sofia_private) {
-			//sofia_private->destroy_me = 1;
-		//}
+		if (sofia_private) {
+			sofia_private->destroy_me = 1;
+		}
 	}
 
 	if (session) {
@@ -7955,10 +7998,8 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 
 }
 
-void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
-								sofia_dispatch_event_t *de, tagi_t tags[])
+void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, sofia_dispatch_event_t *de, tagi_t tags[])
 {
-	switch_core_session_t *session = NULL;
 	char key[128] = "";
 	sip_unknown_t *un;
 	sip_remote_party_id_t *rpid = NULL;
@@ -7997,10 +8038,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	profile->ib_calls++;
 
 
-	if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING)) {
+	if (!session || (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING))) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 		goto fail;
 	}
+
+	tech_pvt = switch_core_session_get_private(session);
 
 	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
@@ -8189,24 +8232,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		is_auth++;
 	}
 
-	if (sofia_endpoint_interface) {
-		if (sofia_test_pflag(profile, PFLAG_CALLID_AS_UUID)) {
-			session = switch_core_session_request_uuid(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL, sip->sip_call_id->i_id);
-		} else {
-			session = switch_core_session_request(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL);
-		}
-	}
 
-	if (!session) {
-		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
-		goto fail;
-	}
+
 	
-	tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t));
-
-	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-	switch_mutex_init(&tech_pvt->sofia_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-
 	tech_pvt->remote_ip = switch_core_session_strdup(session, network_ip);
 	tech_pvt->remote_port = network_port;
 
@@ -9007,13 +9035,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (profile->pres_type && sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT)) {
 		sofia_presence_set_chat_hash(tech_pvt, sip);
 	}
-	switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 
-	if (switch_core_session_running(session) || switch_core_session_started(session)) {
-		return;
-	}
 
-	if (sip && switch_core_session_thread_launch(session) == SWITCH_STATUS_SUCCESS) {
+	if (sip && session) {
 		const char *dialog_from_user = "", *dialog_from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
 		const char *user_agent = "", *call_id = "";
 		url_t *from = NULL, *to = NULL, *contact = NULL;
