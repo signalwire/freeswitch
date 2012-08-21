@@ -323,7 +323,8 @@ typedef enum {
 	SCF_SYNC_CLOCK_REQUESTED = (1 << 19),
 	SCF_CORE_ODBC_REQ = (1 << 20),
 	SCF_DEBUG_SQL = (1 << 21),
-	SCF_API_EXPANSION = (1 << 22)
+	SCF_API_EXPANSION = (1 << 22),
+	SCF_SESSION_THREAD_POOL = (1 << 23)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 

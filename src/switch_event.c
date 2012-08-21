@@ -307,14 +307,14 @@ static switch_status_t switch_event_queue_dispatch_event(switch_event_t **eventp
 		if (switch_queue_size(EVENT_DISPATCH_QUEUE) > (unsigned int)(DISPATCH_QUEUE_LEN * DISPATCH_THREAD_COUNT)) {
 			launch++;
 		}
+
+		switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 		
 		if (launch) {
 			if (SOFT_MAX_DISPATCH + 1 < MAX_DISPATCH) {
 				switch_event_launch_dispatch_threads(SOFT_MAX_DISPATCH + 1);
 			}
 		}
-
-		switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
 		*eventp = NULL;
 		switch_queue_push(EVENT_DISPATCH_QUEUE, event);

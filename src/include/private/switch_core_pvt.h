@@ -283,6 +283,11 @@ struct switch_session_manager {
 	uint32_t session_count;
 	uint32_t session_limit;
 	switch_size_t session_id;
+	switch_queue_t *thread_queue;
+	switch_mutex_t *mutex;
+	int ready;
+	int running;
+	int busy;
 };
 
 extern struct switch_session_manager session_manager;

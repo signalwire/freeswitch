@@ -1440,6 +1440,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
 	switch_set_flag((&runtime), SCF_CLEAR_SQL);
 	switch_set_flag((&runtime), SCF_API_EXPANSION);
+	switch_set_flag((&runtime), SCF_SESSION_THREAD_POOL);
 #ifdef WIN32
 	switch_set_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
 #endif
@@ -1750,6 +1751,12 @@ static void switch_load_core_config(const char *file)
 						switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
 					} else {
 						switch_clear_flag((&runtime), SCF_AUTO_SCHEMAS);
+					}
+				} else if (!strcasecmp(var, "session-thread-pool")) {
+					if (switch_true(val)) {
+						switch_set_flag((&runtime), SCF_SESSION_THREAD_POOL);
+					} else {
+						switch_clear_flag((&runtime), SCF_SESSION_THREAD_POOL);
 					}
 				} else if (!strcasecmp(var, "auto-clear-sql")) {
 					if (switch_true(val)) {
