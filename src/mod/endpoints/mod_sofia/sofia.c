@@ -1656,23 +1656,34 @@ void sofia_event_callback(nua_event_t event,
 
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
+
+	switch(event) {
+	case nua_i_invite:
+	case nua_i_register:
+	case nua_i_options:
+	case nua_i_notify:
+	case nua_i_info:
 	
-	if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
-		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
-		goto end;
-	}
-
-
-	if (switch_queue_size(mod_sofia_globals.msg_queue) > critical) {
-		nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
-		goto end;
-	}
-
-	if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
-		if (event < nua_r_set_params || event > nua_r_authenticate) {
-			nua_respond(nh, 503, "System Paused", TAG_END());
+		if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
+			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			goto end;
 		}
-		goto end;
+		
+
+		if (switch_queue_size(mod_sofia_globals.msg_queue) > critical) {
+			nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			goto end;
+		}
+		
+		if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
+			nua_respond(nh, 503, "System Paused", TAG_END());
+			goto end;
+		}
+		break;
+
+	default:
+		break;
+		
 	}
 
 	switch_mutex_lock(profile->flag_mutex);
