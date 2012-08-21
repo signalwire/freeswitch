@@ -433,6 +433,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
 #endif
         }
         break;
+    case T4_IMAGE_TYPE_BILEVEL:
     case T4_IMAGE_TYPE_GRAY_8BIT:
         row8[0] = s->raw_pixel_row[0];
         row8[1] = s->raw_pixel_row[1];
