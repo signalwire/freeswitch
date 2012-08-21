@@ -153,6 +153,7 @@ typedef struct sofia_dispatch_event_s {
 	sofia_profile_t *profile;
 	int save;
 	switch_core_session_t *session;
+	switch_core_session_t *init_session;
 	switch_memory_pool_t *pool;
 	struct sofia_dispatch_event_s *next;
 } sofia_dispatch_event_t;
@@ -347,7 +348,7 @@ typedef enum {
 } TFLAGS;
 
 #define SOFIA_MAX_MSG_QUEUE 64
-#define SOFIA_MSG_QUEUE_SIZE 100
+#define SOFIA_MSG_QUEUE_SIZE 1000
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
@@ -921,8 +922,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[]);
 
-void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
-								sofia_dispatch_event_t *de, tagi_t tags[]);
+void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, sofia_dispatch_event_t *de, tagi_t tags[]);
+							   
 
 void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de,
