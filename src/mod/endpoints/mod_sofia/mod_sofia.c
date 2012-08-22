@@ -87,11 +87,11 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 		sofia_glue_tech_absorb_sdp(tech_pvt);
 	}
 
-	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE)) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING) || switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE)) {
 		sofia_set_flag(tech_pvt, TFLAG_RECOVERED);
 	}
 
-	if (sofia_test_flag(tech_pvt, TFLAG_OUTBOUND) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
+	if (sofia_test_flag(tech_pvt, TFLAG_OUTBOUND) || switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 		const char *var;
 
 		if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && !zstr(var)) {
@@ -115,10 +115,10 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 
 
 
-	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE)) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE)) {
 		switch_channel_set_state(channel, CS_RESET);
 	} else {
-		if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
+		if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 			switch_channel_set_state(channel, CS_EXECUTE);
 		} else {
 			/* Move channel's state machine to ROUTING */
@@ -167,7 +167,7 @@ static switch_status_t sofia_on_reset(switch_core_session_t *session)
 					  switch_channel_get_name(switch_core_session_get_channel(session)));
 
 
-	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE)) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE)) {
 		switch_core_session_t *other_session = NULL;
 		const char *uuid = switch_core_session_get_uuid(session);
 
@@ -200,7 +200,7 @@ static switch_status_t sofia_on_reset(switch_core_session_t *session)
 			}
 		}
 
-		sofia_clear_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE);
+		switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE);
 	}
 
 
@@ -232,7 +232,7 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_assert(tech_pvt != NULL);
 
-	sofia_clear_flag(tech_pvt, TFLAG_RECOVERING);
+	switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
 		sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
@@ -423,7 +423,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	const char *ps_cause = NULL, *use_my_cause;
 	const char *gateway_name = NULL;
 	sofia_gateway_t *gateway_ptr = NULL;
-	int rec;
 
 	if ((gateway_name = switch_channel_get_variable(channel, "sip_gateway_name"))) {
 		gateway_ptr = sofia_reg_find_gateway(gateway_name);
@@ -435,12 +434,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
-	rec = sofia_test_flag(tech_pvt, TFLAG_RECOVERING);
-	sofia_clear_flag(tech_pvt, TFLAG_RECOVERING);
-
-	if (!rec) {
-		sofia_glue_tech_untrack(tech_pvt->profile, session, SWITCH_TRUE);
-	}
 
 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
@@ -1541,9 +1534,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH:
 	case SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC:
-		{
-			sofia_glue_tech_track(tech_pvt->profile, session);
-		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROXY_MEDIA:
 		{
@@ -1666,7 +1656,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 
 			switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, NULL);
-			sofia_glue_tech_track(tech_pvt->profile, session);
 
 			sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
 
@@ -1753,8 +1742,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			
-			sofia_glue_tech_track(tech_pvt->profile, session);
-
 			if (sofia_test_flag(tech_pvt, TFLAG_JB_PAUSED)) {
 				sofia_clear_flag(tech_pvt, TFLAG_JB_PAUSED);
 				if (switch_channel_test_flag(tech_pvt->channel, CF_JITTERBUFFER)) {
@@ -1786,8 +1773,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			} else {
 				rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
 			}
-
-			//sofia_glue_tech_untrack(tech_pvt->profile, session);
 
 		}
 		goto end;
@@ -3620,13 +3605,14 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	if (!strcasecmp(argv[1], "recover")) {
 		if (argv[2] && !strcasecmp(argv[2], "flush")) {
 			sofia_glue_profile_recover(profile, SWITCH_TRUE);
+
 			stream->write_function(stream, "Flushing recovery database.\n");
 		} else {
 			int x = sofia_glue_profile_recover(profile, SWITCH_FALSE);
 			if (x) {
-				stream->write_function(stream, "Recovered %d call(s)\n", x);
+				stream->write_function(stream, "Recovered %d session(s)\n", x);
 			} else {
-				stream->write_function(stream, "No calls to recover.\n");
+				stream->write_function(stream, "No sessions to recover.\n");
 			}
 		}
 
@@ -5609,12 +5595,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind(modname, SWITCH_EVENT_CUSTOM, MY_EVENT_RECOVERY, sofia_glue_track_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
-	}
-
 	if (switch_event_bind(modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
@@ -5641,6 +5621,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	sofia_endpoint_interface->interface_name = "sofia";
 	sofia_endpoint_interface->io_routines = &sofia_io_routines;
 	sofia_endpoint_interface->state_handler = &sofia_event_handlers;
+	sofia_endpoint_interface->recover_callback = sofia_recover_callback;
 
 	management_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_MANAGEMENT_INTERFACE);
 	management_interface->relative_oid = "1001";
@@ -5730,7 +5711,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 
 	switch_event_unbind_callback(sofia_presence_event_handler);
 	switch_event_unbind_callback(sofia_presence_mwi_event_handler);
-	switch_event_unbind_callback(sofia_glue_track_event_handler);
+
 	switch_event_unbind_callback(general_event_handler);
 	switch_event_unbind_callback(event_handler);
 
