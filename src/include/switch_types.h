@@ -1237,6 +1237,10 @@ typedef enum {
 	CF_CONFIRM_BLIND_TRANSFER,
 	CF_NO_PRESENCE,
 	CF_CONFERENCE,
+	CF_RECOVERING,
+	CF_RECOVERING_BRIDGE,
+	CF_TRACKED,
+	CF_TRACKABLE,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -1778,7 +1782,8 @@ typedef enum {
 	SCSC_SYNC_CLOCK_WHEN_IDLE,
 	SCSC_DEBUG_SQL,
 	SCSC_SQL,
-	SCSC_API_EXPANSION
+	SCSC_API_EXPANSION,
+	SCSC_RECOVER
 } switch_session_ctl_t;
 
 typedef enum {
@@ -1891,6 +1896,7 @@ typedef switch_status_t (*switch_chat_application_function_t) (switch_event_t *,
 typedef void (*switch_application_function_t) (switch_core_session_t *, const char *);
 #define SWITCH_STANDARD_APP(name) static void name (switch_core_session_t *session, const char *data)
 
+typedef int (*switch_core_recover_callback_t)(switch_core_session_t *session);
 typedef void (*switch_event_callback_t) (switch_event_t *);
 typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t) (switch_core_session_t *, void *, switch_caller_profile_t *);
 #define SWITCH_STANDARD_DIALPLAN(name) static switch_caller_extension_t *name (switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)

@@ -250,6 +250,11 @@ struct switch_runtime {
 	char *odbc_user;
 	char *odbc_pass;
 	char *dbname;
+	char *recovery_odbc_dsn;
+	char *recovery_odbc_user;
+	char *recovery_odbc_pass;
+	char *recovery_dbname;
+	switch_dbtype_t recovery_odbc_dbtype;
 	uint32_t debug_level;
 	uint32_t runlevel;
 	uint32_t tipping_point;

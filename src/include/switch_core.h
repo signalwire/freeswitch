@@ -2288,6 +2288,8 @@ SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh)
 SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream);
 SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
 #define switch_core_db_handle(_a) _switch_core_db_handle(_a, __FILE__, __SWITCH_FUNC__, __LINE__)
+SWITCH_DECLARE(switch_status_t) _switch_core_recovery_db_handle(switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
+#define switch_core_recovery_db_handle(_a) _switch_core_recovery_db_handle(_a, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_handle_t *db,
 															const char *test_sql, const char *drop_sql, const char *reactive_sql);
@@ -2344,6 +2346,13 @@ SWITCH_DECLARE(void) switch_close_extra_files(int *keep, int keep_ttl);
 SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu);
 SWITCH_DECLARE(void) switch_os_yield(void);
 SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, switch_size_t *max);
+
+
+SWITCH_DECLARE(int) switch_core_recovery_recover(const char *technology, const char *profile_name);
+SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session, switch_bool_t force);
+SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_recovery_flush(const char *technology, const char *profile_name);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
