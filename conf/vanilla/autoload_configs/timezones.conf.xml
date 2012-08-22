@@ -13,7 +13,7 @@
 	<zone name="Africa/Blantyre" value="CAT-2" />
 	<zone name="Africa/Brazzaville" value="WAT-1" />
 	<zone name="Africa/Bujumbura" value="CAT-2" />
-	<zone name="Africa/Cairo" value="EEST" />
+	<zone name="Africa/Cairo" value="EET-2EEST,M4.5.5/1,M9.5.5/3" />
 	<zone name="Africa/Casablanca" value="WET0" />
 	<zone name="Africa/Ceuta" value="CET-1CEST,M3.5.0,M10.5.0/3" />
 	<zone name="Africa/Conakry" value="GMT0" />
