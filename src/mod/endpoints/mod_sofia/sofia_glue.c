@@ -2506,6 +2506,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_private->is_call++;
 		sofia_private->is_static++;
 
+		if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
+			sofia_private->is_call++;
+		}
+
 		tech_pvt->sofia_private = sofia_private;
 		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 		nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
