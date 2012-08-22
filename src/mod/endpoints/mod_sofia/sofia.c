@@ -8045,6 +8045,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	nua_handle_t *bnh = NULL;
 	char sip_acl_authed_by[512] = "";
 	char sip_acl_token[512] = "";
+	const char *dialog_from_user = "", *dialog_from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
+	const char *user_agent = "", *call_id = "";
+	url_t *from = NULL, *to = NULL, *contact = NULL;
+	const char *to_tag = "";
+	const char *from_tag = "";
+	char *sql = NULL;
+
 
 	profile->ib_calls++;
 
@@ -9047,127 +9054,92 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		sofia_presence_set_chat_hash(tech_pvt, sip);
 	}
 
+	if (sip->sip_to) {
+		to = sip->sip_to->a_url;
+	}
+	if (sip->sip_from) {
+		from = sip->sip_from->a_url;
+	}
+	if (sip->sip_contact) {
+		contact = sip->sip_contact->m_url;
+	}
 
-	if (sip && session) {
-		const char *dialog_from_user = "", *dialog_from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
-		const char *user_agent = "", *call_id = "";
-		url_t *from = NULL, *to = NULL, *contact = NULL;
-		const char *to_tag = "";
-		const char *from_tag = "";
-		char *sql = NULL;
+	if (sip->sip_user_agent) {
+		user_agent = switch_str_nil(sip->sip_user_agent->g_string);
+	}
 
-		if (sip->sip_to) {
-			to = sip->sip_to->a_url;
-		}
-		if (sip->sip_from) {
-			from = sip->sip_from->a_url;
-		}
+	if (sip->sip_call_id) {
+		call_id = switch_str_nil(sip->sip_call_id->i_id);
+	}
+
+	if (to) {
+		to_user = switch_str_nil(to->url_user);
+		to_host = switch_str_nil(to->url_host);
+		to_tag = switch_str_nil(sip->sip_to->a_tag);
+	}
+
+	if (from) {
+		dialog_from_user = switch_str_nil(from->url_user);
+		dialog_from_host = switch_str_nil(from->url_host);
+		from_tag = switch_str_nil(sip->sip_from->a_tag);
+	}
+
+	if (contact) {
+		contact_user = switch_str_nil(contact->url_user);
+		contact_host = switch_str_nil(contact->url_host);
+	}
+
+	if (profile->pres_type) {
+		const char *presence_data = switch_channel_get_variable(channel, "presence_data");
+		const char *presence_id = switch_channel_get_variable(channel, "presence_id");
+		char *full_contact = "";
+		char *p = NULL;
+		time_t now;
+
 		if (sip->sip_contact) {
-			contact = sip->sip_contact->m_url;
+			full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
 		}
 
-		if (sip->sip_user_agent) {
-			user_agent = switch_str_nil(sip->sip_user_agent->g_string);
-		}
-
-		if (sip->sip_call_id) {
-			call_id = switch_str_nil(sip->sip_call_id->i_id);
-		}
-
-		if (to) {
-			to_user = switch_str_nil(to->url_user);
-			to_host = switch_str_nil(to->url_host);
-			to_tag = switch_str_nil(sip->sip_to->a_tag);
-		}
-
-		if (from) {
-			dialog_from_user = switch_str_nil(from->url_user);
-			dialog_from_host = switch_str_nil(from->url_host);
-			from_tag = switch_str_nil(sip->sip_from->a_tag);
-		}
-
-		if (contact) {
-			contact_user = switch_str_nil(contact->url_user);
-			contact_host = switch_str_nil(contact->url_host);
-		}
-
-		if (profile->pres_type) {
-			const char *presence_data = switch_channel_get_variable(channel, "presence_data");
-			const char *presence_id = switch_channel_get_variable(channel, "presence_id");
-			char *full_contact = "";
-			char *p = NULL;
-			time_t now;
-
-			if (sip->sip_contact) {
-				full_contact = sip_header_as_string(nua_handle_home(tech_pvt->nh), (void *) sip->sip_contact);
+		if (call_info_str && switch_stristr("appearance", call_info_str)) {
+			switch_channel_set_variable(channel, "presence_call_info_full", call_info_str);
+			if ((p = strchr(call_info_str, ';'))) {
+				p++;
+				switch_channel_set_variable(channel, "presence_call_info", p);
 			}
-
-			if (call_info_str && switch_stristr("appearance", call_info_str)) {
-				switch_channel_set_variable(channel, "presence_call_info_full", call_info_str);
-				if ((p = strchr(call_info_str, ';'))) {
-					p++;
-					switch_channel_set_variable(channel, "presence_call_info", p);
-				}
-			}
-
-			now = switch_epoch_time_now(NULL);
-
-			sql = switch_mprintf("insert into sip_dialogs "
-								 "(call_id,uuid,sip_to_user,sip_to_host,sip_to_tag,sip_from_user,sip_from_host,sip_from_tag,contact_user,"
-								 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,"
-								 "call_info,rcd,call_info_state) "
-								 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'')",
-								 call_id,
-								 tech_pvt->sofia_private->uuid,
-								 to_user, to_host, to_tag, dialog_from_user, dialog_from_host, from_tag,
-								 contact_user, contact_host, "confirmed", "inbound", user_agent,
-								 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
-								 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p), now);
-
-			switch_assert(sql);
-
-			sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-			switch_safe_free(sql);
-
 		}
 
-		if (is_nat) {
-			sofia_set_flag(tech_pvt, TFLAG_NAT);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NAT mode based on %s\n", is_nat);
-			switch_channel_set_variable(channel, "sip_nat_detected", "true");
-		}
+		now = switch_epoch_time_now(NULL);
 
-		return;
+		sql = switch_mprintf("insert into sip_dialogs "
+							 "(call_id,uuid,sip_to_user,sip_to_host,sip_to_tag,sip_from_user,sip_from_host,sip_from_tag,contact_user,"
+							 "contact_host,state,direction,user_agent,profile_name,hostname,contact,presence_id,presence_data,"
+							 "call_info,rcd,call_info_state) "
+							 "values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'')",
+							 call_id,
+							 tech_pvt->sofia_private->uuid,
+							 to_user, to_host, to_tag, dialog_from_user, dialog_from_host, from_tag,
+							 contact_user, contact_host, "confirmed", "inbound", user_agent,
+							 profile->name, mod_sofia_globals.hostname, switch_str_nil(full_contact),
+							 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p), now);
+
+		switch_assert(sql);
+
+		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
+		switch_safe_free(sql);
+
 	}
 
-	if (sess_count > 110) {
-		switch_mutex_lock(profile->flag_mutex);
-		switch_core_session_limit(sess_count - 10);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "LUKE: I'm hit, but not bad.\n");
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT,
-						  "LUKE'S VOICE: Artoo, see what you can do with it. Hang on back there....\n"
-						  "Green laserfire moves past the beeping little robot as his head turns.  "
-						  "After a few beeps and a twist of his mechanical arm,\n"
-						  "Artoo reduces the max sessions to %d thus, saving the switch from certain doom.\n", sess_count - 10);
-		switch_mutex_unlock(profile->flag_mutex);
+	if (is_nat) {
+		sofia_set_flag(tech_pvt, TFLAG_NAT);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NAT mode based on %s\n", is_nat);
+		switch_channel_set_variable(channel, "sip_nat_detected", "true");
 	}
 
-	if (tech_pvt->hash_key) {
-		switch_mutex_lock(tech_pvt->profile->flag_mutex);
-		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
-		switch_mutex_unlock(tech_pvt->profile->flag_mutex);
-	}
-
-	if (!switch_core_session_running(session)) {
-		nua_handle_bind(nh, NULL);
-		sofia_private_free(sofia_private);
-		switch_core_session_destroy(&session);
-		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
-	}
 	return;
 
   fail:
 	profile->ib_failed_calls++;
+
 	return;
 
 }

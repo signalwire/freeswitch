@@ -1518,6 +1518,28 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 	return NULL;
 }
 
+static void thread_launch_failure(void)
+{
+	uint32_t sess_count;
+
+	switch_mutex_lock(session_manager.mutex);
+
+	sess_count = switch_core_session_count();
+
+	if (sess_count > 110) {
+
+		switch_core_session_limit(sess_count - 10);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE: I'm hit, but not bad.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+						  "LUKE'S VOICE: Artoo, see what you can do with it. Hang on back there....\n"
+						  "Green laserfire moves past the beeping little robot as his head turns.  "
+						  "After a few beeps and a twist of his mechanical arm,\n"
+						  "Artoo reduces the max sessions to %d thus, saving the switch from certain doom.\n", sess_count - 10);
+
+	}
+	
+	switch_mutex_unlock(session_manager.mutex);
+}
 
 static switch_status_t check_queue(void) 
 {
@@ -1550,6 +1572,7 @@ static switch_status_t check_queue(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread Failure!\n");
 			switch_core_destroy_memory_pool(&pool);
 			status = SWITCH_STATUS_GENERR;
+			thread_launch_failure();
 		} else {
 			status = SWITCH_STATUS_SUCCESS;
 		}
@@ -1638,6 +1661,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_se
 			switch_clear_flag(session, SSF_THREAD_RUNNING);
 			switch_clear_flag(session, SSF_THREAD_STARTED);	
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Cannot create thread!\n");
+			thread_launch_failure();
 		}
 	}
 
@@ -1656,7 +1680,10 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *se
 	switch_threadattr_detach_set(thd_attr, 1);
 
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, func, obj, session->pool);
+	if (switch_thread_create(&thread, thd_attr, func, obj, session->pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Cannot create thread!\n");
+		thread_launch_failure();
+	}
 
 }
 
