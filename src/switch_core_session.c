@@ -1788,6 +1788,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	parse_array(flag_str, flags, CF_FLAG_MAX);
 	parse_array(cap_str, caps, CC_FLAG_MAX);
 
+	flags[CF_RECOVERING] = 0;
+	flags[CF_RECOVERING_BRIDGE] = 0;
+	flags[CF_TRACKED] = 0;
 	flags[CF_TRANSFER] = 0;
 	flags[CF_ACCEPT_CNG] = 0;
 	flags[CF_REDIRECT] = 0;

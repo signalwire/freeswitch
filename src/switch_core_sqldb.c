@@ -218,6 +218,45 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 	return r;
 }
 
+#define SWITCH_CORE_RECOVERY_DB "core_recovery"
+SWITCH_DECLARE(switch_status_t) _switch_core_recovery_db_handle(switch_cache_db_handle_t **dbh, const char *file, const char *func, int line)
+{
+	switch_cache_db_connection_options_t options = { {0} };
+	switch_status_t r;
+	
+	if (!sql_manager.manage) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(runtime.recovery_odbc_dsn)) {
+		if (switch_test_flag((&runtime), SCF_CORE_ODBC_REQ)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (runtime.recovery_dbname) {
+			options.core_db_options.db_path = runtime.recovery_dbname;
+		} else {
+			options.core_db_options.db_path = SWITCH_CORE_RECOVERY_DB;
+		}
+		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_CORE_DB, &options, file, func, line);
+		
+	} else {
+		options.odbc_options.dsn = runtime.recovery_odbc_dsn;
+		options.odbc_options.user = runtime.recovery_odbc_user;
+		options.odbc_options.pass = runtime.recovery_odbc_pass;
+
+		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_ODBC, &options, file, func, line);
+	}
+
+	/* I *think* we can do without this now, if not let me know 
+	   if (r == SWITCH_STATUS_SUCCESS && !(*dbh)->io_mutex) {
+	   (*dbh)->io_mutex = sql_manager.io_mutex;
+	   }
+	*/
+
+	return r;
+}
+
 
 #define SQL_CACHE_TIMEOUT 30
 #define SQL_REG_TIMEOUT 15
@@ -1805,6 +1844,16 @@ static char detailed_calls_sql[] =
 	"where a.uuid = c.caller_uuid or a.uuid not in (select callee_uuid from calls)";
 
 
+static char recovery_sql[] =
+	"CREATE TABLE recovery (\n"
+	"   runtime_uuid    VARCHAR(255),\n"
+	"   technology      VARCHAR(255),\n"
+	"   profile_name    VARCHAR(255),\n"
+	"   hostname        VARCHAR(255),\n"
+	"   uuid            VARCHAR(255),\n"
+	"   metadata        text\n"
+	");\n";
+
 static char basic_calls_sql[] =
 	"create view basic_calls as select "
 	"a.uuid as uuid,"
@@ -1855,6 +1904,289 @@ static char basic_calls_sql[] =
 	"left join calls c on a.uuid = c.caller_uuid and a.hostname = c.hostname "
 	"left join channels b on b.uuid = c.callee_uuid and b.hostname = c.hostname "
 	"where a.uuid = c.caller_uuid or a.uuid not in (select callee_uuid from calls)";
+
+
+
+SWITCH_DECLARE(void) switch_core_recovery_flush(const char *technology, const char *profile_name)
+{
+	char *sql = NULL;
+	switch_cache_db_handle_t *dbh;
+
+	if (switch_core_recovery_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+		return;
+	}
+
+	if (zstr(technology)) {
+
+		if (zstr(profile_name)) {
+			sql = switch_mprintf("delete from recovery");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID\n");
+		}
+
+	} else {
+		if (zstr(profile_name)) {
+			sql = switch_mprintf("delete from recovery where technology='%q' ", technology);
+		} else {
+			sql = switch_mprintf("delete from recovery where technology='%q' and profile_name='%q'", technology, profile_name);
+		}
+	}
+
+	if (sql) {
+		switch_cache_db_execute_sql(dbh, sql, NULL);
+		switch_safe_free(sql);
+	}
+	
+	switch_cache_db_release_db_handle(&dbh);
+}
+
+
+static int recover_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	int *rp = (int *) pArg;
+	switch_xml_t xml;
+	switch_endpoint_interface_t *ep;
+	switch_core_session_t *session;
+
+	if (argc < 4) {
+		return 0;
+	}
+	
+	if (!(xml = switch_xml_parse_str_dynamic(argv[4], SWITCH_TRUE))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "XML ERROR\n");
+		return 0;
+	}
+
+	if (!(ep = switch_loadable_module_get_endpoint_interface(argv[0]))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "EP ERROR\n");
+		return 0;
+	}
+
+	if (!(session = switch_core_session_request_xml(ep, NULL, xml))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid cdr data, call not recovered\n");
+		goto end;
+	}
+
+	if (ep->recover_callback) {
+		switch_caller_extension_t *extension = NULL;
+
+
+		if (ep->recover_callback(session) > 0) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+
+			if (switch_channel_get_partner_uuid(channel)) {
+				switch_channel_set_flag(channel, CF_RECOVERING_BRIDGE);
+			} else {
+				switch_xml_t callflow, param, x_extension;
+				if ((extension = switch_caller_extension_new(session, "recovery", "recovery")) == 0) {
+					abort();
+				}
+
+				if ((callflow = switch_xml_child(xml, "callflow")) && (x_extension = switch_xml_child(callflow, "extension"))) {
+					for (param = switch_xml_child(x_extension, "application"); param; param = param->next) {
+						const char *var = switch_xml_attr_soft(param, "app_name");
+						const char *val = switch_xml_attr_soft(param, "app_data");
+						/* skip announcement type apps */
+						if (strcasecmp(var, "speak") && strcasecmp(var, "playback") && strcasecmp(var, "gentones") && strcasecmp(var, "say")) {
+							switch_caller_extension_add_application(session, extension, var, val);
+						}
+					}
+				}
+
+				switch_channel_set_caller_extension(channel, extension);
+			}
+
+			switch_channel_set_state(channel, CS_INIT);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, 
+							  "Resurrecting fallen channel %s\n", switch_channel_get_name(channel));
+			switch_core_session_thread_launch(session);
+
+			*rp = (*rp) + 1;
+			
+		}
+
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Endpoint %s has no recovery function\n", argv[0]);
+	}
+
+
+ end:
+
+	UNPROTECT_INTERFACE(ep);
+
+	switch_xml_free(xml);
+
+	return 0;
+}
+
+SWITCH_DECLARE(int) switch_core_recovery_recover(const char *technology, const char *profile_name)
+												  
+{
+	char *sql = NULL;
+	char *errmsg = NULL;
+	switch_cache_db_handle_t *dbh;
+	int r = 0;
+
+	if (switch_core_recovery_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+		return 0;
+	}
+
+	if (zstr(technology)) {
+		
+		if (zstr(profile_name)) {
+			sql = switch_mprintf("select technology, profile_name, hostname, uuid, metadata "
+								 "from recovery where runtime_uuid!='%q'", 
+								 switch_core_get_uuid());
+		} else {
+			sql = switch_mprintf("select technology, profile_name, hostname, uuid, metadata "
+								 "from recovery where runtime_uuid!='%q' and profile_name='%q'", 
+								 switch_core_get_uuid(), profile_name);
+		}
+
+	} else {
+
+		if (zstr(profile_name)) {
+			sql = switch_mprintf("select technology, profile_name, hostname, uuid, metadata "
+								 "from recovery where technology='%q' and runtime_uuid!='%q'", 
+								 technology, switch_core_get_uuid());
+		} else {
+			sql = switch_mprintf("select technology, profile_name, hostname, uuid, metadata "
+								 "from recovery where technology='%q' and runtime_uuid!='%q' and profile_name='%q'", 
+								 technology, switch_core_get_uuid(), profile_name);
+		}
+	}
+
+
+	switch_cache_db_execute_sql_callback(dbh, sql, recover_callback, &r, &errmsg);
+	
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+		free(errmsg);
+	}
+
+	switch_safe_free(sql);
+
+	if (zstr(technology)) {
+		if (zstr(profile_name)) {
+			sql = switch_mprintf("delete from recovery where runtime_uuid!='%q'", 
+								 switch_core_get_uuid());
+		} else {
+			sql = switch_mprintf("delete from recovery where runtime_uuid!='%q' and profile_name='%q'", 
+								 switch_core_get_uuid(), profile_name);
+		}
+	} else {
+		if (zstr(profile_name)) {
+			sql = switch_mprintf("delete from recovery where runtime_uuid!='%q' and technology='%q' ", 
+								 switch_core_get_uuid(), technology);
+		} else {
+			sql = switch_mprintf("delete from recovery where runtime_uuid!='%q' and technology='%q' and profile_name='%q'", 
+								 switch_core_get_uuid(), technology, profile_name);
+		}
+	}
+
+	switch_cache_db_execute_sql(dbh, sql, NULL);
+	switch_safe_free(sql);
+
+	switch_cache_db_release_db_handle(&dbh);
+
+	return r;
+
+}
+
+
+SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session, switch_bool_t force)
+{
+	char *sql = NULL;
+	switch_cache_db_handle_t *dbh;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (!switch_channel_test_flag(channel, CF_TRACKABLE)) {
+		return;
+	}
+
+	if (switch_core_recovery_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+		return;
+	}
+
+	if ((switch_channel_test_flag(channel, CF_RECOVERING))) {
+		return;
+	}
+
+	if (switch_channel_test_flag(channel, CF_TRACKED || force)) {
+
+		if (force) {
+			sql = switch_mprintf("delete from recovery where uuid='%q'", switch_core_session_get_uuid(session));
+			
+		} else {
+			sql = switch_mprintf("delete from recovery where runtime_uuid='%q' and uuid='%q'",
+								 switch_core_get_uuid(), switch_core_session_get_uuid(session));
+		}
+
+		switch_cache_db_execute_sql(dbh, sql, NULL);
+		
+		switch_channel_clear_flag(channel, CF_TRACKED);
+				
+		switch_safe_free(sql);
+	}
+	
+	switch_cache_db_release_db_handle(&dbh);
+
+}
+
+SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session)
+{
+	switch_xml_t cdr = NULL;
+	char *xml_cdr_text = NULL;
+	char *sql = NULL;
+	switch_cache_db_handle_t *dbh;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *profile_name;
+	const char *technology;
+
+	if (switch_channel_test_flag(channel, CF_RECOVERING) || !switch_channel_test_flag(channel, CF_TRACKABLE)) {
+		return;
+	}
+
+
+	profile_name = switch_channel_get_variable_dup(channel, "recovery_profile_name", SWITCH_FALSE, -1);
+	technology = session->endpoint_interface->interface_name;
+
+	if (switch_core_recovery_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+		return;
+	}
+	
+
+	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
+		xml_cdr_text = switch_xml_toxml_nolock(cdr, SWITCH_FALSE);
+		switch_xml_free(cdr);
+	}
+
+	if (xml_cdr_text) {
+		if (switch_channel_test_flag(channel, CF_TRACKED)) {
+			sql = switch_mprintf("update recovery set metadata='%q' where uuid='%q'",  xml_cdr_text, switch_core_session_get_uuid(session));
+		} else {
+			sql = switch_mprintf("insert into recovery (runtime_uuid, technology, profile_name, hostname, uuid, metadata) "
+								 "values ('%q','%q','%q','%q','%q','%q')",
+								 switch_core_get_uuid(), switch_str_nil(technology), 
+								 switch_str_nil(profile_name), switch_core_get_hostname(), switch_core_session_get_uuid(session), xml_cdr_text);
+		}
+
+		switch_cache_db_execute_sql(dbh, sql, NULL);
+		switch_safe_free(sql);
+		
+		free(xml_cdr_text);
+		switch_channel_set_flag(channel, CF_TRACKED);
+		
+	}
+	
+	switch_cache_db_release_db_handle(&dbh);
+
+}
+
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
@@ -2171,7 +2503,6 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 }
 
 
-
 SWITCH_DECLARE(void) switch_core_sqldb_stop_thread(void)
 {
 	switch_mutex_lock(sql_manager.ctl_mutex);
@@ -2199,7 +2530,29 @@ SWITCH_DECLARE(void) switch_core_sqldb_stop_thread(void)
 
 SWITCH_DECLARE(void) switch_core_sqldb_start_thread(void)
 {
+	switch_cache_db_handle_t *dbh;
+
 	switch_mutex_lock(sql_manager.ctl_mutex);
+
+	if (switch_core_recovery_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+			
+		if (switch_test_flag((&runtime), SCF_CORE_ODBC_REQ)) {
+			int arg = 1;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure! ODBC IS REQUIRED!\n");
+			switch_core_session_ctl(SCSC_SHUTDOWN_NOW, &arg);
+		}
+			
+		
+	} else {
+		switch_cache_db_test_reactive(dbh, "select hostname from recovery", "DROP TABLE recovery", recovery_sql);
+		switch_cache_db_execute_sql(dbh, "create index recovery1 on recovery(technology)", NULL);
+		switch_cache_db_execute_sql(dbh, "create index recovery2 on recovery(profile_name)", NULL);
+		switch_cache_db_execute_sql(dbh, "create index recovery3 on recovery(uuid)", NULL);
+		switch_cache_db_execute_sql(dbh, "create index recovery3 on recovery(runtime_uuid)", NULL);
+		switch_cache_db_release_db_handle(&dbh);
+	}
+
 
 	if (sql_manager.manage) {
 

@@ -1789,7 +1789,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
+#define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -1808,6 +1808,13 @@ SWITCH_STANDARD_API(ctl_function)
 			arg = 1;
 			switch_core_session_ctl(SCSC_HUPALL, &arg);
 			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "recover")) {
+			int r = switch_core_session_ctl(SCSC_RECOVER, argv[1]);
+			if (r < 0){
+				stream->write_function(stream, "+OK flushed\n");
+			} else {
+				stream->write_function(stream, "+OK %d session(s) recovered in total\n", r);
+			}
 		} else if (!strcasecmp(argv[0], "flush_db_handles")) {
 			switch_core_session_ctl(SCSC_FLUSH_DB_HANDLES, NULL);
 			stream->write_function(stream, "+OK\n");
@@ -5646,6 +5653,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl pause_check inbound");
 	switch_console_set_complete("add fsctl pause_check outbound");
 	switch_console_set_complete("add fsctl ready_check");
+	switch_console_set_complete("add fsctl recover");
 	switch_console_set_complete("add fsctl shutdown_check");
 	switch_console_set_complete("add fsctl shutdown");
 	switch_console_set_complete("add fsctl shutdown asap");

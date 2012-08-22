@@ -1882,6 +1882,18 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 					}
+				} else if (!strcasecmp(var, "core-recovery-db-dsn") && !zstr(val)) {
+					if (switch_odbc_available()) {
+						runtime.recovery_odbc_dsn = switch_core_strdup(runtime.memory_pool, val);
+						if ((runtime.recovery_odbc_user = strchr(runtime.recovery_odbc_dsn, ':'))) {
+							*runtime.recovery_odbc_user++ = '\0';
+							if ((runtime.recovery_odbc_pass = strchr(runtime.recovery_odbc_user, ':'))) {
+								*runtime.recovery_odbc_pass++ = '\0';
+							}
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+					}
 				} else if (!strcasecmp(var, "core-odbc-required") && !zstr(val)) {
 					switch_set_flag((&runtime), SCF_CORE_ODBC_REQ);
 				} else if (!strcasecmp(var, "core-dbtype") && !zstr(val)) {
@@ -2108,6 +2120,44 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	}
 
 	switch (cmd) {
+	case SCSC_RECOVER:
+		{
+			char *arg = (char *) val;
+			char *tech = NULL, *prof = NULL;
+			int r, flush = 0;
+
+			if (!zstr(arg)) {
+				tech = strdup(arg);
+				
+				if ((prof = strchr(tech, ':'))) {
+					*prof++ = '\0';
+				}
+
+				if (!strcasecmp(tech, "flush")) {
+					flush++;
+
+					if (prof) {
+						tech = prof;
+						if ((prof = strchr(tech, ':'))) {
+							*prof++ = '\0';
+						}
+					}
+				}
+
+			}
+
+			if (flush) {
+				switch_core_recovery_flush(tech, prof);
+				r = -1;
+			} else {
+				r = switch_core_recovery_recover(tech, prof);
+			}
+
+			switch_safe_free(tech);
+			return r;
+
+		}
+		break;
 	case SCSC_DEBUG_SQL:
 		{
 			if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {

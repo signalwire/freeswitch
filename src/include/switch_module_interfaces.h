@@ -184,8 +184,12 @@ struct switch_endpoint_interface {
 
 	/* parent */
 	switch_loadable_module_interface_t *parent;
+
 	/* to facilitate linking */
 	struct switch_endpoint_interface *next;
+
+	switch_core_recover_callback_t recover_callback;
+
 };
 
 /*! \brief Abstract handler to a timer module */
