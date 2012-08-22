@@ -122,8 +122,8 @@ switch_io_routines_t crtp_io_routines = {
 	/*state_change*/ NULL,
 	/*read_video_frame*/ NULL,
 	/*write_video_frame*/ NULL,
-	/*state_run*/ NULL,
-	/* resurrect_session*/ NULL
+	/*state_run*/ NULL
+
 
 };
 
