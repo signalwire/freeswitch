@@ -476,31 +476,33 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                 {
                     MgMgcoReqEvtDesc* evt = &desc->dl.descs[descId]->u.evts; 
 
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Requested Event descriptor\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG," Requested Event descriptor\n");
             
                     /* If we receive events from MGC , means clear any ongoing events */
                     /* as such we dont apply any events to term, so for us (as of now) clear events means clear active_events structure*/
 
                     if(NULL != term->active_events){
-                        mgUtlDelMgMgcoReqEvtDesc(term->active_events);
-                        free(term->active_events);
-                        term->active_events = NULL;
+			mgUtlDelMgMgcoReqEvtDesc(term->active_events);
+			MG_STACK_MEM_FREE(term->active_events, sizeof(MgMgcoReqEvtDesc));
                     }
 
-                    term->active_events = malloc(sizeof(*term->active_events));
-                    
+		    MG_STACK_MEM_ALLOC(&term->active_events, sizeof(MgMgcoReqEvtDesc));
+
+		    if(NULL == term->active_events){
+			    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," term->active_events Memory Alloc failed \n");
+			    return SWITCH_STATUS_FALSE;
+		    }
+
                     /* copy requested event */
                     if(RFAILED == mgUtlCpyMgMgcoReqEvtDesc(term->active_events, evt, NULLP)){
-                        free(term->active_events);
-                        term->active_events = NULL;
+		        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," copy new events to term->active_events failed \n");
+			MG_STACK_MEM_FREE(term->active_events, sizeof(MgMgcoReqEvtDesc));
                         return SWITCH_STATUS_FALSE;
                     }
 
                     /* print Requested event descriptor */
-                    mgAccEvntPrntMgMgcoReqEvtDesc(term->active_events, stdout);
+                    /*mgAccEvntPrntMgMgcoReqEvtDesc(term->active_events, stdout);*/
                     
-                    /* TODO - We can check for it/ito package*/
-
                     break;
                 }
             case MGT_SIGNALSDESC:
@@ -508,7 +510,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                     MgMgcoSignalsDesc* sig = &desc->dl.descs[descId]->u.sig; 
                     MgMgcoSignalsParm* param = NULL;
                     int i = 0x00;
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Requested Signal descriptor\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG," Requested Signal descriptor\n");
 
                     if((NOTPRSNT != sig->pres.pres) && (NOTPRSNT != sig->num.pres) && (0 != sig->num.val)){
 
@@ -760,7 +762,8 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         if(!is_rtp){
             /* IF ADD request is for Physical term then we can simply copy incoming
              * termination */
-            mgUtlAllocMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.add.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.add.termIdLst);
+            //mgUtlAllocMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.add.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.add.termIdLst);
+	    mgUtlCpyMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.add.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.add.termIdLst, &rsp.u.mgCmdRsp[0]->memCp);
 
 #ifdef GCP_VER_2_1
             out_termId = rsp.u.mgCmdRsp[0]->u.add.termIdLst.terms[0];
@@ -1041,12 +1044,14 @@ error:
             mg_build_mgco_err_request(&mgErr, txn_id, ctxtId, err_code, &errTxt)) {
         sng_mgco_send_err(mg_profile->idx, mgErr);
     }
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," ADD Request failed..releasing context/termination(if allocated) \n"); 
-    if(mg_ctxt){
-	    megaco_release_context(mg_ctxt);
-    }
-    if(term){
-	    megaco_termination_destroy(term);
+    if(err_code != MGT_MGCO_RSP_CODE_DUP_TERM_CTXT){
+	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," ADD Request failed..releasing context/termination(if allocated) \n"); 
+	    if(mg_ctxt){
+		    megaco_release_context(mg_ctxt);
+	    }
+	    if(term){
+		    megaco_termination_destroy(term);
+	    }
     }
     return SWITCH_STATUS_FALSE;	
 }
@@ -1252,7 +1257,9 @@ response:
 		rsp.u.mgCmdRsp[0]->u.mod.termIdLst.num.pres = PRSNT_NODEF;
 		rsp.u.mgCmdRsp[0]->u.mod.termIdLst.num.val  = 1;
 
-		mgUtlAllocMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.mod.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.mod.termIdLst);
+		//mgUtlAllocMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.mod.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.mod.termIdLst);
+
+		mgUtlCpyMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.mod.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.mod.termIdLst, &rsp.u.mgCmdRsp[0]->memCp);
 
 #ifdef GCP_VER_2_1
 		termId = rsp.u.mgCmdRsp[0]->u.mod.termIdLst.terms[0];
@@ -1509,7 +1516,8 @@ response:
             rsp.u.mgCmdRsp[0]->wild.pres = PRSNT_NODEF;
         }
 
-        mgUtlAllocMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.add.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.add.termIdLst);
+        //mgUtlAllocMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.add.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.add.termIdLst);
+	mgUtlCpyMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.add.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.add.termIdLst, &rsp.u.mgCmdRsp[0]->memCp);
 
 #ifdef GCP_VER_2_1
         out_termId = rsp.u.mgCmdRsp[0]->u.add.termIdLst.terms[0];
@@ -1582,7 +1590,8 @@ switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req)
 	cmd.u.mgCmdRsp[0]->u.add.termIdLst.num.pres = PRSNT_NODEF;
 	cmd.u.mgCmdRsp[0]->u.add.termIdLst.num.val  = 1;
 
-	mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.add.termIdLst, &req->u.mgCmdReq[0]->cmd.u.add.termIdLst);
+	//mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.add.termIdLst, &req->u.mgCmdReq[0]->cmd.u.add.termIdLst);
+	mgUtlCpyMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.add.termIdLst, &req->u.mgCmdReq[0]->cmd.u.add.termIdLst, &cmd.u.mgCmdRsp[0]->memCp);
 
 #ifdef GCP_VER_2_1
 	termId = cmd.u.mgCmdRsp[0]->u.add.termIdLst.terms[0];
@@ -1724,6 +1733,7 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 	uint8_t          wild = 0x00;
 
 	memset(&reply, 0, sizeof(reply));
+	memset(&ctxt, 0, sizeof(ctxt));
 
 	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
 	wild 	   = auditReq->u.mgCmdReq[0]->wild.pres;
@@ -1818,7 +1828,8 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 	adtRep->type.pres = PRSNT_NODEF;
 	adtRep->type.val = MGT_TERMAUDIT;
 	adtRep->u.other.pres.pres = PRSNT_NODEF;
-	mgUtlAllocMgMgcoTermIdLst(&adtRep->u.other.termIdLst, term_list);
+	
+	mgUtlCpyMgMgcoTermIdLst(&adtRep->u.other.termIdLst, term_list, &reply.u.mgCmdRsp[0]->memCp);
 
 	/* NOW for each requested AUDIT descriptor we need to add entry to adtRep->u.other.audit.parms list */
 
@@ -1920,7 +1931,7 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 						adtRep->u.other.audit.parms[numOfParms - 1]->type.pres = PRSNT_NODEF;
 						adtRep->u.other.audit.parms[numOfParms - 1]->type.val  = MGT_PKGSDESC;
 
-						if(SWITCH_STATUS_FALSE == mg_build_pkg_desc(&adtRep->u.other.audit.parms[numOfParms - 1]->u.pkgs)){
+						if(SWITCH_STATUS_FALSE == mg_build_pkg_desc(&adtRep->u.other.audit.parms[numOfParms - 1]->u.pkgs, &reply.u.mgCmdRsp[0]->memCp)){
 							return SWITCH_STATUS_FALSE;
 						}
 
@@ -2023,7 +2034,8 @@ switch_status_t mg_send_heartbeat_audit_rsp( SuId suId, MgMgcoCommand *auditReq)
 	adtRep->type.val = MGT_TERMAUDIT;
 	adtRep->u.other.pres.pres = PRSNT_NODEF;
 	adtRep->u.other.audit.num.pres = 0x00;
-	mgUtlAllocMgMgcoTermIdLst(&adtRep->u.other.termIdLst, term_list);
+
+	mgUtlCpyMgMgcoTermIdLst(&adtRep->u.other.termIdLst, term_list, &reply.u.mgCmdRsp[0]->memCp);
 
 
 	/* We will always send one command at a time..*/
@@ -2359,7 +2371,8 @@ switch_status_t mg_send_modify_rsp(SuId suId, MgMgcoCommand *req)
 	cmd.u.mgCmdRsp[0]->u.mod.termIdLst.num.pres = PRSNT_NODEF;
 	cmd.u.mgCmdRsp[0]->u.mod.termIdLst.num.val  = 1;
 
-	mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.mod.termIdLst, &req->u.mgCmdReq[0]->cmd.u.mod.termIdLst);
+	//mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.mod.termIdLst, &req->u.mgCmdReq[0]->cmd.u.mod.termIdLst);
+	mgUtlCpyMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.mod.termIdLst, &req->u.mgCmdReq[0]->cmd.u.mod.termIdLst, &cmd.u.mgCmdRsp[0]->memCp);
 
 #ifdef GCP_VER_2_1
 	termId = cmd.u.mgCmdRsp[0]->u.mod.termIdLst.terms[0];
@@ -2427,7 +2440,8 @@ switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req)
 	cmd.u.mgCmdRsp[0]->u.sub.termIdLst.num.pres = PRSNT_NODEF;
 	cmd.u.mgCmdRsp[0]->u.sub.termIdLst.num.val  = 1;
 
-	mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.sub.termIdLst, &req->u.mgCmdReq[0]->cmd.u.sub.termIdLst);
+	//mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.sub.termIdLst, &req->u.mgCmdReq[0]->cmd.u.sub.termIdLst);
+	mgUtlCpyMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.sub.termIdLst, &req->u.mgCmdReq[0]->cmd.u.sub.termIdLst, &cmd.u.mgCmdRsp[0]->memCp);
 
 #ifdef GCP_VER_2_1
 	termId = cmd.u.mgCmdRsp[0]->u.sub.termIdLst.terms[0];
@@ -2630,7 +2644,7 @@ switch_status_t  mg_send_ito_notify(megaco_profile_t* mg_profile )
 {
     MgMgcoObsEvt *oevt;
 
-	switch_assert(mg_profile);
+    switch_assert(mg_profile);
 
     mg_stack_alloc_mem((Ptr*)&oevt, sizeof(MgMgcoObsEvt));
 

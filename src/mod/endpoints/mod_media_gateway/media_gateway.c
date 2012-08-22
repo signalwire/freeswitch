@@ -379,8 +379,8 @@ void megaco_termination_destroy(mg_termination_t *term)
     }
 
     if(term->active_events){
-        free(term->active_events);
-        term->active_events = NULL;
+	    mgUtlDelMgMgcoReqEvtDesc(term->active_events);
+	    MG_STACK_MEM_FREE(term->active_events, sizeof(MgMgcoReqEvtDesc));
     }
     term->context = NULL;
 

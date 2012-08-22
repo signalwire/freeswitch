@@ -113,6 +113,25 @@ typedef enum {
 	cmMemcpy((U8*) (_dst), (const U8*) (_src), _len)
 
 
+#define MG_STACK_MEM_ALLOC(_buf, _size)\
+{\
+	if (SGetSBuf(S_REG, S_POOL, (Data**) _buf, (Size) _size) == ROK){   \
+	 cmMemset((U8 *) *(_buf), 0, _size); 				    \
+	} else {							    \
+		*(_buf) = NULLP; 					    \
+	}                                 				    \
+}
+
+#define MG_STACK_MEM_FREE(_buf, _size)\
+{\
+	if(_buf != NULL){						    \
+		(Void) SPutSBuf(S_REG, S_POOL, (Data *) _buf, (Size) _size);\
+		(_buf) = NULL;						    \
+	}								    \
+}
+
+
+
 #define MG_INIT_TOKEN_VALUE(_tkn, _val)                               \
 {                                                                         \
    (_tkn)->pres = PRSNT_NODEF;                                            \
@@ -204,7 +223,7 @@ switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req);
 void mg_util_set_term_string ( MgStr  *errTxt, MgMgcoTermId   *termId); 
 MgMgcoTermIdLst *mg_get_term_id_list(MgMgcoCommand *cmd);
 switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq);
-switch_status_t mg_build_pkg_desc(MgMgcoPkgsDesc* pkg);
+switch_status_t mg_build_pkg_desc(MgMgcoPkgsDesc* pkg, CmMemListCp  *memCp);
 switch_status_t mg_send_heartbeat_audit_rsp( SuId suId, MgMgcoCommand *auditReq);
 void mg_get_time_stamp(MgMgcoTimeStamp *timeStamp);
 switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, const char  *reason,CmMemListCp   *memCp);

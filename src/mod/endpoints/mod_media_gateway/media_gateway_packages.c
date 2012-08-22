@@ -147,7 +147,7 @@ MgPackage_t mg_pkg_list [] =
 };
 
 /***************************************************************************************/
-switch_status_t mg_build_pkg_desc(MgMgcoPkgsDesc* pkg)
+switch_status_t mg_build_pkg_desc(MgMgcoPkgsDesc* pkg, CmMemListCp  *memCp)
 {
 	uint16_t i = 0x00;
 	uint16_t num_of_pkgs = sizeof(mg_pkg_list)/sizeof(MgPackage_t);
@@ -157,7 +157,7 @@ switch_status_t mg_build_pkg_desc(MgMgcoPkgsDesc* pkg)
 	for (i = 0; i < num_of_pkgs; i++) {
 
 		if (mgUtlGrowList((void ***)&pkg->items,
-					sizeof(MgMgcoPkgsItem), &pkg->num, NULLP) != ROK) {
+					sizeof(MgMgcoPkgsItem), &pkg->num, memCp) != ROK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Package descriptor Grow List failed\n");
 			return SWITCH_STATUS_FALSE;
 		}

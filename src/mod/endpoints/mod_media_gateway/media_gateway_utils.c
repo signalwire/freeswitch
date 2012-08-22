@@ -961,7 +961,7 @@ const char* mg_get_codec_name(megaco_profile_t* mg_profile, int iana_code)
 	return name;
 }
 
-void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sdp_types_e sdp_type, megaco_profile_t* mg_profile, CmSdpAttrSet  *attrSet, CmMemListCp     *memCp)
+void mgco_handle_sdp_media_param(CmSdpMedPar *s, mg_termination_t* term, mgco_sdp_types_e sdp_type, megaco_profile_t* mg_profile, CmSdpAttrSet  *attrSet, CmMemListCp  *memCp)
 {
     int i=0x00;
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "***** Media Parameter *********** \n");
