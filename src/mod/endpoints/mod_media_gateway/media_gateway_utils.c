@@ -108,7 +108,6 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, C
 	termId->type.pres = PRSNT_NODEF;
 
     if(!strcmp(term_str,"ROOT")){
-        /* ROOT Termination */
         termId->type.val  = MGT_TERMID_ROOT;
     } else {
         termId->type.val  = MGT_TERMID_OTHER;
@@ -117,19 +116,12 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, C
         termId->name.dom.len = 0x00;  
 
         termId->name.pres.pres = PRSNT_NODEF;
-        termId->name.lcl.pres = PRSNT_NODEF;
-        termId->name.lcl.len = term_len;
-        MG_GETMEM(termId->name.lcl.val, termId->name.lcl.len , memCp, ret);
-        //ret = mg_stack_alloc_mem((Ptr*)&termId->name.lcl.val,term_len);
 
-        if( ret != ROK)
-            RETVALUE(ret);          
+	MG_SET_TKNSTROSXL(termId->name.lcl,term_len,term_str,memCp);
 
-        /*cmMemcpy((U8*)(termId->name.lcl.val), (CONSTANT U8*)term_str,termId->name.lcl.len);*/
-        strncpy((char*)(termId->name.lcl.val), term_str, termId->name.lcl.len);
-        termId->name.lcl.val[termId->name.lcl.len] = '\0';
-
-       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"mg_fill_mgco_termid: name.lcl.val[%s], len[%d], term_str[%s], term_len[%d]\n",termId->name.lcl.val, termId->name.lcl.len, term_str,term_len);
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+			"mg_fill_mgco_termid: name.lcl.val[%s], len[%d], term_str[%s], term_len[%d]\n",
+			termId->name.lcl.val, termId->name.lcl.len, term_str,term_len);
     }
 	      
 
