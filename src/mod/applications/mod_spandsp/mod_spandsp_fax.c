@@ -674,6 +674,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	t38_terminal_state_t *t38;
 	t30_state_t *t30;
 	const char *tmp;
+    const char *tz;
 	int fec_entries = DEFAULT_FEC_ENTRIES;
 	int fec_span = DEFAULT_FEC_SPAN;
 
@@ -844,8 +845,12 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	/* All the things which are common to audio and T.38 FAX setup */
 	t30_set_tx_ident(t30, pvt->ident);
 	t30_set_tx_page_header_info(t30, pvt->header);
-	if (pvt->timezone && pvt->timezone[0])
-		t30_set_tx_page_header_tz(t30, pvt->timezone);
+	if (pvt->timezone && pvt->timezone[0]) {
+		if ((tz = switch_lookup_timezone(pvt->timezone)))
+			t30_set_tx_page_header_tz(t30, tz);
+		else
+			t30_set_tx_page_header_tz(t30, pvt->timezone);
+	}
 
 	t30_set_phase_e_handler(t30, phase_e_handler, pvt);
 	t30_set_phase_d_handler(t30, phase_d_handler, pvt);

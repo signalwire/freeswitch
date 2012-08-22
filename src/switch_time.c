@@ -1110,7 +1110,7 @@ typedef struct {
 static switch_timezones_list_t TIMEZONES_LIST = { 0 };
 static switch_event_node_t *NODE = NULL;
 
-const char *switch_lookup_timezone(const char *tz_name)
+SWITCH_DECLARE(const char *) switch_lookup_timezone(const char *tz_name)
 {
 	char *value = NULL;
 

@@ -2131,6 +2131,7 @@ SWITCH_DECLARE(void) switch_time_sync(void);
  \return The current epoch time 
 */
 SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t);
+SWITCH_DECLARE(const char *) switch_lookup_timezone(const char *tz_name);
 SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *format, char *date, size_t len, switch_time_t thetime);
 SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_time_exp_t *tm, switch_time_t thetime);
 SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload);
