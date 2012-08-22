@@ -5743,12 +5743,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 	}
 
 
-	if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
-		switch_core_session_destroy(&session);
-		goto end;
-	}
-
+	tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t));
 	tech_pvt->channel = channel;
 
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
