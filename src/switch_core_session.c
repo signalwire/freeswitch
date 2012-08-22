@@ -388,19 +388,6 @@ SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session_t *
 	return session->stream_count;
 }
 
-SWITCH_DECLARE(switch_call_cause_t) switch_core_session_resurrect_channel(const char *endpoint_name,
-																		  switch_core_session_t **new_session, switch_memory_pool_t **pool, void *data)
-{
-	const switch_endpoint_interface_t *endpoint_interface;
-
-	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
-		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
-	}
-
-	return endpoint_interface->io_routines->resurrect_session(new_session, pool, data);
-}
-
 SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 																		 const char *endpoint_name,
 																		 switch_caller_profile_t *caller_profile,
