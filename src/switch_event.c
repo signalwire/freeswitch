@@ -539,7 +539,6 @@ SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max)
 
 	for (index = SOFT_MAX_DISPATCH; index < max && index < MAX_DISPATCH; index++) {
 		if (EVENT_DISPATCH_QUEUE_THREADS[index]) {
-			printf("Index exists continue\n");
 			continue;
 		}
 
