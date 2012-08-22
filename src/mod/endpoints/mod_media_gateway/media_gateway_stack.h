@@ -186,7 +186,7 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
 switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *cmd);
 switch_status_t mg_stack_free_mem(void* msg);
 switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize );
-MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTermId* termId);
+MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTermId* termId, CmMemListCp   *memCp);
 switch_status_t handle_media_audit( SuId suId, MgMgcoCommand *auditReq);
 switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req);
 S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, CmMemListCp   *memCp);

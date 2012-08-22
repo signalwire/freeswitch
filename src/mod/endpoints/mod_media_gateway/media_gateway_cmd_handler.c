@@ -1857,7 +1857,7 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 						adtRep->u.other.audit.parms[numOfParms - 1]->type.pres = PRSNT_NODEF;
 						adtRep->u.other.audit.parms[numOfParms - 1]->type.val  = MGT_MEDIADESC;
 
-						media = get_default_media_desc(mg_profile, termId);
+						media = get_default_media_desc(mg_profile, termId, &reply.u.mgCmdRsp[0]->memCp);
 						if(!media){
 							return SWITCH_STATUS_FALSE;
 						}

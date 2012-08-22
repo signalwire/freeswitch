@@ -1478,13 +1478,14 @@ void mg_util_set_term_string ( MgStr  *errTxt, MgMgcoTermId   *termId)
 			"info, error-text is: %s\n", __PRETTY_FUNCTION__,errTxt->val);
 }
 /*****************************************************************************************************************************/
-MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTermId* termId)
+MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTermId* termId, CmMemListCp   *memCp)
 {
 	MgMgcoMediaDesc   *media = NULL;
 	MgMgcoMediaPar    *mediaPar = NULL;
 	MgMgcoTermStateParm *trmStPar = NULL;
+	S16 ret = ROK;
 
-	mg_stack_alloc_mem((Ptr)&media, sizeof(MgMgcoMediaDesc));
+        MG_GETMEM(media, sizeof(MgMgcoMediaDesc) , memCp, ret);
 
 	if (!media) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
@@ -1492,14 +1493,15 @@ MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTerm
 	}
 	media->num.pres = PRSNT_NODEF;
 	media->num.val = 1;
-	mg_stack_alloc_mem((Ptr)&mediaPar, sizeof(MgMgcoMediaPar));
+
+        MG_GETMEM(mediaPar, sizeof(MgMgcoMediaPar) , memCp, ret);
 
 	if (!mediaPar) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
 		mg_stack_free_mem(media);
 		return NULL;	
 	}
-	mg_stack_alloc_mem((Ptr)&media->parms, sizeof(MgMgcoMediaPar *));
+        MG_GETMEM(media->parms, sizeof(MgMgcoMediaPar*) , memCp, ret);
 
 	if (!media->parms) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
@@ -1511,7 +1513,8 @@ MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTerm
 	mediaPar->type.val = MGT_MEDIAPAR_TERMST;
 	mediaPar->u.tstate.numComp.pres = PRSNT_NODEF;
 	mediaPar->u.tstate.numComp.val = 1;
-	mg_stack_alloc_mem((Ptr)&trmStPar, sizeof(MgMgcoTermStateParm));
+
+        MG_GETMEM(trmStPar, sizeof(MgMgcoTermStateParm) , memCp, ret);
 
 	if (!trmStPar) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
@@ -1520,7 +1523,8 @@ MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTerm
 		mg_stack_free_mem((void*)media);
 		return NULL;	
 	}
-	mg_stack_alloc_mem((Ptr)&mediaPar->u.tstate.trmStPar, sizeof(MgMgcoTermStateParm *));
+        MG_GETMEM(mediaPar->u.tstate.trmStPar, sizeof(MgMgcoTermStateParm *) , memCp, ret);
+
 	if (!mediaPar->u.tstate.trmStPar) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
 		mg_stack_free_mem((void*)trmStPar);
