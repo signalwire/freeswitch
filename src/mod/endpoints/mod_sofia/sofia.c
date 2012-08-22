@@ -1123,7 +1123,7 @@ static void our_sofia_event_callback(nua_event_t event,
 				}
 
 				extract_header_vars(profile, sip, session, nh);
-				sofia_glue_tech_track(tech_pvt->profile, session);
+				switch_core_recovery_track(session);
 				sofia_set_flag(tech_pvt, TFLAG_GOT_ACK);
 			}
 		}
@@ -4479,9 +4479,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "track-calls")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_TRACK_CALLS);
-						} else if (!strcasecmp(val, "events")) {
-							sofia_set_pflag(profile, PFLAG_TRACK_CALLS);
-							sofia_set_pflag(profile, PFLAG_TRACK_CALLS_EVENTS);
 						}
 					} else if (!strcasecmp(var, "NDLB-received-in-nat-reg-contact") && switch_true(val)) {
 						sofia_set_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT);
@@ -5780,7 +5777,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 
 			if ((!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED) &&
-				 !switch_channel_test_flag(channel, CF_RING_READY)) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
+				 !switch_channel_test_flag(channel, CF_RING_READY)) || switch_channel_test_flag(channel, CF_RECOVERING)) {
 				const char *from_user = "", *from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
 				const char *user_agent = "", *call_id = "";
 				const char *to_tag = "";
@@ -5860,8 +5857,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			extract_header_vars(profile, sip, session, nh);
 			extract_vars(profile, sip, session);
-			sofia_glue_tech_track(tech_pvt->profile, session);
-			sofia_clear_flag(tech_pvt, TFLAG_RECOVERING);
+			switch_core_recovery_track(session);
+			switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 		}
 
 	}
@@ -7984,7 +7981,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 		switch_channel_set_variable_printf(channel, "sip_recieved_port", "%d", network_port);
 		switch_channel_set_variable_printf(channel, "sip_via_rport", "%d", network_port);
 		
-		sofia_glue_tech_track(tech_pvt->profile, session);
+		switch_core_recovery_track(session);
 	}
 
 	if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
@@ -8351,6 +8348,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 
 		switch_channel_set_variable(channel, "sofia_profile_name", profile->name);
+		switch_channel_set_variable(channel, "recovery_profile_name", profile->name);
 		switch_channel_set_variable(channel, "sofia_profile_domain_name", profile->domain_name);
 
 		if (!zstr(sip->sip_from->a_display)) {

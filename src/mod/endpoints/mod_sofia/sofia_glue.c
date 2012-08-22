@@ -689,7 +689,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n", tech_pvt->video_pt, tech_pvt->video_rm_encoding,
 								tech_pvt->video_rm_rate);
 
-				if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
+				if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 					pass_fmtp = tech_pvt->video_rm_fmtp;
 				} else {
 
@@ -933,6 +933,11 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	tech_pvt->session = session;
 	tech_pvt->channel = switch_core_session_get_channel(session);
+
+	if (sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
+		switch_channel_set_flag(tech_pvt->channel, CF_TRACKABLE);
+	}
+
 	sofia_glue_check_dtmf_type(tech_pvt);
 	switch_channel_set_cap(tech_pvt->channel, CC_MEDIA_ACK);
 	switch_channel_set_cap(tech_pvt->channel, CC_BYPASS_MEDIA);
@@ -2085,7 +2090,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	int require_timer = 1;
 
 
-	if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 		const char *recover_contact = switch_channel_get_variable(tech_pvt->channel, "sip_recover_contact");
 		recover_via = switch_channel_get_variable(tech_pvt->channel, "sip_recover_via");
 
@@ -2412,7 +2417,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			cid_type = sofia_cid_name2type(val);
 		}
 
-		if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING) && switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING) && switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			if (zstr((use_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
 				zstr((use_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
 				if (!(use_name = switch_channel_get_variable(tech_pvt->channel, "sip_to_display"))) {
@@ -2506,7 +2511,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_private->is_call++;
 		sofia_private->is_static++;
 
-		if (sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
+		if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 			sofia_private->is_call++;
 		}
 
@@ -2543,6 +2548,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	if (!switch_channel_get_variable(channel, "sofia_profile_name")) {
 		switch_channel_set_variable(channel, "sofia_profile_name", tech_pvt->profile->name);
+		switch_channel_set_variable(channel, "recovery_profile_name", tech_pvt->profile->name);
 	}
 
 	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
@@ -3818,8 +3824,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
  end:
 
 	sofia_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
-	sofia_glue_tech_track(tech_pvt->profile, tech_pvt->session);
-
+	switch_core_recovery_track(tech_pvt->session);
 
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
@@ -5375,7 +5380,7 @@ void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 		other_channel = switch_core_session_get_channel(other_session);
 		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
 
-		if (!sofia_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && !sofia_test_flag(tech_pvt, TFLAG_RECOVERING) &&
+		if (!sofia_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && !switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING) &&
 			(switch_channel_direction(other_channel) == SWITCH_CALL_DIRECTION_OUTBOUND &&
  switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND && switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
 			switch_ivr_nomedia(val, SMF_FORCE);
@@ -5715,39 +5720,36 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
 
-struct recover_helper {
-	sofia_profile_t *profile;
-	int total;
-};
-
-
-static int recover_callback(void *pArg, int argc, char **argv, char **columnNames)
+int sofia_recover_callback(switch_core_session_t *session) 
 {
-	struct recover_helper *h = (struct recover_helper *) pArg;
-	switch_xml_t xml;
-	switch_core_session_t *session;
-	switch_channel_t *channel;
+
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = NULL;
+	sofia_profile_t *profile = NULL;
 	const char *tmp;
 	const char *rr;
+	int r = 0;
+	const char *profile_name = switch_channel_get_variable_dup(channel, "recovery_profile_name", SWITCH_FALSE, -1);
+	
 
-	xml = switch_xml_parse_str_dynamic(argv[3], SWITCH_TRUE);
-
-	if (!xml)
-		return 0;
-
-	if (!(session = switch_core_session_request_xml(sofia_endpoint_interface, NULL, xml))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid cdr data, call not recovered\n");
+	if (zstr(profile_name)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Missing profile\n");
 		return 0;
 	}
+
+	if (!(profile = sofia_glue_find_profile(profile_name))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Invalid profile %s\n", profile_name);
+		return 0;
+	}
+
 
 	if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 		switch_core_session_destroy(&session);
-		return 0;
+		goto end;
 	}
 
-	channel = tech_pvt->channel = switch_core_session_get_channel(session);
+	tech_pvt->channel = channel;
 
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->sofia_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
@@ -5804,7 +5806,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 	tech_pvt->dest_to = tech_pvt->dest;
 
-	sofia_glue_attach_private(session, h->profile, tech_pvt, NULL);
+	sofia_glue_attach_private(session, profile, tech_pvt, NULL);
 	switch_channel_set_name(tech_pvt->channel, switch_channel_get_variable(channel, "channel_name"));
 
 
@@ -5826,7 +5828,6 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 	}
 
 	if (session) {
-		switch_caller_extension_t *extension = NULL;
 		const char *ip = switch_channel_get_variable(channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 		const char *a_ip = switch_channel_get_variable(channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE);
 		const char *port = switch_channel_get_variable(channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
@@ -5834,7 +5835,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 		const char *r_port = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
 		const char *use_uuid;
 
-		sofia_set_flag(tech_pvt, TFLAG_RECOVERING);
+		switch_channel_set_flag(channel, CF_RECOVERING);
 
 		if ((use_uuid = switch_channel_get_variable(channel, "origination_uuid"))) {
 			if (switch_core_session_set_uuid(session, use_uuid) == SWITCH_STATUS_SUCCESS) {
@@ -5918,8 +5919,7 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 
 			if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
-				switch_xml_free(xml);
-				return 0;
+				goto end;
 			}
 			
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
@@ -5943,39 +5943,13 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 			}
 
 		}
-
-		if (switch_channel_get_partner_uuid(channel)) {
-			sofia_set_flag(tech_pvt, TFLAG_RECOVERING_BRIDGE);
-		} else {
-			switch_xml_t callflow, param, x_extension;
-			if ((extension = switch_caller_extension_new(session, "recovery", "recovery")) == 0) {
-				abort();
-			}
-
-			if ((callflow = switch_xml_child(xml, "callflow")) && (x_extension = switch_xml_child(callflow, "extension"))) {
-				for (param = switch_xml_child(x_extension, "application"); param; param = param->next) {
-					const char *var = switch_xml_attr_soft(param, "app_name");
-					const char *val = switch_xml_attr_soft(param, "app_data");
-					/* skip announcement type apps */
-					if (strcasecmp(var, "speak") && strcasecmp(var, "playback") && strcasecmp(var, "gentones") && strcasecmp(var, "say")) {
-						switch_caller_extension_add_application(session, extension, var, val);
-					}
-				}
-			}
-
-			switch_channel_set_caller_extension(channel, extension);
-		}
-
-		switch_channel_set_state(channel, CS_INIT);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Resurrecting fallen channel %s\n", switch_channel_get_name(channel));
-		switch_core_session_thread_launch(session);
 	}
 
-	switch_xml_free(xml);
+	r++;
 
-	h->total++;
+ end:
 
-	return 0;
+	return r;
 
 }
 
@@ -6001,140 +5975,21 @@ int sofia_glue_recover(switch_bool_t flush)
 
 int sofia_glue_profile_recover(sofia_profile_t *profile, switch_bool_t flush)
 {
-	char *sql;				
 	int r = 0;
 
 	if (profile) {
-		struct recover_helper h = { 0 };
-		h.profile = profile;
-		h.total = 0;
-
 		sofia_clear_pflag_locked(profile, PFLAG_STANDBY);
 
 		if (flush) {
-			sql = switch_mprintf("delete from sip_recovery where profile_name='%q'", profile->name);
-			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+			switch_core_recovery_flush(SOFIA_RECOVER, profile->name);
 		} else {
-
-			sql = switch_mprintf("select profile_name, hostname, uuid, metadata "
-								 "from sip_recovery where runtime_uuid!='%q' and profile_name='%q'", switch_core_get_uuid(), profile->name);
-
-			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, recover_callback, &h);
-			r += h.total;
-			free(sql);
-			sql = NULL;
-
-			sql = switch_mprintf("delete "
-								 "from sip_recovery where runtime_uuid!='%q' and profile_name='%q'", switch_core_get_uuid(), profile->name);
-
-			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+			r = switch_core_recovery_recover(SOFIA_RECOVER, profile->name);
 		}
 	}
 
 	return r;
 }
 
-void sofia_glue_track_event_handler(switch_event_t *event)
-{
-	char *sql, *buf = NULL;
-	char *profile_name = NULL;
-
-	switch_assert(event);		// Just a sanity check
-
-	if ((buf = switch_event_get_header_nil(event, "sql")) && (profile_name = switch_event_get_header_nil(event, "profile_name"))) {
-		sofia_profile_t *profile;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", switch_event_get_header_nil(event, "Event-Calling-Function"));
-		if ((profile = sofia_glue_find_profile(profile_name))) {
-			sql = switch_mprintf("%s", buf);
-			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-			sofia_glue_release_profile(profile);
-		}
-	}
-
-	return;
-}
-void sofia_glue_tech_untrack(sofia_profile_t *profile, switch_core_session_t *session, switch_bool_t force)
-{
-	char *sql = NULL;
-	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-
-	if (!sofia_test_pflag(profile, PFLAG_TRACK_CALLS) || (sofia_test_flag(tech_pvt, TFLAG_RECOVERING))) {
-		return;
-	}
-
-	if (sofia_test_pflag(profile, PFLAG_TRACK_CALLS) && (sofia_test_flag(tech_pvt, TFLAG_TRACKED) || force)) {
-		switch_event_t *event = NULL;
-
-		if (force) {
-			sql = switch_mprintf("delete from sip_recovery where uuid='%q'", switch_core_session_get_uuid(session));
-			
-		} else {
-			sql = switch_mprintf("delete from sip_recovery where runtime_uuid='%q' and uuid='%q'",
-								 switch_core_get_uuid(), switch_core_session_get_uuid(session));
-		}
-
-		if (sofia_test_pflag(profile, PFLAG_TRACK_CALLS_EVENTS)) {
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RECOVERY_SEND) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sql", sql);
-				switch_event_fire(&event);
-			}
-		}
-		
-		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-		sofia_clear_flag(tech_pvt, TFLAG_TRACKED);
-		
-		switch_safe_free(sql);
-	}
-	
-
-}
-
-void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *session)
-{
-	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-	switch_xml_t cdr = NULL;
-	char *xml_cdr_text = NULL;
-	char *sql = NULL;
-
-	if (!sofia_test_pflag(profile, PFLAG_TRACK_CALLS) || sofia_test_flag(tech_pvt, TFLAG_RECOVERING)) {
-		return;
-	}
-
-	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
-		xml_cdr_text = switch_xml_toxml_nolock(cdr, SWITCH_FALSE);
-		switch_xml_free(cdr);
-	}
-
-	if (xml_cdr_text) {
-		if (sofia_test_flag(tech_pvt, TFLAG_TRACKED)) {
-			sql = switch_mprintf("update sip_recovery set metadata='%q' where uuid='%q'",  xml_cdr_text, switch_core_session_get_uuid(session));
-		} else {
-			
-			sql = switch_mprintf("insert into sip_recovery (runtime_uuid, profile_name, hostname, uuid, metadata) values ('%q','%q','%q','%q','%q')",
-								 switch_core_get_uuid(), profile->name, mod_sofia_globals.hostname, switch_core_session_get_uuid(session), xml_cdr_text);
-		}
-
-		if (sofia_test_pflag(profile, PFLAG_TRACK_CALLS_EVENTS)) {
-			switch_event_t *event = NULL;
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RECOVERY_SEND) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sql", sql);
-				switch_event_fire(&event);
-			}
-		}
-
-		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-		
-		free(xml_cdr_text);
-		sofia_set_flag(tech_pvt, TFLAG_TRACKED);
-		
-	}
-	
-	
-	switch_safe_free(sql);
-
-}
 
 int sofia_glue_init_sql(sofia_profile_t *profile)
 {
@@ -6164,15 +6019,6 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   orig_server_host VARCHAR(255),\n"
 		"   orig_hostname    VARCHAR(255),\n"
 		"   sub_host         VARCHAR(255)\n"
-		");\n";
-
-	char recovery_sql[] =
-		"CREATE TABLE sip_recovery (\n"
-		"   runtime_uuid    VARCHAR(255),\n"
-		"   profile_name    VARCHAR(255),\n"
-		"   hostname        VARCHAR(255),\n"
-		"   uuid            VARCHAR(255),\n"
-		"   metadata        text\n"
 		");\n";
 
 	char pres_sql[] =
@@ -6346,10 +6192,6 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"create index ssd_contact_str on sip_shared_appearance_dialogs (contact_str)",
 		"create index ssd_call_id on sip_shared_appearance_dialogs (call_id)",
 		"create index ssd_expires on sip_shared_appearance_dialogs (expires)",
-		"create index sr_1 on sip_recovery (runtime_uuid)",
-		"create index sr_2 on sip_recovery (profile_name)",
-		"create index sr_3 on sip_recovery (hostname)",
-		"create index sr_4 on sip_recovery (uuid)",
 		NULL
 	};
 		
@@ -6417,11 +6259,6 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_shared_appearance_dialogs", shared_appearance_dialogs_sql);
 		
-	free(test_sql);
-	test_sql = switch_mprintf("select count(profile_name) from sip_recovery where hostname='%q'", mod_sofia_globals.hostname);
-
-
-	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_recovery", recovery_sql);
 	free(test_sql);
 
 	for (x = 0; indexes[x]; x++) {
@@ -6904,7 +6741,7 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 
 					did_simplify = 1;
 
-					sofia_glue_tech_track(tech_pvt->profile, inbound_session);
+					switch_core_recovery_track(inbound_session);
 
 					switch_channel_set_flag(inbound_channel, CF_SIMPLIFY);
 					

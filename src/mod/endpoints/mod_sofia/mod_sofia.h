@@ -37,6 +37,7 @@
 
 /*Defines etc..*/
 /*************************************************************************************************************************************************************/
+#define SOFIA_RECOVER "sofia"
 #define MANUAL_BYE 1
 #define SQL_CACHE_TIMEOUT 300
 #define DEFAULT_NONCE_TTL 60
@@ -246,7 +247,6 @@ typedef enum {
 	PFLAG_LOG_AUTH_FAIL,
 	PFLAG_FORWARD_MWI_NOTIFY,
 	PFLAG_TRACK_CALLS,
-	PFLAG_TRACK_CALLS_EVENTS,
 	PFLAG_DESTROY,
 	PFLAG_EXTENDED_INFO_PARSING,
 	PFLAG_T38_PASSTHRU,
@@ -327,9 +327,6 @@ typedef enum {
 	TFLAG_PASS_RFC2833,
 	TFLAG_UPDATING_DISPLAY,
 	TFLAG_ENABLE_SOA,
-	TFLAG_TRACKED,
-	TFLAG_RECOVERING,
-	TFLAG_RECOVERING_BRIDGE,
 	TFLAG_T38_PASSTHRU,
 	TFLAG_RECOVERED,
 	TFLAG_AUTOFLUSH_DURING_BRIDGE,
@@ -957,7 +954,7 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 void event_handler(switch_event_t *event);
 void sofia_presence_event_handler(switch_event_t *event);
 void sofia_presence_mwi_event_handler(switch_event_t *event);
-void sofia_glue_track_event_handler(switch_event_t *event);
+
 void sofia_presence_cancel(void);
 switch_status_t config_sofia(int reload, char *profile_name);
 void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_dispatch_event_t *de,
@@ -1161,8 +1158,6 @@ void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t 
 void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t send);
 void sofia_send_callee_id(switch_core_session_t *session, const char *name, const char *number);
 int sofia_sla_supported(sip_t const *sip);
-void sofia_glue_tech_untrack(sofia_profile_t *profile, switch_core_session_t *session, switch_bool_t force);
-void sofia_glue_tech_track(sofia_profile_t *profile, switch_core_session_t *session);
 int sofia_glue_recover(switch_bool_t flush);
 int sofia_glue_profile_recover(sofia_profile_t *profile, switch_bool_t flush);
 void sofia_profile_destroy(sofia_profile_t *profile);
@@ -1192,7 +1187,7 @@ char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);
 void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now);
 void sofia_msg_thread_start(int idx);
 void crtp_init(switch_loadable_module_interface_t *module_interface);
-
+int sofia_recover_callback(switch_core_session_t *session);
 
 /* For Emacs:
  * Local Variables:
