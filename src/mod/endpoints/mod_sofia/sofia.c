@@ -7676,9 +7676,11 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0), 0, SWITCH_DTMF_ENDPOINT };
 	switch_event_t *event;
 	private_object_t *tech_pvt = NULL;
+	switch_channel_t *channel = NULL;
 
 	if (session) {
 		tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+		channel = switch_core_session_get_channel(session);
 	}
 
 	if (sofia_test_pflag(profile, PFLAG_EXTENDED_INFO_PARSING)) {
@@ -7743,8 +7745,6 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	}
 
 	if (session) {
-		/* Get the channel */
-		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *vval;
 
 		/* Barf if we didn't get our private */
@@ -7933,6 +7933,9 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
   end:
 
 	if (create_info_event(sip, nh, &event) == SWITCH_STATUS_SUCCESS) {		
+		if (channel) {
+			switch_channel_event_set_data(channel, event);
+		}
 		switch_event_fire(&event);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "dispatched freeswitch event for INFO\n");
 	}
