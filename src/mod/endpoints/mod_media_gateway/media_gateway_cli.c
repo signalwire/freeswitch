@@ -198,14 +198,15 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 			}
 
 			if(profile){
-				megaco_profile_release(profile);
 				if(!strcasecmp(argv[3], "activecalls")){
 					/* mg <mg-profile> show activecalls */
+					megaco_profile_release(profile);
 					handle_show_activecalls_cli_cmd(stream, profile);
 			     /*******************************************************************/
 				}else if(!strcasecmp(argv[3], "alltermstatus")){
 			     /*******************************************************************/
 					/* mg <mg-profile> show alltermstatus */
+					megaco_profile_release(profile);
 					handle_all_term_status_cli_cmd(stream, profile);
 			     /*******************************************************************/
 				}else if(!strcasecmp(argv[3], "termstatus")){
@@ -214,21 +215,25 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 					if (zstr(argv[4])) {
 						goto usage;
 					}
+					megaco_profile_release(profile);
 					handle_term_status_cli_cmd(stream, profile, argv[4]);
 			     /*******************************************************************/
 				}else if(!strcasecmp(argv[3], "stackmem")){
 			     /*******************************************************************/
+					megaco_profile_release(profile);
 					sng_mg_reg_info_show();
 			     /*******************************************************************/
 #ifdef LEAK_TEST
 				}else if(!strcasecmp(argv[3], "leak-report")){
 			     /*******************************************************************/
+					megaco_profile_release(profile);
 					mgPrntLeakReport();
 			     /*******************************************************************/
 #endif
 				} else {
 			     /*******************************************************************/
-				stream->write_function(stream, "-ERR No such profile\n");
+					stream->write_function(stream, "-ERR No such profile\n");
+					goto usage;
 				}
 			}
 /**********************************************************************************/
