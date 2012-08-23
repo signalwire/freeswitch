@@ -887,7 +887,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	const char *digit_timeout_ = switch_xml_attr(tag, "digit-timeout");
 	char *loops_ = (char *) switch_xml_attr(tag, "loops");
 	int loops = 0;
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_ivr_dmachine_t *dmachine = NULL;
 	switch_input_args_t *args = NULL, myargs = { 0 };
 	long digit_timeout = 1500;
