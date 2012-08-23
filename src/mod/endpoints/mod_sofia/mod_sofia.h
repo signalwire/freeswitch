@@ -1188,6 +1188,8 @@ void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now);
 void sofia_msg_thread_start(int idx);
 void crtp_init(switch_loadable_module_interface_t *module_interface);
 int sofia_recover_callback(switch_core_session_t *session);
+void sofia_glue_set_name(private_object_t *tech_pvt, const char *channame);
+private_object_t *sofia_glue_new_pvt(switch_core_session_t *session);
 
 /* For Emacs:
  * Local Variables:

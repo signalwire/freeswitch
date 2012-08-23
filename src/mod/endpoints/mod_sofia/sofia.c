@@ -1718,15 +1718,8 @@ void sofia_event_callback(nua_event_t event,
 		}
 
 		if (session) {
-			private_object_t *tech_pvt;
-
-			tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t));
-			tech_pvt->profile = profile;
-			tech_pvt->channel = switch_core_session_get_channel(session);
-			tech_pvt->session = session;
-			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-			switch_mutex_init(&tech_pvt->sofia_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-			switch_core_session_set_private(session, tech_pvt);
+			private_object_t *tech_pvt = sofia_glue_new_pvt(session);
+			sofia_glue_attach_private(session, profile, tech_pvt, NULL);
 
 		} else {
 			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -8582,7 +8575,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
-	sofia_glue_attach_private(session, profile, tech_pvt, channel_name);
+	sofia_glue_set_name(tech_pvt, channel_name);
 	sofia_glue_tech_prepare_codecs(tech_pvt);
 
 	switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "INBOUND CALL");
