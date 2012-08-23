@@ -4445,7 +4445,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		goto error;
 	}
 
-	tech_pvt = sofia_glue_new_pvt(session);
+	tech_pvt = sofia_glue_new_pvt(nsession);
 
 	data = switch_core_session_strdup(nsession, outbound_profile->destination_number);
 	if ((dest_to = strchr(data, '^'))) {
