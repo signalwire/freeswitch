@@ -881,12 +881,30 @@ void sofia_glue_check_video_codecs(private_object_t *tech_pvt)
 	}
 }
 
+private_object_t *sofia_glue_new_pvt(switch_core_session_t *session)
+{
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t));
+	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+	switch_mutex_init(&tech_pvt->sofia_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+	return tech_pvt;
+}
+
+void sofia_glue_set_name(private_object_t *tech_pvt, const char *channame)
+{
+	char name[256];
+	char *p;
+
+	switch_snprintf(name, sizeof(name), "sofia/%s/%s", tech_pvt->profile->name, channame);
+	if ((p = strchr(name, ';'))) {
+		*p = '\0';
+	}
+	switch_channel_set_name(tech_pvt->channel, name);
+}
 
 void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame)
 {
-	char name[256];
+
 	unsigned int x;
-	char *p;
 
 	switch_assert(session != NULL);
 	switch_assert(profile != NULL);
@@ -949,12 +967,9 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_core_session_set_private(session, tech_pvt);
 
 	if (channame) {
-		switch_snprintf(name, sizeof(name), "sofia/%s/%s", profile->name, channame);
-		if ((p = strchr(name, ';'))) {
-			*p = '\0';
-		}
-		switch_channel_set_name(tech_pvt->channel, name);
+		sofia_glue_set_name(tech_pvt, channame);
 	}
+
 }
 
 switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_object_t *tech_pvt, char **ip, switch_port_t *port,
