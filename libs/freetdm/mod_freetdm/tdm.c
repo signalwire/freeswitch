@@ -334,7 +334,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     
     channel = switch_core_session_get_channel(*new_session);
     
-    if (ftdm_raw_channel_open(span_id, chan_id, &chan) != FTDM_SUCCESS) {
+    if (ftdm_channel_open(span_id, chan_id, &chan) != FTDM_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't open span or channel.\n"); 
         goto fail;
     }
