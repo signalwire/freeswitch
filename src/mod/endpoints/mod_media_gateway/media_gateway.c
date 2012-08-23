@@ -637,6 +637,7 @@ switch_status_t megaco_profile_start(const char *profilename)
 	profile->name = switch_core_strdup(pool, profilename);
 	profile->next_context_id++;
 	profile->inact_tmr = 0x00;
+	profile->peer_active = 0x00;
 	profile->inact_tmr_task_id = 0x00;
 	
 	switch_thread_rwlock_create(&profile->rwlock, pool);
@@ -707,6 +708,8 @@ switch_status_t mgco_init_ins_service_change(SuId suId)
     if(NULL == (profile = megaco_get_profile_by_suId(suId))){
         return SWITCH_STATUS_FALSE;
     }
+
+    profile->peer_active = 0x01;
 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
             "mgco_init_ins_service_change : Initiating terminations service change for profile: %s\n", profile->name);

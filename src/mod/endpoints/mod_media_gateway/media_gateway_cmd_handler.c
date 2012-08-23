@@ -2479,6 +2479,14 @@ U32 get_txn_id(){
 	return outgoing_txn_id;
 }
 /*****************************************************************************************************************************/
+switch_status_t mg_is_peer_active(megaco_profile_t* profile)
+{
+	if((profile) && (0x01 == profile->peer_active)){
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+/*****************************************************************************************************************************/
 switch_status_t mg_send_term_service_change(char *span_name, char *chan_number, mg_term_states_e term_state)
 {
 	mg_termination_t* term = NULL;
@@ -2490,6 +2498,12 @@ switch_status_t mg_send_term_service_change(char *span_name, char *chan_number, 
 	term = 	megaco_term_locate_by_span_chan_id(span_name, chan_number);
 
 	if(!term || !term->profile){
+		return SWITCH_STATUS_FALSE;
+	}
+
+    if(SWITCH_STATUS_FALSE == mg_is_peer_active(term->profile))
+    {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "profile: %s peer not yet enabled..\n", term->profile->name);
 		return SWITCH_STATUS_FALSE;
 	}
 

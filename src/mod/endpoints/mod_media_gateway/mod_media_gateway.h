@@ -205,6 +205,7 @@ struct megaco_profile_s {
 	char*                	peer_list[MG_MAX_PEERS];     /* MGC Peer ID LIST */
     char*                   codec_prefs;
 	int						inact_tmr;                   /* inactivity timer value */
+	int						peer_active;                   /* inactivity timer value */
     uint32_t                inact_tmr_task_id;                 /* FS timer scheduler task-id */
     
     switch_thread_rwlock_t  *contexts_rwlock;
@@ -220,6 +221,8 @@ struct megaco_profile_s {
     switch_hash_t *terminations;
     switch_thread_rwlock_t *terminations_rwlock;
 };
+
+
 
 static inline const char *megaco_codec_str(megaco_codec_t codec)
 {
