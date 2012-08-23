@@ -557,7 +557,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 			(MGT_TERMID_OTHER == termId->type.val) && 
 			(MGT_AUDITVAL != cmd->u.mgCmdInd[0]->cmd.type.val)){
 		if(SWITCH_STATUS_FALSE == mg_stack_termination_is_in_service(mg_profile, (char*)termId->name.lcl.val, termId->name.lcl.len)){
-			snprintf(prnt_buf,termId->name.lcl.len,"%s",(char*)termId->name.lcl.val);
+			MG_MEM_COPY(&prnt_buf, termId->name.lcl.val, sizeof(U8) * termId->name.lcl.len);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination[%s] not in service \n",(strlen(prnt_buf))?prnt_buf:"NULL");
 			mg_util_set_term_string(&errTxt, termId);
 			err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
