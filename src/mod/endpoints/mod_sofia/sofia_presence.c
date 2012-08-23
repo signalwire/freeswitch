@@ -3369,7 +3369,7 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 	switch_core_hash_init(&sh->hash, sh->pool);
 
 	sql = switch_mprintf("select sip_from_user,sip_from_host,call_info,call_info_state,uuid from sip_dialogs "
-						 "where call_info_state is not null and hostname='%q' and profile_name='%q' "
+						 "where call_info_state is not null and call_info_state != '' and hostname='%q' and profile_name='%q' "
 						 "and ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
 						 "and profile_name='%q'", 
 						 mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host, profile->name);
