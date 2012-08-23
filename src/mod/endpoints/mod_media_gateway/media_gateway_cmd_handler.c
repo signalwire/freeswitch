@@ -1047,6 +1047,10 @@ error:
     if(err_code != MGT_MGCO_RSP_CODE_DUP_TERM_CTXT){
 	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," ADD Request failed..releasing context/termination(if allocated) \n"); 
 	    if(mg_ctxt){
+		   /* we can call sub all from context api to release terminations..
+		      as it could possible that phy term added to context but 
+		     failure happened while adding rtp term, sub_all will release phy term also */
+		    megaco_context_sub_all_termination(mg_ctxt);
 		    megaco_release_context(mg_ctxt);
 	    }
 	    if(term){
