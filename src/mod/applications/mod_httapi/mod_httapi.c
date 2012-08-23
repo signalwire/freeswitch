@@ -229,7 +229,7 @@ SWITCH_STANDARD_API(httapi_api_function)
 static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 {
 	action_binding_t *action_binding = (action_binding_t *) match->user_data;
-
+	
 	action_binding->client->matching_action_binding = action_binding;
 	action_binding->match_digits = switch_core_strdup(action_binding->client->pool, match->match_digits);
 
@@ -996,6 +996,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 			action_binding->action = (char *) switch_xml_attr(bind, "action");
 			action_binding->error_file = (char *) error_file;
 			action_binding->parent = top_action_binding;
+			
 			switch_ivr_dmachine_bind(dmachine, action_binding->realm, action_binding->input, 0, digit_action_callback, action_binding);
 			bind = bind->next;
 		}
