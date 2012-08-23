@@ -1538,6 +1538,107 @@ out:
 	return 0;
 }
 
+
+/**
+ * Look up FreeTDM channel by call reference value
+ * \param[in]	span	Span object
+ * \param[in]	crv	CRV to search for
+ * \return	Channel on success, NULL otherwise
+ */
+static ftdm_channel_t *find_channel_by_cref(ftdm_span_t *span, const int cref)
+{
+	ftdm_iterator_t *iter = NULL;
+	ftdm_channel_t *chan = NULL;
+
+	if (!span || cref <= 0)
+		return NULL;
+
+	ftdm_mutex_lock(span->mutex);
+
+	/* Iterate over all channels on this span */
+	for (iter = ftdm_span_get_chan_iterator(span, NULL); iter; iter = ftdm_iterator_next(iter)) {
+		ftdm_channel_t *cur = ftdm_iterator_current(iter);
+		ftdm_caller_data_t *caller_data = NULL;
+
+		if (ftdm_channel_get_type(cur) != FTDM_CHAN_TYPE_B)
+			continue;
+
+		caller_data = ftdm_channel_get_caller_data(cur);
+
+		if (caller_data->call_reference == cref) {
+			chan = cur;
+			break;
+		}
+	}
+
+	ftdm_iterator_free(iter);
+	ftdm_mutex_unlock(span->mutex);
+	return chan;
+}
+
+
+/**
+ * Hunt for free channel (NT-mode only)
+ * \param[in]	span	Span to hunt on
+ * \param[in]	hint	Channel ID hint (preferred by remote end)
+ * \param[in]	excl	Is the hint exclusive (or preferred)?
+ * \param[out]	chan	Selected channel
+ * \retval	FTDM_SUCCESS	A free channel has been found
+ * \retval	FTDM_FAIL	No free channels could be found on the span
+ * \retval	FTDM_EBUSY	The channel indicated in the exclusive hint is already in use
+ */
+static ftdm_status_t hunt_channel(ftdm_span_t *span, const int hint, const ftdm_bool_t excl, ftdm_channel_t **chan)
+{
+	ftdm_iterator_t *iter = NULL;
+	ftdm_channel_t  *tmp  = NULL;
+	int ret = FTDM_FAIL;
+
+	/* lock span */
+	ftdm_mutex_lock(span->mutex);
+
+	/* Check hint */
+	if (hint > 0) {
+		tmp = ftdm_span_get_channel(span, hint);
+		if (!tmp) {
+			ftdm_log(FTDM_LOG_NOTICE, "Invalid channel hint '%d' given (out of bounds)\n", hint);
+		}
+		else if (!ftdm_test_flag(tmp, FTDM_CHANNEL_INUSE) && ftdm_channel_get_type(tmp) == FTDM_CHAN_TYPE_B) {
+			ftdm_log(FTDM_LOG_DEBUG, "Using channel '%d' from hint\n", ftdm_channel_get_id(tmp));
+			ftdm_channel_use(tmp);
+			ret = FTDM_SUCCESS;
+			*chan = tmp;
+			goto out;
+		}
+		else if (excl) {
+			ftdm_log(FTDM_LOG_NOTICE, "Channel '%d' in exclusive hint is not available\n",
+				ftdm_channel_get_id(tmp));
+			ret = FTDM_EBUSY;
+			goto out;
+		}
+	}
+
+	/* Iterate over all channels on this span */
+	for (iter = ftdm_span_get_chan_iterator(span, NULL); iter; iter = ftdm_iterator_next(iter)) {
+		tmp = ftdm_iterator_current(iter);
+
+		if (ftdm_channel_get_type(tmp) != FTDM_CHAN_TYPE_B)
+			continue;
+
+		if (!ftdm_test_flag(tmp, FTDM_CHANNEL_INUSE)) {
+			ftdm_channel_use(tmp);
+			ret = FTDM_SUCCESS;
+			*chan = tmp;
+			break;
+		}
+	}
+
+	ftdm_iterator_free(iter);
+out:
+	ftdm_mutex_unlock(span->mutex);
+	return ret;
+}
+
+
 /**
  * \brief Handler for libpri ring event
  * \param spri Pri wrapper structure (libpri, span, dchan)
@@ -1553,75 +1654,95 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	ftdm_caller_data_t *caller_data = NULL;
 	int ret = 0;
 
-	if (pevent->ring.channel == -1) {
+	/*
+	 * Check if call has an associated channel (duplicate ring event)
+	 */
+	if ((chan = find_channel_by_cref(span, pevent->ring.cref))) {
+		ftdm_log_chan_msg(chan, FTDM_LOG_NOTICE, "-- Duplicate ring received (ignored)\n");
+		return ret;
+	}
+
+	if (isdn_data->mode == PRI_NETWORK) {
+		/*
+		 * Always hunt for a free channel in NT-mode,
+		 * but use the pre-selected one as hint
+		 */
+		switch (hunt_channel(span, pevent->ring.channel, !pevent->ring.flexible, &chan)) {
+		case FTDM_SUCCESS:	/* OK channel found */
+			break;
+		case FTDM_EBUSY:	/* Exclusive channel hint is not available */
+			ftdm_log(FTDM_LOG_ERROR, "-- New call without channel on span '%s' [NOTE: Initial SETUP w/o channel selection is not supported by FreeTDM]\n",
+				ftdm_span_get_name(span));
+			pri_hangup(spri->pri, pevent->ring.call, PRI_CAUSE_CHANNEL_UNACCEPTABLE);
+			return ret;
+		default:
+			ftdm_log(FTDM_LOG_ERROR, "-- New call without channel on span '%s' [NOTE: Initial SETUP w/o channel selection is not supported by FreeTDM]\n",
+				ftdm_span_get_name(span));
+			pri_hangup(spri->pri, pevent->ring.call, PRI_CAUSE_NORMAL_CIRCUIT_CONGESTION);
+			return ret;
+		}
+
+		ftdm_channel_lock(chan);
+
+	} else if (pevent->ring.channel == -1) {
+		/*
+		 * TE-mode incoming call without channel selection (not supported)
+		 */
 		ftdm_log(FTDM_LOG_ERROR, "-- New call without channel on span '%s' [NOTE: Initial SETUP w/o channel selection is not supported by FreeTDM]\n",
 			ftdm_span_get_name(span));
 		pri_destroycall(spri->pri, pevent->ring.call);
 		return ret;
-	}
-
-	chan = ftdm_span_get_channel(span, pevent->ring.channel);
-	if (!chan) {
-		ftdm_log(FTDM_LOG_ERROR, "-- Unable to get channel %d:%d\n",
-			ftdm_span_get_id(span), pevent->ring.channel);
-		pri_hangup(spri->pri, pevent->ring.call, PRI_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return ret;
-	}
-
-	/* check MSN filter */
-	if (!msn_filter_match(isdn_data, pevent->ring.callednum)) {
-		ftdm_log(FTDM_LOG_INFO, "-- MSN filter not matching incoming DNIS '%s', ignoring call\n",
-			pevent->ring.callednum);
-		pri_destroycall(spri->pri, pevent->ring.call);
-		return ret;
-	}
-
-	ftdm_channel_lock(chan);
-
-	if (chan->call_data) {
-		/* we could drop the incoming call, but most likely the pointer is just a ghost of the past, 
-		 * this check is just to detect potentially unreleased pointers */
-		ftdm_log_chan(chan, FTDM_LOG_ERROR, "channel already has call %p!\n", chan->call_data);
-		chan->call_data = NULL;
-	}
-
-	if (ftdm_channel_get_state(chan) != FTDM_CHANNEL_STATE_DOWN || ftdm_test_flag(chan, FTDM_CHANNEL_INUSE)) {
-		ftdm_log(FTDM_LOG_WARNING, "-- Duplicate Ring on channel %d:%d (ignored)\n", ftdm_span_get_id(span), pevent->ring.channel);
-		goto done;
-	}
-
-	if ((pevent->ring.progressmask & PRI_PROG_INBAND_AVAILABLE)) {
-		/* Open channel if inband information is available */
-		ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, opening B-Channel %d:%d\n",
-			ftdm_channel_get_span_id(chan),
-			ftdm_channel_get_id(chan));
-
-		if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN) && ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
-//			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
-
-			ftdm_log(FTDM_LOG_WARNING, "-- Error opening channel %d:%d (ignored)\n",
-				ftdm_channel_get_span_id(chan),
-				ftdm_channel_get_id(chan));
-
-//			caller_data->hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
-//			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
-//			goto done;
-		}
 	} else {
-		/* Reserve channel, don't open it yet */
-		if (ftdm_channel_use(chan) != FTDM_SUCCESS) {
-			ftdm_log(FTDM_LOG_WARNING, "-- Error reserving channel %d:%d (ignored)\n",
+		/*
+		 * TE-mode, check MSN filter, ignore calls that aren't for this PTMP terminal
+		 */
+		if (!msn_filter_match(isdn_data, pevent->ring.callednum)) {
+			ftdm_log(FTDM_LOG_INFO, "-- MSN filter not matching incoming DNIS '%s', ignoring call\n",
+				pevent->ring.callednum);
+			pri_destroycall(spri->pri, pevent->ring.call);
+			return ret;
+		}
+
+		/*
+		 * TE-mode channel selection, use whatever the NT tells us to
+		 */
+		chan = ftdm_span_get_channel(span, pevent->ring.channel);
+		if (!chan) {
+			ftdm_log(FTDM_LOG_ERROR, "-- Unable to get channel %d:%d\n",
 				ftdm_span_get_id(span), pevent->ring.channel);
+			pri_hangup(spri->pri, pevent->ring.call, PRI_CAUSE_DESTINATION_OUT_OF_ORDER);
+			return ret;
+		}
+
+		ftdm_channel_lock(chan);
+
+		if (ftdm_channel_get_state(chan) != FTDM_CHANNEL_STATE_DOWN || ftdm_test_flag(chan, FTDM_CHANNEL_INUSE)) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "-- Selected channel is already in use\n");
+			pri_hangup(spri->pri, pevent->ring.call, PRI_CAUSE_DESTINATION_OUT_OF_ORDER);
+			goto done;
+		}
+
+		/* Reserve channel */
+		if (ftdm_channel_use(chan) != FTDM_SUCCESS) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_ERROR, "-- Error reserving channel\n");
+			pri_hangup(spri->pri, pevent->ring.call, PRI_CAUSE_DESTINATION_OUT_OF_ORDER);
 			goto done;
 		}
 	}
 
-	ftdm_log(FTDM_LOG_NOTICE, "-- Ring on channel %d:%d (from %s to %s)\n", ftdm_span_get_id(span), pevent->ring.channel,
-					  pevent->ring.callingnum, pevent->ring.callednum);
+	if (chan->call_data) {
+		/* we could drop the incoming call, but most likely the pointer is just a ghost of the past,
+		 * this check is just to detect potentially unreleased pointers */
+		ftdm_log_chan(chan, FTDM_LOG_WARNING, "Channel already has call %p!\n", chan->call_data);
+		chan->call_data = NULL;
+	}
 
 	caller_data = ftdm_channel_get_caller_data(chan);
 
 	memset(caller_data, 0, sizeof(*caller_data));
+
+	/* Save CRV, so we can do proper duplicate RING detection */
+	caller_data->call_reference = pevent->ring.cref;
 
 	ftdm_set_string(caller_data->cid_num.digits, (char *)pevent->ring.callingnum);
 	ftdm_set_string(caller_data->ani.digits, (char *)pevent->ring.callingani);
@@ -1642,7 +1763,30 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	/* hurr, this is valid as along as nobody releases the call */
 	chan->call_data = pevent->ring.call;
 
-	/* only go to RING state if we have the complete called number (indicated via pevent->complete flag) */
+	/* Open Channel if inband information is available */
+	if ((pevent->ring.progressmask & PRI_PROG_INBAND_AVAILABLE)) {
+		/* Open channel if inband information is available */
+		ftdm_log(FTDM_LOG_DEBUG, "-- In-band information available, opening B-Channel %d:%d\n",
+			ftdm_channel_get_span_id(chan),
+			ftdm_channel_get_id(chan));
+
+		if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN) && ftdm_channel_open_chan(chan) != FTDM_SUCCESS) {
+//			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
+
+			ftdm_log(FTDM_LOG_WARNING, "-- Error opening channel %d:%d (ignored)\n",
+				ftdm_channel_get_span_id(chan),
+				ftdm_channel_get_id(chan));
+
+//			caller_data->hangup_cause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+//			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_TERMINATING);
+//			goto done;
+		}
+	}
+
+	ftdm_log(FTDM_LOG_NOTICE, "-- Ring on channel %d:%d (from %s to %s)\n", ftdm_span_get_id(span), pevent->ring.channel,
+					  pevent->ring.callingnum, pevent->ring.callednum);
+
+	/* Only go to RING state if we have the complete called number (indicated via pevent->complete flag) */
 	if (!pevent->ring.complete && (isdn_data->overlap & FTMOD_LIBPRI_OVERLAP_RECEIVE)) {
 		ftdm_log(FTDM_LOG_DEBUG, "RING event without complete indicator, waiting for more digits\n");
 		ftdm_set_state(chan, FTDM_CHANNEL_STATE_COLLECT);
