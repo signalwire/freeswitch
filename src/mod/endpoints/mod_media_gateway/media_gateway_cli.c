@@ -906,6 +906,10 @@ switch_status_t handle_show_stats(switch_stream_handle_t *stream, megaco_profile
 			mg_profile->mg_stats->total_num_of_term_activation_failed_error); 
 	stream->write_function(stream, "Total Number of Term not found in context  error  = %d \n", 
 			mg_profile->mg_stats->total_num_of_no_term_ctxt_error); 
+	stream->write_function(stream, "Total Number of Term not in service error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_term_not_in_service_error); 
+	stream->write_function(stream, "Total Number of unknown context error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_unknown_ctxt_error); 
 
 
 

@@ -76,6 +76,8 @@ typedef struct mg_stats_s{
 	uint32_t  total_num_of_add_term_failed_error;
 	uint32_t  total_num_of_term_activation_failed_error;
 	uint32_t  total_num_of_no_term_ctxt_error;
+	uint32_t  total_num_of_term_not_in_service_error;
+	uint32_t  total_num_of_unknown_ctxt_error;
 }mg_stats_t;
 
 

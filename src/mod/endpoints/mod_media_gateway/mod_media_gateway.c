@@ -559,6 +559,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 		if(SWITCH_STATUS_FALSE == mg_stack_termination_is_in_service(mg_profile, (char*)termId->name.lcl.val, termId->name.lcl.len)){
 			MG_MEM_COPY(&prnt_buf, termId->name.lcl.val, sizeof(U8) * termId->name.lcl.len);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination[%s] not in service \n",(strlen(prnt_buf))?prnt_buf:"NULL");
+			mg_profile->mg_stats->total_num_of_term_not_in_service_error++;
 			mg_util_set_term_string(&errTxt, termId);
 			err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
 			goto error;
@@ -789,7 +790,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
     goto done;
 
 ctxt_error:
-	err_code = MGT_MGCO_RSP_CODE_UNKNOWN_CTXT;
+    mg_profile->mg_stats->total_num_of_unknown_ctxt_error++;
+    err_code = MGT_MGCO_RSP_CODE_UNKNOWN_CTXT;
 
 error:
 	if (SWITCH_STATUS_SUCCESS == 
