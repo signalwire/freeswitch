@@ -3597,7 +3597,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if ((subbed = atoi(buf)) > 0) {
 			sub_state = nua_substate_active;
-		}
+		}		
 	}
 
 	if (sub_state == nua_substate_active) {
@@ -3632,6 +3632,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			switch_safe_free(sql);
 			
 			sstr = switch_mprintf("terminated;reason=noresource");
+
 		} else {
 			sip_accept_t *ap = sip->sip_accept;
 			char accept[256] = "";
@@ -3733,6 +3734,13 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		switch_safe_free(new_contactstr);
 		switch_safe_free(sticky);
+
+		if (sub_state == nua_substate_terminated) {
+			nua_notify(nh,
+					   SIPTAG_EXPIRES_STR("0"),
+					   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
+					   TAG_END());
+		}
 	}
 
 	if (sub_state == nua_substate_terminated) {
