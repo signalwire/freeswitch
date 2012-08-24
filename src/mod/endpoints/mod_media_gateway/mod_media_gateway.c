@@ -606,15 +606,12 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 					case MGT_ADD:
 						{
 							handle_mg_add_cmd(mg_profile, cmd, &out_ctxt);
-							/*mg_send_add_rsp(suId, cmd);*/
 							break;
 						}
 
 					case MGT_MODIFY:
 						{
-							/*MgMgcoAmmReq *addReq = &cmdReq->cmd.u.mod;*/
 							handle_mg_modify_cmd(mg_profile, cmd);
-							/*mg_send_modify_rsp(suId, cmd);*/
 							break;
 						}
 					case MGT_MOVE:
@@ -626,9 +623,7 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 						}
 					case MGT_SUB:
 						{
-							/*MgMgcoSubAudReq *addReq = &cmdReq->cmd.u.sub;*/
 							handle_mg_subtract_cmd(mg_profile, cmd);
-							/*mg_send_subtract_rsp(suId, cmd);*/
 							break;
 						}
 					case MGT_SVCCHG:

@@ -37,7 +37,7 @@ static void mg_inactivity_timer_exp(switch_scheduler_task_t *task)
 {
     megaco_profile_t* profile = (megaco_profile_t*) task->cmd_arg;
 
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," mg_inactivity_timer_exp for profile[%s]\n", profile->name);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," mg_inactivity_timer_exp for profile[%s]\n", profile->name);
     mg_print_time();
 
     mg_send_ito_notify(profile);
@@ -49,7 +49,7 @@ static void mg_inactivity_timer_exp(switch_scheduler_task_t *task)
 /*****************************************************************************************************************************/
 switch_status_t mg_activate_ito_timer(megaco_profile_t* profile)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Starting IT/ITO Timer \n");
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Starting IT/ITO Timer \n");
     mg_print_time();
 
     profile->inact_tmr_task_id = switch_scheduler_add_task(switch_epoch_time_now(NULL)+profile->inact_tmr, mg_inactivity_timer_exp,"","media_gateway",0,profile,0);
@@ -63,7 +63,7 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
     int 		  descId = 0x00;
     MgMgcoAmmReq* desc = NULL;
 
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"cmd->cmdType.val[%d]\n",cmd->cmdType.val);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"cmd->cmdType.val[%d]\n",cmd->cmdType.val);
 
     if(CH_CMD_TYPE_IND != cmd->cmdType.val)
         return SWITCH_STATUS_FALSE;
@@ -74,22 +74,22 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
     desc = &cmd->u.mgCmdInd[0]->cmd.u.mod;
 
     if(NULL == desc){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"No Valid descriptor found \n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"No Valid descriptor found \n");
         return SWITCH_STATUS_FALSE;
     }
 
     if(NOTPRSNT == desc->dl.num.pres){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"No descriptor found in-coming megaco request \n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"No descriptor found in-coming megaco request \n");
         return SWITCH_STATUS_SUCCESS;
     }
 
 
     for (descId = 0; descId < desc->dl.num.val; descId++) {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"descriptors[%d] type in-coming megaco request \n", desc->dl.descs[descId]->type.val); 
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"descriptors[%d] type in-coming megaco request \n", desc->dl.descs[descId]->type.val); 
         switch (desc->dl.descs[descId]->type.val) {
             case MGT_MEDIADESC:
                 {
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Media descriptor on ROOT termination..Not Supporting now\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Media descriptor on ROOT termination..Not Supporting now\n");
                     break;
                 }
 
@@ -103,7 +103,7 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
 
                     /* As of now only handling ito package */
 
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Requested Event descriptor\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Requested Event descriptor\n");
 
                     if (evts->el.num.pres)
                         numEvts = evts->el.num.val;
@@ -143,10 +143,10 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
                                                 (reqEvtPar->u.other.val.u.eq.type.val == MGT_VALTYPE_UINT32))
                                         {
 #ifdef BIT_64
-                                            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Received Inactivity timer value [%d]\n", 
+                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Received Inactivity timer value [%d]\n", 
                                                     reqEvtPar->u.other.val.u.eq.u.decInt.val); 
 #else
-                                            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Received Inactivity timer value [%ld]\n", 
+                                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Received Inactivity timer value [%ld]\n", 
                                                     reqEvtPar->u.other.val.u.eq.u.decInt.val); 
 #endif
 
@@ -170,7 +170,7 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
                 }
             case MGT_SIGNALSDESC:
                 {
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Signal descriptor on ROOT termination..Not Supporting now\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Signal descriptor on ROOT termination..Not Supporting now\n");
                     break;
                 }
             case MGT_MODEMDESC:
@@ -212,7 +212,7 @@ switch_status_t mg_prc_sig_desc(MgMgcoSignalsReq* req, megaco_profile_t* mg_prof
             (NOTPRSNT != req->name.type.pres) && 
             (MGT_GEN_TYPE_KNOWN == req->name.type.val))
        {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Received Signal Descriptor : T.38 ctyp package\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Received Signal Descriptor : T.38 ctyp package\n");
 
         if((NOTPRSNT != req->pl.num.pres) && (NOTPRSNT != req->pl.num.val)){
             for(sig = 0x00; sig < req->pl.num.val; sig++){
@@ -229,7 +229,7 @@ switch_status_t mg_prc_sig_desc(MgMgcoSignalsReq* req, megaco_profile_t* mg_prof
                         (NOTPRSNT != o->val.u.eq.type.pres) && 
                         (MGT_VALTYPE_ENUM == o->val.u.eq.type.val) && 
                         (MGT_PKG_ENUM_SIGOTHERCALLTYPDISCRANSSIGANSTYPANS == o->val.u.eq.u.enume.val)){
-                            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Signal Descriptor :  T.38 CED/ANS TONE \n");
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Signal Descriptor :  T.38 CED/ANS TONE \n");
                             /* apply CED/ANS tone to specify channel */
                 }
             }
@@ -268,7 +268,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
     MgMgcoLocalDesc   *local; 
     MgMgcoRemoteDesc*  remote;
 
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"cmd->cmdType.val[%d]\n",cmd->cmdType.val);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"cmd->cmdType.val[%d]\n",cmd->cmdType.val);
 
     switch (cmd->cmdType.val)
     {
@@ -291,7 +291,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                         break;
                     }
                 default:
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Invalid cmd.type[%d] for descriptor processing \n",
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Invalid cmd.type[%d] for descriptor processing \n",
                             cmd->u.mgCmdInd[0]->cmd.type.val);
                     return SWITCH_STATUS_FALSE;
             }
@@ -303,20 +303,20 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
     }
 
     if(NULL == desc){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"No Valid descriptor found \n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"No Valid descriptor found \n");
         return SWITCH_STATUS_FALSE;
     }
 
-    //switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"descriptors[%d] found in-coming megaco request \n", desc->dl.num.val);
+    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"descriptors[%d] found in-coming megaco request \n", desc->dl.num.val);
 
     if(NOTPRSNT == desc->dl.num.pres){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"No descriptor found in-coming megaco request \n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"No descriptor found in-coming megaco request \n");
         return SWITCH_STATUS_SUCCESS;
     }
 
 
     for (descId = 0; descId < desc->dl.num.val; descId++) {
-        //switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"descriptors[%d] type in-coming megaco request \n", desc->dl.descs[descId]->type.val); 
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"descriptors[%d] type in-coming megaco request \n", desc->dl.descs[descId]->type.val); 
         switch (desc->dl.descs[descId]->type.val) {
             case MGT_MEDIADESC:
                 {
@@ -476,7 +476,7 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                 {
                     MgMgcoReqEvtDesc* evt = &desc->dl.descs[descId]->u.evts; 
 
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG," Requested Event descriptor\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG," Requested Event descriptor\n");
             
                     /* If we receive events from MGC , means clear any ongoing events */
                     /* as such we dont apply any events to term, so for us (as of now) clear events means clear active_events structure*/
@@ -489,13 +489,13 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
 		    MG_STACK_MEM_ALLOC(&term->active_events, sizeof(MgMgcoReqEvtDesc));
 
 		    if(NULL == term->active_events){
-			    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," term->active_events Memory Alloc failed \n");
+			    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," term->active_events Memory Alloc failed \n");
 			    return SWITCH_STATUS_FALSE;
 		    }
 
                     /* copy requested event */
                     if(RFAILED == mgUtlCpyMgMgcoReqEvtDesc(term->active_events, evt, NULLP)){
-		        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," copy new events to term->active_events failed \n");
+		        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," copy new events to term->active_events failed \n");
 			MG_STACK_MEM_FREE(term->active_events, sizeof(MgMgcoReqEvtDesc));
                         return SWITCH_STATUS_FALSE;
                     }
@@ -510,18 +510,18 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
                     MgMgcoSignalsDesc* sig = &desc->dl.descs[descId]->u.sig; 
                     MgMgcoSignalsParm* param = NULL;
                     int i = 0x00;
-                    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG," Requested Signal descriptor\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG," Requested Signal descriptor\n");
 
                     if((NOTPRSNT != sig->pres.pres) && (NOTPRSNT != sig->num.pres) && (0 != sig->num.val)){
 
-                        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Total number of Signal descriptors[%d]\n", sig->num.val);
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Total number of Signal descriptors[%d]\n", sig->num.val);
 
                         for(i=0; i< sig->num.val; i++){
                                 param = sig->parms[i];
 
                                 if(NOTPRSNT == param->type.pres) continue;
 
-                                switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Signal Descriptor[%d] type[%s]\n",
+                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Signal Descriptor[%d] type[%s]\n",
                                         i, ((MGT_SIGSPAR_LST == param->type.val)?"MGT_SIGSPAR_LST":"MGT_SIGSPAR_REQ"));
                                 
                                 switch(param->type.val)
@@ -616,7 +616,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
             ((MGT_CXTID_ALL == ctxtId->type.val)     ||
              (MGT_CXTID_NULL == ctxtId->type.val))) {
 
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," ADD Request processing failed, Context ALL/NULL not allowed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," ADD Request processing failed, Context ALL/NULL not allowed\n");
 
         mg_util_set_ctxt_string(&errTxt, ctxtId);
         err_code = MGT_MGCO_RSP_CODE_PROT_ERROR;
@@ -631,13 +631,13 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         mg_ctxt = megaco_choose_context(mg_profile);
 
         if(NULL == mg_ctxt){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," megaco_choose_context failed \n"); 	
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_context failed \n"); 	
             mg_util_set_err_string(&errTxt, " Resource Failure ");
             err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
             goto error;
         }
 
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Context[%p] with context_id[%d]\n", (void*)mg_ctxt, mg_ctxt->context_id);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated Context[%p] with context_id[%d]\n", (void*)mg_ctxt, mg_ctxt->context_id);
 
         /* fill Trillium Context structure with allocated context */
         MG_SET_VAL_PRES(new_ctxtId->type, MGT_CXTID_OTHER);
@@ -649,10 +649,10 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	    mg_ctxt =  megaco_get_context(mg_profile, inc_cmd->contextId.val.val);
 	    if(NULL == mg_ctxt){
 #ifdef BIT_64
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 				" megaco_get_context failed for context-id[%d]\n",  inc_cmd->contextId.val.val); 	
 #else
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 				" megaco_get_context failed for context-id[%ld]\n",  inc_cmd->contextId.val.val); 	
 #endif
 		    mg_util_set_err_string(&errTxt, " Resource Failure ");
@@ -669,13 +669,13 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         term = megaco_choose_termination(mg_profile, mg_profile->rtp_termination_id_prefix);
 
         if(NULL == term){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," megaco_choose_termination failed \n"); 	
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_termination failed \n"); 	
             mg_util_set_err_string(&errTxt, " Resource Failure ");
             err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
             goto error;
         }
 
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
 
         is_rtp = 0x01;
 
@@ -684,7 +684,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	    term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
 
 	    if(NULL == term){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			" megaco_find_termination failed for term-id[%s] \n",(char*)termId->name.lcl.val); 	
 		    mg_util_set_err_string(&errTxt, " Resource Failure ");
 		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
@@ -692,14 +692,14 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	    }
 
 
-	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
     }
 
     /********************************************************************/
     /* check if termination already is in call */
 
 	    if(term->context){
-		    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Termination[%p : %s] "
+		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Termination[%p : %s] "
 					"already in context[%p -%d]..rejecting ADD \n", 
 					(void*)term, term->name, (void*)term->context,term->context->context_id);
 		    mg_util_set_err_string(&errTxt, " Term already is in call ");
@@ -721,7 +721,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     /* associate physical termination to context  */
 
     if(SWITCH_STATUS_FALSE == megaco_context_add_termination(mg_ctxt, term)){
-	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"megaco_context_add_termination failed \n");
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"megaco_context_add_termination failed \n");
         mg_util_set_err_string(&errTxt, " Resource Failure ");
         err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
         goto error;
@@ -778,47 +778,46 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
             if (mgUtlGrowList((void ***)&rsp.u.mgCmdRsp[0]->u.add.termIdLst.terms, sizeof(MgMgcoTermId),
                         &rsp.u.mgCmdRsp[0]->u.add.termIdLst.num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
             {
-                switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
                 return SWITCH_STATUS_FALSE;
             }
 
             out_termId = rsp.u.mgCmdRsp[0]->u.add.termIdLst.terms[rsp.u.mgCmdRsp[0]->u.add.termIdLst.num.val-1];
             mg_fill_mgco_termid(out_termId, (char*)term->name, strlen((char*)term->name), &rsp.u.mgCmdRsp[0]->memCp);
-
         }
 
 	if(is_rtp){
-        /* Whatever Media descriptor we have received, we can copy that and then
-         * whatever we want we can modify the fields */
-        /* Kapil - TODO - will see if there is any problem of coping the
-         * descriptor */
+		/* Whatever Media descriptor we have received, we can copy that and then
+		 * whatever we want we can modify the fields */
+		/* Kapil - TODO - will see if there is any problem of coping the
+		 * descriptor */
 
-        if (mgUtlGrowList((void ***)&rsp.u.mgCmdRsp[0]->u.add.audit.parms, sizeof(MgMgcoAudRetParm),
-                    &rsp.u.mgCmdRsp[0]->u.add.audit.num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-            return SWITCH_STATUS_FALSE;
-        }
+		if (mgUtlGrowList((void ***)&rsp.u.mgCmdRsp[0]->u.add.audit.parms, sizeof(MgMgcoAudRetParm),
+					&rsp.u.mgCmdRsp[0]->u.add.audit.num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
+			return SWITCH_STATUS_FALSE;
+		}
 
 
-        /* copy media descriptor */
-        desc = rsp.u.mgCmdRsp[0]->u.add.audit.parms[rsp.u.mgCmdRsp[0]->u.add.audit.num.val-1];
-        desc->type.pres = PRSNT_NODEF;
-        desc->type.val = MGT_MEDIADESC;
-        mgUtlCpyMgMgcoMediaDesc(&desc->u.media, inc_med_desc, &rsp.u.mgCmdRsp[0]->memCp);
-	/* see if we have received local descriptor */
-	if((NOTPRSNT != desc->u.media.num.pres) && 
-			(0 != desc->u.media.num.val))
-	{
-		for(mediaId=0; mediaId<desc->u.media.num.val; mediaId++) {
-			if(MGT_MEDIAPAR_LOCAL == desc->u.media.parms[mediaId]->type.val) {
-				local  = &desc->u.media.parms[mediaId]->u.local;
+		/* copy media descriptor */
+		desc = rsp.u.mgCmdRsp[0]->u.add.audit.parms[rsp.u.mgCmdRsp[0]->u.add.audit.num.val-1];
+		desc->type.pres = PRSNT_NODEF;
+		desc->type.val = MGT_MEDIADESC;
+		mgUtlCpyMgMgcoMediaDesc(&desc->u.media, inc_med_desc, &rsp.u.mgCmdRsp[0]->memCp);
+		/* see if we have received local descriptor */
+		if((NOTPRSNT != desc->u.media.num.pres) && 
+				(0 != desc->u.media.num.val))
+		{
+			for(mediaId=0; mediaId<desc->u.media.num.val; mediaId++) {
+				if(MGT_MEDIAPAR_LOCAL == desc->u.media.parms[mediaId]->type.val) {
+					local  = &desc->u.media.parms[mediaId]->u.local;
+				}
 			}
 		}
-	}
 
 
-	/* only for RTP */
+		/* only for RTP */
 		if(SWITCH_STATUS_FALSE == mg_build_sdp(&desc->u.media, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp)) {
 			if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
 				mg_util_set_err_string(&errTxt, " Unsupported Codec ");
@@ -827,200 +826,6 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 			}
 		}
 	}
-
-#if 0
-	if(is_rtp){
-		mg_build_sdp(desc, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp);
-		/* build local descriptors */
-		/*MgMgcoStreamDesc *stream;*/
-		char* ipAddress[4];// = "192.168.1.1";
-		char* dup = strdup((char*)term->u.rtp.local_addr);
-		MgMgcoMediaDesc* media = &desc->u.media;
-
-		switch_split(dup,'.',ipAddress);
-
-		/* Most probably we need to add local descriptor */
-		if(!local){
-
-			/* allocating mem for local descriptor */
-			if (mgUtlGrowList((void ***)&media->parms, sizeof(MgMgcoMediaPar),
-						&media->num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-			{
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-				return SWITCH_STATUS_FALSE;
-			}
-
-#if 0
-			/* Kapil - NOT REQUIRED..keeping now just for ref..will delete  asap  */
-			media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
-			/*media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_STRPAR;*/
-
-			printf("media->num.val[%d]\n",media->num.val);
-
-			stream = &media->parms[media->num.val-1]->u.stream;
-			stream->pres.pres = PRSNT_NODEF;
-			stream->pres.val = 0x01;
-#if 0
-			if(inc_med_desc->num.pres && inc_med_desc->num.val){
-				/* TODO - check stream descriptor type for all medias */
-				inc_strm_desc = &inc_med_desc->parms[0]->u.stream;
-				memcpy(&stream->streamId, &inc_strm_desc->streamId, sizeof(MgMgcoStreamId));
-			}
-#endif
-
-			MG_INIT_TOKEN_VALUE(&(stream->streamId), 1);
-
-
-			stream->sl.pres.pres = PRSNT_NODEF;
-			stream->sl.pres.val = 0x01;
-
-			local  = &stream->sl.local;
-#endif
-			media->parms[media->num.val-1]->type.pres = PRSNT_NODEF;
-			media->parms[media->num.val-1]->type.val = MGT_MEDIAPAR_LOCAL;
-
-			local  = &media->parms[media->num.val-1]->u.local;
-		}
-
-		local->pres.pres = PRSNT_NODEF;
-
-		psdp = &(local->sdp);
-
-		if((NOTPRSNT == local->sdp.numComp.pres) || (0 == local->sdp.numComp.val)){
-
-			if (mgUtlGrowList((void ***)&psdp->info, sizeof(CmSdpInfo),
-						&psdp->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-			{
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-				return SWITCH_STATUS_FALSE;
-			}
-		}
-
-		psdp->info[psdp->numComp.val-1]->pres.pres = PRSNT_NODEF;
-
-		/* fill version */
-		/*memcpy(&psdp->info[0]->ver, &prsdp->info[0]->ver, sizeof(TknU16)); */
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->ver),1);
-
-		/* fill orig */
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.pres), 1);
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.type), CM_SDP_SPEC);
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->orig.orig.pres), 1);
-
-		MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.usrName, 1, "-",
-				&rsp.u.mgCmdRsp[0]->memCp);
-		MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessId, 1, "0",
-				&rsp.u.mgCmdRsp[0]->memCp);
-		MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->orig.orig.sessVer, 1, "0",
-				&rsp.u.mgCmdRsp[0]->memCp);
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.netType.type),
-				CM_SDP_NET_TYPE_IN);
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.addrType), 
-				CM_SDP_ADDR_TYPE_IPV4);
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType), 
-				CM_SDP_IPV4_IP_UNI);
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.addrType),
-				CM_SDP_IPV4_IP_UNI);
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[0]),
-				atoi(ipAddress[0]));
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[1]),
-				atoi(ipAddress[1]));
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[2]),
-				atoi(ipAddress[2]));
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->orig.orig.sdpAddr.u.ip4.u.ip.b[3]),
-				atoi(ipAddress[3]));
-
-		/* fill session name */
-		/* TODO - need to fill proper session name or skip it..*/
-		MG_SET_TKNSTROSXL(psdp->info[psdp->numComp.val-1]->sessName, 8, "SANGOMA",&rsp.u.mgCmdRsp[0]->memCp);
-
-
-		/* Fill the SDP Connection Info */
-		/* "c=" line - ipaddress */
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.netType.type),CM_SDP_NET_TYPE_IN);
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.addrType), CM_SDP_ADDR_TYPE_IPV4);
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->conn.u.ip4.addrType), CM_SDP_IPV4_IP_UNI);
-
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[0]), atoi(ipAddress[0]));
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[1]), atoi(ipAddress[1]));
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[2]), atoi(ipAddress[2]));
-		MG_SET_VAL_PRES( (psdp->info[psdp->numComp.val-1]->conn.u.ip4.u.uniIp.b[3]), atoi(ipAddress[3]));
-
-
-		/* t= line */
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.pres),1);
-#if 0
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.sdpOpTimeSet.numComp),0);
-		MG_INIT_TOKEN_VALUE(&(psdp->info[psdp->numComp.val-1]->sdpTime.zoneAdjSet.numComp),0);
-#endif
-
-		/* fill media descriptors */
-		{
-			CmSdpMediaDescSet* med = &psdp->info[psdp->numComp.val-1]->mediaDescSet;
-			CmSdpMediaDesc*    media;
-
-			if (mgUtlGrowList((void ***)&med->mediaDesc, sizeof(CmSdpMediaDesc),
-						&med->numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-			{
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-				return SWITCH_STATUS_FALSE;
-			}
-
-			media = med->mediaDesc[med->numComp.val-1];
-
-			MG_INIT_TOKEN_VALUE(&(media->pres),1);
-
-			/* Fill CmSdpMediaField */
-			MG_INIT_TOKEN_VALUE(&(media->field.pres),1);
-			MG_INIT_TOKEN_VALUE(&(media->field.mediaType),CM_SDP_MEDIA_AUDIO);
-
-			MG_INIT_TOKEN_VALUE(&(media->field.id.type),CM_SDP_VCID_PORT);
-			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.type),CM_SDP_PORT_INT);
-			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.pres),1);
-			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.type), CM_SDP_SPEC);
-			MG_INIT_TOKEN_VALUE(&(media->field.id.u.port.u.portInt.port.val), term->u.rtp.local_port);
-
-			if (mgUtlGrowList((void ***)&media->field.par.pflst, sizeof(CmSdpMedProtoFmts),
-						&media->field.par.numProtFmts, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-			{
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-				return SWITCH_STATUS_FALSE;
-			}
-
-			/* CmSdpMedProtoFmts */
-			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->prot.type), CM_SDP_MEDIA_PROTO_RTP)
-				MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->prot.u.subtype.type), CM_SDP_PROTO_RTP_AVP);
-			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->protType), CM_SDP_MEDIA_PROTO_RTP);
-
-
-			if (mgUtlGrowList((void ***)&media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts, sizeof(CmSdpU8OrNil),
-						&media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-			{
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-				return SWITCH_STATUS_FALSE;
-			}
-
-			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->type), CM_SDP_SPEC);
-
-			MG_INIT_TOKEN_VALUE(&(media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts[0]->val), 8);
-
-			/* Fill attribute if reqd */
-			{
-				if (mgUtlGrowList((void ***)&media->attrSet.attr, sizeof(CmSdpAttr),
-							&media->attrSet.numComp, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
-				{
-					switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-					return SWITCH_STATUS_FALSE;
-				}
-
-				MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[0]->type),CM_SDP_ATTR_PTIME);
-				MG_INIT_TOKEN_VALUE(&(media->attrSet.attr[0]->u.ptime), term->u.rtp.ptime);
-			}
-		}
-
-		free(dup);
-	}
-#endif
 
 
         /* We will always send one command at a time..*/
@@ -1032,20 +837,23 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
         ret = sng_mgco_send_cmd( mg_profile->idx, &rsp);
 
-        return ret;
+	
+	if(is_rtp){
+		/* releasing memory allocated for term->lcl.val */
+		MG_STACK_MEM_FREE(out_termId->name.lcl.val, ((sizeof(U8)* strlen(term->name))));
+	}
     }
-    /* sample resp code -- end */
+
     /*************************************************************************************************************************/
+    return ret;	
 
-
-    return SWITCH_STATUS_SUCCESS;	
 error:
     if (SWITCH_STATUS_SUCCESS == 
             mg_build_mgco_err_request(&mgErr, txn_id, ctxtId, err_code, &errTxt)) {
         sng_mgco_send_err(mg_profile->idx, mgErr);
     }
     if(err_code != MGT_MGCO_RSP_CODE_DUP_TERM_CTXT){
-	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," ADD Request failed..releasing context/termination(if allocated) \n"); 
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," ADD Request failed..releasing context/termination(if allocated) \n"); 
 	    if(mg_ctxt){
 		   /* we can call sub all from context api to release terminations..
 		      as it could possible that phy term added to context but 
@@ -1102,7 +910,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	if ((NOTPRSNT != ctxtId->type.pres)          &&
 			(MGT_CXTID_CHOOSE == ctxtId->type.val))
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 				"Modify request processing failure,  CHOOSE Context should not present in Modify\n");
 
 		err_code = MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER;
@@ -1113,7 +921,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	else if ((NOTPRSNT != termId->type.pres)          &&
 			(MGT_TERMID_CHOOSE == termId->type.val))
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 				"Modify request processing failure,  CHOOSE Termination should not present in Modify\n");
 
 		err_code = MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER;
@@ -1128,7 +936,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	/* MGT_TERMID_ROOT = If ROOT term then there will not be any conext */
 
 	if(MGT_TERMID_ROOT == termId->type.val){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 				"Modify request is for ROOT termination \n");
 
 		/* check if we have ito packg request */
@@ -1138,11 +946,11 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	} else if(MGT_TERMID_OTHER == termId->type.val){
 		/********************************************************************/
 #ifdef BIT_64
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 				"Modify request is for termination[%s] and context: type[%d], value[%d] \n", 
 				termId->name.lcl.val, ctxtId->type.val, ctxtId->val.val);
 #else
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 				"Modify request is for termination[%s] and context: type[%d], value[%ld] \n", 
 				termId->name.lcl.val, ctxtId->type.val, ctxtId->val.val);
 #endif
@@ -1164,12 +972,21 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 				/*find context based on received context-id */
 				mg_ctxt = megaco_get_context(mg_profile, ctxtId->val.val);
 				if(NULL == mg_ctxt){
+#ifdef BIT_64
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							"Modify request Failed, context[%d] not found \n",ctxtId->val.val);
+#else
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							"Modify request Failed, context[%ld] not found \n",ctxtId->val.val);
+#endif
 					mg_util_set_ctxt_string(&errTxt, ctxtId);
 					err_code = MGT_MGCO_RSP_CODE_UNKNOWN_CTXT;
 					goto error;
 				}
 
 				if(SWITCH_STATUS_FALSE == megaco_context_is_term_present(mg_ctxt, term)){
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							"Modify request Failed, requested term not associated with any context \n");
 					/* ERROR - termination didnt bind with requested context */
 					mg_util_set_term_string(&errTxt,termId);
 					err_code = MGT_MGCO_RSP_CODE_NO_TERM_CTXT;
@@ -1177,12 +994,12 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 				}
 
 			}else if(MGT_CXTID_NULL == ctxtId->type.val) {
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 						"Modify request is for NULL Context \n");
 				/*TODO - NULL context...nothing to do now...jump to response to send +ve response */
 				goto response;
 			}else if(MGT_CXTID_ALL == ctxtId->type.val) {
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 						"Modify request is for ALL Context \n");
 				/*TODO - ALL context...nothing to do now...jump to response to send +ve response */
 				goto response;
@@ -1197,13 +1014,15 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
 		/* IF there is any error , return */
 		if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+					"Modify request Failed, Unsupported Codec \n"); 
 			mg_util_set_err_string(&errTxt, " Unsupported Codec ");
 			err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
 			goto error;
 		}
 
 		if(MG_TERM_RTP == term->type){
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"MODIFY REQUEST - Updated RTP attributes:"
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"MODIFY REQUEST - Updated RTP attributes:"
 					" Media_Type(%s),local_addr[%s] local_port[%d] remote_addr[%s], remote_port[%d], ptime[%d] pt[%d], "
 					" rfc2833_pt[%d] rate[%d], codec[%s], term_id[%d]\n",
 					mg_media_type2str(term->u.rtp.media_type),
@@ -1224,6 +1043,8 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
 		/* SDP updated to termination */
 		if(SWITCH_STATUS_SUCCESS != megaco_activate_termination(term)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+					"Modify request Failed, Activation of termination failed \n"); 
 			mg_util_set_err_string(&errTxt, " Resource Failure ");
 			err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
 			goto error;
@@ -1261,8 +1082,6 @@ response:
 		rsp.u.mgCmdRsp[0]->u.mod.termIdLst.num.pres = PRSNT_NODEF;
 		rsp.u.mgCmdRsp[0]->u.mod.termIdLst.num.val  = 1;
 
-		//mgUtlAllocMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.mod.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.mod.termIdLst);
-
 		mgUtlCpyMgMgcoTermIdLst(&rsp.u.mgCmdRsp[0]->u.mod.termIdLst, &inc_cmd->u.mgCmdReq[0]->cmd.u.mod.termIdLst, &rsp.u.mgCmdRsp[0]->memCp);
 
 #ifdef GCP_VER_2_1
@@ -1270,8 +1089,6 @@ response:
 #else
 		termId = &(rsp.u.mgCmdRsp[0]->u.mod.termId);
 #endif
-		/*mg_fill_mgco_termid(termId, (char*)"term1",&req->u.mgCmdRsp[0]->memCp);*/
-
 		if((MGT_TERMID_ROOT != termId->type.val) && 
 			(term && (MG_TERM_RTP == term->type) &&
 				 ((NOTPRSNT != inc_cmd->u.mgCmdInd[0]->cmd.u.mod.dl.num.pres) && 
@@ -1286,7 +1103,7 @@ response:
 			if (mgUtlGrowList((void ***)&rsp.u.mgCmdRsp[0]->u.mod.audit.parms, sizeof(MgMgcoAudRetParm),
 						&rsp.u.mgCmdRsp[0]->u.mod.audit.num, &rsp.u.mgCmdRsp[0]->memCp) != ROK)
 			{
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 				return SWITCH_STATUS_FALSE;
 			}
 
@@ -1336,7 +1153,7 @@ error:
 		sng_mgco_send_err(mg_profile->idx, mgErr);
 	}
 
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," Modify Request failed..releasing context/termination \n"); 
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Modify Request failed..releasing context/termination \n"); 
 	if(mg_ctxt){
 		megaco_release_context(mg_ctxt);
 	}
@@ -1382,14 +1199,14 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
     /* Validating Subtract request *******************************************/
 
     if(NOTPRSNT == ctxtId->type.pres){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," SUB Request processing failed, Context Not Present\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," SUB Request processing failed, Context Not Present\n");
         mg_util_set_ctxt_string(&errTxt, ctxtId);
         err_code = MGT_MGCO_RSP_CODE_PROT_ERROR;
         goto error;
     }
 
     if(NOTPRSNT == termId->type.pres){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," SUB Request processing failed, Termination Not Present\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," SUB Request processing failed, Termination Not Present\n");
         mg_util_set_term_string(&errTxt,termId);
         err_code = MGT_MGCO_RSP_CODE_PROT_ERROR;
         goto error;
@@ -1399,7 +1216,7 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
     if ((MGT_CXTID_CHOOSE == ctxtId->type.val)     ||
              (MGT_CXTID_NULL == ctxtId->type.val)) {
 
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," SUB Request processing failed, Context CHOOSE/NULL not allowed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," SUB Request processing failed, Context CHOOSE/NULL not allowed\n");
 
         mg_util_set_ctxt_string(&errTxt, ctxtId);
         err_code = MGT_MGCO_RSP_CODE_PROT_ERROR;
@@ -1409,7 +1226,7 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
     else if ((MGT_TERMID_ROOT == termId->type.val)     ||
              (MGT_TERMID_CHOOSE == termId->type.val)) {
 
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR," SUB Request processing failed, Termination ROOT/CHOOSE not allowed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," SUB Request processing failed, Termination ROOT/CHOOSE not allowed\n");
 
         mg_util_set_term_string(&errTxt,termId);
         err_code = MGT_MGCO_RSP_CODE_INVLD_IDENTIFIER;
@@ -1420,9 +1237,9 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
     if (MGT_CXTID_OTHER == ctxtId->type.val){
 
 #ifdef BIT_64
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," SUB Request for Context[%d] \n", ctxtId->val.val);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," SUB Request for Context[%d] \n", ctxtId->val.val);
 #else
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," SUB Request for Context[%ld] \n",  ctxtId->val.val);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," SUB Request for Context[%ld] \n",  ctxtId->val.val);
 #endif
 
         /*find context based on received context-id */
@@ -1433,21 +1250,23 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
             goto error;
         }
 
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," Found Context[%p] for context_id[%d]\n", (void*)mg_ctxt, mg_ctxt->context_id);        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Found Context[%p] for context_id[%d]\n", (void*)mg_ctxt, mg_ctxt->context_id);        
         if(MGT_TERMID_ALL == termId->type.val){
 
-            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," SUB Request for context[%d] with ALL termination   \n", mg_ctxt->context_id);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," SUB Request for context[%d] with ALL termination   \n", mg_ctxt->context_id);
 
             /* remove terminations from context */
             megaco_context_sub_all_termination(mg_ctxt);
 
         }else if(MGT_TERMID_OTHER == termId->type.val){
 
-            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," SUB Request for termination[%s]  \n", (char*)termId->name.lcl.val);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," SUB Request for termination[%s]  \n", (char*)termId->name.lcl.val);
 
             term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
 
             if(SWITCH_STATUS_FALSE == megaco_context_is_term_present(mg_ctxt, term)){
+		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+				    "Subtract request Failed, termination no associated with any context \n"); 
                 /* ERROR - termination didnt bind with requested context */
                 mg_util_set_term_string(&errTxt,termId);
                 err_code = MGT_MGCO_RSP_CODE_NO_TERM_CTXT;
@@ -1455,6 +1274,8 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
             }
 
             if(NULL == term){
+		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+				    "Subtract request Failed, no termination found for input term string[%s] \n", (char*)termId->name.lcl.val); 
                 mg_util_set_term_string(&errTxt,termId);
                 err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
                 goto error;
@@ -1475,7 +1296,7 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
 
     if (MGT_CXTID_ALL == ctxtId->type.val){
 
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO," SUB Request for ALL context \n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," SUB Request for ALL context \n");
 
         /* TODO */
 
@@ -1557,68 +1378,6 @@ error:
 /*****************************************************************************************************************************/
 /*
 *
-*       Fun:  mg_send_add_rsp
-*
-*       Desc: this api will send the ADD response based on ADD request received from MG stack 
-*
-* 	TODO - Dummy response , needs to have proper ADD response code
-*/
-switch_status_t mg_send_add_rsp(SuId suId, MgMgcoCommand *req)
-{
-	MgMgcoCommand  cmd;
-	int ret = 0x00;
-	MgMgcoTermId  *termId;
-
-	memset(&cmd,0, sizeof(cmd));
-
-	/*copy transaction-id*/
-	memcpy(&cmd.transId, &req->transId,sizeof(MgMgcoTransId));
-
-	/*copy context-id*/ /*TODO - in case of $ context should be generated by app, we should not simply copy incoming structure */
-	memcpy(&cmd.contextId, &req->contextId,sizeof(MgMgcoContextId));
-
-	/*copy peer identifier */
-	memcpy(&cmd.peerId, &req->peerId,sizeof(TknU32));
-
-	/*fill response structue */
-	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&cmd.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
-		return ret;
-	}
-
-	cmd.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->type.val = MGT_ADD;
-	cmd.u.mgCmdRsp[0]->u.add.pres.pres = PRSNT_NODEF;
-
-
-	cmd.u.mgCmdRsp[0]->u.add.termIdLst.num.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->u.add.termIdLst.num.val  = 1;
-
-	//mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.add.termIdLst, &req->u.mgCmdReq[0]->cmd.u.add.termIdLst);
-	mgUtlCpyMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.add.termIdLst, &req->u.mgCmdReq[0]->cmd.u.add.termIdLst, &cmd.u.mgCmdRsp[0]->memCp);
-
-#ifdef GCP_VER_2_1
-	termId = cmd.u.mgCmdRsp[0]->u.add.termIdLst.terms[0];
-#else
-	termId = &(cmd.u.mgCmdRsp[0]->u.add.termId);
-#endif
-	/*mg_fill_mgco_termid(termId, (char*)"term1",&req->u.mgCmdRsp[0]->memCp);*/
-
-	/* We will always send one command at a time..*/
-	cmd.cmdStatus.pres = PRSNT_NODEF;
-	cmd.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
-
-	cmd.cmdType.pres = PRSNT_NODEF;
-	cmd.cmdType.val  = CH_CMD_TYPE_RSP;
-
-	ret = sng_mgco_send_cmd(suId, &cmd);
-
-	return ret;
-}
-
-/*****************************************************************************************************************************/
-/*
-*
 *       Fun:  mg_send_end_of_axn
 *
 *       Desc: this api will send the END_OF_AXN event to MG stack to indicate that application is done with processing 
@@ -1639,11 +1398,11 @@ switch_status_t mg_send_end_of_axn(SuId suId, MgMgcoTransId* transId, MgMgcoCont
 
 #if 0
 #ifdef BIT_64
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 			"mg_send_end_of_axn: Sending END_OF_AXN for transId[%d], peerId[%d], context[type = %s, value = %d]\n",
 			transId->val, peerId->val, PRNT_MG_CTXT_TYPE(ctxtId->type.val), ctxtId->val.val);
 #else
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 			"mg_send_end_of_axn: Sending END_OF_AXN for transId[%lu], peerId[%lu], context[type = %s, value = %lu]\n",
 			transId->val, peerId->val, PRNT_MG_CTXT_TYPE(ctxtId->type.val), ctxtId->val.val);
 
@@ -1673,10 +1432,18 @@ switch_status_t mg_build_mgco_err_request(MgMgcoInd  **errcmd,U32  trans_id, MgM
 	mgErr = NULLP;
 	ret = ROK;
 
+#ifdef BIT_64
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+			"Sending Error Request with erro code[%d] for trans_id[%d]\n",trans_id, err);
+#else
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+			"Sending Error Request with erro code[%ld] for trans_id[%ld]\n",trans_id, err);
+#endif
+
 	/* Allocate for AG error */
 	mg_stack_alloc_mem((Ptr*)&mgErr, sizeof(MgMgcoInd));
 	if (NULL == mgErr) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " mg_build_mgco_err_request Failed : memory alloc \n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " mg_build_mgco_err_request Failed : memory alloc \n"); 
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1700,7 +1467,7 @@ switch_status_t mg_build_mgco_err_request(MgMgcoInd  **errcmd,U32  trans_id, MgM
 	{
 		MG_GETMEM(mgErr->err.text.val, (errTxt->len)*sizeof(U8), &mgErr->memCp, &ret);
 		if (ROK != ret) {
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " mg_build_mgco_err_request Failed : memory alloc \n"); 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " mg_build_mgco_err_request Failed : memory alloc \n"); 
 			return SWITCH_STATUS_FALSE;
 		}
 		mgErr->err.text.pres = PRSNT_NODEF;
@@ -1743,14 +1510,14 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 	wild 	   = auditReq->u.mgCmdReq[0]->wild.pres;
 
 	if(NOTPRSNT == audit->pres.pres){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
 		return SWITCH_STATUS_FALSE;
 	}
 
 	audit_desc = &audit->audit;
 
 	if((NOTPRSNT == audit_desc->pres.pres) || ( NOTPRSNT == audit_desc->num.pres)){
-		//switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit Descriptor not present.. Could be HeartBeat message\n");
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Audit Descriptor not present.. Could be HeartBeat message\n");
 		return mg_send_heartbeat_audit_rsp(mg_profile->idx, auditReq);
 	}
 
@@ -1772,7 +1539,7 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 	if ((NOTPRSNT != ctxtId->type.pres)          &&
 			(MGT_CXTID_CHOOSE == ctxtId->type.val)) {
 
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,	
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,	
 				"failed, Ctxt: CHOOSE not allowed in Audit Value\n");
 
 		/* set correct error code */
@@ -1784,7 +1551,7 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 	else if ((NOTPRSNT != termId->type.pres)          &&
 			(MGT_TERMID_CHOOSE == termId->type.val)) {
 
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,	
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,	
 				"failed, Term: CHOOSE not allowed in Audit Value\n");
 
 		mg_util_set_term_string(&errTxt,termId);
@@ -1799,7 +1566,7 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 			((NOTPRSNT != ctxtId->type.pres)        &&
 			 (MGT_CXTID_OTHER == ctxtId->type.val))) {
 
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,	
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,	
 				"failed, Term: Invalid combination, ROOT Term with OTHER CONTEXT\n");
 
 		mg_util_set_ctxt_string(&errTxt,ctxtId);
@@ -1846,7 +1613,7 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 		audit_item = audit_desc->al[i];
 
 		if (!audit_item) {
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,	
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,	
 					"Audit Descriptor is NULL.. rejecting \n");
 			return SWITCH_STATUS_FALSE; 
 		}
@@ -1858,13 +1625,13 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 			{  
 				case MGT_MEDIADESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing MEDIA \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing MEDIA \n");
 
 						/* Grow the list of reply parameters */
 						if (mgUtlGrowList((void ***)&adtRep->u.other.audit.parms, sizeof(MgMgcoAudRetParm),
 									&adtRep->u.other.audit.num, &reply.u.mgCmdRsp[0]->memCp) != ROK)
 						{
-							switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 							return SWITCH_STATUS_FALSE;
 						}
 
@@ -1882,52 +1649,52 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 					}
 				case MGT_MODEMDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing MODEM \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing MODEM \n");
 						break;
 					}
 				case MGT_MUXDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing MULTIPLEX \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing MULTIPLEX \n");
 						break;
 					}
 				case MGT_REQEVTDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing Events \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing Events \n");
 						break;
 					}
 				case MGT_SIGNALSDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing Signals \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing Signals \n");
 						break;
 					}
 				case MGT_DIGMAPDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing Digit Maps \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing Digit Maps \n");
 						break;
 					}
 				case MGT_OBSEVTDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing Buffer Events \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing Buffer Events \n");
 						break;
 					}
 				case MGT_EVBUFDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing  Events Buffer \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing  Events Buffer \n");
 						break;
 					}
 				case MGT_STATSDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing  Statistics \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing  Statistics \n");
 						break;
 					}
 				case MGT_PKGSDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Auditing  Packages \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Auditing  Packages \n");
 						/* Grow the list of reply parameters */
 						if (mgUtlGrowList((void ***)&adtRep->u.other.audit.parms, sizeof(MgMgcoAudRetParm),
 									&adtRep->u.other.audit.num, &reply.u.mgCmdRsp[0]->memCp) != ROK)
 						{
-							switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 							return SWITCH_STATUS_FALSE;
 						}
 
@@ -1943,12 +1710,12 @@ switch_status_t handle_mg_audit_cmd( megaco_profile_t* mg_profile, MgMgcoCommand
 					}
 				case MGT_INDAUD_TERMAUDDESC:
 					{  
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Individual Term  Audit \n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Individual Term  Audit \n");
 						break;
 					}
 				default:
 					{
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Invalid Audit Descriptor[%d] request\n",audit_item->auditItem.val);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Invalid Audit Descriptor[%d] request\n",audit_item->auditItem.val);
 						err_code = MGT_MGCO_RSP_CODE_UNSUPPORTED_DESC;
 						goto error;
 					}
@@ -2006,7 +1773,7 @@ switch_status_t mg_send_heartbeat_audit_rsp( SuId suId, MgMgcoCommand *auditReq)
 	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
 
 	if(NOTPRSNT == audit->pres.pres){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2062,417 +1829,6 @@ switch_status_t mg_send_heartbeat_audit_rsp( SuId suId, MgMgcoCommand *auditReq)
 	return ret;
 }
 
-/*****************************************************************************************************************************/
-#if 0
-/* Kapil - Not using any more */
-switch_status_t handle_media_audit( SuId suId, MgMgcoCommand *auditReq)
-{
-	switch_status_t  ret;
-	MgMgcoCommand    reply;
-	MgMgcoTermIdLst  *term_list;
-	MgMgcoTermId     *termId;
-	MgMgcoSubAudReq  *audit;
-	MgMgcoAuditDesc  *audit_desc;
-	MgMgcoAuditReply  *adtRep = NULLP;
-	U16                    numOfParms;
-	MgMgcoMediaDesc* media;
-
-
-	memset(&reply, 0, sizeof(reply));
-	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
-
-	if(NOTPRSNT == audit->pres.pres){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	audit_desc = &audit->audit;
-
-	if((NOTPRSNT == audit_desc->pres.pres) || ( NOTPRSNT == audit_desc->num.pres)){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit Descriptor not present..rejecting \n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	/* dump AUDIT message information */
-	/*mgAccEvntPrntMgMgcoSubAudReq(auditReq,stdout);*/
-
-	/*-- Get termination list --*/
-	term_list = mg_get_term_id_list(auditReq);
-	termId    = term_list->terms[0];
-
-
-	/*copy transaction-id*/
-	memcpy(&reply.transId, &auditReq->transId,sizeof(MgMgcoTransId));
-	/*copy context-id*/
-	memcpy(&reply.contextId, &auditReq->contextId,sizeof(MgMgcoContextId));
-	/*copy peer identifier */
-	memcpy(&reply.peerId, &auditReq->peerId,sizeof(TknU32));
-
-	/*fill response structue */
-	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&reply.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
-		return ret;
-	}
-
-	reply.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
-	reply.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
-	reply.u.mgCmdRsp[0]->type.val = MGT_AUDITVAL;
-
-
-	adtRep = &(reply.u.mgCmdRsp[0]->u.aval);
-
-	adtRep->type.pres = PRSNT_NODEF;
-	adtRep->type.val = MGT_TERMAUDIT;
-	adtRep->u.other.pres.pres = PRSNT_NODEF;
-	mgUtlAllocMgMgcoTermIdLst(&adtRep->u.other.termIdLst, term_list);
-
-	/* Grow the list of reply parameters */
-	if (mgUtlGrowList((void ***)&adtRep->u.other.audit.parms, sizeof(MgMgcoAudRetParm),
-				&adtRep->u.other.audit.num, &reply.u.mgCmdRsp[0]->memCp) != ROK)
-	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	numOfParms = adtRep->u.other.audit.num.val;
-	adtRep->u.other.audit.parms[numOfParms - 1]->type.pres = PRSNT_NODEF;
-	adtRep->u.other.audit.parms[numOfParms - 1]->type.val  = MGT_MEDIADESC;
-
-	media = get_default_media_desc();
-	if(!media){
-		return SWITCH_STATUS_FALSE;
-	}
-	mgUtlCpyMgMgcoMediaDesc(&adtRep->u.other.audit.parms[numOfParms - 1]->u.media, media, &reply.u.mgCmdRsp[0]->memCp);
-
-	/* We will always send one command at a time..*/
-	reply.cmdStatus.pres = PRSNT_NODEF;
-	reply.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
-
-	reply.cmdType.pres = PRSNT_NODEF;
-	reply.cmdType.val  = CH_CMD_TYPE_RSP;
-
-
-	ret = sng_mgco_send_cmd(suId, &reply);
-
-#if 0
-	/*will send once all audit done*/
-	memcpy(&ctxt.transId,&auditReq->transId,sizeof(MgMgcoTransId)); 
-	memcpy(&ctxt.cntxtId, &auditReq->contextId,sizeof(MgMgcoContextId));
-	memcpy(&ctxt.peerId, &auditReq->peerId,sizeof(TknU32));
-	ctxt.cmdStatus.pres = PRSNT_NODEF;
-	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
-	ret = sng_mgco_send_axn_req(suId, &ctxt);
-#endif
-
-	return ret;
-
-
-
-}
-
-/*****************************************************************************************************************************/
-switch_status_t handle_pkg_audit( SuId suId, MgMgcoCommand *auditReq)
-{
-	switch_status_t  ret;
-	MgMgcoCommand    reply;
-	MgMgcoTermIdLst  *term_list;
-	MgMgcoTermId     *termId;
-	MgMgcoSubAudReq  *audit;
-	MgMgcoAuditDesc  *audit_desc;
-	MgMgcoAuditReply  *adtRep = NULLP;
-	U16                    numOfParms;
-
-	memset(&reply, 0, sizeof(reply));
-	audit 	   = &auditReq->u.mgCmdReq[0]->cmd.u.aval;
-
-	if(NOTPRSNT == audit->pres.pres){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit structure not present..rejecting \n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	audit_desc = &audit->audit;
-
-	if((NOTPRSNT == audit_desc->pres.pres) || ( NOTPRSNT == audit_desc->num.pres)){
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Audit Descriptor not present..rejecting \n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	/* dump AUDIT message information */
-	/*mgAccEvntPrntMgMgcoSubAudReq(auditReq,stdout);*/
-
-	/*-- Get termination list --*/
-	term_list = mg_get_term_id_list(auditReq);
-	termId    = term_list->terms[0];
-
-
-	/*copy transaction-id*/
-	memcpy(&reply.transId, &auditReq->transId,sizeof(MgMgcoTransId));
-	/*copy context-id*/
-	memcpy(&reply.contextId, &auditReq->contextId,sizeof(MgMgcoContextId));
-	/*copy peer identifier */
-	memcpy(&reply.peerId, &auditReq->peerId,sizeof(TknU32));
-
-	/*fill response structue */
-	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&reply.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
-		return ret;
-	}
-
-	reply.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
-	reply.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
-	reply.u.mgCmdRsp[0]->type.val = MGT_AUDITVAL;
-
-
-	adtRep = &(reply.u.mgCmdRsp[0]->u.aval);
-
-	adtRep->type.pres = PRSNT_NODEF;
-	adtRep->type.val = MGT_TERMAUDIT;
-	adtRep->u.other.pres.pres = PRSNT_NODEF;
-	mgUtlAllocMgMgcoTermIdLst(&adtRep->u.other.termIdLst, term_list);
-
-	/* Grow the list of reply parameters */
-	if (mgUtlGrowList((void ***)&adtRep->u.other.audit.parms, sizeof(MgMgcoAudRetParm),
-				&adtRep->u.other.audit.num, &reply.u.mgCmdRsp[0]->memCp) != ROK)
-	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	numOfParms = adtRep->u.other.audit.num.val;
-	adtRep->u.other.audit.parms[numOfParms - 1]->type.pres = PRSNT_NODEF;
-	adtRep->u.other.audit.parms[numOfParms - 1]->type.val  = MGT_PKGSDESC;
-
-	if(SWITCH_STATUS_FALSE == mg_build_pkg_desc(&adtRep->u.other.audit.parms[numOfParms - 1]->u.pkgs)){
-		return SWITCH_STATUS_FALSE;
-	}
-
-	/* We will always send one command at a time..*/
-	reply.cmdStatus.pres = PRSNT_NODEF;
-	reply.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
-
-	reply.cmdType.pres = PRSNT_NODEF;
-	reply.cmdType.val  = CH_CMD_TYPE_RSP;
-
-
-	ret = sng_mgco_send_cmd(suId, &reply);
-
-#if 0
-	/*will send once all audit done*/
-	memcpy(&ctxt.transId,&auditReq->transId,sizeof(MgMgcoTransId)); 
-	memcpy(&ctxt.cntxtId, &auditReq->contextId,sizeof(MgMgcoContextId));
-	memcpy(&ctxt.peerId, &auditReq->peerId,sizeof(TknU32));
-	ctxt.cmdStatus.pres = PRSNT_NODEF;
-	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
-	ret = sng_mgco_send_axn_req(suId, &ctxt);
-#endif
-
-	return ret;
-
-
-
-}
-#endif
-/*****************************************************************************************************************************/
-#if 0
-/* Kapil - Not using any more */
-switch_status_t mg_send_audit_rsp(SuId suId, MgMgcoCommand *req)
-{
-	MgMgcoCommand  cmd;
-	int ret = 0x00;
-	MgMgcoTermId  *termId;
-	MgMgcoCtxt     ctxt;
-	MgMgcoAuditReply  *adtRep = NULLP;
-
-	memset(&cmd,0, sizeof(cmd));
-
-	/*copy transaction-id*/
-	memcpy(&cmd.transId, &req->transId,sizeof(MgMgcoTransId));
-
-	/*copy context-id*/ /*TODO - in case of $ context should be generated by app, we should not simply copy incoming structure */
-	memcpy(&cmd.contextId, &req->contextId,sizeof(MgMgcoContextId));
-
-	/*copy peer identifier */
-	memcpy(&cmd.peerId, &req->peerId,sizeof(TknU32));
-
-	/*fill response structue */
-	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&cmd.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
-		return ret;
-	}
-
-	cmd.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->wild.pres = NOTPRSNT;
-	cmd.u.mgCmdRsp[0]->type.val = MGT_AUDITVAL;
-
-	adtRep = &(cmd.u.mgCmdRsp[0]->u.aval);
-
-	/* Set type as Cxt Audit */
-	MG_INIT_TOKEN_VALUE(&(adtRep->type), MGT_CXTAUDIT);
-	/* Set no of Terminations to 1 */
-	MG_INIT_TOKEN_VALUE(&(adtRep->u.cxt.num), 1);
-
-
-
-	cmd.u.mgCmdRsp[0]->u.aval.u.cxt.num.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->u.aval.u.cxt.num.val  = 1;
-
-	mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.aval.u.cxt, &req->u.mgCmdReq[0]->cmd.u.aval.termIdLst);
-
-#ifdef GCP_VER_2_1
-	termId = cmd.u.mgCmdRsp[0]->u.add.termIdLst.terms[0];
-#else
-	termId = &(cmd.u.mgCmdRsp[0]->u.add.termId);
-#endif
-	mg_fill_mgco_termid(termId, (CONSTANT U8*)"term1",&req->u.mgCmdRsp[0]->memCp);
-
-	/* We will always send one command at a time..*/
-	cmd.cmdStatus.pres = PRSNT_NODEF;
-	cmd.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
-
-	cmd.cmdType.pres = PRSNT_NODEF;
-	cmd.cmdType.val  = CH_CMD_TYPE_RSP;
-
-
-	ret = sng_mgco_send_cmd(suId, &cmd);
-
-	memcpy(&ctxt.transId,&req->transId,sizeof(MgMgcoTransId)); 
-	memcpy(&ctxt.cntxtId, &req->contextId,sizeof(MgMgcoContextId));
-	memcpy(&ctxt.peerId, &req->peerId,sizeof(TknU32));
-	ctxt.cmdStatus.pres = PRSNT_NODEF;
-	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
-	ret = sng_mgco_send_axn_req(suId, &ctxt);
-
-	return ret;
-}
-#endif
-
-/*****************************************************************************************************************************/
-switch_status_t mg_send_modify_rsp(SuId suId, MgMgcoCommand *req)
-{
-	MgMgcoCommand  cmd;
-	int ret = 0x00;
-	MgMgcoTermId  *termId;
-	MgMgcoCtxt     ctxt;
-
-	memset(&cmd,0, sizeof(cmd));
-
-	/*copy transaction-id*/
-	memcpy(&cmd.transId, &req->transId,sizeof(MgMgcoTransId));
-
-	/*copy context-id*/ /*TODO - in case of $ context should be generated by app, we should not simply copy incoming structure */
-	memcpy(&cmd.contextId, &req->contextId,sizeof(MgMgcoContextId));
-
-	/*copy peer identifier */
-	memcpy(&cmd.peerId, &req->peerId,sizeof(TknU32));
-
-	/*fill response structue */
-	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&cmd.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
-		return ret;
-	}
-
-	cmd.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->type.val = MGT_MODIFY;
-	cmd.u.mgCmdRsp[0]->u.mod.pres.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->u.mod.termIdLst.num.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->u.mod.termIdLst.num.val  = 1;
-
-	//mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.mod.termIdLst, &req->u.mgCmdReq[0]->cmd.u.mod.termIdLst);
-	mgUtlCpyMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.mod.termIdLst, &req->u.mgCmdReq[0]->cmd.u.mod.termIdLst, &cmd.u.mgCmdRsp[0]->memCp);
-
-#ifdef GCP_VER_2_1
-	termId = cmd.u.mgCmdRsp[0]->u.mod.termIdLst.terms[0];
-#else
-	termId = &(cmd.u.mgCmdRsp[0]->u.mod.termId);
-#endif
-	/*mg_fill_mgco_termid(termId, (char*)"term1",&req->u.mgCmdRsp[0]->memCp);*/
-
-	/* We will always send one command at a time..*/
-	cmd.cmdStatus.pres = PRSNT_NODEF;
-	cmd.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
-
-	cmd.cmdType.pres = PRSNT_NODEF;
-	cmd.cmdType.val  = CH_CMD_TYPE_RSP;
-
-
-	ret = sng_mgco_send_cmd(suId, &cmd);
-
-	memcpy(&ctxt.transId,&req->transId,sizeof(MgMgcoTransId)); 
-	memcpy(&ctxt.cntxtId, &req->contextId,sizeof(MgMgcoContextId));
-	memcpy(&ctxt.peerId, &req->peerId,sizeof(TknU32));
-	ctxt.cmdStatus.pres = PRSNT_NODEF;
-	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
-	ret = sng_mgco_send_axn_req(suId, &ctxt);
-
-	return ret;
-}
-
-/*****************************************************************************************************************************/
-/*****************************************************************************************************************************/
-switch_status_t mg_send_subtract_rsp(SuId suId, MgMgcoCommand *req)
-{
-	MgMgcoCommand  cmd;
-	int ret = 0x00;
-	MgMgcoTermId  *termId;
-	MgMgcoCtxt     ctxt;
-	uint8_t        wild = 0x00;
-
-	memset(&cmd,0, sizeof(cmd));
-
-	wild = req->u.mgCmdReq[0]->wild.pres;
-
-	/*copy transaction-id*/
-	memcpy(&cmd.transId, &req->transId,sizeof(MgMgcoTransId));
-
-	/*copy context-id*/ /*TODO - in case of $ context should be generated by app, we should not simply copy incoming structure */
-	memcpy(&cmd.contextId, &req->contextId,sizeof(MgMgcoContextId));
-
-	/*copy peer identifier */
-	memcpy(&cmd.peerId, &req->peerId,sizeof(TknU32));
-
-	/*fill response structue */
-	if(SWITCH_STATUS_FALSE == (ret = mg_stack_alloc_mem((Ptr*)&cmd.u.mgCmdRsp[0],sizeof(MgMgcoCmdReply)))){
-		return ret;
-	}
-
-	if(wild){
-		cmd.u.mgCmdRsp[0]->wild.pres = PRSNT_NODEF;
-	}
-
-	cmd.u.mgCmdRsp[0]->pres.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->type.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->type.val = MGT_SUB;
-	cmd.u.mgCmdRsp[0]->u.sub.pres.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->u.sub.termIdLst.num.pres = PRSNT_NODEF;
-	cmd.u.mgCmdRsp[0]->u.sub.termIdLst.num.val  = 1;
-
-	//mgUtlAllocMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.sub.termIdLst, &req->u.mgCmdReq[0]->cmd.u.sub.termIdLst);
-	mgUtlCpyMgMgcoTermIdLst(&cmd.u.mgCmdRsp[0]->u.sub.termIdLst, &req->u.mgCmdReq[0]->cmd.u.sub.termIdLst, &cmd.u.mgCmdRsp[0]->memCp);
-
-#ifdef GCP_VER_2_1
-	termId = cmd.u.mgCmdRsp[0]->u.sub.termIdLst.terms[0];
-#else
-	termId = &(cmd.u.mgCmdRsp[0]->u.sub.termId);
-#endif
-	/*mg_fill_mgco_termid(termId, (char *)"term1",&req->u.mgCmdRsp[0]->memCp);*/
-
-	/* We will always send one command at a time..*/
-	cmd.cmdStatus.pres = PRSNT_NODEF;
-	cmd.cmdStatus.val  = CH_CMD_STATUS_END_OF_CMD;
-
-	cmd.cmdType.pres = PRSNT_NODEF;
-	cmd.cmdType.val  = CH_CMD_TYPE_RSP;
-
-
-	ret = sng_mgco_send_cmd(suId, &cmd);
-
-	memcpy(&ctxt.transId,&req->transId,sizeof(MgMgcoTransId)); 
-	memcpy(&ctxt.cntxtId, &req->contextId,sizeof(MgMgcoContextId));
-	memcpy(&ctxt.peerId, &req->peerId,sizeof(TknU32));
-	ctxt.cmdStatus.pres = PRSNT_NODEF;
-	ctxt.cmdStatus.val  = CH_CMD_STATUS_END_OF_AXN;
-	ret = sng_mgco_send_axn_req(suId, &ctxt);
-
-	return ret;
-}
 /*****************************************************************************************************************************/
 U32 get_txn_id(){
 	outgoing_txn_id++;
@@ -2579,13 +1935,11 @@ switch_status_t mg_send_oos_service_change(megaco_profile_t* mg_profile, const c
 */
 switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_t method, MgServiceChangeReason_e reason,uint8_t wild) 
 {
-	MgMgcoSvcChgPar srvPar;
 	MgMgcoTermId*   termId;
 	switch_status_t ret;
 	MgMgcoCommand   request;
 	MgMgcoSvcChgReq      *svc;
 
-	MG_ZERO(&srvPar, sizeof(MgMgcoSvcChgPar));
 	MG_ZERO(&request, sizeof(request));
 
 	
@@ -2622,13 +1976,11 @@ switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_
 		return ret;
 	}
 
-	/*mgUtlCpyMgMgcoSvcChgPar(&svc->parm, &srvPar, &request.u.mgCmdReq[0]->memCp);*/
-
 	if (mgUtlGrowList((void ***)&svc->termIdLst.terms, sizeof(MgMgcoTermIdLst),
 				&svc->termIdLst.num, &request.u.mgCmdReq[0]->memCp) != ROK)
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
-		return SWITCH_STATUS_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
+		goto err;	
 	}
 
 #ifdef GCP_VER_2_1
@@ -2637,23 +1989,25 @@ switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_
 	termId = &(svc->termId);
 #endif
 
-
 	mg_fill_mgco_termid(termId, (char*)term_name ,strlen(term_name), &request.u.mgCmdReq[0]->memCp);
 
 	if(wild){
 		request.u.mgCmdReq[0]->wild.pres = PRSNT_NODEF;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Sending %s Service Change for termId[%s] with reason[%s], len[%d]\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Sending %s Service Change for termId[%s] with reason[%s], len[%d]\n",
 			((1==wild)?"WildCard":"Non Wild Card"), term_name, svc->parm.reason.val, svc->parm.reason.len);
 
 	sng_mgco_send_cmd(suId, &request);
 
+	/* releasing memory allocated for term->lcl.val */
+	MG_STACK_MEM_FREE(termId->name.lcl.val, ((sizeof(U8)* strlen(term_name))));
+
 	return SWITCH_STATUS_SUCCESS;
 
 err:
-	mgUtlDelMgMgcoSvcChgPar(&srvPar);
-	return ret;
+	mgUtlDelMgMgcoSvcChgPar(&svc->parm);
+	return SWITCH_STATUS_FALSE;
 }
 
 /*****************************************************************************************************************************/
@@ -2714,7 +2068,7 @@ switch_status_t  mg_send_t38_fax_con_change_notify(megaco_profile_t* mg_profile,
     MG_INIT_TOKEN_VALUE(&(oevt->name.u.val),(U8)MGT_PKG_ENUM_REQEVTIPFAXFAXCONNSTATECHNG);
 
     if (mgUtlGrowList((void ***)&oevt->pl.parms, sizeof(MgMgcoEvtPar), &oevt->pl.num, NULL) != ROK) {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
         return SWITCH_STATUS_FALSE;
     }
 
@@ -2744,7 +2098,7 @@ switch_status_t  mg_send_t38_fax_con_change_notify(megaco_profile_t* mg_profile,
     } else if(!strcasecmp(state,"ProcInterrupt")){
 	    MG_INIT_TOKEN_VALUE(&(param->u.other.val.u.eq.u.enume),MGT_PKG_ENUM_OBSEVTOTHERIPFAXFAXCONNSTATECHNGFAXCONNSTATECHNGPROCINTR);
     }else{
-	    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Invalid input state[%s] param\n", state);
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Invalid input state[%s] param\n", state);
 	    return SWITCH_STATUS_FALSE;
     }
 
@@ -2775,7 +2129,7 @@ switch_status_t  mg_send_t38_v21flag_notify(megaco_profile_t* mg_profile, const 
     MG_INIT_TOKEN_VALUE(&(oevt->name.u.val),(U8)MGT_PKG_ENUM_OBSEVTOTHERCALLTYPDISCRDISCTONEDETDISCTONETYPCNG);
 
     if (mgUtlGrowList((void ***)&oevt->pl.parms, sizeof(MgMgcoEvtPar), &oevt->pl.num, NULL) != ROK) {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
         return SWITCH_STATUS_FALSE;
     }
 
@@ -2819,7 +2173,7 @@ switch_status_t  mg_send_t38_ans_notify(megaco_profile_t* mg_profile, const char
     MG_INIT_TOKEN_VALUE(&(oevt->name.u.val),(U8)MGT_PKG_ENUM_OBSEVTOTHERCALLTYPDISCRDISCTONEDETDISCTONETYPCNG);
 
     if (mgUtlGrowList((void ***)&oevt->pl.parms, sizeof(MgMgcoEvtPar), &oevt->pl.num, NULL) != ROK) {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
         return SWITCH_STATUS_FALSE;
     }
 
@@ -2865,7 +2219,7 @@ switch_status_t  mg_send_t38_cng_notify(megaco_profile_t* mg_profile, const char
     MG_INIT_TOKEN_VALUE(&(oevt->name.u.val),(U8)MGT_PKG_ENUM_OBSEVTOTHERCALLTYPDISCRDISCTONEDETDISCTONETYPCNG);
 
     if (mgUtlGrowList((void ***)&oevt->pl.parms, sizeof(MgMgcoEvtPar), &oevt->pl.num, NULL) != ROK) {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
         return SWITCH_STATUS_FALSE;
     }
 
@@ -2897,7 +2251,7 @@ switch_status_t  mg_send_dtmf_notify(megaco_profile_t* mg_profile, const char* t
 	switch_assert(digits);
 
     if(0 == num_of_collected_digits ){
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"num_of_collected_digits cannt be ZERO \n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"num_of_collected_digits cannt be ZERO \n");
         return SWITCH_STATUS_FALSE;
     }
 
@@ -2918,7 +2272,7 @@ switch_status_t  mg_send_dtmf_notify(megaco_profile_t* mg_profile, const char* t
     MG_INIT_TOKEN_VALUE(&(oevt->name.u.val),(U8)MGT_PKG_ENUM_REQEVT_EXT_DTMF_EXT_CE);
 
     if (mgUtlGrowList((void ***)&oevt->pl.parms, sizeof(MgMgcoEvtPar), &oevt->pl.num, NULL) != ROK) {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
         return SWITCH_STATUS_FALSE;
     }
 
@@ -2962,7 +2316,7 @@ switch_status_t  mg_send_dtmf_notify(megaco_profile_t* mg_profile, const char* t
     param->u.other.val.u.eq.u.osxl.val[num_of_collected_digits+1] = '\"';
 
     if (mgUtlGrowList((void ***)&oevt->pl.parms, sizeof(MgMgcoEvtPar), &oevt->pl.num, NULL) != ROK) {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
         return SWITCH_STATUS_FALSE;
     }
 
@@ -2998,7 +2352,7 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
     MgMgcoObsEvtDesc  *obs_desc = NULL;
     MgMgcoRequestId    reqId;               
 
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "Sending Notify Message for termination[%s] !\n", term_name);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending Notify Message for termination[%s] !\n", term_name);
 
     MG_ZERO(&request, sizeof(request));
     MG_ZERO(&reqId, sizeof(reqId));
@@ -3008,12 +2362,12 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
         term = megaco_find_termination(mg_profile, (char*)term_name);
 
         if(!term){
-            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No termination configured for given name[%s] !\n", term_name);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No termination configured for given name[%s] !\n", term_name);
             return SWITCH_STATUS_FALSE;
         }
 
         if(NULL == term->active_events){
-            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No Active events observed on given termination[%s] !\n", term_name);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Active events observed on given termination[%s] !\n", term_name);
             /* return SWITCH_STATUS_FALSE; */
             /*TODO - ideally we should return ...
              * as of now not returning .. if we dont have active signals then
@@ -3034,7 +2388,7 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
 
     if (mgUtlGrowList((void ***)&request.u.mgCmdReq[0]->cmd.u.ntfy.obs.el.evts, sizeof(MgMgcoObsEvtLst),
                 &request.u.mgCmdReq[0]->cmd.u.ntfy.obs.el.num, &request.u.mgCmdReq[0]->memCp) != ROK) {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
         return SWITCH_STATUS_FALSE;
     }
 
@@ -3074,7 +2428,7 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
     if (mgUtlGrowList((void ***)&request.u.mgCmdReq[0]->cmd.u.ntfy.termIdLst.terms, sizeof(MgMgcoTermIdLst),
                 &request.u.mgCmdReq[0]->cmd.u.ntfy.termIdLst.num, &request.u.mgCmdReq[0]->memCp) != ROK)
     {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
         return SWITCH_STATUS_FALSE;
     }
 
@@ -3087,6 +2441,9 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
     mg_fill_mgco_termid(termId, (char*)term_name ,strlen(term_name), &request.u.mgCmdReq[0]->memCp);
 
     sng_mgco_send_cmd(mg_profile->idx, &request);
+
+    /* releasing memory allocated for term->lcl.val */
+    MG_STACK_MEM_FREE(termId->name.lcl.val, ((sizeof(U8)* strlen(term_name))));
 
     return SWITCH_STATUS_SUCCESS;
 }

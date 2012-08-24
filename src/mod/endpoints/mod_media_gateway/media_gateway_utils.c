@@ -20,13 +20,13 @@ switch_status_t mg_stack_alloc_mem( Ptr* _memPtr, Size _memSize )
 
 	if ( _memSize <= 0 )
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed mg_stack_alloc_mem: invalid size\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Failed mg_stack_alloc_mem: invalid size\n"); 
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if ( ROK != cmAllocEvnt( _memSize, MG_MAXBLKSIZE, &sMem, _memPtr ) )
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed mg_stack_alloc_mem: cmAllocEvnt return failure for _memSize=%d\n",(int)_memSize); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Failed mg_stack_alloc_mem: cmAllocEvnt return failure for _memSize=%d\n",(int)_memSize); 
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -41,19 +41,19 @@ switch_status_t mg_stack_get_mem(MgMgcoMsg* msg, Ptr* _memPtr, Size _memSize )
 {
         if ( _memSize <= 0 )
         {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed mg_stack_get_mem: invalid size\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Failed mg_stack_get_mem: invalid size\n"); 
 		return SWITCH_STATUS_FALSE;
         }
 
         if ( !msg )
         {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed mg_stack_get_mem: invalid message\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Failed mg_stack_get_mem: invalid message\n"); 
 		return SWITCH_STATUS_FALSE;
         }
 
         if ( cmGetMem( (Ptr)msg, _memSize, (Ptr*)_memPtr ) != ROK )
         {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed alloc_mg_stack_mem: get memory failed _memSize=%d\n", (int)_memSize );
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Failed alloc_mg_stack_mem: get memory failed _memSize=%d\n", (int)_memSize );
 		return SWITCH_STATUS_FALSE;
         }
 
@@ -68,7 +68,7 @@ switch_status_t mg_stack_free_mem(void* msg)
 {
         if ( !msg )
         {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, " Failed mg_stack_get_mem: invalid message\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, " Failed mg_stack_get_mem: invalid message\n"); 
 		return SWITCH_STATUS_FALSE;
         }
 
@@ -100,30 +100,41 @@ switch_status_t mg_stack_termination_is_in_service(megaco_profile_t* mg_profile,
 
 S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, CmMemListCp   *memCp)
 {
+	char prnt_buf[128];
 #ifdef GCP_ASN       
 	Size              size;
 #endif
 	S16               ret = ROK;
+	memset(&prnt_buf,0,sizeof(prnt_buf));
 
 	termId->type.pres = PRSNT_NODEF;
 
-    if(!strcmp(term_str,"ROOT")){
-        termId->type.val  = MGT_TERMID_ROOT;
-    } else {
-        termId->type.val  = MGT_TERMID_OTHER;
+	if(!strcmp(term_str,"ROOT")){
+		termId->type.val  = MGT_TERMID_ROOT;
+	} else {
 
-        termId->name.dom.pres = NOTPRSNT;  
-        termId->name.dom.len = 0x00;  
+		termId->type.val  = MGT_TERMID_OTHER;
 
-        termId->name.pres.pres = PRSNT_NODEF;
+		termId->name.dom.pres = NOTPRSNT;  
+		termId->name.dom.len = 0x00;  
 
-	MG_SET_TKNSTROSXL(termId->name.lcl,term_len,term_str,memCp);
+		termId->name.pres.pres = PRSNT_NODEF;
 
-       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-			"mg_fill_mgco_termid: name.lcl.val[%s], len[%d], term_str[%s], term_len[%d]\n",
-			termId->name.lcl.val, termId->name.lcl.len, term_str,term_len);
-    }
-	      
+		termId->name.lcl.pres  = PRSNT_NODEF;
+		termId->name.lcl.len  = cmStrlen((U8*)term_str);
+		size = ((sizeof(U8)* term_len));
+		MG_STACK_MEM_ALLOC(&termId->name.lcl.val, size);
+		cmMemcpy((U8*)(termId->name.lcl.val),(CONSTANT U8*)term_str,termId->name.lcl.len);
+
+		MG_MEM_COPY(&prnt_buf, termId->name.lcl.val, sizeof(U8) * termId->name.lcl.len);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+				"mg_fill_mgco_termid: Megaco termination name[%s], len[%d], input_term_str[%s], input_term_len[%d]\n",
+				prnt_buf, termId->name.lcl.len, term_str,term_len);
+
+		//MG_STACK_MEM_FREE(termId->name.lcl.val, size);
+	}
+
 
 #ifdef GCP_ASN
 	if((termId->type.val == MGT_TERMID_ALL) ||
@@ -148,7 +159,7 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, C
 		termId->wildcard.wildcard[0]->val[0] = 0x55;
 
 	}else{
-		   termId->wildcard.num.pres = NOTPRSNT;
+		termId->wildcard.num.pres = NOTPRSNT;
 	}
 #endif /* GCP_ASN */
 
@@ -1480,7 +1491,7 @@ MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTerm
         MG_GETMEM(media, sizeof(MgMgcoMediaDesc) , memCp, ret);
 
 	if (!media) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
 		return NULL;	
 	}
 	media->num.pres = PRSNT_NODEF;
@@ -1489,14 +1500,14 @@ MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTerm
         MG_GETMEM(mediaPar, sizeof(MgMgcoMediaPar) , memCp, ret);
 
 	if (!mediaPar) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
 		mg_stack_free_mem(media);
 		return NULL;	
 	}
         MG_GETMEM(media->parms, sizeof(MgMgcoMediaPar*) , memCp, ret);
 
 	if (!media->parms) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
 		mg_stack_free_mem((void*)mediaPar);
 		mg_stack_free_mem((void*)media);
 		return NULL;	
@@ -1509,7 +1520,7 @@ MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTerm
         MG_GETMEM(trmStPar, sizeof(MgMgcoTermStateParm) , memCp, ret);
 
 	if (!trmStPar) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
 		mg_stack_free_mem((void*)mediaPar);
 		mg_stack_free_mem((void*)media->parms);
 		mg_stack_free_mem((void*)media);
@@ -1518,7 +1529,7 @@ MgMgcoMediaDesc* get_default_media_desc(megaco_profile_t* mg_profile, MgMgcoTerm
         MG_GETMEM(mediaPar->u.tstate.trmStPar, sizeof(MgMgcoTermStateParm *) , memCp, ret);
 
 	if (!mediaPar->u.tstate.trmStPar) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed, memory alloc\n"); 
 		mg_stack_free_mem((void*)trmStPar);
 		mg_stack_free_mem((void*)mediaPar);
 		mg_stack_free_mem((void*)media->parms);
@@ -1564,7 +1575,7 @@ switch_status_t  mg_fill_svc_change(MgMgcoSvcChgPar  *srvPar, uint8_t  method, c
         MG_GETMEM(srvPar->reason.val, srvPar->reason.len , memCp, ret);
 	if (NULL == srvPar->reason.val)
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "failed, memory alloc\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed, memory alloc\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1613,7 +1624,7 @@ void mg_get_time_stamp(MgMgcoTimeStamp *timeStamp)
 	timeStamp->time.pres = PRSNT_NODEF;
 	timeStamp->time.len  = 8;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"mg_get_time_stamp: time(%s)\n", dmBuf);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"mg_get_time_stamp: time(%s)\n", dmBuf);
 }
 /*****************************************************************************************************************************/
 switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, uint8_t cmdType)
@@ -1640,7 +1651,7 @@ switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, ui
 				}
 
 				if (NULL == cmd->u.mgCmdReq[0]) {
-					switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"mg_create_mgco_command: failed, memory alloc\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"mg_create_mgco_command: failed, memory alloc\n");
 					return SWITCH_STATUS_FALSE;
 				}
 
@@ -1669,7 +1680,7 @@ switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, ui
 				}
 
 				if (NULL == cmd->u.mgCmdRsp[0]) {
-					switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"mg_create_mgco_command: failed, memory alloc\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"mg_create_mgco_command: failed, memory alloc\n");
 					return SWITCH_STATUS_FALSE;
 				}
 				cmdRep = cmd->u.mgCmdRsp[0]; 
@@ -1710,7 +1721,7 @@ switch_status_t  mg_create_mgco_command(MgMgcoCommand  *cmd, uint8_t apiType, ui
 			}
 
 		default:
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"mg_create_mgco_command: failed, invalid Cmd type[%d]\n",apiType); 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"mg_create_mgco_command: failed, invalid Cmd type[%d]\n",apiType); 
 			return SWITCH_STATUS_FALSE;
 	} /* switch -apiType */
 
@@ -1736,7 +1747,7 @@ switch_status_t  mg_util_build_obs_evt_desc (MgMgcoObsEvt *obs_event, MgMgcoRequ
    mg_stack_alloc_mem((Ptr*)&obs_desc, sizeof(MgMgcoObsEvtDesc));
    if (NULL == obs_desc)
    {
-       switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Failed to allocate MgMgcoObsEvtDesc!\n");
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to allocate MgMgcoObsEvtDesc!\n");
        return SWITCH_STATUS_FALSE;
    }
 
@@ -1748,7 +1759,7 @@ switch_status_t  mg_util_build_obs_evt_desc (MgMgcoObsEvt *obs_event, MgMgcoRequ
    mg_stack_alloc_mem((Ptr*)&obs_desc->el.evts, sizeof(MgMgcoObsEvt*));
    if (NULL == obs_desc->el.evts)
    {
-       switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Failed to allocate MgMgcoObsEvt!\n");
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to allocate MgMgcoObsEvt!\n");
        return SWITCH_STATUS_FALSE;
    }
 
@@ -1764,7 +1775,7 @@ void mg_print_time()
     time_t now;
     time(&now);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,"Current Time = %s", ctime(&now));
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Current Time = %s", ctime(&now));
 }
 /*****************************************************************************************************************************/
 switch_status_t mg_add_local_descriptor(MgMgcoMediaDesc* media, megaco_profile_t* mg_profile, mg_termination_t* term,CmMemListCp     *memCp)
@@ -1786,7 +1797,7 @@ switch_status_t mg_add_local_descriptor(MgMgcoMediaDesc* media, megaco_profile_t
 	/* allocating mem for local descriptor */
 	if (mgUtlGrowList((void ***)&media->parms, sizeof(MgMgcoMediaPar), &media->num, memCp) != ROK)
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1801,7 +1812,7 @@ switch_status_t mg_add_local_descriptor(MgMgcoMediaDesc* media, megaco_profile_t
 
 	if (mgUtlGrowList((void ***)&psdp->info, sizeof(CmSdpInfo), &psdp->numComp, memCp) != ROK)
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1896,7 +1907,7 @@ switch_status_t mg_add_supported_media_codec(CmSdpMediaDesc* media, megaco_profi
 		if (mgUtlGrowList((void ***)&media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.fmts, sizeof(CmSdpU8OrNil),
 					&media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.num, memCp) != ROK)
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 			return SWITCH_STATUS_FALSE;
 		}
 		fmt = media->field.par.pflst[media->field.par.numProtFmts.val-1]->u.rtp.num.val-1;
@@ -1909,7 +1920,7 @@ switch_status_t mg_add_supported_media_codec(CmSdpMediaDesc* media, megaco_profi
 		{
 			if (mgUtlGrowList((void ***)&media->attrSet.attr, sizeof(CmSdpAttr), &media->attrSet.numComp, memCp) != ROK)
 			{
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 				return SWITCH_STATUS_FALSE;
 			}
 
@@ -1940,7 +1951,7 @@ switch_status_t mg_add_lcl_media(CmSdpMediaDescSet* med, megaco_profile_t* mg_pr
 	if (mgUtlGrowList((void ***)&med->mediaDesc, sizeof(CmSdpMediaDesc),
 				&med->numComp, memCp) != ROK)
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1961,7 +1972,7 @@ switch_status_t mg_add_lcl_media(CmSdpMediaDescSet* med, megaco_profile_t* mg_pr
 	if (mgUtlGrowList((void ***)&media->field.par.pflst, sizeof(CmSdpMedProtoFmts),
 				&media->field.par.numProtFmts, memCp) != ROK)
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1976,7 +1987,7 @@ switch_status_t mg_add_lcl_media(CmSdpMediaDescSet* med, megaco_profile_t* mg_pr
 	{
 		if (mgUtlGrowList((void ***)&media->attrSet.attr, sizeof(CmSdpAttr), &media->attrSet.numComp, memCp) != ROK)
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,"Grow List failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Grow List failed\n");
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -2009,7 +2020,7 @@ switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_term
 	/* Check if code list is present */
 	if (!fmtList ||  (NOTPRSNT == fmtList->num.pres))
 	{
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "codec List Not present\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "codec List Not present\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2036,7 +2047,7 @@ switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_term
 		/* see if received codec is present in our codec supported list */
 		for (id = 0; codecs[id] && id < codec_count; id++) {
 			int pt = codecs[id]->ianacode;
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
 				"Matching recv codec[%d] with supported codec[%d] \n", fmt->val.val, pt);
 			//const char *name = codecs[id]->iananame;
 			/* anything > 96 is dymanic we should skip codec match */
@@ -2067,7 +2078,7 @@ switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_term
 					rtp = &attr->u.rtpmap;
 
 					if((NOTPRSNT != rtp->pres.pres) && (fmt->val.val == rtp->pay.val.val)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "a line found against codec[%d]..Removing a line  \n", fmt->val.val);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "a line found against codec[%d]..Removing a line  \n", fmt->val.val);
 
 						/* mgUtlShrinkList API will delete last node from list, hence suffling list nodes */
 						for(j = a; j <  attrSet->numComp.val - 1; j++)
@@ -2082,7 +2093,7 @@ switch_status_t mg_rem_unsupported_codecs (megaco_profile_t* mg_profile, mg_term
 	}
 
 	if(0 == fmtList->num.val) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "No Supported codec found in offer, Rejecting request \n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Supported codec found in offer, Rejecting request \n");
 		term->mg_error_code = switch_core_alloc(term->pool, sizeof(term->mg_error_code));
 		*term->mg_error_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
 		
@@ -2234,7 +2245,7 @@ if((NOTPRSNT == med->numComp.pres) || (0 == med->numComp.val)){
  /* check for codec */
 if((NOTPRSNT == media->field.par.numProtFmts.pres) || 
 		(0 == media->field.par.numProtFmts.val)){
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 			"No codec specified in incoming local descriptor \n");
 	mg_add_supported_media_codec(media, mg_profile, term, memCp );	
 }else{
@@ -2256,7 +2267,7 @@ if ((NOTPRSNT != format->protType.pres) &&
 	}
   }
     if(choose_codec){
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
 			"CHOOSE codec is requested fill out supported codecs \n");
 
 	/* delete existing rtp format list..TODO find better way  */
