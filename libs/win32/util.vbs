@@ -375,7 +375,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		
 		If strLastCommit <> "" And strLastCommitHuman <> "" And strRevision <> "" Then
 			'Bild version string
-			strGitVer = "git~" & strLastCommit & "~" & strRevision
+			strGitVer = "+git~" & strLastCommit & "~" & strRevision
 			strVerHuman = strVerRev & "; git at commit " & strRevision & " on " & strLastCommitHuman
 
 			'Check for local changes, if found, append to git revision string
@@ -390,13 +390,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 			strVerHuman = ""
 		End If
 
-		If strVerRev = "" Then
-			VERSION=strGitVer
-		Else
-			If strGitVer <> "" Then
-				VERSION=VERSION & "+" & strGitVer
-			End If
-		End If
+		VERSION=VERSION & strGitVer
 
 		sLastVersion = ""
 		Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
