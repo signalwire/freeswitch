@@ -1626,7 +1626,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
-	char *user = argv[1];
+	char *user = argv[3];
 	char *host = argv[2];
 	switch_event_t *event;
 	char *event_name = argv[5];
