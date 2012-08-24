@@ -514,11 +514,11 @@ mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
     if (context_id > MG_MAX_CONTEXTS) {
         return NULL;
     }
-    
+
     switch_thread_rwlock_rdlock(profile->contexts_rwlock);
     
     /* Context exists */
-    if (profile->contexts_bitmap[context_id % 8] & (1 << (context_id / 8))) {
+    if (profile->contexts_bitmap[context_id / 8] & (1 << (context_id % 8))) {
         for (result = profile->contexts[context_id % MG_CONTEXT_MODULO]; result; result = result->next) {
             if (result->context_id == context_id) {
                 break;
@@ -544,10 +544,10 @@ mg_context_t *megaco_choose_context(megaco_profile_t *profile)
     
     /* Look for an available context */
     for (; profile->next_context_id < MG_MAX_CONTEXTS; profile->next_context_id++) {
-        if ((profile->contexts_bitmap[profile->next_context_id % 8] & (1 << (profile->next_context_id / 8))) == 0) {
+        if ((profile->contexts_bitmap[profile->next_context_id / 8] & (1 << (profile->next_context_id % 8))) == 0) {
             /* Found! */
             int i = profile->next_context_id % MG_CONTEXT_MODULO;
-            profile->contexts_bitmap[profile->next_context_id % 8] |= 1 << (profile->next_context_id / 8);
+            profile->contexts_bitmap[profile->next_context_id / 8] |= 1 << (profile->next_context_id % 8);
             ctx = malloc(sizeof *ctx);
             memset(ctx, 0, sizeof *ctx);
             ctx->context_id = profile->next_context_id;
@@ -591,7 +591,7 @@ void megaco_release_context(mg_context_t *ctx)
         }
     }
     
-    profile->contexts_bitmap[context_id % 8] &= ~(1 << (context_id / 8));
+    profile->contexts_bitmap[context_id / 8] &= ~(1 << (context_id % 8));
     
     memset(ctx, 0, sizeof *ctx);
     free(ctx);
@@ -606,8 +606,8 @@ uint32_t mg_rtp_request_id(megaco_profile_t *profile)
     }
 
     for (; profile->rtpid_next < MG_MAX_RTPID; profile->rtpid_next++) {
-        if ((profile->rtpid_bitmap[profile->rtpid_next % 8] & (1 << (profile->rtpid_next / 8))) == 0) {
-            profile->rtpid_bitmap[profile->rtpid_next % 8] |= 1 << (profile->rtpid_next / 8);
+        if ((profile->rtpid_bitmap[profile->rtpid_next / 8] & (1 << (profile->rtpid_next % 8))) == 0) {
+            profile->rtpid_bitmap[profile->rtpid_next / 8] |= 1 << (profile->rtpid_next % 8);
             profile->rtpid_next++;
             return profile->rtpid_next;
         }
@@ -618,7 +618,7 @@ uint32_t mg_rtp_request_id(megaco_profile_t *profile)
 
 void mg_rtp_release_id(megaco_profile_t *profile, uint32_t id)
 {
-    profile->rtpid_bitmap[id % 8] &= ~(1 << (id / 8));
+    profile->rtpid_bitmap[id / 8] &= ~(1 << (id % 8));
 }
 
 switch_status_t megaco_profile_start(const char *profilename)
