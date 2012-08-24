@@ -200,6 +200,9 @@ done:
 	if (event) {
 		switch_event_destroy(&event);
 	}
+
+	switch_safe_free(instructions);
+
 	return status;
 }
 
