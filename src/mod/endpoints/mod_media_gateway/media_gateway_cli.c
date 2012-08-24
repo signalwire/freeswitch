@@ -20,6 +20,7 @@ switch_status_t handle_all_term_status_cli_cmd(switch_stream_handle_t *stream, m
 void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm);
 void  megaco_cli_print_usage(switch_stream_handle_t *stream);
 switch_status_t handle_show_activecalls_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile);
+switch_status_t handle_show_stats(switch_stream_handle_t *stream, megaco_profile_t* mg_profile);
 
 /******************************************************************************/
 
@@ -203,6 +204,12 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 					megaco_profile_release(profile);
 					handle_show_activecalls_cli_cmd(stream, profile);
 			     /*******************************************************************/
+				} else if(!strcasecmp(argv[3], "stats")){
+			     /*******************************************************************/
+					/* mg <mg-profile> show stats */
+					megaco_profile_release(profile);
+					handle_show_stats(stream, profile);
+			     /*******************************************************************/
 				}else if(!strcasecmp(argv[3], "alltermstatus")){
 			     /*******************************************************************/
 					/* mg <mg-profile> show alltermstatus */
@@ -287,13 +294,13 @@ void  megaco_cli_print_usage(switch_stream_handle_t *stream)
 	stream->write_function(stream, "Usage: Profile Specific\n");
 	stream->write_function(stream, "mg profile <profile-name> start \n");
 	stream->write_function(stream, "mg profile <profile-name> stop \n");
-	stream->write_function(stream, "mg profile <profile-name> status \n");
-	stream->write_function(stream, "mg profile <profile-name> xmlstatus \n");
+	//stream->write_function(stream, "mg profile <profile-name> status \n");
+	//stream->write_function(stream, "mg profile <profile-name> xmlstatus \n");
 	stream->write_function(stream, "mg profile <profile-name> peerxmlstatus \n");
-	stream->write_function(stream, "mg profile <profile-name> send sc <term-id> <method> <reason> \n");
-	stream->write_function(stream, "mg profile <profile-name> send notify <term-id> <digits> \n");
-	stream->write_function(stream, "mg profile <profile-name> send ito notify \n");
-	stream->write_function(stream, "mg profile <profile-name> send cng <term-id> \n");
+	//stream->write_function(stream, "mg profile <profile-name> send sc <term-id> <method> <reason> \n");
+	//stream->write_function(stream, "mg profile <profile-name> send notify <term-id> <digits> \n");
+	//stream->write_function(stream, "mg profile <profile-name> send ito notify \n");
+	//stream->write_function(stream, "mg profile <profile-name> send cng <term-id> \n");
 	stream->write_function(stream, "mg profile <profile-name> show activecalls  \n");
 	stream->write_function(stream, "mg profile <profile-name> show termstatus <term-id> \n");
 	stream->write_function(stream, "mg profile <profile-name> show alltermstatus \n");
@@ -867,4 +874,42 @@ switch_status_t handle_show_activecalls_cli_cmd(switch_stream_handle_t *stream, 
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+/******************************************************************************/
+switch_status_t handle_show_stats(switch_stream_handle_t *stream, megaco_profile_t* mg_profile)
+{
+	if(!mg_profile || !mg_profile->mg_stats){
+		stream->write_function(stream, "-ERR NULL profile/term pointer \n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	stream->write_function(stream, "Total Number of Physical ADD received  = %d \n", mg_profile->mg_stats->total_num_of_phy_add_recvd); 
+	stream->write_function(stream, "Total Number of RTP      ADD received  = %d \n", mg_profile->mg_stats->total_num_of_rtp_add_recvd); 
+	stream->write_function(stream, "Total Number of SUB received  = %d \n", mg_profile->mg_stats->total_num_of_sub_recvd); 
+	stream->write_function(stream, "Total Number of CALL received  = %d \n", mg_profile->mg_stats->total_num_of_call_recvd); 
+	stream->write_function(stream, "Total Number of ADD failed  = %d \n", mg_profile->mg_stats->total_num_of_add_failed); 
+	stream->write_function(stream, "Total Number of Term Already in context Error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_term_already_in_ctxt_error); 
+	stream->write_function(stream, "Total Number of choose context failed Error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_choose_ctxt_failed_error); 
+	stream->write_function(stream, "Total Number of choose term failed Error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_choose_term_failed_error); 
+	stream->write_function(stream, "Total Number of find term failed Error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_find_term_failed_error); 
+	stream->write_function(stream, "Total Number of get context failed Error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_get_ctxt_failed_error); 
+	stream->write_function(stream, "Total Number of un-supported codec error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_un_supported_codec_error); 
+	stream->write_function(stream, "Total Number of Term addition to context failed error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_add_term_failed_error); 
+	stream->write_function(stream, "Total Number of Term activation failed error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_term_activation_failed_error); 
+	stream->write_function(stream, "Total Number of Term not found in context  error  = %d \n", 
+			mg_profile->mg_stats->total_num_of_no_term_ctxt_error); 
+
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
+/******************************************************************************/
 

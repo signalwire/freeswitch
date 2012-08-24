@@ -450,6 +450,8 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
                           ctx->terminations[1]->name, ctx->terminations[1]->uuid);
         
         switch_ivr_uuid_bridge(ctx->terminations[0]->uuid, ctx->terminations[1]->uuid);
+
+         ctx->terminations[0]->profile->mg_stats->total_num_of_call_recvd++;
     }
 
     return SWITCH_STATUS_SUCCESS;
@@ -638,6 +640,7 @@ switch_status_t megaco_profile_start(const char *profilename)
 	profile->next_context_id++;
 	profile->inact_tmr = 0x00;
 	profile->peer_active = 0x00;
+	profile->mg_stats = switch_core_alloc(pool, sizeof(mg_stats_t));
 	profile->inact_tmr_task_id = 0x00;
 	
 	switch_thread_rwlock_create(&profile->rwlock, pool);

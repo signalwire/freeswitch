@@ -61,6 +61,24 @@ typedef struct mg_peer_profile_s{
 } mg_peer_profile_t;
 
 
+typedef struct mg_stats_s{
+	uint32_t  total_num_of_phy_add_recvd;
+	uint32_t  total_num_of_rtp_add_recvd;
+	uint32_t  total_num_of_sub_recvd;
+	uint32_t  total_num_of_call_recvd;
+	uint32_t  total_num_of_add_failed;
+	uint32_t  total_num_of_term_already_in_ctxt_error;
+	uint32_t  total_num_of_choose_ctxt_failed_error;
+	uint32_t  total_num_of_choose_term_failed_error;
+	uint32_t  total_num_of_find_term_failed_error;
+	uint32_t  total_num_of_get_ctxt_failed_error;
+	uint32_t  total_num_of_un_supported_codec_error;
+	uint32_t  total_num_of_add_term_failed_error;
+	uint32_t  total_num_of_term_activation_failed_error;
+	uint32_t  total_num_of_no_term_ctxt_error;
+}mg_stats_t;
+
+
 typedef enum {
     MG_TERM_FREE = 0,
     MG_TERM_TDM,
@@ -217,6 +235,7 @@ struct megaco_profile_s {
     uint32_t rtpid_next;
     
     mg_termination_t *physical_terminations;
+    mg_stats_t* mg_stats;
     
     switch_hash_t *terminations;
     switch_thread_rwlock_t *terminations_rwlock;

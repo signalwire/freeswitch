@@ -629,10 +629,11 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         mg_ctxt = megaco_choose_context(mg_profile);
 
         if(NULL == mg_ctxt){
+		mg_profile->mg_stats->total_num_of_choose_ctxt_failed_error++;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_context failed \n"); 	
-            mg_util_set_err_string(&errTxt, " Resource Failure ");
-            err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
-            goto error;
+		mg_util_set_err_string(&errTxt, " Resource Failure ");
+		err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+		goto error;
         }
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated Context[%p] with context_id[%d]\n", (void*)mg_ctxt, mg_ctxt->context_id);
@@ -653,6 +654,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 				" megaco_get_context failed for context-id[%ld]\n",  inc_cmd->contextId.val.val); 	
 #endif
+		    mg_profile->mg_stats->total_num_of_get_ctxt_failed_error++;
 		    mg_util_set_err_string(&errTxt, " Resource Failure ");
 		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
 		    goto error;
@@ -665,8 +667,10 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
             (MGT_TERMID_CHOOSE == termId->type.val)){
 
         term = megaco_choose_termination(mg_profile, mg_profile->rtp_termination_id_prefix);
+	mg_profile->mg_stats->total_num_of_rtp_add_recvd++;
 
         if(NULL == term){
+		mg_profile->mg_stats->total_num_of_choose_term_failed_error++;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_termination failed \n"); 	
             mg_util_set_err_string(&errTxt, " Resource Failure ");
             err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
@@ -680,8 +684,10 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     /********************************************************************/
     }else{  /* Physical termination */
 	    term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
+	    mg_profile->mg_stats->total_num_of_phy_add_recvd++;
 
 	    if(NULL == term){
+		mg_profile->mg_stats->total_num_of_find_term_failed_error++;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 			" megaco_find_termination failed for term-id[%s] \n",(char*)termId->name.lcl.val); 	
 		    mg_util_set_err_string(&errTxt, " Resource Failure ");
@@ -697,6 +703,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     /* check if termination already is in call */
 
 	    if(term->context){
+		mg_profile->mg_stats->total_num_of_term_already_in_ctxt_error++;
 		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Termination[%p : %s] "
 					"already in context[%p -%d]..rejecting ADD \n", 
 					(void*)term, term->name, (void*)term->context,term->context->context_id);
@@ -711,6 +718,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
     /* IF there is any error , return */
     if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+	    mg_profile->mg_stats->total_num_of_un_supported_codec_error++;
 	    mg_util_set_err_string(&errTxt, " Unsupported Codec ");
 	    err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
 	    goto error;
@@ -719,6 +727,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     /* associate physical termination to context  */
 
     if(SWITCH_STATUS_FALSE == megaco_context_add_termination(mg_ctxt, term)){
+	    mg_profile->mg_stats->total_num_of_add_term_failed_error++;
 	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"megaco_context_add_termination failed \n");
         mg_util_set_err_string(&errTxt, " Resource Failure ");
         err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
@@ -818,6 +827,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 		/* only for RTP */
 		if(SWITCH_STATUS_FALSE == mg_build_sdp(&desc->u.media, inc_med_desc, mg_profile, term, &rsp.u.mgCmdRsp[0]->memCp)) {
 			if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+				mg_profile->mg_stats->total_num_of_un_supported_codec_error++;
 				mg_util_set_err_string(&errTxt, " Unsupported Codec ");
 				err_code = MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT;
 				goto error;
@@ -846,6 +856,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     return ret;	
 
 error:
+    mg_profile->mg_stats->total_num_of_add_failed++;
     if (SWITCH_STATUS_SUCCESS == 
             mg_build_mgco_err_request(&mgErr, txn_id, ctxtId, err_code, &errTxt)) {
         sng_mgco_send_err(mg_profile->idx, mgErr);
@@ -956,6 +967,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 		term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
 
 		if(NULL == term){
+		    mg_profile->mg_stats->total_num_of_find_term_failed_error++;
 			mg_util_set_term_string(&errTxt,termId);
 			err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
 			goto error;
@@ -970,6 +982,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 				/*find context based on received context-id */
 				mg_ctxt = megaco_get_context(mg_profile, ctxtId->val.val);
 				if(NULL == mg_ctxt){
+					mg_profile->mg_stats->total_num_of_get_ctxt_failed_error++;
 #ifdef BIT_64
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 							"Modify request Failed, context[%d] not found \n",ctxtId->val.val);
@@ -983,6 +996,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 				}
 
 				if(SWITCH_STATUS_FALSE == megaco_context_is_term_present(mg_ctxt, term)){
+					mg_profile->mg_stats->total_num_of_no_term_ctxt_error++;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 							"Modify request Failed, requested term not associated with any context \n");
 					/* ERROR - termination didnt bind with requested context */
@@ -1012,6 +1026,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
 		/* IF there is any error , return */
 		if(term->mg_error_code && (*term->mg_error_code == MGT_MGCP_RSP_CODE_INCONSISTENT_LCL_OPT)){
+			mg_profile->mg_stats->total_num_of_un_supported_codec_error++;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 					"Modify request Failed, Unsupported Codec \n"); 
 			mg_util_set_err_string(&errTxt, " Unsupported Codec ");
@@ -1041,6 +1056,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 
 		/* SDP updated to termination */
 		if(SWITCH_STATUS_SUCCESS != megaco_activate_termination(term)) {
+			mg_profile->mg_stats->total_num_of_term_activation_failed_error++;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 					"Modify request Failed, Activation of termination failed \n"); 
 			mg_util_set_err_string(&errTxt, " Resource Failure ");
@@ -1193,6 +1209,8 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
     termLst = mg_get_term_id_list(inc_cmd);
     termId  = termLst->terms[0];
 
+    mg_profile->mg_stats->total_num_of_sub_recvd++;
+
     /************************************************************************************************************************************************************/
     /* Validating Subtract request *******************************************/
 
@@ -1243,6 +1261,7 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
         /*find context based on received context-id */
         mg_ctxt = megaco_get_context(mg_profile, ctxtId->val.val);
         if(NULL == mg_ctxt){
+	    mg_profile->mg_stats->total_num_of_get_ctxt_failed_error++;
             mg_util_set_ctxt_string(&errTxt, ctxtId);
             err_code = MGT_MGCO_RSP_CODE_UNKNOWN_CTXT;
             goto error;
@@ -1262,22 +1281,24 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
 
             term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
 
-            if(SWITCH_STATUS_FALSE == megaco_context_is_term_present(mg_ctxt, term)){
-		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-				    "Subtract request Failed, termination no associated with any context \n"); 
-                /* ERROR - termination didnt bind with requested context */
-                mg_util_set_term_string(&errTxt,termId);
-                err_code = MGT_MGCO_RSP_CODE_NO_TERM_CTXT;
-                goto error;
-            }
-
-            if(NULL == term){
+	    if(NULL == term){
+		    mg_profile->mg_stats->total_num_of_find_term_failed_error++;
 		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 				    "Subtract request Failed, no termination found for input term string[%s] \n", (char*)termId->name.lcl.val); 
-                mg_util_set_term_string(&errTxt,termId);
-                err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
-                goto error;
-            }
+		    mg_util_set_term_string(&errTxt,termId);
+		    err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
+		    goto error;
+	    }
+
+	    if(SWITCH_STATUS_FALSE == megaco_context_is_term_present(mg_ctxt, term)){
+		    mg_profile->mg_stats->total_num_of_no_term_ctxt_error++;
+		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+				    "Subtract request Failed, termination no associated with any context \n"); 
+		    /* ERROR - termination didnt bind with requested context */
+		    mg_util_set_term_string(&errTxt,termId);
+		    err_code = MGT_MGCO_RSP_CODE_NO_TERM_CTXT;
+		    goto error;
+	    }
 
             /* remove termination from context */
             megaco_context_sub_termination(mg_ctxt, term);
