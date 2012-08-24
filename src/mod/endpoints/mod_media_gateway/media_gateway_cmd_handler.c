@@ -268,8 +268,6 @@ switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *
     MgMgcoLocalDesc   *local; 
     MgMgcoRemoteDesc*  remote;
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"cmd->cmdType.val[%d]\n",cmd->cmdType.val);
-
     switch (cmd->cmdType.val)
     {
         case CH_CMD_TYPE_IND:
@@ -675,7 +673,7 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
             goto error;
         }
 
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated RTP Termination[%p] with term name[%s]\n", (void*)term, term->name);
 
         is_rtp = 0x01;
 
@@ -692,14 +690,14 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 	    }
 
 
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated Termination[%p] with term name[%s]\n", (void*)term, term->name);
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated Physical Termination[%p] with term name[%s]\n", (void*)term, term->name);
     }
 
     /********************************************************************/
     /* check if termination already is in call */
 
 	    if(term->context){
-		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Termination[%p : %s] "
+		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Termination[%p : %s] "
 					"already in context[%p -%d]..rejecting ADD \n", 
 					(void*)term, term->name, (void*)term->context,term->context->context_id);
 		    mg_util_set_err_string(&errTxt, " Term already is in call ");
