@@ -217,17 +217,6 @@ static void set_rx_handler(fax_modems_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v17_v21_rx_fillin(void *user_data, int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v17_rx_fillin(&s->fast_modems.v17_rx, len);
-    fsk_rx_fillin(&s->v21_rx, len);
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
 static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
@@ -252,17 +241,6 @@ static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v27ter_v21_rx_fillin(void *user_data, int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v27ter_rx_fillin(&s->fast_modems.v27ter_rx, len);
-    fsk_rx_fillin(&s->v21_rx, len);
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
 static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
@@ -283,17 +261,6 @@ static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
         set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
     }
     /*endif*/
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int v29_v21_rx_fillin(void *user_data, int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v29_rx_fillin(&s->fast_modems.v29_rx, len);
-    fsk_rx_fillin(&s->v21_rx, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2106,19 +2073,19 @@ static int restart_rx_modem(t38_gateway_state_t *s)
     case FAX_MODEM_V27TER_RX:
         v27ter_rx_restart(&t->fast_modems.v27ter_rx, s->core.fast_bit_rate, FALSE);
         v27ter_rx_set_put_bit(&t->fast_modems.v27ter_rx, put_bit_func, put_bit_user_data);
-        set_rx_handler(t, &v27ter_v21_rx, t, &v27ter_v21_rx_fillin, t);
+        set_rx_handler(t, &v27ter_v21_rx, t, &fax_modems_v27ter_v21_rx_fillin, t);
         s->core.fast_rx_active = FAX_MODEM_V27TER_RX;
         break;
     case FAX_MODEM_V29_RX:
         v29_rx_restart(&t->fast_modems.v29_rx, s->core.fast_bit_rate, FALSE);
         v29_rx_set_put_bit(&t->fast_modems.v29_rx, put_bit_func, put_bit_user_data);
-        set_rx_handler(t, &v29_v21_rx, t, &v29_v21_rx_fillin, t);
+        set_rx_handler(t, &v29_v21_rx, t, &fax_modems_v29_v21_rx_fillin, t);
         s->core.fast_rx_active = FAX_MODEM_V29_RX;
         break;
     case FAX_MODEM_V17_RX:
         v17_rx_restart(&t->fast_modems.v17_rx, s->core.fast_bit_rate, s->core.short_train);
         v17_rx_set_put_bit(&t->fast_modems.v17_rx, put_bit_func, put_bit_user_data);
-        set_rx_handler(t, &v17_v21_rx, t, &v17_v21_rx_fillin, t);
+        set_rx_handler(t, &v17_v21_rx, t, &fax_modems_v17_v21_rx_fillin, t);
         s->core.fast_rx_active = FAX_MODEM_V17_RX;
         break;
     default:
