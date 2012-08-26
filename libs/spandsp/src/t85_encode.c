@@ -675,6 +675,12 @@ SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s, uint32_t image_width
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) t85_encode_get_logging_state(t85_encode_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(t85_encode_state_t *) t85_encode_init(t85_encode_state_t *s,
                                                    uint32_t image_width,
                                                    uint32_t image_length,

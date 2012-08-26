@@ -799,6 +799,12 @@ SPAN_DECLARE(int) t85_decode_restart(t85_decode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) t85_decode_get_logging_state(t85_decode_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(t85_decode_state_t *) t85_decode_init(t85_decode_state_t *s,
                                                    t4_row_write_handler_t handler,
                                                    void *user_data)
