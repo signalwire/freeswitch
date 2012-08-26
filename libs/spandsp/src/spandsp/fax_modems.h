@@ -77,6 +77,10 @@ SPAN_DECLARE(void) fax_modems_start_slow_modem(fax_modems_state_t *s, int which)
 
 SPAN_DECLARE(void) fax_modems_set_tep_mode(fax_modems_state_t *s, int use_tep);
 
+SPAN_DECLARE(void) fax_modems_set_put_bit(fax_modems_state_t *s, put_bit_func_t put_bit, void *user_data);
+
+SPAN_DECLARE(void) fax_modems_set_get_bit(fax_modems_state_t *s, get_bit_func_t get_bit, void *user_data);
+
 SPAN_DECLARE(void) fax_modems_set_rx_handler(fax_modems_state_t *s,
                                              span_rx_handler_t rx_handler,
                                              void *rx_user_data,
