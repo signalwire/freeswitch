@@ -86,6 +86,18 @@
 
 #define HDLC_FRAMING_OK_THRESHOLD               5
 
+static void fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
+{
+    fax_modems_state_t *s;
+
+    s = (fax_modems_state_t *) user_data;
+    if (ok)
+        s->rx_frame_received = TRUE;
+    if (s->hdlc_accept)
+        s->hdlc_accept(s->hdlc_accept_user_data, msg, len, ok);
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) fax_modems_hdlc_tx_frame(void *user_data, const uint8_t *msg, int len)
 {
     fax_modems_state_t *s;
@@ -405,6 +417,20 @@ SPAN_DECLARE(void) fax_modems_start_rx_modem(fax_modems_state_t *s, int which)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) fax_modems_set_put_bit(fax_modems_state_t *s, put_bit_func_t put_bit, void *user_data)
+{
+    s->put_bit = put_bit;
+    s->put_bit_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) fax_modems_set_get_bit(fax_modems_state_t *s, get_bit_func_t get_bit, void *user_data)
+{
+    s->get_bit = get_bit;
+    s->get_bit_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) fax_modems_set_rx_handler(fax_modems_state_t *s,
                                              span_rx_handler_t rx_handler,
                                              void *rx_user_data,
@@ -497,7 +523,7 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
     s->hdlc_accept = hdlc_accept;
     s->hdlc_accept_user_data = user_data;
 
-    hdlc_rx_init(&s->hdlc_rx, FALSE, FALSE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept, user_data);
+    hdlc_rx_init(&s->hdlc_rx, FALSE, FALSE, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, s);
     hdlc_tx_init(&s->hdlc_tx, FALSE, 2, FALSE, hdlc_tx_underflow, user_data);
 
     fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &s->hdlc_rx);
