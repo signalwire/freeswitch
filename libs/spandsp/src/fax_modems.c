@@ -418,14 +418,12 @@ SPAN_DECLARE(void) fax_modems_set_rx_handler(fax_modems_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-#if 0
 SPAN_DECLARE(void) fax_modems_set_rx_active(fax_modems_state_t *s, int active)
 {
     s->rx_handler = (active)  ?  s->base_rx_handler  :  span_dummy_rx;
     s->rx_fillin_handler = (active)  ?  s->base_rx_fillin_handler  :  span_dummy_rx_fillin;
 }
 /*- End of function --------------------------------------------------------*/
-#endif
 
 SPAN_DECLARE(void) fax_modems_set_tx_handler(fax_modems_state_t *s, span_tx_handler_t handler, void *user_data)
 {
