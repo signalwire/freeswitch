@@ -123,16 +123,6 @@
 
 #define HDLC_FRAMING_OK_THRESHOLD       8
 
-static void fax_modems_hdlc_tx_frame(void *user_data, const uint8_t *msg, int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    
-    hdlc_tx_frame(&s->hdlc_tx, msg, len);
-}
-/*- End of function --------------------------------------------------------*/
-
 static void tone_detected(void *user_data, int tone, int level, int delay)
 {
     t30_state_t *s;

@@ -98,6 +98,12 @@ SPAN_DECLARE(int) t42_encode_set_row_read_handler(t42_encode_state_t *s,
                                                   t4_row_read_handler_t handler,
                                                   void *user_data);
 
+/*! Get the logging context associated with a T.42 encode context.
+    \brief Get the logging context associated with a T.42 encode context.
+    \param s The T.42 encode context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t42_encode_get_logging_state(t42_encode_state_t *s);
+
 SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width, uint32_t image_length);
 
 SPAN_DECLARE(t42_encode_state_t *) t42_encode_init(t42_encode_state_t *s,
@@ -134,6 +140,12 @@ SPAN_DECLARE(uint32_t) t42_decode_get_image_length(t42_decode_state_t *s);
 SPAN_DECLARE(int) t42_decode_get_compressed_image_size(t42_decode_state_t *s);
 
 SPAN_DECLARE(int) t42_decode_new_plane(t42_decode_state_t *s);
+
+/*! Get the logging context associated with a T.42 decode context.
+    \brief Get the logging context associated with a T.42 decode context.
+    \param s The T.42 decode context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t42_decode_get_logging_state(t42_decode_state_t *s);
 
 SPAN_DECLARE(int) t42_decode_restart(t42_decode_state_t *s);
 

@@ -396,16 +396,16 @@ SPAN_DECLARE(void) srgb_to_lab(lab_params_t *s, uint8_t lab[], const uint8_t srg
     cielab_t l;
     int i;
 
-    for (i = 0;  i < pixels;  i++)
+    for (i = 0;  i < 3*pixels;  i += 3)
     {
 #if defined(T42_USE_LUTS)
-        r = srgb_to_linear[srgb[0]];
-        g = srgb_to_linear[srgb[1]];
-        b = srgb_to_linear[srgb[2]];
+        r = srgb_to_linear[srgb[i]];
+        g = srgb_to_linear[srgb[i + 1]];
+        b = srgb_to_linear[srgb[i + 2]];
 #else
-        r = srgb[0]/256.0f;
-        g = srgb[1]/256.0f;
-        b = srgb[2]/256.0f;
+        r = srgb[i]/256.0f;
+        g = srgb[i + 1]/256.0f;
+        b = srgb[i + 2]/256.0f;
 
         /* sRGB to linear RGB */
         r = (r > 0.04045f)  ?  powf((r + 0.055f)/1.055f, 2.4f)  :  r/12.92f;
@@ -433,7 +433,6 @@ SPAN_DECLARE(void) srgb_to_lab(lab_params_t *s, uint8_t lab[], const uint8_t srg
 
         lab_to_itu(s, lab, &l);
 
-        srgb += 3;
         lab += 3;
     }
 }
@@ -452,7 +451,7 @@ SPAN_DECLARE(void) lab_to_srgb(lab_params_t *s, uint8_t srgb[], const uint8_t la
     int val;
     int i;
 
-    for (i = 0;  i < pixels;  i++)
+    for (i = 0;  i < 3*pixels;  i += 3)
     {
         itu_to_lab(s, &l, lab);
 
@@ -477,22 +476,21 @@ SPAN_DECLARE(void) lab_to_srgb(lab_params_t *s, uint8_t srgb[], const uint8_t la
 
 #if defined(T42_USE_LUTS)
         val = r*4096.0f;
-        srgb[0] = linear_to_srgb[(val < 0)  ?  0  :  (val < 4095)  ?  val  :  4095];
+        srgb[i] = linear_to_srgb[(val < 0)  ?  0  :  (val < 4095)  ?  val  :  4095];
         val = g*4096.0f;
-        srgb[1] = linear_to_srgb[(val < 0)  ?  0  :  (val < 4095)  ?  val  :  4095];
+        srgb[i + 1] = linear_to_srgb[(val < 0)  ?  0  :  (val < 4095)  ?  val  :  4095];
         val = b*4096.0f;
-        srgb[2] = linear_to_srgb[(val < 0)  ?  0  :  (val < 4095)  ?  val  :  4095];
+        srgb[i + 2] = linear_to_srgb[(val < 0)  ?  0  :  (val < 4095)  ?  val  :  4095];
 #else
         /* Linear RGB to sRGB */
         r = (r > 0.0031308f)  ?  (1.055f*powf(r, 1.0f/2.4f) - 0.055f)  :  r*12.92f;
         g = (g > 0.0031308f)  ?  (1.055f*powf(g, 1.0f/2.4f) - 0.055f)  :  g*12.92f;
         b = (b > 0.0031308f)  ?  (1.055f*powf(b, 1.0f/2.4f) - 0.055f)  :  b*12.92f;
 
-        srgb[0] = saturateu8(floorf(r*256.0f));
-        srgb[1] = saturateu8(floorf(g*256.0f));
-        srgb[2] = saturateu8(floorf(b*256.0f));
+        srgb[i] = saturateu8(floorf(r*256.0f));
+        srgb[i + 1] = saturateu8(floorf(g*256.0f));
+        srgb[i + 2] = saturateu8(floorf(b*256.0f));
 #endif
-        srgb += 3;
         lab += 3;
     }
 }
@@ -1233,6 +1231,12 @@ SPAN_DECLARE(int) t42_encode_set_row_read_handler(t42_encode_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) t42_encode_get_logging_state(t42_encode_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width, uint32_t image_length)
 {
     //s->image_width = image_width;
@@ -1354,6 +1358,12 @@ SPAN_DECLARE(int) t42_decode_get_compressed_image_size(t42_decode_state_t *s)
 SPAN_DECLARE(int) t42_decode_new_plane(t42_decode_state_t *s)
 {
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(logging_state_t *) t42_decode_get_logging_state(t42_decode_state_t *s)
+{
+    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

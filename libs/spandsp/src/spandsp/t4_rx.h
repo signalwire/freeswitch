@@ -74,10 +74,11 @@ typedef enum
 typedef enum
 {
     T4_IMAGE_TYPE_BILEVEL = 0,
-    T4_IMAGE_TYPE_GRAY_8BIT = 1,
-    T4_IMAGE_TYPE_GRAY_12BIT = 2,
-    T4_IMAGE_TYPE_COLOUR_8BIT = 3,
-    T4_IMAGE_TYPE_COLOUR_12BIT = 4
+    T4_IMAGE_TYPE_COLOUR_BILEVEL = 1,
+    T4_IMAGE_TYPE_GRAY_8BIT = 2,
+    T4_IMAGE_TYPE_GRAY_12BIT = 3,
+    T4_IMAGE_TYPE_COLOUR_8BIT = 4,
+    T4_IMAGE_TYPE_COLOUR_12BIT = 5
 } t4_image_types_t;
 
 /*! Supported X resolutions, in pixels per metre. */

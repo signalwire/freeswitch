@@ -111,7 +111,7 @@ static void create_undithered_50_by_50(image_descriptor_t *im, uint8_t buf[], in
         {
             for (j = 0;  j < 50;  j++)
             {
-#if 1
+#if 0
                 image8[50*3*i + 3*j + 0] = ((i + j)*655) >> 8;
                 image8[50*3*i + 3*j + 1] = ((i + j)*655) >> 8;
                 image8[50*3*i + 3*j + 2] = ((i + j)*655) >> 8;
@@ -129,7 +129,7 @@ static void create_undithered_50_by_50(image_descriptor_t *im, uint8_t buf[], in
         {
             for (j = 0;  j < 50;  j++)
             {
-#if 1
+#if 0
                 image16[50*3*i + 3*j + 0] = (i + j)*655;
                 image16[50*3*i + 3*j + 1] = (i + j)*655;
                 image16[50*3*i + 3*j + 2] = (i + j)*655;
@@ -350,7 +350,7 @@ static void get_colour8_image(image_translate_state_t *s, int compare)
         {
             for (j = 0;  j < 50;  j++)
             {
-#if 1
+#if 0
                 r = ((i + j)*655) >> 8;
                 g = ((i + j)*655) >> 8;
                 b = ((i + j)*655) >> 8;
@@ -399,7 +399,7 @@ static void get_colour16_image(image_translate_state_t *s, int compare)
         {
             for (j = 0;  j < 50;  j++)
             {
-#if 1
+#if 0
                 r = (i + j)*655;
                 g = (i + j)*655;
                 b = (i + j)*655;
@@ -638,7 +638,7 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     TIFFGetField(in_file, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
     samples_per_pixel = 0;
     TIFFGetField(in_file, TIFFTAG_SAMPLESPERPIXEL, &samples_per_pixel);
-    printf("Original image is %d x %d, %f x %f resolution, %d bits per sample, %d samples per pixel\n", image_width, image_length, x_resolution, y_resolution, bits_per_sample, samples_per_pixel);
+    printf("Original image is %d x %d, %.2f x %.2f resolution, %d bits per sample, %d samples per pixel\n", image_width, image_length, x_resolution, y_resolution, bits_per_sample, samples_per_pixel);
     if ((image = malloc(image_width*image_length*samples_per_pixel)) == NULL)
         return;
     for (total = 0, i = 0;  i < 1000;  i++)
