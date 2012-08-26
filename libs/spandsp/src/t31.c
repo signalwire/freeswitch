@@ -2493,7 +2493,6 @@ SPAN_DECLARE_NONSTD(int) t31_rx_fillin(t31_state_t *s, int len)
         at_put_response_code(&s->at_state, AT_RESPONSE_CODE_ERROR);
         restart_modem(s, FAX_MODEM_SILENCE_TX);
     }
-
     s->audio.modems.rx_fillin_handler(s->audio.modems.rx_fillin_user_data, len);
     return 0;
 }
