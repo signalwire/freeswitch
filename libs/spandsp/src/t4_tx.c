@@ -79,6 +79,12 @@
 
 #include "faxfont.h"
 
+#if 0
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#include <tif_dir.h>
+#endif
+#endif
+
 /*! The number of centimetres in one inch */
 #define CM_PER_INCH                 2.54f
 
@@ -93,12 +99,32 @@ static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
     {TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "CodingMethods"},
     {TIFFTAG_VERSIONYEAR, 4, 4, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "VersionYear"},
     {TIFFTAG_MODENUMBER, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "ModeNumber"},
-    {TIFFTAG_DECODE, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SRATIONAL, FIELD_CUSTOM, FALSE, FALSE, (char *) "Decode"},
-    {TIFFTAG_IMAGEBASECOLOR, TIFF_SPP, TIFF_SPP, TIFF_SHORT, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageBaseColor"},
+    {TIFFTAG_DECODE, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SRATIONAL, FIELD_CUSTOM, FALSE, TRUE, (char *) "Decode"},
+    {TIFFTAG_IMAGEBASECOLOR, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SHORT, FIELD_CUSTOM, FALSE, TRUE, (char *) "ImageBaseColor"},
     {TIFFTAG_T82OPTIONS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "T82Options"},
     {TIFFTAG_STRIPROWCOUNTS, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_LONG, FIELD_CUSTOM, FALSE, TRUE, (char *) "StripRowCounts"},
     {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageLayer"},
 };
+
+#if 0
+static TIFFField tiff_fx_tiff_fields[] =
+{
+    { TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, 0, TIFF_SETGET_UINT16, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "Indexed" },
+    { TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_LONG, 0, TIFF_SETGET_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "GlobalParametersIFD", NULL },
+    { TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, 0, TIFF_SETGET_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "ProfileType", NULL },
+    { TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, 0, TIFF_SETGET_UINT8, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "FaxProfile", NULL },
+    { TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, 0, TIFF_SETGET_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "CodingMethods", NULL },
+    { TIFFTAG_VERSIONYEAR, 4, 4, TIFF_BYTE, 0, TIFF_SETGET_C0_UINT8, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "VersionYear", NULL },
+    { TIFFTAG_MODENUMBER, 1, 1, TIFF_BYTE, 0, TIFF_SETGET_UINT8, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "ModeNumber", NULL },
+    { TIFFTAG_DECODE, -1, -1, TIFF_SRATIONAL, 0, TIFF_SETGET_C16_FLOAT, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 1, (char *) "Decode", NULL },
+    { TIFFTAG_IMAGEBASECOLOR, -1, -1, TIFF_SHORT, 0, TIFF_SETGET_C16_UINT16, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 1, (char *) "ImageBaseColor", NULL },
+    { TIFFTAG_T82OPTIONS, 1, 1, TIFF_LONG, 0, TIFF_SETGET_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "T82Options", NULL },
+    { TIFFTAG_STRIPROWCOUNTS, -1, -1, TIFF_LONG, 0, TIFF_SETGET_C16_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 1, (char *) "StripRowCounts", NULL },
+    { TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, 0, TIFF_SETGET_C0_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "ImageLayer", NULL },
+};
+
+TIFFFieldArray tiff_fx_field_array = { tfiatOther, 0, 12, tiff_fx_tiff_fields };
+#endif
 
 static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length);
 
@@ -107,7 +133,7 @@ static TIFFExtendProc _ParentExtender = NULL;
 static void TIFFFXDefaultDirectory(TIFF *tif)
 {
     /* Install the extended tag field info */
-    TIFFMergeFieldInfo(tif, tiff_fx_tiff_field_info, 11);
+    TIFFMergeFieldInfo(tif, tiff_fx_tiff_field_info, 12);
 
     /* Since we may have overriddden another directory method, we call it now to
        allow it to set up the rest of its own methods. */
@@ -135,6 +161,50 @@ static int test_resolution(int res_unit, float actual, float expected)
     if (res_unit == RESUNIT_INCH)
         actual *= 1.0f/CM_PER_INCH;
     return (expected*0.95f <= actual  &&  actual <= expected*1.05f);
+}
+/*- End of function --------------------------------------------------------*/
+
+static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
+{
+    int i;
+    uint16_t *map_L;
+    uint16_t *map_a;
+    uint16_t *map_b;
+    uint16_t *map_z;
+
+    map_L = NULL;
+    map_a = NULL;
+    map_b = NULL;
+    map_z = NULL;
+    if (!TIFFGetField(s->tiff.tiff_file, TIFFTAG_COLORMAP, &map_L, &map_a, &map_b, &map_z))
+        return -1;
+    
+    /* TODO: This only allows for 8 bit deep maps */
+    if ((s->colour_map = realloc(s->colour_map, 3*256)) == NULL)
+        return -1;
+    span_log(&s->logging, SPAN_LOG_FLOW, "Got a colour map\n");
+#if 0
+    /* Sweep the colormap in the proper order */
+    for (i = 0;  i < (1 << bits_per_sample);  i++)
+    {
+        s->colour_map[3*i] = (map_L[i] >> 8) & 0xFF;
+        s->colour_map[3*i + 1] = (map_a[i] >> 8) & 0xFF;
+        s->colour_map[3*i + 2] = (map_b[i] >> 8) & 0xFF;
+        span_log(&s->logging, SPAN_LOG_FLOW, "Map %3d - %5d %5d %5d\n", i, s->colour_map[3*i], s->colour_map[3*i + 1], s->colour_map[3*i + 2]);
+    }
+#else
+    /* Sweep the colormap in the order that seems to work for l04x_02x.tif */
+    for (i = 0;  i < (1 << bits_per_sample);  i++)
+    {
+        s->colour_map[i] = (map_L[i] >> 8) & 0xFF;
+        s->colour_map[256 + i] = (map_a[i] >> 8) & 0xFF;
+        s->colour_map[2*256 + i] = (map_b[i] >> 8) & 0xFF;
+    }
+#endif
+    lab_to_srgb(&s->lab_params, s->colour_map, s->colour_map, 256);
+    for (i = 0;  i < (1 << bits_per_sample);  i++)
+        span_log(&s->logging, SPAN_LOG_FLOW, "Map %3d - %5d %5d %5d\n", i, s->colour_map[3*i], s->colour_map[3*i + 1], s->colour_map[3*i + 2]);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -232,8 +302,12 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     TIFFGetField(t->tiff_file, TIFFTAG_RESOLUTIONUNIT, &res_unit);
     t->photo_metric = PHOTOMETRIC_MINISWHITE;
     TIFFGetField(t->tiff_file, TIFFTAG_PHOTOMETRIC, &t->photo_metric);
-    /* TIFFGetField(t->tiff_file, TIFFTAG_COMPRESSION, &t->????); */
 
+    set_lab_illuminant(&s->lab_params, 0.9638f, 1.0f, 0.8245f);
+    set_lab_gamut(&s->lab_params, 0, 100, -85, 85, -75, 125, FALSE);
+
+    t->compression = -1;
+    TIFFGetField(t->tiff_file, TIFFTAG_COMPRESSION, &t->compression);
     t->fill_order = FILLORDER_LSB2MSB;
 
     /* Allow a little range for the X resolution in centimeters. The spec doesn't pin down the
@@ -314,22 +388,42 @@ static int test_tiff_directory_info(t4_tx_state_t *s)
         {             -1.00f, -1}
     };
     uint16_t res_unit;
-    uint16_t parm16;
     uint32_t parm32;
     float x_resolution;
     float y_resolution;
+    uint16_t bits_per_sample;
+    uint16_t samples_per_pixel;
+    int image_type;
     int i;
     t4_tx_tiff_state_t *t;
 
     t = &s->tiff;
-    parm16 = 1;
-    TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &parm16);
-    if (parm16 != 1)
+    bits_per_sample = 1;
+    TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
+    samples_per_pixel = 1;
+    TIFFGetField(t->tiff_file, TIFFTAG_SAMPLESPERPIXEL, &samples_per_pixel);
+    if (samples_per_pixel == 1  &&  bits_per_sample == 1)
+        image_type = T4_IMAGE_TYPE_BILEVEL;
+    else if (samples_per_pixel == 3  &&  bits_per_sample == 1)
+        image_type = T4_IMAGE_TYPE_COLOUR_BILEVEL;
+    else if (samples_per_pixel == 1  &&  bits_per_sample == 8)
+        image_type = T4_IMAGE_TYPE_GRAY_8BIT;
+    else if (samples_per_pixel == 1  &&  bits_per_sample > 8)
+        image_type = T4_IMAGE_TYPE_GRAY_12BIT;
+    else if (samples_per_pixel == 3  &&  bits_per_sample == 8)
+        image_type = T4_IMAGE_TYPE_COLOUR_8BIT;
+    else if (samples_per_pixel == 3  &&  bits_per_sample > 8)
+        image_type = T4_IMAGE_TYPE_COLOUR_12BIT;
+    else
+        image_type = -1;
+#if 0
+    /* Limit ourselves to plain black and white pages */
+    if (t->image_type != T4_IMAGE_TYPE_BILEVEL)
         return -1;
-    parm16 = 1;
-    TIFFGetField(t->tiff_file, TIFFTAG_SAMPLESPERPIXEL, &parm16);
-    if (parm16 != 1)
-        return -1;
+#endif
+    if (s->tiff.image_type != image_type)
+        return 1;
+
     parm32 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm32);
     if (s->image_width != (int) parm32)
@@ -1081,6 +1175,11 @@ SPAN_DECLARE(int) t4_tx_release(t4_tx_state_t *s)
     {
         free(s->header_text);
         s->header_text = NULL;
+    }
+    if (s->colour_map)
+    {
+        free(s->colour_map);
+        s->colour_map = NULL;
     }
     switch (s->line_encoding)
     {

@@ -45,7 +45,6 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/fast_convert.h"
-#include "spandsp/dc_restore.h"
 #include "spandsp/lpc10.h"
 #include "spandsp/private/lpc10.h"
 

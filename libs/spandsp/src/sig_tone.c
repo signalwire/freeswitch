@@ -45,7 +45,6 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/fast_convert.h"
-#include "spandsp/dc_restore.h"
 #include "spandsp/saturated.h"
 #include "spandsp/vector_int.h"
 #include "spandsp/complex.h"
