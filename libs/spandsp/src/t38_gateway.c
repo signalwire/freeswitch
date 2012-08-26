@@ -217,13 +217,6 @@ static void set_rx_handler(fax_modems_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-static void set_rx_active(t38_gateway_state_t *s, int active)
-{
-    s->audio.modems.rx_handler = (active)  ?  s->audio.modems.base_rx_handler  :  span_dummy_rx;
-    s->audio.modems.rx_fillin_handler = (active)  ?  s->audio.modems.base_rx_fillin_handler  :  span_dummy_rx_fillin;
-}
-/*- End of function --------------------------------------------------------*/
-
 static int v17_v21_rx_fillin(void *user_data, int len)
 {
     t38_gateway_state_t *t;
@@ -425,11 +418,11 @@ static int set_next_tx_type(t38_gateway_state_t *s)
             ||
             t->tx_handler == (span_tx_handler_t) &tone_gen)
         {
-            set_rx_active(s, TRUE);
+            fax_modems_set_rx_active(t, TRUE);
         }
         else
         {
-            set_rx_active(s, FALSE);
+            fax_modems_set_rx_active(t, FALSE);
         }
         /*endif*/
         return TRUE;
@@ -472,7 +465,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         //silence_gen_set(&t->silence_gen, ms_to_samples(75));
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
-        set_rx_active(s, TRUE);
+        fax_modems_set_rx_active(t, TRUE);
         break;
     case T38_IND_CNG:
         t->tx_bit_rate = 0;
@@ -480,14 +473,14 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
         silence_gen_set(&t->silence_gen, 0);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
-        set_rx_active(s, TRUE);
+        fax_modems_set_rx_active(t, TRUE);
         break;
     case T38_IND_CED:
         t->tx_bit_rate = 0;
         modem_connect_tones_tx_init(&t->connect_tx, MODEM_CONNECT_TONES_FAX_CED);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
-        set_rx_active(s, TRUE);
+        fax_modems_set_rx_active(t, TRUE);
         break;
     case T38_IND_V21_PREAMBLE:
         t->tx_bit_rate = 300;
@@ -498,7 +491,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         fsk_tx_init(&t->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &t->hdlc_tx);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &fsk_tx, &t->v21_tx);
-        set_rx_active(s, TRUE);
+        fax_modems_set_rx_active(t, TRUE);
         break;
     case T38_IND_V27TER_2400_TRAINING:
     case T38_IND_V27TER_4800_TRAINING:
@@ -509,7 +502,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         v27ter_tx_set_get_bit(&t->fast_modems.v27ter_tx, get_bit_func, get_bit_user_data);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v27ter_tx, &t->fast_modems.v27ter_tx);
-        set_rx_active(s, TRUE);
+        fax_modems_set_rx_active(t, TRUE);
         break;
     case T38_IND_V29_7200_TRAINING:
     case T38_IND_V29_9600_TRAINING:
@@ -520,7 +513,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         v29_tx_set_get_bit(&t->fast_modems.v29_tx, get_bit_func, get_bit_user_data);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
-        set_rx_active(s, TRUE);
+        fax_modems_set_rx_active(t, TRUE);
         break;
     case T38_IND_V17_7200_SHORT_TRAINING:
     case T38_IND_V17_7200_LONG_TRAINING:
@@ -569,7 +562,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         v17_tx_set_get_bit(&t->fast_modems.v17_tx, get_bit_func, get_bit_user_data);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
-        set_rx_active(s, TRUE);
+        fax_modems_set_rx_active(t, TRUE);
         break;
     case T38_IND_V8_ANSAM:
         t->tx_bit_rate = 300;
@@ -2433,7 +2426,7 @@ SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
     t38_gateway_audio_init(s);
     t38_gateway_t38_init(s, tx_packet_handler, tx_packet_user_data);
     
-    set_rx_active(s, TRUE);
+    fax_modems_set_rx_active(&s->audio.modems, TRUE);
     t38_gateway_set_supported_modems(s, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
     t38_gateway_set_nsx_suppression(s, (const uint8_t *) "\x00\x00\x00", 3, (const uint8_t *) "\x00\x00\x00", 3);
 
