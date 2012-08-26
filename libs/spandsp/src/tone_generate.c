@@ -45,7 +45,6 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/fast_convert.h"
-#include "spandsp/dc_restore.h"
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
 #include "spandsp/tone_generate.h"

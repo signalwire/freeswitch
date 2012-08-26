@@ -67,7 +67,6 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
-#include "spandsp/dc_restore.h"
 #include "spandsp/bitstream.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/g711.h"
