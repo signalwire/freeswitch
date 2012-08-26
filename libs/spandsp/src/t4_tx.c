@@ -260,14 +260,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     }
     t4_tx_set_image_width(s, s->image_width);
     t4_tx_set_image_length(s, s->image_length);
-    switch (s->line_encoding)
-    {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
-        t4_t6_encode_set_max_2d_rows_per_1d_row(&s->encoder.t4_t6, -s->metadata.y_resolution);
-        break;
-    }
+    t4_tx_set_max_2d_rows_per_1d_row(s, -s->metadata.y_resolution);
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     if (TIFFGetField(t->tiff_file, TIFFTAG_PROFILETYPE, &parm32))
         span_log(&s->logging, SPAN_LOG_FLOW, "Profile type %u\n", parm32);
