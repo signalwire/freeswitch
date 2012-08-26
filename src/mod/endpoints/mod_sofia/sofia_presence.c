@@ -3320,7 +3320,7 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 								 "hostname='%q' and profile_name='%q' "
 								 "and sub_to_user='%q' and sub_to_host='%q' "
 								 
-								 "and event='line-seize'", (long) switch_epoch_time_now(NULL),
+								 "and event='line-seize'", (long) switch_epoch_time_now(NULL) + 2,
 								 mod_sofia_globals.hostname, profile->name, to_user, to_host
 								 );
 			
@@ -3349,17 +3349,6 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 			switch_safe_free(sql);
 		}
 
-
-		sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and profile_name='%q' and "
-							 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
-							 "and call_info_state='seized'", mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host);
-
-
-		if (mod_sofia_globals.debug_sla > 1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CLEAR SQL %s\n", sql);
-		}
-		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-		switch_safe_free(sql);
 	}
 
 
@@ -3426,7 +3415,19 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 	sh = NULL;
 	switch_core_destroy_memory_pool(&pool);
 
+	
+	if (clear) {
+		sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and profile_name='%q' and "
+							 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
+							 "and call_info_state='seized'", mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host);
 
+
+		if (mod_sofia_globals.debug_sla > 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CLEAR SQL %s\n", sql);
+		}
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		switch_safe_free(sql);
+	}
 
 	
 
