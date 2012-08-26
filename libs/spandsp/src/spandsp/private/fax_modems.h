@@ -115,9 +115,15 @@ struct fax_modems_state_s
 
     /*! \brief The current receive signal handler */
     span_rx_handler_t rx_handler;
+    /*! \brief The current receive signal handler. Actual receiving hops between this
+               and a dummy receive routine. */
+    span_rx_handler_t base_rx_handler;
     void *rx_user_data;
     /*! \brief The current receive missing signal fill-in handler */
     span_rx_fillin_handler_t rx_fillin_handler;
+    /*! \brief The current receive signal fillin handler. Actual receiving hops between this
+               and a dummy receive routine. */
+    span_rx_fillin_handler_t base_rx_fillin_handler;
     void *rx_fillin_user_data;
 
     /*! \brief The current transmit signal handler */

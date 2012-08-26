@@ -59,10 +59,6 @@ typedef struct
 {
     /*! \brief The FAX modem set for the audio side fo the gateway. */
     fax_modems_state_t modems;
-    /*! \brief The current receive signal handler. Actual receiving hops between this
-               and a dummy receive routine. */
-    span_rx_handler_t base_rx_handler;
-    span_rx_fillin_handler_t base_rx_fillin_handler;
 } t38_gateway_audio_state_t;
 
 /*!

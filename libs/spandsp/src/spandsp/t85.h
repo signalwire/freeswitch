@@ -87,6 +87,12 @@ SPAN_DECLARE(int) t85_encode_set_row_read_handler(t85_encode_state_t *s,
                                                   t4_row_read_handler_t handler,
                                                   void *user_data);
 
+/*! Get the logging context associated with a T.85 encode context.
+    \brief Get the logging context associated with a T.85 encode context.
+    \param s The T.85 encode context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t85_encode_get_logging_state(t85_encode_state_t *s);
+
 /*! \brief Prepare to encode an image in T.85 format.
     \param s The T.85 context.
     \param image_width Image width, in pixels.
@@ -163,6 +169,12 @@ SPAN_DECLARE(int) t85_encode_get_compressed_image_size(t85_encode_state_t *s);
 /*! \brief Stop image encoding prematurely.
     \param s The T.85 context. */
 SPAN_DECLARE(void) t85_encode_abort(t85_encode_state_t *s);
+
+/*! Get the logging context associated with a T.85 decode context.
+    \brief Get the logging context associated with a T.85 decode context.
+    \param s The T.85 decode context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t85_decode_get_logging_state(t85_decode_state_t *s);
 
 /*! \brief Prepare to decode an image in T.85 format.
     \param s The T.85 context.

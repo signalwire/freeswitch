@@ -34,6 +34,11 @@
 /*! \page image_translate_page Image translation
 \section image_translate_page_sec_1 What does it do?
 
+The image translate functions allow an image to be translated and resized between
+various colour an monochrome formats. It also allows a colour or gray-scale image
+to be reduced to a bi-level monochrome image. This is useful for preparing images
+to be sent as traditional bi-level FAX pages.
+
 \section image_translate_page_sec_2 How does it work?
 
 \section image_translate_page_sec_3 How do I use it?

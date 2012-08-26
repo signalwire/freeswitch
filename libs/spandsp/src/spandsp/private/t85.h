@@ -62,7 +62,7 @@ struct t85_encode_state_s
     uint32_t xd;
     /*! The height of the full image, in pixels */
     uint32_t yd;
-    /*! Then number of rows per stripe */
+    /*! The number of rows per stripe */
     uint32_t l0;
     /*! Maximum ATMOVE window size (0 - 127) */
     int mx;
