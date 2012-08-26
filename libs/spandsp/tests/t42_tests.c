@@ -54,7 +54,7 @@ int data5_ptr = 0;
 int plane = 0;
 int bit_mask;
 
-uint8_t xxx[3*256];
+uint8_t colour_map[3*256];
 
 lab_params_t lab_param;
 
@@ -141,10 +141,10 @@ int main(int argc, char *argv[])
     t85_decode_state_t t85_dec;
     uint64_t start;
     uint64_t end;
-    uint16_t *yyyL;
-    uint16_t *yyya;
-    uint16_t *yyyb;
-    uint16_t *yyyz;
+    uint16_t *map_L;
+    uint16_t *map_a;
+    uint16_t *map_b;
+    uint16_t *map_z;
     logging_state_t *logging;
 
     printf("Demo of ITU/Lab library.\n");
@@ -187,37 +187,37 @@ int main(int argc, char *argv[])
     planar_config = 0;
     TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planar_config);
     off = 0;
-    yyyL = NULL;
-    yyya = NULL;
-    yyyb = NULL;
-    yyyz = NULL;
-    if (TIFFGetField(tif, TIFFTAG_COLORMAP, &yyyL, &yyya, &yyyb, &yyyz))
+    map_L = NULL;
+    map_a = NULL;
+    map_b = NULL;
+    map_z = NULL;
+    if (TIFFGetField(tif, TIFFTAG_COLORMAP, &map_L, &map_a, &map_b, &map_z))
     {
 #if 0
         /* Sweep the colormap in the proper order */
         for (i = 0;  i < (1 << bits_per_pixel);  i++)
         {
-            xxx[3*i] = (yyyL[i] >> 8) & 0xFF;
-            xxx[3*i + 1] = (yyya[i] >> 8) & 0xFF;
-            xxx[3*i + 2] = (yyyb[i] >> 8) & 0xFF;
-            printf("Map %3d - %5d %5d %5d\n", i, xxx[3*i], xxx[3*i + 1], xxx[3*i + 2]);
+            colour_map[3*i] = (map_L[i] >> 8) & 0xFF;
+            colour_map[3*i + 1] = (map_a[i] >> 8) & 0xFF;
+            colour_map[3*i + 2] = (map_b[i] >> 8) & 0xFF;
+            printf("Map %3d - %5d %5d %5d\n", i, colour_map[3*i], colour_map[3*i + 1], colour_map[3*i + 2]);
         }
 #else
         /* Sweep the colormap in the order that seems to work for l04x_02x.tif */
         for (i = 0;  i < (1 << bits_per_pixel);  i++)
         {
-            xxx[i] = (yyyL[i] >> 8) & 0xFF;
-            xxx[256 + i] = (yyya[i] >> 8) & 0xFF;
-            xxx[2*256 + i] = (yyyb[i] >> 8) & 0xFF;
+            colour_map[i] = (map_L[i] >> 8) & 0xFF;
+            colour_map[256 + i] = (map_a[i] >> 8) & 0xFF;
+            colour_map[2*256 + i] = (map_b[i] >> 8) & 0xFF;
         }
 #endif
         lab_params_t lab;
 
         set_lab_illuminant(&lab, 0.9638f, 1.0f, 0.8245f);
         set_lab_gamut(&lab, 0, 100, -85, 85, -75, 125, FALSE);
-        lab_to_srgb(&lab, xxx, xxx, 256);
+        lab_to_srgb(&lab, colour_map, colour_map, 256);
         for (i = 0;  i < (1 << bits_per_pixel);  i++)
-            printf("Map %3d - %5d %5d %5d\n", i, xxx[3*i], xxx[3*i + 1], xxx[3*i + 2]);
+            printf("Map %3d - %5d %5d %5d\n", i, colour_map[3*i], colour_map[3*i + 1], colour_map[3*i + 2]);
     }
     else
     {
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
             }
         }
         if (total_len != total_image_len)
-            printf("Size mismatch %d %d\n", total_len, total_image_len);
+            printf("Size mismatch %ld %ld\n", total_len, total_image_len);
         off = total_len;
         switch (compression)
         {
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
         case COMPRESSION_CCITT_T6:
             break;
         case COMPRESSION_T85:
-            printf("T.85 image %d bytes\n", total_len);
+            printf("T.85 image %ld bytes\n", total_len);
             for (i = 0;  i < 16;  i++)
                 printf("0x%02x\n", data[i]);
             t85_decode_init(&t85_dec, t85_row_write_handler, NULL);
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
             t85_decode_release(&t85_dec);
             return 0;
         case COMPRESSION_T43:
-            printf("T.43 image %d bytes\n", total_len);
+            printf("T.43 image %ld bytes\n", total_len);
             if (pack_16(data) == 0xFFA8)
             {
                 data += 2;
@@ -359,10 +359,10 @@ int main(int argc, char *argv[])
             for (j = 0;  j < data5_ptr;  j += 3)
             {
                 i = data5[j] & 0xFF;
-//printf("%d %d %d %d %d %d\n", data5_ptr, j, i, xxx[3*i], xxx[3*i + 1], xxx[3*i + 2]);
-                data5[j] = xxx[3*i];
-                data5[j + 1] = xxx[3*i + 1];
-                data5[j + 2] = xxx[3*i + 2];
+//printf("%d %d %d %d %d %d\n", data5_ptr, j, i, colour_map[3*i], colour_map[3*i + 1], colour_map[3*i + 2]);
+                data5[j] = colour_map[3*i];
+                data5[j + 1] = colour_map[3*i + 1];
+                data5[j + 2] = colour_map[3*i + 2];
             }
 
             if ((tif = TIFFOpen(OUT_FILE_NAME, "w")) == NULL)
@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
                 return 1;
             off += bytes_per_row;
         }
-        printf("total %d, off %d\n", totdata, off);
+        printf("total %d, off %ld\n", totdata, off);
 
         /* We now have the image in memory in RGB form */
 
@@ -440,17 +440,20 @@ int main(int argc, char *argv[])
         else
         {
             start = rdtscll();
-            if (photometric == PHOTOMETRIC_CIELAB)
+            switch (photometric)
             {
+            case PHOTOMETRIC_CIELAB:
                 printf("CIELAB\n");
                 /* The default luminant is D50 */
                 set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
                 set_lab_gamut(&lab_param, 0, 100, -128, 127, -128, 127, TRUE);
                 lab_to_srgb(&lab_param, data, data, w*h);
+                break;
+            case PHOTOMETRIC_ITULAB:
+                set_lab_illuminant(&lab_param, 0.9638f, 1.0f, 0.8245f);
+                set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
+                break;
             }
-
-            set_lab_illuminant(&lab_param, 0.9638f, 1.0f, 0.8245f);
-            set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
             if (!t42_srgb_to_itulab(logging, &lab_param, (tdata_t) &outptr, &outsize, data, off, w, h))
             {
                 printf("Failed to convert to ITULAB\n");
@@ -465,7 +468,7 @@ int main(int argc, char *argv[])
     }
     TIFFClose(tif);
 
-    printf("XXX - image is %d by %d, %d bytes\n", w, h, off);
+    printf("XXX - image is %d by %d, %ld bytes\n", w, h, off);
 
     /* We now have the image in memory in ITULAB form */
 

@@ -170,6 +170,16 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         {1200.0f/CM_PER_INCH, T4_Y_RESOLUTION_1200},
         {             -1.00f, -1}
     };
+    static const char *tiff_fx_fax_profiles[] =
+    {
+        "???",
+        "profile S",
+        "profile F",
+        "profile J",
+        "profile C",
+        "profile L",
+        "profile M"
+    };
     uint16_t res_unit;
     uint8_t parm8;
     uint16_t parm16;
@@ -184,14 +194,14 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     uint16_t samples_per_pixel;
 
     t = &s->tiff;
-    parm16 = 0;
-    TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &parm16);
-    bits_per_sample = parm16;
-    parm16 = 0;
-    TIFFGetField(t->tiff_file, TIFFTAG_SAMPLESPERPIXEL, &parm16);
-    samples_per_pixel = parm16;
+    bits_per_sample = 1;
+    TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
+    samples_per_pixel = 1;
+    TIFFGetField(t->tiff_file, TIFFTAG_SAMPLESPERPIXEL, &samples_per_pixel);
     if (samples_per_pixel == 1  &&  bits_per_sample == 1)
         t->image_type = T4_IMAGE_TYPE_BILEVEL;
+    else if (samples_per_pixel == 3  &&  bits_per_sample == 1)
+        t->image_type = T4_IMAGE_TYPE_COLOUR_BILEVEL;
     else if (samples_per_pixel == 1  &&  bits_per_sample == 8)
         t->image_type = T4_IMAGE_TYPE_GRAY_8BIT;
     else if (samples_per_pixel == 1  &&  bits_per_sample > 8)
@@ -260,19 +270,19 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     }
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     if (TIFFGetField(t->tiff_file, TIFFTAG_PROFILETYPE, &parm32))
-        printf("Profile type %u\n", parm32);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Profile type %u\n", parm32);
     if (TIFFGetField(t->tiff_file, TIFFTAG_FAXPROFILE, &parm8))
-        printf("FAX profile %u\n", parm8);
+        span_log(&s->logging, SPAN_LOG_FLOW, "FAX profile %s (%u)\n", tiff_fx_fax_profiles[parm8], parm8);
     if (TIFFGetField(t->tiff_file, TIFFTAG_CODINGMETHODS, &parm32))
-        printf("Coding methods 0x%x\n", parm32);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Coding methods 0x%x\n", parm32);
     if (TIFFGetField(t->tiff_file, TIFFTAG_VERSIONYEAR, &u))
     {
         memcpy(uu, u, 4);
         uu[4] = '\0';
-        printf("Version year \"%s\"\n", uu);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Version year \"%s\"\n", uu);
     }
     if (TIFFGetField(t->tiff_file, TIFFTAG_MODENUMBER, &parm8))
-        printf("Mode number %u\n", parm8);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Mode number %u\n", parm8);
 #endif
     return 0;
 }
@@ -319,11 +329,11 @@ static int test_tiff_directory_info(t4_tx_state_t *s)
     t4_tx_tiff_state_t *t;
 
     t = &s->tiff;
-    parm16 = 0;
+    parm16 = 1;
     TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &parm16);
     if (parm16 != 1)
         return -1;
-    parm16 = 0;
+    parm16 = 1;
     TIFFGetField(t->tiff_file, TIFFTAG_SAMPLESPERPIXEL, &parm16);
     if (parm16 != 1)
         return -1;
