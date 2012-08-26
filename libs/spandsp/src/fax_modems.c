@@ -98,7 +98,7 @@ static void fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) fax_modems_hdlc_tx_frame(void *user_data, const uint8_t *msg, int len)
+SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_tx_frame(void *user_data, const uint8_t *msg, int len)
 {
     fax_modems_state_t *s;
 
