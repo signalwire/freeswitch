@@ -442,10 +442,10 @@ void faxtest_set_rx_silence(faxtester_state_t *s)
 void faxtester_set_rx_type(void *user_data, int type, int bit_rate, int short_train, int use_hdlc)
 {
     faxtester_state_t *s;
-    put_bit_func_t put_bit_func;
-    void *put_bit_user_data;
     fax_modems_state_t *t;
     int tone;
+    put_bit_func_t put_bit_func;
+    void *put_bit_user_data;
 
     s = (faxtester_state_t *) user_data;
     t = &s->modems;
@@ -540,8 +540,7 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
     {
     case T30_MODEM_PAUSE:
         silence_gen_alter(&t->silence_gen, ms_to_samples(short_train));
-        t->tx_handler = (span_tx_handler_t) &silence_gen;
-        t->tx_user_data = &t->silence_gen;
+        fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         s->transmit = TRUE;
         break;
     case T30_MODEM_CED:
@@ -551,23 +550,20 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
         else
             tone = MODEM_CONNECT_TONES_FAX_CNG;
         modem_connect_tones_tx_init(&t->connect_tx, tone);
-        t->tx_handler = (span_tx_handler_t) &modem_connect_tones_tx;
-        t->tx_user_data = &t->connect_tx;
+        fax_modems_set_tx_handler(t, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
         s->transmit = TRUE;
         break;
     case T30_MODEM_V21:
         fsk_tx_init(&t->v21_tx, &preset_fsk_specs[FSK_V21CH2], get_bit_func, get_bit_user_data);
         fsk_tx_set_modem_status_handler(&t->v21_tx, modem_tx_status, (void *) s);
-        t->tx_handler = (span_tx_handler_t) &fsk_tx;
-        t->tx_user_data = &t->v21_tx;
+        fax_modems_set_tx_handler(t, (span_tx_handler_t) &fsk_tx, &t->v21_tx);
         s->transmit = TRUE;
         break;
     case T30_MODEM_V27TER:
         v27ter_tx_restart(&t->fast_modems.v27ter_tx, bit_rate, t->use_tep);
         v27ter_tx_set_get_bit(&t->fast_modems.v27ter_tx, get_bit_func, get_bit_user_data);
         v27ter_tx_set_modem_status_handler(&t->fast_modems.v27ter_tx, modem_tx_status, (void *) s);
-        t->tx_handler = (span_tx_handler_t) &v27ter_tx;
-        t->tx_user_data = &t->fast_modems.v27ter_tx;
+        fax_modems_set_tx_handler(t, (span_tx_handler_t) &v27ter_tx, &t->fast_modems.v27ter_tx);
         /* For any fast modem, set 200ms of preamble flags */
         hdlc_tx_flags(&t->hdlc_tx, bit_rate/(8*5));
         s->transmit = TRUE;
@@ -576,8 +572,7 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
         v29_tx_restart(&t->fast_modems.v29_tx, bit_rate, t->use_tep);
         v29_tx_set_get_bit(&t->fast_modems.v29_tx, get_bit_func, get_bit_user_data);
         v29_tx_set_modem_status_handler(&t->fast_modems.v29_tx, modem_tx_status, (void *) s);
-        t->tx_handler = (span_tx_handler_t) &v29_tx;
-        t->tx_user_data = &t->fast_modems.v29_tx;
+        fax_modems_set_tx_handler(t, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
         /* For any fast modem, set 200ms of preamble flags */
         hdlc_tx_flags(&t->hdlc_tx, bit_rate/(8*5));
         s->transmit = TRUE;
@@ -586,8 +581,7 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
         v17_tx_restart(&t->fast_modems.v17_tx, bit_rate, t->use_tep, short_train);
         v17_tx_set_get_bit(&t->fast_modems.v17_tx, get_bit_func, get_bit_user_data);
         v17_tx_set_modem_status_handler(&t->fast_modems.v17_tx, modem_tx_status, (void *) s);
-        t->tx_handler = (span_tx_handler_t) &v17_tx;
-        t->tx_user_data = &t->fast_modems.v17_tx;
+        fax_modems_set_tx_handler(t, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
         /* For any fast modem, set 200ms of preamble flags */
         hdlc_tx_flags(&t->hdlc_tx, bit_rate/(8*5));
         s->transmit = TRUE;
@@ -597,8 +591,7 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
         /* Fall through */
     default:
         silence_gen_alter(&t->silence_gen, 0);
-        t->tx_handler = (span_tx_handler_t) &silence_gen;
-        t->tx_user_data = &t->silence_gen;
+        fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         s->transmit = FALSE;
         break;
     }
@@ -623,7 +616,7 @@ void faxtester_set_transmit_on_idle(faxtester_state_t *s, int transmit_on_idle)
 
 void faxtester_set_tep_mode(faxtester_state_t *s, int use_tep)
 {
-    s->modems.use_tep = use_tep;
+    fax_modems_set_tep_mode(&s->modems, use_tep);
 }
 /*- End of function --------------------------------------------------------*/
 
