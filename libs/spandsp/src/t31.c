@@ -2493,25 +2493,8 @@ SPAN_DECLARE_NONSTD(int) t31_rx_fillin(t31_state_t *s, int len)
         at_put_response_code(&s->at_state, AT_RESPONSE_CODE_ERROR);
         restart_modem(s, FAX_MODEM_SILENCE_TX);
     }
-    /* Call the fillin function of the current modem (if there is one). */
-    switch (s->modem)
-    {
-    case FAX_MODEM_V21_RX:
-        len = fsk_rx_fillin(&s->audio.modems.v21_rx, len);
-        break;
-    case FAX_MODEM_V27TER_RX:
-        /* TODO: what about FSK in the early stages */
-        len = v27ter_rx_fillin(&s->audio.modems.fast_modems.v27ter_rx, len);
-        break;
-    case FAX_MODEM_V29_RX:
-        /* TODO: what about FSK in the early stages */
-        len = v29_rx_fillin(&s->audio.modems.fast_modems.v29_rx, len);
-        break;
-    case FAX_MODEM_V17_RX:
-        /* TODO: what about FSK in the early stages */
-        len = v17_rx_fillin(&s->audio.modems.fast_modems.v17_rx, len);
-        break;
-    }
+
+    s->audio.modems.rx_fillin_handler(s->audio.modems.rx_fillin_user_data, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
