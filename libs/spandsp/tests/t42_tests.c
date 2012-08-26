@@ -45,6 +45,10 @@
 
 #include "spandsp.h"
 
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+//#include <tif_dir.h>
+#endif
+
 //#define IN_FILE_NAME    "../test-data/itu/t24/F21_200.TIF"
 #define IN_FILE_NAME    "../test-data/itu/t24/F21B400.TIF"
 #define OUT_FILE_NAME   "t42_tests_receive.tif"
@@ -145,6 +149,7 @@ int main(int argc, char *argv[])
     uint16_t *map_a;
     uint16_t *map_b;
     uint16_t *map_z;
+    uint32_t jpeg_table_len;
     logging_state_t *logging;
 
     printf("Demo of ITU/Lab library.\n");
@@ -187,6 +192,7 @@ int main(int argc, char *argv[])
     planar_config = 0;
     TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planar_config);
     off = 0;
+
     map_L = NULL;
     map_a = NULL;
     map_b = NULL;
@@ -260,7 +266,19 @@ int main(int argc, char *argv[])
 
     if (process_raw)
     {
+        uint8_t *jpeg_table;
+
         nstrips = TIFFNumberOfStrips(tif);
+
+        total_image_len = 0;
+        jpeg_table_len = 0;
+        if (TIFFGetField(tif, TIFFTAG_JPEGTABLES, &jpeg_table_len, &jpeg_table))
+        {
+            total_image_len += (jpeg_table_len - 4);
+            printf("JPEG tables %u\n", jpeg_table_len);
+            printf("YYY %d - %x %x %x %x\n", jpeg_table_len, jpeg_table[0], jpeg_table[1], jpeg_table[2], jpeg_table[3]);
+        }
+
         for (i = 0, total_image_len = 0;  i < nstrips;  i++)
             total_image_len += TIFFRawStripSize(tif, i);
         data = malloc(total_image_len);
@@ -272,6 +290,9 @@ int main(int argc, char *argv[])
                 return -1;
             }
         }
+        if (jpeg_table_len > 0)
+            memcpy(data, jpeg_table, jpeg_table_len - 2);
+
         if (total_len != total_image_len)
             printf("Size mismatch %ld %ld\n", total_len, total_image_len);
         off = total_len;
@@ -420,7 +441,7 @@ int main(int argc, char *argv[])
                 return 1;
             off += bytes_per_row;
         }
-        printf("total %d, off %ld\n", totdata, off);
+        printf("total %u, off %ld\n", totdata, off);
 
         /* We now have the image in memory in RGB form */
 
