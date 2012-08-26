@@ -82,10 +82,29 @@ struct fax_modems_state_s
     /*! \brief */
     dc_restore_state_t dc_restore;
 
+    /*! \brief The fast modem type currently in use */
+    int fast_modem;
+
     /*! \brief The currently selected receiver type */
     int current_rx_type;
     /*! \brief The currently selected transmitter type */
     int current_tx_type;
+
+    int bit_rate;
+    int short_train;
+
+    /*! \brief The callback function used to put each bit received. */
+    put_bit_func_t put_bit;
+    /*! \brief A user specified opaque pointer passed to the put_bit routine. */
+    void *put_bit_user_data;
+
+    /*! \brief The callback function used to get the next bit to be transmitted. */
+    get_bit_func_t get_bit;
+    /*! \brief A user specified opaque pointer passed to the get_bit function. */
+    void *get_bit_user_data;
+
+    hdlc_frame_handler_t hdlc_accept;
+    void *hdlc_accept_user_data;
 
     /*! \brief TRUE if a carrier is present. Otherwise FALSE. */
     int rx_signal_present;
@@ -96,9 +115,9 @@ struct fax_modems_state_s
 
     /*! \brief The current receive signal handler */
     span_rx_handler_t rx_handler;
+    void *rx_user_data;
     /*! \brief The current receive missing signal fill-in handler */
     span_rx_fillin_handler_t rx_fillin_handler;
-    void *rx_user_data;
     void *rx_fillin_user_data;
 
     /*! \brief The current transmit signal handler */
