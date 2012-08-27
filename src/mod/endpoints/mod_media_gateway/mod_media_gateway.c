@@ -556,8 +556,8 @@ void handle_mgco_cmd_ind(Pst *pst, SuId suId, MgMgcoCommand* cmd)
 	if ((CH_CMD_TYPE_IND == cmd->cmdType.val) &&
 			(MGT_TERMID_OTHER == termId->type.val) && 
 			(MGT_AUDITVAL != cmd->u.mgCmdInd[0]->cmd.type.val)){
-		if(SWITCH_STATUS_FALSE == mg_stack_termination_is_in_service(mg_profile, (char*)termId->name.lcl.val, termId->name.lcl.len)){
 			MG_MEM_COPY(&prnt_buf, termId->name.lcl.val, sizeof(U8) * termId->name.lcl.len);
+			if(SWITCH_STATUS_FALSE == mg_stack_termination_is_in_service(mg_profile, prnt_buf, strlen(prnt_buf))){
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Termination[%s] not in service \n",(strlen(prnt_buf))?prnt_buf:"NULL");
 			mg_profile->mg_stats->total_num_of_term_not_in_service_error++;
 			mg_util_set_term_string(&errTxt, termId);

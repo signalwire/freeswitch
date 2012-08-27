@@ -595,16 +595,19 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
     mg_context_t* mg_ctxt;
     int mediaId;
     MgMgcoLocalDesc   *local = NULL;
+    char term_name[128];
     /*CmSdpInfoSet      *psdp  = NULL;*/
 
-    /* TODO - Kapil dummy line , will need to add with proper code */
+    memset(&term_name,0,sizeof(term_name));
+
     inc_med_desc = &cmd->dl.descs[0]->u.media;
 
     /********************************************************************/
     ctxtId  = &inc_cmd->contextId;
     termLst = mg_get_term_id_list(inc_cmd);
     termId  = termLst->terms[0];
-    /* For Matt - termId->name.lcl.val - to get the termination id name */
+    MG_MEM_COPY(&term_name, termId->name.lcl.val, sizeof(U8) * termId->name.lcl.len);
+
 
     /********************************************************************/
     /* Validating ADD request *******************************************/
@@ -683,13 +686,13 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
     /********************************************************************/
     }else{  /* Physical termination */
-	    term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
+	    term = megaco_find_termination(mg_profile, term_name); 
 	    mg_profile->mg_stats->total_num_of_phy_add_recvd++;
 
 	    if(NULL == term){
 		mg_profile->mg_stats->total_num_of_find_term_failed_error++;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-			" megaco_find_termination failed for term-id[%s] \n",(char*)termId->name.lcl.val); 	
+			" megaco_find_termination failed for term-id[%s] \n", term_name);
 		    mg_util_set_err_string(&errTxt, " Resource Failure ");
 		    err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
 		    goto error;
@@ -904,12 +907,16 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 	int mediaId;
 	/*MgMgcoAmmReq 	  *cmd = &inc_cmd->u.mgCmdInd[0]->cmd.u.mod;*/
 	U32 		   txn_id = inc_cmd->transId.val;
+	char term_name[128];
+
+	memset(&term_name,0,sizeof(term_name));
 
 	/********************************************************************/
 	ctxtId  = &inc_cmd->contextId;
 	termLst = mg_get_term_id_list(inc_cmd);
 	termId  = termLst->terms[0];
-	/* For Matt - termId->name.lcl.val - to get the termination id name */
+
+	MG_MEM_COPY(&term_name, termId->name.lcl.val, sizeof(U8) * termId->name.lcl.len);
 
 	/********************************************************************/
 	/* Validation *******************************************/
@@ -964,7 +971,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 				termId->name.lcl.val, ctxtId->type.val, ctxtId->val.val);
 #endif
 
-		term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
+		term = megaco_find_termination(mg_profile, term_name); 
 
 		if(NULL == term){
 		    mg_profile->mg_stats->total_num_of_find_term_failed_error++;
@@ -1200,7 +1207,9 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
     mg_context_t* mg_ctxt = NULL;
     mg_termination_t* term = NULL;
     uint8_t        wild = 0x00;
+    char term_name[128];
 
+    memset(&term_name,0,sizeof(term_name));
     wild = inc_cmd->u.mgCmdReq[0]->wild.pres;
 
 
@@ -1208,6 +1217,7 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
     ctxtId  = &inc_cmd->contextId;
     termLst = mg_get_term_id_list(inc_cmd);
     termId  = termLst->terms[0];
+    MG_MEM_COPY(&term_name, termId->name.lcl.val, sizeof(U8) * termId->name.lcl.len);
 
     mg_profile->mg_stats->total_num_of_sub_recvd++;
 
@@ -1277,14 +1287,14 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
 
         }else if(MGT_TERMID_OTHER == termId->type.val){
 
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," SUB Request for termination[%s]  \n", (char*)termId->name.lcl.val);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," SUB Request for termination[%s]  \n", term_name); 
 
-            term = megaco_find_termination(mg_profile, (char*)termId->name.lcl.val);
+            term = megaco_find_termination(mg_profile,  term_name);
 
 	    if(NULL == term){
 		    mg_profile->mg_stats->total_num_of_find_term_failed_error++;
 		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-				    "Subtract request Failed, no termination found for input term string[%s] \n", (char*)termId->name.lcl.val); 
+				    "Subtract request Failed, no termination found for input term string[%s] \n", term_name); 
 		    mg_util_set_term_string(&errTxt,termId);
 		    err_code = MGT_MGCO_RSP_CODE_UNKNOWN_TERM_ID;
 		    goto error;

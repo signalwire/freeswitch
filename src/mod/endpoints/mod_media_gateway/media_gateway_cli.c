@@ -21,6 +21,7 @@ void get_peer_xml_buffer(char* prntBuf, MgPeerSta* cfm);
 void  megaco_cli_print_usage(switch_stream_handle_t *stream);
 switch_status_t handle_show_activecalls_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile);
 switch_status_t handle_show_stats(switch_stream_handle_t *stream, megaco_profile_t* mg_profile);
+switch_status_t handle_show_stack_mem(switch_stream_handle_t *stream);
 
 /******************************************************************************/
 
@@ -194,6 +195,7 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 		}else if (!strcmp(argv[2], "show")) {
 /**********************************************************************************/
 			/* mg <mg-profile> show activecalls*/
+			
 			if(zstr(argv[3])) {
 				goto usage;
 			}
@@ -228,7 +230,7 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 				}else if(!strcasecmp(argv[3], "stackmem")){
 			     /*******************************************************************/
 					megaco_profile_release(profile);
-					sng_mg_reg_info_show();
+					handle_show_stack_mem(stream);
 			     /*******************************************************************/
 #ifdef LEAK_TEST
 				}else if(!strcasecmp(argv[3], "leak-report")){
@@ -305,6 +307,7 @@ void  megaco_cli_print_usage(switch_stream_handle_t *stream)
 	stream->write_function(stream, "mg profile <profile-name> show termstatus <term-id> \n");
 	stream->write_function(stream, "mg profile <profile-name> show alltermstatus \n");
 	stream->write_function(stream, "mg profile <profile-name> show stackmem  \n");
+	stream->write_function(stream, "mg profile <profile-name> show stats  \n");
 
 	stream->write_function(stream, "Usage: Logging \n");
 	stream->write_function(stream, "mg logging enable \n");
@@ -913,6 +916,20 @@ switch_status_t handle_show_stats(switch_stream_handle_t *stream, megaco_profile
 
 
 
+	return SWITCH_STATUS_SUCCESS;
+}
+/******************************************************************************/
+switch_status_t handle_show_stack_mem(switch_stream_handle_t *stream)
+{
+	U32 availMem = 0;
+	char buffer[4098];
+
+	memset(buffer,0,sizeof(buffer));
+
+	SGetMemInfoBuffer(S_REG, &availMem, buffer);
+
+	stream->write_function(stream, "%s",buffer);
+			
 	return SWITCH_STATUS_SUCCESS;
 }
 /******************************************************************************/
