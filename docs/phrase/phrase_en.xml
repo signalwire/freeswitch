@@ -573,17 +573,14 @@
       <prompt phrase="...hang up." filename="ivr-hang_up.wav"/>
       <prompt phrase="To reject, hang up the call without pressing a key." filename="ivr-to_reject_hangup.wav"/>
       <prompt phrase="Access denied." filename="ivr-access_denied.wav"/>
-      <prompt phrase="Beeyotch." filename="ivr-beeyotch.wav"/>
       <prompt phrase="To perform a DTMF test, press..." filename="ivr-perform_dtmf_test.wav"/>
       <prompt phrase="To perform an echo test, press..." filename="ivr-perform_echo_test.wav"/>
       <prompt phrase="To perform a delayed echo test, press..." filename="ivr-perform_delayed_echo_test.wav"/>
-      <prompt phrase="To perform a fax test, press..." filename="ivr-perform_fax_test.wav"/>
       <prompt phrase="Hang up to end the test." filename="ivr-hangup_to_end_test.wav"/>
-      <prompt phrase="Press a key. I will read each key press back to you." filename="ivr-read_each_key_press_back.wav"/>
+      <prompt phrase="Press one or more keys. I will read each key press back to you." filename="ivr-read_each_key_press_back.wav"/>
       <prompt phrase="After the tone, I will echo your audio back to you." filename="ivr-echo_your_audio_back.wav"/>
       <prompt phrase="After the tone, I will send a delayed echo of your audio back to you." filename="ivr-delayed_echo_your_audio_back.wav"/>
-      <prompt phrase="To send me a fax, press..." filename="ivr-send_fax.wav"/>
-      <prompt phrase="To receive a fax from me, press..." filename="ivr-receive_fax.wav"/>
+      <prompt phrase="To send a fax, press..." filename="ivr-send_fax.wav"/>
       <prompt phrase="Please enter the number to which I should send this fax, then press pound." filename="ivr-enter_number_send_fax.wav"/>
       <prompt phrase="Send your fax now." filename="ivr-send_fax_now.wav"/>
       <prompt phrase="To learn more about FreeSWITCH Solutions, press..." filename="misc-learn_more_about_freeswitch_solutions.wav"/>
@@ -592,10 +589,12 @@
       <prompt phrase="FreeSWITCH is a state of the art telecommunications platform." filename="misc-freeswitch_is_state_of_the_art.wav"/>
       <prompt phrase="It is stable, highly scalable, and extensible." filename="misc-it_is_stable_scalable_extensible.wav"/>
       <prompt phrase="Best of all, it is free for anyone to download and use." filename="misc-free_to_download.wav"/>
+      <prompt phrase="Visit www dot freeswitch dot org to learn more about our project and worldwide community." filename="misc-freeswitch_dot_org_more.wav"/>
       <prompt phrase="...has been added to the blacklist." filename="ivr-has_been_added_to_the_blacklist.wav"/>
-      <prompt phrase="...has been removed from the blacklist" filename="ivr-has_been_removed_from_blacklist.wav"/>
-      <prompt phrase="Please enter the number to be added to the blacklist." filename="ivr-enter_number_to_add_to_blacklist.wac"/>
+      <prompt phrase="...has been removed from the blacklist." filename="ivr-has_been_removed_from_blacklist.wav"/>
+      <prompt phrase="Please enter the number to be added to the blacklist." filename="ivr-enter_number_to_add_to_blacklist.wav"/>
       <prompt phrase="...is not on the blacklist." filename="ivr-is_not_on_the_blacklist.wav"/>
+      <prompt phrase="...is already on the blacklist." filename="ivr-is_already_on_the_blacklist.wav"/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
 
