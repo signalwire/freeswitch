@@ -32,6 +32,11 @@
 #endif
 
 #include <ptlib.h>
+
+#if !defined(PTLIB_CHECK_VERSION)
+  #error PTLib is too old to use, must be >= 2.10.6
+#endif
+
 #include <opal/manager.h>
 #include <opal/localep.h>
 #include <h323/h323ep.h>
