@@ -592,7 +592,10 @@
       <prompt phrase="FreeSWITCH is a state of the art telecommunications platform." filename="misc-freeswitch_is_state_of_the_art.wav"/>
       <prompt phrase="It is stable, highly scalable, and extensible." filename="misc-it_is_stable_scalable_extensible.wav"/>
       <prompt phrase="Best of all, it is free for anyone to download and use." filename="misc-free_to_download.wav"/>
-      <prompt phrase="" filename=""/>
+      <prompt phrase="...has been added to the blacklist." filename="ivr-has_been_added_to_the_blacklist.wav"/>
+      <prompt phrase="...has been removed from the blacklist" filename="ivr-has_been_removed_from_blacklist.wav"/>
+      <prompt phrase="Please enter the number to be added to the blacklist." filename="ivr-enter_number_to_add_to_blacklist.wac"/>
+      <prompt phrase="...is not on the blacklist." filename="ivr-is_not_on_the_blacklist.wav"/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
 
