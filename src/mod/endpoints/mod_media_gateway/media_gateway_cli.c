@@ -22,6 +22,7 @@ void  megaco_cli_print_usage(switch_stream_handle_t *stream);
 switch_status_t handle_show_activecalls_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile);
 switch_status_t handle_show_stats(switch_stream_handle_t *stream, megaco_profile_t* mg_profile);
 switch_status_t handle_show_stack_mem(switch_stream_handle_t *stream);
+switch_status_t handle_span_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile, char* span_name);
 
 /******************************************************************************/
 
@@ -227,6 +228,16 @@ switch_status_t mg_process_cli_cmd(const char *cmd, switch_stream_handle_t *stre
 					megaco_profile_release(profile);
 					handle_term_status_cli_cmd(stream, profile, argv[4]);
 			     /*******************************************************************/
+				}else if(!strcasecmp(argv[3], "spantermstatus")){
+			     /*******************************************************************/
+					/* mg <mg-profile> show spantermstatus <span-name> */
+					if (zstr(argv[4])) {
+						goto usage;
+					}
+					megaco_profile_release(profile);
+					handle_span_term_status_cli_cmd(stream, profile, argv[4]);
+
+			     /*******************************************************************/
 				}else if(!strcasecmp(argv[3], "stackmem")){
 			     /*******************************************************************/
 					megaco_profile_release(profile);
@@ -304,6 +315,7 @@ void  megaco_cli_print_usage(switch_stream_handle_t *stream)
 	//stream->write_function(stream, "mg profile <profile-name> send ito notify \n");
 	//stream->write_function(stream, "mg profile <profile-name> send cng <term-id> \n");
 	stream->write_function(stream, "mg profile <profile-name> show activecalls  \n");
+	stream->write_function(stream, "mg profile <profile-name> show spantermstatus <span_name> \n");
 	stream->write_function(stream, "mg profile <profile-name> show termstatus <term-id> \n");
 	stream->write_function(stream, "mg profile <profile-name> show alltermstatus \n");
 	stream->write_function(stream, "mg profile <profile-name> show stackmem  \n");
@@ -781,6 +793,80 @@ switch_status_t handle_all_term_status_cli_cmd(switch_stream_handle_t *stream, m
 	return SWITCH_STATUS_SUCCESS;
 }
 /******************************************************************************/
+
+switch_status_t handle_span_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile, char* span_name)
+{
+	void                *val = NULL;
+	switch_hash_index_t *hi = NULL;
+	mg_termination_t *term = NULL;
+	const void *var;
+	int found = 0x00;
+	int  first = 0x01;
+
+	if(!mg_profile || !span_name){
+		stream->write_function(stream, "-ERR NULL profile or NULL span_name\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+		switch_thread_rwlock_rdlock(mg_profile->terminations_rwlock);
+
+	for (hi = switch_hash_first(NULL, mg_profile->terminations); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		term = (mg_termination_t *) val;
+		if(!term) continue;
+
+		if(MG_TERM_RTP == term->type) continue;
+
+		if(!term->u.tdm.span_name) continue;
+
+		if(strcasecmp(span_name,term->u.tdm.span_name)) continue;
+
+		found = 0x01;
+		
+		if(first){	
+			stream->write_function(stream, " Termination Name"); 
+			stream->write_function(stream, "\t Termination State"); 
+			stream->write_function(stream, "\t Call State"); 
+			stream->write_function(stream, "\t Termination Type"); 
+			stream->write_function(stream, "\t Span-Id "); 
+			stream->write_function(stream, "\t Channel-Id "); 
+			first = 0x00;
+		}
+
+		stream->write_function(stream, "\n");
+
+		stream->write_function(stream, " %s",(NULL != term->name)?term->name:"NULL");
+		if(MG_TERM_RTP == term->type){
+			stream->write_function(stream, "\t\t\t IN-SERVICE");
+		}else{
+			stream->write_function(stream, "\t\t\t %s",
+					(switch_test_flag(term, MG_IN_SERVICE))?"IN-SERVICE":"OUT-OF-SERVICE");
+		}
+
+		stream->write_function(stream, "\t\t%s",(NULL != term->uuid)?"IN-CALL ":"IDLE  ");
+		stream->write_function(stream, "\t\t %s",(MG_TERM_RTP == term->type)?"MG_TERM_RTP":"MG_TERM_TDM");
+
+		if(MG_TERM_TDM == term->type){
+			stream->write_function(stream, "\t\t %s",
+					(NULL != term->u.tdm.span_name)?term->u.tdm.span_name:"NULL");
+			stream->write_function(stream, "\t\t %d",term->u.tdm.channel);
+		}else{
+			stream->write_function(stream, "\t\t -");
+			stream->write_function(stream, "\t\t -");
+		}
+		stream->write_function(stream, "\n");
+	}
+
+	if(!found){
+		stream->write_function(stream, "No span[%s] configured\n",span_name);
+	}
+
+	switch_thread_rwlock_unlock(mg_profile->terminations_rwlock);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+/******************************************************************************/
+
 switch_status_t handle_term_status_cli_cmd(switch_stream_handle_t *stream, megaco_profile_t* mg_profile, char* term_id)
 {
 	mg_termination_t* term = NULL;
