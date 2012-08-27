@@ -848,11 +848,6 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
         ret = sng_mgco_send_cmd( mg_profile->idx, &rsp);
 
-	
-	if(is_rtp){
-		/* releasing memory allocated for term->lcl.val */
-		MG_STACK_MEM_FREE(out_termId->name.lcl.val, ((sizeof(U8)* strlen(term->name))));
-	}
     }
 
     /*************************************************************************************************************************/
@@ -1936,6 +1931,7 @@ switch_status_t mg_send_ins_service_change(megaco_profile_t* mg_profile, const c
 			  "Sending In-Service Service Change for termination[%s] configured in mg profile[%s], suId[%d]\n", 
 			   term_name, mg_profile->name, mg_profile->idx);
 
+	mg_profile->mg_stats->total_num_of_term_in_service_change_sent++;
 	return mg_send_service_change(mg_profile->idx, term_name, MGT_SVCCHGMETH_RESTART, MG_SVC_REASON_900_RESTORED, wild);
 }
 
@@ -1951,6 +1947,8 @@ switch_status_t mg_send_oos_service_change(megaco_profile_t* mg_profile, const c
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 			  "Sending Out-Of-Service Service Change for termination[%s] configured in mg profile[%s], suId[%d]\n", 
 			   term_name, mg_profile->name, mg_profile->idx);
+
+	mg_profile->mg_stats->total_num_of_term_oos_service_change_sent++;
 
 	return mg_send_service_change(mg_profile->idx, term_name, MGT_SVCCHGMETH_FORCED, MG_SVC_REASON_905_TERM_OOS, wild);
 }
@@ -2028,9 +2026,6 @@ switch_status_t  mg_send_service_change(SuId suId, const char* term_name, uint8_
 			((1==wild)?"WildCard":"Non Wild Card"), term_name, svc->parm.reason.val, svc->parm.reason.len);
 
 	sng_mgco_send_cmd(suId, &request);
-
-	/* releasing memory allocated for term->lcl.val */
-	MG_STACK_MEM_FREE(termId->name.lcl.val, ((sizeof(U8)* strlen(term_name))));
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -2470,9 +2465,6 @@ switch_status_t  mg_send_notify(megaco_profile_t* mg_profile, const char* term_n
     mg_fill_mgco_termid(termId, (char*)term_name ,strlen(term_name), &request.u.mgCmdReq[0]->memCp);
 
     sng_mgco_send_cmd(mg_profile->idx, &request);
-
-    /* releasing memory allocated for term->lcl.val */
-    MG_STACK_MEM_FREE(termId->name.lcl.val, ((sizeof(U8)* strlen(term_name))));
 
     return SWITCH_STATUS_SUCCESS;
 }

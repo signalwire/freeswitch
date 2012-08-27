@@ -63,6 +63,8 @@ typedef struct mg_peer_profile_s{
 
 typedef struct mg_stats_s{
 	uint32_t  total_num_of_phy_add_recvd;
+	uint32_t  total_num_of_term_in_service_change_sent;
+	uint32_t  total_num_of_term_oos_service_change_sent;
 	uint32_t  total_num_of_rtp_add_recvd;
 	uint32_t  total_num_of_sub_recvd;
 	uint32_t  total_num_of_call_recvd;

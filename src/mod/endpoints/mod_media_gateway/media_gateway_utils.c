@@ -111,6 +111,8 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, C
 	Size              size;
 #endif
 	S16               ret = ROK;
+	Ptr* ptr = NULL;
+
 	memset(&prnt_buf,0,sizeof(prnt_buf));
 
 	termId->type.pres = PRSNT_NODEF;
@@ -121,18 +123,33 @@ S16 mg_fill_mgco_termid ( MgMgcoTermId  *termId, char* term_str, int term_len, C
 
 		termId->type.val  = MGT_TERMID_OTHER;
 
-		termId->name.dom.pres = NOTPRSNT;  
-		termId->name.dom.len = 0x00;  
-
 		termId->name.pres.pres = PRSNT_NODEF;
 
-		termId->name.lcl.pres  = PRSNT_NODEF;
-		termId->name.lcl.len  = cmStrlen((U8*)term_str);
-		size = ((sizeof(U8)* term_len));
-		MG_STACK_MEM_ALLOC(&termId->name.lcl.val, size);
-		cmMemcpy((U8*)(termId->name.lcl.val),(CONSTANT U8*)term_str,termId->name.lcl.len);
+		/* domain */
+		termId->name.dom.pres = NOTPRSNT;  
+		termId->name.dom.len = 0x00;
 
-		MG_MEM_COPY(&prnt_buf, termId->name.lcl.val, sizeof(U8) * termId->name.lcl.len);
+		ptr = (Ptr*)&termId->name.dom.val;
+		if( cmGetMem(memCp, 128, ptr) != ROK ){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"cmGetMem failed \n");
+			RETVALUE(RFAILED);
+		}
+
+		/* term name */
+		termId->name.lcl.pres  = PRSNT_NODEF;
+		termId->name.lcl.len = cmStrlen((CONSTANT U8*)term_str);
+
+		ptr = (Ptr*)&termId->name.lcl.val;
+		if( cmGetMem(memCp, termId->name.lcl.len, ptr) != ROK ){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"cmGetMem failed \n");
+			RETVALUE(RFAILED);
+		}
+
+		cmMemset((U8 *)(termId->name.lcl.val), (U8)0,  (PTR)(termId->name.lcl.len));
+
+		cmMemcpy((U8*)(termId->name.lcl.val), (CONSTANT U8*)term_str,termId->name.lcl.len);
+
+		cmMemcpy((U8*)(prnt_buf), (CONSTANT U8*)termId->name.lcl.val,termId->name.lcl.len);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 				"mg_fill_mgco_termid: Megaco termination name[%s], len[%d], input_term_str[%s], input_term_len[%d]\n",
