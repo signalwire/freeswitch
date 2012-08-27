@@ -740,9 +740,12 @@ switch_status_t handle_all_term_status_cli_cmd(switch_stream_handle_t *stream, m
 
 	stream->write_function(stream, " Termination Name"); 
 	stream->write_function(stream, "\t Termination State"); 
+	stream->write_function(stream, "\t Call State"); 
 	stream->write_function(stream, "\t Termination Type"); 
 	stream->write_function(stream, "\t Span-Id "); 
 	stream->write_function(stream, "\t Channel-Id "); 
+
+	switch_thread_rwlock_rdlock(mg_profile->terminations_rwlock);
 
 	for (hi = switch_hash_first(NULL, mg_profile->terminations); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
@@ -758,6 +761,8 @@ switch_status_t handle_all_term_status_cli_cmd(switch_stream_handle_t *stream, m
 			stream->write_function(stream, "\t\t\t %s",
 					(switch_test_flag(term, MG_IN_SERVICE))?"IN-SERVICE":"OUT-OF-SERVICE");
 		}
+
+		stream->write_function(stream, "\t\t%s",(NULL != term->uuid)?"IN-CALL ":"IDLE  ");
 		stream->write_function(stream, "\t\t %s",(MG_TERM_RTP == term->type)?"MG_TERM_RTP":"MG_TERM_TDM");
 
 		if(MG_TERM_TDM == term->type){
@@ -770,6 +775,8 @@ switch_status_t handle_all_term_status_cli_cmd(switch_stream_handle_t *stream, m
 		}
 		stream->write_function(stream, "\n");
 	}
+
+	switch_thread_rwlock_unlock(mg_profile->terminations_rwlock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -849,6 +856,9 @@ switch_status_t handle_show_activecalls_cli_cmd(switch_stream_handle_t *stream, 
 	}
 
 	stream->write_function(stream, "\n ------- Active Calls Terminations ------- \n"); 
+
+	switch_thread_rwlock_rdlock(mg_profile->terminations_rwlock);
+
 	for (hi = switch_hash_first(NULL, mg_profile->terminations); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
 		term = (mg_termination_t *) val;
@@ -869,6 +879,8 @@ switch_status_t handle_show_activecalls_cli_cmd(switch_stream_handle_t *stream, 
 		}
 		stream->write_function(stream, "\n ********************************* \n"); 
 	}
+
+	switch_thread_rwlock_unlock(mg_profile->terminations_rwlock);
 
 
 	if(!found)
