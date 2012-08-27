@@ -1224,15 +1224,16 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 					continue;
 				}
 
+
+				if (mod_sofia_globals.debug_sla > 1) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SLA EVENT:\n");
+					DUMP_EVENT(event);
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CHECK CALL_INFO [%s]\n", switch_str_nil(call_info));
+				}
+
 				if (call_info) {					
 					
-#if 1
-					if (mod_sofia_globals.debug_sla > 1) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SLA EVENT:\n");
-						DUMP_EVENT(event);
-					}
-#endif
-
 					if (uuid) {
 						sql = switch_mprintf("update sip_dialogs set call_info='%q',call_info_state='%q' where "
 											 "hostname='%q' and profile_name='%q' and uuid='%q'",
