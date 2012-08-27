@@ -347,11 +347,10 @@ static int set_next_tx_type(t38_gateway_state_t *s)
 {
     int indicator;
     fax_modems_state_t *t;
-    get_bit_func_t get_bit_func;
-    void *get_bit_user_data;
     t38_gateway_hdlc_state_t *u;
-    int short_train;
     int bit_rate;
+    int short_train;
+    //int use_hdlc;
 
     t = &s->audio.modems;
     t38_non_ecm_buffer_report_output_status(&s->core.non_ecm_to_modem, &s->logging);
@@ -393,14 +392,14 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "HDLC mode\n");
         hdlc_tx_init(&t->hdlc_tx, FALSE, 2, TRUE, hdlc_underflow_handler, s);
-        get_bit_func = (get_bit_func_t) hdlc_tx_get_bit;
-        get_bit_user_data = (void *) &t->hdlc_tx;
+        fax_modems_set_get_bit(t, (get_bit_func_t) hdlc_tx_get_bit, &t->hdlc_tx);
+        //use_hdlc = TRUE;
     }
     else
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM mode\n");
-        get_bit_func = t38_non_ecm_buffer_get_bit;
-        get_bit_user_data = (void *) &s->core.non_ecm_to_modem;
+        fax_modems_set_get_bit(t, (get_bit_func_t) t38_non_ecm_buffer_get_bit, &s->core.non_ecm_to_modem);
+        //use_hdlc = FALSE;
     }
     /*endif*/
     switch (indicator)
@@ -445,7 +444,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         t->tx_bit_rate = (indicator == T38_IND_V27TER_4800_TRAINING)  ?  4800  :  2400;
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         v27ter_tx_restart(&t->fast_modems.v27ter_tx, t->tx_bit_rate, t->use_tep);
-        v27ter_tx_set_get_bit(&t->fast_modems.v27ter_tx, get_bit_func, get_bit_user_data);
+        v27ter_tx_set_get_bit(&t->fast_modems.v27ter_tx, t->get_bit, t->get_bit_user_data);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v27ter_tx, &t->fast_modems.v27ter_tx);
         fax_modems_set_rx_active(t, TRUE);
@@ -456,7 +455,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         t->tx_bit_rate = (indicator == T38_IND_V29_9600_TRAINING)  ?  9600  :  7200;
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         v29_tx_restart(&t->fast_modems.v29_tx, t->tx_bit_rate, t->use_tep);
-        v29_tx_set_get_bit(&t->fast_modems.v29_tx, get_bit_func, get_bit_user_data);
+        v29_tx_set_get_bit(&t->fast_modems.v29_tx, t->get_bit, t->get_bit_user_data);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
         fax_modems_set_rx_active(t, TRUE);
@@ -505,7 +504,7 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         t->tx_bit_rate = bit_rate;
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         v17_tx_restart(&t->fast_modems.v17_tx, t->tx_bit_rate, t->use_tep, short_train);
-        v17_tx_set_get_bit(&t->fast_modems.v17_tx, get_bit_func, get_bit_user_data);
+        v17_tx_set_get_bit(&t->fast_modems.v17_tx, t->get_bit, t->get_bit_user_data);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
         fax_modems_set_rx_active(t, TRUE);
@@ -2020,8 +2019,6 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
 static int restart_rx_modem(t38_gateway_state_t *s)
 {
     fax_modems_state_t *t;
-    put_bit_func_t put_bit_func;
-    void *put_bit_user_data;
 
     if (s->core.to_t38.in_bits  ||  s->core.to_t38.out_octets)
     {
@@ -2049,21 +2046,19 @@ static int restart_rx_modem(t38_gateway_state_t *s)
     s->t38x.current_tx_data_type = T38_DATA_V21;
     fsk_rx_init(&t->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) t38_hdlc_rx_put_bit, &t->hdlc_rx);
 #if 0
-    fsk_rx_signal_cutoff(&t->v21_rx, -45.5f);
+    fsk_rx_signal_cutoff(&t->v21_rx, -39.09f);
 #endif
     if (s->core.image_data_mode  &&  s->core.ecm_mode)
     {
-        put_bit_func = (put_bit_func_t) t38_hdlc_rx_put_bit;
-        put_bit_user_data = (void *) &t->hdlc_rx;
+        fax_modems_set_put_bit(t, (put_bit_func_t) t38_hdlc_rx_put_bit, &t->hdlc_rx);
     }
     else
     {
         if (s->core.image_data_mode  &&  s->core.to_t38.fill_bit_removal)
-            put_bit_func = non_ecm_remove_fill_and_put_bit;
+            fax_modems_set_put_bit(t, (put_bit_func_t) non_ecm_remove_fill_and_put_bit, s);
         else
-            put_bit_func = non_ecm_put_bit;
+            fax_modems_set_put_bit(t, (put_bit_func_t) non_ecm_put_bit, s);
         /*endif*/
-        put_bit_user_data = (void *) s;
     }
     /*endif*/
     to_t38_buffer_init(&s->core.to_t38);
@@ -2072,21 +2067,21 @@ static int restart_rx_modem(t38_gateway_state_t *s)
     {
     case FAX_MODEM_V27TER_RX:
         v27ter_rx_restart(&t->fast_modems.v27ter_rx, s->core.fast_bit_rate, FALSE);
-        v27ter_rx_set_put_bit(&t->fast_modems.v27ter_rx, put_bit_func, put_bit_user_data);
+        v27ter_rx_set_put_bit(&t->fast_modems.v27ter_rx, t->put_bit, t->put_bit_user_data);
         set_rx_handler(t, &v27ter_v21_rx, t, &fax_modems_v27ter_v21_rx_fillin, t);
-        s->core.fast_rx_active = FAX_MODEM_V27TER_RX;
+        s->core.fast_rx_active = s->core.fast_rx_modem;
         break;
     case FAX_MODEM_V29_RX:
         v29_rx_restart(&t->fast_modems.v29_rx, s->core.fast_bit_rate, FALSE);
-        v29_rx_set_put_bit(&t->fast_modems.v29_rx, put_bit_func, put_bit_user_data);
+        v29_rx_set_put_bit(&t->fast_modems.v29_rx, t->put_bit, t->put_bit_user_data);
         set_rx_handler(t, &v29_v21_rx, t, &fax_modems_v29_v21_rx_fillin, t);
-        s->core.fast_rx_active = FAX_MODEM_V29_RX;
+        s->core.fast_rx_active = s->core.fast_rx_modem;
         break;
     case FAX_MODEM_V17_RX:
         v17_rx_restart(&t->fast_modems.v17_rx, s->core.fast_bit_rate, s->core.short_train);
-        v17_rx_set_put_bit(&t->fast_modems.v17_rx, put_bit_func, put_bit_user_data);
+        v17_rx_set_put_bit(&t->fast_modems.v17_rx, t->put_bit, t->put_bit_user_data);
         set_rx_handler(t, &v17_v21_rx, t, &fax_modems_v17_v21_rx_fillin, t);
-        s->core.fast_rx_active = FAX_MODEM_V17_RX;
+        s->core.fast_rx_active = s->core.fast_rx_modem;
         break;
     default:
         set_rx_handler(t, (span_rx_handler_t) &fsk_rx, &t->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &t->v21_rx);

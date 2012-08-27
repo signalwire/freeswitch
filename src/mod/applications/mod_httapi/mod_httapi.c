@@ -2276,7 +2276,9 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 
 			if ((p = strchr(meta_buffer, ':'))) {
 				*p++ = '\0';
-				context->expires = (time_t) atol(meta_buffer);
+				if (context->expires != 1) {
+					context->expires = (time_t) atol(meta_buffer);
+				}
 				context->metadata = switch_core_strdup(context->pool, p);
 			}
 		}
@@ -2522,7 +2524,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 
 	load_cache_data(context, url);
 
-	if (context->expires && now < context->expires) {
+	if (context->expires > 1 && now < context->expires) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2614,7 +2616,13 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 	switch_event_create_brackets(pdup, '(', ')', ',', &context->url_params, &parsed, SWITCH_FALSE);
 
 	if (context->url_params) {
+		const char *var;
 		context->ua = switch_event_get_header(context->url_params, "ua");
+
+		if ((var = switch_event_get_header(context->url_params, "cache")) && !switch_true(var)) {
+			context->expires = 1;
+		}
+
 	}
 
 	if (parsed) path = parsed;
