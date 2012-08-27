@@ -1226,7 +1226,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 				if (call_info) {					
 					
-#if 0
+#if 1
 					if (mod_sofia_globals.debug_sla > 1) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SLA EVENT:\n");
 						DUMP_EVENT(event);
