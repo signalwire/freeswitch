@@ -257,11 +257,6 @@ SPAN_DECLARE_NONSTD(int) fax_modems_v29_v21_rx_fillin(void *user_data, int len)
 
 static void v21_rx_status_handler(void *user_data, int status)
 {
-#if 0
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-#endif
 }
 /*- End of function --------------------------------------------------------*/
 
