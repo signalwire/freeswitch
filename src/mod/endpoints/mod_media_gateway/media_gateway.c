@@ -374,8 +374,13 @@ void megaco_termination_destroy(mg_termination_t *term)
         term->uuid = NULL;
     }
     
-    if (term->type == MG_TERM_RTP && term->u.rtp.local_port != 0) {
-        switch_rtp_release_port(term->u.rtp.local_addr, term->u.rtp.local_port);
+    if (term->type == MG_TERM_RTP ){
+	    if(term->u.rtp.local_port != 0) {
+		    switch_rtp_release_port(term->u.rtp.local_addr, term->u.rtp.local_port);
+	    }
+	    if(term->u.rtp.term_id != 0) {
+		    mg_rtp_release_id(term->profile,term->u.rtp.term_id);
+	    }
     }
 
     if(term->active_events){
@@ -603,6 +608,8 @@ void megaco_release_context(mg_context_t *ctx)
 
 uint32_t mg_rtp_request_id(megaco_profile_t *profile)
 {
+    uint32_t rtp_id = 0x00;
+
     if (profile->rtpid_next >= MG_MAX_RTPID || profile->rtpid_next == 0) {
         profile->rtpid_next = 1;
     }
@@ -610,8 +617,9 @@ uint32_t mg_rtp_request_id(megaco_profile_t *profile)
     for (; profile->rtpid_next < MG_MAX_RTPID; profile->rtpid_next++) {
         if ((profile->rtpid_bitmap[profile->rtpid_next / 8] & (1 << (profile->rtpid_next % 8))) == 0) {
             profile->rtpid_bitmap[profile->rtpid_next / 8] |= 1 << (profile->rtpid_next % 8);
-            profile->rtpid_next++;
-            return profile->rtpid_next;
+            rtp_id = profile->rtpid_next;
+	    profile->rtpid_next++;
+            return rtp_id;
         }
     }
     
