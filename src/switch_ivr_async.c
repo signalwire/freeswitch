@@ -34,6 +34,7 @@
  */
 
 #include <switch.h>
+#include "private/switch_core_pvt.h"
 #include <speex/speex_preprocess.h>
 #include <speex/speex_echo.h>
 
@@ -1475,6 +1476,23 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 						}
 					}
 				}
+			}
+		}
+		break;
+	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
+
+		if (rh->fh) {
+			switch_size_t len;
+
+			if (!bug->ping_frame) break;
+
+			len = bug->ping_frame->packetlen;
+
+			if (len && switch_core_file_write_video(rh->fh, bug->ping_frame->packet, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing video to %s\n", rh->file);
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+				return SWITCH_FALSE;
 			}
 		}
 		break;
