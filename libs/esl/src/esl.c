@@ -568,11 +568,10 @@ ESL_DECLARE(esl_status_t) esl_sendmsg(esl_handle_t *handle, esl_event_t *event, 
 	assert(cmd_buf);
 	memset(cmd_buf, 0, len);	
 
-
 	if (uuid) {
-		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg %s\n%s", uuid, txt);
+		snprintf(cmd_buf, len, "sendmsg %s\n%s", uuid, txt);
 	} else {
-		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg\n%s", txt);
+		snprintf(cmd_buf, len, "sendmsg\n%s", txt);
 	}
 	
 	esl_log(ESL_LOG_DEBUG, "%s%s\n", cmd_buf, txt);
