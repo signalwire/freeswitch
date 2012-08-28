@@ -111,6 +111,49 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		goto done;
 	}
 
+	if (session->bugs) {
+		switch_media_bug_t *bp;
+		switch_bool_t ok = SWITCH_TRUE;
+		int prune = 0;
+		switch_thread_rwlock_rdlock(session->bug_rwlock);
+		for (bp = session->bugs; bp; bp = bp->next) {
+			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				continue;
+			}
+
+			if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+				continue;
+			}
+
+			if (switch_test_flag(bp, SMBF_PRUNE)) {
+				prune++;
+				continue;
+			}
+
+			if (bp->ready && switch_test_flag(bp, SMBF_READ_PING)) {
+				switch_mutex_lock(bp->read_mutex);
+				bp->ping_frame = *frame;
+				if (bp->callback) {
+					if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_VIDEO_PING) == SWITCH_FALSE
+						|| (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL))) {
+						ok = SWITCH_FALSE;
+					}
+				}
+				bp->ping_frame = NULL;;
+				switch_mutex_unlock(bp->read_mutex);
+			}
+
+			if (ok == SWITCH_FALSE) {
+				switch_set_flag(bp, SMBF_PRUNE);
+				prune++;
+			}
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+		if (prune) {
+			switch_core_media_bug_prune(session);
+		}
+	}
+
   done:
 
 	return status;
