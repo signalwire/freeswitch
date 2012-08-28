@@ -556,9 +556,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			if (!switch_channel_test_flag(channel, CF_BRIDGED) || switch_channel_test_flag(channel, CF_BROADCAST)) {
 				inner++;
 				hold_bleg = NULL;
-			} else {
+			} 
+
+			if (!switch_channel_test_flag(channel, CF_BROADCAST)) {
 				switch_channel_set_flag(channel, CF_BROADCAST);
+				inner--;
 			}
+
 			if (hold_bleg && switch_true(hold_bleg)) {
 				if ((b_uuid = switch_channel_get_partner_uuid(channel))) {
 					const char *stream;
