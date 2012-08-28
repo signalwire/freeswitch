@@ -52,7 +52,7 @@ struct fax_modems_state_s
     /*! \brief A V.21 FSK modem context used when receiving HDLC over V.21
                messages. */
     fsk_rx_state_t v21_rx;
-    struct
+    union
     {
         /*! \brief A V.17 modem context used when sending FAXes at 7200bps, 9600bps
                    12000bps or 14400bps */
@@ -113,6 +113,7 @@ struct fax_modems_state_s
     /*! \brief TRUE if an HDLC frame has been received correctly. */
     int rx_frame_received;
 
+    int deferred_rx_handler_updates;
     /*! \brief The current receive signal handler */
     span_rx_handler_t rx_handler;
     /*! \brief The current receive signal handler. Actual receiving hops between this

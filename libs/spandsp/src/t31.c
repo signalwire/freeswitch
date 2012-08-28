@@ -186,9 +186,6 @@ enum
 
 static int restart_modem(t31_state_t *s, int new_modem);
 static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int ok);
-static int v17_v21_rx(void *user_data, const int16_t amp[], int len);
-static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len);
-static int v29_v21_rx(void *user_data, const int16_t amp[], int len);
 static int silence_rx(void *user_data, const int16_t amp[], int len);
 static int cng_rx(void *user_data, const int16_t amp[], int len);
 static void non_ecm_put_bit(void *user_data, int bit);
@@ -1616,8 +1613,7 @@ static void t31_v21_rx(t31_state_t *s)
     s->hdlc_tx.len = 0;
     s->dled = FALSE;
     hdlc_rx_init(&s->audio.modems.hdlc_rx, FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
-    fsk_rx_init(&s->audio.modems.v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &s->audio.modems.hdlc_rx);
-    fsk_rx_signal_cutoff(&s->audio.modems.v21_rx, -39.09f);
+    fax_modems_start_slow_modem(&s->audio.modems, FAX_MODEM_V21_RX);
     s->at_state.transmit = TRUE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1707,7 +1703,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
             hdlc_tx_init(&t->hdlc_tx, FALSE, 2, FALSE, hdlc_tx_underflow, s);
             /* The spec says 1s +-15% of preamble. So, the minimum is 32 octets. */
             hdlc_tx_flags(&t->hdlc_tx, 32);
-            fsk_tx_init(&t->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &t->hdlc_tx);
+            fax_modems_start_slow_modem(t, FAX_MODEM_V21_TX);
             fax_modems_set_tx_handler(t, (span_tx_handler_t) &fsk_tx, &t->v21_tx);
             fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         }
@@ -1753,9 +1749,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         else
         {
-            v17_tx_restart(&t->fast_modems.v17_tx, s->bit_rate, FALSE, s->short_train);
-            fax_modems_set_tx_handler(t, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
-            fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
+            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
         }
         s->tx.out_bytes = 0;
         s->tx.data_started = FALSE;
@@ -1764,8 +1758,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
     case FAX_MODEM_V17_RX:
         if (!s->t38_mode)
         {
-            fax_modems_set_rx_handler(t, (span_rx_handler_t) &v17_v21_rx, t, (span_rx_fillin_handler_t) &fax_modems_v17_v21_rx_fillin, t);
-            v17_rx_restart(&t->fast_modems.v17_rx, s->bit_rate, s->short_train);
+            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
             /* Allow for +FCERROR/+FRH:3 */
             t31_v21_rx(s);
         }
@@ -1790,9 +1783,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         else
         {
-            v27ter_tx_restart(&t->fast_modems.v27ter_tx, s->bit_rate, FALSE);
-            fax_modems_set_tx_handler(t, (span_tx_handler_t) &v27ter_tx, &t->fast_modems.v27ter_tx);
-            fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
+            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
         }
         s->tx.out_bytes = 0;
         s->tx.data_started = FALSE;
@@ -1801,8 +1792,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
     case FAX_MODEM_V27TER_RX:
         if (!s->t38_mode)
         {
-            fax_modems_set_rx_handler(t, (span_rx_handler_t) &v27ter_v21_rx, t, (span_rx_fillin_handler_t) &fax_modems_v27ter_v21_rx_fillin, t);
-            v27ter_rx_restart(&t->fast_modems.v27ter_rx, s->bit_rate, FALSE);
+            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
             /* Allow for +FCERROR/+FRH:3 */
             t31_v21_rx(s);
         }
@@ -1827,9 +1817,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         else
         {
-            v29_tx_restart(&t->fast_modems.v29_tx, s->bit_rate, FALSE);
-            fax_modems_set_tx_handler(t, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
-            fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
+            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
         }
         s->tx.out_bytes = 0;
         s->tx.data_started = FALSE;
@@ -1838,8 +1826,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
     case FAX_MODEM_V29_RX:
         if (!s->t38_mode)
         {
-            fax_modems_set_rx_handler(t, (span_rx_handler_t) &v29_v21_rx, t, (span_rx_fillin_handler_t) &fax_modems_v29_v21_rx_fillin, t);
-            v29_rx_restart(&t->fast_modems.v29_rx, s->bit_rate, FALSE);
+            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
             /* Allow for +FCERROR/+FRH:3 */
             t31_v21_rx(s);
         }
@@ -2296,81 +2283,6 @@ static int cng_rx(void *user_data, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v17_rx(&s->fast_modems.v17_rx, amp, len);
-    fsk_rx(&s->v21_rx, amp, len);
-    if (s->rx_trained)
-    {
-        /* The fast modem has trained, so we no longer need to run the slow
-           one in parallel. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.17 (%.2fdBm0)\n", v17_rx_signal_power(&s->fast_modems.v17_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &v17_rx, &s->fast_modems.v17_rx, (span_rx_fillin_handler_t) &v17_rx_fillin, &s->fast_modems.v17_rx);
-    }
-    else if (s->rx_frame_received)
-    {
-        /* We have received something, and the fast modem has not trained. We must
-           be receiving valid V.21 */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
-    }
-    return len;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v27ter_rx(&s->fast_modems.v27ter_rx, amp, len);
-    fsk_rx(&s->v21_rx, amp, len);
-    if (s->rx_trained)
-    {
-        /* The fast modem has trained, so we no longer need to run the slow
-           one in parallel. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.27ter (%.2fdBm0)\n", v27ter_rx_signal_power(&s->fast_modems.v27ter_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &v27ter_rx, &s->fast_modems.v27ter_rx, (span_rx_fillin_handler_t) &v27ter_rx_fillin, &s->fast_modems.v27ter_rx);
-    }
-    else if (s->rx_frame_received)
-    {
-        /* We have received something, and the fast modem has not trained. We must
-           be receiving valid V.21 */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
-    }
-    return len;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v29_rx(&s->fast_modems.v29_rx, amp, len);
-    fsk_rx(&s->v21_rx, amp, len);
-    if (s->rx_trained)
-    {
-        /* The fast modem has trained, so we no longer need to run the slow
-           one in parallel. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.29 (%.2fdBm0)\n", v29_rx_signal_power(&s->fast_modems.v29_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &v29_rx, &s->fast_modems.v29_rx, (span_rx_fillin_handler_t) &v29_rx_fillin, &s->fast_modems.v29_rx);
-    }
-    else if (s->rx_frame_received)
-    {
-        /* We have received something, and the fast modem has not trained. We must
-           be receiving valid V.21 */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
-    }
-    return len;
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE_NONSTD(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
 {
     int i;
@@ -2411,8 +2323,7 @@ SPAN_DECLARE_NONSTD(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
         restart_modem(s, FAX_MODEM_SILENCE_TX);
     }
 
-    if (!s->at_state.transmit  ||  s->modem == FAX_MODEM_CNG_TONE)
-        s->audio.modems.rx_handler(s->audio.modems.rx_user_data, amp, len);
+    s->audio.modems.rx_handler(s->audio.modems.rx_user_data, amp, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2436,6 +2347,7 @@ SPAN_DECLARE_NONSTD(int) t31_rx_fillin(t31_state_t *s, int len)
         at_put_response_code(&s->at_state, AT_RESPONSE_CODE_ERROR);
         restart_modem(s, FAX_MODEM_SILENCE_TX);
     }
+
     s->audio.modems.rx_fillin_handler(s->audio.modems.rx_fillin_user_data, len);
     return 0;
 }
@@ -2608,6 +2520,7 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
                     non_ecm_get_bit,
                     tone_detected,
                     (void *) s);
+    fax_modems_set_rx_handler(&s->audio.modems, (span_rx_handler_t) &span_dummy_rx, NULL, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, NULL);
     v8_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
     v8_parms.call_function = V8_CALL_T30_RX;
     v8_parms.modulations = V8_MOD_V21

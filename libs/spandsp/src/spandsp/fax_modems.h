@@ -69,8 +69,6 @@ SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_tx_frame(void *user_data, const uint8_
 
 SPAN_DECLARE(void) fax_modems_hdlc_tx_flags(fax_modems_state_t *s, int flags);
 
-SPAN_DECLARE(void) fax_modems_start_rx_modem(fax_modems_state_t *s, int which);
-
 SPAN_DECLARE(void) fax_modems_start_fast_modem(fax_modems_state_t *s, int which, int bit_rate, int short_train, int hdlc_mode);
 
 SPAN_DECLARE(void) fax_modems_start_slow_modem(fax_modems_state_t *s, int which);
