@@ -3816,7 +3816,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 				now = switch_epoch_time_now(NULL);
 				sql = switch_mprintf("insert into sip_dialogs (sip_from_user,sip_from_host,call_info,call_info_state,hostname,expires,rcd,profile_name) "
-									 "values ('%q','%q','%q','seized','%q',%"SWITCH_TIME_T_FMT",%ld,'%q')",
+									 "values ('%q','%q','%q','seized','%q',%"TIME_T_FMT",%ld,'%q')",
 									 to_user, to_host, switch_str_nil(p), mod_sofia_globals.hostname, 
 									 switch_epoch_time_now(NULL) + exp_delta, (long)now, profile->name);
 
