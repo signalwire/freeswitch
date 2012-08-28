@@ -125,10 +125,10 @@ static void v17_rx_status_handler(void *user_data, int status)
         span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.17 (%.2fdBm0)\n", v17_rx_signal_power(&s->fast_modems.v17_rx));
         fax_modems_set_rx_handler(s, (span_rx_handler_t) &v17_rx, &s->fast_modems.v17_rx, (span_rx_fillin_handler_t) &v17_rx_fillin, &s->fast_modems.v17_rx);
         v17_rx_set_modem_status_handler(&s->fast_modems.v17_rx, NULL, s);
-        s->fast_modems.v17_rx.put_bit(s->fast_modems.v17_rx.put_bit_user_data, status);
         break;
     }
     /*endswitch*/
+    s->fast_modems.v17_rx.put_bit(s->fast_modems.v17_rx.put_bit_user_data, status);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -172,10 +172,10 @@ static void v27ter_rx_status_handler(void *user_data, int status)
         span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.27ter (%.2fdBm0)\n", v27ter_rx_signal_power(&s->fast_modems.v27ter_rx));
         fax_modems_set_rx_handler(s, (span_rx_handler_t) &v27ter_rx, &s->fast_modems.v27ter_rx, (span_rx_fillin_handler_t) &v27ter_rx_fillin, &s->fast_modems.v27ter_rx);
         v27ter_rx_set_modem_status_handler(&s->fast_modems.v27ter_rx, NULL, s);
-        s->fast_modems.v27ter_rx.put_bit(s->fast_modems.v27ter_rx.put_bit_user_data, status);
         break;
     }
     /*endswitch*/
+    s->fast_modems.v27ter_rx.put_bit(s->fast_modems.v27ter_rx.put_bit_user_data, status);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -219,10 +219,10 @@ static void v29_rx_status_handler(void *user_data, int status)
         span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.29 (%.2fdBm0)\n", v29_rx_signal_power(&s->fast_modems.v29_rx));
         fax_modems_set_rx_handler(s, (span_rx_handler_t) &v29_rx, &s->fast_modems.v29_rx, (span_rx_fillin_handler_t) &v29_rx_fillin, &s->fast_modems.v29_rx);
         v29_rx_set_modem_status_handler(&s->fast_modems.v29_rx, NULL, s);
-        s->fast_modems.v29_rx.put_bit(s->fast_modems.v29_rx.put_bit_user_data, status);
         break;
     }
     /*endswitch*/
+    s->fast_modems.v29_rx.put_bit(s->fast_modems.v29_rx.put_bit_user_data, status);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -252,11 +252,6 @@ SPAN_DECLARE_NONSTD(int) fax_modems_v29_v21_rx_fillin(void *user_data, int len)
     v29_rx_fillin(&s->fast_modems.v29_rx, len);
     fsk_rx_fillin(&s->v21_rx, len);
     return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static void v21_rx_status_handler(void *user_data, int status)
-{
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -393,25 +388,6 @@ SPAN_DECLARE(void) fax_modems_start_fast_modem(fax_modems_state_t *s, int which,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) fax_modems_start_rx_modem(fax_modems_state_t *s, int which)
-{
-    switch (which)
-    {
-    case FAX_MODEM_V17_RX:
-        v17_rx_set_modem_status_handler(&s->fast_modems.v17_rx, v17_rx_status_handler, s);
-        break;
-    case FAX_MODEM_V27TER_RX:
-        v27ter_rx_set_modem_status_handler(&s->fast_modems.v27ter_rx, v27ter_rx_status_handler, s);
-        break;
-    case FAX_MODEM_V29_RX:
-        v29_rx_set_modem_status_handler(&s->fast_modems.v29_rx, v29_rx_status_handler, s);
-        break;
-    }
-    /*endswitch*/
-    fsk_rx_set_modem_status_handler(&s->v21_rx, v21_rx_status_handler, s);
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE(void) fax_modems_set_put_bit(fax_modems_state_t *s, put_bit_func_t put_bit, void *user_data)
 {
     s->put_bit = put_bit;
@@ -432,9 +408,25 @@ SPAN_DECLARE(void) fax_modems_set_rx_handler(fax_modems_state_t *s,
                                              span_rx_fillin_handler_t rx_fillin_handler,
                                              void *rx_fillin_user_data)
 {
-    s->rx_handler = rx_handler;
+    if (s->deferred_rx_handler_updates)
+    {
+        /* Only update the actual handlers if they are not currently sidelined to dummy targets */
+        if (s->rx_handler != span_dummy_rx)
+            s->rx_handler = rx_handler;
+        /*endif*/
+        s->base_rx_handler = rx_handler;
+
+        if (s->rx_fillin_handler != span_dummy_rx_fillin)
+            s->rx_fillin_handler = rx_fillin_handler;
+        /*endif*/
+        s->base_rx_fillin_handler = rx_fillin_handler;
+    }
+    else
+    {
+        s->rx_handler = rx_handler;
+        s->rx_fillin_handler = rx_fillin_handler;
+    }
     s->rx_user_data = rx_user_data;
-    s->rx_fillin_handler = rx_fillin_handler;
     s->rx_fillin_user_data = rx_fillin_user_data;
 }
 /*- End of function --------------------------------------------------------*/
@@ -521,16 +513,9 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
     hdlc_rx_init(&s->hdlc_rx, FALSE, FALSE, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, s);
     hdlc_tx_init(&s->hdlc_tx, FALSE, 2, FALSE, hdlc_tx_underflow, user_data);
 
-    fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &s->hdlc_rx);
-    fsk_rx_signal_cutoff(&s->v21_rx, -39.09f);
+    fax_modems_start_slow_modem(s, FAX_MODEM_V21_RX);
     fsk_tx_init(&s->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &s->hdlc_tx);
-    v17_rx_init(&s->fast_modems.v17_rx, 14400, non_ecm_put_bit, user_data);
-    v17_tx_init(&s->fast_modems.v17_tx, 14400, s->use_tep, non_ecm_get_bit, user_data);
-    v29_rx_init(&s->fast_modems.v29_rx, 9600, non_ecm_put_bit, user_data);
-    v29_rx_signal_cutoff(&s->fast_modems.v29_rx, -45.5f);
-    v29_tx_init(&s->fast_modems.v29_tx, 9600, s->use_tep, non_ecm_get_bit, user_data);
-    v27ter_rx_init(&s->fast_modems.v27ter_rx, 4800, non_ecm_put_bit, user_data);
-    v27ter_tx_init(&s->fast_modems.v27ter_tx, 4800, s->use_tep, non_ecm_get_bit, user_data);
+
     silence_gen_init(&s->silence_gen, 0);
 
     s->rx_signal_present = FALSE;
