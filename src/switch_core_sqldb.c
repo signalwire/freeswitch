@@ -2115,7 +2115,7 @@ SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session
 		return;
 	}
 
-	if (switch_channel_test_flag(channel, CF_TRACKED || force)) {
+	if (switch_channel_test_flag(channel, CF_TRACKED) || force) {
 
 		if (force) {
 			sql = switch_mprintf("delete from recovery where uuid='%q'", switch_core_session_get_uuid(session));
