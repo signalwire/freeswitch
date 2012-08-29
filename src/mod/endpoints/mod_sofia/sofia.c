@@ -3410,6 +3410,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IN_DIALOG_CHAT);
 						}
+					} else if (!strcasecmp(var, "fire-message-events")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_FIRE_MESSAGE_EVENTS);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_FIRE_MESSAGE_EVENTS);
+						}
 					} else if (!strcasecmp(var, "disable-hold")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_DISABLE_HOLD);
@@ -4335,6 +4341,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_IN_DIALOG_CHAT);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IN_DIALOG_CHAT);
+						}
+					} else if (!strcasecmp(var, "fire-message-events")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_FIRE_MESSAGE_EVENTS);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_FIRE_MESSAGE_EVENTS);
 						}
 					} else if (!strcasecmp(var, "t38-passthru")) {
 						if (switch_true(val)) {
