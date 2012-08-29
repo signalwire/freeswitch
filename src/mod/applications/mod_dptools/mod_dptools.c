@@ -4609,7 +4609,7 @@ static void cancel(switch_core_session_t *session, master_mutex_t *master)
 	
 	switch_mutex_lock(globals.mutex_mutex);
 	for (np = master->list; np; np = np->next) {
-		if (np->session == session) {
+		if (np && np->session == session) {
 			switch_core_event_hook_remove_state_change(session, mutex_hanguphook);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex %s canceled\n", 
 							  switch_core_session_get_name(session), master->key);
@@ -4644,6 +4644,7 @@ static void advance(master_mutex_t *master)
 						  "%s mutex %s advanced\n", switch_channel_get_name(channel), master->key);
 		switch_channel_set_app_flag_key(master->key, channel, MUTEX_FLAG_SET);
 		switch_channel_clear_app_flag_key(master->key, channel, MUTEX_FLAG_WAIT);
+		switch_core_event_hook_add_state_change(master->list->session, mutex_hanguphook);
 	}
 
 
@@ -4669,7 +4670,7 @@ static void confirm(switch_core_session_t *session, master_mutex_t *master)
 		switch_core_event_hook_remove_state_change(session, mutex_hanguphook);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex %s cleared\n", switch_channel_get_name(channel), master->key);
 		advance(master);
-	} else if (switch_channel_test_app_flag_key(master->key, channel, MUTEX_FLAG_WAIT)) {
+	} else {
 		cancel(session, master);
 	}
 }
@@ -4684,6 +4685,8 @@ static switch_status_t mutex_hanguphook(switch_core_session_t *session)
 	if (state != CS_HANGUP) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex hangup hook\n", switch_channel_get_name(channel));
 
 	confirm(session, NULL);
 	switch_core_event_hook_remove_state_change(session, mutex_hanguphook);
@@ -4714,18 +4717,28 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 		switch_mutex_unlock(globals.mutex_mutex);
 		return SWITCH_FALSE;
 	}
-
+	
 	if (!(master = switch_core_hash_find(globals.mutex_hash, key))) {
 		master = switch_core_alloc(globals.pool, sizeof(*master));
 		master->key = switch_core_strdup(globals.pool, key);
+		master->list = NULL;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "NEW MASTER %s %p\n", key, (void *) master);
 		switch_core_hash_insert(globals.mutex_hash, key, master);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "EXIST MASTER %s %p\n", key, (void *) master);
 	}
 		
 	if (on) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "HIT ON\n");
+
 		node = switch_core_session_alloc(session, sizeof(*node));
 		node->session = session;
 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "CHECK MASTER LIST %p\n", (void *) master->list);
+
 		for (np = master->list; np && np->next; np = np->next);
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "HIT ON np %p\n", (void *) np);
 
 		if (np) {
 			np->next = node;
@@ -4803,6 +4816,8 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 		cancel(session, master);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex %s acquired\n", switch_channel_get_name(channel), key);
+		switch_core_event_hook_add_state_change(session, mutex_hanguphook);
+		switch_channel_set_private(channel, "_mutex_master", master);
 	}
 	switch_mutex_unlock(globals.mutex_mutex);
 
@@ -4871,9 +4886,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	switch_file_interface_t *file_interface;
 
 	globals.pool = pool;
-	switch_core_hash_init(&globals.pickup_hash, NULL);
+	switch_core_hash_init(&globals.pickup_hash, globals.pool);
 	switch_mutex_init(&globals.pickup_mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_core_hash_init(&globals.mutex_hash, NULL);
+	switch_core_hash_init(&globals.mutex_hash, globals.pool);
 	switch_mutex_init(&globals.mutex_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	/* connect my internal structure to the blank pointer passed to me */
