@@ -2130,6 +2130,14 @@ SWITCH_DECLARE(switch_size_t) switch_core_session_get_id(switch_core_session_t *
 	return session->id;
 }
 
+SWITCH_DECLARE(switch_size_t) switch_core_session_id_dec(void)
+{
+	switch_mutex_lock(runtime.session_hash_mutex);
+	session_manager.session_id--;
+	switch_mutex_unlock(runtime.session_hash_mutex);
+	return session_manager.session_id;
+}
+
 SWITCH_DECLARE(switch_size_t) switch_core_session_id(void)
 {
 	return session_manager.session_id;

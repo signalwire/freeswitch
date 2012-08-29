@@ -1658,6 +1658,20 @@ void sofia_event_callback(nua_event_t event,
 	uint32_t sess_max = switch_core_session_limit(0);
 
 	switch(event) {
+	case nua_i_terminated:
+		if (status > 300 && sofia_private && sofia_private->uuid) {
+			switch_core_session_t *session;
+
+			if ((session = switch_core_session_force_locate(sofia_private->uuid))) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				switch_channel_set_flag(channel, CF_NO_CDR);
+				switch_channel_hangup(channel, status == 403 ? SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL : SWITCH_CAUSE_BEARERCAPABILITY_NOTAUTH);
+				switch_core_session_rwunlock(session);
+				switch_core_session_id_dec();
+			}
+
+		}
+		break;
 	case nua_i_invite:
 	case nua_i_register:
 	case nua_i_options:
@@ -1718,8 +1732,20 @@ void sofia_event_callback(nua_event_t event,
 		}
 
 		if (session) {
+			const char *channel_name = NULL;
 			private_object_t *tech_pvt = sofia_glue_new_pvt(session);
-			sofia_glue_attach_private(session, profile, tech_pvt, NULL);
+
+			if (sip->sip_from) {
+				channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
+			}
+			if (!channel_name && sip->sip_contact && sip->sip_contact->m_url) {
+				channel_name = url_set_chanvars(session, sip->sip_contact->m_url, sip_contact);
+			}
+			if (sip->sip_referred_by) {
+				channel_name = url_set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
+			}
+
+			sofia_glue_attach_private(session, profile, tech_pvt, channel_name);
 
 		} else {
 			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -8016,7 +8042,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	sip_call_info_t *call_info = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
-	const char *channel_name = NULL;
+	//const char *channel_name = NULL;
 	const char *displayname = NULL;
 	const char *destination_number = NULL;
 	const char *from_user = NULL, *from_host = NULL;
@@ -8323,7 +8349,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	if (sip->sip_from && sip->sip_from->a_url) {
 		from_user = sip->sip_from->a_url->url_user;
 		from_host = sip->sip_from->a_url->url_host;
-		channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
+		//channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
 
 		if (sip->sip_from->a_url->url_params) {
 			aniii = switch_find_parameter(sip->sip_from->a_url->url_params, "isup-oli", switch_core_session_get_pool(session));
@@ -8550,16 +8576,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 	if (sip->sip_contact && sip->sip_contact->m_url) {
-		const char *contact_uri = url_set_chanvars(session, sip->sip_contact->m_url, sip_contact);
-		if (!channel_name) {
-			channel_name = contact_uri;
-		}
+		url_set_chanvars(session, sip->sip_contact->m_url, sip_contact);
 	}
 
 	if (sip->sip_referred_by) {
 		referred_by_user = sip->sip_referred_by->b_url->url_user;
 		//referred_by_host = sip->sip_referred_by->b_url->url_host;
-		channel_name = url_set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
+		//channel_name = url_set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
 
 		check_decode(referred_by_user, session);
 
@@ -8578,7 +8601,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
-	sofia_glue_set_name(tech_pvt, channel_name);
+	//sofia_glue_set_name(tech_pvt, channel_name);
 	sofia_glue_tech_prepare_codecs(tech_pvt);
 
 	switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "INBOUND CALL");

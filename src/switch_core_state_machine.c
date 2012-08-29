@@ -697,6 +697,11 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 		}
 	}
 
+	if (switch_channel_test_flag(session->channel, CF_NO_CDR)) {
+		do_extra_handlers = 0;
+	}
+
+
 	STATE_MACRO(reporting, "REPORTING");
 
 	if ((hook_var = switch_channel_get_variable(session->channel, SWITCH_API_REPORTING_HOOK_VARIABLE))) {
