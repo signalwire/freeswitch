@@ -561,8 +561,8 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 	}
 
 	handle->samples = 0;
-	handle->samplerate = 8000;
-	handle->channels = 1;
+	// handle->samplerate = 8000;
+	// handle->channels = 1;
 	handle->format = 0;
 	handle->sections = 0;
 	handle->seekable = 0;
@@ -690,17 +690,31 @@ end:
 
 static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
-	size_t datalen = *len * 2;
+	uint32_t datalen = *len * sizeof(int16_t);
 	size_t size;
 	switch_status_t status;
+	int16_t *xdata = data;
+	int max_datasize = handle->samplerate / 8000 * 160;
 
 	fsv_file_context *context = handle->private_info;
 
-	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing: %ld\n", (long)(*len)); */
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing: %ld %d %x\n", (long)(*len), handle->channels, handle->flags); */
 
-	if (*len > 160) { /* when sample rate is 8000 */
+	if (*len > max_datasize) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You are asking to write %d bytes of data which is not supported. Please set enable_file_write_buffering=false to use .fsv format\n", (int)(*len));
 		return SWITCH_STATUS_GENERR;
+	}
+
+	if (handle->channels > 1) {
+		int i, j;
+		int32_t mixed = 0;
+		for (i=0; i<*len; i++) {
+			for (j = 0; j < handle->channels; j++) {
+				mixed += xdata[i * handle->channels + j];
+			}
+			switch_normalize_to_16bit(mixed);
+			xdata[i] = (uint16_t)mixed;
+		}
 	}
 
 	switch_mutex_lock(context->mutex);
@@ -714,6 +728,8 @@ static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, 
 	*len = datalen;
 	status =  switch_file_write(context->fd, data, len);
 	switch_mutex_unlock(context->mutex);
+
+	handle->sample_count += *len / sizeof(int16_t);
 
 	return status;
 }
@@ -739,6 +755,9 @@ static switch_status_t fsv_file_write_video(switch_file_handle_t *handle, void *
 	*len = datalen;
 	status =  switch_file_write(context->fd, data, len);
 	switch_mutex_unlock(context->mutex);
+
+	*len /= 2;
+	handle->sample_count += *len;
 
 	return status;
 }
