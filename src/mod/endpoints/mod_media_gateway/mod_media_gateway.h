@@ -217,8 +217,10 @@ struct megaco_profile_s {
 	char*					my_ipaddr;   /* local domain name */
 	char*					port;              	     /* port */
 	char*					protocol_type;    	     /* MEGACO/MGCP */
+	char*					license;    	     /* License file location/name */
 	int 					protocol_version;            /* Protocol supported version */
 	int 					total_peers;
+	int 					total_cfg_term;
 	megaco_codec_t			default_codec;
 	char*					rtp_port_range;
 	char*					rtp_termination_id_prefix;

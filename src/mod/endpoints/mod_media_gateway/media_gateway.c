@@ -575,7 +575,7 @@ mg_context_t *megaco_choose_context(megaco_profile_t *profile)
     }
     
     switch_thread_rwlock_unlock(profile->contexts_rwlock);
-    
+
     return ctx;
 }
 
@@ -647,6 +647,7 @@ switch_status_t megaco_profile_start(const char *profilename)
 	profile->name = switch_core_strdup(pool, profilename);
 	profile->next_context_id++;
 	profile->inact_tmr = 0x00;
+	profile->total_cfg_term = 0x00;
 	profile->peer_active = 0x00;
 	profile->mg_stats = switch_core_alloc(pool, sizeof(mg_stats_t));
 	profile->inact_tmr_task_id = 0x00;

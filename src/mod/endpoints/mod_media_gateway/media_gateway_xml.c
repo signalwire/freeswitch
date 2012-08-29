@@ -25,10 +25,14 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 	switch_xml_config_item_t *instructions = (profile ? get_instructions(profile) : NULL);
 	int count;
 	int idx;
+	int ret=0;
 	char *var, *val;
 	mg_peer_profile_t* peer_profile = NULL;
 	switch_xml_config_item_t *instructions1 = NULL;
 	switch_memory_pool_t *pool;
+	char lic_sig_file[4096];
+
+	memset(&lic_sig_file[0],0,sizeof(lic_sig_file));
 
 	if (!(xml = switch_xml_open_cfg(file, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open %s\n", file);
@@ -64,9 +68,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 			goto done;
 		}
 
-
 		profile->idx = ++mg_sap_id;
-
 
 		if ((mg_phys_terms = switch_xml_child(mg_interface, "physical_terminations"))) {
 			for (mg_term = switch_xml_child(mg_phys_terms, "map"); mg_term; mg_term = mg_term->next) {
@@ -148,11 +150,28 @@ else
 
 	if (!mg_interface) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error profile %s not found\n", profile->name);
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+	}
+
+
+	if((profile->license) && ('\0' != profile->license[0])){
+		sprintf(lic_sig_file, "%s.sig", profile->license);
+	}else{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get License file \n");
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	MG_CHECK_LICENSE(profile->total_cfg_term,profile->license, &lic_sig_file[0], ret);
+	if(ret){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "License validation failed \n");
+		status = SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
 	/* go through the peer configuration and get the mg profile associated peers only */
 	if (!(mg_peers = switch_xml_child(cfg, "mg_peers"))) {
+		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 
@@ -232,6 +251,8 @@ void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char 
 			"Mapped termination [%s] to freetdm span: %s chan: %d\n", 
 			term->name, term->u.tdm.span_name, term->u.tdm.channel);
 	megaco_prepare_tdm_termination(term);
+
+	profile->total_cfg_term++;
 }
 /****************************************************************************************************************************/
 switch_status_t mg_config_cleanup(megaco_profile_t* profile)
@@ -291,7 +312,6 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		SWITCH_TRUE, /* enforce Max */
 		9
 	};
-#endif
 
     static switch_xml_config_int_options_t pre_buffer_len = {
 		SWITCH_TRUE,  /* enforce min */
@@ -300,7 +320,6 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		10000
 	};
     
-#if 0
 	static switch_xml_config_enum_item_t opt_default_codec_enum[] = {
 		{  "PCMA",  MEGACO_CODEC_PCMA},
 		{  "PCMU",  MEGACO_CODEC_PCMU},
@@ -323,8 +342,9 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		//SWITCH_CONFIG_ITEM("rtp-port-range", SWITCH_CONFIG_STRING, CONFIG_REQUIRED, &profile->rtp_port_range, "1-65535", &switch_config_string_strdup, "", "rtp port range"),
 		SWITCH_CONFIG_ITEM("rtp-termination-id-prefix", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->rtp_termination_id_prefix, "", &switch_config_string_strdup, "", "rtp termination prefix"),
 		//SWITCH_CONFIG_ITEM("rtp-termination-id-length", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->rtp_termination_id_len, "", &opt_termination_id_len, "", "rtp termination id"),
-		SWITCH_CONFIG_ITEM("tdm-pre-buffer-size", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->tdm_pre_buffer_size, 0, &pre_buffer_len, "", "freetdm pre buffer size"),
+		//SWITCH_CONFIG_ITEM("tdm-pre-buffer-size", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->tdm_pre_buffer_size, 0, &pre_buffer_len, "", "freetdm pre buffer size"),
 		SWITCH_CONFIG_ITEM("codec-prefs", SWITCH_CONFIG_STRING, 0, &profile->codec_prefs, "", &switch_config_string_strdup, "", "codec preferences, coma-separated"),
+		SWITCH_CONFIG_ITEM("license", SWITCH_CONFIG_STRING, 0, &profile->license, "/usr/local/nsg/conf/license.txt", &switch_config_string_strdup, "", "License file"),
 		SWITCH_CONFIG_ITEM_END()
 	};
 	
