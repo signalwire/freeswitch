@@ -289,6 +289,7 @@ struct switch_session_manager {
 	uint32_t session_limit;
 	switch_size_t session_id;
 	switch_queue_t *thread_queue;
+	switch_thread_t *manager_thread;
 	switch_mutex_t *mutex;
 	int ready;
 	int running;
