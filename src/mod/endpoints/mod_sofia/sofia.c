@@ -1664,10 +1664,17 @@ void sofia_event_callback(nua_event_t event,
 
 			if ((session = switch_core_session_force_locate(sofia_private->uuid))) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
+				switch_call_cause_t cause;
+
 				switch_channel_set_flag(channel, CF_NO_CDR);
-				switch_channel_hangup(channel, status == 403 ? SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL : SWITCH_CAUSE_BEARERCAPABILITY_NOTAUTH);
+
+				cause = sofia_glue_sip_cause_to_freeswitch(status);
+
+				switch_channel_hangup(channel, cause);
 				switch_core_session_rwunlock(session);
-				switch_core_session_id_dec();
+				if (status == 401 || status == 407) {
+					switch_core_session_id_dec();
+				}
 			}
 
 		}
