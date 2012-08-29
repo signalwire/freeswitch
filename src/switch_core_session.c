@@ -2230,15 +2230,13 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 	switch_core_hash_init(&session_manager.session_table, session_manager.memory_pool);
 	
 	if (switch_test_flag((&runtime), SCF_SESSION_THREAD_POOL)) {
-		switch_thread_t *thread;
 		switch_threadattr_t *thd_attr;
 
 		switch_mutex_init(&session_manager.mutex, SWITCH_MUTEX_NESTED, session_manager.memory_pool);
 		switch_queue_create(&session_manager.thread_queue, 100000, session_manager.memory_pool);
 		switch_threadattr_create(&thd_attr, session_manager.memory_pool);
-		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, switch_core_session_thread_pool_manager, NULL, session_manager.memory_pool);		
+		switch_thread_create(&session_manager.manager_thread, thd_attr, switch_core_session_thread_pool_manager, NULL, session_manager.memory_pool);		
 		session_manager.ready = 1;
 	}
 
@@ -2247,9 +2245,12 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 void switch_core_session_uninit(void)
 {
 	int sanity = 100;
+	switch_status_t st = SWITCH_STATUS_FALSE;
 
 	switch_core_hash_destroy(&session_manager.session_table);
 	session_manager.ready = 0;
+
+	switch_thread_join(&st, session_manager.manager_thread);
 
 	while(session_manager.running && --sanity > 0) {
 		switch_queue_interrupt_all(session_manager.thread_queue);
