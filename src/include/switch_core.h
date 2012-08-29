@@ -673,6 +673,7 @@ SWITCH_DECLARE(switch_size_t) switch_core_session_get_id(_In_ switch_core_sessio
   \return the total number of allocated sessions since core startup
 */
 SWITCH_DECLARE(switch_size_t) switch_core_session_id(void);
+SWITCH_DECLARE(switch_size_t) switch_core_session_id_dec(void);
 
 /*! 
   \brief Allocate and return a new session from the core based on a given endpoint module name
