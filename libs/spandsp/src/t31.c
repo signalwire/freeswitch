@@ -1756,6 +1756,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
         s->at_state.transmit = TRUE;
         break;
     case FAX_MODEM_V17_RX:
+    case FAX_MODEM_V27TER_RX:
+    case FAX_MODEM_V29_RX:
         if (!s->t38_mode)
         {
             fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
@@ -1789,15 +1791,6 @@ static int restart_modem(t31_state_t *s, int new_modem)
         s->tx.data_started = FALSE;
         s->at_state.transmit = TRUE;
         break;
-    case FAX_MODEM_V27TER_RX:
-        if (!s->t38_mode)
-        {
-            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
-            /* Allow for +FCERROR/+FRH:3 */
-            t31_v21_rx(s);
-        }
-        s->at_state.transmit = FALSE;
-        break;
     case FAX_MODEM_V29_TX:
         if (s->t38_mode)
         {
@@ -1822,15 +1815,6 @@ static int restart_modem(t31_state_t *s, int new_modem)
         s->tx.out_bytes = 0;
         s->tx.data_started = FALSE;
         s->at_state.transmit = TRUE;
-        break;
-    case FAX_MODEM_V29_RX:
-        if (!s->t38_mode)
-        {
-            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
-            /* Allow for +FCERROR/+FRH:3 */
-            t31_v21_rx(s);
-        }
-        s->at_state.transmit = FALSE;
         break;
     case FAX_MODEM_SILENCE_TX:
         if (s->t38_mode)

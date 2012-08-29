@@ -196,78 +196,6 @@ static void non_ecm_remove_fill_and_put_bit(void *user_data, int bit);
 static void non_ecm_push_residue(t38_gateway_state_t *s);
 static void tone_detected(void *user_data, int tone, int level, int delay);
 
-static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v17_rx(&s->fast_modems.v17_rx, amp, len);
-    fsk_rx(&s->v21_rx, amp, len);
-    if (s->rx_trained)
-    {
-        /* The fast modem has trained, so we no longer need to run the slow one in parallel. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.17 (%.2fdBm0)\n", v17_rx_signal_power(&s->fast_modems.v17_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &v17_rx, &s->fast_modems.v17_rx, (span_rx_fillin_handler_t) &v17_rx_fillin, &s->fast_modems.v17_rx);
-    }
-    else if (s->rx_signal_present)
-    {
-        /* We have received something, and the fast modem has not trained. We must be receiving valid V.21 */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
-    }
-    /*endif*/
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v27ter_rx(&s->fast_modems.v27ter_rx, amp, len);
-    fsk_rx(&s->v21_rx, amp, len);
-    if (s->rx_trained)
-    {
-        /* The fast modem has trained, so we no longer need to run the slow one in parallel. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.27ter (%.2fdBm0)\n", v27ter_rx_signal_power(&s->fast_modems.v27ter_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &v27ter_rx, &s->fast_modems.v27ter_rx, (span_rx_fillin_handler_t) &v27ter_rx_fillin, &s->fast_modems.v27ter_rx);
-    }
-    else if (s->rx_signal_present)
-    {
-        /* We have received something, and the fast modem has not trained. We must be receiving valid V.21 */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
-    }
-    /*endif*/
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v29_rx(&s->fast_modems.v29_rx, amp, len);
-    fsk_rx(&s->v21_rx, amp, len);
-    if (s->rx_trained)
-    {
-        /* The fast modem has trained, so we no longer need to run the slow one in parallel. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.29 (%.2fdBm0)\n", v29_rx_signal_power(&s->fast_modems.v29_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &v29_rx, &s->fast_modems.v29_rx, (span_rx_fillin_handler_t) &v29_rx_fillin, &s->fast_modems.v29_rx);
-    }
-    else if (s->rx_signal_present)
-    {
-        /* We have received something, and the fast modem has not trained. We must be receiving valid V.21 */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
-    }
-    /*endif*/
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
 static void tone_detected(void *user_data, int tone, int level, int delay)
 {
     t38_gateway_state_t *s;
@@ -2044,18 +1972,13 @@ static int restart_rx_modem(t38_gateway_state_t *s)
     switch (s->core.fast_rx_modem)
     {
     case FAX_MODEM_V27TER_RX:
-        fax_modems_start_fast_modem(t, s->core.fast_rx_modem, s->core.fast_bit_rate, s->core.short_train, FALSE);
-        s->core.fast_rx_active = s->core.fast_rx_modem;
-        break;
     case FAX_MODEM_V29_RX:
-        fax_modems_start_fast_modem(t, s->core.fast_rx_modem, s->core.fast_bit_rate, s->core.short_train, FALSE);
-        s->core.fast_rx_active = s->core.fast_rx_modem;
-        break;
     case FAX_MODEM_V17_RX:
         fax_modems_start_fast_modem(t, s->core.fast_rx_modem, s->core.fast_bit_rate, s->core.short_train, FALSE);
         s->core.fast_rx_active = s->core.fast_rx_modem;
         break;
     default:
+        //fax_modems_start_slow_modem(t, FAX_MODEM_V21_RX);
         fax_modems_set_rx_handler(t, (span_rx_handler_t) &fsk_rx, &t->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &t->v21_rx);
         s->core.fast_rx_active = FAX_MODEM_NONE;
         break;
