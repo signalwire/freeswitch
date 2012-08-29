@@ -2738,6 +2738,40 @@ SWITCH_STANDARD_API(uuid_media_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_API(uuid_pre_answer_function)
+{
+	char *uuid = (char *) cmd;
+	switch_core_session_t *xsession;
+
+	if (uuid && (xsession = switch_core_session_locate(uuid))) {
+		switch_channel_t *channel = switch_core_session_get_channel(xsession);
+		switch_channel_pre_answer(channel);
+		switch_core_session_rwunlock(session);
+	} else {
+		stream->write_function(stream, "-ERROR\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(uuid_answer_function)
+{
+	char *uuid = (char *) cmd;
+	switch_core_session_t *xsession;
+
+	if (uuid && (xsession = switch_core_session_locate(uuid))) {
+		switch_channel_t *channel = switch_core_session_get_channel(xsession);
+		switch_channel_answer(channel);
+		switch_core_session_rwunlock(session);
+	} else {
+		stream->write_function(stream, "-ERROR\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define BROADCAST_SYNTAX "<uuid> <path> [aleg|bleg|holdb|both]"
 SWITCH_STANDARD_API(uuid_broadcast_function)
 {
@@ -5570,6 +5604,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "url_encode", "url encode a string", url_encode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param|attr] <name>");
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user> <domain>");
+	SWITCH_ADD_API(commands_api_interface, "uuid_answer", "answer", uuid_answer_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_audio", "uuid_audio", session_audio_function, AUDIO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
@@ -5596,6 +5631,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_phone_event", "Send and event to the phone", uuid_phone_event_function, PHONE_EVENT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_pre_answer", "pre_answer", uuid_pre_answer_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_preprocess", "Pre-process Channel", preprocess_function, PREPROCESS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_record", "session record", session_record_function, SESS_REC_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_recovery_refresh", "Send a recovery_refresh", uuid_recovery_refresh, UUID_RECOVERY_REFRESH_SYNTAX);
@@ -5719,6 +5755,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_displace ::console::list_uuid");
 	switch_console_set_complete("add uuid_display ::console::list_uuid");
 	switch_console_set_complete("add uuid_dump ::console::list_uuid");
+	switch_console_set_complete("add uuid_answer ::console::list_uuid");
+	switch_console_set_complete("add uuid_pre_answer ::console::list_uuid");
 	switch_console_set_complete("add uuid_exists ::console::list_uuid");
 	switch_console_set_complete("add uuid_fileman ::console::list_uuid");
 	switch_console_set_complete("add uuid_flush_dtmf ::console::list_uuid");
