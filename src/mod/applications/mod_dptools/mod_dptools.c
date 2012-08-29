@@ -4565,7 +4565,7 @@ SWITCH_STANDARD_APP(blind_transfer_ack_function)
 /* /// mutex /// */
 
 typedef struct mutex_node_s {
-	switch_core_session_t *session;
+	char *uuid;
 	struct mutex_node_s *next;
 } mutex_node_t;
 
@@ -4588,6 +4588,7 @@ typedef struct master_mutex_s {
 } master_mutex_t;
 
 static switch_status_t mutex_hanguphook(switch_core_session_t *session);
+static void advance(master_mutex_t *master, switch_bool_t pop_current);
 
 static switch_status_t read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
@@ -4603,21 +4604,41 @@ static switch_status_t read_frame_callback(switch_core_session_t *session, switc
 	
 }
 
+static void free_node(mutex_node_t **npp)
+{
+	mutex_node_t *np;
+
+	if (npp) {
+		np = *npp;
+		*npp = NULL;
+		switch_safe_free(np->uuid);
+		free(np);
+	}
+}
+
 static void cancel(switch_core_session_t *session, master_mutex_t *master)
 {
 	mutex_node_t *np, *lp = NULL;
-	
+	const char *uuid = switch_core_session_get_uuid(session);
+
 	switch_mutex_lock(globals.mutex_mutex);
 	for (np = master->list; np; np = np->next) {
-		if (np && np->session == session) {
+		if (np && !strcmp(np->uuid, uuid)) {
 			switch_core_event_hook_remove_state_change(session, mutex_hanguphook);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex %s canceled\n", 
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s %s mutex %s canceled\n", 
+							  switch_core_session_get_uuid(session),
 							  switch_core_session_get_name(session), master->key);
+
 			if (lp) {
 				lp->next = np->next;
 			} else {
-				master->list = np->next;
+				if ((master->list = np->next)) {
+					advance(master, SWITCH_FALSE);
+				}
 			}
+
+			free_node(&np);
+			
 			break;
 		}
 
@@ -4628,23 +4649,46 @@ static void cancel(switch_core_session_t *session, master_mutex_t *master)
 
 }
 
-static void advance(master_mutex_t *master)
+static void advance(master_mutex_t *master, switch_bool_t pop_current)
 {
+
 	switch_mutex_lock(globals.mutex_mutex);
 
 	if (!master || !master->list) {
 		goto end;
 	}
 	
-	master->list = master->list->next;
+	while (master->list) {
+		mutex_node_t *np;
 
-	if (master->list) {
-		switch_channel_t *channel = switch_core_session_get_channel(master->list->session);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(master->list->session), SWITCH_LOG_DEBUG, 
-						  "%s mutex %s advanced\n", switch_channel_get_name(channel), master->key);
-		switch_channel_set_app_flag_key(master->key, channel, MUTEX_FLAG_SET);
-		switch_channel_clear_app_flag_key(master->key, channel, MUTEX_FLAG_WAIT);
-		switch_core_event_hook_add_state_change(master->list->session, mutex_hanguphook);
+
+		if (!pop_current) {
+			pop_current++;
+		} else {
+			np = master->list;
+			master->list = master->list->next;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ADVANCE POP %p\n", (void *)np);
+			free_node(&np);
+		}
+	
+
+		if (master->list) {
+			switch_core_session_t *session;
+
+			if ((session = switch_core_session_locate(master->list->uuid))) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+								  "%s mutex %s advanced\n", switch_channel_get_name(channel), master->key);
+				switch_channel_set_app_flag_key(master->key, channel, MUTEX_FLAG_SET);
+				switch_channel_clear_app_flag_key(master->key, channel, MUTEX_FLAG_WAIT);
+				switch_core_event_hook_add_state_change(session, mutex_hanguphook);
+				switch_core_session_rwunlock(session);
+				break;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "uuid %s already gone\n", master->list->uuid);
+			}
+		}
 	}
 
 
@@ -4665,14 +4709,22 @@ static void confirm(switch_core_session_t *session, master_mutex_t *master)
 		}
 	}
 
-	if (master->list->session == session) {
-		switch_channel_clear_app_flag_key(master->key, channel, MUTEX_FLAG_SET);
-		switch_core_event_hook_remove_state_change(session, mutex_hanguphook);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex %s cleared\n", switch_channel_get_name(channel), master->key);
-		advance(master);
-	} else {
-		cancel(session, master);
+	switch_mutex_lock(globals.mutex_mutex);
+
+	if (master->list) {
+		if (!strcmp(master->list->uuid, switch_core_session_get_uuid(session))) {
+			switch_channel_clear_app_flag_key(master->key, channel, MUTEX_FLAG_SET);
+			switch_core_event_hook_remove_state_change(session, mutex_hanguphook);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s %s mutex %s cleared\n", 
+							  switch_core_session_get_uuid(session),
+							  switch_channel_get_name(channel), master->key);
+			advance(master, SWITCH_TRUE);
+		} else {
+			cancel(session, master);
+		}
 	}
+
+	switch_mutex_unlock(globals.mutex_mutex);
 }
 
 
@@ -4729,10 +4781,12 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 	}
 		
 	if (on) {
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "HIT ON\n");
 
-		node = switch_core_session_alloc(session, sizeof(*node));
-		node->session = session;
+		switch_zmalloc(node, sizeof(*node));
+		node->uuid = strdup(switch_core_session_get_uuid(session));
+		node->next = NULL;
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "CHECK MASTER LIST %p\n", (void *) master->list);
 
@@ -4749,7 +4803,9 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 			switch_channel_clear_app_flag_key(key, channel, MUTEX_FLAG_WAIT);
 			switch_channel_set_private(channel, "_mutex_master", master);
 			switch_core_event_hook_add_state_change(session, mutex_hanguphook);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex %s acquired\n", switch_channel_get_name(channel), key);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s %s mutex %s acquired\n", 
+							  switch_core_session_get_uuid(session),
+							  switch_channel_get_name(channel), key);
 			switch_mutex_unlock(globals.mutex_mutex);
 			return SWITCH_TRUE;
 		}
@@ -4812,10 +4868,12 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 	}
 
 	switch_mutex_lock(globals.mutex_mutex);
-	if (switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_WAIT)) {
+	if (switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_WAIT) || !switch_channel_up(channel)) {
 		cancel(session, master);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex %s acquired\n", switch_channel_get_name(channel), key);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s %s mutex %s acquired\n", 
+						  switch_core_session_get_uuid(session),
+						  switch_channel_get_name(channel), key);
 		switch_core_event_hook_add_state_change(session, mutex_hanguphook);
 		switch_channel_set_private(channel, "_mutex_master", master);
 	}
