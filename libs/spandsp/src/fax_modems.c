@@ -262,6 +262,7 @@ SPAN_DECLARE(void) fax_modems_start_slow_modem(fax_modems_state_t *s, int which)
     case FAX_MODEM_V21_RX:
         fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &s->hdlc_rx);
         fsk_rx_signal_cutoff(&s->v21_rx, -39.09f);
+        //fax_modems_set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
         s->rx_frame_received = FALSE;
         break;
     case FAX_MODEM_V21_TX:
@@ -426,6 +427,7 @@ SPAN_DECLARE(void) fax_modems_set_rx_handler(fax_modems_state_t *s,
         s->rx_handler = rx_handler;
         s->rx_fillin_handler = rx_fillin_handler;
     }
+    /*endif*/
     s->rx_user_data = rx_user_data;
     s->rx_fillin_user_data = rx_fillin_user_data;
 }
