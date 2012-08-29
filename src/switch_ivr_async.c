@@ -1651,7 +1651,17 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 			}
 		}
 		break;
+	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
+		if (!bug->ping_frame) break;
 
+		if (ep->eavesdropper && switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *channel = switch_core_session_get_channel(ep->eavesdropper);
+			if (switch_channel_test_flag(channel, CF_VIDEO)) {
+				switch_core_session_write_video_frame(ep->eavesdropper, bug->ping_frame, SWITCH_IO_FLAG_NONE, 0);
+			}
+			switch_core_session_rwunlock(ep->eavesdropper);
+		}
+		break;
 	default:
 		break;
 	}
