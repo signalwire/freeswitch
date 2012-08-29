@@ -1666,13 +1666,13 @@ void sofia_event_callback(nua_event_t event,
 				switch_channel_t *channel = switch_core_session_get_channel(session);
 				switch_call_cause_t cause;
 
-				switch_channel_set_flag(channel, CF_NO_CDR);
-
 				cause = sofia_glue_sip_cause_to_freeswitch(status);
 
 				switch_channel_hangup(channel, cause);
 				switch_core_session_rwunlock(session);
+
 				if (status == 401 || status == 407) {
+					switch_channel_set_flag(channel, CF_NO_CDR);
 					switch_core_session_id_dec();
 				}
 			}
