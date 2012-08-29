@@ -743,6 +743,29 @@ void FSConnection::SetCodecs()
 
         m_switchMediaFormats += switchFormat;
     }
+
+#if HAVE_T38
+    OpalMediaFormat t38 = OpalT38;
+
+    /* We need to have a T.38 options for TCS, but may be before the
+       spandsp_mod has set it us. So, if not, we actually give to spandsp_mod. */
+    switch_t38_options_t *t38_options = (switch_t38_options_t *)switch_channel_get_private(m_fsChannel, "t38_options");
+    if (t38_options == NULL)
+      SetT38OptionsFromMediaFormat(t38);
+    else {
+      t38.SetOptionInteger("T38FaxVersion", t38_options->T38FaxVersion);
+      t38.SetOptionInteger("T38MaxBitRate", t38_options->T38MaxBitRate);
+      t38.SetOptionBoolean("T38FaxFillBitRemoval", t38_options->T38FaxFillBitRemoval);
+      t38.SetOptionBoolean("T38FaxTranscodingMMR", t38_options->T38FaxTranscodingMMR);
+      t38.SetOptionBoolean("T38FaxTranscodingJBIG", t38_options->T38FaxTranscodingJBIG);
+      t38.SetOptionValue("T38FaxRateManagement", t38_options->T38FaxRateManagement);
+      t38.SetOptionInteger("T38Version", t38_options->T38FaxMaxBuffer);
+      t38.SetOptionInteger("T38Version", t38_options->T38FaxMaxDatagram);
+      t38.SetOptionValue("T38FaxUdpEC", t38_options->T38FaxUdpEC);
+    }
+
+    m_switchMediaFormats += t38;
+#endif // HAVE_T38
 }
 
 
@@ -952,6 +975,23 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
         ownerCall.Transfer(msg->string_arg, GetOtherPartyConnection());
         break;
 
+#if HAVE_T38
+    case SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA:
+      {
+        PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+        if (other == NULL || !other->SwitchT38(true)) {
+            PTRACE(1, "mod_opal\tMode change request to T.38 failed");
+        }
+        break;
+      }
+
+    case SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION:
+        break;
+
+    case SWITCH_MESSAGE_INDICATE_UDPTL_MODE:
+        break;
+#endif // HAVE_T38
+
     default:
         PTRACE(3, "mod_opal\tReceived unhandled message " << msg->message_id << " on connection " << *this);
     }
@@ -975,6 +1015,76 @@ bool FSConnection::WaitForMedia()
     PTRACE(3, "mod_opal\tMedia started on connection " << *this);
     return true;
 }
+
+
+#if HAVE_T38
+void FSConnection::SetT38OptionsFromMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+    switch_t38_options_t *t38_options = (switch_t38_options_t *)switch_channel_get_private(m_fsChannel, "t38_options");
+    if (t38_options == NULL)
+      t38_options = (switch_t38_options_t *)switch_core_session_alloc(m_fsSession, sizeof(switch_t38_options_t));
+
+    PString value;
+    mediaFormat.GetOptionValue("T38FaxRateManagement", value);
+    t38_options->T38FaxRateManagement = switch_core_session_strdup(m_fsSession, value);
+
+    mediaFormat.GetOptionValue("T38FaxUdpEC", value);
+    t38_options->T38FaxUdpEC = switch_core_session_strdup(m_fsSession, value);
+
+    t38_options->T38MaxBitRate = mediaFormat.GetOptionInteger("T38MaxBitRate", 9600);
+    t38_options->T38FaxMaxBuffer = mediaFormat.GetOptionInteger("T38FaxMaxBuffer", 2000);
+    t38_options->T38FaxMaxDatagram = mediaFormat.GetOptionInteger("T38FaxMaxDatagram", 528);
+
+    t38_options->T38FaxFillBitRemoval = mediaFormat.GetOptionBoolean("T38FaxFillBitRemoval") ? SWITCH_TRUE : SWITCH_FALSE;
+    t38_options->T38FaxTranscodingMMR = mediaFormat.GetOptionBoolean("T38FaxTranscodingMMR") ? SWITCH_TRUE : SWITCH_FALSE;
+    t38_options->T38FaxTranscodingJBIG = mediaFormat.GetOptionBoolean("T38FaxTranscodingJBIG") ? SWITCH_TRUE : SWITCH_FALSE;
+
+    t38_options->T38VendorInfo = switch_core_session_strdup(m_fsSession, mediaFormat.GetOptionString("T38VendorInfo"));
+
+    //t38_options->remote_ip = switch_core_session_strdup(session, mediaFormat.something);
+    //t38_options->remote_port = mediaFormat.something;
+
+    switch_channel_set_private(m_fsChannel, "t38_options", t38_options);
+}
+
+
+void FSConnection::OnSwitchedT38(bool toT38, bool success)
+{
+    PTRACE(3, "mod_opal\tMode change request to fax succeeded");
+    OnSwitchingT38(toT38 && success);
+}
+
+
+void FSConnection::OnSwitchingT38(bool toT38)
+{
+    if (!toT38) {
+        switch_channel_set_private(m_fsChannel, "t38_options", NULL);
+        switch_channel_clear_app_flag_key("T38", m_fsChannel, CF_APP_T38);
+        switch_channel_clear_app_flag_key("T38", m_fsChannel, CF_APP_T38_REQ);
+        switch_channel_set_app_flag_key("T38", m_fsChannel, CF_APP_T38_FAIL);
+        return;
+    }
+
+    PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+    if (other == NULL)
+        return;
+
+    OpalMediaFormatList otherFormats = other->GetMediaFormats();
+    OpalMediaFormatList::const_iterator t38 = otherFormats.FindFormat(OpalT38);
+    if (t38 == otherFormats.end())
+        return;
+
+    SetT38OptionsFromMediaFormat(*t38);
+
+    switch_channel_set_variable(m_fsChannel, "has_t38", "true");
+    switch_channel_set_app_flag_key("T38", m_fsChannel, CF_APP_T38);
+
+    switch_channel_execute_on(m_fsChannel, "opal_execute_on_image");
+    switch_channel_api_on(m_fsChannel, "opal_api_on_image");
+
+    return;
+}
+#endif // HAVE_T38
 
 
 switch_status_t FSConnection::receive_event(switch_event_t *event)
@@ -1052,11 +1162,19 @@ PBoolean FSMediaStream::Open()
         return false;
 
     bool isAudio;
-    if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+    OpalMediaType mediaType = mediaFormat.GetMediaType();
+    if (mediaType == OpalMediaType::Audio())
         isAudio = true;
-    } else if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
+    else if (mediaType == OpalMediaType::Video())
         isAudio = false;
-    } else {
+#if HAVE_T38
+    else if (mediaType == OpalMediaType::Fax()) {
+        m_readFrame.flags = SFF_UDPTL_PACKET;
+        return true;
+    }
+#endif
+    else {
+        PTRACE(1, "mod_opal\tUnsupported media type: " << mediaType);
         return false;
     }
 
@@ -1083,13 +1201,13 @@ PBoolean FSMediaStream::Open()
                                    switch_core_session_get_pool(fsSession)) != SWITCH_STATUS_SUCCESS) {
             PTRACE(1, "mod_opal\t" << switch_channel_get_name(fsChannel)
                    << " cannot initialise " << (IsSink()? "read" : "write") << ' '
-                   << mediaFormat.GetMediaType() << " codec " << mediaFormat << " for connection " << *this);
+                   << mediaType << " codec " << mediaFormat << " for connection " << *this);
             switch_channel_hangup(fsChannel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
             return false;
         }
         PTRACE(2, "mod_opal\t" << switch_channel_get_name(fsChannel)
                << " unsupported ptime of " << ptime << " on " << (IsSink()? "read" : "write") << ' '
-               << mediaFormat.GetMediaType() << " codec " << mediaFormat << " for connection " << *this);
+               << mediaType << " codec " << mediaFormat << " for connection " << *this);
     }
 
     if (IsSink()) {
@@ -1102,7 +1220,7 @@ PBoolean FSMediaStream::Open()
                                        switch_core_session_get_pool(fsSession)) != SWITCH_STATUS_SUCCESS) {
                 PTRACE(1, "mod_opal\t" << switch_channel_get_name(fsChannel)
                        << " timer init failed on " << (IsSink()? "read" : "write") << ' '
-                       << mediaFormat.GetMediaType() << " codec " << mediaFormat << " for connection " << *this);
+                       << mediaType << " codec " << mediaFormat << " for connection " << *this);
                 switch_core_codec_destroy(m_switchCodec);
                 m_switchCodec = NULL;
                 return false;
@@ -1122,7 +1240,7 @@ PBoolean FSMediaStream::Open()
 
     PTRACE(3, "mod_opal\t" << switch_channel_get_name(fsChannel)
            << " initialised " << (IsSink()? "read" : "write") << ' '
-           << mediaFormat.GetMediaType() << " codec " << mediaFormat << " for connection " << *this);
+           << mediaType << " codec " << mediaFormat << " for connection " << *this);
 
     return OpalMediaStream::Open();
 }
@@ -1207,8 +1325,13 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
         }
     }
 
+    *frame = &m_readFrame;
+
     m_readFrame.packet    = m_readRTP.GetPointer();
     m_readFrame.packetlen = m_readRTP.GetHeaderSize() + m_readFrame.datalen;
+
+    if ((m_readFrame.flags & (SFF_UDPTL_PACKET|SFF_RAW_RTP)) != 0)
+        return SWITCH_STATUS_SUCCESS;
 
 #if IMPLEMENT_MULTI_FAME_AUDIO
     // Repackage frames in incoming packet to agree with what FS expects.
@@ -1228,8 +1351,6 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
                             m_readFrame.payload == RTP_DataFrame::CN ||
                             m_readFrame.payload == RTP_DataFrame::Cisco_CN ? SFF_CNG : 0;
 
-    *frame = &m_readFrame;
-
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1244,7 +1365,7 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
         return SWITCH_STATUS_SUCCESS;
     }
 
-    if ((frame->flags & SFF_RAW_RTP) != 0) {
+    if ((frame->flags & (SFF_UDPTL_PACKET|SFF_RAW_RTP)) != 0) {
         RTP_DataFrame rtp((const BYTE *)frame->packet, frame->packetlen, false);
         return mediaPatch->PushFrame(rtp) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
     }
@@ -1257,11 +1378,11 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
     /* Not sure what FS is going to give us!
        Suspect it depends on the mod on the other side sending it. */
     if (frame->timestamp != 0)
-      timestamp = frame->timestamp;
+        timestamp = frame->timestamp;
     else if (frame->samples != 0)
-      timestamp += frame->samples;
+        timestamp += frame->samples;
     else
-      timestamp += m_switchCodec->implementation->samples_per_packet;
+        timestamp += m_switchCodec->implementation->samples_per_packet;
     rtp.SetTimestamp(timestamp);
 
     return mediaPatch->PushFrame(rtp) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;

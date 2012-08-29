@@ -77,6 +77,12 @@
 
 #define MODNAME "mod_opal"
 
+#ifndef OPAL_CHECK_VERSION
+  #define OPAL_CHECK_VERSION(a,b,c) 0
+#endif
+
+#define HAVE_T38 (OPAL_CHECK_VERSION(3,11,2) && OPAL_T38_CAPABILITY)
+
 
 class FSEndPoint;
 class FSManager;
@@ -248,6 +254,10 @@ class FSConnection : public OpalLocalConnection
     virtual void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
     virtual OpalMediaFormatList GetMediaFormats() const;
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
+#if HAVE_T38
+    virtual void OnSwitchedT38(bool toT38, bool success);
+    virtual void OnSwitchingT38(bool toT38);
+#endif
 
     DECLARE_CALLBACK0(on_init);
     DECLARE_CALLBACK0(on_destroy);
@@ -294,6 +304,9 @@ class FSConnection : public OpalLocalConnection
   protected:
     void SetCodecs();
     bool WaitForMedia();
+#if HAVE_T38
+    void SetT38OptionsFromMediaFormat(const OpalMediaFormat & mediaFormat);
+#endif
 
     switch_status_t read_frame(const OpalMediaType & mediaType, switch_frame_t **frame, switch_io_flag_t flags);
     switch_status_t write_frame(const OpalMediaType & mediaType, const switch_frame_t *frame, switch_io_flag_t flags);
