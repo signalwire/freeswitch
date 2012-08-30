@@ -4774,25 +4774,25 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 		master = switch_core_alloc(globals.pool, sizeof(*master));
 		master->key = switch_core_strdup(globals.pool, key);
 		master->list = NULL;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "NEW MASTER %s %p\n", key, (void *) master);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "NEW MASTER %s %p\n", key, (void *) master);
 		switch_core_hash_insert(globals.mutex_hash, key, master);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "EXIST MASTER %s %p\n", key, (void *) master);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "EXIST MASTER %s %p\n", key, (void *) master);
 	}
 		
 	if (on) {
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "HIT ON\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "HIT ON\n");
 
 		switch_zmalloc(node, sizeof(*node));
 		node->uuid = strdup(switch_core_session_get_uuid(session));
 		node->next = NULL;
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "CHECK MASTER LIST %p\n", (void *) master->list);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHECK MASTER LIST %p\n", (void *) master->list);
 
 		for (np = master->list; np && np->next; np = np->next);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "HIT ON np %p\n", (void *) np);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "HIT ON np %p\n", (void *) np);
 
 		if (np) {
 			np->next = node;
