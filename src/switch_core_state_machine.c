@@ -349,7 +349,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
 	int silly = 0;
-	//	uint32_t new_loops = 5000;
+	uint32_t new_loops = 500;
 
 	/*
 	   Life of the channel. you have channel and pool in your session
@@ -481,17 +481,15 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		endstate = switch_channel_get_state(session->channel);
 
 		if (endstate == switch_channel_get_running_state(session->channel)) {
-			/**
 			if (endstate == CS_NEW) {
-				switch_cond_next();
+				switch_yield(20000);
 				switch_ivr_parse_all_events(session);
 				if (!--new_loops) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s Timeout waiting for next instruction in CS_NEW!\n",
-									  session->uuid_str);
-					switch_channel_hangup(session->channel, SWITCH_CAUSE_INVALID_CALL_REFERENCE);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s %s Abandoned\n",
+									  session->uuid_str, switch_core_session_get_name(session));
+					switch_channel_hangup(session->channel, SWITCH_CAUSE_WRONG_CALL_STATE);
 				}
 			} else {
-			**/
 				switch_ivr_parse_all_events(session);
 				switch_ivr_parse_all_events(session);
 
@@ -505,7 +503,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 				switch_ivr_parse_all_events(session);
 				switch_ivr_parse_all_events(session);
-				//}
+			}
 		}
 	}
   done:

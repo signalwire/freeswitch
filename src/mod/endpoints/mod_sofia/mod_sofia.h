@@ -362,7 +362,6 @@ struct mod_sofia_globals {
 	char guess_ip[80];
 	char hostname[512];
 	switch_queue_t *presence_queue;
-	switch_queue_t *mwi_queue;
 	switch_queue_t *msg_queue;
 	switch_thread_t *msg_queue_thread[SOFIA_MAX_MSG_QUEUE];
 	int msg_queue_len;
@@ -954,7 +953,7 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_
 char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len);
 void event_handler(switch_event_t *event);
 void sofia_presence_event_handler(switch_event_t *event);
-void sofia_presence_mwi_event_handler(switch_event_t *event);
+
 
 void sofia_presence_cancel(void);
 switch_status_t config_sofia(int reload, char *profile_name);

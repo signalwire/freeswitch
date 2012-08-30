@@ -1072,7 +1072,6 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_r_publish:
 	case nua_i_error:
 	case nua_i_active:
-	case nua_i_terminated:
 	case nua_r_set_params:
 	case nua_i_prack:
 	case nua_r_prack:
@@ -1094,6 +1093,11 @@ static void our_sofia_event_callback(nua_event_t event,
 
 		break;
 
+	case nua_i_terminated:
+		if (!session && nh) {
+			nua_handle_destroy(nh);
+		}
+		break;
 	case nua_r_cancel:
 		{
 			if (status > 299 && nh) {
@@ -1526,8 +1530,6 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	if (session) {
 		switch_ivr_parse_all_signal_data(session);
 	}
-
-	switch_os_yield();
 }
 
 
@@ -1565,7 +1567,6 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 		if (pop) {
 			sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
 			sofia_process_dispatch_event(&de);
-			switch_os_yield();
 		} else {
 			break;
 		}
@@ -1653,32 +1654,38 @@ void sofia_event_callback(nua_event_t event,
 {
 	sofia_dispatch_event_t *de;
 	int critical = (((SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues) * 900) / 1000);
-
+	int nuke = 0;
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
 
 	switch(event) {
 	case nua_i_terminated:
-		if (status > 300 && sofia_private && sofia_private->uuid) {
+        if ((status == 401 || status == 407) && sofia_private && sofia_private->uuid) {
 			switch_core_session_t *session;
 
-			if ((session = switch_core_session_force_locate(sofia_private->uuid))) {
-				switch_channel_t *channel = switch_core_session_get_channel(session);
-				switch_call_cause_t cause;
+			if ((session = switch_core_session_locate(sofia_private->uuid))) {
+				private_object_t *tech_pvt = switch_core_session_get_private(session);
 
-				cause = sofia_glue_sip_cause_to_freeswitch(status);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "detaching session %s\n", sofia_private->uuid);				
 
-				switch_channel_hangup(channel, cause);
+				tech_pvt->sofia_private = NULL;
+				tech_pvt->nh = NULL;
+				sofia_set_flag(tech_pvt, TFLAG_BYE);
+				switch_mutex_lock(profile->flag_mutex);
+				switch_core_hash_insert(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
+				switch_mutex_unlock(profile->flag_mutex);
 				switch_core_session_rwunlock(session);
-
-				if (status == 401 || status == 407) {
-					switch_channel_set_flag(channel, CF_NO_CDR);
-					switch_core_session_id_dec();
-				}
+			} else {
+				nuke++;
 			}
-
+		} else if (!sofia_private || zstr(sofia_private->uuid) || !switch_ivr_uuid_exists(sofia_private->uuid)) {
+			nuke++;
 		}
-		break;
+
+		if (nuke) {
+			nua_handle_destroy(nh);
+			goto end;
+		}
 	case nua_i_invite:
 	case nua_i_register:
 	case nua_i_options:
@@ -1722,6 +1729,7 @@ void sofia_event_callback(nua_event_t event,
 
 	if (event == nua_i_invite && !sofia_private) {
 		switch_core_session_t *session;
+		private_object_t *tech_pvt = NULL;
 
 		if (!(sofia_private = su_alloc(nh->nh_home, sizeof(*sofia_private)))) {
 			abort();
@@ -1732,6 +1740,38 @@ void sofia_event_callback(nua_event_t event,
 		sofia_private->is_static++;
 		nua_handle_bind(nh, sofia_private);
 
+
+		if (sip->sip_call_id && sip->sip_call_id->i_id) {
+			char *uuid;
+
+			switch_mutex_lock(profile->flag_mutex);
+			if ((uuid = (char *) switch_core_hash_find(profile->chat_hash, sip->sip_call_id->i_id))) {
+				switch_core_hash_delete(profile->chat_hash, sip->sip_call_id->i_id);
+			}
+			switch_mutex_unlock(profile->flag_mutex);
+
+			if (uuid) {
+				if ((session = switch_core_session_locate(uuid))) {
+					tech_pvt = switch_core_session_get_private(session);
+					switch_copy_string(sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(sofia_private->uuid));
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-attaching to session %s\n", sofia_private->uuid);
+					de->init_session = session;
+					sofia_clear_flag(tech_pvt, TFLAG_BYE);
+					tech_pvt->sofia_private = NULL;
+					tech_pvt->nh = NULL;
+					switch_core_session_queue_signal_data(session, de);
+					switch_core_session_rwunlock(session);
+					session = NULL;
+					free(uuid);
+					uuid = NULL;
+					goto end;
+				} else {
+					free(uuid);
+					uuid = NULL;
+				}
+			}
+		}
+
 		if (sofia_test_pflag(profile, PFLAG_CALLID_AS_UUID)) {
 			session = switch_core_session_request_uuid(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL, sip->sip_call_id->i_id);
 		} else {
@@ -1740,7 +1780,7 @@ void sofia_event_callback(nua_event_t event,
 
 		if (session) {
 			const char *channel_name = NULL;
-			private_object_t *tech_pvt = sofia_glue_new_pvt(session);
+			tech_pvt = sofia_glue_new_pvt(session);
 
 			if (sip->sip_from) {
 				channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
@@ -1751,8 +1791,14 @@ void sofia_event_callback(nua_event_t event,
 			if (sip->sip_referred_by) {
 				channel_name = url_set_chanvars(session, sip->sip_referred_by->b_url, sip_referred_by);
 			}
-
+			
 			sofia_glue_attach_private(session, profile, tech_pvt, channel_name);
+			
+			if (!tech_pvt->call_id && sip->sip_call_id && sip->sip_call_id->i_id) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
+				switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
+			}
 
 		} else {
 			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -1769,13 +1815,24 @@ void sofia_event_callback(nua_event_t event,
 			goto end;
 		}
 
+		
 		if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
+			char *uuid;
+
 			if (!switch_core_session_running(session) && !switch_core_session_started(session)) {
 				nua_handle_bind(nh, NULL);
 				sofia_private_free(sofia_private);
 				switch_core_session_destroy(&session);
 				nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 			}
+			switch_mutex_lock(profile->flag_mutex);
+			if ((uuid = switch_core_hash_find(profile->chat_hash, tech_pvt->call_id))) {
+				free(uuid);
+				uuid = NULL;
+				switch_core_hash_delete(profile->chat_hash, tech_pvt->call_id);
+			}
+			switch_mutex_unlock(profile->flag_mutex);
+
 			goto end;
 		}
 
@@ -1799,7 +1856,12 @@ void sofia_event_callback(nua_event_t event,
 	sofia_queue_message(de);
 
  end:
-	switch_os_yield();
+
+	if (profile->pres_type) {
+		switch_cond_next();
+	}
+
+
 	return;
 }
 
@@ -1839,7 +1901,7 @@ void event_handler(switch_event_t *event)
 			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "MWI-Message-Account", switch_event_get_header_nil(event, "orig-MWI-Message-Account"));
 			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", switch_event_get_header_nil(event, "orig-MWI-Voice-Message"));
 			/* we cannot use switch_event_fire, or otherwise we'll start an endless loop */
-			sofia_presence_mwi_event_handler(pevent);
+			sofia_presence_event_handler(pevent);
 			return;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nCannot inject MWI event\n");
@@ -8086,7 +8148,6 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	const char *from_tag = "";
 	char *sql = NULL;
 
-
 	profile->ib_calls++;
 
 
@@ -8631,11 +8692,6 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		switch_channel_set_flag(channel, CF_ZRTP_PASSTHRU_REQ);
 	}
 
-	if (!tech_pvt->call_id && sip->sip_call_id && sip->sip_call_id->i_id) {
-		tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
-		switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
-	}
-
 	if (sip->sip_subject && sip->sip_subject->g_string) {
 		switch_channel_set_variable(channel, "sip_subject", sip->sip_subject->g_string);
 	}
@@ -9078,10 +9134,9 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 	}
 
-
 	tech_pvt->sofia_private = sofia_private;
 	tech_pvt->nh = nh;
-	
+
 	if (profile->pres_type && sofia_test_pflag(profile, PFLAG_IN_DIALOG_CHAT)) {
 		sofia_presence_set_chat_hash(tech_pvt, sip);
 	}
