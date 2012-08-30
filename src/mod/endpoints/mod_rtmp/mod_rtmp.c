@@ -634,7 +634,7 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 
 	switch_core_hash_insert_wrlock(rsession->session_hash, switch_core_session_get_uuid(*newsession), tech_pvt, rsession->session_rwlock);
 		
-	if (switch_core_session_thread_launch(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_session_thread_launch(tech_pvt->session) == SWITCH_STATUS_FALSE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't spawn thread\n");	
 		goto fail;
 	}
@@ -647,7 +647,9 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 	
 fail:
 	if (*newsession) {
-		switch_core_session_destroy(newsession);
+		if (!switch_core_session_running(*newsession) && !switch_core_session_started(*newsession)) {
+			switch_core_session_destroy(newsession);
+		}
 	}
 	if (rsession) {
 		rtmp_session_rwunlock(rsession);
@@ -847,6 +849,7 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
+
 	pool = switch_core_session_get_pool(*newsession);	
  	channel = switch_core_session_get_channel(*newsession);
 	switch_channel_set_name(channel, switch_core_session_sprintf(*newsession, "rtmp/%s/%s", rsession->profile->name, number));
@@ -911,17 +914,21 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 		}
 	}
 
-	switch_core_hash_insert_wrlock(rsession->session_hash, switch_core_session_get_uuid(*newsession), tech_pvt, rsession->session_rwlock);
-
-	if (switch_core_session_thread_launch(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_session_thread_launch(tech_pvt->session) == SWITCH_STATUS_FALSE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't spawn thread\n");
 		goto fail;
 	}
 
+	switch_core_hash_insert_wrlock(rsession->session_hash, switch_core_session_get_uuid(*newsession), tech_pvt, rsession->session_rwlock);
+	
 	return SWITCH_CAUSE_SUCCESS;
 	
 fail:
-	switch_core_session_destroy(newsession);
+
+	if (!switch_core_session_running(*newsession) && !switch_core_session_started(*newsession)) {
+		switch_core_session_destroy(newsession);
+	}
+
 	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;	
 }
 
