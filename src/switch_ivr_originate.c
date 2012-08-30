@@ -694,8 +694,11 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 			}
 		}
 
-		if (!oglobals->early_ok && switch_channel_test_flag(originate_status[i].peer_channel, CF_EARLY_OK)) {
-			oglobals->early_ok = 1;
+		if (switch_channel_test_flag(originate_status[i].peer_channel, CF_EARLY_OK)) {
+			if (!oglobals->early_ok) {
+				oglobals->early_ok = 1;
+			}
+			switch_channel_clear_flag(originate_status[i].peer_channel, CF_EARLY_OK);
 		}
 
 		state = switch_channel_get_state(originate_status[i].peer_channel);
