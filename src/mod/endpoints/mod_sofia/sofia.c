@@ -1185,7 +1185,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_state(session, status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
 		break;
 	case nua_i_message:
-		sofia_presence_handle_sip_i_message(status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
+		sofia_presence_handle_sip_i_message(status, phrase, nua, profile, nh, session, sofia_private, sip, de, tags);
 		break;
 	case nua_i_info:
 		sofia_handle_sip_i_info(nua, profile, nh, session, sip, de, tags);
