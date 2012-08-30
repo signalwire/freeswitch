@@ -1242,6 +1242,7 @@ typedef enum {
 	CF_TRACKED,
 	CF_TRACKABLE,
 	CF_NO_CDR,
+	CF_EARLY_OK,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
