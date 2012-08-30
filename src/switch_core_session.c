@@ -1799,6 +1799,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 	flags[CF_SERVICE] = 0;
 	flags[CF_TAGGED] = 0;
 	flags[CF_WINNER] = 0;
+	flags[CF_EARLY_OK] = 0;
 	flags[CF_CONTROLLED] = 0;
 	flags[CF_SUSPEND] = 0;
 	flags[CF_EVENT_PARSE] = 0;
