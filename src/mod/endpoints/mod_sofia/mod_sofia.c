@@ -370,6 +370,7 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *uuid;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA DESTROY\n", switch_channel_get_name(channel));
 
@@ -378,6 +379,15 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->respond_phrase) {
 			switch_yield(100000);
 		}
+
+		switch_mutex_lock(tech_pvt->profile->flag_mutex);
+		if ((uuid = switch_core_hash_find(tech_pvt->profile->chat_hash, tech_pvt->call_id))) {
+			free(uuid);
+			uuid = NULL;
+			switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->call_id);
+		}
+		switch_mutex_unlock(tech_pvt->profile->flag_mutex);
+
 
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -408,7 +418,7 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 			sofia_profile_destroy(tech_pvt->profile);
 		}
 	}
-
+	
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -5524,7 +5534,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.auto_nat = (switch_nat_get_type() ? 1 : 0);
 
 	switch_queue_create(&mod_sofia_globals.presence_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
-	switch_queue_create(&mod_sofia_globals.mwi_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 
 	mod_sofia_globals.cpu_count = switch_core_cpu_count();
 	mod_sofia_globals.max_msg_queues = (mod_sofia_globals.cpu_count / 2) + 1;
@@ -5584,7 +5593,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind(modname, SWITCH_EVENT_MESSAGE_WAITING, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_mwi_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind(modname, SWITCH_EVENT_MESSAGE_WAITING, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
@@ -5707,10 +5716,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
 	switch_event_unbind_callback(sofia_presence_event_handler);
-	switch_event_unbind_callback(sofia_presence_mwi_event_handler);
 
 	switch_event_unbind_callback(general_event_handler);
 	switch_event_unbind_callback(event_handler);
+
+	switch_queue_push(mod_sofia_globals.presence_queue, NULL);
 
 	while (mod_sofia_globals.threads) {
 		switch_cond_next();
