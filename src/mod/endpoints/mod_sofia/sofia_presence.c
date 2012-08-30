@@ -4268,7 +4268,9 @@ void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip)
 
 void sofia_presence_handle_sip_i_message(int status,
 										 char const *phrase,
-										 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+										 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, 
+										 switch_core_session_t *session,
+										 sofia_private_t *sofia_private, sip_t const *sip,
 										 sofia_dispatch_event_t *de,
 										 tagi_t tags[])
 {
@@ -4284,6 +4286,12 @@ void sofia_presence_handle_sip_i_message(int status,
 		const char *us;
 		char network_ip[80];
 		int network_port = 0;
+		switch_channel_t *channel = NULL;
+
+
+		if (session) {
+			channel = switch_core_session_get_channel(session);
+		}
 
 		if ((us = sofia_glue_get_unknown_header(sip, "X-FS-Sending-Message")) && !strcmp(us, switch_core_get_uuid())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not sending message to ourselves!\n");
@@ -4379,6 +4387,11 @@ void sofia_presence_handle_sip_i_message(int status,
 				if (msg) {
 					switch_event_add_body(event, "%s", msg);
 				}
+
+				if (channel) {
+					switch_channel_event_set_data(channel, event);
+				}
+
 
 				if (sofia_test_pflag(profile, PFLAG_FIRE_MESSAGE_EVENTS)) { 
 					if (switch_event_dup(&event_dup, event) == SWITCH_STATUS_SUCCESS) {
