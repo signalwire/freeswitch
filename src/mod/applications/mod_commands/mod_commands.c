@@ -2738,6 +2738,21 @@ SWITCH_STANDARD_API(uuid_media_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(uuid_early_ok_function)
+{
+	char *uuid = (char *) cmd;
+	switch_core_session_t *xsession;
+
+	if (uuid && (xsession = switch_core_session_locate(uuid))) {
+		switch_channel_t *channel = switch_core_session_get_channel(xsession);
+		switch_channel_set_flag(channel, CF_EARLY_OK);
+		switch_core_session_rwunlock(xsession);
+	} else {
+		stream->write_function(stream, "-ERROR\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_STANDARD_API(uuid_pre_answer_function)
 {
@@ -5603,6 +5618,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "url_decode", "url decode a string", url_decode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "url_encode", "url encode a string", url_encode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param|attr] <name>");
+	SWITCH_ADD_API(commands_api_interface, "uuid_early_ok", "stop ignoring early media", uuid_early_ok_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user> <domain>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_answer", "answer", uuid_answer_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_audio", "uuid_audio", session_audio_function, AUDIO_SYNTAX);
@@ -5757,6 +5773,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_dump ::console::list_uuid");
 	switch_console_set_complete("add uuid_answer ::console::list_uuid");
 	switch_console_set_complete("add uuid_pre_answer ::console::list_uuid");
+	switch_console_set_complete("add uuid_early_ok ::console::list_uuid");
 	switch_console_set_complete("add uuid_exists ::console::list_uuid");
 	switch_console_set_complete("add uuid_fileman ::console::list_uuid");
 	switch_console_set_complete("add uuid_flush_dtmf ::console::list_uuid");
