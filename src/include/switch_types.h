@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Joseph Sullivan <jossulli@amazon.com>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  * switch_types.h -- Data Types
  *
@@ -900,6 +901,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_JITTER_BUFFER,
 	SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH,
 	SWITCH_MESSAGE_INDICATE_SIGNAL_DATA,
+	SWITCH_MESSAGE_INDICATE_MESSAGE,
 	SWITCH_MESSAGE_INDICATE_INFO,
 	SWITCH_MESSAGE_INDICATE_AUDIO_DATA,
 	SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE,
