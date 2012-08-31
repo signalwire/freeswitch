@@ -1161,33 +1161,25 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char title_b4[128] = "";
 	char title_aft[128 * 3 + 1] = "";
 	char *mp3, *m3u;
-
-	/*
-	   0  uuid  VARCHAR(255),
-	   1  created  VARCHAR(255),
-	   2  name  VARCHAR(255),
-	   3  state  VARCHAR(255),
-	   4  cid_name  VARCHAR(255),
-	   5  cid_num  VARCHAR(255),
-	   6  ip_addr  VARCHAR(255),
-	   7  dest  VARCHAR(255),
-	   8  application  VARCHAR(255),
-	   9  application_data  VARCHAR(255),
-	   10 read_codec  VARCHAR(255),
-	   11 read_rate  VARCHAR(255),
-	   12 write_codec  VARCHAR(255),
-	   13 write_rate  VARCHAR(255)
-	 */
+	const char *uuid = argv[0];
+	const char *created = argv[1];
+	const char *cid_name = argv[2];
+	const char *cid_num = argv[3];
+	const char *dest = argv[4];
+	const char *application = argv[5] ? argv[5] : "N/A";
+	const char *application_data = argv[6] ? argv[6] : "N/A";
+	const char *read_codec = argv[7];
+	const char *read_rate = argv[8];
 
 	holder->stream->write_function(holder->stream,
 								   "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>",
-								   argv[1], argv[4], argv[5], argv[7], argv[8] ? argv[8] : "N/A", argv[9] ? argv[9] : "N/A", argv[10], argv[11]);
+								   created, cid_name, cid_num, dest, application, application_data, read_codec, read_rate);
 
-	snprintf(title_b4, sizeof(title_b4), "%s <%s>", argv[4], argv[5]);
+	snprintf(title_b4, sizeof(title_b4), "%s <%s>", cid_name, cid_num);
 	switch_url_encode(title_b4, title_aft, sizeof(title_aft));
 
-	mp3 = switch_mprintf("http://%s:%s%s/mp3/%s/%s.mp3", holder->host, holder->port, holder->uri, argv[0], argv[5]);
-	m3u = switch_mprintf("http://%s:%s%s/m3u/mp3/%s/%s.mp3.m3u", holder->host, holder->port, holder->uri, argv[0], argv[5]);
+	mp3 = switch_mprintf("http://%s:%s%s/mp3/%s/%s.mp3", holder->host, holder->port, holder->uri, uuid, cid_num);
+	m3u = switch_mprintf("http://%s:%s%s/m3u/mp3/%s/%s.mp3.m3u", holder->host, holder->port, holder->uri, uuid, cid_num);
 
 	holder->stream->write_function(holder->stream, "[<a href=%s>mp3</a>] ", mp3);
 	holder->stream->write_function(holder->stream, "[<a href=%s>m3u</a>]</td></tr>\n", m3u);
@@ -1411,7 +1403,7 @@ void do_broadcast(switch_stream_handle_t *stream)
 void do_index(switch_stream_handle_t *stream)
 {
 	switch_cache_db_handle_t *db;
-	const char *sql = "select * from channels";
+	const char *sql = "select uuid, created, cid_name, cid_num, dest, application, application_data, read_codec, read_rate from channels";
 	struct holder holder;
 	char *errmsg;
 
