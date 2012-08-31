@@ -6327,6 +6327,17 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		{
 			const char *invite_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_from");
 			const char *invite_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_to");
+			const char *wait_for_ack = switch_channel_get_variable(channel, "sip_wait_for_aleg_ack");
+
+			if (switch_true(wait_for_ack)) {
+				switch_core_session_t *other_session;
+
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+					switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+					switch_core_session_rwunlock(other_session);
+				}
+			}
 
 			if (r_sdp && sofia_test_flag(tech_pvt, TFLAG_3PCC_INVITE) && !sofia_test_flag(tech_pvt, TFLAG_SDP)) {
 				sofia_set_flag(tech_pvt, TFLAG_SDP);
