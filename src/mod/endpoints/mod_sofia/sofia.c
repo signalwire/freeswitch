@@ -1069,6 +1069,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_r_bye:
 	case nua_r_unregister:
 	case nua_r_unsubscribe:
+	case nua_i_terminated:
 	case nua_r_publish:
 	case nua_i_error:
 	case nua_i_active:
@@ -1091,12 +1092,6 @@ static void our_sofia_event_callback(nua_event_t event,
 			}
 		}
 
-		break;
-
-	case nua_i_terminated:
-		if (!session && nh) {
-			nua_handle_destroy(nh);
-		}
 		break;
 	case nua_r_cancel:
 		{
@@ -1654,7 +1649,6 @@ void sofia_event_callback(nua_event_t event,
 {
 	sofia_dispatch_event_t *de;
 	int critical = (((SOFIA_MSG_QUEUE_SIZE * mod_sofia_globals.max_msg_queues) * 900) / 1000);
-	int nuke = 0;
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
 
@@ -1675,17 +1669,9 @@ void sofia_event_callback(nua_event_t event,
 				switch_core_hash_insert(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
 				switch_mutex_unlock(profile->flag_mutex);
 				switch_core_session_rwunlock(session);
-			} else {
-				nuke++;
 			}
-		} else if (!sofia_private || zstr(sofia_private->uuid) || !switch_ivr_uuid_exists(sofia_private->uuid)) {
-			nuke++;
 		}
-
-		if (nuke) {
-			nua_handle_destroy(nh);
-			goto end;
-		}
+		goto end;
 	case nua_i_invite:
 	case nua_i_register:
 	case nua_i_options:
