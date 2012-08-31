@@ -4402,6 +4402,12 @@ void sofia_presence_handle_sip_i_message(int status,
 					}
 				}
 
+				if (session) {
+					if (switch_event_dup(&event_dup, event) == SWITCH_STATUS_SUCCESS) {
+						switch_core_session_queue_event(session, &event_dup);
+					}
+				}
+				
 
 			} else {
 				abort();
