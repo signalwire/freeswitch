@@ -27,6 +27,7 @@
  * Ken Rice <krice at cometsig.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  *
  * mod_sofia.c -- SOFIA SIP Endpoint
@@ -2092,6 +2093,42 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 
 		}
+	case SWITCH_MESSAGE_INDICATE_MESSAGE:
+		{
+			char *ct = "text/plain";
+			int ok = 0;
+
+			if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+				ct = switch_core_session_sprintf(session, "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
+				ok = 1;
+			}
+
+			if (switch_stristr("send_message", tech_pvt->x_freeswitch_support_remote)) {
+				ok = 1;
+			}
+
+			if (switch_true(switch_channel_get_variable(channel, "fs_send_unsupported_message"))) {
+				ok = 1;
+			}
+
+			if (ok) {
+				const char *pl = NULL;
+
+				if (!zstr(msg->string_array_arg[2])) {
+					pl = msg->string_array_arg[2];
+				}
+
+				nua_message(tech_pvt->nh,
+						 SIPTAG_CONTENT_TYPE_STR(ct),
+						 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+						 TAG_IF(pl, SIPTAG_PAYLOAD_STR(pl)),
+						 TAG_END());
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+								  "%s send_message is not supported.\n", switch_channel_get_name(channel));
+			}
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_INFO:
 		{
 			char *ct = "freeswitch/data";
@@ -2106,7 +2143,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				ok = 1;
 			}
 
+			/* TODO: 1.4 remove this stanza */
 			if (switch_true(switch_channel_get_variable(channel, "fs_send_unspported_info"))) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+								  "fs_send_unspported_info is deprecated in favor of correctly spelled fs_send_unsupported_info\n");
+				ok = 1;
+			}
+			
+			if (switch_true(switch_channel_get_variable(channel, "fs_send_unsupported_info"))) {
 				ok = 1;
 			}
 			
@@ -5116,20 +5160,22 @@ static void general_event_handler(switch_event_t *event)
 			const char *user = switch_event_get_header(event, "user");
 			const char *host = switch_event_get_header(event, "host");
 			const char *subject = switch_event_get_header(event, "subject");
+			const char *uuid = switch_event_get_header(event, "uuid");
 			const char *body = switch_event_get_body(event);
+
 			sofia_profile_t *profile;
 			nua_handle_t *nh;
-			
-			if (profile_name && ct && user && host) {
+
+			if (!profile_name || !(profile = sofia_glue_find_profile(profile_name))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
+				return;
+			}
+
+			if (ct && user && host) {
 				char *id = NULL;
 				char *contact, *p;
 				switch_console_callback_match_t *list = NULL;
 				switch_console_callback_match_node_t *m;
-				
-				if (!(profile = sofia_glue_find_profile(profile_name))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
-					return;
-				}
 				
 				if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
@@ -5139,7 +5185,7 @@ static void general_event_handler(switch_event_t *event)
 				id = switch_mprintf("sip:%s@%s", user, host);
 
 				switch_assert(id);
-				
+
 				for (m = list->head; m; m = m->next) {
 					contact = sofia_glue_get_url_from_contact(m->val, 0);
 
@@ -5158,8 +5204,19 @@ static void general_event_handler(switch_event_t *event)
 				switch_console_free_matches(&list);
 
 				sofia_glue_release_profile(profile);
-			}
+			} else if (uuid && ct) {
+				switch_core_session_t *session;
+				private_object_t *tech_pvt;
 
+				if ((session = switch_core_session_locate(uuid))) {
+					if ((tech_pvt = switch_core_session_get_private(session))) {
+						nua_message(tech_pvt->nh,
+									SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body),
+									TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_IF(!zstr(subject), SIPTAG_SUBJECT_STR(subject)), TAG_END());
+					}
+					switch_core_session_rwunlock(session);
+				}
+			}
 		}
 		break;
 	case SWITCH_EVENT_SEND_INFO:
