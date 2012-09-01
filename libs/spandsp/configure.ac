@@ -19,9 +19,9 @@
 # @start 1
 
 AC_PREREQ([2.59])
-AC_INIT([spandsp], [0.0.6])
+AC_INIT([spandsp], [0.0.7])
 
-SPANDSP_LT_CURRENT=2
+SPANDSP_LT_CURRENT=3
 SPANDSP_LT_REVISION=0
 SPANDSP_LT_AGE=0
 
@@ -516,7 +516,7 @@ AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
 AM_CONDITIONAL([COND_AVX], [test "$enable_avx" = yes])
 
 if test "$enable_builtin_tiff" = "yes" ; then
-    abs_tiffdir="`cd $srcdir/../tiff-3.8.2/ && pwd`"
+    abs_tiffdir="`cd $srcdir/../tiff-4.0.2/ && pwd`"
     save_CFLAGS=$CFLAGS
     CFLAGS="$CFLAGS -I$abs_tiffdir/libtiff"
     AC_CHECK_HEADERS([tiffio.h])

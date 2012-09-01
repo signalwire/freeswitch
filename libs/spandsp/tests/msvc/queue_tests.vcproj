@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+tiff-4.0.2<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;..\..\src\spandsp;..\..\src;..\..\src\msvc;..;..\..\..\tiff-3.8.2\libtiff"
+				AdditionalIncludeDirectories=".;..\..\src\spandsp;..\..\src;..\..\src\msvc;..;..\..\..\tiff-4.0.2\libtiff"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;HAVE_CONFIG_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"

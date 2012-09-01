@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;..\..\src;..\..\src\msvc;..\..\src\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff"
+				AdditionalIncludeDirectories=".;..\..\src;..\..\src\msvc;..\..\src\spandsp;.\msvc;..\..\tiff-4.0.2\libtiff"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;HAVE_CONFIG_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"

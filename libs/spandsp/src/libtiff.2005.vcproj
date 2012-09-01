@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -92,7 +92,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -154,147 +154,147 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_aux.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_aux.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_close.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_close.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_codec.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_codec.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_color.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_color.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_compress.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_compress.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dir.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dir.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dirinfo.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dirinfo.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dirread.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dirread.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dirwrite.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dirwrite.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dumpmode.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dumpmode.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_error.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_error.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_extension.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_extension.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_fax3.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_fax3.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_fax3sm.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_fax3sm.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_flush.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_flush.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_getimage.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_getimage.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_jpeg.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_jpeg.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_luv.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_luv.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_lzw.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_lzw.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_next.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_next.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_ojpeg.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_ojpeg.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_open.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_open.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_packbits.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_packbits.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_pixarlog.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_pixarlog.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_predict.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_predict.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_print.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_print.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_read.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_read.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_strip.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_strip.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_swab.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_swab.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_thunder.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_thunder.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_tile.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_tile.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_unix.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_unix.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_version.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_version.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_warning.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_warning.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_write.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_write.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_zip.c"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_zip.c"
 				>
 			</File>
 		</Filter>
@@ -302,47 +302,47 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\t4.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\t4.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dir.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dir.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_fax3.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_fax3.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_predict.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_predict.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiff.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiff.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffconf.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffconf.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffio.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffio.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffio.hxx"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffio.hxx"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffiop.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffiop.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffvers.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffvers.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\uvcode.h"
+				RelativePath="..\..\tiff-4.0.2\libtiff\uvcode.h"
 				>
 			</File>
 		</Filter>

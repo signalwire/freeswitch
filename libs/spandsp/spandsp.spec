@@ -2,12 +2,12 @@
 
 Summary: A DSP library for telephony.
 Name: spandsp
-Version: 0.0.6
+Version: 0.0.7
 Release: 1
 License: LGPLv2 and GPLv2
 Group: System Environment/Libraries
 URL: http://www.soft-switch.org/spandsp
-Source: http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6.tar.gz
+Source: http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.7.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: libtiff-devel%{?_isa}
