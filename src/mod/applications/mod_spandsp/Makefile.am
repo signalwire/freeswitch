@@ -1,8 +1,8 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_spandsp
 
-TIFF_DIR=$(switch_srcdir)/libs/tiff-3.8.2
-TIFF_BUILDDIR=$(switch_builddir)/libs/tiff-3.8.2
+TIFF_DIR=$(switch_srcdir)/libs/tiff-4.0.2
+TIFF_BUILDDIR=$(switch_builddir)/libs/tiff-4.0.2
 TIFF_LA=$(TIFF_BUILDDIR)/libtiff/libtiff.la
 BUILD_CFLAGS=
 SPANDSP_DIR=$(switch_srcdir)/libs/spandsp
