@@ -39,7 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-3.8.2\libtiff&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-4.0.2\libtiff&quot;"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				WarnAsError="false"
@@ -104,7 +104,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-3.8.2\libtiff&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\spandsp\src\msvc&quot;;&quot;$(InputDir)..\..\..\..\libs\spandsp\src&quot;;&quot;$(InputDir)..\..\..\..\libs\tiff-4.0.2\libtiff&quot;"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
