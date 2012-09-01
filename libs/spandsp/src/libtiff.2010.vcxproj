@@ -75,8 +75,8 @@
       <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
     </BuildLog>
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h.vc" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
-if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h.vc" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
+      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
+if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
 </Command>
     </PreBuildEvent>
     <ClCompile>
@@ -92,8 +92,8 @@ if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(Projec
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h.vc" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
-if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h.vc" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
+      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
+if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
 </Command>
     </PreBuildEvent>
     <Midl>
@@ -115,8 +115,8 @@ if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(Projec
       <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
     </BuildLog>
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h.vc" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
-if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h.vc" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
+      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
+if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
 </Command>
     </PreBuildEvent>
     <ClCompile>
@@ -128,8 +128,8 @@ if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(Projec
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h.vc" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
-if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h.vc" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
+      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
+if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
 </Command>
     </PreBuildEvent>
     <Midl>
