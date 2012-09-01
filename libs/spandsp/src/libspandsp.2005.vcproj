@@ -27,7 +27,7 @@
       <Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff"
+				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff-4.0.2\libtiff"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,7 +61,7 @@
 			>
       <Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff"
+				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff-4.0.2\libtiff"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
