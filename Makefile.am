@@ -109,7 +109,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
-CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-3.8.2/libtiff
+CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-4.0.2/libtiff
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
@@ -617,8 +617,8 @@ sndfile-reconf:
 	cd libs/libsndfile && ./config.status
 
 tiff-reconf:
-	cd libs/tiff-3.8.2 && autoreconf -fi
-	cd libs/tiff-3.8.2 && sh ./configure.gnu
+	cd libs/tiff-4.0.2 && autoreconf -fi
+	cd libs/tiff-4.0.2 && sh ./configure.gnu
 	cd libs/spandsp && autoreconf -fi
 	cd libs/spandsp && sh ./configure.gnu
 	make mod_voipcodecs-clean
