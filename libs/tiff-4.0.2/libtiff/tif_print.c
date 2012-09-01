@@ -47,6 +47,8 @@ static const char *photoNames[] = {
     "YCbCr",					/* PHOTOMETRIC_YCBCR */
     "7 (0x7)",
     "CIE L*a*b*",				/* PHOTOMETRIC_CIELAB */
+    "ICC L*a*b*",				/* PHOTOMETRIC_ICCLAB */
+    "ITU L*a*b*" 				/* PHOTOMETRIC_ITULAB */
 };
 #define	NPHOTONAMES	(sizeof (photoNames) / sizeof (photoNames[0]))
 
@@ -580,7 +582,7 @@ TIFFPrintDirectory(TIFF* tif, FILE* fd, long flags)
 				continue;
 
 			if(fip->field_passcount) {
-				if (fip->field_readcount == TIFF_VARIABLE2 ) {
+				if (fip->field_readcount == TIFF_VARIABLE ) {
 					if(TIFFGetField(tif, tag, &value_count, &raw_data) != 1)
 						continue;
 				} else if (fip->field_readcount == TIFF_VARIABLE2 ) {
