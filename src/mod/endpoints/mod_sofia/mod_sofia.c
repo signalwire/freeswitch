@@ -381,14 +381,15 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 			switch_yield(100000);
 		}
 
-		switch_mutex_lock(tech_pvt->profile->flag_mutex);
-		if ((uuid = switch_core_hash_find(tech_pvt->profile->chat_hash, tech_pvt->call_id))) {
-			free(uuid);
-			uuid = NULL;
-			switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->call_id);
+		if (!zstr(tech_pvt->call_id)) {
+			switch_mutex_lock(tech_pvt->profile->flag_mutex);
+			if ((uuid = switch_core_hash_find(tech_pvt->profile->chat_hash, tech_pvt->call_id))) {
+				free(uuid);
+				uuid = NULL;
+				switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->call_id);
+			}
+			switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 		}
-		switch_mutex_unlock(tech_pvt->profile->flag_mutex);
-
 
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
