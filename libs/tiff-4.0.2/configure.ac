@@ -29,6 +29,8 @@ AC_INIT([LibTIFF Software],[4.0.2],[tiff@lists.maptools.org],[tiff])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(m4)
 AC_LANG(C)
+AC_PROG_LIBTOOL
+m4_include(m4/acinclude.m4)
 
 dnl Compute the canonical host (run-time) system type variable
 AC_CANONICAL_HOST
