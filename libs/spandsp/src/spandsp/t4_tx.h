@@ -28,8 +28,6 @@
 #if !defined(_SPANDSP_T4_TX_H_)
 #define _SPANDSP_T4_TX_H_
 
-#define SPANDSP_SUPPORT_TIFF_FX
-
 /*! This function is a callback from the image decoders, to read the unencoded bi-level image,
     row by row. It is called for each row, with len set to the number of bytes per row expected.
     \return len for OK, or zero to indicate the end of the image data. */
@@ -41,8 +39,7 @@ typedef int (*t4_row_read_handler_t)(void *user_data, uint8_t buf[], size_t len)
 */
 typedef struct t4_tx_state_s t4_tx_state_t;
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
-/* TIFF-FX related extensions to the tag set supported by libtiff */
+/* TIFF-FX related extensions to the TIFF tag set */
 
 /*
 Indexed(346) = 0, 1.                                                SHORT
@@ -55,7 +52,7 @@ Indexed(346) = 0, 1.                                                SHORT
     profile supports palette-color images with the ITULAB encoding.
     The SamplesPerPixel value must be 1.
 
-GlobalParametersIFD (400)                                            IFD
+GlobalParametersIFD (400)                                           IFD/LONG
     An IFD containing global parameters. It is recommended that a TIFF
     writer place this field in the first IFD, where a TIFF reader would
     find it quickly.
@@ -177,6 +174,9 @@ ImageLayer(34732)                                                   LONG
         3: ...
 */
 
+/* Define the TIFF/FX tags to extend libtiff, when using a version of libtiff where this
+   stuff has not been merged. */
+#if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  !defined(TIFFTAG_FAXPROFILE)
 #define TIFFTAG_INDEXED                 346
 #define TIFFTAG_GLOBALPARAMETERSIFD     400
 #define TIFFTAG_PROFILETYPE             401
