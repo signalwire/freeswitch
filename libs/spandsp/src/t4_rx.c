@@ -81,6 +81,10 @@
 /*! The number of centimetres in one inch */
 #define CM_PER_INCH                 2.54f
 
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+extern TIFFFieldArray tiff_fx_field_array;
+#endif
+
 SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding)
 {
     switch (encoding)
@@ -126,17 +130,20 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     /* Prepare the directory entry fully before writing the image, or libtiff complains */
     switch (t->output_encoding)
     {
-    case T4_COMPRESSION_ITU_T6:
-        output_compression = COMPRESSION_CCITT_T6;
-        output_t4_options = 0;
+    case T4_COMPRESSION_ITU_T4_1D:
+    default:
+        output_compression = COMPRESSION_CCITT_T4;
+        output_t4_options = GROUP3OPT_FILLBITS;
         break;
     case T4_COMPRESSION_ITU_T4_2D:
         output_compression = COMPRESSION_CCITT_T4;
         output_t4_options = GROUP3OPT_FILLBITS | GROUP3OPT_2DENCODING;
         break;
-    default:
-        output_compression = COMPRESSION_CCITT_T4;
-        output_t4_options = GROUP3OPT_FILLBITS;
+    case T4_COMPRESSION_ITU_T6:
+        output_compression = COMPRESSION_CCITT_T6;
+        break;
+    case T4_COMPRESSION_ITU_T85:
+        output_compression = COMPRESSION_T85;
         break;
     }
 
@@ -146,10 +153,21 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     case COMPRESSION_CCITT_T4:
         TIFFSetField(t->tiff_file, TIFFTAG_T4OPTIONS, output_t4_options);
         TIFFSetField(t->tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);
+        TIFFSetField(t->tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
         break;
     case COMPRESSION_CCITT_T6:
         TIFFSetField(t->tiff_file, TIFFTAG_T6OPTIONS, 0);
         TIFFSetField(t->tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);
+        TIFFSetField(t->tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
+        break;
+    case COMPRESSION_T85:
+        TIFFSetField(t->tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);
+        TIFFSetField(t->tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
+        break;
+    default:
+        TIFFSetField(t->tiff_file,
+                     TIFFTAG_ROWSPERSTRIP,
+                     TIFFDefaultStripSize(t->tiff_file, 0));
         break;
     }
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
@@ -162,21 +180,10 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     TIFFSetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, 1);
     TIFFSetField(t->tiff_file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(t->tiff_file, TIFFTAG_SAMPLESPERPIXEL, 1);
-    if (output_compression == COMPRESSION_CCITT_T4
-        ||
-        output_compression == COMPRESSION_CCITT_T6)
-    {
-        TIFFSetField(t->tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
-    }
-    else
-    {
-        TIFFSetField(t->tiff_file,
-                     TIFFTAG_ROWSPERSTRIP,
-                     TIFFDefaultStripSize(t->tiff_file, 0));
-    }
     TIFFSetField(t->tiff_file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     TIFFSetField(t->tiff_file, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISWHITE);
     TIFFSetField(t->tiff_file, TIFFTAG_FILLORDER, FILLORDER_LSB2MSB);
+    /* TIFFTAG_STRIPBYTECOUNTS and TIFFTAG_STRIPOFFSETS are added automatically */
 
     x_resolution = s->metadata.x_resolution/100.0f;
     y_resolution = s->metadata.y_resolution/100.0f;
@@ -266,6 +273,13 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         TIFFSetField(t->tiff_file, TIFFTAG_IMAGELENGTH, t85_decode_get_image_length(&s->decoder.t85));
         break;
     }
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+    if (s->current_page == 0)
+    {
+        /* Create a placeholder for the global parameters IFD, to be filled in later */
+        TIFFSetField(t->tiff_file, TIFFTAG_GLOBALPARAMETERSIFD, 0);
+    }
+#endif
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -280,15 +294,45 @@ static int open_tiff_output_file(t4_rx_state_t *s, const char *file)
 
 static int write_tiff_image(t4_rx_state_t *s)
 {
-    if (s->tiff.image_buffer == NULL  ||  s->tiff.image_size <= 0)
+    t4_rx_tiff_state_t *t;
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+    uint64_t offset;
+#endif
+
+    t = &s->tiff;
+    if (t->image_buffer == NULL  ||  t->image_size <= 0)
         return -1;
     /* Set up the TIFF directory info... */
     set_tiff_directory_info(s);
     /* ...and then write the image... */
-    if (TIFFWriteEncodedStrip(s->tiff.tiff_file, 0, s->tiff.image_buffer, s->tiff.image_size) < 0)
-        span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", s->tiff.file);
+    if (TIFFWriteEncodedStrip(t->tiff_file, 0, t->image_buffer, t->image_size) < 0)
+        span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", t->file);
     /* ...then the directory entry, and libtiff is happy. */
-    TIFFWriteDirectory(s->tiff.tiff_file);
+    if (!TIFFWriteDirectory(t->tiff_file))
+        span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", t->file, s->current_page);
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+    if (s->current_page == 0)
+    {
+        if (!TIFFCreateCustomDirectory(t->tiff_file, &tiff_fx_field_array))
+        {
+            TIFFSetField(t->tiff_file, TIFFTAG_FAXPROFILE, PROFILETYPE_G3_FAX);
+            TIFFSetField(t->tiff_file, TIFFTAG_PROFILETYPE, FAXPROFILE_S);
+            TIFFSetField(t->tiff_file, TIFFTAG_VERSIONYEAR, "1998");
+
+            offset = 0;
+            if (!TIFFWriteCustomDirectory(t->tiff_file, &offset))
+                printf("Failed to write custom directory.\n");
+
+            /* Now go back and patch in the pointer to the new IFD */
+            if (!TIFFSetDirectory(t->tiff_file, s->current_page))
+                printf("Failed to set directory.\n");
+            if (!TIFFSetField(t->tiff_file, TIFFTAG_GLOBALPARAMETERSIFD, offset))
+                printf("Failed to set field.\n");
+            if (!TIFFWriteDirectory(t->tiff_file))
+                span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", t->file, s->current_page);
+        }
+    }
+#endif
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -308,9 +352,11 @@ static int close_tiff_output_file(t4_rx_state_t *s)
            need to set the correct total page count associated with each page. */
         for (i = 0;  i < s->current_page;  i++)
         {
-            TIFFSetDirectory(t->tiff_file, (tdir_t) i);
+            if (!TIFFSetDirectory(t->tiff_file, (tdir_t) i))
+                span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to set directory to page %d.\n", s->tiff.file, i);
             TIFFSetField(t->tiff_file, TIFFTAG_PAGENUMBER, i, s->current_page);
-            TIFFWriteDirectory(t->tiff_file);
+            if (!TIFFWriteDirectory(t->tiff_file))
+                span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", s->tiff.file, i);
         }
     }
     TIFFClose(t->tiff_file);
