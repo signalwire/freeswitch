@@ -926,7 +926,14 @@ static void print_banner(FILE *stream)
 #include <cc.h>
 
 #ifdef WIN32
-	fprintf(stream, "%s%s\n%s\n", banner, cc, inf);
+	/* Print banner in yellow with blue background */
+	SetConsoleTextAttribute(hStdout, ESL_SEQ_FYELLOW | BACKGROUND_BLUE);
+	WriteFile(hStdout, banner, (DWORD) strlen(banner), NULL, NULL);
+	WriteFile(hStdout, cc, (DWORD) strlen(cc), NULL, NULL);
+	SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+
+	/* Print the rest info in default colors */
+	fprintf(stream, "\n%s\n", inf);
 #else
 	fprintf(stream,
 			"%s%s%s%s%s%s\n%s\n", 
