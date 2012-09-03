@@ -106,7 +106,6 @@ static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
     {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageLayer"},
 };
 
-#if 0
 static TIFFField tiff_fx_tiff_fields[] =
 {
     { TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, 0, TIFF_SETGET_UINT16, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "Indexed" },
@@ -124,7 +123,6 @@ static TIFFField tiff_fx_tiff_fields[] =
 };
 
 TIFFFieldArray tiff_fx_field_array = { tfiatOther, 0, 12, tiff_fx_tiff_fields };
-#endif
 
 static TIFFExtendProc _ParentExtender = NULL;
 
