@@ -31,6 +31,7 @@
  * Rupa Schomaker <rupa@rupa.com>
  * David Weekly <david@weekly.org>
  * Joao Mesquita <jmesquita@gmail.com>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  * mod_conference.c -- Software Conference Bridge
  *
@@ -334,6 +335,7 @@ typedef struct conference_obj {
 	switch_byte_t *not_talking_buf;
 	uint32_t not_talking_buf_len;
 	int pin_retries;
+	int broadcast_chat_messages;
 	int comfort_noise_level;
 	int is_recording;
 	int record_count;
@@ -3587,6 +3589,9 @@ static void conference_loop_output(conference_member_t *member)
 						switch_event_del_header(event, "to");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM,
 												"to", "%s+%s@%s", CONF_CHAT_PROTO, member->conference->name, member->conference->domain);
+					} else {
+						switch_event_del_header(event, "to");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", member->conference->name);
 					}
 					chat_send(event);
 				}
@@ -4465,6 +4470,51 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 	status = SWITCH_STATUS_SUCCESS;
 
 	return status;
+}
+
+/* send a message to every member of the conference */
+static void chat_message_broadcast(conference_obj_t *conference, switch_stream_handle_t *stream, const char *data, const char *chat_from)
+{
+	conference_member_t *member = NULL;
+	char *argv[2] = { 0 };
+	char *dup = NULL;
+	switch_core_session_message_t msg = { 0 };
+
+	switch_assert(conference != NULL);
+	switch_assert(stream != NULL);
+
+	if (!(dup = strdup(chat_from))) {
+		return;
+	}
+	switch_separate_string(dup, '@', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	msg.message_id = SWITCH_MESSAGE_INDICATE_MESSAGE;
+	msg.string_array_arg[2] = data;
+	msg.from = __FILE__;
+
+	switch_mutex_lock(conference->member_mutex);
+	for (member = conference->members; member; member = member->next) {
+		if (member->session && !switch_test_flag(member, MFLAG_NOCHANNEL)) {
+			switch_core_session_t *lsession = NULL;
+			switch_channel_t *channel = NULL;
+			switch_caller_profile_t *caller_profile = NULL;
+
+			lsession = member->session;
+			channel = switch_core_session_get_channel(lsession);
+			caller_profile = switch_channel_get_caller_profile(channel);
+
+			if (!strcmp(argv[0], caller_profile->username)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "not sending message to sender [%s]\n", chat_from);
+				continue;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sending message to [%s]\n", caller_profile->username);
+			}
+
+			switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_rwunlock(lsession);
+		}
+	}
+	switch_mutex_unlock(conference->member_mutex);
 }
 
 /* execute a callback for every member of the conference */
@@ -7849,7 +7899,9 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 	if (body != NULL && (lbuf = strdup(body))) {
 		/* special case list */
-		if (switch_stristr("list", lbuf)) {
+		if (conference->broadcast_chat_messages) {
+			chat_message_broadcast(conference, &stream, body, from);
+		} else if (switch_stristr("list", lbuf)) {
 			conference_list_pretty(conference, &stream);
 			/* provide help */
 		} else {
@@ -7934,6 +7986,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	uint32_t announce_count = 0;
 	char *maxmember_sound = NULL;
 	uint32_t rate = 8000, interval = 20;
+	int broadcast_chat_messages = 0;
 	int comfort_noise_level = 0;
 	int pin_retries = 3;
 	int ivr_dtmf_timeout = 500;
@@ -8119,6 +8172,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
                                }
 			} else if (!strcasecmp(var, "moderator-controls") && !zstr(val)) {
 				moderator_controls = val;
+			} else if (!strcasecmp(var, "broadcast-chat-messages") && !zstr(val) && switch_true(val)) {
+				broadcast_chat_messages = 1;
 			} else if (!strcasecmp(var, "comfort-noise") && !zstr(val)) {
 				int tmp;
 				tmp = atoi(val);
@@ -8216,6 +8271,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);
 	conference->caller_controls = switch_core_strdup(conference->pool, caller_controls);
 	conference->moderator_controls = switch_core_strdup(conference->pool, moderator_controls);
+	conference->broadcast_chat_messages = broadcast_chat_messages;
+
 	if (outcall_templ) {
 		conference->outcall_templ = switch_core_strdup(conference->pool, outcall_templ);
 	}
