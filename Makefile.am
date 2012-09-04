@@ -619,8 +619,7 @@ sndfile-reconf:
 tiff-reconf:
 	cd libs/tiff-4.0.2 && autoreconf -fi
 	cd libs/tiff-4.0.2 && sh ./configure.gnu
-	cd libs/spandsp && autoreconf -fi
-	cd libs/spandsp && sh ./configure.gnu
+	cd libs/tiff-4.0.2 && make
 
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
