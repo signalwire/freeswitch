@@ -223,7 +223,7 @@ static ftdm_status_t parse_spanmap(const char *_spanmap, ftdm_span_t *span)
 		}
 	}
 
-	if (!name || logical_span_id < 0) {
+	if (!name) {
 		ftdm_log(FTDM_LOG_ERROR, "Invalid spanmap syntax %s\n", _spanmap);
 		ret = FTDM_FAIL;
 		goto done;
