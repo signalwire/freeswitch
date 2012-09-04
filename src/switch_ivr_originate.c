@@ -703,6 +703,13 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 			switch_channel_clear_flag(originate_status[i].peer_channel, CF_EARLY_OK);
 		}
 
+		if (caller_channel && switch_channel_test_flag(caller_channel, CF_EARLY_OK)) {
+			if (!oglobals->early_ok) {
+				oglobals->early_ok = 1;
+			}
+			switch_channel_clear_flag(caller_channel, CF_EARLY_OK);
+		}
+
 		state = switch_channel_get_state(originate_status[i].peer_channel);
 		if (state >= CS_HANGUP || state == CS_RESET || switch_channel_test_flag(originate_status[i].peer_channel, CF_TRANSFER) ||
 			switch_channel_test_flag(originate_status[i].peer_channel, CF_REDIRECT) ||
