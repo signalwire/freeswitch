@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005/2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -23,16 +23,14 @@
  *
  * This module (mod_gsmopen) has been contributed by:
  *
- * Giovanni Maruzzelli (gmaruzz@gmail.com)
+ * Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
+ * Maintainer: Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
- * Further Contributors:
- *
- *
- *
- * mod_gsmopen.c -- GSM compatible Endpoint Module
+ * mod_gsmopen.cpp -- GSM Modem compatible Endpoint Module
  *
  */
+
 
 #define __STDC_LIMIT_MACROS
 
@@ -99,9 +97,9 @@
 #define 	PROTOCOL_FBUS2   1
 #define 	PROTOCOL_NO_SERIAL   3
 
-#define		AT_BUFSIZ 8192
 //FIXME FIXME FIXME #define AT_MESG_MAX_LENGTH 2048 /* much more than 10 SMSs */
 #define AT_MESG_MAX_LENGTH 2048	/* much more than 10 SMSs */
+#define		AT_BUFSIZ AT_MESG_MAX_LENGTH
 //FIXME FIXME FIXME #define AT_MESG_MAX_LINES 256   /* 256 lines, so it can contains the results of AT+CLAC, that gives all the AT commands the phone supports */
 #define AT_MESG_MAX_LINES 20	/* 256 lines, so it can contains the results of AT+CLAC, that gives all the AT commands the phone supports */
 
@@ -115,7 +113,7 @@
 #endif
 
 #ifndef GSMOPEN_SVN_VERSION
-#define GSMOPEN_SVN_VERSION SWITCH_VERSION_REVISION
+#define GSMOPEN_SVN_VERSION SWITCH_VERSION_FULL
 #endif /* GSMOPEN_SVN_VERSION */
 
 #include "ctb-0.16/ctb.h"

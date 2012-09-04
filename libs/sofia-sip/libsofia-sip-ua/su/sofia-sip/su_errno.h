@@ -53,11 +53,6 @@ SOFIAPUBFUN int su_errno(void);
 /** Set the su error. */
 SOFIAPUBFUN int su_seterrno(int);
 
-#if !SU_HAVE_WINSOCK
-#define su_errno() (errno)
-#define su_seterrno(n) ((errno = (n)), -1)
-#endif
-
 #if defined(__APPLE_CC__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__)
 #ifndef EBADMSG
 #define EBADMSG EFAULT

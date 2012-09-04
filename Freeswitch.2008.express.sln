@@ -542,6 +542,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_lcr", "src\mod\applicat
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspandsp", "libs\spandsp\src\libspandsp.2008.vcproj", "{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}"
 	ProjectSection(ProjectDependencies) = postProject
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A} = {FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}
 		{329A6FA0-0FCC-4435-A950-E670AEFA9838} = {329A6FA0-0FCC-4435-A950-E670AEFA9838}
 		{DEE932AB-5911-4700-9EEB-8C7090A0A330} = {DEE932AB-5911-4700-9EEB-8C7090A0A330}
 		{401A40CD-5DB4-4E34-AC68-FA99E9FAC014} = {401A40CD-5DB4-4E34-AC68-FA99E9FAC014}
@@ -666,6 +667,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_directory", "src\mod\ap
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ldns", "libs\win32\ldns\ldns-lib\ldns-lib.2008.vcproj", "{23B4D303-79FC-49E0-89E2-2280E7E28940}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download libjpeg", "libs\win32\Download libjpeg.2008.vcproj", "{21A7DA70-555E-49FA-942B-D84A38B61243}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "libs\win32\libjpeg\libjpeg.2008.vcproj", "{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{21A7DA70-555E-49FA-942B-D84A38B61243} = {21A7DA70-555E-49FA-942B-D84A38B61243}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -2138,6 +2146,24 @@ Global
 		{23B4D303-79FC-49E0-89E2-2280E7E28940}.Release|Win32.ActiveCfg = Release|Win32
 		{23B4D303-79FC-49E0-89E2-2280E7E28940}.Release|Win32.Build.0 = Release|Win32
 		{23B4D303-79FC-49E0-89E2-2280E7E28940}.Release|x64.ActiveCfg = Release|Win32
+		{21A7DA70-555E-49FA-942B-D84A38B61243}.All|Win32.ActiveCfg = Release|Win32
+		{21A7DA70-555E-49FA-942B-D84A38B61243}.All|Win32.Build.0 = Release|Win32
+		{21A7DA70-555E-49FA-942B-D84A38B61243}.All|x64.ActiveCfg = Release|Win32
+		{21A7DA70-555E-49FA-942B-D84A38B61243}.Debug|Win32.ActiveCfg = Debug|Win32
+		{21A7DA70-555E-49FA-942B-D84A38B61243}.Debug|Win32.Build.0 = Debug|Win32
+		{21A7DA70-555E-49FA-942B-D84A38B61243}.Debug|x64.ActiveCfg = Debug|Win32
+		{21A7DA70-555E-49FA-942B-D84A38B61243}.Release|Win32.ActiveCfg = Release|Win32
+		{21A7DA70-555E-49FA-942B-D84A38B61243}.Release|Win32.Build.0 = Release|Win32
+		{21A7DA70-555E-49FA-942B-D84A38B61243}.Release|x64.ActiveCfg = Release|Win32
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}.All|Win32.ActiveCfg = Debug|Win32
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}.All|Win32.Build.0 = Debug|Win32
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}.All|x64.ActiveCfg = Debug|Win32
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}.Debug|Win32.Build.0 = Debug|Win32
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}.Debug|x64.ActiveCfg = Debug|Win32
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}.Release|Win32.ActiveCfg = Release|Win32
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}.Release|Win32.Build.0 = Release|Win32
+		{FE02CD06-DD97-489C-8F61-B5E7F89BCC0A}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

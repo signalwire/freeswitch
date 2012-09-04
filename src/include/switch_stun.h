@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -57,6 +57,8 @@ SWITCH_BEGIN_EXTERN_C
 	SWITCH_STUN_DATA_INDICATION = 0x0115
 } switch_stun_message_t;
 
+#define STUN_MAGIC_COOKIE 0x2112A442
+
 typedef enum {
 	SWITCH_STUN_ATTR_MAPPED_ADDRESS = 0x0001,	/* Address */
 	SWITCH_STUN_ATTR_RESPONSE_ADDRESS = 0x0002,	/* Address */
@@ -77,7 +79,8 @@ typedef enum {
 	SWITCH_STUN_ATTR_DESTINATION_ADDRESS = 0x0011,	/* Address */
 	SWITCH_STUN_ATTR_SOURCE_ADDRESS2 = 0x0012,	/* Address */
 	SWITCH_STUN_ATTR_DATA = 0x0013,	/* ByteString */
-	SWITCH_STUN_ATTR_OPTIONS = 0x8001	/* UInt32 */
+	SWITCH_STUN_ATTR_OPTIONS = 0x8001,	/* UInt32 */
+	SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS = 0x0020,   /* Address */  
 } switch_stun_attribute_t;
 
 typedef enum {
@@ -101,7 +104,8 @@ typedef enum {
 typedef struct {
 	uint16_t type;
 	uint16_t length;
-	char id[16];
+	uint32_t cookie;
+	char id[12];
 } switch_stun_packet_header_t;
 
 typedef struct {
@@ -185,6 +189,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_st
   \return true or false
 */
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_packet_t *packet, char *username, uint16_t ulen);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_password(switch_stun_packet_t *packet, char *password, uint16_t ulen);
 
 
 /*!
@@ -195,6 +200,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
   \return true or false
 */
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port);
 
 /*!
   \brief Perform a stun lookup

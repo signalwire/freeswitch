@@ -76,7 +76,7 @@
     </BuildLog>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;..\..\src\spandsp;..\..\src;..\..\src\msvc;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\..\src\spandsp;..\..\src;..\..\src\msvc;.\spandsp;.\msvc;..\..\tiff-4.0.2\libtiff;..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -97,7 +97,7 @@
       <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
     </BuildLog>
     <ClCompile>
-      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\tiff-4.0.2\libtiff;..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
@@ -118,7 +118,7 @@
     </BuildLog>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\tiff-4.0.2\libtiff;..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -139,7 +139,7 @@
       <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
     </BuildLog>
     <ClCompile>
-      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\tiff-4.0.2\libtiff;..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
@@ -155,6 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ademco_contactid.c" />
     <ClCompile Include="adsi.c" />
     <ClCompile Include="async.c" />
     <ClCompile Include="at_interpreter.c" />
@@ -185,6 +186,7 @@
     <ClCompile Include="gsm0610_rpe.c" />
     <ClCompile Include="gsm0610_short_term.c" />
     <ClCompile Include="hdlc.c" />
+    <ClCompile Include="image_translate.c" />
     <ClCompile Include="ima_adpcm.c" />
     <ClCompile Include="logging.c" />
     <ClCompile Include="lpc10_analyse.c" />
@@ -206,7 +208,10 @@
     <ClCompile Include="super_tone_rx.c" />
     <ClCompile Include="super_tone_tx.c" />
     <ClCompile Include="swept_tone.c" />
+    <ClCompile Include="t42.c" />
     <ClCompile Include="t4_rx.c" />
+    <ClCompile Include="t4_t6_decode.c" />
+    <ClCompile Include="t4_t6_encode.c" />
     <ClCompile Include="t4_tx.c" />
     <ClCompile Include="t30.c" />
     <ClCompile Include="t30_api.c" />
@@ -217,6 +222,9 @@
     <ClCompile Include="t38_gateway.c" />
     <ClCompile Include="t38_non_ecm_buffer.c" />
     <ClCompile Include="t38_terminal.c" />
+    <ClCompile Include="t81_t82_arith_coding.c" />
+    <ClCompile Include="t85_decode.c" />
+    <ClCompile Include="t85_encode.c" />
     <ClCompile Include="testcpuid.c" />
     <ClCompile Include="time_scale.c" />
     <ClCompile Include="timezone.c" />
@@ -239,6 +247,7 @@
     <ClCompile Include="msvc\gettimeofday.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="spandsp\ademco_contactid.h" />
     <ClInclude Include="spandsp\adsi.h" />
     <ClInclude Include="spandsp\async.h" />
     <ClInclude Include="spandsp\arctan2.h" />
@@ -269,6 +278,7 @@
     <ClInclude Include="spandsp\g726.h" />
     <ClInclude Include="spandsp\gsm0610.h" />
     <ClInclude Include="spandsp\hdlc.h" />
+    <ClInclude Include="spandsp\image_translate.h" />
     <ClInclude Include="spandsp\ima_adpcm.h" />
     <ClInclude Include="spandsp\logging.h" />
     <ClInclude Include="spandsp\lpc10.h" />
@@ -279,6 +289,11 @@
     <ClInclude Include="spandsp\playout.h" />
     <ClInclude Include="spandsp\plc.h" />
     <ClInclude Include="spandsp\power_meter.h" />
+    <ClInclude Include="spandsp\private\ademco_contactid.h" />
+    <ClInclude Include="spandsp\private\image_translate.h" />
+    <ClInclude Include="spandsp\private\t42.h" />
+    <ClInclude Include="spandsp\private\t81_t82_arith_coding.h" />
+    <ClInclude Include="spandsp\private\t85.h" />
     <ClInclude Include="spandsp\queue.h" />
     <ClInclude Include="spandsp\saturated.h" />
     <ClInclude Include="spandsp\schedule.h" />
@@ -287,6 +302,7 @@
     <ClInclude Include="spandsp\super_tone_rx.h" />
     <ClInclude Include="spandsp\super_tone_tx.h" />
     <ClInclude Include="spandsp\swept_tone.h" />
+    <ClInclude Include="spandsp\t42.h" />
     <ClInclude Include="spandsp\t4_rx.h" />
     <ClInclude Include="spandsp\t4_tx.h" />
     <ClInclude Include="spandsp\t4_t6_decode.h" />
@@ -301,6 +317,8 @@
     <ClInclude Include="spandsp\t38_gateway.h" />
     <ClInclude Include="spandsp\t38_non_ecm_buffer.h" />
     <ClInclude Include="spandsp\t38_terminal.h" />
+    <ClInclude Include="spandsp\t81_t82_arith_coding.h" />
+    <ClInclude Include="spandsp\t85.h" />
     <ClInclude Include="spandsp\telephony.h" />
     <ClInclude Include="spandsp\time_scale.h" />
     <ClInclude Include="spandsp\timing.h" />
@@ -392,6 +410,14 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\win32\libjpeg\libjpeg.2010.vcxproj">
+      <Project>{019dbd2a-273d-4ba4-bf86-b5efe2ed76b1}</Project>
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
     <ProjectReference Include="libtiff.2010.vcxproj">
       <Project>{401a40cd-5db4-4e34-ac68-fa99e9fac014}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

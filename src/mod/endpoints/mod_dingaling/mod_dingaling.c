@@ -33,8 +33,11 @@
 #include <switch_stun.h>
 #include <libdingaling.h>
 
+#define MDL_RTCP_DUR 5000
 #define DL_CAND_WAIT 10000000
 #define DL_CAND_INITIAL_WAIT 2000000
+//#define DL_CAND_WAIT 2000000
+//#define DL_CAND_INITIAL_WAIT 5000000
 
 #define DL_EVENT_LOGIN_SUCCESS "dingaling::login_success"
 #define DL_EVENT_LOGIN_FAILURE "dingaling::login_failure"
@@ -79,7 +82,8 @@ typedef enum {
 	TFLAG_TERM = (1 << 21),
 	TFLAG_TRANSPORT_ACCEPT = (1 << 22),
 	TFLAG_READY = (1 << 23),
-	TFLAG_NAT_MAP = (1 << 24)
+	TFLAG_NAT_MAP = (1 << 24),
+	TFLAG_SECURE = (1 << 25)
 } TFLAGS;
 
 typedef enum {
@@ -144,47 +148,103 @@ struct mdl_profile {
 };
 typedef struct mdl_profile mdl_profile_t;
 
-struct private_object {
-	unsigned int flags;
+/*! \brief The required components to setup a jingle transport */
+typedef struct mdl_transport {
+	char *remote_ip;
+	switch_port_t remote_port;
+
+	switch_port_t local_port;	/*!< The real local port */
+    switch_port_t adv_local_port;
+	unsigned int ssrc;
+
+	char local_user[17];
+    char local_pass[17];    
+	char *remote_user;
+	char *remote_pass;
+	int ptime;
+	int payload_count;
+	int restart_rtp;
+
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
+	
 	switch_frame_t read_frame;
+	
+	uint32_t codec_rate;
+	char *codec_name;
+	
+	switch_payload_t codec_num;
+	switch_payload_t r_codec_num;
+	
+	char *stun_ip;
+	uint16_t stun_port;
+	
+	switch_rtp_t *rtp_session;
+	ldl_transport_type_t type;
+
+	int total;
+	int accepted;
+
+	int ready;
+
+	int codec_index;
+
+	int vid_width;
+	int vid_height;
+	int vid_rate;
+
+	switch_byte_t has_crypto;
+	int crypto_tag;
+	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	switch_rtp_crypto_key_type_t crypto_send_type;
+	switch_rtp_crypto_key_type_t crypto_recv_type;
+	switch_rtp_crypto_key_type_t crypto_type;
+
+	char *local_crypto_key;
+	char *remote_crypto_key;
+	
+	ldl_crypto_data_t *local_crypto_data;
+	
+} mdl_transport_t;
+
+
+struct private_object {
+	unsigned int flags;
 	mdl_profile_t *profile;
 	switch_core_session_t *session;
+	switch_channel_t *channel;
+
 	switch_caller_profile_t *caller_profile;
 	unsigned short samprate;
 	switch_mutex_t *mutex;
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	unsigned int num_codecs;
-	int codec_index;
-	switch_rtp_t *rtp_session;
+
+	mdl_transport_t transports[LDL_TPORT_MAX+1];	
+
 	ldl_session_t *dlsession;
-	char *remote_ip;
-	switch_port_t local_port;
-	switch_port_t adv_local_port;
-	switch_port_t remote_port;
-	char local_user[17];
-	char local_pass[17];
-	char *remote_user;
+
 	char *us;
 	char *them;
 	unsigned int cand_id;
 	unsigned int desc_id;
 	unsigned int dc;
+
 	uint32_t timestamp_send;
 	int32_t timestamp_recv;
 	uint32_t last_read;
-	char *codec_name;
-	switch_payload_t codec_num;
-	switch_payload_t r_codec_num;
-	uint32_t codec_rate;
+
 	switch_time_t next_desc;
 	switch_time_t next_cand;
-	char *stun_ip;
+
 	char *recip;
 	char *dnis;
-	uint16_t stun_port;
 	switch_mutex_t *flag_mutex;
+
+	int read_count;
+
+
 };
 
 struct rfc2833_digit {
@@ -744,8 +804,12 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
 		tech_pvt = switch_core_session_get_private(*session);
 
 
-		if (tech_pvt && tech_pvt->profile && tech_pvt->profile->ip && tech_pvt->local_port) {
-			switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->local_port);
+		if (tech_pvt && tech_pvt->profile && tech_pvt->profile->ip && tech_pvt->transports[LDL_TPORT_RTP].local_port) {
+			switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->transports[LDL_TPORT_RTP].local_port);
+		}
+
+		if (tech_pvt && tech_pvt->profile && tech_pvt->profile->ip && tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port) {
+			switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port);
 		}
 
 		if (!switch_core_session_running(*session) && (!tech_pvt || !switch_test_flag(tech_pvt, TFLAG_READY))) {
@@ -811,16 +875,35 @@ static void dl_logger(char *file, const char *func, int line, int level, char *f
 
 static int get_codecs(struct private_object *tech_pvt)
 {
+	char *codec_string = NULL;
+	const char *var;
+	char *codec_order[SWITCH_MAX_CODECS];
+	int codec_order_last;
+	char **codec_order_p = NULL;
+
+
 	switch_assert(tech_pvt != NULL);
 	switch_assert(tech_pvt->session != NULL);
 
 	if (!tech_pvt->num_codecs) {
-		if (globals.codec_string) {
+
+		if ((var = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
+			codec_string = (char *)var;
+			codec_order_last = switch_separate_string(codec_string, ',', codec_order, SWITCH_MAX_CODECS);
+			codec_order_p = codec_order;
+		} else {
+			codec_string = globals.codec_string;
+			codec_order_last = globals.codec_order_last;
+			codec_order_p = globals.codec_order;
+		}
+		
+		if (codec_string) {
 			if ((tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs,
-																				 SWITCH_MAX_CODECS, globals.codec_order, globals.codec_order_last)) <= 0) {
+																				 SWITCH_MAX_CODECS, codec_order_p, codec_order_last)) <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 				return 0;
 			}
+			
 		} else if (((tech_pvt->num_codecs = switch_loadable_module_get_codecs(tech_pvt->codecs, SWITCH_MAX_CODECS))) <= 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 			return 0;
@@ -864,76 +947,251 @@ static void handle_thread_launch(ldl_handle_t *handle)
 }
 
 
-static int activate_rtp(struct private_object *tech_pvt)
+switch_status_t mdl_build_crypto(struct private_object *tech_pvt, ldl_transport_type_t ttype, 
+									int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction)
+{
+	unsigned char b64_key[512] = "";
+	const char *type_str;
+	unsigned char *key;
+	char *p;
+
+
+	if (!switch_test_flag(tech_pvt, TFLAG_SECURE)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
+	if (type == AES_CM_128_HMAC_SHA1_80) {
+		type_str = SWITCH_RTP_CRYPTO_KEY_80;
+	} else {
+		type_str = SWITCH_RTP_CRYPTO_KEY_32;
+	}
+
+	if (direction == SWITCH_RTP_CRYPTO_SEND) {
+		key = tech_pvt->transports[ttype].local_raw_key;
+	} else {
+		key = tech_pvt->transports[ttype].remote_raw_key;
+
+	}
+
+	switch_rtp_get_random(key, SWITCH_RTP_KEY_LEN);
+	switch_b64_encode(key, SWITCH_RTP_KEY_LEN, b64_key, sizeof(b64_key));
+	p = strrchr((char *) b64_key, '=');
+
+	while (p && *p && *p == '=') {
+		*p-- = '\0';
+	}
+
+	tech_pvt->transports[ttype].local_crypto_key = switch_core_session_sprintf(tech_pvt->session, "%d %s inline:%s", index, type_str, b64_key);
+	tech_pvt->transports[ttype].local_crypto_data = switch_core_session_alloc(tech_pvt->session, sizeof(ldl_crypto_data_t));
+	tech_pvt->transports[ttype].local_crypto_data->tag = switch_core_session_sprintf(tech_pvt->session, "%d", index);
+	tech_pvt->transports[ttype].local_crypto_data->suite = switch_core_session_strdup(tech_pvt->session, type_str);
+	tech_pvt->transports[ttype].local_crypto_data->key = switch_core_session_sprintf(tech_pvt->session, "inline:%s", (char *)b64_key);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Local Key [%s]\n", tech_pvt->transports[ttype].local_crypto_key);
+
+	tech_pvt->transports[ttype].crypto_type = AES_CM_128_NULL_AUTH;
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t mdl_add_crypto(struct private_object *tech_pvt, 
+									  ldl_transport_type_t ttype, const char *key_str, switch_rtp_crypto_direction_t direction)
+{
+	unsigned char key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	switch_rtp_crypto_key_type_t type;
+	char *p;
+
+
+	p = strchr(key_str, ' ');
+
+	if (p && *p && *(p + 1)) {
+		p++;
+		if (!strncasecmp(p, SWITCH_RTP_CRYPTO_KEY_32, strlen(SWITCH_RTP_CRYPTO_KEY_32))) {
+			type = AES_CM_128_HMAC_SHA1_32;
+		} else if (!strncasecmp(p, SWITCH_RTP_CRYPTO_KEY_80, strlen(SWITCH_RTP_CRYPTO_KEY_80))) {
+			type = AES_CM_128_HMAC_SHA1_80;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Parse Error near [%s]\n", p);
+			goto bad;
+		}
+
+		p = strchr(p, ' ');
+		if (p && *p && *(p + 1)) {
+			p++;
+			if (strncasecmp(p, "inline:", 7)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Parse Error near [%s]\n", p);
+				goto bad;
+			}
+
+			p += 7;
+			switch_b64_decode(p, (char *) key, sizeof(key));
+
+			if (direction == SWITCH_RTP_CRYPTO_SEND) {
+				tech_pvt->transports[ttype].crypto_send_type = type;
+				memcpy(tech_pvt->transports[ttype].local_raw_key, key, SWITCH_RTP_KEY_LEN);
+			} else {
+				tech_pvt->transports[ttype].crypto_recv_type = type;
+				memcpy(tech_pvt->transports[ttype].remote_raw_key, key, SWITCH_RTP_KEY_LEN);
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_NOTICE, 
+							  "%s Setting %s crypto key\n", ldl_transport_type_str(ttype), switch_core_session_get_name(tech_pvt->session));
+			tech_pvt->transports[ttype].has_crypto++;
+
+			
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+	}
+
+ bad:
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Error!\n");
+	return SWITCH_STATUS_FALSE;
+
+}
+
+static void try_secure(struct private_object *tech_pvt, ldl_transport_type_t ttype) 
+{
+
+	if (!switch_test_flag(tech_pvt, TFLAG_SECURE)) {
+		return;
+	}
+
+
+	if (tech_pvt->transports[ttype].crypto_recv_type) {
+		tech_pvt->transports[ttype].crypto_type = tech_pvt->transports[ttype].crypto_recv_type;
+	}
+
+
+	//if (tech_pvt->transports[ttype].crypto_type) {
+		switch_rtp_add_crypto_key(tech_pvt->transports[ttype].rtp_session, 
+								  SWITCH_RTP_CRYPTO_SEND, 1, tech_pvt->transports[ttype].crypto_type, 
+								  tech_pvt->transports[ttype].local_raw_key, SWITCH_RTP_KEY_LEN);
+			
+
+		switch_rtp_add_crypto_key(tech_pvt->transports[ttype].rtp_session, 
+								  SWITCH_RTP_CRYPTO_RECV, tech_pvt->transports[ttype].crypto_tag, 
+								  tech_pvt->transports[ttype].crypto_type, 
+								  tech_pvt->transports[ttype].remote_raw_key, SWITCH_RTP_KEY_LEN);
+			
+		switch_channel_set_variable(tech_pvt->channel, "jingle_secure_audio_confirmed", "true");
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_NOTICE, 
+						  "%s %s crypto confirmed\n", ldl_transport_type_str(ttype), switch_core_session_get_name(tech_pvt->session));
+
+		//}
+
+}
+
+
+
+static int activate_audio_rtp(struct private_object *tech_pvt)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 	const char *err;
-	int ms = 0;
+	int ms = tech_pvt->transports[LDL_TPORT_RTP].ptime;
 	switch_rtp_flag_t flags;
+	int locked = 0;
+	int r = 1;
 
-	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+
+	if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
 		return 1;
 	}
 
-	if (!(tech_pvt->remote_ip && tech_pvt->remote_port)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "No valid candidates received!\n");
+	if (!(tech_pvt->transports[LDL_TPORT_RTP].remote_ip && tech_pvt->transports[LDL_TPORT_RTP].remote_port)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "No valid rtp candidates received!\n");
 		return 0;
 	}
 
-	if (switch_core_codec_init(&tech_pvt->read_codec,
-							   tech_pvt->codec_name,
-							   NULL,
-							   tech_pvt->codec_rate,
-							   ms,
-							   1,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Can't load codec?\n");
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return 0;
+	if (switch_core_codec_ready(&tech_pvt->transports[LDL_TPORT_RTP].read_codec)) {
+		locked = 1;
+		switch_mutex_lock(tech_pvt->transports[LDL_TPORT_RTP].read_codec.mutex);
+		if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
+			switch_rtp_kill_socket(tech_pvt->transports[LDL_TPORT_RTP].rtp_session);
+			switch_rtp_destroy(&tech_pvt->transports[LDL_TPORT_RTP].rtp_session);
+		}
+
+
+	} else {
+		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_RTP].read_codec,
+								   tech_pvt->transports[LDL_TPORT_RTP].codec_name,
+								   NULL,
+								   tech_pvt->transports[LDL_TPORT_RTP].codec_rate,
+								   ms,
+								   1,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Can't load codec?\n");
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			r = 0;
+			goto end;
+		}
+		tech_pvt->transports[LDL_TPORT_RTP].read_frame.rate = tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_second;
+		tech_pvt->transports[LDL_TPORT_RTP].read_frame.codec = &tech_pvt->transports[LDL_TPORT_RTP].read_codec;
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Read Codec to %s@%d\n",
+						  tech_pvt->transports[LDL_TPORT_RTP].codec_name, (int) tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_second);
+
+		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_RTP].write_codec,
+								   tech_pvt->transports[LDL_TPORT_RTP].codec_name,
+								   NULL,
+								   tech_pvt->transports[LDL_TPORT_RTP].codec_rate,
+								   ms,
+								   1,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Can't load codec?\n");
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			r = 0;
+			goto end;
+		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Write Codec to %s@%d\n",
+						  tech_pvt->transports[LDL_TPORT_RTP].codec_name, (int) tech_pvt->transports[LDL_TPORT_RTP].write_codec.implementation->samples_per_second);
+		
+		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->transports[LDL_TPORT_RTP].read_codec);
+		switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->transports[LDL_TPORT_RTP].write_codec);
 	}
-	tech_pvt->read_frame.rate = tech_pvt->read_codec.implementation->samples_per_second;
-	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Read Codec to %s@%d\n",
-					  tech_pvt->codec_name, (int) tech_pvt->read_codec.implementation->samples_per_second);
-
-	if (switch_core_codec_init(&tech_pvt->write_codec,
-							   tech_pvt->codec_name,
-							   NULL,
-							   tech_pvt->codec_rate,
-							   ms,
-							   1,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Can't load codec?\n");
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return 0;
-	}
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Write Codec to %s@%d\n",
-					  tech_pvt->codec_name, (int) tech_pvt->write_codec.implementation->samples_per_second);
-
-	switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
-	switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
-
-	if (globals.auto_nat && tech_pvt->profile->local_network && !switch_check_network_list_ip(tech_pvt->remote_ip, tech_pvt->profile->local_network)) {
+	if (globals.auto_nat && tech_pvt->profile->local_network && !switch_check_network_list_ip(tech_pvt->transports[LDL_TPORT_RTP].remote_ip, tech_pvt->profile->local_network)) {
 		switch_port_t external_port = 0;
-		switch_nat_add_mapping((switch_port_t) tech_pvt->local_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
+		switch_nat_add_mapping((switch_port_t) tech_pvt->transports[LDL_TPORT_RTP].local_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
 
 		if (external_port) {
-			tech_pvt->adv_local_port = external_port;
+			tech_pvt->transports[LDL_TPORT_RTP].adv_local_port = external_port;
 			switch_set_flag(tech_pvt, TFLAG_NAT_MAP);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "NAT mapping returned 0. Run freeswitch with -nonat since it's not working right.\n");
 		}
 	}
 
-	if (tech_pvt->adv_local_port != tech_pvt->local_port) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "SETUP RTP %s:%d(%d) -> %s:%d\n", tech_pvt->profile->ip,
-						  tech_pvt->local_port, tech_pvt->adv_local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
+	if (tech_pvt->transports[LDL_TPORT_RTP].adv_local_port != tech_pvt->transports[LDL_TPORT_RTP].local_port) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "SETUP AUDIO RTP %s:%d(%d) -> %s:%d codec: %s(%d) %dh %di\n", 
+						  tech_pvt->profile->ip,
+						  tech_pvt->transports[LDL_TPORT_RTP].local_port, 
+						  tech_pvt->transports[LDL_TPORT_RTP].adv_local_port, 
+						  tech_pvt->transports[LDL_TPORT_RTP].remote_ip, 
+						  tech_pvt->transports[LDL_TPORT_RTP].remote_port,
+						  tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->iananame,
+						  tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->ianacode,
+						  tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_packet,
+						  tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->microseconds_per_packet
+						  
+						  );
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip,
-						  tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "SETUP AUDIO RTP %s:%d -> %s:%d codec: %s(%d) %dh %di\n", 
+						  tech_pvt->profile->ip,
+						  tech_pvt->transports[LDL_TPORT_RTP].local_port, 
+						  tech_pvt->transports[LDL_TPORT_RTP].remote_ip, 
+						  tech_pvt->transports[LDL_TPORT_RTP].remote_port,
+						  tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->iananame,
+						  tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->ianacode,
+						  tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_packet,
+						  tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->microseconds_per_packet
+						  );
 	}
 
 	flags = SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTO_CNG;
@@ -947,127 +1205,389 @@ static int activate_rtp(struct private_object *tech_pvt)
 		flags &= ~SWITCH_RTP_FLAG_AUTOADJ;
 	}
 
-	if (!(tech_pvt->rtp_session = switch_rtp_new(tech_pvt->profile->ip,
-												 tech_pvt->local_port,
-												 tech_pvt->remote_ip,
-												 tech_pvt->remote_port,
-												 tech_pvt->codec_num,
-												 tech_pvt->read_codec.implementation->samples_per_packet,
-												 tech_pvt->read_codec.implementation->microseconds_per_packet,
-												 flags, tech_pvt->profile->timer_name, &err, switch_core_session_get_pool(tech_pvt->session)))) {
+	if (!(tech_pvt->transports[LDL_TPORT_RTP].rtp_session = switch_rtp_new(tech_pvt->profile->ip,
+																		   tech_pvt->transports[LDL_TPORT_RTP].local_port,
+																		   tech_pvt->transports[LDL_TPORT_RTP].remote_ip,
+																		   tech_pvt->transports[LDL_TPORT_RTP].remote_port,
+																		   tech_pvt->transports[LDL_TPORT_RTP].codec_num,
+																		   tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_packet,
+																		   tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->microseconds_per_packet,
+																		   flags, tech_pvt->profile->timer_name, &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return 0;
+		r = 0;
+		goto end;
 	} else {
 		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
 		uint8_t vad_out = switch_test_flag(tech_pvt, TFLAG_VAD_OUT) ? 1 : 0;
 		uint8_t inb = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
-		switch_rtp_activate_ice(tech_pvt->rtp_session, tech_pvt->remote_user, tech_pvt->local_user);
+
+		switch_rtp_set_ssrc(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_RTP].ssrc);
+
+		if (tech_pvt->transports[LDL_TPORT_RTCP].remote_port) {
+			switch_rtp_activate_rtcp(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, MDL_RTCP_DUR, 
+									 tech_pvt->transports[LDL_TPORT_RTCP].remote_port);
+
+		}
+
+		try_secure(tech_pvt, LDL_TPORT_RTP);
+
+		switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 
+								tech_pvt->transports[LDL_TPORT_RTP].remote_user, 
+								tech_pvt->transports[LDL_TPORT_RTP].local_user,
+								tech_pvt->transports[LDL_TPORT_RTP].remote_pass);
+		
 		if ((vad_in && inb) || (vad_out && !inb)) {
-			if (switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING) != SWITCH_STATUS_SUCCESS) {
+			if (switch_rtp_enable_vad(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, tech_pvt->session, &tech_pvt->transports[LDL_TPORT_RTP].read_codec, SWITCH_VAD_FLAG_TALKING) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "VAD ERROR %s\n", err);
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				return 0;
+				r = 0;
+				goto end;
 			}
 			switch_set_flag_locked(tech_pvt, TFLAG_VAD);
 		}
-		switch_rtp_set_cng_pt(tech_pvt->rtp_session, 13);
-		switch_rtp_set_telephony_event(tech_pvt->rtp_session, 101);
+		//switch_rtp_set_cng_pt(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 13);
+		switch_rtp_set_telephony_event(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 101);
+		
+		if (tech_pvt->transports[LDL_TPORT_RTCP].remote_port) {
+			switch_rtp_activate_rtcp_ice(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 
+										 tech_pvt->transports[LDL_TPORT_RTCP].remote_user, 
+										 tech_pvt->transports[LDL_TPORT_RTCP].local_user,
+										 tech_pvt->transports[LDL_TPORT_RTCP].remote_pass);
+			
+		}
+
+		
+
 	}
 
-	return 1;
+ end:
+
+	if (locked) {
+		switch_mutex_unlock(tech_pvt->transports[LDL_TPORT_RTP].read_codec.mutex);
+	}
+
+	return r;
+}
+
+
+static int activate_video_rtp(struct private_object *tech_pvt)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
+	const char *err;
+	int ms = 0;
+	switch_rtp_flag_t flags;
+	int r = 1, locked = 0;
+
+	
+	if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session)) {
+			r = 1; goto end;
+	}
+
+	if (!(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_ip && tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_port)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "No valid video_rtp candidates received!\n");
+		r = 0; goto end;
+	}
+
+	if (zstr(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "No valid video_rtp codecs received!\n");
+		r = 0; goto end;		
+	}
+
+	if (switch_core_codec_ready(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec)) {
+		locked = 1;
+		switch_mutex_lock(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.mutex);
+		if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session)) {
+			switch_rtp_kill_socket(tech_pvt->transports[LDL_TPORT_RTP].rtp_session);
+			switch_rtp_destroy(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session);
+		}
+
+
+
+
+
+	} else {
+		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec,
+								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name,
+								   NULL,
+								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_rate,
+								   ms,
+								   1,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Can't load codec?\n");
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			r = 0; goto end;
+		}
+		tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.rate = tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->samples_per_second;
+		tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.codec = &tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec;
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Read Codec to %s@%d\n",
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name, (int) tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->samples_per_second);
+
+		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].write_codec,
+								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name,
+								   NULL,
+								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_rate,
+								   ms,
+								   1,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Can't load codec?\n");
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			r = 0; goto end;
+		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Write Codec to %s@%d\n",
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name, (int) tech_pvt->transports[LDL_TPORT_VIDEO_RTP].write_codec.implementation->samples_per_second);
+
+		switch_core_session_set_video_read_codec(tech_pvt->session, &tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec);
+		switch_core_session_set_video_write_codec(tech_pvt->session, &tech_pvt->transports[LDL_TPORT_VIDEO_RTP].write_codec);
+	}
+
+	if (globals.auto_nat && tech_pvt->profile->local_network && !switch_check_network_list_ip(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_ip, tech_pvt->profile->local_network)) {
+		switch_port_t external_port = 0;
+		switch_nat_add_mapping((switch_port_t) tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port, SWITCH_NAT_UDP, &external_port, SWITCH_FALSE);
+
+		if (external_port) {
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].adv_local_port = external_port;
+			switch_set_flag(tech_pvt, TFLAG_NAT_MAP);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "NAT mapping returned 0. Run freeswitch with -nonat since it's not working right.\n");
+		}
+	}
+
+
+	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].adv_local_port != tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "SETUP VIDEO RTP %s:%d(%d) -> %s:%d codec: %s(%d) %dh %di\n", 
+						  tech_pvt->profile->ip,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port, 
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].adv_local_port, 
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_ip, 
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_port,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->iananame,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->ianacode,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->samples_per_packet,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->microseconds_per_packet
+						  
+						  );
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "SETUP VIDEO RTP %s:%d -> %s:%d codec: %s(%d) %dh %di\n", 
+						  tech_pvt->profile->ip,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port, 
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_ip, 
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_port,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->iananame,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->ianacode,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->samples_per_packet,
+						  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation->microseconds_per_packet
+						  );
+	}
+
+
+	flags = SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_VIDEO;
+
+
+	if (switch_true(switch_channel_get_variable(channel, "disable_rtp_auto_adjust"))) {
+		flags &= ~SWITCH_RTP_FLAG_AUTOADJ;
+	}
+
+	if (!(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session = switch_rtp_new(tech_pvt->profile->ip,
+																				 tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port,
+																				 tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_ip,
+																				 tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_port,
+																				 tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num,
+																				 1,
+																				 90000,
+																				 flags, NULL, &err, switch_core_session_get_pool(tech_pvt->session)))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		r = 0; goto end;
+	} else {
+		switch_rtp_set_ssrc(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].ssrc);
+
+		if (tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_port) {
+			switch_rtp_activate_rtcp(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, MDL_RTCP_DUR, 
+									 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_port);
+		}
+		try_secure(tech_pvt, LDL_TPORT_VIDEO_RTP);
+
+
+		switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
+								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_user, 
+								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_user,
+								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
+		switch_channel_set_flag(channel, CF_VIDEO);
+		//switch_rtp_set_default_payload(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].r_codec_num);
+		
+
+		if (tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_port) {
+			
+			switch_rtp_activate_rtcp_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
+										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_user, 
+										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].local_user,
+										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_pass);
+		}
+
+
+		
+	}
+
+ end:
+	if (locked) {
+		switch_mutex_unlock(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.mutex);
+	}
+
+	return r;
 }
 
 
 
-static int do_candidates(struct private_object *tech_pvt, int force)
+static int activate_rtp(struct private_object *tech_pvt)
+{
+	int r = 0;
+
+	if (tech_pvt->transports[LDL_TPORT_RTP].ready) {
+		r += activate_audio_rtp(tech_pvt);
+	}
+
+	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].ready) {
+		r += activate_video_rtp(tech_pvt);
+	}
+
+	return r;
+}
+
+
+static int do_tport_candidates(struct private_object *tech_pvt, ldl_transport_type_t ttype, ldl_candidate_t *cand, int force)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
+	char *advip = tech_pvt->profile->extip ? tech_pvt->profile->extip : tech_pvt->profile->ip;
+	char *err = NULL, *address = NULL;
+	
+	if (!force && tech_pvt->transports[ttype].ready) {
+		return 0;
+	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_LANADDR)) {
+		advip = tech_pvt->profile->ip;
+	}
+	address = advip;
+
+	if(address && !strncasecmp(address, "host:", 5)) {
+		address = address + 5;
+	}
+
+	memset(cand, 0, sizeof(*cand));
+	switch_stun_random_string(tech_pvt->transports[ttype].local_user, 16, NULL);
+	switch_stun_random_string(tech_pvt->transports[ttype].local_pass, 16, NULL);
+
+	cand->port = tech_pvt->transports[ttype].adv_local_port;
+	cand->address = address;
+
+	if (!strncasecmp(advip, "stun:", 5)) {
+		char *stun_ip = advip + 5;
+
+		if (tech_pvt->transports[ttype].stun_ip) {
+			cand->address = tech_pvt->transports[ttype].stun_ip;
+			cand->port = tech_pvt->transports[ttype].stun_port;
+		} else {
+			if (!stun_ip) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER!\n");
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				return 0;
+			}
+
+			cand->address = tech_pvt->profile->ip;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Stun Lookup Local %s:%d\n", cand->address,
+							  cand->port);
+			if (switch_stun_lookup
+				(&cand->address, &cand->port, stun_ip, SWITCH_STUN_DEFAULT_PORT, &err,
+				 switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip,
+								  SWITCH_STUN_DEFAULT_PORT, err);
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				return 0;
+			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "Stun Success %s:%d\n", cand->address, cand->port);
+		}
+		cand->type = "stun";
+		tech_pvt->transports[ttype].stun_ip = switch_core_session_strdup(tech_pvt->session, cand->address);
+		tech_pvt->transports[ttype].stun_port = cand->port;
+	} else {
+		cand->type = "local";
+	}
+
+	cand->name = (char *)ldl_transport_type_str(ttype);
+	cand->username = tech_pvt->transports[ttype].local_user;
+	cand->password = tech_pvt->transports[ttype].local_pass;
+	cand->pref = 1;
+	cand->protocol = "udp";
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+					  "Send %s Candidate %s:%d [%s]\n", ldl_transport_type_str(ttype), cand->address, cand->port,
+					  cand->username);
+
+
+		
+	tech_pvt->transports[ttype].ready = 1;
+	
+	return 1;
+}
+
+
+static int do_candidates(struct private_object *tech_pvt, int force)
+{
+	ldl_candidate_t cand[4] = {{0}};
+	int idx = 0;
 
 	if (switch_test_flag(tech_pvt, TFLAG_DO_CAND)) {
 		return 1;
 	}
 
 	tech_pvt->next_cand += DL_CAND_WAIT;
-	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || !tech_pvt->dlsession) {
 		return 0;
 	}
 	switch_set_flag_locked(tech_pvt, TFLAG_DO_CAND);
 
-	if (force || !switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
-		ldl_candidate_t cand[1];
-		char *advip = tech_pvt->profile->extip ? tech_pvt->profile->extip : tech_pvt->profile->ip;
-		char *err = NULL, *address = NULL;
+	idx += do_tport_candidates(tech_pvt, LDL_TPORT_RTP, &cand[idx], force);
+	idx += do_tport_candidates(tech_pvt, LDL_TPORT_RTCP, &cand[idx], force);
+	idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTP, &cand[idx], force);
+	idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTCP, &cand[idx], force);
 
-		memset(cand, 0, sizeof(cand));
-		switch_stun_random_string(tech_pvt->local_user, 16, NULL);
-		switch_stun_random_string(tech_pvt->local_pass, 16, NULL);
-
-		if (switch_test_flag(tech_pvt, TFLAG_LANADDR)) {
-			advip = tech_pvt->profile->ip;
-		}
-		address = advip;
-
-		if(address && !strncasecmp(address, "host:", 5)) {
-			address = address + 5;
-		}
-
-		cand[0].port = tech_pvt->adv_local_port;
-		cand[0].address = address;
-
-		if (!strncasecmp(advip, "stun:", 5)) {
-			char *stun_ip = advip + 5;
-
-			if (tech_pvt->stun_ip) {
-				cand[0].address = tech_pvt->stun_ip;
-				cand[0].port = tech_pvt->stun_port;
-			} else {
-				if (!stun_ip) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER!\n");
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					return 0;
-				}
-
-				cand[0].address = tech_pvt->profile->ip;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Stun Lookup Local %s:%d\n", cand[0].address,
-								  cand[0].port);
-				if (switch_stun_lookup
-					(&cand[0].address, &cand[0].port, stun_ip, SWITCH_STUN_DEFAULT_PORT, &err,
-					 switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip,
-									  SWITCH_STUN_DEFAULT_PORT, err);
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					return 0;
-				}
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
-			}
-			cand[0].type = "stun";
-			tech_pvt->stun_ip = switch_core_session_strdup(tech_pvt->session, cand[0].address);
-			tech_pvt->stun_port = cand[0].port;
-		} else {
-			cand[0].type = "local";
-		}
-
-		cand[0].name = "rtp";
-		cand[0].username = tech_pvt->local_user;
-		cand[0].password = tech_pvt->local_pass;
-		cand[0].pref = 1;
-		cand[0].protocol = "udp";
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Send Candidate %s:%d [%s]\n", cand[0].address, cand[0].port,
-						  cand[0].username);
-
+	if (idx && cand[0].name) {
 		if (ldl_session_gateway(tech_pvt->dlsession) && switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-			tech_pvt->cand_id = ldl_session_transport(tech_pvt->dlsession, cand, 1);
+			tech_pvt->cand_id = ldl_session_transport(tech_pvt->dlsession, cand, idx);
 		} else {
-			tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
+			tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, idx);
 		}
+	}
 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Accepted %u of %u rtp candidates.\n", 
+					  tech_pvt->transports[LDL_TPORT_RTP].accepted, tech_pvt->transports[LDL_TPORT_RTP].total);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Accepted %u of %u rtcp candidates.\n", 
+					  tech_pvt->transports[LDL_TPORT_RTCP].accepted, tech_pvt->transports[LDL_TPORT_RTCP].total);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Accepted %u of %u video_rtp candidates\n", 
+					  tech_pvt->transports[LDL_TPORT_VIDEO_RTP].accepted, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].total);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Accepted %u of %u video_rctp candidates\n", 
+					  tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].accepted, tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].total);
+
+
+
+	if ((tech_pvt->transports[LDL_TPORT_RTP].ready && tech_pvt->transports[LDL_TPORT_RTCP].ready)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT);
 		switch_set_flag_locked(tech_pvt, TFLAG_RTP_READY);
 	}
+
+
 	switch_clear_flag_locked(tech_pvt, TFLAG_DO_CAND);
 	return 1;
+
 }
+
+
+
 
 static char *lame(char *in)
 {
@@ -1078,16 +1598,115 @@ static char *lame(char *in)
 	}
 }
 
+
+static void setup_codecs(struct private_object *tech_pvt)
+{
+	ldl_payload_t payloads[LDL_MAX_PAYLOADS] = { {0} };
+	int idx = 0, i = 0;
+	int dft_audio = -1, dft_video = -1;
+
+	memset(payloads, 0, sizeof(payloads));
+
+	for (idx = 0; idx < tech_pvt->num_codecs && (dft_audio == -1 || dft_video == -1); idx++) {
+		if (dft_audio < 0 && tech_pvt->codecs[idx]->codec_type == SWITCH_CODEC_TYPE_AUDIO) {
+			dft_audio = idx;
+		}
+		if (dft_video < 0 && tech_pvt->codecs[idx]->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
+			dft_video = idx;
+		}
+	}
+	
+	if (dft_audio == -1 && dft_video == -1) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Cannot find a codec.\n");  
+		return;
+	}
+
+	idx = 0;
+
+	payloads[0].type = LDL_TPORT_RTP;
+	if (tech_pvt->transports[LDL_TPORT_RTP].codec_index < 0) {
+		if (dft_audio > -1) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Don't have my audio codec yet here's one\n");
+			tech_pvt->transports[LDL_TPORT_RTP].codec_name = lame(tech_pvt->codecs[dft_audio]->iananame);
+			tech_pvt->transports[LDL_TPORT_RTP].codec_num = tech_pvt->codecs[dft_audio]->ianacode;
+			tech_pvt->transports[LDL_TPORT_RTP].codec_rate = tech_pvt->codecs[dft_audio]->samples_per_second;
+			tech_pvt->transports[LDL_TPORT_RTP].r_codec_num = tech_pvt->codecs[dft_audio]->ianacode;
+			tech_pvt->transports[LDL_TPORT_RTP].codec_index = dft_audio;
+
+			payloads[0].name = lame(tech_pvt->codecs[dft_audio]->iananame);
+			payloads[0].id = tech_pvt->codecs[dft_audio]->ianacode;
+			payloads[0].rate = tech_pvt->codecs[dft_audio]->samples_per_second;
+			payloads[0].bps = tech_pvt->codecs[dft_audio]->bits_per_second;
+			payloads[0].ptime = tech_pvt->codecs[dft_audio]->microseconds_per_packet / 1000;
+			idx++;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Don't have an audio codec.\n");
+		}
+	} else {
+		payloads[0].name = lame(tech_pvt->codecs[tech_pvt->transports[LDL_TPORT_RTP].codec_index]->iananame);
+		payloads[0].id = tech_pvt->codecs[tech_pvt->transports[LDL_TPORT_RTP].codec_index]->ianacode;
+		payloads[0].rate = tech_pvt->codecs[tech_pvt->transports[LDL_TPORT_RTP].codec_index]->samples_per_second;
+		payloads[0].bps = tech_pvt->codecs[tech_pvt->transports[LDL_TPORT_RTP].codec_index]->bits_per_second;
+		payloads[0].ptime = tech_pvt->codecs[tech_pvt->transports[LDL_TPORT_RTP].codec_index]->microseconds_per_packet / 1000;
+		idx++;
+	}
+
+
+	payloads[1].type = LDL_TPORT_VIDEO_RTP;
+	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index < 0) {
+		if (dft_video > -1) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Don't have my video codec yet here's one\n");
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name = lame(tech_pvt->codecs[dft_video]->iananame);
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num = tech_pvt->codecs[dft_video]->ianacode;
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_rate = tech_pvt->codecs[dft_video]->samples_per_second;
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].r_codec_num = tech_pvt->codecs[dft_video]->ianacode;
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index = dft_video;
+
+			payloads[1].name = lame(tech_pvt->codecs[dft_video]->iananame);
+			payloads[1].id = tech_pvt->codecs[dft_video]->ianacode;
+			payloads[1].rate = tech_pvt->codecs[dft_video]->samples_per_second;
+			payloads[1].bps = tech_pvt->codecs[dft_video]->bits_per_second;
+			payloads[1].width = 600;
+			payloads[1].height = 400;
+			payloads[1].framerate = 30;
+			
+			idx++;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Don't have video codec.\n");
+		}
+	} else {
+		payloads[1].name = lame(tech_pvt->codecs[tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index]->iananame);
+		payloads[1].id = tech_pvt->codecs[tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index]->ianacode;
+		payloads[1].rate = tech_pvt->codecs[tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index]->samples_per_second;
+		payloads[1].bps = tech_pvt->codecs[tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index]->bits_per_second;
+		idx++;
+	}
+
+	for(i = 0; i < idx; i++) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Send Describe [%s@%d]\n", payloads[i].name, payloads[i].rate);
+	}
+
+
+	if (!payloads[1].id && tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port) {
+		switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port);
+		tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port = 0;
+	}
+
+
+	tech_pvt->desc_id = ldl_session_describe(tech_pvt->dlsession, payloads, idx,
+											 switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? LDL_DESCRIPTION_INITIATE : LDL_DESCRIPTION_ACCEPT,
+											 &tech_pvt->transports[LDL_TPORT_RTP].ssrc, &tech_pvt->transports[LDL_TPORT_VIDEO_RTP].ssrc, 
+											 tech_pvt->transports[LDL_TPORT_RTP].local_crypto_data, 
+											 tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_crypto_data);
+
+
+}
+
 static int do_describe(struct private_object *tech_pvt, int force)
 {
-	ldl_payload_t payloads[5];
 
 	if (!tech_pvt->session) {
 		return 0;
-	}
-
-	if (switch_test_flag(tech_pvt, TFLAG_DO_DESC)) {
-		return 1;
 	}
 
 	tech_pvt->next_desc += DL_CAND_WAIT;
@@ -1096,7 +1715,7 @@ static int do_describe(struct private_object *tech_pvt, int force)
 		return 0;
 	}
 
-	memset(payloads, 0, sizeof(payloads));
+
 	switch_set_flag_locked(tech_pvt, TFLAG_DO_CAND);
 	if (!get_codecs(tech_pvt)) {
 		terminate_session(&tech_pvt->session, __LINE__, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
@@ -1107,31 +1726,7 @@ static int do_describe(struct private_object *tech_pvt, int force)
 
 
 	if (force || !switch_test_flag(tech_pvt, TFLAG_CODEC_READY)) {
-		if (tech_pvt->codec_index < 0) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Don't have my codec yet here's one\n");
-			tech_pvt->codec_name = lame(tech_pvt->codecs[0]->iananame);
-			tech_pvt->codec_num = tech_pvt->codecs[0]->ianacode;
-			tech_pvt->codec_rate = tech_pvt->codecs[0]->samples_per_second;
-			tech_pvt->r_codec_num = tech_pvt->codecs[0]->ianacode;
-			tech_pvt->codec_index = 0;
-
-			payloads[0].name = lame(tech_pvt->codecs[0]->iananame);
-			payloads[0].id = tech_pvt->codecs[0]->ianacode;
-			payloads[0].rate = tech_pvt->codecs[0]->samples_per_second;
-			payloads[0].bps = tech_pvt->codecs[0]->bits_per_second;
-
-		} else {
-			payloads[0].name = lame(tech_pvt->codecs[tech_pvt->codec_index]->iananame);
-			payloads[0].id = tech_pvt->codecs[tech_pvt->codec_index]->ianacode;
-			payloads[0].rate = tech_pvt->codecs[tech_pvt->codec_index]->samples_per_second;
-			payloads[0].bps = tech_pvt->codecs[tech_pvt->codec_index]->bits_per_second;
-		}
-
-
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Send Describe [%s@%d]\n", payloads[0].name, payloads[0].rate);
-		tech_pvt->desc_id =
-			ldl_session_describe(tech_pvt->dlsession, payloads, 1,
-								 switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? LDL_DESCRIPTION_INITIATE : LDL_DESCRIPTION_ACCEPT);
+		setup_codecs(tech_pvt);
 		switch_set_flag_locked(tech_pvt, TFLAG_CODEC_READY);
 	}
 	switch_clear_flag_locked(tech_pvt, TFLAG_DO_CAND);
@@ -1167,8 +1762,8 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 	while (!(switch_test_flag(tech_pvt, TFLAG_CODEC_READY) &&
 			 switch_test_flag(tech_pvt, TFLAG_RTP_READY) &&
-			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT) &&
-			 tech_pvt->remote_ip && tech_pvt->remote_port && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
+			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT) && //tech_pvt->read_count &&
+			 tech_pvt->transports[LDL_TPORT_RTP].remote_ip && tech_pvt->transports[LDL_TPORT_RTP].remote_port && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
 		now = switch_micro_time_now();
 		elapsed = (unsigned int) ((now - started) / 1000);
 
@@ -1195,10 +1790,20 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 			switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 			goto done;
 		}
+
 		if (switch_test_flag(tech_pvt, TFLAG_BYE) || !switch_test_flag(tech_pvt, TFLAG_IO)) {
 			goto done;
 		}
-		switch_cond_next();
+
+		if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
+			switch_rtp_ping(tech_pvt->transports[LDL_TPORT_RTP].rtp_session);
+		}
+
+		if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session)) {
+			switch_rtp_ping(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session);
+		}		
+
+		switch_yield(20000);
 	}
 
 	if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
@@ -1218,6 +1823,9 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 		}
 	}
 	ret = SWITCH_STATUS_SUCCESS;
+
+	switch_channel_audio_sync(channel); 
+
 
 	goto done;
 
@@ -1241,7 +1849,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
+	tech_pvt->transports[LDL_TPORT_RTP].read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 
 	switch_set_flag(tech_pvt, TFLAG_READY);
 
@@ -1295,35 +1903,51 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 
 	if (tech_pvt) {
-		if (tech_pvt->rtp_session) {
-			switch_rtp_destroy(&tech_pvt->rtp_session);
+		if (tech_pvt->transports[LDL_TPORT_RTP].rtp_session) {
+			switch_rtp_destroy(&tech_pvt->transports[LDL_TPORT_RTP].rtp_session);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "NUKE RTP\n");
-			tech_pvt->rtp_session = NULL;
+			tech_pvt->transports[LDL_TPORT_RTP].rtp_session = NULL;
+		}
+
+		if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session) {
+			switch_rtp_destroy(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "NUKE RTP\n");
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session = NULL;
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_NAT_MAP)) {
-			switch_nat_del_mapping((switch_port_t) tech_pvt->adv_local_port, SWITCH_NAT_UDP);
+			switch_nat_del_mapping((switch_port_t) tech_pvt->transports[LDL_TPORT_RTP].adv_local_port, SWITCH_NAT_UDP);
 			switch_clear_flag(tech_pvt, TFLAG_NAT_MAP);
 		}
 
-		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
-			switch_core_codec_destroy(&tech_pvt->read_codec);
+		if (switch_core_codec_ready(&tech_pvt->transports[LDL_TPORT_RTP].read_codec)) {
+			switch_core_codec_destroy(&tech_pvt->transports[LDL_TPORT_RTP].read_codec);
 		}
 
-		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
-			switch_core_codec_destroy(&tech_pvt->write_codec);
+		if (switch_core_codec_ready(&tech_pvt->transports[LDL_TPORT_RTP].write_codec)) {
+			switch_core_codec_destroy(&tech_pvt->transports[LDL_TPORT_RTP].write_codec);
+		}
+
+		if (switch_core_codec_ready(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec)) {
+			switch_core_codec_destroy(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec);
+		}
+
+		if (switch_core_codec_ready(&tech_pvt->transports[LDL_TPORT_RTP].write_codec)) {
+			switch_core_codec_destroy(&tech_pvt->transports[LDL_TPORT_RTP].write_codec);
 		}
 
 		if (tech_pvt->dlsession) {
 			ldl_session_destroy(&tech_pvt->dlsession);
 		}
 
-		switch_thread_rwlock_unlock(tech_pvt->profile->rwlock);
-
-		if (tech_pvt->profile->purge) {
-			mdl_profile_t *profile = tech_pvt->profile;
-			if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
+		if (tech_pvt->profile) {
+			switch_thread_rwlock_unlock(tech_pvt->profile->rwlock);
+			
+			if (tech_pvt->profile->purge) {
+				mdl_profile_t *profile = tech_pvt->profile;
+				if (switch_core_hash_delete(globals.profile_hash, profile->name) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile %s deleted successfully\n", profile->name);
+				}
 			}
 		}
 	}
@@ -1340,8 +1964,12 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	if (tech_pvt->profile->ip && tech_pvt->local_port) {
-		switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->local_port);
+	if (tech_pvt->profile->ip && tech_pvt->transports[LDL_TPORT_RTP].local_port) {
+		switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->transports[LDL_TPORT_RTP].local_port);
+	}
+
+	if (tech_pvt->profile->ip && tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port) {
+		switch_rtp_release_port(tech_pvt->profile->ip, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port);
 	}
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
@@ -1382,13 +2010,13 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 		switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 		switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 
-		if (switch_rtp_ready(tech_pvt->rtp_session)) {
-			switch_rtp_kill_socket(tech_pvt->rtp_session);
+		if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
+			switch_rtp_kill_socket(tech_pvt->transports[LDL_TPORT_RTP].rtp_session);
 		}
 		break;
 	case SWITCH_SIG_BREAK:
-		if (switch_rtp_ready(tech_pvt->rtp_session)) {
-			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+		if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
+			switch_rtp_set_flag(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, SWITCH_RTP_FLAG_BREAK);
 		}
 		break;
 	}
@@ -1421,7 +2049,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DTMF [%c]\n", dtmf->digit);
 
-	return switch_rtp_queue_rfc2833(tech_pvt->rtp_session, dtmf);
+	return switch_rtp_queue_rfc2833(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, dtmf);
 
 }
 
@@ -1434,7 +2062,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
+	while (!(tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation && switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session))) {
 		if (switch_channel_ready(channel)) {
 			switch_yield(10000);
 		} else {
@@ -1443,7 +2071,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 
-	tech_pvt->read_frame.datalen = 0;
+	tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen = 0;
 	switch_set_flag_locked(tech_pvt, TFLAG_READING);
 
 #if 0
@@ -1457,23 +2085,25 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
-		switch_status_t status;
+		//switch_status_t status;
+		
+		switch_assert(tech_pvt->transports[LDL_TPORT_RTP].rtp_session != NULL);
+		tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen = 0;
 
-		switch_assert(tech_pvt->rtp_session != NULL);
-		tech_pvt->read_frame.datalen = 0;
 
+		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen == 0) {
+			tech_pvt->transports[LDL_TPORT_RTP].read_frame.flags = SFF_NONE;
 
-		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
-			tech_pvt->read_frame.flags = SFF_NONE;
+			switch_rtp_zerocopy_read_frame(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, &tech_pvt->transports[LDL_TPORT_RTP].read_frame, flags);
 
-			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame, flags);
-			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-				return SWITCH_STATUS_FALSE;
+			tech_pvt->read_count++;
+#if 0
+			if (tech_pvt->read_count == 1 && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+				setup_codecs(tech_pvt);
 			}
+#endif
 
-
-
-			//payload = tech_pvt->read_frame.payload;
+			//payload = tech_pvt->transports[LDL_TPORT_RTP].read_frame.payload;
 
 #if 0
 			elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000);
@@ -1489,22 +2119,22 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				return SWITCH_STATUS_BREAK;
 			}
 #endif
-			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
+			if (switch_rtp_has_dtmf(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
 				switch_dtmf_t dtmf = { 0 };
-				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, &dtmf);
+				switch_rtp_dequeue_dtmf(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, &dtmf);
 				switch_channel_queue_dtmf(channel, &dtmf);
 			}
 
 
-			if (tech_pvt->read_frame.datalen > 0) {
+			if (tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen > 0) {
 				size_t bytes = 0;
 				int frames = 1;
 
-				if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
-					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet)) {
-						frames = (tech_pvt->read_frame.datalen / bytes);
+				if (!switch_test_flag((&tech_pvt->transports[LDL_TPORT_RTP].read_frame), SFF_CNG)) {
+					if ((bytes = tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->encoded_bytes_per_packet)) {
+						frames = (tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen / bytes);
 					}
-					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_packet);
+					tech_pvt->transports[LDL_TPORT_RTP].read_frame.samples = (int) (frames * tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_packet);
 				}
 				break;
 			}
@@ -1513,12 +2143,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 
-	if (tech_pvt->read_frame.datalen == 0) {
-		*frame = NULL;
-		return SWITCH_STATUS_GENERR;
+	if (tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen == 0) {
+		switch_set_flag((&tech_pvt->transports[LDL_TPORT_RTP].read_frame), SFF_CNG);
+		tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen = 2;
 	}
 
-	*frame = &tech_pvt->read_frame;
+	*frame = &tech_pvt->transports[LDL_TPORT_RTP].read_frame;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1533,7 +2163,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
+	while (!(tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation && switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session))) {
 		if (switch_channel_ready(channel)) {
 			switch_yield(10000);
 		} else {
@@ -1541,7 +2171,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		}
 	}
 
-	if (!switch_core_codec_ready(&tech_pvt->read_codec) || !tech_pvt->read_codec.implementation) {
+	if (!switch_core_codec_ready(&tech_pvt->transports[LDL_TPORT_RTP].read_codec) || !tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -1552,13 +2182,13 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
 	if (!switch_test_flag(frame, SFF_CNG)) {
-		if (tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
-			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet;
+		if (tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->encoded_bytes_per_packet) {
+			bytes = tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->encoded_bytes_per_packet;
 			frames = ((int) frame->datalen / bytes);
 		} else
 			frames = 1;
 
-		samples = frames * tech_pvt->read_codec.implementation->samples_per_packet;
+		samples = frames * tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_packet;
 	}
 #if 0
 	printf("%s %s->%s send %d bytes %d samples in %d frames ts=%d\n",
@@ -1567,13 +2197,81 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 #endif
 
 	tech_pvt->timestamp_send += samples;
-	//switch_rtp_write_frame(tech_pvt->rtp_session, frame, tech_pvt->timestamp_send);
-	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame) < 0) {
+	//switch_rtp_write_frame(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, frame, tech_pvt->timestamp_send);
+	if (switch_rtp_write_frame(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, frame) < 0) {
 		status = SWITCH_STATUS_GENERR;
 	}
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
 	return status;
+}
+
+
+static switch_status_t channel_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
+{
+	struct private_object *tech_pvt = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	//int payload = 0;
+	//switch_status_t status;
+
+	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+	
+	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	while (!(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation && switch_rtp_ready(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session))) {
+		if (switch_channel_ready(channel)) {
+			switch_yield(10000);
+		} else {
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+	
+	tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.datalen = 0;
+	
+	while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.datalen == 0) {
+		tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.flags = SFF_NONE;
+		switch_rtp_zerocopy_read_frame(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, &tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame, flags);
+	}
+
+
+	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.datalen == 0) {
+		switch_set_flag((&tech_pvt->transports[LDL_TPORT_RTP].read_frame), SFF_CNG);
+		tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.datalen = 2;
+	}
+
+	*frame = &tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame;
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t channel_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
+{
+	struct private_object *tech_pvt = (struct private_object *)switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int wrote = 0;
+
+	switch_assert(tech_pvt != NULL);
+
+	while (!(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec.implementation && switch_rtp_ready(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session))) {
+		if (switch_channel_ready(channel)) {
+			switch_yield(10000);
+		} else {
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+
+	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!switch_test_flag(frame, SFF_CNG)) {
+		wrote = switch_rtp_write_frame(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, frame);
+	}
+
+	return wrote > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
 }
 
 static switch_status_t channel_answer_channel(switch_core_session_t *session)
@@ -1603,10 +2301,13 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		channel_answer_channel(session);
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-		rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
+		rtp_flush_read_buffer(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, SWITCH_RTP_FLUSH_STICK);
 		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-		rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
+		rtp_flush_read_buffer(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
+		break;
+	case SWITCH_MESSAGE_INDICATE_STUN_ERROR:
+		//switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
 		break;
 	default:
 		break;
@@ -1654,12 +2355,15 @@ switch_state_handler_table_t dingaling_event_handlers = {
 
 switch_io_routines_t dingaling_io_routines = {
 	/*.outgoing_channel */ channel_outgoing_channel,
-	/*.read_frame */ channel_read_frame,
+	/*.transports[LDL_TPORT_RTP].read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
 	/*.kill_channel */ channel_kill_channel,
 	/*.send_dtmf */ channel_send_dtmf,
 	/*.receive_message */ channel_receive_message,
-	/*.receive_event */ channel_receive_event
+	/*.receive_event */ channel_receive_event,
+	/*.state_change */ NULL,
+	/*.read_video_frame */ channel_read_video_frame,
+	/*.write_video_frame */ channel_write_video_frame
 };
 
 
@@ -1688,6 +2392,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		char *p, *u, ubuf[512] = "", *user = NULL, *f_cid_msg = NULL;
 		const char *cid_msg = NULL;
 		ldl_user_flag_t flags = LDL_FLAG_OUTBOUND;
+		const char *var;
 
 		switch_copy_string(workspace, outbound_profile->destination_number, sizeof(workspace));
 		profile_name = workspace;
@@ -1752,6 +2457,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
 			}
 
+			
+
+
 			if (!ldl_handle_ready(mdl_profile->handle)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "Doh! we are not logged in yet!\n");
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1775,19 +2483,40 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			tech_pvt->profile = mdl_profile;
 			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			tech_pvt->flags |= globals.flags;
 			tech_pvt->flags |= mdl_profile->flags;
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
-			tech_pvt->codec_index = -1;
-			if (!(tech_pvt->local_port = switch_rtp_request_port(mdl_profile->ip))) {
+			tech_pvt->channel = switch_core_session_get_channel(tech_pvt->session);
+			tech_pvt->transports[LDL_TPORT_RTP].codec_index = -1;
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index = -1;
+
+			switch_set_flag(tech_pvt, TFLAG_SECURE);
+			mdl_build_crypto(tech_pvt, LDL_TPORT_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
+			mdl_build_crypto(tech_pvt, LDL_TPORT_VIDEO_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
+
+
+
+			if (!(tech_pvt->transports[LDL_TPORT_RTP].local_port = switch_rtp_request_port(mdl_profile->ip))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "No RTP port available!\n");
 				terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
-			tech_pvt->adv_local_port = tech_pvt->local_port;
+			tech_pvt->transports[LDL_TPORT_RTP].adv_local_port = tech_pvt->transports[LDL_TPORT_RTP].local_port;
+			tech_pvt->transports[LDL_TPORT_RTCP].adv_local_port = tech_pvt->transports[LDL_TPORT_RTP].local_port + 1;
+			if (!(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port = switch_rtp_request_port(mdl_profile->ip))) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "No RTP port available!\n");
+				terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			}
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTP].adv_local_port = tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port;
+			tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].adv_local_port = tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port + 1;
+
+			
+
 			tech_pvt->recip = switch_core_session_strdup(*new_session, full_id);
 			if (dnis) {
 				tech_pvt->dnis = switch_core_session_strdup(*new_session, dnis);
@@ -1848,12 +2577,17 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 		switch_safe_free(f_cid_msg);
 
-		tech_pvt->profile = mdl_profile;
+
 		ldl_session_set_private(dlsession, *new_session);
 		ldl_session_set_value(dlsession, "dnis", dnis);
 		ldl_session_set_value(dlsession, "caller_id_name", outbound_profile->caller_id_name);
 		ldl_session_set_value(dlsession, "caller_id_number", outbound_profile->caller_id_number);
 		tech_pvt->dlsession = dlsession;
+
+		if ((var = switch_event_get_header(var_event, "absolute_codec_string"))) {
+			switch_channel_set_variable(channel, "absolute_codec_string", var);
+		}
+
 		if (!get_codecs(tech_pvt)) {
 			terminate_session(new_session, __LINE__, SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL);
 			return SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL;
@@ -2117,6 +2851,8 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		} else if (val && !strcasecmp(val, "md5")) {
 			profile->user_flags |= LDL_FLAG_SASL_MD5;
 		}
+	} else if (!strcasecmp(var, "use-jingle") && switch_true(val)) {
+		profile->user_flags |= LDL_FLAG_JINGLE;
 	} else if (!strcasecmp(var, "exten") && !zstr(val)) {
 		profile->exten = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "context") && !zstr(val)) {
@@ -2757,6 +3493,308 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 	switch_safe_free(xmlstr);
 }
 
+static switch_status_t parse_candidates(ldl_session_t *dlsession, switch_core_session_t *session, ldl_transport_type_t ttype, const char *subject) 
+{
+	
+	ldl_candidate_t *candidates;
+	unsigned int len = 0;
+	unsigned int x, choice = 0, ok = 0;
+	uint8_t lanaddr = 0;
+	struct private_object *tech_pvt = NULL;
+	switch_status_t status = LDL_STATUS_SUCCESS;
+
+	if (!(tech_pvt = switch_core_session_get_private(session))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (ldl_session_get_candidates(dlsession, ttype, &candidates, &len) != LDL_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Candidate Error!\n");
+		switch_set_flag(tech_pvt, TFLAG_BYE);
+		switch_clear_flag(tech_pvt, TFLAG_IO);
+		status = LDL_STATUS_FALSE;
+		goto end;
+	}
+
+
+	tech_pvt->transports[ttype].total = len;
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%u %s candidates\n", len, ldl_transport_type_str(ttype));
+
+	if (tech_pvt->profile->acl_count) {
+		for (x = 0; x < len; x++) {
+			uint32_t y = 0;
+
+			if (strcasecmp(candidates[x].protocol, "udp")) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d has an unsupported protocol!\n",
+								  candidates[x].address, candidates[x].port);
+				continue;
+			}
+
+			for (y = 0; y < tech_pvt->profile->acl_count; y++) {
+																																																																																																															
+				if (switch_check_network_list_ip(candidates[x].address, tech_pvt->profile->acl[y])) {
+					choice = x;
+					ok = 1;
+				}
+																																																																																																																																															
+				if (ok) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d PASS ACL %s\n",
+									  candidates[x].address, candidates[x].port, tech_pvt->profile->acl[y]);
+					goto end_candidates;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d FAIL ACL %s\n",
+									  candidates[x].address, candidates[x].port, tech_pvt->profile->acl[y]);
+				}
+			}
+		}
+	} else {
+		for (x = 0; x < len; x++) {
+			
+
+			if (tech_pvt->profile->lanaddr) {
+				lanaddr = strncasecmp(candidates[x].address, tech_pvt->profile->lanaddr, strlen(tech_pvt->profile->lanaddr)) ? 0 : 1;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s candidates %s:%d\n", 
+							  ldl_transport_type_str(ttype), candidates[x].address,
+							  candidates[x].port);
+
+
+			// 192.0.0.0 - 192.0.127.255 is marked as reserved, should we filter all of them?
+			if (!strcasecmp(candidates[x].protocol, "udp") &&
+				(!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun") || !strcasecmp(candidates[x].type, "relay")) &&
+				((tech_pvt->profile->lanaddr &&
+				  lanaddr) || (strncasecmp(candidates[x].address, "10.", 3) &&
+							   strncasecmp(candidates[x].address, "192.168.", 8) &&
+							   strncasecmp(candidates[x].address, "127.", 4) &&
+							   strncasecmp(candidates[x].address, "255.", 4) &&
+							   strncasecmp(candidates[x].address, "0.", 2) &&
+							   strncasecmp(candidates[x].address, "1.", 2) &&
+							   strncasecmp(candidates[x].address, "2.", 2) &&
+							   strncasecmp(candidates[x].address, "172.16.", 7) &&
+							   strncasecmp(candidates[x].address, "172.17.", 7) &&
+							   strncasecmp(candidates[x].address, "172.18.", 7) &&
+							   strncasecmp(candidates[x].address, "172.19.", 7) &&
+							   strncasecmp(candidates[x].address, "172.2", 5) &&
+							   strncasecmp(candidates[x].address, "172.30.", 7) &&
+							   strncasecmp(candidates[x].address, "172.31.", 7) &&
+							   strncasecmp(candidates[x].address, "192.0.2.", 8) && strncasecmp(candidates[x].address, "169.254.", 8)
+							   ))) {
+				choice = x;
+				ok = 1;
+			}
+		}
+	}
+
+
+ end_candidates:
+	
+	if (ok) {
+		ldl_payload_t payloads[5];
+		char *key;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+						  "Acceptable %s Candidate %s:%d\n", ldl_transport_type_str(ttype), candidates[choice].address, candidates[choice].port);
+
+
+		if (tech_pvt->transports[ttype].accepted) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Already Accepted [%s:%d]\n", 
+							  tech_pvt->transports[ttype].remote_ip, tech_pvt->transports[ttype].remote_port);
+			goto end;
+		}
+
+
+		if (tech_pvt->transports[ttype].remote_ip) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Already picked an IP [%s]\n", tech_pvt->transports[ttype].remote_ip);
+			goto end;
+		}
+
+		
+		memset(payloads, 0, sizeof(payloads));
+
+		tech_pvt->transports[ttype].accepted++;
+
+		if (ttype == LDL_TPORT_VIDEO_RTP) {
+			if ((key = ldl_session_get_value(dlsession, "video:crypto:1"))) {
+				mdl_add_crypto(tech_pvt, ttype, key, SWITCH_RTP_CRYPTO_RECV);
+			} else {
+				tech_pvt->transports[ttype].crypto_type = 0;
+			}
+		} else if (ttype == LDL_TPORT_RTP) {
+			if ((key = ldl_session_get_value(dlsession, "audio:crypto:1"))) {
+				mdl_add_crypto(tech_pvt, ttype, key, SWITCH_RTP_CRYPTO_RECV);
+			} else {
+				tech_pvt->transports[ttype].crypto_type = 0;
+			}
+		}
+		
+		if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+			switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
+			//ldl_session_accept_candidate(dlsession, &candidates[choice]);
+		}
+
+		if (!strcasecmp(subject, "candidates")) {
+			//switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
+			switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
+		}
+
+		if (lanaddr) {
+			switch_set_flag_locked(tech_pvt, TFLAG_LANADDR);
+		}
+
+		if (!get_codecs(tech_pvt)) {
+			terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			status = LDL_STATUS_FALSE;
+			goto end;
+		}
+
+
+		tech_pvt->transports[ttype].remote_ip = switch_core_session_strdup(session, candidates[choice].address);
+		ldl_session_set_ip(dlsession, tech_pvt->transports[ttype].remote_ip);
+		tech_pvt->transports[ttype].remote_port = candidates[choice].port;
+		tech_pvt->transports[ttype].remote_user = switch_core_session_strdup(session, candidates[choice].username);
+		tech_pvt->transports[ttype].remote_pass = switch_core_session_strdup(session, candidates[choice].password);
+
+		if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+			if (!do_candidates(tech_pvt, 0)) {
+				terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				status = LDL_STATUS_FALSE;
+
+				goto end;
+			}
+		}
+
+		if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && (ttype == LDL_TPORT_VIDEO_RTP || ttype == LDL_TPORT_VIDEO_RTP) &&
+			tech_pvt->transports[ttype].accepted == 1 && (1||switch_test_flag(tech_pvt, TFLAG_RTP_READY))) {
+
+			if (ttype == LDL_TPORT_VIDEO_RTP) {
+				activate_video_rtp(tech_pvt);
+			}
+
+			if (ttype == LDL_TPORT_VIDEO_RTP) {
+				activate_audio_rtp(tech_pvt);
+			}
+
+			tech_pvt->transports[ttype].restart_rtp++;
+		}
+
+
+		status = LDL_STATUS_SUCCESS;
+	}
+
+ end:
+
+	return status;
+
+}
+
+
+static ldl_status parse_payloads_type(ldl_session_t *dlsession, switch_core_session_t *session, 
+										ldl_transport_type_t ttype, ldl_payload_t *payloads, unsigned int len)
+{
+	struct private_object *tech_pvt = NULL;
+	switch_status_t status = LDL_STATUS_SUCCESS;
+	unsigned int x, y;
+	int match = 0;
+
+	tech_pvt = switch_core_session_get_private(session);	
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%u payloads\n", len);
+	for (x = 0; x < len; x++) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Available Payload %s %u\n", payloads[x].name,
+						  payloads[x].id);
+		for (y = 0; y < tech_pvt->num_codecs; y++) {
+			char *name = tech_pvt->codecs[y]->iananame;
+
+			if ((ttype == LDL_TPORT_VIDEO_RTP && tech_pvt->codecs[y]->codec_type != SWITCH_CODEC_TYPE_VIDEO) || 
+				(ttype == LDL_TPORT_RTP && tech_pvt->codecs[y]->codec_type != SWITCH_CODEC_TYPE_AUDIO)) {
+				continue;
+			}
+
+			if (!strncasecmp(name, "ilbc", 4)) {
+				name = "ilbc";
+			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "compare %s %d/%d to %s %d/%d\n",
+							  payloads[x].name, payloads[x].id, payloads[x].rate,
+							  name, tech_pvt->codecs[y]->ianacode, tech_pvt->codecs[y]->samples_per_second);
+
+			if (tech_pvt->codecs[y]->ianacode > 95) {
+				match = strcasecmp(name, payloads[x].name) ? 0 : 1;
+			} else {
+				match = (payloads[x].id == tech_pvt->codecs[y]->ianacode) ? 1 : 0;
+			}
+						
+			if (match && payloads[x].rate == tech_pvt->codecs[y]->samples_per_second) {
+				tech_pvt->transports[ttype].codec_index = y;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Choosing %s Payload index %u %s %u\n", 
+								  ldl_transport_type_str(ttype),
+								  y,
+								  payloads[x].name, payloads[x].id);
+				tech_pvt->transports[ttype].codec_name = tech_pvt->codecs[y]->iananame;
+				tech_pvt->transports[ttype].codec_num = tech_pvt->codecs[y]->ianacode;
+				tech_pvt->transports[ttype].r_codec_num = (switch_payload_t) (payloads[x].id);
+				tech_pvt->transports[ttype].codec_rate = payloads[x].rate;
+				tech_pvt->transports[ttype].ptime = payloads[x].ptime;
+				tech_pvt->transports[ttype].payload_count++;
+
+				if (ttype == LDL_TPORT_VIDEO_RTP) {
+					tech_pvt->transports[ttype].vid_width = payloads[x].width;
+					tech_pvt->transports[ttype].vid_height = payloads[x].height;
+					tech_pvt->transports[ttype].vid_rate = payloads[x].framerate;
+				}
+
+				if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+
+
+					if (!do_describe(tech_pvt, 0)) {
+						terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						status = LDL_STATUS_FALSE;
+						goto done;
+					}
+				}
+				status = LDL_STATUS_SUCCESS;
+				goto done;
+			}
+		}
+	}
+
+ done:
+
+	return status;
+
+}
+
+static ldl_status parse_payloads(ldl_session_t *dlsession, switch_core_session_t *session, ldl_payload_t *payloads, unsigned int len)
+{
+	int match = 0;
+	struct private_object *tech_pvt = NULL;
+	ldl_status status;
+
+	tech_pvt = switch_core_session_get_private(session);
+
+	
+	if ((status = parse_payloads_type(dlsession, session, LDL_TPORT_RTP, payloads, len)) == LDL_STATUS_SUCCESS) {
+		match++;
+	}
+
+	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].ready) {
+		if ((status = parse_payloads_type(dlsession, session, LDL_TPORT_VIDEO_RTP, payloads, len)) == LDL_STATUS_SUCCESS) {
+			match++;
+		}
+	}
+
+	if (!match && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+		if (!do_describe(tech_pvt, 0)) {
+			terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			status = LDL_STATUS_FALSE;
+		}
+	}
+
+
+	return status;
+
+}
+		
+
 static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t dl_signal, char *to, char *from, char *subject,
 									char *msg)
 {
@@ -3060,15 +4098,36 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->dlsession = dlsession;
 
 				tech_pvt->session = session;
-				tech_pvt->codec_index = -1;
+				tech_pvt->channel = switch_core_session_get_channel(session);
+				tech_pvt->transports[LDL_TPORT_RTP].codec_index = -1;
+				tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index = -1;
 				tech_pvt->profile = profile;
-				if (!(tech_pvt->local_port = switch_rtp_request_port(profile->ip))) {
+
+				switch_set_flag(tech_pvt, TFLAG_SECURE);
+				mdl_build_crypto(tech_pvt, LDL_TPORT_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
+				mdl_build_crypto(tech_pvt, LDL_TPORT_VIDEO_RTP, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
+
+
+				if (!(tech_pvt->transports[LDL_TPORT_RTP].local_port = switch_rtp_request_port(profile->ip))) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "No RTP port available!\n");
 					terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					status = LDL_STATUS_FALSE;
 					goto done;
 				}
-				tech_pvt->adv_local_port = tech_pvt->local_port;
+				tech_pvt->transports[LDL_TPORT_RTP].adv_local_port = tech_pvt->transports[LDL_TPORT_RTP].local_port;
+				tech_pvt->transports[LDL_TPORT_RTCP].adv_local_port = tech_pvt->transports[LDL_TPORT_RTP].local_port + 1;
+
+				if (!(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port = switch_rtp_request_port(profile->ip))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "No RTP port available!\n");
+					terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					status = LDL_STATUS_FALSE;
+					goto done;
+				}
+				tech_pvt->transports[LDL_TPORT_VIDEO_RTP].adv_local_port = tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port;
+				tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].adv_local_port = tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_port + 1;
+
+
+
 				switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 				tech_pvt->recip = switch_core_session_strdup(session, from);
 				if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
@@ -3205,8 +4264,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					p++;
 				}
 				switch_set_flag_locked(tech_pvt, TFLAG_DTMF);
-				if (switch_rtp_ready(tech_pvt->rtp_session)) {
-					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+				if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
+					switch_rtp_set_flag(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, SWITCH_RTP_FLAG_BREAK);
 				}
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SESSION MSG [%s]\n", msg);
@@ -3252,10 +4311,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		if (dl_signal) {
 			ldl_payload_t *payloads;
 			unsigned int len = 0;
-			int match = 0;
-
+			
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-				if (!strcasecmp(msg, "accept")) {
+				if (msg && !strcasecmp(msg, "accept")) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 					switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
 					if (!do_candidates(tech_pvt, 0)) {
@@ -3266,7 +4324,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				}
 			}
 
-			if (tech_pvt->codec_index > -1) {
+			if (tech_pvt->transports[LDL_TPORT_RTP].codec_index > -1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Already decided on a codec\n");
 				break;
 			}
@@ -3278,55 +4336,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				goto done;
 			}
 
-
 			if (ldl_session_get_payloads(dlsession, &payloads, &len) == LDL_STATUS_SUCCESS) {
-				unsigned int x, y;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%u payloads\n", len);
-				for (x = 0; x < len; x++) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Available Payload %s %u\n", payloads[x].name,
-									  payloads[x].id);
-					for (y = 0; y < tech_pvt->num_codecs; y++) {
-						char *name = tech_pvt->codecs[y]->iananame;
-
-						if (!strncasecmp(name, "ilbc", 4)) {
-							name = "ilbc";
-						}
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "compare %s %d/%d to %s %d/%d\n",
-										  payloads[x].name, payloads[x].id, payloads[x].rate,
-										  name, tech_pvt->codecs[y]->ianacode, tech_pvt->codecs[y]->samples_per_second);
-						if (tech_pvt->codecs[y]->ianacode > 95) {
-							match = strcasecmp(name, payloads[x].name) ? 0 : 1;
-						} else {
-							match = (payloads[x].id == tech_pvt->codecs[y]->ianacode) ? 1 : 0;
-						}
-
-						if (match && payloads[x].rate == tech_pvt->codecs[y]->samples_per_second) {
-							tech_pvt->codec_index = y;
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Choosing Payload index %u %s %u\n", y,
-											  payloads[x].name, payloads[x].id);
-							tech_pvt->codec_name = tech_pvt->codecs[y]->iananame;
-							tech_pvt->codec_num = tech_pvt->codecs[y]->ianacode;
-							tech_pvt->r_codec_num = (switch_payload_t) (payloads[x].id);
-							tech_pvt->codec_rate = payloads[x].rate;
-							if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-								if (!do_describe(tech_pvt, 0)) {
-									terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-									status = LDL_STATUS_FALSE;
-									goto done;
-								}
-							}
-							status = LDL_STATUS_SUCCESS;
-							goto done;
-						}
-					}
-				}
-				if (!match && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-					if (!do_describe(tech_pvt, 0)) {
-						terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-						status = LDL_STATUS_FALSE;
-						goto done;
-					}
-				}
+				status = parse_payloads(dlsession, session, payloads, len);
+				goto done;
 			}
 
 		}
@@ -3334,141 +4346,14 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		break;
 	case LDL_SIGNAL_CANDIDATES:
 		if (dl_signal) {
-			ldl_candidate_t *candidates;
-			unsigned int len = 0;
-			unsigned int x, choice = 0, ok = 0;
-			uint8_t lanaddr = 0;
+			status = SWITCH_STATUS_SUCCESS;
 
-			if (ldl_session_get_candidates(dlsession, &candidates, &len) != LDL_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Candidate Error!\n");
-				switch_set_flag(tech_pvt, TFLAG_BYE);
-				switch_clear_flag(tech_pvt, TFLAG_IO);
-				status = LDL_STATUS_FALSE;
-				goto done;
-			}
-
-
-			if (tech_pvt->remote_ip) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Already picked an IP [%s]\n", tech_pvt->remote_ip);
-				break;
-			}
-
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%u candidates\n", len);
-
-			if (profile->acl_count) {
-				for (x = 0; x < len; x++) {
-					uint32_t y = 0;
-
-					if (strcasecmp(candidates[x].protocol, "udp")) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d has an unsupported protocol!\n",
-										  candidates[x].address, candidates[x].port);
-						continue;
-					}
-
-					for (y = 0; y < profile->acl_count; y++) {
-						
-						if (switch_check_network_list_ip(candidates[x].address, profile->acl[y])) {
-							choice = x;
-							ok = 1;
-						}
-						
-						if (ok) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d PASS ACL %s\n",
-											  candidates[x].address, candidates[x].port, profile->acl[y]);
-							goto end_candidates;
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidate %s:%d FAIL ACL %s\n",
-											  candidates[x].address, candidates[x].port, profile->acl[y]);
-						}
-					}
-				}
-			} else {
-				for (x = 0; x < len; x++) {
-
-					if (profile->lanaddr) {
-						lanaddr = strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr)) ? 0 : 1;
-					}
-
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "candidates %s:%d\n", candidates[x].address,
-									  candidates[x].port);
-
-					// 192.0.0.0 - 192.0.127.255 is marked as reserved, should we filter all of them?
-					if (!strcasecmp(candidates[x].protocol, "udp") &&
-						(!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun")) &&
-						((profile->lanaddr &&
-						  lanaddr) || (strncasecmp(candidates[x].address, "10.", 3) &&
-									   strncasecmp(candidates[x].address, "192.168.", 8) &&
-									   strncasecmp(candidates[x].address, "127.", 4) &&
-									   strncasecmp(candidates[x].address, "255.", 4) &&
-									   strncasecmp(candidates[x].address, "0.", 2) &&
-									   strncasecmp(candidates[x].address, "1.", 2) &&
-									   strncasecmp(candidates[x].address, "2.", 2) &&
-									   strncasecmp(candidates[x].address, "172.16.", 7) &&
-									   strncasecmp(candidates[x].address, "172.17.", 7) &&
-									   strncasecmp(candidates[x].address, "172.18.", 7) &&
-									   strncasecmp(candidates[x].address, "172.19.", 7) &&
-									   strncasecmp(candidates[x].address, "172.2", 5) &&
-									   strncasecmp(candidates[x].address, "172.30.", 7) &&
-									   strncasecmp(candidates[x].address, "172.31.", 7) &&
-									   strncasecmp(candidates[x].address, "192.0.2.", 8) && strncasecmp(candidates[x].address, "169.254.", 8)
-						 ))) {
-						choice = x;
-						ok = 1;
-					}
-				}
-			}
-
-		end_candidates:
-
-			if (ok) {
-				ldl_payload_t payloads[5];
-
-				memset(payloads, 0, sizeof(payloads));
-
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-								  "Acceptable Candidate %s:%d\n", candidates[choice].address, candidates[choice].port);
-
-				if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-					switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
-					//ldl_session_accept_candidate(dlsession, &candidates[choice]);
-				}
-
-				if (!strcasecmp(subject, "candidates")) {
-					//switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
-					switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
-				}
-
-				if (lanaddr) {
-					switch_set_flag_locked(tech_pvt, TFLAG_LANADDR);
-				}
-
-				if (!get_codecs(tech_pvt)) {
-					terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					status = LDL_STATUS_FALSE;
-					goto done;
-				}
-
-
-				tech_pvt->remote_ip = switch_core_session_strdup(session, candidates[choice].address);
-				ldl_session_set_ip(dlsession, tech_pvt->remote_ip);
-				tech_pvt->remote_port = candidates[choice].port;
-				tech_pvt->remote_user = switch_core_session_strdup(session, candidates[choice].username);
-
-
-				if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-					if (!do_candidates(tech_pvt, 0)) {
-						terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-						status = LDL_STATUS_FALSE;
-						goto done;
-					}
-				}
-
-				status = LDL_STATUS_SUCCESS;
-			}
-
-			goto done;
-
+			status = parse_candidates(dlsession, session, LDL_TPORT_RTP, subject);
+			status = parse_candidates(dlsession, session, LDL_TPORT_VIDEO_RTP, subject); 
+			status = parse_candidates(dlsession, session, LDL_TPORT_RTCP, subject);
+			status = parse_candidates(dlsession, session, LDL_TPORT_VIDEO_RTCP, subject); 
 		}
+
 		break;
 	case LDL_SIGNAL_REJECT:
 		if (channel) {

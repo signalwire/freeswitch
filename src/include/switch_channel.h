@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -641,6 +641,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_api_on(switch_channel_t *channel,
 
 SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_queued_extension(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_transfer_to_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension);
+SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid(switch_channel_t *channel);
 
 SWITCH_END_EXTERN_C
 #endif

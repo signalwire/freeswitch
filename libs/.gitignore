@@ -13,10 +13,15 @@ libtool
 ltmain.sh
 missing
 
+ptlib
+opal
+
 *_manifest.rc
 *.pc
 
 /*.tar.*
+
+/*/*.dSYM/
 
 /apr/apr-1-config
 /apr/apr.exp
@@ -225,6 +230,7 @@ missing
 /ldns/doc/ldns_manpages
 /ldns/include/
 /ldns/ldns/config.h
+/ldns/ldns/ldns
 /ldns/ldns/net.h
 /ldns/ldns/util.h
 /ldns/lib
@@ -522,6 +528,11 @@ missing
 /spandsp/doc/Makefile.in
 /spandsp/Makefile
 /spandsp/Makefile.in
+/spandsp/m4/libtool.m4
+/spandsp/m4/ltoptions.m4
+/spandsp/m4/ltsugar.m4
+/spandsp/m4/ltversion.m4
+/spandsp/m4/lt~obsolete.m4
 /spandsp/spandsp-sim/Makefile
 /spandsp/spandsp-sim/Makefile.in
 /spandsp/src/at_interpreter_dictionary.h
@@ -572,6 +583,7 @@ missing
 /spandsp/test-data/Makefile.in
 /spandsp/tests/Makefile
 /spandsp/tests/Makefile.in
+/spandsp/src/make_cielab_luts
 /speex/config.h
 /speex/include/Makefile
 /speex/include/Makefile.in
@@ -874,6 +886,7 @@ missing
 /yaml/tests/run-parser
 /yaml/tests/run-scanner
 /zeromq-*/
+/jpeg-8d/
 
 # build products we should remove
 !/apr-util/xml/expat/conftools/config.guess

@@ -553,7 +553,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 
 	do {
 		if (speak) {
-			status = switch_ivr_speak_text(client->session, tts_engine, tts_voice, (char *)body, args);
+			status = switch_ivr_speak_text(client->session, tts_engine, tts_voice, (char *)file, args);
 		} else if (say) {
 			status = switch_ivr_say(client->session, body, say_lang, say_type, say_method, say_gender, args);
 		} else if (play) {
@@ -597,8 +597,8 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 				switch_ivr_play_file(client->session, NULL, error_file, &nullargs);
 				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, name, "invalid");
 				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "invalid");
-				status = SWITCH_STATUS_SUCCESS;
 			}
+			status = SWITCH_STATUS_SUCCESS;
 		} else if (status == SWITCH_STATUS_FOUND) {
 			status = SWITCH_STATUS_SUCCESS;
 			submit = 1;
@@ -887,7 +887,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	const char *digit_timeout_ = switch_xml_attr(tag, "digit-timeout");
 	char *loops_ = (char *) switch_xml_attr(tag, "loops");
 	int loops = 0;
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_ivr_dmachine_t *dmachine = NULL;
 	switch_input_args_t *args = NULL, myargs = { 0 };
 	long digit_timeout = 1500;
@@ -1020,6 +1020,10 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 		fh.silence_hits = silence_hits;
 		
 		status = switch_ivr_record_file(client->session, &fh, tmp_record_path, args, record_limit);
+	}
+
+	if (switch_channel_ready(client->channel)) {
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 	if (client->matching_action_binding) {
@@ -1326,7 +1330,6 @@ static void cleanup_attachments(client_t *client)
 	for (hp = client->params->headers; hp; hp = hp->next) {
 		if (!strncasecmp(hp->name, "attach_file:", 12)) {
 			if (switch_file_exists(hp->value, client->pool) == SWITCH_STATUS_SUCCESS) {
-				printf("DELETE %s\n", hp->value);
 				unlink(hp->value);
 			}
 		}	
@@ -2161,6 +2164,7 @@ SWITCH_STANDARD_APP(httapi_function)
 		if (!zstr(url) && switch_stristr("://", url)) {
 			if (!params) {
 				switch_event_create(&params, SWITCH_EVENT_CLONE);
+				params->flags |= EF_UNIQ_HEADERS;
 			}
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "url", url);
 		}
@@ -2272,7 +2276,9 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 
 			if ((p = strchr(meta_buffer, ':'))) {
 				*p++ = '\0';
-				context->expires = (time_t) atol(meta_buffer);
+				if (context->expires != 1) {
+					context->expires = (time_t) atol(meta_buffer);
+				}
 				context->metadata = switch_core_strdup(context->pool, p);
 			}
 		}
@@ -2518,7 +2524,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 
 	load_cache_data(context, url);
 
-	if (context->expires && now < context->expires) {
+	if (context->expires > 1 && now < context->expires) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2610,7 +2616,13 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 	switch_event_create_brackets(pdup, '(', ')', ',', &context->url_params, &parsed, SWITCH_FALSE);
 
 	if (context->url_params) {
+		const char *var;
 		context->ua = switch_event_get_header(context->url_params, "ua");
+
+		if ((var = switch_event_get_header(context->url_params, "cache")) && !switch_true(var)) {
+			context->expires = 1;
+		}
+
 	}
 
 	if (parsed) path = parsed;

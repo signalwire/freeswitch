@@ -107,8 +107,8 @@ SPAN_DECLARE(void) vec_copyl(long double z[], const long double x[], int n)
 SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
 {
     int i;
-	static const uint32_t mask = 0x80000000;
-	static const float *fmask = (float *) &mask;
+    static const uint32_t mask = 0x80000000;
+    static const float *fmask = (float *) &mask;
     __m128 n1;
     __m128 n2;
  
@@ -118,7 +118,7 @@ SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
         for (i -= 4;  i >= 0;  i -= 4)
         {
             n1 = _mm_loadu_ps(x + i);
-		    n1 = _mm_xor_ps(n1, n2);
+            n1 = _mm_xor_ps(n1, n2);
             _mm_storeu_ps(z + i, n1);
         }
     }

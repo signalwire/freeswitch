@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     printf("Decoded as %s %s %s\n", (country)  ?  country  :  "???", (vendor)  ?  vendor  :  "???", (model)  ?  model  :  "???");
 
     printf("Tests passed\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

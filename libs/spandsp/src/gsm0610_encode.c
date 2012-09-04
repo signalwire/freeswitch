@@ -116,7 +116,7 @@ SPAN_DECLARE(gsm0610_state_t *) gsm0610_init(gsm0610_state_t *s, int packing)
     if (s == NULL)
     {
         if ((s = (gsm0610_state_t *) malloc(sizeof (*s))) == NULL)
-            return  NULL;
+            return NULL;
         /*endif*/
     }
     /*endif*/

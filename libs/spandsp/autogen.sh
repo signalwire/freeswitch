@@ -106,32 +106,19 @@ version_compare()
 
 # Check for required version and die if unhappy
 
+mkdir config
+
 if [ "x$UNAME" = "xFreeBSD" ]; then
 version_compare libtoolize 1 5 16 || exit 1
 version_compare automake19 1 9 5 || exit 1
 version_compare autoconf259 2 59 || exit 1
-ACLOCAL=aclocal19
-AUTOHEADER=autoheader259
-AUTOMAKE=automake19
-AUTOCONF=autoconf259
 else
 version_compare libtoolize 1 5 16 || exit 1
 version_compare automake 1 9 5 || exit 1
 version_compare autoconf 2 59 || exit 1
-ACLOCAL=aclocal
-AUTOHEADER=autoheader
-AUTOMAKE=automake
-AUTOCONF=autoconf
 fi
 
-libtoolize --copy --force --ltdl
-#NetBSD seems to need this file writable
-chmod u+w libltdl/configure
-
-$ACLOCAL
-$AUTOHEADER --force
-$AUTOMAKE --copy --add-missing
-$AUTOCONF --force
+autoreconf -fi
 
 #chmod ug+x debian/rules
 

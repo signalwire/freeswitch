@@ -245,7 +245,7 @@ SPAN_DECLARE(echo_can_state_t *) echo_can_init(int len, int adaption_mode)
     int j;
 
     if ((ec = (echo_can_state_t *) malloc(sizeof(*ec))) == NULL)
-        return  NULL;
+        return NULL;
     memset(ec, 0, sizeof(*ec));
     ec->taps = len;
     ec->curr_pos = ec->taps - 1;
@@ -253,7 +253,7 @@ SPAN_DECLARE(echo_can_state_t *) echo_can_init(int len, int adaption_mode)
     if ((ec->fir_taps32 = (int32_t *) malloc(ec->taps*sizeof(int32_t))) == NULL)
     {
         free(ec);
-        return  NULL;
+        return NULL;
     }
     memset(ec->fir_taps32, 0, ec->taps*sizeof(int32_t));
     for (i = 0;  i < 4;  i++)
@@ -264,7 +264,7 @@ SPAN_DECLARE(echo_can_state_t *) echo_can_init(int len, int adaption_mode)
                 free(ec->fir_taps16[j]);
             free(ec->fir_taps32);
             free(ec);
-            return  NULL;
+            return NULL;
         }
         memset(ec->fir_taps16[i], 0, ec->taps*sizeof(int16_t));
     }

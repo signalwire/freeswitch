@@ -124,11 +124,16 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	/* Channel variables */
 	bson_append_start_object(&cdr, "variables");
-	for (hi = switch_channel_variable_first(channel); hi; hi = hi->next) {
-		if (!zstr(hi->name) && !zstr(hi->value)) {
-			bson_append_string(&cdr, hi->name, hi->value);
+
+	if ((hi = switch_channel_variable_first(channel))) {
+		for (; hi; hi = hi->next) {
+			if (!zstr(hi->name) && !zstr(hi->value)) {
+				bson_append_string(&cdr, hi->name, hi->value);
+			}
 		}
+		switch_channel_variable_last(channel);
 	}
+
 	bson_append_finish_object(&cdr);				/* variables */
 
 
@@ -140,7 +145,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		for (ap = app_log; ap; ap = ap->next) {
 			bson_append_start_object(&cdr, "application");
 			bson_append_string(&cdr, "app_name", ap->app);
-			bson_append_string(&cdr, "app_data", ap->arg);
+			bson_append_string(&cdr, "app_data", switch_str_nil(ap->arg));
 			bson_append_long(&cdr, "app_stamp", ap->stamp);
 			bson_append_finish_object(&cdr);		/* application */
 		}
@@ -181,7 +186,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 					bson_append_bool(&cdr, "last_executed", 1);
 				}
 				bson_append_string(&cdr, "app_name", ap->application_name);
-				bson_append_string(&cdr, "app_data", ap->application_data);
+				bson_append_string(&cdr, "app_data", switch_str_nil(ap->application_data));
 				bson_append_finish_object(&cdr);
 			}
 
@@ -210,7 +215,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 							bson_append_bool(&cdr, "last_executed", 1);
 						}
 						bson_append_string(&cdr, "app_name", ap->application_name);
-						bson_append_string(&cdr, "app_data", ap->application_data);
+						bson_append_string(&cdr, "app_data", switch_str_nil(ap->application_data));
 						bson_append_finish_object(&cdr);
 					}
 
@@ -355,7 +360,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_mongodb_load)
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 	if (load_config(pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Unable to load or parse config!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to load or parse config!\n");
+		return SWITCH_STATUS_FALSE;
 	}
 
 	db_status = mongo_connect(globals.mongo_conn, globals.mongo_host, globals.mongo_port);

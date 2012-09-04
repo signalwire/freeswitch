@@ -9,8 +9,8 @@ VERBOSE=false
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="apr \
-  libzrtp ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip \
-  speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-3.8.2 broadvoice silk libcodec2 \
+  libzrtp ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip libwebsockets \
+  speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-4.0.2 broadvoice silk libcodec2 \
   fs";
 
 while getopts 'jhd:v' o; do 
@@ -209,24 +209,11 @@ check_make() {
 
 
 check_awk() {
-  #
-  # Check to make sure we have GNU Make installed
-  #  
-  
-  awk=`which awk`
-  if [ -x "$awk" ]; then
-     awk_version=`$awk --version | head -n 1 |grep GNU`
-     if [ $? -ne 0 ]; then
-        awk=`which gawk`
-        if [ -x "$awk" ]; then
-          awk_version=`$awk --version | head -n 1 |grep GNU`
-	  if [ $? -ne 0 ]; then 
-            echo "GNU awk does not exist or is not executable"
-            exit 1;
-          fi
-        fi
-      fi
-   fi
+  # TODO: Building with mawk on at least Debian squeeze is know to
+  # work, but mawk is believed to fail on some systems.  If we can
+  # replicate this, we need a particular behavior that we can test
+  # here to verify whether we have an acceptable awk.
+  :
 }
 
 
@@ -356,11 +343,7 @@ bootstrap_apr() {
 
   echo "Entering directory ${LIBDIR}/apr-util"
   cd ${LIBDIR}/apr-util
-  if ! ${BGJOB}; then
-    ./buildconf
-  else
-    ./buildconf &
-  fi
+  ./buildconf
 }
 
 bootstrap_libzrtp() {
@@ -447,7 +430,7 @@ bootstrap_libs_post() {
     ldns)
       cd $BASEDIR/libs/ldns
       if test ! -x install-sh; then
-        ex automake --add-missing --copy
+        ex ${AUTOMAKE:-automake} --add-missing --copy
         ex rm -rf autom4te*.cache
       fi
       ;;
@@ -467,9 +450,10 @@ bootstrap_libs() {
     if ! ${BGJOB}; then
       libbootstrap ${i} ; bootstrap_libs_post ${i}
     else
-      ((libbootstrap ${i} ; bootstrap_libs_post ${i}) &)
+      (libbootstrap ${i} ; bootstrap_libs_post ${i}) &
     fi
   done
+  ${BGJOB} && wait
 }
 
 run() {
@@ -484,7 +468,6 @@ run() {
   check_libtoolize
   print_autotools_vers
   bootstrap_libs
-  ${BGJOB} && wait
   return 0
 }
 

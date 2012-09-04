@@ -903,28 +903,46 @@ static const char *basic_gets(int *cnt)
 }
 
 static const char *banner =
-	"            _____ ____     ____ _     ___              \n"
-	"           |  ___/ ___|   / ___| |   |_ _|             \n"
-	"           | |_  \\___ \\  | |   | |    | |            \n"
-	"           |  _|  ___) | | |___| |___ | |              \n"
-	"           |_|   |____/   \\____|_____|___|            \n"
-	"\n"
-	"*******************************************************\n"
-	"* Anthony Minessale II, Ken Rice,                     *\n"
-	"* Michael Jerris, Travis Cross                        *\n"
-	"* FreeSWITCH (http://www.freeswitch.org)              *\n"
-	"* Paypal Donations Appreciated: paypal@freeswitch.org *\n"
-	"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
-	"*******************************************************\n"
-	"\n"
-	"Type /help <enter> to see a list of commands\n\n\n";
+	".=======================================================.\n"
+    "|            _____ ____     ____ _     ___              |\n"
+    "|           |  ___/ ___|   / ___| |   |_ _|             |\n"
+    "|           | |_  \\___ \\  | |   | |    | |              |\n"
+    "|           |  _|  ___) | | |___| |___ | |              |\n"
+    "|           |_|   |____/   \\____|_____|___|             |\n"
+	"|                                                       |\n"
+	".=======================================================.\n"
+    "| Anthony Minessale II, Ken Rice,                       |\n"
+    "| Michael Jerris, Travis Cross                          |\n"
+    "| FreeSWITCH (http://www.freeswitch.org)                |\n"
+    "| Paypal Donations Appreciated: paypal@freeswitch.org   |\n"
+    "| Brought to you by ClueCon http://www.cluecon.com/     |\n"
+    ".=======================================================.\n"
+    "\n";
+
+static const char *inf = "Type /help <enter> to see a list of commands\n\n\n";
 
 static void print_banner(FILE *stream)
 {
-#ifndef WIN32
-	fprintf(stream, "%s%s", output_text_color, banner);
+#include <cc.h>
+
+#ifdef WIN32
+	/* Print banner in yellow with blue background */
+	SetConsoleTextAttribute(hStdout, ESL_SEQ_FYELLOW | BACKGROUND_BLUE);
+	WriteFile(hStdout, banner, (DWORD) strlen(banner), NULL, NULL);
+	WriteFile(hStdout, cc, (DWORD) strlen(cc), NULL, NULL);
+	SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+
+	/* Print the rest info in default colors */
+	fprintf(stream, "\n%s\n", inf);
 #else
-	fprintf(stream, "%s", banner);
+	fprintf(stream,
+			"%s%s%s%s%s%s\n%s\n", 
+			ESL_SEQ_DEFAULT_COLOR,
+			ESL_SEQ_FYELLOW, ESL_SEQ_BBLUE,
+			banner,
+			cc, ESL_SEQ_DEFAULT_COLOR, inf);
+
+	fprintf(stream, "%s", output_text_color);
 #endif
 }
 

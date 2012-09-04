@@ -61,15 +61,10 @@
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/image_translate.h"
 #include "spandsp/t81_t82_arith_coding.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/t43.h"
 #endif
@@ -83,20 +78,15 @@
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/timezone.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/private/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/private/t43.h"
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
+#include "spandsp/private/image_translate.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
 #include "spandsp/private/t30.h"
@@ -707,16 +697,12 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
     mask = T30_SUPPORT_T4_1D_COMPRESSION
          | T30_SUPPORT_T4_2D_COMPRESSION
          | T30_SUPPORT_T6_COMPRESSION
-#if defined(SPANDSP_SUPPORT_T42)
-         | T30_SUPPORT_T42_COMPRESSION
-#endif
+         //| T30_SUPPORT_T81_COMPRESSION
 #if defined(SPANDSP_SUPPORT_T43)
          | T30_SUPPORT_T43_COMPRESSION
 #endif
-#if defined(SPANDSP_SUPPORT_T85)
          | T30_SUPPORT_T85_COMPRESSION
          | T30_SUPPORT_T85_L0_COMPRESSION
-#endif
          | 0;
     s->supported_compressions = supported_compressions & mask;
     t30_build_dis_or_dtc(s);
@@ -765,35 +751,35 @@ SPAN_DECLARE(int) t30_set_receiver_not_ready(t30_state_t *s, int count)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_phase_b_handler(t30_state_t *s, t30_phase_b_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_phase_b_handler(t30_state_t *s, t30_phase_b_handler_t handler, void *user_data)
 {
     s->phase_b_handler = handler;
     s->phase_b_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_phase_d_handler(t30_state_t *s, t30_phase_d_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_phase_d_handler(t30_state_t *s, t30_phase_d_handler_t handler, void *user_data)
 {
     s->phase_d_handler = handler;
     s->phase_d_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_phase_e_handler(t30_state_t *s, t30_phase_e_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_phase_e_handler(t30_state_t *s, t30_phase_e_handler_t handler, void *user_data)
 {
     s->phase_e_handler = handler;
     s->phase_e_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler_t handler, void *user_data)
 {
     s->document_handler = handler;
     s->document_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t handler, void *user_data)
 {
     s->real_time_frame_handler = handler;
     s->real_time_frame_user_data = user_data;

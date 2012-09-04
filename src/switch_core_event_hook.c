@@ -43,7 +43,6 @@ NEW_HOOK_DECL(outgoing_channel)
 	NEW_HOOK_DECL(kill_channel)
 	NEW_HOOK_DECL(send_dtmf)
 	NEW_HOOK_DECL(recv_dtmf)
-	NEW_HOOK_DECL(resurrect_session)
 
 /* For Emacs:
  * Local Variables:

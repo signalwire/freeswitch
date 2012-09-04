@@ -44,7 +44,9 @@ sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
 
 if [ -n "$rev" ]; then
   sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
+    -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, \[\).*\(\])\)|\1$rev\2|" \
     -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
+    -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN\)|\1|" \
     -i configure.in
 fi
 

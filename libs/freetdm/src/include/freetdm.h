@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,9 @@
 
 /*! \brief Max number of groups */
 #define FTDM_MAX_GROUPS_INTERFACE FTDM_MAX_SPANS_INTERFACE
+
+/*! \brief Max number of key=value pairs to be sent as signaling stack parameters */
+#define FTDM_MAX_SIG_PARAMETERS 30
 
 #define FTDM_INVALID_INT_PARM 0xFF
 
@@ -201,10 +204,19 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t)
 	                                (fchan)->span->trunk_type == FTDM_TRUNK_BRI || \
 	                                (fchan)->span->trunk_type == FTDM_TRUNK_BRI_PTMP)
 
+/*! \brief Test if a span is digital */
+#define FTDM_SPAN_IS_DIGITAL(span) \
+	((span)->trunk_type == FTDM_TRUNK_E1 || \
+	 (span)->trunk_type == FTDM_TRUNK_T1 || \
+	 (span)->trunk_type == FTDM_TRUNK_J1 || \
+	 (span)->trunk_type == FTDM_TRUNK_BRI || \
+	 (span)->trunk_type == FTDM_TRUNK_BRI_PTMP)
+
+
 /*! \brief Logging function prototype to be used for all FreeTDM logs 
  *  you should use ftdm_global_set_logger to set your own logger
  */
-typedef void (*ftdm_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...);
+typedef void (*ftdm_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...) __ftdm_check_printf(5, 6);
 
 /*! \brief Data queue operation functions
  *  you can use ftdm_global_set_queue_handler if you want to override the default implementation (not recommended)
@@ -343,6 +355,11 @@ typedef struct {
 	uint8_t plan;
 } ftdm_number_t;
 
+typedef struct {
+	char from[FTDM_MAX_NUMBER_STR_SZ];  	
+	char body[FTDM_MAX_NAME_STR_SZ];
+} ftdm_sms_data_t;
+
 /*! \brief Caller information */
 typedef struct ftdm_caller_data {
 	char cid_date[8]; /*!< Caller ID date */
@@ -362,6 +379,7 @@ typedef struct ftdm_caller_data {
 	/* user information layer 1 protocol */
 	ftdm_user_layer1_prot_t bearer_layer1;
 	ftdm_calling_party_category_t cpc; /*!< Calling party category */
+	uint32_t call_reference;
 
 	ftdm_channel_t *fchan; /*!< FreeTDM channel associated (can be NULL) */
 
@@ -452,12 +470,13 @@ typedef enum {
 	FTDM_SIGEVENT_INDICATION_COMPLETED, /*!< Last requested indication was completed */
 	FTDM_SIGEVENT_DIALING, /*!< Outgoing call just started */
 	FTDM_SIGEVENT_TRANSFER_COMPLETED, /*!< Transfer request is completed */
+	FTDM_SIGEVENT_SMS,
 	FTDM_SIGEVENT_INVALID, /*!<Invalid */
 } ftdm_signal_event_t;
 #define SIGNAL_STRINGS "START", "STOP", "RELEASED", "UP", "FLASH", "PROCEED", "RINGING", "PROGRESS", \
 		"PROGRESS_MEDIA", "ALARM_TRAP", "ALARM_CLEAR", \
 		"COLLECTED_DIGIT", "ADD_CALL", "RESTART", "SIGSTATUS_CHANGED", "FACILITY", \
-		"TRACE", "TRACE_RAW", "INDICATION_COMPLETED", "DIALING", "TRANSFER_COMPLETED", "INVALID"
+		"TRACE", "TRACE_RAW", "INDICATION_COMPLETED", "DIALING", "TRANSFER_COMPLETED", "SMS", "INVALID"
 /*! \brief Move from string to ftdm_signal_event_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_signal_event, ftdm_signal_event2str, ftdm_signal_event_t)
 
@@ -471,12 +490,25 @@ typedef enum {
 	FTDM_TRUNK_FXO,
 	FTDM_TRUNK_FXS,
 	FTDM_TRUNK_EM,
+	FTDM_TRUNK_GSM,
 	FTDM_TRUNK_NONE
 } ftdm_trunk_type_t;
-#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "EM", "NONE"
+#define TRUNK_TYPE_STRINGS "E1", "T1", "J1", "BRI", "BRI_PTMP", "FXO", "FXS", "EM", "GSM", "NONE"
 
 /*! \brief Move from string to ftdm_trunk_type_t and viceversa */
 FTDM_STR2ENUM_P(ftdm_str2ftdm_trunk_type, ftdm_trunk_type2str, ftdm_trunk_type_t)
+
+/*! \brief Span trunk modes */
+typedef enum {
+	FTDM_TRUNK_MODE_CPE,
+	FTDM_TRUNK_MODE_NET,
+	FTDM_TRUNK_MODE_INVALID
+} ftdm_trunk_mode_t;
+#define TRUNK_MODE_STRINGS "CPE", "NET", "INVALID"
+
+/*! \brief Move from string to ftdm_trunk_mode_t and viceversa */
+FTDM_STR2ENUM_P(ftdm_str2ftdm_trunk_mode, ftdm_trunk_mode2str, ftdm_trunk_mode_t)
+
 
 /*! \brief Basic channel configuration provided to ftdm_configure_span_channels */
 typedef struct ftdm_channel_config {
@@ -620,14 +652,6 @@ typedef enum {
 	FTDM_CRASH_NEVER = 0,
 	FTDM_CRASH_ON_ASSERT
 } ftdm_crash_policy_t;
-
-/*! \brief I/O waiting flags */
-typedef enum {
-	FTDM_NO_FLAGS = 0,
-	FTDM_READ =  (1 << 0),
-	FTDM_WRITE = (1 << 1),
-	FTDM_EVENTS = (1 << 2)
-} ftdm_wait_flag_t;
 
 /*! \brief Signaling configuration parameter for the stacks (variable=value pair) */
 typedef struct ftdm_conf_parameter {
@@ -783,6 +807,8 @@ struct ftdm_memory_handler {
 #define FIO_CONFIGURE_SPAN_SIGNALING_ARGS (ftdm_span_t *span, fio_signal_cb_t sig_cb, ftdm_conf_parameter_t *ftdm_parameters)
 #define FIO_SIG_UNLOAD_ARGS (void)
 #define FIO_API_ARGS (ftdm_stream_handle_t *stream, const char *data)
+#define FIO_SPAN_START_ARGS (ftdm_span_t *span)
+#define FIO_SPAN_STOP_ARGS (ftdm_span_t *span)
 
 /*! \brief FreeTDM I/O layer interface function typedefs
  * You don't need these unless your implementing an I/O interface module (most users don't) */
@@ -829,6 +855,8 @@ typedef ftdm_status_t (*fio_configure_span_signaling_t) FIO_CONFIGURE_SPAN_SIGNA
 typedef ftdm_status_t (*fio_io_unload_t) FIO_IO_UNLOAD_ARGS ;
 typedef ftdm_status_t (*fio_sig_unload_t) FIO_SIG_UNLOAD_ARGS ;
 typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
+typedef ftdm_status_t (*fio_span_start_t) FIO_SPAN_START_ARGS ;
+typedef ftdm_status_t (*fio_span_stop_t) FIO_SPAN_STOP_ARGS ;
 
 
 /*! \brief FreeTDM I/O layer interface function prototype wrapper macros
@@ -863,6 +891,8 @@ typedef ftdm_status_t (*fio_api_t) FIO_API_ARGS ;
 #define FIO_IO_UNLOAD_FUNCTION(name) ftdm_status_t name FIO_IO_UNLOAD_ARGS
 #define FIO_SIG_UNLOAD_FUNCTION(name) ftdm_status_t name FIO_SIG_UNLOAD_ARGS
 #define FIO_API_FUNCTION(name) ftdm_status_t name FIO_API_ARGS
+#define FIO_SPAN_START_FUNCTION(name) ftdm_status_t name FIO_SPAN_START_ARGS
+#define FIO_SPAN_STOP_FUNCTION(name) ftdm_status_t name FIO_SPAN_STOP_ARGS
 
 /*! \brief FreeTDM I/O layer function prototype wrapper macros
  * You don't need these unless your implementing an I/O interface module (most users don't) */
@@ -883,6 +913,8 @@ struct ftdm_io_interface {
 	fio_span_next_event_t next_event; /*!< Retrieve an event from the span */
 	fio_channel_next_event_t channel_next_event; /*!< Retrieve an event from channel */
 	fio_api_t api; /*!< Execute a text command */
+	fio_span_start_t span_start; /*!< Start span I/O */
+	fio_span_stop_t span_stop; /*!< Stop span I/O */
 };
 
 /*! \brief FreeTDM supported I/O codecs */
@@ -1741,6 +1773,28 @@ FT_DECLARE(ftdm_trunk_type_t) ftdm_span_get_trunk_type(const ftdm_span_t *span);
 /*! \brief For display debugging purposes you can display this string which describes the trunk type of a span */
 FT_DECLARE(const char *) ftdm_span_get_trunk_type_str(const ftdm_span_t *span);
 
+/*!
+ * Set the trunk mode for a span
+ * \note	This must be called before configuring any channels within the span!
+ * \param[in]	span	The span
+ * \param[in]	type	The trunk mode
+ */
+FT_DECLARE(void) ftdm_span_set_trunk_mode(ftdm_span_t *span, ftdm_trunk_mode_t mode);
+
+/*!
+ * Get the trunk mode for a span
+ * \param[in]	span	The span
+ * \return	Span trunk mode
+ */
+FT_DECLARE(ftdm_trunk_mode_t) ftdm_span_get_trunk_mode(const ftdm_span_t *span);
+
+/*!
+ * Get the trunk mode of a span in textual form
+ * \param[in]	span	The span
+ * \return	Span mode name as a string
+ */
+FT_DECLARE(const char *) ftdm_span_get_trunk_mode_str(const ftdm_span_t *span);
+
 /*! 
  * \brief Return the channel identified by the provided id
  *
@@ -1810,6 +1864,40 @@ FT_DECLARE(void) ftdm_global_set_config_directory(const char *path);
 
 /*! \brief Check if the FTDM library is initialized and running */
 FT_DECLARE(ftdm_bool_t) ftdm_running(void);
+
+/**
+ * Generate a stack trace and invoke a callback function for each entry
+ * \param[in]	callback	Callback function, that is invoked for each stack symbol
+ * \param[in]	priv		(User-)Private data passed to the callback
+ * \retval
+ *	FTDM_SUCCESS	On success
+ *	FTDM_NOTIMPL	Backtraces are not available
+ *	FTDM_EINVAL	Invalid arguments (callback was NULL)
+ */
+FT_DECLARE(ftdm_status_t) ftdm_backtrace_walk(void (* callback)(const int tid, const void *addr, const char *symbol, void *priv), void *priv);
+
+/**
+ * Convenience function to print a backtrace for a span.
+ * \note	The backtrace is generated with FTDM_LOG_DEBUG log level.
+ * \param[in]	span	Span object
+ * \retval
+ *	FTDM_SUCCESS	On success
+ *	FTDM_NOTIMPL	Backtraces are not available
+ *	FTDM_EINVAL	Invalid arguments (e.g. span was NULL)
+ */
+FT_DECLARE(ftdm_status_t) ftdm_backtrace_span(ftdm_span_t *span);
+
+/**
+ * Convenience function to print a backtrace for a channel.
+ * \note	The backtrace is generated with FTDM_LOG_DEBUG log level.
+ * \param[in]	chan	Channel object
+ * \retval
+ *	FTDM_SUCCESS	On success
+ *	FTDM_NOTIMPL	Backtraces are not available
+ *	FTDM_EINVAL	Invalid arguments (e.g. chan was NULL)
+ */
+FT_DECLARE(ftdm_status_t) ftdm_backtrace_chan(ftdm_channel_t *chan);
+
 
 FT_DECLARE_DATA extern ftdm_logger_t ftdm_log;
 

@@ -170,7 +170,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
     super_tone_tx_step_t *tree;
 
     if (s->level < 0  ||  s->level > 3)
-        return  0;
+        return 0;
     samples = 0;
     tree = s->levels[s->level];
     while (tree  &&  samples < max_samples)
@@ -280,7 +280,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
         }
         
     }
-    return  samples;
+    return samples;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

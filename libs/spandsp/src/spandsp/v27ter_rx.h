@@ -44,6 +44,12 @@ at the start of transmission, which makes the design of a V.27ter receiver relat
 straightforward.
 */
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define V27TER_CONSTELLATION_SCALING_FACTOR     1024.0
+#else
+#define V27TER_CONSTELLATION_SCALING_FACTOR     1.0
+#endif
+
 /*!
     V.27ter modem receive side descriptor. This defines the working state for a
     single instance of a V.27ter modem receiver.
@@ -126,7 +132,11 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx_fillin(v27ter_rx_state_t *s, int len);
     \brief Get a snapshot of the current equalizer coefficients.
     \param coeffs The vector of complex coefficients.
     \return The number of coefficients in the vector. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+SPAN_DECLARE(int) v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexi16_t **coeffs);
+#else
 SPAN_DECLARE(int) v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexf_t **coeffs);
+#endif
 
 /*! Get the current received carrier frequency.
     \param s The modem context.

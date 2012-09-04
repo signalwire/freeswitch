@@ -59,10 +59,6 @@ typedef struct
 {
     /*! \brief The FAX modem set for the audio side fo the gateway. */
     fax_modems_state_t modems;
-    /*! \brief The current receive signal handler. Actual receiving hops between this
-               and a dummy receive routine. */
-    span_rx_handler_t *base_rx_handler;
-    span_rx_fillin_handler_t *base_rx_fillin_handler;
 } t38_gateway_audio_state_t;
 
 /*!
@@ -86,8 +82,8 @@ typedef struct
     uint16_t crc;
     /*! \brief TRUE if non-ECM fill bits are to be stripped when sending image data. */
     int fill_bit_removal;
-    /*! \brief The number of octets to send in each image packet (non-ECM or ECM) at the current
-               rate and the current specified packet interval. */
+    /*! \brief The number of octets to send in each image packet (non-ECM or ECM) at
+               the current rate and the current specified packet interval. */
     int octets_per_data_packet;
 
     /*! \brief Bits into the non-ECM buffer */
@@ -183,7 +179,7 @@ typedef struct
 
     /*! \brief A pointer to a callback routine to be called when frames are
         exchanged. */
-    t38_gateway_real_time_frame_handler_t *real_time_frame_handler;
+    t38_gateway_real_time_frame_handler_t real_time_frame_handler;
     /*! \brief An opaque pointer supplied in real time frame callbacks. */
     void *real_time_frame_user_data;
 } t38_gateway_core_state_t;

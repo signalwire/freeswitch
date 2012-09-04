@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -42,6 +42,9 @@ typedef HANDLE zap_socket_t;
 typedef int zap_socket_t;
 #endif
 
+#define MY_EVENT_TDD_SEND_MESSAGE "TDD::SEND_MESSAGE"
+#define MY_EVENT_TDD_RECV_MESSAGE "TDD::RECV_MESSAGE"
+
 #define MAX_MODEMS 1024
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include <spandsp.h>
@@ -57,9 +60,9 @@ struct spandsp_globals {
 	short int use_ecm;
 	short int verbose;
 	short int disable_v17;
-    short int enable_t38;
-    short int enable_t38_request;
-    short int enable_t38_insist;
+	short int enable_t38;
+	short int enable_t38_request;
+	short int enable_t38_insist;
 	char *ident;
 	char *header;
 	char *timezone;
@@ -81,7 +84,7 @@ extern struct spandsp_globals spandsp_globals;
 typedef enum {
 	FUNCTION_TX,
 	FUNCTION_RX,
-    FUNCTION_GW
+	FUNCTION_GW
 } mod_spandsp_fax_application_mode_t;
 
 /******************************************************************************
@@ -104,7 +107,7 @@ struct tone_descriptor {
 
 	/** The mapping of tone id to key */
 	char tone_keys[MAX_TONES][STRLEN];
-    int idx;
+	int idx;
 
 };
 typedef struct tone_descriptor tone_descriptor_t;
@@ -140,3 +143,22 @@ switch_status_t spandsp_fax_stop_detect_session(switch_core_session_t *session);
 void spanfax_log_message(void *user_data, int level, const char *msg);
 switch_status_t load_configuration(switch_bool_t reload);
 void mod_spandsp_indicate_data(switch_core_session_t *session, switch_bool_t self, switch_bool_t on);
+
+switch_status_t spandsp_stop_tdd_encode_session(switch_core_session_t *session);
+switch_status_t spandsp_tdd_encode_session(switch_core_session_t *session, const char *text);
+
+
+switch_status_t spandsp_stop_tdd_decode_session(switch_core_session_t *session);
+switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session);
+switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const char *text);
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */

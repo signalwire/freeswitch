@@ -88,7 +88,7 @@ struct fsk_rx_state_s
     int buf_ptr;
 
     int frame_state;
-    int frame_bits;
+    unsigned int frame_bits;
     int baud_phase;
     int last_bit;
     int scaling_shift;

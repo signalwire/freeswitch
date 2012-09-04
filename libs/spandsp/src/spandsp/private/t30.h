@@ -37,8 +37,8 @@ struct t30_state_s
     /*! \brief T.4 context for reading or writing image data. */
     union
     {
-        t4_state_t rx;
-        t4_state_t tx;
+        t4_rx_state_t rx;
+        t4_tx_state_t tx;
     } t4;
     /*! \brief The type of FAX operation currently in progress */
     int operation_in_progress;
@@ -94,42 +94,42 @@ struct t30_state_s
 
     /*! \brief A pointer to a callback routine to be called when phase B events
         occur. */
-    t30_phase_b_handler_t *phase_b_handler;
+    t30_phase_b_handler_t phase_b_handler;
     /*! \brief An opaque pointer supplied in event B callbacks. */
     void *phase_b_user_data;
     /*! \brief A pointer to a callback routine to be called when phase D events
         occur. */
-    t30_phase_d_handler_t *phase_d_handler;
+    t30_phase_d_handler_t phase_d_handler;
     /*! \brief An opaque pointer supplied in event D callbacks. */
     void *phase_d_user_data;
     /*! \brief A pointer to a callback routine to be called when phase E events
         occur. */
-    t30_phase_e_handler_t *phase_e_handler;
+    t30_phase_e_handler_t phase_e_handler;
     /*! \brief An opaque pointer supplied in event E callbacks. */
     void *phase_e_user_data;
     /*! \brief A pointer to a callback routine to be called when frames are
         exchanged. */
-    t30_real_time_frame_handler_t *real_time_frame_handler;
+    t30_real_time_frame_handler_t real_time_frame_handler;
     /*! \brief An opaque pointer supplied in real time frame callbacks. */
     void *real_time_frame_user_data;
 
     /*! \brief A pointer to a callback routine to be called when document events
         (e.g. end of transmitted document) occur. */
-    t30_document_handler_t *document_handler;
+    t30_document_handler_t document_handler;
     /*! \brief An opaque pointer supplied in document callbacks. */
     void *document_user_data;
 
     /*! \brief The handler for changes to the receive mode */
-    t30_set_handler_t *set_rx_type_handler;
+    t30_set_handler_t set_rx_type_handler;
     /*! \brief An opaque pointer passed to the handler for changes to the receive mode */
     void *set_rx_type_user_data;
     /*! \brief The handler for changes to the transmit mode */
-    t30_set_handler_t *set_tx_type_handler;
+    t30_set_handler_t set_tx_type_handler;
     /*! \brief An opaque pointer passed to the handler for changes to the transmit mode */
     void *set_tx_type_user_data;
 
     /*! \brief The transmitted HDLC frame handler. */
-    t30_send_hdlc_handler_t *send_hdlc_handler;
+    t30_send_hdlc_handler_t send_hdlc_handler;
     /*! \brief An opaque pointer passed to the transmitted HDLC frame handler. */
     void *send_hdlc_user_data;
 

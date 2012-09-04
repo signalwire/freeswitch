@@ -39,22 +39,57 @@ typedef struct v18_state_s v18_state_t;
 enum
 {
     V18_MODE_NONE = 0,
-    /* V.18 Annex A - Weitbrecht TDD at 45.45bps, half-duplex, 5 bit baudot. */
+    /* V.18 Annex A - Weitbrecht TDD at 45.45bps (US TTY), half-duplex, 5 bit baudot (USA). */
     V18_MODE_5BIT_45 = 1,
-    /* V.18 Annex A - Weitbrecht TDD at 50bps, half-duplex, 5 bit baudot. */
+    /* V.18 Annex A - Weitbrecht TDD at 50bps (International TTY), half-duplex, 5 bit baudot (UK, Australia and others). */
     V18_MODE_5BIT_50 = 2,
-    /* V.18 Annex B - DTMF encoding of ASCII. */
+    /* V.18 Annex B - DTMF encoding of ASCII (Denmark, Holland and others). */
     V18_MODE_DTMF = 3,
-    /* V.18 Annex C - EDT 110bps, V.21, half-duplex, ASCII. */
+    /* V.18 Annex C - EDT (European Deaf Telephone) 110bps, V.21, half-duplex, ASCII (Germany, Austria, Switzerland and others). */
     V18_MODE_EDT = 4,
-    /* V.18 Annex D - 300bps, Bell 103, duplex, ASCII. */
+    /* V.18 Annex D - 300bps, Bell 103, duplex, ASCII (USA). */
     V18_MODE_BELL103 = 5,
-    /* V.18 Annex E - 1200bps Videotex terminals, ASCII. */
+    /* V.18 Annex E - 1200bps Videotex terminals, ASCII (France). */
     V18_MODE_V23VIDEOTEX = 6,
-    /* V.18 Annex F - V.21 text telephone, V.21, duplex, ASCII. */
+    /* V.18 Annex F - V.21 text telephone, V.21, duplex, ASCII (Sweden, Norway and Finland). */
     V18_MODE_V21TEXTPHONE = 7,
     /* V.18 Annex G - V.18 text telephone mode. */
     V18_MODE_V18TEXTPHONE = 8
+};
+
+/* Automoding sequences for different countries */
+enum
+{
+    /* 5-bit, V.21, V.23, EDT, DTMF, Bell 103 */
+    V18_AUTOMODING_AUSTRALIA,
+    V18_AUTOMODING_IRELAND,
+
+    /* EDT, V.21, V.23, 5-bit, DTMF, Bell 103 */
+    V18_AUTOMODING_GERMANY,
+    V18_AUTOMODING_SWITZERLAND,
+    V18_AUTOMODING_ITALY,
+    V18_AUTOMODING_SPAIN,
+    V18_AUTOMODING_AUSTRIA,
+
+    /* DTMF, V.21, V.23, 5-bit, EDT, Bell 103 */
+    V18_AUTOMODING_NETHERLANDS,
+
+    /* V.21, DTMF, 5-bit, EDT, V.23, Bell 103 */
+    V18_AUTOMODING_ICELAND,
+    V18_AUTOMODING_NORWAY,
+    V18_AUTOMODING_SWEDEN,
+    V18_AUTOMODING_FINALND,
+    V18_AUTOMODING_DENMARK,
+
+    /* V.21, 5-bit, V.23, EDT, DTMF, Bell 103 */
+    V18_AUTOMODING_UK,
+
+    /* 5-bit, Bell 103, V.21, V.23, EDT, DTMF */
+    V18_AUTOMODING_USA,
+
+    /* V.23, EDT, DTMF, 5-bit, V.21, Bell 103 */
+    V18_AUTOMODING_FRANCE,
+    V18_AUTOMODING_BELGIUM
 };
 
 #if defined(__cplusplus)

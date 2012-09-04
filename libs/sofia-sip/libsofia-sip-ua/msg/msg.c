@@ -242,8 +242,8 @@ msg_mclass_t const *msg_mclass(msg_t const *msg)
  */
 void msg_addr_zero(msg_t *msg)
 {
-  memset(&msg->m_addr, 0, sizeof(&msg->m_addr));
-  memset(&msg->m_addrinfo, 0, sizeof(&msg->m_addrinfo));
+  memset(&msg->m_addr, 0, sizeof(msg->m_addr));
+  memset(&msg->m_addrinfo, 0, sizeof(msg->m_addrinfo));
 
   msg->m_addrinfo.ai_addrlen = sizeof(msg->m_addr);
   msg->m_addrinfo.ai_addr = &msg->m_addr->su_sa;

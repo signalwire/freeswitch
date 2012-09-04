@@ -7,7 +7,7 @@ dnl Anything which is not an m4 macro is copied directly to the output.
 dnl
 dnl Start things up.  If the specified file doesn't exist, configure
 dnl will complain.
-AC_INIT(lbn16.c)
+AC_INIT([libbn], [0.1])
 
 dnl The following tests need to know that we intend to produce a config.h
 dnl file, even though this won't expand to any shell script code until
@@ -219,63 +219,8 @@ else	# If non-ANSI, check for other brokenness.
 
 AC_CHECK_HEADERS(assert.h limits.h stdlib.h string.h)
 
-# Do we want to include memory.h?
-if test $ac_cv_header_string_h = no; then
-AC_CHECK_HEADERS(strings.h)
-ac_found=no
-else
-AC_MSG_CHECKING(whether string.h declares mem functions)
-AC_EGREP_HEADER(memset, string.h, ac_found=yes, ac_found=no)
-AC_MSG_RESULT($ac_found)
-fi
-# ac_found is now "yes" if string.h exists and declares the mem*
-# functions.  If not, see if memory.h exists and include that
-# as well.
-if test $ac_found = no; then
-AC_CHECK_HEADER(memory,h. [AC_DEFINE(NEED_MEMORY_H)])
-fi
-
-AC_CACHE_CHECK(whether <stdio.h> provides prototypes,
-bn_cv_header_stdio_protos,
-[AC_EGREP_HEADER(printf, stdio.h, bn_cv_header_stdio_protos=yes, bn_cv_header_stdio_protos=no)
-])
-if test $bn_cv_header_stdio_protos = no; then
-  AC_DEFINE(NO_STDIO_PROTOS)
-fi
-
 fi
 # ^^ End of non-ANSI header brokenness tests (first part)
-
-AC_CACHE_CHECK(whether <string.h> declares mem* wrong.,
-bn_cv_header_mem_broken,
-[AC_EGREP_HEADER(memcpy.*char, string.h, bn_cv_header_mem_broken=yes, bn_cv_header_mem_broken=no)
-])
-if test $bn_cv_header_mem_broken = yes; then
-  AC_DEFINE(MEM_PROTOS_BROKEN)
-fi
-
-# SunOS 4.1.x acc's <assert.h> is broken
-AC_CACHE_CHECK(whether <assert.h> is broken and needs <stdio.h>,
-bn_cv_header_assert_needs_stdio,
-[AC_EGREP_CPP(stderr,
-[#include <assert.h>
-assert(foo)
-], bn_cv_header_assert_needs_stdio=yes, bn_cv_header_assert_needs_stdio=no)
-])
-if test $bn_cv_header_assert_needs_stdio = yes; then
-  AC_DEFINE(ASSERT_NEEDS_STDIO)
-fi
-
-AC_CACHE_CHECK(whether <assert.h> is broken and needs <stdlib.h>,
-bn_cv_header_assert_needs_stdlib,
-[AC_EGREP_CPP(exit,
-[#include <assert.h>
-assert(foo)
-], bn_cv_header_assert_needs_stdlib=yes, bn_cv_header_assert_needs_stdlib=no)
-])
-if test $bn_cv_header_assert_needs_stdlib = yes; then
-  AC_DEFINE(ASSERT_NEEDS_STDLIB)
-fi
 
 # Check that we have <sys/time.h> explicitly.
 AC_CHECK_HEADERS(sys/time.h)

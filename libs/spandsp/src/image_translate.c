@@ -2,8 +2,9 @@
  * SpanDSP - a series of DSP components for telephony
  *
  * image_translate.c - Image translation routines for reworking colour
- *                     and gray scale images to be bi-level images of an
- *                     appropriate size to be FAX compatible.
+ *                     and gray scale images to be colour, gray scale or
+ *                     bi-level images of an appropriate size to be FAX
+ *                     compatible.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -57,15 +58,9 @@
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t81_t82_arith_coding.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/t43.h"
 #endif
@@ -74,104 +69,270 @@
 #include "spandsp/image_translate.h"
 
 #include "spandsp/private/logging.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/private/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/private/t43.h"
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
+#include "spandsp/private/image_translate.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
-#include "spandsp/private/image_translate.h"
 
-static int image_colour16_to_gray8_row(uint8_t mono[], uint16_t colour[], int pixels)
+static int image_colour16_to_colour8_row(uint8_t colour8[], uint16_t colour16[], int pixels)
+{
+    int i;
+
+    for (i = 0;  i < 3*pixels;  i++)
+        colour8[i] = colour16[i] >> 8;
+    return pixels;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int image_colour16_to_gray16_row(uint16_t gray16[], uint16_t colour16[], int pixels)
 {
     int i;
     uint32_t gray;
 
     for (i = 0;  i < pixels;  i++)
     {
-        gray = colour[3*i]*19595 + colour[3*i + 1]*38469 + colour[3*i + 2]*7472;
-        mono[i] = saturateu8(gray >> 24);
+        gray = colour16[3*i]*19595 + colour16[3*i + 1]*38469 + colour16[3*i + 2]*7472;
+        gray16[i] = saturateu16(gray >> 16);
     }
     return pixels;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int image_colour8_to_gray8_row(uint8_t mono[], uint8_t colour[], int pixels)
+static int image_colour16_to_gray8_row(uint8_t gray8[], uint16_t colour16[], int pixels)
 {
     int i;
     uint32_t gray;
 
     for (i = 0;  i < pixels;  i++)
     {
-        gray = colour[3*i]*19595 + colour[3*i + 1]*38469 + colour[3*i + 2]*7472;
-        mono[i] = saturateu8(gray >> 16);
+        gray = colour16[3*i]*19595 + colour16[3*i + 1]*38469 + colour16[3*i + 2]*7472;
+        gray8[i] = saturateu8(gray >> 24);
     }
     return pixels;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int image_gray16_to_gray8_row(uint8_t mono[], uint16_t gray[], int pixels)
+static int image_colour8_to_gray16_row(uint16_t gray16[], uint8_t colour8[], int pixels)
 {
     int i;
+    uint32_t gray;
 
     for (i = 0;  i < pixels;  i++)
-        mono[i] = gray[i] >> 8;
+    {
+        gray = colour8[3*i]*19595 + colour8[3*i + 1]*38469 + colour8[3*i + 2]*7472;
+        gray16[i] = saturateu16(gray >> 8);
+    }
     return pixels;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int get_and_scrunch_row(image_translate_state_t *s, uint8_t buf[], size_t len)
+static int image_colour8_to_gray8_row(uint8_t gray8[], uint8_t colour8[], int pixels)
 {
-    int row_len;
+    int i;
+    uint32_t gray;
 
-    row_len = (*s->row_read_handler)(s->row_read_user_data, buf, s->input_width*s->bytes_per_pixel);
-    if (row_len != s->input_width*s->bytes_per_pixel)
+    for (i = 0;  i < pixels;  i++)
+    {
+        gray = colour8[3*i]*19595 + colour8[3*i + 1]*38469 + colour8[3*i + 2]*7472;
+        gray8[i] = saturateu8(gray >> 16);
+    }
+    return pixels;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int image_colour8_to_colour16_row(uint16_t colour16[], uint8_t colour8[], int pixels)
+{
+    int i;
+
+    for (i = 3*pixels - 1;  i >= 0;  i--)
+        colour16[i] = colour8[i] << 8;
+    return pixels;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int image_gray16_to_colour16_row(uint16_t colour16[], uint16_t gray16[], int pixels)
+{
+    int i;
+
+    for (i = pixels - 1;  i >= 0;  i--)
+    {
+        colour16[3*i] = saturateu16((gray16[i]*36532U) >> 15);
+        colour16[3*i + 1] = saturateu16((gray16[i]*37216U) >> 16);
+        colour16[3*i + 2] = saturateu16((gray16[i]*47900U) >> 14);
+    }
+    return pixels;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int image_gray16_to_colour8_row(uint8_t colour8[], uint16_t gray16[], int pixels)
+{
+    int i;
+
+    for (i = pixels - 1;  i >= 0;  i--)
+    {
+        colour8[3*i] = saturateu8((gray16[i]*36532U) >> 23);
+        colour8[3*i + 1] = saturateu8((gray16[i]*37216U) >> 24);
+        colour8[3*i + 2] = saturateu8((gray16[i]*47900U) >> 22);
+    }
+    return pixels;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int image_gray16_to_gray8_row(uint8_t gray8[], uint16_t gray16[], int pixels)
+{
+    int i;
+
+    for (i = 0;  i < pixels;  i++)
+        gray8[i] = gray16[i] >> 8;
+    return pixels;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int image_gray8_to_colour16_row(uint16_t colour16[], uint8_t gray8[], int pixels)
+{
+    int i;
+
+    for (i = pixels - 1;  i >= 0;  i--)
+    {
+        /* TODO: need to balance the colours */
+        colour16[3*i] = gray8[i] << 8;
+        colour16[3*i + 1] = gray8[i] << 8;
+        colour16[3*i + 2] = gray8[i] << 8;
+    }
+    return pixels;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int image_gray8_to_colour8_row(uint8_t colour8[], uint8_t gray8[], int pixels)
+{
+    int i;
+
+    for (i = pixels - 1;  i >= 0;  i--)
+    {
+        /* TODO: need to balance the colours */
+        colour8[3*i] = gray8[i];
+        colour8[3*i + 1] = gray8[i];
+        colour8[3*i + 2] = gray8[i];
+    }
+    return pixels;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int image_gray8_to_gray16_row(uint16_t gray16[], uint8_t gray8[], int pixels)
+{
+    int i;
+
+    for (i = pixels - 1;  i >= 0;  i--)
+        gray16[i] = gray8[i] << 8;
+    return pixels;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int get_and_scrunch_row(image_translate_state_t *s, uint8_t buf[])
+{
+    int input_row_len;
+
+    input_row_len = (*s->row_read_handler)(s->row_read_user_data, buf, s->input_width*s->input_bytes_per_pixel);
+    if (input_row_len != s->input_width*s->input_bytes_per_pixel)
         return 0;
-    /* Scrunch colour down to gray, and scrunch 16 bit pixels down to 8 bit pixels */
+    /* Scrunch colour down to gray, vice versa. Scrunch 16 bit pixels down to 8 bit pixels, or vice versa. */
     switch (s->input_format)
     {
-    case IMAGE_TRANSLATE_FROM_GRAY_16:
-        image_gray16_to_gray8_row(buf, (uint16_t *) buf, s->input_width);
+    case T4_IMAGE_TYPE_GRAY_12BIT:
+        switch (s->output_format)
+        {
+        case T4_IMAGE_TYPE_BILEVEL:
+        case T4_IMAGE_TYPE_GRAY_8BIT:
+            image_gray16_to_gray8_row(buf, (uint16_t *) buf, s->input_width);
+            break;
+        case T4_IMAGE_TYPE_COLOUR_12BIT:
+            image_gray16_to_colour16_row((uint16_t *) buf, (uint16_t *) buf, s->input_width);
+            break;
+        case T4_IMAGE_TYPE_COLOUR_8BIT:
+            image_gray16_to_colour8_row(buf, (uint16_t *) buf, s->input_width);
+            break;
+        }
         break;
-    case IMAGE_TRANSLATE_FROM_COLOUR_16:
-        image_colour16_to_gray8_row(buf, (uint16_t *) buf, s->input_width);
+    case T4_IMAGE_TYPE_GRAY_8BIT:
+        switch (s->output_format)
+        {
+        case T4_IMAGE_TYPE_GRAY_12BIT:
+            image_gray8_to_gray16_row((uint16_t *) buf, buf, s->input_width);
+            break;
+        case T4_IMAGE_TYPE_COLOUR_12BIT:
+            image_gray8_to_colour16_row((uint16_t *) buf, buf, s->input_width);
+            break;
+        case T4_IMAGE_TYPE_COLOUR_8BIT:
+            image_gray8_to_colour8_row(buf, buf, s->input_width);
+            break;
+        }
         break;
-    case IMAGE_TRANSLATE_FROM_COLOUR_8:
-        image_colour8_to_gray8_row(buf, buf, s->input_width);
+    case T4_IMAGE_TYPE_COLOUR_12BIT:
+        switch (s->output_format)
+        {
+        case T4_IMAGE_TYPE_GRAY_12BIT:
+            image_colour16_to_gray16_row((uint16_t *) buf, (uint16_t *) buf, s->input_width);
+            break;
+        case T4_IMAGE_TYPE_BILEVEL:
+        case T4_IMAGE_TYPE_GRAY_8BIT:
+            image_colour16_to_gray8_row(buf, (uint16_t *) buf, s->input_width);
+            break;
+        case T4_IMAGE_TYPE_COLOUR_8BIT:
+            image_colour16_to_colour8_row(buf, (uint16_t *) buf, s->input_width);
+            break;
+        }
+        break;
+    case T4_IMAGE_TYPE_COLOUR_8BIT:
+        switch (s->output_format)
+        {
+        case T4_IMAGE_TYPE_GRAY_12BIT:
+            image_colour8_to_gray16_row((uint16_t *) buf, buf, s->input_width);
+            break;
+        case T4_IMAGE_TYPE_BILEVEL:
+        case T4_IMAGE_TYPE_GRAY_8BIT:
+            image_colour8_to_gray8_row(buf, buf, s->input_width);
+            break;
+        case T4_IMAGE_TYPE_COLOUR_12BIT:
+            image_colour8_to_colour16_row((uint16_t *) buf, buf, s->input_width);
+            break;
+        }
         break;
     }
-    return row_len;
+    return s->output_width;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int image_resize_row(image_translate_state_t *s, uint8_t buf[], size_t len)
+static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
 {
     int i;
+    int j;
     int output_width;
     int output_length;
     int input_width;
     int input_length;
     int x;
-    double c1;
-    double c2;
 #if defined(SPANDSP_USE_FIXED_POINT)
+    int c1;
+    int c2;
     int frac_row;
     int frac_col;
 #else
+    double c1;
+    double c2;
     double int_part;
     double frac_row;
     double frac_col;
 #endif
+    uint8_t *row8[2];
+    uint16_t *row16[2];
+    uint16_t *buf16;
     int row_len;
     int skip;
     uint8_t *p;
@@ -194,8 +355,8 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[], size_t le
                 s->raw_output_row = -1;
                 break;
             }
-            row_len = get_and_scrunch_row(s, s->raw_pixel_row[0], s->input_width*s->bytes_per_pixel);
-            if (row_len != s->input_width*s->bytes_per_pixel)
+            row_len = get_and_scrunch_row(s, s->raw_pixel_row[0]);
+            if (row_len != s->output_width)
             {
                 s->raw_output_row = -1;
                 return 0;
@@ -208,30 +369,118 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[], size_t le
     }
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-    frac_row = s->raw_output_row*input_length/output_length;
-    frac_row = s->raw_output_row*input_length - frac_row*output_length;
-    for (i = 0;  i < output_width;  i++)
-    {
-        x = i*input_width/output_width;
-        frac_col = x - x*output_width;
-        c1 = s->raw_pixel_row[0][x] + (s->raw_pixel_row[0][x + 1] - s->raw_pixel_row[0][x])*frac_col;
-        c2 = s->raw_pixel_row[1][x] + (s->raw_pixel_row[1][x + 1] - s->raw_pixel_row[1][x])*frac_col;
-        buf[i] = saturateu8(c1 + (c2 - c1)*frac_row);
-    }
+    frac_row = ((s->raw_output_row*256*input_length)/output_length) & 0xFF;
 #else
     frac_row = modf((double) s->raw_output_row*input_length/output_length, &int_part);
-    for (i = 0;  i < output_width;  i++)
-    {
-        frac_col = modf((double) i*input_width/output_width, &int_part);
-        x = int_part;
-        c1 = s->raw_pixel_row[0][x] + (s->raw_pixel_row[0][x + 1] - s->raw_pixel_row[0][x])*frac_col;
-        c2 = s->raw_pixel_row[1][x] + (s->raw_pixel_row[1][x + 1] - s->raw_pixel_row[1][x])*frac_col;
-        buf[i] = saturateu8(c1 + (c2 - c1)*frac_row);
-    }
 #endif
+
+    switch (s->output_format)
+    {
+    case T4_IMAGE_TYPE_COLOUR_8BIT:
+        row8[0] = s->raw_pixel_row[0];
+        row8[1] = s->raw_pixel_row[1];
+        for (i = 0;  i < output_width;  i++)
+        {
+#if defined(SPANDSP_USE_FIXED_POINT)
+            x = i*256*input_width/output_width;
+            frac_col = x & 0xFF;
+            x >>= 8;
+            x = 3*x;
+            for (j = 0;  j < 3;  j++)
+            {
+                c1 = row8[0][x + j] + (((row8[0][x + j + 3] - row8[0][x + j])*frac_col) >> 8);
+                c2 = row8[1][x + j] + (((row8[1][x + j + 3] - row8[1][x + j])*frac_col) >> 8);
+                buf[3*i + j] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
+            }
+#else
+            frac_col = modf((double) i*input_width/output_width, &int_part);
+            x = 3*int_part;
+            for (j = 0;  j < 3;  j++)
+            {
+                c1 = row8[0][x + j] + (row8[0][x + j + 3] - row8[0][x + j])*frac_col;
+                c2 = row8[1][x + j] + (row8[1][x + j + 3] - row8[1][x + j])*frac_col;
+                buf[3*i + j] = saturateu8(c1 + (c2 - c1)*frac_row);
+            }
+#endif
+        }
+        break;
+    case T4_IMAGE_TYPE_COLOUR_12BIT:
+        row16[0] = (uint16_t *) s->raw_pixel_row[0];
+        row16[1] = (uint16_t *) s->raw_pixel_row[1];
+        buf16 = (uint16_t *) buf;
+        for (i = 0;  i < output_width;  i++)
+        {
+#if defined(SPANDSP_USE_FIXED_POINT)
+            x = i*256*input_width/output_width;
+            frac_col = x & 0xFF;
+            x >>= 8;
+            x = 3*x;
+            for (j = 0;  j < 3;  j++)
+            {
+                c1 = row16[0][x + j] + (((row16[0][x + j + 3] - row16[0][x + j])*frac_col) >> 8);
+                c2 = row16[1][x + j] + (((row16[1][x + j + 3] - row16[1][x + j])*frac_col) >> 8);
+                buf16[3*i + j] = saturateu16(c1 + (((c2 - c1)*frac_row) >> 8));
+            }
+#else
+            frac_col = modf((double) i*input_width/output_width, &int_part);
+            x = 3*int_part;
+            for (j = 0;  j < 3;  j++)
+            {
+                c1 = row16[0][x + j] + (row16[0][x + j + 3] - row16[0][x + j])*frac_col;
+                c2 = row16[1][x + j] + (row16[1][x + j + 3] - row16[1][x + j])*frac_col;
+                buf16[3*i + j] = saturateu16(c1 + (c2 - c1)*frac_row);
+            }
+#endif
+        }
+        break;
+    case T4_IMAGE_TYPE_BILEVEL:
+    case T4_IMAGE_TYPE_GRAY_8BIT:
+        row8[0] = s->raw_pixel_row[0];
+        row8[1] = s->raw_pixel_row[1];
+        for (i = 0;  i < output_width;  i++)
+        {
+#if defined(SPANDSP_USE_FIXED_POINT)
+            x = i*256*input_width/output_width;
+            frac_col = x & 0xFF;
+            x >>= 8;
+            c1 = row8[0][x] + (((row8[0][x + 1] - row8[0][x])*frac_col) >> 8);
+            c2 = row8[1][x] + (((row8[1][x + 1] - row8[1][x])*frac_col) >> 8);
+            buf[i] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
+#else
+            frac_col = modf((double) i*input_width/output_width, &int_part);
+            x = int_part;
+            c1 = row8[0][x] + (row8[0][x + 1] - row8[0][x])*frac_col;
+            c2 = row8[1][x] + (row8[1][x + 1] - row8[1][x])*frac_col;
+            buf[i] = saturateu8(c1 + (c2 - c1)*frac_row);
+#endif
+        }
+        break;
+    case T4_IMAGE_TYPE_GRAY_12BIT:
+        row16[0] = (uint16_t *) s->raw_pixel_row[0];
+        row16[1] = (uint16_t *) s->raw_pixel_row[1];
+        buf16 = (uint16_t *) buf;
+        for (i = 0;  i < output_width;  i++)
+        {
+#if defined(SPANDSP_USE_FIXED_POINT)
+            x = i*256*input_width/output_width;
+            frac_col = x & 0xFF;
+            x >>= 8;
+            c1 = row16[0][x] + (((row16[0][x + 1] - row16[0][x])*frac_col) >> 8);
+            c2 = row16[1][x] + (((row16[1][x + 1] - row16[1][x])*frac_col) >> 8);
+            buf[i] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
+#else
+            frac_col = modf((double) i*input_width/output_width, &int_part);
+            x = int_part;
+            c1 = row16[0][x] + (row16[0][x + 1] - row16[0][x])*frac_col;
+            c2 = row16[1][x] + (row16[1][x + 1] - row16[1][x])*frac_col;
+            buf[i] = saturateu8(c1 + (c2 - c1)*frac_row);
+#endif
+        }
+        break;
+    }
     if (++s->raw_output_row >= s->output_length)
         s->raw_output_row = -1;
-    return len;
+    return s->output_width;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -241,7 +490,7 @@ static __inline__ uint8_t find_closest_palette_color(int in)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[], size_t len)
+static int floyd_steinberg_dither_row(image_translate_state_t *s, uint8_t buf[])
 {
     int x;
     int y;
@@ -251,11 +500,9 @@ SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[],
     int old_pixel;
     int new_pixel;
     int quant_error;
-    uint8_t *p;
     uint8_t xx;
+    uint8_t *p;
 
-    if (s->output_row < 0)
-        return 0;
     y = s->output_row++;
     /* This algorithm works over two rows, and outputs the earlier of the two. To
        make this work:
@@ -264,6 +511,7 @@ SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[],
            - At the last row we dither and output, without getting an extra row in. */
     for (i = (y == 0)  ?  0  :  1;  i < 2;  i++)
     {
+        /* Swap the row buffers */
         p = s->pixel_row[0];
         s->pixel_row[0] = s->pixel_row[1];
         s->pixel_row[1] = p;
@@ -273,12 +521,12 @@ SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[],
            will fail, with the end of image condition (i.e. returning zero length) */
         if (s->resize)
         {
-            if (image_resize_row(s, s->pixel_row[1], s->output_width*s->bytes_per_pixel) != s->output_width*s->bytes_per_pixel)
+            if (image_resize_row(s, s->pixel_row[1]) != s->output_width)
                 s->output_row = -1;
         }
         else
         {
-            if (get_and_scrunch_row(s, s->pixel_row[1], s->output_width*s->bytes_per_pixel) != s->output_width*s->bytes_per_pixel)
+            if (get_and_scrunch_row(s, s->pixel_row[1]) != s->output_width)
                 s->output_row = -1;
         }
     }
@@ -359,6 +607,37 @@ SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[],
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[], size_t len)
+{
+    int i;
+
+    if (s->output_row < 0)
+        return 0;
+    if (s->output_format == T4_IMAGE_TYPE_BILEVEL)
+    {
+        i = floyd_steinberg_dither_row(s, buf);
+    }
+    else
+    {
+        s->output_row++;
+        if (s->resize)
+        {
+            if (image_resize_row(s, buf) != s->output_width)
+                s->output_row = -1;
+        }
+        else
+        {
+            if (get_and_scrunch_row(s, buf) != s->output_width)
+                s->output_row = -1;
+        }
+        if (s->output_row < 0)
+            return 0;
+        i = s->output_width*s->output_bytes_per_pixel;
+    }
+    return i;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) image_translate_get_output_width(image_translate_state_t *s)
 {
     return s->output_width;
@@ -375,11 +654,15 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
                                                              int input_format,
                                                              int input_width,
                                                              int input_length,
+                                                             int output_format,
                                                              int output_width,
+                                                             int output_length,
                                                              t4_row_read_handler_t row_read_handler,
                                                              void *row_read_user_data)
 {
     int i;
+    int raw_row_size;
+    int row_size;
 
     if (s == NULL)
     {
@@ -389,53 +672,86 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
     memset(s, 0, sizeof(*s));
 
     s->input_format = input_format;
-
     s->input_width = input_width;
     s->input_length = input_length;
 
-    s->resize = (output_width > 0);
-    s->output_width = (s->resize)  ?  output_width  :  s->input_width;
-    s->output_length = (s->resize)  ?  s->input_length*s->output_width/s->input_width  :  s->input_length;
+    s->output_format = output_format;
+
+    if ((s->resize = (output_width > 0)))
+    {
+        s->output_width = output_width;
+        if (output_length > 0)
+            s->output_length = output_length;
+        else
+            s->output_length = (s->input_length*s->output_width)/s->input_width;
+    }
+    else
+    {
+        s->output_width = s->input_width;
+        s->output_length = s->input_length;
+    }
 
     switch (s->input_format)
     {
-    case IMAGE_TRANSLATE_FROM_GRAY_8:
-        s->bytes_per_pixel = 1;
+    case T4_IMAGE_TYPE_GRAY_8BIT:
+        s->input_bytes_per_pixel = 1;
         break;
-    case IMAGE_TRANSLATE_FROM_GRAY_16:
-        s->bytes_per_pixel = 2;
+    case T4_IMAGE_TYPE_GRAY_12BIT:
+        s->input_bytes_per_pixel = 2;
         break;
-    case IMAGE_TRANSLATE_FROM_COLOUR_8:
-        s->bytes_per_pixel = 3;
+    case T4_IMAGE_TYPE_COLOUR_8BIT:
+        s->input_bytes_per_pixel = 3;
         break;
-    case IMAGE_TRANSLATE_FROM_COLOUR_16:
-        s->bytes_per_pixel = 6;
+    case T4_IMAGE_TYPE_COLOUR_12BIT:
+        s->input_bytes_per_pixel = 6;
         break;
     default:
-        s->bytes_per_pixel = 1;
+        s->input_bytes_per_pixel = 1;
+        break;
+    }
+
+    switch (s->output_format)
+    {
+    case T4_IMAGE_TYPE_GRAY_8BIT:
+        s->output_bytes_per_pixel = 1;
+        break;
+    case T4_IMAGE_TYPE_GRAY_12BIT:
+        s->output_bytes_per_pixel = 2;
+        break;
+    case T4_IMAGE_TYPE_COLOUR_8BIT:
+        s->output_bytes_per_pixel = 3;
+        break;
+    case T4_IMAGE_TYPE_COLOUR_12BIT:
+        s->output_bytes_per_pixel = 6;
+        break;
+    default:
+        s->output_bytes_per_pixel = 1;
         break;
     }
 
     /* Allocate the two row buffers we need, using the space requirements we now have */
+    raw_row_size = s->input_width*s->input_bytes_per_pixel;
+    row_size = s->output_width*s->output_bytes_per_pixel;
+    if (raw_row_size < row_size)
+        raw_row_size = row_size;
     if (s->resize)
     {
         for (i = 0;  i < 2;  i++)
         {
-            if ((s->raw_pixel_row[i] = (uint8_t *) malloc(s->input_width*s->bytes_per_pixel)) == NULL)
+            if ((s->raw_pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
                 return NULL;
-            memset(s->raw_pixel_row[i], 0, s->input_width*s->bytes_per_pixel);
-            if ((s->pixel_row[i] = (uint8_t *) malloc(s->output_width*sizeof(uint8_t))) == NULL)
-                return NULL;
-            memset(s->pixel_row[i], 0, s->output_width*sizeof(uint8_t));
+            memset(s->raw_pixel_row[i], 0, raw_row_size);
         }
     }
-    else
+    if (s->output_format == T4_IMAGE_TYPE_BILEVEL)
     {
+        if (s->resize)
+            raw_row_size = row_size;
         for (i = 0;  i < 2;  i++)
         {
-            if ((s->pixel_row[i] = (uint8_t *) malloc(s->output_width*s->bytes_per_pixel)) == NULL)
+            if ((s->pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
                 return NULL;
-            memset(s->pixel_row[i], 0, s->output_width*s->bytes_per_pixel);
+            memset(s->pixel_row[i], 0, raw_row_size);
         }
     }
 

@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     int i;
     span_sched_state_t sched;
     uint64_t when;
-    
+
     span_schedule_init(&sched);
 
     span_schedule_event(&sched, 500000, callback1, NULL);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
     span_schedule_release(&sched);
 
     printf("Tests passed.\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

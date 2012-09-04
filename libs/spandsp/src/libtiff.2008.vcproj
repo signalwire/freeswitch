@@ -16,8 +16,8 @@
 			Name="x64"
 		/>
 	</Platforms>
-	<ToolFiles>
-	</ToolFiles>
+	<Tooltiff-4.0.2s>
+	</Tooltiff-4.0.2s>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
@@ -25,11 +25,11 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="1"
-			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			BuildLogtiff-4.0.2="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -47,12 +47,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_FILEIO"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_tiff-4.0.2IO"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
+				ProgramDataBasetiff-4.0.2Name="$(IntDir)\$(TargetName).pdb"
 				WarningLevel="0"
 				DebugInformationFormat="4"
 				CompileAs="1"
@@ -94,7 +94,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -113,7 +113,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_FILEIO"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_tiff-4.0.2IO"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -157,11 +157,11 @@
 			ConfigurationType="4"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
-			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			BuildLogtiff-4.0.2="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -178,10 +178,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_FILEIO"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_tiff-4.0.2IO"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
+				ProgramDataBasetiff-4.0.2Name="$(IntDir)\$(TargetName).pdb"
 				WarningLevel="0"
 				DebugInformationFormat="3"
 			/>
@@ -223,7 +223,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h&quot; &quot;$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -241,7 +241,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_FILEIO"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_tiff-4.0.2IO"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
@@ -278,206 +278,206 @@
 	</Configurations>
 	<References>
 	</References>
-	<Files>
+	<tiff-4.0.2s>
 		<Filter
-			Name="Source Files"
+			Name="Source tiff-4.0.2s"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_aux.c"
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_aux.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_close.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_close.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_codec.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_codec.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_color.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_color.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_compress.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_compress.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dir.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dir.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dirinfo.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dirinfo.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dirread.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dirread.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dirwrite.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dirwrite.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dumpmode.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dumpmode.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_error.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_error.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_extension.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_extension.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_fax3.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_fax3.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_fax3sm.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_fax3sm.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_flush.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_flush.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_getimage.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_getimage.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_jpeg.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_jpeg.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_luv.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_luv.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_lzw.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_lzw.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_next.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_next.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_ojpeg.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_ojpeg.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_open.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_open.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_packbits.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_packbits.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_pixarlog.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_pixarlog.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_predict.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_predict.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_print.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_print.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_read.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_read.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_strip.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_strip.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_swab.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_swab.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_thunder.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_thunder.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_tile.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_tile.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_unix.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_unix.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_version.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_version.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_warning.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_warning.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_write.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_write.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_zip.c"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_zip.c"
 				>
-			</File>
+			</tiff-4.0.2>
 		</Filter>
 		<Filter
-			Name="Header Files"
+			Name="Header tiff-4.0.2s"
 			>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\t4.h"
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\t4.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_dir.h"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dir.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_fax3.h"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_fax3.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tif_predict.h"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tif_predict.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiff.h"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiff.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffconf.h"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffconf.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffio.h"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffio.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffio.hxx"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffio.hxx"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffiop.h"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffiop.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\tiffvers.h"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\tiffvers.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\tiff-3.8.2\libtiff\uvcode.h"
+			</tiff-4.0.2>
+			<tiff-4.0.2
+				RelativePath="..\..\tiff-4.0.2\libtiff\uvcode.h"
 				>
-			</File>
+			</tiff-4.0.2>
 		</Filter>
-	</Files>
+	</tiff-4.0.2s>
 	<Globals>
 	</Globals>
 </VisualStudioProject>

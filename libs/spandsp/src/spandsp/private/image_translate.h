@@ -1,7 +1,7 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * private/image_translate.c - Image translation routines for reworking colour
+ * private/image_translate.h - Image translation routines for reworking colour
  *                             and gray scale images to be bi-level images of an
  *                             appropriate size to be FAX compatible.
  *
@@ -33,10 +33,12 @@ struct image_translate_state_s
     int input_format;
     int input_width;
     int input_length;
+    int input_bytes_per_pixel;
+    int output_format;
     int output_width;
     int output_length;
+    int output_bytes_per_pixel;
     int resize;
-    int bytes_per_pixel;
     int raw_input_row;
     int raw_output_row;
     int output_row;

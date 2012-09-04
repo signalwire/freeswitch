@@ -96,6 +96,7 @@ struct listener {
 	switch_event_t *filters;
 	time_t linger_timeout;
 	struct listener *next;
+	switch_pollfd_t *pollfd;
 };
 
 typedef struct listener listener_t;
@@ -475,6 +476,8 @@ SWITCH_STANDARD_APP(socket_function)
 	listener->session = session;
 	switch_set_flag(listener, LFLAG_ALLOW_LOG);
 
+	switch_socket_create_pollset(&listener->pollfd, listener->sock, SWITCH_POLLIN | SWITCH_POLLERR, listener->pool);
+
 	switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 	switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
@@ -833,6 +836,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
+
 		switch_core_hash_init(&listener->event_hash, listener->pool);
 		switch_set_flag(listener, LFLAG_AUTHED);
 		switch_set_flag(listener, LFLAG_STATEFUL);
@@ -1185,7 +1189,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					}
 					count++;
 					if (count == 1) {
-						switch_event_create(event, SWITCH_EVENT_SOCKET_DATA);
+						switch_event_create(event, SWITCH_EVENT_CLONE);
 						switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Command", mbuf);
 					} else if (cur) {
 						char *var, *val;
@@ -1354,31 +1358,26 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		if (channel && switch_channel_down(channel) && !switch_test_flag(listener, LFLAG_HANDLE_DISCO)) {
 			switch_set_flag_locked(listener, LFLAG_HANDLE_DISCO);
 			if (switch_test_flag(listener, LFLAG_LINGER)) {
-				char message[128] = "";
 				char disco_buf[512] = "";
+				
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(listener->session), SWITCH_LOG_DEBUG, "%s Socket Linger %d\n", 
+								  switch_channel_get_name(channel), (int)listener->linger_timeout);
+				
+				switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
+								"Controlled-Session-UUID: %s\n"
+								"Content-Disposition: linger\n" 
+								"Channel-Name: %s\n"
+								"Linger-Time: %d\n"
+								"Content-Length: 0\n\n", 
+								switch_core_session_get_uuid(listener->session), switch_channel_get_name(channel), (int)listener->linger_timeout);
+
 
 				if (listener->linger_timeout != (time_t) -1) {
 					listener->linger_timeout += switch_epoch_time_now(NULL);
-					switch_snprintf(message, sizeof(message),
-						"Channel %s has disconnected, lingering %d seconds by request from remote.\n",
-						switch_channel_get_name(channel), listener->linger_timeout);
-				} else {
-					switch_snprintf(message, sizeof(message),
-						"Channel %s has disconnected, lingering by request from remote.\n",
-						switch_channel_get_name(channel));
 				}
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s", message);
-
-				mlen = strlen(message);
-
-				switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
-								"Controlled-Session-UUID: %s\n"
-								"Content-Disposition: linger\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), (int) mlen);
-
+				
 				len = strlen(disco_buf);
 				switch_socket_send(listener->sock, disco_buf, &len);
-				len = mlen;
-				switch_socket_send(listener->sock, message, &len);
 			} else {
 				status = SWITCH_STATUS_FALSE;
 				break;
@@ -1386,7 +1385,10 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		}
 
 		if (do_sleep) {
-			switch_cond_next();
+			int fdr = 0;
+			switch_poll(listener->pollfd, 1, &fdr, 20000);
+		} else {
+			switch_os_yield();
 		}
 	}
 
@@ -2099,6 +2101,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	if (!strncasecmp(cmd, "sendevent", 9)) {
 		char *ename;
 		const char *uuid = NULL;
+		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+		switch_uuid_str(uuid_str, sizeof(uuid_str));
+		
+		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-UUID", uuid_str);
 
 		strip_cr(cmd);
 
@@ -2126,6 +2132,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		if ((uuid = switch_event_get_header(*event, "unique-id"))) {
 			switch_core_session_t *dsession;
+
 			if ((dsession = switch_core_session_locate(uuid))) {
 				switch_core_session_queue_event(dsession, event);
 				switch_core_session_rwunlock(dsession);
@@ -2133,9 +2140,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 
 		if (*event) {
+			switch_event_prep_for_delivery(*event);
 			switch_event_fire(event);
 		}
-		switch_snprintf(reply, reply_len, "+OK");
+		switch_snprintf(reply, reply_len, "+OK %s", uuid_str);
 		goto done;
 	} else if (!strncasecmp(cmd, "api ", 4)) {
 		struct api_command_struct acs = { 0 };
@@ -2855,6 +2863,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
 		switch_core_hash_init(&listener->event_hash, listener->pool);
+		switch_socket_create_pollset(&listener->pollfd, listener->sock, SWITCH_POLLIN | SWITCH_POLLERR, listener->pool);
+
+
 
 		if (switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock) == SWITCH_STATUS_SUCCESS && listener->sa) {
 			switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);

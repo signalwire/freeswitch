@@ -18,7 +18,7 @@
 run_fax_test()
 {
     rm -f fax_tests_1.tif
-    echo -i ${FILE} ${OPTS} -i ${FILE}
+    echo ./fax_tests ${OPTS} -i ${FILE}
     ./fax_tests ${OPTS} -i ${FILE} >xyzzy 2>xyzzy2
     RETVAL=$?
     if [ $RETVAL != 0 ]
@@ -28,7 +28,7 @@ run_fax_test()
     fi
     # Now use tiffcmp to check the results. It will return non-zero if any page images differ. The -t
     # option means the normal differences in tags will be ignored.
-    tiffcmp -t ${FILE} fax_tests.tif #>/dev/null
+    tiffcmp -t ${FILE} fax_tests.tif >/dev/null
     RETVAL=$?
     if [ $RETVAL != 0 ]
     then
@@ -142,3 +142,6 @@ do
     FILE="${ITUTESTS_DIR}/R1200_1200_A3.tif"
     run_fax_test
 done
+
+echo
+echo All fax tests successfully completed

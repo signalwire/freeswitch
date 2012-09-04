@@ -1557,10 +1557,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_r2_configure_span_signaling)
 			intval = atoi(val);
 			if (intval < 0) {
 				r2conf.mf_dump_size = FTDM_IO_DUMP_DEFAULT_BUFF_SIZE;
-				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with default mf_dump_size = %d bytes\n", span->name, r2conf.mf_dump_size);
+				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with default mf_dump_size = %"FTDM_SIZE_FMT" bytes\n", span->name, r2conf.mf_dump_size);
 			} else {
 				r2conf.mf_dump_size = intval;
-				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with mf_dump_size = %d bytes\n", span->name, r2conf.mf_dump_size);
+				ftdm_log(FTDM_LOG_DEBUG, "Configuring R2 span %s with mf_dump_size = %"FTDM_SIZE_FMT" bytes\n", span->name, r2conf.mf_dump_size);
 			}
 		} else if (!strcasecmp(var, "allow_collect_calls")) {
 			r2conf.allow_collect_calls = ftdm_true(val);
@@ -1970,7 +1970,7 @@ static void *ftdm_r2_run(ftdm_thread_t *me, void *obj)
 	r2data->monitor_thread_id = syscall(SYS_gettid);	
 #endif
 	
-	ftdm_log(FTDM_LOG_DEBUG, "OpenR2 monitor thread %lu started.\n", r2data->monitor_thread_id);
+	ftdm_log(FTDM_LOG_DEBUG, "OpenR2 monitor thread %u started.\n", r2data->monitor_thread_id);
 	r2chan = NULL;
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	if (!chaniter) {

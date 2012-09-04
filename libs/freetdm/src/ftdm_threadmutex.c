@@ -73,6 +73,8 @@ struct ftdm_mutex {
 
 struct ftdm_interrupt {
 	ftdm_socket_t device;
+	ftdm_wait_flag_t device_input_flags;
+	ftdm_wait_flag_t device_output_flags;
 #ifdef WIN32
 	/* for generic interruption */
 	HANDLE event;
@@ -323,7 +325,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(const char *file, int line, const c
 }
 
 
-FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **ininterrupt, ftdm_socket_t device)
+FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **ininterrupt, ftdm_socket_t device, ftdm_wait_flag_t device_flags)
 {
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_interrupt_t *interrupt = NULL;
@@ -340,6 +342,7 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_create(ftdm_interrupt_t **ininterrupt, 
 	}
 
 	interrupt->device = device;
+	interrupt->device_input_flags = device_flags;
 #ifdef WIN32
 	interrupt->event = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (!interrupt->event) {
@@ -389,15 +392,16 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_wait(ftdm_interrupt_t *interrupt, int m
 	char pipebuf[255];
 #endif
 
-	ftdm_assert_return(interrupt != NULL, FTDM_FAIL, "Condition is null!\n");
+	ftdm_assert_return(interrupt != NULL, FTDM_FAIL, "Interrupt is null!\n");
 
-
+	interrupt->device_output_flags = FTDM_NO_FLAGS;
 	/* start implementation */
 #ifdef WIN32
 	ints[0] = interrupt->event;
 	if (interrupt->device != FTDM_INVALID_SOCKET) {
 		num++;
 		ints[1] = interrupt->device;
+		ftdm_log(FTDM_LOG_CRIT, "implement me! (Windows support for device_output_flags member!)\n");
 	}
 	res = WaitForMultipleObjects(num, ints, FALSE, ms >= 0 ? ms : INFINITE);
 	switch (res) {
@@ -422,7 +426,7 @@ pollagain:
 	if (interrupt->device != FTDM_INVALID_SOCKET) {
 		num++;
 		ints[1].fd = interrupt->device;
-		ints[1].events = POLLIN;
+		ints[1].events = interrupt->device_input_flags;
 		ints[1].revents = 0;
 	}
 
@@ -446,7 +450,17 @@ pollagain:
 			ftdm_log(FTDM_LOG_CRIT, "reading interrupt descriptor failed (%s)\n", strerror(errno));
 		}
 	}
-
+	if (interrupt->device != FTDM_INVALID_SOCKET) {
+		if (ints[1].revents & POLLIN) {
+			interrupt->device_output_flags |= FTDM_READ;
+		}
+		if (ints[1].revents & POLLOUT) {
+			interrupt->device_output_flags |= FTDM_WRITE;
+		}
+		if (ints[1].revents & POLLPRI) {
+			interrupt->device_output_flags |= FTDM_EVENTS;
+		}
+	}
 	return FTDM_SUCCESS;
 #endif
 }
@@ -515,10 +529,12 @@ FT_DECLARE(ftdm_status_t) ftdm_interrupt_multiple_wait(ftdm_interrupt_t *interru
 
 	for (i = 0; i < size; i++) {
 		ints[i] = interrupts[i]->event;
+		interrupts[i]->device_output_flags = FTDM_NO_FLAGS;
 		if (interrupts[i]->device != FTDM_INVALID_SOCKET) {
-
+			/* WARNING: if the device is ready for data we must implement for Windows the device_output_flags member */
 			ints[size+numdevices] = interrupts[i]->device;
 			numdevices++;
+			ftdm_log(FTDM_LOG_CRIT, "implement me! (Windows support for device_data_ready member!)\n", size);
 		}
 	}
 
@@ -548,17 +564,16 @@ pollagain:
 		ints[i].events = POLLIN;
 		ints[i].revents = 0;
 		ints[i].fd = interrupts[i]->readfd;
+		interrupts[i]->device_output_flags = FTDM_NO_FLAGS;
 		if (interrupts[i]->device != FTDM_INVALID_SOCKET) {
-			ints[size+numdevices].events = POLLIN;
+			ints[size+numdevices].events = interrupts[i]->device_input_flags;
 			ints[size+numdevices].revents = 0;
 			ints[size+numdevices].fd = interrupts[i]->device;
-
 			numdevices++;
 		}
 	}
 
 	res = poll(ints, size + numdevices, ms);
-
 	if (res == -1) {
 		if (errno == EINTR) {
 			goto pollagain;
@@ -571,7 +586,8 @@ pollagain:
 		return FTDM_TIMEOUT;
 	}
 
-	/* check for events in the pipes, NOT in the devices */
+	/* check for events in the pipes and in the devices, but service only the pipes  */
+	numdevices = 0;
 	for (i = 0; i < size; i++) {
 		if (ints[i].revents & POLLIN) {
 			res = read(ints[i].fd, pipebuf, sizeof(pipebuf));
@@ -579,12 +595,33 @@ pollagain:
 				ftdm_log(FTDM_LOG_CRIT, "reading interrupt descriptor failed (%s)\n", strerror(errno));
 			}
 		}
+		if (interrupts[i]->device != FTDM_INVALID_SOCKET) {
+			if (ints[size+numdevices].revents & POLLIN) {
+				interrupts[i]->device_output_flags |= FTDM_READ;
+			}
+			if (ints[size+numdevices].revents & POLLOUT) {
+				interrupts[i]->device_output_flags |= FTDM_WRITE;
+			}
+			if (ints[size+numdevices].revents & POLLPRI) {
+				interrupts[i]->device_output_flags |= FTDM_EVENTS;
+			}
+			numdevices++;
+		}
 	}
 #else
 	/* for MacOS compilation, unused vars */
 	numdevices = i;
 #endif
 	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(ftdm_wait_flag_t) ftdm_interrupt_device_ready(ftdm_interrupt_t *interrupt)
+{
+#if defined(__WINDOWS__)
+	/* device output flags are not currently filled for Windows upon returning from a wait function */
+	ftdm_log(FTDM_LOG_CRIT, "IMPLEMENT ME!\n");
+#endif
+	return interrupt->device_output_flags;
 }
 
 /* For Emacs:

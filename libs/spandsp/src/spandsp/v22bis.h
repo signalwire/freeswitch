@@ -48,6 +48,12 @@ or 1200bps if one or both ends to not acknowledge that 2400bps is OK.
 #if !defined(_SPANDSP_V22BIS_H_)
 #define _SPANDSP_V22BIS_H_
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define V22BIS_CONSTELLATION_SCALING_FACTOR     1024.0
+#else
+#define V22BIS_CONSTELLATION_SCALING_FACTOR     1.0
+#endif
+
 enum
 {
     V22BIS_GUARD_TONE_NONE,
@@ -60,8 +66,6 @@ enum
     of a V.22bis modem.
 */
 typedef struct v22bis_state_s v22bis_state_t;
-
-extern const complexf_t v22bis_constellation[16];
 
 #if defined(__cplusplus)
 extern "C"
@@ -88,7 +92,11 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx_fillin(v22bis_state_t *s, int len);
     \brief Get a snapshot of the current equalizer coefficients.
     \param coeffs The vector of complex coefficients.
     \return The number of coefficients in the vector. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexi16_t **coeffs);
+#else
 SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexf_t **coeffs);
+#endif
 
 /*! Get the current received carrier frequency.
     \param s The modem context.

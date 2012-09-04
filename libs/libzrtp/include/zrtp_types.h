@@ -527,7 +527,12 @@ typedef struct zrtp_stream_mescache_t
 	zrtp_retry_task_t       errorack_task;
 	zrtp_retry_task_t       sasrelay_task;
 	
-	zrtp_string16_t			signaling_hash;	
+	/*!
+	 * Hash pre-image of the remote party Hello retrieved from Signaling. When
+	 * user calls zrtp_signaling_hash_set() libzrtp stores hash value in this
+	 * variable and checks all incoming Hello-s to prevent DOS attacks.
+	 */
+	zrtp_string64_t			signaling_hash;
 } zrtp_stream_mescache_t;
 
 
@@ -722,14 +727,7 @@ struct zrtp_stream_t
 	 * crypto sources and performs traffic encryption/decryption.
 	 */
 	zrtp_protocol_t			*protocol;
-	
-	/*!
-	 * Hash pre-image of the remote party Hello retrieved from Signaling. When
-	 * user calls zrtp_signaling_hash_set() libzrtp stores hash value in this
-	 * variable and checks all incoming Hellos to prevent DOS attacks.
-	 */
-	zrtp_string128_t		signaling_hash;
-	
+
 	/*!< Holder for RTP/ZRTP media stream options. */
 	zrtp_media_context_t	media_ctx;
 	

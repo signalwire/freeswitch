@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,9 @@
  * David Yat Sin <davidy@sangoma.com>
  * Nenad Corbic <ncorbic@sangoma.com>
  * Arnaldo Pereira <arnaldo@sangoma.com>
+ * Gideon Sadan <gsadan@sangoma.com>
  *
- */
-
+ */ 
 #ifdef WP_DEBUG_IO
 #define _BSD_SOURCE
 #include <syscall.h>
@@ -120,6 +120,16 @@ typedef struct {
 FIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event);
 FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event);
 FIO_CHANNEL_NEXT_EVENT_FUNCTION(wanpipe_channel_next_event);
+
+static void wp_swap16(char *data, int datalen)
+{
+	int i = 0;
+	uint16_t *samples = (uint16_t *)data;
+	for (i = 0; i < datalen/2; i++) {
+		uint16_t sample = ((samples[i]  & 0x00FF) << 8) | ((samples[i]  & 0xFF00) >> 8); 
+		samples[i] =  sample;
+	}
+}
 
 /**
  * \brief Poll for event on a wanpipe socket
@@ -305,10 +315,19 @@ static unsigned wp_open_range(ftdm_span_t *span, unsigned spanno, unsigned start
 
 				err = sangoma_tdm_get_hw_coding(chan->sockfd, &tdm_api);
 
+				
+			
 				if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
 					chan->native_codec = chan->effective_codec = FTDM_CODEC_ALAW;
 				} else {
 					chan->native_codec = chan->effective_codec = FTDM_CODEC_ULAW;
+				}
+ 
+				
+				if ((span->trunk_type == FTDM_TRUNK_GSM) && (chan->type == FTDM_CHAN_TYPE_B)) {
+					chan->native_codec = FTDM_CODEC_SLIN;
+					chan->native_interval = 20;
+					chan->packet_len = 320;
 				}
 
 				err = sangoma_tdm_get_hw_dtmf(chan->sockfd, &tdm_api);
@@ -580,8 +599,9 @@ static FIO_OPEN_FUNCTION(wanpipe_open)
 
 		ftdm_channel_set_feature(ftdmchan, FTDM_CHANNEL_FEATURE_INTERVAL);
 		ftdmchan->effective_interval = ftdmchan->native_interval = wp_globals.codec_ms;
-		ftdmchan->packet_len = ftdmchan->native_interval * 8;
-
+		
+		/* The packet len will depend on the codec and interval */
+		ftdmchan->packet_len = ftdmchan->native_interval * ((ftdmchan->native_codec==FTDM_CODEC_SLIN) ? 16 : 8);
 		if (wp_globals.txqueue_size > 0) {
 			ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_TX_QUEUE_SIZE, &wp_globals.txqueue_size);
 		}
@@ -772,6 +792,7 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 	case FTDM_COMMAND_SET_INTERVAL: 
 		{
 			err=sangoma_tdm_set_usr_period(ftdmchan->sockfd, &tdm_api, FTDM_COMMAND_OBJ_INT);
+			
 			ftdmchan->packet_len = ftdmchan->native_interval * (ftdmchan->effective_codec == FTDM_CODEC_SLIN ? 16 : 8);
 		}
 		break;
@@ -793,7 +814,7 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 				FTDM_COMMAND_OBJ_INT = wanpipe_swap_bits(rbsbits);
 			}
 #else
-			// does sangoma_tdm_read_rbs is available here?
+			/* is sangoma_tdm_read_rbs available here? */
 			FTDM_COMMAND_OBJ_INT = ftdmchan->rx_cas_bits;
 #endif
 		}
@@ -885,17 +906,11 @@ static void wanpipe_write_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_tx_hdr_t *t
 	}
 
 	if (ftdmchan->iostats.tx.idle_packets < tx_stats->wp_api_tx_hdr_tx_idle_packets) {
-		/* HDLC channels do not always transmit, so its ok for drivers to fill with idle
-		 * also do not report idle warning when we just started transmitting */
-		if (ftdmchan->iostats.tx.packets && FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
-			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Tx idle changed from %d to %d\n", 
-					ftdmchan->iostats.tx.idle_packets, tx_stats->wp_api_tx_hdr_tx_idle_packets);
-		}
 		ftdmchan->iostats.tx.idle_packets = tx_stats->wp_api_tx_hdr_tx_idle_packets;
 	}
 
 	if (!ftdmchan->iostats.tx.packets) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "First packet write stats: Tx queue len: %d, Tx queue size: %d, Tx idle: %d\n", 
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "First packet write stats: Tx queue len: %d, Tx queue size: %d, Tx idle: %"FTDM_UINT64_FMT"\n", 
 				ftdmchan->iostats.tx.queue_len, 
 				ftdmchan->iostats.tx.queue_size,
 				ftdmchan->iostats.tx.idle_packets);
@@ -941,11 +956,11 @@ static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx
 	}
 
 	if (ftdmchan->iostats.rx.queue_len >= (0.8 * ftdmchan->iostats.rx.queue_size)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length exceeded 80% threshold (%d/%d)\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length exceeded 80%% threshold (%d/%d)\n",
 					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
 		ftdm_set_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
 	} else if (ftdm_test_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES)){
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length reduced 80% threshold (%d/%d)\n",
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Rx Queue length reduced 80%% threshold (%d/%d)\n",
 					  		ftdmchan->iostats.rx.queue_len, ftdmchan->iostats.rx.queue_size);
 		ftdm_clear_flag(&(ftdmchan->iostats.rx), FTDM_IOSTATS_ERROR_QUEUE_THRES);
 	}
@@ -975,12 +990,15 @@ static void wanpipe_read_stats(ftdm_channel_t *ftdmchan, wp_tdm_api_rx_hdr_t *rx
  * \param datalen Size of data buffer
  * \return Success, failure or timeout
  */
+
+
 static FIO_READ_FUNCTION(wanpipe_read)
 {
 	int rx_len = 0;
 	int rq_len = (int)*datalen;
 	wp_tdm_api_rx_hdr_t hdrframe;
 
+	
 #ifdef WP_DEBUG_IO
 	wp_channel_t *wchan = ftdmchan->io_data;
 	ftdm_time_t time_diff = 0;
@@ -1040,6 +1058,10 @@ static FIO_READ_FUNCTION(wanpipe_read)
 		wanpipe_read_stats(ftdmchan, &hdrframe);
 	}
 
+	if ((ftdmchan->type == FTDM_CHAN_TYPE_B) && (ftdmchan->span->trunk_type == FTDM_TRUNK_GSM)) {
+		wp_swap16(data, *datalen);
+	}
+	
 	return FTDM_SUCCESS;
 }
 
@@ -1055,6 +1077,10 @@ static FIO_WRITE_FUNCTION(wanpipe_write)
 	int bsent = 0;
 	int err = 0;
 	wp_tdm_api_tx_hdr_t hdrframe;
+
+	if ((ftdmchan->type == FTDM_CHAN_TYPE_B) && (ftdmchan->span->trunk_type == FTDM_TRUNK_GSM)) {
+		wp_swap16(data, *datalen);
+	}
 
 	/* Do we even need the headerframe here? on windows, we don't even pass it to the driver */
 	memset(&hdrframe, 0, sizeof(hdrframe));
@@ -1490,10 +1516,10 @@ static __inline__ ftdm_status_t wanpipe_channel_process_event(ftdm_channel_t *fc
 					if (fchan->dtmfdetect.duration_ms) {
 						ftdm_time_t diff = ftdm_current_time_in_ms() - fchan->dtmfdetect.start_time;
 						if (diff > fchan->dtmfdetect.duration_ms) {
-							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c (duration:%"FTDM_TIME_FMT" min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
 							ftdm_channel_queue_dtmf(fchan, tmp_dtmf);
 						} else {
-							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c (duration:%d min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
+							ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Ignoring wanpipe DTMF: %c (duration:%"FTDM_TIME_FMT" min:%d)\n", tmp_dtmf[0], diff, fchan->dtmfdetect.duration_ms);
 						}
 					} else if (!fchan->dtmfdetect.trigger_on_start) {
 						ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Queuing wanpipe DTMF: %c\n", tmp_dtmf[0]);
@@ -1591,7 +1617,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 					ftdm_clear_flag_locked(span->channels[i], FTDM_CHANNEL_FLASH);
 					ftdm_set_flag_locked(span->channels[i], FTDM_CHANNEL_OFFHOOK);
 					event_id = FTDM_OOB_OFFHOOK;
-					ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Diff since last event = %llums, delivering %s now\n", diff, ftdm_oob_event2str(event_id));
+					ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Diff since last event = %"FTDM_TIME_FMT" ms, delivering %s now\n", diff, ftdm_oob_event2str(event_id));
 					goto event;
 				}
 			}
@@ -1610,7 +1636,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_span_next_event)
 
 						sangoma_tdm_txsig_onhook(ftdmchan->sockfd,&tdm_api);
 					}
-					ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Diff since last event = %llums, delivering %s now\n", diff, ftdm_oob_event2str(event_id));
+					ftdm_log_chan(span->channels[i], FTDM_LOG_DEBUG, "Diff since last event = %"FTDM_TIME_FMT" ms, delivering %s now\n", diff, ftdm_oob_event2str(event_id));
 					goto event;
 				}
 			}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,9 +67,6 @@ struct ftdm_isdn_data {
 	int32_t mode;
 	int32_t digit_timeout;
 	ftdm_isdn_opts_t opts;
-	ftdm_caller_data_t *outbound_crv[32768];
-	ftdm_channel_t *channels_local_crv[32768];
-	ftdm_channel_t *channels_remote_crv[32768];
 #ifdef HAVE_PCAP
 	struct pcap_context *pcap;
 #endif
@@ -81,7 +78,8 @@ typedef struct ftdm_isdn_data ftdm_isdn_data_t;
 /* b-channel private data */
 struct ftdm_isdn_bchan_data
 {
-	int32_t digit_timeout;
+	ftdm_time_t digit_timeout;
+	int offset;	/* offset in teletone buffer */
 };
 
 typedef struct ftdm_isdn_bchan_data ftdm_isdn_bchan_data_t;

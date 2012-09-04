@@ -1879,6 +1879,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	size_t len = 0;
 	char tb[2] = "";
+	int term_required = 0;
+	
+
+	if (valid_terminators && *valid_terminators == '=') {
+		term_required = 1;
+	}
 
 	switch_assert(session);
 
@@ -1945,6 +1951,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 				}
 			}
 		}
+	} else if (term_required) {
+		status = SWITCH_STATUS_TOO_SMALL;
 	}
 
 	len = strlen(digit_buffer);
@@ -2570,7 +2578,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
-	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+	if ((other_uuid = switch_channel_get_partner_uuid(channel))) {
 		if ((other_session = switch_core_session_locate(other_uuid))) {
 			other_channel = switch_core_session_get_channel(other_session);
 

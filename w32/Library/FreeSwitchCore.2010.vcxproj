@@ -88,8 +88,8 @@
     </PreBuildEvent>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-3.8.2\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -146,8 +146,8 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-3.8.2\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -198,8 +198,8 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </PreBuildEvent>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-3.8.2\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>
@@ -247,8 +247,8 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-3.8.2\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>
@@ -765,6 +765,9 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ProjectReference Include="..\..\libs\libteletone\libteletone.2010.vcxproj">
       <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\libzrtp\projects\win\libzrtp.2010.vcxproj">
+      <Project>{c13cc324-0032-4492-9a30-310a6bd64ff5}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\spandsp\src\libspandsp.2010.vcxproj">
       <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>

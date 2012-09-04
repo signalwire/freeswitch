@@ -543,7 +543,6 @@ static int create_error_page(TIFF *tiff_file)
 
 int main(int argc, char *argv[])
 {
-    int row;
     TIFF *tiff_file;
     struct tm *tm;
     time_t now;
@@ -553,24 +552,13 @@ int main(int argc, char *argv[])
     int i;
     int image_length;
     int opt;
-    int compression;
 
-    compression = T4_COMPRESSION_ITU_T6;
     photo_metric = PHOTOMETRIC_MINISWHITE;
     fill_order = FILLORDER_LSB2MSB;
-    while ((opt = getopt(argc, argv, "126ir")) != -1)
+    while ((opt = getopt(argc, argv, "ir")) != -1)
     {
         switch (opt)
         {
-        case '1':
-            compression = T4_COMPRESSION_ITU_T4_1D;
-            break;
-        case '2':
-            compression = T4_COMPRESSION_ITU_T4_2D;
-            break;
-        case '6':
-            compression = T4_COMPRESSION_ITU_T6;
-            break;
         case 'i':
             photo_metric = PHOTOMETRIC_MINISBLACK;
             break;
@@ -637,7 +625,6 @@ int main(int argc, char *argv[])
         image_length = sequence[i].length;
         
         /* Write the image first.... */
-        row = 0;
         switch (sequence[i].type)
         {
         case 0:

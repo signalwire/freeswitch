@@ -784,12 +784,12 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 
 	tech_pvt = switch_core_session_get_private(session);
 	channel = switch_core_session_get_channel(session);
-	remote_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+	remote_uuid = switch_channel_get_partner_uuid(channel);
 
 	if (tech_pvt->transfer_from_call_id) {
 		if((session2 = skinny_profile_find_session(listener->profile, listener, &line_instance, tech_pvt->transfer_from_call_id))) {
 			switch_channel_t *channel2 = switch_core_session_get_channel(session2);
-			const char *remote_uuid2 = switch_channel_get_variable(channel2, SWITCH_SIGNAL_BOND_VARIABLE);
+			const char *remote_uuid2 = switch_channel_get_partner_uuid(channel2);
 			if (switch_ivr_uuid_bridge(remote_uuid, remote_uuid2) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				switch_channel_hangup(channel2, SWITCH_CAUSE_NORMAL_CLEARING);
@@ -1007,6 +1007,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 				const char *value = switch_xml_attr_soft(xbutton, "value");
 				if(type ==  SKINNY_BUTTON_LINE) {
 					const char *caller_name = switch_xml_attr_soft(xbutton, "caller-name");
+					const char *reg_metadata = switch_xml_attr_soft(xbutton, "registration-metadata");
 					uint32_t ring_on_idle = atoi(switch_xml_attr_soft(xbutton, "ring-on-idle"));
 					uint32_t ring_on_active = atoi(switch_xml_attr_soft(xbutton, "ring-on-active"));
 					uint32_t busy_trigger = atoi(switch_xml_attr_soft(xbutton, "busy-trigger"));
@@ -1030,7 +1031,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 						switch_safe_free(sql);
 						token = switch_mprintf("skinny/%q/%q/%q:%d", profile->name, value, request->data.reg.device_name, request->data.reg.instance);
 						url = switch_mprintf("skinny/%q/%q", profile->name, value);
-						switch_core_add_registration(value, profile->domain, token, url, 0, network_ip, network_port_c, "tcp");
+						switch_core_add_registration(value, profile->domain, token, url, 0, network_ip, network_port_c, "tcp", reg_metadata);
 						switch_safe_free(token);
 						switch_safe_free(url);
 					}

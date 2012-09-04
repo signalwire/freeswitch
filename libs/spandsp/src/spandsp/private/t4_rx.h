@@ -36,37 +36,95 @@ typedef struct
     /*! \brief The libtiff context for the current TIFF file */
     TIFF *tiff_file;
 
+    /*! Image type - bilevel, gray, colour */
+    int image_type;
     /*! \brief The compression type for output to the TIFF file. */
-    int32_t output_compression;
+    int output_encoding;
     /*! \brief The TIFF photometric setting for the current page. */
     uint16_t photo_metric;
     /*! \brief The TIFF fill order setting for the current page. */
     uint16_t fill_order;
-    /*! \brief The TIFF G3 FAX options. */
-    int32_t output_t4_options;
 
     /*! \brief The number of pages in the current image file. */
     int pages_in_file;
+
+    /*! \brief The time at which handling of the current page began. */
+    time_t page_start_time;
+
+    /*! \brief A point to the image buffer. */
+    uint8_t *image_buffer;
+    /*! \brief The size of the image in the image buffer, in bytes. */
+    int image_size;
+    /*! \brief The current size of the image buffer. */
+    int image_buffer_size;
+} t4_rx_tiff_state_t;
+
+/*!
+    T.4 FAX decompression metadata descriptor. This contains information about the image
+    which may be relevant to the backend, but is not relevant to the image decoding process.
+*/
+typedef struct
+{
+    /*! \brief Column-to-column (X) resolution in pixels per metre. */
+    int x_resolution;
+    /*! \brief Row-to-row (Y) resolution in pixels per metre. */
+    int y_resolution;
 
     /* "Background" information about the FAX, which can be stored in the image file. */
     /*! \brief The vendor of the machine which produced the file. */ 
     const char *vendor;
     /*! \brief The model of machine which produced the file. */ 
     const char *model;
-    /*! \brief The local ident string. */ 
-    const char *local_ident;
     /*! \brief The remote end's ident string. */ 
     const char *far_ident;
     /*! \brief The FAX sub-address. */ 
     const char *sub_address;
     /*! \brief The FAX DCS information, as an ASCII hex string. */ 
     const char *dcs;
+} t4_rx_metadata_t;
 
-    /*! \brief The first page to transfer. -1 to start at the beginning of the file. */
-    int start_page;
-    /*! \brief The last page to transfer. -1 to continue to the end of the file. */
-    int stop_page;
-} t4_tiff_state_t;
+/*!
+    T.4 FAX decompression descriptor. This defines the working state
+    for a single instance of a T.4 FAX decompression channel.
+*/
+struct t4_rx_state_s
+{
+    /*! \brief Callback function to write a row of pixels to the image destination. */
+    t4_row_write_handler_t row_handler;
+    /*! \brief Opaque pointer passed to row_write_handler. */
+    void *row_handler_user_data;
+
+    /*! \brief The number of pages transferred to date. */
+    int current_page;
+
+    /*! \brief The size of the compressed image on the line side, in bits. */
+    int line_image_size;
+
+    /*! \brief The type of compression used between the FAX machines. */
+    int line_encoding;
+    
+    /*! \brief The width of the current page, in pixels. */
+    uint32_t image_width;
+
+    union
+    {
+        t4_t6_decode_state_t t4_t6;
+        t42_decode_state_t t42;
+#if defined(SPANDSP_SUPPORT_T43)
+        t43_decode_state_t t43;
+#endif
+        t85_decode_state_t t85;
+    } decoder;
+
+    /* Supporting information, like resolutions, which the backend may want. */
+    t4_rx_metadata_t metadata;
+
+    /*! \brief All TIFF file specific state information for the T.4 context. */
+    t4_rx_tiff_state_t tiff;
+
+    /*! \brief Error and flow logging control */
+    logging_state_t logging;
+};
 
 #endif
 /*- End of file ------------------------------------------------------------*/

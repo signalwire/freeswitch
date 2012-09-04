@@ -1,6 +1,6 @@
 /* 
  * libDingaLing XMPP Jingle Library
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -28,6 +28,7 @@
  * libdingaling.h -- Main Header File
  *
  */
+
 /*! \file libdingaling.h
     \brief Main Header File
 */
@@ -60,12 +61,18 @@ extern "C" {
 #endif
 
 #define LDL_HANDLE_QLEN 2000
-#define LDL_MAX_CANDIDATES 10
+#define LDL_MAX_CANDIDATES 25
 #define LDL_MAX_PAYLOADS 50
 #define LDL_RETRY 3
 #define IKS_NS_COMPONENT "jabber:component:accept"
-/* period between keep alive signals in 1sec units*/
-#define LDL_KEEPALIVE_TIMEOUT 300
+/* period between keep alive signals in 0.1sec units*/
+#define LDL_KEEPALIVE_TIMEOUT 6000
+
+typedef struct ldl_crypto_data_s {
+	char *tag;
+	char *suite;
+	char *key;
+} ldl_crypto_data_t;
 
 /*! \brief A structure to store a jingle candidate */
 struct ldl_candidate {
@@ -90,18 +97,88 @@ struct ldl_candidate {
 };
 typedef struct ldl_candidate ldl_candidate_t;
 
-/*! \brief A structure to store a jingle payload */
+typedef enum {
+	LDL_PAYLOAD_AUDIO,
+	LDL_PAYLOAD_VIDEO
+} ldl_payload_type_t;
+
+/*! \brief A structure to store a jingle audio payload */
 struct ldl_payload {
+	/*! the type of the payload */
+	ldl_payload_type_t type;
 	/*! the iana name of the payload type */
 	char *name;
 	/*! the iana id of the payload type */
 	unsigned int id;
+	
+	/* Audio */
+	
 	/*! the transfer rate of the payload type */
 	unsigned int rate;
 	/*! the bits per second of the payload type */
 	unsigned int bps;
+	
+	/* Video */
+	
+	/*! the width of the video payload type */
+	unsigned int width;
+	/*! the width of the video payload type */
+	unsigned int height;
+	/*! the framerate of the video payload type */
+	unsigned int framerate;
+
+	unsigned int ptime;
 };
 typedef struct ldl_payload ldl_payload_t;
+
+
+enum ldl_transport_type  {
+	LDL_TPORT_RTP,
+	LDL_TPORT_VIDEO_RTP,
+	LDL_TPORT_RTCP,
+	LDL_TPORT_VIDEO_RTCP,
+	
+	/* Nothing below that line */
+	LDL_TPORT_MAX
+};
+typedef enum ldl_transport_type ldl_transport_type_t;
+
+static inline const char *ldl_transport_type_str(ldl_transport_type_t type) 
+{
+	static const char *name[] = { "rtp", "video_rtp", "rtcp", "video_rtcp" };
+	return  type >= LDL_TPORT_MAX ? NULL : name[type];
+}
+
+static inline ldl_transport_type_t ldl_transport_type_parse(const char *type) {
+	if (!strcasecmp(type, "rtp")) {
+		return LDL_TPORT_RTP;
+	} else if (!strcasecmp(type, "rtcp")) {
+		return LDL_TPORT_RTCP;
+	} else if (!strcasecmp(type, "video_rtp")) {
+		return LDL_TPORT_VIDEO_RTP;
+	} else if (!strcasecmp(type, "video_rtcp")) {
+		return LDL_TPORT_VIDEO_RTCP;
+	} else {
+		return LDL_TPORT_MAX;
+	}
+}
+
+#if 0
+/*! \brief A structure to store a jingle video payload */
+struct ldl_vpayload {
+	/*! the iana name of the video payload type */
+	char *name;
+	/*! the iana id of the video payload type */
+	unsigned int id;
+	/*! the width of the video payload type */
+	unsigned int width;
+	/*! the width of the video payload type */
+	unsigned int height;
+	/*! the framerate of the video payload type */
+	unsigned int framerate;
+};
+typedef struct ldl_vpayload ldl_vpayload_t;
+#endif
 
 struct ldl_handle;
 typedef struct ldl_handle ldl_handle_t;
@@ -132,7 +209,8 @@ typedef enum {
 	LDL_FLAG_SASL_MD5 = (1 << 12),
 	LDL_FLAG_COMPONENT = (1 << 13),
 	LDL_FLAG_OUTBOUND = (1 << 14),
-	LDL_FLAG_GATEWAY = (1 << 15)
+	LDL_FLAG_GATEWAY = (1 << 15),
+	LDL_FLAG_JINGLE = (1 << 16)
 } ldl_user_flag_t;
 
 typedef enum {
@@ -514,9 +592,10 @@ unsigned int ldl_session_transport(ldl_session_t *session,
   \return the message_id of the generated xmpp request
 */
 unsigned int ldl_session_describe(ldl_session_t *session,
-								ldl_payload_t *payloads,
-								unsigned int plen,
-								ldl_description_t description);
+								  ldl_payload_t *payloads,
+								  unsigned int plen,
+								  ldl_description_t description, unsigned int *audio_ssrc, unsigned int *video_ssrc, 
+								  ldl_crypto_data_t *audio_crypto_data, ldl_crypto_data_t *video_crypto_data);
 
 
 /*!
@@ -530,11 +609,12 @@ ldl_state_t ldl_session_get_state(ldl_session_t *session);
 /*!
   \brief get the candidates
   \param session the session
+  \param tport type of transport (rtp,rtcp,video_rtp,video_rtcp,etc.)
   \param candidates pointer to point at array of the candidates
   \param len the resulting len of the array pointer
   \return success or failure
 */
-ldl_status ldl_session_get_candidates(ldl_session_t *session, ldl_candidate_t **candidates, unsigned int *len);
+ldl_status ldl_session_get_candidates(ldl_session_t *session, ldl_transport_type_t tport, ldl_candidate_t **candidates, unsigned int *len);
 
 /*!
   \brief get the payloads

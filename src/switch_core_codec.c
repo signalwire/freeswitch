@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  *
  *
  * switch_core_codec.c -- Main Core Library (codec functions)
@@ -114,6 +114,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 			changed_read_codec = 1;
 			if (codec->implementation) {
 				session->read_impl = *codec->implementation;
+				session->real_read_impl = *codec->implementation;
 			} else {
 				memset(&session->read_impl, 0, sizeof(session->read_impl));
 			}
@@ -136,7 +137,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 				session->read_codec = codec;
 				changed_read_codec = 1;
 				if (codec->implementation) {
-				session->read_impl = *codec->implementation;
+					session->read_impl = *codec->implementation;
+					session->real_read_impl = *codec->implementation;
 				} else {
 					memset(&session->read_impl, 0, sizeof(session->read_impl));
 				}
@@ -206,6 +208,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 			session->read_codec = session->real_read_codec = codec;
 			if (codec->implementation) {
 				session->read_impl = *codec->implementation;
+				session->real_read_impl = *codec->implementation;
 			} else {
 				memset(&session->read_impl, 0, sizeof(session->read_impl));
 			}
@@ -313,6 +316,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_se
 {
 	if (session->read_impl.codec_id) {
 		*impp = session->read_impl;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_real_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp)
+{
+	if (session->real_read_impl.codec_id) {
+		*impp = session->real_read_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
 

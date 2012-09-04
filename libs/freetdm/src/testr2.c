@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 			ftdm_channel_call_indicate(lchan, ind);
 			stop = ftdm_current_time_in_ms();
 			diff = stop - start;
-			ftdm_log(FTDM_LOG_DEBUG, "Setting indication %s took %llums\n", 
+			ftdm_log(FTDM_LOG_DEBUG, "Setting indication %s took %"FTDM_TIME_FMT" ms\n",
 					ftdm_channel_indication2str(ind), diff);
 		}
 	}

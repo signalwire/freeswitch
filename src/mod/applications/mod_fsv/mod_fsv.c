@@ -24,10 +24,13 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_fsv -- FS Video File Format
  *
+ *
  */
+
 #include <switch.h>
 
 
@@ -273,6 +276,11 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		}
 	}
 
+	if (fd > -1) {
+		close(fd);
+	}
+
+
 	switch_core_session_set_read_codec(session, NULL);
 	switch_core_codec_destroy(&codec);
 
@@ -406,6 +414,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
 				switch_byte_t *data = (switch_byte_t *) vid_frame.packet;
 
+				vid_frame.m = hdr->m;
+				vid_frame.timestamp = ts;
 				vid_frame.data = data + 12;
 				vid_frame.datalen = vid_frame.packetlen - 12;
 				switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -482,12 +492,278 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	}
 }
 
+struct fsv_file_context {
+	switch_file_t *fd;
+	char *path;
+	switch_mutex_t *mutex;
+};
+
+typedef struct fsv_file_context fsv_file_context;
+
+static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *path)
+{
+	fsv_file_context *context;
+	char *ext;
+	unsigned int flags = 0;
+
+	if ((ext = strrchr(path, '.')) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
+		return SWITCH_STATUS_GENERR;
+	}
+	ext++;
+
+	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		flags |= SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE;
+		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND) || switch_test_flag(handle, SWITCH_FILE_WRITE_OVER)) {
+			flags |= SWITCH_FOPEN_READ;
+		} else {
+			flags |= SWITCH_FOPEN_TRUNCATE;
+		}
+
+	}
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
+		flags |= SWITCH_FOPEN_READ;
+	}
+
+	if (switch_file_open(&context->fd, path, flags, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	context->path = switch_core_strdup(handle->memory_pool, path);
+
+	if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+		int64_t samples = 0;
+		switch_file_seek(context->fd, SEEK_END, &samples);
+		handle->pos = samples;
+	}
+
+	handle->samples = 0;
+	handle->samplerate = 8000;
+	handle->channels = 1;
+	handle->format = 0;
+	handle->sections = 0;
+	handle->seekable = 0;
+	handle->speed = 0;
+	handle->pos = 0;
+	handle->private_info = context;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		struct file_header h;
+		size_t len = sizeof(h);
+
+		memset(&h, 0, sizeof(h));
+
+		h.version = VERSION;
+		h.created = switch_micro_time_now();
+
+		switch_set_string(h.video_codec_name, "H264"); /* FIXME: hard coded */
+
+		h.audio_rate = handle->samplerate;
+		h.audio_ptime = 20; /* FIXME: hard coded */
+
+		if (switch_file_write(context->fd, &h, &len) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File write failed\n");
+			return SWITCH_STATUS_GENERR;
+		}
+	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
+		struct file_header h;
+		size_t size = sizeof(h);
+
+		if (switch_file_read(context->fd, &h, &size) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error reading file header\n");
+			return SWITCH_STATUS_GENERR;
+		}
+
+		if (h.version != VERSION) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "File version does not match!\n");
+			return SWITCH_STATUS_GENERR;
+		}
+
+		handle->samplerate = h.audio_rate;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t fsv_file_truncate(switch_file_handle_t *handle, int64_t offset)
+{
+	fsv_file_context *context = handle->private_info;
+	switch_status_t status;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "truncate file [%s]\n", context->path);
+
+	if ((status = switch_file_trunc(context->fd, offset)) == SWITCH_STATUS_SUCCESS) {
+		handle->pos = 0;
+	}
+
+	return status;
+
+}
+
+static switch_status_t fsv_file_close(switch_file_handle_t *handle)
+{
+	fsv_file_context *context = handle->private_info;
+
+	if (context->fd) {
+		switch_file_close(context->fd);
+		context->fd = NULL;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t fsv_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Seek not implemented\n");
+	return SWITCH_STATUS_FALSE;
+}
+
+static switch_status_t fsv_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	switch_status_t status;
+	size_t need = *len;
+	uint32_t size;
+	size_t bytes = sizeof(size);
+	fsv_file_context *context = handle->private_info;
+
+again:
+
+	status = switch_file_read(context->fd, &size, &bytes);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		goto end;
+	}
+
+	if (size & VID_BIT) { /* video */
+		*len = size & ~VID_BIT;
+		/* TODO: read video data */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "discarding video data %d\n", (int)*len);
+		status = switch_file_read(context->fd, data, len);
+
+		if (status != SWITCH_STATUS_SUCCESS) {
+			goto end;
+		}
+
+		handle->pos += *len + bytes;
+		goto again;
+	}
+
+	if (size > need) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "size %u > need %u\n", (unsigned int)size, (int)need);
+		goto end;
+	}
+
+	*len = size;
+
+	status = switch_file_read(context->fd, data, len);
+
+	*len /= 2;
+
+end:
+
+	return status;
+}
+
+static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	uint32_t datalen = *len * 2;
+	size_t size;
+	switch_status_t status;
+
+	fsv_file_context *context = handle->private_info;
+
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing: %ld\n", (long)(*len)); */
+
+	if (*len > 160) { /* when sample rate is 8000 */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You are asking to write %d bytes of data which is not supported. Please set enable_file_write_buffering=false to use .fsv format\n", (int)(*len));
+		return SWITCH_STATUS_GENERR;
+	}
+
+	switch_mutex_lock(context->mutex);
+
+	size = sizeof(datalen);
+	if (switch_file_write(context->fd, &datalen, &size) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "write error\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*len = datalen;
+	status =  switch_file_write(context->fd, data, len);
+	switch_mutex_unlock(context->mutex);
+
+	return status;
+}
+
+static switch_status_t fsv_file_write_video(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	uint32_t datalen = *len;
+	uint32_t bytes = datalen | VID_BIT;
+	size_t size;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	fsv_file_context *context = handle->private_info;
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "writing: %ld\n", (long)(*len)); */
+
+	switch_mutex_lock(context->mutex);
+
+	size = sizeof(bytes);
+	if (switch_file_write(context->fd, &bytes, &size) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "write error\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*len = datalen;
+	status =  switch_file_write(context->fd, data, len);
+	switch_mutex_unlock(context->mutex);
+
+	return status;
+}
+
+static switch_status_t fsv_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
+{
+	return SWITCH_STATUS_FALSE;
+}
+
+static switch_status_t fsv_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
+{
+	return SWITCH_STATUS_FALSE;
+}
+
+/* Registration */
+
+static char *supported_formats[2] = { 0 };
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_fsv_load)
 {
 	switch_application_interface_t *app_interface;
+	switch_file_interface_t *file_interface;
+
+	supported_formats[0] = "fsv";
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = supported_formats;
+	file_interface->file_open = fsv_file_open;
+	file_interface->file_close = fsv_file_close;
+	file_interface->file_truncate = fsv_file_truncate;
+	file_interface->file_read = fsv_file_read;
+	file_interface->file_write = fsv_file_write;
+	file_interface->file_write_video = fsv_file_write_video;
+	file_interface->file_seek = fsv_file_seek;
+	file_interface->file_set_string = fsv_file_set_string;
+	file_interface->file_get_string = fsv_file_get_string;
 
 	SWITCH_ADD_APP(app_interface, "play_fsv", "play an fsv file", "play an fsv file", play_fsv_function, "<file>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_fsv", "record an fsv file", "record an fsv file", record_fsv_function, "<file>", SAF_NONE);

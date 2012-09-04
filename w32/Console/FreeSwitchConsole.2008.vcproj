@@ -46,7 +46,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-3.8.2\libtiff;&quot;$(InputDir)..\libs\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;&quot;$(InputDir)..\libs\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -128,7 +128,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-3.8.2\libtiff;&quot;$(InputDir)..\libs\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;&quot;$(InputDir)..\libs\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -208,7 +208,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-3.8.2\libtiff;&quot;$(InputDir)..\libs\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;&quot;$(InputDir)..\libs\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -288,7 +288,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-3.8.2\libtiff;&quot;$(InputDir)..\libs\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;&quot;$(InputDir)..\libs\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"

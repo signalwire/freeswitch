@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -262,8 +262,11 @@ FTDM_STR2ENUM(ftdm_str2ftdm_tonemap, ftdm_tonemap2str, ftdm_tonemap_t, TONEMAP_N
 FTDM_ENUM_NAMES(OOB_NAMES, OOB_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_oob_event, ftdm_oob_event2str, ftdm_oob_event_t, OOB_NAMES, FTDM_OOB_INVALID)
 
-FTDM_ENUM_NAMES(TRUNK_TYPE_NAMES, TRUNK_STRINGS)
+FTDM_ENUM_NAMES(TRUNK_TYPE_NAMES, TRUNK_TYPE_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_trunk_type, ftdm_trunk_type2str, ftdm_trunk_type_t, TRUNK_TYPE_NAMES, FTDM_TRUNK_NONE)
+
+FTDM_ENUM_NAMES(TRUNK_MODE_NAMES, TRUNK_MODE_STRINGS)
+FTDM_STR2ENUM(ftdm_str2ftdm_trunk_mode, ftdm_trunk_mode2str, ftdm_trunk_mode_t, TRUNK_MODE_NAMES, FTDM_TRUNK_MODE_INVALID)
 
 FTDM_ENUM_NAMES(START_TYPE_NAMES, START_TYPE_STRINGS)
 FTDM_STR2ENUM(ftdm_str2ftdm_analog_start_type, ftdm_analog_start_type2str, ftdm_analog_start_type_t, START_TYPE_NAMES, FTDM_ANALOG_START_NA)
@@ -757,11 +760,16 @@ FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span)
 		goto done;
 	}
 
+	/* Stop SIG */
 	status = span->stop(span);
-	if (FTDM_SUCCESS == status) {
+	if (status == FTDM_SUCCESS) {
 		ftdm_clear_flag(span, FTDM_SPAN_STARTED);
 	}
 
+	/* Stop I/O */
+	if (span->fio && span->fio->span_stop) {
+		status = span->fio->span_stop(span);
+	}
 done:
 	ftdm_mutex_unlock(span->mutex);
 
@@ -816,6 +824,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_create(const char *iotype, const char *name,
 		ftdm_copy_string(new_span->tone_map[FTDM_TONEMAP_BUSY], "%(500,500,480,620)", FTDM_TONEMAP_LEN);
 		ftdm_copy_string(new_span->tone_map[FTDM_TONEMAP_ATTN], "%(100,100,1400,2060,2450,2600)", FTDM_TONEMAP_LEN);
 		new_span->trunk_type = FTDM_TRUNK_NONE;
+		new_span->trunk_mode = FTDM_TRUNK_MODE_CPE;
 		new_span->data_type = FTDM_TYPE_SPAN;
 
 		ftdm_mutex_lock(globals.span_mutex);
@@ -1992,6 +2001,21 @@ FT_DECLARE(ftdm_trunk_type_t) ftdm_span_get_trunk_type(const ftdm_span_t *span)
 FT_DECLARE(const char *) ftdm_span_get_trunk_type_str(const ftdm_span_t *span)
 {
 	return ftdm_trunk_type2str(span->trunk_type);
+}
+
+FT_DECLARE(void) ftdm_span_set_trunk_mode(ftdm_span_t *span, ftdm_trunk_mode_t mode)
+{
+	span->trunk_mode = mode;
+}
+
+FT_DECLARE(ftdm_trunk_mode_t) ftdm_span_get_trunk_mode(const ftdm_span_t *span)
+{
+	return span->trunk_mode;
+}
+
+FT_DECLARE(const char *) ftdm_span_get_trunk_mode_str(const ftdm_span_t *span)
+{
+	return ftdm_trunk_mode2str(span->trunk_mode);
 }
 
 FT_DECLARE(uint32_t) ftdm_span_get_id(const ftdm_span_t *span)
@@ -4181,6 +4205,9 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_get_iterator(ftdm_iterator_type_t type, ftdm_
 
 FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *span, ftdm_iterator_t *iter)
 {
+	if (!span->chan_count) {
+		return NULL;
+	}
 	if (!(iter = ftdm_get_iterator(FTDM_ITERATOR_CHANS, iter))) {
 		return NULL;
 	}
@@ -4624,7 +4651,7 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 
 static ftdm_status_t load_config(void)
 {
-	char cfg_name[] = "freetdm.conf";
+	const char cfg_name[] = "freetdm.conf";
 	ftdm_config_t cfg;
 	char *var, *val;
 	int catno = -1;
@@ -4642,7 +4669,9 @@ static ftdm_status_t load_config(void)
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
 		return FTDM_FAIL;
 	}
-	ftdm_log(FTDM_LOG_DEBUG, "Reading FreeTDM configuration file\n");	
+
+	ftdm_log(FTDM_LOG_DEBUG, "Reading FreeTDM configuration file\n");
+
 	while (ftdm_config_next_pair(&cfg, &var, &val)) {
 		if (*cfg.category == '#') {
 			if (cfg.catno != catno) {
@@ -4653,14 +4682,14 @@ static ftdm_status_t load_config(void)
 			if (cfg.catno != catno) {
 				char *type = cfg.category + 4;
 				char *name;
-				
+
 				if (*type == ' ') {
 					type++;
 				}
-				
+
 				ftdm_log(FTDM_LOG_DEBUG, "found config for span\n");
 				catno = cfg.catno;
-				
+
 				if (ftdm_strlen_zero(type)) {
 					ftdm_log(FTDM_LOG_CRIT, "failure creating span, no type specified.\n");
 					span = NULL;
@@ -4671,7 +4700,7 @@ static ftdm_status_t load_config(void)
 					*name++ = '\0';
 				}
 
-				/* Verify is trunk_type was specified for previous span */
+				/* Verify if trunk_type was specified for previous span */
 				if (span && span->trunk_type == FTDM_TRUNK_NONE) {
 					ftdm_log(FTDM_LOG_ERROR, "trunk_type not specified for span %d (%s)\n", span->span_id, span->name);
 					ret = FTDM_FAIL;
@@ -4698,11 +4727,15 @@ static ftdm_status_t load_config(void)
 			}
 
 			ftdm_log(FTDM_LOG_DEBUG, "span %d [%s]=[%s]\n", span->span_id, var, val);
-			
+
 			if (!strcasecmp(var, "trunk_type")) {
 				ftdm_trunk_type_t trtype = ftdm_str2ftdm_trunk_type(val);
 				ftdm_span_set_trunk_type(span, trtype);
-				ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s'\n", ftdm_trunk_type2str(trtype)); 
+				ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s'\n", ftdm_trunk_type2str(trtype));
+			} else if (!strcasecmp(var, "trunk_mode")) {
+				ftdm_trunk_mode_t trmode = ftdm_str2ftdm_trunk_mode(val);
+				ftdm_span_set_trunk_mode(span, trmode);
+				ftdm_log(FTDM_LOG_DEBUG, "setting trunk mode to '%s'\n", ftdm_trunk_mode2str(trmode));
 			} else if (!strcasecmp(var, "name")) {
 				if (!strcasecmp(val, "undef")) {
 					chan_config.name[0] = '\0';
@@ -4719,16 +4752,17 @@ static ftdm_status_t load_config(void)
 				if (span->trunk_type == FTDM_TRUNK_FXS || span->trunk_type == FTDM_TRUNK_FXO || span->trunk_type == FTDM_TRUNK_EM) {
 					if ((tmp = ftdm_str2ftdm_analog_start_type(val)) != FTDM_ANALOG_START_NA) {
 						span->start_type = tmp;
-						ftdm_log(FTDM_LOG_DEBUG, "changing start type to '%s'\n", ftdm_analog_start_type2str(span->start_type)); 
+						ftdm_log(FTDM_LOG_DEBUG, "changing start type to '%s'\n", ftdm_analog_start_type2str(span->start_type));
 					}
 				} else {
 					ftdm_log(FTDM_LOG_ERROR, "This option is only valid on analog trunks!\n");
 				}
 			} else if (!strcasecmp(var, "fxo-channel")) {
 				if (span->trunk_type == FTDM_TRUNK_NONE) {
-					span->trunk_type = FTDM_TRUNK_FXO;										
-					ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s' start(%s)\n", ftdm_trunk_type2str(span->trunk_type), 
-							ftdm_analog_start_type2str(span->start_type));
+					span->trunk_type = FTDM_TRUNK_FXO;
+					span->trunk_mode = FTDM_TRUNK_MODE_CPE;
+					ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s' start(%s), mode(%s)\n", ftdm_trunk_type2str(span->trunk_type),
+							ftdm_analog_start_type2str(span->start_type), ftdm_trunk_mode2str(span->trunk_mode));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXO) {
 					unsigned chans_configured = 0;
@@ -4737,13 +4771,14 @@ static ftdm_status_t load_config(void)
 						configured += chans_configured;
 					}
 				} else {
-					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXO channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "fxs-channel")) {
 				if (span->trunk_type == FTDM_TRUNK_NONE) {
 					span->trunk_type = FTDM_TRUNK_FXS;
-					ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s' start(%s)\n", ftdm_trunk_type2str(span->trunk_type), 
-							ftdm_analog_start_type2str(span->start_type));
+					span->trunk_mode = FTDM_TRUNK_MODE_NET;
+					ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s' start(%s), mode(%s)\n", ftdm_trunk_type2str(span->trunk_type),
+							ftdm_analog_start_type2str(span->start_type), ftdm_trunk_mode2str(span->trunk_mode));
 				}
 				if (span->trunk_type == FTDM_TRUNK_FXS) {
 					unsigned chans_configured = 0;
@@ -4752,13 +4787,14 @@ static ftdm_status_t load_config(void)
 						configured += chans_configured;
 					}
 				} else {
-					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add FXS channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "em-channel")) {
 				if (span->trunk_type == FTDM_TRUNK_NONE) {
 					span->trunk_type = FTDM_TRUNK_EM;
-					ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s' start(%s)\n", ftdm_trunk_type2str(span->trunk_type), 
-							ftdm_analog_start_type2str(span->start_type));
+					span->trunk_mode = FTDM_TRUNK_MODE_CPE;
+					ftdm_log(FTDM_LOG_DEBUG, "setting trunk type to '%s' start(%s), mode(%s)\n", ftdm_trunk_type2str(span->trunk_type),
+							ftdm_analog_start_type2str(span->start_type), ftdm_trunk_mode2str(span->trunk_mode));
 				}
 				if (span->trunk_type == FTDM_TRUNK_EM) {
 					unsigned chans_configured = 0;
@@ -4767,19 +4803,33 @@ static ftdm_status_t load_config(void)
 						configured += chans_configured;
 					}
 				} else {
-					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a non-EM trunk!\n");
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add EM channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
-				unsigned chans_configured = 0;
-				chan_config.type = FTDM_CHAN_TYPE_B;
-				if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
-					configured += chans_configured;
+				if (span->trunk_type == FTDM_TRUNK_NONE) {
+					ftdm_log(FTDM_LOG_ERROR, "No trunk type specified in configuration file\n");
+					break;
+				}
+				if (FTDM_SPAN_IS_DIGITAL(span)) {
+					unsigned chans_configured = 0;
+					chan_config.type = FTDM_CHAN_TYPE_B;
+					if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
+						configured += chans_configured;
+					}
+				} else {
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add B channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "d-channel")) {
-				if (d) {
-					ftdm_log(FTDM_LOG_WARNING, "ignoring extra d-channel\n");
-				} else {
+				if (span->trunk_type == FTDM_TRUNK_NONE) {
+					ftdm_log(FTDM_LOG_ERROR, "No trunk type specified in configuration file\n");
+					break;
+				}
+				if (FTDM_SPAN_IS_DIGITAL(span)) {
 					unsigned chans_configured = 0;
+					if (d) {
+						ftdm_log(FTDM_LOG_WARNING, "ignoring extra d-channel\n");
+						continue;
+					}
 					if (!strncasecmp(val, "lapd:", 5)) {
 						chan_config.type = FTDM_CHAN_TYPE_DQ931;
 						val += 5;
@@ -4790,11 +4840,12 @@ static ftdm_status_t load_config(void)
 						configured += chans_configured;
 					}
 					d++;
+				} else {
+					ftdm_log(FTDM_LOG_WARNING, "Cannot add D channels to a %s trunk!\n", ftdm_trunk_type2str(span->trunk_type));
 				}
 			} else if (!strcasecmp(var, "cas-channel")) {
 				unsigned chans_configured = 0;
 				chan_config.type = FTDM_CHAN_TYPE_CAS;
-				
 				if (ftdm_configure_span_channels(span, val, &chan_config, &chans_configured) == FTDM_SUCCESS) {
 					configured += chans_configured;
 				}
@@ -4916,7 +4967,7 @@ done:
 	if (!configured) {
 		ret = FTDM_FAIL;
 	}
-	
+
 	return ret;
 }
 
@@ -5263,6 +5314,14 @@ FT_DECLARE(ftdm_status_t) ftdm_span_start(ftdm_span_t *span)
 		goto done;
 	}
 
+	/* Start I/O */
+	if (span->fio && span->fio->span_start) {
+		status = span->fio->span_start(span);
+		if (status != FTDM_SUCCESS)
+			goto done;
+	}
+
+	/* Start SIG */
 	status = ftdm_report_initial_channels_alarms(span);
 	if (status != FTDM_SUCCESS) {
 		goto done;
@@ -5661,7 +5720,7 @@ static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)
 
 static ftdm_status_t ftdm_cpu_monitor_start(void)
 {
-	if (ftdm_interrupt_create(&globals.cpu_monitor.interrupt, FTDM_INVALID_SOCKET) != FTDM_SUCCESS) {
+	if (ftdm_interrupt_create(&globals.cpu_monitor.interrupt, FTDM_INVALID_SOCKET, FTDM_NO_FLAGS) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "Failed to create CPU monitor interrupt\n");
 		return FTDM_FAIL;
 	}

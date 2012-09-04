@@ -67,7 +67,6 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
-#include "spandsp/dc_restore.h"
 #include "spandsp/bitstream.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/g711.h"
@@ -1004,7 +1003,7 @@ SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_co
     if (s == NULL)
     {
         if ((s = (g726_state_t *) malloc(sizeof(*s))) == NULL)
-            return  NULL;
+            return NULL;
     }
     s->yl = 34816;
     s->yu = 544;

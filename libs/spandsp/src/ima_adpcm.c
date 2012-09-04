@@ -283,13 +283,13 @@ SPAN_DECLARE(ima_adpcm_state_t *) ima_adpcm_init(ima_adpcm_state_t *s,
     if (s == NULL)
     {
         if ((s = (ima_adpcm_state_t *) malloc(sizeof(*s))) == NULL)
-            return  NULL;
+            return NULL;
     }
     /*endif*/
     memset(s, 0, sizeof(*s));
     s->variant = variant;
     s->chunk_size = chunk_size;
-    return  s;
+    return s;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -503,7 +503,7 @@ SPAN_DECLARE(int) ima_adpcm_encode(ima_adpcm_state_t *s,
         break;
     }
     /*endswitch*/
-    return  bytes;
+    return bytes;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

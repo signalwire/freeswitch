@@ -54,36 +54,39 @@
     <param name="tls-cert-dir" value="$${internal_ssl_dir}"/>
     <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
     <param name="tls-version" value="$${sip_tls_version}"/>
-    
+
     <!--If you don't want to pass through timestampes from 1 RTP call to another (on a per call basis with rtp_rewrite_timestamps chanvar)-->
     <!--<param name="rtp-rewrite-timestamps" value="true"/>-->
     <!--<param name="pass-rfc2833" value="true"/>-->
     <!--If you have ODBC support and a working dsn you can use it instead of SQLite-->
     <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
-    
+
     <!--Uncomment to set all inbound calls to no media mode-->
     <!--<param name="inbound-bypass-media" value="true"/>-->
 
     <!--Uncomment to set all inbound calls to proxy media mode-->
     <!--<param name="inbound-proxy-media" value="true"/>-->
-    
-    <!--Uncomment to let calls hit the dialplan *before* you decide if the codec is ok-->
-    <!--<param name="inbound-late-negotiation" value="true"/>-->
-    
+
+    <!-- Let calls hit the dialplan before selecting codec for the a-leg -->
+    <param name="inbound-late-negotiation" value="true"/>
+
+    <!-- Allow ZRTP clients to negotiate end-to-end security associations (also enables late negotiation) -->
+    <param name="inbound-zrtp-passthru" value="true"/>
+
     <!-- this lets anything register -->
     <!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
     <!-- <param name="accept-blind-reg" value="true"/> -->
 
     <!-- accept any authentication without actually checking (not a good feature for most people) -->
     <!-- <param name="accept-blind-auth" value="true"/> -->
-    
+
     <!-- suppress CNG on this profile or per call with the 'suppress_cng' variable -->
     <!-- <param name="suppress-cng" value="true"/> -->
-    
+
     <!--TTL for nonce in sip auth-->
     <param name="nonce-ttl" value="60"/>
-    <!--Uncomment if you want to force the outbound leg of a bridge to only offer the codec 
-	that the originator is using-->
+    <!--Uncomment if you want to force the outbound leg of a bridge to only offer the codec
+        that the originator is using-->
     <!--<param name="disable-transcoding" value="true"/>-->
     <!-- Used for when phones respond to a challenged ACK with method INVITE in the hash -->
     <!--<param name="NDLB-broken-auth-hash" value="true"/>-->
@@ -103,8 +106,8 @@
     <!-- <param name="vad" value="both"/> -->
     <!--<param name="alias" value="sip:10.0.1.251:5555"/>-->
     <!--
-	These are enabled to make the default config work better out of the box.
-	If you need more than ONE domain you'll need to not use these options.
+        These are enabled to make the default config work better out of the box.
+        If you need more than ONE domain you'll need to not use these options.
 
     -->
     <!--all inbound reg will look in this domain for the users -->
@@ -121,10 +124,9 @@
     <!-- set to true to have the profile determine stun is not useful and turn it off globally-->
     <!--<param name="stun-auto-disable" value="true"/>-->
 
-	 <!-- the following can be used as workaround with bogus SRV/NAPTR records -->
-	 <!--<param name="disable-srv" value="false" />-->
-	 <!--<param name="disable-naptr" value="false" />-->
+    <!-- the following can be used as workaround with bogus SRV/NAPTR records -->
+    <!--<param name="disable-srv" value="false" />-->
+    <!--<param name="disable-naptr" value="false" />-->
 
   </settings>
 </profile>
-

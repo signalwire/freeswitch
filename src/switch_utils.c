@@ -2092,6 +2092,17 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 		return 0;
 	}
 
+
+	if (*buf == '^' && *(buf+1) == '^') {
+		char *p = buf + 2;
+		
+		if (p && *p && *(p+1)) {
+			buf = p;
+			delim = *buf++;
+		}
+	}
+
+
 	memset(array, 0, arraylen * sizeof(*array));
 
 	return (delim == ' ' ? separate_string_blank_delim(buf, array, arraylen) : separate_string_char_delim(buf, delim, array, arraylen));
@@ -2956,6 +2967,37 @@ SWITCH_DECLARE(unsigned long) switch_atoul(const char *nptr)
 	if (tmp < 0) return 0;
 	else return (unsigned long) tmp;
 }
+
+
+SWITCH_DECLARE(char *) switch_strerror_r(int errnum, char *buf, switch_size_t buflen)
+{
+#ifdef HAVE_STRERROR_R
+#ifdef STRERROR_R_CHAR_P
+	/* GNU variant returning char *, avoids warn-unused-result error */
+	return strerror_r(errnum, buf, buflen);
+#else
+	/*
+	 * XSI variant returning int, with GNU compatible error string,
+	 * if no message could be found
+	 */
+	if (strerror_r(errnum, buf, buflen)) {
+		switch_snprintf(buf, buflen, "Unknown error %d", errnum);
+	}
+	return buf;
+#endif /* STRERROR_R_CHAR_P */
+#elif defined(WIN32)
+	/* WIN32 variant */
+	if (strerror_s(buf, buflen, errnum)) {
+		switch_snprintf(buf, buflen, "Unknown error %d", errnum);
+	}
+	return buf;
+#else
+	/* Fallback, copy string into private buffer */
+	switch_copy_string(buf, strerror(errnum), buflen);
+	return buf;
+#endif
+}
+
 
 /* For Emacs:
  * Local Variables:

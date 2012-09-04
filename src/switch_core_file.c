@@ -406,6 +406,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 	}
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_file_write_video(switch_file_handle_t *fh, void *data, switch_size_t *len)
+{
+	switch_assert(fh != NULL);
+	switch_assert(fh->file_interface != NULL);
+
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!fh->file_interface->file_write_video) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return fh->file_interface->file_write_video(fh, data, len);
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence)
 {
 	switch_status_t status;

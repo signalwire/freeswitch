@@ -209,6 +209,12 @@ working only on the most optimal lines, and being widely usable across most phon
 TCM absolutely transformed the phone line modem business.
 */
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define V17_CONSTELLATION_SCALING_FACTOR        1024.0
+#else
+#define V17_CONSTELLATION_SCALING_FACTOR        1.0
+#endif
+
 /*!
     V.17 modem receive side descriptor. This defines the working state for a
     single instance of a V.17 modem receiver.
@@ -292,8 +298,8 @@ SPAN_DECLARE_NONSTD(int) v17_rx_fillin(v17_rx_state_t *s, int len);
     \param s The modem context.
     \param coeffs The vector of complex coefficients.
     \return The number of coefficients in the vector. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
-SPAN_DECLARE(int) v17_rx_equalizer_state(v17_rx_state_t *s, complexi_t **coeffs);
+#if defined(SPANDSP_USE_FIXED_POINT)
+SPAN_DECLARE(int) v17_rx_equalizer_state(v17_rx_state_t *s, complexi16_t **coeffs);
 #else
 SPAN_DECLARE(int) v17_rx_equalizer_state(v17_rx_state_t *s, complexf_t **coeffs);
 #endif

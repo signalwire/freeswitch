@@ -20,11 +20,18 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	 sounds_version=`grep $$base_sound_dir $(switch_srcdir)/build/sounds_version.txt | cut -d ' '  -f2`;\
 	 soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$moh_version.tar.gz`; \
 	 echo $$full_sound_dir | grep  music  >/dev/null || soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$sounds_version.tar.gz`; \
-         if test "$$target" = "install"; then $(MAKE) $(AM_MAKEFLAGS) core_install; else $(MAKE) $(AM_MAKEFLAGS) core ; fi; \
          if test "$$target_prefix" = "sounds"; then \
-	   if test "$$target" = "install"; then $(GETSOUNDS) $$soundfile $(DESTDIR)$(soundsdir)/; else $(GETSOUNDS) $$soundfile ; fi; \
+	   if test "$$target" = "install"; then \
+	      $(GETSOUNDS) $$soundfile $(DESTDIR)$(soundsdir)/;\
+	   else \
+	      $(GETSOUNDS) $$soundfile ; \
+	   fi; \
 	 else \
-	   cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
+	   if test "$$target" = "install"; then \
+	      $(MAKE) $(AM_MAKEFLAGS) core_install && cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ; \
+	   else \
+	      $(MAKE) $(AM_MAKEFLAGS) core && cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
+	   fi; \
 	 fi
 
 sounds: sounds-en-us-callie-8000
@@ -102,7 +109,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
-CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-3.8.2/libtiff
+CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-4.0.2/libtiff
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
@@ -150,8 +157,8 @@ if ENABLE_ZRTP
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bgaes
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bnlib
 CORE_CFLAGS += -isystem $(switch_srcdir)/libs/libzrtp/include
-ZRTP_LDFLAGS = -Llibs/libzrtp/third_party/bnlib
-ZRTP_LDFLAGS += -Llibs/libzrtp/projects/gnu/build
+ZRTP_LDFLAGS = -L$(switch_srcdir)/libs/libzrtp/third_party/bnlib
+ZRTP_LDFLAGS += -L$(switch_srcdir)/libs/libzrtp/projects/gnu/build
 ZRTP_LIBS = -lbn -lzrtp
 libfreeswitch_la_LDFLAGS += $(ZRTP_LDFLAGS)
 libfreeswitch_la_LIBADD += $(ZRTP_LIBS)
@@ -408,29 +415,19 @@ $(OUR_MODULES): $(switch_builddir)/modules.conf libfreeswitch.la
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > $(switch_builddir)/quiet_libtool
 
-src/include/switch_version.h: src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
-	@have_version=1 ; \
-	force=0 ; \
-	grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h.in > /dev/null  && have_version=0 ; \
-	test ! -f src/include/switch_version.h || grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h > /dev/null && force=1 ; \
-	if test $$have_version = 1 ; then \
-	  cat src/include/switch_version.h.in > src/include/switch_version.h ; \
-	  touch .version ; \
-	else \
-	  if [ -d .git ] ; then \
-	    version=`git log --pretty=format:"%h %ci" -1 HEAD | head -1 | sed -e 's|:|-|g' || echo hacked` ; \
-	    if [ "x$$version" = "xhacked" ] ; then \
-	      version="hacked-`date -u +%Y%m%dT%H%M%SZ`" ; \
-	    else \
-	      version="git-$$version" ; \
-	    fi ;\
-	  fi ; \
-	  oldversion=`cat .version 2>/dev/null || echo "0"` ; \
-	  if test "$$oldversion" != "$$version" || test $$force = 1 ; then \
-	    cat src/include/switch_version.h.in | sed "s/@SWITCH_VERSION_REVISION@/$$version/g" > src/include/switch_version.h ; \
-	    echo $$version > .version ; \
-	  fi ; \
-	fi ;
+build/print_git_revision: build/print_git_revision.c
+	$(CC) -o $@ $<
+
+src/include/switch_version.h: src/include/switch_version.h.in Makefile build/print_git_revision $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
+	@cat $< > $@; \
+	if [ -d .git ] && [ -n "$$(which git)" ]; then \
+	  xver="$$(./build/print_git_revision)"; \
+	  xhver="$$(./build/print_git_revision -h)"; \
+	  sed \
+	    -e "/#define *SWITCH_VERSION_REVISION[^a-zA-Z0-9_]/{s/\"\([^\"]*\)\"/\"\1$$xver\"/;}" \
+	    -e "/#define *SWITCH_VERSION_REVISION_HUMAN[^a-zA-Z0-9_]/{s/\"\([^\"]*\)\"/\"\1$$xhver\"/;}" \
+	    $< > $@; \
+	fi;
 
 ##
 ## Dependency targets
@@ -537,7 +534,6 @@ is-scm:
 
 update: is-scm
 	@if test -d .git ; then \
-	  test ! -f .version || rm -f .version ; \
 	  echo "Pulling updates..." ; \
 	  git pull ; \
 	else \
@@ -621,8 +617,8 @@ sndfile-reconf:
 	cd libs/libsndfile && ./config.status
 
 tiff-reconf:
-	cd libs/tiff-3.8.2 && autoreconf -fi
-	cd libs/tiff-3.8.2 && sh ./configure.gnu
+	cd libs/tiff-4.0.2 && autoreconf -fi
+	cd libs/tiff-4.0.2 && sh ./configure.gnu
 	cd libs/spandsp && autoreconf -fi
 	cd libs/spandsp && sh ./configure.gnu
 	make mod_voipcodecs-clean
@@ -663,6 +659,7 @@ cluecon:
 	@clear
 	@echo Thank you for updating. This is going to take a while so relax.
 	@echo Now would be a good time to register for ClueCon!
+	@cat cluecon2.tmpl
 	@echo
 	@echo http://www.cluecon.com
 	@sleep 5

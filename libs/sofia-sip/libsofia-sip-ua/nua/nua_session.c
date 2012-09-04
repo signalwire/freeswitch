@@ -370,7 +370,8 @@ static int session_timer_check_min_se(msg_t *msg, sip_t *sip,
 
 static int session_timer_add_headers(struct session_timer *t,
 				     int initial,
-				     msg_t *msg, sip_t *sip);
+					 msg_t *msg, sip_t *sip,
+					 nua_handle_t *nh);
 
 static void session_timer_negotiate(struct session_timer *t, int uas);
 
@@ -791,7 +792,7 @@ static int nua_invite_client_request(nua_client_request_t *cr,
   /* Add session timer headers */
   if (session_timer_is_supported(ss->ss_timer))
     session_timer_add_headers(ss->ss_timer, ss->ss_state == nua_callstate_init,
-			      msg, sip);
+				  msg, sip, nh);
 
   ss->ss_100rel = NH_PGET(nh, early_media);
   ss->ss_precondition = sip_has_feature(sip->sip_require, "precondition");
@@ -2146,7 +2147,7 @@ nua_session_server_init(nua_server_request_t *sr)
 		if (request->sip_multipart) {
 			mp = request->sip_multipart;
 		} else {
-			mp = msg_multipart_parse(msg_home(msg),
+			mp = msg_multipart_parse(nua_handle_home(nh),
 									 request->sip_content_type,
 									 (sip_payload_t *)request->sip_payload);
 			request->sip_multipart = mp;
@@ -2161,13 +2162,13 @@ nua_session_server_init(nua_server_request_t *sr)
 					mpp->mp_payload && mpp->mp_payload->pl_data && 
 					su_casenmatch(mpp->mp_content_type->c_type, "application/sdp", 15)) {
 
-					request->sip_content_type = msg_content_type_dup(msg_home(msg), mpp->mp_content_type);
+					request->sip_content_type = msg_content_type_dup(nua_handle_home(nh), mpp->mp_content_type);
 					
 					if (request->sip_content_length) {
 						request->sip_content_length->l_length = mpp->mp_payload->pl_len;
 					}
 					
-					request->sip_payload->pl_data = su_strdup(msg_home(msg), mpp->mp_payload->pl_data);
+					request->sip_payload->pl_data = su_strdup(nua_handle_home(nh), mpp->mp_payload->pl_data);
 					request->sip_payload->pl_len = mpp->mp_payload->pl_len;
 
 					sdp++;
@@ -2436,7 +2437,7 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 			      NH_PGET(nh, min_se));
 
     if (session_timer_is_supported(ss->ss_timer))
-      session_timer_add_headers(ss->ss_timer, 0, msg, sip);
+	  session_timer_add_headers(ss->ss_timer, 0, msg, sip, nh);
   }
 
   return nua_base_server_respond(sr, tags);
@@ -3354,7 +3355,7 @@ static int nua_update_client_request(nua_client_request_t *cr,
 
   if (session_timer_is_supported(ss->ss_timer))
     session_timer_add_headers(ss->ss_timer, ss->ss_state < nua_callstate_ready,
-			      msg, sip);
+				  msg, sip, nh);
 
   retval = nua_base_client_request(cr, msg, sip, NULL);
 
@@ -3610,7 +3611,7 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
       nua_server_request_t *sr0;
       int uas;
 
-      session_timer_add_headers(ss->ss_timer, 0, msg, sip);
+      session_timer_add_headers(ss->ss_timer, 0, msg, sip, nh);
 
       for (sr0 = nh->nh_ds->ds_sr; sr0; sr0 = sr0->sr_next)
 	if (sr0->sr_method == sip_method_invite)
@@ -4426,17 +4427,23 @@ static int
 session_timer_add_headers(struct session_timer *t,
 			  int initial,
 			  msg_t *msg,
-			  sip_t *sip)
+			  sip_t *sip,
+			  nua_handle_t *nh)
 {
   unsigned long expires, min;
   sip_min_se_t min_se[1];
   sip_session_expires_t x[1];
   int uas;
+  int autorequire = 1;
 
   enum nua_session_refresher refresher = nua_any_refresher;
 
   static sip_param_t const x_params_uac[] = {"refresher=uac", NULL};
   static sip_param_t const x_params_uas[] = {"refresher=uas", NULL};
+
+  if ( !NH_PGET(nh, timer_autorequire) && NH_PISSET(nh, timer_autorequire)) {
+    autorequire = 0;
+  }
 
   if (!t->local.supported)
     return 0;
@@ -4491,7 +4498,7 @@ session_timer_add_headers(struct session_timer *t,
 					/* Min-SE: 0 is optional with initial INVITE */
 					|| !initial,
 					SIPTAG_MIN_SE(min_se)),
-			 //TAG_IF(refresher == nua_remote_refresher && expires != 0, SIPTAG_REQUIRE_STR("timer")),
+			 TAG_IF(autorequire && refresher == nua_remote_refresher && expires != 0, SIPTAG_REQUIRE_STR("timer")),
 			 TAG_END());
 
   return 1;

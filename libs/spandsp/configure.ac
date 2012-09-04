@@ -18,34 +18,25 @@
 
 # @start 1
 
-AC_INIT
+AC_PREREQ([2.59])
+AC_INIT([spandsp], [0.0.7])
 
-m4_include(config/ax_compiler_vendor.m4)
-m4_include(config/ax_check_real_file.m4)
-m4_include(config/ax_fixed_point_machine.m4)
-m4_include(config/ax_misaligned_access_fails.m4)
-m4_include(config/ax_c99_features.m4)
-m4_include(config/ax_check_export_capability.m4)
-
-SPANDSP_MAJOR_VERSION=0
-SPANDSP_MINOR_VERSION=0
-SPANDSP_MICRO_VERSION=6
-
-SPANDSP_LT_CURRENT=2
+SPANDSP_LT_CURRENT=3
 SPANDSP_LT_REVISION=0
 SPANDSP_LT_AGE=0
 
-VERSION=$SPANDSP_MAJOR_VERSION.$SPANDSP_MINOR_VERSION.$SPANDSP_MICRO_VERSION
-PACKAGE=spandsp
-
-AC_SUBST(SPANDSP_LT_CURRENT)
-AC_SUBST(SPANDSP_LT_REVISION)
-AC_SUBST(SPANDSP_LT_AGE)
+m4_include(m4/ax_compiler_vendor.m4)
+m4_include(m4/ax_check_real_file.m4)
+m4_include(m4/ax_fixed_point_machine.m4)
+m4_include(m4/ax_misaligned_access_fails.m4)
+m4_include(m4/ax_c99_features.m4)
+m4_include(m4/ax_check_export_capability.m4)
 
 AC_CONFIG_SRCDIR([src/tone_generate.c])
-AC_CONFIG_AUX_DIR(config)
+AC_CONFIG_AUX_DIR([config])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([src/config.h:config-h.in])
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+AM_INIT_AUTOMAKE([1.9.5])
 
 AC_CANONICAL_HOST
 #AC_CANONICAL_BUILD
@@ -59,51 +50,51 @@ AX_COMPILER_VENDOR
 
 if test "${build}" != "${host}"
 then
-  # If we are doing a Canadian Cross, in which the host and build systems
-  # are not the same, we set reasonable default values for the tools.
+    # If we are doing a Canadian Cross, in which the host and build systems
+    # are not the same, we set reasonable default values for the tools.
 
-  CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
-  CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
-  CC=${CC-${host_alias}-gcc}
-  CFLAGS=${CFLAGS-"-g -O2"}
-  CXX=${CXX-${host_alias}-c++}
-  CXXFLAGS=${CXXFLAGS-"-g -O2"}
+    CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
+    CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
+    CC=${CC-${host_alias}-gcc}
+    CFLAGS=${CFLAGS-"-g -O2"}
+    CXX=${CXX-${host_alias}-c++}
+    CXXFLAGS=${CXXFLAGS-"-g -O2"}
 else
-  # Set reasonable default values for some tools even if not Canadian.
-  # Of course, these are different reasonable default values, originally
-  # specified directly in the Makefile.
-  # We don't export, so that autoconf can do its job.
-  # Note that all these settings are above the fragment inclusion point
-  # in Makefile.in, so can still be overridden by fragments.
-  # This is all going to change when we autoconfiscate...
-  CC_FOR_BUILD="\$(CC)"
-  CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
-  AC_PROG_CC
+    # Set reasonable default values for some tools even if not Canadian.
+    # Of course, these are different reasonable default values, originally
+    # specified directly in the Makefile.
+    # We don't export, so that autoconf can do its job.
+    # Note that all these settings are above the fragment inclusion point
+    # in Makefile.in, so can still be overridden by fragments.
+    # This is all going to change when we autoconfiscate...
+    CC_FOR_BUILD="\$(CC)"
+    CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
+    AC_PROG_CC
 
-  # We must set the default linker to the linker used by gcc for the correct
-  # operation of libtool.  If LD is not defined and we are using gcc, try to
-  # set the LD default to the ld used by gcc.
-  if test -z "$LD"
-  then
-    if test "$GCC" = yes
+    # We must set the default linker to the linker used by gcc for the correct
+    # operation of libtool.  If LD is not defined and we are using gcc, try to
+    # set the LD default to the ld used by gcc.
+    if test -z "$LD"
     then
-      case $build in
-      *-*-mingw*)
-        gcc_prog_ld=`$CC -print-prog-name=ld 2>&1 | tr -d '\015'` ;;
-      *)
-        gcc_prog_ld=`$CC -print-prog-name=ld 2>&1` ;;
-      esac
-      case $gcc_prog_ld in
-      # Accept absolute paths.
-      [[\\/]* | [A-Za-z]:[\\/]*)]
-        LD="$gcc_prog_ld" ;;
-      esac
+        if test "$GCC" = yes
+        then
+            case $build in
+            *-*-mingw*)
+                gcc_prog_ld=`$CC -print-prog-name=ld 2>&1 | tr -d '\015'` ;;
+            *)
+                gcc_prog_ld=`$CC -print-prog-name=ld 2>&1` ;;
+            esac
+            case $gcc_prog_ld in
+            # Accept absolute paths.
+            [[\\/]* | [A-Za-z]:[\\/]*)]
+                LD="$gcc_prog_ld" ;;
+            esac
+        fi
     fi
-  fi
 
-  CXX=${CXX-"c++"}
-  CFLAGS=${CFLAGS-"-g -O2"}
-  CXXFLAGS=${CXXFLAGS-"-g -O2"}
+    CXX=${CXX-"c++"}
+    CFLAGS=${CFLAGS-"-g -O2"}
+    CXXFLAGS=${CXXFLAGS-"-g -O2"}
 fi
 
 AC_DEFUN([REMOVE_FROM_VAR],[
@@ -143,6 +134,7 @@ AC_ARG_ENABLE(sse4_1,       [  --enable-sse4-1      Enable SSE4.1 support])
 AC_ARG_ENABLE(sse4_2,       [  --enable-sse4-2      Enable SSE4.2 support])
 AC_ARG_ENABLE(sse4a,        [  --enable-sse4a       Enable SSE4A support])
 AC_ARG_ENABLE(sse5,         [  --enable-sse5        Enable SSE5 support])
+AC_ARG_ENABLE(avx,          [  --enable-avx         Enable AVX support])
 AC_ARG_ENABLE(fixed_point,  [  --enable-fixed-point Enable fixed point support])
 # The following is for MSVC, where we may be using a local copy of libtiff, built alongside spandsp
 AC_ARG_ENABLE(builtin_tiff,
@@ -207,9 +199,9 @@ AC_CHECK_HEADERS([fenv.h])
 AC_CHECK_HEADERS([fftw3.h], , [AC_CHECK_HEADERS([fftw.h])])
 AC_CHECK_HEADERS([pcap.h])
 AC_CHECK_HEADERS([pthread.h])
-if test "${build}" = "${host}"
+if test "${build}" == "${host}"
 then
-  AC_CHECK_HEADERS([X11/X.h])
+    AC_CHECK_HEADERS([X11/X.h])
 fi
 
 # Determine XML2 include path
@@ -246,19 +238,17 @@ AC_CHECK_HEADERS([FL/Fl.H])
 AC_CHECK_HEADERS([FL/Fl_Overlay_Window.H])
 AC_CHECK_HEADERS([FL/Fl_Light_Button.H])
 AC_CHECK_HEADERS([FL/fl_draw.H])
-AC_CHECK_HEADERS([FL/Fl_Cartesian.H], [], [], [],[[#include <FL/Fl.H>
-]])
-AC_CHECK_HEADERS([FL/Fl_Audio_Meter.H], [], [], [],[[#include <FL/Fl.H>
-]])
+AC_CHECK_HEADERS([FL/Fl_Cartesian.H])
+AC_CHECK_HEADERS([FL/Fl_Audio_Meter.H])
 
 AC_LANG([C])
 
-if test "${build}" = "${host}"
+if test "${build}" == "${host}"
 then
     case "${host}" in
     x86_64-*)
         # X86_64 Linux machines may have both 64 bit and 32 bit libraries. We need to choose the right set
-        AX_CHECK_REAL_FILE([${prefix}/lib64], libdir='$(exec_prefix)/lib64')
+        AX_CHECK_REAL_FILE([${prefix}/lib64], libdir='${exec_prefix}/lib64')
         AX_CHECK_REAL_FILE([/usr/X11R6/lib64], [TESTLIBS="$TESTLIBS -L/usr/X11R6/lib64"], AC_CHECK_FILE([/usr/X11R6/lib], [TESTLIBS="$TESTLIBS -L/usr/X11R6/lib"]))
         # The very oldest AMD 64 bit chips support SSE2, SSE and MMX
         enable_sse2="yes"
@@ -266,8 +256,10 @@ then
     esac
 fi
 
-#AC_DEFINE([SPANDSP_SUPPORT_T85], [1], [Support T.85 JBIG compression])
-SPANDSP_SUPPORT_T85="#undef SPANDSP_SUPPORT_T85"
+#AC_DEFINE([SPANDSP_SUPPORT_T42], [1], [Support T.42 JPEG compression])
+SPANDSP_SUPPORT_T42="#undef SPANDSP_SUPPORT_T42"
+#AC_DEFINE([SPANDSP_SUPPORT_T43], [1], [Support T.43 JBIG gray and colour compression])
+SPANDSP_SUPPORT_T43="#undef SPANDSP_SUPPORT_T43"
 #AC_DEFINE([SPANDSP_SUPPORT_V34], [1], [Support the V.34 FAX modem])
 SPANDSP_SUPPORT_V34="#undef SPANDSP_SUPPORT_V34"
 
@@ -287,14 +279,27 @@ AC_SEARCH_LIBS([expf], [m], AC_DEFINE([HAVE_EXPF], [1], [Define to 1 if you have
 AC_SEARCH_LIBS([logf], [m], AC_DEFINE([HAVE_LOGF], [1], [Define to 1 if you have the logf() function.]))
 AC_SEARCH_LIBS([log10f], [m], AC_DEFINE([HAVE_LOG10F], [1], [Define to 1 if you have the log10f() function.]))
 
-# Checks for libraries.
-AC_CHECK_LIB([xml2], [xmlParseFile], [AC_DEFINE([HAVE_LIBXML2], [1], [Define to 1 if you have the 'libxml2' library (-lxml2).]) SIMLIBS="$SIMLIBS -lxml2"])
+AC_SEARCH_LIBS([open_memstream], [m], AC_DEFINE([HAVE_OPEN_MEMSTREAM], [1], [Define to 1 if you have the open_memstream() function.]))
 
 if test -n "$enable_tests" ; then
+    AC_CHECK_PROG([HAVE_SOX], [sox], yes)
+    if test "x$HAVE_SOX" != "xyes" ; then
+        AC_MSG_ERROR("Cannot make tests without sox installed")
+    fi
+    AC_CHECK_PROG([HAVE_PBMTOG3], [pbmtog3], yes)
+    if test "x$HAVE_PBMTOG3" != "xyes" ; then
+        AC_MSG_ERROR("Cannot make tests without pbmtog3 installed (does your system require a netpbm-progs package?)")
+    fi
+    AC_CHECK_PROG([HAVE_FAX2TIFF], [fax2tiff], yes)
+    if test "x$HAVE_FAX2TIFF" != "xyes" ; then
+        AC_MSG_ERROR("Cannot make tests without fax2tiff installed (does your system require a libtiff-tools package?)")
+    fi
     AC_LANG([C])
-    AC_CHECK_LIB([sndfile], [sf_open], SIMLIBS="$SIMLIBS -lsndfile", AC_MSG_ERROR("Can't make tests without libsndfile (does your system require a libsndfile-devel package?)"))
-    AC_CHECK_LIB([fftw3], [fftw_plan_dft_1d], SIMLIBS="$SIMLIBS -lfftw3", [AC_CHECK_LIB([fftw], [fftw_create_plan], SIMLIBS="$SIMLIBS -lfftw", AC_MSG_ERROR("Can't make tests without FFTW 2 or 3 (does your system require an fftw?-devel package?)"))])
-    AC_CHECK_LIB([pcap], [pcap_open_offline], TESTLIBS="$TESTLIBS -lpcap", AC_MSG_ERROR("Can't make tests without libpcap (does your system require a libpcap-devel package?)"))
+    # Checks for libraries.
+    AC_CHECK_LIB([sndfile], [sf_open], SIMLIBS="$SIMLIBS -lsndfile", AC_MSG_ERROR("Cannot make tests without libsndfile (does your system require a libsndfile-devel package?)"))
+    AC_CHECK_LIB([fftw3], [fftw_plan_dft_1d], SIMLIBS="$SIMLIBS -lfftw3", [AC_CHECK_LIB([fftw], [fftw_create_plan], SIMLIBS="$SIMLIBS -lfftw", AC_MSG_ERROR("Cannot make tests without FFTW 2 or 3 (does your system require an fftw?-devel package?)"))])
+    AC_CHECK_LIB([xml2], [xmlParseFile], TESTLIBS="$TESTLIBS -lxml2", AC_MSG_ERROR("Cannot make tests without libxml2 (does your system require a libxml2-devel package?)"))
+    AC_CHECK_LIB([pcap], [pcap_open_offline], TESTLIBS="$TESTLIBS -lpcap", [AC_CHECK_LIB([wpcap], [pcap_open_offline], TESTLIBS="$TESTLIBS -lwpcap",  AC_MSG_ERROR("Cannot make tests without libpcap (does your system require an libpcap-devel package?)"))])
     AC_CHECK_LIB([pthread], [pthread_attr_init], TESTLIBS="$TESTLIBS -lpthread")
     AC_CHECK_LIB([dl], [dlopen], TESTLIBS="$TESTLIBS -ldl")
     AC_CHECK_LIB([Xft], [XftFontOpen], TESTLIBS="$TESTLIBS -lXft",, $TESTLIBS)
@@ -307,14 +312,35 @@ if test -n "$enable_tests" ; then
     AC_LANG([C])
 fi
 
+
+saved_CFLAGS="$CFLAGS"
 AX_CHECK_EXPORT_CAPABILITY([$host],
     [AC_DEFINE([SPANDSP_USE_EXPORT_CAPABILITY], [1], [Use the library symbol export capability of the compiler])
     SPANDSP_USE_EXPORT_CAPABILITY="#define SPANDSP_USE_EXPORT_CAPABILITY 1"],
     [SPANDSP_USE_EXPORT_CAPABILITY="#undef SPANDSP_USE_EXPORT_CAPABILITY"])
 
+AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
+CFLAGS="$CFLAGS -Wunused-but-set-variable"
+AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
+])
+AC_MSG_RESULT($ac_cv_gcc_unused_but_set_variable)
+CFLAGS="$saved_CFLAGS"
+
+
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
     COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+
+
+    if test x"$ac_cv_gcc_unused_but_set_variable" = xyes; then
+        COMP_VENDOR_CFLAGS="-Wunused-but-set-variable $COMP_VENDOR_CFLAGS"
+	
+    fi
+
+
+    if test "$enable_avx" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
+    fi
     if test "$enable_sse5" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse5 $COMP_VENDOR_CFLAGS"
     fi
@@ -343,8 +369,11 @@ gnu)
         COMP_VENDOR_CFLAGS="-mmmx $COMP_VENDOR_CFLAGS"
     fi
     case $host_os in
-    mingw* | cygwin*)
+    cygwin*)
         COMP_VENDOR_LDFLAGS="-no-undefined"
+        ;;
+    mingw*)
+        COMP_VENDOR_LDFLAGS="-no-undefined -lws2_32"
         ;;
     *)
         COMP_VENDOR_LDFLAGS=
@@ -370,6 +399,15 @@ sun)
     ;;
 intel)
     COMP_VENDOR_CFLAGS="-std=c99 -D_POSIX_C_SOURCE=2 -D_GNU_SOURCE=1 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+
+    if test x"$ac_cv_gcc_unused_but_set_variable" = xyes; then
+        COMP_VENDOR_CFLAGS="-Wunused-but-set-variable $COMP_VENDOR_CFLAGS"
+	
+    fi
+
+    if test "$enable_avx" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
+    fi
     if test "$enable_sse5" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse5 $COMP_VENDOR_CFLAGS"
     fi
@@ -400,25 +438,13 @@ intel)
     COMP_VENDOR_LDFLAGS=
     ;;
 *)
-    COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wunused-but-set-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
     COMP_VENDOR_LDFLAGS=
     ;;
 esac
 
 COMP_VENDOR_CFLAGS="-DNDEBUG $COMP_VENDOR_CFLAGS"
 
-AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
-AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
-AM_CONDITIONAL([COND_TESTDATA], [test "$enable_test_data" = yes])
-AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
-AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])
-AM_CONDITIONAL([COND_SSE2], [test "$enable_sse2" = yes])
-AM_CONDITIONAL([COND_SSE3], [test "$enable_sse3" = yes])
-AM_CONDITIONAL([COND_SSSE3], [test "$enable_ssse3" = yes])
-AM_CONDITIONAL([COND_SSE4_1], [test "$enable_sse4_1" = yes])
-AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
-AM_CONDITIONAL([COND_SSE4A], [test "$enable_sse4a" = yes])
-AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
 if test "$enable_fixed_point" = "yes" ; then
     AC_DEFINE([SPANDSP_USE_FIXED_POINT], [1], [Enable fixed point processing, where possible, instead of floating point])
     SPANDSP_USE_FIXED_POINT="#define SPANDSP_USE_FIXED_POINT 1"
@@ -433,6 +459,10 @@ AX_MISALIGNED_ACCESS_FAILS([$host],
     SPANDSP_MISALIGNED_ACCESS_FAILS="#define SPANDSP_MISALIGNED_ACCESS_FAILS 1"],
     [SPANDSP_MISALIGNED_ACCESS_FAILS="#undef SPANDSP_MISALIGNED_ACCESS_FAILS"])
 
+if test "$enable_avx" = "yes" ; then
+    AC_DEFINE([SPANDSP_USE_AVX], [1], [Use the AVX instruction set (i386 and x86_64 only).])
+    enable_sse5"yes"
+fi
 if test "$enable_sse5" = "yes" ; then
     AC_DEFINE([SPANDSP_USE_SSE5], [1], [Use the SSE5 instruction set (i386 and x86_64 only).])
     enable_sse4a="yes"
@@ -469,23 +499,56 @@ if test "$enable_mmx" = "yes" ; then
     AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
 fi
 
+AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
+AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
+AM_CONDITIONAL([COND_TESTDATA], [test "$enable_test_data" = yes])
+AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
+AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])
+AM_CONDITIONAL([COND_SSE2], [test "$enable_sse2" = yes])
+AM_CONDITIONAL([COND_SSE3], [test "$enable_sse3" = yes])
+AM_CONDITIONAL([COND_SSSE3], [test "$enable_ssse3" = yes])
+AM_CONDITIONAL([COND_SSE4_1], [test "$enable_sse4_1" = yes])
+AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
+AM_CONDITIONAL([COND_SSE4A], [test "$enable_sse4a" = yes])
+AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
+AM_CONDITIONAL([COND_AVX], [test "$enable_avx" = yes])
+
 if test "$enable_builtin_tiff" = "yes" ; then
-  abs_tiffdir="`cd $srcdir/../tiff-3.8.2/ && pwd`"
-  save_CFLAGS=$CFLAGS
-  CFLAGS="$CFLAGS -I$abs_tiffdir/libtiff"
-  AC_CHECK_HEADERS([tiffio.h])
-  CFLAGS="$save_CFLAGS"
-  COMP_VENDOR_CFLAGS="-I$abs_tiffdir/libtiff $COMP_VENDOR_CFLAGS"
-  COMP_VENDOR_LDFLAGS="-L$abs_tiffdir/libtiff $COMP_VENDOR_LDFLAGS"
-  LIBS="$LIBS $abs_tiffdir/libtiff/libtiff.la"
-  AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
+    abs_tiffdir="`cd $srcdir/../tiff-4.0.2/ && pwd`"
+    save_CFLAGS=$CFLAGS
+    CFLAGS="$CFLAGS -I$abs_tiffdir/libtiff"
+    AC_CHECK_HEADERS([tiffio.h])
+    AC_CHECK_HEADERS([tif_dir.h], [], [], [#include <tiffio.h>
+])
+    CFLAGS="$save_CFLAGS"
+    COMP_VENDOR_CFLAGS="-I$abs_tiffdir/libtiff $COMP_VENDOR_CFLAGS"
+    COMP_VENDOR_LDFLAGS="-L$abs_tiffdir/libtiff $COMP_VENDOR_LDFLAGS"
+    TIFF_LIBS="$abs_tiffdir/libtiff/libtiff.la"
+    AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
 else
-  AC_CHECK_HEADERS([tiffio.h])
-  AC_CHECK_LIB([tiff], [TIFFOpen], , AC_MSG_ERROR("Can't build without libtiff (does your system require a libtiff-devel package?)"), -lm)
+    AC_CHECK_HEADERS([tiffio.h])
+    AC_CHECK_HEADERS([tif_dir.h], [], [], [#include <tiffio.h>
+])
+    AC_CHECK_LIB([tiff], [TIFFOpen], [TIFF_LIBS="-ltiff"], AC_MSG_ERROR("Cannot build without libtiff (does your system require a libtiff-devel package?)"), -lm)
 fi
+
+if test "$ac_cv_header_tif_dir_h" = "yes" ; then
+    AC_DEFINE([SPANDSP_SUPPORT_TIFF_FX], [1], [Support TIFF/FX in TIFF file handling])
+    SPANDSP_SUPPORT_TIFF_FX="#define SPANDSP_SUPPORT_TIFF_FX"
+else
+    SPANDSP_SUPPORT_TIFF_FX="#undef SPANDSP_SUPPORT_TIFF_FX"
+fi
+
+AC_CHECK_HEADERS([jpeglib.h])
+AC_CHECK_LIB([jpeg], [jpeg_start_compress], [JPEG_LIBS="-ljpeg"])
+
+LIBS="$LIBS $TIFF_LIBS $JPEG_LIBS"
 
 TESTLIBS="$SIMLIBS $TESTLIBS"
 
+AC_SUBST(SPANDSP_LT_CURRENT)
+AC_SUBST(SPANDSP_LT_REVISION)
+AC_SUBST(SPANDSP_LT_AGE)
 AC_SUBST(CC_FOR_BUILD)
 AC_SUBST(CPPFLAGS_FOR_BUILD)
 AC_SUBST(COMP_VENDOR_CFLAGS)
@@ -495,8 +558,10 @@ AC_SUBST(TESTLIBS)
 AC_SUBST(SPANDSP_USE_FIXED_POINT)
 AC_SUBST(SPANDSP_MISALIGNED_ACCESS_FAILS)
 AC_SUBST(SPANDSP_USE_EXPORT_CAPABILITY)
-AC_SUBST(SPANDSP_SUPPORT_T85)
+AC_SUBST(SPANDSP_SUPPORT_T42)
+AC_SUBST(SPANDSP_SUPPORT_T43)
 AC_SUBST(SPANDSP_SUPPORT_V34)
+AC_SUBST(SPANDSP_SUPPORT_TIFF_FX)
 AC_SUBST(INSERT_INTTYPES_HEADER)
 AC_SUBST(INSERT_STDINT_HEADER)
 AC_SUBST(INSERT_TGMATH_HEADER)

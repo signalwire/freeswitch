@@ -198,7 +198,7 @@ static int parse_tone(super_tone_rx_descriptor_t *desc, int tone_id, super_tone_
         cur = cur->next;
     }
     /*endwhile*/
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -410,7 +410,6 @@ static int detection_range_tests(super_tone_rx_state_t *super)
     int16_t amp[SAMPLES_PER_CHUNK];
     int i;
     int j;
-    int x;
     uint32_t phase;
     int32_t phase_inc;
     int scale;
@@ -427,7 +426,7 @@ static int detection_range_tests(super_tone_rx_state_t *super)
         {
             for (i = 0;  i < SAMPLES_PER_CHUNK;  i++)
                 amp[i] = (dds(&phase, phase_inc)*scale) >> 15;
-            x = super_tone_rx(super, amp, SAMPLES_PER_CHUNK);
+            super_tone_rx(super, amp, SAMPLES_PER_CHUNK);
         }
     }
     return 0;

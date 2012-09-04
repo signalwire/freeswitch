@@ -1,6 +1,6 @@
 ################################################################################
 # ignore_helper.pl
-# Copyright (c) 2007-2009 Anthony Minessale II <anthm@freeswitch.org>
+# Copyright (c) 2007-2012 Anthony Minessale II <anthm@freeswitch.org>
 # 
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation

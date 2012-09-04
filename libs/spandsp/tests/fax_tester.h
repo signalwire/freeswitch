@@ -37,7 +37,7 @@
 
 typedef struct faxtester_state_s faxtester_state_t;
 
-typedef void (faxtester_flush_handler_t)(faxtester_state_t *s, void *user_data, int which);
+typedef void (*faxtester_flush_handler_t)(faxtester_state_t *s, void *user_data, int which);
 
 /*!
     FAX tester real time frame handler.
@@ -48,13 +48,13 @@ typedef void (faxtester_flush_handler_t)(faxtester_state_t *s, void *user_data, 
     \param msg The HDLC message.
     \param len The length of the message.
 */
-typedef void (faxtester_real_time_frame_handler_t)(faxtester_state_t *s,
-                                                   void *user_data,
-                                                   int direction,
-                                                   const uint8_t *msg,
-                                                   int len);
+typedef void (*faxtester_real_time_frame_handler_t)(faxtester_state_t *s,
+                                                    void *user_data,
+                                                    int direction,
+                                                    const uint8_t *msg,
+                                                    int len);
 
-typedef void (faxtester_front_end_step_complete_handler_t)(faxtester_state_t *s, void *user_data);
+typedef void (*faxtester_front_end_step_complete_handler_t)(faxtester_state_t *s, void *user_data);
 
 /*!
     FAX tester descriptor.
@@ -64,19 +64,19 @@ struct faxtester_state_s
     /*! \brief Pointer to our current step in the test. */
     xmlNodePtr cur;
 
-    faxtester_flush_handler_t *flush_handler;
+    faxtester_flush_handler_t flush_handler;
     void *flush_user_data;
 
     /*! \brief A pointer to a callback routine to be called when frames are
         exchanged. */
-    faxtester_real_time_frame_handler_t *real_time_frame_handler;
+    faxtester_real_time_frame_handler_t real_time_frame_handler;
     /*! \brief An opaque pointer supplied in real time frame callbacks. */
     void *real_time_frame_user_data;
 
-    faxtester_front_end_step_complete_handler_t *front_end_step_complete_handler;
+    faxtester_front_end_step_complete_handler_t front_end_step_complete_handler;
     void *front_end_step_complete_user_data;
 
-    faxtester_front_end_step_complete_handler_t *front_end_step_timeout_handler;
+    faxtester_front_end_step_complete_handler_t front_end_step_timeout_handler;
     void *front_end_step_timeout_user_data;
 
     const uint8_t *image_buffer;
@@ -149,7 +149,7 @@ void faxtester_send_hdlc_flags(faxtester_state_t *s, int flags);
 
 void faxtester_send_hdlc_msg(faxtester_state_t *s, const uint8_t *msg, int len, int crc_ok);
 
-void faxtester_set_flush_handler(faxtester_state_t *s, faxtester_flush_handler_t *handler, void *user_data);
+void faxtester_set_flush_handler(faxtester_state_t *s, faxtester_flush_handler_t handler, void *user_data);
 
 /*! Select whether silent audio will be sent when FAX transmit is idle.
     \brief Select whether silent audio will be sent when FAX transmit is idle.
@@ -167,11 +167,11 @@ void faxtester_set_transmit_on_idle(faxtester_state_t *s, int transmit_on_idle);
 */
 void faxtester_set_tep_mode(faxtester_state_t *s, int use_tep);
 
-void faxtester_set_real_time_frame_handler(faxtester_state_t *s, faxtester_real_time_frame_handler_t *handler, void *user_data);
+void faxtester_set_real_time_frame_handler(faxtester_state_t *s, faxtester_real_time_frame_handler_t handler, void *user_data);
 
-void faxtester_set_front_end_step_complete_handler(faxtester_state_t *s, faxtester_front_end_step_complete_handler_t *handler, void *user_data);
+void faxtester_set_front_end_step_complete_handler(faxtester_state_t *s, faxtester_front_end_step_complete_handler_t handler, void *user_data);
 
-void faxtester_set_front_end_step_timeout_handler(faxtester_state_t *s, faxtester_front_end_step_complete_handler_t *handler, void *user_data);
+void faxtester_set_front_end_step_timeout_handler(faxtester_state_t *s, faxtester_front_end_step_complete_handler_t handler, void *user_data);
 
 void faxtester_set_timeout(faxtester_state_t *s, int timeout);
 

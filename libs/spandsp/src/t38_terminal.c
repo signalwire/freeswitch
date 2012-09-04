@@ -64,15 +64,10 @@
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/image_translate.h"
 #include "spandsp/t81_t82_arith_coding.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/t43.h"
 #endif
@@ -88,20 +83,15 @@
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/timezone.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
 #include "spandsp/private/t42.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/private/t43.h"
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
+#include "spandsp/private/image_translate.h"
 #include "spandsp/private/t4_rx.h"
 #include "spandsp/private/t4_tx.h"
 #include "spandsp/private/t30.h"
@@ -152,9 +142,12 @@ enum
     T38_TIMED_STEP_NO_SIGNAL = 0x60
 };
 
-static __inline__ void front_end_status(t38_terminal_state_t *s, int status)
+static __inline__ int front_end_status(t38_terminal_state_t *s, int status)
 {
     t30_front_end_status(&s->t30, status);
+    if (s->t38_fe.timed_step == T38_TIMED_STEP_NONE)
+        return -1;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -560,7 +553,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             bit_reverse(buf2, buf, len);
-            t30_non_ecm_put_chunk(&s->t30, buf2, len);
+            t30_non_ecm_put(&s->t30, buf2, len);
         }
         /*endif*/
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
@@ -580,7 +573,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                 }
                 /*endif*/
                 bit_reverse(buf2, buf, len);
-                t30_non_ecm_put_chunk(&s->t30, buf2, len);
+                t30_non_ecm_put(&s->t30, buf2, len);
             }
             /*endif*/
             /* WORKAROUND: At least some Mediatrix boxes have a bug, where they can send HDLC signal end where
@@ -748,7 +741,10 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                However, I think the early versions of T.38 said the signal end message should not
                contain data. Hopefully, following the current spec will not cause compatibility
                issues. */
-            len = t30_non_ecm_get_chunk(&s->t30, buf, fe->octets_per_data_packet);
+            len = t30_non_ecm_get(&s->t30, buf, fe->octets_per_data_packet);
+            if (len < 0)
+                return -1;
+            /*endif*/
             if (len > 0)
                 bit_reverse(buf, buf, len);
             /*endif*/
@@ -776,7 +772,8 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                         return res;
                     /*endif*/
                     fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_5;
-                    front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
+                    if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
+                        return -1;
                     break;
                 }
                 /*endif*/
@@ -806,7 +803,8 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 if (fe->us_per_tx_chunk)
                     delay = bits_to_us(s, 8*len) + 60000;
                 /*endif*/
-                front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
+                if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
+                    return -1;
                 break;
             }
             /*endif*/
@@ -910,7 +908,8 @@ static int stream_hdlc(t38_terminal_state_t *s)
                     previous = fe->current_tx_data_type;
                     fe->hdlc_tx.ptr = 0;
                     fe->hdlc_tx.len = 0;
-                    front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
+                    if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
+                        return -1;
                     /* The above step should have got the next HDLC step ready - either another frame, or an instruction to stop transmission. */
                     if (fe->hdlc_tx.len >= 0)
                     {
@@ -940,7 +939,8 @@ static int stream_hdlc(t38_terminal_state_t *s)
                         if (fe->us_per_tx_chunk)
                             delay += 100000;
                         /*endif*/
-                        front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
+                        if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
+                            return -1;
                     }
                     /*endif*/
                     break;
@@ -969,7 +969,8 @@ static int stream_hdlc(t38_terminal_state_t *s)
             previous = fe->current_tx_data_type;
             fe->hdlc_tx.ptr = 0;
             fe->hdlc_tx.len = 0;
-            front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
+            if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
+                return -1;
             /* The above step should have got the next HDLC step ready - either another frame, or an instruction to stop transmission. */
             if (fe->hdlc_tx.len >= 0)
             {
@@ -1003,7 +1004,8 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 if (fe->us_per_tx_chunk)
                     delay += 100000;
                 /*endif*/
-                front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
+                if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
+                    return -1;
             }
             /*endif*/
             break;
@@ -1059,7 +1061,8 @@ static int stream_ced(t38_terminal_state_t *s)
         case T38_TIMED_STEP_CED_3:
             /* End of CED */
             fe->timed_step = fe->queued_timed_step;
-            front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
+            if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
+                return -1;
             return 0;
         }
         /*endswitch*/
@@ -1433,7 +1436,7 @@ static int t38_terminal_t38_fe_restart(t38_terminal_state_t *t)
 /*- End of function --------------------------------------------------------*/
 
 static int t38_terminal_t38_fe_init(t38_terminal_state_t *t,
-                                    t38_tx_packet_handler_t *tx_packet_handler,
+                                    t38_tx_packet_handler_t tx_packet_handler,
                                     void *tx_packet_user_data)
 {
     t38_terminal_front_end_state_t *s;
@@ -1482,7 +1485,7 @@ SPAN_DECLARE(int) t38_terminal_restart(t38_terminal_state_t *s,
 
 SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
                                                        int calling_party,
-                                                       t38_tx_packet_handler_t *tx_packet_handler,
+                                                       t38_tx_packet_handler_t tx_packet_handler,
                                                        void *tx_packet_user_data)
 {
     if (tx_packet_handler == NULL)

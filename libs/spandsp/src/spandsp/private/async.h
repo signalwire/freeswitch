@@ -45,7 +45,7 @@ struct async_tx_state_s
     void *user_data;
 
     /*! \brief A current, partially transmitted, character. */
-    int byte_in_progress;
+    unsigned int byte_in_progress;
     /*! \brief The current bit position within a partially transmitted character. */
     int bitpos;
     /*! \brief Parity bit. */
@@ -73,7 +73,7 @@ struct async_rx_state_s
     void *user_data;
 
     /*! \brief A current, partially complete, character. */
-    int byte_in_progress;
+    unsigned int byte_in_progress;
     /*! \brief The current bit position within a partially complete character. */
     int bitpos;
     /*! \brief Parity bit. */

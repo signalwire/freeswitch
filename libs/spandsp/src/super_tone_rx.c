@@ -56,11 +56,11 @@
 #include "spandsp/private/super_tone_rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define DETECTION_THRESHOLD         16439           /* -42dBm0 [((BINS*BINS*32768.0/(1.4142*128.0))*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
+#define DETECTION_THRESHOLD         16439           /* -42dBm0 [((SUPER_TONE_BINS*SUPER_TONE_BINS*32768.0/(1.4142*128.0))*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
 #define TONE_TWIST                  4               /* 6dB */
 #define TONE_TO_TOTAL_ENERGY        64              /* -3dB */
 #else
-#define DETECTION_THRESHOLD         2104205.6f      /* -42dBm0 [((BINS*BINS*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
+#define DETECTION_THRESHOLD         2104205.6f      /* -42dBm0 [((SUPER_TONE_BINS*SUPER_TONE_BINS*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
 #define TONE_TWIST                  3.981f          /* 6dB */
 #define TONE_TO_TOTAL_ENERGY        1.995f          /* 3dB */
 #endif
@@ -86,7 +86,7 @@ static int add_super_tone_freq(super_tone_rx_descriptor_t *desc, int freq)
             /* Merge these two */
             desc->pitches[desc->used_frequencies][0] = freq;
             desc->pitches[desc->used_frequencies][1] = i;
-            make_goertzel_descriptor(&desc->desc[desc->pitches[i][1]], (float) (freq + desc->pitches[i][0])/2, BINS);
+            make_goertzel_descriptor(&desc->desc[desc->pitches[i][1]], (float) (freq + desc->pitches[i][0])/2, SUPER_TONE_BINS);
             desc->used_frequencies++;
             return desc->pitches[i][1];
         }
@@ -97,7 +97,7 @@ static int add_super_tone_freq(super_tone_rx_descriptor_t *desc, int freq)
     {
         desc->desc = (goertzel_descriptor_t *) realloc(desc->desc, (desc->monitored_frequencies + 5)*sizeof(goertzel_descriptor_t));
     }
-    make_goertzel_descriptor(&desc->desc[desc->monitored_frequencies++], (float) freq, BINS);
+    make_goertzel_descriptor(&desc->desc[desc->monitored_frequencies++], (float) freq, SUPER_TONE_BINS);
     desc->used_frequencies++;
     return desc->pitches[i][1];
 }
@@ -161,19 +161,19 @@ static int test_cadence(super_tone_rx_segment_t *pattern,
             steps = -steps;
             j = (rotation + steps - 2)%steps;
             if (pattern[j].f1 != test[8].f1  ||  pattern[j].f2 != test[8].f2)
-                return  0;
-            if (pattern[j].min_duration > test[8].min_duration*BINS
+                return 0;
+            if (pattern[j].min_duration > test[8].min_duration*SUPER_TONE_BINS
                 ||
-                pattern[j].max_duration < test[8].min_duration*BINS)
+                pattern[j].max_duration < test[8].min_duration*SUPER_TONE_BINS)
             {
-                return  0;
+                return 0;
             }
         }
         j = (rotation + steps - 1)%steps;
         if (pattern[j].f1 != test[9].f1  ||  pattern[j].f2 != test[9].f2)
-            return  0;
-        if (pattern[j].max_duration < test[9].min_duration*BINS)
-            return  0;
+            return 0;
+        if (pattern[j].max_duration < test[9].min_duration*SUPER_TONE_BINS)
+            return 0;
     }
     else
     {
@@ -182,16 +182,16 @@ static int test_cadence(super_tone_rx_segment_t *pattern,
         {
             j = i + 10 - steps;
             if (pattern[i].f1 != test[j].f1  ||  pattern[i].f2 != test[j].f2)
-                return  0;
-            if (pattern[i].min_duration > test[j].min_duration*BINS
+                return 0;
+            if (pattern[i].min_duration > test[j].min_duration*SUPER_TONE_BINS
                 ||
-                pattern[i].max_duration < test[j].min_duration*BINS)
+                pattern[i].max_duration < test[j].min_duration*SUPER_TONE_BINS)
             {
-                return  0;
+                return 0;
             }
         }
     }
-    return  1;
+    return 1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -288,7 +288,7 @@ SPAN_DECLARE(super_tone_rx_state_t *) super_tone_rx_init(super_tone_rx_state_t *
 #endif
     for (i = 0;  i < desc->monitored_frequencies;  i++)
         goertzel_init(&s->state[i], &s->desc->desc[i]);
-    return  s;
+    return s;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -313,9 +313,9 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
     int k1;
     int k2;
 #if defined(SPANDSP_USE_FIXED_POINT)
-    int32_t res[BINS/2];
+    int32_t res[SUPER_TONE_BINS/2];
 #else
-    float res[BINS/2];
+    float res[SUPER_TONE_BINS/2];
 #endif
 
     for (i = 0;  i < s->desc->monitored_frequencies;  i++)
@@ -397,7 +397,7 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
                 s->segment_callback(s->callback_data,
                                     s->segments[9].f1,
                                     s->segments[9].f2,
-                                    s->segments[9].min_duration*BINS/8);
+                                    s->segments[9].min_duration*SUPER_TONE_BINS/8);
             }
             memcpy (&s->segments[0], &s->segments[1], 9*sizeof(s->segments[0]));
             s->segments[9].f1 = k1;
@@ -467,7 +467,7 @@ SPAN_DECLARE(int) super_tone_rx(super_tone_rx_state_t *s, const int16_t amp[], i
             s->energy += xamp*xamp;
 #endif
         }
-        if (s->state[0].current_sample >= BINS)
+        if (s->state[0].current_sample >= SUPER_TONE_BINS)
         {
             /* We have finished a Goertzel block. */
             super_tone_chunk(s);

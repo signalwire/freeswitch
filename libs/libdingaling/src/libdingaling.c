@@ -27,7 +27,10 @@
  *
  * libdingaling.c -- Main Library Code
  *
+ * QMOD: XMPP Video Signaling + Presentation (video-v1 & camera-v1)
+ *
  */
+
 
 #ifndef  _MSC_VER
 #include <config.h>
@@ -157,8 +160,10 @@ struct ldl_session {
 	char *login;
 	ldl_payload_t payloads[LDL_MAX_PAYLOADS];
 	unsigned int payload_len;
-	ldl_candidate_t candidates[LDL_MAX_CANDIDATES];
-	unsigned int candidate_len;
+	/*! \brief Transport candidates, organized per type */
+	ldl_candidate_t candidates[LDL_TPORT_MAX][LDL_MAX_CANDIDATES];
+	/*! \brief Length of the candidate list, per transport type */
+	unsigned int candidate_len[LDL_TPORT_MAX];
 	apr_pool_t *pool;
 	apr_hash_t *variables;
 	apr_time_t created;
@@ -181,6 +186,8 @@ typedef struct ldl_feature ldl_feature_t;
 #define FEATURE_VERSION "jabber:iq:version"
 #define FEATURE_VCARD "vcard-temp"
 #define FEATURE_VOICE "http://www.google.com/xmpp/protocol/voice/v1"
+#define FEATURE_VIDEO "http://www.google.com/xmpp/protocol/video/v1"
+#define FEATURE_CAMERA "http://www.google.com/xmpp/protocol/camera/v1"
 #define FEATURE_LAST "jabber:iq:last"
 
 static ldl_feature_t FEATURES[] = { 
@@ -189,6 +196,8 @@ static ldl_feature_t FEATURES[] = {
 	{ FEATURE_VERSION, on_disco_default },
 	{ FEATURE_VCARD, on_vcard},
 	{ FEATURE_VOICE, on_disco_default },
+	{ FEATURE_VIDEO, on_disco_default },
+	{ FEATURE_CAMERA, on_disco_default },
 	{ FEATURE_LAST, on_disco_default },
 	{ NULL, NULL}
 };
@@ -253,7 +262,6 @@ static unsigned int next_id(void)
 	return globals.id++;
 }
 
-
 static char *iks_name_nons(iks *x)
 {
 	char *r = iks_name(x);
@@ -296,7 +304,7 @@ ldl_status ldl_session_destroy(ldl_session_t **session_p)
 		apr_hash_t *hash = session->handle->sessions;
 
 		if (globals.debug) {
-			globals.logger(DL_LOG_DEBUG, "Destroyed Session %s\n", session->id);
+			globals.logger(DL_LOG_CRIT, "Destroyed Session %s\n", session->id);
 		}
 
 		if (session->id) {
@@ -322,7 +330,7 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 	ldl_session_t *session = NULL;
 	
 	if (!(session = apr_palloc(handle->pool, sizeof(ldl_session_t)))) {
-		globals.logger(DL_LOG_DEBUG, "Memory ERROR!\n");
+		globals.logger(DL_LOG_CRIT, "Memory ERROR!\n");
 		*session_p = NULL;
 		return LDL_STATUS_MEMERR;
 	}
@@ -352,7 +360,7 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 
 
 	if (globals.debug) {
-		globals.logger(DL_LOG_DEBUG, "Created Session %s\n", id);
+		globals.logger(DL_LOG_CRIT, "Created Session %s\n", id);
 	}
 
 	return LDL_STATUS_SUCCESS;
@@ -374,21 +382,22 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 
 	if (!session) {
 		if (globals.debug) {
-			globals.logger(DL_LOG_DEBUG, "Non-Existent Session %s!\n", id);
+			globals.logger(DL_LOG_CRIT, "Non-Existent Session %s!\n", id);
 		}
 		return LDL_STATUS_MEMERR;
 	}
 	
 	if (globals.debug) {
-		globals.logger(DL_LOG_DEBUG, "Message for Session %s\n", id);
+		globals.logger(DL_LOG_CRIT, "Message for Session %s\n", id);
 	}
 
 	while(xml) {
 		char *type = NULL;
 		iks *tag;
 
-		if (iks_type(xml)!=IKS_CDATA)
+		if (iks_type(xml) != IKS_CDATA) {
 			type = xtype ? xtype : iks_find_attrib(xml, "type");
+		}
 
 		if (type) {
 			
@@ -429,18 +438,28 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 								char *name = iks_find_attrib(itag, "name");
 								char *id = iks_find_attrib(itag, "id");
 								char *rate = iks_find_attrib(itag, "clockrate");
+								char *ptime = iks_find_attrib(itag, "ptime");
 								if (name && id) {
 									session->payloads[session->payload_len].name = apr_pstrdup(session->pool, name);
 									session->payloads[session->payload_len].id = atoi(id);
+									if (ptime) {
+										session->payloads[session->payload_len].ptime = atoi(ptime);
+									} else {
+										session->payloads[session->payload_len].ptime = 20;
+									}
 									if (rate) {
 										session->payloads[session->payload_len].rate = atoi(rate);
 									} else {
-                                        session->payloads[session->payload_len].rate = 8000;
+										if (!strncasecmp(iks_name(itag), "vid", 3)) {
+											session->payloads[session->payload_len].rate = 90000;
+										} else {
+											session->payloads[session->payload_len].rate = 8000;
+										}
                                     }
 									session->payload_len++;
 								
 									if (globals.debug) {
-										globals.logger(DL_LOG_DEBUG, "Add Payload [%s] id='%s'\n", name, id);
+										globals.logger(DL_LOG_CRIT, "Add Payload [%s] id='%s'\n", name, id);
 									}
 								}
 							}
@@ -462,27 +481,46 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 					tag = iks_child(tag);
 				}
 				
-				while(tag) {
+				for (;tag;tag = iks_next_tag(tag)) {
 					if (!strcasecmp(iks_name_nons(tag), "info_element")) {
 						char *name = iks_find_attrib(tag, "name");
 						char *value = iks_find_attrib(tag, "value");
 						if (globals.debug) {
-							globals.logger(DL_LOG_DEBUG, "Info Element [%s]=[%s]\n", name, value);
+							globals.logger(DL_LOG_CRIT, "Info Element [%s]=[%s]\n", name, value);
 						}
 						ldl_session_set_value(session, name, value);
 						
-					} else if (!strcasecmp(iks_name_nons(tag), "candidate") && session->candidate_len < LDL_MAX_CANDIDATES) {
+					} else if (!strcasecmp(iks_name_nons(tag), "candidate") /*&& session->candidate_len < LDL_MAX_CANDIDATES*/) {
 						char *key;
 						double pref = 0.0;
 						int index = -1;
+						ldl_transport_type_t tport;
+						unsigned int *candidate_len = NULL;
+						ldl_candidate_t (*candidates)[LDL_MAX_CANDIDATES] = NULL;
+						
 						if ((key = iks_find_attrib(tag, "preference"))) {
 							unsigned int x;
+							
 							pref = strtod(key, NULL);
 							
-							for (x = 0; x < session->candidate_len; x++) {
-								if (session->candidates[x].pref == pref) {
+							/* Check what kind of candidate this is */
+							if ((key = iks_find_attrib(tag, "name")) && ((tport = ldl_transport_type_parse(key)) != LDL_TPORT_MAX)) {
+								candidates = &(session->candidates[tport]);
+								candidate_len = &(session->candidate_len[tport]);
+							} else {
+								globals.logger(DL_LOG_WARNING, "No such transport type: %s\n", key);
+								continue;
+							}
+							
+							if (*candidate_len >= LDL_MAX_CANDIDATES) {
+								globals.logger(DL_LOG_WARNING, "Too many %s candidates\n", key);
+								continue;
+							}
+							
+							for (x = 0; x < *candidate_len; x++) {
+								if ((*candidates)[x].pref == pref) {
 									if (globals.debug) {
-										globals.logger(DL_LOG_DEBUG, "Duplicate Pref!\n");
+										globals.logger(DL_LOG_CRIT, "Duplicate Pref! Updating...\n");
 									}
 									index = x;
 									break;
@@ -491,44 +529,44 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 						}
 						
 						if (index < 0) {
-							index = session->candidate_len++;
+							index = (*candidate_len)++;
 						}
 						
-						session->candidates[index].pref = pref;
+						(*candidates)[index].pref = pref;
 
 						if (tid) {
-							session->candidates[index].tid = apr_pstrdup(session->pool, tid);
+							(*candidates)[index].tid = apr_pstrdup(session->pool, tid);
 						}
 
 						if ((key = iks_find_attrib(tag, "name"))) {
-							session->candidates[index].name = apr_pstrdup(session->pool, key);
+							(*candidates)[index].name = apr_pstrdup(session->pool, key);
 						}
 						if ((key = iks_find_attrib(tag, "type"))) {
-							session->candidates[index].type = apr_pstrdup(session->pool, key);
+							(*candidates)[index].type = apr_pstrdup(session->pool, key);
 						}
 						if ((key = iks_find_attrib(tag, "protocol"))) {
-							session->candidates[index].protocol = apr_pstrdup(session->pool, key);
+							(*candidates)[index].protocol = apr_pstrdup(session->pool, key);
 						}
 						if ((key = iks_find_attrib(tag, "username"))) {
-							session->candidates[index].username = apr_pstrdup(session->pool, key);
+							(*candidates)[index].username = apr_pstrdup(session->pool, key);
 						}
 						if ((key = iks_find_attrib(tag, "password"))) {
-							session->candidates[index].password = apr_pstrdup(session->pool, key);
+							(*candidates)[index].password = apr_pstrdup(session->pool, key);
 						}
 						if ((key = iks_find_attrib(tag, "address"))) {
-							session->candidates[index].address = apr_pstrdup(session->pool, key);
+							(*candidates)[index].address = apr_pstrdup(session->pool, key);
 						}
 						if ((key = iks_find_attrib(tag, "port"))) {
-							session->candidates[index].port = (uint16_t)atoi(key);
+							(*candidates)[index].port = (uint16_t)atoi(key);
 						}
 						
-						if (!session->candidates[index].type) {
-							session->candidates[index].type = apr_pstrdup(session->pool, "stun");
+						if (!(*candidates)[index].type) {
+							(*candidates)[index].type = apr_pstrdup(session->pool, "stun");
 						}
 
 
 						if (globals.debug) {
-							globals.logger(DL_LOG_DEBUG, 
+							globals.logger(DL_LOG_CRIT, 
 									"New Candidate %d\n"
 									"name=%s\n"
 									"type=%s\n"
@@ -538,19 +576,18 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 									"address=%s\n"
 									"port=%d\n"
 									"pref=%0.2f\n",
-									session->candidate_len,
-									session->candidates[index].name,
-									session->candidates[index].type,
-									session->candidates[index].protocol,
-									session->candidates[index].username,
-									session->candidates[index].password,
-									session->candidates[index].address,
-									session->candidates[index].port,
-									session->candidates[index].pref
+									*candidate_len,
+									(*candidates)[index].name,
+									(*candidates)[index].type,
+									(*candidates)[index].protocol,
+									(*candidates)[index].username,
+									(*candidates)[index].password,
+									(*candidates)[index].address,
+									(*candidates)[index].port,
+									(*candidates)[index].pref
 									);
 						}
 					}
-					tag = iks_next_tag(tag);
 				}
 			} else if (!strcasecmp(type, "terminate")) {
 				dl_signal = LDL_SIGNAL_TERMINATE;
@@ -568,6 +605,301 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 
 	return LDL_STATUS_SUCCESS;
 }
+
+
+static ldl_status parse_jingle_code(ldl_handle_t *handle, iks *xml, char *to, char *from, char *type)
+{
+	ldl_session_t *session = NULL;
+	ldl_signal_t dl_signal = LDL_SIGNAL_NONE;
+	char *initiator = iks_find_attrib(xml, "initiator");
+	char *msg = NULL;
+	char *id = iks_find_attrib(xml, "sid");
+	char *action = iks_find_attrib(xml, "action");
+	iks *tag;
+
+
+	if (!strcasecmp(type, "error")) {
+		action = type;
+	}
+
+
+	if (!(id && action)) {
+		globals.logger(DL_LOG_CRIT, "missing required params\n");  
+		return LDL_STATUS_FALSE;
+	}
+
+	if (!(session = apr_hash_get(handle->sessions, id, APR_HASH_KEY_STRING))) {
+		ldl_session_create(&session, handle, id, from, to, LDL_FLAG_NONE);
+		if (!session) {
+			return LDL_STATUS_MEMERR;
+		}
+	}
+
+	if (!session) {
+		if (globals.debug) {
+			globals.logger(DL_LOG_CRIT, "Non-Existent Session %s!\n", id);
+		}
+		return LDL_STATUS_MEMERR;
+	}
+	
+	if (globals.debug) {
+		globals.logger(DL_LOG_CRIT, "Message for Session %s\n", id);
+	}
+
+
+	if (action) {
+			
+		if (!strcasecmp(action, "redirect")) {
+			apr_hash_t *hash = session->handle->sessions;
+			char *p = to;
+			if ((p = strchr(to, ':'))) {
+				p++;
+			} else {
+				p = to;
+			}
+						
+
+			apr_hash_set(hash, session->them, APR_HASH_KEY_STRING, NULL);
+			apr_hash_set(hash, session->id, APR_HASH_KEY_STRING, NULL);
+			session->them = apr_pstrdup(session->pool, p);
+			apr_hash_set(handle->sessions, session->them, APR_HASH_KEY_STRING, session);
+			apr_hash_set(handle->sessions, session->id, APR_HASH_KEY_STRING, session);
+
+			dl_signal = LDL_SIGNAL_REDIRECT;
+		} else if (!strcasecmp(action, "session-initiate") || !strcasecmp(action, "session-accept")) {
+
+			dl_signal = LDL_SIGNAL_INITIATE;
+
+			if (!strcasecmp(action, "session-accept")) {
+				msg = "accept";
+			}
+			
+			if (!session->initiator && initiator) {
+				session->initiator = apr_pstrdup(session->pool, initiator);
+			}
+			tag = iks_child (xml);
+				
+			while(tag) {
+
+				if (!strcasecmp(iks_name_nons(tag), "content")) {
+					iks *dtag = iks_child (tag);
+					char key[512];
+
+					if (!strcasecmp(iks_name_nons(dtag), "description")) {
+						iks *itag = iks_child (dtag);
+						char *name = iks_find_attrib(tag, "name");
+						char *media = iks_find_attrib(dtag, "media");
+
+						if (globals.debug) {
+							globals.logger(DL_LOG_CRIT, "Found description of type '%s' media type '%s'\n", name, media);
+							
+						}
+						
+						while(itag) {
+							if (!strcasecmp(iks_name_nons(itag), "rtcp-mux")) {
+								snprintf(key, sizeof(key), "%s:rtcp-mux", media);
+								ldl_session_set_value(session, key, "true");
+							}
+
+							if (!strcasecmp(iks_name_nons(itag), "encryption")) {
+								iks *etag = iks_child (itag); 
+
+								while(etag) { 
+									char *suite = iks_find_attrib(etag, "crypto-suite"); 
+									char *params = iks_find_attrib(etag, "key-params"); 
+									char *tag = iks_find_attrib(etag, "tag"); 
+									char val[512];
+									
+									if (suite && params && tag) {
+										snprintf(key, sizeof(key), "%s:crypto:%s", media, tag);
+										snprintf(val, sizeof(val), "%s %s %s", tag, suite, params);
+										
+										ldl_session_set_value(session, key, val);
+									}
+									
+									etag = iks_next_tag(etag);
+								}
+							}
+
+
+							if (!strcasecmp(iks_name_nons(itag), "payload-type") && session->payload_len < LDL_MAX_PAYLOADS) {
+								char *name = iks_find_attrib(itag, "name");
+								char *id = iks_find_attrib(itag, "id");
+								char *rate = iks_find_attrib(itag, "clockrate");
+
+								if (name && id) {
+									session->payloads[session->payload_len].name = apr_pstrdup(session->pool, name);
+									session->payloads[session->payload_len].id = atoi(id);
+									if (rate) {
+										session->payloads[session->payload_len].rate = atoi(rate);
+									} else {
+										if (!strcasecmp(media, "video")) {
+											session->payloads[session->payload_len].rate = 90000;
+										} else {
+											session->payloads[session->payload_len].rate = 8000;
+										}
+									}
+									session->payload_len++;
+								
+									if (globals.debug) {
+										globals.logger(DL_LOG_CRIT, "Add Payload [%s] id='%s'\n", name, id);
+									}
+								}
+							}
+							itag = iks_next_tag(itag);
+						}
+						
+					}
+				}
+				
+				tag = iks_next_tag(tag);
+			}
+		} else if (!strcasecmp(action, "transport-accept")) {
+			dl_signal = LDL_SIGNAL_TRANSPORT_ACCEPT;
+		} else if (!strcasecmp(action, "reject")) {
+			dl_signal = LDL_SIGNAL_REJECT;
+		} else if (!strcasecmp(action, "transport-info")) {
+
+			tag = iks_child (xml);
+				
+			while(tag) {
+
+				if (!strcasecmp(iks_name_nons(tag), "content")) {
+					iks *ttag = iks_child (tag);
+
+					dl_signal = LDL_SIGNAL_CANDIDATES;
+
+					id = action;
+
+					if (ttag && !strcasecmp(iks_name_nons(ttag), "transport")) {
+						ttag = iks_child(ttag);
+					}
+				
+					for (;ttag;ttag = iks_next_tag(ttag)) {
+						if (!strcasecmp(iks_name_nons(ttag), "info_element")) {
+							char *name = iks_find_attrib(ttag, "name");
+							char *value = iks_find_attrib(ttag, "value");
+							if (globals.debug) {
+								globals.logger(DL_LOG_CRIT, "Info Element [%s]=[%s]\n", name, value);
+							}
+							ldl_session_set_value(session, name, value);
+						
+						} else if (!strcasecmp(iks_name_nons(ttag), "candidate")) {
+							char *key;
+							double pref = 0.0;
+							int index = -1;
+							ldl_transport_type_t tport;
+							unsigned int *candidate_len = NULL;
+							ldl_candidate_t (*candidates)[LDL_MAX_CANDIDATES] = NULL;
+						
+							if ((key = iks_find_attrib(ttag, "preference"))) {
+								unsigned int x;
+							
+								pref = strtod(key, NULL);
+							
+								/* Check what kind of candidate this is */
+								if ((key = iks_find_attrib(ttag, "name")) && ((tport = ldl_transport_type_parse(key)) != LDL_TPORT_MAX)) {
+									candidates = &(session->candidates[tport]);
+									candidate_len = &(session->candidate_len[tport]);
+								} else {
+									globals.logger(DL_LOG_WARNING, "No such transport type: %s\n", key);
+									continue;
+								}
+							
+								if (*candidate_len >= LDL_MAX_CANDIDATES) {
+									globals.logger(DL_LOG_WARNING, "Too many %s candidates\n", key);
+									continue;
+								}
+							
+								for (x = 0; x < *candidate_len; x++) {
+									if ((*candidates)[x].pref == pref) {
+										if (globals.debug) {
+											globals.logger(DL_LOG_CRIT, "Duplicate Pref!\n");
+										}
+										index = x;
+										break;
+									}
+								}
+							}
+						
+							if (index < 0) {
+								index = (*candidate_len)++;
+							}
+						
+							(*candidates)[index].pref = pref;
+
+							if ((key = iks_find_attrib(ttag, "name"))) {
+								(*candidates)[index].name = apr_pstrdup(session->pool, key);
+							}
+							if ((key = iks_find_attrib(ttag, "type"))) {
+								(*candidates)[index].type = apr_pstrdup(session->pool, key);
+							}
+							if ((key = iks_find_attrib(ttag, "protocol"))) {
+								(*candidates)[index].protocol = apr_pstrdup(session->pool, key);
+							}
+							if ((key = iks_find_attrib(ttag, "username"))) {
+								(*candidates)[index].username = apr_pstrdup(session->pool, key);
+							}
+							if ((key = iks_find_attrib(ttag, "password"))) {
+								(*candidates)[index].password = apr_pstrdup(session->pool, key);
+							}
+							if ((key = iks_find_attrib(ttag, "address"))) {
+								(*candidates)[index].address = apr_pstrdup(session->pool, key);
+							}
+							if ((key = iks_find_attrib(ttag, "port"))) {
+								(*candidates)[index].port = (uint16_t)atoi(key);
+							}
+						
+							if (!(*candidates)[index].type) {
+								(*candidates)[index].type = apr_pstrdup(session->pool, "stun");
+							}
+
+
+							if (globals.debug) {
+								globals.logger(DL_LOG_CRIT, 
+											   "New Candidate %d\n"
+											   "name=%s\n"
+											   "type=%s\n"
+											   "protocol=%s\n"
+											   "username=%s\n"
+											   "password=%s\n"
+											   "address=%s\n"
+											   "port=%d\n"
+											   "pref=%0.2f\n",
+											   *candidate_len,
+											   (*candidates)[index].name,
+											   (*candidates)[index].type,
+											   (*candidates)[index].protocol,
+											   (*candidates)[index].username,
+											   (*candidates)[index].password,
+											   (*candidates)[index].address,
+											   (*candidates)[index].port,
+											   (*candidates)[index].pref
+											   );
+							}
+						}
+					}
+				}
+
+				tag = iks_next_tag(tag); 
+			}
+		} else if (!strcasecmp(action, "session-terminate")) {
+			dl_signal = LDL_SIGNAL_TERMINATE;
+		} else if (!strcasecmp(action, "error")) {
+			dl_signal = LDL_SIGNAL_ERROR;
+		}
+	}
+		
+
+
+	if (handle->session_callback && dl_signal) {
+		handle->session_callback(handle, session, dl_signal, to, from, id, msg); 
+	}
+
+	return LDL_STATUS_SUCCESS;
+}
+
+
 
 const char *marker = "TRUE";
 
@@ -601,12 +933,12 @@ static int on_disco_default(void *user_data, ikspak *pak)
 	}
 
 	if (pak->subtype == IKS_TYPE_RESULT) {
-		globals.logger(DL_LOG_DEBUG, "FixME!!! node=[%s]\n", node?node:"");		
+		globals.logger(DL_LOG_CRIT, "FixME!!! node=[%s]\n", node?node:"");		
 	} else if (pak->subtype == IKS_TYPE_GET) {
 		if ((iq = iks_new("iq"))) {
 			int all = 0;
 			
-			iks_insert_attrib(iq, "from", iks_find_attrib(pak->x, "to"));
+			iks_insert_attrib(iq, "from", handle->login);
 			if (pak->from) {
 				iks_insert_attrib(iq, "to", pak->from->full);
 			}
@@ -673,7 +1005,7 @@ static int on_disco_default(void *user_data, ikspak *pak)
 		}
 
 		if (!send) {
-			globals.logger(DL_LOG_DEBUG, "Memory Error!\n");
+			globals.logger(DL_LOG_CRIT, "Memory Error!\n");
 		}
 	}
 
@@ -838,12 +1170,12 @@ static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, 
 	char buf[512];
 	iks *tag;
 
-	if (from && !strchr(from, '/')) {
+	if (!strchr(from, '/')) {
 		snprintf(buf, sizeof(buf), "%s/talk", from);
 		from = buf;
 	}
 
-	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT) && from && to && ldl_jid_domcmp(from, to)) {
+	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT) && ldl_jid_domcmp(from, to)) {
 		globals.logger(DL_LOG_ERR, "Refusal to send presence from and to the same domain in component mode [%s][%s]\n", from, to);
 		return;
 	}
@@ -890,7 +1222,7 @@ static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, 
 			if ((tag = iks_insert(pres, "c"))) {
 				iks_insert_attrib(tag, "node", "http://www.freeswitch.org/xmpp/client/caps");
 				iks_insert_attrib(tag, "ver", LDL_CAPS_VER);
-				iks_insert_attrib(tag, "ext", "sidebar voice-v1");
+				iks_insert_attrib(tag, "ext", "sidebar voice-v1 video-v1 camera-v1");
 				iks_insert_attrib(tag, "client", "libdingaling");
 				iks_insert_attrib(tag, "xmlns", "http://jabber.org/protocol/caps");
 			}
@@ -970,7 +1302,7 @@ static void cancel_retry(ldl_handle_t *handle, char *id)
 	apr_thread_mutex_lock(handle->lock);
 	if ((packet_node = apr_hash_get(handle->retry_hash, id, APR_HASH_KEY_STRING))) {
 		if (globals.debug) {
-			globals.logger(DL_LOG_DEBUG, "Cancel packet %s\n", packet_node->id);
+			globals.logger(DL_LOG_CRIT, "Cancel packet %s\n", packet_node->id);
 		}
 		packet_node->retries = 0;
 	}
@@ -989,6 +1321,30 @@ static iks* working_find(iks *tag, const char *name)
 	return NULL;
 }
 
+static iks* working_find_nons(iks *tag, const char *name) 
+{
+	while(tag) {
+		char *a = iks_name(tag);
+		char *b = (char *)name;
+		char *p;
+
+		if ((p = strchr(a, ':'))) {
+			a = p+1;
+		}
+
+		if ((p = strchr(b, ':'))) {
+			b = p+1;
+		}
+
+		if (!strcasecmp(a,b)) {
+			return tag;
+		}
+		tag = iks_next_tag(tag);
+	}
+	
+	return NULL;
+}
+
 static int on_commands(void *user_data, ikspak *pak)
 {
 	ldl_handle_t *handle = user_data;
@@ -999,6 +1355,8 @@ static int on_commands(void *user_data, ikspak *pak)
 	uint8_t is_result = strcasecmp(type, "result") ? 0 : 1;
 	uint8_t is_error = strcasecmp(type, "error") ? 0 : 1;
 	iks *xml, *xsession, *xerror = NULL, *xredir = NULL;
+	iks *xjingle;
+
 
 	xml = iks_child (pak->x);
 
@@ -1062,8 +1420,21 @@ static int on_commands(void *user_data, ikspak *pak)
 		}
 	}
 	
-	
-	if ((xsession = working_find(xml, "ses:session")) || (xsession = working_find(xml, "session"))) {
+
+
+	if ((handle->flags & LDL_FLAG_JINGLE) && (xjingle = working_find_nons(xml, "jin:jingle"))) {
+		if (parse_jingle_code(handle, xjingle, to, from, type) == LDL_STATUS_SUCCESS) {
+			iks *reply;
+			if ((reply = iks_make_iq(IKS_TYPE_RESULT, NULL))) {
+				iks_insert_attrib(reply, "to", from);
+				iks_insert_attrib(reply, "from", to);
+				iks_insert_attrib(reply, "id", iqid);
+				apr_queue_push(handle->queue, reply);
+				reply = NULL;
+			}
+		}
+		
+	} else if ((xsession = working_find_nons(xml, "ses:session"))) {
 		char *id;
 
 		id = iks_find_attrib(xsession, "id");
@@ -1102,7 +1473,7 @@ static int on_result(void *user_data, ikspak *pak)
 		ctag = iks_insert(msg, "c");
 		iks_insert_attrib(ctag, "node", "http://www.freeswitch.org/xmpp/client/caps");
 		iks_insert_attrib(ctag, "ver", "1.0.0.1");
-		iks_insert_attrib(ctag, "ext", "sidebar voice-v1");
+		iks_insert_attrib(ctag, "ext", "sidebar voice-v1 video-v1");
 		iks_insert_attrib(ctag, "client", "libdingaling");
 		iks_insert_attrib(ctag, "xmlns", "http://jabber.org/protocol/caps");
 
@@ -1239,7 +1610,7 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 			if (iks_has_tls()) {
 				iks_start_tls(handle->parser);
 			} else {
-				globals.logger(DL_LOG_DEBUG, "TLS NOT SUPPORTED IN THIS BUILD!\n");
+				globals.logger(DL_LOG_WARNING, "TLS NOT SUPPORTED IN THIS BUILD!\n");
 			}
 		}
 		break;
@@ -1284,19 +1655,19 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 						apr_queue_push(handle->queue, x);
 						x = NULL;
 					} else {
-						globals.logger(DL_LOG_DEBUG, "Memory ERROR!\n");
+						globals.logger(DL_LOG_CRIT, "Memory ERROR!\n");
 						break;
 					}
 					
 				}
 			}
 		} else if (node && strcmp("failure", iks_name_nons(node)) == 0) {
-			globals.logger(DL_LOG_DEBUG, "sasl authentication failed\n");
+			globals.logger(DL_LOG_CRIT, "sasl authentication failed\n");
 			if (handle->session_callback) {
 				handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_FAILURE, "user", "core", "Login Failure", handle->login);
 			}
 		} else if (node && strcmp("success", iks_name_nons(node)) == 0) {
-			globals.logger(DL_LOG_DEBUG, "XMPP server connected\n");
+			globals.logger(DL_LOG_NOTICE, "XMPP server connected\n");
 			iks_send_header(handle->parser, handle->acc->server);
 			ldl_set_flag_locked(handle, LDL_FLAG_CONNECTED);
 			if (handle->session_callback) {
@@ -1308,7 +1679,7 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 				if (handle->session_callback) {
 					handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_SUCCESS, "user", "core", "Login Success", handle->login);
 				}
-				globals.logger(DL_LOG_DEBUG, "XMPP authenticated\n");
+				globals.logger(DL_LOG_NOTICE, "XMPP authenticated\n");
 				ldl_set_flag_locked(handle, LDL_FLAG_AUTHORIZED);
 			}
             if (node) {
@@ -1360,18 +1731,20 @@ static int on_msg(void *user_data, ikspak *pak)
 
 static int on_error(void *user_data, ikspak * pak)
 {
-	globals.logger(DL_LOG_DEBUG, "authorization failed\n");
+	globals.logger(DL_LOG_ERR, "authorization failed\n");
 	return IKS_FILTER_EAT;
 }
 
 static void on_log(ldl_handle_t *handle, const char *data, size_t size, int is_incoming)
 {
+
 	if (globals.debug) {
 		if (is_incoming) {
 			globals.logger(DL_LOG_INFO, "+xml:%s%s:%s", iks_is_secure(handle->parser) ? "Sec" : "", is_incoming ? "RECV" : "SEND", data);
 		} else {
 			globals.logger(DL_LOG_NOTICE, "+xml:%s%s:%s", iks_is_secure(handle->parser) ? "Sec" : "", is_incoming ? "RECV" : "SEND", data);
 		}
+						   
 	}
 }
 
@@ -1443,11 +1816,7 @@ static ldl_queue_t ldl_flush_queue(ldl_handle_t *handle, int done)
 	while(apr_queue_trypop(handle->queue, &pop) == APR_SUCCESS) {
 		if (pop) {
 			msg = (iks *) pop;
-			if (!done) {
-				if (iks_send(handle->parser, msg) != IKS_OK) {
-					globals.logger(DL_LOG_DEBUG, "Failed sending data!\n");
-				};
-			};
+			if (!done) iks_send(handle->parser, msg);
 			iks_delete(msg);
 			pop = NULL;
 			sent_data = LDL_QUEUE_SENT;
@@ -1458,7 +1827,7 @@ static ldl_queue_t ldl_flush_queue(ldl_handle_t *handle, int done)
 
 	len = apr_queue_size(handle->retry_queue); 
 	if (globals.debug && len) {
-		globals.logger(DL_LOG_DEBUG, "Processing %u packets in retry queue\n", len);
+		globals.logger(DL_LOG_CRIT, "Processing %u packets in retry queue\n", len);
 	}
 
 	pop = NULL;
@@ -1475,18 +1844,16 @@ static ldl_queue_t ldl_flush_queue(ldl_handle_t *handle, int done)
 				if (packet_node->retries > 0) {
 					packet_node->retries--;
 					if (globals.debug) {
-						globals.logger(DL_LOG_DEBUG, "Sending packet %s (%d left)\n", packet_node->id, packet_node->retries);
+						globals.logger(DL_LOG_CRIT, "Sending packet %s (%d left)\n", packet_node->id, packet_node->retries);
 					}
-					if (iks_send(handle->parser, packet_node->xml) != IKS_OK) {
-						globals.logger(DL_LOG_DEBUG, "Failed trying re-sending data!\n");
-					};
+					iks_send(handle->parser, packet_node->xml);
 					packet_node->next = now + 5000000;
 					sent_data = LDL_QUEUE_SENT;
 				}
 			}
 			if (packet_node->retries == 0 || done) {
 				if (globals.debug) {
-					globals.logger(DL_LOG_DEBUG, "Discarding packet %s\n", packet_node->id);
+					globals.logger(DL_LOG_CRIT, "Discarding packet %s\n", packet_node->id);
 				}
 				apr_hash_set(handle->retry_hash, packet_node->id, APR_HASH_KEY_STRING, NULL);
 				iks_delete(packet_node->xml);
@@ -1505,8 +1872,8 @@ static ldl_queue_t ldl_flush_queue(ldl_handle_t *handle, int done)
 
 static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 {
-	int count_ka = LDL_KEEPALIVE_TIMEOUT;	
-	time_t tstart, tnow;
+	int timeout_ka = LDL_KEEPALIVE_TIMEOUT;
+	int count_ka = timeout_ka;	
 
 	while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 		int e;
@@ -1537,8 +1904,6 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 
 		j_setup_filter(handle);
 
-		globals.logger(DL_LOG_DEBUG, "xmpp connecting\n");
-
 		e = iks_connect_via(handle->parser,
 							handle->server ? handle->server : handle->acc->server,
 							handle->port ? handle->port : IKS_JABBER_PORT,
@@ -1548,26 +1913,30 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		case IKS_OK:
 			break;
 		case IKS_NET_NODNS:
-			globals.logger(DL_LOG_DEBUG, "hostname lookup failed\n");
+			globals.logger(DL_LOG_CRIT, "hostname lookup failed\n");
 			microsleep(1000);
 			goto fail;
 		case IKS_NET_NOCONN:
-			globals.logger(DL_LOG_DEBUG, "connection failed\n");
+			globals.logger(DL_LOG_CRIT, "connection failed\n");
 			microsleep(1000);
 			goto fail;
 		default:
-			globals.logger(DL_LOG_DEBUG, "io error 1 %d\n", e);
+			globals.logger(DL_LOG_CRIT, "io error 1 %d\n", e);
 			microsleep(1000);
 			goto fail;
 		}
 
 		handle->counter = opt_timeout;
-		if ((tstart = time(NULL)) == -1) {
-			globals.logger(DL_LOG_DEBUG, "error determining connection time");
-		}
 
 		while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 			e = iks_recv(handle->parser, 1);
+
+			if (count_ka-- <= 0) {
+				if( iks_send_raw(handle->parser, " ") == IKS_OK) {
+					count_ka = timeout_ka;
+					globals.logger(DL_LOG_DEBUG, "Sent keep alive signal\n");
+				}
+			}
 
 			if (handle->loop_callback) {
 				if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS) {
@@ -1585,51 +1954,31 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 			}
 
 			if (IKS_OK != e || ldl_test_flag(handle, LDL_FLAG_BREAK)) {
-				globals.logger(DL_LOG_DEBUG, "io error 2 %d retry in %d second(s)", e, ++handle->fail_count);
-				if ((tnow = time(NULL)) == -1) {
-					globals.logger(DL_LOG_DEBUG, "error deterniming io error time");
-				}
-				if (difftime(tnow, tstart) > 30) {
-					/* this is a new error situation: reset counter */ 
-					globals.logger(DL_LOG_DEBUG, "resetting fail count");
-					handle->fail_count = 1;
-				}
+				globals.logger(DL_LOG_DEBUG, "io error 2 %d retry in %d second(s)\n", e, ++handle->fail_count);
 				microsleep(1000 * handle->fail_count);
 				goto fail;
 			}
 
 			if (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
-				if (ldl_flush_queue(handle, 0) == LDL_QUEUE_SENT) {
-					count_ka = LDL_KEEPALIVE_TIMEOUT;
-				}
-			} 
+				ldl_flush_queue(handle, 0);
+			}
 
 			handle->counter--;
 			if (!ldl_test_flag(handle, LDL_FLAG_CONNECTED)) {
 				if (IKS_NET_TLSFAIL == e) {
-					globals.logger(DL_LOG_DEBUG, "tls handshake failed\n");
+					globals.logger(DL_LOG_CRIT, "tls handshake failed\n");
 					microsleep(500);
 					break;
 				}
 
 				if (handle->counter == 0) {
-					globals.logger(DL_LOG_DEBUG, "network timeout\n");
+					globals.logger(DL_LOG_CRIT, "network timeout\n");
 					microsleep(500);
 					break;
 				}
 			}
 
-			if (count_ka-- <= 0) {
-				if( iks_send_raw(handle->parser, " ") == IKS_OK) {
-					globals.logger(DL_LOG_DEBUG, "Sent keep alive signal");
-					count_ka = LDL_KEEPALIVE_TIMEOUT;
-				} else {
-					globals.logger(DL_LOG_DEBUG, "Failed sending keep alive signal");
-					microsleep(500);
-					break;
-				}
-			}
-
+			microsleep(100);
 		}
 
 	fail:
@@ -1657,7 +2006,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 static void add_elements(ldl_session_t *session, iks *tag)
 {
 	apr_hash_index_t *hi;
-
+	return;
 	for (hi = apr_hash_first(session->pool, session->variables); hi; hi = apr_hash_next(hi)) {
 		void *val = NULL;
 		const void *key = NULL;
@@ -1671,6 +2020,42 @@ static void add_elements(ldl_session_t *session, iks *tag)
 		}
 	}
 }
+
+
+static iks *ldl_set_jingle_tag(ldl_session_t *session, iks *iq, char *action)
+{
+	iks *jin = iks_insert (iq, "jin:jingle");
+	iks_insert_attrib(jin, "xmlns:jin", "urn:xmpp:jingle:1");
+	iks_insert_attrib(jin, "action", action);
+	iks_insert_attrib(jin, "sid", session->id);
+	//iks_insert_attrib(jin, "initiator", session->initiator ? session->initiator : session->them);
+
+	return jin;
+}
+
+static ldl_status new_jingle_iq(ldl_session_t *session, iks **iqp, iks **jinp, unsigned int *id, char *action)
+{
+	iks *iq , *jin;
+	unsigned int myid;
+	char idbuf[80];
+
+	myid = next_id();
+	snprintf(idbuf, sizeof(idbuf), "%u", myid);
+	iq = iks_new("iq");
+	iks_insert_attrib(iq, "xmlns", "jabber:client");
+	iks_insert_attrib(iq, "from", session->login);
+	iks_insert_attrib(iq, "to", session->them);
+	iks_insert_attrib(iq, "type", "set");
+	iks_insert_attrib(iq, "id", idbuf);
+
+	jin = ldl_set_jingle_tag(session, iq, action);
+
+	*jinp = jin;
+	*iqp = iq;
+	*id = myid;
+	return LDL_STATUS_SUCCESS;
+}
+
 
 static ldl_status new_session_iq(ldl_session_t *session, iks **iqp, iks **sessp, unsigned int *id, char *type)
 {
@@ -1973,6 +2358,11 @@ unsigned int ldl_session_terminate(ldl_session_t *session)
 	apr_hash_t *hash = session->handle->sessions;
 
 	new_session_iq(session, &iq, &sess, &id, "terminate");
+
+	if ((session->handle->flags & LDL_FLAG_JINGLE)) {
+		ldl_set_jingle_tag(session, iq, "session-terminate");
+	}
+
 	schedule_packet(session->handle, id, iq, LDL_RETRY);
 
 	if (session->id) {
@@ -1998,6 +2388,12 @@ unsigned int ldl_session_transport(ldl_session_t *session,
 	unsigned int x, id = 0;
 
 
+	if ((session->handle->flags & LDL_FLAG_JINGLE)) {
+		return ldl_session_candidates(session, candidates, clen);
+	}
+
+
+
 	for (x = 0; x < clen; x++) {
 		char buf[512];
 		iq = NULL;
@@ -2005,13 +2401,13 @@ unsigned int ldl_session_transport(ldl_session_t *session,
 		id = 0;
 		
 		new_session_iq(session, &iq, &sess, &id, "transport-info");
-		//tag = iks_insert(sess, "transport");
-		//iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");
+		
 		tag = sess;
 
-		if (0) add_elements(session, tag);
+		//if (0) add_elements(session, tag);
 		tag = iks_insert(tag, "transport");
 		iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");
+		//iks_insert_attrib(tag, "xmlns", "urn:xmpp:jingle:transports:raw-udp:1");
 
 		tag = iks_insert(tag, "candidate");
 
@@ -2047,7 +2443,6 @@ unsigned int ldl_session_transport(ldl_session_t *session,
 		schedule_packet(session->handle, id, iq, LDL_RETRY);
 	}
 
-
 	return id;
 }
 
@@ -2056,23 +2451,103 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 									unsigned int clen)
 
 {
-	iks *iq, *sess, *tag;
-	unsigned int x, id = 0;
+	iks *iq = NULL, *sess = NULL, *tag = NULL;
+	unsigned int x = 0, id = 0;
 
+
+	unsigned int pass = 0;
+	iks *jingle = NULL, *jin_content = NULL, *p_trans = NULL;
+	const char *tname = "";
+	const char *type = "";   
+
+	if ((session->handle->flags & LDL_FLAG_JINGLE)) {
+
+
+		new_jingle_iq(session, &iq, &jingle, &id, "transport-info");
+
+		for (pass = 0; pass < 2; pass++) {
+		
+			if (pass == 0) {
+				type = "rtp";
+				tname = "audio";
+			} else {
+				type = "video_rtp";
+				tname = "video";
+			}
+		
+			jin_content = iks_insert(jingle, "jin:content");
+			iks_insert_attrib(jin_content, "name", tname);
+			iks_insert_attrib(jin_content, "creator", "initiator");         
+
+			for (x = 0; x < clen; x++) {
+				char buf[512];
+			
+				if (strcasecmp(candidates[x].name, type)) {
+					continue;
+				}    
+			
+				p_trans = iks_insert(jin_content, "p:transport");
+				iks_insert_attrib(p_trans, "xmlns:p", "http://www.google.com/transport/p2p");
+			
+			
+			
+				tag = iks_insert(p_trans, "candidate");
+
+				if (candidates[x].name) {
+					iks_insert_attrib(tag, "name", candidates[x].name);
+				}
+				if (candidates[x].address) {
+					iks_insert_attrib(tag, "address", candidates[x].address);
+				}
+				if (candidates[x].port) {
+					snprintf(buf, sizeof(buf), "%u", candidates[x].port);
+					iks_insert_attrib(tag, "port", buf);
+				}
+				if (candidates[x].username) {
+					iks_insert_attrib(tag, "username", candidates[x].username);
+				}
+				if (candidates[x].password) {
+					iks_insert_attrib(tag, "password", candidates[x].password);
+				}
+				if (candidates[x].pref) {
+					snprintf(buf, sizeof(buf), "%0.1f", candidates[x].pref);
+					iks_insert_attrib(tag, "preference", buf);
+				}
+				if (candidates[x].protocol) {
+					iks_insert_attrib(tag, "protocol", candidates[x].protocol);
+				}
+				if (candidates[x].type) {
+					iks_insert_attrib(tag, "type", candidates[x].type);
+				}
+
+				iks_insert_attrib(tag, "network", "0");
+				iks_insert_attrib(tag, "generation", "0");
+			}
+		}
+		
+
+		schedule_packet(session->handle, id, iq, LDL_RETRY);
+
+		iq = NULL;
+		sess = NULL;
+		tag = NULL;
+		x = 0;
+		id = 0;
+	}
+
+
+	new_session_iq(session, &iq, &sess, &id, "candidates");
+	add_elements(session, sess);
 
 	for (x = 0; x < clen; x++) {
 		char buf[512];
-		iq = NULL;
-		sess = NULL;
-		id = 0;
+		//iq = NULL;
+		//sess = NULL;
+		//id = 0;
 		
-		new_session_iq(session, &iq, &sess, &id, "candidates");
-		//tag = iks_insert(sess, "transport");
-		//iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");
-		tag = sess;
+		tag = iks_insert(sess, "ses:candidate");
 
-		add_elements(session, tag);
-		tag = iks_insert(tag, "ses:candidate");
+
 
 		if (candidates[x].name) {
 			iks_insert_attrib(tag, "name", candidates[x].name);
@@ -2103,9 +2578,10 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 
 		iks_insert_attrib(tag, "network", "0");
 		iks_insert_attrib(tag, "generation", "0");
-		schedule_packet(session->handle, id, iq, LDL_RETRY);
+
 	}
 
+	schedule_packet(session->handle, id, iq, LDL_RETRY);
 
 	return id;
 }
@@ -2192,11 +2668,11 @@ char *ldl_handle_disco(ldl_handle_t *handle, char *id, char *from, char *buf, un
 			iks_insert_attrib(query, "xmlns", "http://jabber.org/protocol/disco#info");
 		} else {
 			iks_delete(iq);
-			globals.logger(DL_LOG_DEBUG, "Memory ERROR!\n");
+			globals.logger(DL_LOG_CRIT, "Memory ERROR!\n");
 			return NULL;
 		}
 	} else {
-		globals.logger(DL_LOG_DEBUG, "Memory ERROR!\n");
+		globals.logger(DL_LOG_CRIT, "Memory ERROR!\n");
 		return NULL;
 	}
 	
@@ -2236,42 +2712,274 @@ char *ldl_handle_disco(ldl_handle_t *handle, char *id, char *from, char *buf, un
 }
 
 
+
 unsigned int ldl_session_describe(ldl_session_t *session,
-								ldl_payload_t *payloads,
-								unsigned int plen,
-								ldl_description_t description)
+								  ldl_payload_t *payloads,
+								  unsigned int plen,
+								  ldl_description_t description, unsigned int *audio_ssrc, unsigned int *video_ssrc, 
+								  ldl_crypto_data_t *audio_crypto_data, ldl_crypto_data_t *video_crypto_data)
 {
-	iks *iq, *sess, *tag, *payload, *tp;
+	iks *iq;
+	iks *sess, *payload = NULL, *tag = NULL;//, *u = NULL;
+
 	unsigned int x, id;
-	
+	int video_call = 0;
+	int compat = 1;
+	//char *vid_mux = ldl_session_get_value(session, "video:rtcp-mux");
+	//char *aud_mux = ldl_session_get_value(session, "audio:rtcp-mux");
+ 	char tmp[80];
+	iks *jpayload = NULL, *tp = NULL;
+	iks *jingle, *jin_audio, *jin_audio_desc = NULL, *jin_video = NULL, *jin_video_desc = NULL, *crypto;
 
-	new_session_iq(session, &iq, &sess, &id, description == LDL_DESCRIPTION_ACCEPT ? "accept" : "initiate");
-	tag = iks_insert(sess, "pho:description");
-	iks_insert_attrib(tag, "xmlns:pho", "http://www.google.com/session/phone");
-	iks_insert_attrib(tag, "xml:lang", "en");
-	for (x = 0; x < plen; x++) {
-		char idbuf[80];
-		payload = iks_insert(tag, "pho:payload-type");
-		iks_insert_attrib(payload, "xmlns:pho", "http://www.google.com/session/phone");
 
-		sprintf(idbuf, "%d", payloads[x].id);
-		iks_insert_attrib(payload, "id", idbuf);
-		iks_insert_attrib(payload, "name", payloads[x].name);
-		if (payloads[x].rate) {
-			sprintf(idbuf, "%d", payloads[x].rate);
-			iks_insert_attrib(payload, "clockrate", idbuf);
+	if (!*audio_ssrc) {
+		*audio_ssrc = (uint32_t) ((intptr_t) session + (uint32_t) time(NULL));
+	}
+
+	if (!*video_ssrc) {
+		*video_ssrc = (uint32_t) ((intptr_t) payloads + (uint32_t) time(NULL));
+	}
+
+	if ((session->handle->flags & LDL_FLAG_JINGLE)) {
+		new_jingle_iq(session, &iq, &jingle, &id, description == LDL_DESCRIPTION_ACCEPT ? "session-accept" : "session-initiate");
+		iks_insert_attrib(jingle, "initiator", session->initiator ? session->initiator : session->them);
+		
+		if (compat) {
+			sess = iks_insert (iq, "ses:session");
+			iks_insert_attrib(sess, "xmlns:ses", "http://www.google.com/session");
+			
+			iks_insert_attrib(sess, "type", description == LDL_DESCRIPTION_ACCEPT ? "accept" : "initiate");
+			iks_insert_attrib(sess, "id", session->id);
+			iks_insert_attrib(sess, "initiator", session->initiator ? session->initiator : session->them);
 		}
-		if (payloads[x].bps) {
-			sprintf(idbuf, "%d", payloads[x].bps);
-			iks_insert_attrib(payload, "bitrate", idbuf);
+
+	} else {
+		new_session_iq(session, &iq, &sess, &id, description == LDL_DESCRIPTION_ACCEPT ? "accept" : "initiate");
+	}
+
+
+	/* Check if this is a video call */
+	for (x = 0; x < plen; x++) {
+		if (payloads[x].type == LDL_PAYLOAD_VIDEO) {
+			video_call = 1;
+			if ((session->handle->flags & LDL_FLAG_JINGLE)) {
+				jin_video = iks_insert(jingle, "jin:content");
+				iks_insert_attrib(jin_video, "name", "video");
+				iks_insert_attrib(jin_video, "creator", "initiator");
+				//iks_insert_attrib(jin_video, "senders", "both");
+				jin_video_desc = iks_insert(jin_video, "rtp:description");
+				iks_insert_attrib(jin_video_desc, "xmlns:rtp", "urn:xmpp:jingle:apps:rtp:1");
+				iks_insert_attrib(jin_video_desc, "media", "video");
+				snprintf(tmp, sizeof(tmp), "%u", *video_ssrc);
+				iks_insert_attrib(jin_video_desc, "ssrc", tmp);
+				tp = iks_insert(jin_video, "p:transport");
+				iks_insert_attrib(tp, "xmlns:p", "http://www.google.com/transport/p2p");
+
+			}
+
+			break;
 		}
 	}
 
+	
+	if ((session->handle->flags & LDL_FLAG_JINGLE)) {	
+		jin_audio = iks_insert(jingle, "jin:content");
+		iks_insert_attrib(jin_audio, "name", "audio");
+		iks_insert_attrib(jin_audio, "creator", "initiator");
+		//iks_insert_attrib(jin_audio, "senders", "both");
+		jin_audio_desc = iks_insert(jin_audio, "rtp:description");
+		iks_insert_attrib(jin_audio_desc, "xmlns:rtp", "urn:xmpp:jingle:apps:rtp:1");
+		iks_insert_attrib(jin_audio_desc, "media", "audio");
+		snprintf(tmp, sizeof(tmp), "%u", *audio_ssrc);
+		iks_insert_attrib(jin_audio_desc, "ssrc", tmp);
+		tp = iks_insert(jin_audio, "p:transport");
+		iks_insert_attrib(tp, "xmlns:p", "http://www.google.com/transport/p2p");
+	}
+	
+	if (compat) {
+
+		if (video_call) {
+			tag = iks_insert(sess, "vid:description");
+			iks_insert_attrib(tag, "xmlns:vid", "http://www.google.com/session/video");
+		} else {
+			tag = iks_insert(sess, "pho:description");
+			iks_insert_attrib(tag, "xmlns:pho", "http://www.google.com/session/phone");
+		}
+
+		if (video_call) {
+			
+			for (x = 0; x < plen; x++) {
+				char idbuf[80];
+
+				if (payloads[x].type != LDL_PAYLOAD_VIDEO) {
+					continue;
+				}
+		
+				sprintf(idbuf, "%d", payloads[x].id);
+
+
+				payload = iks_insert(tag, "vid:payload-type");
+
+				iks_insert_attrib(payload, "id", idbuf);
+				iks_insert_attrib(payload, "name", payloads[x].name);
+		
+				if (payloads[x].type == LDL_PAYLOAD_VIDEO && video_call) {
+					if (payloads[x].width) {
+						sprintf(idbuf, "%d", payloads[x].width);
+						iks_insert_attrib(payload, "width", idbuf);
+					}
+					if (payloads[x].height) {
+						sprintf(idbuf, "%d", payloads[x].height);
+						iks_insert_attrib(payload, "height", idbuf);
+					}
+					if (payloads[x].framerate) {
+						sprintf(idbuf, "%d", payloads[x].framerate);
+						iks_insert_attrib(payload, "framerate", idbuf);
+					}
+				}
+			
+			}
+
+
+			//if (vid_mux) {
+			//	iks_insert(tag, "rtcp-mux"); 
+			//}
+
+			//payload = iks_insert(tag, "vid:src-id"); 
+			//iks_insert_cdata(payload, "123456789", 0); 
+
+
+			//iks_insert_attrib(payload, "xmlns:rtp", "urn:xmpp:jingle:apps:rtp:1");
+			//iks_insert(payload, "vid:usage");
+		}
+	}
+
+	for (x = 0; x < plen; x++) {
+		char idbuf[80];
+
+		if (payloads[x].type == LDL_PAYLOAD_VIDEO && !video_call) {
+			continue;
+		}
+		
+		sprintf(idbuf, "%d", payloads[x].id);
+		
+		if (payloads[x].type == LDL_PAYLOAD_AUDIO) {
+
+			if ((session->handle->flags & LDL_FLAG_JINGLE)) {	
+				char ratebuf[80];
+				char buf[80];
+				iks *param;
+				
+				jpayload = iks_insert(jin_audio_desc, "rtp:payload-type");
+				iks_insert_attrib(jpayload, "id", idbuf);
+				sprintf(ratebuf, "%d", payloads[x].rate);
+				iks_insert_attrib(jpayload, "name", payloads[x].name);
+				iks_insert_attrib(jpayload, "clockrate", ratebuf);
+				param = iks_insert(jpayload, "rtp:parameter");
+				iks_insert_attrib(param, "name", "bitrate");
+				sprintf(buf, "%d", payloads[x].bps);
+				iks_insert_attrib(param, "value", buf);
+				
+				sprintf(buf, "%d", payloads[x].ptime);
+				iks_insert_attrib(jpayload, "ptime", ratebuf);
+				iks_insert_attrib(jpayload, "maxptime", ratebuf);
+				
+			}
+			
+		} else  if (payloads[x].type == LDL_PAYLOAD_VIDEO && video_call) {
+	
+			if ((session->handle->flags & LDL_FLAG_JINGLE)) {	
+				char buf[80];
+				iks *param;
+
+				jpayload = iks_insert(jin_video_desc, "rtp:payload-type");
+				iks_insert_attrib(jpayload, "id", idbuf);
+				iks_insert_attrib(jpayload, "name", payloads[x].name);
+				param = iks_insert(jpayload, "rtp:parameter");
+				iks_insert_attrib(param, "name", "width");
+				sprintf(buf, "%d", payloads[x].width);
+				iks_insert_attrib(param, "value", buf);
+
+
+				param = iks_insert(jpayload, "rtp:parameter");
+				iks_insert_attrib(param, "name", "height");
+				sprintf(buf, "%d", payloads[x].height);
+				iks_insert_attrib(param, "value", buf);
+				
+				param = iks_insert(jpayload, "rtp:parameter");
+				iks_insert_attrib(param, "name", "framerate");
+				sprintf(buf, "%d", payloads[x].framerate);
+				iks_insert_attrib(param, "value", buf);
+			
+			}
+		}
+
+		if (compat) {
+
+			if (payloads[x].type == LDL_PAYLOAD_AUDIO) {
+
+				payload = iks_insert(tag, "pho:payload-type");
+
+				iks_insert_attrib(payload, "id", idbuf);
+				iks_insert_attrib(payload, "name", payloads[x].name);
+
+				if (payloads[x].rate) {
+					sprintf(idbuf, "%d", payloads[x].rate);
+					iks_insert_attrib(payload, "clockrate", idbuf);
+				}
+			
+				if (payloads[x].bps) {
+					sprintf(idbuf, "%d", payloads[x].bps);
+					iks_insert_attrib(payload, "bitrate", idbuf);
+				}
+
+				iks_insert_attrib(payload, "xmlns:pho", "http://www.google.com/session/phone");	
+			}
+		}
+		//if (payloads[x].id == 34) payloads[x].id = 98; /* XXX */
+
+	}
+
+	if ((session->handle->flags & LDL_FLAG_JINGLE)) {	
+		if (jin_video_desc && video_crypto_data) {
+			payload = iks_insert(jin_video_desc, "rtp:encryption");
+			crypto = iks_insert(payload, "rtp:crypto");
+			iks_insert_attrib(crypto, "crypto-suite", video_crypto_data->suite);
+			iks_insert_attrib(crypto, "key-params", video_crypto_data->key);
+			iks_insert_attrib(crypto, "tag", video_crypto_data->tag);
+		}
+
+
+		if (jin_audio_desc && audio_crypto_data) {
+			payload = iks_insert(jin_audio_desc, "rtp:encryption");
+			crypto = iks_insert(payload, "rtp:crypto");
+			iks_insert_attrib(crypto, "crypto-suite", audio_crypto_data->suite);
+			iks_insert_attrib(crypto, "key-params", audio_crypto_data->key);
+			iks_insert_attrib(crypto, "tag", audio_crypto_data->tag);
+		}
+	}
+
+	//if (aud_mux) {
+	//	iks_insert(tag, "rtcp-mux"); 
+	//}
+
+	//payload = iks_insert(tag, "pho:src-id");
+	//iks_insert_cdata(payload, "987654321", 0); 
+	//iks_insert_attrib(payload, "xmlns:pho", "http://www.google.com/session/phone");
+
+	//payload = iks_insert(tag, "rtp:encryption");
+	//iks_insert_attrib(payload, "xmlns:rtp", "urn:xmpp:jingle:apps:rtp:1");
+	//u = iks_insert(payload, "pho:usage");
+	//iks_insert_attrib(u, "xmlns:pho", "http://www.google.com/session/phone");
+
+#if 0
 	if (description == LDL_DESCRIPTION_INITIATE) {
 		tp = iks_insert (sess, "transport");
 		iks_insert_attrib(tp, "xmlns", "http://www.google.com/transport/p2p");
 	}
-	
+#endif
+
+
 	schedule_packet(session->handle, id, iq, LDL_RETRY);
 
 	return id;
@@ -2282,11 +2990,13 @@ ldl_state_t ldl_session_get_state(ldl_session_t *session)
 	return session->state;
 }
 
-ldl_status ldl_session_get_candidates(ldl_session_t *session, ldl_candidate_t **candidates, unsigned int *len)
+ldl_status ldl_session_get_candidates(ldl_session_t *session, ldl_transport_type_t tport, ldl_candidate_t **candidates, unsigned int *len)
 {
+	assert(tport < LDL_TPORT_MAX);
+	
 	if (session->candidate_len) {
-		*candidates = session->candidates;
-		*len = session->candidate_len;
+		*candidates = session->candidates[tport];
+		*len = session->candidate_len[tport];
 		return LDL_STATUS_SUCCESS;
 	} else {
 		*candidates = NULL;
@@ -2332,7 +3042,7 @@ ldl_status ldl_global_init(int debug)
 	memset(&globals, 0, sizeof(globals));
 
 	if (apr_pool_create(&globals.memory_pool, NULL) != LDL_STATUS_SUCCESS) {
-		globals.logger(DL_LOG_DEBUG, "Could not allocate memory pool\n");
+		globals.logger(DL_LOG_CRIT, "Could not allocate memory pool\n");
 		return LDL_STATUS_MEMERR;
 	}
 

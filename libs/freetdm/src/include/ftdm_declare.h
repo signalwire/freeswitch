@@ -121,6 +121,36 @@ extern "C" {
 #pragma comment(lib, "Winmm")
 #endif
 
+/*
+ * Compiler-specific format checking attributes
+ * use these on custom functions that use printf/scanf-style
+ * format strings (e.g. ftdm_log())
+ */
+#if defined(__GNUC__)
+/**
+ * Enable compiler-specific printf()-style format and argument checks on a function
+ * @param	fmtp	Position of printf()-style format string parameter
+ * @param	argp	Position of variable argument list ("...") parameter
+ * @code
+ *	void log(const int level, const char *fmt, ...) __ftdm_check_printf(2, 3);
+ * @endcode
+ */
+#define __ftdm_check_printf(fmtp, argp) __attribute__((format (printf, fmtp, argp)))
+/**
+ * Enable compiler-specific scanf()-style format and argument checks on a function
+ * @param	fmtp	Position of scanf()-style format string parameter
+ * @param	argp	Position of variable argument list ("...") parameter
+ * @code
+ *	void parse(struct foo *ctx, const char *fmt, ...) __ftdm_check_scanf(2, 3);
+ * @endcode
+ */
+#define __ftdm_check_scanf(fmtp, argp) __attribute__((format (scanf, fmtp, argp)))
+#else
+#define __ftdm_check_printf(fmtp, argp)
+#define __ftdm_check_scanf(fmtp, argp)
+#endif
+
+
 #define FTDM_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) FT_DECLARE(_TYPE) _FUNC1 (const char *name); FT_DECLARE(const char *) _FUNC2 (_TYPE type);
 #define FTDM_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)	\
 	FT_DECLARE(_TYPE) _FUNC1 (const char *name)							\
@@ -160,6 +190,9 @@ typedef __int16 int16_t;
 typedef __int8 int8_t;
 #define FTDM_O_BINARY O_BINARY
 #define FTDM_SIZE_FMT "Id"
+#define FTDM_INT64_FMT "lld"
+#define FTDM_UINT64_FMT "llu"
+#define FTDM_XINT64_FMT "llx"
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
 #define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
 #else
@@ -168,6 +201,15 @@ typedef __int8 int8_t;
 #else /* __WINDOWS__ */
 #define FTDM_O_BINARY 0
 #define FTDM_SIZE_FMT "zd"
+#if (defined(__SIZEOF_LONG__) && (__SIZEOF_LONG__ == 8)) || defined(__LP64__) || defined(__LLP64__)
+#define FTDM_INT64_FMT "ld"
+#define FTDM_UINT64_FMT "lu"
+#define FTDM_XINT64_FMT "lx"
+#else
+#define FTDM_INT64_FMT "lld"
+#define FTDM_UINT64_FMT "llu"
+#define FTDM_XINT64_FMT "llx"
+#endif
 #define FTDM_INVALID_SOCKET -1
 typedef int ftdm_socket_t;
 #include <stdio.h>
@@ -202,6 +244,14 @@ typedef enum {
 	FTDM_FALSE,
 	FTDM_TRUE
 } ftdm_bool_t;
+
+/*! \brief I/O waiting flags */
+typedef enum {
+	FTDM_NO_FLAGS = 0,
+	FTDM_READ =  (1 << 0),
+	FTDM_WRITE = (1 << 1),
+	FTDM_EVENTS = (1 << 2)
+} ftdm_wait_flag_t;
 
 /*! 
  * \brief FreeTDM channel.

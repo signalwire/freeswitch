@@ -414,7 +414,7 @@ static void output_csv(struct callback_data *p, const char *z, int bSep){
     }
   }
   if( bSep ){
-    fprintf(p->out, p->separator);
+    fprintf(p->out, "%s", p->separator);
   }
 }
 
@@ -1085,7 +1085,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='h' && strncmp(azArg[0], "help", n)==0 ){
-    fprintf(stderr,zHelp);
+    fprintf(stderr,"%s",zHelp);
   }else
 
   if( c=='i' && strncmp(azArg[0], "import", n)==0 && nArg>=3 ){

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -128,6 +128,10 @@ typedef enum {
 	ESL_EVENT_SOCKET_DATA,
 	ESL_EVENT_MEDIA_BUG_START,
 	ESL_EVENT_MEDIA_BUG_STOP,
+	ESL_EVENT_CONFERENCE_DATA_QUERY,
+	ESL_EVENT_CONFERENCE_DATA,
+	ESL_EVENT_CALL_SETUP_REQ,
+	ESL_EVENT_CALL_SETUP_RESULT,
 	ESL_EVENT_ALL
 } esl_event_types_t;
 

@@ -158,7 +158,7 @@ typedef struct t30_state_s t30_state_t;
     \param result The phase B event code.
     \return The new status. Normally, T30_ERR_OK is returned.
 */
-typedef int (t30_phase_b_handler_t)(t30_state_t *s, void *user_data, int result);
+typedef int (*t30_phase_b_handler_t)(t30_state_t *s, void *user_data, int result);
 
 /*!
     T.30 phase D callback handler.
@@ -168,7 +168,7 @@ typedef int (t30_phase_b_handler_t)(t30_state_t *s, void *user_data, int result)
     \param result The phase D event code.
     \return The new status. Normally, T30_ERR_OK is returned.
 */
-typedef int (t30_phase_d_handler_t)(t30_state_t *s, void *user_data, int result);
+typedef int (*t30_phase_d_handler_t)(t30_state_t *s, void *user_data, int result);
 
 /*!
     T.30 phase E callback handler.
@@ -177,7 +177,7 @@ typedef int (t30_phase_d_handler_t)(t30_state_t *s, void *user_data, int result)
     \param user_data An opaque pointer.
     \param completion_code The phase E completion code.
 */
-typedef void (t30_phase_e_handler_t)(t30_state_t *s, void *user_data, int completion_code);
+typedef void (*t30_phase_e_handler_t)(t30_state_t *s, void *user_data, int completion_code);
 
 /*!
     T.30 real time frame handler.
@@ -188,11 +188,11 @@ typedef void (t30_phase_e_handler_t)(t30_state_t *s, void *user_data, int comple
     \param msg The HDLC message.
     \param len The length of the message.
 */
-typedef void (t30_real_time_frame_handler_t)(t30_state_t *s,
-                                             void *user_data,
-                                             int direction,
-                                             const uint8_t msg[],
-                                             int len);
+typedef void (*t30_real_time_frame_handler_t)(t30_state_t *s,
+                                              void *user_data,
+                                              int direction,
+                                              const uint8_t msg[],
+                                              int len);
 
 /*!
     T.30 document handler.
@@ -201,7 +201,7 @@ typedef void (t30_real_time_frame_handler_t)(t30_state_t *s,
     \param user_data An opaque pointer.
     \param result The document event code.
 */
-typedef int (t30_document_handler_t)(t30_state_t *s, void *user_data, int status);
+typedef int (*t30_document_handler_t)(t30_state_t *s, void *user_data, int status);
 
 /*!
     T.30 set a receive or transmit type handler.
@@ -212,7 +212,7 @@ typedef int (t30_document_handler_t)(t30_state_t *s, void *user_data, int status
     \param short_train TRUE if the short training sequence should be used (where one exists).
     \param use_hdlc FALSE for bit stream, TRUE for HDLC framing.
 */
-typedef void (t30_set_handler_t)(void *user_data, int type, int bit_rate, int short_train, int use_hdlc);
+typedef void (*t30_set_handler_t)(void *user_data, int type, int bit_rate, int short_train, int use_hdlc);
 
 /*!
     T.30 send HDLC handler.
@@ -221,7 +221,7 @@ typedef void (t30_set_handler_t)(void *user_data, int type, int bit_rate, int sh
     \param msg The HDLC message.
     \param len The length of the message.
 */
-typedef void (t30_send_hdlc_handler_t)(void *user_data, const uint8_t msg[], int len);
+typedef void (*t30_send_hdlc_handler_t)(void *user_data, const uint8_t msg[], int len);
 
 /*!
     T.30 protocol completion codes, at phase E.
@@ -373,7 +373,11 @@ enum
     /*! T.81 + T.30 Annex K colour sYCC-JPEG compression */
     T30_SUPPORT_SYCC_T81_COMPRESSION = 0x200,
     /*! T.88 monochrome JBIG2 compression */
-    T30_SUPPORT_T88_COMPRESSION = 0x400
+    T30_SUPPORT_T88_COMPRESSION = 0x400,
+    /*! Dither a gray scale image down a simple bilevel image, with rescaling to fit a FAX page */
+    T30_SUPPORT_GRAY_TO_BILEVEL = 0x10000000,
+    /*! Dither a colour image down a simple bilevel image, with rescaling to fit a FAX page */
+    T30_SUPPORT_COLOUR_TO_BILEVEL = 0x20000000
 };
 
 enum
@@ -572,11 +576,11 @@ extern "C"
     \return A pointer to the context, or NULL if there was a problem. */
 SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
                                      int calling_party,
-                                     t30_set_handler_t *set_rx_type_handler,
+                                     t30_set_handler_t set_rx_type_handler,
                                      void *set_rx_type_user_data,
-                                     t30_set_handler_t *set_tx_type_handler,
+                                     t30_set_handler_t set_tx_type_handler,
                                      void *set_tx_type_user_data,
-                                     t30_send_hdlc_handler_t *send_hdlc_handler,
+                                     t30_send_hdlc_handler_t send_hdlc_handler,
                                      void *send_hdlc_user_data);
 
 /*! Release a T.30 context.
@@ -621,19 +625,13 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status);
     \return The next bit to transmit. */
 SPAN_DECLARE_NONSTD(int) t30_non_ecm_get_bit(void *user_data);
 
-/*! Get a byte of received non-ECM image data.
-    \brief Get a byte of received non-ECM image data.
-    \param user_data An opaque pointer, which must point to the T.30 context.
-    \return The next byte to transmit. */
-SPAN_DECLARE(int) t30_non_ecm_get_byte(void *user_data);
-
 /*! Get a chunk of received non-ECM image data.
     \brief Get a bit of received non-ECM image data.
     \param user_data An opaque pointer, which must point to the T.30 context.
     \param buf The buffer to contain the data.
     \param max_len The maximum length of the chunk.
     \return The actual length of the chunk. */
-SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_len);
+SPAN_DECLARE(int) t30_non_ecm_get(void *user_data, uint8_t buf[], int max_len);
 
 /*! Process a bit of received non-ECM image data.
     \brief Process a bit of received non-ECM image data
@@ -641,18 +639,12 @@ SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_
     \param bit The received bit. */
 SPAN_DECLARE_NONSTD(void) t30_non_ecm_put_bit(void *user_data, int bit);
 
-/*! Process a byte of received non-ECM image data.
-    \brief Process a byte of received non-ECM image data
-    \param user_data An opaque pointer, which must point to the T.30 context.
-    \param byte The received byte. */
-SPAN_DECLARE(void) t30_non_ecm_put_byte(void *user_data, int byte);
-
 /*! Process a chunk of received non-ECM image data.
     \brief Process a chunk of received non-ECM image data
     \param user_data An opaque pointer, which must point to the T.30 context.
     \param buf The buffer containing the received data.
     \param len The length of the data in buf. */
-SPAN_DECLARE(void) t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], int len);
+SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len);
 
 /*! Process a received HDLC frame.
     \brief Process a received HDLC frame.

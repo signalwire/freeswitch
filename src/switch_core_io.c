@@ -288,7 +288,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	if (switch_test_flag(session, SSF_READ_TRANSCODE) && !need_codec && switch_core_codec_ready(session->read_codec)) {
 		switch_core_session_t *other_session;
-		const char *uuid = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *uuid = switch_channel_get_partner_uuid(switch_core_session_get_channel(session));
 		switch_clear_flag(session, SSF_READ_TRANSCODE);
 		
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
@@ -498,21 +498,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					continue;
 				}
 
-				if (bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
-					switch_mutex_lock(bp->read_mutex);
-					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
-
-					if (bp->callback) {
-						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ);
-					}
-					switch_mutex_unlock(bp->read_mutex);
-				}
-
 				if (ok && switch_test_flag(bp, SMBF_READ_REPLACE)) {
 					do_bugs = 0;
 					if (bp->callback) {
 						bp->read_replace_frame_in = read_frame;
 						bp->read_replace_frame_out = read_frame;
+						bp->read_demux_frame = NULL;
 						if ((ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_REPLACE)) == SWITCH_TRUE) {
 							read_frame = bp->read_replace_frame_out;
 						}
@@ -525,6 +516,55 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				}
 
 
+			}
+			switch_thread_rwlock_unlock(session->bug_rwlock);
+			if (prune) {
+				switch_core_media_bug_prune(session);
+			}
+		}
+
+		if (session->bugs) {
+			switch_media_bug_t *bp;
+			switch_bool_t ok = SWITCH_TRUE;
+			int prune = 0;
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
+
+			for (bp = session->bugs; bp; bp = bp->next) {
+				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+					continue;
+				}
+
+				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+					continue;
+				}
+				if (switch_test_flag(bp, SMBF_PRUNE)) {
+					prune++;
+					continue;
+				}
+
+				if (ok && bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
+					switch_mutex_lock(bp->read_mutex);
+					if (bp->read_demux_frame) {
+						uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+						int bytes = read_frame->datalen / 2;
+
+						memcpy(data, read_frame->data, read_frame->datalen);
+						switch_unmerge_sln((int16_t *)data, bytes, bp->read_demux_frame->data, bytes);
+						switch_buffer_write(bp->raw_read_buffer, data, read_frame->datalen);
+					} else {
+						switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
+					}
+
+					if (bp->callback) {
+						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ);
+					}
+					switch_mutex_unlock(bp->read_mutex);
+				}
+
+				if ((bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL)) || ok == SWITCH_FALSE) {
+					switch_set_flag(bp, SMBF_PRUNE);
+					prune++;
+				}
 			}
 			switch_thread_rwlock_unlock(session->bug_rwlock);
 			if (prune) {
@@ -826,7 +866,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (switch_test_flag(session, SSF_WRITE_TRANSCODE) && !need_codec && switch_core_codec_ready(session->write_codec)) {
 		switch_core_session_t *other_session;
-		const char *uuid = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *uuid = switch_channel_get_partner_uuid(switch_core_session_get_channel(session));
 
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
 			switch_set_flag(other_session, SSF_READ_CODEC_RESET);
@@ -1429,6 +1469,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 
 	switch_assert(session != NULL);
 
+	if (zstr(dtmf_string)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (*dtmf_string == '~') {
 		dtmf_string++;
 		dtmf.flags = 0;
@@ -1438,9 +1482,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (zstr(dtmf_string)) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (strlen(dtmf_string) > 99) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Attempt to send very large dtmf string ignored!\n");

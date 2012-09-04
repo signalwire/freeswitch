@@ -91,7 +91,7 @@ void fax_log_final_transfer_statistics(t30_state_t *s, const char *tag)
     t30_get_transfer_statistics(s, &t);
     printf("%s: Bit rate %d\n", tag, t.bit_rate);
     printf("%s: ECM %s\n", tag, (t.error_correcting_mode)  ?  "on"  :  "off");
-    //printf("%s: RTP events %d. RTN events %d\n", tag, t.rtp_events, t.rtn_events);
+    printf("%s: RTP events %d. RTN events %d\n", tag, t.rtp_events, t.rtn_events);
     printf("%s: Tx pages %d, rx pages %d\n", tag, t.pages_tx, t.pages_rx);
 }
 /*- End of function --------------------------------------------------------*/

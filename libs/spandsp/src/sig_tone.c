@@ -45,7 +45,6 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/fast_convert.h"
-#include "spandsp/dc_restore.h"
 #include "spandsp/saturated.h"
 #include "spandsp/vector_int.h"
 #include "spandsp/complex.h"
@@ -647,9 +646,9 @@ SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int
     }
     memset(s, 0, sizeof(*s));
 #if !defined(SPANDSP_USE_FIXED_POINT)
-    for (j = 0;  j < 2;  j++)
+    for (j = 0;  j < 3;  j++)
     {
-        for (i = 0;  i < 3;  i++)
+        for (i = 0;  i < 2;  i++)
         {
             s->tone[j].notch_z1[i] = 0.0f;
             s->tone[j].notch_z2[i] = 0.0f;

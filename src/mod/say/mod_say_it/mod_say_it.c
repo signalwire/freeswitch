@@ -1,5 +1,6 @@
+
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -228,9 +229,11 @@ static switch_status_t it_say_general_count(switch_core_session_t *session,	char
 static switch_status_t it_say_time(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	int32_t t;
-	switch_time_t target = 0;
-	switch_time_exp_t tm;
-	uint8_t say_date = 0, say_time = 0;
+	switch_time_t target = 0, target_now = 0;
+	switch_time_exp_t tm, tm_now;
+	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *tz = switch_channel_get_variable(channel, "timezone");
 
 	if (say_args->type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
@@ -314,10 +317,28 @@ static switch_status_t it_say_time(switch_core_session_t *session, char *tosay, 
 
 	if ((t = atoi(tosay)) > 0) {
 		target = switch_time_make(t, 0);
+		target_now = switch_micro_time_now();
+
 	} else {
 		target = switch_micro_time_now();
+		target_now = switch_micro_time_now();
+
 	}
-	switch_time_exp_lt(&tm, target);
+
+	if (tz) {
+		int check = atoi(tz);
+		if (check) {
+			switch_time_exp_tz(&tm, target, check);
+			switch_time_exp_tz(&tm_now, target_now, check);
+		} else {
+			switch_time_exp_tz_name(tz, &tm, target);
+			switch_time_exp_tz_name(tz, &tm_now, target_now);
+		}
+	} else {
+		switch_time_exp_lt(&tm, target);
+		switch_time_exp_lt(&tm_now, target_now);
+	}
+
 
 	switch (say_args->type) {
 	case SST_CURRENT_DATE_TIME:
@@ -329,18 +350,80 @@ static switch_status_t it_say_time(switch_core_session_t *session, char *tosay, 
 	case SST_CURRENT_TIME:
 		say_time = 1;
 		break;
+	case SST_SHORT_DATE_TIME:
+		say_time = 1;
+		if (tm.tm_year != tm_now.tm_year) {
+			say_date = 1;
+			break;
+		}
+		if (tm.tm_yday == tm_now.tm_yday) {
+			say_today = 1;
+			break;
+		}
+		if (tm.tm_yday == tm_now.tm_yday - 1) {
+			say_yesterday = 1;
+			break;
+		}
+		if (tm.tm_yday >= tm_now.tm_yday - 5) {
+			say_dow = 1;
+			break;
+		}
+		if (tm.tm_mon != tm_now.tm_mon) {
+			say_month = say_day = say_dow = 1;
+			break;
+		}
+
+		say_month = say_day = say_dow = 1;
+
+		break;
 	default:
 		break;
 	}
 
+
+	if (say_today) {
+		say_file("time/today.wav");
+	}
+	if (say_yesterday) {
+		say_file("time/yesterday.wav");
+	}
+	if (say_dow) {
+		say_file("time/day-%d.wav", tm.tm_wday);
+	}
+
 	if (say_date) {
+		say_year = say_month = say_day = say_dow = 1;
+		say_today = say_yesterday = 0;
+
 		say_file("time/day-%d.wav", tm.tm_wday);
 		say_num(tm.tm_mday, SSM_PRONOUNCED);
 		say_file("time/mon-%d.wav", tm.tm_mon);
 		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
 	}
 
+       if (say_day) {
+		if (tm.tm_mday == 1) { /* 1 er Janvier,... 2 feb, 23 dec... */
+			say_args->gender = SSG_MASCULINE;
+	                say_num(tm.tm_mday, SSM_COUNTED);
+		} else {
+			say_args->gender = SSG_FEMININE;
+			say_num(tm.tm_mday, SSM_PRONOUNCED);
+		}
+        }
+
+	if (say_month) {
+		say_file("time/mon-%d.wav", tm.tm_mon);
+	}
+	if (say_year) {
+		say_args->gender = SSG_MASCULINE;
+		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
+	}
+
+
 	if (say_time) {
+		if (say_date || say_today || say_yesterday || say_dow) {
+			say_file("time/at.wav");
+		}
 		say_file("time/hours.wav");
 		say_num(tm.tm_hour, SSM_PRONOUNCED);
 
@@ -430,6 +513,9 @@ static switch_status_t it_say(switch_core_session_t *session, char *tosay, switc
 	case SST_CURRENT_DATE:
 	case SST_CURRENT_TIME:
 	case SST_CURRENT_DATE_TIME:
+		say_cb = it_say_time;
+		break;
+	case SST_SHORT_DATE_TIME:
 		say_cb = it_say_time;
 		break;
 	case SST_IP_ADDRESS:

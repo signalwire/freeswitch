@@ -486,47 +486,47 @@ void sngss7_sta_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, uint
 						g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic);
 		}
 
-		x = (g_ftdm_sngss7_data.cfg.procId * 1000) + 1;
+		x = (g_ftdm_sngss7_data.cfg.procId * MAX_CIC_MAP_LENGTH) + 1;
 		while ((g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) &&
-			   (g_ftdm_sngss7_data.cfg.isupCkt[x].id < ((g_ftdm_sngss7_data.cfg.procId +1) * 1000))) {
-		/**********************************************************************/
+			   (g_ftdm_sngss7_data.cfg.isupCkt[x].id < ((g_ftdm_sngss7_data.cfg.procId + 1) * MAX_CIC_MAP_LENGTH))) {
+			/**********************************************************************/
 			/* confirm this is a voice channel and not a gap/sig (no ftdmchan there) */
-			if (g_ftdm_sngss7_data.cfg.isupCkt[x].type != SNG_CKT_VOICE) goto move_along;
+			if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
+				/* compare the intfIds */
+				if (g_ftdm_sngss7_data.cfg.isupCkt[x].infId == intfId) {
+					/* we have a match, setup the pointers to the correct values */
+					circuit = x;
 
-			/* compare the intfIds */
-			if (g_ftdm_sngss7_data.cfg.isupCkt[x].infId == intfId) {
-				/* we have a match, setup the pointers to the correct values */
-				circuit = x;
+					/* confirm that the circuit is active on our side otherwise move to the next circuit */
+					if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[circuit], SNGSS7_ACTIVE)) {
+						SS7_DEBUG("[CIC:%d]Rx %s but circuit is not active yet, skipping!\n",
+									g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
+									DECODE_LCC_EVENT(evntType));
+						x++;
+						continue;
+					}
 
-			/* confirm that the circuit is active on our side otherwise move to the next circuit */
-			if (!sngss7_test_flag(&g_ftdm_sngss7_data.cfg.isupCkt[circuit], SNGSS7_ACTIVE)) {
-				SS7_DEBUG("[CIC:%d]Rx %s but circuit is not active yet, skipping!\n",
-							g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
-							DECODE_LCC_EVENT(evntType));
-				continue;
-			}
-				
-				if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
-					SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
-					SS7_FUNC_TRACE_EXIT(__FUNCTION__);
-					return;
+					if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
+						SS7_ERROR("Failed to extract channel data for circuit = %d!\n", circuit);
+						SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+						return;
+					}
+
+					/* bounce out of the loop */
+					break;
 				}
+			}
 
-				/* bounce out of the loop */
-				break;
-			} /* if (g_ftdm_sngss7_data.cfg.isupCkt[x].intfId == intfId) */
-
-move_along:
-			/* move along ... nothing to see here */
 			x++;
-
-		/**********************************************************************/
-		} /* while (g_ftdm_sngss7_data.cfg.isupCkt[x].id != 0) */
+			/**********************************************************************/
+		}
 
 		/* check if we found any circuits that are on the intfId, drop the message
-		 * if none are found
-		 */
-		if (ftdmchan == NULL) goto sta_ind_end;
+		 * if none are found */
+		if (!ftdmchan) {
+			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+			return;
+		}
 
 		break;
 	/**************************************************************************/
@@ -544,7 +544,6 @@ move_along:
 			SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 			return;
 		}
-		
 		break;
 	/**************************************************************************/
 	} /* switch (evntType) */
@@ -571,9 +570,6 @@ move_along:
 
 	/* enqueue this event */
 	ftdm_queue_enqueue(((sngss7_span_data_t*)sngss7_info->ftdmchan->span->signal_data)->event_queue, sngss7_event);
-
-sta_ind_end:
-	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 }
 
 /******************************************************************************/

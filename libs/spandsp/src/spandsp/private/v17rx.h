@@ -73,13 +73,13 @@ struct v17_rx_state_s
     void *qam_user_data;
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
-    float agc_scaling;
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
+    int16_t agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
-    float agc_scaling_save;
+    int16_t agc_scaling_save;
 
     /*! \brief The current delta factor for updating the equalizer coefficients. */
-    float eq_delta;
+    int16_t eq_delta;
     /*! \brief The adaptive equalizer coefficients. */
     complexi16_t eq_coeff[V17_EQUALIZER_LEN];
     /*! \brief A saved set of adaptive equalizer coefficients for use after restarts. */
@@ -98,19 +98,19 @@ struct v17_rx_state_s
 
     /*! \brief A measure of how much mismatch there is between the real constellation,
         and the decoded symbol positions. */
-    float training_error;
+    int32_t training_error;
 
     /*! \brief The proportional part of the carrier tracking filter. */
-    float carrier_track_p;
+    int32_t carrier_track_p;
     /*! \brief The integral part of the carrier tracking filter. */
-    float carrier_track_i;
+    int32_t carrier_track_i;
     /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
     int16_t rrc_filter[V17_RX_FILTER_STEPS];
 
     /*! \brief A pointer to the current constellation. */
     const complexi16_t *constellation;
 #else
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
     float agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     float agc_scaling_save;
@@ -150,7 +150,7 @@ struct v17_rx_state_s
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
 
-    /*! \brief The state of the differential decoder */
+    /*! \brief The current state of the differential decoder */
     int diff;
     /*! \brief The register for the data scrambler. */
     uint32_t scramble_reg;
@@ -228,7 +228,6 @@ struct v17_rx_state_s
                from the last states of the trellis. */
     float distances[8];
 #endif
-
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };

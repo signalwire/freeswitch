@@ -33,6 +33,7 @@
  * Massimo Cetra <devel@navynet.it>
  * Rupa Schomaker <rupa@rupa.com>
  * Joseph Sullivan <jossulli@amazon.com>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  * 
  * mod_commands.c -- Misc. Command Module
@@ -285,7 +286,7 @@ SWITCH_STANDARD_API(shutdown_function)
 
 SWITCH_STANDARD_API(version_function)
 {
-	stream->write_function(stream, "FreeSWITCH Version %s\n", SWITCH_VERSION_FULL);
+	stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_FULL_HUMAN);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1559,27 +1560,22 @@ SWITCH_STANDARD_API(regex_function)
 		goto error;
 	}
 
-	if ((proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-		if (argc > 2) {
-			len = (strlen(argv[0]) + strlen(argv[2]) + 10) * proceed;
-			substituted = malloc(len);
-			switch_assert(substituted);
-			memset(substituted, 0, len);
-			switch_replace_char(argv[2], '%', '$', SWITCH_FALSE);
-			switch_perform_substitution(re, proceed, argv[2], argv[0], substituted, len, ovector);
+	proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
 
-			stream->write_function(stream, "%s", substituted);
-			free(substituted);
-		} else {
-			stream->write_function(stream, "true");
-		}
+	if (argc > 2) {
+		len = (strlen(argv[0]) + strlen(argv[2]) + 10) * proceed;
+		substituted = malloc(len);
+		switch_assert(substituted);
+		memset(substituted, 0, len);
+		switch_replace_char(argv[2], '%', '$', SWITCH_FALSE);
+		switch_perform_substitution(re, proceed, argv[2], argv[0], substituted, len, ovector);
+
+		stream->write_function(stream, "%s", substituted);
+		free(substituted);
 	} else {
-		if (argc > 2) {
-			stream->write_function(stream, "%s", argv[0]);
-		} else {
-			stream->write_function(stream, "false");
-		}
+		stream->write_function(stream, proceed ? "true" : "false");
 	}
+
 	goto ok;
 
   error:
@@ -1733,6 +1729,7 @@ SWITCH_STANDARD_API(status_function)
 	char *http = NULL;
 	int sps = 0, last_sps = 0;
 	const char *var;
+	switch_size_t cur = 0, max = 0;
 
 	switch_core_measure_time(switch_core_uptime(), &duration);
 
@@ -1769,6 +1766,11 @@ SWITCH_STANDARD_API(status_function)
 	stream->write_function(stream, "%d session(s) max\n", switch_core_session_limit(0));
 	stream->write_function(stream, "min idle cpu %0.2f/%0.2f\n", switch_core_min_idle_cpu(-1.0), switch_core_idle_cpu());
 
+
+	if (switch_core_get_stacksizes(&cur, &max) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "Current Stack Size/Max %ldK/%ldK\n", cur / 1024, max / 1024);
+	}
+
 	if (html) {
 		stream->write_function(stream, "</b>\n");
 	}
@@ -1788,7 +1790,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
+#define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -1807,6 +1809,13 @@ SWITCH_STANDARD_API(ctl_function)
 			arg = 1;
 			switch_core_session_ctl(SCSC_HUPALL, &arg);
 			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "recover")) {
+			int r = switch_core_session_ctl(SCSC_RECOVER, argv[1]);
+			if (r < 0){
+				stream->write_function(stream, "+OK flushed\n");
+			} else {
+				stream->write_function(stream, "+OK %d session(s) recovered in total\n", r);
+			}
 		} else if (!strcasecmp(argv[0], "flush_db_handles")) {
 			switch_core_session_ctl(SCSC_FLUSH_DB_HANDLES, NULL);
 			stream->write_function(stream, "+OK\n");
@@ -1853,6 +1862,15 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_VERBOSE_EVENTS, &arg);
 
 			stream->write_function(stream, "+OK verbose_events is %s \n", arg ? "on" : "off");
+		} else if (!strcasecmp(argv[0], "api_expansion")) {
+			arg = -1;
+			if (argv[1]) {
+				arg = switch_true(argv[1]);
+			}
+
+			switch_core_session_ctl(SCSC_API_EXPANSION, &arg);
+
+			stream->write_function(stream, "+OK api_expansion is %s \n", arg ? "on" : "off");
 		} else if (!strcasecmp(argv[0], "threaded_system_exec")) {
 			arg = -1;
 			if (argv[1]) {
@@ -1913,6 +1931,16 @@ SWITCH_STANDARD_API(ctl_function)
 			int x = 0;
 			switch_core_session_ctl(SCSC_DEBUG_SQL, &x);
 			stream->write_function(stream, "+OK SQL DEBUG [%s]\n", x ? "on" : "off");			
+
+		} else if (!strcasecmp(argv[0], "sql")) {
+			if (argv[1]) {
+				int x = 0;
+				if (!strcasecmp(argv[1], "start")) {
+					x = 1;
+				}
+				switch_core_session_ctl(SCSC_SQL, &x);
+				stream->write_function(stream, "+OK\n");			
+			}
 
 		} else if (!strcasecmp(argv[0], "reclaim_mem")) {
 			switch_core_session_ctl(SCSC_RECLAIM, &arg);
@@ -2649,9 +2677,10 @@ SWITCH_STANDARD_API(sched_hangup_function)
 		char *cause_str = argv[2];
 		time_t when;
 		switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
+		int sec = atol(argv[0] + 1);
 
 		if (*argv[0] == '+') {
-			when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
+			when = switch_epoch_time_now(NULL) + sec;
 		} else {
 			when = atol(argv[0]);
 		}
@@ -2661,7 +2690,13 @@ SWITCH_STANDARD_API(sched_hangup_function)
 		}
 
 		if ((hsession = switch_core_session_locate(uuid))) {
-			switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
+			if (sec == 0) {
+				switch_channel_t *hchannel = switch_core_session_get_channel(hsession);
+				switch_channel_hangup(hchannel, cause);
+			} else {
+				switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
+			}
+
 			stream->write_function(stream, "+OK\n");
 			switch_core_session_rwunlock(hsession);
 		} else {
@@ -2703,6 +2738,55 @@ SWITCH_STANDARD_API(uuid_media_function)
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
+
+SWITCH_STANDARD_API(uuid_early_ok_function)
+{
+	char *uuid = (char *) cmd;
+	switch_core_session_t *xsession;
+
+	if (uuid && (xsession = switch_core_session_locate(uuid))) {
+		switch_channel_t *channel = switch_core_session_get_channel(xsession);
+		switch_channel_set_flag(channel, CF_EARLY_OK);
+		switch_core_session_rwunlock(xsession);
+	} else {
+		stream->write_function(stream, "-ERROR\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(uuid_pre_answer_function)
+{
+	char *uuid = (char *) cmd;
+	switch_core_session_t *xsession;
+
+	if (uuid && (xsession = switch_core_session_locate(uuid))) {
+		switch_channel_t *channel = switch_core_session_get_channel(xsession);
+		switch_channel_pre_answer(channel);
+		switch_core_session_rwunlock(xsession);
+	} else {
+		stream->write_function(stream, "-ERROR\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(uuid_answer_function)
+{
+	char *uuid = (char *) cmd;
+	switch_core_session_t *xsession;
+
+	if (uuid && (xsession = switch_core_session_locate(uuid))) {
+		switch_channel_t *channel = switch_core_session_get_channel(xsession);
+		switch_channel_answer(channel);
+		switch_core_session_rwunlock(xsession);
+	} else {
+		stream->write_function(stream, "-ERROR\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 #define BROADCAST_SYNTAX "<uuid> <path> [aleg|bleg|holdb|both]"
 SWITCH_STANDARD_API(uuid_broadcast_function)
@@ -3048,6 +3132,49 @@ SWITCH_STANDARD_API(uuid_phone_event_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SEND_MESSAGE_SYNTAX "<uuid> <message>"
+SWITCH_STANDARD_API(uuid_send_message_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 2) {
+		stream->write_function(stream, "-USAGE: %s\n", SEND_MESSAGE_SYNTAX);
+		goto end;
+	} else {
+		switch_core_session_message_t msg = { 0 };
+		switch_core_session_t *lsession = NULL;
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_MESSAGE;
+		msg.string_array_arg[2] = argv[1];
+		msg.from = __FILE__;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_rwunlock(lsession);
+		} else {
+			stream->write_function(stream, "-ERR Unable to find session for UUID\n");
+			goto end;
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+ end:
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define INFO_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_send_info_function)
 {
@@ -3066,6 +3193,45 @@ SWITCH_STANDARD_API(uuid_send_info_function)
 		switch_core_session_t *lsession = NULL;
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_INFO;
+		msg.string_array_arg[2] = argv[1];
+		msg.from = __FILE__;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_rwunlock(lsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+#define VIDEO_REFRESH_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(uuid_video_refresh_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 1) {
+		stream->write_function(stream, "-USAGE: %s\n", VIDEO_REFRESH_SYNTAX);
+	} else {
+		switch_core_session_message_t msg = { 0 };
+		switch_core_session_t *lsession = NULL;
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
 		msg.string_array_arg[2] = argv[1];
 		msg.from = __FILE__;
 
@@ -3398,7 +3564,7 @@ SWITCH_STANDARD_API(break_function)
 	channel = switch_core_session_get_channel(psession);
 
 	if (both) {
-		const char *quuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *quuid = switch_channel_get_partner_uuid(channel);
 		if (quuid && (qsession = switch_core_session_locate(quuid))) {
 			qchannel = switch_core_session_get_channel(qsession);
 		}
@@ -3869,9 +4035,49 @@ struct holder {
 	uint32_t count;
 	int print_title;
 	switch_xml_t xml;
+	cJSON *json;
 	int rows;
 	int justcount;
 };
+
+static int show_as_json_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct holder *holder = (struct holder *) pArg;
+	cJSON *row;
+	int x;
+
+	if (holder->count == 0) {
+		if (!(holder->json = cJSON_CreateArray())) {
+			return -1;
+		}
+	}
+
+	if (holder->justcount) {
+		holder->count++;
+		return 0;
+	}
+
+	if (!(row = cJSON_CreateObject())) {
+		return -1;
+	}
+
+	cJSON_AddItemToArray(holder->json, row);
+
+	for (x = 0; x < argc; x++) {
+		char *name = columnNames[x];
+		char *val = switch_str_nil(argv[x]);
+
+		if (!name) {
+			name = "undefined";
+		}
+
+		cJSON_AddItemToObject(row, name, cJSON_CreateString(val));
+	}
+
+	holder->count++;
+
+	return 0;
+}
 
 static int show_as_xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -4243,6 +4449,45 @@ SWITCH_STANDARD_API(show_function)
 		} else {
 			holder.stream->write_function(holder.stream, "<result row_count=\"0\"/>\n");
 		}
+	} else if (!strcasecmp(as, "json")) {
+
+		switch_cache_db_execute_sql_callback(db, sql, show_as_json_callback, &holder, &errmsg);
+
+		if (errmsg) {
+			stream->write_function(stream, "-ERR SQL Error [%s]\n", errmsg);
+			free(errmsg);
+			errmsg = NULL;
+		}
+
+		if (holder.json) {
+			cJSON *result;
+
+			if (!(result = cJSON_CreateObject())) {
+				cJSON_Delete(holder.json);
+				holder.json = NULL;
+				holder.stream->write_function(holder.stream, "-ERR Error creating json object!\n");
+			} else {
+				char *json_text;
+
+				cJSON_AddItemToObject(result, "row_count", cJSON_CreateNumber(holder.count));
+				cJSON_AddItemToObject(result, "rows", holder.json);
+
+				json_text = cJSON_PrintUnformatted(result);
+
+				if (!json_text) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+					holder.stream->write_function(holder.stream, "-ERR Memory Error!\n");
+				} else {
+					holder.stream->write_function(holder.stream, json_text);
+				}
+				cJSON_Delete(result);
+				switch_safe_free(json_text);
+			}
+
+		} else {
+			holder.stream->write_function(holder.stream, "{\"row_count\": 0}\n");
+		}
+
 	} else {
 		holder.stream->write_function(holder.stream, "-ERR Cannot find format %s\n", as);
 	}
@@ -4705,6 +4950,8 @@ SWITCH_STANDARD_API(uuid_dump_function)
 							switch_core_session_rwunlock(psession);
 							goto done;
 						}
+					} else if (!strcasecmp(format, "json")) {
+						switch_event_serialize_json(event, &buf);
 					} else {
 						switch_event_serialize(event, &buf, strcasecmp(format, "plain"));
 					}
@@ -5415,7 +5662,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "url_decode", "url decode a string", url_decode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "url_encode", "url encode a string", url_encode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param|attr] <name>");
+	SWITCH_ADD_API(commands_api_interface, "uuid_early_ok", "stop ignoring early media", uuid_early_ok_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user> <domain>");
+	SWITCH_ADD_API(commands_api_interface, "uuid_answer", "answer", uuid_answer_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_audio", "uuid_audio", session_audio_function, AUDIO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
@@ -5433,7 +5682,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_send_message", "Send MESSAGE to the endpoint", uuid_send_message_function, SEND_MESSAGE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_info", "Send info to the endpoint", uuid_send_info_function, INFO_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_video_refresh", "Send video refresh.", uuid_video_refresh_function, VIDEO_REFRESH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_outgoing_answer", "Answer Outgoing Channel", outgoing_answer_function, OUTGOING_ANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
@@ -5441,6 +5692,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_phone_event", "Send and event to the phone", uuid_phone_event_function, PHONE_EVENT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_pre_answer", "pre_answer", uuid_pre_answer_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_preprocess", "Pre-process Channel", preprocess_function, PREPROCESS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_record", "session record", session_record_function, SESS_REC_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_recovery_refresh", "Send a recovery_refresh", uuid_recovery_refresh, UUID_RECOVERY_REFRESH_SYNTAX);
@@ -5498,6 +5750,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl pause_check inbound");
 	switch_console_set_complete("add fsctl pause_check outbound");
 	switch_console_set_complete("add fsctl ready_check");
+	switch_console_set_complete("add fsctl recover");
 	switch_console_set_complete("add fsctl shutdown_check");
 	switch_console_set_complete("add fsctl shutdown");
 	switch_console_set_complete("add fsctl shutdown asap");
@@ -5563,6 +5816,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_displace ::console::list_uuid");
 	switch_console_set_complete("add uuid_display ::console::list_uuid");
 	switch_console_set_complete("add uuid_dump ::console::list_uuid");
+	switch_console_set_complete("add uuid_answer ::console::list_uuid");
+	switch_console_set_complete("add uuid_pre_answer ::console::list_uuid");
+	switch_console_set_complete("add uuid_early_ok ::console::list_uuid");
 	switch_console_set_complete("add uuid_exists ::console::list_uuid");
 	switch_console_set_complete("add uuid_fileman ::console::list_uuid");
 	switch_console_set_complete("add uuid_flush_dtmf ::console::list_uuid");
@@ -5598,6 +5854,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_simplify ::console::list_uuid");
 	switch_console_set_complete("add uuid_transfer ::console::list_uuid");
 	switch_console_set_complete("add uuid_dual_transfer ::console::list_uuid");
+	switch_console_set_complete("add uuid_video_refresh ::console::list_uuid");
 	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
 	switch_console_set_complete("add ...");

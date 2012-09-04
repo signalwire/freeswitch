@@ -31,9 +31,6 @@
 #ifndef HAVE_STRINGS_H
 #define HAVE_STRINGS_H 0
 #endif
-#ifndef NEED_MEMORY_H
-#define NEED_MEMORY_H 0
-#endif
 
 #include <stdio.h>
 
@@ -47,9 +44,6 @@ long strtol(const char *, char **, int);
 #include <string.h>	/* For memcpy */
 #elif HAVE_STRINGS_H
 #include <strings.h>
-#endif
-#if NEED_MEMORY_H
-#include <memory.h>
 #endif
 
 #include "cputime.h"

@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
     }
 
     fftw_destroy_plan(p);
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

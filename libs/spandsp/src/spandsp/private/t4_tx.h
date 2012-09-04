@@ -27,20 +27,87 @@
 #define _SPANDSP_PRIVATE_T4_TX_H_
 
 /*!
-    T.4 FAX compression/decompression descriptor. This defines the working state
-    for a single instance of a T.4 FAX compression or decompression channel.
+    TIFF specific state information to go with T.4 compression or decompression handling.
 */
-struct t4_state_s
+typedef struct
 {
-    /*! \brief The same structure is used for T.4 transmit and receive. This variable
-               records which mode is in progress. */
-    int rx;
+    /*! \brief The current file name. */
+    const char *file;
+    /*! \brief The libtiff context for the current TIFF file */
+    TIFF *tiff_file;
+
+    /*! \brief The compression type used in the TIFF file */
+    uint16_t compression;
+    /*! \brief Image type - bilevel, gray, colour */
+    int image_type;
+    /*! \brief The TIFF photometric setting for the current page. */
+    uint16_t photo_metric;
+    /*! \brief The TIFF fill order setting for the current page. */
+    uint16_t fill_order;
+
+    /*! \brief The number of pages in the current image file. */
+    int pages_in_file;
+
+    /*! \brief A pointer to the image buffer. */
+    uint8_t *image_buffer;
+    /*! \brief The size of the image in the image buffer, in bytes. */
+    int image_size;
+    /*! \brief The current size of the image buffer. */
+    int image_buffer_size;
+    /*! \brief Row counter for playing out the rows of the image. */
+    int row;
+
+    /*! \brief Image length of the image in the file. This is used when the
+               image is resized or dithered flat. */
+    int image_length;
+    /*! \brief Row counter used when the image is resized or dithered flat. */
+    int raw_row;
+} t4_tx_tiff_state_t;
+
+/*!
+    T.4 FAX compression metadata descriptor. This contains information about the image
+    which may be relevant to the backend, but is not generally relevant to the image
+    encoding process. The exception here is the y-resolution, which is used in T.4 2-D
+    encoding for non-ECM applications, to optimise the balance of density and robustness.
+*/
+typedef struct
+{
+    /*! \brief Column-to-column (X) resolution in pixels per metre. */
+    int x_resolution;
+    /*! \brief Row-to-row (Y) resolution in pixels per metre. */
+    int y_resolution;
+} t4_tx_metadata_t;
+
+/*!
+    T.4 FAX compression descriptor. This defines the working state
+    for a single instance of a T.4 FAX compression channel.
+*/
+struct t4_tx_state_s
+{
+    /*! \brief Callback function to read a row of pixels from the image source. */
+    t4_row_read_handler_t row_handler;
+    /*! \brief Opaque pointer passed to row_read_handler. */
+    void *row_handler_user_data;
 
     /*! \brief The type of compression used between the FAX machines. */
     int line_encoding;
 
-    /*! \brief The time at which handling of the current page began. */
-    time_t page_start_time;
+    int line_encoding_bilevel;
+    int line_encoding_gray;
+    int line_encoding_colour;
+
+    /*! \brief The width of the current page, in pixels. */
+    uint32_t image_width;
+    /*! \brief The length of the current page, in pixels. */
+    uint32_t image_length;
+
+    /*! \brief The size of the compressed image on the line side, in bits. */
+    int line_image_size;
+
+    /*! \brief The first page to transfer. -1 to start at the beginning of the file. */
+    int start_page;
+    /*! \brief The last page to transfer. -1 to continue to the end of the file. */
+    int stop_page;
 
     /*! \brief TRUE for FAX page headers to overlay (i.e. replace) the beginning of the
                page image. FALSE for FAX page headers to add to the overall length of
@@ -49,66 +116,47 @@ struct t4_state_s
     /*! \brief The text which will be used in FAX page header. No text results
                in no header line. */
     const char *header_info;
-    /*! \brief Optional per instance time zone for the FAX page header timestamp. */
-    struct tz_s *tz;
-
-    /*! \brief The size of the compressed image on the line side, in bits. */
-    int line_image_size;
-
-    /*! \brief The current number of bytes per row of uncompressed image data. */
-    int bytes_per_row;
-    /*! \brief The size of the image in the image buffer, in bytes. */
-    int image_size;
-    /*! \brief The current size of the image buffer. */
-    int image_buffer_size;
-    /*! \brief A point to the image buffer. */
-    uint8_t *image_buffer;
-
-    /*! \brief The number of pages transferred to date. */
+    /*! \brief The local ident string. This is used with header_info to form a
+               page header line. */ 
+    const char *local_ident;
+    /*! \brief The page number of current page. The first page is zero. If FAX page
+               headers are used, the page number in the header will be one more than
+               this value (i.e. they start from 1). */
     int current_page;
-    /*! \brief Column-to-column (X) resolution in pixels per metre. */
-    int x_resolution;
-    /*! \brief Row-to-row (Y) resolution in pixels per metre. */
-    int y_resolution;
-    /*! \brief Width of the current page, in pixels. */
-    int image_width;
-    /*! \brief Length of the current page, in pixels. */
-    int image_length;
-    /*! \brief Current pixel row number. */
-    int row;
 
-    /*! \brief This variable is set if we are treating the current row as a 2D encoded
-               one. */
-    int row_is_2d;
-    /*! \brief The current length of the current row. */
-    int row_len;
+    /*! \brief The composed text of the FAX page header, if there is one. */
+    char *header_text;
+    /*! \brief Optional per instance time zone for the FAX page header timestamp. */
+    tz_t *tz;
 
-    /*! \brief Black and white run-lengths for the current row. */
-    uint32_t *cur_runs;
-    /*! \brief Black and white run-lengths for the reference row. */
-    uint32_t *ref_runs;
-    /*! \brief Pointer to the buffer for the current pixel row. */
-    uint8_t *row_buf;
+    /*! \brief Row counter for playing out the rows of the header line. */
+    int header_row;
 
-    /*! \brief Encoded data bits buffer. */
-    uint32_t tx_bitstream;
-    /*! \brief The number of bits currently in tx_bitstream. */
-    int tx_bits;
+    union
+    {
+        t4_t6_encode_state_t t4_t6;
+        t42_encode_state_t t42;
+#if defined(SPANDSP_SUPPORT_T43)
+        t43_encode_state_t t43;
+#endif
+        t85_encode_state_t t85;
+    } encoder;
 
-    /*! \brief The current number of bits in the current encoded row. */
-    int row_bits;
-    /*! \brief The minimum bits in any row of the current page. For monitoring only. */
-    int min_row_bits;
-    /*! \brief The maximum bits in any row of the current page. For monitoring only. */
-    int max_row_bits;
+    image_translate_state_t translator;
+
+    int apply_lab;
+    lab_params_t lab_params;
+    uint8_t *colour_map;
+    int colour_map_entries;
+
+    /* Supporting information, like resolutions, which the backend may want. */
+    t4_tx_metadata_t metadata;
+
+    /*! \brief All TIFF file specific state information for the T.4 context. */
+    t4_tx_tiff_state_t tiff;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;
-
-    /*! \brief All TIFF file specific state information for the T.4 context. */
-    t4_tiff_state_t tiff;
-    t4_t6_decode_state_t t4_t6_rx;
-    t4_t6_encode_state_t t4_t6_tx;
 };
 
 #endif

@@ -1,14 +1,14 @@
 <profile name="external">
-  <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files --> 
+  <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
   <!-- This profile is only for outbound registrations to providers -->
   <gateways>
     <X-PRE-PROCESS cmd="include" data="external/*.xml"/>
   </gateways>
 
   <aliases>
-    <!-- 
-    <alias name="outbound"/>
-    <alias name="nat"/>
+    <!--
+        <alias name="outbound"/>
+        <alias name="nat"/>
     -->
   </aliases>
 
@@ -18,10 +18,10 @@
 
   <settings>
     <param name="debug" value="0"/>
-	<!-- If you want FreeSWITCH to shutdown if this profile fails to load, uncomment the next line. -->
-	<!-- <param name="shutdown-on-fail" value="true"/> -->
+    <!-- If you want FreeSWITCH to shutdown if this profile fails to load, uncomment the next line. -->
+    <!-- <param name="shutdown-on-fail" value="true"/> -->
     <param name="sip-trace" value="no"/>
-    <param name="sip-capture" value="no"/>        
+    <param name="sip-capture" value="no"/>
     <param name="rfc2833-pt" value="101"/>
     <!-- RFC 5626 : Send reg-id and sip.instance -->
     <!--<param name="enable-rfc-5626" value="true"/> -->
@@ -34,15 +34,15 @@
     <param name="hold-music" value="$${hold_music}"/>
     <param name="rtp-timer-name" value="soft"/>
     <!--<param name="enable-100rel" value="true"/>-->
-    <!--<param name="disable-srv503" value="true"/>-->                
+    <!--<param name="disable-srv503" value="true"/>-->
     <!-- This could be set to "passive" -->
     <param name="local-network-acl" value="localnet.auto"/>
     <param name="manage-presence" value="false"/>
 
-    <!-- used to share presence info across sofia profiles 
-	 manage-presence needs to be set to passive on this profile
-	 if you want it to behave as if it were the internal profile 
-	 for presence.
+    <!-- used to share presence info across sofia profiles
+         manage-presence needs to be set to passive on this profile
+         if you want it to behave as if it were the internal profile
+         for presence.
     -->
     <!-- Name of the db to use for this profile -->
     <!--<param name="dbname" value="share_presence"/>-->
@@ -56,8 +56,10 @@
     <param name="inbound-codec-negotiation" value="generous"/>
     <param name="nonce-ttl" value="60"/>
     <param name="auth-calls" value="false"/>
+    <param name="inbound-late-negotiation" value="true"/>
+    <param name="inbound-zrtp-passthru" value="true"/> <!-- (also enables late negotiation) -->
     <!--
-	DO NOT USE HOSTNAMES, ONLY IP ADDRESSES IN THESE SETTINGS!
+        DO NOT USE HOSTNAMES, ONLY IP ADDRESSES IN THESE SETTINGS!
     -->
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
@@ -90,6 +92,5 @@
     <param name="tls-verify-in-subjects" value=""/>
     <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
     <param name="tls-version" value="$${sip_tls_version}"/>
-
   </settings>
 </profile>

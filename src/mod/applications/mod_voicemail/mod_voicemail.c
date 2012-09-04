@@ -1815,6 +1815,7 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 	int total_new_urgent_messages = 0;
 	int total_saved_urgent_messages = 0;
 	switch_event_t *event;
+	switch_event_t *message_event;
 
 	message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages, &total_new_urgent_messages,
 				  &total_saved_urgent_messages);
@@ -1831,6 +1832,18 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", total_new_messages, total_saved_messages,
 							total_new_urgent_messages, total_saved_urgent_messages);
 	switch_event_fire(&event);
+
+
+	switch_event_create_subclass(&message_event, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
+	switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Action", "mwi-update");
+	switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-User", id);
+	switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
+	switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Total-New", "%d", total_new_messages);
+	switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Total-Saved", "%d", total_saved_messages);
+	switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Total-New-Urgent", "%d", total_new_urgent_messages);
+	switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Total-Saved-Urgent", "%d", total_saved_urgent_messages);
+
+	switch_event_fire(&message_event);
 }
 
 
@@ -2197,8 +2210,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						
 						if (fail) {
 							/* add feedback for user - let him/her know that the password they tried to change to is not allowed */
-							/* change the following macro to VM_CHANGE_PASS_FAIL_MACRO when new prompts have been recorded */
-							switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
+							switch_ivr_phrase_macro(session, VM_CHANGE_PASS_FAIL_MACRO, NULL, NULL, NULL);
 						} else {
 							sql = switch_mprintf("update voicemail_prefs set password='%s' where username='%s' and domain='%s'", buf, myid, domain_name);
 							vm_execute_sql(profile, sql, profile->mutex);
@@ -2536,7 +2548,10 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		if (authed) {
 			switch_channel_set_variable(channel, "user_pin_authenticated", "true");
 			switch_channel_set_variable(channel, "user_pin_authenticated_user", myid);
-			if (!zstr(myid)) switch_ivr_set_user(session, myid);
+			if (!zstr(myid) && !zstr(domain_name)) {
+				char *account = switch_core_session_sprintf(session, "%s@%s", myid, domain_name);
+				switch_ivr_set_user(session, account);
+			}
 		} else {
 			switch_channel_hangup(channel, SWITCH_CAUSE_USER_CHALLENGE);
 		}
@@ -3490,7 +3505,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 	switch_safe_free(file_path);
 
-	if (switch_channel_ready(channel)) {
+	if (switch_channel_ready(channel) && vm_enabled) {
 		status = switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
 	}
 
@@ -3523,11 +3538,11 @@ SWITCH_STANDARD_APP(voicemail_function)
 		if (argv[x] && !strcasecmp(argv[x], "check")) {
 			check++;
 			x++;
-		} else if (argv[x] && !strcasecmp(argv[x], "auth")) {
-			auth++;
-			x++;
 		} else if (argv[x] && !strcasecmp(argv[x], "auth_only")) {
 			auth = 2;
+			x++;
+		} else if (argv[x] && !strcasecmp(argv[x], "auth")) {
+			auth++;
 			x++;
 		} else {
 			break;
@@ -3572,7 +3587,7 @@ SWITCH_STANDARD_APP(voicemail_function)
 		return;
 	}
 
-	if (check) {
+	if (check || auth == 2) {
 		if (argv[x]) {
 			uuid = argv[x++];
 		}
@@ -3793,6 +3808,9 @@ static void actual_message_query_handler(switch_event_t *event)
 			if (globals.message_query_exact_match) {
 				if ((profile = (vm_profile_t *) switch_core_hash_find(globals.profile_hash, domain))) {
 					parse_profile();
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+									  "Cound not find a profile for domain: [%s] Returning 0 messages\nWhen message-query-exact-match is enabled you must have a dedicated vm profile per distinct domain name you wish to use.\n", domain);
 				}
 			} else {
 				for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
@@ -4896,6 +4914,8 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 				profile->name, SWITCH_PATH_SEPARATOR, domain, SWITCH_PATH_SEPARATOR, id);
 		char *final_file_path = switch_core_sprintf(pool, "%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, slot, profile->file_ext);
 
+		switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool);
+
 		if (file_path) {
 			if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
 				stream->write_function(stream, "-ERR Filename doesn't exist\n");
@@ -4990,6 +5010,8 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 				profile->name, SWITCH_PATH_SEPARATOR, domain, SWITCH_PATH_SEPARATOR, id);
 		char *final_file_path = switch_core_sprintf(pool, "%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
 
+		switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool);
+
 		if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "-ERR Filename doesn't exist\n");
 			profile_rwunlock(profile);
@@ -4997,6 +5019,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 		}
 
 		switch_file_rename(file_path, final_file_path, pool);
+
 		if (atoi(res) == 0) {
 			sql = switch_mprintf("INSERT INTO voicemail_prefs (username, domain, name_path) VALUES('%q', '%q', '%q')", id, domain, final_file_path);
 		} else {

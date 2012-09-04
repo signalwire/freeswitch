@@ -70,6 +70,9 @@ static int MONO = 1;
 static int MONO = 0;
 #endif
 
+
+static int SYSTEM_TIME = 0;
+
 /* clock_nanosleep works badly on some kernels but really well on others.
    timerfd seems to work well as long as it exists so if you have timerfd we'll also enable clock_nanosleep by default.
 */
@@ -140,7 +143,9 @@ typedef struct timer_matrix timer_matrix_t;
 
 static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 
-static void os_yield(void)
+static switch_time_t time_now(int64_t offset);
+
+SWITCH_DECLARE(void) switch_os_yield(void)
 {
 #if defined(WIN32)
 	SwitchToThread();
@@ -313,6 +318,11 @@ SWITCH_DECLARE(switch_time_t) switch_micro_time_now(void)
 	return (globals.RUNNING == 1 && runtime.timestamp) ? runtime.timestamp : switch_time_now();
 }
 
+SWITCH_DECLARE(switch_time_t) switch_mono_micro_time_now(void)
+{
+	return time_now(-1);
+}
+
 
 SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t)
 {
@@ -331,6 +341,12 @@ SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 #else
 	MONO = 0;
 #endif
+}
+
+
+SWITCH_DECLARE(void) switch_time_set_use_system_time(switch_bool_t enable)
+{
+	SYSTEM_TIME = enable;
 }
 
 
@@ -376,9 +392,15 @@ static switch_time_t time_now(int64_t offset)
 	if (MONO) {
 #ifndef WIN32
 		struct timespec ts;
-		clock_gettime(CLOCK_MONOTONIC, &ts);
+		clock_gettime(offset ? CLOCK_MONOTONIC : CLOCK_REALTIME, &ts);
+		if (offset < 0) offset = 0;
 		now = ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec / 1000) + offset;
 #else
+		if (offset == 0) {
+			return switch_time_now();
+		} else if (offset < 0) offset = 0;
+		
+
 		if (win32_use_qpc) {
 			/* Use QueryPerformanceCounter */
 			uint64_t count = 0;
@@ -420,7 +442,13 @@ static switch_time_t time_now(int64_t offset)
 
 SWITCH_DECLARE(switch_time_t) switch_time_ref(void)
 {
-	return time_now(0);
+	if (SYSTEM_TIME) {
+		/* Return system time reference */
+		return time_now(0);
+	} else {
+		/* Return monotonic time reference (when available) */
+		return time_now(-1);
+	}
 }
 
 static switch_time_t last_time = 0;
@@ -431,10 +459,22 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 
 	runtime.reference = switch_time_now();
 
-	runtime.offset = runtime.reference - time_now(0);
-	runtime.reference = time_now(runtime.offset);
+	if (SYSTEM_TIME) {
+		runtime.reference = time_now(0);
+		runtime.mono_reference = time_now(-1);
+		runtime.offset = 0;
+	} else {
+		runtime.offset = runtime.reference - time_now(-1); /* Get the offset between system time and the monotonic clock (when available) */
+		runtime.reference = time_now(runtime.offset);
+	}
+
+
 	if (runtime.reference - last_time > 1000000 || last_time == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Clock synchronized to system time.\n");
+		if (SYSTEM_TIME) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Clock is already configured to always report system time.\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Clock synchronized to system time.\n");
+		}
 	}
 	last_time = runtime.reference;
 
@@ -467,7 +507,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 SWITCH_DECLARE(void) switch_cond_next(void)
 {
 	if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
-		os_yield();
+		switch_os_yield();
 		return;
 	}
 #ifdef DISABLE_1MS_COND
@@ -633,7 +673,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 		check_roll();
 
 		if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
-			os_yield();
+			switch_os_yield();
 			globals.use_cond_yield = 0;
 		} else {
 			if (globals.use_cond_yield == 1) {
@@ -795,14 +835,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	runtime.profile_timer = switch_new_profile_timer();
 	switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
 
-#ifdef HAVE_CPU_SET_MACROS
-	if (runtime.timer_affinity > -1) {
-		cpu_set_t set;
-		CPU_ZERO(&set);
-		CPU_SET(0, &set);
-		sched_setaffinity(runtime.timer_affinity, sizeof(set), &set);
+	if (runtime.timer_affinity > -1) { 
+		switch_core_thread_set_cpu_affinity(runtime.timer_affinity);
 	}
-#endif
 
 	switch_time_sync();
 	time_sync = runtime.time_sync;
@@ -815,7 +850,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	if (MONO) {
 		int loops;
 		for (loops = 0; loops < 3; loops++) {
-			ts = time_now(0);
+			ts = switch_time_ref();
 			/* if it returns the same value every time it won't be of much use. */
 			if (ts == last) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Broken MONOTONIC Clock Detected!, Support Disabled.\n");
@@ -889,7 +924,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 
 			if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
-				os_yield();
+				switch_os_yield();
 			} else {
 				if (tfd > -1 && globals.RUNNING == 1) {
 					uint64_t exp;
@@ -946,7 +981,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 		runtime.timestamp = ts;
 		current_ms += (runtime.microseconds_per_tick / 1000);
-		tick += (runtime.microseconds_per_tick / 1000);
+		tick++;
 
 		if (time_sync < runtime.time_sync) {
 			time_sync++; /* Only step once for each loop, we want to make sure to keep this thread safe */
@@ -1075,7 +1110,7 @@ typedef struct {
 static switch_timezones_list_t TIMEZONES_LIST = { 0 };
 static switch_event_node_t *NODE = NULL;
 
-const char *switch_lookup_timezone(const char *tz_name)
+SWITCH_DECLARE(const char *) switch_lookup_timezone(const char *tz_name)
 {
 	char *value = NULL;
 
@@ -1258,6 +1293,8 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabled Windows monotonic clock, using timeGetTime()\n");
 		}
+
+		runtime.mono_initiated = switch_mono_micro_time_now(); /* Update mono_initiated, since now is the first time the real clock is enabled */
 	}
 
 	/* No need to calibrate clock in Win32, we will only sleep ms anyway, it's just not accurate enough */

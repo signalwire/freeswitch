@@ -262,6 +262,83 @@ Sub FindReplaceInFile(FileName, sFind, sReplace)
 	fNewFile.Close
 End Sub
 
+Function ExecAndGetResult(tmpFolder, VersionDir, execStr)
+	
+	Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpExec.Bat", True)
+	MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
+	MyFile.WriteLine("@" & execStr)
+	MyFile.Close
+	
+	Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpExec.Bat" & quote)
+	
+	ExecAndGetResult = Trim(OExec.StdOut.ReadLine())
+
+	Do
+	Loop While Not OExec.StdOut.atEndOfStream
+	
+	FSO.DeleteFile(tmpFolder & "tmpExec.Bat")
+
+End Function
+
+Function ExecAndGetExitCode(tmpFolder, VersionDir, execStr)
+	
+	Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpExec.Bat", True)
+	MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
+	MyFile.WriteLine("@" & execStr)
+	MyFile.WriteLine("@exit %ERRORLEVEL%")
+	MyFile.Close
+	
+	ExecAndGetExitCode = WshShell.Run("cmd /C " & quote & tmpFolder & "tmpExec.Bat" & quote, 0, True)
+	
+	FSO.DeleteFile(tmpFolder & "tmpExec.Bat")
+
+End Function
+
+Function pd(n, totalDigits)
+	If totalDigits > len(n) then
+		pd = String(totalDigits-len(n),"0") & n
+	Else
+		pd = n
+	End If
+End Function
+
+Function GetTimeUTC()
+
+    iOffset = WshShell.RegRead("HKLM\System\CurrentControlSet\Control\TimeZoneInformation\ActiveTimeBias")
+    
+    If IsNumeric(iOffset) Then
+    	GetTimeUTC = DateAdd("n", iOffset, Now())
+    Else
+    	GetTimeUTC = Now()
+    End If
+
+End Function
+
+Function GetWeekDay(DateTime)
+
+	DayOfWeek = DatePart("w", DateTime)
+
+	Select Case DayOfWeek
+		Case 1 GetWeekDay = "Sun"
+		Case 2 GetWeekDay = "Mon"
+		Case 3 GetWeekDay = "Tue"
+		Case 4 GetWeekDay = "Wed"
+		Case 5 GetWeekDay = "Thu"
+		Case 6 GetWeekDay = "Fri"
+		Case 7 GetWeekDay = "Sat"
+	End Select
+
+End Function
+
+Function GetMonthName(DateTime)
+
+	Val = MonthName(Month(DateTime), True)
+	Val = UCase(Left(Val, 1)) & Mid(Val, 2, 4)
+	
+	GetMonthName = Val
+	
+End Function
+
 Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	Dim oExec
 	
@@ -269,96 +346,63 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	strVerMinor = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MINOR")
 	strVerMicro = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MICRO")
 	strVerRev   = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_REVISION")
+	strVerHuman = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_REVISION_HUMAN")
 	
-	If Right(tmpFolder, 1) <> "\" Then tmpFolder = tmpFolder & "\" End If
-	If Not FSO.FileExists(tmpFolder & "fs_svnversion.exe") Then 
-		Wget ToolsBase & "fs_svnversion.exe", tmpFolder
-	End If	
-
-	If Not FSO.FileExists(tmpFolder & "libdb44.dll") Then 
-		Wget ToolsBase & "libdb44.dll", tmpFolder
-	End If	
-	If Not FSO.FileExists(tmpFolder & "libsvn_diff-1.dll") Then 
-		Wget ToolsBase & "libsvn_diff-1.dll", tmpFolder
-	End If	
-	If Not FSO.FileExists(tmpFolder & "libsvn_subr-1.dll") Then 
-		Wget ToolsBase & "libsvn_subr-1.dll", tmpFolder
-	End If	
-	If Not FSO.FileExists(tmpFolder & "libsvn_wc-1.dll") Then 
-		Wget ToolsBase & "libsvn_wc-1.dll", tmpFolder
-	End If	
-	If Not FSO.FileExists(tmpFolder & "intl3_svn.dll") Then 
-		Wget ToolsBase & "intl3_svn.dll", tmpFolder
-	End If	
-	If Not FSO.FileExists(tmpFolder & "libapr-1.dll") Then 
-		Wget ToolsBase & "libapr-1.dll", tmpFolder
-	End If	
-	If Not FSO.FileExists(tmpFolder & "libaprutil-1.dll") Then 
-		Wget ToolsBase & "libaprutil-1.dll", tmpFolder
-	End If	
-	If Not FSO.FileExists(tmpFolder & "libapriconv-1.dll") Then 
-		Wget ToolsBase & "libapriconv-1.dll", tmpFolder
-	End If	
-	If Not FSO.FileExists(tmpFolder & "libsvn_delta-1.dll") Then 
-		Wget ToolsBase & "libsvn_delta-1.dll", tmpFolder
-	End If	
-
-	Dim sLastFile
-	Const OverwriteIfExist = -1
-	Const ForReading       =  1
-
-	if strVerRev = "" Then
-		if FSO.FolderExists(VersionDir & ".svn") Then
-			VersionCmd="fs_svnversion " & quote & VersionDir & "." & quote &  " -n"
-			Set MyFile = fso.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
-			MyFile.WriteLine("@" & "cd " & quote & tmpFolder & quote )
-			MyFile.WriteLine("@" & VersionCmd)
-			MyFile.Close
-			Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
-			Do
-				strFromProc = OExec.StdOut.ReadLine()
-				VERSION="svn-" & strFromProc
-			Loop While Not OExec.StdOut.atEndOfStream
-			sLastVersion = ""
-			Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
-			If Not sLastFile.atEndOfStream Then
-				sLastVersion = sLastFile.ReadLine()
-			End If
-			sLastFile.Close
-		End If
-
-		if FSO.FolderExists(VersionDir & ".git") Then
-			VersionCmd="git log --format=" & quote & "%%h %%ci" & quote & " -1 HEAD"
-			Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
-			MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
-			MyFile.WriteLine("@" & VersionCmd)
-			MyFile.Close
-			Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
-			Do
-				strFromProc = Trim(OExec.StdOut.ReadLine())
-				VERSION="git-" & strFromProc
-			Loop While Not OExec.StdOut.atEndOfStream
-			sLastVersion = ""
-			Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
-			If Not sLastFile.atEndOfStream Then
-				sLastVersion = sLastFile.ReadLine()
-			End If
-			sLastFile.Close
-			VERSION = Replace(VERSION, ":", "-")
-		End If
-	End If
-	
-	if strVerRev <> "" Then
+	'Set version to the one reported by configure.in
+	If strVerRev <> "" Then
 	    VERSION = strVerRev
 	End If
 
-	If VERSION = "" Then
-		VERSION = "UNKNOWN"
-	End If
+	Dim sLastFile
+	Const ForReading = 1
+	Const ShowUnclean = False 'Don't show unclean state for now
 
-	If VERSION <> sLastVersion Then
+	'Try To read revision from git
+	If FSO.FolderExists(VersionDir & ".git") Then
+		'Get timestamp for last commit
+		strFromProc = ExecAndGetResult(tmpFolder, VersionDir, "git log -n1 --format=" & quote & "%%ct" & quote & " HEAD")
+		If IsNumeric(strFromProc) Then
+			lastChangedDateTime = DateAdd("s", strFromProc, "01/01/1970 00:00:00")
+			strLastCommit = YEAR(lastChangedDateTime) & Pd(Month(lastChangedDateTime), 2) & Pd(DAY(lastChangedDateTime), 2) & "T" & Pd(Hour(lastChangedDateTime), 2) & Pd(Minute(lastChangedDateTime), 2) & Pd(Second(lastChangedDateTime), 2) & "Z"
+			strLastCommitHuman = GetWeekDay(lastChangedDateTime) & ", " & Pd(DAY(lastChangedDateTime), 2) & " " & GetMonthName(lastChangedDateTime) & " " & YEAR(lastChangedDateTime) & " " & Pd(Hour(lastChangedDateTime), 2) & ":" & Pd(Minute(lastChangedDateTime), 2) & ":" & Pd(Second(lastChangedDateTime), 2) & " Z"
+		Else
+			strLastCommit = ""
+			strLastCommitHuman = ""
+		End If
+
+		'Get revision hash
+		strRevision = ExecAndGetResult(tmpFolder, VersionDir, "git rev-list -n1 --abbrev=10 --abbrev-commit HEAD")
+		
+		If strLastCommit <> "" And strLastCommitHuman <> "" And strRevision <> "" Then
+			'Bild version string
+			strGitVer = "+git~" & strLastCommit & "~" & strRevision
+			strVerHuman = strVerRev & "; git at commit " & strRevision & " on " & strLastCommitHuman
+
+			'Check for local changes, if found, append to git revision string
+			If ShowUnclean Then
+				If ExecAndGetExitCode(tmpFolder, VersionDir, "git diff-index --quiet HEAD") <> 0 Then
+					lastChangedDateTime = GetTimeUTC()
+					strGitVer = strGitVer & "+unclean~" & YEAR(lastChangedDateTime) & Pd(Month(lastChangedDateTime), 2) & Pd(DAY(lastChangedDateTime), 2) & "T" & Pd(Hour(lastChangedDateTime), 2) & Pd(Minute(lastChangedDateTime), 2) & Pd(Second(lastChangedDateTime), 2) & "Z"
+				End If
+			End If
+		Else
+			strGitVer = ""
+			strVerHuman = ""
+		End If
+
+		VERSION=VERSION & strGitVer
+
+		sLastVersion = ""
+		Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
+		If Not sLastFile.atEndOfStream Then
+			sLastVersion = sLastFile.ReadLine()
+		End If
+		sLastFile.Close
+	End If
+	
+	If VERSION & " " & strVerHuman <> sLastVersion Then
 		Set MyFile = fso.CreateTextFile(tmpFolder & "lastversion", True)
-		MyFile.WriteLine(VERSION)
+		MyFile.WriteLine(VERSION & " " & strVerHuman)
 		MyFile.Close
 	
 		FSO.CopyFile includebase, includedest, true
@@ -366,7 +410,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		FindReplaceInFile includedest, "@SWITCH_VERSION_MAJOR@", strVerMajor
 		FindReplaceInFile includedest, "@SWITCH_VERSION_MINOR@", strVerMinor
 		FindReplaceInFile includedest, "@SWITCH_VERSION_MICRO@", strVerMicro
-
+		FindReplaceInFile includedest, "@SWITCH_VERSION_REVISION_HUMAN@", strVerHuman
 	End If
 	
 End Sub

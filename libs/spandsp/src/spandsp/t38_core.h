@@ -201,11 +201,11 @@ typedef struct
 */
 typedef struct t38_core_state_s t38_core_state_t;
 
-typedef int (t38_tx_packet_handler_t)(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count);
+typedef int (*t38_tx_packet_handler_t)(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count);
 
-typedef int (t38_rx_indicator_handler_t)(t38_core_state_t *s, void *user_data, int indicator);
-typedef int (t38_rx_data_handler_t)(t38_core_state_t *s, void *user_data, int data_type, int field_type, const uint8_t *buf, int len);
-typedef int (t38_rx_missing_handler_t)(t38_core_state_t *s, void *user_data, int rx_seq_no, int expected_seq_no);
+typedef int (*t38_rx_indicator_handler_t)(t38_core_state_t *s, void *user_data, int indicator);
+typedef int (*t38_rx_data_handler_t)(t38_core_state_t *s, void *user_data, int data_type, int field_type, const uint8_t *buf, int len);
+typedef int (*t38_rx_missing_handler_t)(t38_core_state_t *s, void *user_data, int rx_seq_no, int expected_seq_no);
 
 #if defined(__cplusplus)
 extern "C"
@@ -398,11 +398,11 @@ SPAN_DECLARE(int) t38_core_restart(t38_core_state_t *s);
     \param tx_packet_user_data An opaque pointer passed to the tx_packet_handler.
     \return A pointer to the T.38 context, or NULL if there was a problem. */
 SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
-                                               t38_rx_indicator_handler_t *rx_indicator_handler,
-                                               t38_rx_data_handler_t *rx_data_handler,
-                                               t38_rx_missing_handler_t *rx_missing_handler,
+                                               t38_rx_indicator_handler_t rx_indicator_handler,
+                                               t38_rx_data_handler_t rx_data_handler,
+                                               t38_rx_missing_handler_t rx_missing_handler,
                                                void *rx_user_data,
-                                               t38_tx_packet_handler_t *tx_packet_handler,
+                                               t38_tx_packet_handler_t tx_packet_handler,
                                                void *tx_packet_user_data);
 
 /*! Release a signaling tone transmitter context.

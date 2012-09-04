@@ -9,7 +9,7 @@ IKS_LA=$(IKS_DIR)/src/libiksemel.la
 DING_DIR=$(BASE)/libs/libdingaling
 LOCAL_CFLAGS += -I$(DING_DIR)/src -I$(BASE)/libs/iksemel/include
 LOCAL_OBJS=$(DING_DIR)/src/libdingaling.o $(DING_DIR)/src/sha1.o $(IKS_LA)
-LOCAL_SOURCES=$(DING_DIR)/src/libdingaling.c $(DING_DIR)/src/sha1.c
+LOCAL_SOURCES=$(DING_DIR)/src/libdingaling.c $(DING_DIR)/src/sha1.c $(DING_DIR)/src/libdingaling.h
 LOCAL_LDFLAGS=$(LIBGNUTLS_LIBS)
 include $(BASE)/build/modmake.rules
 

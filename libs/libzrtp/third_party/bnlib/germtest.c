@@ -22,9 +22,6 @@
 #elif HAVE_STRINGS_H
 #include <strings.h>
 #endif
-#if NEED_MEMORY_H
-#include <memory.h>
-#endif
 
 #include <stdlib.h>	/* For malloc() */
 

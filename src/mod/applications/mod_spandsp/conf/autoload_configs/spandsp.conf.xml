@@ -34,7 +34,7 @@
 	<param name="file-prefix"	value="faxrx"/>
     </fax-settings>
 
-    <descriptors>
+    <descriptors debug-level="0">
 
      <!-- These tones are defined in Annex to ITU Operational Bulletin No. 781 - 1.II.2003 -->
      <!-- Various Tones Used in National Networks (According to ITU-T Recommendation E.180)(03/1998) -->
@@ -42,20 +42,25 @@
      <!-- North America -->
      <descriptor name="1">
        <tone name="CED_TONE">
-         <element freq1="2100" freq2="0" min="500" max="0"/>
+         <element freq1="2100" freq2="0" min="700" max="0"/>
        </tone>
        <tone name="SIT">
          <element freq1="950" freq2="0" min="256" max="400"/>
          <element freq1="1400" freq2="0" min="256" max="400"/>
          <element freq1="1800" freq2="0" min="256" max="400"/>
        </tone>
+       <tone name="RING_TONE" description="North America ring">
+         <element freq1="440" freq2="480" min="1200" max="0"/>
+       </tone>
        <tone name="REORDER_TONE">
-         <element freq1="480" freq2="620" min="224" max="272"/>
-         <element freq1="0" freq2="0" min="224" max="272"/>
+         <element freq1="480" freq2="620" min="224" max="316"/>
+         <element freq1="0" freq2="0" min="168" max="352"/>
+         <element freq1="480" freq2="620" min="224" max="316"/>
        </tone>
        <tone name="BUSY_TONE">
-         <element freq1="480" freq2="620" min="464" max="516"/>
-         <element freq1="0" freq2="0" min="464" max="516"/>
+         <element freq1="480" freq2="620" min="464" max="536"/>
+         <element freq1="0" freq2="0" min="464" max="572"/>
+         <element freq1="480" freq2="620" min="464" max="536"/>
        </tone>
      </descriptor>
 

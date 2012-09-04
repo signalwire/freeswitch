@@ -27,7 +27,7 @@
  * Michael Jerris <mike@jerris.com>
  * Bret McDanel <bret AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.com>
  *
  * switch_ivr_async.c -- IVR Library (async operations)
  *
@@ -1148,8 +1148,13 @@ struct eavesdrop_pvt {
 	switch_mutex_t *r_mutex;
 	switch_buffer_t *w_buffer;
 	switch_mutex_t *w_mutex;
+	switch_core_session_t *eavesdropper;
 	uint32_t flags;
+	switch_frame_t demux_frame;
+	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 };
+
+
 
 static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
@@ -1190,13 +1195,18 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 				if (switch_buffer_inuse(ep->r_buffer) >= rframe->datalen) {
 					uint32_t bytes;
 					switch_buffer_lock(ep->r_buffer);
-					bytes = (uint32_t) switch_buffer_read(ep->r_buffer, data, rframe->datalen);
+					bytes = (uint32_t) switch_buffer_read(ep->r_buffer, ep->data, rframe->datalen);
 
-					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) data, bytes / 2) * 2;
+					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) ep->data, bytes / 2) * 2;
 					rframe->samples = rframe->datalen / 2;
 
+					ep->demux_frame.data = ep->data;
+					ep->demux_frame.datalen = bytes;
+					ep->demux_frame.samples = bytes / 2;
+					
 					switch_buffer_unlock(ep->r_buffer);
 					switch_core_media_bug_set_read_replace_frame(bug, rframe);
+					switch_core_media_bug_set_read_demux_frame(bug, &ep->demux_frame);
 				}
 			}
 		}
@@ -1229,6 +1239,99 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	return SWITCH_TRUE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_pop_eavesdropper(switch_core_session_t *session, switch_core_session_t **sessionp)
+{
+	switch_media_bug_t *bug;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (switch_core_media_bug_pop(session, "eavesdrop", &bug) == SWITCH_STATUS_SUCCESS) {
+		struct eavesdrop_pvt *ep = (struct eavesdrop_pvt *) switch_core_media_bug_get_user_data(bug);
+
+		if (ep && ep->eavesdropper && ep->eavesdropper != session) {
+			switch_core_session_read_lock(ep->eavesdropper);
+			*sessionp = ep->eavesdropper;
+			switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+
+	return status;
+}
+
+struct exec_cb_data {
+	switch_core_session_t *caller;
+	char *var;
+	char *val;
+};
+
+static void exec_cb(switch_media_bug_t *bug, void *user_data)
+{
+	struct exec_cb_data *data = (struct exec_cb_data *) user_data;
+	struct eavesdrop_pvt *ep = (struct eavesdrop_pvt *) switch_core_media_bug_get_user_data(bug);
+
+	if (ep && ep->eavesdropper && ep->eavesdropper != data->caller) {
+		switch_channel_t *a = switch_core_session_get_channel(ep->eavesdropper);
+		switch_channel_t *b = switch_core_session_get_channel(data->caller);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s telling %s to exec %s:%s\n", 
+						  switch_channel_get_name(b), switch_channel_get_name(a), data->var, data->val);
+
+		switch_core_session_execute_application(ep->eavesdropper, data->var, data->val);
+	}
+}
+
+static void display_exec_cb(switch_media_bug_t *bug, void *user_data)
+{
+	struct exec_cb_data *data = (struct exec_cb_data *) user_data;
+	struct eavesdrop_pvt *ep = (struct eavesdrop_pvt *) switch_core_media_bug_get_user_data(bug);
+
+	if (ep && ep->eavesdropper && ep->eavesdropper != data->caller) {
+		switch_core_session_message_t msg = { 0 };
+
+		msg.from = __FILE__;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
+		msg.string_array_arg[0] = data->var;
+		msg.string_array_arg[1] = data->val;
+		
+		switch_core_session_receive_message(ep->eavesdropper, &msg);		
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_exec_all(switch_core_session_t *session, const char *app, const char *arg)
+{
+	struct exec_cb_data *data = NULL;
+
+	data = switch_core_session_alloc(session, sizeof(*data));
+	data->var = switch_core_session_strdup(session, app);
+	data->val = switch_core_session_strdup(session, arg);
+	data->caller = session;
+
+	return switch_core_media_bug_exec_all(session, "eavesdrop", exec_cb, data);
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_update_display(switch_core_session_t *session, const char *name, const char *number)
+{
+	struct exec_cb_data *data = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	data = switch_core_session_alloc(session, sizeof(*data));
+	data->var = switch_core_session_strdup(session, name);
+	data->val = switch_core_session_strdup(session, number);
+	data->caller = session;
+
+	if (!switch_channel_test_app_flag_key("EAVESDROP", channel, 1)) {
+		switch_channel_set_app_flag_key("EAVESDROP", channel, 1);
+		status = switch_core_media_bug_exec_all(session, "eavesdrop", display_exec_cb, data);
+		switch_channel_clear_app_flag_key("EAVESDROP", channel, 1);
+	}
+
+	return status;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session_t *session,
 															 const char *uuid, const char *require_group, switch_eavesdrop_flag_t flags)
 {
@@ -1236,6 +1339,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int codec_initialized = 0;
+	const char *name, *num;
 
 	if ((tsession = switch_core_session_locate(uuid))) {
 		struct eavesdrop_pvt *ep = NULL;
@@ -1341,6 +1445,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		write_frame.buflen = sizeof(buf);
 		write_frame.rate = codec.implementation->actual_samples_per_second;
 
+		ep->eavesdropper = session;
 		ep->flags = flags;
 		switch_mutex_init(&ep->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
 		switch_buffer_create_dynamic(&ep->buffer, 2048, 2048, 8192);
@@ -1370,9 +1475,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		/* Tell the channel we are going to be in a bridge */
 		msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 		switch_core_session_receive_message(session, &msg);
-		
 		cp = switch_channel_get_caller_profile(tchannel);
-		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", cp->caller_id_number, cp->caller_id_name);
+		name = cp->caller_id_name;
+		num = cp->caller_id_number;
+
+		if (flags & ED_COPY_DISPLAY) {
+			const char *tmp_name = NULL, *tmp_num = NULL;
+			name = cp->callee_id_name;
+			num = cp->callee_id_number;
+			
+			if (!((tmp_name = switch_channel_get_variable(tchannel, "last_sent_callee_id_name")) 
+				  && (tmp_num = switch_channel_get_variable(tchannel, "last_sent_callee_id_number")))) {
+				
+				tmp_name = switch_channel_get_variable(tchannel, "callee_id_name");
+				tmp_num = switch_channel_get_variable(tchannel, "callee_id_number");
+			}
+			
+			if (tmp_name) name = tmp_name;
+			if (tmp_num) num = tmp_num;
+			
+		}
+
+		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", name, num);
 		msg.string_arg = cid_buf;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
 		switch_core_session_receive_message(session, &msg);
@@ -3944,7 +4068,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		}
 	}
 
-	if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
+	if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_partner_uuid(channel))
 		&& (other_session = switch_core_session_locate(other_uuid))) {
 		if ((flags & SMF_EXEC_INLINE)) {
 			switch_core_session_execute_application_get_flags(other_session, app, path, &app_flags);

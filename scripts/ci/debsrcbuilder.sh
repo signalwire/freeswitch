@@ -1,60 +1,85 @@
-#!/bin/bash
+#!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
-src_repo="$(pwd)"
+sdir="."
+[ -n "${0%/*}" ] && sdir="${0%/*}"
+. $sdir/common.sh
 
-if [ ! -d .git ]; then
-  echo "error: must be run from within the top level of a FreeSWITCH git tree." 1>&2
-  exit 1;
+check_pwd
+check_input_ver_build $@
+in_ver="$1"
+if [ "$in_ver" = "auto" ]; then
+  in_ver="$(cat build/next-release.txt)"
 fi
+eval $(parse_version "$in_ver")
+datestamp="$(date +%Y%m%dT%H%M%SZ)"
+nightly="n${datestamp}"
+build="b${2-0}"
+distro="${3-unstable}"
+codename="${4-sid}"
 
-if [ -z "$1" ]; then
-  echo "usage: ./scripts/ci/debbuilder.sh MAJOR.MINOR.MICRO[.REVISION] BUILD_NUMBER" 1>&2
-  exit 1;
-fi
+fver="${dver}~${nightly}~${build}"
+fname="freeswitch-$fver"
+orig="freeswitch_$fver.orig"
+ddir=$src_repo/debbuild
+bdir=$src_repo/debbuild/$fname
 
-ver="$1"
-major=$(echo "$ver" | cut -d. -f1)
-minor=$(echo "$ver" | cut -d. -f2)
-micro=$(echo "$ver" | cut -d. -f3)
-rev=$(echo "$ver" | cut -d. -f4)
+mkdir -p $ddir
+git clone . $bdir
+cd $bdir
+set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
+echo "$gver" > .version
+cd libs
+getlib () {
+  f="${1##*/}"
+  echo "fetching: $1 to $f" >&2
+  wget -N "$1" \
+    && tar -xv --no-same-owner --no-same-permissions -f "$f" \
+    && rm -f "$f" \
+    && mkdir -p $f
+}
+getlib http://downloads.mongodb.org/cxx-driver/mongodb-linux-x86_64-v1.8-latest.tgz
+getlib http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/soundtouch-1.6.0.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/flite-1.5.4-current.tar.bz2
+getlib http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/opus-0.9.0.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/openldap-2.4.19.tar.gz
+getlib http://download.zeromq.org/zeromq-2.1.9.tar.gz \
+  || getlib http://download.zeromq.org/historic/zeromq-2.1.9.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.6.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
+getlib http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
+cd mongo-cxx-driver-v1.8
+rm -rf config.log .sconf_temp *Test *Example
+find . -name "*.o" -exec rm -f {} \;
+cd $ddir
+tar -c --exclude=.git -vf $orig.tar $fname
+echo "Compressing $orig.tar with xz -6..." >&2
+xz -6 $orig.tar
 
-build="$2"
-input_distro=$3
-distro=${input_distro:="unstable"}
+cd $bdir
+(cd debian && ./bootstrap.sh -c "$codename")
+# dch can't handle comments in control file
+(cd debian; \
+  mv control control.orig; \
+  grep -e '^#' -v control.orig > control)
+# dependency: libparse-debcontrol-perl
+dch -b -v "${fver}-1~${codename}+1" \
+  -M --force-distribution -D "$distro" \
+  "Nightly build at ${datestamp}."
+# dependency: fakeroot
+dpkg-buildpackage -S -rfakeroot -uc -us -i\.git -I.git -Zxz -z9 || exit ?
 
-dst_version="$major.$minor.$micro"
-dst_name="freeswitch-$dst_version"
-dst_parent="/tmp/"
-dst_dir="/tmp/$dst_name"
-dst_full_version="$dst_version.$build"
-dst_full_name="freeswitch-$dst_full_version"
-
-mkdir -p $src_repo/debbuild/
-
-tar xjf src_dist/$dst_name.tar.bz2 -C $src_repo/debbuild/
-mv $src_repo/debbuild/$dst_name $src_repo/debbuild/$dst_full_name
-mv src_dist/$dst_name.tar.bz2 $src_repo/debbuild/freeswitch_${dst_full_version}.orig.tar.bz2
-
-# Build the debian source package first, from the source tar file.
-echo "changing directory to $src_repo/debbuild/$dst_full_name"
-
-cd $src_repo/debbuild/$dst_full_name
-
-dch -v "${dst_full_version}-1" -M --force-distribution -D "$distro" "Nightly Build"
-
-dpkg-buildpackage -rfakeroot -S -us -uc
-
-status=$?
-
-if [ $status -gt 0 ]; then
-  exit $status
-else
-  cat 1>&2 <<EOF
+cat 1>&2 <<EOF
 ----------------------------------------------------------------------
-The v$ver-$build DEB-SRCs have been rolled, now we
-just need to push them to the YUM Repo
+The ${fname} DEB-SRCs have been rolled, now we
+just need to push them to the Debian repo
 ----------------------------------------------------------------------
 EOF
-fi
 

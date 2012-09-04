@@ -74,6 +74,8 @@
 
   #define _MMX_H_
 
+  #define cbrtf(value) pow((float)value, (float).333)
+
   #include <malloc.h> // To get alloca
 
 #endif

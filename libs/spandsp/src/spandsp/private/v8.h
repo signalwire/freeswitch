@@ -32,7 +32,7 @@ struct v8_state_s
     int calling_party;
 
     /*! \brief A handler to process the V.8 signals */
-    v8_result_handler_t *result_handler;
+    v8_result_handler_t result_handler;
     /*! \brief An opaque pointer passed to result_handler */
     void *result_handler_user_data;
 

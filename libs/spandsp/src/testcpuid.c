@@ -92,7 +92,7 @@ int has_MMX(void)
     int result;
 
     if (!have_cpuid_p())
-        return  0;
+        return 0;
     /*endif*/
     __asm__ __volatile__ (
         " push  %%ebx;\n"
@@ -107,7 +107,7 @@ int has_MMX(void)
 	: "=a" (result)
         : 
         : "ecx", "edx");
-    return  result;
+    return result;
 }
 /*- End of function --------------------------------------------------------*/
         
@@ -116,7 +116,7 @@ int has_SIMD(void)
     int result;
 
     if (!have_cpuid_p())
-        return  0;
+        return 0;
     /*endif*/
     __asm__ __volatile__ (
         " push  %%ebx;\n"
@@ -131,7 +131,7 @@ int has_SIMD(void)
 	: "=a" (result)
         : 
         : "ecx", "edx");
-    return  result;
+    return result;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -140,7 +140,7 @@ int has_SIMD2(void)
     int result;
 
     if (!have_cpuid_p())
-        return  0;
+        return 0;
     /*endif*/
     __asm__ __volatile__ (
         " push  %%ebx;\n"
@@ -155,7 +155,7 @@ int has_SIMD2(void)
 	: "=a" (result)
         : 
         : "ecx", "edx");
-    return  result;
+    return result;
 }
 /*- End of function --------------------------------------------------------*/
         
@@ -164,7 +164,7 @@ int has_3DNow(void)
     int result;
 
     if (!have_cpuid_p())
-        return  0;
+        return 0;
     /*endif*/
     __asm__ __volatile__ (
         " push  %%ebx;\n"
@@ -184,7 +184,7 @@ int has_3DNow(void)
 	: "=c" (result)
         : 
         : "eax", "edx");
-    return  result;
+    return result;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
     printf("SIMD2 is %x\n", result);
     result = has_3DNow();
     printf("3DNow is %x\n", result);
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 #endif

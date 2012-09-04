@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -21,18 +21,16 @@
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
- * This module (mod_skypopen) has been contributed by:
+ * This module (mod_gsmopen) has been contributed by:
  *
- * Giovanni Maruzzelli (gmaruzz@gmail.com)
+ * Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
- *
- * Further Contributors:
- *
- *
+ * Maintainer: Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
  * mod_skypopen.c -- Skype compatible Endpoint Module
  *
  */
+
 
 #include "skypopen.h"
 #define SKYPE_CHAT_PROTO "skype"
@@ -112,6 +110,7 @@ char *interface_status[] = {	/* should match SKYPOPEN_STATE_xxx in skypopen.h */
 	"PREANSW",
 	"DEAD"
 };
+
 char *skype_callflow[] = {		/* should match CALLFLOW_XXX in skypopen.h */
 	"IDLE",
 	"DOWN",
@@ -381,7 +380,7 @@ static switch_status_t interface_exists(char *the_interface)
 		if (tech_pvt->running && tech_pvt->SkypopenHandles.disp) {
 			XEvent e;
 			Atom atom1 = XInternAtom(tech_pvt->SkypopenHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN", False);
-			switch_sleep(20000); 
+			switch_sleep(20000);
 			XFlush(tech_pvt->SkypopenHandles.disp);
 			memset(&e, 0, sizeof(e));
 			e.xclient.type = ClientMessage;
@@ -739,6 +738,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
 static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 {
 	private_t *tech_pvt = NULL;
@@ -765,6 +765,7 @@ static switch_status_t channel_on_soft_execute(switch_core_session_t *session)
 	DEBUGA_SKYPE("%s CHANNEL SOFT_EXECUTE\n", SKYPOPEN_P_LOG, tech_pvt->name);
 	return SWITCH_STATUS_SUCCESS;
 }
+
 static switch_status_t channel_on_reset(switch_core_session_t *session)
 {
 	private_t *tech_pvt = NULL;
@@ -873,10 +874,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 
 		if (!bytes_read) {
-			switch_sleep(1000); //XXX don't like this
+			switch_sleep(1000);	//XXX don't like this
 			try++;
-			if (try < 5){
-				DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
+			if (try < 5) {
+				//DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
 				goto read;
 			}
 			DEBUGA_SKYPE("READ BUFFER EMPTY, skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
@@ -940,19 +941,19 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 						char *p = digit_str;
 						switch_channel_t *channel = switch_core_session_get_channel(session);
 
-						if(channel){
+						if (channel) {
 
 							while (p && *p) {
-								switch_dtmf_t dtmf = {0};
+								switch_dtmf_t dtmf = { 0 };
 								dtmf.digit = *p;
 								dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
 								switch_channel_queue_dtmf(channel, &dtmf);
 								p++;
 							}
-							NOTICA("DTMF DETECTED: [%s] new_dtmf_timestamp: %u, delta_t: %u\n", SKYPOPEN_P_LOG, digit_str, (unsigned int) new_dtmf_timestamp,
-									(unsigned int) (new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp));
+							NOTICA("DTMF DETECTED: [%s] new_dtmf_timestamp: %u, delta_t: %u\n", SKYPOPEN_P_LOG, digit_str,
+								   (unsigned int) new_dtmf_timestamp, (unsigned int) (new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp));
 							tech_pvt->old_dtmf_timestamp = new_dtmf_timestamp;
-						}else{
+						} else {
 							WARNINGA("NO CHANNEL ?\n", SKYPOPEN_P_LOG);
 						}
 					}
@@ -1077,7 +1078,7 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t * msg)
+static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
@@ -1648,7 +1649,7 @@ static switch_status_t load_config(int reload_type)
 			} else {
 				DEBUGA_SKYPE("Initialized XInitThreads!\n", SKYPOPEN_P_LOG);
 			}
-			switch_sleep(20000); 
+			switch_sleep(20000);
 #endif /* WIN32 */
 
 			if (interface_id && interface_id < SKYPOPEN_MAX_INTERFACES) {
@@ -1751,8 +1752,7 @@ static switch_status_t load_config(int reload_type)
 				switch_threadattr_detach_set(skypopen_signaling_thread_attr, 0);
 				switch_threadattr_stacksize_set(skypopen_signaling_thread_attr, SWITCH_THREAD_STACKSIZE);
 				//switch_threadattr_priority_increase(skypopen_signaling_thread_attr);
-				switch_thread_create(&globals.SKYPOPEN_INTERFACES[interface_id].
-									 skypopen_signaling_thread, skypopen_signaling_thread_attr,
+				switch_thread_create(&globals.SKYPOPEN_INTERFACES[interface_id].skypopen_signaling_thread, skypopen_signaling_thread_attr,
 									 skypopen_signaling_thread_func, &globals.SKYPOPEN_INTERFACES[interface_id], skypopen_module_pool);
 
 				switch_sleep(100000);
@@ -1858,8 +1858,8 @@ static switch_status_t load_config(int reload_type)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
 static switch_status_t chat_send(switch_event_t *message_event)
-								 
 {
 	char *user = NULL, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
 	private_t *tech_pvt = NULL;
@@ -1867,7 +1867,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	char skype_msg[1024];
 
 	const char *proto;
-	const char *from; 
+	const char *from;
 	const char *to;
 	const char *subject;
 	const char *body;
@@ -1885,7 +1885,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	switch_assert(proto != NULL);
 
 	//DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body, type,
-	//			 hint ? hint : "NULL");
+	//           hint ? hint : "NULL");
 	DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body,
 				 hint ? hint : "NULL");
 
@@ -1912,9 +1912,8 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		if ((host = strchr(user, '@'))) {
 			*host++ = '\0';
 		}
-
 		//DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body, type,
-		//			 hint ? hint : "NULL");
+		//           hint ? hint : "NULL");
 		DEBUGA_SKYPE("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, hint=%s)\n", SKYPOPEN_P_LOG, proto, from, to, subject, body,
 					 hint ? hint : "NULL");
 		if (hint && strlen(hint)) {
@@ -1950,13 +1949,14 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 			snprintf(skype_msg, sizeof(skype_msg), "CHAT CREATE %s", to);
 			skypopen_signaling_write(tech_pvt, skype_msg);
-			switch_sleep(20000); 
+			switch_sleep(20000);
 		}
 
 		found = 0;
 
 		while (!found) {
 			for (i = 0; i < MAX_CHATS; i++) {
+				//DEBUGA_SKYPE("tech_pvt->chats[i].dialog_partner='%s' to='%s'\n", SKYPOPEN_P_LOG, tech_pvt->chats[i].dialog_partner, to);
 				if (!strcmp(tech_pvt->chats[i].dialog_partner, to)) {
 					snprintf(skype_msg, sizeof(skype_msg), "CHATMESSAGE %s %s", tech_pvt->chats[i].chatname, body);
 					skypopen_signaling_write(tech_pvt, skype_msg);
@@ -1969,7 +1969,9 @@ static switch_status_t chat_send(switch_event_t *message_event)
 			}
 			tried++;
 			if (tried > 20) {
-				ERRORA("No chat with dialog_partner='%s' was found\n", SKYPOPEN_P_LOG, to);
+				ERRORA
+					("No chat with dialog_partner='%s' was found. (If you're using mod_sms this is a bug of mod_skypopen when using mod_sms, from next incoming message it will probably work...)\n",
+					 SKYPOPEN_P_LOG, to);
 				break;
 			}
 			switch_sleep(50000);
@@ -2075,7 +2077,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 					XEvent e;
 					Atom atom1 = XInternAtom(tech_pvt->SkypopenHandles.disp, "SKYPECONTROLAPI_MESSAGE_BEGIN",
 											 False);
-					switch_sleep(20000); 
+					switch_sleep(20000);
 					XFlush(tech_pvt->SkypopenHandles.disp);
 					memset(&e, 0, sizeof(e));
 					e.xclient.type = ClientMessage;
@@ -2171,7 +2173,7 @@ int dtmf_received(private_t *tech_pvt, char *value)
 		if (channel) {
 
 			if (switch_channel_test_flag(channel, CF_BRIDGED)
-					&& !switch_true(switch_channel_get_variable(channel, "skype_add_outband_dtmf_also_when_bridged"))) {
+				&& !switch_true(switch_channel_get_variable(channel, "skype_add_outband_dtmf_also_when_bridged"))) {
 
 
 				NOTICA
@@ -2193,12 +2195,50 @@ int dtmf_received(private_t *tech_pvt, char *value)
 			WARNINGA("received %c DTMF, but no channel?\n", SKYPOPEN_P_LOG, value[0]);
 		}
 		switch_core_session_rwunlock(session);
-	}else{
+	} else {
 		WARNINGA("received %c DTMF, but no session?\n", SKYPOPEN_P_LOG, value[0]);
 	}
 
 	return 0;
 }
+
+void *SWITCH_THREAD_FUNC skypopen_do_mod_sms_thread(switch_thread_t *thread, void *obj)
+{
+	switch_event_t *event;
+
+
+	event = obj;
+	switch_core_chat_send("GLOBAL", event);	/* mod_sms */
+
+	return event;
+
+}
+
+
+
+int start_mod_sms_thread(private_t *tech_pvt, switch_event_t *event)
+{
+	switch_threadattr_t *mod_sms_thread_thd_attr = NULL;
+	switch_thread_t *mod_sms_thread;
+
+
+	switch_threadattr_create(&mod_sms_thread_thd_attr, skypopen_module_pool);
+	switch_threadattr_detach_set(mod_sms_thread_thd_attr, 0);
+	switch_threadattr_stacksize_set(mod_sms_thread_thd_attr, SWITCH_THREAD_STACKSIZE);
+	if (switch_thread_create(&mod_sms_thread, mod_sms_thread_thd_attr, skypopen_do_mod_sms_thread, event, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
+		DEBUGA_SKYPE("started mod_sms_thread thread.\n", SKYPOPEN_P_LOG);
+	} else {
+		ERRORA("failed to start mod_sms_thread thread.\n", SKYPOPEN_P_LOG);
+		return -1;
+	}
+	if (mod_sms_thread == NULL) {
+		WARNINGA("mod_sms_thread exited\n", SKYPOPEN_P_LOG);
+		return -1;
+	}
+
+	return 0;
+}
+
 
 int start_audio_threads(private_t *tech_pvt)
 {
@@ -2235,7 +2275,8 @@ int start_audio_threads(private_t *tech_pvt)
 	switch_threadattr_priority_increase(tcp_srv_thread_thd_attr);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_srv);
 	//DEBUGA_SKYPE("debugging_hangup srv lock\n", SKYPOPEN_P_LOG);
-	if (switch_thread_create(&tech_pvt->tcp_srv_thread, tcp_srv_thread_thd_attr, skypopen_do_tcp_srv_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
+	if (switch_thread_create(&tech_pvt->tcp_srv_thread, tcp_srv_thread_thd_attr, skypopen_do_tcp_srv_thread, tech_pvt, skypopen_module_pool) ==
+		SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_srv_thread thread.\n", SKYPOPEN_P_LOG);
@@ -2252,7 +2293,8 @@ int start_audio_threads(private_t *tech_pvt)
 	switch_threadattr_priority_increase(tcp_cli_thread_thd_attr);
 	switch_mutex_lock(tech_pvt->mutex_thread_audio_cli);
 	//DEBUGA_SKYPE("debugging_hangup cli lock\n", SKYPOPEN_P_LOG);
-	if (switch_thread_create(&tech_pvt->tcp_cli_thread, tcp_cli_thread_thd_attr, skypopen_do_tcp_cli_thread, tech_pvt, skypopen_module_pool) == SWITCH_STATUS_SUCCESS) {
+	if (switch_thread_create(&tech_pvt->tcp_cli_thread, tcp_cli_thread_thd_attr, skypopen_do_tcp_cli_thread, tech_pvt, skypopen_module_pool) ==
+		SWITCH_STATUS_SUCCESS) {
 		DEBUGA_SKYPE("started tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);
 	} else {
 		ERRORA("failed to start tcp_cli_thread thread.\n", SKYPOPEN_P_LOG);
@@ -2470,27 +2512,26 @@ SWITCH_STANDARD_API(sk_function)
 		goto end;
 	}
 
-	
-	if (!strcasecmp(argv[0], "balances")) {
-	    stream->write_function(stream, "  Name  \tBalance\tCurrency\n");
-	    stream->write_function(stream, "  ====  \t=======\t========\n");
-	    
-	    for (tmp_i = 0; tmp_i < SKYPOPEN_MAX_INTERFACES; tmp_i++) {
-		if (strlen(globals.SKYPOPEN_INTERFACES[tmp_i].name)) {
-        		skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[tmp_i], "GET PROFILE PSTN_BALANCE");
-			switch_sleep(20000);
-			
-			strncpy(tmp_message, globals.SKYPOPEN_INTERFACES[tmp_i].message, sizeof(globals.SKYPOPEN_INTERFACES[tmp_i].message));
-			
-        		skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[tmp_i], "GET PROFILE PSTN_BALANCE_CURRENCY");
-			switch_sleep(20000);
-			if(strlen(tmp_message)>21 && strlen(globals.SKYPOPEN_INTERFACES[tmp_i].message) > 30)
-			    stream->write_function(stream, "  %s \t%s\t%s\n", globals.SKYPOPEN_INTERFACES[tmp_i].name, tmp_message+21,  globals.SKYPOPEN_INTERFACES[tmp_i].message+30);
-	        }
-	    }
-	}
 
-	if (!strcasecmp(argv[0], "list")) {
+	if (!strcasecmp(argv[0], "balances")) {
+		stream->write_function(stream, "  Name  \tBalance\tCurrency\n");
+		stream->write_function(stream, "  ====  \t=======\t========\n");
+
+		for (tmp_i = 0; tmp_i < SKYPOPEN_MAX_INTERFACES; tmp_i++) {
+			if (strlen(globals.SKYPOPEN_INTERFACES[tmp_i].name)) {
+				skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[tmp_i], "GET PROFILE PSTN_BALANCE");
+				switch_sleep(20000);
+
+				strncpy(tmp_message, globals.SKYPOPEN_INTERFACES[tmp_i].message, sizeof(globals.SKYPOPEN_INTERFACES[tmp_i].message));
+
+				skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[tmp_i], "GET PROFILE PSTN_BALANCE_CURRENCY");
+				switch_sleep(20000);
+				if (strlen(tmp_message) > 21 && strlen(globals.SKYPOPEN_INTERFACES[tmp_i].message) > 30)
+					stream->write_function(stream, "  %s \t%s\t%s\n", globals.SKYPOPEN_INTERFACES[tmp_i].name, tmp_message + 21,
+										   globals.SKYPOPEN_INTERFACES[tmp_i].message + 30);
+			}
+		}
+	} else if (!strcasecmp(argv[0], "list")) {
 		int i;
 		unsigned int ib = 0;
 		unsigned int ib_failed = 0;
@@ -2503,14 +2544,14 @@ SWITCH_STANDARD_API(sk_function)
 
 		for (i = 0; i < SKYPOPEN_MAX_INTERFACES; i++) {
 			if (strlen(globals.SKYPOPEN_INTERFACES[i].name)) {
-			next_flag_char = i == globals.next_interface ? '*' : ' ';
-			ib += globals.SKYPOPEN_INTERFACES[i].ib_calls;
-			ib_failed += globals.SKYPOPEN_INTERFACES[i].ib_failed_calls;
-			ob += globals.SKYPOPEN_INTERFACES[i].ob_calls;
-			ob_failed += globals.SKYPOPEN_INTERFACES[i].ob_failed_calls;
+				next_flag_char = i == globals.next_interface ? '*' : ' ';
+				ib += globals.SKYPOPEN_INTERFACES[i].ib_calls;
+				ib_failed += globals.SKYPOPEN_INTERFACES[i].ib_failed_calls;
+				ob += globals.SKYPOPEN_INTERFACES[i].ob_calls;
+				ob_failed += globals.SKYPOPEN_INTERFACES[i].ob_failed_calls;
 
 				stream->write_function(stream,
-									   "%c %d\t[%s]\t%3u/%u\t%6u/%u\t%s\t%s\t%s\n",
+									   "%c %d\t[%6s]\t%3u/%u\t%6u/%u\t%s\t%s\t%s\n",
 									   next_flag_char,
 									   i, globals.SKYPOPEN_INTERFACES[i].name,
 									   globals.SKYPOPEN_INTERFACES[i].ib_failed_calls,
@@ -2966,12 +3007,24 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SKYPE_CHAT_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
+/* mod_sms begin */
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->skype_user);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", SKYPE_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->chatmessages[which].from_handle);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
+/* mod_sms end */
+
 		switch_event_add_body(event, "%s", tech_pvt->chatmessages[which].body);
+
 		if (session) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
 			if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
@@ -3013,7 +3066,36 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 	if (session) {
 		switch_core_session_rwunlock(session);
 	}
-	memset(&tech_pvt->chatmessages[which], '\0', sizeof(&tech_pvt->chatmessages[which]));
+
+
+	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SKYPE_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
+/* mod_sms begin */
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->skype_user);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", SKYPE_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->chatmessages[which].from_handle);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
+/* mod_sms end */
+
+		switch_event_add_body(event, "%s", tech_pvt->chatmessages[which].body);
+		//switch_core_chat_send("GLOBAL", event); /* mod_sms */
+		start_mod_sms_thread(tech_pvt, event);
+		//usleep(20000);
+
+	} else {
+		ERRORA("cannot create event on interface %s. WHY?????\n", SKYPOPEN_P_LOG, tech_pvt->name);
+	}
+
 	return 0;
 }
 
@@ -3030,19 +3112,19 @@ static switch_status_t compat_chat_send(const char *proto, const char *from, con
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "subject", subject);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "type", type);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
-		
+
 		if (body) {
 			switch_event_add_body(message_event, "%s", body);
 		}
 	} else {
 		abort();
-	}	
+	}
 
 	status = chat_send(message_event);
 	switch_event_destroy(&message_event);
 
 	return status;
-	
+
 }
 
 SWITCH_STANDARD_API(skypopen_chat_function)
@@ -3084,8 +3166,9 @@ SWITCH_STANDARD_API(skypopen_chat_function)
 			goto end;
 		} else {
 
-			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", SKYPOPEN_P_LOG, SKYPE_CHAT_PROTO, tech_pvt->skype_user,
-				   argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), tech_pvt->name);
+			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", SKYPOPEN_P_LOG, SKYPE_CHAT_PROTO,
+				   tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]),
+				   tech_pvt->name);
 
 			compat_chat_send(SKYPE_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE",
 							 switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, tech_pvt->name);

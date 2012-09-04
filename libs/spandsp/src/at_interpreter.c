@@ -434,13 +434,13 @@ static int match_element(const char **variant, const char *variants)
         if (len == (int) strlen(*variant)  &&  memcmp(*variant, s, len) == 0)
         {
             *variant += len;
-            return  i;
+            return i;
         }
         s += len;
         if (*s == ',')
             s++;
     }
-    return  -1;
+    return -1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -804,7 +804,7 @@ static int process_class1_cmd(at_state_t *s, const char **t)
     if (val < 0)
     {
         /* It was just a query */
-        return  TRUE;
+        return TRUE;
     }
     /* All class 1 FAX commands are supposed to give an ERROR response, if the phone
        is on-hook. */
@@ -5501,9 +5501,9 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
-                                   at_tx_handler_t *at_tx_handler,
+                                   at_tx_handler_t at_tx_handler,
                                    void *at_tx_user_data,
-                                   at_modem_control_handler_t *modem_control_handler,
+                                   at_modem_control_handler_t modem_control_handler,
                                    void *modem_control_user_data)
 {
     if (s == NULL)

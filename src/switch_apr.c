@@ -665,6 +665,11 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 
 /* socket stubs */
 
+SWITCH_DECLARE(switch_status_t) switch_os_sock_get(switch_os_socket_t *thesock, switch_socket_t *sock)
+{
+	return apr_os_sock_get(thesock, sock);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_socket_addr_get(switch_sockaddr_t ** sa, switch_bool_t remote, switch_socket_t *sock)
 {
 	return apr_socket_addr_get(sa, (apr_interface_e) remote, sock);
@@ -1169,6 +1174,11 @@ SWITCH_DECLARE(switch_status_t) switch_thread_exit(switch_thread_t *thd, switch_
  */
 SWITCH_DECLARE(switch_status_t) switch_thread_join(switch_status_t *retval, switch_thread_t *thd)
 {
+	if ( !thd ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Attempting to join thread that does not exist\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	return apr_thread_join((apr_status_t *) retval, (apr_thread_t *) thd);
 }
 

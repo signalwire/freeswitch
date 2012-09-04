@@ -43,7 +43,7 @@ being negotiating and training with their chosen modem standard.
 
 typedef struct v8_parms_s v8_parms_t;
 
-typedef void (v8_result_handler_t)(void *user_data, v8_parms_t *result);
+typedef void (*v8_result_handler_t)(void *user_data, v8_parms_t *result);
 
 enum v8_call_function_e
 {
@@ -118,6 +118,8 @@ struct v8_parms_s
 {
     int status;
     int modem_connect_tone;
+    int send_ci;
+    int v92;
     int call_function;
     unsigned int modulations;
     int protocol;
@@ -147,7 +149,7 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s,
 SPAN_DECLARE(v8_state_t *) v8_init(v8_state_t *s,
                                    int calling_party,
                                    v8_parms_t *parms,
-                                   v8_result_handler_t *result_handler,
+                                   v8_result_handler_t result_handler,
                                    void *user_data);
 
 /*! Release a V.8 context.

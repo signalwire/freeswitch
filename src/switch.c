@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Pawel Pierscionek <pawel@voiceworks.pl>
@@ -68,6 +68,10 @@ static switch_core_flag_t service_flags = SCF_NONE;
 
 /* event to signal shutdown (for you unix people, this is like a pthread_cond) */
 static HANDLE shutdown_event;
+
+#ifndef PATH_MAX
+#define PATH_MAX 256
+#endif
 #endif
 
 /* signal handler for when freeswitch is running in background mode.
@@ -100,9 +104,7 @@ static void handle_SIGCHLD(int sig)
 	if (sig) {};
 
 	pid = wait(&status);
-	
 	if (pid > 0) {
-		printf("ASS %d\n", pid);
 		system_ready = -1;
 	}
 
@@ -114,7 +116,7 @@ static void handle_SIGCHLD(int sig)
 static int freeswitch_kill_background()
 {
 	FILE *f;					/* FILE handle to open the pid file */
-	char path[256] = "";		/* full path of the PID file */
+	char path[PATH_MAX] = "";		/* full path of the PID file */
 	pid_t pid = 0;				/* pid from the pid file */
 
 	/* set the globals so we can use the global paths. */
@@ -237,75 +239,68 @@ void WINAPI service_main(DWORD numArgs, char **args)
 
 #else
 
-void daemonize(int do_wait)
+static void daemonize(int do_wait)
 {
 	int fd;
 	pid_t pid;
 
 	if (!do_wait) {
 		switch (fork()) {
-		case 0:
+		case 0:		/* child process */
 			break;
 		case -1:
 			fprintf(stderr, "Error Backgrounding (fork)! %d - %s\n", errno, strerror(errno));
-			exit(0);
+			exit(EXIT_SUCCESS);
 			break;
-		default:
-			exit(0);
+		default:	/* parent process */
+			exit(EXIT_SUCCESS);
 		}
 
 		if (setsid() < 0) {
 			fprintf(stderr, "Error Backgrounding (setsid)! %d - %s\n", errno, strerror(errno));
-			exit(0);
+			exit(EXIT_SUCCESS);
 		}
 	}
 
 	pid = fork();
 
 	switch (pid) {
-	case 0:
+	case 0:		/* child process */
 		break;
 	case -1:
 		fprintf(stderr, "Error Backgrounding (fork2)! %d - %s\n", errno, strerror(errno));
-		exit(0);
+		exit(EXIT_SUCCESS);
 		break;
-	default:
-		{
-			fprintf(stderr, "%d Backgrounding.\n", (int) pid);
+	default:	/* parent process */
+		fprintf(stderr, "%d Backgrounding.\n", (int) pid);
 
+		if (do_wait) {
+			unsigned int sanity = 60;
+			char *o;
 
-			if (do_wait) {
-				unsigned int sanity = 60;
-				char *o;
-
-				if ((o = getenv("FREESWITCH_BG_TIMEOUT"))) {
-					int tmp = atoi(o);
-					if (tmp > 0) {
-						sanity = tmp;
-					}
+			if ((o = getenv("FREESWITCH_BG_TIMEOUT"))) {
+				int tmp = atoi(o);
+				if (tmp > 0) {
+					sanity = tmp;
 				}
-
-				while(--sanity && !system_ready) {
-				
-					if (sanity % 2 == 0) {
-						printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", getpid(), (int) pid);
-					}
-					sleep(1);
-				}
-
-				if (system_ready == 1) {
-					printf("FreeSWITCH[%d] System Ready pid:%d\n", (int) getpid(), (int) pid);
-				} else {
-					printf("FreeSWITCH[%d] Error starting system! pid:%d\n", (int)getpid(), (int) pid);
-					kill(pid, 9);
-					exit(-1);
-				}
-			
 			}
 
-		}
+			while (--sanity && !system_ready) {
 
-		exit(0);
+				if (sanity % 2 == 0) {
+					printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", (int)getpid(), (int) pid);
+				}
+				sleep(1);
+			}
+			if (!system_ready) {
+				printf("FreeSWITCH[%d] Error starting system! pid:%d\n", (int)getpid(), (int) pid);
+				kill(pid, 9);
+				exit(EXIT_FAILURE);
+			}
+
+			printf("FreeSWITCH[%d] System Ready pid:%d\n", (int) getpid(), (int) pid);
+		}
+		exit(EXIT_SUCCESS);
 	}
 
 	if (do_wait) {
@@ -318,11 +313,13 @@ void daemonize(int do_wait)
 		dup2(fd, 0);
 		close(fd);
 	}
+
 	fd = open("/dev/null", O_WRONLY);
 	if (fd != 1) {
 		dup2(fd, 1);
 		close(fd);
 	}
+
 	fd = open("/dev/null", O_WRONLY);
 	if (fd != 2) {
 		dup2(fd, 2);
@@ -332,22 +329,85 @@ void daemonize(int do_wait)
 
 #endif
 
+static const char usage[] =
+	"Usage: freeswitch [OPTIONS]\n\n"
+	"These are the optional arguments you can pass to freeswitch:\n"
+#ifdef WIN32
+	"\t-service [name]        -- start freeswitch as a service, cannot be used if loaded as a console app\n"
+	"\t-install [name]        -- install freeswitch as a service, with optional service name\n"
+	"\t-uninstall             -- remove freeswitch as a service\n"
+	"\t-monotonic-clock       -- use monotonic clock as timer source\n"
+#else
+	"\t-nf                    -- no forking\n"
+	"\t-u [user]              -- specify user to switch to\n"
+	"\t-g [group]             -- specify group to switch to\n"
+#endif
+#ifdef HAVE_SETRLIMIT
+	"\t-waste                 -- allow memory waste\n"
+	"\t-core                  -- dump cores\n"
+#endif
+	"\t-help                  -- this message\n"
+	"\t-version               -- print the version and exit\n"
+	"\t-rp                    -- enable high(realtime) priority settings\n"
+	"\t-lp                    -- enable low priority settings\n"
+	"\t-np                    -- enable normal priority settings (system defaults)\n"
+	"\t-vg                    -- run under valgrind\n"
+	"\t-nosql                 -- disable internal sql scoreboard\n"
+	"\t-heavy-timer           -- Heavy Timer, possibly more accurate but at a cost\n"
+	"\t-nonat                 -- disable auto nat detection\n"
+	"\t-nonatmap              -- disable auto nat port mapping\n"
+	"\t-nocal                 -- disable clock calibration\n"
+	"\t-nort                  -- disable clock clock_realtime\n"
+	"\t-stop                  -- stop freeswitch\n"
+	"\t-nc                    -- do not output to a console and background\n"
+#ifndef WIN32
+	"\t-ncwait                -- do not output to a console and background but wait until the system is ready before exiting (implies -nc)\n"
+#endif
+	"\t-c                     -- output to a console and stay in the foreground\n"
+	"\n\tOptions to control locations of files:\n"
+	"\t-base [basedir]         -- alternate prefix directory\n"
+	"\t-conf [confdir]         -- alternate directory for FreeSWITCH configuration files\n"
+	"\t-log [logdir]           -- alternate directory for logfiles\n"
+	"\t-run [rundir]           -- alternate directory for runtime files\n"
+	"\t-db [dbdir]             -- alternate directory for the internal database\n"
+	"\t-mod [moddir]           -- alternate directory for modules\n"
+	"\t-htdocs [htdocsdir]     -- alternate directory for htdocs\n"
+	"\t-scripts [scriptsdir]   -- alternate directory for scripts\n"
+	"\t-temp [directory]       -- alternate directory for temporary files\n"
+	"\t-grammar [directory]    -- alternate directory for grammar files\n"
+	"\t-recordings [directory] -- alternate directory for recordings\n"
+	"\t-storage [directory]    -- alternate directory for voicemail storage\n"
+	"\t-sounds [directory]     -- alternate directory for sound files\n";
+
+
+/**
+ * Check if value string starts with "-"
+ */
+static switch_bool_t is_option(const char *p)
+{
+	/* skip whitespaces */
+	while ((*p == 13) || (*p == 10) || (*p == 9) || (*p == 32) || (*p == 11)) p++;
+	return (p[0] == '-');
+}
+
+
 /* the main application entry point */
 int main(int argc, char *argv[])
 {
-	char pid_path[256] = "";	/* full path to the pid file */
+	char pid_path[PATH_MAX] = "";	/* full path to the pid file */
 	char pid_buffer[32] = "";	/* pid string */
 	char old_pid_buffer[32] = "";	/* pid string */
 	switch_size_t pid_len, old_pid_len;
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 #ifndef WIN32
-	int nf = 0;					/* TRUE if we are running in nofork mode */
+	switch_bool_t nf = SWITCH_FALSE;				/* TRUE if we are running in nofork mode */
+	switch_bool_t do_wait = SWITCH_FALSE;
 	char *runas_user = NULL;
 	char *runas_group = NULL;
 #else
-	int win32_service = 0;
+	switch_bool_t win32_service = SWITCH_FALSE;
 #endif
-	int nc = 0;					/* TRUE if we are running in noconsole mode */
+	switch_bool_t nc = SWITCH_FALSE;				/* TRUE if we are running in noconsole mode */
 	pid_t pid = 0;
 	int i, x;
 	char *opts;
@@ -355,13 +415,8 @@ int main(int argc, char *argv[])
 	char *local_argv[1024] = { 0 };
 	int local_argc = argc;
 	char *arg_argv[128] = { 0 };
-	char *usageDesc;
 	int alt_dirs = 0, log_set = 0, run_set = 0, do_kill = 0;
-	int known_opt;
 	int priority = 0;
-#ifndef WIN32
-	int do_wait = 0;
-#endif
 #ifdef __sun
 	switch_core_flag_t flags = SCF_USE_SQL;
 #else
@@ -372,8 +427,7 @@ int main(int argc, char *argv[])
 	switch_file_t *fd;
 	switch_memory_pool_t *pool = NULL;
 #ifdef HAVE_SETRLIMIT
-	struct rlimit rlp;
-	int waste = 0;
+	switch_bool_t waste = SWITCH_FALSE;
 #endif
 
 	for (x = 0; x < argc; x++) {
@@ -388,378 +442,426 @@ int main(int argc, char *argv[])
 		}
 	}
 
-
 	if (local_argv[0] && strstr(local_argv[0], "freeswitchd")) {
-		nc++;
+		nc = SWITCH_TRUE;
 	}
 
-	usageDesc = "these are the optional arguments you can pass to freeswitch\n"
-#ifdef WIN32
-		"\t-service [name]        -- start freeswitch as a service, cannot be used if loaded as a console app\n"
-		"\t-install [name]        -- install freeswitch as a service, with optional service name\n"
-		"\t-uninstall             -- remove freeswitch as a service\n"
-		"\t-monotonic-clock       -- use monotonic clock as timer source\n"
-#else
-		"\t-nf                    -- no forking\n"
-		"\t-u [user]              -- specify user to switch to\n" "\t-g [group]             -- specify group to switch to\n"
-#endif
-		"\t-help                  -- this message\n" "\t-version               -- print the version and exit\n"
-#ifdef HAVE_SETRLIMIT
-		"\t-waste                 -- allow memory waste\n" 
-		"\t-core                  -- dump cores\n"
-#endif
-		"\t-rp                    -- enable high(realtime) priority settings\n"
-		"\t-lp                    -- enable low priority settings\n"
-		"\t-np                    -- enable normal priority settings (system defaults)\n"
-		"\t-vg                    -- run under valgrind\n"
-		"\t-nosql                 -- disable internal sql scoreboard\n"
-		"\t-heavy-timer           -- Heavy Timer, possibly more accurate but at a cost\n"
-		"\t-nonat                 -- disable auto nat detection\n"
-		"\t-nonatmap              -- disable auto nat port mapping\n"
-		"\t-nocal                 -- disable clock calibration\n"
-		"\t-nort                  -- disable clock clock_realtime\n"
-		"\t-stop                  -- stop freeswitch\n"
-		"\t-nc                    -- do not output to a console and background\n"
-#ifndef WIN32
-		"\t-ncwait                -- do not output to a console and background but wait until the system is ready before exiting (implies -nc)\n"
-#endif
-		"\t-c                     -- output to a console and stay in the foreground\n"
-		"\t-conf [confdir]        -- specify an alternate config dir\n"
-		"\t-log [logdir]          -- specify an alternate log dir\n"
-		"\t-run [rundir]          -- specify an alternate run dir\n"
-		"\t-db [dbdir]            -- specify an alternate db dir\n"
-		"\t-mod [moddir]          -- specify an alternate mod dir\n"
-		"\t-htdocs [htdocsdir]    -- specify an alternate htdocs dir\n" "\t-scripts [scriptsdir]  -- specify an alternate scripts dir\n";
-
 	for (x = 1; x < local_argc; x++) {
-		known_opt = 0;
+
+		if (switch_strlen_zero(local_argv[x]))
+			continue;
+
+		if (!strcmp(local_argv[x], "-help") || !strcmp(local_argv[x], "-h") || !strcmp(local_argv[x], "-?")) {
+			printf("%s\n", usage);
+			exit(EXIT_SUCCESS);
+		}
 #ifdef WIN32
-		if (x == 1) {
-			if (local_argv[x] && !strcmp(local_argv[x], "-service")) {
-				/* New installs will always have the service name specified, but keep a default for compat */
-				x++;
-				if (local_argv[x] && strlen(local_argv[x])) {
-					switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
-				} else {
-					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
-				}
-				known_opt++;
-				win32_service++;
-				continue;
-			}
-			if (local_argv[x] && !strcmp(local_argv[x], "-install")) {
-				char exePath[1024];
-				char servicePath[1024];
-				x++;
-				if (local_argv[x] && strlen(local_argv[x])) {
-					switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
-				} else {
-					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
-				}
-				known_opt++;
-				GetModuleFileName(NULL, exePath, 1024);
-				snprintf(servicePath, sizeof(servicePath), "%s -service %s", exePath, service_name);
-				{				/* Perform service installation */
-					SC_HANDLE hService;
-					SC_HANDLE hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-					if (!hSCManager) {
-						fprintf(stderr, "Could not open service manager (%d).\n", GetLastError());
-						exit(1);
-					}
-					hService = CreateService(hSCManager, service_name, service_name, GENERIC_READ | GENERIC_EXECUTE | SERVICE_CHANGE_CONFIG, SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, servicePath, NULL, NULL, NULL, NULL,	/* Service start name */
-											 NULL);
-					if (!hService) {
-						fprintf(stderr, "Error creating freeswitch service (%d).\n", GetLastError());
-					} else {
-						/* Set desc, and don't care if it succeeds */
-						SERVICE_DESCRIPTION desc;
-						desc.lpDescription = "The FreeSWITCH service.";
-						if (!ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION, &desc)) {
-							fprintf(stderr, "FreeSWITCH installed, but could not set the service description (%d).\n", GetLastError());
-						}
-						CloseServiceHandle(hService);
-					}
-					CloseServiceHandle(hSCManager);
-					exit(0);
-				}
+		if (x == 1 && !strcmp(local_argv[x], "-service")) {
+			/* New installs will always have the service name specified, but keep a default for compat */
+			x++;
+			if (!switch_strlen_zero(local_argv[x])) {
+				switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
+			} else {
+				switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
 			}
 
-			if (local_argv[x] && !strcmp(local_argv[x], "-uninstall")) {
-				x++;
-				if (local_argv[x] && strlen(local_argv[x])) {
-					switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
-				} else {
-					switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
-				}
-				{				/* Do the uninstallation */
-					SC_HANDLE hService;
-					SC_HANDLE hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-					if (!hSCManager) {
-						fprintf(stderr, "Could not open service manager (%d).\n", GetLastError());
-						exit(1);
-					}
-					hService = OpenService(hSCManager, service_name, DELETE);
-					known_opt++;
-					if (hService != NULL) {
-						/* remove the service! */
-						if (!DeleteService(hService)) {
-							fprintf(stderr, "Error deleting service (%d).\n", GetLastError());
-						}
-						CloseServiceHandle(hService);
-					} else {
-						fprintf(stderr, "Error opening service (%d).\n", GetLastError());
-					}
-					CloseServiceHandle(hSCManager);
-					exit(0);
-				}
-			}
+			win32_service = SWITCH_TRUE;
+			continue;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-monotonic-clock")) {
+		else if (x == 1 && !strcmp(local_argv[x], "-install")) {
+			char servicePath[PATH_MAX];
+			char exePath[PATH_MAX];
+			SC_HANDLE hService;
+			SC_HANDLE hSCManager;
+			SERVICE_DESCRIPTION desc;
+			desc.lpDescription = "The FreeSWITCH service.";
+
+			x++;
+			if (!switch_strlen_zero(local_argv[x])) {
+				switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
+			} else {
+				switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
+			}
+
+			GetModuleFileName(NULL, exePath, sizeof(exePath));
+			snprintf(servicePath, sizeof(servicePath), "%s -service %s", exePath, service_name);
+
+			/* Perform service installation */
+
+			hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+			if (!hSCManager) {
+				fprintf(stderr, "Could not open service manager (%d).\n", GetLastError());
+				exit(EXIT_FAILURE);
+			}
+
+			hService = CreateService(hSCManager, service_name, service_name, GENERIC_READ | GENERIC_EXECUTE | SERVICE_CHANGE_CONFIG, SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE,
+						 servicePath, NULL, NULL, NULL, NULL, /* Service start name */ NULL);
+			if (!hService) {
+				fprintf(stderr, "Error creating freeswitch service (%d).\n", GetLastError());
+				CloseServiceHandle(hSCManager);
+				exit(EXIT_FAILURE);
+			}
+
+			/* Set desc, and don't care if it succeeds */
+			if (!ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION, &desc)) {
+				fprintf(stderr, "FreeSWITCH installed, but could not set the service description (%d).\n", GetLastError());
+			}
+
+			CloseServiceHandle(hService);
+			CloseServiceHandle(hSCManager);
+			exit(EXIT_SUCCESS);
+		}
+
+		else if (x == 1 && !strcmp(local_argv[x], "-uninstall")) {
+			SC_HANDLE hService;
+			SC_HANDLE hSCManager;
+			BOOL deleted;
+
+			x++;
+			if (!switch_strlen_zero(local_argv[x])) {
+				switch_copy_string(service_name, local_argv[x], SERVICENAME_MAXLEN);
+			} else {
+				switch_copy_string(service_name, SERVICENAME_DEFAULT, SERVICENAME_MAXLEN);
+			}
+
+			/* Do the uninstallation */
+			hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+			if (!hSCManager) {
+				fprintf(stderr, "Could not open service manager (%d).\n", GetLastError());
+				exit(EXIT_FAILURE);
+			}
+
+			hService = OpenService(hSCManager, service_name, DELETE);
+			if (!hService) {
+				fprintf(stderr, "Error opening service (%d).\n", GetLastError());
+				CloseServiceHandle(hSCManager);
+				exit(EXIT_FAILURE);
+			}
+
+			/* remove the service! */
+			deleted = DeleteService(hService);
+			if (!deleted) {
+				fprintf(stderr, "Error deleting service (%d).\n", GetLastError());
+			}
+
+			CloseServiceHandle(hService);
+			CloseServiceHandle(hSCManager);
+			exit(deleted ? EXIT_SUCCESS : EXIT_FAILURE);
+		}
+
+		else if (!strcmp(local_argv[x], "-monotonic-clock")) {
 			flags |= SCF_USE_WIN32_MONOTONIC;
-			known_opt++;
 		}
 #else
-		if (local_argv[x] && !strcmp(local_argv[x], "-u")) {
+		else if (!strcmp(local_argv[x], "-u")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
-				runas_user = local_argv[x];
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "Option '%s' requires an argument!\n", local_argv[x - 1]);
+				exit(EXIT_FAILURE);
 			}
-			known_opt++;
+			runas_user = local_argv[x];
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-g")) {
+		else if (!strcmp(local_argv[x], "-g")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
-				runas_group = local_argv[x];
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "Option '%s' requires an argument!\n", local_argv[x - 1]);
+				exit(EXIT_FAILURE);
 			}
-			known_opt++;
+			runas_group = local_argv[x];
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-nf")) {
-			nf++;
-			known_opt++;
+		else if (!strcmp(local_argv[x], "-nf")) {
+			nf = SWITCH_TRUE;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-version")) {
-			fprintf(stdout, "FreeSWITCH version: %s\n", SWITCH_VERSION_FULL);
-			return 0;
-			known_opt++;
+		else if (!strcmp(local_argv[x], "-version")) {
+			fprintf(stdout, "FreeSWITCH version: %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_FULL_HUMAN);
+			exit(EXIT_SUCCESS);
 		}
 #endif
 #ifdef HAVE_SETRLIMIT
-		if (local_argv[x] && !strcmp(local_argv[x], "-core")) {
+		else if (!strcmp(local_argv[x], "-core")) {
+			struct rlimit rlp;
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = RLIM_INFINITY;
 			rlp.rlim_max = RLIM_INFINITY;
 			setrlimit(RLIMIT_CORE, &rlp);
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-waste")) {
+		else if (!strcmp(local_argv[x], "-waste")) {
 			fprintf(stderr, "WARNING: Wasting up to 8 megs of memory per thread.\n");
 			sleep(2);
-			waste++;
-			known_opt++;
+			waste = SWITCH_TRUE;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-no-auto-stack")) {
-			waste++;
-			known_opt++;
+		else if (!strcmp(local_argv[x], "-no-auto-stack")) {
+			waste = SWITCH_TRUE;
 		}
 #endif
-
-		if (local_argv[x] && (!strcmp(local_argv[x], "-hp") || !strcmp(local_argv[x], "-rp"))) {
+		else if (!strcmp(local_argv[x], "-hp") || !strcmp(local_argv[x], "-rp")) {
 			priority = 2;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-lp")) {
+		else if (!strcmp(local_argv[x], "-lp")) {
 			priority = -1;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-np")) {
+		else if (!strcmp(local_argv[x], "-np")) {
 			priority = 1;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-nosql")) {
+		else if (!strcmp(local_argv[x], "-nosql")) {
 			flags &= ~SCF_USE_SQL;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-nonat")) {
+		else if (!strcmp(local_argv[x], "-nonat")) {
 			flags &= ~SCF_USE_AUTO_NAT;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-nonatmap")) {
+		else if (!strcmp(local_argv[x], "-nonatmap")) {
 			flags &= ~SCF_USE_NAT_MAPPING;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-heavy-timer")) {
+		else if (!strcmp(local_argv[x], "-heavy-timer")) {
 			flags |= SCF_USE_HEAVY_TIMING;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-nort")) {
+		else if (!strcmp(local_argv[x], "-nort")) {
 			flags &= ~SCF_USE_CLOCK_RT;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-nocal")) {
+		else if (!strcmp(local_argv[x], "-nocal")) {
 			flags &= ~SCF_CALIBRATE_CLOCK;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-vg")) {
+		else if (!strcmp(local_argv[x], "-vg")) {
 			flags |= SCF_VG;
-			known_opt++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-stop")) {
-			do_kill++;
-			known_opt++;
+		else if (!strcmp(local_argv[x], "-stop")) {
+			do_kill = SWITCH_TRUE;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-nc")) {
-			nc++;
-			known_opt++;
+		else if (!strcmp(local_argv[x], "-nc")) {
+			nc = SWITCH_TRUE;
 		}
 #ifndef WIN32
-		if (local_argv[x] && !strcmp(local_argv[x], "-ncwait")) {
-			nc++;
-			do_wait++;
-			known_opt++;
+		else if (!strcmp(local_argv[x], "-ncwait")) {
+			nc = SWITCH_TRUE;
+			do_wait = SWITCH_TRUE;
 		}
 #endif
-		if (local_argv[x] && !strcmp(local_argv[x], "-c")) {
-			nc = 0;
-			known_opt++;
+		else if (!strcmp(local_argv[x], "-c")) {
+			nc = SWITCH_FALSE;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-conf")) {
+		else if (!strcmp(local_argv[x], "-conf")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
-				SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(strlen(local_argv[x]) + 1);
-				if (!SWITCH_GLOBAL_dirs.conf_dir) {
-					fprintf(stderr, "Allocation error\n");
-					return 255;
-				}
-				strcpy(SWITCH_GLOBAL_dirs.conf_dir, local_argv[x]);
-				alt_dirs++;
-			} else {
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
 				fprintf(stderr, "When using -conf you must specify a config directory\n");
 				return 255;
 			}
-			known_opt++;
+
+			SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.conf_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.conf_dir, local_argv[x]);
+			alt_dirs++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-mod")) {
+		else if (!strcmp(local_argv[x], "-mod")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
-				SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(strlen(local_argv[x]) + 1);
-				if (!SWITCH_GLOBAL_dirs.mod_dir) {
-					fprintf(stderr, "Allocation error\n");
-					return 255;
-				}
-				strcpy(SWITCH_GLOBAL_dirs.mod_dir, local_argv[x]);
-			} else {
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
 				fprintf(stderr, "When using -mod you must specify a module directory\n");
 				return 255;
 			}
-			known_opt++;
+
+			SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.mod_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.mod_dir, local_argv[x]);
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-log")) {
+		else if (!strcmp(local_argv[x], "-log")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
-				SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(strlen(local_argv[x]) + 1);
-				if (!SWITCH_GLOBAL_dirs.log_dir) {
-					fprintf(stderr, "Allocation error\n");
-					return 255;
-				}
-				strcpy(SWITCH_GLOBAL_dirs.log_dir, local_argv[x]);
-				alt_dirs++;
-				log_set++;
-			} else {
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
 				fprintf(stderr, "When using -log you must specify a log directory\n");
 				return 255;
 			}
-			known_opt++;
+
+			SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.log_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.log_dir, local_argv[x]);
+			alt_dirs++;
+			log_set = SWITCH_TRUE;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-run")) {
+		else if (!strcmp(local_argv[x], "-run")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
-				SWITCH_GLOBAL_dirs.run_dir = (char *) malloc(strlen(local_argv[x]) + 1);
-				if (!SWITCH_GLOBAL_dirs.run_dir) {
-					fprintf(stderr, "Allocation error\n");
-					return 255;
-				}
-				strcpy(SWITCH_GLOBAL_dirs.run_dir, local_argv[x]);
-				run_set++;
-			} else {
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
 				fprintf(stderr, "When using -run you must specify a pid directory\n");
 				return 255;
 			}
-			known_opt++;
+
+			SWITCH_GLOBAL_dirs.run_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.run_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.run_dir, local_argv[x]);
+			run_set = SWITCH_TRUE;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-db")) {
+		else if (!strcmp(local_argv[x], "-db")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
-				SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(strlen(local_argv[x]) + 1);
-				if (!SWITCH_GLOBAL_dirs.db_dir) {
-					fprintf(stderr, "Allocation error\n");
-					return 255;
-				}
-				strcpy(SWITCH_GLOBAL_dirs.db_dir, local_argv[x]);
-				alt_dirs++;
-			} else {
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
 				fprintf(stderr, "When using -db you must specify a db directory\n");
 				return 255;
 			}
-			known_opt++;
+
+			SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.db_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.db_dir, local_argv[x]);
+			alt_dirs++;
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-scripts")) {
+		else if (!strcmp(local_argv[x], "-scripts")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
-				SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(strlen(local_argv[x]) + 1);
-				if (!SWITCH_GLOBAL_dirs.script_dir) {
-					fprintf(stderr, "Allocation error\n");
-					return 255;
-				}
-				strcpy(SWITCH_GLOBAL_dirs.script_dir, local_argv[x]);
-			} else {
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
 				fprintf(stderr, "When using -scripts you must specify a scripts directory\n");
 				return 255;
 			}
-			known_opt++;
+
+			SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.script_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.script_dir, local_argv[x]);
 		}
 
-		if (local_argv[x] && !strcmp(local_argv[x], "-htdocs")) {
+		else if (!strcmp(local_argv[x], "-htdocs")) {
 			x++;
-			if (local_argv[x] && strlen(local_argv[x])) {
-				SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(strlen(local_argv[x]) + 1);
-				if (!SWITCH_GLOBAL_dirs.htdocs_dir) {
-					fprintf(stderr, "Allocation error\n");
-					return 255;
-				}
-				strcpy(SWITCH_GLOBAL_dirs.htdocs_dir, local_argv[x]);
-			} else {
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
 				fprintf(stderr, "When using -htdocs you must specify a htdocs directory\n");
 				return 255;
 			}
-			known_opt++;
+
+			SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.htdocs_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.htdocs_dir, local_argv[x]);
 		}
 
-		if (!known_opt || (local_argv[x] && (!strcmp(local_argv[x], "-help") || !strcmp(local_argv[x], "-h") || !strcmp(local_argv[x], "-?")))) {
-			printf("%s\n", usageDesc);
-			exit(0);
+		else if (!strcmp(local_argv[x], "-base")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -base you must specify a base directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.base_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.base_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-temp")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -temp you must specify a temp directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.temp_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.temp_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.temp_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-storage")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -storage you must specify a storage directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.storage_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.storage_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.storage_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-recordings")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -recordings you must specify a recording directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.recordings_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.recordings_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.recordings_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-grammar")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -grammar you must specify a grammar directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.grammar_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.grammar_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.grammar_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-sounds")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -sounds you must specify a sounds directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.sounds_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.sounds_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.sounds_dir, local_argv[x]);
+		}
+
+		/* Unknown option (always last!) */
+		else {
+			fprintf(stderr, "Unknown option '%s', see '%s -help' for a list of valid options\n",
+				local_argv[x], local_argv[0]);
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -789,36 +891,34 @@ int main(int argc, char *argv[])
 
 #if defined(HAVE_SETRLIMIT) && !defined(__sun)
 	if (!waste && !(flags & SCF_VG)) {
-		//int x;
+		struct rlimit rlp;
 
 		memset(&rlp, 0, sizeof(rlp));
 		getrlimit(RLIMIT_STACK, &rlp);
 
-		if (rlp.rlim_max > SWITCH_THREAD_STACKSIZE) {
+		if (rlp.rlim_cur != SWITCH_THREAD_STACKSIZE) {
 			char buf[1024] = "";
 			int i = 0;
 
-			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d from your shell before starting the application.\nauto-adjusting stack size for optimal performance...\n",
-					(int) (rlp.rlim_max / 1024), SWITCH_THREAD_STACKSIZE / 1024);
-			
+			fprintf(stderr, "Error: stacksize %d is not optimal: run ulimit -s %d from your shell before starting the application.\nauto-adjusting stack size for optimal performance...\n",
+					(int) (rlp.rlim_cur / 1024), SWITCH_THREAD_STACKSIZE / 1024);
+
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
 			rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
 			setrlimit(RLIMIT_STACK, &rlp);
-			
+
 			apr_terminate();
 			ret = (int) execv(argv[0], argv);
-			
+
 			for (i = 0; i < argc; i++) {
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[i]);
 			}
-			
-			return system(buf);
 
+			return system(buf);
 		}
 	}
 #endif
-
 
 	signal(SIGILL, handle_SIGILL);
 	signal(SIGTERM, handle_SIGILL);
@@ -828,7 +928,7 @@ int main(int argc, char *argv[])
 		signal(SIGCHLD, handle_SIGCHLD);
 	}
 #endif
-	
+
 	if (nc) {
 #ifdef WIN32
 		FreeConsole();
@@ -839,8 +939,7 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-
-	switch(priority) {
+	switch (priority) {
 	case 2:
 		set_realtime_priority();
 		break;
@@ -861,27 +960,28 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 	if (runas_user || runas_group) {
 		if (change_user_group(runas_user, runas_group) < 0) {
-			fprintf(stderr, "Failed to switch user / group\n");
+			fprintf(stderr, "Failed to switch user [%s] / group [%s]\n",
+				switch_strlen_zero(runas_user)  ? "-" : runas_user,
+				switch_strlen_zero(runas_group) ? "-" : runas_group);
 			return 255;
 		}
 	}
 #else
 	if (win32_service) {
-		{						/* Attempt to start service */
-			SERVICE_TABLE_ENTRY dispatchTable[] = {
-				{service_name, &service_main}
-				,
-				{NULL, NULL}
-			};
-			service_flags = flags; /* copy parsed flags for service startup */
+		/* Attempt to start service */
+		SERVICE_TABLE_ENTRY dispatchTable[] = {
+			{service_name, &service_main}
+			,
+			{NULL, NULL}
+		};
+		service_flags = flags; /* copy parsed flags for service startup */
 
-			if (StartServiceCtrlDispatcher(dispatchTable) == 0) {
-				/* Not loaded as a service */
-				fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
-				fprintf(stderr, "To install the service load freeswitch with -install\n");
-			}
-			exit(0);
+		if (StartServiceCtrlDispatcher(dispatchTable) == 0) {
+			/* Not loaded as a service */
+			fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
+			fprintf(stderr, "To install the service load freeswitch with -install\n");
 		}
+		exit(EXIT_SUCCESS);
 	}
 #endif
 

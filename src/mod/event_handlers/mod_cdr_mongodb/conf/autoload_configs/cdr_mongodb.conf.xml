@@ -1,6 +1,6 @@
 <configuration name="cdr_mongodb.conf" description="MongoDB CDR logger">
   <settings>
-    <!-- Hostnames and IPv6 addrs not supported (yet) -->
+    <!-- IPv6 addresses not supported (yet) -->
     <param name="host" value="127.0.0.1"/>
     <param name="port" value="27017"/>
 

@@ -1,0 +1,35 @@
+;;;;; Author: Travis Cross <tc@traviscross.com>
+
+[Unit]
+Description=freeswitch
+After=syslog.target network.target local-fs.target
+
+[Service]
+; service
+Type=forking
+PIDFile=/run/freeswitch/freeswitch.pid
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /run/freeswitch
+ExecStartPre=/bin/chown freeswitch:freeswitch /run/freeswitch
+ExecStart=/usr/bin/freeswitch -nc -nonat
+TimeoutSec=45s
+Restart=always
+; exec
+WorkingDirectory=/run/freeswitch
+User=freeswitch
+Group=freeswitch
+LimitCORE=infinity
+LimitNOFILE=100000
+LimitNPROC=60000
+LimitSTACK=240
+LimitRTPRIO=infinity
+LimitRTTIME=7000000
+IOSchedulingClass=realtime
+IOSchedulingPriority=2
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=89
+UMask=0007
+
+[Install]
+WantedBy=multi-user.target
+

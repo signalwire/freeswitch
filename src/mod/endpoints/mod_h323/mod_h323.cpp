@@ -1334,11 +1334,11 @@ void FSH323Connection::OnModeChanged(const H245_ModeDescription & newMode)
 					else
 						t38_options->T38FaxUdpEC = "t38UDPRedundancy";
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"T38FaxUdpEC:%s\n",t38_options->T38FaxUdpEC);
-					const char *uuid = switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE); 
+					const char *uuid = switch_channel_get_partner_uuid(m_fsChannel); 
 					if (uuid != NULL) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"uuid:%s\n",uuid);
 						
-						switch_core_session_t *session = switch_core_session_locate(switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE));
+						switch_core_session_t *session = switch_core_session_locate(switch_channel_get_partner_uuid(m_fsChannel));
 						if (session) {
 							switch_channel_t * channel = switch_core_session_get_channel(session);
 							if (channel) {
@@ -2229,7 +2229,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 		switch_channel_mark_pre_answered(m_fsChannel);
 
 	if (m_capability->GetMainType() == H323Capability::e_Data && m_conn->m_rxChannel &&  m_conn->m_txChannel) {
-		const char *uuid = switch_channel_get_variable(m_fsChannel, SWITCH_SIGNAL_BOND_VARIABLE); 
+		const char *uuid = switch_channel_get_partner_uuid(m_fsChannel); 
 		if (uuid != NULL){
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------------------->switch_rtp_udptl_mode\n");
 			switch_rtp_udptl_mode(tech_pvt->rtp_session);

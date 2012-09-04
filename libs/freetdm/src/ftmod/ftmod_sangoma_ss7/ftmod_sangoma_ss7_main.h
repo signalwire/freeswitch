@@ -51,7 +51,7 @@
 
 /* DEFINES ********************************************************************/
 #define MAX_NAME_LEN			25
-#define MAX_PATH				255
+#define MAX_PATH				4096
 
 #define MAX_CIC_LENGTH			5
 #define MAX_CIC_MAP_LENGTH		1000 
@@ -64,12 +64,10 @@
 											(switchtype == LSI_SW_ANS92) || \
 											(switchtype == LSI_SW_ANS95)
 
-typedef struct ftdm2trillium
-{
+typedef struct ftdm2trillium {
 	uint8_t ftdm_val;
 	uint8_t trillium_val;
-}ftdm2trillium_t;
-
+} ftdm2trillium_t;
 
 typedef enum {
 	SNGSS7_CON_IND_EVENT = 0,
@@ -290,7 +288,6 @@ typedef struct sng_isup_intf {
 	uint32_t		ssf;
 	uint32_t		isap;
 	uint16_t		t4;
-	uint32_t		t10;
 	uint32_t		t11;
 	uint32_t		t18;
 	uint32_t		t19;
@@ -346,6 +343,7 @@ typedef struct sng_isup_ckt {
 	uint8_t			transparent_iam;
 	void			*obj;
 	uint16_t		t3;
+	uint32_t		t10;
 	uint16_t		t12;
 	uint16_t		t13;
 	uint16_t		t14;
@@ -473,6 +471,7 @@ typedef struct sngss7_chan_data {
 	void					*raw_data;		/* send on next sigevent */
 	sngss7_glare_data_t		glare;
 	sngss7_timer_data_t		t35;
+	sngss7_timer_data_t		t10;
 	sngss7_group_data_t		rx_grs;
 	sngss7_group_data_t		rx_gra;
 	sngss7_group_data_t		tx_grs;
@@ -609,22 +608,20 @@ typedef enum {
 	"TX CKT BLK DN", \
 	"TX CKT UNBLK", \
 	"TX CKT UNBLK DN", \
-	"RX GRP MN BLK", \
-	"RX GRP MN BLK DN", \
-	"RX GRP MN UNBLK", \
-	"RX GRP MN UNBLK DN", \
-	"TX GRP MN BLK", \
-	"TX GRP MN BLK DN", \
-	"TX GRP MN UNBLK", \
-	"TX GRP MN UNBLK DN", \
 	"RX GRP HW BLK", \
 	"RX GRP HW BLK DN", \
-	"RX GRP HW UNBLK", \
-	"RX GRP HW UNBLK DN", \
 	"TX GRP HW BLK", \
 	"TX GRP HW BLK DN", \
+	"RX GRP MN BLK", \
+	"RX GRP MN BLK DN", \
+	"TX GRP MN BLK", \
+	"TX GRP MN BLK DN", \
 	"TX GRP HW UNBLK", \
-	"TX GRP HW UNBLK DN"
+	"TX GRP HW UNBLK DN", \
+	"TX GRP MN UNBLK", \
+	"TX GRP MN UNBLK DN", \
+	"RX GRP HW UNBLK", \
+	"RX GRP HW UNBLK DN"
 FTDM_STR2ENUM_P(ftmod_ss7_blk_state2flag, ftmod_ss7_blk_flag2str, sng_ckt_block_flag_t)
 
 /* valid for every cfg array except circuits */
@@ -636,13 +633,25 @@ typedef enum {
 } sng_cfg_flag_t;
 
 typedef enum {
-	SNGSS7_SM		= (1 << 0),
-	SNGSS7_RY		= (1 << 1),
-	SNGSS7_MTP1		= (1 << 2),
-	SNGSS7_MTP2		= (1 << 3),
-	SNGSS7_MTP3		= (1 << 4),
-	SNGSS7_ISUP		= (1 << 5),
-	SNGSS7_CC		= (1 << 6)
+	SNGSS7_SM_STARTED	= (1 << 0),
+
+	SNGSS7_RY_PRESENT	= (1 << 2),
+	SNGSS7_RY_STARTED	= (1 << 3),
+	
+	SNGSS7_MTP1_PRESENT	= (1 << 4),
+	SNGSS7_MTP1_STARTED	= (1 << 5),
+
+	SNGSS7_MTP2_PRESENT	= (1 << 6),
+	SNGSS7_MTP2_STARTED     = (1 << 7),
+
+	SNGSS7_MTP3_PRESENT	= (1 << 8),
+	SNGSS7_MTP3_STARTED     = (1 << 9),
+
+	SNGSS7_ISUP_PRESENT	= (1 << 10),
+	SNGSS7_ISUP_STARTED     = (1 << 11),
+
+	SNGSS7_CC_PRESENT	= (1 << 12),
+	SNGSS7_CC_STARTED       = (1 << 13),
 } sng_task_flag_t;
 /******************************************************************************/
 
@@ -739,6 +748,7 @@ int ftmod_ss7_isup_ckt_sta(uint32_t id, unsigned char *state);
 /* in ftmod_sangoma_ss7_out.c */
 void ft_to_sngss7_iam(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_acm(ftdm_channel_t *ftdmchan);
+void ft_to_sngss7_cpg (ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_anm(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_rel(ftdm_channel_t *ftdmchan);
 void ft_to_sngss7_rlc(ftdm_channel_t *ftdmchan);
@@ -878,6 +888,7 @@ ftdm_status_t sngss7_add_raw_data(sngss7_chan_data_t *sngss7_info, uint8_t* data
 
 /* in ftmod_sangoma_ss7_timers.c */
 void handle_isup_t35(void *userdata);
+void handle_isup_t10(void *userdata);
 
 /******************************************************************************/
 
@@ -1029,13 +1040,12 @@ if (ftdmchan->state == new_state) { \
 #define sngss7_set_options(obj, option)   ((obj)->options |= (option))
 
 
-#ifdef SS7_PRODUCTION
-# define SS7_ASSERT \
-	SS7_INFO_CHAN(ftdmchan,"Production Mode, continuing%s\n", "");
+#ifdef SMG_RELAY_DBG
+#define SS7_RELAY_DBG(a,...)	printf(a"\n", ##__VA_ARGS__)
+#define SS7_RELAY_DBG_FUN(a)	printf(#a"\n")
 #else
-# define SS7_ASSERT	\
-	SS7_ERROR_CHAN(ftdmchan, "Debugging Mode, ending%s\n", ""); \
-	*(int*)0=0;
+#define SS7_RELAY_DBG(a, ...)  
+#define SS7_RELAY_DBG_FUN(a)
 #endif
 /******************************************************************************/
 

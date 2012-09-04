@@ -319,7 +319,7 @@ ftdm_status_t copy_genNmb_from_sngss7(ftdm_channel_t *ftdmchan, SiGenNum *genNmb
 
 	if (genNmb->nmbQual.pres == PRSNT_NODEF) {
 		snprintf(val, sizeof(val), "%d", genNmb->nmbQual.val);
-		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number qualifier\" \n", val);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Generic Number \"number qualifier\" \"%s\"\n", val);
 		sngss7_add_var(sngss7_info, "ss7_gn_numqual", val);
 	}
 
@@ -2454,7 +2454,7 @@ ftdm_status_t sngss7_save_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt)
 		goto done;
 	}
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Compressed IAM size:%d\n", len);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Compressed IAM size:%lu\n", len);
 
 	/* Worst case: size will triple after url encode */
 	url_encoded_iam = ftdm_malloc(3*sizeof(*siConEvnt));
@@ -2468,10 +2468,10 @@ ftdm_status_t sngss7_save_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt)
 	/* URL encode buffer to that its safe to store it in a string */
 	ftdm_url_encode((const char*)compressed_iam, url_encoded_iam, len);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IAM variable length:%d\n", strlen(url_encoded_iam));
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IAM variable length:%"FTDM_SIZE_FMT"\n", strlen(url_encoded_iam));
 
 	if (strlen(url_encoded_iam) > g_ftdm_sngss7_data.cfg.transparent_iam_max_size) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "IAM variable length exceeds max size (len:%d max:%d) \n", strlen(url_encoded_iam), g_ftdm_sngss7_data.cfg.transparent_iam_max_size);
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "IAM variable length exceeds max size (len:%"FTDM_SIZE_FMT" max:%d) \n", strlen(url_encoded_iam), g_ftdm_sngss7_data.cfg.transparent_iam_max_size);
 		ret_val = FTDM_FAIL;
 		goto done;
 	}
@@ -2505,10 +2505,10 @@ ftdm_status_t sngss7_retrieve_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt
 
 	url_encoded_iam = ftdm_strdup(val);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IAM variable length:%d\n", strlen(val));
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IAM variable length:%"FTDM_SIZE_FMT"\n", strlen(val));
 	ftdm_url_decode(url_encoded_iam, &url_encoded_iam_len);
 	
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Compressed IAM size:%d\n", url_encoded_iam_len);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Compressed IAM size:%"FTDM_SIZE_FMT"\n", url_encoded_iam_len);
 
 	uncompressed_buffer = ftdm_malloc(sizeof(*siConEvnt));
 	ftdm_assert_return(uncompressed_buffer, FTDM_FAIL, "Failed to allocate buffer for uncompressed buffer\n");
@@ -2520,7 +2520,7 @@ ftdm_status_t sngss7_retrieve_iam(ftdm_channel_t *ftdmchan, SiConEvnt *siConEvnt
 	}
 
 	if (len != sizeof(*siConEvnt)) {
-		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Incompatible IAM structure size (expected:%d size:%d)\n", sizeof(*siConEvnt), strlen(uncompressed_buffer));
+		ftdm_log_chan(ftdmchan, FTDM_LOG_CRIT, "Incompatible IAM structure size (expected:%"FTDM_SIZE_FMT" size:%"FTDM_SIZE_FMT")\n", sizeof(*siConEvnt), strlen(uncompressed_buffer));
 		goto done;
 	}
 

@@ -75,8 +75,8 @@
       <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
     </BuildLog>
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc" "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h" /Y
-if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc" "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h" /Y
+      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
+if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
 </Command>
     </PreBuildEvent>
     <ClCompile>
@@ -92,8 +92,8 @@ if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h" copy "$(Projec
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc" "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h" /Y
-if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc" "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h" /Y
+      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
+if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
 </Command>
     </PreBuildEvent>
     <Midl>
@@ -115,8 +115,8 @@ if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h" copy "$(Projec
       <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
     </BuildLog>
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc" "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h" /Y
-if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc" "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h" /Y
+      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
+if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
 </Command>
     </PreBuildEvent>
     <ClCompile>
@@ -128,8 +128,8 @@ if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h" copy "$(Projec
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc" "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h" /Y
-if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc" "$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h" /Y
+      <Command>if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tiffconf.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tiffconf.h" /Y
+if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.vc.h" "$(ProjectDir)..\..\tiff-4.0.2\libtiff\tif_config.h" /Y
 </Command>
     </PreBuildEvent>
     <Midl>
@@ -143,55 +143,55 @@ if not exist "$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h" copy "$(Projec
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_aux.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_close.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_codec.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_color.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_compress.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_dir.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_dirinfo.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_dirread.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_dirwrite.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_dumpmode.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_error.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_extension.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_fax3.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_fax3sm.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_flush.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_getimage.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_jpeg.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_luv.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_lzw.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_next.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_ojpeg.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_open.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_packbits.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_pixarlog.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_predict.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_print.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_read.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_strip.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_swab.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_thunder.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_tile.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_unix.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_version.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_warning.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_write.c" />
-    <ClCompile Include="..\..\tiff-3.8.2\libtiff\tif_zip.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_aux.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_close.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_codec.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_color.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_compress.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_dir.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_dirinfo.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_dirread.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_dirwrite.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_dumpmode.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_error.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_extension.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_fax3.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_fax3sm.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_flush.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_getimage.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_jpeg.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_luv.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_lzw.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_next.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_ojpeg.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_open.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_packbits.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_pixarlog.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_predict.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_print.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_read.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_strip.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_swab.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_thunder.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_tile.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_unix.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_version.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_warning.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_write.c" />
+    <ClCompile Include="..\..\tiff-4.0.2\libtiff\tif_zip.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\t4.h" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\tif_dir.h" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\tif_fax3.h" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\tif_predict.h" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\tiff.h" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\tiffconf.h" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\tiffio.h" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\tiffio.hxx" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\tiffiop.h" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\tiffvers.h" />
-    <ClInclude Include="..\..\tiff-3.8.2\libtiff\uvcode.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\t4.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\tif_dir.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\tif_fax3.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\tif_predict.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\tiff.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\tiffconf.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\tiffio.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\tiffio.hxx" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\tiffiop.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\tiffvers.h" />
+    <ClInclude Include="..\..\tiff-4.0.2\libtiff\uvcode.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

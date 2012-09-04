@@ -1,0 +1,232 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\jpeg-8d\jconfig.h" />
+    <ClInclude Include="..\..\jpeg-8d\jdct.h" />
+    <ClInclude Include="..\..\jpeg-8d\jerror.h" />
+    <ClInclude Include="..\..\jpeg-8d\jinclude.h" />
+    <ClInclude Include="..\..\jpeg-8d\jmemsys.h" />
+    <ClInclude Include="..\..\jpeg-8d\jmorecfg.h" />
+    <ClInclude Include="..\..\jpeg-8d\jpegint.h" />
+    <ClInclude Include="..\..\jpeg-8d\jpeglib.h" />
+    <ClInclude Include="..\..\jpeg-8d\jversion.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\jpeg-8d\jaricom.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcapimin.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcapistd.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcarith.c" />
+    <ClCompile Include="..\..\jpeg-8d\jccoefct.c" />
+    <ClCompile Include="..\..\jpeg-8d\jccolor.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcdctmgr.c" />
+    <ClCompile Include="..\..\jpeg-8d\jchuff.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcinit.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcmainct.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcmarker.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcmaster.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcomapi.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcparam.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcprepct.c" />
+    <ClCompile Include="..\..\jpeg-8d\jcsample.c" />
+    <ClCompile Include="..\..\jpeg-8d\jctrans.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdapimin.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdapistd.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdarith.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdatadst.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdatasrc.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdcoefct.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdcolor.c" />
+    <ClCompile Include="..\..\jpeg-8d\jddctmgr.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdhuff.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdinput.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdmainct.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdmarker.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdmaster.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdmerge.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdpostct.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdsample.c" />
+    <ClCompile Include="..\..\jpeg-8d\jdtrans.c" />
+    <ClCompile Include="..\..\jpeg-8d\jerror.c" />
+    <ClCompile Include="..\..\jpeg-8d\jfdctflt.c" />
+    <ClCompile Include="..\..\jpeg-8d\jfdctfst.c" />
+    <ClCompile Include="..\..\jpeg-8d\jfdctint.c" />
+    <ClCompile Include="..\..\jpeg-8d\jidctflt.c" />
+    <ClCompile Include="..\..\jpeg-8d\jidctfst.c" />
+    <ClCompile Include="..\..\jpeg-8d\jidctint.c" />
+    <ClCompile Include="..\..\jpeg-8d\jmemmgr.c" />
+    <ClCompile Include="..\..\jpeg-8d\jmemnobs.c" />
+    <ClCompile Include="..\..\jpeg-8d\jquant1.c" />
+    <ClCompile Include="..\..\jpeg-8d\jquant2.c" />
+    <ClCompile Include="..\..\jpeg-8d\jutils.c">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Disabled</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Disabled</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BufferSecurityCheck Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</BufferSecurityCheck>
+      <BufferSecurityCheck Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</BufferSecurityCheck>
+      <BufferSecurityCheck Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</BufferSecurityCheck>
+      <BufferSecurityCheck Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</BufferSecurityCheck>
+    </ClCompile>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>libjpeg</ProjectName>
+    <ProjectGuid>{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libjpeg</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <AdditionalIncludeDirectories>..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\jpeg-8d\jconfig.h" type "$(ProjectDir)..\..\jpeg-8d\jconfig.vc" &gt; "$(ProjectDir)..\..\jpeg-8d\jconfig.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <AdditionalIncludeDirectories>..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\jpeg-8d\jconfig.h" type "$(ProjectDir)..\..\jpeg-8d\jconfig.vc" &gt; "$(ProjectDir)..\..\jpeg-8d\jconfig.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <AdditionalIncludeDirectories>..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\jpeg-8d\jconfig.h" type "$(ProjectDir)..\..\jpeg-8d\jconfig.vc" &gt; "$(ProjectDir)..\..\jpeg-8d\jconfig.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <AdditionalIncludeDirectories>..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\jpeg-8d\jconfig.h" type "$(ProjectDir)..\..\jpeg-8d\jconfig.vc" &gt; "$(ProjectDir)..\..\jpeg-8d\jconfig.h"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

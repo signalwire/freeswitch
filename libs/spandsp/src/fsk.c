@@ -70,16 +70,16 @@ const fsk_spec_t preset_fsk_specs[] =
     },
     {
         "V23 ch 1",
-        2100,
-        1300,
+        1700 + 400,
+        1700 - 400,
         -14,
         -30,
         1200*100
     },
     {
         "V23 ch 2",
-        450,
-        390,
+        420 + 30,
+        420 - 30,
         -14,
         -30,
         75*100
@@ -102,27 +102,35 @@ const fsk_spec_t preset_fsk_specs[] =
     },
     {
         "Bell202",
-        2200,
-        1200,
+        1700 + 500,
+        1700 - 500,
         -14,
         -30,
         1200*100
     },
     {
-        "Weitbrecht 45.45", /* Used for TDD (Telecoms Device for the Deaf) */
-        1800,
-        1400,
+        "Weitbrecht 45.45", /* Used for US TDD (Telecoms Device for the Deaf) */
+        1600 + 200,
+        1600 - 200,
         -14,
         -30,
          4545
     },
     {
-        "Weitbrecht 50",    /* Used for TDD (Telecoms Device for the Deaf) */
-        1800,
-        1400,
+        "Weitbrecht 50",    /* Used for Internatioal TDD (Telecoms Device for the Deaf) */
+        1600 + 200,
+        1600 - 200,
         -14,
         -30,
-         5000
+         50*100
+    },
+    {
+        "V21 (110bps) ch 1",
+        1080 + 100,
+        1080 - 100,
+        -14,
+        -30,
+        110*100
     }
 };
 
@@ -476,6 +484,10 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                 s->put_bit(s->put_bit_user_data, baudstate);
             }
             break;
+        case FSK_FRAME_MODE_5N1_FRAMES:
+        case FSK_FRAME_MODE_7N1_FRAMES:
+        case FSK_FRAME_MODE_7E1_FRAMES:
+        case FSK_FRAME_MODE_7E2_FRAMES:
         default:
             /* Gather the specified number of bits, with robust checking to ensure reasonable voice immunity.
                The first bit should be a start bit (0), and the last bit should be a stop bit (1) */
@@ -527,24 +539,22 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                            state as the next bit */
                         if (s->last_bit == baudstate)
                         {
-                            s->frame_bits |= (baudstate << s->framing_mode);
-                            s->frame_bits >>= 1;
-                            s->baud_phase -= (SAMPLE_RATE*100);
                             if (++s->frame_state > s->framing_mode)
                             {
-                                /* Check we have a stop bit */
-                                if (baudstate == 1)
+                                /* Check we have a stop bit and a start bit */
+                                if (baudstate == 1  &&  (s->frame_bits & 0x02) == 0)
                                 {
-                                    /* Check we have a start bit */
-                                    if ((s->frame_bits & 1) == 0)
-                                    {
-                                        /* Drop the start bit, and pass the rest back */
-                                        s->frame_bits >>= 1;
-                                        s->put_bit(s->put_bit_user_data, s->frame_bits);
-                                    }
+                                    /* Drop the start bit, and pass the rest back */
+                                    s->put_bit(s->put_bit_user_data, s->frame_bits >> 2);
                                 }
                                 s->frame_state = 0;
                             }
+                            else
+                            {
+                                s->frame_bits |= (baudstate << s->framing_mode);
+                                s->frame_bits >>= 1;
+                            }
+                            s->baud_phase -= (SAMPLE_RATE*100);
                         }
                         else
                         {

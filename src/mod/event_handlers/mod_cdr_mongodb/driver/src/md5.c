@@ -309,7 +309,7 @@ mongo_md5_process(mongo_md5_state_t *pms, const mongo_md5_byte_t *data /*[64]*/)
     pms->abcd[3] += d;
 }
 
-void
+MONGO_EXPORT void
 mongo_md5_init(mongo_md5_state_t *pms)
 {
     pms->count[0] = pms->count[1] = 0;
@@ -319,7 +319,7 @@ mongo_md5_init(mongo_md5_state_t *pms)
     pms->abcd[3] = 0x10325476;
 }
 
-void
+MONGO_EXPORT void
 mongo_md5_append(mongo_md5_state_t *pms, const mongo_md5_byte_t *data, int nbytes)
 {
     const mongo_md5_byte_t *p = data;
@@ -357,7 +357,7 @@ mongo_md5_append(mongo_md5_state_t *pms, const mongo_md5_byte_t *data, int nbyte
 	memcpy(pms->buf, p, left);
 }
 
-void
+MONGO_EXPORT void
 mongo_md5_finish(mongo_md5_state_t *pms, mongo_md5_byte_t digest[16])
 {
     static const mongo_md5_byte_t pad[64] = {

@@ -89,12 +89,13 @@ ftdm_status_t handle_olm_msg(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiConEvnt *siConEvnt)
 {
-	sngss7_chan_data_t  *sngss7_info = NULL;
-	ftdm_channel_t	  	*ftdmchan = NULL;
-	char				nadi[2];
-	
 	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
-	memset(nadi, '\0', sizeof(nadi));
+
+	sngss7_chan_data_t *sngss7_info = NULL;
+	ftdm_channel_t *ftdmchan = NULL;
+	char var[FTDM_DIGITS_LIMIT];
+
+	memset(var, '\0', sizeof(var));
 
 	/* get the ftdmchan and ss7_chan_data from the circuit */
 	if (extract_chan_data(circuit, &sngss7_info, &ftdmchan)) {
@@ -209,12 +210,52 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			}
 
 			/* add any special variables for the dialplan */
-			sprintf(nadi, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
-			sngss7_add_var(sngss7_info, "ss7_clg_nadi", nadi);
+			sprintf(var, "%d", siConEvnt->cgPtyNum.natAddrInd.val);
+			sngss7_add_var(sngss7_info, "ss7_clg_nadi", var);
 
-			sprintf(nadi, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
-			sngss7_add_var(sngss7_info, "ss7_cld_nadi", nadi);
+			sprintf(var, "%d", siConEvnt->cdPtyNum.natAddrInd.val);
+			sngss7_add_var(sngss7_info, "ss7_cld_nadi", var);
 
+			/* Retrieve the Location Number if present (see ITU Q.763, 3.30) */
+			if (siConEvnt->cgPtyNum1.eh.pres) {
+				if (siConEvnt->cgPtyNum1.addrSig.pres) {
+					/* fill in the ss7 location address number */
+					copy_tknStr_from_sngss7(siConEvnt->cgPtyNum1.addrSig, var, siConEvnt->cgPtyNum1.oddEven);
+					sngss7_add_var(sngss7_info, "ss7_loc_digits", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.scrnInd.pres) {
+					/* fill in the screening indication value */
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.scrnInd.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_screen_ind", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.presRest.pres) {
+					/* fill in the presentation value */
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.presRest.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_pres_ind", var);
+				}
+
+				if (siConEvnt->cgPtyNum1.natAddrInd.pres) {
+					sprintf(var, "%d", siConEvnt->cgPtyNum1.natAddrInd.val);
+					sngss7_add_var(sngss7_info, "ss7_loc_nadi", var);
+				}
+			} else {
+				SS7_DEBUG_CHAN(ftdmchan, "No Location Number information in IAM%s\n", " ");
+			}
+
+			sprintf(var, "%d", sngss7_info->circuit->cic);
+			sngss7_add_var(sngss7_info, "ss7_cic", var);
+
+			sprintf(var, "%d", g_ftdm_sngss7_data.cfg.isupIntf[sngss7_info->circuit->infId].spc );
+			sngss7_add_var(sngss7_info, "ss7_opc", var);
+			
+			if (siConEvnt->callRef.callId.pres) {
+				ftdmchan->caller_data.call_reference = (unsigned int)siConEvnt->callRef.callId.val;
+			} else {
+				ftdmchan->caller_data.call_reference = 0;
+			}
+			
 			if (sngss7_info->circuit->transparent_iam) {
 				sngss7_save_iam(ftdmchan, siConEvnt);
 			}
@@ -252,9 +293,9 @@ ftdm_status_t handle_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	case (FTDM_CHANNEL_STATE_HANGUP_COMPLETE):
 handle_glare:
 		/* the core already has plans for this channel...glare */
-		SS7_INFO_CHAN(ftdmchan, "Got IAM on channel that is already inuse (state=%s|inuse=%d)...glare!\n", 
+		SS7_INFO_CHAN(ftdmchan, "Got IAM on channel that is already inuse (state=%s|inuse=%c)...glare!\n",
 								ftdm_channel_state2str (ftdmchan->state),
-								ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE));
+								ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE) ? 'Y' : 'N');
 
 		/* save the info so that we can use it later on */
 		sngss7_info->glare.spInstId = spInstId;
@@ -401,6 +442,8 @@ ftdm_status_t handle_con_sta(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 				append_tknStr_from_sngss7(siCnStEvnt->subNum.addrSig, 
 											ftdmchan->caller_data.dnis.digits, 
 											siCnStEvnt->subNum.oddEven);
+				SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Rx SAM (digits = %s)\n", sngss7_info->circuit->cic,
+						ftdmchan->caller_data.dnis.digits);
 			} else {
 				SS7_INFO_CHAN(ftdmchan,"No Called party (DNIS) information in SAM!%s\n", " ");
 			}
@@ -696,7 +739,7 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 		 * ITU Q.784 Test Number 3.8
 		 * Collision of REL messages
 		 */
-		SS7_DEBUG_CHAN(ftdmchan, "Collision of REL messages. Rx REL while waiting for RLC.\n", " ");
+		SS7_DEBUG_CHAN(ftdmchan, "Collision of REL messages. Rx REL while waiting for RLC.%s\n", " ");
 		if (sngss7_test_ckt_flag(sngss7_info, FLAG_LOCAL_REL) && 
 			!sngss7_test_ckt_flag (sngss7_info, FLAG_REMOTE_REL)) {
 			/* locally requested hangup completed, wait for remote RLC */
@@ -1639,8 +1682,8 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 	ftdm_mutex_lock(ftdmchan->mutex);
 
 	/* check if the channel is blocked */
-	if (!(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX))) {
-		SS7_WARN("Received UBL on circuit that is not blocked!\n");
+	if (!(sngss7_test_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX)) && !sngss7_test_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX)) {
+		SS7_WARN("Received UBL on circuit that is not blocked! span= %d, chan= %d , flag = %x \n", g_ftdm_sngss7_data.cfg.isupCkt[circuit].span, g_ftdm_sngss7_data.cfg.isupCkt[circuit].chan,sngss7_info->blk_flags  );
 	}
 
 	/* throw the unblock flag */
@@ -1648,6 +1691,8 @@ ftdm_status_t handle_ubl_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 
 	/* clear the block flag */
 	sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+	sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+	sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX_DN);
 
 	/* set the channel to suspended state */
 	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_SUSPENDED);
@@ -1687,14 +1732,6 @@ ftdm_status_t handle_ubl_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			g_ftdm_sngss7_data.cfg.isupCkt[circuit].cic,
 			DECODE_LCC_EVENT(evntType));
 	}
-
-	/* lock the channel */
-	ftdm_mutex_lock(ftdmchan->mutex);
-
-	/* KONRAD FIX ME */
-
-	/* unlock the channel again before we exit */
-	ftdm_mutex_unlock(ftdmchan->mutex);
 
 	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
 	return FTDM_SUCCESS;
@@ -1860,7 +1897,7 @@ ftdm_status_t handle_rsc_rsp(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			/* go to DOWN */
 			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		} else {
-			SS7_ERROR("Received RSC-RLC but we're not waiting on a RSC-RLC on CIC #, dropping\n", sngss7_info->circuit->cic);
+			SS7_ERROR("Received RSC-RLC but we're not waiting on a RSC-RLC on CIC #%d, dropping\n", sngss7_info->circuit->cic);
 		}
 
 		break;
@@ -2449,6 +2486,8 @@ ftdm_status_t handle_cgu_req(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			/**********************************************************************/
 			case 0:	/* maintenance oriented */
 				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_GRP_MN_BLOCK_RX);
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX);
+				sngss7_clear_ckt_blk_flag(sngss7_info, FLAG_CKT_MN_BLOCK_RX_DN);
 				break;
 			/**********************************************************************/
 			case 1: /* hardware failure oriented */

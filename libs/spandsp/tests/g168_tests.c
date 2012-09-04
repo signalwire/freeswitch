@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
         printf("%d\n", css_c3[i]);
     signal_free(&local_css);
     signal_free(&far_css);
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

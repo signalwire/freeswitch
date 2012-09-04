@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2009, Konrad Hammel <konrad@sangoma.com>
+ * Copyright (c) 2009, Sangoma Technologies
+ * Konrad Hammel <konrad@sangoma.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +30,11 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Contributors: 
+ *
+ * Moises Silva <moy@sangoma.com>
+ *
  */
 
 /* INCLUDE ********************************************************************/
@@ -56,25 +62,53 @@ void handle_isup_t35(void *userdata)
     ftdm_channel_t      *ftdmchan = sngss7_info->ftdmchan;
 
     /* now that we have the right channel...put a lock on it so no-one else can use it */
-    ftdm_mutex_lock(ftdmchan->mutex);
+    ftdm_channel_lock(ftdmchan);
 
+    /* Q.764 2.2.5 Address incomplete (T35 expiry action is hangup with cause 28 according to Table A.1/Q.764) */
     SS7_ERROR("[Call-Control] Timer 35 expired on CIC = %d\n", sngss7_info->circuit->cic);
 
     /* set the flag to indicate this hangup is started from the local side */
     sngss7_set_ckt_flag(sngss7_info, FLAG_LOCAL_REL);
 
     /* hang up on timer expiry */
-    ftdmchan->caller_data.hangup_cause = 28;
+    ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_INVALID_NUMBER_FORMAT;
 
     /* end the call */
     ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_CANCEL);
 
+    /* kill t10 if active */
+    if (sngss7_info->t10.hb_timer_id) {
+        ftdm_sched_cancel_timer (sngss7_info->t10.sched, sngss7_info->t10.hb_timer_id);
+    }
+
     /*unlock*/
-    ftdm_mutex_unlock(ftdmchan->mutex);
+    ftdm_channel_unlock(ftdmchan);
 
     SS7_FUNC_TRACE_EXIT(__FUNCTION__);
     return;
 }
+
+
+void handle_isup_t10(void *userdata)
+{
+	SS7_FUNC_TRACE_ENTER(__FUNCTION__);
+
+	sngss7_timer_data_t *timer = userdata;
+	sngss7_chan_data_t  *sngss7_info = timer->sngss7_info;
+	ftdm_channel_t      *ftdmchan = sngss7_info->ftdmchan;
+
+	ftdm_channel_lock(ftdmchan);
+
+	SS7_DEBUG("[Call-Control] Timer 10 expired on CIC = %d\n", sngss7_info->circuit->cic);
+
+	/* send the call to the user */
+	ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+
+	ftdm_channel_unlock(ftdmchan);
+
+	SS7_FUNC_TRACE_EXIT(__FUNCTION__);
+}
+ 
 /******************************************************************************/
 /* For Emacs:
  * Local Variables:

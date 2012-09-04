@@ -450,6 +450,151 @@ int main(int argc, char **argv)
         rx_tag = "";
         tx_tag = "";
     }
+    else if (strcmp(modem, "V.34_2400") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 10;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 1600.0;
+        baud_rate = 2400.0;
+        rx_tag = "_2400_low_carrier";
+        tx_tag = "_2400";
+    }
+    else if (strcmp(modem, "V.34_2400_high") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 10;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 1800.0;
+        baud_rate = 2400.0;
+        rx_tag = "_2400_high_carrier";
+        tx_tag = "_2400";
+    }
+    else if (strcmp(modem, "V.34_2743") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 35;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 1646.0;
+        baud_rate = 2400.0*8.0/7.0;
+        rx_tag = "_2743_low_carrier";
+        tx_tag = "_2743";
+    }
+    else if (strcmp(modem, "V.34_2743_high") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 35;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 1829.0;
+        baud_rate = 2400.0*8.0/7.0;
+        rx_tag = "_2743_high_carrier";
+        tx_tag = "_2743";
+    }
+    else if (strcmp(modem, "V.34_2800") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 20;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 1680.0;
+        baud_rate = 2400.0*7.0/6.0;
+        rx_tag = "_2800_low_carrier";
+        tx_tag = "_2800";
+    }
+    else if (strcmp(modem, "V.34_2800_high") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 20;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 1867.0;
+        baud_rate = 2400.0*7.0/6.0;
+        rx_tag = "_2800_high_carrier";
+        tx_tag = "_2800";
+    }
+    else if (strcmp(modem, "V.34_3000") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 8;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 1800.0;
+        baud_rate = 2400.0*5.0/4.0;
+        rx_tag = "_3000_low_carrier";
+        tx_tag = "_3000";
+    }
+    else if (strcmp(modem, "V.34_3000_high") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 8;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 2000.0;
+        baud_rate = 2400.0*5.0/4.0;
+        rx_tag = "_3000_high_carrier";
+        tx_tag = "_3000";
+    }
+    else if (strcmp(modem, "V.34_3200") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 5;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 1829.0;
+        baud_rate = 2400.0*4.0/3.0;
+        rx_tag = "_3200_low_carrier";
+        tx_tag = "_3200";
+    }
+    else if (strcmp(modem, "V.34_3200_high") == 0)
+    {
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 5;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        carrier = 1920.0;
+        baud_rate = 2400.0*4.0/3.0;
+        rx_tag = "_3200_high_carrier";
+        tx_tag = "_3200";
+    }
+    else if (strcmp(modem, "V.34_3429") == 0)
+    {
+        /* There is only one carrier frequency defined for this baud rate */
+        rx_coeff_sets = 192;
+        rx_coeffs_per_filter = 27;
+        rx_excess_bandwidth = 0.25;
+        tx_coeff_sets = 7;
+        tx_coeffs_per_filter = 9;
+        tx_excess_bandwidth = 0.12;
+        //carrier = 1959.0;
+        carrier = 1959.0;
+        baud_rate = 2400.0*10.0/7.0;
+        rx_tag = "_3429";
+        tx_tag = "_3429";
+    }
     else
     {
         usage();

@@ -62,6 +62,7 @@ sng_switch_type_t sng_switch_type_map[] =
 	{ 1, "india"  , LSI_SW_INDIA   , LSI_SW_INDIA   },
 	{ 1, "uk"     , LSI_SW_UK      , LSI_SW_UK      },
 	{ 1, "russia" , LSI_SW_RUSSIA  , LSI_SW_RUSSIA  },
+	{ 1, "china"  , LSI_SW_CHINA   , LSI_SW_CHINA   },
 	{ 0, "", 0, 0 },
 };
 
@@ -127,6 +128,7 @@ typedef struct sng_ccSpan
 	uint8_t			itx_auto_reply;
 	uint8_t			transparent_iam;
 	uint32_t		t3;
+	uint32_t		t10;
 	uint32_t		t12;
 	uint32_t		t13;
 	uint32_t		t14;
@@ -1570,11 +1572,6 @@ static int ftmod_ss7_parse_isup_interface(ftdm_conf_node_t *isup_interface)
 			sng_isap.t9 = atoi(parm->val);
 			SS7_DEBUG("Found isup t9 = %d\n",sng_isap.t9);
 		/**********************************************************************/
-		} else if (!strcasecmp(parm->var, "isup.t10")) {
-		/**********************************************************************/
-			sng_isup.t10 = atoi(parm->val);
-			SS7_DEBUG("Found isup t10 = %d\n",sng_isup.t10);
-		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "isup.t11")) {
 		/**********************************************************************/
 			sng_isup.t11 = atoi(parm->val);
@@ -1965,6 +1962,10 @@ static int ftmod_ss7_parse_cc_span(ftdm_conf_node_t *cc_span)
 		/**********************************************************************/
 			sng_ccSpan.t3 = atoi(parm->val);
 			SS7_DEBUG("Found isup t3 = %d\n", sng_ccSpan.t3);
+		} else if (!strcasecmp(parm->var, "isup.t10")) {
+		/**********************************************************************/
+			sng_ccSpan.t10 = atoi(parm->val);
+			SS7_DEBUG("Found isup t10 = %d\n", sng_ccSpan.t10);
 		/**********************************************************************/
 		} else if (!strcasecmp(parm->var, "isup.t12")) {
 		/**********************************************************************/
@@ -2082,7 +2083,7 @@ static int ftmod_ss7_fill_in_relay_channel(sng_relay_t *relay_channel)
 					relay_channel->port,
 					relay_channel->procId, 
 					relay_channel->id);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_RY_PRESENT);
 	} else {
 		relay_channel->id = i;
 		SS7_DEBUG("found existing relay channel on type:%d, hostname:%s, port:%d, procId:%d, id = %d\n",
@@ -2116,7 +2117,7 @@ static int ftmod_ss7_fill_in_mtp1_link(sng_mtp1_link_t *mtp1Link)
 	/* check if this id value has been used already */
 	if (g_ftdm_sngss7_data.cfg.mtp1Link[i].id == 0) {
 		SS7_DEBUG("Found new MTP1 Link: id=%d, name=%s\n", mtp1Link->id, mtp1Link->name);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP1);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP1_PRESENT);
 	} else {
 		SS7_DEBUG("Found an existing MTP1 Link: id=%d, name=%s (old name=%s)\n", 
 					mtp1Link->id, 
@@ -2142,7 +2143,7 @@ static int ftmod_ss7_fill_in_mtp2_link(sng_mtp2_link_t *mtp2Link)
 	/* check if this id value has been used already */
 	if (g_ftdm_sngss7_data.cfg.mtp2Link[i].id == 0) {
 		SS7_DEBUG("Found new MTP2 Link: id=%d, name=%s\n", mtp2Link->id, mtp2Link->name);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP2_PRESENT);
 	} else {
 		SS7_DEBUG("Found an existing MTP2 Link: id=%d, name=%s (old name=%s)\n", 
 					mtp2Link->id, 
@@ -2219,7 +2220,7 @@ static int ftmod_ss7_fill_in_mtp3_link(sng_mtp3_link_t *mtp3Link)
 	/* check if this id value has been used already */
 	if (g_ftdm_sngss7_data.cfg.mtp3Link[i].id == 0) {
 		SS7_DEBUG("Found new MTP3 Link: id=%d, name=%s\n", mtp3Link->id, mtp3Link->name);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_MTP3_PRESENT);
 	} else {
 		SS7_DEBUG("Found an existing MTP3 Link: id=%d, name=%s (old name=%s)\n", 
 					mtp3Link->id, 
@@ -2560,7 +2561,7 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 	/* check if this id value has been used already */
 	if (g_ftdm_sngss7_data.cfg.isupIntf[i].id == 0) {
 		SS7_DEBUG("Found new ISUP Interface: id=%d, name=%s\n", sng_isup->id, sng_isup->name);
-		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP);
+		sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_ISUP_PRESENT);
 	} else {
 		SS7_DEBUG("Found an existing ISUP Interface: id=%d, name=%s (old name=%s)\n", 
 					sng_isup->id, 
@@ -2583,11 +2584,6 @@ static int ftmod_ss7_fill_in_isup_interface(sng_isup_inf_t *sng_isup)
 		g_ftdm_sngss7_data.cfg.isupIntf[i].t4		= sng_isup->t4;
 	} else {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].t4		= 3000;
-	}
-	if (sng_isup->t10 != 0) {
-		g_ftdm_sngss7_data.cfg.isupIntf[i].t10		= sng_isup->t10;
-	} else {
-		g_ftdm_sngss7_data.cfg.isupIntf[i].t10		= 50;
 	}
 	if (sng_isup->t11 != 0) {
 		g_ftdm_sngss7_data.cfg.isupIntf[i].t11		= sng_isup->t11;
@@ -2908,7 +2904,7 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 			g_ftdm_sngss7_data.cfg.isupCkt[x].type		= SNG_CKT_VOICE;
 			
 			/* throw the flag to indicate that we need to start call control */
-			sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC);
+			sngss7_set_flag(&g_ftdm_sngss7_data.cfg, SNGSS7_CC_PRESENT);
 		}
 
 		if (timeslot.channel) {
@@ -2934,6 +2930,11 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t3			= 1200;
 		} else {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t3			= ccSpan->t3;
+		}
+		if (ccSpan->t10 == 0) {
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t10		= 50;
+		} else {
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t10		= ccSpan->t10;
 		}
 		if (ccSpan->t12 == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t12		= 300;
@@ -2966,9 +2967,10 @@ static int ftmod_ss7_fill_in_ccSpan(sng_ccSpan_t *ccSpan)
 			g_ftdm_sngss7_data.cfg.isupCkt[x].t17		= ccSpan->t17;
 		}
 		if (ccSpan->t35 == 0) {
-			g_ftdm_sngss7_data.cfg.isupCkt[x].t17		= 170;
+			/* Q.764 2.2.5 Address incomplete (T35 is 15-20 seconds according to Table A.1/Q.764) */
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t35		= 170;
 		} else {
-			g_ftdm_sngss7_data.cfg.isupCkt[x].t17		= ccSpan->t35;
+			g_ftdm_sngss7_data.cfg.isupCkt[x].t35		= ccSpan->t35;
 		}
 		if (ccSpan->tval == 0) {
 			g_ftdm_sngss7_data.cfg.isupCkt[x].tval		= 10;
@@ -3062,11 +3064,17 @@ static int ftmod_ss7_fill_in_circuits(sng_span_t *sngSpan)
 		ftdmchan->call_data = ss7_info;
 
 		/* prepare the timer structures */
-		ss7_info->t35.sched			= ((sngss7_span_data_t *)(ftdmspan->signal_data))->sched;
+		ss7_info->t35.sched		= ((sngss7_span_data_t *)(ftdmspan->signal_data))->sched;
 		ss7_info->t35.counter		= 1;
-		ss7_info->t35.beat			= (isupCkt->t35) * 100; /* beat is in ms, t35 is in 100ms */
+		ss7_info->t35.beat		= (isupCkt->t35) * 100; /* beat is in ms, t35 is in 100ms */
 		ss7_info->t35.callback		= handle_isup_t35;
 		ss7_info->t35.sngss7_info	= ss7_info;
+
+		ss7_info->t10.sched		= ((sngss7_span_data_t *)(ftdmspan->signal_data))->sched;
+		ss7_info->t10.counter		= 1;
+		ss7_info->t10.beat		= (isupCkt->t10) * 100; /* beat is in ms, t10 is in 100ms */
+		ss7_info->t10.callback		= handle_isup_t10;
+		ss7_info->t10.sngss7_info	= ss7_info;
 
 
 	/**************************************************************************/

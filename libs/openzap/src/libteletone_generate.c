@@ -1,7 +1,7 @@
 /* 
  * libteletone_generate.c -- Tone Generator
  *
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without

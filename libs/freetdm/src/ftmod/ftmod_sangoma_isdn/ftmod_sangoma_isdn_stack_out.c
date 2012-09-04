@@ -67,6 +67,7 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	set_calling_num(ftdmchan, &conEvnt.cgPtyNmb);
 	set_calling_num2(ftdmchan, &conEvnt.cgPtyNmb2);
 	set_calling_subaddr(ftdmchan, &conEvnt.cgPtySad);
+	set_called_subaddr(ftdmchan, &conEvnt.cdPtySad);
 	set_redir_num(ftdmchan, &conEvnt.redirNmb);
 	set_calling_name(ftdmchan, &conEvnt);
 	set_network_specific_fac(ftdmchan, &conEvnt.netFac[0]);

@@ -1,0 +1,27 @@
+<include>
+
+  <extension name="auth" continue="true">
+    <condition field="${radius_auth_result}" expression="^$">
+      <action application="radius_auth" inline="true"/>
+    </condition>
+  </extension>
+
+  <extension name="rejections">
+    <condition field="${radius_auth_result}" expression="^2$">
+      <action application="hangup" data="CALL_REJECTED"/>      
+    </condition>
+  </extension>
+
+  <extension name="timeouts">
+    <condition field="${radius_auth_result}" expression="^1$">
+      <action application="hangup" data="SWITCH_CONGESTION"/>
+    </condition>
+  </extension>
+
+  <extension name="originate_leg" continue="true">
+    <condition>
+      <action application="export" data="nolocal:h323-call-origin=originate"/>
+    </condition>
+  </extension>
+</include>
+

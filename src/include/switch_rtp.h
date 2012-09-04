@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -215,7 +215,8 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session);
   \brief Acvite ICE on an RTP session
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin);
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, const char *password);
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, const char *password);
 
 /*! 
   \brief Activate sending RTCP Sender Reports (SR's)
@@ -268,7 +269,7 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
   \return the socket from the RTP session
 */
 SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_session);
-
+SWITCH_DECLARE(void) switch_rtp_ping(switch_rtp_t *rtp_session);
 /*! 
   \brief Get the default samples per interval for a given RTP session
   \param rtp_session the RTP session to get the samples per interval from

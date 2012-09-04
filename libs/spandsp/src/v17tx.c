@@ -53,13 +53,19 @@
 #include "spandsp/dds.h"
 #include "spandsp/power_meter.h"
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define SPANDSP_USE_FIXED_POINTx
+#endif
+
 #include "spandsp/v17tx.h"
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v17tx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define SPANDSP_USE_FIXED_POINTx
+#define FP_SCALE(x)     ((int16_t) x)
+#else
+#define FP_SCALE(x)     (x)
 #endif
 
 #include "v17_v32bis_tx_constellation_maps.h"
@@ -229,6 +235,11 @@ static __inline__ complexf_t getbaud(v17_tx_state_t *s)
     int i;
     int bit;
     int bits;
+#if defined(SPANDSP_USE_FIXED_POINT)
+    static const complexi16_t zero = {0, 0};
+#else
+    static const complexf_t zero = {0.0f, 0.0f};
+#endif
 
     if (s->in_training)
     {
@@ -251,11 +262,7 @@ static __inline__ complexf_t getbaud(v17_tx_state_t *s)
             {
                 /* The shutdown sequence is 32 bauds of all 1's, then 48 bauds
                    of silence */
-#if defined(SPANDSP_USE_FIXED_POINT)
-                return complex_seti16(0, 0);
-#else
-                return complex_setf(0.0f, 0.0f);
-#endif
+                return zero;
             }
             if (s->training_step == V17_TRAINING_SHUTDOWN_END)
             {

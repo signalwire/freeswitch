@@ -46,7 +46,6 @@
 #include "spandsp/logging.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/queue.h"
-#include "spandsp/dc_restore.h"
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
 #include "spandsp/tone_detect.h"
@@ -621,7 +620,7 @@ SPAN_DECLARE(size_t) bell_mf_rx_get(bell_mf_rx_state_t *s, char *buf, int max)
         s->current_digits -= max;
     }
     buf[max] = '\0';
-    return  max;
+    return max;
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -321,10 +321,10 @@ static int16_t evaluate_ltp_parameters(int16_t d[40],
 
     /* Normalization of L_max and L_power */
     if (L_max <= 0)
-        return  0;
+        return 0;
     /*endif*/
     if (L_max >= L_power)
-        return  3;
+        return 3;
     /*endif*/
     temp = gsm0610_norm(L_power);
 

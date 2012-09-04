@@ -62,9 +62,11 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v22bis.h"
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define FP_SCALE    FP_Q_6_10
 #include "v22bis_tx_fixed_rrc.h"
 #else
+#define FP_SCALE(x) (x)
 #include "v22bis_tx_floating_rrc.h"
 #endif
 
@@ -246,24 +248,28 @@ static const int phase_steps[4] =
     1, 0, 2, 3
 };
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+const complexi16_t v22bis_constellation[16] =
+#else
 const complexf_t v22bis_constellation[16] =
+#endif
 {
-    { 1.0f,  1.0f},
-    { 3.0f,  1.0f},     /* 1200bps 00 */
-    { 1.0f,  3.0f},
-    { 3.0f,  3.0f},
-    {-1.0f,  1.0f},
-    {-1.0f,  3.0f},     /* 1200bps 01 */
-    {-3.0f,  1.0f},
-    {-3.0f,  3.0f},
-    {-1.0f, -1.0f},
-    {-3.0f, -1.0f},     /* 1200bps 10 */
-    {-1.0f, -3.0f},
-    {-3.0f, -3.0f},
-    { 1.0f, -1.0f},
-    { 1.0f, -3.0f},     /* 1200bps 11 */
-    { 3.0f, -1.0f},
-    { 3.0f, -3.0f}
+    {FP_SCALE( 1.0f), FP_SCALE( 1.0f)},
+    {FP_SCALE( 3.0f), FP_SCALE( 1.0f)},         /* 1200bps 00 */
+    {FP_SCALE( 1.0f), FP_SCALE( 3.0f)},
+    {FP_SCALE( 3.0f), FP_SCALE( 3.0f)},
+    {FP_SCALE(-1.0f), FP_SCALE( 1.0f)},
+    {FP_SCALE(-1.0f), FP_SCALE( 3.0f)},         /* 1200bps 01 */
+    {FP_SCALE(-3.0f), FP_SCALE( 1.0f)},
+    {FP_SCALE(-3.0f), FP_SCALE( 3.0f)},
+    {FP_SCALE(-1.0f), FP_SCALE(-1.0f)},
+    {FP_SCALE(-3.0f), FP_SCALE(-1.0f)},         /* 1200bps 10 */
+    {FP_SCALE(-1.0f), FP_SCALE(-3.0f)},
+    {FP_SCALE(-3.0f), FP_SCALE(-3.0f)},
+    {FP_SCALE( 1.0f), FP_SCALE(-1.0f)},
+    {FP_SCALE( 1.0f), FP_SCALE(-3.0f)},         /* 1200bps 11 */
+    {FP_SCALE( 3.0f), FP_SCALE(-1.0f)},
+    {FP_SCALE( 3.0f), FP_SCALE(-3.0f)}
 };
 
 static int fake_get_bit(void *user_data)
@@ -308,9 +314,17 @@ static __inline__ int get_scrambled_bit(v22bis_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+static complexi16_t training_get(v22bis_state_t *s)
+#else
 static complexf_t training_get(v22bis_state_t *s)
+#endif
 {
-    complexf_t z;
+#if defined(SPANDSP_USE_FIXED_POINT)
+    static const complexi16_t zero = {0, 0};
+#else
+    static const complexf_t zero = {0.0f, 0.0f};
+#endif
     int bits;
 
     /* V.22bis training sequence */
@@ -329,20 +343,17 @@ static complexf_t training_get(v22bis_state_t *s)
     case V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE:
         /* Silence */
         s->tx.constellation_state = 0;
-        z = complex_setf(0.0f, 0.0f);
-        break;
+        return zero;
     case V22BIS_TX_TRAINING_STAGE_U11:
         /* Send continuous unscrambled ones at 1200bps (i.e. 270 degree phase steps). */
         /* Only the answering modem sends unscrambled ones. It is the first thing exchanged between the modems. */
         s->tx.constellation_state = (s->tx.constellation_state + phase_steps[3]) & 3;
-        z = v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
-        break;
+        return v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
     case V22BIS_TX_TRAINING_STAGE_U0011:
         /* Continuous unscrambled double dibit 00 11 at 1200bps. This is termed the S1 segment in
            the V.22bis spec. It is only sent to request or accept 2400bps mode, and lasts 100+-3ms. After this
            timed burst, we unconditionally change to sending scrambled ones at 1200bps. */
         s->tx.constellation_state = (s->tx.constellation_state + phase_steps[3*(s->tx.training_count & 1)]) & 3;
-        z = v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
         if (++s->tx.training_count >= ms_to_symbols(100))
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting S11 after U0011\n");
@@ -357,7 +368,7 @@ static complexf_t training_get(v22bis_state_t *s)
                 s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
             }
         }
-        break;
+        return v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
     case V22BIS_TX_TRAINING_STAGE_TIMED_S11:
         /* A timed period of scrambled ones at 1200bps. */
         if (++s->tx.training_count >= ms_to_symbols(756))
@@ -383,8 +394,7 @@ static complexf_t training_get(v22bis_state_t *s)
         bits = scramble(s, 1);
         bits = (bits << 1) | scramble(s, 1);
         s->tx.constellation_state = (s->tx.constellation_state + phase_steps[bits]) & 3;
-        z = v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
-        break;
+        return v22bis_constellation[(s->tx.constellation_state << 2) | 0x01];
     case V22BIS_TX_TRAINING_STAGE_S1111:
         /* Scrambled ones at 2400bps. We send a timed 200ms burst, and switch to normal operation at 2400bps */
         bits = scramble(s, 1);
@@ -392,7 +402,6 @@ static complexf_t training_get(v22bis_state_t *s)
         s->tx.constellation_state = (s->tx.constellation_state + phase_steps[bits]) & 3;
         bits = scramble(s, 1);
         bits = (bits << 1) | scramble(s, 1);
-        z = v22bis_constellation[(s->tx.constellation_state << 2) | bits];
         if (++s->tx.training_count >= ms_to_symbols(200))
         {
             /* We have completed training. Now handle some real work. */
@@ -402,18 +411,23 @@ static complexf_t training_get(v22bis_state_t *s)
             v22bis_report_status_change(s, SIG_STATUS_TRAINING_SUCCEEDED);
             s->tx.current_get_bit = s->get_bit;
         }
-        break;
-    case V22BIS_TX_TRAINING_STAGE_PARKED:
-    default:
-        z = complex_setf(0.0f, 0.0f);
-        break;
+        return v22bis_constellation[(s->tx.constellation_state << 2) | bits];
     }
-    return z;
+    return zero;
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+static complexi16_t getbaud(v22bis_state_t *s)
+#else
 static complexf_t getbaud(v22bis_state_t *s)
+#endif
 {
+#if defined(SPANDSP_USE_FIXED_POINT)
+    static const complexi16_t zero = {0, 0};
+#else
+    static const complexf_t zero = {0.0f, 0.0f};
+#endif
     int bits;
 
     if (s->tx.training)
@@ -428,7 +442,7 @@ static complexf_t getbaud(v22bis_state_t *s)
     if (s->tx.shutdown)
     {
         if (++s->tx.shutdown > 10)
-            return complex_setf(0.0f, 0.0f);
+            return zero;
     }
     /* The first two bits define the quadrant */
     bits = get_scrambled_bit(s);
@@ -450,11 +464,18 @@ static complexf_t getbaud(v22bis_state_t *s)
 
 SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
 {
+#if defined(SPANDSP_USE_FIXED_POINT)
+    complexi16_t v;
+    complexi32_t x;
+    complexi32_t z;
+    int16_t iamp;
+#else
+    complexf_t v;
     complexf_t x;
     complexf_t z;
-    int i;
-    int sample;
     float famp;
+#endif
+    int sample;
 
     if (s->tx.shutdown > 10)
         return 0;
@@ -463,28 +484,42 @@ SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
         if ((s->tx.baud_phase += 3) >= 40)
         {
             s->tx.baud_phase -= 40;
-            s->tx.rrc_filter[s->tx.rrc_filter_step] =
-            s->tx.rrc_filter[s->tx.rrc_filter_step + V22BIS_TX_FILTER_STEPS] = getbaud(s);
+            v = getbaud(s);
+            s->tx.rrc_filter_re[s->tx.rrc_filter_step] = v.re;
+            s->tx.rrc_filter_im[s->tx.rrc_filter_step] = v.im;
             if (++s->tx.rrc_filter_step >= V22BIS_TX_FILTER_STEPS)
                 s->tx.rrc_filter_step = 0;
         }
+#if defined(SPANDSP_USE_FIXED_POINT)
         /* Root raised cosine pulse shaping at baseband */
-        x = complex_setf(0.0f, 0.0f);
-        for (i = 0;  i < V22BIS_TX_FILTER_STEPS;  i++)
-        {
-            x.re += tx_pulseshaper[39 - s->tx.baud_phase][i]*s->tx.rrc_filter[i + s->tx.rrc_filter_step].re;
-            x.im += tx_pulseshaper[39 - s->tx.baud_phase][i]*s->tx.rrc_filter[i + s->tx.rrc_filter_step].im;
-        }
+        x.re = vec_circular_dot_prodi16(s->tx.rrc_filter_re, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->tx.baud_phase], V22BIS_TX_FILTER_STEPS, s->tx.rrc_filter_step) >> 14;
+        x.im = vec_circular_dot_prodi16(s->tx.rrc_filter_im, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->tx.baud_phase], V22BIS_TX_FILTER_STEPS, s->tx.rrc_filter_step) >> 14;
         /* Now create and modulate the carrier */
-        z = dds_complexf(&(s->tx.carrier_phase), s->tx.carrier_phase_rate);
-        famp = (x.re*z.re - x.im*z.im)*s->tx.gain;
-        if (s->tx.guard_phase_rate  &&  (s->tx.rrc_filter[s->tx.rrc_filter_step].re != 0.0f  ||  s->tx.rrc_filter[s->tx.rrc_filter_step].im != 0.0f))
+        z = dds_complexi32(&s->tx.carrier_phase, s->tx.carrier_phase_rate);
+        iamp = (x.re*z.re - x.im*z.im) >> 15;
+        iamp = (int16_t) (((int32_t) iamp*s->tx.gain) >> 11);
+        if (s->tx.guard_phase_rate  &&  (s->tx.rrc_filter_re[s->tx.rrc_filter_step] != 0  ||  s->tx.rrc_filter_im[s->tx.rrc_filter_step] != 0))
         {
             /* Add the guard tone */
-            famp += dds_modf(&(s->tx.guard_phase), s->tx.guard_phase_rate, s->tx.guard_level, 0);
+            iamp += dds_mod(&s->tx.guard_phase, s->tx.guard_phase_rate, s->tx.guard_tone_gain, 0);
+        }
+        /* Don't bother saturating. We should never clip. */
+        amp[sample] = iamp;
+#else
+        /* Root raised cosine pulse shaping at baseband */
+        x.re = vec_circular_dot_prodf(s->tx.rrc_filter_re, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->tx.baud_phase], V22BIS_TX_FILTER_STEPS, s->tx.rrc_filter_step);
+        x.im = vec_circular_dot_prodf(s->tx.rrc_filter_im, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->tx.baud_phase], V22BIS_TX_FILTER_STEPS, s->tx.rrc_filter_step);
+        /* Now create and modulate the carrier */
+        z = dds_complexf(&s->tx.carrier_phase, s->tx.carrier_phase_rate);
+        famp = (x.re*z.re - x.im*z.im)*s->tx.gain;
+        if (s->tx.guard_phase_rate  &&  (s->tx.rrc_filter_re[s->tx.rrc_filter_step] != 0.0f  ||  s->tx.rrc_filter_im[s->tx.rrc_filter_step] != 0.0f))
+        {
+            /* Add the guard tone */
+            famp += dds_modf(&s->tx.guard_phase, s->tx.guard_phase_rate, s->tx.guard_tone_gain, 0);
         }
         /* Don't bother saturating. We should never clip. */
         amp[sample] = (int16_t) lfastrintf(famp);
+#endif
     }
     return sample;
 }
@@ -492,34 +527,49 @@ SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
 
 SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power)
 {
-    float l;
+    float sig_power;
+    float guard_tone_power;
+    float sig_gain;
+    float guard_tone_gain;
 
+    /* If is there is a guard tone we need to scale down the signal power a bit, so the aggregate of the signal
+       and guard tone power is the specified power. */
     if (s->tx.guard_phase_rate == dds_phase_ratef(550.0f))
     {
-        l = 1.6f*powf(10.0f, (power - 1.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
-        l = powf(10.0f, (power - 1.0f - 3.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.guard_level = l*32768.0f;
+        sig_power = power - 1.0f;
+        guard_tone_power = sig_power - 3.0f;
     }
     else if(s->tx.guard_phase_rate == dds_phase_ratef(1800.0f))
     {
-        l = 1.6f*powf(10.0f, (power - 1.0f - 1.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
-        l = powf(10.0f, (power - 1.0f - 6.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.guard_level = l*32768.0f;
+        sig_power = power - 0.55f;
+        guard_tone_power = sig_power - 6.0f;
     }
     else
     {
-        l = 1.6f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f);
-        s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
-        s->tx.guard_level = 0;
+        sig_power = power;
+        guard_tone_power = -9999.0f;
     }
+    sig_gain = 0.4490f*powf(10.0f, (sig_power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
+    guard_tone_gain = powf(10.0f, (guard_tone_power - DBM0_MAX_POWER)/20.0f)*32768.0f;
+#if defined(SPANDSP_USE_FIXED_POINT)
+    s->tx.gain = (int16_t) sig_gain;
+    s->tx.guard_tone_gain = (int16_t) guard_tone_gain;
+#else
+    s->tx.gain = sig_gain;
+    s->tx.guard_tone_gain = guard_tone_gain;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
 static int v22bis_tx_restart(v22bis_state_t *s)
 {
-    cvec_zerof(s->tx.rrc_filter, sizeof(s->tx.rrc_filter)/sizeof(s->tx.rrc_filter[0]));
+#if defined(SPANDSP_USE_FIXED_POINT)
+    vec_zeroi16(s->tx.rrc_filter_re, sizeof(s->tx.rrc_filter_re)/sizeof(s->tx.rrc_filter_re[0]));
+    vec_zeroi16(s->tx.rrc_filter_im, sizeof(s->tx.rrc_filter_im)/sizeof(s->tx.rrc_filter_im[0]));
+#else
+    vec_zerof(s->tx.rrc_filter_re, sizeof(s->tx.rrc_filter_re)/sizeof(s->tx.rrc_filter_re[0]));
+    vec_zerof(s->tx.rrc_filter_im, sizeof(s->tx.rrc_filter_im)/sizeof(s->tx.rrc_filter_im[0]));
+#endif
     s->tx.rrc_filter_step = 0;
     s->tx.scramble_reg = 0;
     s->tx.scrambler_pattern_count = 0;

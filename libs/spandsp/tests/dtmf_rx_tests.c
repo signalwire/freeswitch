@@ -154,8 +154,8 @@ int callback_ok;
 int callback_roll;
 int step;
 
-int max_forward_twist;
-int max_reverse_twist;
+float max_forward_twist;
+float max_reverse_twist;
 
 int use_dialtone_filter = FALSE;
 
@@ -325,8 +325,8 @@ static void mitel_cm7291_side_1_tests(void)
     logging_state_t *logging;
 
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
-    if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
-        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
+        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -635,8 +635,8 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
     logging_state_t *logging;
 
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
-    if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
-        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
+        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -706,8 +706,8 @@ static void dial_tone_tolerance_tests(void)
     logging_state_t *logging;
 
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
-    if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
-        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
+        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -763,8 +763,8 @@ static void callback_function_tests(void)
     callback_ok = TRUE;
     callback_roll = 0;
     dtmf_state = dtmf_rx_init(NULL, digit_delivery, (void *) 0x12345678);
-    if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
-        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
+        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -793,8 +793,8 @@ static void callback_function_tests(void)
     callback_roll = 0;
     dtmf_rx_init(dtmf_state, NULL, NULL);
     dtmf_rx_set_realtime_callback(dtmf_state, digit_status, (void *) 0x12345678);
-    if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
-        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
+        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -836,8 +836,8 @@ static void decode_test(const char *test_file)
     logging_state_t *logging;
 
     dtmf_state = dtmf_rx_init(NULL, NULL, NULL);
-    if (use_dialtone_filter  ||  max_forward_twist >= 0  ||  max_reverse_twist >= 0)
-        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99);
+    if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
+        dtmf_rx_parms(dtmf_state, use_dialtone_filter, max_forward_twist, max_reverse_twist, -99.0f);
     logging = dtmf_rx_get_logging_state(dtmf_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "DTMF-rx");
@@ -874,8 +874,8 @@ int main(int argc, char *argv[])
     use_dialtone_filter = FALSE;
     channel_codec = MUNGE_CODEC_NONE;
     decode_test_file = NULL;
-    max_forward_twist = -1;
-    max_reverse_twist = -1;
+    max_forward_twist = -1.0f;
+    max_reverse_twist = -1.0f;
     while ((opt = getopt(argc, argv, "c:d:F:fR:")) != -1)
     {
         switch (opt)
@@ -887,13 +887,13 @@ int main(int argc, char *argv[])
             decode_test_file = optarg;
             break;
         case 'F':
-            max_forward_twist = atoi(optarg);
+            max_forward_twist = atof(optarg);
             break;
         case 'f':
             use_dialtone_filter = TRUE;
             break;
         case 'R':
-            max_reverse_twist = atoi(optarg);
+            max_reverse_twist = atof(optarg);
             break;
         default:
             //usage();

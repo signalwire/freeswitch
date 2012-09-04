@@ -1,0 +1,161 @@
+# -*- text -*-
+#
+# dictionary.cisco
+#
+#		Accounting VSAs originally by
+#		"Marcelo M. Sosa Lugones" <marcelo@sosa.com.ar>
+#
+# Version:	$Id$
+#
+#  For documentation on Cisco RADIUS attributes, see:
+#
+# http://www.cisco.com/univercd/cc/td/doc/product/access/acs_serv/vapp_dev/vsaig3.htm
+#
+#  For general documentation on Cisco RADIUS configuration, see:
+#
+# http://www.cisco.com/en/US/partner/tech/tk583/tk547/tsd_technology_support_sub-protocol_home.html
+#
+
+VENDOR		Cisco				9
+
+#
+#	Standard attribute
+#
+#BEGIN-VENDOR	Cisco
+
+ATTRIBUTE	Cisco-AVPair				1	string vendor=Cisco
+ATTRIBUTE	Cisco-NAS-Port				2	string vendor=Cisco
+
+#
+#  T.37 Store-and-Forward attributes.
+#
+ATTRIBUTE	Cisco-Fax-Account-Id-Origin		3	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Msg-Id			4	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Pages				5	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Coverpage-Flag		6	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Modem-Time			7	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Connect-Speed			8	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Recipient-Count		9	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Process-Abort-Flag		10	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Dsn-Address			11	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Dsn-Flag			12	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Mdn-Address			13	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Mdn-Flag			14	string vendor=Cisco
+ATTRIBUTE	Cisco-Fax-Auth-Status			15	string vendor=Cisco
+ATTRIBUTE	Cisco-Email-Server-Address		16	string vendor=Cisco
+ATTRIBUTE	Cisco-Email-Server-Ack-Flag		17	string vendor=Cisco
+ATTRIBUTE	Cisco-Gateway-Id			18	string vendor=Cisco
+ATTRIBUTE	Cisco-Call-Type				19	string vendor=Cisco
+ATTRIBUTE	Cisco-Port-Used				20	string vendor=Cisco
+ATTRIBUTE	Cisco-Abort-Cause			21	string vendor=Cisco
+
+#
+#  Voice over IP attributes.
+#
+ATTRIBUTE	h323-remote-address			23	string vendor=Cisco
+ATTRIBUTE	h323-conf-id				24	string vendor=Cisco
+ATTRIBUTE	h323-setup-time				25	string vendor=Cisco
+ATTRIBUTE	h323-call-origin			26	string vendor=Cisco
+ATTRIBUTE	h323-call-type				27	string vendor=Cisco
+ATTRIBUTE	h323-connect-time			28	string vendor=Cisco
+ATTRIBUTE	h323-disconnect-time			29	string vendor=Cisco
+ATTRIBUTE	h323-disconnect-cause			30	string vendor=Cisco
+ATTRIBUTE	h323-voice-quality			31	string vendor=Cisco
+ATTRIBUTE	h323-gw-id				33	string vendor=Cisco
+ATTRIBUTE	h323-incoming-conf-id			35	string vendor=Cisco
+
+ATTRIBUTE	Cisco-Policy-Up				37	string vendor=Cisco
+ATTRIBUTE	Cisco-Policy-Down			38	string vendor=Cisco
+
+ATTRIBUTE	sip-conf-id				100	string vendor=Cisco
+ATTRIBUTE	h323-credit-amount			101	string vendor=Cisco
+ATTRIBUTE	h323-credit-time			102	string vendor=Cisco
+ATTRIBUTE	h323-return-code			103	string vendor=Cisco
+ATTRIBUTE	h323-prompt-id				104	string vendor=Cisco
+ATTRIBUTE	h323-time-and-day			105	string vendor=Cisco
+ATTRIBUTE	h323-redirect-number			106	string vendor=Cisco
+ATTRIBUTE	h323-preferred-lang			107	string vendor=Cisco
+ATTRIBUTE	h323-redirect-ip-address		108	string vendor=Cisco
+ATTRIBUTE	h323-billing-model			109	string vendor=Cisco
+ATTRIBUTE	h323-currency				110	string vendor=Cisco
+ATTRIBUTE	subscriber				111	string vendor=Cisco
+ATTRIBUTE	gw-rxd-cdn				112	string vendor=Cisco
+ATTRIBUTE	gw-final-xlated-cdn			113	string vendor=Cisco
+ATTRIBUTE	remote-media-address			114	string vendor=Cisco
+ATTRIBUTE	release-source				115	string vendor=Cisco
+ATTRIBUTE	gw-rxd-cgn				116	string vendor=Cisco
+ATTRIBUTE	gw-final-xlated-cgn			117	string vendor=Cisco
+
+# SIP Attributes
+ATTRIBUTE	call-id					141	string vendor=Cisco
+ATTRIBUTE	session-protocol			142	string vendor=Cisco
+ATTRIBUTE	method					143	string vendor=Cisco
+ATTRIBUTE	prev-hop-via				144	string vendor=Cisco
+ATTRIBUTE	prev-hop-ip				145	string vendor=Cisco
+ATTRIBUTE	incoming-req-uri			146	string vendor=Cisco
+ATTRIBUTE	outgoing-req-uri			147	string vendor=Cisco
+ATTRIBUTE	next-hop-ip				148	string vendor=Cisco
+ATTRIBUTE	next-hop-dn				149	string vendor=Cisco
+ATTRIBUTE	sip-hdr					150	string vendor=Cisco
+
+#
+#	Extra attributes sent by the Cisco, if you configure
+#	"radius-server vsa accounting" (requires IOS11.2+).
+#
+ATTRIBUTE	Cisco-Multilink-ID			187	integer vendor=Cisco
+ATTRIBUTE	Cisco-Num-In-Multilink			188	integer vendor=Cisco
+ATTRIBUTE	Cisco-Pre-Input-Octets			190	integer vendor=Cisco
+ATTRIBUTE	Cisco-Pre-Output-Octets			191	integer vendor=Cisco
+ATTRIBUTE	Cisco-Pre-Input-Packets			192	integer vendor=Cisco
+ATTRIBUTE	Cisco-Pre-Output-Packets		193	integer vendor=Cisco
+ATTRIBUTE	Cisco-Maximum-Time			194	integer vendor=Cisco
+ATTRIBUTE	Cisco-Disconnect-Cause			195	integer vendor=Cisco
+ATTRIBUTE	Cisco-Data-Rate				197	integer vendor=Cisco
+ATTRIBUTE	Cisco-PreSession-Time			198	integer vendor=Cisco
+ATTRIBUTE	Cisco-PW-Lifetime			208	integer vendor=Cisco
+ATTRIBUTE	Cisco-IP-Direct				209	integer vendor=Cisco
+ATTRIBUTE	Cisco-PPP-VJ-Slot-Comp			210	integer vendor=Cisco
+ATTRIBUTE	Cisco-PPP-Async-Map			212	integer vendor=Cisco
+ATTRIBUTE	Cisco-IP-Pool-Definition		217	string vendor=Cisco
+ATTRIBUTE	Cisco-Assign-IP-Pool			218	integer vendor=Cisco
+ATTRIBUTE	Cisco-Route-IP				228	integer vendor=Cisco
+ATTRIBUTE	Cisco-Link-Compression			233	integer vendor=Cisco
+ATTRIBUTE	Cisco-Target-Util			234	integer vendor=Cisco
+ATTRIBUTE	Cisco-Maximum-Channels			235	integer vendor=Cisco
+ATTRIBUTE	Cisco-Data-Filter			242	integer vendor=Cisco
+ATTRIBUTE	Cisco-Call-Filter			243	integer vendor=Cisco
+ATTRIBUTE	Cisco-Idle-Limit			244	integer vendor=Cisco
+ATTRIBUTE	Cisco-Subscriber-Password		249	string vendor=Cisco
+ATTRIBUTE	Cisco-Account-Info			250	string vendor=Cisco
+ATTRIBUTE	Cisco-Service-Info			251	string vendor=Cisco
+ATTRIBUTE	Cisco-Command-Code			252	string vendor=Cisco
+ATTRIBUTE	Cisco-Control-Info			253	string vendor=Cisco
+ATTRIBUTE	Cisco-Xmit-Rate				255	integer vendor=Cisco
+
+VALUE	Cisco-Disconnect-Cause		Unknown			2
+VALUE	Cisco-Disconnect-Cause		CLID-Authentication-Failure 4
+VALUE	Cisco-Disconnect-Cause		No-Carrier		10
+VALUE	Cisco-Disconnect-Cause		Lost-Carrier		11
+VALUE	Cisco-Disconnect-Cause		No-Detected-Result-Codes 12
+VALUE	Cisco-Disconnect-Cause		User-Ends-Session	20
+VALUE	Cisco-Disconnect-Cause		Idle-Timeout		21
+VALUE	Cisco-Disconnect-Cause		Exit-Telnet-Session	22
+VALUE	Cisco-Disconnect-Cause		No-Remote-IP-Addr	23
+VALUE	Cisco-Disconnect-Cause		Exit-Raw-TCP		24
+VALUE	Cisco-Disconnect-Cause		Password-Fail		25
+VALUE	Cisco-Disconnect-Cause		Raw-TCP-Disabled	26
+VALUE	Cisco-Disconnect-Cause		Control-C-Detected	27
+VALUE	Cisco-Disconnect-Cause		EXEC-Program-Destroyed	28
+VALUE	Cisco-Disconnect-Cause		Timeout-PPP-LCP		40
+VALUE	Cisco-Disconnect-Cause		Failed-PPP-LCP-Negotiation 41
+VALUE	Cisco-Disconnect-Cause		Failed-PPP-PAP-Auth-Fail 42
+VALUE	Cisco-Disconnect-Cause		Failed-PPP-CHAP-Auth	43
+VALUE	Cisco-Disconnect-Cause		Failed-PPP-Remote-Auth	44
+VALUE	Cisco-Disconnect-Cause		PPP-Remote-Terminate	45
+VALUE	Cisco-Disconnect-Cause		PPP-Closed-Event	46
+VALUE	Cisco-Disconnect-Cause		Session-Timeout		100
+VALUE	Cisco-Disconnect-Cause		Session-Failed-Security	101
+VALUE	Cisco-Disconnect-Cause		Session-End-Callback	102
+VALUE	Cisco-Disconnect-Cause		Invalid-Protocol	120
+
+#END-VENDOR	Cisco

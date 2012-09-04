@@ -118,7 +118,7 @@ static void v27ter_rx_status(void *user_data, int status)
     v27ter_rx_state_t *s;
     int i;
     int len;
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t *coeffs;
 #else
     complexf_t *coeffs;
@@ -129,14 +129,16 @@ static void v27ter_rx_status(void *user_data, int status)
     switch (status)
     {
     case SIG_STATUS_TRAINING_SUCCEEDED:
-        len = v27ter_rx_equalizer_state(s, &coeffs);
-        printf("Equalizer:\n");
-        for (i = 0;  i < len;  i++)
-#if defined(SPANDSP_USE_FIXED_POINTx)
-            printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/4096.0f, coeffs[i].im/4096.0f);
+        if ((len = v27ter_rx_equalizer_state(s, &coeffs)))
+        {
+            printf("Equalizer:\n");
+            for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINT)
+                printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/V27TER_CONSTELLATION_SCALING_FACTOR, coeffs[i].im/V27TER_CONSTELLATION_SCALING_FACTOR);
 #else
-            printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+                printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
 #endif
+        }
         break;
     }
 }
@@ -169,7 +171,7 @@ static int v27tergetbit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
 static void qam_report(void *user_data, const complexi16_t *constel, const complexi16_t *target, int symbol)
 #else
 static void qam_report(void *user_data, const complexf_t *constel, const complexf_t *target, int symbol)
@@ -177,95 +179,100 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 {
     int i;
     int len;
-#if defined(SPANDSP_USE_FIXED_POINTx)
+#if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t *coeffs;
-    complexf_t constel_point;
 #else
     complexf_t *coeffs;
 #endif
+    complexf_t constel_point;
+    complexf_t target_point;
     float fpower;
     float error;
     v27ter_rx_state_t *rx;
     static float smooth_power = 0.0f;
-#if defined(ENABLE_GUI)
-    static int reports = 0;
-#endif
+    static int update_interval = 100;
 
     rx = (v27ter_rx_state_t *) user_data;
     if (constel)
     {
-        fpower = (constel->re - target->re)*(constel->re - target->re)
-               + (constel->im - target->im)*(constel->im - target->im);
+        constel_point.re = constel->re/V27TER_CONSTELLATION_SCALING_FACTOR;
+        constel_point.im = constel->im/V27TER_CONSTELLATION_SCALING_FACTOR;
+        target_point.re = target->re/V27TER_CONSTELLATION_SCALING_FACTOR;
+        target_point.im = target->im/V27TER_CONSTELLATION_SCALING_FACTOR;
+        fpower = (constel_point.re - target_point.re)*(constel_point.re - target_point.re)
+               + (constel_point.im - target_point.im)*(constel_point.im - target_point.im);
         smooth_power = 0.95f*smooth_power + 0.05f*fpower;
 #if defined(ENABLE_GUI)
         if (use_gui)
         {
-            qam_monitor_update_constel(qam_monitor, constel);
+            qam_monitor_update_constel(qam_monitor, &constel_point);
             qam_monitor_update_carrier_tracking(qam_monitor, v27ter_rx_carrier_frequency(rx));
             qam_monitor_update_symbol_tracking(qam_monitor, v27ter_rx_symbol_timing_correction(rx));
         }
 #endif
         error = constel->im*target->re - constel->re*target->im;
-        printf("Tracking error %f %f %f %f %f %f\n", error, v27ter_rx_carrier_frequency(rx), constel->re, constel->im, target->re, target->im);
+        printf("Tracking error %f %f %f %f %f %f\n", error, v27ter_rx_carrier_frequency(rx), constel_point.re, constel_point.im, target_point.re, target_point.im);
         printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %9.4f %7.3f %7.4f\n",
                symbol_no,
-               constel->re,
-               constel->im,
-               target->re,
-               target->im,
+               constel_point.re,
+               constel_point.im,
+               target_point.re,
+               target_point.im,
                symbol,
                fpower,
                smooth_power,
                v27ter_rx_carrier_frequency(rx),
                v27ter_rx_signal_power(rx),
                v27ter_rx_symbol_timing_correction(rx));
-        len = v27ter_rx_equalizer_state(rx, &coeffs);
-        printf("Equalizer B:\n");
-        for (i = 0;  i < len;  i++)
-#if defined(SPANDSP_USE_FIXED_POINTx)
-            printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/1024.0f, coeffs[i].im/1024.0f);
-#else
-            printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
-#endif
-#if defined(WITH_SPANDSP_INTERNALS)
-        printf("Gardtest %d %f %d\n", symbol_no, v27ter_rx_symbol_timing_correction(rx), rx->gardner_integrate);
-#endif
-        printf("Carcar %d %f\n", symbol_no, v27ter_rx_carrier_frequency(rx));
-#if defined(ENABLE_GUI)
-        if (use_gui)
-        {
-            if (++reports >= 1000)
-            {
-#if defined(SPANDSP_USE_FIXED_POINTx)
-                qam_monitor_update_int_equalizer(qam_monitor, coeffs, len);
-#else
-                qam_monitor_update_equalizer(qam_monitor, coeffs, len);
-#endif
-                reports = 0;
-            }
-        }
-#endif
         symbol_no++;
+        if (--update_interval <= 0)
+        {
+            if ((len = v27ter_rx_equalizer_state(rx, &coeffs)))
+            {
+                printf("Equalizer B:\n");
+                for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINT)
+                    printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/V27TER_CONSTELLATION_SCALING_FACTOR, coeffs[i].im/V27TER_CONSTELLATION_SCALING_FACTOR);
+#else
+                    printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+#endif
+#if defined(ENABLE_GUI)
+                if (use_gui)
+                {
+#if defined(SPANDSP_USE_FIXED_POINT)
+                    qam_monitor_update_int_equalizer(qam_monitor, coeffs, len);
+#else
+                    qam_monitor_update_equalizer(qam_monitor, coeffs, len);
+#endif
+                }
+#endif
+            }
+            update_interval = 100;
+        }
     }
     else
     {
         printf("Gardner step %d\n", symbol);
-        len = v27ter_rx_equalizer_state(rx, &coeffs);
-        printf("Equalizer A:\n");
-        for (i = 0;  i < len;  i++)
-#if defined(SPANDSP_USE_FIXED_POINTx)
-            printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/1024.0f, coeffs[i].im/1024.0f);
+        if ((len = v27ter_rx_equalizer_state(rx, &coeffs)))
+        {
+            printf("Equalizer A:\n");
+            for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINT)
+                printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/V27TER_CONSTELLATION_SCALING_FACTOR, coeffs[i].im/V27TER_CONSTELLATION_SCALING_FACTOR);
 #else
-            printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+                printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
 #endif
 #if defined(ENABLE_GUI)
-        if (use_gui)
-#if defined(SPANDSP_USE_FIXED_POINTx)
-            qam_monitor_update_int_equalizer(qam_monitor, coeffs, len);
+            if (use_gui)
+            {
+#if defined(SPANDSP_USE_FIXED_POINT)
+                qam_monitor_update_int_equalizer(qam_monitor, coeffs, len);
 #else
-            qam_monitor_update_equalizer(qam_monitor, coeffs, len);
+                qam_monitor_update_equalizer(qam_monitor, coeffs, len);
 #endif
+            }
 #endif
+        }
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -475,7 +482,7 @@ int main(int argc, char *argv[])
 #if defined(ENABLE_GUI)
     if (use_gui)
     {
-        qam_monitor = qam_monitor_init(2.0f, NULL);
+        qam_monitor = qam_monitor_init(2.0f, V27TER_CONSTELLATION_SCALING_FACTOR, NULL);
         if (!decode_test_file)
         {
             start_line_model_monitor(129);
@@ -598,7 +605,7 @@ int main(int argc, char *argv[])
             exit(2);
         }
     }
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

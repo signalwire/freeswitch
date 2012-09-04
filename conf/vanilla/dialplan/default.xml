@@ -720,6 +720,15 @@
       </condition>
     </extension>
 
+    <extension name="laugh break">
+      <condition field="destination_number" expression="^9386$">
+        <action application="answer"/>
+        <action application="sleep" data="1500"/>
+        <action application="playback" data="phrase:funny_prompts"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>
+
     <!--
 	You can place files in the default directory to get included.
     -->

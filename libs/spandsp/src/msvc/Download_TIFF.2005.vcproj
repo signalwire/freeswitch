@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+tiff-4.0.2<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -38,8 +38,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading Tiff."
-					CommandLine="if not exist &quot;$(ProjectDir)..\..\..\tiff-3.8.2&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/tiff-3.8.2.tar.gz &quot;$(ProjectDir)..\..\..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\..\..\tiff-3.8.2"
+					CommandLine="if not exist &quot;$(ProjectDir)..\..\..\tiff-4.0.2&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/tiff-4.0.2.tar.gz &quot;$(ProjectDir)..\..\..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\..\..\tiff-4.0.2"
 				/>
 			</FileConfiguration>
 		</File>

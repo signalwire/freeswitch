@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Joseph Sullivan <jossulli@amazon.com>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  * switch_types.h -- Data Types
  *
@@ -129,7 +130,9 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE "enable_heartbeat_events"
 #define SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE "bypass_media_after_bridge"
 #define SWITCH_READ_RESULT_VARIABLE "read_result"
+#define SWITCH_ATT_XFER_RESULT_VARIABLE "att_xfer_result"
 #define SWITCH_COPY_XML_CDR_VARIABLE "copy_xml_cdr"
+#define SWITCH_COPY_JSON_CDR_VARIABLE "copy_json_cdr"
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
 #define SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE "proto_specific_hangup_cause"
 #define SWITCH_TRANSFER_HISTORY_VARIABLE "transfer_history"
@@ -141,6 +144,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE "execute_on_ring"
 #define SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE "execute_on_tone_detect"
 #define SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE "execute_on_originate"
+#define SWITCH_CHANNEL_EXECUTE_ON_POST_ORIGINATE_VARIABLE "execute_on_post_originate"
 
 #define SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE "api_on_answer"
 #define SWITCH_CHANNEL_API_ON_PRE_ANSWER_VARIABLE "api_on_pre_answer"
@@ -148,6 +152,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CHANNEL_API_ON_RING_VARIABLE "api_on_ring"
 #define SWITCH_CHANNEL_API_ON_TONE_DETECT_VARIABLE "api_on_tone_detect"
 #define SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE "api_on_originate"
+#define SWITCH_CHANNEL_API_ON_POST_ORIGINATE_VARIABLE "api_on_post_originate"
 
 #define SWITCH_CALL_TIMEOUT_VARIABLE "call_timeout"
 #define SWITCH_HOLDING_UUID_VARIABLE "holding_uuid"
@@ -168,6 +173,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME "__cache_speech_handles_obj__"
 #define SWITCH_BYPASS_MEDIA_VARIABLE "bypass_media"
 #define SWITCH_PROXY_MEDIA_VARIABLE "proxy_media"
+#define SWITCH_ZRTP_PASSTHRU_VARIABLE "zrtp_passthru"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
 #define SWITCH_TEMP_HOLD_MUSIC_VARIABLE "temp_hold_music"
@@ -180,6 +186,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_LAST_BRIDGE_VARIABLE "last_bridge_to"
 #define SWITCH_SIGNAL_BRIDGE_VARIABLE "signal_bridge_to"
 #define SWITCH_SIGNAL_BOND_VARIABLE "signal_bond"
+#define SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE "originate_signal_bond"
 #define SWITCH_ORIGINATOR_VARIABLE "originator"
 #define SWITCH_ORIGINATOR_CODEC_VARIABLE "originator_codec"
 #define SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE "originator_video_codec"
@@ -287,7 +294,8 @@ typedef enum {
 	ED_NONE = 0,
 	ED_MUX_READ = (1 << 0),
 	ED_MUX_WRITE = (1 << 1),
-	ED_DTMF = (1 << 2)
+	ED_DTMF = (1 << 2),
+	ED_COPY_DISPLAY = (1 << 3)
 } switch_eavesdrop_flag_enum_t;
 typedef uint32_t switch_eavesdrop_flag_t;
 
@@ -315,7 +323,9 @@ typedef enum {
 	SCF_THREADED_SYSTEM_EXEC = (1 << 18),
 	SCF_SYNC_CLOCK_REQUESTED = (1 << 19),
 	SCF_CORE_ODBC_REQ = (1 << 20),
-	SCF_DEBUG_SQL = (1 << 21)
+	SCF_DEBUG_SQL = (1 << 21),
+	SCF_API_EXPANSION = (1 << 22),
+	SCF_SESSION_THREAD_POOL = (1 << 23)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -534,6 +544,7 @@ typedef struct {
 	switch_size_t raw_bytes;
 	switch_size_t media_bytes;
 	switch_size_t packet_count;
+	switch_size_t period_packet_count;
 	switch_size_t media_packet_count;
 	switch_size_t skip_packet_count;
 	switch_size_t jb_packet_count;
@@ -546,13 +557,15 @@ typedef struct {
 
 typedef struct {
 	uint32_t packet_count;
-	uint32_t octet_count;
+	uint32_t octet_count; 
+	uint32_t peer_ssrc;
 } switch_rtcp_numbers_t;
 
 typedef struct {
 	switch_rtp_numbers_t inbound;
 	switch_rtp_numbers_t outbound;
 	switch_rtcp_numbers_t rtcp;
+	uint32_t read_count;
 } switch_rtp_stats_t;
 
 typedef enum {
@@ -703,7 +716,7 @@ typedef enum {
 	*/
 
 
-	RTP_BUG_GEN_ONE_GEN_ALL = (1 << 8)
+	RTP_BUG_GEN_ONE_GEN_ALL = (1 << 8),
 
 	/*
 	  Some RTP endpoints (and by some we mean *cough* _SONUS_!) do not like it when the timestamps jump forward or backwards in time.
@@ -717,6 +730,12 @@ typedef enum {
 
 	 */
 
+	RTP_BUG_CHANGE_SSRC_ON_MARKER = (1 << 9)
+
+	/*
+	  By default FS will change the SSRC when the marker is set and it detects a timestamp reset.
+	  If this setting is enabled it will NOT do this (old behaviour).
+	 */
 
 } switch_rtp_bug_flag_t;
 
@@ -882,8 +901,11 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_JITTER_BUFFER,
 	SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH,
 	SWITCH_MESSAGE_INDICATE_SIGNAL_DATA,
+	SWITCH_MESSAGE_INDICATE_MESSAGE,
 	SWITCH_MESSAGE_INDICATE_INFO,
 	SWITCH_MESSAGE_INDICATE_AUDIO_DATA,
+	SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE,
+	SWITCH_MESSAGE_INDICATE_STUN_ERROR,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
@@ -1209,8 +1231,20 @@ typedef enum {
 	CF_VIDEO_REFRESH_REQ,
 	CF_SERVICE_AUDIO,
 	CF_SERVICE_VIDEO,
+	CF_ZRTP_PASSTHRU_REQ,
+	CF_ZRTP_PASSTHRU,
 	CF_ZRTP_HASH,
-	CF_ZRTP_PASS,
+	CF_CHANNEL_SWAP,
+	CF_PICKUP,
+	CF_CONFIRM_BLIND_TRANSFER,
+	CF_NO_PRESENCE,
+	CF_CONFERENCE,
+	CF_RECOVERING,
+	CF_RECOVERING_BRIDGE,
+	CF_TRACKED,
+	CF_TRACKABLE,
+	CF_NO_CDR,
+	CF_EARLY_OK,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -1431,7 +1465,8 @@ typedef enum {
 	SMBF_THREAD_LOCK = (1 << 7),
 	SMBF_PRUNE = (1 << 8),
 	SMBF_NO_PAUSE = (1 << 9),
-	SMBF_STEREO_SWAP = (1 << 10)
+	SMBF_STEREO_SWAP = (1 << 10),
+	SMBF_LOCK = (1 << 11)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -1631,6 +1666,10 @@ typedef enum {
 	SWITCH_EVENT_SOCKET_DATA,
 	SWITCH_EVENT_MEDIA_BUG_START,
 	SWITCH_EVENT_MEDIA_BUG_STOP,
+	SWITCH_EVENT_CONFERENCE_DATA_QUERY,
+	SWITCH_EVENT_CONFERENCE_DATA,
+	SWITCH_EVENT_CALL_SETUP_REQ,
+	SWITCH_EVENT_CALL_SETUP_RESULT,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
@@ -1746,11 +1785,20 @@ typedef enum {
 	SCSC_THREADED_SYSTEM_EXEC,
 	SCSC_SYNC_CLOCK_WHEN_IDLE,
 	SCSC_DEBUG_SQL,
+	SCSC_SQL,
+	SCSC_API_EXPANSION,
+	SCSC_RECOVER
 } switch_session_ctl_t;
 
 typedef enum {
 	SSH_FLAG_STICKY = (1 << 0)
 } switch_state_handler_flag_t;
+
+#ifdef WIN32
+typedef SOCKET switch_os_socket_t;
+#else
+typedef int switch_os_socket_t;
+#endif
 
 typedef struct apr_pool_t switch_memory_pool_t;
 typedef uint16_t switch_port_t;
@@ -1818,6 +1866,8 @@ struct switch_console_callback_match {
 };
 typedef struct switch_console_callback_match switch_console_callback_match_t;
 
+typedef void (*switch_media_bug_exec_cb_t)(switch_media_bug_t *bug, void *user_data);
+
 typedef void (*switch_cap_callback_t) (const char *var, const char *val, void *user_data);
 typedef switch_status_t (*switch_console_complete_callback_t) (const char *, const char *, switch_console_callback_match_t **matches);
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
@@ -1850,6 +1900,7 @@ typedef switch_status_t (*switch_chat_application_function_t) (switch_event_t *,
 typedef void (*switch_application_function_t) (switch_core_session_t *, const char *);
 #define SWITCH_STANDARD_APP(name) static void name (switch_core_session_t *session, const char *data)
 
+typedef int (*switch_core_recover_callback_t)(switch_core_session_t *session);
 typedef void (*switch_event_callback_t) (switch_event_t *);
 typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t) (switch_core_session_t *, void *, switch_caller_profile_t *);
 #define SWITCH_STANDARD_DIALPLAN(name) static switch_caller_extension_t *name (switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)

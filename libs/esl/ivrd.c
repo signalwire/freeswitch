@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Anthony Minessale II
+ * Copyright (c) 2009-2012, Anthony Minessale II
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -35,12 +35,68 @@
 #include <stdlib.h>
 #include <esl.h>
 #include <errno.h>
+#include <sys/wait.h>
+
+static void handle_SIGCHLD(int sig)
+{
+	int status = 0;
+
+	wait(&status);
+	return;
+}
+
+static void my_forking_callback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
+{
+	esl_handle_t handle = {{0}};
+	char path_buffer[1024] = { 0 };
+	const char *path;
+	char arg[64] = { 0 };
+
+	signal(SIGCHLD, handle_SIGCHLD);
+
+	if (fork()) {
+		close(client_sock);
+		return;
+	}
+	
+	if (esl_attach_handle(&handle, client_sock, addr) != ESL_SUCCESS || !handle.info_event) {
+		esl_log(ESL_LOG_ERROR, "Socket Error\n");
+		exit(0);
+	}
+
+	if (!(path = esl_event_get_header(handle.info_event, "variable_ivr_path"))) {
+		esl_disconnect(&handle);
+		esl_log(ESL_LOG_ERROR, "Missing ivr_path param!\n");
+		exit(0);
+	}
+
+	snprintf(arg, sizeof(arg), "%d", client_sock);
+
+	strncpy(path_buffer, path, sizeof(path_buffer) - 1);
+	
+	/* hotwire the socket to STDIN/STDOUT */
+	/* hotwire the socket to STDIN/STDOUT */
+	if (!(dup2(client_sock, STDIN_FILENO)) && !(dup2(client_sock, STDOUT_FILENO))){
+		esl_disconnect(&handle);
+		esl_log(ESL_LOG_ERROR, "Socket Error hotwiring socket to STDIN/STDOUT!\n");
+		return;
+	}
+
+	/* close the handle but leak the socket on purpose cos the child will need it open */
+	handle.sock = -1;
+	esl_disconnect(&handle);
+	
+	execl(path_buffer, path_buffer, arg, (char *)NULL);
+	close(client_sock);
+	exit(0);
+}
 
 static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
 {
 	esl_handle_t handle = {{0}};
 	const char *path;
-	
+	char path_buffer[1024] = { 0 };
+
 	if (esl_attach_handle(&handle, client_sock, addr) != ESL_SUCCESS || !handle.info_event) {
 		close(client_sock);
 		esl_log(ESL_LOG_ERROR, "Socket Error\n");
@@ -53,16 +109,13 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 		return;
 	}
 
-	/* hotwire the socket to STDIN/STDOUT */
-	if (!(dup2(client_sock, STDIN_FILENO)) && !(dup2(client_sock, STDOUT_FILENO))){
-		esl_disconnect(&handle);
-		esl_log(ESL_LOG_ERROR, "Socket Error hotwiring socket to STDIN/STDOUT!\n");
-		return;
-	}
+	snprintf(path_buffer, sizeof(path_buffer), "%s %d", path, client_sock);
 
-	if(system(path)) {
+
+	if (system(path_buffer)) {
 		 esl_log(ESL_LOG_ERROR, "System Call Failed! [%s]\n", strerror(errno));
 	}
+
 	esl_disconnect(&handle);
 	
 }
@@ -71,24 +124,43 @@ int main(int argc, char *argv[])
 {
 	int i;
 	char *ip = NULL;
-	int port = 0;
+	int port = 0, thread = 0;
 	
-	for (i = 1; i + 1 < argc; ) {
-		if (!strcasecmp(argv[i], "-h")) {
-			ip = argv[++i];
-		} else if (!strcasecmp(argv[i], "-p")) {
-			port = atoi(argv[++i]);
-		} else {
-			i++;
+	for (i = 1; i < argc; ) {
+		int cont = 0;
+
+		if (i + 1 < argc) {
+			if (!strcasecmp(argv[i], "-h")) {
+				ip = argv[++i]; cont++;
+			} else if (!strcasecmp(argv[i], "-p")) {
+				port = atoi(argv[++i]); cont++;
+			}
 		}
+
+		if (cont) {
+			i++;
+			continue;
+		}
+
+		if (!strcasecmp(argv[i], "-t")) {
+			thread++;
+		}
+
+		i++;
 	}
 
 	if (!(ip && port)) {
-		fprintf(stderr, "Usage %s -h <host> -p <port>\n", argv[0]);
+		fprintf(stderr, "Usage %s [-t] -h <host> -p <port>\n", argv[0]);
 		return -1;
 	}
 
-	esl_listen(ip, port, mycallback, 100000);
+	if (thread) {
+		printf("Starting threaded listener.\n");
+		esl_listen_threaded(ip, port, mycallback, 100000);
+	} else {
+		printf("Starting forking listener.\n");
+		esl_listen(ip, port, my_forking_callback);
+	}
 	
 	return 0;
 }

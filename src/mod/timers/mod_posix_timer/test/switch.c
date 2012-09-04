@@ -42,13 +42,17 @@ switch_status_t switch_thread_cond_create(switch_thread_cond_t **cond, switch_me
 	return pthread_cond_init(*cond, NULL);
 }
 
-switch_status_t switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_mutex_t *mutex, int wait)
+switch_status_t switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_mutex_t *mutex, long wait)
 {
-	struct timespec dur = { 0, 0 };
-	clock_gettime(CLOCK_REALTIME, &dur);
-	dur.tv_sec = wait / 1000000000;
-	dur.tv_nsec = wait % 1000000000; 
-	return pthread_cond_timedwait(cond, mutex, &dur);
+	struct timespec abs_time = { 0, 0 };
+	/* add wait duration to current time (wait is in microseconds, pthreads wants nanosecond resolution) */
+	clock_gettime(CLOCK_REALTIME, &abs_time);
+	abs_time.tv_sec += wait / 1000000;
+	abs_time.tv_nsec += (wait % 1000000) * 1000;
+	/* handle overflow of tv_nsec */
+	abs_time.tv_sec += abs_time.tv_nsec / 1000000000;
+	abs_time.tv_nsec = abs_time.tv_nsec % 1000000000;
+	return pthread_cond_timedwait(cond, mutex, &abs_time);
 }
 
 switch_status_t switch_thread_cond_broadcast(switch_thread_cond_t *cond)

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -260,7 +260,7 @@ static switch_xml_t lua_fetch(const char *section,
 			mod_lua_conjure_event(L, params, "params", 1);
 		}
 
-		if( error = lua_parse_and_execute(L, mycmd) ){
+		if((error = lua_parse_and_execute(L, mycmd))){
 		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "LUA script parse/execute error!\n");
 		    return NULL;
 		}
@@ -331,7 +331,7 @@ static switch_status_t do_config(void)
 
 	if (cpath_stream.data_len) {
 		char *lua_cpath = NULL;
-		if (lua_cpath = getenv("LUA_CPATH")) {
+		if ((lua_cpath = getenv("LUA_CPATH"))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending LUA_CPATH: '%s'\n", lua_cpath);
 			cpath_stream.write_function(&cpath_stream, ";%s", lua_cpath);
 		}
@@ -349,7 +349,7 @@ static switch_status_t do_config(void)
 
 	if (path_stream.data_len) {
 		char *lua_path = NULL;
-		if (lua_path = getenv("LUA_PATH")) {
+		if ((lua_path = getenv("LUA_PATH"))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending LUA_PATH: '%s'\n", lua_path);
 			path_stream.write_function(&path_stream, ";%s", lua_path);
 		}

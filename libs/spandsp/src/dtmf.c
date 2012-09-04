@@ -258,45 +258,42 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                   Note this is only relevant to VoIP using A-law, u-law or similar.
                   Low bit rate codecs scramble DTMF too much for it to be recognised,
                   and often slip in units larger than a sample. */
-        if (hit != s->in_digit)
+        if (hit != s->in_digit  &&  s->last_hit != s->in_digit)
         {
-            if (s->last_hit != s->in_digit)
+            /* We have two successive indications that something has changed. */
+            /* To declare digit on, the hits must agree. Otherwise we declare tone off. */
+            hit = (hit  &&  hit == s->last_hit)  ?  hit   :  0;
+            if (s->realtime_callback)
             {
-                /* We have two successive indications that something has changed. */
-                /* To declare digit on, the hits must agree. Otherwise we declare tone off. */
-                hit = (hit  &&  hit == s->last_hit)  ?  hit   :  0;
-                if (s->realtime_callback)
+                /* Avoid reporting multiple no digit conditions on flaky hits */
+                if (s->in_digit  ||  hit)
                 {
-                    /* Avoid reporting multiple no digit conditions on flaky hits */
-                    if (s->in_digit  ||  hit)
-                    {
-                        i = (s->in_digit  &&  !hit)  ?  -99  :  lfastrintf(log10f(s->energy)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER);
-                        s->realtime_callback(s->realtime_callback_data, hit, i, s->duration);
-                        s->duration = 0;
-                    }
+                    i = (s->in_digit  &&  !hit)  ?  -99  :  lfastrintf(log10f(s->energy)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER);
+                    s->realtime_callback(s->realtime_callback_data, hit, i, s->duration);
+                    s->duration = 0;
                 }
-                else
-                {
-                    if (hit)
-                    {
-                        if (s->current_digits < MAX_DTMF_DIGITS)
-                        {
-                            s->digits[s->current_digits++] = (char) hit;
-                            s->digits[s->current_digits] = '\0';
-                            if (s->digits_callback)
-                            {
-                                s->digits_callback(s->digits_callback_data, s->digits, s->current_digits);
-                                s->current_digits = 0;
-                            }
-                        }
-                        else
-                        {
-                            s->lost_digits++;
-                        }
-                    }
-                }
-                s->in_digit = hit;
             }
+            else
+            {
+                if (hit)
+                {
+                    if (s->current_digits < MAX_DTMF_DIGITS)
+                    {
+                        s->digits[s->current_digits++] = (char) hit;
+                        s->digits[s->current_digits] = '\0';
+                        if (s->digits_callback)
+                        {
+                            s->digits_callback(s->digits_callback_data, s->digits, s->current_digits);
+                            s->current_digits = 0;
+                        }
+                    }
+                    else
+                    {
+                        s->lost_digits++;
+                    }
+                }
+            }
+            s->in_digit = hit;
         }
         s->last_hit = hit;
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -333,7 +330,7 @@ SPAN_DECLARE(int) dtmf_rx_fillin(dtmf_rx_state_t *s, int samples)
 #endif
     s->current_sample = 0;
     /* Don't update the hit detection. Pretend it never happened. */
-    /* TODO: Surely we can be a cleverer than this. */
+    /* TODO: Surely we can be cleverer than this. */
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -359,7 +356,7 @@ SPAN_DECLARE(size_t) dtmf_rx_get(dtmf_rx_state_t *s, char *buf, int max)
         s->current_digits -= max;
     }
     buf[max] = '\0';
-    return  max;
+    return max;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -375,9 +372,9 @@ SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
 
 SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
                                  int filter_dialtone,
-                                 int twist,
-                                 int reverse_twist,
-                                 int threshold)
+                                 float twist,
+                                 float reverse_twist,
+                                 float threshold)
 {
     float x;
 
@@ -417,7 +414,7 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
     if (s == NULL)
     {
         if ((s = (dtmf_rx_state_t *) malloc(sizeof (*s))) == NULL)
-            return  NULL;
+            return NULL;
     }
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
@@ -570,7 +567,7 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s)
     if (s == NULL)
     {
         if ((s = (dtmf_tx_state_t *) malloc(sizeof (*s))) == NULL)
-            return  NULL;
+            return NULL;
     }
     memset(s, 0, sizeof(*s));
     if (!dtmf_tx_inited)

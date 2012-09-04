@@ -1,19 +1,22 @@
-Summary:    A DSP library for telephony.
-Name:       spandsp
-Version:    0.0.6
-Release:    1
-License:    LGPL
-Group:      System Environment/Libraries
-URL:        http://www.soft-switch.org/spandsp
-BuildRoot:  %{_tmppath}/%{name}-%{version}-root
-Source:     http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6.tar.gz
-BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+%global pre 21
 
-BuildRequires: libtiff-devel
-BuildRequires: audiofile-devel
+Summary: A DSP library for telephony.
+Name: spandsp
+Version: 0.0.7
+Release: 1
+License: LGPLv2 and GPLv2
+Group: System Environment/Libraries
+URL: http://www.soft-switch.org/spandsp
+Source: http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.7.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+BuildRequires: libtiff-devel%{?_isa}
+BuildRequires: libjpeg-turbo-devel%{?_isa}
+BuildRequires: libxml2-devel%{?_isa}
+BuildRequires: libsndfile-devel%{?_isa}
 BuildRequires: doxygen
-# for xsltproc:
 BuildRequires: libxslt
+BuildRequires: docbook-style-xsl
 
 %description
 SpanDSP is a library of DSP functions for telephony, in the 8000
@@ -26,14 +29,21 @@ relevant patents have expired. See the file DueDiligence for important
 information about these intellectual property issues.
 
 %package devel
-Summary:    SpanDSP development files
-Group:      Development/Libraries
-Requires:   spandsp = %{version}
-Requires:   libtiff-devel
-PreReq:     /sbin/install-info
+Summary: SpanDSP development files
+Group: Development/Libraries
+Requires: spandsp%{?_isa} = %{version}-%{release}
+Requires: libtiff-devel%{?_isa}
+Requires: libjpeg-turbo-devel%{?_isa}
 
 %description devel
 SpanDSP development files.
+
+%package apidoc
+Summary: SpanDSP API documentation
+Group: Development/Libraries
+
+%description apidoc
+SpanDSP API documentation.
 
 %prep
 %setup -q
@@ -41,34 +51,44 @@ SpanDSP development files.
 %build
 %configure --enable-doc --disable-static --disable-rpath
 make
+find doc/api -type f | xargs touch -r configure
 
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
 rm %{buildroot}%{_libdir}/libspandsp.la
+mkdir -p %{buildroot}%{_datadir}/spandsp
 
 %clean
 rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc DueDiligence ChangeLog AUTHORS COPYING NEWS README 
+%doc DueDiligence ChangeLog AUTHORS COPYING NEWS README
 
 %{_libdir}/libspandsp.so.*
 
+%{_datadir}/spandsp
+
 %files devel
 %defattr(-,root,root,-)
-%doc doc/api
 %{_includedir}/spandsp.h
 %{_includedir}/spandsp
 %{_libdir}/libspandsp.so
 %{_libdir}/pkgconfig/spandsp.pc
+
+%files apidoc
+%defattr(-,root,root,-)
+%doc doc/api/html/*
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Oct 03 2011 Steve Underwood <steveu@coppice.org> 0.0.6-1
+- Converge with what Fedora do
+
 * Wed Sep 24 2008 Tzafrir Cohen <tzafrir.cohen@xorcom.com> 0.0.5-1
 - Preparing for 0.0.5pre4 release
 - License: LGPL

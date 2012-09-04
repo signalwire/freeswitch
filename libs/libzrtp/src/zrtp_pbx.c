@@ -128,13 +128,15 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 	zrtp_status_t s = zrtp_status_fail;
 	zrtp_string128_t hmac = ZSTR_INIT_EMPTY(hmac);
 	char zerosashash[32];
+	unsigned sas_scheme_did_change = 0;
+	unsigned sas_hash_did_change = 0;
 	
 	/* (padding + sig_len + flags) + SAS scheme and SAS hash */
 	const uint8_t encrypted_body_size = (2 + 1 + 1) + 4 + 32;
 	
 	zrtp_memset(zerosashash, 0, sizeof(zerosashash));
 
-	/* Check if the remote endpoint is assiggneed to relay the SAS values */
+	/* Check if the remote endpoint is assigned to relay the SAS values */
 	if (!stream->peer_mitm_flag) {
 		ZRTP_LOG(2,(_ZTU_, ZRTP_RELAYED_SAS_FROM_NONMITM_STR));
 		return zrtp_status_fail;
@@ -157,7 +159,7 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 		return zrtp_status_fail;
 	}
 
-	ZRTP_LOG(3,(_ZTU_, "\tHMAC value for the SASRELAY is correct - decryptiong...\n"));
+	ZRTP_LOG(3,(_ZTU_, "\tHMAC value for the SASRELAY is correct - decrypting...\n"));
 
 	/* Then we need to decrypt Confirm body */
 	do
@@ -217,9 +219,14 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 		_zrtp_machine_enter_initiatingerror(stream, zrtp_error_invalid_packet, 1);
 		return zrtp_status_fail;
 	}
-	session->sasscheme = zrtp_comp_find(ZRTP_CC_SAS, rendering_id, session->zrtp );
 
-	ZRTP_LOG(3,(_ZTU_,"\tSasrelay: New Rendering scheme %.4s.\n", session->sasscheme->base.type));
+	/* Check is SAS rendering did change */
+	if (rendering_id != session->sasscheme->base.id) {
+		session->sasscheme = zrtp_comp_find(ZRTP_CC_SAS, rendering_id, session->zrtp );
+
+		sas_scheme_did_change = 1;
+		ZRTP_LOG(3,(_ZTU_,"\tSasrelay: Rendering scheme was updated to %.4s.\n", session->sasscheme->base.type));
+	}
 
 	if (session->secrets.matches & ZRTP_BIT_PBX) {
 		if ( ( ((uint32_t) *sasrelay->sas_scheme) != (uint32_t)0x0L ) &&
@@ -231,7 +238,8 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 			zrtp_memcpy(session->sasbin.buffer, sasrelay->sashash, session->sasbin.length);
 			stream->mitm_mode = ZRTP_MITM_MODE_RECONFIRM_CLIENT;
 	
-			ZRTP_LOG(3,(_ZTU_,"\tSasRelay: SAS value was updated bin=%s.\n",
+			sas_hash_did_change = 1;
+			ZRTP_LOG(3,(_ZTU_,"\tSasRelay: SAS value was updated to bin=%s.\n",
 							hex2str(buff, sizeof(buff), session->sasbin.buffer, session->sasbin.length)));
 		}
 	} else if (0 != zrtp_memcmp(sasrelay->sashash, zerosashash, sizeof(sasrelay->sashash))) {
@@ -242,16 +250,24 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 		ZRTP_LOG(1,(_ZTU_, "\rERROR! For SasRelay Other secret doesn't match. ID=%u\n", stream->id));
 	}
 
-	s = session->sasscheme->compute(session->sasscheme, stream, session->hash, 1);
-	if (zrtp_status_ok != s) {
-		_zrtp_machine_enter_initiatingerror(stream, zrtp_error_software, 1);
-		return s;
-	}
 
-	ZRTP_LOG(3,(_ZTU_,"\tSasRelay: Updated SAS is <%s> <%s>.\n", session->sas1.buffer, session->sas2.buffer));
+	/* Generate new SAS if hash or rendering scheme did change.
+	 * Note: latest libzrtp may send "empty" SasRelay with the same SAS rendering
+	 *       scheme and empty Hello hash for consistency reasons, we should ignore
+	 *       such packets.
+	 */
+	if (sas_scheme_did_change || sas_hash_did_change) {
+		s = session->sasscheme->compute(session->sasscheme, stream, session->hash, 1);
+		if (zrtp_status_ok != s) {
+			_zrtp_machine_enter_initiatingerror(stream, zrtp_error_software, 1);
+			return s;
+		}
 
-	if (session->zrtp->cb.event_cb.on_zrtp_protocol_event) {
-		session->zrtp->cb.event_cb.on_zrtp_protocol_event(stream, ZRTP_EVENT_LOCAL_SAS_UPDATED);
+		ZRTP_LOG(3,(_ZTU_,"\tSasRelay: Updated SAS is <%s> <%s>.\n", session->sas1.buffer, session->sas2.buffer));
+
+		if (session->zrtp->cb.event_cb.on_zrtp_protocol_event) {
+			session->zrtp->cb.event_cb.on_zrtp_protocol_event(stream, ZRTP_EVENT_LOCAL_SAS_UPDATED);
+		}
 	}
 
 	return zrtp_status_ok;
@@ -356,8 +372,8 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream)
 	
 	/* Passive Client endpoint should NOT generate PBX Secret. */
 	if ((stream->mitm_mode == ZRTP_MITM_MODE_REG_CLIENT) &&
-		(ZRTP_LICENSE_MODE_PASSIVE != stream->zrtp->lic_mode)) {
-		ZRTP_LOG(2,(_ZTU_,"WARNING: Passive Client endpoint should NOT generate PBX Secert.\n"));
+		(ZRTP_LICENSE_MODE_PASSIVE == stream->zrtp->lic_mode)) {
+		ZRTP_LOG(2,(_ZTU_,"WARNING: Passive Client endpoint should NOT generate PBX Secret.\n"));
 		return zrtp_status_bad_param;
 	}
 
@@ -492,7 +508,7 @@ zrtp_status_t zrtp_update_remote_options( zrtp_stream_t* stream,
 		return zrtp_status_bad_param;
 	}
 	
-	/* Don't allow to transfer the SAS if the library wasn't initalized as MiTM endpoint */
+	/* Don't allow to transfer the SAS if the library wasn't initialized as MiTM endpoint */
 	if (!stream->zrtp->is_mitm) {
 		ZRTP_LOG(3,(_ZTU_,"\tERROR! The endpoint can't transfer SAS values to other endpoints"
 					" without introducing itself by M-flag in Hello. see zrtp_init().\n"));

@@ -296,6 +296,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 		}
 
 		if (!pop) {
+			THREAD_RUNNING = -1;
 			break;
 		}
 
@@ -558,7 +559,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 {
 	switch_status_t st;
 
-	THREAD_RUNNING = -1;
+
 	switch_queue_push(LOG_QUEUE, NULL);
 	while (THREAD_RUNNING) {
 		switch_cond_next();

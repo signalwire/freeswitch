@@ -563,7 +563,6 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 			if ((ci = (switch_chat_interface_t *) val)) {
 				if (ci->chat_send && !strncasecmp(ci->interface_name, "GLOBAL_", 7)) {
 					status = ci->chat_send(message_event);
-
 					if (status == SWITCH_STATUS_BREAK) {
 						do_skip = 1;
 					}
@@ -599,17 +598,20 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	return status;
 }
 
-static void chat_process_event(switch_event_t **eventp)
+static switch_status_t chat_process_event(switch_event_t **eventp)
 {
 	switch_event_t *event;
+	switch_status_t status;
 
 	switch_assert(eventp);
 
 	event = *eventp;
 	*eventp = NULL;
 
-	do_chat_send(event);
+	status = do_chat_send(event);
 	switch_event_destroy(&event);
+
+	return status;
 }
 
 
@@ -743,7 +745,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_execute_chat_app(switch_event_t *mes
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_proto, const char *proto, const char *from, const char *to,
-														   const char *subject, const char *body, const char *type, const char *hint)
+														   const char *subject, const char *body, const char *type, const char *hint, switch_bool_t blocking)
 {
 	switch_event_t *message_event;
 	switch_status_t status;
@@ -756,6 +758,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_prot
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "type", type);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
+		if (blocking) {
+			switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "blocking", "true");
+		}
 		
 		if (body) {
 			switch_event_add_body(message_event, "%s", body);
@@ -768,8 +773,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_prot
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
 	}
 
-	chat_queue_message(&message_event);
-	status = SWITCH_STATUS_SUCCESS;
+	
+	if (blocking) {
+		status = chat_process_event(&message_event);
+	} else {
+		chat_queue_message(&message_event);
+		status = SWITCH_STATUS_SUCCESS;
+	}
 
 	return status;
 	
@@ -2075,7 +2085,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 }
 
-char *parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit)
+SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit)
 {
 	char *cur, *next = NULL, *name, *p;
 
@@ -2119,7 +2129,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		uint32_t interval = 0, rate = 0, bit = 0;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
-		name = parse_codec_buf(buf, &interval, &rate, &bit);
+		name = switch_parse_codec_buf(buf, &interval, &rate, &bit);
 
 		for(j = 0; j < x; j++) {
 			char *jname;
@@ -2135,7 +2145,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			}
 
 			switch_copy_string(jbuf, prefs[j], sizeof(jbuf));
-			jname = parse_codec_buf(jbuf, &jinterval, &jrate, &jbit);
+			jname = switch_parse_codec_buf(jbuf, &jinterval, &jrate, &jbit);
 
 			if (jinterval == 0) {
 				jinterval = switch_default_ptime(jname, 0);

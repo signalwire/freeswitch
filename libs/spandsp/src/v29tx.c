@@ -205,13 +205,16 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
 SPAN_DECLARE_NONSTD(int) v29_tx(v29_tx_state_t *s, int16_t amp[], int len)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
-    complexi_t x;
-    complexi_t z;
+    complexi16_t v;
+    complexi32_t x;
+    complexi32_t z;
+    int16_t iamp;
 #else
+    complexf_t v;
     complexf_t x;
     complexf_t z;
+    float famp;
 #endif
-    int i;
     int sample;
 
     if (s->training_step >= V29_TRAINING_SHUTDOWN_END)
@@ -224,37 +227,30 @@ SPAN_DECLARE_NONSTD(int) v29_tx(v29_tx_state_t *s, int16_t amp[], int len)
         if ((s->baud_phase += 3) >= 10)
         {
             s->baud_phase -= 10;
-            s->rrc_filter[s->rrc_filter_step] =
-            s->rrc_filter[s->rrc_filter_step + V29_TX_FILTER_STEPS] = getbaud(s);
+            v = getbaud(s);
+            s->rrc_filter_re[s->rrc_filter_step] = v.re;
+            s->rrc_filter_im[s->rrc_filter_step] = v.im;
             if (++s->rrc_filter_step >= V29_TX_FILTER_STEPS)
                 s->rrc_filter_step = 0;
         }
-        /* Root raised cosine pulse shaping at baseband */
 #if defined(SPANDSP_USE_FIXED_POINT)
-        x = complex_seti(0, 0);
-        for (i = 0;  i < V29_TX_FILTER_STEPS;  i++)
-        {
-            x.re += (int32_t) tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase][i]*(int32_t) s->rrc_filter[i + s->rrc_filter_step].re;
-            x.im += (int32_t) tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase][i]*(int32_t) s->rrc_filter[i + s->rrc_filter_step].im;
-        }
+        /* Root raised cosine pulse shaping at baseband */
+        x.re = vec_circular_dot_prodi16(s->rrc_filter_re, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase], V29_TX_FILTER_STEPS, s->rrc_filter_step) >> 4;
+        x.im = vec_circular_dot_prodi16(s->rrc_filter_im, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase], V29_TX_FILTER_STEPS, s->rrc_filter_step) >> 4;
         /* Now create and modulate the carrier */
-        x.re >>= 4;
-        x.im >>= 4;
-        z = dds_complexi(&(s->carrier_phase), s->carrier_phase_rate);
+        z = dds_complexi32(&s->carrier_phase, s->carrier_phase_rate);
+        iamp = ((int32_t) x.re*z.re - x.im*z.im) >> 15;
         /* Don't bother saturating. We should never clip. */
-        i = (x.re*z.re - x.im*z.im) >> 15;
-        amp[sample] = (int16_t) ((i*s->gain) >> 15);
+        amp[sample] = (int16_t) (((int32_t) iamp*s->gain) >> 11);
 #else
-        x = complex_setf(0.0f, 0.0f);
-        for (i = 0;  i < V29_TX_FILTER_STEPS;  i++)
-        {
-            x.re += tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase][i]*s->rrc_filter[i + s->rrc_filter_step].re;
-            x.im += tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase][i]*s->rrc_filter[i + s->rrc_filter_step].im;
-        }
+        /* Root raised cosine pulse shaping at baseband */
+        x.re = vec_circular_dot_prodf(s->rrc_filter_re, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase], V29_TX_FILTER_STEPS, s->rrc_filter_step);
+        x.im = vec_circular_dot_prodf(s->rrc_filter_im, tx_pulseshaper[TX_PULSESHAPER_COEFF_SETS - 1 - s->baud_phase], V29_TX_FILTER_STEPS, s->rrc_filter_step);
         /* Now create and modulate the carrier */
-        z = dds_complexf(&(s->carrier_phase), s->carrier_phase_rate);
+        z = dds_complexf(&s->carrier_phase, s->carrier_phase_rate);
+        famp = x.re*z.re - x.im*z.im;
         /* Don't bother saturating. We should never clip. */
-        amp[sample] = (int16_t) lfastrintf((x.re*z.re - x.im*z.im)*s->gain);
+        amp[sample] = (int16_t) lfastrintf(famp*s->gain);
 #endif
     }
     return sample;
@@ -267,13 +263,13 @@ static void set_working_gain(v29_tx_state_t *s)
     switch (s->bit_rate)
     {
     case 9600:
-        s->gain = 0.387f*s->base_gain*16.0f*32767.0f/30672.52f;
+        s->gain = ((int32_t) FP_Q_4_12(0.387f)*s->base_gain) >> 12;
         break;
     case 7200:
-        s->gain = 0.605f*s->base_gain*16.0f*32767.0f/30672.52f;
+        s->gain = ((int32_t) FP_Q_4_12(0.605f)*s->base_gain) >> 12;
         break;
     case 4800:
-        s->gain = 0.470f*s->base_gain*16.0f*32767.0f/30672.52f;
+        s->gain = ((int32_t) FP_Q_4_12(0.470f)*s->base_gain) >> 12;
         break;
     default:
         break;
@@ -299,10 +295,17 @@ static void set_working_gain(v29_tx_state_t *s)
 
 SPAN_DECLARE(void) v29_tx_power(v29_tx_state_t *s, float power)
 {
+    float gain;
+
     /* The constellation does not maintain constant average power as we change bit rates.
        We need to scale the gain we get here by a bit rate specific scaling factor each
        time we restart the modem. */
-    s->base_gain = powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
+    gain = powf(10.0f, (power - DBM0_MAX_POWER)/20.0f)*32768.0f/TX_PULSESHAPER_GAIN;
+#if defined(SPANDSP_USE_FIXED_POINT)
+    s->base_gain = (int16_t) gain;
+#else
+    s->base_gain = gain;
+#endif
     set_working_gain(s);
 }
 /*- End of function --------------------------------------------------------*/
@@ -349,9 +352,11 @@ SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, int tep)
         return -1;
     }
 #if defined(SPANDSP_USE_FIXED_POINT)
-    cvec_zeroi16(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
+    vec_zeroi16(s->rrc_filter_re, sizeof(s->rrc_filter_re)/sizeof(s->rrc_filter_re[0]));
+    vec_zeroi16(s->rrc_filter_im, sizeof(s->rrc_filter_im)/sizeof(s->rrc_filter_im[0]));
 #else
-    cvec_zerof(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
+    vec_zerof(s->rrc_filter_re, sizeof(s->rrc_filter_re)/sizeof(s->rrc_filter_re[0]));
+    vec_zerof(s->rrc_filter_im, sizeof(s->rrc_filter_im)/sizeof(s->rrc_filter_im[0]));
 #endif
     s->rrc_filter_step = 0;
     s->scramble_reg = 0;

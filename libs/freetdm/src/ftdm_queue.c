@@ -98,7 +98,7 @@ static ftdm_status_t ftdm_std_queue_create(ftdm_queue_t **outqueue, ftdm_size_t 
 		goto failed;
 	}
 
-	if (ftdm_interrupt_create(&queue->interrupt, FTDM_INVALID_SOCKET) != FTDM_SUCCESS) {
+	if (ftdm_interrupt_create(&queue->interrupt, FTDM_INVALID_SOCKET, FTDM_NO_FLAGS) != FTDM_SUCCESS) {
 		goto failed;
 	}
 

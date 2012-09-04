@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -402,6 +402,9 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
 
 SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix, switch_hash_t *vars_map);
 SWITCH_DECLARE(int) switch_event_check_permission_list(switch_event_t *list, const char *name);
+SWITCH_DECLARE(void) switch_event_add_presence_data_cols(switch_channel_t *channel, switch_event_t *event, const char *prefix);
+SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max);
+
 ///\}
 
 SWITCH_END_EXTERN_C

@@ -507,28 +507,28 @@ SPAN_DECLARE(int) t30_set_receiver_not_ready(t30_state_t *s, int count);
     \param s The T.30 context.
     \param handler The callback function.
     \param user_data An opaque pointer passed to the callback function. */
-SPAN_DECLARE(void) t30_set_phase_b_handler(t30_state_t *s, t30_phase_b_handler_t *handler, void *user_data);
+SPAN_DECLARE(void) t30_set_phase_b_handler(t30_state_t *s, t30_phase_b_handler_t handler, void *user_data);
 
 /*! Set a callback function for T.30 phase D handling.
     \brief Set a callback function for T.30 phase D handling.
     \param s The T.30 context.
     \param handler The callback function.
     \param user_data An opaque pointer passed to the callback function. */
-SPAN_DECLARE(void) t30_set_phase_d_handler(t30_state_t *s, t30_phase_d_handler_t *handler, void *user_data);
+SPAN_DECLARE(void) t30_set_phase_d_handler(t30_state_t *s, t30_phase_d_handler_t handler, void *user_data);
 
 /*! Set a callback function for T.30 phase E handling.
     \brief Set a callback function for T.30 phase E handling.
     \param s The T.30 context.
     \param handler The callback function.
     \param user_data An opaque pointer passed to the callback function. */
-SPAN_DECLARE(void) t30_set_phase_e_handler(t30_state_t *s, t30_phase_e_handler_t *handler, void *user_data);
+SPAN_DECLARE(void) t30_set_phase_e_handler(t30_state_t *s, t30_phase_e_handler_t handler, void *user_data);
 
 /*! Set a callback function for T.30 end of document handling.
     \brief Set a callback function for T.30 end of document handling.
     \param s The T.30 context.
     \param handler The callback function.
     \param user_data An opaque pointer passed to the callback function. */
-SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler_t *handler, void *user_data);
+SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler_t handler, void *user_data);
 
 /*! Set a callback function for T.30 frame exchange monitoring. This is called from the heart
     of the signal processing, so don't take too long in the handler routine.
@@ -536,7 +536,7 @@ SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler
     \param s The T.30 context.
     \param handler The callback function.
     \param user_data An opaque pointer passed to the callback function. */
-SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t *handler, void *user_data);
+SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t handler, void *user_data);
 
 /*! Get a pointer to the logging context associated with a T.30 context.
     \brief Get a pointer to the logging context associated with a T.30 context.

@@ -122,8 +122,8 @@ static void clear_queue(private_t *tech_pvt)
 static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, switch_codec_t *codec)
 {
 	const char *iananame = "L16";
-	int rate = 8000;
-	int interval = 20;
+	uint32_t rate = 8000;
+	uint32_t interval = 20;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const switch_codec_implementation_t *read_impl;
@@ -132,6 +132,15 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		iananame = codec->implementation->iananame;
 		rate = codec->implementation->samples_per_second;
 		interval = codec->implementation->microseconds_per_packet / 1000;
+	} else {
+		const char *var;
+
+		if ((var = switch_channel_get_variable(channel, "loopback_initial_codec"))) {
+			char *dup = switch_core_session_strdup(session, var);
+			uint32_t bit;
+			iananame = switch_parse_codec_buf(dup, &interval, &rate, &bit);
+		}
+		
 	}
 
 	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
@@ -641,6 +650,39 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	return status;
 }
 
+static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, switch_core_session_t **br_session, const char **br_uuid)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *a_uuid;
+	switch_core_session_t *sp;
+
+	*br_session = NULL;
+	*br_uuid = NULL;
+
+	a_uuid = switch_channel_get_partner_uuid(channel);
+
+	while (a_uuid && (sp = switch_core_session_locate(a_uuid))) {
+		if (switch_core_session_check_interface(sp, loopback_endpoint_interface)) {
+			private_t *tech_pvt = switch_core_session_get_private(sp);
+
+			a_uuid = switch_channel_get_partner_uuid(tech_pvt->other_channel);
+			switch_core_session_rwunlock(sp);
+			sp = NULL;
+		} else {
+			break;
+		}
+	}
+
+	if (sp) {
+		*br_session = sp;
+		*br_uuid = a_uuid;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+
+}
+
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_channel_t *channel = NULL;
@@ -669,8 +711,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		switch_channel_test_flag(tech_pvt->other_channel, CF_BRIDGED) &&
 		switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) &&
 		switch_channel_test_flag(tech_pvt->other_channel, CF_ANSWERED) && --tech_pvt->bowout_frame_count <= 0) {
-		const char *a_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
-		const char *b_uuid = switch_channel_get_variable(tech_pvt->other_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *a_uuid = NULL;
+		const char *b_uuid = NULL;
 		const char *vetoa, *vetob;
 
 
@@ -681,16 +723,21 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 			switch_core_session_t *br_a, *br_b;
 			switch_channel_t *ch_a = NULL, *ch_b = NULL;
 			int good_to_go = 0;
+
+			find_non_loopback_bridge(session, &br_a, &a_uuid);
+			find_non_loopback_bridge(tech_pvt->other_session, &br_b, &b_uuid);
+
 			
-			if ((br_a = switch_core_session_locate(a_uuid))) {
+			if (br_a) {
 				ch_a = switch_core_session_get_channel(br_a);
 			}
 
-			if ((br_b = switch_core_session_locate(b_uuid))) {
+			if (br_b) {
 				ch_b = switch_core_session_get_channel(br_b);
 			}
 			
 			if (ch_a && ch_b && switch_channel_test_flag(ch_a, CF_BRIDGED) && switch_channel_test_flag(ch_b, CF_BRIDGED)) {
+
 				switch_set_flag_locked(tech_pvt, TFLAG_BOWOUT);
 				switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_BOWOUT);
 
@@ -872,7 +919,7 @@ static switch_status_t loopback_bowout_on_execute_state_handler(switch_core_sess
 		/* Wait for b_channel to be fully bridged */
 		switch_channel_wait_for_flag(b_channel, CF_BRIDGED, SWITCH_TRUE, 5000, NULL);
 
-		uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		uuid = switch_channel_get_partner_uuid(b_channel);
 
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
 			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);

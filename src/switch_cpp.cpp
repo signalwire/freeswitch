@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -50,11 +50,11 @@ static void event_handler(switch_event_t *event)
 
 }
 
-SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(const char *event_name, const char *subclass_name)
+SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(const char *event_name, const char *subclass_name, int len)
 {
 
 	switch_core_new_memory_pool(&pool);	
-	switch_queue_create(&events, 5000, pool);
+	switch_queue_create(&events, len, pool);
 	node_index = 0;
 	
 	if (!zstr(event_name)) {

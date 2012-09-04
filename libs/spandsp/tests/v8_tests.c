@@ -206,6 +206,8 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
     negotiations_ok = 0;
 
     v8_call_parms.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
+    v8_call_parms.send_ci = TRUE;
+    v8_call_parms.v92 = -1;
     v8_call_parms.call_function = V8_CALL_V_SERIES;
     v8_call_parms.modulations = caller_available_modulations;
     v8_call_parms.protocol = V8_PROTOCOL_LAPM_V42;
@@ -219,6 +221,8 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
                         handler,
                         (void *) "caller");
     v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
+    v8_answer_parms.send_ci = TRUE;
+    v8_answer_parms.v92 = -1;
     v8_answer_parms.call_function = V8_CALL_V_SERIES;
     v8_answer_parms.modulations = answerer_available_modulations;
     v8_answer_parms.protocol = V8_PROTOCOL_LAPM_V42;
@@ -329,6 +333,8 @@ static int non_v8_calls_v8_tests(SNDFILE *outhandle)
     non_v8_caller_rx = modem_connect_tones_rx_init(NULL, MODEM_CONNECT_TONES_ANS_PR, NULL, NULL);
 
     v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
+    v8_answer_parms.send_ci = TRUE;
+    v8_answer_parms.v92 = -1;
     v8_answer_parms.call_function = V8_CALL_V_SERIES;
     v8_answer_parms.modulations = answerer_available_modulations;
     v8_answer_parms.protocol = V8_PROTOCOL_LAPM_V42;
@@ -439,6 +445,8 @@ static int v8_calls_non_v8_tests(SNDFILE *outhandle)
     negotiations_ok = 0;
 
     v8_call_parms.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
+    v8_call_parms.send_ci = TRUE;
+    v8_call_parms.v92 = -1;
     v8_call_parms.call_function = V8_CALL_V_SERIES;
     v8_call_parms.modulations = caller_available_modulations;
     v8_call_parms.protocol = V8_PROTOCOL_LAPM_V42;
@@ -578,6 +586,8 @@ int main(int argc, char *argv[])
 
         printf("Decode file '%s'\n", decode_test_file);
         v8_call_parms.modem_connect_tone = MODEM_CONNECT_TONES_NONE;
+        v8_call_parms.send_ci = TRUE;
+        v8_call_parms.v92 = -1;
         v8_call_parms.call_function = V8_CALL_V_SERIES;
         v8_call_parms.modulations = caller_available_modulations;
         v8_call_parms.protocol = V8_PROTOCOL_LAPM_V42;
@@ -595,6 +605,8 @@ int main(int argc, char *argv[])
         span_log_set_tag(logging, "caller");
 
         v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
+        v8_answer_parms.send_ci = TRUE;
+        v8_answer_parms.v92 = -1;
         v8_answer_parms.call_function = V8_CALL_V_SERIES;
         v8_answer_parms.modulations = answerer_available_modulations;
         v8_answer_parms.protocol = V8_PROTOCOL_LAPM_V42;

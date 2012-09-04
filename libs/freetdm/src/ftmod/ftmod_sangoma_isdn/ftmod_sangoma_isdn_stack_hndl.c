@@ -493,7 +493,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 						if (cnStEvnt->sndCmplt.eh.pres || num_digits >= min_digits) {
 							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 						} else {
-							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "received %d of %d digits\n", num_digits, min_digits);
+							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "received %"FTDM_SIZE_FMT" of %"FTDM_SIZE_FMT" digits\n", num_digits, min_digits);
 						}
 					}
 					break;
@@ -509,7 +509,7 @@ void sngisdn_process_cnst_ind (sngisdn_event_data_t *sngisdn_event)
 						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Processing SETUP but channel in RESET state, ignoring\n");
 						break;
 					default:
-						ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "\n", suId, suInstId, spInstId);
+						ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Unhandled INFO (suId:%u suInstId:%u spInstId:%u)\n", suId, suInstId, spInstId);
 						break;
 				}
 			}
@@ -966,6 +966,12 @@ void sngisdn_process_sta_cfm (sngisdn_event_data_t *sngisdn_event)
 				break;
 				case 2: /* overlap sending */
 					switch (ftdmchan->state) {
+						case FTDM_CHANNEL_STATE_COLLECT:
+							/* T302 Timeout reached */
+							/* Send the call to user, and see if they accept it */
+							ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "T302 Timer expired, proceeding with call\n");
+							ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+							break;
 						case FTDM_CHANNEL_STATE_PROCEED:
 						case FTDM_CHANNEL_STATE_PROGRESS:
 						case FTDM_CHANNEL_STATE_RINGING:
@@ -1196,7 +1202,16 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 		return;
 	}
 
-	if (rstEvnt->rstInd.eh.pres == PRSNT_NODEF && rstEvnt->rstInd.rstClass.pres == PRSNT_NODEF) {
+	ftdm_log(FTDM_LOG_DEBUG, "%s: Processing RESTART CFM (suId:%u dChan:%d ces:%d %s(%d))\n",
+									signal_data->ftdm_span->name,
+									suId, dChan, ces,
+									(evntType == IN_LNK_DWN)?"LNK_DOWN":
+									(evntType == IN_LNK_UP)?"LNK_UP":
+									(evntType == IN_INDCHAN)?"b-channel":
+									(evntType == IN_LNK_DWN_DM_RLS)?"NFAS service procedures":
+									(evntType == IN_SWCHD_BU_DCHAN)?"NFAS switchover to backup":"Unknown", evntType);
+
+	if (rstEvnt->rstInd.eh.pres == PRSNT_NODEF && rstEvnt->rstInd.rstClass.pres == PRSNT_NODEF) {			
 		switch(rstEvnt->rstInd.rstClass.val) {
 			case IN_CL_INDCHAN: /* Indicated b-channel */
 				if (rstEvnt->chanId.eh.pres) {
@@ -1342,28 +1357,29 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 	}
 
 	if (chan_no) { /* For a single channel */
-		if (chan_no > ftdm_span_get_chan_count(signal_data->ftdm_span)) {
-			ftdm_log(FTDM_LOG_CRIT, "Received RESTART IND on invalid channel:%d\n", chan_no);
-		} else {
-			ftdm_iterator_t *chaniter = NULL;
-			ftdm_iterator_t *curr = NULL;
-			
-			chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
-			for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {			
-				ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
-				if (ftdmchan->physical_chan_id == chan_no) {
-					sngisdn_bring_down(ftdmchan);
-				}
+		ftdm_iterator_t *chaniter = NULL;
+		ftdm_iterator_t *curr = NULL;
+
+		chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
+		for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
+			ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
+			sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
+			if (sngisdn_info->ces == ces && ftdmchan->physical_chan_id == chan_no) {
+				sngisdn_bring_down(ftdmchan);
 			}
-			ftdm_iterator_free(chaniter);
 		}
+		ftdm_iterator_free(chaniter);
 	} else { /* for all channels */
 		ftdm_iterator_t *chaniter = NULL;
 		ftdm_iterator_t *curr = NULL;
 
 		chaniter = ftdm_span_get_chan_iterator(signal_data->ftdm_span, NULL);
 		for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
-			sngisdn_bring_down((ftdm_channel_t*)ftdm_iterator_current(curr));
+			ftdm_channel_t *ftdmchan = (ftdm_channel_t*)ftdm_iterator_current(curr);
+			sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
+			if (sngisdn_info->ces == ces) {
+				sngisdn_bring_down(ftdmchan);
+			}
 		}
 		ftdm_iterator_free(chaniter);
 	}

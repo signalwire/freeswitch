@@ -1587,10 +1587,11 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1n
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1EventConsumer(JNIEnv *jenv, jclass jcls, jstring jarg1, jstring jarg2) {
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1EventConsumer(JNIEnv *jenv, jclass jcls, jstring jarg1, jstring jarg2, jint jarg3) {
   jlong jresult = 0 ;
   char *arg1 = (char *) NULL ;
   char *arg2 = (char *) "" ;
+  int arg3 = (int) 5000 ;
   EventConsumer *result = 0 ;
   
   (void)jenv;
@@ -1605,7 +1606,8 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1EventConsum
     arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
     if (!arg2) return 0;
   }
-  result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2);
+  arg3 = (int)jarg3; 
+  result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2,arg3);
   *(EventConsumer **)&jresult = result; 
   if (arg1) jenv->ReleaseStringUTFChars(jarg1, (const char *)arg1);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);

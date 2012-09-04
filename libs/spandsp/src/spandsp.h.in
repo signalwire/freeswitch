@@ -33,15 +33,19 @@
 
 @SPANDSP_USE_EXPORT_CAPABILITY@
 
+@SPANDSP_SUPPORT_T42@
+@SPANDSP_SUPPORT_T43@
+@SPANDSP_SUPPORT_V34@
+@SPANDSP_SUPPORT_TIFF_FX@
+
 #include <stdlib.h>
 @INSERT_INTTYPES_HEADER@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
 @INSERT_MATH_HEADER@
-#if !defined(SPANDSP_NO_TIFF)
 #include <tiffio.h>
-#endif
+
 #include <spandsp/telephony.h>
 #include <spandsp/fast_convert.h>
 #include <spandsp/logging.h>
@@ -104,8 +108,10 @@
 #include <spandsp/image_translate.h>
 #include <spandsp/t4_t6_decode.h>
 #include <spandsp/t4_t6_encode.h>
-/*#include <spandsp/t81_t82_arith_coding.h>*/
-/*#include <spandsp/t85.h>*/
+#include <spandsp/t81_t82_arith_coding.h>
+#include <spandsp/t85.h>
+#include <spandsp/t42.h>
+/*#include <spandsp/t43.h>*/
 #include <spandsp/t30.h>
 #include <spandsp/t30_api.h>
 #include <spandsp/t30_fcf.h>
@@ -120,6 +126,7 @@
 #include <spandsp/t38_terminal.h>
 #include <spandsp/t31.h>
 #include <spandsp/adsi.h>
+#include <spandsp/ademco_contactid.h>
 #include <spandsp/oki_adpcm.h>
 #include <spandsp/ima_adpcm.h>
 #include <spandsp/g722.h>

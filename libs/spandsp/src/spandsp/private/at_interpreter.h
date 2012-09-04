@@ -113,11 +113,11 @@ struct at_state_s
     char line[256];
     int line_ptr;
 
-    at_modem_control_handler_t *modem_control_handler;
+    at_modem_control_handler_t modem_control_handler;
     void *modem_control_user_data;
-    at_tx_handler_t *at_tx_handler;
+    at_tx_handler_t at_tx_handler;
     void *at_tx_user_data;
-    at_class1_handler_t *class1_handler;
+    at_class1_handler_t class1_handler;
     void *class1_user_data;
 
     /*! \brief Error and flow logging control */

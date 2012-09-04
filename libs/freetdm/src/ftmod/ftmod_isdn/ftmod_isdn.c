@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2012, Anthony Minessale II
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -469,10 +469,15 @@ static FIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 			}
 
 			if (new_chan && new_chan->state == FTDM_CHANNEL_STATE_DOWN) {
-				isdn_data->channels_local_crv[gen->CRV] = new_chan;
+				struct Q931_Call *call = NULL;
+
 				memset(&new_chan->caller_data, 0, sizeof(new_chan->caller_data));
 				ftdm_set_flag(new_chan, FTDM_CHANNEL_OUTBOUND);
 				ftdm_set_state_locked(new_chan, FTDM_CHANNEL_STATE_DIALING);
+
+				call = Q931GetCallByCRV(&isdn_data->q931, gen->CRV);
+				Q931CallSetPrivate(call, new_chan);
+
 				switch(gen->MesType) {
 				case Q931mes_ALERTING:
 					new_chan->init_state = FTDM_CHANNEL_STATE_PROGRESS_MEDIA;
@@ -539,21 +544,17 @@ static void ftdm_isdn_call_event(struct Q931_Call *call, struct Q931_CallEvent *
 {
 	Q931_TrunkInfo_t *trunk = NULL;
 	ftdm_isdn_data_t *isdn_data = NULL;
-	ftdm_span_t *zspan = NULL;
+	ftdm_span_t *span = priv;
+
+	assert(span);
 	assert(call);
 	assert(event);
 
 	trunk = Q931CallGetTrunk(call);
 	assert(trunk);
 
-	zspan = Q931CallGetPrivate(call);
-	if (!zspan) {
-		zspan = priv;
-		Q931CallSetPrivate(call, zspan);
-	}
-	assert(zspan);
-
-	isdn_data = zspan->signal_data;
+	isdn_data = span->signal_data;
+	assert(isdn_data);
 
 	if (Q931CallIsGlobal(call)) {
 		/*
@@ -575,7 +576,7 @@ static void ftdm_isdn_call_event(struct Q931_Call *call, struct Q931_CallEvent *
 		 * Try to get associated zap channel
 		 * and init sigmsg struct if there is one
 		 */
-		ftdmchan = Q931CallIsOutgoing(call) ? isdn_data->channels_local_crv[call_crv] : isdn_data->channels_remote_crv[call_crv];
+		ftdmchan = Q931CallGetPrivate(call);
 		if (ftdmchan) {
 			memset(&sig, 0, sizeof(ftdm_sigmsg_t));
 			sig.chan_id = ftdmchan->chan_id;
@@ -598,7 +599,9 @@ static void ftdm_isdn_call_event(struct Q931_Call *call, struct Q931_CallEvent *
 						return;
 					}
 
-					if (ftdm_channel_get_state(ftdmchan) != FTDM_CHANNEL_STATE_DOWN) {
+					if (ftdm_channel_get_state(ftdmchan) != FTDM_CHANNEL_STATE_DOWN &&
+					    ftdm_channel_get_state(ftdmchan) != FTDM_CHANNEL_STATE_HANGUP_COMPLETE)
+					{
 						ftdm_log(FTDM_LOG_DEBUG, "Channel %d:%d not in DOWN state, cleaning up\n",
 									ftdm_channel_get_span_id(ftdmchan),
 									ftdm_channel_get_id(ftdmchan));
@@ -763,29 +766,23 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 	assert(span != NULL);
 	assert(isdn_data != NULL);
 
-	/*
-	 * Support code for the new event handling system
-	 * Remove this as soon as we have the new api to set up calls
-	 */
-#ifdef __OLD__
-	if (gen->CRV) {
-		struct Q931_Call *call;
-
-		call = Q931GetCallByCRV(&isdn_data->q931, gen->CRV);
-		if (call && !Q931CallGetPrivate(call)) {
-			ftdm_log(FTDM_LOG_DEBUG, "Storing reference to current span in call %d [0x%x]\n", gen->CRV, gen->CRV);
-			Q931CallSetPrivate(call, span);
+	/* ftdm channel is stored in call private */
+	if (call) {
+		ftdmchan = Q931CallGetPrivate(call);
+		if (!ftdmchan) {
+			ftdm_log(FTDM_LOG_DEBUG, "[s%d] No channel associated to call [%#x] private\n",
+				ftdm_span_get_id(span), Q931CallGetCRV(call));
 		}
 	}
-#else
-	if (call && !Q931CallGetPrivate(call)) {
-		ftdm_log(FTDM_LOG_DEBUG, "Storing reference to current span in call %d [0x%x]\n", gen->CRV, gen->CRV);
-		Q931CallSetPrivate(call, span);
-	}
-#endif
-	ftdm_log(FTDM_LOG_DEBUG, "Yay I got an event! Type:[%02x] Size:[%d] CRV: %d (%#hx, CTX: %s)\n", gen->MesType, gen->Size, gen->CRV, gen->CRV, gen->CRVFlag ? "Terminator" : "Originator");
 
-#ifdef __TODO_OR_REMOVE__
+	ftdm_log(FTDM_LOG_DEBUG, "Yay I got an event! Type:[%02x] Size:[%d] CRV: %d (%#hx, CTX: %s)\n",
+		gen->MesType, gen->Size, gen->CRV, gen->CRV, gen->CRVFlag ? "Terminator" : "Originator");
+
+#ifdef __TODO__
+	/*
+	 * This code block is needed for isdn_channel_request()
+	 * isdn_data->outbound_crv has been removed so another way to pass data around is required
+	 */
 	if (gen->CRVFlag && (caller_data = isdn_data->outbound_crv[gen->CRV])) {
 		if (chan_id) {
 			caller_data->chan_id = chan_id;
@@ -808,18 +805,10 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 		return 0;
 	}
 #endif
-
-	if (gen->CRVFlag) {
-		ftdmchan = isdn_data->channels_local_crv[gen->CRV];
-	} else {
-		ftdmchan = isdn_data->channels_remote_crv[gen->CRV];
-	}
-
-	ftdm_log(FTDM_LOG_DEBUG, "ftdmchan %x (%d:%d) source isdn_data->channels_%s_crv[%#hx]\n",
+	ftdm_log(FTDM_LOG_DEBUG, "ftdmchan %p (%d:%d) via CRV[%#hx]\n",
 			ftdmchan,
 			((ftdmchan) ? ftdm_channel_get_span_id(ftdmchan) : -1),
 			((ftdmchan) ? ftdm_channel_get_id(ftdmchan) : -1),
-			((gen->CRVFlag) ? "local" : "remote"),
 			gen->CRV);
 
 	if (gen->ProtDisc == 3) {
@@ -874,12 +863,14 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 					uint32_t i;
 
 					for (i = 1; i < ftdm_span_get_chan_count(span); i++) {
+						ftdmchan = ftdm_span_get_channel(span, chan_id);
+
 						/* Skip channels that are down and D-Channels (#OpenZAP-39) */
-						if (ftdm_channel_get_state(span->channels[i]) == FTDM_CHANNEL_STATE_DOWN ||
-						    ftdm_channel_get_type(span->channels[i]) == FTDM_CHAN_TYPE_DQ921)
+						if (ftdm_channel_get_state(ftdmchan) == FTDM_CHANNEL_STATE_DOWN ||
+						    ftdm_channel_get_type(ftdmchan) == FTDM_CHAN_TYPE_DQ921)
 							continue;
 
-						ftdm_set_state_locked(span->channels[i], FTDM_CHANNEL_STATE_RESTART);
+						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RESTART);
 					}
 				}
 			}
@@ -898,6 +889,10 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 						}
 					}
+					else if (gen->MesType == Q931mes_RELEASE_COMPLETE && ftdm_channel_get_state(ftdmchan) == FTDM_CHANNEL_STATE_DIALTONE) {
+						/* Go DOWN */
+						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+					}
 					else if ((gen->MesType == Q931mes_RELEASE && ftdm_channel_get_state(ftdmchan) <= FTDM_CHANNEL_STATE_UP) ||
 						 (gen->MesType == Q931mes_RELEASE_COMPLETE && ftdm_channel_get_state(ftdmchan) == FTDM_CHANNEL_STATE_DIALING)) {
 
@@ -906,7 +901,6 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 						 */
 						Q931ie_Cause *cause = Q931GetIEPtr(gen->Cause, gen->buf);
 						ftdm_sigmsg_t sig;
-						ftdm_status_t status;
 
 						memset(&sig, 0, sizeof(sig));
 						sig.span_id = ftdm_channel_get_span_id(ftdmchan);
@@ -915,14 +909,15 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 						sig.channel->caller_data.hangup_cause = (cause) ? cause->Value : FTDM_CAUSE_NORMAL_UNSPECIFIED;
 
 						sig.event_id = FTDM_SIGEVENT_STOP;
-						status = ftdm_span_send_signal(span, &sig);
+						ftdm_span_send_signal(span, &sig);
 
 						ftdm_log(FTDM_LOG_DEBUG, "Received %s in state %s, requested hangup for channel %d:%d\n", what,
 								ftdm_channel_get_state_str(ftdmchan),
 								ftdm_channel_get_span_id(ftdmchan),
 								ftdm_channel_get_id(ftdmchan));
 					} else {
-						ftdm_log(FTDM_LOG_DEBUG, "Ignoring %s on channel %d\n", what, ftdm_channel_get_id(ftdmchan));
+						ftdm_log(FTDM_LOG_DEBUG, "Ignoring %s on channel %d in state %s\n", what,
+							 ftdm_channel_get_id(ftdmchan), ftdm_channel_get_state_str(ftdmchan));
 					}
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "Received %s with no matching channel %d\n", what, chan_id);
@@ -983,7 +978,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 				int fail_cause = 0;
 				int fail = 1;
 
-				if (ftdmchan && ftdmchan == isdn_data->channels_remote_crv[gen->CRV]) {
+				if (ftdmchan && ftdmchan == Q931CallGetPrivate(call)) {
 					ftdm_log(FTDM_LOG_INFO, "Duplicate SETUP message(?) for Channel %d:%d ~ %d:%d in state %s [ignoring]\n",
 									ftdm_channel_get_span_id(ftdmchan),
 									ftdm_channel_get_id(ftdmchan),
@@ -1039,7 +1034,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 					}
 				}
 
-				if (!callednum || !strlen((char *)callednum->Digit)) {
+				if (!callednum || ftdm_strlen_zero((char *)callednum->Digit)) {
 					if (FTDM_SPAN_IS_NT(span)) {
 						ftdm_log(FTDM_LOG_NOTICE, "No destination number found, assuming overlap dial\n");
 						overlap_dial++;
@@ -1080,7 +1075,6 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 					if (ftdmchan && ftdm_channel_get_state(ftdmchan) == FTDM_CHANNEL_STATE_DOWN) {
 						ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(ftdmchan);
 
-						isdn_data->channels_remote_crv[gen->CRV] = ftdmchan;
 						memset(&ftdmchan->caller_data, 0, sizeof(ftdmchan->caller_data));
 
 						if (ftdmchan->call_data) {
@@ -1095,19 +1089,12 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 						if (!overlap_dial) {
 							isdn_get_number(callednum, caller_data->dnis.digits);
 						}
-#ifdef __TODO_OR_REMOVE__
-						ftdmchan->caller_data.CRV = gen->CRV;
-#endif
-#if 0 /* FIXME */
-						if (cplen > sizeof(caller_data->raw_data)) {
-							cplen = sizeof(caller_data->raw_data);
-						}
-#endif
+
+						ftdmchan->caller_data.call_reference = gen->CRV;
+						Q931CallSetPrivate(call, ftdmchan);
+
 						gen->CRVFlag = !(gen->CRVFlag);
-#if 0 /* FIXME */						
-						memcpy(caller_data->raw_data, msg, cplen);
-						caller_data->raw_data_len = cplen;
-#endif
+
 						fail = 0;
 					}
 				}
@@ -1134,7 +1121,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 					}
 
 					if (ftdmchan) {
-						ftdm_log(FTDM_LOG_CRIT, "Channel is busy\n");
+						ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Channel is busy\n");
 					} else {
 						ftdm_log(FTDM_LOG_CRIT, "Failed to open channel for new setup message\n");
 					}
@@ -1191,7 +1178,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 		case Q931mes_CALL_PROCEEDING:
 			{
 				if (ftdmchan) {
-					ftdm_log(FTDM_LOG_CRIT, "Received CALL PROCEEDING message for channel %d\n", ftdm_channel_get_id(ftdmchan));
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Received CALL PROCEEDING message for channel\n");
 					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_PROGRESS);
 				} else {
 					ftdm_log(FTDM_LOG_CRIT, "Received CALL PROCEEDING with no matching channel %d\n", chan_id);
@@ -1201,7 +1188,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 		case Q931mes_CONNECT_ACKNOWLEDGE:
 			{
 				if (ftdmchan) {
-					ftdm_log(FTDM_LOG_DEBUG, "Received CONNECT_ACK message for channel %d\n", ftdm_channel_get_id(ftdmchan));
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Received CONNECT_ACK message for channel\n");
 				} else {
 					ftdm_log(FTDM_LOG_DEBUG, "Received CONNECT_ACK with no matching channel %d\n", chan_id);
 				}
@@ -1211,7 +1198,7 @@ static L3INT ftdm_isdn_931_34(void *pvt, struct Q931_Call *call, Q931mes_Generic
 		case Q931mes_INFORMATION:
 			{
 				if (ftdmchan) {
-					ftdm_log(FTDM_LOG_CRIT, "Received INFORMATION message for channel %d\n", ftdm_channel_get_id(ftdmchan));
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Received INFORMATION message for channel\n");
 
 					if (ftdm_channel_get_state(ftdmchan) == FTDM_CHANNEL_STATE_DIALTONE) {
 						char digit = '\0';
@@ -1305,19 +1292,25 @@ static int ftdm_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 
 static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 {
-	ftdm_isdn_data_t *isdn_data = ftdmchan->span->signal_data;
 	ftdm_span_t *span = ftdm_channel_get_span(ftdmchan);
+	ftdm_isdn_data_t *isdn_data = NULL;
 	ftdm_sigmsg_t sig;
 	ftdm_status_t status;
 
-#if 1 /* FIXME caller_data.raw_data does not exist anymore, see docs/variables.txt for more info */
 	Q931mes_Generic empty_gen;
 	Q931mes_Generic *gen = &empty_gen;
-	
-	memset(&empty_gen, 0, sizeof(empty_gen)) ;
-#else
-	Q931mes_Generic *gen = (Q931mes_Generic *) ftdmchan->caller_data.raw_data;
-#endif
+	struct Q931_Call *call = NULL;
+
+	Q931InitMesGeneric(gen);
+
+	isdn_data = span->signal_data;
+	assert(isdn_data);
+
+	call = Q931GetCallByCRV(&isdn_data->q931, ftdmchan->caller_data.call_reference);
+	if (call) {
+		gen->CRV     = Q931CallGetCRV(call);
+		gen->CRVFlag = Q931CallGetDirection(call) == Q931_DIRECTION_INBOUND ? 1 : 0;
+	}
 
 	ftdm_log(FTDM_LOG_DEBUG, "%d:%d STATE [%s]\n",
 			ftdm_channel_get_span_id(ftdmchan),
@@ -1329,17 +1322,17 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 	sig.chan_id = ftdm_channel_get_id(ftdmchan);
 	sig.channel = ftdmchan;
 
+	/* Acknowledge channel state change */
+	ftdm_channel_complete_state(ftdmchan);
+
 	switch (ftdm_channel_get_state(ftdmchan)) {
 	case FTDM_CHANNEL_STATE_DOWN:
 		{
 			if (gen->CRV) {
-				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-					isdn_data->channels_local_crv[gen->CRV] = NULL;
-				} else {
-					isdn_data->channels_remote_crv[gen->CRV] = NULL;
-				}
+				Q931CallSetPrivate(call, NULL);
 				Q931ReleaseCRV(&isdn_data->q931, gen->CRV);
 			}
+			ftdmchan->caller_data.call_reference = 0;
 			ftdm_channel_close(&ftdmchan);
 		}
 		break;
@@ -1348,15 +1341,10 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS;
 				if ((status = ftdm_span_send_signal(ftdm_channel_get_span(ftdmchan), &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else {
-				int crv = gen->CRV;
-
-				Q931InitMesGeneric(gen);
 				gen->MesType = Q931mes_CALL_PROCEEDING;
-				gen->CRV     = crv;
-				gen->CRVFlag = 1;	/* inbound */
 
 				if (FTDM_SPAN_IS_NT(ftdm_channel_get_span(ftdmchan))) {
 					Q931ie_ChanID ChanID;
@@ -1396,7 +1384,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_START;
 				if ((status = ftdm_span_send_signal(span, &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			}
 		}
@@ -1406,7 +1394,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_UNSPECIFIED;
 			sig.event_id = FTDM_SIGEVENT_RESTART;
 			status = ftdm_span_send_signal(span, &sig);
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
@@ -1414,17 +1402,16 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_PROGRESS_MEDIA;
 				if ((status = ftdm_span_send_signal(span, &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else {
 				if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 					if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 						return;
 					}
 				}
 				gen->MesType = Q931mes_ALERTING;
-				gen->CRVFlag = 1;	/* inbound call */
 				Q931Rx43(&isdn_data->q931, gen, gen->Size);
 			}
 		}
@@ -1434,21 +1421,19 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
 				sig.event_id = FTDM_SIGEVENT_UP;
 				if ((status = ftdm_span_send_signal(span, &sig) != FTDM_SUCCESS)) {
-					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else {
 				if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OPEN)) {
 					if (ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
-						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+						ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 						return;
 					}
 				}
+
 				gen->MesType = Q931mes_CONNECT;
-				gen->BearerCap = 0;
-				gen->CRVFlag = 1;	/* inbound call */
-#if 0 /* FIXME */
-				Q931Rx43(&isdn_data->q931, gen, ftdmchan->caller_data.raw_data_len);
-#endif
+
+				Q931Rx43(&isdn_data->q931, gen, gen->Size);
 			}
 		}
 		break;
@@ -1560,19 +1545,18 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			gen->HLComp = Q931AppendIE(gen, (L3UCHAR *) &HLComp);
 
 			Q931Rx43(&isdn_data->q931, gen, gen->Size);
-			isdn_data->channels_local_crv[gen->CRV] = ftdmchan;
 
 			/*
 			 * Support code for the new event handling system
 			 * Remove this as soon as we have the new api to set up calls
 			 */
 			if (gen->CRV) {
-				struct Q931_Call *call;
-
 				call = Q931GetCallByCRV(&isdn_data->q931, gen->CRV);
 				if (call) {
 					ftdm_log(FTDM_LOG_DEBUG, "Storing reference to current span in call %d [0x%x]\n", gen->CRV, gen->CRV);
-					Q931CallSetPrivate(call, ftdm_channel_get_span(ftdmchan));
+
+					Q931CallSetPrivate(call, ftdmchan);
+					ftdmchan->caller_data.call_reference = gen->CRV;
 				}
 			}
 		}
@@ -1585,7 +1569,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 
 				Q931Rx43(&isdn_data->q931, gen, gen->Size);
 			}
-			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 		}
 		break;
 	case FTDM_CHANNEL_STATE_HANGUP:
@@ -1593,9 +1577,8 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(ftdmchan);
 			Q931ie_Cause cause;
 
-			ftdm_log(FTDM_LOG_DEBUG, "Hangup: Direction %s\n", ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? "Outbound" : "Inbound");
-
-			gen->CRVFlag = ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? 0 : 1;
+			ftdm_log(FTDM_LOG_DEBUG, "Hangup: Call direction %s\n",
+				ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? "Outbound" : "Inbound");
 
 			cause.IEId = Q931ie_CAUSE;
 			cause.Size = sizeof(Q931ie_Cause);
@@ -1612,7 +1595,13 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				 * inbound call [was: number unknown (= not found in routing state)]
 				 * (in Q.931 spec terms: Reject request)
 				 */
-				gen->MesType = Q931mes_RELEASE_COMPLETE;
+				if (!FTDM_SPAN_IS_NT(span)) {
+					gen->MesType = Q931mes_RELEASE_COMPLETE;	/* TE mode: Reject call */
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+				} else {
+					gen->MesType = Q931mes_DISCONNECT;		/* NT mode: Disconnect and wait */
+					//ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+				}
 
 				//cause.Value = (unsigned char) FTDM_CAUSE_UNALLOCATED;
 				cause.Value = (unsigned char) caller_data->hangup_cause;
@@ -1621,8 +1610,8 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				Q931Rx43(&isdn_data->q931, gen, gen->Size);
 
 				/* we're done, release channel */
-				//ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
-				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+				////ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+				//ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 			}
 			else if (ftdm_channel_get_last_state(ftdmchan) <= FTDM_CHANNEL_STATE_PROGRESS) {
 				/*
@@ -1636,7 +1625,7 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 				Q931Rx43(&isdn_data->q931, gen, gen->Size);
 
 				/* this will be triggered by the RELEASE_COMPLETE reply */
-				/* ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE); */
+				/* ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE); */
 			}
 			else {
 				/*
@@ -1653,13 +1642,13 @@ static __inline__ void state_advance(ftdm_channel_t *ftdmchan)
 		break;
 	case FTDM_CHANNEL_STATE_TERMINATING:
 		{
-			ftdm_log(FTDM_LOG_DEBUG, "Terminating: Direction %s\n", ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? "Outbound" : "Inbound");
+			ftdm_log(FTDM_LOG_DEBUG, "Terminating: Call direction %s\n",
+				ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? "Outbound" : "Inbound");
 
 			sig.event_id = FTDM_SIGEVENT_STOP;
 			status = ftdm_span_send_signal(span, &sig);
 
 			gen->MesType = Q931mes_RELEASE;
-			gen->CRVFlag = ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND) ? 0 : 1;
 			Q931Rx43(&isdn_data->q931, gen, gen->Size);
 		}
 	default:
@@ -1679,11 +1668,8 @@ static __inline__ void check_state(ftdm_span_t *span)
 
 			if (ftdm_test_flag(chan, FTDM_CHANNEL_STATE_CHANGE)) {
 				ftdm_channel_lock(chan);
-
 				ftdm_clear_flag(chan, FTDM_CHANNEL_STATE_CHANGE);
 				state_advance(chan);
-				ftdm_channel_complete_state(chan);
-
 				ftdm_channel_unlock(chan);
 			}
 		}
@@ -1820,7 +1806,6 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 	teletone_generation_session_t ts = {{{{0}}}};;
 	unsigned char frame[1024];
 	int x, interval;
-	int offset = 0;
 
 	ftdm_log(FTDM_LOG_DEBUG, "ISDN tones thread starting.\n");
 	ftdm_set_flag(isdn_data, FTDM_ISDN_TONES_RUNNING);
@@ -1865,6 +1850,7 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 		for (x = 1; x <= ftdm_span_get_chan_count(span); x++) {
 			ftdm_channel_t *chan = ftdm_span_get_channel(span, x);
 			ftdm_size_t len = sizeof(frame), rlen;
+			ftdm_isdn_bchan_data_t *data = chan->call_data;
 
 			if (ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_DQ921) {
 				continue;
@@ -1878,7 +1864,6 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 			switch (ftdm_channel_get_state(chan)) {
 			case FTDM_CHANNEL_STATE_DIALTONE:
 				{
-					ftdm_isdn_bchan_data_t *data = (ftdm_isdn_bchan_data_t *)chan->call_data;
 					ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
 
 					/* check overlap dial timeout first before generating tone */
@@ -1951,13 +1936,24 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 				continue;
 			}
 
+			/*
+			 * Teletone operates on SLIN data (2 bytes per sample).
+			 * Convert the length of non-SLIN codecs, so we read
+			 * the right amount of samples from the buffer.
+			 */
 			if (chan->effective_codec != FTDM_CODEC_SLIN) {
 				len *= 2;
 			}
 
 			/* seek to current offset */
-			ftdm_buffer_seek(dt_buffer, offset);
+			ftdm_buffer_seek(dt_buffer, data->offset);
 
+			/*
+			 * ftdm_channel_read() can read up to sizeof(frame) bytes
+			 * (in certain situations). Avoid overflowing the stack (and smashing dt_buffer)
+			 * if the codec is not slin and we had to double the length.
+			 */
+			len  = ftdm_min(len, sizeof(frame));
 			rlen = ftdm_buffer_read_loop(dt_buffer, frame, len);
 
 			if (chan->effective_codec != FTDM_CODEC_SLIN) {
@@ -1969,6 +1965,12 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 					codec_func = fio_slin2alaw;
 				}
 
+				/*
+				 * Convert SLIN to native format (a-law/u-law),
+				 * input size is 2 bytes per sample, output size
+				 * (after conversion) is one byte per sample
+				 * (= max. half the input size).
+				 */
 				if (codec_func) {
 					status = codec_func(frame, sizeof(frame), &rlen);
 				} else {
@@ -1976,7 +1978,21 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 					goto done;
 				}
 			}
-			ftdm_channel_write(chan, frame, sizeof(frame), &rlen);
+
+			if (ftdm_channel_write(chan, frame, sizeof(frame), &rlen) == FTDM_SUCCESS) {
+				/*
+				 * Advance offset in teletone buffer by amount
+				 * of data actually written to channel.
+				 */
+				if (chan->effective_codec != FTDM_CODEC_SLIN) {
+					data->offset += rlen << 1;	/* Teletone buffer is in SLIN (= rlen * 2) */
+				} else {
+					data->offset += rlen;
+				}
+
+				/* Limit offset to [0..Rate(Samples/s)-1] in SLIN (2 bytes per sample) units. */
+				data->offset %= (ts.rate << 1);
+			}
 		}
 
 		/*
@@ -1984,11 +2000,6 @@ static void *ftdm_isdn_tones_run(ftdm_thread_t *me, void *obj)
 		 */
 		if (!gated) {
 			ftdm_sleep(interval);
-		}
-
-		offset += (ts.rate / (1000 / interval)) << 1;
-		if (offset >= ts.rate) {
-			offset = 0;
 		}
 	}
 
@@ -2055,10 +2066,13 @@ static void *ftdm_isdn_run(ftdm_thread_t *me, void *obj)
 			break;
 		default:
 			{
-				errs = 0;
 				if (flags & FTDM_READ) {
 					len = sizeof(frame);
-					if (ftdm_channel_read(isdn_data->dchan, frame, &len) == FTDM_SUCCESS) {
+					if (ftdm_channel_read(isdn_data->dchan, frame, &len) != FTDM_SUCCESS) {
+						ftdm_log_chan_msg(isdn_data->dchan, FTDM_LOG_ERROR, "Failed to read from D-Channel\n");
+						continue;
+					}
+					if (len > 0) {
 #ifdef HAVE_PCAP
 						if (isdn_pcap_capture_both(isdn_data)) {
 							isdn_pcap_write(isdn_data, frame, len, ISDN_PCAP_INCOMING);
@@ -2066,6 +2080,9 @@ static void *ftdm_isdn_run(ftdm_thread_t *me, void *obj)
 #endif
 						Q921QueueHDLCFrame(&isdn_data->q921, frame, (int)len);
 						Q921Rx12(&isdn_data->q921);
+
+						/* Successful read, reset error counter */
+						errs = 0;
 					}
 				} else {
 					ftdm_log(FTDM_LOG_DEBUG, "No Read FLAG!\n");
@@ -2209,7 +2226,7 @@ static ftdm_state_map_t isdn_state_map = {
 			ZSD_INBOUND,
 			ZSM_UNACCEPTABLE,
 			{FTDM_CHANNEL_STATE_DIALTONE, FTDM_END},
-			{FTDM_CHANNEL_STATE_RING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_END}
+			{FTDM_CHANNEL_STATE_RING, FTDM_CHANNEL_STATE_HANGUP, FTDM_CHANNEL_STATE_TERMINATING, FTDM_CHANNEL_STATE_DOWN, FTDM_END}
 		},
 		{
 			ZSD_INBOUND,
@@ -2676,10 +2693,23 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(isdn_configure_span)
 
 	isdn_data = malloc(sizeof(*isdn_data));
 	assert(isdn_data != NULL);
-	memset(isdn_data, 0, sizeof(*isdn_data));
 
-	isdn_data->mode = Q931_TE;
+	memset(isdn_data, 0, sizeof(*isdn_data));
 	dialect = Q931_Dialect_Q931;
+
+	/* Use trunk_mode span parameter to set default */
+	switch (ftdm_span_get_trunk_mode(span)) {
+	case FTDM_TRUNK_MODE_NET:
+		ftdm_log(FTDM_LOG_INFO, "Span '%s' [s%d] defaulting to NET mode\n",
+			ftdm_span_get_name(span), ftdm_span_get_id(span));
+		isdn_data->mode = Q931_NT;
+		break;
+	default:
+		ftdm_log(FTDM_LOG_INFO, "Span '%s' [s%d] defaulting to USER mode\n",
+			ftdm_span_get_name(span), ftdm_span_get_id(span));
+		isdn_data->mode = Q931_TE;
+		break;
+	}
 
 	for (i = 0; ftdm_parameters[i].var; i++) {
 		const char *var = ftdm_parameters[i].var;
@@ -2742,6 +2772,16 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(isdn_configure_span)
 
 	if (!digit_timeout) {
 		digit_timeout = DEFAULT_DIGIT_TIMEOUT;
+	}
+
+	/* Check if modes match and log a message if they do not. Just to be on the safe side. */
+	if (isdn_data->mode == Q931_TE && ftdm_span_get_trunk_mode(span) == FTDM_TRUNK_MODE_NET) {
+		ftdm_log(FTDM_LOG_WARNING, "Span '%s' signalling set up for TE/CPE/USER mode, while port is running in NT/NET mode. You may want to check your 'trunk_mode' settings.\n",
+			ftdm_span_get_name(span));
+	}
+	else if (isdn_data->mode == Q931_NT && ftdm_span_get_trunk_mode(span) == FTDM_TRUNK_MODE_CPE) {
+		ftdm_log(FTDM_LOG_WARNING, "Span '%s' signalling set up for NT/NET mode, while port is running in TE/CPE/USER mode. You may want to check your 'trunk_mode' settings.\n",
+			ftdm_span_get_name(span));
 	}
 
 	/* allocate per b-chan data */

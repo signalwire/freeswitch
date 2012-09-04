@@ -107,9 +107,6 @@ typedef void (*put_bit_func_t)(void *user_data, int bit);
 /*! Bit get function for data pumps */
 typedef int (*get_bit_func_t)(void *user_data);
 
-#define modem_rx_status_func_t modem_status_func_t
-#define modem_tx_status_func_t modem_status_func_t
-
 /*! Status change callback function for data pumps */
 typedef void (*modem_status_func_t)(void *user_data, int status);
 

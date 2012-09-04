@@ -13,7 +13,7 @@ $(SNDT_SRC):
 	$(GETLIB) $(VERSION).tar.gz
 
 $(SNDT_BUILD)/Makefile: $(SNDT_SRC)
-	mkdir -p $(SNDT_BUILD)
+	mkdir -p $(SNDT_BUILD)/config/m4
 	rm -rf $(SNDT_BUILD)/config/m4/*
 	rm -rf $(SNDT_SRC)/config/m4/*
 	cd $(SNDT_SRC) && AUTOMAKE="automake --add-missing --foreign --copy" autoreconf -fisv 

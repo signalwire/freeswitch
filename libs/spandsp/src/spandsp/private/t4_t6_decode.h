@@ -31,18 +31,36 @@
 */
 struct t4_t6_decode_state_s
 {
-    /*! \brief The type of compression used between the FAX machines. */
-    //int encoding;
-    /*! \brief Width of the current page, in pixels. */
-    //int image_width;
-
     /*! \brief Callback function to write a row of pixels to the image destination. */
     t4_row_write_handler_t row_write_handler;
     /*! \brief Opaque pointer passed to row_write_handler. */
     void *row_write_user_data;
 
-    /*! \brief A pointer into the image buffer indicating where the last row begins */
-    int last_row_starts_at;
+    /*! \brief The type of compression used between the FAX machines. */
+    int encoding;
+    /*! \brief Width of the current page, in pixels. */
+    int image_width;
+
+    /*! \brief Length of the current page, in pixels. */
+    int image_length;
+    /*! \brief The current number of bytes per row of uncompressed image data. */
+    int bytes_per_row;
+
+    /*! \brief The current number of bits in the current encoded row. */
+    int row_bits;
+    /*! \brief Pointer to the buffer for the current pixel row. */
+    uint8_t *row_buf;
+
+    /*! \brief This variable is set if we are treating the current row as a 2D encoded
+               one. */
+    int row_is_2d;
+    /*! \brief The current length of the current row. */
+    int row_len;
+
+    /*! \brief Black and white run-lengths for the current row. */
+    uint32_t *cur_runs;
+    /*! \brief Black and white run-lengths for the reference row. */
+    uint32_t *ref_runs;
 
     /*! \brief This variable is used to count the consecutive EOLS we have seen. If it
                reaches six, this is the end of the image. It is initially set to -1 for
@@ -64,7 +82,7 @@ struct t4_t6_decode_state_s
     /*! \brief 2D horizontal mode control. */
     int black_white;
     /*! \brief TRUE if the current run is black */
-    int its_black;
+    int in_black;
 
     /*! \brief The current step into the current row run-lengths buffer. */
     int a_cursor;
@@ -78,14 +96,18 @@ struct t4_t6_decode_state_s
     /*! \brief The number of bits to be skipped before trying to match the next code word. */
     int rx_skip_bits;
 
-    /*! \brief Decoded pixel buffer. */
-    //uint32_t pixel_stream;
-    /*! \brief The number of bits currently in pixel_stream. */
-    //int tx_bits;
+    /*! \brief Decoded pixel stream buffer. */
+    uint32_t pixel_stream;
+    /*! \brief The number of pixels currently in pixel_stream. */
+    int pixels;
 
-    /*! \brief Current pixel row number. */
-    //int row;
+    /*! \brief The minimum bits in any row of the current page. For monitoring only. */
+    int min_row_bits;
+    /*! \brief The maximum bits in any row of the current page. For monitoring only. */
+    int max_row_bits;
 
+    /*! \brief The size of the compressed image, in bits. */
+    int compressed_image_size;
     /*! \brief The current number of consecutive bad rows. */
     int curr_bad_row_run;
     /*! \brief The longest run of consecutive bad rows seen in the current page. */
@@ -94,7 +116,7 @@ struct t4_t6_decode_state_s
     int bad_rows;
 
     /*! \brief Error and flow logging control */
-    //logging_state_t logging;
+    logging_state_t logging;
 };
 
 #endif
