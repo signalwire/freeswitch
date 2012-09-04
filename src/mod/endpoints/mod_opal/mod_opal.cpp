@@ -31,7 +31,7 @@
 
 
 /* FreeSWITCH does not correctly handle an H.323 subtely, that is that a
-   MAXIMUM audio frames per packet is nototiated, and there is no
+   MAXIMUM audio frames per packet is negotiated, and there is no
    requirement for the remote to actually send that many. So, in say GSM, we
    negotiate up to 3 frames or 60ms of data and the remote actually sends one
    (20ms) frame per packet. Perfectly legal but blows up the media handling
@@ -101,7 +101,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load)
 
     /* Prevent the loading of OPAL codecs via "plug ins", this is a directory
        full of DLLs that will be loaded automatically. */
-    putenv((char *)"PTLIBPLUGINDIR=/no/thanks");
+    (void)putenv((char *)"PTLIBPLUGINDIR=/no/thanks");
 
 
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);

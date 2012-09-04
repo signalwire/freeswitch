@@ -50,11 +50,11 @@
 #undef strncasecmp
 
 
-#if _MSC_VER < 1600
+#ifdef _MSC_VER
 /*The following insanity is because libteletone_generate.h defines int8_t in
-  a slightly different manner to most other cases (SDL, PCAP, Java V8, stdint.h
-  etc) and does not provide a mechanism to prevent it's inclusion. Then, to
-  cap it off, VS2008 barfs on the difference. VS2010 seems OK with it.
+  a slightly different manner to most other cases (SDL, PCAP, Java V8,
+  VS2010's own stdint.h, etc) and does not provide a mechanism to prevent it's
+  inclusion. Then, to cap it off, MSVC barfs on the difference.
 
   Sigh.
  */
