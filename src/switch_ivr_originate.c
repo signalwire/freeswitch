@@ -191,6 +191,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 
 		if (switch_channel_up_nosig(channel)) {
 			switch_channel_set_flag(channel, CF_WINNER);
+			switch_channel_set_variable(channel, "group_dial_status", "winner");
 		}
 		goto wbreak;
 	}
@@ -225,6 +226,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		
 		if (!strcmp(collect->key, buf)) {
 			switch_channel_set_flag(channel, CF_WINNER);
+			switch_channel_set_variable(channel, "group_dial_status", "winner");
 			goto wbreak;
 		} else if (collect->error_file) {
 			switch_ivr_play_file(collect->session, NULL, collect->error_file, NULL);
@@ -1344,7 +1346,10 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thr
 
 	if (handle->done != 2) {
 		if (handle->status == SWITCH_STATUS_SUCCESS) {
-			switch_channel_hangup(switch_core_session_get_channel(handle->bleg), SWITCH_CAUSE_LOSE_RACE);
+			switch_channel_t *channel = switch_core_session_get_channel(handle->bleg);
+
+			switch_channel_set_variable(channel, "group_dial_status", "loser");
+			switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
 			switch_core_session_rwunlock(handle->bleg);
 		}
 	}
@@ -3283,6 +3288,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(originate_status[i].peer_session));
 							holding = NULL;
 						} else {
+							if (force_reason == SWITCH_CAUSE_LOSE_RACE || reason == SWITCH_CAUSE_LOSE_RACE) {
+								switch_channel_set_variable(originate_status[i].peer_channel, "group_dial_status", "loser");
+							}
 							switch_channel_hangup(originate_status[i].peer_channel, force_reason ? force_reason : reason);
 						}
 					}
