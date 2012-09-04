@@ -35,6 +35,10 @@
 #include "freetdm.h"
 #include "lpwrap_pri.h"
 
+#define OVERLAP_TIMEOUT_MS_DEFAULT	5000	/* 5 sec */
+#define OVERLAP_TIMEOUT_MS_MIN		3000	/* 3 sec */
+#define OVERLAP_TIMEOUT_MS_MAX		30000	/* 30 sec */
+
 typedef enum {
         SERVICE_CHANGE_STATUS_INSERVICE = 0,
         SERVICE_CHANGE_STATUS_MAINTENANCE,
@@ -71,6 +75,7 @@ struct ftdm_libpri_data {
 	int mode;
 	int dialect;
 	int overlap;		/*!< Overlap dial flags */
+	int overlap_timeout_ms;	/*!< Overlap dial timeout */
 	unsigned int layer1;
 	unsigned int ton;
 	unsigned int service_message_support;
@@ -83,6 +88,27 @@ struct ftdm_libpri_data {
 };
 
 typedef struct ftdm_libpri_data ftdm_libpri_data_t;
+
+
+/*
+ * b-channel flags
+ */
+enum {
+	FTDM_LIBPRI_B_NONE = 0,
+	FTDM_LIBPRI_B_REMOTE_RESTART = (1 << 0),	/*!< Remote triggered channel restart */
+};
+
+/**
+ * Per-b-channel private data
+ */
+struct ftdm_libpri_b_chan {
+	struct lpwrap_timer t302;	/*!< T302 overlap receive timer */
+	ftdm_channel_t *channel;	/*!< back-pointer to b-channel */
+	q931_call *call;		/*!< libpri opaque call handle */
+	uint32_t flags;			/*!< channel flags */
+};
+
+typedef struct ftdm_libpri_b_chan ftdm_libpri_b_chan_t;
 
 #endif
 

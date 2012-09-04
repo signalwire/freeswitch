@@ -92,10 +92,14 @@ typedef enum {
 } lpwrap_pri_switch_t;
 
 typedef enum {
-	LPWRAP_PRI_READY = (1 << 0)
+	LPWRAP_PRI_READY = (1 << 0),
+	LPWRAP_PRI_ABORT = (1 << 1)
 } lpwrap_pri_flag_t;
 
 struct lpwrap_pri;
+struct lpwrap_timer;
+
+typedef int (*timeout_handler)(struct lpwrap_pri *, struct lpwrap_timer *);
 typedef int (*event_handler)(struct lpwrap_pri *, lpwrap_pri_event_t, pri_event *);
 typedef int (*loop_handler)(struct lpwrap_pri *);
 
@@ -108,6 +112,8 @@ struct lpwrap_pri {
 	event_handler eventmap[LPWRAP_PRI_EVENT_MAX];
 	loop_handler on_loop;
 	int errs;
+	struct lpwrap_timer *timer_list;
+	ftdm_mutex_t *timer_mutex;
 };
 
 typedef struct lpwrap_pri lpwrap_pri_t;
@@ -118,15 +124,21 @@ struct lpwrap_pri_event_list {
 	const char *name;
 };
 
+struct lpwrap_timer {
+	struct lpwrap_timer *next;
+	ftdm_time_t timeout;
+	timeout_handler callback;
+};
 
+int lpwrap_start_timer(struct lpwrap_pri *spri, struct lpwrap_timer *timer, const uint32_t timeout_ms, timeout_handler callback);
+int lpwrap_stop_timer(struct lpwrap_pri *spri, struct lpwrap_timer *timer);
 
 #define LPWRAP_MAP_PRI_EVENT(spri, event, func) spri.eventmap[event] = func;
-
 const char *lpwrap_pri_event_str(lpwrap_pri_event_t event_id);
-int lpwrap_one_loop(struct lpwrap_pri *spri);
-int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int debug);
-int lpwrap_init_bri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int ptp, int debug);
-int lpwrap_run_pri(struct lpwrap_pri *spri);
-#define lpwrap_run_bri(x)	lpwrap_run_pri(x)
 
+int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *dchan, int swtype, int node, int debug);
+int lpwrap_destroy_pri(struct lpwrap_pri *spri);
+int lpwrap_run_pri_once(struct lpwrap_pri *spri);
+int lpwrap_run_pri(struct lpwrap_pri *spri);
+int lpwrap_stop_pri(struct lpwrap_pri *spri);
 #endif
