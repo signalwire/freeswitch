@@ -25,7 +25,7 @@
 
 docdir = $(LIBTIFF_DOCDIR)
 
-AUTOMAKE_OPTIONS = 1.11 dist-zip foreign
+AUTOMAKE_OPTIONS = 1.7 dist-zip foreign
 ACLOCAL_AMFLAGS = -I m4
 
 docfiles = \
