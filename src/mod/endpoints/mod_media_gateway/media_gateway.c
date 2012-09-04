@@ -545,6 +545,7 @@ mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
 mg_context_t *megaco_choose_context(megaco_profile_t *profile)
 {
     mg_context_t *ctx=NULL;
+    uint32_t start_id = profile->next_context_id;
     
     switch_thread_rwlock_wrlock(profile->contexts_rwlock);
     /* Try the next one */
@@ -552,6 +553,7 @@ mg_context_t *megaco_choose_context(megaco_profile_t *profile)
         profile->next_context_id = 1;
     }
     
+again:
     /* Look for an available context */
     for (; profile->next_context_id < MG_MAX_CONTEXTS; profile->next_context_id++) {
         if ((profile->contexts_bitmap[profile->next_context_id / 8] & (1 << (profile->next_context_id % 8))) == 0) {
@@ -575,6 +577,12 @@ mg_context_t *megaco_choose_context(megaco_profile_t *profile)
             profile->next_context_id++;
             break;
         }
+    }
+
+    if (!ctx && start_id > 1) {
+        start_id = 1;
+        profile->next_context_id = 1;
+        goto again;
     }
     
     switch_thread_rwlock_unlock(profile->contexts_rwlock);
@@ -612,18 +620,26 @@ void megaco_release_context(mg_context_t *ctx)
 uint32_t mg_rtp_request_id(megaco_profile_t *profile)
 {
     uint32_t rtp_id = 0x00;
+    uint32_t start_id = profile->rtpid_next;
 
     if (profile->rtpid_next >= MG_MAX_RTPID || profile->rtpid_next == 0) {
         profile->rtpid_next = 1;
     }
 
+again:
     for (; profile->rtpid_next < MG_MAX_RTPID; profile->rtpid_next++) {
         if ((profile->rtpid_bitmap[profile->rtpid_next / 8] & (1 << (profile->rtpid_next % 8))) == 0) {
             profile->rtpid_bitmap[profile->rtpid_next / 8] |= 1 << (profile->rtpid_next % 8);
             rtp_id = profile->rtpid_next;
-	    profile->rtpid_next++;
+            profile->rtpid_next++;
             return rtp_id;
         }
+    }
+
+    if (start_id > 1) {
+        start_id = 1;
+        profile->rtpid_next = 1;
+        goto again;
     }
     
     return 0;
