@@ -621,7 +621,6 @@ tiff-reconf:
 	cd libs/tiff-4.0.2 && sh ./configure.gnu
 	cd libs/spandsp && autoreconf -fi
 	cd libs/spandsp && sh ./configure.gnu
-	make mod_voipcodecs-clean
 
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
@@ -644,7 +643,7 @@ iks-reconf:
 	cd libs/iksemel && sh ./configure.gnu --prefix=$(prefix)
 	$(MAKE) mod_dingaling-clean
 
-spandsp-reconf:
+spandsp-reconf: tiff-reconf
 	cd libs/spandsp && $(MAKE) clean || echo
 	cd libs/spandsp && autoreconf -fi
 	cd libs/spandsp && sh ./configure.gnu --prefix=$(prefix)
