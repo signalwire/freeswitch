@@ -463,6 +463,42 @@ SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
 
 	for (p = s; x < len; p++) {
 		switch (*p) {
+
+		case '"':
+			if (x + 6 > len - 1) {
+				goto end;
+			}
+			*q++ = '&';
+			*q++ = 'q';
+			*q++ = 'u';
+			*q++ = 'o';
+			*q++ = 't';
+			*q++ = ';';
+			x += 6;
+			break;
+		case '\'':
+			if (x + 6 > len - 1) {
+				goto end;
+			}
+			*q++ = '&';
+			*q++ = 'a';
+			*q++ = 'p';
+			*q++ = 'o';
+			*q++ = 's';
+			*q++ = ';';
+			x += 6;
+			break;
+		case '&':
+			if (x + 5 > len - 1) {
+				goto end;
+			}
+			*q++ = '&';
+			*q++ = 'a';
+			*q++ = 'm';
+			*q++ = 'p';
+			*q++ = ';';
+			x += 5;
+			break;
 		case '<':
 			if (x + 4 > len - 1) {
 				goto end;
