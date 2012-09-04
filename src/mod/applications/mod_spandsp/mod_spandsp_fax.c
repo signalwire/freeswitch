@@ -357,7 +357,7 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 
 static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 {
-	t4_stats_t t4_stats;
+	t30_stats_t t30_stats;
 	char *fax_image_resolution = NULL;
 	char *fax_image_size = NULL;
 	char *fax_image_pixel_size = NULL;
@@ -379,60 +379,56 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
 
-	if (pvt->app_mode == FUNCTION_TX) {
-		t4_tx_get_transfer_statistics(&s->t4.tx, &t4_stats);
-	} else {
-		t4_rx_get_transfer_statistics(&s->t4.rx, &t4_stats);
-	}
+	t30_get_transfer_statistics(s, &t30_stats);
 
 	/* Set Channel Variable */
 
-	fax_image_resolution = switch_core_session_sprintf(session, "%ix%i", t4_stats.x_resolution, t4_stats.y_resolution);
+	fax_image_resolution = switch_core_session_sprintf(session, "%ix%i", t30_stats.x_resolution, t30_stats.y_resolution);
 	if (fax_image_resolution) {
 		switch_channel_set_variable(channel, "fax_image_resolution", fax_image_resolution);
 	}
 
-	fax_image_pixel_size = switch_core_session_sprintf(session, "%ix%i", t4_stats.width, t4_stats.length);
+	fax_image_pixel_size = switch_core_session_sprintf(session, "%ix%i", t30_stats.width, t30_stats.length);
 	if (fax_image_pixel_size) {
 		switch_channel_set_variable(channel, "fax_image_pixel_size", fax_image_pixel_size);;
 	}
 
-	fax_image_size = switch_core_session_sprintf(session, "%d", t4_stats.line_image_size);
+	fax_image_size = switch_core_session_sprintf(session, "%d", t30_stats.image_size);
 	if (fax_image_size) {
 		switch_channel_set_variable(channel, "fax_image_size", fax_image_size);
 	}
 
-	fax_bad_rows = switch_core_session_sprintf(session, "%d", t4_stats.bad_rows);
+	fax_bad_rows = switch_core_session_sprintf(session, "%d", t30_stats.bad_rows);
 	if (fax_bad_rows) {
 		switch_channel_set_variable(channel, "fax_bad_rows", fax_bad_rows);
 	}
 
-	fax_longest_bad_row_run = switch_core_session_sprintf(session, "%d", t4_stats.longest_bad_row_run);
+	fax_longest_bad_row_run = switch_core_session_sprintf(session, "%d", t30_stats.longest_bad_row_run);
 	if (fax_longest_bad_row_run) {
 		switch_channel_set_variable(channel, "fax_longest_bad_row_run", fax_longest_bad_row_run);
 	}
 
-	fax_encoding = switch_core_session_sprintf(session, "%d", t4_stats.encoding);
+	fax_encoding = switch_core_session_sprintf(session, "%d", t30_stats.encoding);
 	if (fax_encoding) {
 		switch_channel_set_variable(channel, "fax_encoding", fax_encoding);
 	}
 
-	switch_channel_set_variable(channel, "fax_encoding_name", t4_encoding_to_str(t4_stats.encoding));
+	switch_channel_set_variable(channel, "fax_encoding_name", t4_encoding_to_str(t30_stats.encoding));
 
-	fax_document_transferred_pages = switch_core_session_sprintf(session, "%d", t4_stats.pages_transferred);
+	fax_document_transferred_pages = switch_core_session_sprintf(session, "%d", (pvt->app_mode == FUNCTION_TX)  ?  t30_stats.pages_tx  :  t30_stats.pages_rx);
 	if (fax_document_transferred_pages) {
 		switch_channel_set_variable(channel, "fax_document_transferred_pages", fax_document_transferred_pages);
 	}
 
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==== Page %s===========================================================\n", pvt->app_mode == FUNCTION_TX ? "Sent ====": "Received ");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Page no = %d\n", t4_stats.pages_transferred);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image size = %d x %d pixels\n", t4_stats.width, t4_stats.length);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution = %d/m x %d/m\n", t4_stats.x_resolution, t4_stats.y_resolution);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compression = %s (%d)\n", t4_encoding_to_str(t4_stats.encoding), t4_stats.encoding);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compressed image size = %d bytes\n", t4_stats.line_image_size);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Bad rows = %d\n", t4_stats.bad_rows);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Longest bad row run = %d\n", t4_stats.longest_bad_row_run);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Page no = %d\n", (pvt->app_mode == FUNCTION_TX)  ?  t30_stats.pages_tx  :  t30_stats.pages_rx);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image size = %d x %d pixels\n", t30_stats.width, t30_stats.length);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution = %d/m x %d/m\n", t30_stats.x_resolution, t30_stats.y_resolution);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compression = %s (%d)\n", t4_encoding_to_str(t30_stats.encoding), t30_stats.encoding);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compressed image size = %d bytes\n", t30_stats.image_size);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Bad rows = %d\n", t30_stats.bad_rows);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Longest bad row run = %d\n", t30_stats.longest_bad_row_run);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
 	switch_channel_execute_on(channel, "execute_on_fax_phase_d");
@@ -446,7 +442,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-longest-bad-row-run", fax_longest_bad_row_run);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-encoding", fax_encoding);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-encoding-name", t4_encoding_to_str(t4_stats.encoding));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-encoding-name", t4_encoding_to_str(t30_stats.encoding));
 		switch_event_fire(&event);
 	}
 
@@ -713,12 +709,12 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 		fax_set_transmit_on_idle(fax, TRUE);
 
-		span_log_set_message_handler(&fax->logging, spanfax_log_message, NULL);
-		span_log_set_message_handler(&t30->logging, spanfax_log_message, NULL);
+		span_log_set_message_handler(fax_get_logging_state(fax), spanfax_log_message, NULL);
+		span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, NULL);
 
 		if (pvt->verbose) {
-			span_log_set_level(&fax->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-			span_log_set_level(&t30->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+			span_log_set_level(fax_get_logging_state(fax), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+			span_log_set_level(t30_get_logging_state(t30), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 		}
 		break;
 	case T38_MODE:
@@ -769,12 +765,12 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 				}
 			}
 
-			span_log_set_message_handler(&t38->logging, spanfax_log_message, NULL);
-			span_log_set_message_handler(&t30->logging, spanfax_log_message, NULL);
+			span_log_set_message_handler(t38_terminal_get_logging_state(t38), spanfax_log_message, NULL);
+			span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, NULL);
 
 			if (pvt->verbose) {
-				span_log_set_level(&t38->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-				span_log_set_level(&t30->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+				span_log_set_level(t38_terminal_get_logging_state(t38), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+				span_log_set_level(t30_get_logging_state(t30), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 			}
 		}
 		break;
@@ -824,12 +820,12 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		}
 
 
-		span_log_set_message_handler(&pvt->t38_gateway_state->logging, spanfax_log_message, NULL);
-		span_log_set_message_handler(&pvt->t38_core->logging, spanfax_log_message, NULL);
+		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), spanfax_log_message, NULL);
+		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), spanfax_log_message, NULL);
 
 		if (pvt->verbose) {
-			span_log_set_level(&pvt->t38_gateway_state->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-			span_log_set_level(&pvt->t38_core->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+			span_log_set_level(t38_gateway_get_logging_state(pvt->t38_gateway_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+			span_log_set_level(t38_core_get_logging_state(pvt->t38_core), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 		}
 
 		t38_set_t38_version(pvt->t38_core, 0);
