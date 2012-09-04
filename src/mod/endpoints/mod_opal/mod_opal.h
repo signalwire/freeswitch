@@ -44,8 +44,29 @@
 #undef strcasecmp
 #undef strncasecmp
 
+
+#if _MSC_VER < 1600
+/*The following insanity is because libteletone_generate.h defines int8_t in
+  a slightly different manner to most other cases (SDL, PCAP, Java V8, stdint.h
+  etc) and does not provide a mechanism to prevent it's inclusion. Then, to
+  cap it off, VS2008 barfs on the difference. VS2010 seems OK with it.
+
+  Sigh.
+ */
+#pragma include_alias(<libteletone.h>,          <../../libs/libteletone/src/libteletone.h>)
+#pragma include_alias(<libteletone_generate.h>, <../../libs/libteletone/src/libteletone_generate.h>)
+#pragma include_alias(<libteletone_detect.h>,   <../../libs/libteletone/src/libteletone_detect.h>)
+#define int8_t signed int8_t
+#include <libteletone_generate.h>
+#undef int8_t
+#endif // End of insanity
+
+
 #define HAVE_APR
+#define uint32_t uint32_t // Avoid conflict in stdint definitions
 #include <switch.h>
+#undef uint32_t
+
 #include <switch_version.h>
 
 
@@ -100,6 +121,7 @@ class FSManager : public OpalManager
     const PString & GetContext() const { return m_context; }
     const PString & GetDialPlan() const { return m_dialplan; }
     const PString & GetCodecPrefs() const { return m_codecPrefs; }
+    bool GetDisableTranscoding() const { return m_disableTranscoding; }
 
   private:
     switch_endpoint_interface_t *m_FreeSwitch;
@@ -111,6 +133,7 @@ class FSManager : public OpalManager
     PString m_context;
     PString m_dialplan;
     PString m_codecPrefs;
+    bool    m_disableTranscoding;
     PString m_gkAddress;
     PString m_gkIdentifer;
     PString m_gkInterface;
@@ -221,9 +244,6 @@ class FSConnection : public OpalLocalConnection
     virtual OpalMediaFormatList GetMediaFormats() const;
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
 
-    void SetCodecs();
-    bool WaitForMedia();
-
     DECLARE_CALLBACK0(on_init);
     DECLARE_CALLBACK0(on_destroy);
     DECLARE_CALLBACK0(on_routing);
@@ -242,9 +262,6 @@ class FSConnection : public OpalLocalConnection
     DECLARE_CALLBACK3(write_audio_frame, switch_frame_t *, frame, switch_io_flag_t, flags, int, stream_id);
     DECLARE_CALLBACK3(read_video_frame, switch_frame_t **, frame, switch_io_flag_t, flag, int, stream_id);
     DECLARE_CALLBACK3(write_video_frame, switch_frame_t *, frame, switch_io_flag_t, flag, int, stream_id);
-
-    switch_status_t read_frame(const OpalMediaType & mediaType, switch_frame_t **frame, switch_io_flag_t flags);
-    switch_status_t write_frame(const OpalMediaType & mediaType, const switch_frame_t *frame, switch_io_flag_t flags);
 
     __inline switch_core_session_t *GetSession() const
     {
@@ -268,6 +285,13 @@ class FSConnection : public OpalLocalConnection
         m_flushAudio = false;
         return true;
     }
+
+  protected:
+    void SetCodecs();
+    bool WaitForMedia();
+
+    switch_status_t read_frame(const OpalMediaType & mediaType, switch_frame_t **frame, switch_io_flag_t flags);
+    switch_status_t write_frame(const OpalMediaType & mediaType, const switch_frame_t *frame, switch_io_flag_t flags);
 
   private:
     FSEndPoint            &m_endpoint;

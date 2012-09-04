@@ -153,13 +153,27 @@ private:
         return 0;
 
       //Due to explicit setting of flags we know exactly what we are getting
-      PStringArray fields(6);
-      static PRegularExpression logRE("^([0-9]+)\t *([^(]+)\\(([0-9]+)\\)\t(.*)", PRegularExpression::Extended);
+  #define THREAD_ID_INDEX 2
+  #define FILE_NAME_INDEX 3
+  #define FILE_LINE_INDEX 4
+#if PTLIB_CHECK_VERSION(2,11,1)
+  #define CONTEXT_ID_REGEX "([0-9]+|- - - - - - -)\t"
+  #define LOG_PRINTF_FORMAT "{%s,%s} %s"
+  #define FULL_TEXT_INDEX 6
+#else
+  #define CONTEXT_ID_REGEX
+  #define LOG_PRINTF_FORMAT "{%s} %s"
+  #define FULL_TEXT_INDEX 5
+#endif
+      PStringArray fields(7);
+      static PRegularExpression logRE("^([0-9]+)\t *(.+)\t *([^(]+)\\(([0-9]+)\\)\t"CONTEXT_ID_REGEX"(.*)",
+                                      PRegularExpression::Extended);
       if (!logRE.Execute(s.c_str(), fields)) {
         fields[1] = "4";
-        fields[2] = __FILE__;
-        fields[3] = __LINE__;
-        fields[4] = s;
+        fields[THREAD_ID_INDEX] = "unknown";
+        fields[FILE_NAME_INDEX] = __FILE__;
+        fields[FILE_LINE_INDEX] = __LINE__;
+        fields[FULL_TEXT_INDEX] = s;
       }
 
       switch_log_level_t level;
@@ -182,13 +196,21 @@ private:
       }
 
       fields[4].Replace("\t", " ", true);
+#if PTLIB_CHECK_VERSION(2,11,1)
+      fields[5].Replace("- - - - - - -", "-"),
+#endif
       switch_log_printf(SWITCH_CHANNEL_ID_LOG,
-                        fields[2],
+                        fields[FILE_NAME_INDEX],
                         "PTLib-OPAL",
-                        fields[3].AsUnsigned(),
+                        fields[FILE_LINE_INDEX].AsUnsigned(),
                         NULL,
                         level,
-                        "%s", fields[4].GetPointer());
+                        LOG_PRINTF_FORMAT,
+                        fields[THREAD_ID_INDEX].GetPointer(),
+#if PTLIB_CHECK_VERSION(2,11,1)
+                        fields[5].GetPointer(),
+#endif
+                        fields[FULL_TEXT_INDEX].GetPointer());
 
       // Reset string
       str(std::string());
@@ -337,6 +359,8 @@ switch_status_t FSManager::ReadConfig(int reload)
                 m_dialplan = val;
             } else if (var == "codec-prefs") {
                 m_codecPrefs = val;
+            } else if (var == "disable-transcoding") {
+                m_disableTranscoding = switch_true(val);
             } else if (var == "jitter-size") {
                 SetAudioJitterDelay(val.AsUnsigned(), val.Mid(val.Find(',')+1).AsUnsigned()); // In milliseconds
             } else if (var == "gk-address") {
@@ -352,7 +376,7 @@ switch_status_t FSManager::ReadConfig(int reload)
                     PTrace::SetLevel(level);
                     PTrace::ClearOptions(0xffffffff); // Everything off
                     PTrace::SetOptions(               // Except these
-                      PTrace::TraceLevel|PTrace::FileAndLine
+                      PTrace::TraceLevel|PTrace::FileAndLine|PTrace::Thread
 #if PTLIB_CHECK_VERSION(2,11,1)
                       |PTrace::ContextIdentifier
 #endif
@@ -493,6 +517,7 @@ FSConnection::FSConnection(OpalCall & call,
         switch_channel_set_caller_profile(m_fsChannel, caller_profile);
         SetLocalPartyName(caller_profile->caller_id_number);
         SetDisplayName(caller_profile->caller_id_name);
+
         *params->new_session = m_fsSession;
     }
 
@@ -629,19 +654,42 @@ void FSConnection::SetCodecs()
     PString codec_string = switch_channel_get_variable(m_fsChannel, "absolute_codec_string");
     if (codec_string.IsEmpty()) {
         codec_string = switch_channel_get_variable(m_fsChannel, "codec_string");
-        const char *orig_codec = switch_channel_get_variable(m_fsChannel, SWITCH_ORIGINATOR_CODEC_VARIABLE);
-        if (orig_codec) {
-            codec_string.Splice(orig_codec, 0);
+        if (codec_string.IsEmpty()) {
+            codec_string = m_endpoint.GetManager().GetCodecPrefs();
+            if (codec_string.IsEmpty()) {
+                numCodecs = switch_loadable_module_get_codecs(codecs, sizeof(codecs) / sizeof(codecs[0]));
+                for (int i = 0; i < numCodecs; i++) {
+                  if (i > 0)
+                    codec_string += ',';
+                  codec_string += codecs[i]->iananame;
+                }
+                PTRACE(4, "mod_opal\tDefault to all loaded codecs=" << codec_string);
+            }
+            else {
+                PTRACE(4, "mod_opal\tSettings codec-prefs=" << codec_string);
+            }
+        }
+        else {
+            PTRACE(4, "mod_opal\tChannel codec_string=" << codec_string);
+        }
+
+        PString orig_codec = switch_channel_get_variable(m_fsChannel, SWITCH_ORIGINATOR_CODEC_VARIABLE);
+        if (!orig_codec.IsEmpty()) {
+          if (m_endpoint.GetManager().GetDisableTranscoding()) {
+              codec_string = orig_codec;
+              PTRACE(4, "mod_opal\tNo transcoding, forced to originator codec=" << orig_codec);
+          }
+          else {
+              codec_string.Splice(orig_codec+',', 0);
+              PTRACE(4, "mod_opal\tSetting preference to originator codec=" << orig_codec);
+          }
         }
     }
-
-    if (codec_string.IsEmpty()) {
-        codec_string = m_endpoint.GetManager().GetCodecPrefs();
+    else {
+        PTRACE(4, "mod_opal\tChannel absolute_codec_string=" << codec_string);
     }
 
-    if (codec_string.IsEmpty()) {
-        numCodecs = switch_loadable_module_get_codecs(codecs, sizeof(codecs) / sizeof(codecs[0]));
-    } else {
+    if (!codec_string.IsEmpty()) {
         char *codec_order[SWITCH_MAX_CODECS];
         int codec_order_last = switch_separate_string((char *)codec_string.GetPointer(), ',', codec_order, SWITCH_MAX_CODECS);
         numCodecs = switch_loadable_module_get_codecs_sorted(codecs, SWITCH_MAX_CODECS, codec_order, codec_order_last);
@@ -658,16 +706,19 @@ void FSConnection::SetCodecs()
             // See if we have a match by name alone
             switchFormat = codec->iananame;
             if (!switchFormat.IsValid()) {
-              PTRACE(2, "mod_opal\tCould not match FS codec " << codec->iananame << " to OPAL media format.");
+              PTRACE(2, "mod_opal\tCould not match FS codec "
+                     << codec->iananame << '@' << codec->samples_per_second
+                     << " (pt=" << codec->ianacode << ")"
+                        " to an OPAL media format.");
               continue;
             }
         }
 
-        // Did we match or create a new media format?
-        if (switchFormat.IsValid() && codec->codec_type == SWITCH_CODEC_TYPE_AUDIO) {
-            PTRACE(3, "mod_opal\tMatched FS codec " << codec->iananame << " to OPAL media format " << switchFormat);
+        PTRACE(4, "mod_opal\tMatched FS codec " << codec->iananame << " to OPAL media format " << switchFormat);
 
 #if IMPLEMENT_MULTI_FAME_AUDIO
+        // Did we match or create a new media format?
+        if (switchFormat.IsValid() && codec->codec_type == SWITCH_CODEC_TYPE_AUDIO) {
             // Calculate frames per packet, do not use codec->codec_frames_per_packet as that field
             // has slightly different semantics when used in streamed codecs such as G.711
             int fpp = codec->samples_per_packet/switchFormat.GetFrameTime();
@@ -687,8 +738,8 @@ void FSConnection::SetCodecs()
             if (fpp > switchFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())) {
                 switchFormat.SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), fpp);
             }
-#endif // IMPLEMENT_MULTI_FAME_AUDIO
         }
+#endif // IMPLEMENT_MULTI_FAME_AUDIO
 
         m_switchMediaFormats += switchFormat;
     }
@@ -1006,7 +1057,7 @@ PBoolean FSMediaStream::Open()
     } else if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
         isAudio = false;
     } else {
-        return OpalMediaStream::Open();
+        return false;
     }
 
     int ptime = mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption()) * mediaFormat.GetFrameTime() / mediaFormat.GetTimeUnits();
@@ -1145,16 +1196,19 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
         }
     }
 
-    if (!m_switchTimer) {
-        PTRACE(2, "mod_opal\tread_frame: no timer!");
-        return SWITCH_STATUS_FALSE;
+    if (m_switchTimer != NULL) {
+        switch_core_timer_next(m_switchTimer);
     }
-    switch_core_timer_next(m_switchTimer);
 
-    if (!switch_core_codec_ready(m_switchCodec)) {
-        PTRACE(2, "mod_opal\tread_frame: codec not ready!");
-        return SWITCH_STATUS_FALSE;
+    if (m_switchCodec != NULL) {
+        if (!switch_core_codec_ready(m_switchCodec)) {
+            PTRACE(2, "mod_opal\tread_frame: codec not ready!");
+            return SWITCH_STATUS_FALSE;
+        }
     }
+
+    m_readFrame.packet    = m_readRTP.GetPointer();
+    m_readFrame.packetlen = m_readRTP.GetHeaderSize() + m_readFrame.datalen;
 
 #if IMPLEMENT_MULTI_FAME_AUDIO
     // Repackage frames in incoming packet to agree with what FS expects.
@@ -1165,8 +1219,6 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
     m_readFrame.buflen    = m_readRTP.GetSize();
     m_readFrame.data      = m_readRTP.GetPayloadPtr();
     m_readFrame.datalen   = m_readRTP.GetPayloadSize();
-    m_readFrame.packet    = m_readRTP.GetPointer();
-    m_readFrame.packetlen = m_readRTP.GetHeaderSize() + m_readFrame.datalen;
     m_readFrame.timestamp = m_readRTP.GetTimestamp();
     m_readFrame.seq       = m_readRTP.GetSequenceNumber();
     m_readFrame.ssrc      = m_readRTP.GetSyncSource();
