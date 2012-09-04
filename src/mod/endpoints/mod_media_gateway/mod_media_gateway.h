@@ -215,6 +215,7 @@ struct megaco_profile_s {
 	char*					mid;  	     /* MG H.248 MID */
 	char*					my_domain;   /* local domain name */
 	char*					my_ipaddr;   /* local domain name */
+	char*					rtp_ipaddr;   /* local rtp ip */
 	char*					port;              	     /* port */
 	char*					protocol_type;    	     /* MEGACO/MGCP */
 	char*					license;    	     /* License file location/name */

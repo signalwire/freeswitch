@@ -129,6 +129,8 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, kMEDIATYPE, mg_media_type2str(term->u.rtp.media_type));
         switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "fax_enable_t38", "true");
         switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "rtp_execute_on_image", "t38_gateway self nocng");
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s local_add[%s]\n",__FUNCTION__, term->u.rtp.local_addr); 
     } else if (term->type == MG_TERM_TDM) {
         switch_snprintf(dialstring, sizeof dialstring, "tdm/%s", term->name);
         
@@ -276,7 +278,8 @@ mg_termination_t *megaco_choose_termination(megaco_profile_t *profile, const cha
     
     if (termtype == MG_TERM_RTP) {
         /* Fill in local address and reserve an rtp port */
-        term->u.rtp.local_addr = profile->my_ipaddr;
+        //term->u.rtp.local_addr = profile->my_ipaddr;
+        term->u.rtp.local_addr = profile->rtp_ipaddr;
         term->u.rtp.local_port = switch_rtp_request_port(term->u.rtp.local_addr);
         term->u.rtp.codec = megaco_codec_str(profile->default_codec);
         term->u.rtp.term_id = term_id;

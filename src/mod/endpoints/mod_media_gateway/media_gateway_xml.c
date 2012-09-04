@@ -64,6 +64,14 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 			profile->total_peers++;
 		}
 
+		/* If RTP-IP is not defined then default to local-ip */
+		if((!profile->rtp_ipaddr) || 
+				(profile->rtp_ipaddr && ('\0' == profile->rtp_ipaddr[0]))){
+			profile->rtp_ipaddr = switch_mprintf("%s", profile->my_ipaddr);
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"rtp_ipaddr[%s], local ip[%s]\n", profile->rtp_ipaddr, profile->my_ipaddr);
+
 		if(SWITCH_STATUS_FALSE == (status = modify_mg_profile_mid(profile, &profile->mid))){
 			goto done;
 		}
@@ -168,6 +176,7 @@ else
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
+
 
 	/* go through the peer configuration and get the mg profile associated peers only */
 	if (!(mg_peers = switch_xml_child(cfg, "mg_peers"))) {
@@ -345,6 +354,7 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		//SWITCH_CONFIG_ITEM("tdm-pre-buffer-size", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &profile->tdm_pre_buffer_size, 0, &pre_buffer_len, "", "freetdm pre buffer size"),
 		SWITCH_CONFIG_ITEM("codec-prefs", SWITCH_CONFIG_STRING, 0, &profile->codec_prefs, "", &switch_config_string_strdup, "", "codec preferences, coma-separated"),
 		SWITCH_CONFIG_ITEM("license", SWITCH_CONFIG_STRING, 0, &profile->license, "/usr/local/nsg/conf/license.txt", &switch_config_string_strdup, "", "License file"),
+		SWITCH_CONFIG_ITEM("rtp-ip", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->rtp_ipaddr, "" , &switch_config_string_strdup, "", "rtp ip"),
 		SWITCH_CONFIG_ITEM_END()
 	};
 	
