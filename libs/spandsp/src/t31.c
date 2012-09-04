@@ -2180,6 +2180,12 @@ SPAN_DECLARE(void) t31_call_event(t31_state_t *s, int event)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) t31_at_rx_free_space(t31_state_t *s)
+{
+    return T31_TX_BUF_LEN - (s->tx.in_bytes - s->tx.out_bytes) - 1;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
 {
     if (s->dte_data_timeout)
@@ -2215,7 +2221,7 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
         if (s->tx.out_bytes)
         {
             /* Make room for new data in existing data buffer. */
-            s->tx.in_bytes = &s->tx.data[s->tx.in_bytes] - &s->tx.data[s->tx.out_bytes];
+            s->tx.in_bytes -= s->tx.out_bytes;
             memmove(&s->tx.data[0], &s->tx.data[s->tx.out_bytes], s->tx.in_bytes);
             s->tx.out_bytes = 0;
         }

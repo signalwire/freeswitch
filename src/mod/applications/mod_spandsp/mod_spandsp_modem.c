@@ -1279,7 +1279,7 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 				modem->last_event = switch_time_now();
 			}
 
-			avail = sizeof(buf) - modem->t31_state->tx.in_bytes + modem->t31_state->tx.out_bytes - 1;
+			avail = t31_at_rx_free_space(modem->t31_state);
 
 			if (avail == 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Buffer Full, retrying....\n");
