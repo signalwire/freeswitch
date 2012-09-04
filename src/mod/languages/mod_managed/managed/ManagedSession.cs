@@ -145,6 +145,8 @@ namespace FreeSWITCH.Native
             switch_state_handler_t_delegate del = ptr => {
                 using (var sess = new ManagedSession(new SWIGTYPE_p_switch_core_session(ptr, false))) {
                     handler(sess);
+                    sess.setAutoHangup(false);
+                    sess.destroy();
                     return switch_status_t.SWITCH_STATUS_SUCCESS;
                 }
             };
