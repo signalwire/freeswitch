@@ -58,6 +58,19 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 		
 	switch (ftdmchan->state) {
 		case FTDM_CHANNEL_STATE_DOWN: /* Proper state to receive a SETUP */
+			if (signal_data->nfas.trunk) {
+				ftdm_alarm_flag_t alarmflag = 0;
+
+				ftdm_channel_get_alarms(ftdmchan, &alarmflag);
+				if (alarmflag) {
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "Received SETUP but channel has physical layer alarm - rejecting\n");
+					
+					ftdmchan->caller_data.hangup_cause = 0x2C; /* Channel requested not available */
+					ftdm_sched_timer(signal_data->sched, "delayed_release", 1, sngisdn_delayed_release, (void*) sngisdn_info, NULL);
+					break;
+				}
+			}
+
 			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INUSE) ||
 				ftdm_channel_open_chan(ftdmchan) != FTDM_SUCCESS) {
 
@@ -1183,7 +1196,7 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 	uint8_t chan_no = 0;
 	Rst *rstEvnt = &sngisdn_event->event.rstEvnt;	
 	
-	sngisdn_span_data_t	*signal_data = g_sngisdn_data.dchans[dChan].spans[1];
+	sngisdn_span_data_t	*signal_data = g_sngisdn_data.spans[dChan];
 	if (!signal_data) {
 		ftdm_log(FTDM_LOG_CRIT, "Received RESTART CFM on unconfigured span (suId:%d)\n", suId);
 		return;
@@ -1209,6 +1222,16 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 					} else if (rstEvnt->chanId.intType.val == IN_IT_OTHER) {
 						if (rstEvnt->chanId.chanNmbSlotMap.pres == PRSNT_NODEF) {
 							chan_no = rstEvnt->chanId.chanNmbSlotMap.val[0];
+						}
+					}
+
+					if (signal_data->nfas.trunk) {
+						if (!rstEvnt->chanId.intIdent.pres) {
+							ftdm_log(FTDM_LOG_CRIT, "Failed to determine interface from RESTART\n");
+							return;
+						} else if (signal_data->nfas.interface_id != rstEvnt->chanId.intIdent.val) {
+							/* This RESTART is for another interface */
+							return;
 						}
 					}
 				}
@@ -1273,10 +1296,7 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 
 	rstEvnt = &sngisdn_event->event.rstEvnt;
 
-	/* TODO: readjust this when NFAS is implemented as signal_data will not always be the first
-	 * span for that d-channel */
-
-	signal_data = g_sngisdn_data.dchans[dChan].spans[1];
+	signal_data = g_sngisdn_data.spans[dChan];
 
 	if (!signal_data) {
 		ftdm_log(FTDM_LOG_CRIT, "Received RESTART IND on unconfigured span (suId:%d)\n", suId);
@@ -1307,6 +1327,16 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 							chan_no = rstEvnt->chanId.chanNmbSlotMap.val[0];
 						}
 					}
+
+					if (signal_data->nfas.trunk) {
+						if (!rstEvnt->chanId.intIdent.pres) {
+							ftdm_log(FTDM_LOG_CRIT, "Failed to determine interface from RESTART\n");
+							return;
+						} else if (signal_data->nfas.interface_id != rstEvnt->chanId.intIdent.val) {
+							/* This RESTART is for another interface */
+							return;
+						}
+					}
 				}
 				if (!chan_no) {
 					ftdm_log(FTDM_LOG_CRIT, "Failed to determine channel from RESTART\n");
@@ -1315,7 +1345,7 @@ void sngisdn_process_rst_ind (sngisdn_event_data_t *sngisdn_event)
 				break;
 			case IN_CL_SNGINT: /* Single interface */
 			case IN_CL_ALLINT: /* All interfaces */
-				/* In case restart class indicates all interfaces, we will duplicate
+				/* In case restart class indicates all interfaces, we will duplicated
 						this event on each span associated to this d-channel in sngisdn_rcv_rst_cfm,
 						so treat it as a single interface anyway */
 				chan_no = 0;

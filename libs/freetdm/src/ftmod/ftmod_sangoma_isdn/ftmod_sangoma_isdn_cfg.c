@@ -37,6 +37,7 @@
 static ftdm_status_t parse_timer(const char* val, int32_t *target);
 static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span);
 static ftdm_status_t parse_signalling(const char* signalling, ftdm_span_t *span);
+static ftdm_status_t parse_trunkgroup(const char *_trunkgroup);
 static ftdm_status_t add_local_number(const char* val, ftdm_span_t *span);
 static ftdm_status_t parse_yesno(const char* var, const char* val, uint8_t *target);
 static ftdm_status_t set_switchtype_defaults(ftdm_span_t *span);
@@ -81,7 +82,7 @@ static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span
 	unsigned i;
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;	
-	sngisdn_dchan_data_t *dchan_data;
+	//sngisdn_dchan_data_t *dchan_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
 	
 	switch(span->trunk_type) {
@@ -133,13 +134,15 @@ static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span
 			ftdm_log(FTDM_LOG_ERROR, "%s:Unsupported trunktype:%s\n", span->name, ftdm_trunk_type2str(span->trunk_type));
 			return FTDM_FAIL;
 	}
+
 	/* see if we have profile with this switch_type already */
-	for (i=1; i <= g_sngisdn_data.num_cc; i++) {
+	for (i = 1; i <= g_sngisdn_data.num_cc; i++) {
 		if (g_sngisdn_data.ccs[i].switchtype == signal_data->switchtype &&
 			g_sngisdn_data.ccs[i].trunktype == span->trunk_type) {
 			break;
 		}
 	}
+
 	/* need to create a new switch_type */
 	if (i > g_sngisdn_data.num_cc) {
 		g_sngisdn_data.num_cc++;
@@ -151,20 +154,9 @@ static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span
 	/* add this span to its ent_cc */
 	signal_data->cc_id = i;
 
-	/* create a new dchan */ /* for NFAS - no-dchan on b-channels-only links */
-	g_sngisdn_data.num_dchan++;
-	signal_data->dchan_id = g_sngisdn_data.num_dchan;
-
-	dchan_data = &g_sngisdn_data.dchans[signal_data->dchan_id];
-	dchan_data->num_spans++;
-
-	signal_data->span_id = dchan_data->num_spans;
-	dchan_data->spans[signal_data->span_id] = signal_data;
-
 	g_sngisdn_data.spans[signal_data->link_id] = signal_data;
 	
-	ftdm_log(FTDM_LOG_DEBUG, "%s: cc_id:%d dchan_id:%d span_id:%d link_id:%d\n", span->name, signal_data->cc_id, signal_data->dchan_id, signal_data->span_id, signal_data->link_id);
-
+	ftdm_log(FTDM_LOG_DEBUG, "%s: cc_id:%d link_id:%d\n", span->name, signal_data->cc_id, signal_data->link_id);
 	
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
@@ -175,17 +167,16 @@ static ftdm_status_t parse_switchtype(const char* switch_name, ftdm_span_t *span
 			signal_data->dchan = ftdmchan;
 		} else {
 			/* Add the channels to the span */
-			/* NFAS is not supported on E1, so span_id will always be 1 for E1 so this will work for E1 as well */
-			chan_id = ((signal_data->span_id-1)*NUM_T1_CHANNELS_PER_SPAN)+ftdmchan->physical_chan_id;
-			dchan_data->channels[chan_id] = (sngisdn_chan_data_t*)ftdmchan->call_data;
-			dchan_data->num_chans++;
+			chan_id = ftdmchan->physical_chan_id;
+			signal_data->channels[chan_id] = (sngisdn_chan_data_t*)ftdmchan->call_data;
+			signal_data->num_chans++;
 		}
 	}
 	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
 }
 
-static ftdm_status_t parse_signalling(const char* signalling, ftdm_span_t *span)
+static ftdm_status_t parse_signalling(const char *signalling, ftdm_span_t *span)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
 	if (!strcasecmp(signalling, "net") ||
@@ -202,6 +193,146 @@ static ftdm_status_t parse_signalling(const char* signalling, ftdm_span_t *span)
 		ftdm_log(FTDM_LOG_ERROR, "Unsupported signalling/interface %s\n", signalling);
 		return FTDM_FAIL;
 	}
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t parse_spanmap(const char *_spanmap, ftdm_span_t *span)
+{
+	int i;
+	char *p, *name, *spanmap;
+	uint8_t logical_span_id = 0;
+	ftdm_status_t ret = FTDM_SUCCESS;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) span->signal_data;
+
+	spanmap = ftdm_strdup(_spanmap);
+
+	p = name = NULL;
+
+	i = 0;
+	for (p = strtok(spanmap, ","); p; p = strtok(NULL, ",")) {
+		while (*p == ' ') {
+			p++;
+		}
+		switch(i++) {
+			case 0:
+				name = ftdm_strdup(p);
+				break;
+			case 1:
+				logical_span_id = atoi(p);
+				break;
+		}
+	}
+
+	if (!name) {
+		ftdm_log(FTDM_LOG_ERROR, "Invalid spanmap syntax %s\n", _spanmap);
+		ret = FTDM_FAIL;
+		goto done;
+	}
+
+	for (i = 0; i < g_sngisdn_data.num_nfas; i++) {
+		if (!ftdm_strlen_zero(g_sngisdn_data.nfass[i].name) &&
+			!strcasecmp(g_sngisdn_data.nfass[i].name, name)) {
+
+			signal_data->nfas.trunk = &g_sngisdn_data.nfass[i];
+			break;
+		}
+	}
+
+	if (!signal_data->nfas.trunk) {
+		ftdm_log(FTDM_LOG_ERROR, "Could not find trunkgroup with name %s\n", name);
+		ret = FTDM_FAIL;
+		goto done;
+	}
+
+	if (signal_data->nfas.trunk->spans[logical_span_id]) {
+		ftdm_log(FTDM_LOG_ERROR, "trunkgroup:%s already had a span with logical span id:%d\n", name, logical_span_id);
+	} else {
+		signal_data->nfas.trunk->spans[logical_span_id] = signal_data;
+		signal_data->nfas.interface_id = logical_span_id;
+	}
+
+	if (!strcasecmp(signal_data->ftdm_span->name, signal_data->nfas.trunk->dchan_span_name)) {
+
+		signal_data->nfas.sigchan = SNGISDN_NFAS_DCHAN_PRIMARY;
+		signal_data->nfas.trunk->dchan = signal_data;
+	}
+
+	if (!strcasecmp(signal_data->ftdm_span->name, signal_data->nfas.trunk->backup_span_name)) {
+
+		signal_data->nfas.sigchan = SNGISDN_NFAS_DCHAN_BACKUP;
+		signal_data->nfas.trunk->backup = signal_data;
+	}
+
+done:
+	ftdm_safe_free(spanmap);
+	ftdm_safe_free(name);
+	return ret;
+}
+
+static ftdm_status_t parse_trunkgroup(const char *_trunkgroup)
+{
+	int i;
+	char *p, *name, *dchan_span, *backup_span, *trunkgroup;
+	uint8_t num_spans;
+	ftdm_status_t ret = FTDM_SUCCESS;
+
+	trunkgroup =  ftdm_strdup(_trunkgroup);
+
+	p = name = dchan_span = backup_span = NULL;
+
+	/* format: name, num_chans, dchan_span, [backup_span] */
+
+	i = 0;
+	for (p = strtok(trunkgroup, ","); p; p = strtok(NULL, ",")) {
+		while (*p == ' ') {
+			p++;
+		}
+		switch(i++) {
+			case 0:
+				name = ftdm_strdup(p);
+				break;
+			case 1:
+				num_spans = atoi(p);
+				break;
+			case 2:
+				dchan_span = ftdm_strdup(p);
+				break;
+			case 3:
+				backup_span = ftdm_strdup(p);
+		}
+	}
+
+	if (!name || !dchan_span || num_spans <= 0) {
+		ftdm_log(FTDM_LOG_ERROR, "Invalid parameters for trunkgroup:%s\n", _trunkgroup);
+		ret = FTDM_FAIL;
+		goto done;
+	}
+
+	for (i = 0; i < g_sngisdn_data.num_nfas; i++) {
+		if (!ftdm_strlen_zero(g_sngisdn_data.nfass[i].name) &&
+		    !strcasecmp(g_sngisdn_data.nfass[i].name, name)) {
+
+			/* We already configured this trunkgroup */
+			goto done;
+		}
+	}
+
+	/* Trunk group was not found, need to configure it */
+	strncpy(g_sngisdn_data.nfass[i].name, name, sizeof(g_sngisdn_data.nfass[i].name));
+	g_sngisdn_data.nfass[i].num_spans = num_spans;
+	strncpy(g_sngisdn_data.nfass[i].dchan_span_name, dchan_span, sizeof(g_sngisdn_data.nfass[i].dchan_span_name));
+
+	if (backup_span) {
+		strncpy(g_sngisdn_data.nfass[i].backup_span_name, backup_span, sizeof(g_sngisdn_data.nfass[i].backup_span_name));
+	}
+	
+
+	g_sngisdn_data.num_nfas++;
+done:
+	ftdm_safe_free(trunkgroup);
+	ftdm_safe_free(name);
+	ftdm_safe_free(dchan_span);
+	ftdm_safe_free(backup_span);
 	return FTDM_SUCCESS;
 }
 
@@ -314,6 +445,19 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 	/* Cannot set default bearer_layer1 yet, as we do not know the switchtype */
 	span->default_caller_data.bearer_layer1 = FTDM_INVALID_INT_PARM;
 
+	/* Find out if NFAS is enabled first */
+	for (paramindex = 0; ftdm_parameters[paramindex].var; paramindex++) {
+		ftdm_log(FTDM_LOG_DEBUG, "Sangoma ISDN key=value, %s=%s\n", ftdm_parameters[paramindex].var, ftdm_parameters[paramindex].val);
+		var = ftdm_parameters[paramindex].var;
+		val = ftdm_parameters[paramindex].val;
+
+		if (!strcasecmp(var, "trunkgroup")) {
+			if (parse_trunkgroup(val) != FTDM_SUCCESS) {
+				return FTDM_FAIL;
+			}
+		}
+	}
+
 	for (paramindex = 0; ftdm_parameters[paramindex].var; paramindex++) {
 		ftdm_log(FTDM_LOG_DEBUG, "Sangoma ISDN key=value, %s=%s\n", ftdm_parameters[paramindex].var, ftdm_parameters[paramindex].val);
 		var = ftdm_parameters[paramindex].var;
@@ -329,6 +473,10 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 		} else if (!strcasecmp(var, "signalling") ||
 				   !strcasecmp(var, "interface")) {
 			if (parse_signalling(val, span) != FTDM_SUCCESS) {
+				return FTDM_FAIL;
+			}
+		} else if (!strcasecmp(var, "spanmap")) {
+			if (parse_spanmap(val, span) != FTDM_SUCCESS) {
 				return FTDM_FAIL;
 			}
 		} else if (!strcasecmp(var, "tei")) {
@@ -465,6 +613,8 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			parse_timer(val, &signal_data->timer_t319);
 		} else if (!strcasecmp(var, "timer-t322")) {
 			parse_timer(val, &signal_data->timer_t322);
+		} else if (!strcasecmp(var, "trunkgroup")) {
+			/* Do nothing, we already parsed this parameter */
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}

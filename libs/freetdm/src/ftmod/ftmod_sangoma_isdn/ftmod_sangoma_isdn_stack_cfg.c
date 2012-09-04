@@ -62,6 +62,8 @@ ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 
+	ftdm_log(FTDM_LOG_DEBUG, "Starting stack configuration for span:%s\n", span->name);
+	
 	if (!g_sngisdn_data.gen_config_done) {
 		g_sngisdn_data.gen_config_done = 1;
 		ftdm_log(FTDM_LOG_DEBUG, "Starting general stack configuration\n");
@@ -91,33 +93,33 @@ ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span)
 		ftdm_log(FTDM_LOG_INFO, "General stack configuration done\n");
 	}
 
-	/* TODO: for NFAS, should only call these function for spans with d-chans */
-	if (sngisdn_stack_cfg_phy_psap(span) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "%s:phy_psap configuration failed\n", span->name);
-		return FTDM_FAIL;
-	}
-	ftdm_log(FTDM_LOG_DEBUG, "%s:phy_psap configuration done\n", span->name);
-
-	if (sngisdn_stack_cfg_q921_msap(span) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "%s:q921_msap configuration failed\n", span->name);
-		return FTDM_FAIL;
-	}
-	ftdm_log(FTDM_LOG_DEBUG, "%s:q921_msap configuration done\n", span->name);
-
-	if (sngisdn_stack_cfg_q921_dlsap(span, 0) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "%s:q921_dlsap configuration failed\n", span->name);
-		return FTDM_FAIL;
-	}
-	ftdm_log(FTDM_LOG_DEBUG, "%s:q921_dlsap configuration done\n", span->name);
-
-	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
-		if (sngisdn_stack_cfg_q921_dlsap(span, 1) != FTDM_SUCCESS) {
-			ftdm_log(FTDM_LOG_ERROR, "%s:q921_dlsap management configuration failed\n", span->name);
+	if (signal_data->dchan) {
+		if (sngisdn_stack_cfg_phy_psap(span) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "%s:phy_psap configuration failed\n", span->name);
 			return FTDM_FAIL;
 		}
-		ftdm_log(FTDM_LOG_DEBUG, "%s:q921_dlsap management configuration done\n", span->name);
+		ftdm_log(FTDM_LOG_DEBUG, "%s:phy_psap configuration done\n", span->name);
+
+		if (sngisdn_stack_cfg_q921_msap(span) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "%s:q921_msap configuration failed\n", span->name);
+			return FTDM_FAIL;
+		}
+		ftdm_log(FTDM_LOG_DEBUG, "%s:q921_msap configuration done\n", span->name);
+
+		if (sngisdn_stack_cfg_q921_dlsap(span, 0) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "%s:q921_dlsap configuration failed\n", span->name);
+			return FTDM_FAIL;
+		}
+		ftdm_log(FTDM_LOG_DEBUG, "%s:q921_dlsap configuration done\n", span->name);
+
+		if (span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
+			if (sngisdn_stack_cfg_q921_dlsap(span, 1) != FTDM_SUCCESS) {
+				ftdm_log(FTDM_LOG_ERROR, "%s:q921_dlsap management configuration failed\n", span->name);
+				return FTDM_FAIL;
+			}
+			ftdm_log(FTDM_LOG_DEBUG, "%s:q921_dlsap management configuration done\n", span->name);
+		}
 	}
-	
 
 	if (sngisdn_stack_cfg_q931_dlsap(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:q931_dlsap configuration failed\n", span->name);
@@ -125,11 +127,13 @@ ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span)
 	}
 	ftdm_log(FTDM_LOG_DEBUG, "%s:q931_dlsap configuration done\n", span->name);
 
-	if (sngisdn_stack_cfg_q931_lce(span) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_ERROR, "%s:q931_lce configuration failed\n", span->name);
-		return FTDM_FAIL;
+	if (signal_data->dchan) {
+		if (sngisdn_stack_cfg_q931_lce(span) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_ERROR, "%s:q931_lce configuration failed\n", span->name);
+			return FTDM_FAIL;
+		}
+		ftdm_log(FTDM_LOG_DEBUG, "%s:q931_lce configuration done\n", span->name);
 	}
-	ftdm_log(FTDM_LOG_DEBUG, "%s:q931_lce configuration done\n", span->name);
 
 	if (!g_sngisdn_data.ccs[signal_data->cc_id].config_done) {
 		g_sngisdn_data.ccs[signal_data->cc_id].config_done = 1;
@@ -216,7 +220,7 @@ ftdm_status_t sngisdn_stack_cfg_phy_psap(ftdm_span_t *span)
 	cfg.hdr.entId.inst  = S_INST;
 	cfg.hdr.elmId.elmnt = STPSAP;
 
-	cfg.hdr.elmId.elmntInst1    = signal_data->dchan_id;
+	cfg.hdr.elmId.elmntInst1    = signal_data->link_id;
 
 	if (!signal_data->dchan) {
 		ftdm_log(FTDM_LOG_ERROR, "%s:No d-channels specified\n", span->name);
@@ -242,7 +246,7 @@ ftdm_status_t sngisdn_stack_cfg_phy_psap(ftdm_span_t *span)
 			return FTDM_FAIL;
 	}
 
-	cfg.t.cfg.s.l1PSAP.spId		= signal_data->dchan_id;
+	cfg.t.cfg.s.l1PSAP.spId		= signal_data->link_id;
 
 	if (sng_isdn_phy_config(&pst, &cfg)) {
 		return FTDM_FAIL;
@@ -316,7 +320,7 @@ ftdm_status_t sngisdn_stack_cfg_q921_msap(ftdm_span_t *span)
 	cfg.hdr.entId.inst  = S_INST;
 	cfg.hdr.elmId.elmnt = STMSAP;
 
-	cfg.t.cfg.s.bdMSAP.lnkNmb      = signal_data->dchan_id;
+	cfg.t.cfg.s.bdMSAP.lnkNmb      = signal_data->link_id;
 
 	cfg.t.cfg.s.bdMSAP.maxOutsFrms = 24;            /* MAC window */
 	cfg.t.cfg.s.bdMSAP.tQUpperTrs  = 32;           /* Tx Queue Upper Threshold */
@@ -409,7 +413,7 @@ ftdm_status_t sngisdn_stack_cfg_q921_dlsap(ftdm_span_t *span, uint8_t management
 	cfg.hdr.entId.inst  = S_INST;
 	cfg.hdr.elmId.elmnt = STDLSAP;
 
-	cfg.t.cfg.s.bdDLSAP.lnkNmb		= signal_data->dchan_id;
+	cfg.t.cfg.s.bdDLSAP.lnkNmb		= signal_data->link_id;
 
 	cfg.t.cfg.s.bdDLSAP.n201		= 1028;          	/* n201 */
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP ||
@@ -614,8 +618,8 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 
 	cfg.hdr.response.selector=0;
 
-	cfg.t.cfg.s.inDLSAP.sapId = signal_data->dchan_id;
-	cfg.t.cfg.s.inDLSAP.spId = signal_data->dchan_id;
+	cfg.t.cfg.s.inDLSAP.sapId = signal_data->link_id;
+	cfg.t.cfg.s.inDLSAP.spId = signal_data->link_id;
 
 	cfg.t.cfg.s.inDLSAP.swtch = sng_isdn_stack_switchtype(signal_data->switchtype);
 
@@ -630,11 +634,9 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 	} else {
 		cfg.t.cfg.s.inDLSAP.facilityHandling = 0;
 	}
-
-	/* TODO : NFAS configuration */
-	cfg.t.cfg.s.inDLSAP.nfasInt = FALSE; /* pass this later */
-
-	if (!cfg.t.cfg.s.inDLSAP.nfasInt) {
+	
+	if (!signal_data->nfas.trunk) {
+		cfg.t.cfg.s.inDLSAP.nfasInt = FALSE;
 		cfg.t.cfg.s.inDLSAP.intId = 0;
 		cfg.t.cfg.s.inDLSAP.sigInt = 0;
 		cfg.t.cfg.s.inDLSAP.bupInt = 0;
@@ -645,19 +647,55 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 			cfg.t.cfg.s.inDLSAP.ctldInt[i] = IN_INT_NOT_CFGD;
 
 	} else {
-		/* Need to get these parameters from NFAS */
-		cfg.t.cfg.s.inDLSAP.intId = 0;
-		cfg.t.cfg.s.inDLSAP.sigInt = 0;
-		cfg.t.cfg.s.inDLSAP.bupInt = 1;
-		cfg.t.cfg.s.inDLSAP.nmbNfasInt = 2;
-		cfg.t.cfg.s.inDLSAP.buIntPr = 1;
+		cfg.t.cfg.s.inDLSAP.nfasInt = TRUE;
+		cfg.t.cfg.s.inDLSAP.intId = signal_data->nfas.interface_id;
 
 		for (i = 0; i < IN_MAX_NMB_INTRFS; i++)
 			cfg.t.cfg.s.inDLSAP.ctldInt[i] = IN_INT_NOT_CFGD;
 
-		/* For primary and backup interfaces, need to initialize this array */
-		cfg.t.cfg.s.inDLSAP.ctldInt[0] = 0; /* This is primary if for NFAS */
-		cfg.t.cfg.s.inDLSAP.ctldInt[1] = 1;
+		switch (signal_data->nfas.sigchan) {
+			case SNGISDN_NFAS_DCHAN_PRIMARY:
+				cfg.t.cfg.s.inDLSAP.sigInt = signal_data->nfas.trunk->dchan->link_id;
+				cfg.t.cfg.s.inDLSAP.nmbNfasInt = signal_data->nfas.trunk->num_spans;
+
+				if (signal_data->nfas.trunk->backup) {
+					cfg.t.cfg.s.inDLSAP.buIntPr = TRUE;
+					cfg.t.cfg.s.inDLSAP.bupInt = signal_data->nfas.trunk->backup->link_id;
+				} else {
+					cfg.t.cfg.s.inDLSAP.buIntPr = FALSE;
+				}
+
+				for (i = 0; i < MAX_SPANS_PER_NFAS_LINK; i++) {
+					if (signal_data->nfas.trunk->spans[i]) {
+						cfg.t.cfg.s.inDLSAP.ctldInt[i] = signal_data->nfas.trunk->spans[i]->link_id;
+					}
+				}
+				
+				break;
+			case SNGISDN_NFAS_DCHAN_BACKUP:
+				cfg.t.cfg.s.inDLSAP.sigInt = signal_data->nfas.trunk->dchan->link_id;
+				cfg.t.cfg.s.inDLSAP.nmbNfasInt = signal_data->nfas.trunk->num_spans;
+
+				if (signal_data->nfas.trunk->backup) {
+					cfg.t.cfg.s.inDLSAP.buIntPr = TRUE;
+					cfg.t.cfg.s.inDLSAP.bupInt = signal_data->nfas.trunk->backup->link_id;
+				} else {
+					cfg.t.cfg.s.inDLSAP.buIntPr = FALSE;
+				}
+
+				for (i = 0; i < MAX_SPANS_PER_NFAS_LINK; i++) {
+					if (signal_data->nfas.trunk->spans[i]) {
+						cfg.t.cfg.s.inDLSAP.ctldInt[i] = signal_data->nfas.trunk->spans[i]->link_id;
+					}
+				}
+				
+				break;
+			case SNGISDN_NFAS_DCHAN_NONE:
+				cfg.t.cfg.s.inDLSAP.sigInt = signal_data->nfas.trunk->dchan->link_id;
+				cfg.t.cfg.s.inDLSAP.nmbNfasInt = 0;
+
+				break;
+		}
 	}
 
 	cfg.t.cfg.s.inDLSAP.numRstInd = 255;
@@ -905,13 +943,27 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 			break;
 		case FTDM_TRUNK_T1:
 		case FTDM_TRUNK_J1:
-				/* if NFAS, could be 0 if no signalling */
-			cfg.t.cfg.s.inDLSAP.dChannelNum = 24;
-			cfg.t.cfg.s.inDLSAP.nmbBearChan = NUM_T1_CHANNELS_PER_SPAN;
-			cfg.t.cfg.s.inDLSAP.firstBChanNum = 1;
+			/* if NFAS, could be 0 if no signalling */
 			cfg.t.cfg.s.inDLSAP.callRefLen = 2;
 			cfg.t.cfg.s.inDLSAP.teiAlloc = IN_STATIC;
 			cfg.t.cfg.s.inDLSAP.intCfg = IN_INTCFG_PTPT;
+			cfg.t.cfg.s.inDLSAP.firstBChanNum = 1;
+			
+			if (signal_data->nfas.trunk) {
+				if (signal_data->nfas.sigchan ==  SNGISDN_NFAS_DCHAN_PRIMARY ||
+					signal_data->nfas.sigchan ==  SNGISDN_NFAS_DCHAN_BACKUP) {
+
+					cfg.t.cfg.s.inDLSAP.dChannelNum = 24;
+					cfg.t.cfg.s.inDLSAP.nmbBearChan = NUM_T1_CHANNELS_PER_SPAN - 1;
+				} else {
+					cfg.t.cfg.s.inDLSAP.dChannelNum = 0;
+					cfg.t.cfg.s.inDLSAP.nmbBearChan = NUM_T1_CHANNELS_PER_SPAN;
+				}
+			} else {
+				cfg.t.cfg.s.inDLSAP.dChannelNum = 24;
+				cfg.t.cfg.s.inDLSAP.nmbBearChan = NUM_T1_CHANNELS_PER_SPAN;
+				cfg.t.cfg.s.inDLSAP.firstBChanNum = 1;
+			}
 			break;
 		case FTDM_TRUNK_BRI:
 			cfg.t.cfg.s.inDLSAP.dChannelNum = 0; /* Unused for BRI */
@@ -971,7 +1023,7 @@ ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 
 	cfg.hdr.response.selector=0;
 
-	cfg.t.cfg.s.inLCe.sapId = signal_data->dchan_id;
+	cfg.t.cfg.s.inLCe.sapId = signal_data->link_id;
 
 	if (span->trunk_type == FTDM_TRUNK_BRI_PTMP) {
 		/* Stack will send Restart CFM's each time link is established (TEI negotiated),
@@ -998,13 +1050,13 @@ ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span)
 	cfg.t.cfg.s.inLCe.t314.enb = FALSE; /* if segmentation enabled, set to TRUE */
 	cfg.t.cfg.s.inLCe.t314.val = 35;
 
-	cfg.t.cfg.s.inLCe.t332i.enb = FALSE; /* set to TRUE for NFAS */
-
-#ifdef NFAS
-	cfg.t.cfg.s.inLCe.t332i.val = 35;
-#else
-	cfg.t.cfg.s.inLCe.t332i.val = 0;
-#endif
+	if (signal_data->nfas.trunk) {
+		cfg.t.cfg.s.inLCe.t332i.enb = TRUE;
+		cfg.t.cfg.s.inLCe.t332i.val = 35;
+	} else {
+		cfg.t.cfg.s.inLCe.t332i.enb = FALSE;
+		cfg.t.cfg.s.inLCe.t332i.val = 35;
+	}
 
 #if (ISDN_NI1 || ISDN_NT || ISDN_ATT)
 	cfg.t.cfg.s.inLCe.tSpid.enb = TRUE;
