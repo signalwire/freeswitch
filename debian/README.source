@@ -55,7 +55,7 @@ directory of your FS git working tree:
   ./build/set-fs-version.sh "$ver"
   git add configure.in && git commit -m "bump to custom v$ver"
   (cd debian && ./bootstrap.sh -c $distro)
-  dch -b -m -v "$ver" --force-distribution -D "$suite" "Custom build."
+  dch -b -m -v "$ver" --force-distribution -D "unstable" "Custom build."
   git-buildpackage -b -us -uc \
     --git-verbose \
     --git-pbuilder --git-dist=$distro \
@@ -97,4 +97,4 @@ freeswitch-music-*:
   git clone https://github.com/traviscross/freeswitch-sounds.git
   cd freeswitch-sounds && cat debian/README.source
 
- -- Travis Cross <tc@traviscross.com>, Tue,  4 Sep 2012 14:52:08 +0000
+ -- Travis Cross <tc@traviscross.com>, Tue,  4 Sep 2012 14:55:37 +0000
