@@ -35,9 +35,26 @@
 #include "freetdm.h"
 #include "lpwrap_pri.h"
 
+/* T302 Overlap receiving inter-digit timeout */
 #define OVERLAP_TIMEOUT_MS_DEFAULT	5000	/* 5 sec */
 #define OVERLAP_TIMEOUT_MS_MIN		3000	/* 3 sec */
 #define OVERLAP_TIMEOUT_MS_MAX		30000	/* 30 sec */
+
+/* NT-mode idle b-channel restart timer */
+#define IDLE_RESTART_TIMEOUT_MS_DEFAULT	900000		/* 15 min */
+#define IDLE_RESTART_TIMEOUT_MS_MIN	10000		/* 10 sec */
+#define IDLE_RESTART_TIMEOUT_MS_MAX	86400000	/* 1 day */
+
+/* T316 RESTART ACK wait timer */
+#define T316_TIMEOUT_MS_DEFAULT		30000	/* 30 sec */
+#define T316_TIMEOUT_MS_MIN		10000	/* 10 sec */
+#define T316_TIMEOUT_MS_MAX		300000	/* 5 min  */
+
+/* T316 restart attempts until channel is suspended */
+#define T316_ATTEMPT_LIMIT_DEFAULT	3
+#define T316_ATTEMPT_LIMIT_MIN		1
+#define T316_ATTEMPT_LIMIT_MAX		10
+
 
 typedef enum {
         SERVICE_CHANGE_STATUS_INSERVICE = 0,
@@ -76,6 +93,9 @@ struct ftdm_libpri_data {
 	int dialect;
 	int overlap;		/*!< Overlap dial flags */
 	int overlap_timeout_ms;	/*!< Overlap dial timeout */
+	int idle_restart_timeout_ms;	/*!< NT-mode idle b-channel restart */
+	int t316_timeout_ms;	/*!< T316 RESTART ACK timeout */
+	int t316_max_attempts;	/*!< T316 timeout limit */
 	unsigned int layer1;
 	unsigned int ton;
 	unsigned int service_message_support;
@@ -85,6 +105,9 @@ struct ftdm_libpri_data {
 	/* MSN filter */
 	ftdm_hash_t *msn_hash;
 	ftdm_mutex_t *msn_mutex;
+
+	/* NT-mode idle restart timer */
+	struct lpwrap_timer t3xx;
 };
 
 typedef struct ftdm_libpri_data ftdm_libpri_data_t;
@@ -103,9 +126,11 @@ enum {
  */
 struct ftdm_libpri_b_chan {
 	struct lpwrap_timer t302;	/*!< T302 overlap receive timer */
+	struct lpwrap_timer t316;	/*!< T316 restart ack timer */
 	ftdm_channel_t *channel;	/*!< back-pointer to b-channel */
 	q931_call *call;		/*!< libpri opaque call handle */
 	uint32_t flags;			/*!< channel flags */
+	uint32_t t316_timeout_cnt;	/*!< T316 timeout counter */
 };
 
 typedef struct ftdm_libpri_b_chan ftdm_libpri_b_chan_t;
