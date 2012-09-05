@@ -4511,7 +4511,6 @@ static void chat_message_broadcast(conference_obj_t *conference, switch_stream_h
 			}
 
 			switch_core_session_receive_message(lsession, &msg);
-			switch_core_session_rwunlock(lsession);
 		}
 	}
 	switch_mutex_unlock(conference->member_mutex);
