@@ -3915,9 +3915,9 @@ void sofia_glue_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core
 	bleg_channel = switch_core_session_get_channel(bleg_session);
 	bleg_tech_pvt = switch_core_session_get_private(bleg_session);
 
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Deciding whether to pass zrtp-hash between a-leg and b-leg\n");
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG1, "Deciding whether to pass zrtp-hash between a-leg and b-leg\n");
 	if (!(switch_channel_test_flag(aleg_tech_pvt->channel, CF_ZRTP_PASSTHRU_REQ))) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "CF_ZRTP_PASSTHRU_REQ not set on a-leg, so not propagating zrtp-hash\n");
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG1, "CF_ZRTP_PASSTHRU_REQ not set on a-leg, so not propagating zrtp-hash\n");
 		return;
 	}
 	if (aleg_tech_pvt->remote_sdp_audio_zrtp_hash) {
@@ -3947,15 +3947,15 @@ void sofia_glue_pass_zrtp_hash(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_core_session_t *other_session;
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Deciding whether to pass zrtp-hash between legs\n");
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Deciding whether to pass zrtp-hash between legs\n");
 	if (!(switch_channel_test_flag(tech_pvt->channel, CF_ZRTP_PASSTHRU_REQ))) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "CF_ZRTP_PASSTHRU_REQ not set, so not propagating zrtp-hash\n");
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "CF_ZRTP_PASSTHRU_REQ not set, so not propagating zrtp-hash\n");
 		return;
 	} else if (!(switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "No partner channel found, so not propagating zrtp-hash\n");
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "No partner channel found, so not propagating zrtp-hash\n");
 		return;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Found peer channel; propagating zrtp-hash if set\n");
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Found peer channel; propagating zrtp-hash if set\n");
 		sofia_glue_pass_zrtp_hash2(session, other_session);
 		switch_core_session_rwunlock(other_session);
 	}
@@ -3969,7 +3969,7 @@ static void find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp)
 	sdp_attribute_t *attr;
 	int got_audio = 0, got_video = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Looking for zrtp-hash\n");
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Looking for zrtp-hash\n");
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		if (got_audio && got_video) break;
 		if (m->m_port && ((m->m_type == sdp_media_audio && !got_audio)
