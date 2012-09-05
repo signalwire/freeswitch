@@ -36,10 +36,10 @@
 
 void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 {
-	ConEvnt conEvnt;	
+	ConEvnt conEvnt;
 	sngisdn_chan_data_t *sngisdn_info = ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
-	ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_INVALID};
+	ftdm_sngisdn_progind_t prog_ind = {SNGISDN_PROGIND_LOC_USER, SNGISDN_PROGIND_DESCR_INVALID};	
 
 	ftdm_assert((!sngisdn_info->suInstId && !sngisdn_info->spInstId), "Trying to call out, but call data was not cleared\n");
 	
@@ -76,9 +76,9 @@ void sngisdn_snd_setup(ftdm_channel_t *ftdmchan)
 	set_facility_ie(ftdmchan, &conEvnt.facilityStr);
 	set_prog_ind_ie(ftdmchan, &conEvnt.progInd, prog_ind);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending SETUP (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending SETUP (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 
-	if (sng_isdn_con_request(signal_data->cc_id, sngisdn_info->suInstId, &conEvnt, signal_data->dchan_id, sngisdn_info->ces)) {
+	if (sng_isdn_con_request(signal_data->cc_id, sngisdn_info->suInstId, &conEvnt, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "stack refused SETUP request\n");
 	}
 
@@ -104,9 +104,9 @@ void sngisdn_snd_setup_ack(ftdm_channel_t *ftdmchan)
 
 
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending SETUP ACK (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending SETUP ACK (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 
-	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, MI_SETUPACK, signal_data->dchan_id, sngisdn_info->ces)) {
+	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, MI_SETUPACK, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused SETUP ACK request\n");
 	}
 	return;
@@ -136,9 +136,9 @@ void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan)
 		set_chan_id_ie(ftdmchan, &cnStEvnt.chanId);
 	}
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT COMPL (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT COMPL (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 
-	if(sng_isdn_con_comp(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, signal_data->dchan_id, sngisdn_info->ces)) {
+	if(sng_isdn_con_comp(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused CONNECT ACK request\n");
 	}
 	return;
@@ -172,9 +172,9 @@ void sngisdn_snd_proceed(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_i
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending PROCEED (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending PROCEED (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 
-	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, MI_CALLPROC, signal_data->dchan_id, sngisdn_info->ces)) {
+	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, MI_CALLPROC, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused PROCEED request\n");
 	}
 	return;
@@ -204,8 +204,8 @@ void sngisdn_snd_progress(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending PROGRESS (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
-	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_PROGRESS, signal_data->dchan_id, sngisdn_info->ces)) {
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending PROGRESS (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
+	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_PROGRESS, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused PROGRESS request\n");
 	}
 	return;
@@ -230,9 +230,9 @@ void sngisdn_snd_alert(ftdm_channel_t *ftdmchan, ftdm_sngisdn_progind_t prog_ind
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending ALERT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending ALERT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 
-	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_ALERTING, signal_data->dchan_id, sngisdn_info->ces)) {
+	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_ALERTING, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused ALERT request\n");
 	}
 	return;
@@ -266,8 +266,8 @@ void sngisdn_snd_connect(ftdm_channel_t *ftdmchan)
 	set_prog_ind_ie(ftdmchan, &cnStEvnt.progInd, prog_ind);
 	set_facility_ie(ftdmchan, &cnStEvnt.facilityStr);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
-	if (sng_isdn_con_response(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, signal_data->dchan_id, sngisdn_info->ces)) {
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending CONNECT (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
+	if (sng_isdn_con_response(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &cnStEvnt, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "stack refused CONNECT request\n");
 	}
 	return;
@@ -298,9 +298,9 @@ void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan)
 	facEvnt.facElmt.facStr.val[1] = (uint8_t)facEvnt.facElmt.facStr.len;
 	facEvnt.facElmt.facStr.len +=2; /* Need to include the size of identifier + len */
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending FACILITY (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending FACILITY (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 
-	if (sng_isdn_facility_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &facEvnt, MI_FACIL, signal_data->dchan_id, sngisdn_info->ces)) {
+	if (sng_isdn_facility_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &facEvnt, MI_FACIL, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused FACILITY request\n");
 	}
 	return;
@@ -323,9 +323,9 @@ void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan)
 
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending INFO REQ (suId:%d dchan:%d ces:%d)\n", signal_data->cc_id, signal_data->dchan_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending INFO REQ (suId:%d dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 
-	if (sng_isdn_con_status(signal_data->cc_id, 0, 0, &cnStEvnt, MI_INFO, signal_data->dchan_id, sngisdn_info->ces)) {
+	if (sng_isdn_con_status(signal_data->cc_id, 0, 0, &cnStEvnt, MI_INFO, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused INFO request\n");
 	}
 	return;
@@ -349,9 +349,9 @@ void sngisdn_snd_notify_req(ftdm_channel_t *ftdmchan)
 
 	set_not_ind_ie(ftdmchan, &cnStEvnt.notInd);
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending NOTIFY (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending NOTIFY (suId:%d suInstId:%u spInstId:%u dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 
-	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_NOTIFY, signal_data->dchan_id, sngisdn_info->ces)) {
+	if(sng_isdn_con_status(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId,&cnStEvnt, MI_NOTIFY, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused NOTIFY request\n");
 	}
 	return;
@@ -369,7 +369,7 @@ void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan)
 
 	memset(&staEvnt, 0, sizeof(StaEvnt));
 	
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending Status ENQ on suId:%d suInstId:%u spInstId:%d dchan:%d ces:%d\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, signal_data->dchan_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Sending Status ENQ on suId:%d suInstId:%u spInstId:%d dchan:%d ces:%d\n", signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 	if (sng_isdn_status_request(signal_data->cc_id, sngisdn_info->suInstId, sngisdn_info->spInstId, &staEvnt, MI_STATENQ)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused Status ENQ request\n");
 	}
@@ -469,9 +469,9 @@ void sngisdn_snd_restart(ftdm_channel_t *ftdmchan)
 	set_chan_id_ie(ftdmchan, &rstEvnt.chanId);
 	set_restart_ind_ie(ftdmchan, &rstEvnt.rstInd);
 	
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending RESTART (suId:%d dchan:%d ces:%d)\n", signal_data->cc_id, signal_data->dchan_id, CES_MNGMNT);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending RESTART (suId:%d dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_dchan(signal_data)->link_id, CES_MNGMNT);
 
-	if (sng_isdn_restart_request(signal_data->cc_id, &rstEvnt, signal_data->dchan_id, CES_MNGMNT, IN_SND_RST)) {
+	if (sng_isdn_restart_request(signal_data->cc_id, &rstEvnt, sngisdn_dchan(signal_data)->link_id, CES_MNGMNT, IN_SND_RST)) {
 		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "stack refused RESTART request\n");
 	}
 	return;
@@ -536,25 +536,26 @@ void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 		ftdm_log_chan(dchan, FTDM_LOG_CRIT, "\nL1 RX [%s] flags:%x\n", string, l1_frame.flags);
 	}
 #endif
-	sng_isdn_data_ind(signal_data->dchan_id, &l1_frame);
+	sng_isdn_data_ind(signal_data->link_id, &l1_frame);
 }
 
-void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event)
+void sngisdn_snd_event(sngisdn_span_data_t *signal_data, ftdm_oob_event_t event)
 {
 	sng_l1_event_t l1_event;
-	sngisdn_span_data_t *signal_data = NULL;
+
+	if (!signal_data->dchan) {
+		return;
+	}
 	memset(&l1_event, 0, sizeof(l1_event));
-	
-	
-	signal_data = (sngisdn_span_data_t*) dchan->span->signal_data;
+
 	switch(event) {
 		case FTDM_OOB_ALARM_CLEAR:
 			l1_event.type = SNG_L1EVENT_ALARM_OFF;
-			sng_isdn_event_ind(signal_data->dchan_id, &l1_event);
+			sng_isdn_event_ind(signal_data->link_id, &l1_event);
 			break;
 		case FTDM_OOB_ALARM_TRAP:
 			l1_event.type = SNG_L1EVENT_ALARM_ON;
-			sng_isdn_event_ind(signal_data->dchan_id, &l1_event);
+			sng_isdn_event_ind(signal_data->link_id, &l1_event);
 			break;
 		default:
 			/* We do not care about the other OOB events for now */

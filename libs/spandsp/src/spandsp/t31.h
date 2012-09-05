@@ -57,6 +57,12 @@ extern "C"
 
 SPAN_DECLARE(void) t31_call_event(t31_state_t *s, int event);
 
+/*! Return the amount of free space in the AT COMMAND BUFFER.
+    \brief Return the amount of free space in the AT COMMAND BUFFER.
+    \param s The T.31 modem context.
+    \return The number of bytes of free space. */
+SPAN_DECLARE(int) t31_at_rx_free_space(t31_state_t *s);
+    
 SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len);
 
 /*! Process a block of received T.31 modem audio samples.

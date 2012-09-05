@@ -55,12 +55,32 @@ directory of your FS git working tree:
   ./build/set-fs-version.sh "$ver"
   git add configure.in && git commit -m "bump to custom v$ver"
   (cd debian && ./bootstrap.sh -c $distro)
-  dch -b -m -v "$ver" --force-distribution -D "$suite" "Custom build."
-  git-buildpackage -b -us -uc \
-    --git-verbose \
-    --git-pbuilder --git-dist=$distro \
-    --git-compression-level=1v --git-compression=xz
+  dch -b -m -v "$ver" --force-distribution -D "unstable" "Custom build."
+  dpkg-buildpackage -b -us -uc -Zxz -z9
   git reset --hard HEAD^
+
+To build for a stable branch, do this:
+
+  distro=sid # update as needed
+  stable_ver="1.2.1" # update as needed
+  # if you only want to build some modules, put them one per line here, e.g.:
+  #echo "applications/mod_commands" >> debian/modules.conf
+  ver="$(echo "$stable_ver" | sed -e 's/-/~/g')~n$(date +%Y%m%dT%H%M%SZ)-1~${distro}+1"
+  git clean -fdx && git reset --hard refs/tags/v${stable_ver}
+  ./build/set-fs-version.sh "$ver"
+  git add configure.in && git commit -m "bump to custom v$ver"
+  (cd debian && ./bootstrap.sh -c $distro)
+  dch -b -m -v "$ver" --force-distribution -D "unstable" "Custom build."
+  dpkg-buildpackage -b -us -uc -Zxz -z9
+  git reset --hard origin/master
+
+Alternatively, you can build using our automated tools:
+
+  aptitude install cowbuilder
+  # if you only want to build some modules, create a modules.conf
+  # outside the source tree and add -f ../path/to/modules.conf to the
+  # command below.
+  ./debian/util.sh build-all -bn -a amd64 -c sid # update as needed
 
 The source packages for sounds and music on hold are maintained in a
 separate repository.  Each set of sounds has a separate version number
@@ -74,4 +94,4 @@ freeswitch-music-*:
   git clone https://github.com/traviscross/freeswitch-sounds.git
   cd freeswitch-sounds && cat debian/README.source
 
- -- Travis Cross <tc@traviscross.com>, Mon, 20 Aug 2012 08:14:49 +0000
+ -- Travis Cross <tc@traviscross.com>, Tue,  4 Sep 2012 14:56:52 +0000

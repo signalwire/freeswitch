@@ -79,14 +79,14 @@
 
 #include "faxfont.h"
 
-#if 0
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
 #include <tif_dir.h>
-#endif
 #endif
 
 /*! The number of centimetres in one inch */
 #define CM_PER_INCH                 2.54f
+
+static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length);
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
 /* TIFF-FX related extensions to the tag set supported by libtiff */
@@ -106,7 +106,6 @@ static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
     {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageLayer"},
 };
 
-#if 0
 static TIFFField tiff_fx_tiff_fields[] =
 {
     { TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, 0, TIFF_SETGET_UINT16, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "Indexed" },
@@ -124,9 +123,6 @@ static TIFFField tiff_fx_tiff_fields[] =
 };
 
 TIFFFieldArray tiff_fx_field_array = { tfiatOther, 0, 12, tiff_fx_tiff_fields };
-#endif
-
-static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length);
 
 static TIFFExtendProc _ParentExtender = NULL;
 
@@ -164,6 +160,7 @@ static int test_resolution(int res_unit, float actual, float expected)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
 static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
 {
     int i;
@@ -187,7 +184,7 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
     /* Sweep the colormap in the proper order */
     for (i = 0;  i < (1 << bits_per_sample);  i++)
     {
-        s->colour_map[3*i] = (map_L[i] >> 8) & 0xFF;
+        s->colour_map[3*i + 0] = (map_L[i] >> 8) & 0xFF;
         s->colour_map[3*i + 1] = (map_a[i] >> 8) & 0xFF;
         s->colour_map[3*i + 2] = (map_b[i] >> 8) & 0xFF;
         span_log(&s->logging, SPAN_LOG_FLOW, "Map %3d - %5d %5d %5d\n", i, s->colour_map[3*i], s->colour_map[3*i + 1], s->colour_map[3*i + 2]);
@@ -196,8 +193,8 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
     /* Sweep the colormap in the order that seems to work for l04x_02x.tif */
     for (i = 0;  i < (1 << bits_per_sample);  i++)
     {
-        s->colour_map[i] = (map_L[i] >> 8) & 0xFF;
-        s->colour_map[256 + i] = (map_a[i] >> 8) & 0xFF;
+        s->colour_map[0*256 + i] = (map_L[i] >> 8) & 0xFF;
+        s->colour_map[1*256 + i] = (map_a[i] >> 8) & 0xFF;
         s->colour_map[2*256 + i] = (map_b[i] >> 8) & 0xFF;
     }
 #endif
@@ -207,6 +204,7 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 static int get_tiff_directory_info(t4_tx_state_t *s)
 {
@@ -240,6 +238,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         {1200.0f/CM_PER_INCH, T4_Y_RESOLUTION_1200},
         {             -1.00f, -1}
     };
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
     static const char *tiff_fx_fax_profiles[] =
     {
         "???",
@@ -250,18 +249,19 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         "profile L",
         "profile M"
     };
-    uint16_t res_unit;
-    uint8_t parm8;
-    uint16_t parm16;
-    uint32_t parm32;
     char *u;
     char uu[10];
+    uint8_t parm8;
+    uint16_t parm16;
+#endif
+    uint32_t parm32;
     float x_resolution;
     float y_resolution;
     int i;
     t4_tx_tiff_state_t *t;
     uint16_t bits_per_sample;
     uint16_t samples_per_pixel;
+    uint16_t res_unit;
 
     t = &s->tiff;
     bits_per_sample = 1;

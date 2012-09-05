@@ -58,7 +58,8 @@
 /* Theoretical limit for MAX_SPANS_PER_NFAS_LINK is 31,
    but set to 8 for now to save some memory */
 
-#define MAX_SPANS_PER_NFAS_LINK	  	8 
+#define MAX_SPANS_PER_NFAS_LINK	  	16
+#define MAX_NFAS_GROUPS				16
 #define NUM_E1_CHANNELS_PER_SPAN 	32
 #define NUM_T1_CHANNELS_PER_SPAN 	24
 #define NUM_BRI_CHANNELS_PER_SPAN	2
@@ -66,6 +67,9 @@
 #define SNGISDN_EVENT_POLL_RATE		100
 #define SNGISDN_NUM_LOCAL_NUMBERS	8
 #define SNGISDN_DCHAN_QUEUE_LEN		200
+#define MAX_NFAS_GROUP_NAME			50
+
+#define NSG
 
 #ifndef MI_NOTIFY
 #define MI_NOTIFY 0x14
@@ -242,16 +246,25 @@ typedef struct sngisdn_chan_data {
 	ftdm_size_t				raw_data_len;
 } sngisdn_chan_data_t;
 
+struct sngisdn_nfas_data;
+typedef struct sngisdn_nfas_data sngisdn_nfas_data_t;
+
+typedef enum {
+	SNGISDN_NFAS_DCHAN_NONE,
+	SNGISDN_NFAS_DCHAN_PRIMARY,
+	SNGISDN_NFAS_DCHAN_BACKUP,
+} sngisdn_nfas_sigchan_t;
+
 /* Span specific data */
 typedef struct sngisdn_span_data {
 	ftdm_span_t		*ftdm_span;
 	ftdm_channel_t	*dchan;
 	uint8_t			link_id;
 	uint8_t 		switchtype;
-	uint8_t			signalling;			/* SNGISDN_SIGNALING_CPE or SNGISDN_SIGNALING_NET */
+	uint8_t			signalling;		/* SNGISDN_SIGNALING_CPE or SNGISDN_SIGNALING_NET */
 	uint8_t 		cc_id;
-	uint8_t 		dchan_id;
-	uint8_t 		span_id;
+	ftdm_signaling_status_t		sigstatus;
+
 	uint8_t			tei;
 	uint8_t			min_digits;
 	uint8_t			trace_flags;		/* TODO change to bit map of sngisdn_tracetype_t */
@@ -274,7 +287,7 @@ typedef struct sngisdn_span_data {
 	uint8_t			restart_timeout;
 	uint8_t			force_sending_complete;
 	uint8_t			cid_name_method;
-	uint8_t			send_cid_name;
+	uint8_t			send_cid_name;	
 
 	int32_t			timer_t301;
 	int32_t			timer_t302;
@@ -292,11 +305,20 @@ typedef struct sngisdn_span_data {
 	int32_t			timer_t318;
 	int32_t			timer_t319;
 	int32_t			timer_t322;
-	
+
 	char*			local_numbers[SNGISDN_NUM_LOCAL_NUMBERS];
 	ftdm_timer_id_t timers[SNGISDN_NUM_SPAN_TIMERS];
 	ftdm_sched_t 	*sched;
 	ftdm_queue_t 	*event_queue;
+
+	struct nfas_info {
+		sngisdn_nfas_data_t *trunk;
+		sngisdn_nfas_sigchan_t sigchan;
+		uint8_t interface_id;
+	} nfas;
+
+	uint32_t num_chans;
+	sngisdn_chan_data_t *channels[NUM_E1_CHANNELS_PER_SPAN];
 } sngisdn_span_data_t;
 
 typedef struct sngisdn_event_data {
@@ -331,19 +353,18 @@ typedef struct sngisdn_event_data {
 	
 } sngisdn_event_data_t;
 
-/* dchan_data can have more than 1 span when running NFAS */
-typedef struct sngisdn_dchan_data {
-	uint8_t 			num_spans;
-	sngisdn_span_data_t	*spans[MAX_L1_LINKS+1];
-	uint16_t			num_chans;
-	/* worst case for number of channel is when using NFAS, and NFAS is only used on T1,
-		so we can use MAX_SPANS_PER_NFAS_LINK*NUM_T1_CHANNELS_PER_SPAN instead of
-		MAX_SPANS_PER_NFAS_LINK*NUM_E1_CHANNELS_PER_SPAN
-	*/
-	/* Never seen NFAS on E1 yet, so use NUM_T1_CHANNELS_PER_SPAN */
-	/* b-channels are arranged by physical id's not logical */
-	sngisdn_chan_data_t *channels[MAX_SPANS_PER_NFAS_LINK*NUM_T1_CHANNELS_PER_SPAN];
-}sngisdn_dchan_data_t;
+struct sngisdn_nfas_data {
+	char name[MAX_NFAS_GROUP_NAME];
+
+	char dchan_span_name[20];
+	sngisdn_span_data_t *dchan;	/* Span that contains primary d-channel */
+
+	char backup_span_name[20];
+	sngisdn_span_data_t *backup; /* Span that contains backup d-channel */
+	uint8_t num_spans;			/* Number of spans within this NFAS */
+	uint8_t num_spans_configured;
+	sngisdn_span_data_t	*spans[MAX_SPANS_PER_NFAS_LINK+1]; //indexed by logical span id
+};
 
 typedef struct sngisdn_cc {
 	/* TODO: use flags instead of config_done and activation_done */
@@ -360,10 +381,10 @@ typedef struct sngisdn_cc {
 /* Global sngisdn data */
 typedef struct ftdm_sngisdn_data {
 	uint8_t	gen_config_done;
-	uint8_t num_cc;						/* 1 ent per switchtype */
-	struct sngisdn_cc ccs[MAX_VARIANTS+1];
-	uint8_t	num_dchan;
-	sngisdn_dchan_data_t dchans[MAX_L1_LINKS+1];
+	uint8_t num_cc;						/* 1 ent per switchtype */	
+	struct sngisdn_cc ccs[MAX_VARIANTS+1];	
+	uint8_t num_nfas;
+	sngisdn_nfas_data_t nfass[MAX_NFAS_GROUPS+1];
 	sngisdn_span_data_t *spans[MAX_L1_LINKS+1]; /* spans are indexed by link_id */
 
 #ifdef SANGOMA_ISDN_CHAN_ID_INVERT_BIT
@@ -424,7 +445,7 @@ void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_restart(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len);
-void sngisdn_snd_event(ftdm_channel_t *dchan, ftdm_oob_event_t event);
+void sngisdn_snd_event(sngisdn_span_data_t *signal_data, ftdm_oob_event_t event);
 
 /* Inbound Call Control functions */
 void sngisdn_rcv_con_ind(int16_t suId, uint32_t suInstId, uint32_t spInstId, ConEvnt *conEvnt, int16_t dChan, uint8_t ces);
@@ -554,6 +575,7 @@ static __inline__ void sngisdn_set_flag(sngisdn_chan_data_t *sngisdn_info, sngis
 void handle_sng_log(uint8_t level, char *fmt,...);
 void sngisdn_delayed_setup(void* p_sngisdn_info);
 void sngisdn_delayed_release(void* p_sngisdn_info);
+void sngisdn_delayed_release_nfas(void *p_sngisdn_info);
 void sngisdn_delayed_connect(void* p_sngisdn_info);
 void sngisdn_delayed_disconnect(void* p_sngisdn_info);
 void sngisdn_facility_timeout(void* p_sngisdn_info);
@@ -565,6 +587,7 @@ ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span);
 ftdm_status_t sngisdn_stack_start(ftdm_span_t *span);
 ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span);
 ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span);
+sngisdn_span_data_t *sngisdn_dchan(sngisdn_span_data_t *signal_data);
 
 ftdm_status_t sngisdn_show_l1_stats(ftdm_stream_handle_t *stream, ftdm_span_t *span);
 ftdm_status_t sngisdn_show_spans(ftdm_stream_handle_t *stream);

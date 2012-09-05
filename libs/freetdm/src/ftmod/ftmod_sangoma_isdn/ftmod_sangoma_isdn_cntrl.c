@@ -40,6 +40,8 @@ void sngisdn_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status
 void sngisdn_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status)
 {
 	ftdm_sigmsg_t sig;
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)ftdmchan->span->signal_data;
+	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Signalling link status changed to %s\n", ftdm_signaling_status2str(status));
 
 	memset(&sig, 0, sizeof(sig));
@@ -52,7 +54,6 @@ void sngisdn_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status
 
 	if (FTDM_SPAN_IS_BRI(ftdmchan->span)) {		
 		sngisdn_chan_data_t		*sngisdn_info = ftdmchan->call_data;
-		sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)ftdmchan->span->signal_data;
 		if (ftdm_test_flag(sngisdn_info, FLAG_ACTIVATING)) {
 			ftdm_clear_flag(sngisdn_info, FLAG_ACTIVATING);
 
@@ -67,6 +68,7 @@ void sngisdn_set_span_sig_status(ftdm_span_t *span, ftdm_signaling_status_t stat
 	ftdm_iterator_t *chaniter = NULL;
 	ftdm_iterator_t *curr = NULL;
 
+	((sngisdn_span_data_t*)span->signal_data)->sigstatus = status;
 
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {

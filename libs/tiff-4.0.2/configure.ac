@@ -24,11 +24,13 @@ dnl OF THIS SOFTWARE.
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.64)
+AC_PREREQ(2.59)
 AC_INIT([LibTIFF Software],[4.0.2],[tiff@lists.maptools.org],[tiff])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(m4)
 AC_LANG(C)
+AC_PROG_LIBTOOL
+m4_include(m4/acinclude.m4)
 
 dnl Compute the canonical host (run-time) system type variable
 AC_CANONICAL_HOST
@@ -144,15 +146,15 @@ AM_CONDITIONAL(HAVE_LD_VERSION_SCRIPT, test "$have_ld_version_script" = "yes")
 
 
 dnl Tests for Windows
-AC_EXEEXT
-AC_OBJEXT
+#AC_EXEEXT
+#AC_OBJEXT
 
 dnl initialize libtool
-LT_INIT([win32-dll])
-LT_LANG([C++])
+#LT_INIT([win32-dll])
+#LT_LANG([C++])
 
 # Enable support for silent build rules
-AM_SILENT_RULES
+#AM_SILENT_RULES
 
 dnl Checks for libraries.
 AC_CHECK_LIB([c], [main])

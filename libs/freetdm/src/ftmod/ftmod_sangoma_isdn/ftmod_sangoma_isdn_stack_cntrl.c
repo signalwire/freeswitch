@@ -55,10 +55,12 @@ ftdm_status_t sngisdn_stack_start(ftdm_span_t *span)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 
-	
-	if (sngisdn_cntrl_q921(span, ABND_ENA, NOTUSED) != FTDM_SUCCESS) {
-		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to activate stack q921\n", span->name);
-		return FTDM_FAIL;
+	if (signal_data->dchan) {		
+		if (sngisdn_cntrl_q921(span, ABND_ENA, NOTUSED) != FTDM_SUCCESS) {
+			ftdm_log(FTDM_LOG_CRIT, "%s:Failed to activate stack q921\n", span->name);
+			return FTDM_FAIL;
+		}
+		ftdm_log(FTDM_LOG_DEBUG, "%s:Stack q921 activated\n", span->name);
 	}
 
 	/* Try to find an alternative for this */
@@ -67,8 +69,7 @@ ftdm_status_t sngisdn_stack_start(ftdm_span_t *span)
 	LdUiDatConReq when activated, and this requires the Mac SAP to be already
 	bound first */
 	ftdm_sleep(500); 
-	
-	ftdm_log(FTDM_LOG_DEBUG, "%s:Stack q921 activated\n", span->name);
+		
 	if (!g_sngisdn_data.ccs[signal_data->cc_id].activation_done) {
 		g_sngisdn_data.ccs[signal_data->cc_id].activation_done = 1;
 		if (sngisdn_activate_cc(span) != FTDM_SUCCESS) {
@@ -78,7 +79,6 @@ ftdm_status_t sngisdn_stack_start(ftdm_span_t *span)
 		ftdm_log(FTDM_LOG_DEBUG, "%s:Stack CC activated\n", span->name);
 	}
 
-	
 	if (sngisdn_cntrl_q931(span, ABND_ENA, SAELMNT) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to activate stack q931\n", span->name);
 		return FTDM_FAIL;
@@ -91,7 +91,11 @@ ftdm_status_t sngisdn_stack_start(ftdm_span_t *span)
 
 ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span)
 {
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
 	/* Stop L1 first, so we do not receive any more frames */
+	if (!signal_data->dchan) {
+		return FTDM_SUCCESS;
+	}
 	if (sngisdn_deactivate_phy(span) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "%s:Failed to deactivate stack phy\n", span->name);
 		return FTDM_FAIL;
@@ -147,7 +151,7 @@ ftdm_status_t sngisdn_deactivate_phy(ftdm_span_t *span)
 	cntrl.t.cntrl.action = AUBND_DIS;
 	cntrl.t.cntrl.subAction = SAELMNT;
 
-	cntrl.t.cntrl.sapId = signal_data->dchan_id;
+	cntrl.t.cntrl.sapId = signal_data->link_id;
 	
 	if (sng_isdn_phy_cntrl(&pst, &cntrl)) {
 		return FTDM_FAIL;
@@ -182,7 +186,7 @@ ftdm_status_t sngisdn_wake_up_phy(ftdm_span_t *span)
 	cntrl.t.cntrl.action = AENA;
 	cntrl.t.cntrl.subAction = SAELMNT;
 
-	cntrl.t.cntrl.sapId = signal_data->dchan_id;
+	cntrl.t.cntrl.sapId = signal_data->link_id;
 	
 	if (sng_isdn_phy_cntrl(&pst, &cntrl)) {
 		return FTDM_FAIL;
@@ -226,33 +230,34 @@ ftdm_status_t sngisdn_activate_cc(ftdm_span_t *span)
 
 ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trace_opt)
 {
-	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
+	sngisdn_span_data_t *signal_data = sngisdn_dchan((sngisdn_span_data_t*)span->signal_data);
+
 	switch (trace_opt) {
 		case SNGISDN_TRACE_DISABLE:
 			if (sngisdn_test_trace_flag(signal_data, SNGISDN_TRACE_Q921)) {
-				ftdm_log(FTDM_LOG_INFO, "s%d Disabling q921 trace\n", signal_data->link_id);
+				ftdm_log(FTDM_LOG_INFO, "%s:Disabling q921 trace\n", signal_data->ftdm_span->name);
 				sngisdn_clear_trace_flag(signal_data, SNGISDN_TRACE_Q921);
 				
-				if (sngisdn_cntrl_q921(span, ADISIMM, SATRC) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to disable q921 trace\n", signal_data->link_id);
+				if (sngisdn_cntrl_q921(signal_data->ftdm_span, ADISIMM, SATRC) != FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_INFO, "%s:Failed to disable q921 trace\n", signal_data->ftdm_span->name);
 				}
 			}
 			if (sngisdn_test_trace_flag(signal_data, SNGISDN_TRACE_Q931)) {
-				ftdm_log(FTDM_LOG_INFO, "s%d Disabling q931 trace\n", signal_data->link_id);
+				ftdm_log(FTDM_LOG_INFO, "%s:Disabling q921 trace\n", signal_data->ftdm_span->name);
 				sngisdn_clear_trace_flag(signal_data, SNGISDN_TRACE_Q931);
 
-				if (sngisdn_cntrl_q931(span, ADISIMM, SATRC) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to disable q931 trace\n", signal_data->link_id);
+				if (sngisdn_cntrl_q931(signal_data->ftdm_span, ADISIMM, SATRC) != FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_INFO, "%s:Failed to disable q921 trace\n", signal_data->ftdm_span->name);
 				}
 			}
 			break;
 		case SNGISDN_TRACE_Q921:
 			if (!sngisdn_test_trace_flag(signal_data, SNGISDN_TRACE_Q921)) {
-				ftdm_log(FTDM_LOG_INFO, "s%d Enabling q921 trace\n", signal_data->link_id);
+				ftdm_log(FTDM_LOG_INFO, "%s:Enabling q921 trace\n", signal_data->ftdm_span->name);
 				sngisdn_set_trace_flag(signal_data, SNGISDN_TRACE_Q921);
 
-				if (sngisdn_cntrl_q921(span, AENA, SATRC) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to enable q921 trace\n", signal_data->link_id);
+				if (sngisdn_cntrl_q921(signal_data->ftdm_span, AENA, SATRC) != FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_INFO, "%s:Failed to enable q921 trace\n", signal_data->ftdm_span->name);
 				}
 			}
 			break;
@@ -261,8 +266,8 @@ ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trac
 				ftdm_log(FTDM_LOG_INFO, "s%d Enabling q931 trace\n", signal_data->link_id);
 				sngisdn_set_trace_flag(signal_data, SNGISDN_TRACE_Q931);
 				
-				if (sngisdn_cntrl_q931(span, AENA, SATRC) != FTDM_SUCCESS) {
-					ftdm_log(FTDM_LOG_ERROR, "s%d Failed to enable q931 trace\n", signal_data->link_id);
+				if (sngisdn_cntrl_q931(signal_data->ftdm_span, AENA, SATRC) != FTDM_SUCCESS) {
+					ftdm_log(FTDM_LOG_INFO, "%s:Failed to enable q931 trace\n", signal_data->ftdm_span->name);
 				}
 			}
 			break;
@@ -301,7 +306,7 @@ ftdm_status_t sngisdn_cntrl_q931(ftdm_span_t *span, uint8_t action, uint8_t suba
 		cntrl.t.cntrl.trcLen = -1; /* Trace the entire message buffer */
 	}
 
-	cntrl.t.cntrl.sapId = signal_data->dchan_id;
+	cntrl.t.cntrl.sapId = signal_data->link_id;
 	cntrl.t.cntrl.ces = 0;
 
 	if(sng_isdn_q931_cntrl(&pst, &cntrl)) {
@@ -342,11 +347,11 @@ ftdm_status_t sngisdn_cntrl_q921(ftdm_span_t *span, uint8_t action, uint8_t suba
 	cntrl.t.cntrl.subAction    = subaction;
 
 #if (SMBD_LMINT3 || BD_LMINT3)
-	cntrl.t.cntrl.lnkNmb       = signal_data->dchan_id;
+	cntrl.t.cntrl.lnkNmb       = signal_data->link_id;
 	cntrl.t.cntrl.sapi         = NOTUSED;
 	cntrl.t.cntrl.tei          = NOTUSED;
 #else /* _LMINT3 */
-	cntrl.hdr.elmId.elmntInst1 = signal_data->dchan_id;
+	cntrl.hdr.elmId.elmntInst1 = signal_data->link_id;
 	cntrl.hdr.elmId.elmntInst2 = NOTUSED;
 	cntrl.hdr.elmId.elmntInst3 = NOTUSED;
 #endif /* _LMINT3 */

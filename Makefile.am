@@ -585,6 +585,9 @@ libs/openzap/Makefile:
 	cd libs/openzap && autoconf
 	cd libs/openzap && ./configure
 
+version:
+	git log -1  | head -3
+
 reinstall: modwipe uninstall install
 
 update-clean: clean libs/openzap/Makefile python-reconf
@@ -619,9 +622,7 @@ sndfile-reconf:
 tiff-reconf:
 	cd libs/tiff-4.0.2 && autoreconf -fi
 	cd libs/tiff-4.0.2 && sh ./configure.gnu
-	cd libs/spandsp && autoreconf -fi
-	cd libs/spandsp && sh ./configure.gnu
-	make mod_voipcodecs-clean
+	cd libs/tiff-4.0.2 && make
 
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
@@ -644,7 +645,7 @@ iks-reconf:
 	cd libs/iksemel && sh ./configure.gnu --prefix=$(prefix)
 	$(MAKE) mod_dingaling-clean
 
-spandsp-reconf:
+spandsp-reconf: tiff-reconf
 	cd libs/spandsp && $(MAKE) clean || echo
 	cd libs/spandsp && autoreconf -fi
 	cd libs/spandsp && sh ./configure.gnu --prefix=$(prefix)
@@ -694,7 +695,7 @@ modclean: $(switch_builddir)/modules.conf
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
 
 modwipe:
-	rm -f $(modulesdir)/*.${DYNAMIC_LIB_EXTEN}
+	rm -f $(modulesdir)/*.${DYNAMIC_LIB_EXTEN} $(modulesdir)/*.la
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
