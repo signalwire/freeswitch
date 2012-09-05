@@ -585,6 +585,9 @@ libs/openzap/Makefile:
 	cd libs/openzap && autoconf
 	cd libs/openzap && ./configure
 
+version:
+	git log -1  | head -3
+
 reinstall: modwipe uninstall install
 
 update-clean: clean libs/openzap/Makefile python-reconf
