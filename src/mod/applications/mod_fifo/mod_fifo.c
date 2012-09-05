@@ -2247,7 +2247,7 @@ static void fifo_caller_del(const char *uuid)
 	if (uuid) {
 		sql = switch_mprintf("delete from fifo_callers where uuid='%q'", uuid);
 	} else {
-		sql = switch_mprintf("delete from fifo_callers", uuid);
+		sql = switch_mprintf("delete from fifo_callers");
 	}
 
 	fifo_execute_sql(sql, globals.sql_mutex);
@@ -4251,7 +4251,6 @@ static switch_status_t load_config(int reload, int del_all)
 			}
 		}
 		switch_mutex_unlock(globals.mutex);
-		fifo_caller_del(NULL);
 	}
 
 
