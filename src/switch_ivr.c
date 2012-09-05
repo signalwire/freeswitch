@@ -560,7 +560,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 			if (!switch_channel_test_flag(channel, CF_BROADCAST)) {
 				switch_channel_set_flag(channel, CF_BROADCAST);
-				inner--;
+				if (inner) {
+					inner--;
+				}
 			}
 
 			if (hold_bleg && switch_true(hold_bleg)) {
@@ -611,7 +613,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 				if (switch_core_session_execute_application(session, app_name, app_arg) != SWITCH_STATUS_SUCCESS) {
 					if (!inner || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) switch_channel_clear_flag(channel, CF_BROADCAST);
-					goto done;
+					break;
 				}
 
 				aftr = switch_micro_time_now();
