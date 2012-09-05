@@ -6393,6 +6393,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 			if (send_ack) {
 				tech_send_ack(nh, tech_pvt);
+			} else {
+				ss_state = nua_callstate_ready;
+				goto state_process;
 			}
 			
 		}
