@@ -585,6 +585,9 @@ libs/openzap/Makefile:
 	cd libs/openzap && autoconf
 	cd libs/openzap && ./configure
 
+version:
+	git log -1  | head -3
+
 reinstall: modwipe uninstall install
 
 update-clean: clean libs/openzap/Makefile python-reconf
@@ -692,7 +695,7 @@ modclean: $(switch_builddir)/modules.conf
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
 
 modwipe:
-	rm -f $(modulesdir)/*.${DYNAMIC_LIB_EXTEN}
+	rm -f $(modulesdir)/*.${DYNAMIC_LIB_EXTEN} $(modulesdir)/*.la
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf

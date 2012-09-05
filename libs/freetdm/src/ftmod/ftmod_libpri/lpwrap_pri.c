@@ -275,15 +275,17 @@ static int lpwrap_run_expired(struct lpwrap_pri *spri, ftdm_time_t now_ms)
 
 	/* fire callbacks */
 	while ((cur = expired_list)) {
+		timeout_handler handler = cur->callback;
 		expired_list = cur->next;
-		if (cur->callback)
-			cur->callback(spri, cur);
-		/* stop timer */
+
+		/* Stop timer */
 		cur->next     = NULL;
 		cur->timeout  = 0;
 		cur->callback = NULL;
-	}
 
+		if (handler)
+			handler(spri, cur);
+	}
 	return 0;
 }
 

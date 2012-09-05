@@ -341,6 +341,7 @@ typedef enum {
 	TFLAG_REINVITED,
 	TFLAG_SLA_BARGE,
 	TFLAG_SLA_BARGING,
+	TFLAG_PASS_ACK,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
