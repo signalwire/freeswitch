@@ -954,6 +954,36 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	switch_safe_free(dup);
 }
 
+static void tech_send_ack(nua_handle_t *nh, private_object_t *tech_pvt)
+{
+	const char *invite_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_from");
+	const char *invite_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_to");
+
+
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_TRACK_CALLS)) {
+		const char *invite_full_via = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_via");
+		const char *invite_route_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_route_uri");			
+		
+		nua_ack(nh, 
+				TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
+				TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
+				TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+				TAG_IF((zstr(tech_pvt->user_via) && !zstr(invite_full_via)), SIPTAG_VIA_STR(invite_full_via)),
+				TAG_IF(!zstr(invite_route_uri), SIPTAG_ROUTE_STR(invite_route_uri)),
+				TAG_END());
+		
+						
+	} else {
+		nua_ack(nh, 
+				TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
+				TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
+				TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), 
+				TAG_END());
+	}
+
+}
+
+
 //sofia_dispatch_event_t *de
 static void our_sofia_event_callback(nua_event_t event,
 						  int status,
@@ -1124,6 +1154,24 @@ static void our_sofia_event_callback(nua_event_t event,
 				extract_header_vars(profile, sip, session, nh);
 				switch_core_recovery_track(session);
 				sofia_set_flag(tech_pvt, TFLAG_GOT_ACK);
+
+				if (sofia_test_flag(tech_pvt, TFLAG_PASS_ACK)) {
+					switch_core_session_t *other_session;
+					
+					sofia_clear_flag(tech_pvt, TFLAG_PASS_ACK);
+
+
+					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+						if (switch_core_session_compare(session, other_session)) {
+							private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+							tech_send_ack(other_tech_pvt->nh, other_tech_pvt);
+						}
+						switch_core_session_rwunlock(other_session);
+					}		
+					
+				}
+
+
 			}
 		}
 	case nua_r_ack:
@@ -6311,16 +6359,18 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		break;
 	case nua_callstate_completing:
 		{
-			const char *invite_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_from");
-			const char *invite_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_to");
 			const char *wait_for_ack = switch_channel_get_variable(channel, "sip_wait_for_aleg_ack");
+			int send_ack = 1;
 
 			if (switch_true(wait_for_ack)) {
 				switch_core_session_t *other_session;
 
 				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-					switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-					switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
+					if (switch_core_session_compare(session, other_session)) {
+						private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+						sofia_set_flag(other_tech_pvt, TFLAG_PASS_ACK);
+						send_ack = 0;
+					}
 					switch_core_session_rwunlock(other_session);
 				}
 			}
@@ -6341,26 +6391,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 			}
 
-			if (sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
-				const char *invite_full_via = switch_channel_get_variable(tech_pvt->channel, "sip_invite_full_via");
-				const char *invite_route_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_route_uri");			
-
-				nua_ack(nh, 
-						TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
-						TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
-						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-						TAG_IF((zstr(tech_pvt->user_via) && !zstr(invite_full_via)), SIPTAG_VIA_STR(invite_full_via)),
-
-						TAG_IF(!zstr(invite_route_uri), SIPTAG_ROUTE_STR(invite_route_uri)),
-						TAG_END());
-						
-			} else {
-				nua_ack(nh, 
-					TAG_IF(invite_full_from, SIPTAG_FROM_STR(invite_full_from)),
-					TAG_IF(invite_full_to, SIPTAG_TO_STR(invite_full_to)),
-					TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), 
-					TAG_END());
+			if (send_ack) {
+				tech_send_ack(nh, tech_pvt);
 			}
+			
 		}
 		goto done;
 	case nua_callstate_received:
