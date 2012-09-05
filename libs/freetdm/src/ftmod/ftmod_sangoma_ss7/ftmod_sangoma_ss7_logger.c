@@ -162,10 +162,10 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				{
 					if ((LSD_EVENT_ALIGN_LOST == sta->t.usta.alarm.event) ||
 						(LSD_EVENT_PROT_ST_DN == sta->t.usta.alarm.event)) {
-						log_level = FTDM_LOG_LEVEL_ERROR;
+						log_level = FTDM_LOG_LEVEL_WARNING;
 					} else if ((LSD_EVENT_LINK_ALIGNED == sta->t.usta.alarm.event) ||
 						      (LSD_EVENT_PROT_ST_UP == sta->t.usta.alarm.event)){
-						log_level = FTDM_LOG_LEVEL_DEBUG;
+						log_level = FTDM_LOG_LEVEL_INFO;
 					} else {
 						log_level = FTDM_LOG_LEVEL_WARNING;
 					}
