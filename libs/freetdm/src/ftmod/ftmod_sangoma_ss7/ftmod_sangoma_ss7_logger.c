@@ -114,7 +114,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 {
 	char	buf[50];
 	int		x = 1;
-    int log_level = FTDM_LOG_DEBUG;
+	int log_level = FTDM_LOG_LEVEL_DEBUG;
 
 	memset(buf, '\0', sizeof(buf));
 
@@ -159,22 +159,22 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 					break;			
 				case (LCM_CAUSE_UNKNOWN):
 				default:
-                    {
-                        if((LSD_EVENT_ALIGN_LOST == sta->t.usta.alarm.event) || 
-                                (LSD_EVENT_PROT_ST_DN == sta->t.usta.alarm.event)){
-                            log_level = FTDM_LOG_ERROR;
-                        }else if((LSD_EVENT_LINK_ALIGNED == sta->t.usta.alarm.event) ||
-                                ( LSD_EVENT_PROT_ST_UP == sta->t.usta.alarm.event)){
-                            log_level = FTDM_LOG_DEBUG;
-                        }else {
-                            log_level = FTDM_LOG_WARNING;
-                        }
-                        ftdm_log(log_level,"[MTP2]%s cause:%s event:%s\n",
-                                buf,
-                                DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
-                                DECODE_LSD_EVENT(sta->t.usta.alarm.event));
-                        break;
-                    }
+				{
+					if ((LSD_EVENT_ALIGN_LOST == sta->t.usta.alarm.event) ||
+						(LSD_EVENT_PROT_ST_DN == sta->t.usta.alarm.event)) {
+						log_level = FTDM_LOG_LEVEL_ERROR;
+					} else if ((LSD_EVENT_LINK_ALIGNED == sta->t.usta.alarm.event) ||
+						      (LSD_EVENT_PROT_ST_UP == sta->t.usta.alarm.event)){
+						log_level = FTDM_LOG_LEVEL_DEBUG;
+					} else {
+						log_level = FTDM_LOG_LEVEL_WARNING;
+					}
+					ftdm_log(FTDM_PRE, log_level,"[MTP2]%s cause:%s event:%s\n",
+						buf,
+						DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
+						DECODE_LSD_EVENT(sta->t.usta.alarm.event));
+					break;
+				}
 			/******************************************************************/
 			} /* switch (sta->t.usta.alarm.cause) */
 			break;
