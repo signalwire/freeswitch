@@ -201,7 +201,7 @@ int lpwrap_start_timer(struct lpwrap_pri *spri, struct lpwrap_timer *timer, cons
 	ftdm_mutex_lock(spri->timer_mutex);
 
 	for (prev = &spri->timer_list, cur = spri->timer_list; cur; prev = &(*prev)->next, cur = cur->next) {
-		if (cur->timeout < timer->timeout) {
+		if (cur->timeout > timer->timeout) {
 			*prev = timer;
 			timer->next = cur;
 			break;
