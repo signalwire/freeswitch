@@ -172,7 +172,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     }
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     TIFFSetField(t->tiff_file, TIFFTAG_PROFILETYPE, PROFILETYPE_G3_FAX);
-    TIFFSetField(t->tiff_file, TIFFTAG_FAXPROFILE, FAXPROFILE_S);
+    TIFFSetField(t->tiff_file, TIFFTAG_FAXPROFILE, FAXPROFILE_F);
     TIFFSetField(t->tiff_file, TIFFTAG_CODINGMETHODS, CODINGMETHODS_T4_1D | CODINGMETHODS_T4_2D | CODINGMETHODS_T6);
     TIFFSetField(t->tiff_file, TIFFTAG_VERSIONYEAR, "1998");
     /* TIFFSetField(t->tiff_file, TIFFTAG_MODENUMBER, 0); */
@@ -304,10 +304,14 @@ static int write_tiff_image(t4_rx_state_t *s)
         return -1;
     /* Set up the TIFF directory info... */
     set_tiff_directory_info(s);
-    /* ...and then write the image... */
+    /* ...Put the directory in the file before the image data, to get them in the order specified
+       for TIFF/F files... */
+    if (!TIFFCheckpointDirectory(t->tiff_file))
+        span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to checkpoint directory for page %d.\n", t->file, s->current_page);
+    /* ...and write out the image... */
     if (TIFFWriteEncodedStrip(t->tiff_file, 0, t->image_buffer, t->image_size) < 0)
         span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", t->file);
-    /* ...then the directory entry, and libtiff is happy. */
+    /* ...then finalise the directory entry, and libtiff is happy. */
     if (!TIFFWriteDirectory(t->tiff_file))
         span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", t->file, s->current_page);
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
@@ -316,7 +320,7 @@ static int write_tiff_image(t4_rx_state_t *s)
         if (!TIFFCreateCustomDirectory(t->tiff_file, &tiff_fx_field_array))
         {
             TIFFSetField(t->tiff_file, TIFFTAG_FAXPROFILE, PROFILETYPE_G3_FAX);
-            TIFFSetField(t->tiff_file, TIFFTAG_PROFILETYPE, FAXPROFILE_S);
+            TIFFSetField(t->tiff_file, TIFFTAG_PROFILETYPE, FAXPROFILE_F);
             TIFFSetField(t->tiff_file, TIFFTAG_VERSIONYEAR, "1998");
 
             offset = 0;
