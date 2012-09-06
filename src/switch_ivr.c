@@ -631,8 +631,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 				}
 			}
 
-			if (!inner || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) {
-				switch_channel_clear_flag(channel, CF_BROADCAST); 
+			if (!inner) {
+				switch_channel_clear_flag(channel, CF_BROADCAST);
+			}
+
+			if (switch_channel_test_flag(channel, CF_STOP_BROADCAST)) {
+				switch_channel_clear_flag(channel, CF_BROADCAST);
 				switch_channel_set_flag(channel, CF_BREAK); 
 			}
 			
