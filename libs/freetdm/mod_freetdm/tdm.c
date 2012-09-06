@@ -141,6 +141,25 @@ static void ctdm_report_alarms(ftdm_channel_t *channel)
 	return;
 }
 
+static ftdm_channel_t *ctdm_get_channel_from_event(switch_event_t *event, ftdm_span_t *span)
+{
+	uint32_t chan_id = 0;
+	const char *chan_number = NULL;
+
+	chan_number = switch_event_get_header(event, "chan-number");
+
+	if (zstr(chan_number)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channel number specified\n");
+		return NULL;
+	}
+	chan_id = atoi(chan_number);
+	if (!chan_id) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid channel number:%s\n", chan_number);
+		return NULL;
+	}
+
+	return ftdm_span_get_channel(span, chan_id);
+}
 
 
 static void ctdm_event_handler(switch_event_t *event)
@@ -152,17 +171,15 @@ static void ctdm_event_handler(switch_event_t *event)
 				ftdm_span_t *span = NULL;
 				ftdm_channel_t *channel = NULL;
 				const char *span_name = NULL;
-				const char *chan_number = NULL;
-				uint32_t chan_id = 0;
+
 				const char *cond = switch_event_get_header(event, "condition");
-				
+				const char *command = switch_event_get_header(event, "command");
 				if (zstr(cond)) {
 					return;
 				}
 
 				span_name = switch_event_get_header(event, "span-name");
-				chan_number = switch_event_get_header(event, "chan-number");
-
+				
 				if (ftdm_span_find_by_name(span_name, &span) != FTDM_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find span [%s]\n", span_name);
 					return;
@@ -171,22 +188,12 @@ static void ctdm_event_handler(switch_event_t *event)
 				if (!strcmp(cond, "mg-tdm-prepare")) {
 					status = ctdm_span_prepare(span);
 					if (status == FTDM_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Span %s prepared successfully\n", span_name);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s:prepared successfully\n", span_name);
 					} else if (status != FTDM_EINVAL) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to prepare span %s.\n", span_name);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s:Failed to prepare span\n", span_name);
 					}
 				} else if (!strcmp(cond, "mg-tdm-check")) {
-					if (zstr(chan_number)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channel number specified\n");
-						return;
-					}
-					chan_id = atoi(chan_number);
-					if (!chan_id) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid channel number:%s\n", chan_number);
-						return;
-					}
-
-					channel = ftdm_span_get_channel(span, chan_id);
+					channel = ctdm_get_channel_from_event(event, span);
 					if (!channel) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find channel\n");
 						return;
@@ -196,6 +203,27 @@ static void ctdm_event_handler(switch_event_t *event)
 							ftdm_channel_get_span_name(channel), ftdm_channel_get_id(channel));
 
 					ctdm_report_alarms(channel);
+				} else if (!strcmp(cond, "mg-tdm-dtmfremoval")) {
+					uint8_t enable = 0;
+					channel = ctdm_get_channel_from_event(event, span);
+					if (!channel) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find channel\n");
+						return;
+					}
+
+					if (zstr(command)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s:No command specified for mg-tdm-dtmfremoval\n", span_name);
+						return;
+					}
+
+					if (!strcmp(command, "enable")) {
+						enable = 1;
+					}
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s DTMF-removal for %s:%d\n",
+									  enable ? "Enabling" : "Disabling", ftdm_channel_get_span_name(channel), ftdm_channel_get_id(channel));
+
+					ftdm_channel_command(channel, enable ? FTDM_COMMAND_ENABLE_DTMF_REMOVAL : FTDM_COMMAND_DISABLE_DTMF_REMOVAL, 0);
 				}
 			}
 			break;
