@@ -631,13 +631,19 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
         mg_ctxt = megaco_choose_context(mg_profile);
 
-        if(NULL == mg_ctxt){
-		mg_profile->mg_stats->total_num_of_choose_ctxt_failed_error++;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_context failed \n"); 	
-		mg_util_set_err_string(&errTxt, " Resource Failure ");
-		err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
-		goto error;
-        }
+		if(NULL == mg_ctxt){
+			/* temp fix - Calling again, just in case if this time we get context */
+			mg_ctxt = megaco_choose_context(mg_profile);
+			if(NULL == mg_ctxt){
+				mg_profile->mg_stats->total_num_of_choose_ctxt_failed_error++;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_context failed \n"); 	
+				mg_util_set_err_string(&errTxt, " Resource Failure ");
+				err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+				goto error;
+			}else{
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_context - Success in 2nd Attempt \n"); 	
+			}
+		}
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated Context[%p] with context_id[%d]\n", (void*)mg_ctxt, mg_ctxt->context_id);
 
