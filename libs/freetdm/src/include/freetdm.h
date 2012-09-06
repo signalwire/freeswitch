@@ -733,6 +733,10 @@ typedef enum {
 	/*!< Enable/disable IO stats in the channel */
 	FTDM_COMMAND_SWITCH_IOSTATS =  60,
 
+	/*!< Enable/disable DTMF removal */
+	FTDM_COMMAND_ENABLE_DTMF_REMOVAL = 61,
+	FTDM_COMMAND_DISABLE_DTMF_REMOVAL = 62,
+
 	FTDM_COMMAND_COUNT,
 } ftdm_command_t;
 
