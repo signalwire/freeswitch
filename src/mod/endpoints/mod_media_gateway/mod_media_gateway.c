@@ -36,17 +36,42 @@ SWITCH_STANDARD_APP(mg_notify_function)
         return;
     }
 
-    if (!strcmp(data, "cng")) {
-        mg_send_t38_cng_notify(term->profile, term->name);
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent CNG notify\n");
-	/* Disable echo cancellation */
-	mg_term_set_ec(term, 0);
-    } else if (!strcmp(data, "ced")) {
-	mg_send_t38_ans_notify(term->profile, term->name);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent CED notify\n");
-	/* Disable echo cancellation */
-	mg_term_set_ec(term, 0);
-    }
+	if (!strcmp(data, "cng")) {
+		if((term->profile) && 
+		   (term->profile->t38_fax_notify == MG_T38_FAX_NOTIFY_YES) && 
+			!switch_test_flag(term, MG_FAX_NOTIFIED)){
+			switch_set_flag(term, MG_FAX_NOTIFIED);
+			mg_send_t38_cng_notify(term->profile, term->name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent CNG notify\n");
+		}else{
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Not reporting CNG tone "
+			"FAX Notify[%s] MG_FAX_NOTIFIED flag [%s]\n",
+			(MG_T38_FAX_NOTIFY_YES == term->profile->t38_fax_notify)?"ENABLE":"DISABLE",
+			(switch_test_flag(term, MG_FAX_NOTIFIED))?"TRUE":"FALSE");
+		}
+		/* Disable echo cancellation */
+		if(MG_TERM_TDM == term->type){
+			mg_term_set_ec(term, 0);
+		}
+	} else if (!strcmp(data, "ced")) {
+		if((term->profile) && 
+		   (term->profile->t38_fax_notify == MG_T38_FAX_NOTIFY_YES) && 
+			!switch_test_flag(term, MG_FAX_NOTIFIED)){
+			switch_set_flag(term, MG_FAX_NOTIFIED);
+		   mg_send_t38_ans_notify(term->profile, term->name);
+	  	   switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent CED notify\n");
+		}else{
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Not reporting CED tone "
+			"FAX Notify[%s] MG_FAX_NOTIFIED flag [%s]\n",
+			(MG_T38_FAX_NOTIFY_YES == term->profile->t38_fax_notify)?"ENABLE":"DISABLE",
+			(switch_test_flag(term, MG_FAX_NOTIFIED))?"TRUE":"FALSE");
+		}
+
+		if(MG_TERM_TDM == term->type){
+			mg_term_set_ec(term, 0);
+		}
+	}
+
 }
 
 static switch_status_t console_complete_hashtable(switch_hash_t *hash, const char *line, const char *cursor, switch_console_callback_match_t **matches)

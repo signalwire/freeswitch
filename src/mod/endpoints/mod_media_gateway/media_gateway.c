@@ -172,54 +172,30 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         term->uuid = NULL;
     }
     
-    if (zstr(term->uuid)) {    
-        switch_channel_t *channel;
-        if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_STATUS_SUCCESS) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to instanciate termination [%s]: %s\n", term->name, switch_channel_cause2str(cause));   
-            status = SWITCH_STATUS_FALSE;
-            goto done;
-        }
-        
-        term->uuid = switch_core_strdup(term->pool, switch_core_session_get_uuid(session));
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));   
-        channel = switch_core_session_get_channel(session);
-        switch_channel_set_private(channel, PVT_MG_TERM, term);
+	if (zstr(term->uuid)) {    
+		switch_channel_t *channel;
+		if (switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, var_event, 0, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to instanciate termination [%s]: %s\n", term->name, switch_channel_cause2str(cause));   
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
 
-        if (term->type == MG_TERM_RTP && term->u.rtp.t38_options) {
-            switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
-        }
-        
-        switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
-        	
-		if ((term->type == MG_TERM_TDM) && (term->profile)){
-				switch(term->profile->fax_detect_evt_type){
-					case MG_FAX_DETECT_EVENT_TYPE_CED:
-						{ 
-							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
-							break;
-						}
-					case MG_FAX_DETECT_EVENT_TYPE_CNG:
-						{ 
-							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
-							break;
-						}
-					case MG_FAX_DETECT_EVENT_TYPE_CNG_CED:
-						{ 
-							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
-							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
-							break;
-						}
-					case MG_FAX_DETECT_EVENT_TYPE_DISABLE:
-						{
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FAX detection Disable\n");
-							break;
-						}
-					default:
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid FAX detection Event[%d]\n",term->profile->fax_detect_evt_type);
-						break;
-				}
-			}
-    }
+		term->uuid = switch_core_strdup(term->pool, switch_core_session_get_uuid(session));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Termination [%s] successfully instanciated as [%s] [%s]\n", term->name, dialstring, switch_core_session_get_uuid(session));   
+		channel = switch_core_session_get_channel(session);
+		switch_channel_set_private(channel, PVT_MG_TERM, term);
+
+		if (term->type == MG_TERM_RTP && term->u.rtp.t38_options) {
+			switch_channel_set_private(channel, "t38_options", term->u.rtp.t38_options);
+		}
+
+		switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
+		if (term->type == MG_TERM_TDM){
+			switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
+			switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
+		}
+
+	}
     
     switch_set_flag(term, MGT_ACTIVE);
     
@@ -419,6 +395,7 @@ void megaco_termination_destroy(mg_termination_t *term)
 
     switch_clear_flag(term, MGT_ALLOCATED);
     switch_clear_flag(term, MGT_ACTIVE);
+    switch_clear_flag(term, MG_FAX_NOTIFIED);
     
     if (term->type == MG_TERM_RTP) {
         switch_core_hash_delete_wrlock(term->profile->terminations, term->name, term->profile->terminations_rwlock);
@@ -757,8 +734,9 @@ switch_status_t mgco_init_ins_service_change(SuId suId)
     for (hi = switch_hash_first(NULL,  profile->terminations); hi; hi = switch_hash_next(hi)) {
         switch_hash_this(hi, &key, &keylen, &val);
         term = (mg_termination_t *) val;
-	if(!term) continue;
-	megaco_check_tdm_termination(term);
+		if(!term) continue;
+		if(MG_TERM_RTP == term->type) continue;
+		megaco_check_tdm_termination(term);
     }
 
     return SWITCH_STATUS_SUCCESS;

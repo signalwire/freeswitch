@@ -119,8 +119,17 @@ enum {
     MGT_ACTIVE    	= (1 << 1),
     MG_IN_SERVICE 	= (1 << 2),
     MG_OUT_OF_SERVICE 	= (1 << 3),
+    MG_FAX_NOTIFIED 	= (1 << 4),
     
 } mg_termination_flags;
+
+
+typedef enum {
+    MG_T38_FAX_NOTIFY_NONE,
+    MG_T38_FAX_NOTIFY_YES,
+    MG_T38_FAX_NOTIFY_NO,
+    MG_T38_FAX_NOTIFY_INVALID,
+} mg_t38_fax_notify_t;
 
 
 typedef enum {
@@ -257,7 +266,7 @@ struct megaco_profile_s {
 	int						inact_tmr;                   /* inactivity timer value */
 	int						peer_active;                   /* inactivity timer value */
     uint32_t                inact_tmr_task_id;                 /* FS timer scheduler task-id */
-    mg_fax_detect_event_type_t fax_detect_evt_type;
+    mg_t38_fax_notify_t	    t38_fax_notify;
     
     switch_thread_rwlock_t  *contexts_rwlock;
     uint32_t next_context_id;
