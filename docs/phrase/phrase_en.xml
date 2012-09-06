@@ -590,7 +590,7 @@
       <prompt phrase="...is already on the blacklist." filename="ivr-is_already_on_the_blacklist.wav"/>
       <prompt phrase="For other options, press..." filename="ivr-for_other_options.wav"/>
       <!-- The following phrases still need to be recorded -->
-      <prompt phrase="" filename=""/>
+      <prompt phrase="Thank you." filename="ivr-thank_you.wav"/>
       <prompt phrase="" filename=""/>
 
     </ivr>
