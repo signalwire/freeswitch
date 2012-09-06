@@ -238,6 +238,10 @@ int lpwrap_stop_timer(struct lpwrap_pri *spri, struct lpwrap_timer *timer)
 
 	ftdm_mutex_unlock(spri->timer_mutex);
 
+	if (!cur) {
+		ftdm_log_chan(spri->dchan, FTDM_LOG_WARNING, "-- Timer %p not found in list\n", timer);
+	}
+
 	timer->next     = NULL;
 	timer->timeout  = 0;
 	timer->callback = NULL;
