@@ -494,7 +494,7 @@ FSConnection::FSConnection(OpalCall & call,
         params->fail_cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 
         if ((m_fsSession = switch_core_session_request(endpoint.GetManager().GetSwitchInterface(),
-                  SWITCH_CALL_DIRECTION_INBOUND, params->flags, params->pool)) == NULL) {
+                                      SWITCH_CALL_DIRECTION_OUTBOUND, params->flags, params->pool)) == NULL) {
             PTRACE(1, "mod_opal\tCannot create session for outgoing call.");
             return;
         }
