@@ -248,6 +248,7 @@ class FSConnection : public OpalLocalConnection
 
     virtual bool OnOutgoingSetUp();
     virtual bool OnIncoming();
+    virtual void OnEstablished();
     virtual void OnReleased();
     virtual PBoolean SetAlerting(const PString & calleeName, PBoolean withMedia);
     virtual OpalMediaStream *CreateMediaStream(const OpalMediaFormat &, unsigned, PBoolean);

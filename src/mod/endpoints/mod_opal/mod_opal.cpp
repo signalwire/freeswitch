@@ -310,9 +310,12 @@ bool FSManager::Initialise(switch_loadable_module_interface_t *iface)
     OpalMediaFormatList allCodecs = OpalMediaFormat::GetAllRegisteredMediaFormats();
     for (OpalMediaFormatList::iterator it = allCodecs.begin(); it != allCodecs.end(); ++it) {
       if (it->GetMediaType() == OpalMediaType::Audio()) {
-        it->SetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), 1);
-        it->SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+        int ms_per_frame = it->GetFrameTime()/it->GetTimeUnits();
+        int frames_in_20_ms = (ms_per_frame+19)/ms_per_frame;
+        it->SetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), frames_in_20_ms);
+        it->SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), frames_in_20_ms);
         OpalMediaFormat::SetRegisteredMediaFormat(*it);
+        PTRACE(4, "mod_opal\tSet " << *it << " to " << frames_in_20_ms << "frames/packet");
       }
     }
 #endif // IMPLEMENT_MULTI_FAME_AUDIO
@@ -602,6 +605,20 @@ bool FSConnection::OnIncoming()
 }
 
 
+void FSConnection::OnEstablished()
+{
+  OpalLocalConnection::OnEstablished();
+
+  if (switch_channel_direction(m_fsChannel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+    PTRACE(4, "mod_opal\tOnEstablished for outbound call, checking for media");
+    if (GetMediaStream(OpalMediaType::Audio(), true) != NULL && GetMediaStream(OpalMediaType::Audio(), false) != NULL) {
+      PTRACE(3, "mod_opal\tOnEstablished for outbound call, making call answered");
+      switch_channel_mark_answered(m_fsChannel);
+    }
+  }
+}
+
+
 void FSConnection::OnReleased()
 {
     m_rxAudioOpened.Signal();   // Just in case
@@ -786,18 +803,26 @@ void FSConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
         return;
 
     if (switch_channel_direction(m_fsChannel) == SWITCH_CALL_DIRECTION_INBOUND) {
+        PTRACE(4, "mod_opal\tOnPatchMediaStream for inbound call, flagging media opened");
         if (isSource)
             m_rxAudioOpened.Signal();
         else
             m_txAudioOpened.Signal();
     }
-    else if (GetMediaStream(OpalMediaType::Audio(), !isSource) != NULL) {
+    else {
+      PTRACE(4, "mod_opal\tOnPatchMediaStream for outbound call, checking media");
+      if (GetMediaStream(OpalMediaType::Audio(), !isSource) != NULL) {
           // Have open media in both directions.
-        if (IsEstablished())
+          if (IsEstablished()) {
+              PTRACE(3, "mod_opal\tOnPatchMediaStream for outbound call, making call answered");
               switch_channel_mark_answered(m_fsChannel);
-        else if (!IsReleased())
+          }
+          else if (!IsReleased()) {
+              PTRACE(3, "mod_opal\tOnPatchMediaStream for outbound call, making call pre-answered");
               switch_channel_mark_pre_answered(m_fsChannel);
           }
+      }
+    }
 }
 
 
