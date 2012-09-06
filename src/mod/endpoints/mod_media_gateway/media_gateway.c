@@ -191,10 +191,34 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         
         switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
         	
-        if (term->type == MG_TERM_TDM) {
-            switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
-            switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
-        }
+		if ((term->type == MG_TERM_TDM) && (term->profile)){
+				switch(term->profile->fax_detect_evt_type){
+					case MG_FAX_DETECT_EVENT_TYPE_CED:
+						{ 
+							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
+							break;
+						}
+					case MG_FAX_DETECT_EVENT_TYPE_CNG:
+						{ 
+							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
+							break;
+						}
+					case MG_FAX_DETECT_EVENT_TYPE_CNG_CED:
+						{ 
+							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
+							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
+							break;
+						}
+					case MG_FAX_DETECT_EVENT_TYPE_DISABLE:
+						{
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FAX detection Disable\n");
+							break;
+						}
+					default:
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid FAX detection Event[%d]\n",term->profile->fax_detect_evt_type);
+						break;
+				}
+			}
     }
     
     switch_set_flag(term, MGT_ACTIVE);
@@ -545,7 +569,6 @@ mg_context_t *megaco_get_context(megaco_profile_t *profile, uint32_t context_id)
 mg_context_t *megaco_choose_context(megaco_profile_t *profile)
 {
     mg_context_t *ctx=NULL;
-    uint32_t start_id = profile->next_context_id;
     
     switch_thread_rwlock_wrlock(profile->contexts_rwlock);
     /* Try the next one */
@@ -553,7 +576,6 @@ mg_context_t *megaco_choose_context(megaco_profile_t *profile)
         profile->next_context_id = 1;
     }
     
-again:
     /* Look for an available context */
     for (; profile->next_context_id < MG_MAX_CONTEXTS; profile->next_context_id++) {
         if ((profile->contexts_bitmap[profile->next_context_id / 8] & (1 << (profile->next_context_id % 8))) == 0) {
@@ -577,12 +599,6 @@ again:
             profile->next_context_id++;
             break;
         }
-    }
-
-    if (!ctx && start_id > 1) {
-        start_id = 1;
-        profile->next_context_id = 1;
-        goto again;
     }
     
     switch_thread_rwlock_unlock(profile->contexts_rwlock);
@@ -620,26 +636,18 @@ void megaco_release_context(mg_context_t *ctx)
 uint32_t mg_rtp_request_id(megaco_profile_t *profile)
 {
     uint32_t rtp_id = 0x00;
-    uint32_t start_id = profile->rtpid_next;
 
     if (profile->rtpid_next >= MG_MAX_RTPID || profile->rtpid_next == 0) {
         profile->rtpid_next = 1;
     }
 
-again:
     for (; profile->rtpid_next < MG_MAX_RTPID; profile->rtpid_next++) {
         if ((profile->rtpid_bitmap[profile->rtpid_next / 8] & (1 << (profile->rtpid_next % 8))) == 0) {
             profile->rtpid_bitmap[profile->rtpid_next / 8] |= 1 << (profile->rtpid_next % 8);
             rtp_id = profile->rtpid_next;
-            profile->rtpid_next++;
+	    profile->rtpid_next++;
             return rtp_id;
         }
-    }
-
-    if (start_id > 1) {
-        start_id = 1;
-        profile->rtpid_next = 1;
-        goto again;
     }
     
     return 0;

@@ -63,8 +63,6 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
     int 		  descId = 0x00;
     MgMgcoAmmReq* desc = NULL;
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"cmd->cmdType.val[%d]\n",cmd->cmdType.val);
-
     if(CH_CMD_TYPE_IND != cmd->cmdType.val)
         return SWITCH_STATUS_FALSE;
 
@@ -103,7 +101,7 @@ switch_status_t mg_is_ito_pkg_req(megaco_profile_t* mg_profile, MgMgcoCommand *c
 
                     /* As of now only handling ito package */
 
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," Requested Event descriptor\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Requested Event descriptor\n");
 
                     if (evts->el.num.pres)
                         numEvts = evts->el.num.val;
@@ -631,13 +629,19 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
         mg_ctxt = megaco_choose_context(mg_profile);
 
-        if(NULL == mg_ctxt){
-		mg_profile->mg_stats->total_num_of_choose_ctxt_failed_error++;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_context failed \n"); 	
-		mg_util_set_err_string(&errTxt, " Resource Failure ");
-		err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
-		goto error;
-        }
+		if(NULL == mg_ctxt){
+			/* temp fix - Calling again, just in case if this time we get context */
+			mg_ctxt = megaco_choose_context(mg_profile);
+			if(NULL == mg_ctxt){
+				mg_profile->mg_stats->total_num_of_choose_ctxt_failed_error++;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_context failed \n"); 	
+				mg_util_set_err_string(&errTxt, " Resource Failure ");
+				err_code = MGT_MGCO_RSP_CODE_RSRC_ERROR;
+				goto error;
+			}else{
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," megaco_choose_context - Success in 2nd Attempt \n"); 	
+			}
+		}
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Allocated Context[%p] with context_id[%d]\n", (void*)mg_ctxt, mg_ctxt->context_id);
 
@@ -1037,7 +1041,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 		}
 
 		if(MG_TERM_RTP == term->type){
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"MODIFY REQUEST - Updated RTP attributes:"
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"MODIFY REQUEST - Updated RTP attributes:"
 					" Media_Type(%s),local_addr[%s] local_port[%d] remote_addr[%s], remote_port[%d], ptime[%d] pt[%d], "
 					" rfc2833_pt[%d] rate[%d], codec[%s], term_id[%d]\n",
 					mg_media_type2str(term->u.rtp.media_type),
