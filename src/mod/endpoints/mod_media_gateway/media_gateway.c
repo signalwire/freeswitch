@@ -191,10 +191,34 @@ switch_status_t megaco_activate_termination(mg_termination_t *term)
         
         switch_core_event_hook_add_recv_dtmf(session, mg_on_dtmf);
         	
-        if (term->type == MG_TERM_TDM) {
-            switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
-            switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
-        }
+		if ((term->type == MG_TERM_TDM) && (term->profile)){
+				switch(term->profile->fax_detect_evt_type){
+					case MG_FAX_DETECT_EVENT_TYPE_CED:
+						{ 
+							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
+							break;
+						}
+					case MG_FAX_DETECT_EVENT_TYPE_CNG:
+						{ 
+							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
+							break;
+						}
+					case MG_FAX_DETECT_EVENT_TYPE_CNG_CED:
+						{ 
+							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify cng 120 cng");
+							switch_core_session_execute_application_async(session, "spandsp_start_fax_detect", "mg_notify ced 120 ced");
+							break;
+						}
+					case MG_FAX_DETECT_EVENT_TYPE_DISABLE:
+						{
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FAX detection Disable\n");
+							break;
+						}
+					default:
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid FAX detection Event[%d]\n",term->profile->fax_detect_evt_type);
+						break;
+				}
+			}
     }
     
     switch_set_flag(term, MGT_ACTIVE);

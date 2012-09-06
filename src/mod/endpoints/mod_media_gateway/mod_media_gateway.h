@@ -150,6 +150,31 @@ static inline mg_media_type_t mg_media_type_parse(const char *str) {
     return MGM_INVALID;
 }
 
+typedef enum {
+    MG_FAX_DETECT_EVENT_TYPE_NONE = 0,
+    MG_FAX_DETECT_EVENT_TYPE_CED,
+    MG_FAX_DETECT_EVENT_TYPE_CNG,
+    MG_FAX_DETECT_EVENT_TYPE_CNG_CED,
+    MG_FAX_DETECT_EVENT_TYPE_DISABLE,
+    MG_FAX_DETECT_EVENT_TYPE_INVALID,
+} mg_fax_detect_event_type_t;
+
+static inline const char *mg_fax_detect_evt_type2str(mg_fax_detect_event_type_t type) {
+    switch (type) {
+        case MG_FAX_DETECT_EVENT_TYPE_CED:
+            return "CED";
+        case MG_FAX_DETECT_EVENT_TYPE_CNG:
+            return "CNG";
+        case MG_FAX_DETECT_EVENT_TYPE_CNG_CED:
+            return "CED AND CNG";
+        case MG_FAX_DETECT_EVENT_TYPE_DISABLE:
+            return "DISABLE";
+        default:
+            return "Invalid";
+    }
+    return NULL;
+}
+
 struct mg_context_s {
     uint32_t context_id;
     mg_termination_t *terminations[MG_CONTEXT_MAX_TERMS];
@@ -232,6 +257,7 @@ struct megaco_profile_s {
 	int						inact_tmr;                   /* inactivity timer value */
 	int						peer_active;                   /* inactivity timer value */
     uint32_t                inact_tmr_task_id;                 /* FS timer scheduler task-id */
+    mg_fax_detect_event_type_t fax_detect_evt_type;
     
     switch_thread_rwlock_t  *contexts_rwlock;
     uint32_t next_context_id;

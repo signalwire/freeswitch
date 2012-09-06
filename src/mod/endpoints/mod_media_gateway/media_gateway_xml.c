@@ -71,6 +71,7 @@ switch_status_t config_profile(megaco_profile_t *profile, switch_bool_t reload)
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"rtp_ipaddr[%s], local ip[%s]\n", profile->rtp_ipaddr, profile->my_ipaddr);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"fax_detect_evt_type[%s]\n", mg_fax_detect_evt_type2str(profile->fax_detect_evt_type));
 
 		if(SWITCH_STATUS_FALSE == (status = modify_mg_profile_mid(profile, &profile->mid))){
 			goto done;
@@ -337,6 +338,13 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		{  "ILBC", MEGACO_CODEC_ILBC },
 	};
 #endif
+	static switch_xml_config_enum_item_t opt_fax_detect_type_enum[] = {
+		{  "CED",  MG_FAX_DETECT_EVENT_TYPE_CED},
+		{  "CNG",  MG_FAX_DETECT_EVENT_TYPE_CNG},
+		{  "CED_CNG",  MG_FAX_DETECT_EVENT_TYPE_CNG_CED},
+		{  "DISABLE",  MG_FAX_DETECT_EVENT_TYPE_DISABLE},
+	};
+
 
 	switch_xml_config_item_t instructions[] = {
 		/* parameter name        type                 reloadable   pointer                         default value     options structure */
@@ -355,6 +363,7 @@ static switch_xml_config_item_t *get_instructions(megaco_profile_t *profile) {
 		SWITCH_CONFIG_ITEM("codec-prefs", SWITCH_CONFIG_STRING, 0, &profile->codec_prefs, "", &switch_config_string_strdup, "", "codec preferences, coma-separated"),
 		SWITCH_CONFIG_ITEM("license", SWITCH_CONFIG_STRING, 0, &profile->license, "/usr/local/nsg/conf/license.txt", &switch_config_string_strdup, "", "License file"),
 		SWITCH_CONFIG_ITEM("rtp-ip", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &profile->rtp_ipaddr, "" , &switch_config_string_strdup, "", "rtp ip"),
+		SWITCH_CONFIG_ITEM("fax-detect-event-type", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &profile->fax_detect_evt_type, MG_FAX_DETECT_EVENT_TYPE_CNG_CED , &opt_fax_detect_type_enum, "", "fax-detect-event-type"),
 		SWITCH_CONFIG_ITEM_END()
 	};
 	
