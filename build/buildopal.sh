@@ -22,14 +22,17 @@ export PKG_CONFIG_PATH=$INSTALLDIR/lib/pkgconfig
 
 
 # Version and patch for PTLib and OPAL. These are almost always in lock
-# step so shoud be the same unless you really know ehat you are doing!
+# step so should be the same unless you really know what you are doing!
 # The PATCH should be set to a  specific"snapshot release" when things
-# are nice and stable.
+# are nice and stable. But right now comment them out for using trunk.
 
-VERSION=10
-#PATCH=6
+#VERSION=10
+#PATCH=7
 
-if [ -z "$PATCH" ]; then
+if [ -z "$VERSION" ]; then
+  PTLIB_VERSION=trunk
+  OPAL_VERSION=trunk
+elif [ -z "$PATCH" ]; then
   PTLIB_VERSION=branches/v2_$VERSION
   OPAL_VERSION=branches/v3_$VERSION
 else
