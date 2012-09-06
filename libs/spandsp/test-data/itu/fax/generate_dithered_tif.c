@@ -137,6 +137,7 @@ int main(int argc, char *argv[])
     TIFFSetField(tiff_file, TIFFTAG_PAGENUMBER, 0, 1);
     TIFFSetField(tiff_file, TIFFTAG_CLEANFAXDATA, CLEANFAXDATA_CLEAN);
     TIFFSetField(tiff_file, TIFFTAG_IMAGEWIDTH, image_width);
+    TIFFCheckpointDirectory(tiff_file);
 
     /* Write the image first.... */
     for (row = 0;  row < image_length;  row++)

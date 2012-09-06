@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
     TIFFSetField(tiff_file, TIFFTAG_IMAGEWIDTH, IMAGE_WIDTH);
     TIFFSetField(tiff_file, TIFFTAG_IMAGELENGTH, IMAGE_LENGTH);
     TIFFSetField(tiff_file, TIFFTAG_PAGENUMBER, 0, 1);
+    TIFFCheckpointDirectory(tiff_file);
 
     image_size = IMAGE_WIDTH*ROWS_PER_STRIPE/8;
     memset(image_buffer, 0x18, image_size);
