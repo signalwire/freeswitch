@@ -33,6 +33,7 @@ int sng_mgco_mg_shutdown();
 int sng_mgco_mg_ssap_stop(int sapId);
 int sng_mgco_mg_tpt_server_stop(megaco_profile_t* profile);
 int sng_mgco_mg_app_ssap_stop(int idx);
+int mg_tucl_debug(int action);
 
 switch_status_t sng_mgco_stack_gen_cfg();
 
@@ -581,13 +582,15 @@ int mg_enable_logging()
 	memset(&mgMngmt, 0, sizeof(mgMngmt));
 	cntrl = &mgMngmt.t.cntrl;
 
+	mg_tucl_debug(AENA);
+
 	/* initalize the post structure */
 	smPstInit(&pst);
 
 	/* insert the destination Entity */
 	pst.dstEnt = ENTMG;
 	mgMngmt.hdr.msgType         = TCFG;
-	mgMngmt.hdr.entId.ent       = ENTHI;
+	mgMngmt.hdr.entId.ent       = ENTMG;
 	mgMngmt.hdr.entId.inst      = S_INST;
 	mgMngmt.hdr.elmId.elmnt     = STGEN;
 
@@ -608,13 +611,15 @@ int mg_disable_logging()
 	memset(&mgMngmt, 0, sizeof(mgMngmt));
 	cntrl = &mgMngmt.t.cntrl;
 
+	mg_tucl_debug(ADISIMM);
+
 	/* initalize the post structure */
 	smPstInit(&pst);
 
 	/* insert the destination Entity */
 	pst.dstEnt = ENTMG;
 	mgMngmt.hdr.msgType         = TCFG;
-	mgMngmt.hdr.entId.ent       = ENTHI;
+	mgMngmt.hdr.entId.ent       = ENTMG;
 	mgMngmt.hdr.entId.inst      = S_INST;
 	mgMngmt.hdr.elmId.elmnt     = STGEN;
 
@@ -623,6 +628,38 @@ int mg_disable_logging()
 	cntrl->s.dbg.genDbgMask    = 0xfffffdff;
 
 	return(sng_cntrl_mg(&pst, &mgMngmt));
+}
+
+/******************************************************************************/
+int mg_tucl_debug(int action)
+{
+	Pst pst;
+	HiMngmt cntrl;  
+
+	memset((U8 *)&pst, 0, sizeof(Pst));
+	memset((U8 *)&cntrl, 0, sizeof(HiMngmt));
+
+	smPstInit(&pst);
+
+	pst.dstEnt = ENTHI;
+
+	/* prepare header */
+	cntrl.hdr.msgType     = TCNTRL;         /* message type */
+	cntrl.hdr.entId.ent   = ENTHI;          /* entity */
+	cntrl.hdr.entId.inst  = 0;              /* instance */
+	cntrl.hdr.elmId.elmnt = STGEN;       /* General */
+
+	cntrl.hdr.response.selector    = 0;
+	cntrl.hdr.response.prior       = PRIOR0;
+	cntrl.hdr.response.route       = RTESPEC;
+	cntrl.hdr.response.mem.region  = S_REG;
+	cntrl.hdr.response.mem.pool    = S_POOL;
+
+	cntrl.t.cntrl.action    = action;
+	cntrl.t.cntrl.subAction = SADBG;
+	cntrl.t.cntrl.ctlType.hiDbg.dbgMask = 0xFFFF;
+
+	return (sng_cntrl_tucl (&pst, &cntrl));
 }
 
 /******************************************************************************/
