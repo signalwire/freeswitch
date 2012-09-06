@@ -1209,11 +1209,13 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_options(status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
 		break;
 	case nua_i_invite:
-		if (session && sofia_private->is_call > 1) {
-			sofia_handle_sip_i_reinvite(session, nua, profile, nh, sofia_private, sip, de, tags);
-		} else {
-			sofia_private->is_call++;
-			sofia_handle_sip_i_invite(session, nua, profile, nh, sofia_private, sip, de, tags);
+		if (session && sofia_private) {
+			if (sofia_private->is_call > 1) {
+				sofia_handle_sip_i_reinvite(session, nua, profile, nh, sofia_private, sip, de, tags);
+			} else {
+				sofia_private->is_call++;
+				sofia_handle_sip_i_invite(session, nua, profile, nh, sofia_private, sip, de, tags);
+			}
 		}
 		break;
 	case nua_i_publish:
