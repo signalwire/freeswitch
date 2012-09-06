@@ -1109,21 +1109,21 @@ static t38_mode_t request_t38(pvt_t *pvt)
 
         if (!(t38_options = switch_channel_get_private(channel, "_preconfigured_t38_options"))) {
             t38_options = switch_core_session_alloc(session, sizeof(*t38_options));
-            switch_channel_set_private(channel, "_preconfigured_t38_options", NULL);
+            t38_options->T38MaxBitRate = (pvt->disable_v17) ? 9600 : 14400;
+            t38_options->T38FaxVersion = 0;
+            t38_options->T38FaxFillBitRemoval = 1;
+            t38_options->T38FaxTranscodingMMR = 0;
+            t38_options->T38FaxTranscodingJBIG = 0;
+            t38_options->T38FaxRateManagement = "transferredTCF";
+            t38_options->T38FaxMaxBuffer = 2000;
+            t38_options->T38FaxMaxDatagram = LOCAL_FAX_MAX_DATAGRAM;
+            t38_options->T38FaxUdpEC = "t38UDPRedundancy";
+            t38_options->T38VendorInfo = "0 0 0";
         }
 
-		t38_options->T38MaxBitRate = (pvt->disable_v17) ? 9600 : 14400;
-		t38_options->T38FaxVersion = 0;
-		t38_options->T38FaxFillBitRemoval = 1;
-		t38_options->T38FaxTranscodingMMR = 0;
-		t38_options->T38FaxTranscodingJBIG = 0;
-		t38_options->T38FaxRateManagement = "transferredTCF";
-		t38_options->T38FaxMaxBuffer = 2000;
-		t38_options->T38FaxMaxDatagram = LOCAL_FAX_MAX_DATAGRAM;
-		t38_options->T38FaxUdpEC = "t38UDPRedundancy";
-		t38_options->T38VendorInfo = "0 0 0";
+	switch_channel_set_private(channel, "t38_options", t38_options);
+        switch_channel_set_private(channel, "_preconfigured_t38_options", NULL);
 
-		switch_channel_set_private(channel, "t38_options", t38_options);
 		pvt->t38_mode = T38_MODE_REQUESTED;
 		switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_REQ);
 

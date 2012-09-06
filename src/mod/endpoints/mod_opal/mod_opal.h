@@ -305,7 +305,9 @@ class FSConnection : public OpalLocalConnection
     void SetCodecs();
     bool WaitForMedia();
 #if HAVE_T38
-    void SetT38OptionsFromMediaFormat(const OpalMediaFormat & mediaFormat);
+    void SetT38OptionsFromMediaFormat(const OpalMediaFormat & mediaFormat, const char * varname);
+    bool IndicateSwitchedT38();
+    void AbortT38();
 #endif
 
     switch_status_t read_frame(const OpalMediaType & mediaType, switch_frame_t **frame, switch_io_flag_t flags);

@@ -751,7 +751,7 @@ void FSConnection::SetCodecs()
        spandsp_mod has set it us. So, if not, we actually give to spandsp_mod. */
     switch_t38_options_t *t38_options = (switch_t38_options_t *)switch_channel_get_private(m_fsChannel, "t38_options");
     if (t38_options == NULL)
-      SetT38OptionsFromMediaFormat(t38);
+      SetT38OptionsFromMediaFormat(t38, "_preconfigured_t38_options");
     else {
       t38.SetOptionInteger("T38FaxVersion", t38_options->T38FaxVersion);
       t38.SetOptionInteger("T38MaxBitRate", t38_options->T38MaxBitRate);
@@ -786,18 +786,18 @@ void FSConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
         return;
 
     if (switch_channel_direction(m_fsChannel) == SWITCH_CALL_DIRECTION_INBOUND) {
-      if (isSource)
-          m_rxAudioOpened.Signal();
-      else
-          m_txAudioOpened.Signal();
+        if (isSource)
+            m_rxAudioOpened.Signal();
+        else
+            m_txAudioOpened.Signal();
     }
     else if (GetMediaStream(OpalMediaType::Audio(), !isSource) != NULL) {
-        // Have open media in both directions.
+          // Have open media in both directions.
         if (IsEstablished())
-            switch_channel_mark_answered(m_fsChannel);
+              switch_channel_mark_answered(m_fsChannel);
         else if (!IsReleased())
-            switch_channel_mark_pre_answered(m_fsChannel);
-    }
+              switch_channel_mark_pre_answered(m_fsChannel);
+          }
 }
 
 
@@ -978,17 +978,22 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
 #if HAVE_T38
     case SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA:
       {
+        PTRACE(2, "mod_opal\tRequesting switch to T.38");
         PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-        if (other == NULL || !other->SwitchT38(true)) {
+        if (other != NULL && other->SwitchT38(true))
+            switch_channel_set_flag(m_fsChannel, CF_REQ_MEDIA);
+        else {
             PTRACE(1, "mod_opal\tMode change request to T.38 failed");
         }
         break;
       }
 
     case SWITCH_MESSAGE_INDICATE_T38_DESCRIPTION:
+        PTRACE(2, "mod_opal\tSWITCH_MESSAGE_INDICATE_T38_DESCRIPTION");
         break;
 
     case SWITCH_MESSAGE_INDICATE_UDPTL_MODE:
+        PTRACE(2, "mod_opal\tSWITCH_MESSAGE_INDICATE_UDPTL_MODE");
         break;
 #endif // HAVE_T38
 
@@ -1018,9 +1023,9 @@ bool FSConnection::WaitForMedia()
 
 
 #if HAVE_T38
-void FSConnection::SetT38OptionsFromMediaFormat(const OpalMediaFormat & mediaFormat)
+void FSConnection::SetT38OptionsFromMediaFormat(const OpalMediaFormat & mediaFormat, const char * varname)
 {
-    switch_t38_options_t *t38_options = (switch_t38_options_t *)switch_channel_get_private(m_fsChannel, "t38_options");
+    switch_t38_options_t *t38_options = (switch_t38_options_t *)switch_channel_get_private(m_fsChannel, varname);
     if (t38_options == NULL)
       t38_options = (switch_t38_options_t *)switch_core_session_alloc(m_fsSession, sizeof(switch_t38_options_t));
 
@@ -1044,45 +1049,55 @@ void FSConnection::SetT38OptionsFromMediaFormat(const OpalMediaFormat & mediaFor
     //t38_options->remote_ip = switch_core_session_strdup(session, mediaFormat.something);
     //t38_options->remote_port = mediaFormat.something;
 
-    switch_channel_set_private(m_fsChannel, "t38_options", t38_options);
+    switch_channel_set_private(m_fsChannel, varname, t38_options);
+    PTRACE(3, "mod_opal\tSet " << varname);
 }
 
 
 void FSConnection::OnSwitchedT38(bool toT38, bool success)
 {
-    PTRACE(3, "mod_opal\tMode change request to fax succeeded");
-    OnSwitchingT38(toT38 && success);
+    if (!toT38 || !success || !IndicateSwitchedT38())
+      AbortT38();
 }
 
 
 void FSConnection::OnSwitchingT38(bool toT38)
 {
-    if (!toT38) {
-        switch_channel_set_private(m_fsChannel, "t38_options", NULL);
-        switch_channel_clear_app_flag_key("T38", m_fsChannel, CF_APP_T38);
-        switch_channel_clear_app_flag_key("T38", m_fsChannel, CF_APP_T38_REQ);
-        switch_channel_set_app_flag_key("T38", m_fsChannel, CF_APP_T38_FAIL);
-        return;
-    }
+    if (!toT38 || !IndicateSwitchedT38())
+      AbortT38();
+}
 
+
+void FSConnection::AbortT38()
+{
+    PTRACE(3, "mod_opal\tMode change request to T.38 failed");
+    switch_channel_set_private(m_fsChannel, "t38_options", NULL);
+    switch_channel_clear_app_flag_key("T38", m_fsChannel, CF_APP_T38);
+    switch_channel_clear_app_flag_key("T38", m_fsChannel, CF_APP_T38_REQ);
+    switch_channel_set_app_flag_key("T38", m_fsChannel, CF_APP_T38_FAIL);
+}
+
+
+bool FSConnection::IndicateSwitchedT38()
+{
     PSafePtr<OpalConnection> other = GetOtherPartyConnection();
     if (other == NULL)
-        return;
+        return false;
 
     OpalMediaFormatList otherFormats = other->GetMediaFormats();
     OpalMediaFormatList::const_iterator t38 = otherFormats.FindFormat(OpalT38);
     if (t38 == otherFormats.end())
-        return;
+        return false;
 
-    SetT38OptionsFromMediaFormat(*t38);
+    SetT38OptionsFromMediaFormat(*t38, "t38_options");
 
     switch_channel_set_variable(m_fsChannel, "has_t38", "true");
     switch_channel_set_app_flag_key("T38", m_fsChannel, CF_APP_T38);
 
-    switch_channel_execute_on(m_fsChannel, "opal_execute_on_image");
-    switch_channel_api_on(m_fsChannel, "opal_api_on_image");
-
-    return;
+    switch_channel_execute_on(m_fsChannel, "opal_execute_on_t38");
+    switch_channel_api_on(m_fsChannel, "opal_api_on_t38");
+    PTRACE(3, "mod_opal\tMode change request to T.38 succeeded");
+    return true;
 }
 #endif // HAVE_T38
 
@@ -1103,13 +1118,21 @@ switch_status_t FSConnection::state_change()
 
 switch_status_t FSConnection::read_audio_frame(switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
-    return read_frame(OpalMediaType::Audio(), frame, flags);
+    // Avoid all the channel closing and re-opening upsetting FS
+    if (ownerCall.IsSwitchingT38())
+      return SWITCH_STATUS_SUCCESS;
+
+    return read_frame((flags&SFF_UDPTL_PACKET) ? OpalMediaType::Fax() : OpalMediaType::Audio(), frame, flags);
 }
 
 
 switch_status_t FSConnection::write_audio_frame(switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
-    return write_frame(OpalMediaType::Audio(), frame, flags);
+    // Avoid all the channel closing and re-opening upsetting FS
+    if (ownerCall.IsSwitchingT38())
+      return SWITCH_STATUS_SUCCESS;
+
+    return write_frame((flags&SFF_UDPTL_PACKET) ? OpalMediaType::Fax() : OpalMediaType::Audio(), frame, flags);
 }
 
 
@@ -1128,14 +1151,22 @@ switch_status_t FSConnection::write_video_frame(switch_frame_t *frame, switch_io
 switch_status_t FSConnection::read_frame(const OpalMediaType & mediaType, switch_frame_t **frame, switch_io_flag_t flags)
 {
     PSafePtr <FSMediaStream> stream = PSafePtrCast <OpalMediaStream, FSMediaStream>(GetMediaStream(mediaType, false));
-    return stream != NULL ? stream->read_frame(frame, flags) : SWITCH_STATUS_FALSE;
+    if (stream != NULL)
+      return stream->read_frame(frame, flags);
+
+    PTRACE(2, "mod_opal\tNo stream for read of " << mediaType);
+    return SWITCH_STATUS_SUCCESS;
 }
 
 
 switch_status_t FSConnection::write_frame(const OpalMediaType & mediaType, const switch_frame_t *frame, switch_io_flag_t flags)
 {
     PSafePtr <FSMediaStream> stream = PSafePtrCast<OpalMediaStream, FSMediaStream>(GetMediaStream(mediaType, true));
-    return stream != NULL ? stream->write_frame(frame, flags) : SWITCH_STATUS_FALSE;
+    if (stream != NULL)
+      return stream->write_frame(frame, flags);
+
+    PTRACE(2, "mod_opal\tNo stream for write of " << mediaType);
+    return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -1266,17 +1297,17 @@ PBoolean FSMediaStream::RequiresPatchThread(OpalMediaStream *) const
 int FSMediaStream::StartReadWrite(PatchPtr & mediaPatch) const
 {
     if (!IsOpen()) {
-        PTRACE(2, "mod_opal\tNot open!");
+        PTRACE(1, "mod_opal\tNot open!");
         return -1;
     }
 
     if (!m_switchCodec) {
-        PTRACE(2, "mod_opal\tNo codec!");
+        PTRACE(1, "mod_opal\tNo codec!");
         return -1;
     }
 
     if (!m_connection.IsChannelReady()) {
-        PTRACE(2, "mod_opal\tChannel not ready!");
+        PTRACE(1, "mod_opal\tChannel not ready!");
         return -1;
     }
 
@@ -1285,7 +1316,7 @@ int FSMediaStream::StartReadWrite(PatchPtr & mediaPatch) const
     if (mediaPatch == NULL) {
         /*There is a race here... sometimes we make it here and m_mediaPatch is NULL
           if we wait it shows up in 1ms, maybe there is a better way to wait. */
-        PTRACE(3, "mod_opal\tPatch not ready!");
+        PTRACE(2, "mod_opal\tPatch not ready!");
         return 1;
     }
 
@@ -1310,6 +1341,7 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
         m_readRTP.SetTimestamp(m_readFrame.timestamp + m_switchCodec->implementation->samples_per_packet);
 
         if (!mediaPatch->GetSource().ReadPacket(m_readRTP)) {
+            PTRACE(1, "mod_opal\tread_frame: no source data!");
             return SWITCH_STATUS_FALSE;
         }
     }
@@ -1320,7 +1352,7 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
 
     if (m_switchCodec != NULL) {
         if (!switch_core_codec_ready(m_switchCodec)) {
-            PTRACE(2, "mod_opal\tread_frame: codec not ready!");
+            PTRACE(1, "mod_opal\tread_frame: codec not ready!");
             return SWITCH_STATUS_FALSE;
         }
     }
@@ -1385,7 +1417,11 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
         timestamp += m_switchCodec->implementation->samples_per_packet;
     rtp.SetTimestamp(timestamp);
 
-    return mediaPatch->PushFrame(rtp) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+    if (mediaPatch->PushFrame(rtp))
+      return SWITCH_STATUS_SUCCESS;
+
+    PTRACE(1, "mod_opal\tread_frame: push failed!");
+    return SWITCH_STATUS_FALSE;
 }
 
 
