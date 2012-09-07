@@ -321,6 +321,7 @@ static inline megaco_codec_t megaco_codec_parse(const char *codec) {
 }
 
 
+switch_status_t megaco_tdm_term_dtmf_removal(mg_termination_t *term, int enable);
 megaco_profile_t *megaco_profile_locate(const char *name);
 mg_termination_t *megaco_term_locate_by_span_chan_id(const char *span_name, const char *chan_number);
 mg_peer_profile_t *megaco_peer_profile_locate(const char *name);
@@ -363,6 +364,7 @@ switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination
 
 switch_status_t megaco_prepare_tdm_termination(mg_termination_t *term);
 switch_status_t megaco_check_tdm_termination(mg_termination_t *term);
+mg_termination_t* megaco_context_get_peer_term(mg_context_t *ctx, mg_termination_t *term);
 
 
 

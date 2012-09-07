@@ -208,6 +208,51 @@ done:
     return status;
 }
 
+switch_status_t megaco_tdm_term_dtmf_removal(mg_termination_t *term, int enable)
+{
+	char buf[128];
+	switch_event_t *event = NULL;
+	mg_termination_t* tdm_term = NULL;
+
+	if(NULL == term) return SWITCH_STATUS_FALSE;
+
+	if(MG_TERM_RTP == term->type){
+		if(NULL == term->context) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Null Context from rtp term, not able to get tdm term \n");   
+			return SWITCH_STATUS_FALSE;
+		}
+		tdm_term = megaco_context_get_peer_term(term->context, term);
+	}else{
+		tdm_term = term;
+	}
+
+	if(NULL == tdm_term) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Null TDM term \n");   
+		return SWITCH_STATUS_FALSE;
+	}
+
+	memset(&buf[0],0,sizeof(buf));
+
+	if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create NOTIFY event\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s",  tdm_term->u.tdm.span_name);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", tdm_term->u.tdm.channel);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "mg-tdm-dtmfremoval");
+
+	sprintf(buf,"%s",(1 == enable)?"enable":"disable");
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending DTMF Removal Event[%s] for MG Term[%s], TDM span[%s] channel[%d]\n",
+					 buf,tdm_term->name, tdm_term->u.tdm.span_name, tdm_term->u.tdm.channel);
+
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "command", buf);
+
+	switch_event_fire(&event);
+    return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t megaco_prepare_tdm_termination(mg_termination_t *term)
 {
 	switch_event_t *event = NULL;
@@ -401,6 +446,23 @@ void megaco_termination_destroy(mg_termination_t *term)
         switch_core_hash_delete_wrlock(term->profile->terminations, term->name, term->profile->terminations_rwlock);
         switch_core_destroy_memory_pool(&term->pool);   
     }
+}
+
+mg_termination_t* megaco_context_get_peer_term(mg_context_t *ctx, mg_termination_t *term)
+{
+
+    switch_assert(ctx != NULL);
+    switch_assert(term != NULL);
+
+    if (ctx->terminations[0] && (term == ctx->terminations[0])) {
+        return ctx->terminations[1];
+    }
+
+    if (ctx->terminations[1] && (term == ctx->terminations[1])) {
+        return ctx->terminations[0];
+    }
+
+    return NULL;
 }
 
 switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination_t *term)
