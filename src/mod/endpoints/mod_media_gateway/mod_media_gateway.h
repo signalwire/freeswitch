@@ -120,6 +120,7 @@ enum {
     MG_IN_SERVICE 	= (1 << 2),
     MG_OUT_OF_SERVICE 	= (1 << 3),
     MG_FAX_NOTIFIED 	= (1 << 4),
+    MG_DTMF_REMOVAL_ENABLE 	= (1 << 5),
     
 } mg_termination_flags;
 

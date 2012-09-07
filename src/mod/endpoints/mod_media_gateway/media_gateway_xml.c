@@ -264,6 +264,10 @@ void mg_create_tdm_term(megaco_profile_t *profile, const char *tech, const char 
 			term->name, term->u.tdm.span_name, term->u.tdm.channel);
 	megaco_prepare_tdm_termination(term);
 
+	/* by-default : DTMF removal disable 
+	 * by default do not modify in-band audio stream*/
+	megaco_tdm_term_dtmf_removal(term,0x00);
+
 	profile->total_cfg_term++;
 }
 /****************************************************************************************************************************/

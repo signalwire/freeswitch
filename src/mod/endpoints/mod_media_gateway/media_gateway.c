@@ -244,6 +244,10 @@ switch_status_t megaco_tdm_term_dtmf_removal(mg_termination_t *term, int enable)
 
 	sprintf(buf,"%s",(1 == enable)?"enable":"disable");
 
+	if(enable){
+		switch_set_flag(term, MG_DTMF_REMOVAL_ENABLE);
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Sending DTMF Removal Event[%s] for MG Term[%s], TDM span[%s] channel[%d]\n",
 					 buf,tdm_term->name, tdm_term->u.tdm.span_name, tdm_term->u.tdm.channel);
 
@@ -441,6 +445,11 @@ void megaco_termination_destroy(mg_termination_t *term)
     switch_clear_flag(term, MGT_ALLOCATED);
     switch_clear_flag(term, MGT_ACTIVE);
     switch_clear_flag(term, MG_FAX_NOTIFIED);
+	
+	if(switch_test_flag(term, MG_DTMF_REMOVAL_ENABLE)){
+		switch_clear_flag(term, MG_DTMF_REMOVAL_ENABLE);
+		megaco_tdm_term_dtmf_removal(term,0x00);
+	}
     
     if (term->type == MG_TERM_RTP) {
         switch_core_hash_delete_wrlock(term->profile->terminations, term->name, term->profile->terminations_rwlock);
