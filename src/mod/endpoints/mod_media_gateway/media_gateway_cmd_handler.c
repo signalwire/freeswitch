@@ -1335,7 +1335,7 @@ switch_status_t handle_mg_subtract_cmd(megaco_profile_t* mg_profile, MgMgcoComma
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," SUB Request for ALL context \n");
 
-        /* TODO */
+		megaco_release_all_calls(mg_profile);
 
         /* As of now sending +ve response */
         goto response;

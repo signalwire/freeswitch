@@ -332,6 +332,7 @@ mg_termination_t* megaco_find_termination_by_span_chan(megaco_profile_t *profile
 switch_status_t megaco_start_all_profiles(void);
 switch_status_t megaco_profile_start(const char *profilename);
 switch_status_t megaco_profile_destroy(megaco_profile_t **profile);
+switch_status_t megaco_release_all_calls(megaco_profile_t* mg_profile);
 
 uint32_t mg_rtp_request_id(megaco_profile_t *profile);
 void mg_rtp_release_id(megaco_profile_t *profile, uint32_t id);

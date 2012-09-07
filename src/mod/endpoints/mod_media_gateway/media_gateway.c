@@ -781,6 +781,22 @@ switch_status_t megaco_profile_destroy(megaco_profile_t **profile)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t mgco_process_mgc_failure(SuId suId)
+{
+	megaco_profile_t*    profile = NULL;
+
+	if(NULL == (profile = megaco_get_profile_by_suId(suId))){
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if(0x01 == profile->peer_active){
+		/* MGC failure during active association , release all on-going calls contexts */
+		megaco_release_all_calls(profile);
+		profile->peer_active = 0x00;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 switch_status_t mgco_init_ins_service_change(SuId suId)
 {

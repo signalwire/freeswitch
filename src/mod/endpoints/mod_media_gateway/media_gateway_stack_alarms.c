@@ -76,6 +76,7 @@ void handle_mg_alarm(Pst *pst, MgMngmt *usta)
 	{
         case LMG_EVENT_ALL_MGC_FAILED:
             {
+				//mgco_process_mgc_failure(usta->t.usta.alarmInfo.sapId);
                 len = len + sprintf(prBuf+len, "ALL MGC Failed ");
                 break;
             }

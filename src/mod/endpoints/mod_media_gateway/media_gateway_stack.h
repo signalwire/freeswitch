@@ -247,6 +247,8 @@ switch_status_t mg_activate_ito_timer(megaco_profile_t* profile);
 
 void mg_restart_inactivity_timer(megaco_profile_t* profile);
 
+switch_status_t mgco_process_mgc_failure(SuId suId);
+
 
 /****************************************************************************************************************/
 /* MG Stack defines */

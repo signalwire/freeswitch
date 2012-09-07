@@ -231,6 +231,25 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_media_gateway_shutdown)
 }
 
 /*****************************************************************************************************************************/
+switch_status_t megaco_release_all_calls(megaco_profile_t* mg_profile)
+{
+	mg_context_t* ctx = NULL;
+	uint32_t  context_id = 0x00;
+
+	if(NULL == mg_profile) return SWITCH_STATUS_FALSE;
+
+	for (context_id = 0; context_id < MG_MAX_CONTEXTS; context_id++) {
+			ctx = megaco_get_context(mg_profile, context_id);
+			if(NULL == ctx) continue;
+
+			megaco_context_sub_all_termination(ctx);
+			megaco_release_context(ctx);
+	}
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
+/*****************************************************************************************************************************/
 switch_status_t megaco_start_all_profiles()
 {
 	switch_xml_t cfg, xml, mg_interfaces, mg_interface ;
