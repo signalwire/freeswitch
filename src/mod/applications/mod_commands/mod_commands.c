@@ -2739,6 +2739,49 @@ SWITCH_STANDARD_API(uuid_media_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define MEDIA_RENEG_SYNTAX "<uuid>[ <codec_string>]"
+SWITCH_STANDARD_API(uuid_media_neg_function)
+{
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (zstr(cmd) || argc < 1 || zstr(argv[0])) {
+		stream->write_function(stream, "-USAGE: %s\n", MEDIA_RENEG_SYNTAX);
+	} else {
+		switch_core_session_message_t msg = { 0 };
+		switch_core_session_t *lsession = NULL;
+		char *uuid = argv[0];
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
+		msg.string_arg = argv[1];
+		msg.from = __FILE__;
+
+		if (*uuid == '+') {
+			msg.numeric_arg++;
+			uuid++;
+		}
+		
+		if ((lsession = switch_core_session_locate(uuid))) {
+			status = switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_rwunlock(lsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(uuid_early_ok_function)
 {
 	char *uuid = (char *) cmd;
@@ -5690,6 +5733,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_media", "media", uuid_media_function, MEDIA_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_media_reneg", "media negotiation", uuid_media_neg_function, MEDIA_RENEG_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park Channel", park_function, PARK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_phone_event", "Send and event to the phone", uuid_phone_event_function, PHONE_EVENT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_pre_answer", "pre_answer", uuid_pre_answer_function, "<uuid>");
@@ -5841,6 +5885,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_media ::console::list_uuid");
 	switch_console_set_complete("add uuid_media off ::console::list_uuid");
 	switch_console_set_complete("add uuid_park ::console::list_uuid");
+	switch_console_set_complete("add uuid_media_reneg ::console::list_uuid");
 	switch_console_set_complete("add uuid_phone_event ::console::list_uuid talk");
 	switch_console_set_complete("add uuid_phone_event ::console::list_uuid hold");
 	switch_console_set_complete("add uuid_preprocess ::console::list_uuid");
