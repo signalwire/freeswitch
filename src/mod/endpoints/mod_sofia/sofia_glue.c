@@ -5138,6 +5138,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 				if (mimp) {
 					char tmp[50];
+					const char *mirror = switch_channel_get_variable(tech_pvt->channel, "sip_mirror_remote_audio_codec_payload");
+
 					tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *) map->rm_encoding);
 					tech_pvt->iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
 					tech_pvt->pt = (switch_payload_t) map->rm_pt;
@@ -5155,7 +5157,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 					tech_pvt->audio_recv_pt = (switch_payload_t)map->rm_pt;
 					
-					if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+					if (!switch_true(mirror) && 
+						switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
+						(!sofia_test_flag(tech_pvt, TFLAG_REINVITE) || sofia_test_pflag(tech_pvt->profile, PFLAG_RENEG_ON_REINVITE))) {
 						sofia_glue_get_offered_pt(tech_pvt, mimp, &tech_pvt->audio_recv_pt);
 					}
 					
@@ -5278,6 +5282,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				if (mimp) {
 					if ((tech_pvt->video_rm_encoding = switch_core_session_strdup(session, (char *) rm_encoding))) {
 						char tmp[50];
+						const char *mirror = switch_channel_get_variable(tech_pvt->channel, "sip_mirror_remote_video_codec_payload");
+
 						tech_pvt->video_pt = (switch_payload_t) map->rm_pt;
 						tech_pvt->video_rm_rate = map->rm_rate;
 						tech_pvt->video_codec_ms = mimp->microseconds_per_packet / 1000;
@@ -5295,7 +5301,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 						tech_pvt->video_recv_pt = (switch_payload_t)map->rm_pt;
 						
-						if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+						if (!switch_true(mirror) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 							sofia_glue_get_offered_pt(tech_pvt, mimp, &tech_pvt->video_recv_pt);
 						}
 
