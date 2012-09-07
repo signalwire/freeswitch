@@ -155,8 +155,13 @@ struct switch_channel {
 	switch_event_t *app_list;
 	switch_event_t *api_list;
 	switch_event_t *var_list;
+	switch_hold_record_t *hold_record;
 };
 
+SWITCH_DECLARE(switch_hold_record_t *) switch_channel_get_hold_record(switch_channel_t *channel)
+{
+	return channel->hold_record;
+}
 
 SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause)
 {
@@ -1611,9 +1616,24 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 	switch_mutex_unlock(channel->flag_mutex);
 
 	if (HELD) {
+		switch_hold_record_t *hr;
+		const char *brto = switch_channel_get_partner_uuid(channel);
+
 		switch_channel_set_callstate(channel, CCS_HELD);
 		switch_mutex_lock(channel->profile_mutex);
 		channel->caller_profile->times->last_hold = switch_time_now();
+
+		hr = switch_core_session_alloc(channel->session, sizeof(*hr));
+		hr->on = switch_time_now();
+		if (brto) {
+			hr->uuid = switch_core_session_strdup(channel->session, brto);
+		}
+																							
+		if (channel->hold_record) {
+			hr->next = channel->hold_record;
+		}
+		channel->hold_record = hr;
+
 		switch_mutex_unlock(channel->profile_mutex);
 	}
 
@@ -1763,6 +1783,11 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		if (channel->caller_profile->times->last_hold) {
 			channel->caller_profile->times->hold_accum += (switch_time_now() - channel->caller_profile->times->last_hold);
 		}
+
+		if (channel->hold_record) {
+			channel->hold_record->off = switch_time_now();
+		}
+
 		switch_mutex_unlock(channel->profile_mutex);
 	}
 
@@ -2904,6 +2929,12 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_channel_state_t last_state;
 		switch_event_t *event;
 		const char *var;
+
+		switch_mutex_lock(channel->profile_mutex);
+		if (channel->hold_record && !channel->hold_record->off) {
+			channel->hold_record->off = switch_time_now();
+		}
+		switch_mutex_unlock(channel->profile_mutex);
 
 		switch_mutex_lock(channel->state_mutex);
 		last_state = channel->state;
