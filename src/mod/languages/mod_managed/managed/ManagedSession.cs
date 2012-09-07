@@ -139,16 +139,13 @@ namespace FreeSWITCH.Native
         // The delegate needs to be stored so it doesn't get GC'd, so we can't just return GetFunctionPointerForDelegate right away.
 
         /// <summary>Wraps a nice handler into a delegate suitable for reverse P/Invoke. This only currently works well for hangup/reporting handlers.</summary>
-        public static switch_state_handler_t_delegate CreateStateHandlerDelegate(Action<ManagedSession> handler) {
+		public static switch_state_handler_t_delegate CreateStateHandlerDelegate(ManagedSession sess, Action<ManagedSession> handler)
+		{
             // We create a ManagedSession on top of the session so callbacks can use it "nicely"
             // Then we sort of dispose it.
             switch_state_handler_t_delegate del = ptr => {
-                using (var sess = new ManagedSession(new SWIGTYPE_p_switch_core_session(ptr, false))) {
                     handler(sess);
-                    sess.SetAutoHangup(false);
-                    sess.destroy();
                     return switch_status_t.SWITCH_STATUS_SUCCESS;
-                }
             };
             return del;
         }
@@ -187,7 +184,7 @@ namespace FreeSWITCH.Native
             var bleg = new ManagedSession();
 
             bleg.originate_ondestroy_delegate = bleg.originate_ondestroy_method;
-            bleg.originate_onhangup_delegate = CreateStateHandlerDelegate(sess_b => {
+            bleg.originate_onhangup_delegate = CreateStateHandlerDelegate(bleg, sess_b => {
                 if (onHangup != null) {
                     onHangup(sess_b);
                 }
