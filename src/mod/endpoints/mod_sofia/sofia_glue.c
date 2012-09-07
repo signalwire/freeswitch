@@ -833,11 +833,13 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 
 	if (!(codec_string = switch_channel_get_variable(tech_pvt->channel, "codec_string"))) {
 		codec_string = sofia_glue_get_codec_string(tech_pvt);
-		if (codec_string && *codec_string == '=') {
-			codec_string++;
-			goto ready;
-		}
 	}
+
+	if (codec_string && *codec_string == '=') {
+		codec_string++;
+		goto ready;
+	}
+
 
 	if ((ocodec = switch_channel_get_variable(tech_pvt->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
 		if (!codec_string || sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_TRANSCODING)) {
@@ -871,6 +873,7 @@ void sofia_glue_check_video_codecs(private_object_t *tech_pvt)
 		int i;
 		tech_pvt->video_count = 0;
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
+			
 			if (tech_pvt->codecs[i]->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
 				tech_pvt->video_count++;
 			}
