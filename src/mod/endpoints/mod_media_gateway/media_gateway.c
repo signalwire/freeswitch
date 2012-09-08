@@ -448,7 +448,7 @@ void megaco_termination_destroy(mg_termination_t *term)
 	
 	if(switch_test_flag(term, MG_DTMF_REMOVAL_ENABLE)){
 		switch_clear_flag(term, MG_DTMF_REMOVAL_ENABLE);
-		megaco_tdm_term_dtmf_removal(term,0x00);
+		//megaco_tdm_term_dtmf_removal(term,0x00);
 	}
     
     if (term->type == MG_TERM_RTP) {
@@ -792,7 +792,6 @@ switch_status_t mgco_process_mgc_failure(SuId suId)
 	if(0x01 == profile->peer_active){
 		/* MGC failure during active association , release all on-going calls contexts */
 		megaco_release_all_calls(profile);
-		profile->peer_active = 0x00;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
