@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
                 }
                 end_of_page = t4_rx_put(&receive_state, block, i);
             }
-            else if (strlen(buf) > 2  &&  sscanf(buf, "T.30 Rx:  %x %x", (unsigned int *) &bit, (unsigned int *) &bit) == 2)
+            else if (strlen(buf) > 2  &&  sscanf(buf, "T.30 Rx:  %x %x %x %x", (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &pkt_no) == 4)
             {
                 /* Useful for breaking up ECM logs */
                 if (pkt_no != last_pkt_no + 1)
@@ -575,7 +575,7 @@ int main(int argc, char *argv[])
                 if (compression < 0  ||  (block_size == 0  &&  compression_step >= 3))
                     break;
             }
-            t4_tx_set_tx_encoding(&send_state, compression);
+            t4_tx_set_tx_encoding(&send_state, compression, T4_COMPRESSION_NONE);
             t4_rx_set_rx_encoding(&receive_state, compression);
 
             rows_read = 0;
@@ -716,7 +716,7 @@ int main(int argc, char *argv[])
                         compression = compression_sequence[compression_step++];
                     }
                 }
-                t4_tx_set_tx_encoding(&send_state, compression);
+                t4_tx_set_tx_encoding(&send_state, compression, T4_COMPRESSION_NONE);
                 t4_rx_set_rx_encoding(&receive_state, compression);
 
                 if (t4_tx_start_page(&send_state))

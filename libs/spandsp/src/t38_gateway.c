@@ -1977,6 +1977,7 @@ static int restart_rx_modem(t38_gateway_state_t *s)
         fax_modems_start_fast_modem(t, s->core.fast_rx_modem, s->core.fast_bit_rate, s->core.short_train, FALSE);
         s->core.fast_rx_active = s->core.fast_rx_modem;
         break;
+    case FAX_MODEM_V21_RX:
     default:
         //fax_modems_start_slow_modem(t, FAX_MODEM_V21_RX);
         fax_modems_set_rx_handler(t, (span_rx_handler_t) &fsk_rx, &t->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &t->v21_rx);
