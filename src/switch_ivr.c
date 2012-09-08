@@ -631,8 +631,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 				}
 			}
 
-			if (!inner || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) {
-				switch_channel_clear_flag(channel, CF_BROADCAST); 
+			if (!inner) {
+				switch_channel_clear_flag(channel, CF_BROADCAST);
+			}
+
+			if (switch_channel_test_flag(channel, CF_STOP_BROADCAST)) {
+				switch_channel_clear_flag(channel, CF_BROADCAST);
 				switch_channel_set_flag(channel, CF_BREAK); 
 			}
 			
@@ -2191,11 +2195,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile;
 	switch_xml_t variables, cdr, x_main_cp, x_caller_profile, x_caller_extension, x_times, time_tag,
-		x_application, x_callflow, x_inner_extension, x_apps, x_o, x_channel_data, x_field;
+		x_application, x_callflow, x_inner_extension, x_apps, x_o, x_channel_data, x_field, xhr, x_hold;
 	switch_app_log_t *app_log;
 	char tmp[512], *f;
 	int cdr_off = 0, v_off = 0, cd_off = 0;
-
+	switch_hold_record_t *hold_record = switch_channel_get_hold_record(channel), *hr;
+	
 	if (*xml_cdr) {
 		cdr = *xml_cdr;
 	} else {
@@ -2261,6 +2266,36 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			switch_xml_set_attr_d_buf(x_application, "app_stamp", tmp);
 		}
 	}
+
+	if (hold_record) {
+		int cf_off = 0;
+
+		if (!(xhr = switch_xml_add_child_d(cdr, "hold-record", cdr_off++))) {
+			goto error;
+		}
+
+		for (hr = hold_record; hr; hr = hr->next) {
+			char *t = tmp;
+			if (!(x_hold = switch_xml_add_child_d(xhr, "hold", cf_off++))) {
+				goto error;
+			}
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, hr->on);
+			switch_xml_set_attr_d(x_hold, "on", t);
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, hr->off);
+			switch_xml_set_attr_d(x_hold, "off", t);
+
+			if (hr->uuid) {
+				switch_xml_set_attr_d(x_hold, "bridged-to", hr->uuid);
+			}
+
+
+		}
+
+
+	}
+
 
 
 	caller_profile = switch_channel_get_caller_profile(channel);

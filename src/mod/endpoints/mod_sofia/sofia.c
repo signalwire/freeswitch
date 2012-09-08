@@ -1209,11 +1209,13 @@ static void our_sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_options(status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
 		break;
 	case nua_i_invite:
-		if (session && sofia_private->is_call > 1) {
-			sofia_handle_sip_i_reinvite(session, nua, profile, nh, sofia_private, sip, de, tags);
-		} else {
-			sofia_private->is_call++;
-			sofia_handle_sip_i_invite(session, nua, profile, nh, sofia_private, sip, de, tags);
+		if (session && sofia_private) {
+			if (sofia_private->is_call > 1) {
+				sofia_handle_sip_i_reinvite(session, nua, profile, nh, sofia_private, sip, de, tags);
+			} else {
+				sofia_private->is_call++;
+				sofia_handle_sip_i_invite(session, nua, profile, nh, sofia_private, sip, de, tags);
+			}
 		}
 		break;
 	case nua_i_publish:
@@ -1688,6 +1690,14 @@ static void sofia_queue_message(sofia_dispatch_event_t *de)
 	switch_queue_push(mod_sofia_globals.msg_queue, de);
 }
 
+static void set_call_id(private_object_t *tech_pvt, sip_t const *sip)
+{
+	if (!tech_pvt->call_id && tech_pvt->session && tech_pvt->channel && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
+		tech_pvt->call_id = switch_core_session_strdup(tech_pvt->session, sip->sip_call_id->i_id);
+		switch_channel_set_variable(tech_pvt->channel, "sip_call_id", tech_pvt->call_id);
+	}
+}
+
 
 void sofia_event_callback(nua_event_t event,
 						  int status,
@@ -1707,16 +1717,22 @@ void sofia_event_callback(nua_event_t event,
 
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
 				private_object_t *tech_pvt = switch_core_session_get_private(session);
+				switch_channel_t *channel = switch_core_session_get_channel(session);
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "detaching session %s\n", sofia_private->uuid);				
-
-				tech_pvt->sofia_private = NULL;
-				tech_pvt->nh = NULL;
-				sofia_set_flag(tech_pvt, TFLAG_BYE);
-				switch_mutex_lock(profile->flag_mutex);
-				switch_core_hash_insert(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
-				switch_mutex_unlock(profile->flag_mutex);
-				switch_core_session_rwunlock(session);
+				set_call_id(tech_pvt, sip);
+				
+				if (!zstr(tech_pvt->call_id)) {
+					tech_pvt->sofia_private = NULL;
+					tech_pvt->nh = NULL;
+					sofia_set_flag(tech_pvt, TFLAG_BYE);
+					switch_mutex_lock(profile->flag_mutex);
+					switch_core_hash_insert(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
+					switch_mutex_unlock(profile->flag_mutex);
+					switch_core_session_rwunlock(session);
+				} else {
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				}
 			}
 		}
 		goto end;
@@ -1802,8 +1818,24 @@ void sofia_event_callback(nua_event_t event,
 				} else {
 					free(uuid);
 					uuid = NULL;
+					sip = NULL;
 				}
 			}
+		}
+		
+		if (!sip || !sip->sip_call_id || zstr(sip->sip_call_id->i_id)) {
+			nua_respond(nh, 503, "INVALID INVITE", TAG_END());
+			nua_destroy_event(de->event);	
+			su_free(nh->nh_home, de);
+			
+			switch_mutex_lock(profile->flag_mutex);
+			profile->queued_events--;
+			switch_mutex_unlock(profile->flag_mutex);
+			
+			nua_handle_unref(nh);
+			nua_stack_unref(nua);
+			
+			goto end;
 		}
 
 		if (sofia_test_pflag(profile, PFLAG_CALLID_AS_UUID)) {
@@ -1827,13 +1859,8 @@ void sofia_event_callback(nua_event_t event,
 			}
 			
 			sofia_glue_attach_private(session, profile, tech_pvt, channel_name);
-			
-			if (!tech_pvt->call_id && sip->sip_call_id && sip->sip_call_id->i_id) {
-				switch_channel_t *channel = switch_core_session_get_channel(session);
-				tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
-				switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
-			}
 
+			set_call_id(tech_pvt, sip);
 		} else {
 			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 			nua_destroy_event(de->event);	

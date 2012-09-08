@@ -46,7 +46,7 @@
 #include "spandsp.h"
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
-//#include <tif_dir.h>
+#include <tif_dir.h>
 #endif
 
 //#define IN_FILE_NAME    "../test-data/itu/t24/F21_200.TIF"
@@ -156,7 +156,9 @@ int main(int argc, char *argv[])
 
     logging = span_log_init(NULL, SPAN_LOG_FLOW, "T.42");
 
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
     TIFF_FX_init();
+#endif
 
     set_lab_illuminant(&lab_param, 0.9638f, 1.0f, 0.8245f);
     set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
@@ -189,7 +191,7 @@ int main(int argc, char *argv[])
     YCbCrSubsampleHoriz = 0;
     YCbCrSubsampleVert = 0;
     TIFFGetField(tif, TIFFTAG_YCBCRSUBSAMPLING, &YCbCrSubsampleHoriz, &YCbCrSubsampleVert);
-    planar_config = 0;
+    planar_config = PLANARCONFIG_CONTIG;
     TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planar_config);
     off = 0;
 

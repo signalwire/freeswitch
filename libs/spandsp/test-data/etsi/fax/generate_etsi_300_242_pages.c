@@ -623,6 +623,10 @@ int main(int argc, char *argv[])
                 tm->tm_sec);
         TIFFSetField(tiff_file, TIFFTAG_DATETIME, buf);
         image_length = sequence[i].length;
+        TIFFSetField(tiff_file, TIFFTAG_PAGENUMBER, 0, 1);
+        TIFFSetField(tiff_file, TIFFTAG_CLEANFAXDATA, CLEANFAXDATA_CLEAN);
+        TIFFSetField(tiff_file, TIFFTAG_IMAGELENGTH, image_length);
+        TIFFCheckpointDirectory(tiff_file);
         
         /* Write the image first.... */
         switch (sequence[i].type)
@@ -662,8 +666,6 @@ int main(int argc, char *argv[])
         }
         /* ....then the directory entry, and libtiff is happy. */
         TIFFSetField(tiff_file, TIFFTAG_IMAGELENGTH, image_length);
-        TIFFSetField(tiff_file, TIFFTAG_PAGENUMBER, 0, 1);
-        TIFFSetField(tiff_file, TIFFTAG_CLEANFAXDATA, CLEANFAXDATA_CLEAN);
 
         TIFFWriteDirectory(tiff_file);
     }

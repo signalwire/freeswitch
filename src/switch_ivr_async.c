@@ -311,9 +311,18 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
-			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
-			pmatches = 1;
+			pmatches++;
+		} else {
+			if (!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
+				pmatches++;
+			}
+		}
+	}
 
+	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
+		if (bp->is_regex) {
+			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
+			
 			if (r_status == SWITCH_STATUS_SUCCESS) {
 				if (is_timeout || (bp == dmachine->realm->binding_list && !bp->next)) {
 					best = DM_MATCH_EXACT;
@@ -325,11 +334,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		} else {
 			int pmatch = !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits));
 
-			if (pmatch) {
-				pmatches++;
-			}
-
-			if (!exact_bp && pmatch && !strcmp(bp->digits, dmachine->digits)) {
+			if (!exact_bp && pmatch && (pmatches == 1 || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
 				best = DM_MATCH_EXACT;
 				exact_bp = bp;
 				if (dmachine->cur_digit_len == dmachine->max_digit_len) break;

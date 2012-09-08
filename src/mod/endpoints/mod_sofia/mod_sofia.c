@@ -1547,6 +1547,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH:
 	case SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC:
 		break;
+
 	case SWITCH_MESSAGE_INDICATE_PROXY_MEDIA:
 		{
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
@@ -1849,6 +1850,43 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	}
 
 	switch (msg->message_id) {
+
+	case SWITCH_MESSAGE_INDICATE_MEDIA_RENEG:
+		{
+			switch_core_session_t *nsession;
+			
+			if (msg->string_arg) {
+				switch_channel_set_variable(channel, "absolute_codec_string", NULL);
+				if (*msg->string_arg == '=') {
+					switch_channel_set_variable(channel, "codec_string", msg->string_arg);
+				} else {
+					switch_channel_set_variable_printf(channel, "codec_string", "=%s%s%s,%s", 
+													   tech_pvt->video_rm_encoding ? tech_pvt->video_rm_encoding : "",
+													   tech_pvt->video_rm_encoding ? "," : "",
+													   tech_pvt->rm_encoding, msg->string_arg);					
+				}
+
+
+				tech_pvt->num_codecs = 0;
+				tech_pvt->rm_encoding = NULL;
+				tech_pvt->video_rm_encoding = NULL;
+				sofia_clear_flag_locked(tech_pvt, TFLAG_VIDEO);
+				sofia_glue_tech_prepare_codecs(tech_pvt);
+				sofia_glue_check_video_codecs(tech_pvt);
+				sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
+				sofia_set_pflag(tech_pvt->profile, PFLAG_RENEG_ON_REINVITE);
+			}
+			
+			sofia_glue_do_invite(session);
+
+			if (msg->numeric_arg && switch_core_session_get_partner(session, &nsession) == SWITCH_STATUS_SUCCESS) {
+				msg->numeric_arg = 0;
+				switch_core_session_receive_message(nsession, msg);
+				switch_core_session_rwunlock(nsession);
+			}
+
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			const char *pl = "<media_control><vc_primitive><to_encoder><picture_fast_update/></to_encoder></vc_primitive></media_control>";

@@ -61,6 +61,16 @@ struct switch_app_log {
 	struct switch_app_log *next;
 };
 
+
+typedef struct switch_hold_record_s {
+	switch_time_t on;
+	switch_time_t off;
+	char *uuid;
+	struct switch_hold_record_s *next;
+} switch_hold_record_t;
+
+
+
 #define MESSAGE_STAMP_FFL(_m) _m->_file = __FILE__; _m->_func = __SWITCH_FUNC__; _m->_line = __LINE__
 
 #define MESSAGE_STRING_ARG_MAX 10
