@@ -4473,7 +4473,7 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 }
 
 /* send a message to every member of the conference */
-static void chat_message_broadcast(conference_obj_t *conference, switch_stream_handle_t *stream, const char *data, const char *chat_from)
+static void chat_message_broadcast(conference_obj_t *conference, switch_stream_handle_t *stream, const char *data, const char *chat_from, const char *ouuid)
 {
 	conference_member_t *member = NULL;
 	char *argv[2] = { 0 };
@@ -4490,25 +4490,15 @@ static void chat_message_broadcast(conference_obj_t *conference, switch_stream_h
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_MESSAGE;
 	msg.string_array_arg[2] = data;
+	msg.string_array_arg[3] = ouuid;
 	msg.from = __FILE__;
 
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
 		if (member->session && !switch_test_flag(member, MFLAG_NOCHANNEL)) {
 			switch_core_session_t *lsession = NULL;
-			switch_channel_t *channel = NULL;
-			switch_caller_profile_t *caller_profile = NULL;
 
 			lsession = member->session;
-			channel = switch_core_session_get_channel(lsession);
-			caller_profile = switch_channel_get_caller_profile(channel);
-
-			if (!strcmp(argv[0], caller_profile->username)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "not sending message to sender [%s]\n", chat_from);
-				continue;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sending message to [%s]\n", caller_profile->username);
-			}
 
 			switch_core_session_receive_message(lsession, &msg);
 		}
@@ -7866,6 +7856,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	const char *body;
 	//const char *type;
 	const char *hint;
+	const char *ouuid;
 
 	proto = switch_event_get_header(message_event, "proto");
 	from = switch_event_get_header(message_event, "from");
@@ -7874,6 +7865,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	body = switch_event_get_body(message_event);
 	//type = switch_event_get_header(message_event, "type");
 	hint = switch_event_get_header(message_event, "hint");
+	ouuid = switch_event_get_header(message_event, "Channel-Call-UUID");
 
 	if ((p = strchr(to, '+'))) {
 		to = ++p;
@@ -7890,7 +7882,8 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	}
 
 	if (!(conference = conference_find(name, NULL))) {
-		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL, NULL, SWITCH_FALSE);
+		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", 
+								   "Conference not active.", NULL, NULL, SWITCH_FALSE);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -7899,7 +7892,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	if (body != NULL && (lbuf = strdup(body))) {
 		/* special case list */
 		if (conference->broadcast_chat_messages) {
-			chat_message_broadcast(conference, &stream, body, from);
+			chat_message_broadcast(conference, &stream, body, from, ouuid);
 		} else if (switch_stristr("list", lbuf)) {
 			conference_list_pretty(conference, &stream);
 			/* provide help */

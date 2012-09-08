@@ -2099,6 +2099,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			char *ct = "text/plain";
 			int ok = 0;
 
+			if (!zstr(msg->string_array_arg[3]) && !strcmp(msg->string_array_arg[3], tech_pvt->caller_profile->uuid)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Not sending message back to sender\n");
+				break;
+			}
+
 			if (!zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
 				ct = switch_core_session_sprintf(session, "%s/%s", msg->string_array_arg[0], msg->string_array_arg[1]);
 				ok = 1;
