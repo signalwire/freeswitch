@@ -2354,3 +2354,22 @@ void mg_print_t38_attributes(mg_termination_t* term)
 	}
 
 }
+
+/*****************************************************************************************************************************/
+void mg_apply_tdm_dtmf_removal(mg_termination_t* term, mg_context_t *mg_ctxt)
+{
+	mg_termination_t* tdm_term = NULL;
+
+	if(NULL == term) return ;
+
+	if((MG_TERM_RTP == term->type)){
+		if(NULL != (tdm_term = megaco_context_get_peer_term(mg_ctxt, term))){
+			if(term->u.rtp.rfc2833_pt){
+				megaco_tdm_term_dtmf_removal(tdm_term,0x01);
+			}else{
+				megaco_tdm_term_dtmf_removal(tdm_term,0x00);
+			}
+		}
+	}
+}
+/*****************************************************************************************************************************/

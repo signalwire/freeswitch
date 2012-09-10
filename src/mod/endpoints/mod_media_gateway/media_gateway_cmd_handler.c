@@ -741,19 +741,8 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
         goto error;
     }
 
-	if(is_rtp){
-		mg_termination_t* tdm_term = NULL;
-		/* disable dtmf removal */
-		if(NULL != (tdm_term = megaco_context_get_peer_term(mg_ctxt, term))){
-			if(term->u.rtp.rfc2833_pt){
-				megaco_tdm_term_dtmf_removal(tdm_term,0x01);
-			}else{
-				megaco_tdm_term_dtmf_removal(tdm_term,0x00);
-			}
-		}
-	}
+	mg_apply_tdm_dtmf_removal(term, mg_ctxt);
 
-    
     mg_print_t38_attributes(term);
 
     /********************************************************************/
@@ -1069,6 +1058,7 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 					term->u.rtp.term_id);
 		}
 
+		mg_apply_tdm_dtmf_removal(term, mg_ctxt);
 		mg_print_t38_attributes(term);
 
 

@@ -248,6 +248,7 @@ switch_status_t mg_activate_ito_timer(megaco_profile_t* profile);
 void mg_restart_inactivity_timer(megaco_profile_t* profile);
 
 switch_status_t mgco_process_mgc_failure(SuId suId);
+void mg_apply_tdm_dtmf_removal(mg_termination_t* term, mg_context_t *mg_ctxt);
 
 
 /****************************************************************************************************************/
