@@ -780,6 +780,16 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
   end:
 
+	if (rval == 0 && pickups) {
+		for (i = 0; i < len; i++) {
+			if (originate_status[i].peer_channel && switch_channel_test_flag(originate_status[i].peer_channel, CF_PICKUP) && 
+				switch_channel_up(originate_status[i].peer_channel)) {
+				switch_channel_hangup(originate_status[i].peer_channel, SWITCH_CAUSE_NO_ANSWER);
+			}
+		}
+	}
+
+
 	if (pindex > -1 && caller_channel && switch_channel_ready(caller_channel) && !switch_channel_media_ready(caller_channel) && 
 		switch_channel_media_ready(originate_status[pindex].peer_channel)) {
 		inherit_codec(caller_channel, originate_status[pindex].peer_session);
