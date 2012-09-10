@@ -2943,6 +2943,27 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 			switch_core_session_set_video_write_codec(tech_pvt->session, &tech_pvt->video_write_codec);
 
 
+			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+				switch_core_session_message_t msg = { 0 };
+
+				msg.from = __FILE__;
+				msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+
+				switch_rtp_set_default_payload(tech_pvt->video_rtp_session, tech_pvt->video_agreed_pt);
+				
+				if (tech_pvt->video_recv_pt != tech_pvt->video_agreed_pt) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
+									  "%s Set video receive payload to %u\n", switch_channel_get_name(tech_pvt->channel), tech_pvt->video_recv_pt);
+					
+					switch_rtp_set_recv_pt(tech_pvt->video_rtp_session, tech_pvt->video_recv_pt);
+				} else {
+					switch_rtp_set_recv_pt(tech_pvt->video_rtp_session, tech_pvt->video_agreed_pt);
+				}
+
+				switch_core_session_receive_message(tech_pvt->session, &msg);
+
+			}
+
 			switch_channel_set_variable(tech_pvt->channel, "sip_use_video_codec_name", tech_pvt->video_rm_encoding);
 			switch_channel_set_variable(tech_pvt->channel, "sip_use_video_codec_fmtp", tech_pvt->video_rm_fmtp);
 			switch_channel_set_variable_printf(tech_pvt->channel, "sip_use_video_codec_rate", "%d", tech_pvt->video_rm_rate);
