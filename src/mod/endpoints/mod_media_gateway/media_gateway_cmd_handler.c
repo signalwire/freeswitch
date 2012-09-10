@@ -743,7 +743,9 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 	mg_apply_tdm_dtmf_removal(term, mg_ctxt);
 
-    mg_print_t38_attributes(term);
+	mg_apply_tdm_ec(term, mg_ctxt);
+	mg_print_t38_attributes(term);
+
 
     /********************************************************************/
 
@@ -1059,7 +1061,10 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 		}
 
 		mg_apply_tdm_dtmf_removal(term, mg_ctxt);
+
+		mg_apply_tdm_ec(term, mg_ctxt);
 		mg_print_t38_attributes(term);
+
 
 
 		/* SDP updated to termination */

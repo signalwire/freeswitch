@@ -459,459 +459,468 @@ void mg_util_set_cmd_name_string (MgStr *errTxt, MgMgcoCommand       *cmd)
 /*****************************************************************************************************************************/
 void mgco_handle_sdp_attr_set(CmSdpAttrSet *s, mg_termination_t* term)
 {
-    int i=0x00;
-    if (s->numComp.pres) {
-        for (i = 0; i < s->numComp.val; i++) {
-            CmSdpAttr *a = s->attr[i];
+	int i=0x00;
+	int rfc2833_pres = 0x00;
+	if (s->numComp.pres) {
+		for (i = 0; i < s->numComp.val; i++) {
+			CmSdpAttr *a = s->attr[i];
 
-            if(NOTPRSNT == a->type.pres) continue;
+			if(NOTPRSNT == a->type.pres) continue;
 
 
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attribute Type[%d]\n",a->type.val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attribute Type[%d]\n",a->type.val);
 
-            switch(a->type.val)
-            {
-                case CM_SDP_ATTR_GENERIC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_CAT:
-                    {
-                        break;
-                    }
+			switch(a->type.val)
+			{
+				case CM_SDP_ATTR_GENERIC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_CAT:
+					{
+						break;
+					}
 
-                case CM_SDP_ATTR_KEYWDS:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_TOOL:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_PTIME:
-                    {
+				case CM_SDP_ATTR_KEYWDS:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_TOOL:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_PTIME:
+					{
 #ifdef BIT_64
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t PTIME  = %d \n", 
-                                (NOTPRSNT != a->u.ptime.pres)?a->u.ptime.val:-1);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t PTIME  = %d \n", 
+								(NOTPRSNT != a->u.ptime.pres)?a->u.ptime.val:-1);
 #else
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t PTIME  = %ld \n", 
-                                (NOTPRSNT != a->u.ptime.pres)?a->u.ptime.val:-1);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t PTIME  = %ld \n", 
+								(NOTPRSNT != a->u.ptime.pres)?a->u.ptime.val:-1);
 #endif
-			if(MG_TERM_RTP == term->type){
-				term->u.rtp.ptime = a->u.ptime.val;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Updating ptime to [%d]\n", term->u.rtp.ptime);
-			}
-                        break;
-                    }
-                case CM_SDP_ATTR_RECVONLY:
-                    {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_RECVONLY: \n");
-                        break;
-                    }
-                case CM_SDP_ATTR_SENDRECV:
-                    {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_SENDRECV: \n");
-                        break;
-                    }
-                case CM_SDP_ATTR_SENDONLY:
-                    {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_SENDONLY: \n");
-                        break;
-                    }
-                case CM_SDP_ATTR_ORIENT:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_TYPE:
-                    {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_TYPE: \n");
-                        break;
-                    }
-                case CM_SDP_ATTR_CHARSET:
-                    {
-                        break;
-                    }
-
-                case CM_SDP_ATTR_SDPLANG:
-                    {
-                        break;
-                    }
-
-                case CM_SDP_ATTR_LANG:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_FRAMERATE:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_QUALITY:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_FMTP:
-                    {
-                        CmSdpAttrFmtp* f = &a->u.fmtp;
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_FMTP: \n");
-
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Format Type = %d \n",(NOTPRSNT != f->type.pres)?f->type.val:-1);
-
-                        break;
-                    }
-                case CM_SDP_ATTR_RTPMAP:
-                    {
-                        CmSdpAttrRtpMap* r = &a->u.rtpmap;
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_RTPMAP: \n");
-
-                        if(NOTPRSNT != r->pres.pres){
-
-                            /* payload type */
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-						"\t Payload Type = %d \n",
-		                                 (NOTPRSNT != r->pay.type.pres)?r->pay.type.val:-1);
-
-                            /* payload value */
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-						"\t Payload Value = %d \n",
-	        	                           (NOTPRSNT != r->pay.val.pres)?r->pay.val.val:-1);
-
-                            /* encoding name */
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-					"\t Encoding Name value = %d \n",
-	                                    (NOTPRSNT != r->enc.val.pres)?r->enc.val.val:-1);
-
-			    if((NOTPRSNT != r->enc.val.pres ) && 
-					    (CM_SDP_ENC_TELEPHONE_EVENT == r->enc.val.val)){
-				
-				    term->u.rtp.rfc2833_pt=r->pay.val.val;
-				    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-					" Updating rfc2833_pt to [%d] \n", term->u.rtp.rfc2833_pt);
-			    }
-
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-					"\t Encoding Name name = %s \n",
-	                                    (NOTPRSNT != r->enc.name.pres)?
-					   (char*)r->enc.name.val:"Not Present");
-
-#ifdef BIT_64
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-						"\t Clock Rate = %d \n",
-		                                    (NOTPRSNT != r->clk.pres)?r->clk.val:-1);
-#else
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-						"\t Clock Rate = %ld \n",
-		                                    (NOTPRSNT != r->clk.pres)?r->clk.val:-1);
-#endif
-
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-						"\t Encoding Parameters = %s \n",
-		                                    (NOTPRSNT != r->parms.pres)?
-						    (char*)r->parms.val:"Not Present");
-                        }
-                        break;
-                    }
-                case CM_SDP_ATTR_INACTIVE:
-                    {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_INACTIVE: \n");
-                        break;
-                    }
-                case CM_SDP_ATTR_CONTROL:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_RANGE:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_ETAG:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_ATMMAP:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_EECID:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_AALTYPE:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_SILENCESUPP:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_ECAN:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_GC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_PROFILEDESC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_VSEL:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_DSEL:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_FSEL:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_CAPABILITY:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_QOSCLASS:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_BCOB:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_STC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_UPCC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_ATMQOSPARMS:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_AAL2QOSFPARMS:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_AAL2QOSBPARMS:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_ATMTRFCDESC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_AAL2FTRFCDESC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_AAL2BTRFCDESC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_ABRPARMS:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_CLKREC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_FEC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_PRTFL:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_BEARERTYPE:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_STRUCTURE:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_SBC:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_CPSSDUSIZE:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_AAL2CPS:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_ANYCAST:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_WTP:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_CACHE:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_CHAIN:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_PHONECONTEXT:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_CLIR:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_DIRECTION:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_MAXPTIME:
-                    {
-                        break;
-                    }
-                case CM_SDP_ATTR_T38_FAX:
-		    {
-			    CmSdpAttrT38Fax* f = &a->u.fax;
-			    if(NOTPRSNT == f->type.pres) {
-				    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-						    "CM_SDP_ATTR_T38_FAX: TYPE not present \n");
-				    break;
-			    }
-
-			    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-					    "\t CM_SDP_ATTR_T38_FAX: type=%d\n", f->type.val);
-
-			    if(NULL == term->u.rtp.t38_options){
-				    term->u.rtp.t38_options = 
-					    switch_core_alloc(term->pool, sizeof *term->u.rtp.t38_options);
-			    }
-			    switch(f->type.val)
-			    {
-				    case CM_SDP_ATTR_T38_FAX_VER:
-					    {
-						    term->u.rtp.t38_options->T38FaxVersion = f->u.num.val;
-						    break;
-					    }
-				    case CM_SDP_ATTR_T38_MAX_BIT_RATE:
-					    {
-						    term->u.rtp.t38_options->T38MaxBitRate = f->u.num.val;
-						    break;
-					    }
-				    case CM_SDP_ATTR_T38_FAX_FILL_BIT_RMVL:
-					    {
-						    term->u.rtp.t38_options->T38FaxFillBitRemoval = f->u.num.val;
-						    break;
-					    }
-				    case CM_SDP_ATTR_T38_FAX_TRNS_MMR:
-					    {
-						    term->u.rtp.t38_options->T38FaxTranscodingMMR = f->u.num.val;
-						    break;
-					    }
-				    case CM_SDP_ATTR_T38_FAX_TRNS_JBIG:
-					    {
-						    term->u.rtp.t38_options->T38FaxTranscodingJBIG = f->u.num.val;
-						    break;
-					    }
-				    case CM_SDP_ATTR_T38_FAX_RATE_MNGMNT:
-					    {
-						    switch(f->u.val.val)
-						    {
-							    case CM_SDP_ATTR_T38_FAX_RATE_MNG_LOC_TCF:
-								    {
-									    term->u.rtp.t38_options->T38FaxRateManagement = 
-										    switch_core_strdup(term->pool,"localTCF") ;
-									    break;
-								    }
-							    case CM_SDP_ATTR_T38_FAX_RATE_MNG_TRANSF_TCF:
-								    {
-									    term->u.rtp.t38_options->T38FaxRateManagement = 
-										    switch_core_strdup(term->pool,"transferredTCF") ;
-									    break;
-								    }
-						    }
-						    break;
-					    }
-				    case CM_SDP_ATTR_T38_FAX_MAX_BFR:
-					    {
-						    term->u.rtp.t38_options->T38FaxMaxBuffer = f->u.num.val;
-						    break;
-					    }
-				    case CM_SDP_ATTR_T38_FAX_MAX_DATAGRAM:
-					    {
-						    term->u.rtp.t38_options->T38FaxMaxDatagram = f->u.num.val;
-						    break;
-					    }
-				    case CM_SDP_ATTR_T38_FAX_UDP_EC:
-					    {
-						    switch(f->u.val.val)
-						    {
-							    case CM_SDP_ATTR_T38_FAX_UDP_EC_UDP_FEC:
-								    {
-									    term->u.rtp.t38_options->T38FaxUdpEC = 
-										    switch_core_strdup(term->pool,"t38UDPNoEC");
-									    break;
-								    }
-							    case CM_SDP_ATTR_T38_FAX_UDP_EC_UDP_RED:
-								    {
-									    term->u.rtp.t38_options->T38FaxUdpEC = 
-										    switch_core_strdup(term->pool,"t38UDPRedundancy") ;
-									    break;
-								    }
-						    }
-						    break;
-					    }
-				    case CM_SDP_ATTR_T38_FAX_UNKNOWN:
-					    {
-					     if(f->u.unknown.name.pres){
-					       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-					       "T38: Attribute : name[len=%d, value=%s] \n",
-					         f->u.unknown.name.len,(char*)f->u.unknown.name.val);
+						if(MG_TERM_RTP == term->type){
+							term->u.rtp.ptime = a->u.ptime.val;
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Updating ptime to [%d]\n", term->u.rtp.ptime);
 						}
-						if(f->u.unknown.val.pres){
-					         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-						 "T38: Attribute : value[len=%d, value=%s] \n",
-						   f->u.unknown.val.len,(char*)f->u.unknown.val.val);
-						  }
-						    break;
-					    }
+						break;
+					}
+				case CM_SDP_ATTR_RECVONLY:
+					{
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_RECVONLY: \n");
+						break;
+					}
+				case CM_SDP_ATTR_SENDRECV:
+					{
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_SENDRECV: \n");
+						break;
+					}
+				case CM_SDP_ATTR_SENDONLY:
+					{
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_SENDONLY: \n");
+						break;
+					}
+				case CM_SDP_ATTR_ORIENT:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_TYPE:
+					{
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_TYPE: \n");
+						break;
+					}
+				case CM_SDP_ATTR_CHARSET:
+					{
+						break;
+					}
 
-				    default:
-					    break;
-			    }
+				case CM_SDP_ATTR_SDPLANG:
+					{
+						break;
+					}
+
+				case CM_SDP_ATTR_LANG:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_FRAMERATE:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_QUALITY:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_FMTP:
+					{
+						CmSdpAttrFmtp* f = &a->u.fmtp;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_FMTP: \n");
+
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t Format Type = %d \n",(NOTPRSNT != f->type.pres)?f->type.val:-1);
+
+						break;
+					}
+				case CM_SDP_ATTR_RTPMAP:
+					{
+						CmSdpAttrRtpMap* r = &a->u.rtpmap;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_RTPMAP: \n");
+
+						if(NOTPRSNT != r->pres.pres){
+
+							/* payload type */
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									"\t Payload Type = %d \n",
+									(NOTPRSNT != r->pay.type.pres)?r->pay.type.val:-1);
+
+							/* payload value */
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									"\t Payload Value = %d \n",
+									(NOTPRSNT != r->pay.val.pres)?r->pay.val.val:-1);
+
+							/* encoding name */
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									"\t Encoding Name value = %d \n",
+									(NOTPRSNT != r->enc.val.pres)?r->enc.val.val:-1);
+
+							if((NOTPRSNT != r->enc.val.pres ) && 
+									(CM_SDP_ENC_TELEPHONE_EVENT == r->enc.val.val)){
+
+								rfc2833_pres = 0x01;
+								term->u.rtp.rfc2833_pt=r->pay.val.val;
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+										" Updating rfc2833_pt to [%d] \n", term->u.rtp.rfc2833_pt);
+							}
+
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									"\t Encoding Name name = %s \n",
+									(NOTPRSNT != r->enc.name.pres)?
+									(char*)r->enc.name.val:"Not Present");
+
+#ifdef BIT_64
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									"\t Clock Rate = %d \n",
+									(NOTPRSNT != r->clk.pres)?r->clk.val:-1);
+#else
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									"\t Clock Rate = %ld \n",
+									(NOTPRSNT != r->clk.pres)?r->clk.val:-1);
+#endif
+
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									"\t Encoding Parameters = %s \n",
+									(NOTPRSNT != r->parms.pres)?
+									(char*)r->parms.val:"Not Present");
+						}
+						break;
+					}
+				case CM_SDP_ATTR_INACTIVE:
+					{
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\t CM_SDP_ATTR_INACTIVE: \n");
+						break;
+					}
+				case CM_SDP_ATTR_CONTROL:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_RANGE:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_ETAG:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_ATMMAP:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_EECID:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_AALTYPE:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_SILENCESUPP:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_ECAN:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_GC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_PROFILEDESC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_VSEL:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_DSEL:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_FSEL:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_CAPABILITY:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_QOSCLASS:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_BCOB:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_STC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_UPCC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_ATMQOSPARMS:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_AAL2QOSFPARMS:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_AAL2QOSBPARMS:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_ATMTRFCDESC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_AAL2FTRFCDESC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_AAL2BTRFCDESC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_ABRPARMS:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_CLKREC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_FEC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_PRTFL:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_BEARERTYPE:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_STRUCTURE:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_SBC:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_CPSSDUSIZE:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_AAL2CPS:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_ANYCAST:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_WTP:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_CACHE:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_CHAIN:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_PHONECONTEXT:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_CLIR:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_DIRECTION:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_MAXPTIME:
+					{
+						break;
+					}
+				case CM_SDP_ATTR_T38_FAX:
+					{
+						CmSdpAttrT38Fax* f = &a->u.fax;
+						if(NOTPRSNT == f->type.pres) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+									"CM_SDP_ATTR_T38_FAX: TYPE not present \n");
+							break;
+						}
+
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								"\t CM_SDP_ATTR_T38_FAX: type=%d\n", f->type.val);
+
+						if(NULL == term->u.rtp.t38_options){
+							term->u.rtp.t38_options = 
+								switch_core_alloc(term->pool, sizeof *term->u.rtp.t38_options);
+						}
+						switch(f->type.val)
+						{
+							case CM_SDP_ATTR_T38_FAX_VER:
+								{
+									term->u.rtp.t38_options->T38FaxVersion = f->u.num.val;
+									break;
+								}
+							case CM_SDP_ATTR_T38_MAX_BIT_RATE:
+								{
+									term->u.rtp.t38_options->T38MaxBitRate = f->u.num.val;
+									break;
+								}
+							case CM_SDP_ATTR_T38_FAX_FILL_BIT_RMVL:
+								{
+									term->u.rtp.t38_options->T38FaxFillBitRemoval = f->u.num.val;
+									break;
+								}
+							case CM_SDP_ATTR_T38_FAX_TRNS_MMR:
+								{
+									term->u.rtp.t38_options->T38FaxTranscodingMMR = f->u.num.val;
+									break;
+								}
+							case CM_SDP_ATTR_T38_FAX_TRNS_JBIG:
+								{
+									term->u.rtp.t38_options->T38FaxTranscodingJBIG = f->u.num.val;
+									break;
+								}
+							case CM_SDP_ATTR_T38_FAX_RATE_MNGMNT:
+								{
+									switch(f->u.val.val)
+									{
+										case CM_SDP_ATTR_T38_FAX_RATE_MNG_LOC_TCF:
+											{
+												term->u.rtp.t38_options->T38FaxRateManagement = 
+													switch_core_strdup(term->pool,"localTCF") ;
+												break;
+											}
+										case CM_SDP_ATTR_T38_FAX_RATE_MNG_TRANSF_TCF:
+											{
+												term->u.rtp.t38_options->T38FaxRateManagement = 
+													switch_core_strdup(term->pool,"transferredTCF") ;
+												break;
+											}
+									}
+									break;
+								}
+							case CM_SDP_ATTR_T38_FAX_MAX_BFR:
+								{
+									term->u.rtp.t38_options->T38FaxMaxBuffer = f->u.num.val;
+									break;
+								}
+							case CM_SDP_ATTR_T38_FAX_MAX_DATAGRAM:
+								{
+									term->u.rtp.t38_options->T38FaxMaxDatagram = f->u.num.val;
+									break;
+								}
+							case CM_SDP_ATTR_T38_FAX_UDP_EC:
+								{
+									switch(f->u.val.val)
+									{
+										case CM_SDP_ATTR_T38_FAX_UDP_EC_UDP_FEC:
+											{
+												term->u.rtp.t38_options->T38FaxUdpEC = 
+													switch_core_strdup(term->pool,"t38UDPNoEC");
+												break;
+											}
+										case CM_SDP_ATTR_T38_FAX_UDP_EC_UDP_RED:
+											{
+												term->u.rtp.t38_options->T38FaxUdpEC = 
+													switch_core_strdup(term->pool,"t38UDPRedundancy") ;
+												break;
+											}
+									}
+									break;
+								}
+							case CM_SDP_ATTR_T38_FAX_UNKNOWN:
+								{
+									if(f->u.unknown.name.pres){
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+												"T38: Attribute : name[len=%d, value=%s] \n",
+												f->u.unknown.name.len,(char*)f->u.unknown.name.val);
+									}
+									if(f->u.unknown.val.pres){
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+												"T38: Attribute : value[len=%d, value=%s] \n",
+												f->u.unknown.val.len,(char*)f->u.unknown.val.val);
+									}
+									break;
+								}
+
+							default:
+								break;
+						}
 
 
 #if 0
-			term->u.rtp.t38_options->T38FaxVersion = 0x01;
-			term->u.rtp.t38_options->T38MaxBitRate = 14400;
-			term->u.rtp.t38_options->T38FaxRateManagement = 
-				switch_core_strdup(term->pool,"transferredTCF") ;
-			//term->u.rtp.t38_options->T38FaxMaxBuffer = ;
-			//term->u.rtp.t38_options->T38FaxMaxDatagram = ;
-			term->u.rtp.t38_options->T38FaxUdpEC = 
-				switch_core_strdup(term->pool,"t38UDPRedundancy") ;
-			//term->u.rtp.t38_options->T38VendorInfo = 
+						term->u.rtp.t38_options->T38FaxVersion = 0x01;
+						term->u.rtp.t38_options->T38MaxBitRate = 14400;
+						term->u.rtp.t38_options->T38FaxRateManagement = 
+							switch_core_strdup(term->pool,"transferredTCF") ;
+						//term->u.rtp.t38_options->T38FaxMaxBuffer = ;
+						//term->u.rtp.t38_options->T38FaxMaxDatagram = ;
+						term->u.rtp.t38_options->T38FaxUdpEC = 
+							switch_core_strdup(term->pool,"t38UDPRedundancy") ;
+						//term->u.rtp.t38_options->T38VendorInfo = 
 #endif
 
-			break;
-		    }
-                default:
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not supported Type[%d]\n",a->type.val);
-                    break;
-            }
-        }
-    }else{
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "a-line not present \n");
-    }
+						break;
+					}
+				default:
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not supported Type[%d]\n",a->type.val);
+					break;
+			}
+		}
+
+	}else{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "a-line not present \n");
+	}
+
+	if(0x00 == rfc2833_pres){
+		term->u.rtp.rfc2833_pt = 0x00;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+				" Resetting rfc2833_pt to [%d] \n", term->u.rtp.rfc2833_pt);
+	}
 }
 
 void mgco_handle_sdp_c_line(CmSdpConn *s, mg_termination_t* term, mgco_sdp_types_e sdp_type)
@@ -2368,6 +2377,21 @@ void mg_apply_tdm_dtmf_removal(mg_termination_t* term, mg_context_t *mg_ctxt)
 				megaco_tdm_term_dtmf_removal(tdm_term,0x01);
 			}else{
 				megaco_tdm_term_dtmf_removal(tdm_term,0x00);
+			}
+		}
+	}
+}
+/*****************************************************************************************************************************/
+void mg_apply_tdm_ec(mg_termination_t* term, mg_context_t *mg_ctxt)
+{
+	mg_termination_t* tdm_term = NULL;
+
+	if(NULL == term) return ;
+
+	if((MG_TERM_RTP == term->type)){
+		if(NULL != (tdm_term = megaco_context_get_peer_term(mg_ctxt, term))){
+			if(term->u.rtp.t38_options){
+				mg_term_set_ec(tdm_term,0x00);
 			}
 		}
 	}
