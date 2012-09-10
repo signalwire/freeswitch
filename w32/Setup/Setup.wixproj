@@ -175,6 +175,15 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>MODLOCATION</RefTargetDir>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_callcenter\mod_callcenter.2010.vcxproj">
+      <Name>mod_callcenter</Name>
+      <Project>{47886a6c-cca6-4f9f-a7d4-f97d06fb2b1a}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_commands\mod_commands.2010.vcxproj">
       <Name>mod_commands</Name>
       <Project>{30a5b29c-983e-4580-9fd0-d647ccdcc7eb}</Project>
@@ -205,6 +214,15 @@
     <ProjectReference Include="..\..\src\mod\applications\mod_db\mod_db.2010.vcxproj">
       <Name>mod_db</Name>
       <Project>{f6a33240-8f29-48bd-98f0-826995911799}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\applications\mod_directory\mod_directory.2010.vcxproj">
+      <Name>mod_directory</Name>
+      <Project>{b889a18e-70a7-44b5-b2c9-47798d4f43b3}</Project>
       <Private>True</Private>
       <DoNotHarvest>
       </DoNotHarvest>
@@ -502,6 +520,24 @@
     <ProjectReference Include="..\..\src\mod\endpoints\mod_portaudio\mod_PortAudio.2010.vcxproj">
       <Name>mod_PortAudio</Name>
       <Project>{5fd31a25-5d83-4794-8bee-904dad84ce71}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\endpoints\mod_rtmp\mod_rtmp_2010.vcxproj">
+      <Name>mod_rtmp</Name>
+      <Project>{48414740-c693-4968-9846-ee058020c64f}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>
+      </DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>MODLOCATION</RefTargetDir>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\mod\endpoints\mod_skypopen\mod_skypopen.2010.vcxproj">
+      <Name>mod_skypopen</Name>
+      <Project>{c6e78a4c-db1e-47f4-9b63-4dc27d86343f}</Project>
       <Private>True</Private>
       <DoNotHarvest>
       </DoNotHarvest>
