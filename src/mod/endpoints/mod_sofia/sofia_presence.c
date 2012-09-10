@@ -2478,6 +2478,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *full_to = NULL;
 	char *ip = NULL;
 	char *port = 0;
+	const char *call_state = NULL;
 
 	if (mod_sofia_globals.debug_presence > 0) {
 		int i;	
@@ -2593,8 +2594,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 	is_dialog = !strcmp(event, "dialog");
 
-	if (helper->hup && helper->calls_up > 0 && (!is_dialog || !user_agent || !switch_stristr("polycom", user_agent) || !switch_stristr("snom", user_agent))) {
-		goto end;
+	if (helper->hup && helper->calls_up > 0) {
+		call_state = "CS_EXECUTE";
+	} else {
+		call_state = switch_event_get_header(helper->event, "channel-state");
 	}
 
 	if (helper->event) {
@@ -2614,7 +2617,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		char *clean_to_user = NULL;
 		char *clean_from_user = NULL;
 		int force_status = 0;
-		const char *call_state = switch_event_get_header(helper->event, "channel-state");
+		
 		char *call_info_state = switch_event_get_header(helper->event, "presence-call-info-state");
 		int term = 0;
 
