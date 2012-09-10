@@ -65,6 +65,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	size_t alt_len = 0;
 	int rates[4] = { 8000, 16000, 32000, 48000 };
 	int i;
+	sf_count_t frames = 0;
 #ifdef WIN32
 	char ps = '\\';
 #else
@@ -209,12 +210,16 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	handle->speed = 0;
 	handle->private_info = context;
 
+	if (handle->offset_pos) {
+		frames = handle->offset_pos;
+		handle->offset_pos = 0;
+	}
+
 	if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
-		handle->pos = sf_seek(context->handle, 0, SEEK_END);
+		handle->pos = sf_seek(context->handle, frames, SEEK_END);
 	} else if (switch_test_flag(handle, SWITCH_FILE_WRITE_OVER)) {
-		handle->pos = sf_seek(context->handle, 0, SEEK_SET);
-	} else {
-		sf_count_t frames = 0;
+		handle->pos = sf_seek(context->handle, frames, SEEK_SET);
+	} else {		
 		sf_command(context->handle, SFC_FILE_TRUNCATE, &frames, sizeof(frames));
 	}
 
