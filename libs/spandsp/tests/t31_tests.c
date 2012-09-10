@@ -120,7 +120,7 @@ static const struct command_response_s fax_send_test_seq[] =
     //<TSI frame data>
     EXCHANGE("\xFF\x03\x43\x32\x32\x32\x32\x32\x32\x32\x32\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x10\x03", "\r\nCONNECT\r\n"),
     //<DCS frame data>
-    EXCHANGE("\xFF\x13\x83\x01\xC6\x80\x80\x80\x80\x01\xFD\x13\x10\x03", "\r\nOK\r\n"),
+    EXCHANGE("\xFF\x13\x83\x01\xC6\x80\x80\x80\x80\x01\x10\x03", "\r\nOK\r\n"),
     //Do a wait for timed silence at this point, or there won't be one in the tests
     EXCHANGE("AT+FRS=7\r", "\r\nOK\r\n"),
     //EXCHANGE("AT+FTS=8;+FTM=96\r", "\r\nCONNECT\r\n"),

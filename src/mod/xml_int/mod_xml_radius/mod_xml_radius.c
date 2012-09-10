@@ -367,6 +367,10 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					switch_time_t time = profile->times->created;
 					switch_time_exp_t tm;
 					
+					if ( !time ) {
+						goto err;
+					}
+					
 					switch_time_exp_lt(&tm, time);
 					av_value = switch_mprintf("%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
 											  tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
@@ -381,6 +385,10 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
 					switch_time_t time = profile->times->answered;
 					switch_time_exp_t tm;
+
+					if ( !time ) {
+						goto err;
+					}
 					
 					switch_time_exp_lt(&tm, time);
 					
@@ -397,6 +405,10 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
 					switch_time_t time = profile->times->hungup;
 					switch_time_exp_t tm;
+
+					if ( !time ) {
+						goto err;
+					}
 					
 					switch_time_exp_lt(&tm, time);
 					

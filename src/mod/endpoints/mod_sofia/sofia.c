@@ -1716,26 +1716,36 @@ void sofia_event_callback(nua_event_t event,
 			switch_core_session_t *session;
 
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
-				private_object_t *tech_pvt = switch_core_session_get_private(session);
 				switch_channel_t *channel = switch_core_session_get_channel(session);
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "detaching session %s\n", sofia_private->uuid);				
-				set_call_id(tech_pvt, sip);
+				int end = 0;
 				
-				if (!zstr(tech_pvt->call_id)) {
-					tech_pvt->sofia_private = NULL;
-					tech_pvt->nh = NULL;
-					sofia_set_flag(tech_pvt, TFLAG_BYE);
-					switch_mutex_lock(profile->flag_mutex);
-					switch_core_hash_insert(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
-					switch_mutex_unlock(profile->flag_mutex);
-					switch_core_session_rwunlock(session);
-				} else {
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_test_flag(channel, CF_ANSWERED)) {
+					private_object_t *tech_pvt = switch_core_session_get_private(session);
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "detaching session %s\n", sofia_private->uuid);
+					
+					if (!zstr(tech_pvt->call_id)) {
+						tech_pvt->sofia_private = NULL;
+						tech_pvt->nh = NULL;
+						sofia_set_flag(tech_pvt, TFLAG_BYE);
+						switch_mutex_lock(profile->flag_mutex);
+						switch_core_hash_insert(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
+						switch_mutex_unlock(profile->flag_mutex);
+					} else {
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					}
+
+					end++;
+				}
+
+				switch_core_session_rwunlock(session);
+
+				if (end) {
+					goto end;
 				}
 			}
 		}
-		goto end;
+		break;
 	case nua_i_invite:
 	case nua_i_register:
 	case nua_i_options:

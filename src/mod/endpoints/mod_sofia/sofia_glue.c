@@ -2884,6 +2884,10 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force)
 {
 
+	if (!tech_pvt->video_rm_encoding) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (tech_pvt->video_read_codec.implementation && switch_core_codec_ready(&tech_pvt->video_read_codec)) {
 		if (!force) {
 			return SWITCH_STATUS_SUCCESS;
@@ -2902,10 +2906,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 		}
 	}
 
-	if (!tech_pvt->video_rm_encoding) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Can't load codec with no name?\n");
-		return SWITCH_STATUS_FALSE;
-	}
+
 
 	if (switch_core_codec_init(&tech_pvt->video_read_codec,
 							   tech_pvt->video_rm_encoding,
@@ -3077,6 +3078,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_core_session_unlock_codec_read(tech_pvt->session);
 	}
 
+	sofia_glue_tech_set_video_codec(tech_pvt, force);
 
 	return status;
 }
@@ -5307,7 +5309,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->video_recv_pt);
 						switch_channel_set_variable(tech_pvt->channel, "sip_video_recv_pt", tmp);
-						
+						if (!match && vmatch) match = 1;
+
 						break;
 					} else {
 						vmatch = 0;
