@@ -580,7 +580,7 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *callid, const c
 {
 	const char *event = "check-sync";
 	const char *contenttype = "application/simple-message-summary";
-	const char *body = "";
+	char *body = NULL;
 
 	if (switch_stristr("snom", user_agent) || switch_stristr("yealink", user_agent)) {
 		event = "check-sync;reboot=true";
@@ -588,9 +588,19 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *callid, const c
 		event = "reboot_now";
 	} else if (switch_stristr("spa", user_agent)) {
 		event = "reboot";
+	} else if (switch_stristr("cisco", user_agent)) {
+		event = "service-control";
+		contenttype = "text/plain";
+		body = switch_mprintf("action=restart\n"
+							  "RegisterCallId={%s}\n"
+							  "ConfigVersionStamp={0000000000000000}\n"
+							  "DialplanVersionStamp={0000000000000000}\n"
+							  "SoftkeyVersionStamp={0000000000000000}", callid);
 	}
 
-	sofia_glue_send_notify(profile, user, host, event, contenttype, body, contact, network_ip, callid);
+	sofia_glue_send_notify(profile, user, host, event, contenttype, body ? body : "", contact, network_ip, callid);
+
+	switch_safe_free(body);
 }
 
 int sofia_sla_dialog_del_callback(void *pArg, int argc, char **argv, char **columnNames)
