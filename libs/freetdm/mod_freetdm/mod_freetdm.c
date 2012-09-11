@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Moises Silva <moy@sangoma.com>
  * David Yat Sin <dyatsin@sangoma.com>
@@ -42,7 +42,7 @@
 
 #define FREETDM_LIMIT_REALM "__freetdm"
 #define FREETDM_VAR_PREFIX "freetdm_"
-#define FREETDM_VAR_PREFIX_LEN (sizeof(FREETDM_VAR_PREFIX)-1) 
+#define FREETDM_VAR_PREFIX_LEN (sizeof(FREETDM_VAR_PREFIX)-1)
 
 /* How many consecutive IO errors before giving up */
 #define FTDM_MAX_READ_WRITE_ERRORS 10
@@ -133,7 +133,7 @@ struct span_config {
 	char dial_regex[256];
 	char fail_dial_regex[256];
 	char hold_music[256];
-	char type[256];	
+	char type[256];
 	analog_option_t analog_options;
 	const char *limit_backend;
 	int limit_calls;
@@ -156,7 +156,7 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 static switch_status_t channel_on_soft_execute(switch_core_session_t *session);
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, 
+													switch_core_session_t **new_session,
 													switch_memory_pool_t **pool,
 													switch_originate_flag_t flags, switch_call_cause_t *cancel_cause);
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
@@ -190,7 +190,6 @@ static void stop_hold(switch_core_session_t *session_a, const char *uuid)
 {
 	switch_core_session_t *session;
 	switch_channel_t *channel, *channel_a;
-	;
 
 	if (!uuid) {
 		return;
@@ -222,8 +221,8 @@ static void start_hold(ftdm_channel_t *ftdmchan, switch_core_session_t *session_
 	if (!uuid) {
 		return;
 	}
-	
-	spanid = ftdm_channel_get_span_id(ftdmchan);	
+
+	spanid = ftdm_channel_get_span_id(ftdmchan);
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
 		if (zstr(stream)) {
@@ -246,8 +245,7 @@ static void start_hold(ftdm_channel_t *ftdmchan, switch_core_session_t *session_
 		if (zstr(stream)) {
 			stream = globals.hold_music;
 		}
-		
-		
+
 		if (zstr(stream) && !(stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 			stream = globals.hold_music;
 		}
@@ -274,7 +272,6 @@ static void cycle_foreground(ftdm_channel_t *ftdmchan, int flash, const char *bc
 	switch_channel_t *channel;
 	private_t *tech_pvt;
 	uint32_t tokencnt = ftdm_channel_get_token_count(ftdmchan);
-	
 
 	for (i = 0; i < tokencnt; i++) {
 		if ((session = ftdm_channel_get_session(ftdmchan, i))) {
@@ -283,7 +280,6 @@ static void cycle_foreground(ftdm_channel_t *ftdmchan, int flash, const char *bc
 			channel = switch_core_session_get_channel(session);
 			buuid = switch_channel_get_partner_uuid(channel);
 
-			
 			if (tokencnt  == 1 && flash) {
 				if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
 					stop_hold(session, buuid);
@@ -347,7 +343,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch(codec) {
+	switch (codec) {
 	case FTDM_CODEC_ULAW:
 		{
 			dname = "PCMU";
@@ -405,7 +401,6 @@ init_codecs:
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
 	return SWITCH_STATUS_SUCCESS;
-	
 }
 
 static switch_status_t channel_on_init(switch_core_session_t *session)
@@ -422,8 +417,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
 		return SWITCH_STATUS_SUCCESS;
-	} 
-	
+	}
+
 	/* Move channel's state machine to ROUTING */
 	switch_channel_set_state(channel, CS_ROUTING);
 	switch_mutex_lock(globals.mutex);
@@ -477,13 +472,13 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
 	private_t *tech_pvt = NULL;
-	
+
 	if ((tech_pvt = switch_core_session_get_private(session))) {
 
 		if (tech_pvt->read_codec.implementation) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 		}
-		
+
 		if (tech_pvt->write_codec.implementation) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
@@ -529,7 +524,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	/* ignore any further I/O requests, we're hanging up already! */
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-	
+
 	name = switch_channel_get_name(channel);
 
 	span_id = tech_pvt->ftdmchan ? ftdm_channel_get_span_id(tech_pvt->ftdmchan) : 0;
@@ -543,7 +538,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		goto end;
 	}
 
-	/* Now verify the device is still attached to this call :-) 
+	/* Now verify the device is still attached to this call :-)
 	 * Sometimes the FS core takes too long (more than 3 seconds) in calling
 	 * channel_on_hangup() and the FreeTDM core decides to take the brute
 	 * force approach and hangup and detach themselves from the call. Later
@@ -606,7 +601,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 			ftdm_channel_call_hangup_with_cause(tech_pvt->ftdmchan, hcause);
 		}
 		break;
-	default: 
+	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unhandled channel type %d for channel %s\n", chantype, switch_channel_get_name(channel));
 		}
@@ -675,11 +670,11 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
 	tmp[0] = dtmf->digit;
 	ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_SEND_DTMF, tmp);
-		
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -698,7 +693,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
-	
+
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
@@ -706,16 +701,16 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if (!tech_pvt->ftdmchan) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no ftdmchan set in channel %s!\n", name);
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
 	span_id = ftdm_channel_get_span_id(tech_pvt->ftdmchan);
 	chan_id = ftdm_channel_get_id(tech_pvt->ftdmchan);
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_DEAD is set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
-	/* Digium Cards sometimes timeout several times in a row here. 
+	/* Digium Cards sometimes timeout several times in a row here.
 	   Yes, we support digium cards, ain't we nice.......
 	   6 double length intervals should compensate */
 	chunk = ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 2;
@@ -743,20 +738,20 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_IO is not set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		goto fail;
 	}
 
-	wflags = FTDM_READ;	
+	wflags = FTDM_READ;
 	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, chunk);
-	
+
 	if (status == FTDM_FAIL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read from channel %s device %d:%d!\n", name, span_id, chan_id);
 		goto fail;
 	}
-	
+
 	if (status == FTDM_TIMEOUT) {
 		if (!switch_test_flag(tech_pvt, TFLAG_HOLD)) {
 			total_to -= chunk;
@@ -831,11 +826,11 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (!tech_pvt->ftdmchan) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no ftdmchan set in channel %s!\n", name);
 		return SWITCH_STATUS_FALSE;
-	} 
+	}
 
 	span_id = ftdm_channel_get_span_id(tech_pvt->ftdmchan);
 	chan_id = ftdm_channel_get_id(tech_pvt->ftdmchan);
-	
+
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_DEAD is set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		return SWITCH_STATUS_FALSE;
@@ -860,9 +855,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 
 
-	wflags = FTDM_WRITE;	
+	wflags = FTDM_WRITE;
 	ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 10);
-	
+
 	if (!(wflags & FTDM_WRITE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write not ready) in channel %s device %d:%d!\n", name, span_id, chan_id);
 		return SWITCH_STATUS_SUCCESS;
@@ -897,16 +892,16 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
-			
+
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-	
-	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
-        return SWITCH_STATUS_FALSE;
-    }
 
-	phy_id = ftdm_channel_get_ph_id(tech_pvt->ftdmchan);	
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	phy_id = ftdm_channel_get_ph_id(tech_pvt->ftdmchan);
 	ftdm_log(FTDM_LOG_DEBUG, "Got Freeswitch message in R2 channel %d [%d]\n", phy_id, msg->message_id);
 
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
@@ -943,7 +938,7 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
-			
+
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
@@ -1010,7 +1005,7 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
-			
+
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
@@ -1018,7 +1013,7 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
 		return SWITCH_STATUS_FALSE;
     	}
-	
+
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1042,7 +1037,7 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
-			
+
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
@@ -1054,7 +1049,7 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -1062,7 +1057,7 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 		switch_channel_mark_answered(channel);
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
-		if (!switch_channel_test_flag(channel, CF_ANSWERED) && 
+		if (!switch_channel_test_flag(channel, CF_ANSWERED) &&
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) &&
 			!switch_channel_test_flag(channel, CF_RING_READY)
 			) {
@@ -1091,14 +1086,14 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	channel = switch_core_session_get_channel(session);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
-        return SWITCH_STATUS_FALSE;
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!(ftdmchan = tech_pvt->ftdmchan)) {
-        switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
-        return SWITCH_STATUS_FALSE;
-    }
+		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!tech_pvt->ftdmchan) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
@@ -1149,7 +1144,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	}
 
 	return status;
-
 }
 
 switch_state_handler_table_t freetdm_state_handlers = {
@@ -1160,12 +1154,11 @@ switch_state_handler_table_t freetdm_state_handlers = {
 	/*.on_exchange_media */ channel_on_exchange_media,
 	/*.on_soft_execute */ channel_on_soft_execute,
 	/*.on_consume_media */ NULL,
-    /*.on_hibernate */ NULL,
-    /*.on_reset */ NULL,
-    /*.on_park*/ NULL,
-    /*.on_reporting*/ NULL,
-    /*.on_destroy*/ channel_on_destroy
-
+	/*.on_hibernate */ NULL,
+	/*.on_reset */ NULL,
+	/*.on_park*/ NULL,
+	/*.on_reporting*/ NULL,
+	/*.on_destroy*/ channel_on_destroy
 };
 
 switch_io_routines_t freetdm_io_routines = {
@@ -1241,12 +1234,14 @@ static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t 
 
 	if (SPAN_CONFIG[span_id].limit_calls) {
 		char spanresource[512];
-		snprintf(spanresource, sizeof(spanresource), "span_%s_%s", ftdm_channel_get_span_name(fchan), 
+		snprintf(spanresource, sizeof(spanresource), "span_%s_%s", ftdm_channel_get_span_name(fchan),
 				caller_data->dnis.digits);
-		ftdm_log(FTDM_LOG_DEBUG, "Adding rate limit resource on channel %d:%d (%s/%s/%d/%d)\n", 
-				span_id, chan_id, FREETDM_LIMIT_REALM, 
+
+		ftdm_log(FTDM_LOG_DEBUG, "Adding rate limit resource on channel %d:%d (%s/%s/%d/%d)\n",
+				span_id, chan_id, FREETDM_LIMIT_REALM,
 				spanresource, SPAN_CONFIG[span_id].limit_calls, SPAN_CONFIG[span_id].limit_seconds);
-		if (switch_limit_incr("hash", hdata->new_session, FREETDM_LIMIT_REALM, spanresource, 
+
+		if (switch_limit_incr("hash", hdata->new_session, FREETDM_LIMIT_REALM, spanresource,
 					SPAN_CONFIG[span_id].limit_calls, SPAN_CONFIG[span_id].limit_seconds) != SWITCH_STATUS_SUCCESS) {
 			return FTDM_BREAK;
 		}
@@ -1306,17 +1301,17 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if (!zstr(callerid_num) && !strcmp(callerid_num, "0000000000")) {
 		callerid_num = NULL;
 	}
-	
+
 	if ((argc = switch_separate_string(data, '/', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
         	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
-	
+
 	if (switch_is_number(argv[0])) {
 		span_id = atoi(argv[0]);
 	} else {
 		span_name = argv[0];
-	}	
+	}
 
 	if (*argv[1] == 'A') {
 		direction = FTDM_BOTTOM_UP;
@@ -1371,7 +1366,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			ftdm_set_string(caller_data.cid_name, sipvar);
 		}
-		
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-CallerNumber");
 		if (sipvar) {
 			ftdm_set_string(caller_data.cid_num.digits, sipvar);
@@ -1402,7 +1397,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			ftdm_set_string(caller_data.aniII, sipvar);
 		}
-		
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-DNIS");
 		if (sipvar) {
 			ftdm_set_string(caller_data.dnis.digits, sipvar);
@@ -1423,7 +1418,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_clg_nadi", sipvar);
 		}
-		
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-RDNIS");
 		if (sipvar) {
 			ftdm_set_string(caller_data.rdnis.digits, sipvar);
@@ -1484,7 +1479,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_gn_num_inc_ind", sipvar);
 		}
-		
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-Screen");
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_screen_ind", sipvar);
@@ -1499,7 +1494,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (sipvar) {
 			ftdm_set_calling_party_category(sipvar, (uint8_t *)&caller_data.cpc);
 		}
-		
+
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-IAM");
 		if (sipvar) {
 			ftdm_usrmsg_add_var(&usrmsg, "ss7_iam", sipvar);
@@ -1517,7 +1512,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_capability"))) {
 		caller_data.bearer_capability = (uint8_t)atoi(var);
 	}
-	
+
 	if ((var = channel_get_variable(session, var_event, "freetdm_bearer_layer1"))) {
 		caller_data.bearer_layer1 = (uint8_t)atoi(var);
 	}
@@ -1539,7 +1534,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if ((var = channel_get_variable(session, var_event, "freetdm_calling_party_category"))) {
 		ftdm_set_calling_party_category(var, (uint8_t *)&caller_data.cpc);
 	}
-	
+
 	if (!zstr(dest)) {
 		ftdm_set_string(caller_data.dnis.digits, dest);
 	}
@@ -1582,7 +1577,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding outbound freetdm variable %s=%s to channel %d:%d\n", v, h->value, span_id, chan_id);
 				}
-				
+
 				ftdm_usrmsg_add_var(&usrmsg, v, h->value);
 			}
 		}
@@ -1591,7 +1586,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if ((*new_session = switch_core_session_request(freetdm_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_caller_profile_t *caller_profile;
-		
+
 		switch_core_session_add_stream(*new_session, NULL);
 		if (!(tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t)))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
@@ -1615,12 +1610,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			if (tech_pvt->read_codec.implementation) {
 				switch_core_codec_destroy(&tech_pvt->read_codec);
 			}
-			
+
 			if (tech_pvt->write_codec.implementation) {
 				switch_core_codec_destroy(&tech_pvt->write_codec);
 			}
 			switch_core_session_destroy(new_session);
-			if (status == FTDM_BREAK || status == FTDM_EBUSY) { 
+			if (status == FTDM_BREAK || status == FTDM_EBUSY) {
 				cause = SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
 			} else {
 				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1632,7 +1627,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 fail:
-
 	return cause;
 }
 
@@ -1666,22 +1660,22 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	uint32_t spanid, chanid;
 	char name[128];
 	ftdm_caller_data_t *channel_caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
-	
+
 	*sp = NULL;
 
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 	chanid = ftdm_channel_get_id(sigmsg->channel);
-	
+
 	if (!(session = switch_core_session_request(freetdm_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
 		return FTDM_FAIL;
 	}
-	
+
 	/* I guess we always want DTMF detection */
 	ftdm_enable_channel_dtmf(sigmsg->channel, NULL);
 
 	switch_core_session_add_stream(session, NULL);
-	
+
 	tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t));
 	assert(tech_pvt != NULL);
 	channel = switch_core_session_get_channel(session);
@@ -1692,7 +1686,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	}
 
 	channel_caller_data->collected[0] = '\0';
-	
+
 	if (zstr(channel_caller_data->cid_name)) {
 		switch_set_string(channel_caller_data->cid_name, ftdm_channel_get_name(sigmsg->channel));
 	}
@@ -1736,25 +1730,24 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	if (channel_caller_data->pres) {
 		switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 	}
-	
+
 	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", spanid, chanid, tech_pvt->caller_profile->destination_number);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect inbound channel %s\n", name);
 	switch_channel_set_name(channel, name);
 	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 
 	switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(sigmsg->channel));
-	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", spanid);	
+	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", spanid);
 	switch_channel_set_variable_printf(channel, "freetdm_chan_number", "%d", chanid);
-	switch_channel_set_variable_printf(channel, "freetdm_bearer_capability", "%d", channel_caller_data->bearer_capability);	
+	switch_channel_set_variable_printf(channel, "freetdm_bearer_capability", "%d", channel_caller_data->bearer_capability);
 	switch_channel_set_variable_printf(channel, "freetdm_bearer_layer1", "%d", channel_caller_data->bearer_layer1);
 	switch_channel_set_variable_printf(channel, "freetdm_calling_party_category", ftdm_calling_party_category2str(channel_caller_data->cpc));
 	switch_channel_set_variable_printf(channel, "screening_ind", ftdm_screening2str(channel_caller_data->screen));
 	switch_channel_set_variable_printf(channel, "presentation_ind", ftdm_presentation2str(channel_caller_data->pres));
-	
-	
+
 	if (globals.sip_headers) {
 		switch_channel_set_variable(channel, "sip_h_X-FreeTDM-SpanName", ftdm_channel_get_span_name(sigmsg->channel));
-		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-SpanNumber", "%d", spanid);	
+		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-SpanNumber", "%d", spanid);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ChanNumber", "%d", chanid);
 
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CallerName", "%s", channel_caller_data->cid_name);
@@ -1764,7 +1757,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ANI-TON", "%d", channel_caller_data->ani.type);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ANI-Plan", "%d", channel_caller_data->ani.plan);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-ANI2", "%s", channel_caller_data->aniII);
-		
+
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS", "%s", channel_caller_data->dnis.digits);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-TON", "%d", channel_caller_data->dnis.type);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-DNIS-Plan", "%d", channel_caller_data->dnis.plan);
@@ -1773,7 +1766,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-NADI", "%d", channel_caller_data->rdnis.type);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-RDNIS-Plan", "%d", channel_caller_data->rdnis.plan);
 		switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-CPC", "%s", ftdm_calling_party_category2str(channel_caller_data->cpc));
-		
+
 		var_value = ftdm_sigmsg_get_var(sigmsg, "ss7_clg_nadi");
 		if (!ftdm_strlen_zero(var_value)) {
 			switch_channel_set_variable_printf(channel, "sip_h_X-FreeTDM-NADI", "%d", var_value);
@@ -1858,7 +1851,7 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 		}
 	}
 	ftdm_iterator_free(iter);
-	
+
 	switch_channel_set_state(channel, CS_INIT);
 	if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
@@ -1873,25 +1866,23 @@ ftdm_status_t ftdm_channel_from_event(ftdm_sigmsg_t *sigmsg, switch_core_session
 	}
 	*sp = session;
 
-    return FTDM_SUCCESS;
+	return FTDM_SUCCESS;
 }
 
 static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 {
 	uint32_t chanid, spanid;
-	switch_event_t *event = NULL;	
+	switch_event_t *event = NULL;
 	ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
 
 	chanid = ftdm_channel_get_id(sigmsg->channel);
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 
 	switch (sigmsg->event_id) {
-
-		case FTDM_SIGEVENT_SMS:
+	case FTDM_SIGEVENT_SMS:
 		{
 			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
 			ftdm_sms_data_t *sms = (ftdm_sms_data_t*) caller_data->priv;
-			
 
 			ftdm_log(FTDM_LOG_INFO,"FTDM_SIGEVENT_SMS from %s: %s", sms->from, sms->body);
 			if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
@@ -1904,7 +1895,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 		}
 			//return FTDM_BREAK;
 		break;
-
 	case FTDM_SIGEVENT_ALARM_CLEAR:
 	case FTDM_SIGEVENT_ALARM_TRAP:
 		{
@@ -1935,6 +1925,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 			}
 			return FTDM_SUCCESS;
 		}
+		break;
 	case FTDM_SIGEVENT_TRANSFER_COMPLETED:
 		{
 			switch_core_session_t *session = NULL;
@@ -1952,7 +1943,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 			return FTDM_SUCCESS;
 		}
 		break;
-	
 	case FTDM_SIGEVENT_RELEASED:
 	case FTDM_SIGEVENT_INDICATION_COMPLETED:
 	case FTDM_SIGEVENT_DIALING:
@@ -1966,7 +1956,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 		{
 			switch_core_session_t *session = NULL;
 			private_t *tech_pvt = NULL;
-			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+			while ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				tech_pvt = switch_core_session_get_private(session);
 
 				switch_clear_flag_locked(tech_pvt, TFLAG_TRANSFER);
@@ -1981,8 +1971,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 	}
 
 	if (event) {
-
-		
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-name", "%s", ftdm_channel_get_span_name(sigmsg->channel));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "span-number", "%d", ftdm_channel_get_span_id(sigmsg->channel));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "chan-number", "%d", ftdm_channel_get_id(sigmsg->channel));
@@ -2026,9 +2014,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 
 	ftdm_log(FTDM_LOG_DEBUG, "got FXO sig %d:%d [%s]\n", spanid, chanid, ftdm_signal_event2str(sigmsg->event_id));
 
-    switch(sigmsg->event_id) {
-
-    case FTDM_SIGEVENT_PROGRESS_MEDIA:
+	switch(sigmsg->event_id) {
+	case FTDM_SIGEVENT_PROGRESS_MEDIA:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2037,10 +2024,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
-    case FTDM_SIGEVENT_STOP:
+	case FTDM_SIGEVENT_STOP:
 		{
 			private_t *tech_pvt = NULL;
-			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+			while ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				tech_pvt = switch_core_session_get_private(session);
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				ftdm_channel_clear_token(sigmsg->channel, 0);
@@ -2051,7 +2038,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
-    case FTDM_SIGEVENT_UP:
+	case FTDM_SIGEVENT_UP:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2061,7 +2048,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
-    case FTDM_SIGEVENT_START:
+	case FTDM_SIGEVENT_START:
 		{
 			status = ftdm_channel_from_event(sigmsg, &session);
 			if (status != FTDM_SUCCESS) {
@@ -2069,15 +2056,14 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
-	case FTDM_SIGEVENT_SIGSTATUS_CHANGED: { /* twiddle */ } break;
-	
+	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
+		break;
 	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
 							  sigmsg->event_id, spanid, chanid);
 		}
 		break;
-
 	}
 
 	return FTDM_SUCCESS;
@@ -2096,8 +2082,8 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
 	ftdm_log(FTDM_LOG_DEBUG, "got FXS sig [%s]\n", ftdm_signal_event2str(sigmsg->event_id));
 
-    switch(sigmsg->event_id) {
-    case FTDM_SIGEVENT_UP:
+	switch(sigmsg->event_id) {
+	case FTDM_SIGEVENT_UP:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2107,7 +2093,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 		}
 		break;
-    case FTDM_SIGEVENT_PROGRESS:
+	case FTDM_SIGEVENT_PROGRESS:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2116,7 +2102,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 		}
 		break;
-    case FTDM_SIGEVENT_START:
+	case FTDM_SIGEVENT_START:
 		{
 			status = ftdm_channel_from_event(sigmsg, &session);
 			if (status != FTDM_SUCCESS) {
@@ -2124,8 +2110,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 		}
 		break;
-	
-    case FTDM_SIGEVENT_STOP:
+	case FTDM_SIGEVENT_STOP:
 		{
 			private_t *tech_pvt = NULL;
 			switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -2156,7 +2141,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 				}
 
-				if (channel_a && channel_b &&  switch_channel_direction(channel_a) == SWITCH_CALL_DIRECTION_INBOUND && 
+				if (channel_a && channel_b &&  switch_channel_direction(channel_a) == SWITCH_CALL_DIRECTION_INBOUND &&
 					switch_channel_direction(channel_b) == SWITCH_CALL_DIRECTION_INBOUND) {
 
 					cause = SWITCH_CAUSE_ATTENDED_TRANSFER;
@@ -2168,7 +2153,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 						session_t = switch_core_session_locate(br_b_uuid);
 					}
 				}
-				
+
 				if (session_t) {
 					switch_ivr_session_transfer(session_t, caller_data->collected, NULL, NULL);
 					switch_core_session_rwunlock(session_t);
@@ -2181,11 +2166,9 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 				if (session_b) {
 					switch_core_session_rwunlock(session_b);
 				}
-
-				
 			}
 
-			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+			while ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				tech_pvt = switch_core_session_get_private(session);
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
@@ -2194,16 +2177,14 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 				switch_core_session_rwunlock(session);
 			}
 			ftdm_channel_clear_token(sigmsg->channel, NULL);
-			
 		}
 		break;
-
-    case FTDM_SIGEVENT_ADD_CALL:
+	case FTDM_SIGEVENT_ADD_CALL:
 		{
 			cycle_foreground(sigmsg->channel, 1, NULL);
 		}
 		break;
-    case FTDM_SIGEVENT_FLASH:
+	case FTDM_SIGEVENT_FLASH:
 		{
 			chan_pvt_t *chanpvt = ftdm_channel_get_private(sigmsg->channel);
 			if (!chanpvt) {
@@ -2217,7 +2198,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 					const char *buuid;
 					switch_channel_t *channel;
 					private_t *tech_pvt;
-					
+
 					tech_pvt = switch_core_session_get_private(session);
 					channel = switch_core_session_get_channel(session);
 					buuid = switch_channel_get_partner_uuid(channel);
@@ -2245,24 +2226,22 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 				}
 			} else if ((SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_CALL_SWAP)
 					   || (SPAN_CONFIG[sigmsg->span_id].analog_options & ANALOG_OPTION_3WAY)
-					   ) { 
+					   ) {
 				cycle_foreground(sigmsg->channel, 1, NULL);
 				if (tokencount == 1) {
 					ftdm_channel_call_hold(sigmsg->channel);
 				}
 			}
-			
 		}
 		break;
-
-    case FTDM_SIGEVENT_COLLECTED_DIGIT:
+	case FTDM_SIGEVENT_COLLECTED_DIGIT:
 		{
 			int span_id = ftdm_channel_get_span_id(sigmsg->channel);
 			char *dtmf = sigmsg->ev_data.collected.digits;
 			char *regex = SPAN_CONFIG[span_id].dial_regex;
 			char *fail_regex = SPAN_CONFIG[span_id].fail_dial_regex;
 			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
-			
+
 			if (zstr(regex)) {
 				regex = NULL;
 			}
@@ -2273,7 +2252,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
 			ftdm_log(FTDM_LOG_DEBUG, "got DTMF sig [%s]\n", dtmf);
 			switch_set_string(caller_data->collected, dtmf);
-			
+
 			if ((regex || fail_regex) && !zstr(dtmf)) {
 				switch_regex_t *re = NULL;
 				int ovector[30];
@@ -2296,14 +2275,12 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			}
 		}
 		break;
-
 	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d\n",
 							  sigmsg->event_id, spanid, chanid);
 		}
 		break;
-
 	}
 
 	return status;
@@ -2327,12 +2304,11 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 		return FTDM_SUCCESS;
 	}
 
-	switch(sigmsg->event_id) {
-		/* on_call_disconnect from the R2 side */
-		case FTDM_SIGEVENT_STOP: 
-		{	
+	switch (sigmsg->event_id) {
+	case FTDM_SIGEVENT_STOP:	/* on_call_disconnect from the R2 side */
+		{
 			private_t *tech_pvt = NULL;
-			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+			while ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				tech_pvt = switch_core_session_get_private(session);
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
@@ -2341,16 +2317,12 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			}
 		}
 		break;
-
-		/* on_call_offered from the R2 side */
-		case FTDM_SIGEVENT_START: 
+	case FTDM_SIGEVENT_START:	/* on_call_offered from the R2 side */
 		{
 			status = ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
-		
-		/* on DNIS received from the R2 forward side, return status == FTDM_BREAK to stop requesting DNIS */
-		case FTDM_SIGEVENT_COLLECTED_DIGIT: 
+	case FTDM_SIGEVENT_COLLECTED_DIGIT:	/* on DNIS received from the R2 forward side, return status == FTDM_BREAK to stop requesting DNIS */
 		{
 			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
 			int span_id = ftdm_channel_get_span_id(sigmsg->channel);
@@ -2387,8 +2359,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			}
 		}
 		break;
-
-		case FTDM_SIGEVENT_PROGRESS:
+	case FTDM_SIGEVENT_PROGRESS:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2397,8 +2368,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			}
 		}
 		break;
-
-		case FTDM_SIGEVENT_PROGRESS_MEDIA:
+	case FTDM_SIGEVENT_PROGRESS_MEDIA:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2407,8 +2377,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			}
 		}
 		break;
-
-		case FTDM_SIGEVENT_UP:
+	case FTDM_SIGEVENT_UP:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2418,19 +2387,17 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 			}
 		}
 		break;
-
-		case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
+	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		{
 			ftdm_signaling_status_t sigstatus = sigmsg->ev_data.sigstatus.status;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to: %s\n",
 					spanid, chanid, ftdm_signaling_status2str(sigstatus));
 		}
 		break;
-
-		case FTDM_SIGEVENT_PROCEED:{} break;
-		case FTDM_SIGEVENT_INDICATION_COMPLETED:{} break;
-
-		default:
+	case FTDM_SIGEVENT_PROCEED:
+	case FTDM_SIGEVENT_INDICATION_COMPLETED:
+		break;
+	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled event %d from R2 for channel %d:%d\n",
 			sigmsg->event_id, spanid, chanid);
@@ -2458,18 +2425,17 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 		return FTDM_SUCCESS;
 	}
 
-    switch(sigmsg->event_id) {
-    case FTDM_SIGEVENT_START:
+	switch (sigmsg->event_id) {
+	case FTDM_SIGEVENT_START:
 		{
 			return ftdm_channel_from_event(sigmsg, &session);
 		}
 		break;
-
-    case FTDM_SIGEVENT_STOP:
-    case FTDM_SIGEVENT_RESTART:
+	case FTDM_SIGEVENT_STOP:
+	case FTDM_SIGEVENT_RESTART:
 		{
 			private_t *tech_pvt = NULL;
-			while((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
+			while ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				tech_pvt = switch_core_session_get_private(session);
 				switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 				channel = switch_core_session_get_channel(session);
@@ -2478,7 +2444,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 			}
 		}
 		break;
-    case FTDM_SIGEVENT_UP:
+	case FTDM_SIGEVENT_UP:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2492,7 +2458,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 					spanid, chanid, (uuid) ? uuid : "N/A");
 			}
 		}
-    case FTDM_SIGEVENT_PROGRESS_MEDIA:
+	case FTDM_SIGEVENT_PROGRESS_MEDIA:
 		{
 			if ((session = ftdm_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
@@ -2520,10 +2486,10 @@ static FIO_SIGNAL_CB_FUNCTION(on_clear_channel_signal)
 					spanid, chanid, (uuid) ? uuid : "N/A");
 			}
 		}
-		break;	
+		break;
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
-		{	
-			ftdm_signaling_status_t sigstatus = sigmsg->ev_data.sigstatus.status;	
+		{
+			ftdm_signaling_status_t sigstatus = sigmsg->ev_data.sigstatus.status;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d:%d signalling changed to :%s\n",
 					spanid, chanid, ftdm_signaling_status2str(sigstatus));
 		}
@@ -2570,7 +2536,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 			status = on_fxs_signal(sigmsg);
 		}
 		break;
-	default: 
+	default:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled analog channel type %d for channel %d:%d\n",
 							  type, spanid, chanid);
@@ -2583,17 +2549,19 @@ static FIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 
 static void ftdm_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
-    char *data = NULL;
-    va_list ap;
-	
-    va_start(ap, fmt);
+	char *data = NULL;
+	va_list ap;
+
+	va_start(ap, fmt);
 
 	if (switch_vasprintf(&data, fmt, ap) != -1) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, (char *)func, line, NULL, level, "%s", data);
 	}
-	if (data) free(data);
-    va_end(ap);
+	if (data) {
+		 free(data);
+	}
 
+	va_end(ap);
 }
 
 static uint32_t enable_analog_option(const char *str, uint32_t current_options)
@@ -2605,20 +2573,21 @@ static uint32_t enable_analog_option(const char *str, uint32_t current_options)
 		current_options |= ANALOG_OPTION_CALL_SWAP;
 		current_options &= ~ANALOG_OPTION_3WAY;
 	}
-	
+
 	return current_options;
-	
 }
 
 #define CONFIG_ERROR(...) { \
 		ftdm_log(FTDM_LOG_ERROR, __VA_ARGS__); \
 		globals.config_error = 1; \
 	}
-/* create ftdm_conf_node_t tree based on a fixed pattern XML configuration list 
+
+/*
+ * Create ftdm_conf_node_t tree based on a fixed pattern XML configuration list
  * last 2 args are for limited aka dumb recursivity
- * */
-static int add_config_list_nodes(switch_xml_t swnode, ftdm_conf_node_t *rootnode, 
-		const char *list_name, const char *list_element_name, 
+ */
+static int add_config_list_nodes(switch_xml_t swnode, ftdm_conf_node_t *rootnode,
+		const char *list_name, const char *list_element_name,
 		const char *sub_list_name, const char *sub_list_element_name)
 {
 	char *var, *val;
@@ -2878,7 +2847,7 @@ static void parse_gsm_spans(switch_xml_t cfg, switch_xml_t spans)
 			CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 			continue;
 		}
-		
+
 		if (!span_id) {
 			span_id = ftdm_span_get_id(span);
 		}
@@ -2913,8 +2882,8 @@ static void parse_gsm_spans(switch_xml_t cfg, switch_xml_t spans)
 			}
 		}
 
-		if (ftdm_configure_span_signaling(span, 
-						  "gsm", 
+		if (ftdm_configure_span_signaling(span,
+						  "gsm",
 						  on_clear_channel_signal,
 						  spanparameters) != FTDM_SUCCESS) {
 			CONFIG_ERROR("Error configuring Sangoma GSM FreeTDM span %d\n", span_id);
@@ -2967,7 +2936,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 			CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 			continue;
 		}
-		
+
 		if (!span_id) {
 			span_id = ftdm_span_get_id(span);
 		}
@@ -3006,13 +2975,13 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 				int num_codecs;
 				num_codecs = switch_loadable_module_get_codecs_sorted(&codec, 1, &val, 1);
 				if (num_codecs != 1 || !codec) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 					"Failed finding codec %s for unrestricted digital calls\n", val);
 				} else {
 					SPAN_CONFIG[span_id].digital_codec = switch_core_strdup(module_pool, codec->iananame);
 					SPAN_CONFIG[span_id].digital_sampling_rate = codec->samples_per_second;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-						"Unrestricted digital codec is %s at %dhz for span %d\n", 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+						"Unrestricted digital codec is %s at %dhz for span %d\n",
 						SPAN_CONFIG[span_id].digital_codec, SPAN_CONFIG[span_id].digital_sampling_rate, span_id);
 				}
 			} else if (!strcasecmp(var, "call_limit_backend")) {
@@ -3044,8 +3013,8 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 			}
 		}
 
-		if (ftdm_configure_span_signaling(span, 
-						  "sangoma_isdn", 
+		if (ftdm_configure_span_signaling(span,
+						  "sangoma_isdn",
 						  on_clear_channel_signal,
 						  spanparameters) != FTDM_SUCCESS) {
 			CONFIG_ERROR("Error configuring Sangoma ISDN FreeTDM span %d\n", span_id);
@@ -3076,7 +3045,7 @@ static switch_status_t load_config(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -3098,7 +3067,7 @@ static switch_status_t load_config(void)
 		}
 	}
 
-	if ((spans = switch_xml_child(cfg, "sangoma_pri_spans"))) { 
+	if ((spans = switch_xml_child(cfg, "sangoma_pri_spans"))) {
 		parse_bri_pri_spans(cfg, spans);
 	}
 
@@ -3148,7 +3117,7 @@ static switch_status_t load_config(void)
 				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
-			
+
 			if (!span_id) {
 				span_id = ftdm_span_get_id(span);
 			}
@@ -3184,8 +3153,8 @@ static switch_status_t load_config(void)
 				}
 			}
 
-			if (ftdm_configure_span_signaling(span, 
-						          "sangoma_ss7", 
+			if (ftdm_configure_span_signaling(span,
+						          "sangoma_ss7",
 						          on_clear_channel_signal,
 							  spanparameters) != FTDM_SUCCESS) {
 				CONFIG_ERROR("Error configuring ss7 FreeTDM span %d\n", span_id);
@@ -3243,7 +3212,7 @@ static switch_status_t load_config(void)
 				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
-			
+
 			if (!span_id) {
 				span_id = ftdm_span_get_id(span);
 			}
@@ -3251,7 +3220,7 @@ static switch_status_t load_config(void)
 			/* some defaults first */
 			SPAN_CONFIG[span_id].limit_backend = "hash";
 			SPAN_CONFIG[span_id].limit_reset_event = FTDM_LIMIT_RESET_ON_TIMEOUT;
-			
+
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -3315,16 +3284,16 @@ static switch_status_t load_config(void)
 					analog_options = enable_analog_option(val, analog_options);
 				}
 			}
-				
+
 			if (!id && !name) {
 				CONFIG_ERROR("span missing required param 'id'\n");
 				continue;
 			}
-			
+
 			if (!tonegroup) {
 				tonegroup = "us";
 			}
-			
+
 			if (digit_timeout) {
 				to = atoi(digit_timeout);
 			}
@@ -3350,13 +3319,13 @@ static switch_status_t load_config(void)
 				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
-			
+
 			if (!span_id) {
 				span_id = ftdm_span_get_id(span);
 			}
 
-			if (ftdm_configure_span(span, "analog", on_analog_signal, 
-								   "tonemap", tonegroup, 
+			if (ftdm_configure_span(span, "analog", on_analog_signal,
+								   "tonemap", tonegroup,
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
 								   "hotline", hotline ? hotline : "",
@@ -3376,7 +3345,7 @@ static switch_status_t load_config(void)
 			switch_set_string(SPAN_CONFIG[span_id].context, context);
 			switch_set_string(SPAN_CONFIG[span_id].dialplan, dialplan);
 			SPAN_CONFIG[span_id].analog_options = analog_options | globals.analog_options;
-			
+
 			chaniter = ftdm_span_get_chan_iterator(span, NULL);
 			curr = chaniter;
 			for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
@@ -3384,7 +3353,7 @@ static switch_status_t load_config(void)
 				ftdm_channel_set_private(fchan, &SPAN_CONFIG[span_id].pvts[i]);
 			}
 			ftdm_iterator_free(chaniter);
-			
+
 			if (dial_regex) {
 				switch_set_string(SPAN_CONFIG[span_id].dial_regex, dial_regex);
 			}
@@ -3442,17 +3411,16 @@ static switch_status_t load_config(void)
 					analog_options = enable_analog_option(val, analog_options);
 				}
 			}
-				
+
 			if (!id && !name) {
 				CONFIG_ERROR("span missing required param 'id'\n");
 				continue;
 			}
 
-			
 			if (!tonegroup) {
 				tonegroup = "us";
 			}
-			
+
 			if (digit_timeout) {
 				to = atoi(digit_timeout);
 			}
@@ -3479,14 +3447,14 @@ static switch_status_t load_config(void)
 				CONFIG_ERROR("Error finding FreeTDM span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
-			
+
 			if (!span_id) {
 				span_id = ftdm_span_get_id(span);
 			}
 
 
-			if (ftdm_configure_span(span, "analog_em", on_analog_signal, 
-								   "tonemap", tonegroup, 
+			if (ftdm_configure_span(span, "analog_em", on_analog_signal,
+								   "tonemap", tonegroup,
 								   "digit_timeout", &to,
 								   "max_dialstr", &max,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
@@ -3498,7 +3466,7 @@ static switch_status_t load_config(void)
 			switch_set_string(SPAN_CONFIG[span_id].context, context);
 			switch_set_string(SPAN_CONFIG[span_id].dialplan, dialplan);
 			SPAN_CONFIG[span_id].analog_options = analog_options | globals.analog_options;
-			
+
 			if (dial_regex) {
 				switch_set_string(SPAN_CONFIG[span_id].dial_regex, dial_regex);
 			}
@@ -3618,7 +3586,7 @@ static switch_status_t load_config(void)
 					paramindex++;
 				}
 			}
-	
+
 			zstatus = ftdm_span_find_by_name(name, &span);
 			if (zstatus != FTDM_SUCCESS) {
 				CONFIG_ERROR("Error finding FreeTDM span %s\n", name);
@@ -4020,22 +3988,21 @@ static void *SWITCH_THREAD_FUNC ioread_thread(switch_thread_t *thread, void *obj
 	ftdm_size_t origlen = len;
 	unsigned int pbuf[5];
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-	         "Started ioread thread (times = %d, interval = %ums, len = %"FTDM_SIZE_FMT", span = %d, chan = %d\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+	         "Started ioread thread (times = %d, interval = %ums, len = %"FTDM_SIZE_FMT", span = %d, chan = %d\n",
 		 data->num_times, data->interval, len, span_id, chan_id);
 
 	while (ftdm_running() && data->num_times > 0) {
 		data->num_times--;
 
-		wflags = FTDM_READ;	
-
+		wflags = FTDM_READ;
 		status = ftdm_channel_wait(data->fchan, &wflags, (data->interval * 10));
-		
+
 		if (status == FTDM_FAIL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to wait for IO in device %d:%d!\n", span_id, chan_id);
 			continue;
 		}
-		
+
 		if (status == FTDM_TIMEOUT) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out while waiting I/O in device %d:%d!\n", span_id, chan_id);
 			continue;
@@ -4051,7 +4018,7 @@ static void *SWITCH_THREAD_FUNC ioread_thread(switch_thread_t *thread, void *obj
 		pbuf[2] = iobuf[2];
 		pbuf[3] = iobuf[3];
 		pbuf[4] = iobuf[4];
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read 0x%1X 0x%1X 0x%1X 0x%1X 0x%1X\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read 0x%1X 0x%1X 0x%1X 0x%1X 0x%1X\n",
 				pbuf[0], pbuf[1], pbuf[2], pbuf[3], pbuf[4]);
 	}
 
@@ -4060,8 +4027,8 @@ static void *SWITCH_THREAD_FUNC ioread_thread(switch_thread_t *thread, void *obj
 	}
 
 	switch_core_destroy_memory_pool(&data->pool);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-	         "Done ioread thread (times = %d, interval = %ums, len = %"FTDM_SIZE_FMT", span = %d, chan = %d\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+	         "Done ioread thread (times = %d, interval = %ums, len = %"FTDM_SIZE_FMT", span = %d, chan = %d\n",
 		 data->num_times, data->interval, origlen, span_id, chan_id);
 	return NULL;
 }
@@ -4137,6 +4104,7 @@ end:
 FTDM_CLI_DECLARE(ftdm_cmd_list)
 {
 	int j;
+
 	for (j = 0 ; j < FTDM_MAX_SPANS_INTERFACE; j++) {
 		ftdm_channel_t *fchan;
 		ftdm_alarm_flag_t alarmbits = FTDM_ALARM_NONE;
@@ -4154,12 +4122,12 @@ FTDM_CLI_DECLARE(ftdm_cmd_list)
 		}
 		fchan = ftdm_span_get_channel(SPAN_CONFIG[j].span, 1);
 		ftdm_channel_get_alarms(fchan, &alarmbits);
-		
+
 		if ((FTDM_SUCCESS == ftdm_span_get_sig_status(SPAN_CONFIG[j].span, &sigstatus))) {
 			stream->write_function(stream,
 								   "+OK\n"
 								   "span: %u (%s)\n"
-								   "type: %s\n"		
+								   "type: %s\n"
 								   "physical_status: %s\n"
 								   "signaling_status: %s\n"
 								   "chan_count: %u\n"
@@ -4227,13 +4195,13 @@ FTDM_CLI_DECLARE(ftdm_cmd_start_stop)
 		stream->write_function(stream, "-ERR span %s not found\n", span_name);
 		goto end;
 	}
-	
+
 	if (!strcasecmp(argv[0], "stop")) {
 		status = ftdm_span_stop(span);
 	} else {
 		status = ftdm_span_start(span);
 	}
-	
+
 	stream->write_function(stream, status == FTDM_SUCCESS ? "+OK\n" : "-ERR failure\n");
 end:
 	return SWITCH_STATUS_SUCCESS;
@@ -4295,7 +4263,7 @@ FTDM_CLI_DECLARE(ftdm_cmd_dump)
 	uint32_t chan_id = 0;
 	ftdm_span_t *span;
 	char *as = NULL;
-	
+
 	if (argc < 2) {
 		print_usage(stream, cli);
 		goto end;
@@ -4320,7 +4288,7 @@ FTDM_CLI_DECLARE(ftdm_cmd_dump)
 			stream->write_function(stream, "<error>invalid span</error>\n");
 		} else {
 			if (chan_id) {
-				if(chan_id > ftdm_span_get_chan_count(span)) {
+				if (chan_id > ftdm_span_get_chan_count(span)) {
 					stream->write_function(stream, "<error>invalid channel</error>\n");
 				} else {
 					dump_chan_xml(span, chan_id, stream);
@@ -4339,7 +4307,7 @@ FTDM_CLI_DECLARE(ftdm_cmd_dump)
 			stream->write_function(stream, "-ERR invalid span\n");
 		} else {
 			if (chan_id) {
-				if(chan_id > ftdm_span_get_chan_count(span)) {
+				if (chan_id > ftdm_span_get_chan_count(span)) {
 					stream->write_function(stream, "-ERR invalid channel\n");
 				} else {
 					char *dbgstr = NULL;
@@ -4380,7 +4348,7 @@ FTDM_CLI_DECLARE(ftdm_cmd_alarms)
         if (!span) {
                 stream->write_function(stream, "-ERR invalid span\n");
         } else if (chan_id) {
-                if(chan_id > ftdm_span_get_chan_count(span)) {
+                if (chan_id > ftdm_span_get_chan_count(span)) {
                         stream->write_function(stream, "-ERR invalid channel\n");
                 } else {
                         ftdm_channel_t *chan = ftdm_span_get_channel(span, chan_id);
@@ -4492,16 +4460,20 @@ FTDM_CLI_DECLARE(ftdm_cmd_trace)
 	uint32_t chan_count = 0;
 	ftdm_span_t *span = NULL;
 	ftdm_channel_t *chan = NULL;
+
 	if (argc < 3) {
 		print_usage(stream, cli);
 		goto end;
-	} 
+	}
+
 	ftdm_span_find_by_name(argv[2], &span);
 	if (!span) {
 		stream->write_function(stream, "-ERR failed to find span %s\n", argv[2]);
 		goto end;
 	}
+
 	chan_count = ftdm_span_get_chan_count(span);
+
 	if (argc > 3) {
 		chan_id = atoi(argv[3]);
 		if (chan_id > chan_count) {
@@ -4509,7 +4481,9 @@ FTDM_CLI_DECLARE(ftdm_cmd_trace)
 			goto end;
 		}
 	}
+
 	span_id = ftdm_span_get_id(span);
+
 	if (chan_id) {
 		chan = ftdm_span_get_channel(span, chan_id);
 		snprintf(tracepath, sizeof(tracepath), "%s-in-s%dc%d", argv[1], span_id, chan_id);
@@ -4541,7 +4515,8 @@ FTDM_CLI_DECLARE(ftdm_cmd_notrace)
 	if (argc < 2) {
 		print_usage(stream, cli);
 		goto end;
-	} 
+	}
+
 	ftdm_span_find_by_name(argv[1], &span);
 	if (!span) {
 		stream->write_function(stream, "-ERR failed to find span %s\n", argv[1]);
@@ -4549,6 +4524,7 @@ FTDM_CLI_DECLARE(ftdm_cmd_notrace)
 	}
 
 	chan_count = ftdm_span_get_chan_count(span);
+
 	if (argc > 2) {
 		chan_id = atoi(argv[2]);
 		if (chan_id > chan_count) {
@@ -4581,10 +4557,12 @@ FTDM_CLI_DECLARE(ftdm_cmd_gains)
 	uint32_t ccount = 0;
 	ftdm_channel_t *chan;
 	ftdm_span_t *span = NULL;
+
 	if (argc < 4) {
 		print_usage(stream, cli);
 		goto end;
-	} 
+	}
+
 	ftdm_span_find_by_name(argv[3], &span);
 	if (!span) {
 		stream->write_function(stream, "-ERR failed to find span %s\n", argv[3]);
@@ -4598,7 +4576,8 @@ FTDM_CLI_DECLARE(ftdm_cmd_gains)
 			goto end;
 		}
 	}
-	i = sscanf(argv[1], "%f", &rxgain);
+
+	i  = sscanf(argv[1], "%f", &rxgain);
 	i += sscanf(argv[2], "%f", &txgain);
 	if (i != 2) {
 		stream->write_function(stream, "-ERR invalid gains\n");
@@ -4681,10 +4660,11 @@ FTDM_CLI_DECLARE(ftdm_cmd_queuesize)
 	uint32_t ccount = 0;
 	ftdm_channel_t *chan;
 	ftdm_span_t *span = NULL;
+
 	if (argc < 4) {
 		print_usage(stream, cli);
 		goto end;
-	} 
+	}
 
 	ftdm_span_find_by_name(argv[3], &span);
 	if (!span) {
@@ -4700,7 +4680,7 @@ FTDM_CLI_DECLARE(ftdm_cmd_queuesize)
 		}
 	}
 
-	i = sscanf(argv[1], "%u", &rxsize);
+	i  = sscanf(argv[1], "%u", &rxsize);
 	i += sscanf(argv[2], "%u", &txsize);
 	if (i != 2) {
 		stream->write_function(stream, "-ERR invalid queue sizes provided\n");
@@ -4728,6 +4708,7 @@ static void exec_io_command(const char *cmd, switch_stream_handle_t *stream, ftd
 {
 	int enable = 0;
 	ftdm_channel_iostats_t stats;
+
 	if (!strcasecmp("enable", cmd)) {
 		enable = 1;
 		ftdm_channel_command(fchan, FTDM_COMMAND_SWITCH_IOSTATS, &enable);
@@ -4738,7 +4719,7 @@ static void exec_io_command(const char *cmd, switch_stream_handle_t *stream, ftd
 		ftdm_channel_command(fchan, FTDM_COMMAND_FLUSH_IOSTATS, NULL);
 	} else {
 		ftdm_channel_command(fchan, FTDM_COMMAND_GET_IOSTATS, &stats);
-		stream->write_function(stream, "-- IO statistics for channel %d:%d --\n", 
+		stream->write_function(stream, "-- IO statistics for channel %d:%d --\n",
 				ftdm_channel_get_span_id(fchan), ftdm_channel_get_id(fchan));
 		stream->write_function(stream, "Rx errors: %u\n", stats.rx.errors);
 		stream->write_function(stream, "Rx queue size: %u\n", stats.rx.queue_size);
@@ -4833,6 +4814,7 @@ static void print_full_usage(switch_stream_handle_t *stream)
 {
 	int i = 0;
 	ftdm_cli_entry_t *entry = NULL;
+
 	stream->write_function(stream, "USAGE:\n");
 	stream->write_function(stream, "--------------------------------------------------------------------------------\n");
 	for (i = 0 ; i < ftdm_array_len(ftdm_cli_options); i++) {
@@ -4865,7 +4847,7 @@ SWITCH_STANDARD_API(ft_function)
 			break;
 		}
 	}
-	
+
 	/* if the command was not found in the main CLI entries, try to execute it as a FreeTDM API */
 	if (i == ftdm_array_len(ftdm_cli_options)) {
 		char *rply = ftdm_api_execute(cmd);
@@ -4878,27 +4860,26 @@ SWITCH_STANDARD_API(ft_function)
 	}
 
 end:
-
 	switch_safe_free(mycmd);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_STANDARD_APP(enable_dtmf_function)
 {
 	private_t *tech_pvt;
+
 	if (!switch_core_session_check_interface(session, freetdm_endpoint_interface)) {
 		ftdm_log(FTDM_LOG_ERROR, "This application is only for FreeTDM channels.\n");
 		return;
 	}
-	
+
 	tech_pvt = switch_core_session_get_private(session);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
         	switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
 		return;
 	}
-	
+
 	ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_ENABLE_DTMF_DETECT, NULL);
 	ftdm_log(FTDM_LOG_INFO, "DTMF detection enabled in channel %d:%d\n", ftdm_channel_get_id(tech_pvt->ftdmchan), ftdm_channel_get_span_id(tech_pvt->ftdmchan));
 }
@@ -4906,18 +4887,19 @@ SWITCH_STANDARD_APP(enable_dtmf_function)
 SWITCH_STANDARD_APP(disable_dtmf_function)
 {
 	private_t *tech_pvt;
+
 	if (!switch_core_session_check_interface(session, freetdm_endpoint_interface)) {
 		ftdm_log(FTDM_LOG_ERROR, "This application is only for FreeTDM channels.\n");
 		return;
 	}
-	
+
 	tech_pvt = switch_core_session_get_private(session);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
         	switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
 		return;
 	}
-	
+
 	ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_DISABLE_DTMF_DETECT, NULL);
 	ftdm_log(FTDM_LOG_INFO, "DTMF detection Disabled in channel %d:%d\n", ftdm_channel_get_id(tech_pvt->ftdmchan), ftdm_channel_get_span_id(tech_pvt->ftdmchan));
 }
@@ -4931,14 +4913,14 @@ SWITCH_STANDARD_APP(disable_ec_function)
 		ftdm_log(FTDM_LOG_ERROR, "This application is only for FreeTDM channels.\n");
 		return;
 	}
-	
+
 	tech_pvt = switch_core_session_get_private(session);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-        switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
-        return;
-    }
-	
+		switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_LOSE_RACE);
+		return;
+	}
+
 	ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_DISABLE_ECHOCANCEL, &x);
 	ftdm_channel_command(tech_pvt->ftdmchan, FTDM_COMMAND_DISABLE_ECHOTRAIN, &x);
 	ftdm_log(FTDM_LOG_INFO, "Echo Canceller Disabled\n");
@@ -4971,7 +4953,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 		ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
 		ftdm_global_destroy();
 		return SWITCH_STATUS_TERM;
@@ -4982,7 +4964,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 	freetdm_endpoint_interface->interface_name = "freetdm";
 	freetdm_endpoint_interface->io_routines = &freetdm_io_routines;
 	freetdm_endpoint_interface->state_handler = &freetdm_state_handlers;
-	
+
 	SWITCH_ADD_API(commands_api_interface, "ftdm", "FreeTDM commands", ft_function, "<cmd> <args>");
 	for (i = 0 ; i < ftdm_array_len(ftdm_cli_options); i++) {
 		char complete_cli[512];
@@ -5001,14 +4983,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_freetdm_shutdown)
 {
-	switch_hash_index_t *hi;		
-
+	switch_hash_index_t *hi;
 	const void *var;
 	void *val;
 
 	/* destroy ss7 configs */
 	for (hi = switch_hash_first(NULL, globals.ss7_configs); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &var, NULL, &val);	
+		switch_hash_this(hi, &var, NULL, &val);
 		ftdm_conf_node_destroy(val);
 	}
 
