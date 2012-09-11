@@ -760,8 +760,6 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 	mg_apply_tdm_dtmf_removal(term, mg_ctxt);
 
-	if((MG_TERM_RTP == term->type) && (term->u.rtp.t38_options))
-		mg_profile->mg_stats->total_num_of_fax_call_recvd++;
 
 	mg_apply_tdm_ec(term, mg_ctxt);
 
@@ -1084,6 +1082,9 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 		mg_apply_tdm_dtmf_removal(term, mg_ctxt);
 
 		mg_apply_tdm_ec(term, mg_ctxt);
+
+		if((MG_TERM_RTP == term->type) && (term->u.rtp.t38_options))
+			mg_profile->mg_stats->total_num_of_t38_call_recvd++;
 
 		mg_print_t38_attributes(term);
 

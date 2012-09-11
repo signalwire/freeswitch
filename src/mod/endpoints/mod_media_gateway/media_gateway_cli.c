@@ -988,7 +988,7 @@ switch_status_t handle_show_stats(switch_stream_handle_t *stream, megaco_profile
 	stream->write_function(stream, "Total Number of RTP      ADD received  = %d \n", mg_profile->mg_stats->total_num_of_rtp_add_recvd); 
 	stream->write_function(stream, "Total Number of SUB received  = %d \n", mg_profile->mg_stats->total_num_of_sub_recvd); 
 	stream->write_function(stream, "Total Number of CALL received  = %d \n", mg_profile->mg_stats->total_num_of_call_recvd); 
-	stream->write_function(stream, "Total Number of T38-FAX CALL received  = %d \n", mg_profile->mg_stats->total_num_of_fax_call_recvd++); 
+	stream->write_function(stream, "Total Number of T38 CALL received  = %d \n", mg_profile->mg_stats->total_num_of_t38_call_recvd); 
 	stream->write_function(stream, "Total Number of IN-Service Service change sent  = %d \n", 
 			mg_profile->mg_stats->total_num_of_term_in_service_change_sent); 
 	stream->write_function(stream, "Total Number of Out-Of-Service Service change sent  = %d \n", 
