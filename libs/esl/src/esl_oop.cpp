@@ -12,6 +12,7 @@ void eslSetLogLevel(int level)
 ESLconnection::ESLconnection(const char *host, const char *port, const char *password)
 {
 	connection_construct_common();
+	if (port == NULL) return;
 	int x_port = atoi(port);
 
 	esl_connect(&handle, host, x_port, NULL, password);
@@ -20,6 +21,7 @@ ESLconnection::ESLconnection(const char *host, const char *port, const char *pas
 ESLconnection::ESLconnection(const char *host, const char *port, const char *user, const char *password)
 {
 	connection_construct_common();
+	if (port == NULL) return;
 	int x_port = atoi(port);
 
 	esl_connect(&handle, host, x_port, user, password);
