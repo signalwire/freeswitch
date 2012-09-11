@@ -525,10 +525,17 @@ void sngisdn_rcv_sta_cfm (int16_t suId, uint32_t suInstId, uint32_t spInstId, St
 
 	ISDN_FUNC_TRACE_ENTER(__FUNCTION__);
 
+	if (!suInstId && !spInstId) {
+		/* This is a response to a sngisdn_snd_info_req
+		 * that was sent to attempt to re-establish DL link */
+		ISDN_FUNC_TRACE_EXIT(__FUNCTION__);
+		return;
+	}
+
 	/* We sometimes receive a STA CFM after receiving a RELEASE/RELEASE COMPLETE, so we need to lock
 		here in case we are calling clear_call_data at the same time this function is called */
 
-	ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);	
+	ftdm_mutex_lock(g_sngisdn_data.ccs[suId].mutex);
 	if (!(spInstId && get_ftdmchan_by_spInstId(suId, spInstId, &sngisdn_info) == FTDM_SUCCESS) &&
 		!(suInstId && get_ftdmchan_by_suInstId(suId, suInstId, &sngisdn_info) == FTDM_SUCCESS)) {
 
@@ -838,7 +845,7 @@ void sngisdn_rcv_q931_ind(InMngmt *status)
 
 			if (nfas_data && status->t.usta.alarm.event == LCM_EVENT_DOWN) {
 				if (nfas_data->dchan->sigstatus == FTDM_SIG_STATE_DOWN &&
-				   (nfas_data->backup && nfas_data->backup->sigstatus == FTDM_SIG_STATE_DOWN)) {
+				   ((nfas_data->backup && nfas_data->backup->sigstatus == FTDM_SIG_STATE_DOWN) || !nfas_data->backup)) {
 
 					for (i = 0; i < ftdm_array_len(nfas_data->spans); i++) {
 						if (nfas_data->spans[i] && nfas_data->spans[i]->nfas.sigchan == SNGISDN_NFAS_DCHAN_NONE) {

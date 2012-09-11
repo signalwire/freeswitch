@@ -58,12 +58,8 @@ ftdm_status_t sngisdn_stack_cfg_q931_lce(ftdm_span_t *span);
 
 ftdm_status_t sngisdn_stack_cfg_cc_sap(ftdm_span_t *span);
 
-ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span)
+ftdm_status_t sngisdn_start_gen_cfg(void)
 {
-	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
-
-	ftdm_log(FTDM_LOG_DEBUG, "Starting stack configuration for span:%s\n", span->name);
-	
 	if (!g_sngisdn_data.gen_config_done) {
 		g_sngisdn_data.gen_config_done = 1;
 		ftdm_log(FTDM_LOG_DEBUG, "Starting general stack configuration\n");
@@ -92,6 +88,15 @@ ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span)
 		ftdm_log(FTDM_LOG_DEBUG, "General stack CC done\n");
 		ftdm_log(FTDM_LOG_INFO, "General stack configuration done\n");
 	}
+	return FTDM_SUCCESS;
+}
+
+
+ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*)span->signal_data;
+
+	ftdm_log(FTDM_LOG_DEBUG, "Starting stack configuration for span:%s\n", span->name);
 
 	if (signal_data->dchan) {
 		if (sngisdn_stack_cfg_phy_psap(span) != FTDM_SUCCESS) {

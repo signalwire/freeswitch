@@ -1376,8 +1376,11 @@ static FIO_SIG_LOAD_FUNCTION(ftdm_sangoma_isdn_init)
 	}
 	
 	/* initalize sng_isdn library */
-
 	ftdm_assert_return(!sng_isdn_init(&g_sngisdn_event_interface), FTDM_FAIL, "Failed to initialize stack\n");
+
+	/* Load Stack General Configuration */
+	sngisdn_start_gen_cfg();
+
 	return FTDM_SUCCESS;
 }
 

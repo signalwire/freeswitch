@@ -1595,6 +1595,10 @@ void sngisdn_send_signal(sngisdn_chan_data_t *sngisdn_info, ftdm_signal_event_t 
 
 sngisdn_span_data_t *sngisdn_dchan(sngisdn_span_data_t *signal_data)
 {
+	if (!signal_data) {
+		return NULL;
+	}
+
 	if (!signal_data->nfas.trunk) {
 		return signal_data;
 	}
