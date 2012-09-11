@@ -974,7 +974,7 @@ SWITCH_STANDARD_APP(transfer_function)
 			if (bleg || both) {
 				const char *uuid;
 				switch_channel_t *channel = switch_core_session_get_channel(session);
-				if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+				if ((uuid = switch_channel_get_partner_uuid(channel))) {
 					switch_core_session_t *b_session;
 					if ((b_session = switch_core_session_locate(uuid))) {
 						switch_ivr_session_transfer(b_session, argv[1], argv[2], argv[3]);
@@ -1182,6 +1182,17 @@ SWITCH_STANDARD_APP(redirect_function)
 	msg.from = __FILE__;
 	msg.string_arg = data;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
+	switch_core_session_receive_message(session, &msg);
+}
+
+SWITCH_STANDARD_APP(video_refresh_function)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to refresh video */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
 	switch_core_session_receive_message(session, &msg);
 }
 
@@ -2138,7 +2149,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 
 	channel = switch_core_session_get_channel(session);
 
-	if ((bond = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+	if ((bond = switch_channel_get_partner_uuid(channel))) {
 		bond = switch_core_session_strdup(session, bond);
 	}
 
@@ -3058,7 +3069,8 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 				}
 			} 
 		}
-		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_get_state(caller_channel) != CS_ROUTING) {
+		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && !switch_channel_test_flag(caller_channel, CF_CONFIRM_BLIND_TRANSFER) && 
+			switch_channel_get_state(caller_channel) != CS_ROUTING) {
 			switch_channel_hangup(caller_channel, cause);
 		}
 		return;
@@ -3558,13 +3570,8 @@ SWITCH_STANDARD_APP(pickup_function)
 			caller_profile->callee_id_number = num;
 			
 			if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
-				const char *uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+				const char *uuid = switch_channel_get_partner_uuid(channel);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
-
-				if (!uuid) {
-					uuid = switch_channel_get_variable(channel, "originate_signal_bond");
-				}
-
 				
 				if (uuid) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
@@ -4462,6 +4469,19 @@ static char *file_string_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 /* /FILE STRING INTERFACE */
 
 
+SWITCH_STANDARD_APP(blind_transfer_ack_function)
+{
+	switch_bool_t val = 0;
+
+	if (data) {
+		val = switch_true((char *) val);
+	}
+
+	switch_ivr_blind_transfer_ack(session, val);
+}
+
+
+
 
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
@@ -4541,6 +4561,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, PRESENCE_USAGE);
 
+	SWITCH_ADD_APP(app_interface, "blind_transfer_ack", "", "", blind_transfer_ack_function, "[true|false]", SAF_NONE);
+
 	SWITCH_ADD_APP(app_interface, "bind_digit_action", "bind a key sequence or regex to an action", 
 				   "bind a key sequence or regex to an action", bind_digit_action_function, BIND_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
 
@@ -4616,6 +4638,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "play_and_detect_speech", "Play and do speech recognition", "Play and do speech recognition", play_and_detect_speech_function, PLAY_AND_DETECT_SPEECH_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>",
+				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "video_refresh", "Send video refresh.", "Send video refresh.", video_refresh_function, "",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_info", "Send info", "Send info", send_info_function, "<info>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "jitterbuffer", "Send session jitterbuffer", "Send a jitterbuffer message to a session.", 

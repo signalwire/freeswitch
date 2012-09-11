@@ -28,6 +28,8 @@
  * Christopher M. Rienzo <chris@rienzo.net>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  *
+ * Maintainer: Christopher M. Rienzo <chris@rienzo.net>
+ *
  * mod_unimrcp.c -- UniMRCP module (MRCP client)
  *
  */

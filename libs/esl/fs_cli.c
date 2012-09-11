@@ -9,6 +9,7 @@
 #include <getopt.h>
 
 #define CMD_BUFLEN 1024
+#define PROMPT_PREFIX "netborder-ss7"
 
 #ifndef WIN32
 #include <sys/select.h>
@@ -902,30 +903,19 @@ static const char *basic_gets(int *cnt)
 	return command_buf;
 }
 
-static const char *banner =
-	"            _____ ____     ____ _     ___              \n"
-	"           |  ___/ ___|   / ___| |   |_ _|             \n"
-	"           | |_  \\___ \\  | |   | |    | |            \n"
-	"           |  _|  ___) | | |___| |___ | |              \n"
-	"           |_|   |____/   \\____|_____|___|            \n"
-	"\n"
-	"*******************************************************\n"
-	"* Anthony Minessale II, Ken Rice,                     *\n"
-	"* Michael Jerris, Travis Cross                        *\n"
-	"* FreeSWITCH (http://www.freeswitch.org)              *\n"
-	"* Paypal Donations Appreciated: paypal@freeswitch.org *\n"
-	"* Brought to you by ClueCon http://www.cluecon.com/   *\n"
-	"*******************************************************\n"
-	"\n"
-	"Type /help <enter> to see a list of commands\n\n\n";
-
 static void print_banner(FILE *stream)
 {
-#ifndef WIN32
-	fprintf(stream, "%s%s", output_text_color, banner);
-#else
-	fprintf(stream, "%s", banner);
-#endif
+	fprintf(stream,
+			
+
+			"\n"
+			"*******************************************************\n"
+			"* Netborder SS7 Gateway                               *\n"
+			"* Powered by FreeSWITCH (http://www.freeswitch.org)   *\n"
+			"*******************************************************\n"
+			"\n"
+                        "Type /help <enter> to see a list of commands\n\n\n"
+			);
 }
 
 static void set_fn_keys(cli_profile_t *profile)
@@ -1152,13 +1142,13 @@ int main(int argc, char *argv[])
 	char cmd_str[1024] = "";
 	cli_profile_t *profile = NULL;
 #ifndef WIN32
-	char hfile[512] = "/tmp/fs_cli_history";
-	char cfile[512] = "/etc/fs_cli.conf";
-	char dft_cfile[512] = "/etc/fs_cli.conf";
+	char hfile[512] = "/etc/nbess7_cli_history";
+	char cfile[512] = "/etc/nbess7_cli.conf";
+	char dft_cfile[512] = "/etc/nbess7_cli.conf";
 #else
-	char hfile[512] = "fs_cli_history";
-	char cfile[512] = "fs_cli.conf";
-	char dft_cfile[512] = "fs_cli.conf";
+	char hfile[512] = "nbess7_cli_history";
+	char cfile[512] = "nbess7_cli.conf";
+	char dft_cfile[512] = "nbess7_cli.conf";
 #endif
 	char *home = getenv("HOME");
 	/* Vars for optargs */
@@ -1203,18 +1193,19 @@ int main(int argc, char *argv[])
 #else
 	feature_level = 1;
 #endif
+	feature_level = 0;
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
 	strncpy(internal_profile.name, "internal", sizeof(internal_profile.name));
-	internal_profile.port = 8021;
+	internal_profile.port = 8821;
 	set_fn_keys(&internal_profile);
 	esl_set_string(internal_profile.prompt_color, prompt_color);
 	esl_set_string(internal_profile.input_text_color, input_text_color);
 	esl_set_string(internal_profile.output_text_color, output_text_color);
 	if (home) {
-		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
-		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_conf", home);
+		snprintf(hfile, sizeof(hfile), "%s/.nbess7_cli_history", home);
+		snprintf(cfile, sizeof(cfile), "%s/.nbess7_cli_conf", home);
 	}
 	signal(SIGINT, handle_SIGINT);
 #ifdef SIGTSTP
@@ -1335,20 +1326,24 @@ int main(int argc, char *argv[])
 	esl_set_string(input_text_color, profile->input_text_color);
 	esl_set_string(output_text_color, profile->output_text_color);
 	if (argv_host) {
-		if (argv_port && profile->port != 8021) {
-			snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s:%u@%s> ", profile->host, profile->port, profile->name);
+		if (argv_port && profile->port != 8821) {
+			snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s:%u@%s> ", profile->host, profile->port, profile->name);
 		} else {
-			snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s@%s> ", profile->host, profile->name);
+			snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s@%s> ", profile->host, profile->name);
 		}
 	} else {
-		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s> ", profile->name);
+		snprintf(prompt_str, sizeof(prompt_str), PROMPT_PREFIX "@%s> ", profile->name);
 	}
 	bare_prompt_str_len = (int)strlen(bare_prompt_str);
 	if (feature_level) {
 		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
-	} else {
+	} 
+	/*  
+	else {
+	
 		snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str);
-	}
+	}	
+	*/
  connect:
 	connected = 0;
 	while (--loops > 0) {
@@ -1470,8 +1465,10 @@ int main(int argc, char *argv[])
 		setvbuf(stdout, (char*)NULL, _IONBF, 0);
 	}
 	print_banner(stdout);
-	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
+
+	esl_log(ESL_LOG_INFO, "Netborder SS7 CLI Ready.\nenter /help for a list of commands.\n");
 	output_printf("%s\n", handle.last_sr_reply);
+
 	while (running > 0) {
 		int r;
 #ifdef HAVE_EDITLINE

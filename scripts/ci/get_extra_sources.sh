@@ -8,7 +8,7 @@ if [ ! -d .git ]; then
   exit 1;
 fi
 
-(mkdir -p rpmbuild && cd $_ && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SOURCES SPECS)
+(mkdir -p rpmbuild && cd rpmbuild && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SOURCES SPECS)
 
 cd $src_repo/rpmbuild/SOURCES
 

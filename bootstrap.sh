@@ -343,11 +343,7 @@ bootstrap_apr() {
 
   echo "Entering directory ${LIBDIR}/apr-util"
   cd ${LIBDIR}/apr-util
-  if ! ${BGJOB}; then
-    ./buildconf
-  else
-    ./buildconf &
-  fi
+  ./buildconf
 }
 
 bootstrap_libzrtp() {
@@ -454,9 +450,10 @@ bootstrap_libs() {
     if ! ${BGJOB}; then
       libbootstrap ${i} ; bootstrap_libs_post ${i}
     else
-      ((libbootstrap ${i} ; bootstrap_libs_post ${i}) &)
+      (libbootstrap ${i} ; bootstrap_libs_post ${i}) &
     fi
   done
+  ${BGJOB} && wait
 }
 
 run() {
@@ -471,7 +468,6 @@ run() {
   check_libtoolize
   print_autotools_vers
   bootstrap_libs
-  ${BGJOB} && wait
   return 0
 }
 

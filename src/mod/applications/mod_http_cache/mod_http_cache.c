@@ -23,7 +23,9 @@
  *
  * Contributor(s):
  *
- * Chris Rienzo <chris@rienzo.net>
+ * Christopher M. Rienzo <chris@rienzo.net>
+ *
+ * Maintainer: Christopher M. Rienzo <chris@rienzo.net>
  *
  * mod_http_cache.c -- HTTP GET with caching
  *                  -- designed for downloading audio files from a webserver for playback

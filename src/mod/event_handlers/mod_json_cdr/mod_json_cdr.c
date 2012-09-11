@@ -33,7 +33,6 @@
 #include <sys/stat.h>
 #include <switch.h>
 #include <switch_curl.h>
-#include <json.h>
 
 #define MAX_URLS 20
 #define MAX_ERR_DIRS 20
@@ -181,432 +180,11 @@ static switch_status_t set_json_cdr_log_dirs()
 	return status;
 }
 
-#define json_object_safe_new_string(str) json_object_new_string(str ? str : "")
-#define JSON_ENSURE_SUCCESS(obj) if (is_error(obj)) { return; }
-static void set_json_profile_data(struct json_object *json, switch_caller_profile_t *caller_profile)
-{
-	struct json_object *param = NULL;
-
-	param = json_object_safe_new_string((char *)caller_profile->username);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "username", param);
-
-	param = json_object_safe_new_string((char *)caller_profile->dialplan);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "dialplan", param);
-
-	param = json_object_safe_new_string((char *)caller_profile->caller_id_name);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "caller_id_name", param);
-
-	param = json_object_safe_new_string((char *)caller_profile->ani);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "ani", param);
-
-	param = json_object_safe_new_string((char *)caller_profile->aniii);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "aniii", param);
-
-	param = json_object_safe_new_string((char *)caller_profile->caller_id_number);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "caller_id_number", param);
-
-	param = json_object_safe_new_string((char *)caller_profile->network_addr);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "network_addr", param);
-
-	param = json_object_safe_new_string((char *)caller_profile->rdnis);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "rdnis", param);
-
-	param = json_object_safe_new_string(caller_profile->destination_number);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "destination_number", param);
-
-	param = json_object_safe_new_string(caller_profile->uuid);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "uuid", param);
-
-	param = json_object_safe_new_string((char *)caller_profile->source);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "source", param);
-
-	param = json_object_safe_new_string((char *)caller_profile->context);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "context", param);
-
-	param = json_object_safe_new_string(caller_profile->chan_name);
-	JSON_ENSURE_SUCCESS(param);
-	json_object_object_add(json, "chan_name", param);
-
-}
-
-static void set_json_chan_vars(struct json_object *json, switch_channel_t *channel)
-{
-	struct json_object *variable = NULL;
-	switch_event_header_t *hi = switch_channel_variable_first(channel);
-
-	if (!hi)
-		return;
-
-	for (; hi; hi = hi->next) {
-		if (!zstr(hi->name) && !zstr(hi->value)) {
-			char *data = hi->value;
-			if (globals.encode_values == ENCODING_DEFAULT) {
-				switch_size_t dlen = strlen(hi->value) * 3;
-
-				if ((data = malloc(dlen))) {
-					memset(data, 0, dlen);
-					switch_url_encode(hi->value, data, dlen);
-				}
-			}
-
-			variable = json_object_safe_new_string(data);			
-			if (!is_error(variable)) {
-				json_object_object_add(json, hi->name, variable);
-			}
-
-			if (data != hi->value) {
-				switch_safe_free(data);
-			}
-		}
-	}
-	switch_channel_variable_last(channel);
-}
-
-
-
-static switch_status_t generate_json_cdr(switch_core_session_t *session, struct json_object **json_cdr)
-{
-
-	struct json_object *cdr = json_object_new_object();
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_caller_profile_t *caller_profile;
-	struct json_object *variables, *j_main_cp, *j_caller_profile, *j_caller_extension, *j_times, *time_tag,
-		*j_application, *j_callflow, *j_inner_extension, *j_apps, *j_o, *j_channel_data, *j_field;
-	switch_app_log_t *app_log;
-	char tmp[512], *f;
-	
-	if (is_error(cdr)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	j_channel_data = json_object_new_object();
-	if (is_error(j_channel_data)) {
-		goto error;
-	}
-	json_object_object_add(cdr, "channel_data", j_channel_data);
-
-	
-	j_field = json_object_safe_new_string((char *) switch_channel_state_name(switch_channel_get_state(channel)));
-	json_object_object_add(j_channel_data, "state", j_field);
-
-	j_field = json_object_safe_new_string(switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
-
-	json_object_object_add(j_channel_data, "direction", j_field);
-
-
-	switch_snprintf(tmp, sizeof(tmp), "%d", switch_channel_get_state(channel));
-	j_field = json_object_new_string((char *) tmp);
-	json_object_object_add(j_channel_data, "state_number", j_field);
-	
-
-	if ((f = switch_channel_get_flag_string(channel))) {
-		j_field = json_object_safe_new_string((char *) f);
-		json_object_object_add(j_channel_data, "flags", j_field);
-		free(f);
-	}
-
-	if ((f = switch_channel_get_cap_string(channel))) {
-		j_field = json_object_safe_new_string((char *) f);
-		json_object_object_add(j_channel_data, "caps", j_field);
-		free(f);
-	}
-
-
-	variables = json_object_new_object();
-	json_object_object_add(cdr, "variables", variables);
-
-	if (is_error(variables)) {
-		goto error;
-	}
-
-	set_json_chan_vars(variables, channel);
-
-
-	if ((app_log = switch_core_session_get_app_log(session))) {
-		switch_app_log_t *ap;
-
-		j_apps = json_object_new_object();
-
-		if (is_error(j_apps)) {
-			goto error;
-		}
-
-		json_object_object_add(cdr, "app_log", j_apps);
-
-		for (ap = app_log; ap; ap = ap->next) {
-			j_application = json_object_new_object();
-
-			if (is_error(j_application)) {
-				goto error;
-			}
-
-			json_object_object_add(j_application, "app_name", json_object_safe_new_string(ap->app));
-			json_object_object_add(j_application, "app_data", json_object_safe_new_string(ap->arg));
-
-			json_object_object_add(j_apps, "application", j_application);
-		}
-	}
-
-
-	caller_profile = switch_channel_get_caller_profile(channel);
-
-	while (caller_profile) {
-
-		j_callflow = json_object_new_object();
-
-		if (is_error(j_callflow)) {
-			goto error;
-		}
-
-		json_object_object_add(cdr, "callflow", j_callflow);
-
-		if (!zstr(caller_profile->dialplan)) {
-			json_object_object_add(j_callflow, "dialplan", json_object_safe_new_string((char *)caller_profile->dialplan));
-		}
-
-		if (!zstr(caller_profile->profile_index)) {
-			json_object_object_add(j_callflow, "profile_index", json_object_safe_new_string((char *)caller_profile->profile_index));
-		}
-
-		if (caller_profile->caller_extension) {
-			switch_caller_application_t *ap;
-
-			j_caller_extension = json_object_new_object();
-
-			if (is_error(j_caller_extension)) {
-				goto error;
-			}
-
-			json_object_object_add(j_callflow, "extension", j_caller_extension);
-
-			json_object_object_add(j_caller_extension, "name", json_object_safe_new_string(caller_profile->caller_extension->extension_name));
-			json_object_object_add(j_caller_extension, "number", json_object_safe_new_string(caller_profile->caller_extension->extension_number));
-
-			if (caller_profile->caller_extension->current_application) {
-				json_object_object_add(j_caller_extension, "current_app", json_object_safe_new_string(caller_profile->caller_extension->current_application->application_name));
-			}
-
-			for (ap = caller_profile->caller_extension->applications; ap; ap = ap->next) {
-				j_application = json_object_new_object();
-
-				if (is_error(j_application)) {
-					goto error;
-				}
-
-
-				json_object_object_add(j_caller_extension, "application", j_application);
-
-				if (ap == caller_profile->caller_extension->current_application) {
-					json_object_object_add(j_application, "last_executed", json_object_new_string("true"));
-				}
-				json_object_object_add(j_application, "app_name", json_object_safe_new_string(ap->application_name));
-				json_object_object_add(j_application, "app_data", json_object_safe_new_string(switch_str_nil(ap->application_data)));
-			}
-
-			if (caller_profile->caller_extension->children) {
-				switch_caller_profile_t *cp = NULL;
-				for (cp = caller_profile->caller_extension->children; cp; cp = cp->next) {
-
-					if (!cp->caller_extension) {
-						continue;
-					}
-
-					j_inner_extension = json_object_new_object();
-					if (is_error(j_inner_extension)) {
-						goto error;
-					}
-
-					json_object_object_add(j_caller_extension, "sub_extensions", j_inner_extension);
-
-
-					j_caller_extension = json_object_new_object();
-					if (is_error(j_caller_extension)) {
-						goto error;
-					}
-
-					json_object_object_add(j_inner_extension, "extension", j_caller_extension);
-
-					json_object_object_add(j_caller_extension, "name", json_object_safe_new_string(cp->caller_extension->extension_name));
-					json_object_object_add(j_caller_extension, "number", json_object_safe_new_string(cp->caller_extension->extension_number));
-
-					json_object_object_add(j_caller_extension, "dialplan", json_object_safe_new_string((char *)cp->dialplan));
-
-					if (cp->caller_extension->current_application) {
-						json_object_object_add(j_caller_extension, "current_app", json_object_safe_new_string(cp->caller_extension->current_application->application_name));
-					}
-
-					for (ap = cp->caller_extension->applications; ap; ap = ap->next) {
-						j_application = json_object_new_object();
-						
-						if (is_error(j_application)) {
-							goto error;
-						}
-						json_object_object_add(j_caller_extension, "application", j_application);
-
-						if (ap == cp->caller_extension->current_application) {
-							json_object_object_add(j_application, "last_executed", json_object_new_string("true"));
-						}
-						json_object_object_add(j_application, "app_name", json_object_safe_new_string(ap->application_name));
-						json_object_object_add(j_application, "app_data", json_object_safe_new_string(switch_str_nil(ap->application_data)));
-					}
-				}
-			}
-		}
-
-		j_main_cp = json_object_new_object();
-		if (is_error(j_main_cp)) {
-			goto error;
-		}
-
-		json_object_object_add(j_callflow, "caller_profile", j_main_cp);
-
-		set_json_profile_data(j_main_cp, caller_profile);
-
-		if (caller_profile->originator_caller_profile) {
-			switch_caller_profile_t *cp = NULL;
-
-			j_o = json_object_new_object();
-			if (is_error(j_o)) {
-				goto error;
-			}
-			
-			json_object_object_add(j_main_cp, "originator", j_o);
-
-			for (cp = caller_profile->originator_caller_profile; cp; cp = cp->next) {
-				j_caller_profile = json_object_new_object();
-				if (is_error(j_caller_profile)) {
-					goto error;
-				}
-
-				json_object_object_add(j_o, "originator_caller_profile", j_caller_profile);
-
-				set_json_profile_data(j_caller_profile, cp);
-			}
-		}
-
-		if (caller_profile->originatee_caller_profile) {
-			switch_caller_profile_t *cp = NULL;
-
-			j_o = json_object_new_object();
-			if (is_error(j_o)) {
-				goto error;
-			}
-
-			json_object_object_add(j_main_cp, "originatee", j_o);
-
-			for (cp = caller_profile->originatee_caller_profile; cp; cp = cp->next) {
-
-				j_caller_profile = json_object_new_object();
-				if (is_error(j_caller_profile)) {
-					goto error;
-				}
-				
-				json_object_object_add(j_o, "originatee_caller_profile", j_caller_profile);
-				set_json_profile_data(j_caller_profile, cp);
-			}
-		}
-
-		if (caller_profile->times) {
-
-			j_times = json_object_new_object();
-			if (is_error(j_times)) {
-				goto error;
-			}
-
-			json_object_object_add(j_callflow, "times", j_times);
-
-			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
-			time_tag = json_object_new_string(tmp);
-			if (is_error(time_tag)) {
-				goto error;
-			}
-			json_object_object_add(j_times, "created_time", time_tag);
-
-			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
-			time_tag = json_object_new_string(tmp);
-			if (is_error(time_tag)) {
-				goto error;
-			}
-			json_object_object_add(j_times, "profile_created_time", time_tag);
-
-			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
-			time_tag = json_object_new_string(tmp);
-			if (is_error(time_tag)) {
-				goto error;
-			}
-			json_object_object_add(j_times, "progress_time", time_tag);
-
-			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
-			time_tag = json_object_new_string(tmp);
-			if (is_error(time_tag)) {
-				goto error;
-			}
-			json_object_object_add(j_times, "progress_media_time", time_tag);
-
-
-			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
-			time_tag = json_object_new_string(tmp);
-			if (is_error(time_tag)) {
-				goto error;
-			}
-			json_object_object_add(j_times, "answered_time", time_tag);
-
-			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
-			time_tag = json_object_new_string(tmp);
-			if (is_error(time_tag)) {
-				goto error;
-			}
-			json_object_object_add(j_times, "hangup_time", time_tag);
-
-			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->resurrected);
-			time_tag = json_object_new_string(tmp);
-			if (is_error(time_tag)) {
-				goto error;
-			}
-			json_object_object_add(j_times, "resurrect_time", time_tag);
-
-			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);
-			time_tag = json_object_new_string(tmp);
-			if (is_error(time_tag)) {
-				goto error;
-			}
-			json_object_object_add(j_times, "transfer_time", time_tag);
-
-		}
-
-		caller_profile = caller_profile->next;
-	}
-
-	*json_cdr = cdr;
-
-	return SWITCH_STATUS_SUCCESS;
-	
-  error:
-
-	if (cdr) {
-		json_object_put(cdr);
-	}
-
-	return SWITCH_STATUS_FALSE;
-}
-
 
 static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
-	struct json_object *json_cdr = NULL;
-	const char *json_text = NULL;
+	cJSON *json_cdr = NULL;
+	char *json_text = NULL;
 	char *path = NULL;
 	char *curl_json_text = NULL;
 	const char *logdir = NULL;
@@ -637,12 +215,12 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		a_prefix = "a_";
 
 
-	if (generate_json_cdr(session, &json_cdr) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_generate_json_cdr(session, &json_cdr, globals.encode_values == ENCODING_DEFAULT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Generating Data!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	json_text = json_object_to_json_string(json_cdr);
+	json_text = cJSON_PrintUnformatted(json_cdr);
 
 	if (!json_text) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -705,6 +283,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				switch_b64_encode((unsigned char *) json_text, need_bytes / 3, (unsigned char *) json_text_escaped, need_bytes);
 			}
 
+			switch_safe_free(json_text);
 			json_text = json_text_escaped;
 
 			if (!(curl_json_text = switch_mprintf("cdr=%s", json_text))) {
@@ -861,8 +440,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		switch_safe_free(curl_json_text);
 	}
 	
-	json_object_put(json_cdr);
-	switch_safe_free(json_text_escaped);
+	cJSON_Delete(json_cdr);
+	switch_safe_free(json_text);
 
 	return status;
 }

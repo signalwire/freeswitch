@@ -48,7 +48,7 @@
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
-#define PIDFILE "freeswitch.pid"
+#define PIDFILE "nsg.pid"
 static char *pfile = PIDFILE;
 static int system_ready = 0;
 
@@ -288,7 +288,7 @@ void daemonize(int do_wait)
 				while(--sanity && !system_ready) {
 				
 					if (sanity % 2 == 0) {
-						printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", getpid(), (int) pid);
+						printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", (int)getpid(), (int) pid);
 					}
 					sleep(1);
 				}
@@ -424,6 +424,7 @@ int main(int argc, char *argv[])
 		"\t-ncwait                -- do not output to a console and background but wait until the system is ready before exiting (implies -nc)\n"
 #endif
 		"\t-c                     -- output to a console and stay in the foreground\n"
+		"\t-base [basedir]        -- specify an alternate base dir\n"
 		"\t-conf [confdir]        -- specify an alternate config dir\n"
 		"\t-log [logdir]          -- specify an alternate log dir\n"
 		"\t-run [rundir]          -- specify an alternate run dir\n"
@@ -542,7 +543,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (local_argv[x] && !strcmp(local_argv[x], "-version")) {
-			fprintf(stdout, "FreeSWITCH version: %s\n", SWITCH_VERSION_FULL);
+			fprintf(stdout, "Netborder SS7 Version: %s\n", SWITCH_VERSION_FULL);
 			return 0;
 			known_opt++;
 		}
@@ -668,6 +669,22 @@ int main(int argc, char *argv[])
 				strcpy(SWITCH_GLOBAL_dirs.mod_dir, local_argv[x]);
 			} else {
 				fprintf(stderr, "When using -mod you must specify a module directory\n");
+				return 255;
+			}
+			known_opt++;
+		}
+
+		if (local_argv[x] && !strcmp(local_argv[x], "-base")) {
+			x++;
+			if (local_argv[x] && strlen(local_argv[x])) {
+				SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+				if (!SWITCH_GLOBAL_dirs.base_dir) {
+					fprintf(stderr, "Allocation error\n");
+					return 255;
+				}
+				strcpy(SWITCH_GLOBAL_dirs.base_dir, local_argv[x]);
+			} else {
+				fprintf(stderr, "When using -base you must specify a base directory\n");
 				return 255;
 			}
 			known_opt++;
@@ -896,7 +913,16 @@ int main(int argc, char *argv[])
 
 	apr_pool_create(&pool, NULL);
 
+	switch_filepath_set(SWITCH_GLOBAL_dirs.base_dir, pool);
+
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.run_dir, SWITCH_DEFAULT_DIR_PERMS, pool);
+
+	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Failed to initialize modules: %s\n", err);
+		/* 65 is EX_DATAERR (see sysexits.h), meaning some input from the user failed, some init scripts use
+		 * this to tell when fs fails to start due to configuration error */
+		return 65;
+	}
 
 	if (switch_file_open(&fd, pid_path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, pool) == SWITCH_STATUS_SUCCESS) {
 
@@ -923,11 +949,6 @@ int main(int argc, char *argv[])
 	}
 
 	switch_file_write(fd, pid_buffer, &pid_len);
-
-	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot Initialize [%s]\n", err);
-		return 255;
-	}
 
 #ifndef WIN32
 	if (do_wait) {

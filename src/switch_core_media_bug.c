@@ -72,6 +72,9 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(switch_media_bug_t *bug
 
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_set_flag(switch_media_bug_t *bug, uint32_t flag)
 {
+	if ((flag & SMBF_PRUNE)) {
+		switch_clear_flag(bug, SMBF_LOCK);
+	}
 	return switch_set_flag(bug, flag);
 }
 
@@ -103,6 +106,11 @@ SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_read_replace_frame(sw
 SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(switch_media_bug_t *bug, switch_frame_t *frame)
 {
 	bug->read_replace_frame_out = frame;
+}
+
+SWITCH_DECLARE(void) switch_core_media_bug_set_read_demux_frame(switch_media_bug_t *bug, switch_frame_t *frame)
+{
+	bug->read_demux_frame = frame;
 }
 
 SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *bug)
@@ -174,6 +182,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	switch_core_session_get_read_impl(bug->session, &read_impl);
 
 	bytes = read_impl.decoded_bytes_per_packet;
+
+#ifdef TESTINGONLY
+	if (0 && bug->session->recur_buffer_len) {
+		frame->datalen = bug->session->recur_buffer_len;
+		frame->samples = bug->session->recur_buffer_len / sizeof(int16_t);
+		frame->rate = read_impl.actual_samples_per_second;
+		frame->codec = NULL;
+		memcpy(frame->data, bug->session->recur_buffer, bug->session->recur_buffer_len);
+		return SWITCH_STATUS_SUCCESS;
+	}
+#endif
+
 
 	if (frame->buflen < bytes) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "%s frame buffer too small!\n",
@@ -363,6 +383,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		return SWITCH_STATUS_BREAK;
 	}
 
+	memcpy(bug->session->recur_buffer, frame->data, frame->datalen);
+	bug->session->recur_buffer_len = frame->datalen;
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -552,6 +575,71 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_pop(switch_core_session_t *orig_session, const char *function, switch_media_bug_t **pop)
+{
+	switch_media_bug_t *bp;
+
+	if (orig_session->bugs) {
+		switch_thread_rwlock_wrlock(orig_session->bug_rwlock);
+		for (bp = orig_session->bugs; bp; bp = bp->next) {
+			if (!strcmp(bp->function, function)) {
+				switch_set_flag(bp, SMBF_LOCK);
+				break;
+			}
+		}
+		switch_thread_rwlock_unlock(orig_session->bug_rwlock);
+
+		if (bp) {
+			*pop = bp;
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			*pop = NULL;
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_count(switch_core_session_t *orig_session, const char *function)
+{
+	switch_media_bug_t *bp;
+	uint32_t x = 0;
+
+	if (orig_session->bugs) {
+		switch_thread_rwlock_rdlock(orig_session->bug_rwlock);
+		for (bp = orig_session->bugs; bp; bp = bp->next) {
+			if (!switch_test_flag(bp, SMBF_PRUNE) && !switch_test_flag(bp, SMBF_LOCK) && !strcmp(bp->function, function)) {
+				x++;
+			}
+		}
+		switch_thread_rwlock_unlock(orig_session->bug_rwlock);
+	}
+
+	return x;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_exec_all(switch_core_session_t *orig_session, 
+															   const char *function, switch_media_bug_exec_cb_t cb, void *user_data)
+{
+	switch_media_bug_t *bp;
+	int x = 0;
+
+	switch_assert(cb);
+
+	if (orig_session->bugs) {
+		switch_thread_rwlock_wrlock(orig_session->bug_rwlock);
+		for (bp = orig_session->bugs; bp; bp = bp->next) {
+			if (!switch_test_flag(bp, SMBF_PRUNE) && !switch_test_flag(bp, SMBF_LOCK) && !strcmp(bp->function, function)) {
+				cb(bp, user_data);
+				x++;
+			}
+		}
+		switch_thread_rwlock_unlock(orig_session->bug_rwlock);
+	}
+
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	switch_media_bug_t *bp;
@@ -559,7 +647,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_sess
 	stream->write_function(stream, "<media-bugs>\n");
 
 	if (session->bugs) {
-        switch_thread_rwlock_wrlock(session->bug_rwlock);
+        switch_thread_rwlock_rdlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			int thread_locked = (bp->thread_id && bp->thread_id == switch_thread_self());
 			stream->write_function(stream, 
@@ -579,7 +667,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_sess
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch_core_session_t *session, const char *function)
 {
 	switch_media_bug_t *bp;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -587,10 +675,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
-			if (bp->thread_id && bp->thread_id != switch_thread_self()) {
+			if ((bp->thread_id && bp->thread_id != switch_thread_self()) || switch_test_flag(bp, SMBF_LOCK)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
 				continue;
 			}
+			
+			if (!zstr(function) && strcmp(bp->function, function)) {
+				continue;
+			}
+
 
 			if (bp->callback) {
 				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
@@ -614,7 +707,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 {
 	switch_media_bug_t *bp = *bug;
 	if (bp) {
-		if (bp->thread_id && bp->thread_id != switch_thread_self()) {
+		if ((bp->thread_id && bp->thread_id != switch_thread_self()) || switch_test_flag(bp, SMBF_LOCK)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(*bug)), SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
 			return SWITCH_STATUS_FALSE;
 		}
@@ -637,6 +730,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 {
 	switch_media_bug_t *bp = NULL, *last = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	if (switch_core_media_bug_test_flag(*bug, SMBF_LOCK)) {
+		return status;
+	}
 
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	if (session->bugs) {
@@ -699,6 +796,8 @@ SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *sess
 	switch_thread_rwlock_unlock(session->bug_rwlock);
 
 	if (bp) {
+		switch_clear_flag(bp, SMBF_LOCK);
+		bp->thread_id = 0;
 		switch_core_media_bug_close(&bp);
 		ttl++;
 		goto top;

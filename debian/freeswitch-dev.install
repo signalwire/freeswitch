@@ -1,6 +1,0 @@
-/usr/include
-/usr/lib/freeswitch/mod/*.la
-/usr/lib/libfreeswitch.so
-/usr/lib/*.a
-/usr/lib/*.la
-/usr/lib/pkgconfig

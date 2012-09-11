@@ -333,7 +333,12 @@ static switch_status_t load_profile(switch_xml_t xml)
 				new_profile->logfile = strdup(val);
 			} else if (!strcmp(var, "rollover")) {
 				new_profile->roll_size = switch_atoui(val);
-			} else if (!strcmp(var, "maximum-rotate")) {
+			} else if (!strcmp(var, "maximum-rotate") ||
+			           !strcmp(var, "maxfilecount")) { 
+				/* maxfilecount is backwards compatible parameter, we had our own log rotation code
+				 * and eventually mainstream FreeSWITCH included the parameter maximum-rotate which
+				 * did pretty much the same as ours, I deleted the old code and stayed with the official
+				 * project rotation code */
 				new_profile->max_rot = switch_atoui(val);
 				if (new_profile->max_rot == 0) {
 					new_profile->max_rot = MAX_ROT;

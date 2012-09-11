@@ -114,6 +114,8 @@ Description: HTTP GET with caching
 Module: applications/mod_ladspa
 Description: LADSPA
  This module provides an API for accessing LADSPA plugins.
+Build-Depends: ladspa-sdk
+Suggests: tap-plugins, swh-plugins, autotalent
 
 Module: applications/mod_lcr
 Description: LCR
@@ -133,13 +135,12 @@ Description: MongoDB
  This module provides an interface to MongoDB.
 Build-Depends: scons, libboost-dev, libboost-system-dev,
  libboost-date-time-dev, libboost-thread-dev, libboost-filesystem-dev
-Depends: libicu44, libboost-system1.42.0, libboost-date-time1.42.0,
- libboost-serialization1.42.0, libboost-thread1.42.0,
- libboost-filesystem1.42.0
 
 Module: applications/mod_mp4
+Section: contrib/comm
 Description: MP4 video support
  This module adds support for MP4 video playback.
+Build-Depends: libmp4v2-dev
 
 Module: applications/mod_nibblebill
 Description: Nibblebill
@@ -149,10 +150,16 @@ Description: Nibblebill
 Module: applications/mod_osp
 Description: Open Settlement Protocol
  This module adds support for the Open Settlement Protocol (OSP).
+Build-Depends: libosptk3-dev
 
 Module: applications/mod_rad_auth
 Description: RADIUS AA
  This module implements RADIUS Authentication and Authorization.
+
+Module: applications/mod_random
+Description: Entropy extraction
+ This module extracts entropy from FreeSWITCH and feeds it into
+ /dev/random.
 
 Module: applications/mod_redis
 Description: Redis limit backend
@@ -282,6 +289,7 @@ Description: mod_h26x
  Adds mod_h26x.
 
 Module: codecs/mod_ilbc
+Section: non-free/comm
 Description: mod_ilbc
  Adds mod_ilbc.
 
@@ -306,6 +314,7 @@ Description: mod_silk
  Adds mod_silk.
 
 Module: codecs/mod_siren
+Section: non-free/comm
 Description: mod_siren
  Adds mod_siren.
 
@@ -317,7 +326,6 @@ Module: codecs/mod_speex
 Description: mod_speex
  Adds mod_speex.
 Build-Depends: libogg-dev
-Depends: libogg0
 
 Module: codecs/mod_theora
 Description: mod_theora
@@ -353,7 +361,6 @@ Module: endpoints/mod_alsa
 Description: mod_alsa
  Adds mod_alsa.
 Build-Depends: libasound2-dev
-Depends: libasound2
 
 Module: endpoints/mod_dingaling
 Description: mod_dingaling
@@ -362,10 +369,12 @@ Description: mod_dingaling
 Module: endpoints/mod_gsmopen
 Description: mod_gsmopen
  Adds mod_gsmopen.
+Build-Depends: libx11-dev
 
 Module: endpoints/mod_h323
 Description: mod_h323
  Adds mod_h323.
+Build-Depends: libopenh323-dev, libpt-dev
 
 Module: endpoints/mod_khomp
 Description: mod_khomp
@@ -399,7 +408,6 @@ Module: endpoints/mod_skypopen
 Description: mod_skypopen
  Adds mod_skypopen.
 Build-Depends: libx11-dev
-Depends: libpthread-stubs0
 
 Module: endpoints/mod_sofia
 Description: mod_sofia
@@ -423,7 +431,6 @@ Module: event_handlers/mod_cdr_pg_csv
 Description: mod_cdr_pg_csv
  Adds mod_cdr_pg_csv.
 Build-Depends: libpq-dev
-Depends: libpq5
 
 Module: event_handlers/mod_cdr_sqlite
 Description: mod_cdr_sqlite
@@ -432,10 +439,12 @@ Description: mod_cdr_sqlite
 Module: event_handlers/mod_erlang_event
 Description: mod_erlang_event
  Adds mod_erlang_event.
+Build-Depends: erlang-dev
 
 Module: event_handlers/mod_event_multicast
 Description: mod_event_multicast
  Adds mod_event_multicast.
+Build-Depends: libssl-dev
 
 Module: event_handlers/mod_event_socket
 Description: mod_event_socket
@@ -460,6 +469,7 @@ Description: mod_radius_cdr
 Module: event_handlers/mod_snmp
 Description: mod_snmp
  Adds mod_snmp.
+Build-Depends: libsnmp-dev
 
 ## mod/formats
 
@@ -483,8 +493,6 @@ Module: formats/mod_shout
 Description: mod_shout
  Adds mod_shout.
 Build-Depends: libogg-dev, libvorbis-dev
-Depends: libogg0, libvorbis0a, libvorbisenc2, libvorbisfile3,
- libvorbisidec1
 
 Module: formats/mod_sndfile
 Description: mod_sndfile
@@ -498,7 +506,6 @@ Module: formats/mod_vlc
 Description: VLC streaming
  This module provides VLC streaming.
 Build-Depends: libvlc-dev (>= 2.0.0)
-Depends: libvlc5
 Distro-Conflicts: squeeze
 
 ## mod/languages
@@ -506,6 +513,7 @@ Distro-Conflicts: squeeze
 Module: languages/mod_java
 Description: mod_java
  Adds mod_java.
+Build-Depends: default-jdk, gcj-jdk
 
 Module: languages/mod_lua
 Description: mod_lua
@@ -514,24 +522,27 @@ Description: mod_lua
 Module: languages/mod_managed
 Description: mod_managed
  Adds mod_managed.
+Build-Depends: libmono-2.0-dev, mono-gmcs
 
 Module: languages/mod_perl
 Description: mod_perl
  Adds mod_perl.
 Build-Depends: libperl-dev
-Depends: libperl5.10
 
 Module: languages/mod_python
 Description: mod_python
  Adds mod_python.
+Build-Depends: python-dev
 
 Module: languages/mod_spidermonkey
 Description: mod_spidermonkey
  Adds mod_spidermonkey.
+Build-Depends: unixodbc-dev
 
 Module: languages/mod_yaml
 Description: mod_yaml
  Adds mod_yaml.
+Build-Depends: libyaml-dev
 
 ## mod/loggers
 
@@ -560,6 +571,10 @@ Description: mod_say_en
 Module: say/mod_say_es
 Description: mod_say_es
  Adds mod_say_es.
+
+Module: say/mod_say_fa
+Description: mod_say_fa
+ Adds mod_say_fa.
 
 Module: say/mod_say_fr
 Description: mod_say_fr
@@ -635,9 +650,12 @@ Module: xml_int/mod_xml_ldap
 Description: mod_xml_ldap
  Adds mod_xml_ldap.
 Build-Depends: libsasl2-dev
-Depends: libsasl2-modules
 
 Module: xml_int/mod_xml_rpc
 Description: mod_xml_rpc
  Adds mod_xml_rpc.
+
+Module: xml_int/mod_xml_scgi
+Description: mod_xml_scgi
+ Adds mod_xml_scgi.
 

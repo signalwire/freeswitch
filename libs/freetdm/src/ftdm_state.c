@@ -48,9 +48,26 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 	ftdm_time_t diff = 0;
 	ftdm_channel_state_t state = fchan->state;
 
+#if 0
+	/*  I could not perform this sanity check without more disruptive changes. Ideally we should check here if the signaling module completing the state
+		executed a state processor (called ftdm_channel_advance_states() which call fchan->span->state_processor(fchan)) for the state. That is just a 
+		sanity check, as in the past we had at least one bug where the signaling module set the state and then accidentally changed the state to a new one 
+		without calling ftdm_channel_advance_states(), meaning the state processor for the first state was not executed and that lead to unexpected behavior.
+
+		If we want to be able to perform this kind of sanity check it would be nice to add a new state status (FTDM_STATE_STATUS_PROCESSING), the function
+		ftdm_channel_advance_states() would set the state_status to PROCESSING and then the check below for STATUS_NEW would be valid. Currently is not
+		valid because the signaling module may be completing the state at the end of the state_processor callback and therefore the state will still be
+		in STATUS_NEW, and is perfectly valid ... */
+
+	if (fchan->state_status == FTDM_STATE_STATUS_NEW) {
+		ftdm_log_chan_ex(fchan, file, func, line, FTDM_LOG_LEVEL_CRIT, 
+						"Asking to complete state change from %s to %s in %llums, but the state is still unprocessed (this might be a bug!)\n", 
+						ftdm_channel_state2str(fchan->last_state), ftdm_channel_state2str(state), diff);
+	}
+#endif
+
 	if (fchan->state_status == FTDM_STATE_STATUS_COMPLETED) {
-		ftdm_assert_return(!ftdm_test_flag(fchan, FTDM_CHANNEL_STATE_CHANGE), FTDM_FAIL, 
-				"State change flag set but state is not completed\n");
+		ftdm_assert_return(!ftdm_test_flag(fchan, FTDM_CHANNEL_STATE_CHANGE), FTDM_FAIL, "State change flag set but state is already completed\n");
 		return FTDM_SUCCESS;
 	}
 
@@ -87,6 +104,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_channel_complete_state(const char *file, const c
 	ftdm_assert(!fchan->history[hindex].end_time, "End time should be zero!\n");
 
 	fchan->history[hindex].end_time = ftdm_current_time_in_ms();
+	fchan->last_state_change_time = ftdm_current_time_in_ms();
 
 	fchan->state_status = FTDM_STATE_STATUS_COMPLETED;
 
@@ -262,6 +280,9 @@ static ftdm_status_t ftdm_core_set_state(const char *file, const char *func, int
 		}
 	}
 
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+		goto perform_state_change;
+	}
 
 	if (ftdmchan->span->state_map) {
 		ok = ftdm_parse_state_map(ftdmchan, state, ftdmchan->span->state_map);
@@ -352,6 +373,8 @@ end:
 		ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_WARNING, "VETO state change from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 		goto done;
 	}
+
+perform_state_change:
 
 	ftdm_log_chan_ex(ftdmchan, file, func, line, FTDM_LOG_LEVEL_DEBUG, "Changed state from %s to %s\n", ftdm_channel_state2str(ftdmchan->state), ftdm_channel_state2str(state));
 	ftdmchan->last_state = ftdmchan->state; 

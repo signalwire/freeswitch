@@ -174,8 +174,11 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 	}
 
 	if (!extension) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No Route, Aborting\n");
-		switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
+
+		if (switch_ivr_blind_transfer_ack(session, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No Route, Aborting\n");
+			switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
+		}
 	}
 
   end:
@@ -188,6 +191,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 static void switch_core_standard_on_execute(switch_core_session_t *session)
 {
 	switch_caller_extension_t *extension;
+	const char *uuid;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard EXECUTE\n", switch_channel_get_name(session->channel));
 
@@ -222,6 +226,25 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 	}
 
+	if (switch_channel_ready(session->channel) && switch_channel_get_state(session->channel) == CS_EXECUTE && 
+		switch_channel_test_flag(session->channel, CF_CONFIRM_BLIND_TRANSFER) && 
+		(uuid = switch_channel_get_variable(session->channel, "blind_transfer_uuid"))) {
+		switch_core_session_t *other_session;
+
+		if ((other_session = switch_core_session_locate(uuid))) {
+			switch_core_session_message_t msg = { 0 };			
+			msg.message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
+			msg.from = __FILE__;
+			msg.numeric_arg = 0;
+			switch_core_session_receive_message(other_session, &msg);
+			switch_core_session_rwunlock(other_session);
+
+			switch_channel_set_variable(session->channel, "park_timeout", "10:blind_transfer");
+			switch_channel_set_state(session->channel, CS_PARK);
+			switch_channel_clear_flag(session->channel, CF_CONFIRM_BLIND_TRANSFER);
+		}
+	}
+	
 	if (switch_channel_ready(session->channel) && switch_channel_get_state(session->channel) == CS_EXECUTE) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s has executed the last dialplan instruction, hanging up.\n",
 						  switch_channel_get_name(session->channel));

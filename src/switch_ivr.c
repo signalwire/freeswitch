@@ -170,7 +170,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		SWITCH_IVR_VERIFY_SILENCE_DIVISOR(sval);
 	}
 
-	if (ms > 100 && sval) {
+	if (ms > 10 && sval) {
 		switch_core_session_get_read_impl(session, &imp);
 
 		if (switch_core_codec_init(&codec,
@@ -559,7 +559,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 				switch_channel_set_flag(channel, CF_BROADCAST);
 			}
 			if (hold_bleg && switch_true(hold_bleg)) {
-				if ((b_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+				if ((b_uuid = switch_channel_get_partner_uuid(channel))) {
 					const char *stream;
 					b_uuid = switch_core_session_strdup(session, b_uuid);
 
@@ -1384,7 +1384,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 	switch_core_session_receive_message(session, &msg);
 
 	if (moh && (stream = switch_channel_get_hold_music(channel))) {
-		if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		if ((other_uuid = switch_channel_get_partner_uuid(channel))) {
 			switch_ivr_broadcast(other_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
 		}
 	}
@@ -1421,7 +1421,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 	switch_core_session_receive_message(session, &msg);
 
 
-	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (b_session = switch_core_session_locate(other_uuid))) {
+	if ((other_uuid = switch_channel_get_partner_uuid(channel)) && (b_session = switch_core_session_locate(other_uuid))) {
 		switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 		switch_channel_stop_broadcast(b_channel);
 		switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
@@ -2472,6 +2472,260 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	return SWITCH_STATUS_FALSE;
 }
 
+static void switch_ivr_set_json_profile_data(cJSON *json, switch_caller_profile_t *caller_profile)
+{
+	cJSON_AddItemToObject(json, "username", cJSON_CreateString((char *)caller_profile->username));
+	cJSON_AddItemToObject(json, "dialplan", cJSON_CreateString((char *)caller_profile->dialplan));
+	cJSON_AddItemToObject(json, "caller_id_name", cJSON_CreateString((char *)caller_profile->caller_id_name));
+	cJSON_AddItemToObject(json, "ani", cJSON_CreateString((char *)caller_profile->ani));
+	cJSON_AddItemToObject(json, "aniii", cJSON_CreateString((char *)caller_profile->aniii));
+	cJSON_AddItemToObject(json, "caller_id_number", cJSON_CreateString((char *)caller_profile->caller_id_number));
+	cJSON_AddItemToObject(json, "network_addr", cJSON_CreateString((char *)caller_profile->network_addr));
+	cJSON_AddItemToObject(json, "rdnis", cJSON_CreateString((char *)caller_profile->rdnis));
+	cJSON_AddItemToObject(json, "destination_number", cJSON_CreateString(caller_profile->destination_number));
+	cJSON_AddItemToObject(json, "uuid", cJSON_CreateString(caller_profile->uuid));
+	cJSON_AddItemToObject(json, "source", cJSON_CreateString((char *)caller_profile->source));
+	cJSON_AddItemToObject(json, "context", cJSON_CreateString((char *)caller_profile->context));
+	cJSON_AddItemToObject(json, "chan_name", cJSON_CreateString(caller_profile->chan_name));
+}
+
+static void switch_ivr_set_json_chan_vars(cJSON *json, switch_channel_t *channel, switch_bool_t urlencode)
+{
+	switch_event_header_t *hi = switch_channel_variable_first(channel);
+
+	if (!hi)
+		return;
+
+	for (; hi; hi = hi->next) {
+		if (!zstr(hi->name) && !zstr(hi->value)) {
+			char *data = hi->value;
+			if (urlencode) {
+				switch_size_t dlen = strlen(hi->value) * 3;
+
+				if ((data = malloc(dlen))) {
+					memset(data, 0, dlen);
+					switch_url_encode(hi->value, data, dlen);
+				}
+			}
+
+			cJSON_AddItemToObject(json, hi->name, cJSON_CreateString(data));
+
+			if (data != hi->value) {
+				switch_safe_free(data);
+			}
+		}
+	}
+	switch_channel_variable_last(channel);
+}
+
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session_t *session, cJSON **json_cdr, switch_bool_t urlencode)
+{
+	cJSON *cdr = cJSON_CreateObject();
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_caller_profile_t *caller_profile;
+	cJSON *variables, *j_main_cp, *j_caller_profile, *j_caller_extension, *j_times,
+		*j_application, *j_callflow, *j_inner_extension, *j_apps, *j_o, *j_channel_data;
+	switch_app_log_t *app_log;
+	char tmp[512], *f;
+	
+	j_channel_data = cJSON_CreateObject();
+
+	cJSON_AddItemToObject(cdr, "channel_data", j_channel_data);
+
+	cJSON_AddItemToObject(j_channel_data, "state", cJSON_CreateString((char *) switch_channel_state_name(switch_channel_get_state(channel))));
+	cJSON_AddItemToObject(j_channel_data, "direction", cJSON_CreateString(switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound"));
+
+	switch_snprintf(tmp, sizeof(tmp), "%d", switch_channel_get_state(channel));
+	cJSON_AddItemToObject(j_channel_data, "state_number", cJSON_CreateString((char *) tmp));
+	
+	if ((f = switch_channel_get_flag_string(channel))) {
+		cJSON_AddItemToObject(j_channel_data, "flags", cJSON_CreateString((char *) f));
+		free(f);
+	}
+
+	if ((f = switch_channel_get_cap_string(channel))) {
+		cJSON_AddItemToObject(j_channel_data, "caps", cJSON_CreateString((char *) f));
+		free(f);
+	}
+
+	variables = cJSON_CreateObject();
+	cJSON_AddItemToObject(cdr, "variables", variables);
+
+	switch_ivr_set_json_chan_vars(variables, channel, urlencode);
+
+
+	if ((app_log = switch_core_session_get_app_log(session))) {
+		switch_app_log_t *ap;
+
+		j_apps = cJSON_CreateObject();
+
+		cJSON_AddItemToObject(cdr, "app_log", j_apps);
+
+		for (ap = app_log; ap; ap = ap->next) {
+			j_application = cJSON_CreateObject();
+
+			cJSON_AddItemToObject(j_application, "app_name", cJSON_CreateString(ap->app));
+			cJSON_AddItemToObject(j_application, "app_data", cJSON_CreateString(ap->arg));
+
+			cJSON_AddItemToObject(j_apps, "application", j_application);
+		}
+	}
+
+
+	caller_profile = switch_channel_get_caller_profile(channel);
+
+	while (caller_profile) {
+
+		j_callflow = cJSON_CreateObject();
+
+		cJSON_AddItemToObject(cdr, "callflow", j_callflow);
+
+		if (!zstr(caller_profile->dialplan)) {
+			cJSON_AddItemToObject(j_callflow, "dialplan", cJSON_CreateString((char *)caller_profile->dialplan));
+		}
+
+		if (!zstr(caller_profile->profile_index)) {
+			cJSON_AddItemToObject(j_callflow, "profile_index", cJSON_CreateString((char *)caller_profile->profile_index));
+		}
+
+		if (caller_profile->caller_extension) {
+			switch_caller_application_t *ap;
+
+			j_caller_extension = cJSON_CreateObject();
+
+			cJSON_AddItemToObject(j_callflow, "extension", j_caller_extension);
+
+			cJSON_AddItemToObject(j_caller_extension, "name", cJSON_CreateString(caller_profile->caller_extension->extension_name));
+			cJSON_AddItemToObject(j_caller_extension, "number", cJSON_CreateString(caller_profile->caller_extension->extension_number));
+
+			if (caller_profile->caller_extension->current_application) {
+				cJSON_AddItemToObject(j_caller_extension, "current_app", cJSON_CreateString(caller_profile->caller_extension->current_application->application_name));
+			}
+
+			for (ap = caller_profile->caller_extension->applications; ap; ap = ap->next) {
+				j_application = cJSON_CreateObject();
+
+				cJSON_AddItemToObject(j_caller_extension, "application", j_application);
+
+				if (ap == caller_profile->caller_extension->current_application) {
+					cJSON_AddItemToObject(j_application, "last_executed", cJSON_CreateString("true"));
+				}
+				cJSON_AddItemToObject(j_application, "app_name", cJSON_CreateString(ap->application_name));
+				cJSON_AddItemToObject(j_application, "app_data", cJSON_CreateString(switch_str_nil(ap->application_data)));
+			}
+
+			if (caller_profile->caller_extension->children) {
+				switch_caller_profile_t *cp = NULL;
+				for (cp = caller_profile->caller_extension->children; cp; cp = cp->next) {
+
+					if (!cp->caller_extension) {
+						continue;
+					}
+
+					j_inner_extension = cJSON_CreateObject();
+					cJSON_AddItemToObject(j_caller_extension, "sub_extensions", j_inner_extension);
+
+					j_caller_extension = cJSON_CreateObject();
+					cJSON_AddItemToObject(j_inner_extension, "extension", j_caller_extension);
+
+					cJSON_AddItemToObject(j_caller_extension, "name", cJSON_CreateString(cp->caller_extension->extension_name));
+					cJSON_AddItemToObject(j_caller_extension, "number", cJSON_CreateString(cp->caller_extension->extension_number));
+
+					cJSON_AddItemToObject(j_caller_extension, "dialplan", cJSON_CreateString((char *)cp->dialplan));
+
+					if (cp->caller_extension->current_application) {
+						cJSON_AddItemToObject(j_caller_extension, "current_app", cJSON_CreateString(cp->caller_extension->current_application->application_name));
+					}
+
+					for (ap = cp->caller_extension->applications; ap; ap = ap->next) {
+						j_application = cJSON_CreateObject();
+						cJSON_AddItemToObject(j_caller_extension, "application", j_application);
+
+						if (ap == cp->caller_extension->current_application) {
+							cJSON_AddItemToObject(j_application, "last_executed", cJSON_CreateString("true"));
+						}
+						cJSON_AddItemToObject(j_application, "app_name", cJSON_CreateString(ap->application_name));
+						cJSON_AddItemToObject(j_application, "app_data", cJSON_CreateString(switch_str_nil(ap->application_data)));
+					}
+				}
+			}
+		}
+
+		j_main_cp = cJSON_CreateObject();
+		cJSON_AddItemToObject(j_callflow, "caller_profile", j_main_cp);
+
+		switch_ivr_set_json_profile_data(j_main_cp, caller_profile);
+
+		if (caller_profile->originator_caller_profile) {
+			switch_caller_profile_t *cp = NULL;
+
+			j_o = cJSON_CreateObject();
+			cJSON_AddItemToObject(j_main_cp, "originator", j_o);
+
+			for (cp = caller_profile->originator_caller_profile; cp; cp = cp->next) {
+				j_caller_profile = cJSON_CreateObject();
+				cJSON_AddItemToObject(j_o, "originator_caller_profile", j_caller_profile);
+
+				switch_ivr_set_json_profile_data(j_caller_profile, cp);
+			}
+		}
+
+		if (caller_profile->originatee_caller_profile) {
+			switch_caller_profile_t *cp = NULL;
+
+			j_o = cJSON_CreateObject();
+			cJSON_AddItemToObject(j_main_cp, "originatee", j_o);
+
+			for (cp = caller_profile->originatee_caller_profile; cp; cp = cp->next) {
+				j_caller_profile = cJSON_CreateObject();
+				cJSON_AddItemToObject(j_o, "originatee_caller_profile", j_caller_profile);
+				switch_ivr_set_json_profile_data(j_caller_profile, cp);
+			}
+		}
+
+		if (caller_profile->times) {
+
+			j_times = cJSON_CreateObject();
+			cJSON_AddItemToObject(j_callflow, "times", j_times);
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
+			cJSON_AddItemToObject(j_times, "created_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
+			cJSON_AddItemToObject(j_times, "profile_created_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
+			cJSON_AddItemToObject(j_times, "progress_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
+			cJSON_AddItemToObject(j_times, "progress_media_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
+			cJSON_AddItemToObject(j_times, "answered_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
+			cJSON_AddItemToObject(j_times, "hangup_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->resurrected);
+			cJSON_AddItemToObject(j_times, "resurrect_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);
+			cJSON_AddItemToObject(j_times, "transfer_time", cJSON_CreateString(tmp));
+
+		}
+
+		caller_profile = caller_profile->next;
+	}
+
+	*json_cdr = cdr;
+
+	return SWITCH_STATUS_SUCCESS;
+	
+}
+
+
 SWITCH_DECLARE(void) switch_ivr_park_session(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -3247,6 +3501,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_kill_uuid(const char *uuid, switch_ca
 	}
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_blind_transfer_ack(switch_core_session_t *session, switch_bool_t success)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (switch_channel_test_flag(channel, CF_CONFIRM_BLIND_TRANSFER)) {
+		switch_core_session_t *other_session;
+		const char *uuid = switch_channel_get_variable(channel, "blind_transfer_uuid");
+
+		switch_channel_clear_flag(channel, CF_CONFIRM_BLIND_TRANSFER);
+
+		if (!zstr(uuid) && (other_session = switch_core_session_locate(uuid))) {
+			switch_core_session_message_t msg = { 0 };			
+			msg.message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
+			msg.from = __FILE__;
+			msg.numeric_arg = success;
+			switch_core_session_receive_message(other_session, &msg);
+			switch_core_session_rwunlock(other_session);
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	return status;
+
+}
 
 /* For Emacs:
  * Local Variables:

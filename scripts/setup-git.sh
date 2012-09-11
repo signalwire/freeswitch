@@ -34,13 +34,14 @@ if ! git config user.email >/dev/null 2>&1; then
   git config --global user.email "$email"
 fi
 
+git config pull.rebase true
 git config branch.master.rebase true
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
   Git has been configured for FS successfully.
 
-  branch.master.rebase has been set to true
+  pull.rebase and branch.master.rebase have been set to true
 
     This means that when you do a 'git pull' to fetch remote changes,
     your local changes will be rebased on top of the remote changes.

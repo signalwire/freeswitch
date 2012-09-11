@@ -3,11 +3,11 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.1.beta1], BUG-REPORT-ADDRESS)
-AC_SUBST(SWITCH_VERSION_MAJOR, [1])
-AC_SUBST(SWITCH_VERSION_MINOR, [1])
-AC_SUBST(SWITCH_VERSION_MICRO, [beta1])
-#AC_SUBST(SWITCH_VERSION_REVISION, [])
+AC_INIT([freeswitch], [4.3.0], BUG-REPORT-ADDRESS)
+AC_SUBST(SWITCH_VERSION_MAJOR, [4])
+AC_SUBST(SWITCH_VERSION_MINOR, [3])
+AC_SUBST(SWITCH_VERSION_MICRO, [0])
+AC_SUBST(SWITCH_VERSION_REVISION, [3e39945d73bc55c9bae492161e968bed239a4f4f])
 
 AC_CONFIG_FILES([src/include/switch_version.h.in:src/include/switch_version.h.template])
 AC_CONFIG_FILES([.version:.version.in])
@@ -993,7 +993,6 @@ AC_CONFIG_FILES([Makefile
 		src/Makefile
 		src/mod/Makefile
 		src/mod/applications/mod_expr/Makefile
-		src/mod/applications/mod_fax/Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_osp/Makefile
 		src/mod/applications/mod_stress/Makefile

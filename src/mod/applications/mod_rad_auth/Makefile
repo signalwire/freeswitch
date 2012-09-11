@@ -1,7 +1,29 @@
 switch_srcdir=../../../..
 
-FREERADIUSLA=/usr/local/lib/libfreeradius-client.so
-LOCAL_LIBADD=$(FREERADIUSLA)
+RADCLIENT_VERSION=1.1.6
+RADCLIENT=freeradius-client-$(RADCLIENT_VERSION)
+RADCLIENT_DIR=$(switch_srcdir)/libs/$(RADCLIENT)
+RADCLIENT_BUILDDIR=$(switch_builddir)/libs/$(RADCLIENT)
+RADCLIENT_LIBDIR=$(RADCLIENT_BUILDDIR)/lib
+RADCLIENT_LA=${RADCLIENT_LIBDIR}/libfreeradius-client.la
+
+LOCAL_CFLAGS=-I$(RADCLIENT_DIR)/include
+LOCAL_LIBADD=$(RADCLIENT_LA)
+
 
 include $(switch_srcdir)/build/modmake.rules
+
+$(RADCLIENT_DIR):
+	$(GETLIB) $(RADCLIENT).tar.gz
+
+$(RADCLIENT_BUILDDIR)/Makefile: $(RADCLIENT_DIR)
+	mkdir -p $(RADCLIENT_BUILDDIR)
+	cd $(RADCLIENT_BUILDDIR) && $(DEFAULT_VARS) $(RADCLIENT_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(RADCLIENT_DIR)
+	$(TOUCH_TARGET)
+
+$(RADCLIENT_LA): $(RADCLIENT_BUILDDIR)/Makefile
+	cd $(RADCLIENT_BUILDDIR) && CFLAGS="$(CFLAGS)" $(MAKE)
+	$(TOUCH_TARGET)
+
+
 

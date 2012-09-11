@@ -131,6 +131,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_READ_RESULT_VARIABLE "read_result"
 #define SWITCH_ATT_XFER_RESULT_VARIABLE "att_xfer_result"
 #define SWITCH_COPY_XML_CDR_VARIABLE "copy_xml_cdr"
+#define SWITCH_COPY_JSON_CDR_VARIABLE "copy_json_cdr"
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
 #define SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE "proto_specific_hangup_cause"
 #define SWITCH_TRANSFER_HISTORY_VARIABLE "transfer_history"
@@ -169,6 +170,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME "__cache_speech_handles_obj__"
 #define SWITCH_BYPASS_MEDIA_VARIABLE "bypass_media"
 #define SWITCH_PROXY_MEDIA_VARIABLE "proxy_media"
+#define SWITCH_ZRTP_PASSTHRU_VARIABLE "zrtp_passthru"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
 #define SWITCH_TEMP_HOLD_MUSIC_VARIABLE "temp_hold_music"
@@ -181,6 +183,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_LAST_BRIDGE_VARIABLE "last_bridge_to"
 #define SWITCH_SIGNAL_BRIDGE_VARIABLE "signal_bridge_to"
 #define SWITCH_SIGNAL_BOND_VARIABLE "signal_bond"
+#define SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE "originate_signal_bond"
 #define SWITCH_ORIGINATOR_VARIABLE "originator"
 #define SWITCH_ORIGINATOR_CODEC_VARIABLE "originator_codec"
 #define SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE "originator_video_codec"
@@ -288,7 +291,8 @@ typedef enum {
 	ED_NONE = 0,
 	ED_MUX_READ = (1 << 0),
 	ED_MUX_WRITE = (1 << 1),
-	ED_DTMF = (1 << 2)
+	ED_DTMF = (1 << 2),
+	ED_COPY_DISPLAY = (1 << 3)
 } switch_eavesdrop_flag_enum_t;
 typedef uint32_t switch_eavesdrop_flag_t;
 
@@ -548,6 +552,8 @@ typedef struct {
 typedef struct {
 	uint32_t packet_count;
 	uint32_t octet_count;
+
+	uint32_t peer_ssrc;
 } switch_rtcp_numbers_t;
 
 typedef struct {
@@ -770,7 +776,6 @@ typedef struct {
 	unsigned type:8;			/* packet type                       */
 	unsigned length:16;			/* length in 32-bit words - 1        */
 } switch_rtcp_hdr_t;
-
 #else /*  BIG_ENDIAN */
 
 typedef struct {
@@ -885,6 +890,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_SIGNAL_DATA,
 	SWITCH_MESSAGE_INDICATE_INFO,
 	SWITCH_MESSAGE_INDICATE_AUDIO_DATA,
+	SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
@@ -1210,10 +1216,12 @@ typedef enum {
 	CF_VIDEO_REFRESH_REQ,
 	CF_SERVICE_AUDIO,
 	CF_SERVICE_VIDEO,
+	CF_ZRTP_PASSTHRU_REQ,
+	CF_ZRTP_PASSTHRU,
 	CF_ZRTP_HASH,
-	CF_ZRTP_PASS,
 	CF_CHANNEL_SWAP,
 	CF_PICKUP,
+	CF_CONFIRM_BLIND_TRANSFER,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -1434,7 +1442,8 @@ typedef enum {
 	SMBF_THREAD_LOCK = (1 << 7),
 	SMBF_PRUNE = (1 << 8),
 	SMBF_NO_PAUSE = (1 << 9),
-	SMBF_STEREO_SWAP = (1 << 10)
+	SMBF_STEREO_SWAP = (1 << 10),
+	SMBF_LOCK = (1 << 11)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -1820,6 +1829,8 @@ struct switch_console_callback_match {
 	int dynamic;
 };
 typedef struct switch_console_callback_match switch_console_callback_match_t;
+
+typedef void (*switch_media_bug_exec_cb_t)(switch_media_bug_t *bug, void *user_data);
 
 typedef void (*switch_cap_callback_t) (const char *var, const char *val, void *user_data);
 typedef switch_status_t (*switch_console_complete_callback_t) (const char *, const char *, switch_console_callback_match_t **matches);

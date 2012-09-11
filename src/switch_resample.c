@@ -252,6 +252,25 @@ SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16
 	return x;
 }
 
+
+SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples)
+{
+	int i;
+	int32_t x;
+
+	if (samples > other_samples) {
+		x = other_samples;
+	} else {
+		x = samples;
+	}
+
+	for (i = 0; i < x; i++) {
+		data[i] -= other_data[i];
+	}
+
+	return x;
+}
+
 SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, uint32_t channels)
 {
 	int16_t *buf;

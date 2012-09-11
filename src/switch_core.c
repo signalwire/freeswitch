@@ -527,6 +527,9 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 
 #else
 	char base_dir[1024] = SWITCH_PREFIX_DIR;
+	if (SWITCH_GLOBAL_dirs.base_dir) {
+		snprintf(base_dir, sizeof(base_dir), "%s", SWITCH_GLOBAL_dirs.base_dir);
+	}
 #endif
 
 	if (!SWITCH_GLOBAL_dirs.base_dir && (SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(BUFSIZE))) {
@@ -1325,6 +1328,35 @@ SWITCH_DECLARE(uint32_t) switch_core_min_dtmf_duration(uint32_t duration)
 	return runtime.min_dtmf_duration;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (cpu > -1) {
+
+#ifdef HAVE_CPU_SET_MACROS
+		cpu_set_t set;
+
+		CPU_ZERO(&set);
+		CPU_SET(cpu, &set);
+
+		if (!sched_setaffinity(0, sizeof(set), &set)) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+		
+#else
+#if WIN32
+		if (SetThreadAffinityMask(GetCurrentThread(), (DWORD_PTR) cpu)) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+#endif
+#endif
+	}
+
+	return status;
+}
+
+
 static void switch_core_set_serial(void)
 {
 	char buf[13] = "";
@@ -1391,7 +1423,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	gethostname(runtime.hostname, sizeof(runtime.hostname));
 
 	runtime.max_db_handles = 50;
-	runtime.db_handle_timeout = 5000000;;
+	runtime.db_handle_timeout = 5000000;
 	
 	runtime.runlevel++;
 	runtime.sql_buffer_len = 1024 * 32;
@@ -1402,8 +1434,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_set_flag((&runtime.dummy_cng_frame), SFF_CNG);
 	switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
 	switch_set_flag((&runtime), SCF_CLEAR_SQL);
+#ifdef WIN32
 	switch_set_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
-
+#endif
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;
 	runtime.mailer_app = "sendmail";
@@ -1444,12 +1477,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.log_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.run_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.db_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+#if 0
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.script_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.htdocs_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.recordings_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.sounds_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.temp_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
+#endif
 
 
 	switch_mutex_init(&runtime.uuid_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
@@ -1488,6 +1523,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), NULL, AF_INET6);
 	switch_core_set_variable("local_ip_v6", guess_ip);
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
+	switch_core_set_variable("base_logdir", SWITCH_GLOBAL_dirs.log_dir);
 	switch_core_set_variable("recordings_dir", SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_core_set_variable("sound_prefix", SWITCH_GLOBAL_dirs.sounds_dir);
 	switch_core_set_variable("sounds_dir", SWITCH_GLOBAL_dirs.sounds_dir);
@@ -1855,7 +1891,7 @@ static void switch_load_core_config(const char *file)
 SWITCH_DECLARE(const char *) switch_core_banner(void)
 {
 
-
+#if 0
 	return ("\n"
 			"   _____              ______        _____ _____ ____ _   _  \n"
 			"  |  ___| __ ___  ___/ ___\\ \\      / /_ _|_   _/ ___| | | | \n"
@@ -1868,6 +1904,19 @@ SWITCH_DECLARE(const char *) switch_core_banner(void)
 			"* FreeSWITCH (http://www.freeswitch.org)                   *\n"
 			"* Paypal Donations Appreciated: paypal@freeswitch.org      *\n"
 			"* Brought to you by ClueCon http://www.cluecon.com/        *\n" "************************************************************\n" "\n");
+#else
+	return (
+			"************************************************************************\n"
+			"*    .__   __. .______    _______         _______.     _______. ______ *\n" 
+			"*    |  \\ |  | |   _  \\  |   ____|       /       |    /       ||____  |*\n" 
+			"*    |   \\|  | |  |_)  | |  |__         |   (----`   |   (----`    / / *\n" 
+			"*    |  . `  | |   _  <  |   __|         \\   \\        \\   \\       / /  *\n" 
+			"*    |  |\\   | |  |_)  | |  |____    .----)   |   .----)   |     / /   *\n" 
+			"*    |__| \\__| |______/  |_______|   |_______/    |_______/     /_/    *\n" 
+			"*                                                                      *\n"
+			"*    Powered by: FreeSWITCH (http://www.freeswitch.org)                *\n" 
+                        "**************************************************************************\n" "\n");
+#endif
 }
 
 
@@ -1913,7 +1962,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-					  "\nFreeSWITCH Version %s Started.\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL,
+					  "\nNSG Version %s Started.\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL,
 					  switch_core_session_limit(0),
 					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
 

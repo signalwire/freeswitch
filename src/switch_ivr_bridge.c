@@ -228,6 +228,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 	}
 
+	switch_channel_clear_flag(chan_a, CF_INTERCEPT);
+	switch_channel_clear_flag(chan_a, CF_INTERCEPTED);
 
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
 
@@ -652,9 +654,11 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 
 	state = switch_channel_get_state(channel);
 
-	if (state < CS_HANGUP && switch_true(switch_channel_get_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
+	if (state < CS_HANGUP && !switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) &&
+		switch_true(switch_channel_get_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 		switch_ivr_park_session(session);
-	} else if (state < CS_HANGUP && (var = switch_channel_get_variable(channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
+	} else if (state < CS_HANGUP && !switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) && 
+			  (var = switch_channel_get_variable(channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
 		transfer_after_bridge(session, var);
 	} else {
 		if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) &&
@@ -968,9 +972,16 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 
 	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_t *other_session;
+
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", msg.string_arg);
 			switch_channel_event_set_data(channel, event);
+			if ((other_session = switch_core_session_locate(msg.string_arg))) {
+				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+				switch_event_add_presence_data_cols(other_channel, event, "Bridge-B-PD-");
+				switch_core_session_rwunlock(other_session);
+			}
 			switch_event_fire(&event);
 		}
 	}
@@ -1052,16 +1063,27 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 			}
 		}
 		
-		switch_core_session_rwunlock(other_session);
-	}
+		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+			switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", uuid);
+				switch_event_add_presence_data_cols(other_channel, event, "Bridge-B-PD-");
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
+			}
+		}
 
-	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
-		switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", uuid);
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
+		switch_core_session_rwunlock(other_session);
+	} else {
+		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+			switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", uuid);
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
+			}
 		}
 	}
 
@@ -1242,6 +1264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", switch_core_session_get_uuid(peer_session));
 			switch_channel_event_set_data(caller_channel, event);
+			switch_event_add_presence_data_cols(peer_channel, event, "Bridge-B-PD-");
 			switch_event_fire(&event);
 			br = 1;
 		}
@@ -1366,21 +1389,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE, switch_channel_cause2str(cause));
 			}
 			
-			if (switch_channel_down_nosig(peer_channel) && switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
-				switch_xml_t cdr = NULL;
-				char *xml_text;
+			if (switch_channel_down_nosig(peer_channel)) {
+				switch_bool_t copy_xml_cdr = switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE));
+				switch_bool_t copy_json_cdr = switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_JSON_CDR_VARIABLE));
 
-				switch_channel_wait_for_state(peer_channel, caller_channel, CS_DESTROY);
+				if (copy_xml_cdr || copy_json_cdr) {
+					char *cdr_text = NULL;					
 
-				if (switch_ivr_generate_xml_cdr(peer_session, &cdr) == SWITCH_STATUS_SUCCESS) {
-					if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
-						switch_channel_set_variable(caller_channel, "b_leg_cdr", xml_text);
-						switch_safe_free(xml_text);
+					switch_channel_wait_for_state(peer_channel, caller_channel, CS_DESTROY);
+
+					if (copy_xml_cdr) {
+						switch_xml_t cdr = NULL;
+
+						if (switch_ivr_generate_xml_cdr(peer_session, &cdr) == SWITCH_STATUS_SUCCESS) {
+							cdr_text = switch_xml_toxml(cdr, SWITCH_FALSE);
+							switch_xml_free(cdr);
+						}
 					}
-					switch_xml_free(cdr);
-				}
-			}
+					if (copy_json_cdr) {
+						cJSON *cdr = NULL;
 
+						if (switch_ivr_generate_json_cdr(peer_session, &cdr, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+							cdr_text = cJSON_PrintUnformatted(cdr);
+							cJSON_Delete(cdr);
+						}
+					}
+
+					if (cdr_text) {
+						switch_channel_set_variable(caller_channel, "b_leg_cdr", cdr_text);
+						switch_channel_set_variable_name_printf(caller_channel, cdr_text, "b_leg_cdr_%s", switch_core_session_get_uuid(peer_session));
+						switch_safe_free(cdr_text);
+					}
+				}
+					
+			}
+			
 			switch_core_session_rwunlock(peer_session);
 
 		} else {
@@ -1405,6 +1448,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", switch_core_session_get_uuid(peer_session));
 		switch_channel_event_set_data(caller_channel, event);
+		switch_event_add_presence_data_cols(peer_channel, event, "Bridge-B-PD-");
 		switch_event_fire(&event);
 	}
 
@@ -1471,21 +1515,26 @@ static void cleanup_proxy_mode_b(switch_core_session_t *session)
 static void cleanup_proxy_mode_a(switch_core_session_t *session)
 {
 	switch_core_session_t *sbsession;
-
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
+	int done = 0;
 
 	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-		const char *sbv = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
-		if (!zstr(sbv) && (sbsession = switch_core_session_locate(sbv))) {
+		if (switch_core_session_get_partner(session, &sbsession) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *sbchannel = switch_core_session_get_channel(sbsession);
-			/* Clear this now, otherwise will cause the one we're interested in to hang up too...*/
-			switch_channel_set_variable(sbchannel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
-			switch_channel_hangup(sbchannel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+
+			if (switch_channel_test_flag(sbchannel, CF_PROXY_MODE)) { 	
+				/* Clear this now, otherwise will cause the one we're interested in to hang up too...*/
+				switch_channel_set_variable(sbchannel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
+				switch_channel_hangup(sbchannel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+			} else {
+				done = 1;
+			}
 			switch_core_session_rwunlock(sbsession);
 		}
 	}
 
+	if (done) return;
+	
 	switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 	switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_channel_set_variable(channel, SWITCH_BRIDGE_UUID_VARIABLE, NULL);
@@ -1657,7 +1706,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, c
 		const char *brto;
 
 		if ((brto = switch_channel_get_variable(rchannel, "orignate_signal_bond")) || 
-			(brto = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+			(brto = switch_channel_get_partner_uuid(rchannel))) {
 			switch_copy_string(b_uuid, brto, blen);
 			status = SWITCH_STATUS_SUCCESS;
 		}
@@ -1691,7 +1740,7 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 
 	channel = switch_core_session_get_channel(session);
 	rchannel = switch_core_session_get_channel(rsession);
-	buuid = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE);
+	buuid = switch_channel_get_partner_uuid(rchannel);
 
 	if ((var = switch_channel_get_variable(channel, "intercept_unbridged_only")) && switch_true(var)) {
 		if ((switch_channel_test_flag(rchannel, CF_BRIDGED))) {

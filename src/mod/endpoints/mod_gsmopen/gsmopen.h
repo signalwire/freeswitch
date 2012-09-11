@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005/2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -23,16 +23,14 @@
  *
  * This module (mod_gsmopen) has been contributed by:
  *
- * Giovanni Maruzzelli (gmaruzz@gmail.com)
+ * Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
+ * Maintainer: Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
- * Further Contributors:
- *
- *
- *
- * mod_gsmopen.c -- GSM compatible Endpoint Module
+ * mod_gsmopen.cpp -- GSM Modem compatible Endpoint Module
  *
  */
+
 
 #define __STDC_LIMIT_MACROS
 

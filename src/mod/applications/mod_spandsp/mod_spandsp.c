@@ -125,12 +125,14 @@ static void event_handler(switch_event_t *event)
 SWITCH_STANDARD_APP(t38_gateway_function)
 {
     switch_channel_t *channel = switch_core_session_get_channel(session);
-    time_t timeout = switch_epoch_time_now(NULL) + 20;
+    time_t timeout = 20;
     const char *var;
     int argc = 0;
     char *argv[2] = { 0 };
     char *dupdata;
     const char *direction = NULL, *flags = NULL;
+
+	int tone_type = 0;
     
     if (!zstr(data) && (dupdata = switch_core_session_strdup(session, data))) {
         if ((argc = switch_split(dupdata, ' ', argv))) {
@@ -156,14 +158,35 @@ SWITCH_STANDARD_APP(t38_gateway_function)
         if ((var = switch_channel_get_variable(channel, "t38_gateway_detect_timeout"))) {
             long to = atol(var);
             if (to > -1) {
-                timeout = (time_t) (switch_epoch_time_now(NULL) + to);
+                timeout = to;
             } else {
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s invalid timeout value.\n", switch_channel_get_name(channel));
             }
         }
 
+		if (!strcasecmp(flags, "cng")) {
+			tone_type = MODEM_CONNECT_TONES_FAX_CNG;
+		} else if (!strcasecmp(flags, "ans")) {
+			tone_type = MODEM_CONNECT_TONES_ANS;
+		} else if (!strcasecmp(flags, "ans_pr")) {
+			tone_type = MODEM_CONNECT_TONES_ANS_PR;
+		} else if (!strcasecmp(flags, "ansam")) {
+			tone_type = MODEM_CONNECT_TONES_ANSAM;
+		} else if (!strcasecmp(flags, "ansam_pr")) {
+			tone_type = MODEM_CONNECT_TONES_ANSAM_PR;
+		} else if (!strcasecmp(flags, "preamble")) {
+			tone_type = MODEM_CONNECT_TONES_FAX_PREAMBLE;
+		} else if (!strcasecmp(flags, "ced_preamble")) {
+			tone_type = MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE;
+		} else {
+			tone_type = MODEM_CONNECT_TONES_NONE;
+		}
+
+
+
         //switch_ivr_tone_detect_session(session, "t38", "1100.0", "rw", timeout, 1, direction, NULL, t38_gateway_start);        
-		spandsp_fax_detect_session(session, "rw", timeout, MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE, 1, direction, NULL, t38_gateway_start);
+		//spandsp_fax_detect_session(session, "rw", timeout, MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE, 1, direction, NULL, t38_gateway_start);
+		spandsp_fax_detect_session(session, "rw", timeout, tone_type, 1, direction, NULL, t38_gateway_start);
     }
 }
 

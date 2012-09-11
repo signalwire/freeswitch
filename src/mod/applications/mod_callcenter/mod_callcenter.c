@@ -1466,6 +1466,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "origination_uuid", "%s", agent_uuid_str);
 
+		switch_channel_process_export(member_channel, NULL, ovars, "cc_export_vars");
+
 		t_agent_called = local_epoch_time_now(NULL);
 		dialstr = switch_mprintf("%s", h->originate_string);
 		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
@@ -1534,7 +1536,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 				/* Wait for the real channel to be fully bridged */
 				switch_channel_wait_for_flag(other_loopback_channel, CF_BRIDGED, SWITCH_TRUE, 5000, member_channel);
 
-				real_uuid = switch_channel_get_variable(other_loopback_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+				real_uuid = switch_channel_get_partner_uuid(other_loopback_channel);
 				switch_channel_set_variable(other_loopback_channel, "cc_member_pre_answer_uuid", NULL);
 
 				/* Switch the agent session */

@@ -5,13 +5,20 @@ sdir="."
 [ -n "${0%/*}" ] && sdir="${0%/*}"
 . $sdir/common.sh
 
-eval $(parse_version "$1")
+check_pwd
+check_input_ver_build $@
+in_ver="$1"
+if [ "$in_ver" = "auto" ]; then
+  in_ver="$(cat build/next-release.txt)"
+fi
+eval $(parse_version "$in_ver")
 datestamp="$(date +%Y%m%dT%H%M%SZ)"
 nightly="n${datestamp}"
-build="b$2"
-distro=${3:="unstable"}
+build="b${2-0}"
+distro="${3-unstable}"
+codename="${4-sid}"
 
-fver="${ver}~${nightly}~${build}"
+fver="${dver}~${nightly}~${build}"
 fname="freeswitch-$fver"
 orig="freeswitch_$fver.orig"
 ddir=$src_repo/debbuild
@@ -20,7 +27,7 @@ bdir=$src_repo/debbuild/$fname
 mkdir -p $ddir
 git clone . $bdir
 cd $bdir
-set_fs_ver "$ver" "$major" "$minor" "$micro" "$rev"
+set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 cd libs
 getlib () {
   f="${1##*/}"
@@ -56,13 +63,13 @@ echo "Compressing $orig.tar with xz -6..." >&2
 xz -6 $orig.tar
 
 cd $bdir
-(cd debian && ./bootstrap.sh)
+(cd debian && ./bootstrap.sh -c "$codename")
 # dch can't handle comments in control file
 (cd debian; \
   mv control control.orig; \
   grep -e '^#' -v control.orig > control)
 # dependency: libparse-debcontrol-perl
-dch -b -v "${fver}-1" \
+dch -b -v "${fver}-1~${codename}+1" \
   -M --force-distribution -D "$distro" \
   "Nightly build at ${datestamp}."
 # dependency: fakeroot

@@ -258,7 +258,11 @@ typedef intptr_t switch_ssize_t;
 #endif
 
 #ifndef TIME_T_FMT
+#if defined(__FreeBSD__) && SIZEOF_VOIDP == 4
+#define TIME_T_FMT "d"
+#else
 #define TIME_T_FMT "ld"
+#endif
 #endif
 
 #endif

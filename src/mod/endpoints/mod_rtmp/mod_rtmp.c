@@ -625,7 +625,7 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 	/*switch_channel_mark_pre_answered(channel);*/
 	
 	switch_channel_ring_ready(channel);
-	rtmp_send_incoming_call(*newsession);
+	rtmp_send_incoming_call(*newsession, var_event);
 	
 	switch_channel_set_state(channel, CS_INIT);
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);

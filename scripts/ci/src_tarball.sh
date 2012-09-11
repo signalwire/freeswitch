@@ -5,6 +5,8 @@ sdir="."
 [ -n "${0%/*}" ] && sdir="${0%/*}"
 . $sdir/common.sh
 
+check_pwd
+check_input_ver_build $@
 eval $(parse_version "$1")
 
 dst_name="freeswitch-$cmajor.$cminor.$cmicro"
@@ -19,7 +21,7 @@ mkdir -p $dst_dir
 cp -r . $dst_dir
 
 cd $dst_dir
-set_fs_ver "$cver" "$cmajor" "$cminor" "$cmicro" "$crev"
+set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 gnuize
 cd ..
 ls

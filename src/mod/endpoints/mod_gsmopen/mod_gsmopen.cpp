@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005/2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -23,14 +23,11 @@
  *
  * This module (mod_gsmopen) has been contributed by:
  *
- * Giovanni Maruzzelli (gmaruzz@gmail.com)
+ * Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
+ * Maintainer: Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
- * Further Contributors:
- *
- *
- *
- * mod_gsmopen.c -- GSM compatible Endpoint Module
+ * mod_gsmopen.cpp -- GSM Modem compatible Endpoint Module
  *
  */
 
@@ -2978,6 +2975,7 @@ int sms_incoming(private_t *tech_pvt)
 	DEBUGA_GSMOPEN("received SMS on interface %s: DATE=%s, SENDER=%s, BODY=%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_date, tech_pvt->sms_sender,
 				   tech_pvt->sms_body);
 
+#ifdef NOTDEF
 	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	}
@@ -2993,7 +2991,6 @@ int sms_incoming(private_t *tech_pvt)
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-/* mod_sms begin */
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
@@ -3002,10 +2999,7 @@ int sms_incoming(private_t *tech_pvt)
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
-/* mod_sms end */
 		switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
-                //switch_core_chat_send(GSMOPEN_CHAT_PROTO, event); /* mod_sms */
-                switch_core_chat_send("GLOBAL", event); /* mod_sms */
 		if (session) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
 			if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
@@ -3052,6 +3046,38 @@ int sms_incoming(private_t *tech_pvt)
 	if (session) {
 		switch_core_session_rwunlock(session);
 	}
+#endif //NOTDEF
+	/* mod_sms begin */
+	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->sms_sender);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
+		switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
+		//switch_core_chat_send("GLOBAL", event); /* mod_sms */
+		switch_core_chat_send("GLOBAL", event);	/* mod_sms */
+	} else {
+
+		ERRORA("cannot create event on interface %s. WHY?????\n", GSMOPEN_P_LOG, tech_pvt->name);
+	}
+	/* mod_sms end */
+
+
 	//memset(&tech_pvt->chatmessages[which], '\0', sizeof(&tech_pvt->chatmessages[which]) );
 	//memset(tech_pvt->sms_message, '\0', sizeof(tech_pvt->sms_message));
 	return 0;

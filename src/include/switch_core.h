@@ -137,6 +137,11 @@ SWITCH_DECLARE(void) switch_core_session_disable_heartbeat(switch_core_session_t
 
 #define switch_core_session_get_name(_s) switch_channel_get_name(switch_core_session_get_channel(_s))
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_pop(switch_core_session_t *orig_session, const char *function, switch_media_bug_t **pop);
+								
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_exec_all(switch_core_session_t *orig_session, 
+															   const char *function, switch_media_bug_exec_cb_t cb, void *user_data);
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_count(switch_core_session_t *orig_session, const char *function);
 /*!
   \brief Add a media bug to the session
   \param session the session to add the bug to
@@ -193,7 +198,7 @@ SWITCH_DECLARE(void) switch_core_media_bug_set_write_replace_frame(_In_ switch_m
   \param bug the bug to get the data from
 */
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_read_replace_frame(_In_ switch_media_bug_t *bug);
-
+SWITCH_DECLARE(void) switch_core_media_bug_set_read_demux_frame(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
 /*!
   \brief Obtain the session from a media bug
   \param bug the bug to get the data from
@@ -225,6 +230,7 @@ SWITCH_DECLARE(uint32_t) switch_core_cpu_count(void);
   \param bug bug to remove
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(_In_ switch_core_session_t *session, _Inout_ switch_media_bug_t **bug);
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_prune(switch_core_session_t *session);
 
@@ -247,7 +253,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(_Inout_ switch_media
   \param session the session to remove the bugs from
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(_In_ switch_core_session_t *session, const char *function);
+
+#define switch_core_media_bug_remove_all(_s) switch_core_media_bug_remove_all_function(_s, NULL)
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_enumerate(switch_core_session_t *session, switch_stream_handle_t *stream);
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch_core_session_t *orig_session, switch_core_session_t *new_session);
@@ -1492,6 +1500,7 @@ SWITCH_DECLARE(void) switch_core_session_unlock_codec_read(_In_ switch_core_sess
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp);
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_real_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_session_t *session, switch_codec_implementation_t *impp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_write_impl(switch_core_session_t *session, switch_codec_implementation_t *impp);
@@ -2291,10 +2300,12 @@ SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number)
  \param [in] network_ip
  \param [in] network_port
  \param [in] network_proto - one of tls, tcp, udp
+ \param [in] metadata - generic metadata supplied by module
  \param [out] err - Error if it exists
 */
 SWITCH_DECLARE(switch_status_t) switch_core_add_registration(const char *user, const char *realm, const char *token, const char *url, uint32_t expires, 
-															 const char *network_ip, const char *network_port, const char *network_proto);
+															 const char *network_ip, const char *network_port, const char *network_proto,
+															 const char *metadata);
 /*!
  \brief Delete user registration
  \param [in] user
@@ -2319,6 +2330,8 @@ SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_ha
 SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *fmt, ...);
 SWITCH_DECLARE(int) switch_max_file_desc(void);
 SWITCH_DECLARE(void) switch_close_extra_files(int *keep, int keep_ttl);
+SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu);
+SWITCH_DECLARE(void) switch_os_yield(void);
 
 SWITCH_END_EXTERN_C
 #endif

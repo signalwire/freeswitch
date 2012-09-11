@@ -1,3 +1,39 @@
+/*
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthm@freeswitch.org>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * This module (mod_gsmopen) has been contributed by:
+ *
+ * Giovanni Maruzzelli <gmaruzz@gmail.com>
+ *
+ * Maintainer: Giovanni Maruzzelli <gmaruzz@gmail.com>
+ *
+ * gsmopen_protocol.cpp -- Low Level Interface for mod_gamopen
+ *
+ */
+
+
+
+
 #include "gsmopen.h"
 #ifdef WIN32
 #include "win_iconv.c"
@@ -367,7 +403,6 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	if (res) {
 		DEBUGA_GSMOPEN("AT+CMGF? failed, continue\n", GSMOPEN_P_LOG);
 	}
-#ifndef WANT_GSMLIB
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=1");
 	if (res) {
 		ERRORA("Error setting SMS sending mode to TEXT on the cellphone, let's hope is TEXT by default. Continuing\n", GSMOPEN_P_LOG);
@@ -402,7 +437,6 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 			WARNINGA("AT+CSMP do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
 		}
 	}
-#else // WANT_GSMLIB
 
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
 	if (res) {
@@ -410,6 +444,7 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	}
 	tech_pvt->sms_pdu_not_supported = 0;
 	tech_pvt->no_ucs2 = 1;
+#ifdef NOTDEF					//GSMLIB? XXX
 	if (tech_pvt->no_ucs2) {
 		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"GSM\"");
 		if (res) {
@@ -421,7 +456,7 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 			WARNINGA("AT+CSMP do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
 		}
 	}
-#endif // WANT_GSMLIB
+#endif // NOTDEF                 //GSMLIB? XXX
 
 #ifdef NOTDEF					//GSMLIB? XXX
 
@@ -1181,10 +1216,12 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						if (res) {
 							ERRORA("AT+CMGR (read SMS) do not got OK from the phone, message sent was:|||%s|||\n", GSMOPEN_P_LOG, at_command);
 						}
-						res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"GSM\"");
+/*
+						res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"CIAPALO1\"");
 						if (res) {
-							ERRORA("AT+CSCS=\"GSM\" (set TE messages to GSM) do not got OK from the phone\n", GSMOPEN_P_LOG);
+							ERRORA("AT+CSCS=\"CIAPALO1\" (set TE messages to GSM) do not got OK from the phone\n", GSMOPEN_P_LOG);
 						}
+*/
 						memset(at_command, 0, sizeof(at_command));
 						sprintf(at_command, "AT+CMGD=%d", tech_pvt->unread_sms_msg_id);	/* delete the message */
 						tech_pvt->unread_sms_msg_id = 0;
@@ -1199,7 +1236,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 							/* we're not in a call, neither calling */
 							res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CKPD=\"EEE\"");
 							if (res) {
-								ERRORA("AT+CKPD=\"EEE\" (cellphone screen back to user) do not got OK from the phone\n", GSMOPEN_P_LOG);
+								DEBUGA_GSMOPEN("AT+CKPD=\"EEE\" (cellphone screen back to user) do not got OK from the phone\n", GSMOPEN_P_LOG);
 							}
 						}
 					}			//unread_msg_id
@@ -1666,7 +1703,6 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 					} else {
 
 
-#ifdef WANT_GSMLIB
 						try {
 							char content2[1000];
 							SMSMessageRef sms;
@@ -1719,7 +1755,6 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						}
 
 
-#endif // WANT_GSMLIB
 
 
 
@@ -2402,7 +2437,7 @@ int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, c
 	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 #endif // WIN32
 	if (iconv_res == (size_t) -1) {
-		ERRORA("error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
+		DEBUGA_GSMOPEN("cannot translate in iso_8859_1 error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
 		return -1;
 	}
 	DEBUGA_GSMOPEN
@@ -2731,117 +2766,70 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 		char pdu2[16000];
 		memset(pdu2, '\0', sizeof(pdu2));
 		int pdulenght = 0;
+		string pdu;
 
 		PUSHA_UNLOCKA(&tech_pvt->controldev_lock);
 		LOKKA(tech_pvt->controldev_lock);
 
-#ifndef WANT_GSMLIB
-		err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=1");
-		if (err) {
-			ERRORA("AT+CMGF=1 (set message sending to TEXT (as opposed to PDU)  do not got OK from the phone\n", GSMOPEN_P_LOG);
-		}
-#else // WANT_GSMLIB
-		err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
-		if (err) {
-			ERRORA("AT+CMGF=0 (set message sending to TEXT (as opposed to PDU)  do not got OK from the phone\n", GSMOPEN_P_LOG);
-		}
-#endif // WANT_GSMLIB
-
-
 		if (tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0) {
-#ifdef WANT_GSMLIB
 			try {
-				SMSMessageRef smsMessage;
+				int bad_8859 = 0;
 
 				memset(mesg_test, '\0', sizeof(mesg_test));
 				sprintf(mesg_test, ":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù");	//let's test the beauty of utf8
 				//sprintf(mesg_test,":) ciao belè èéàòìù"); 
 				//text=mesg_test;
 
-				utf8_to_iso_8859_1(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
-				smsMessage = new SMSSubmitMessage(smscommand, dest);
-				string pdu = smsMessage->encode();
-				strncpy(pdu2, pdu.c_str(), sizeof(pdu2) - 1);
-				memset(smscommand, '\0', sizeof(smscommand));
-				pdulenght = pdu.length() / 2 - 1;
-				sprintf(smscommand, "AT+CMGS=%d", pdulenght);
-
-#ifdef NOTDEF
-
-				***9. How to support unicode ? You need 6 steps : 1. set datacodingschema to DCS_SIXTEEN_BIT_ALPHABET 2. set your locale correctly, for example
-					, my locale, china.setlocale(LC_ALL, "chs");
-
-				3. translate MBCS(multiple byte character set) string to unicode string.wchar_t wstr[1000];
-				memset(wstr, 0, 2000);
-				mbstowcs(wstr, data.c_str(), data.length());
-
-				4. get unicode string length.int wcs_len = wcslen(wstr);
-
-				5. change unicode string to net order.for (int i = 0; i < wcs_len; i++)
-					wstr[i] = htons(wstr[i]);
-
-				6. put unicode string into pdu.char content2[1000];
-				SMSMessageRef sms;
-				//MessageType messagetype;
-				//Address servicecentreaddress;
-				//Timestamp servicecentretimestamp;
-				//Address sender_recipient_address;
-
-				sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
-
-				DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
-
-				memset(content2, '\0', sizeof(content2));
-				if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
-					iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
-				} else if (sms->dataCodingScheme().getAlphabet() == DCS_SIXTEEN_BIT_ALPHABET) {
-					ucs2_to_utf8(tech_pvt, (char *) bufToHex((unsigned char *) sms->userData().data(), sms->userData().length()).c_str(), content2,
-								 sizeof(content2));
+				bad_8859 = utf8_to_iso_8859_1(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
+				if (!bad_8859) {
+					err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
+					if (err) {
+						ERRORA("AT+CMGF=0 (set message sending to PDU (as opposed to TEXT)  do not got OK from the phone\n", GSMOPEN_P_LOG);
+					}
+					SMSMessageRef smsMessage;
+					smsMessage = new SMSSubmitMessage(smscommand, dest);
+					//string pdu = smsMessage->encode();
+					pdu = smsMessage->encode();
+					strncpy(pdu2, pdu.c_str(), sizeof(pdu2) - 1);
+					memset(smscommand, '\0', sizeof(smscommand));
+					pdulenght = pdu.length() / 2 - 1;
+					sprintf(smscommand, "AT+CMGS=%d", pdulenght);
 				} else {
-					ERRORA("dataCodingScheme not supported=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
+					int ok;
 
+					UNLOCKA(tech_pvt->controldev_lock);
+					POPPA_UNLOCKA(&tech_pvt->controldev_lock);
+
+					tech_pvt->no_ucs2 = 0;
+					tech_pvt->sms_pdu_not_supported = 1;
+					ok = gsmopen_sendsms(tech_pvt, dest, text);
+					tech_pvt->no_ucs2 = 1;
+					tech_pvt->sms_pdu_not_supported = 0;
+
+					return ok;
 				}
-				DEBUGA_GSMOPEN("dataCodingScheme=%d\n", GSMOPEN_P_LOG, sms->dataCodingScheme().getAlphabet());
-				DEBUGA_GSMOPEN("dataCodingScheme=%s\n", GSMOPEN_P_LOG, sms->dataCodingScheme().toString().c_str());
-				DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
-				DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
-				DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
-				DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
-				DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
 
-
-				memset(sms_body, '\0', sizeof(sms_body));
-				strncpy(sms_body, content2, sizeof(sms_body));
-				DEBUGA_GSMOPEN("body=%s\n", GSMOPEN_P_LOG, sms_body);
-				strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
-				strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
-				strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
-				strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
-				strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(), sizeof(tech_pvt->sms_servicecentreaddress));
-				tech_pvt->sms_messagetype = sms->messageType();
-				//messagetype = sms->messageType();
-				//servicecentreaddress = sms->serviceCentreAddress();
-				//servicecentretimestamp = sms->serviceCentreTimestamp();
-				//sender_recipient_address = sms->address();
-#endif // NOTDEF
 			}
 			catch(GsmException & ge) {
 				ERRORA("GsmException= |||%s|||\n", GSMOPEN_P_LOG, ge.what());
 			}
 
 
-#else // WANT_GSMLIB
-			ERRORA("tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0 && no WANT_GSMLIB\n", GSMOPEN_P_LOG);
-			return RESULT_FAILURE;
-#endif // WANT_GSMLIB
 
 		} else {
 			char dest2[1048];
 
+			err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=1");
+			if (err) {
+				ERRORA("AT+CMGF=1 (set message sending to TEXT (as opposed to PDU)  do not got OK from the phone\n", GSMOPEN_P_LOG);
+			}
+
+/*
 			err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"UCS2\"");
 			if (err) {
 				ERRORA("AT+CSCS=\"UCS2\" (set TE messages to ucs2)  do not got OK from the phone\n", GSMOPEN_P_LOG);
 			}
+*/
 
 			memset(dest2, '\0', sizeof(dest2));
 			utf8_to_ucs2(tech_pvt, dest, strlen(dest), dest2, sizeof(dest2));
@@ -2854,7 +2842,6 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 			goto uscita;
 		}
 		err = gsmopen_serial_AT_expect(tech_pvt, "> ", 0, 1);	// wait 1.1s for the prompt, no  crlf
-#if 1
 		if (err) {
 			DEBUGA_GSMOPEN
 				("Error or timeout getting prompt '> ' for sending sms directly to the remote party. BTW, seems that we cannot do that with Motorola c350, so we'll write to cellphone memory, then send from memory\n",
@@ -2879,24 +2866,23 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 				goto uscita;
 			}
 		}
-#endif
 
-#ifndef WANT_GSMLIB
-		memset(mesg_test, '\0', sizeof(mesg_test));
-		sprintf(mesg_test, ":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù");	//let's test the beauty of utf8
-		//text=mesg_test;
-
-		memset(smscommand, '\0', sizeof(smscommand));
-		if (tech_pvt->no_ucs2) {
-			sprintf(smscommand, "%s", text);
+		if (tech_pvt->no_ucs2 || tech_pvt->sms_pdu_not_supported == 0) {
+			memset(smscommand, '\0', sizeof(smscommand));
+			sprintf(smscommand, "%s", pdu2);
 		} else {
-			utf8_to_ucs2(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
-		}
-#else // WANT_GSMLIB
+			memset(mesg_test, '\0', sizeof(mesg_test));
+			sprintf(mesg_test, ":) ciao belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大aèéàòçù");	//let's test the beauty of utf8
+			//text=mesg_test;
 
-		memset(smscommand, '\0', sizeof(smscommand));
-		sprintf(smscommand, "%s", pdu2);
-#endif // WANT_GSMLIB
+			memset(smscommand, '\0', sizeof(smscommand));
+			if (tech_pvt->no_ucs2) {
+				sprintf(smscommand, "%s", text);
+			} else {
+				utf8_to_ucs2(tech_pvt, text, strlen(text), smscommand, sizeof(smscommand));
+			}
+
+		}
 		smscommand[strlen(smscommand)] = 0x1A;
 		DEBUGA_GSMOPEN("smscommand len is: %d, text is:|||%s|||\n", GSMOPEN_P_LOG, (int) strlen(smscommand), smscommand);
 
@@ -2948,12 +2934,6 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 		UNLOCKA(tech_pvt->controldev_lock);
 		POPPA_UNLOCKA(&tech_pvt->controldev_lock);
 	}
-#ifdef NOTDEF
-	err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
-	if (err) {
-		DEBUGA_GSMOPEN("AT+CMGF=0 (set message sending to PDU (as opposed to TEXT)  do not got OK from the phone, continuing\n", GSMOPEN_P_LOG);
-	}
-#endif // NOTDEF
 
 	DEBUGA_GSMOPEN("FINISH\n", GSMOPEN_P_LOG);
 	if (failed)

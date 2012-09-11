@@ -428,6 +428,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 				nua_unregister(gateway_ptr->nh,
 							   NUTAG_URL(gateway_ptr->register_url),
+							   TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
 							   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 							   SIPTAG_FROM_STR(gateway_ptr->register_from),
 							   SIPTAG_TO_STR(gateway_ptr->distinct_to ? gateway_ptr->register_to : gateway_ptr->register_from),
@@ -586,7 +587,7 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 		event = "reboot";
 	}
 
-	sofia_glue_send_notify(profile, user, host, event, contenttype, body, contact, network_ip);
+	sofia_glue_send_notify(profile, user, host, event, contenttype, body, contact, network_ip, NULL);
 }
 
 int sofia_sla_dialog_del_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -992,6 +993,30 @@ uint32_t sofia_reg_reg_count(sofia_profile_t *profile, const char *user, const c
 	return atoi(buf);													
 }
 
+static int debounce_check(sofia_profile_t *profile, const char *user, const char *host)
+{
+	char key[512] = "";
+	int r = 0;
+	time_t *last, now = switch_epoch_time_now(NULL);
+
+	snprintf(key, sizeof(key), "%s%s", user, host);
+
+	if ((last = switch_core_hash_find(profile->mwi_debounce_hash, key))) {
+		if (now - *last > 30) {
+			*last = now;
+			r = 1;
+		}
+	} else {
+		last = switch_core_alloc(profile->pool, sizeof(*last));
+		*last = now;
+		switch_core_hash_insert(profile->mwi_debounce_hash, key, last);
+		r = 1;
+	}
+
+	return r;
+}
+						
+
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
 								sofia_dispatch_event_t *de, sofia_regtype_t regtype, char *key,
 								  uint32_t keylen, switch_event_t **v_event, const char *is_nat)
@@ -1003,6 +1028,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	sip_contact_t const *contact = NULL;
 	char *sql;
 	switch_event_t *s_event;
+	const char *reg_meta = NULL;
 	const char *to_user = NULL;
 	const char *to_host = NULL;
 	char *mwi_account = NULL;
@@ -1460,6 +1486,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		to_user = var;
 	}
 
+	if (v_event && *v_event && (var = switch_event_get_header(*v_event, "registration_metadata"))) {
+		reg_meta = var;
+	}
+
 	if (v_event && *v_event && (mwi_account = switch_event_get_header(*v_event, "mwi-account"))) {
 		dup_mwi_account = strdup(mwi_account);
 		switch_assert(dup_mwi_account != NULL);
@@ -1534,7 +1564,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		url = switch_mprintf("sofia/%q/sip:%q", profile->name, sofia_glue_strip_proto(contact));
 		
 		switch_core_add_registration(to_user, reg_host, call_id, url, (long) switch_epoch_time_now(NULL) + (long) exptime + 60,
-									 network_ip, network_port_c, is_tls ? "tls" : is_tcp ? "tcp" : "udp");
+									 network_ip, network_port_c, is_tls ? "tls" : is_tcp ? "tcp" : "udp", reg_meta);
 
 		switch_safe_free(url);
 		switch_safe_free(contact);
@@ -1667,11 +1697,14 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		if (contact) {
 			if (exptime) {
+				int debounce_ok = debounce_check(profile, mwi_user, mwi_host);
+
 				switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
 				sip_contact_add_param(nua_handle_home(nh), sip->sip_contact, exp_param);
-
-				if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER) ||
-					(reg_count == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) {
+				
+				if ((sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER) ||
+					 (reg_count == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) && debounce_ok) {
+					
 					if (switch_event_create(&s_mwi_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(s_mwi_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", mwi_user, mwi_host);
 						switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
@@ -1679,9 +1712,9 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					}
 				}
 
-				if (sofia_test_pflag(profile, PFLAG_PRESENCE_ON_REGISTER) || 
+				if ((sofia_test_pflag(profile, PFLAG_PRESENCE_ON_REGISTER) || 
 					(reg_count == 1 && sofia_test_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER)) 
-					|| send_pres == 1 || (reg_count == 1 && send_pres == 2)) {
+					 || send_pres == 1 || (reg_count == 1 && send_pres == 2)) && debounce_ok) {
 				
 					if (sofia_test_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER)) {
 						if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {

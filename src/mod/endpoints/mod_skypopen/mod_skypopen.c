@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2011, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -21,18 +21,16 @@
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
- * This module (mod_skypopen) has been contributed by:
+ * This module (mod_gsmopen) has been contributed by:
  *
- * Giovanni Maruzzelli (gmaruzz@gmail.com)
+ * Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
- *
- * Further Contributors:
- *
- *
+ * Maintainer: Giovanni Maruzzelli <gmaruzz@gmail.com>
  *
  * mod_skypopen.c -- Skype compatible Endpoint Module
  *
  */
+
 
 #include "skypopen.h"
 #define SKYPE_CHAT_PROTO "skype"
@@ -879,7 +877,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			switch_sleep(1000);	//XXX don't like this
 			try++;
 			if (try < 5) {
-				DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
+				//DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
 				goto read;
 			}
 			DEBUGA_SKYPE("READ BUFFER EMPTY, skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
@@ -2533,9 +2531,7 @@ SWITCH_STANDARD_API(sk_function)
 										   globals.SKYPOPEN_INTERFACES[tmp_i].message + 30);
 			}
 		}
-	}
-
-	if (!strcasecmp(argv[0], "list")) {
+	} else if (!strcasecmp(argv[0], "list")) {
 		int i;
 		unsigned int ib = 0;
 		unsigned int ib_failed = 0;

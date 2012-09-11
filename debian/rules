@@ -1,11 +1,12 @@
 #!/usr/bin/make -f
 # -*- mode:makefile -*-
+##### Author: Travis Cross <tc@traviscross.com>
+
 #export DH_VERBOSE=1
 
 FS_CFLAGS?=-ggdb3 -O2
 FS_CPPFLAGS?=
 FS_CXXFLAGS?=$(FS_CFLAGS)
-FS_INSTALL_SOUNDS?=true
 export PATH?=/usr/lib/ccache:/usr/sbin:/usr/bin:/sbin:/bin
 export CFLAGS=$(FS_CFLAGS)
 export CPPFLAGS=$(FS_CPPFLAGS)
@@ -18,7 +19,6 @@ show_vars= \
 	echo "CFLAGS='$(CFLAGS)'"; \
 	echo "CXXFLAGS='$(CXXFLAGS)'"; \
 	echo "CCACHE_DIR='$(CCACHE_DIR)'"; \
-	echo "FS_INSTALL_SOUNDS='$(FS_INSTALL_SOUNDS)'"; \
 	echo;
 
 binary:
@@ -88,9 +88,9 @@ override_dh_strip:
 
 override_dh_auto_install:
 	dh_auto_install
-	-$(FS_INSTALL_SOUNDS) && DESTDIR=debian/tmp make cd-sounds-install cd-moh-install
 	mkdir -p debian/tmp/lib/systemd/system
 	install -m0644 debian/freeswitch-systemd.freeswitch.service debian/tmp/lib/systemd/system/freeswitch.service
+	rm -f debian/tmp/usr/share/freeswitch/grammar/model/communicator/COPYING
 
 override_dh_installinit:
 	dh_installinit -pfreeswitch-sysvinit --name=freeswitch
@@ -115,13 +115,5 @@ binary-quicktest:
 	@$(call show_vars)
 	echo "applications/mod_commands" > debian/modules.conf
 	(cd debian && ./bootstrap.sh)
-	env FS_INSTALL_SOUNDS=false dh binary \
-		-Nfreeswitch-sounds-music-8k \
-		-Nfreeswitch-sounds-music-16k \
-		-Nfreeswitch-sounds-music-32k \
-		-Nfreeswitch-sounds-music-48k \
-		-Nfreeswitch-sounds-en-us-callie-8k \
-		-Nfreeswitch-sounds-en-us-callie-16k \
-		-Nfreeswitch-sounds-en-us-callie-32k \
-		-Nfreeswitch-sounds-en-us-callie-48k
+	dh binary
 

@@ -285,7 +285,7 @@ SWITCH_STANDARD_API(shutdown_function)
 
 SWITCH_STANDARD_API(version_function)
 {
-	stream->write_function(stream, "FreeSWITCH Version %s\n", SWITCH_VERSION_FULL);
+	stream->write_function(stream, "NSG Version %s\n", SWITCH_VERSION_FULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3089,6 +3089,45 @@ SWITCH_STANDARD_API(uuid_send_info_function)
 }
 
 
+#define VIDEO_REFRESH_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(uuid_video_refresh_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 1) {
+		stream->write_function(stream, "-USAGE: %s\n", VIDEO_REFRESH_SYNTAX);
+	} else {
+		switch_core_session_message_t msg = { 0 };
+		switch_core_session_t *lsession = NULL;
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+		msg.string_array_arg[2] = argv[1];
+		msg.from = __FILE__;
+
+		if ((lsession = switch_core_session_locate(argv[0]))) {
+			status = switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_rwunlock(lsession);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define DEBUG_AUDIO_SYNTAX "<uuid> <read|write|both> <on|off>"
 SWITCH_STANDARD_API(uuid_debug_audio_function)
 {
@@ -3400,7 +3439,7 @@ SWITCH_STANDARD_API(break_function)
 	channel = switch_core_session_get_channel(psession);
 
 	if (both) {
-		const char *quuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+		const char *quuid = switch_channel_get_partner_uuid(channel);
 		if (quuid && (qsession = switch_core_session_locate(quuid))) {
 			qchannel = switch_core_session_get_channel(qsession);
 		}
@@ -5436,6 +5475,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill Channel", kill_function, KILL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_info", "Send info to the endpoint", uuid_send_info_function, INFO_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_video_refresh", "Send video refresh.", uuid_video_refresh_function, VIDEO_REFRESH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_outgoing_answer", "Answer Outgoing Channel", outgoing_answer_function, OUTGOING_ANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
@@ -5600,6 +5640,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_simplify ::console::list_uuid");
 	switch_console_set_complete("add uuid_transfer ::console::list_uuid");
 	switch_console_set_complete("add uuid_dual_transfer ::console::list_uuid");
+	switch_console_set_complete("add uuid_video_refresh ::console::list_uuid");
 	switch_console_set_complete("add version");
 	switch_console_set_complete("add uuid_warning ::console::list_uuid");
 	switch_console_set_complete("add ...");

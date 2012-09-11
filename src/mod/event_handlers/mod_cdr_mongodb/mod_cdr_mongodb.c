@@ -124,11 +124,16 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	/* Channel variables */
 	bson_append_start_object(&cdr, "variables");
-	for (hi = switch_channel_variable_first(channel); hi; hi = hi->next) {
-		if (!zstr(hi->name) && !zstr(hi->value)) {
-			bson_append_string(&cdr, hi->name, hi->value);
+
+	if ((hi = switch_channel_variable_first(channel))) {
+		for (; hi; hi = hi->next) {
+			if (!zstr(hi->name) && !zstr(hi->value)) {
+				bson_append_string(&cdr, hi->name, hi->value);
+			}
 		}
+		switch_channel_variable_last(channel);
 	}
+
 	bson_append_finish_object(&cdr);				/* variables */
 
 
