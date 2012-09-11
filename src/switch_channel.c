@@ -1937,7 +1937,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 											   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Call-Direction",
 											   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
-
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-HIT-Dialplan", 
 											   switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND ||
 											   switch_channel_test_flag(channel, CF_DIALPLAN) ? "true" : "false");

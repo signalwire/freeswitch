@@ -5,6 +5,7 @@ applications/mod_dptools
 applications/mod_commands
 applications/mod_hash
 applications/mod_spandsp
+applications/mod_distributor
 dialplans/mod_dialplan_xml
 endpoints/mod_sofia
 endpoints/mod_opal

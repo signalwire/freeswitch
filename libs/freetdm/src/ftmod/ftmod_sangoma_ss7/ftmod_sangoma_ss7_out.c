@@ -138,6 +138,7 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 				/* Original Called Number */
 				copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
 			}
+			copy_access_transport_to_sngss7(ftdmchan, &iam.accTrnspt);
 		}
 	} else if (sngss7_info->circuit->transparent_iam &&
 		sngss7_retrieve_iam(ftdmchan, &iam) == FTDM_SUCCESS) {
@@ -160,6 +161,10 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 
 		/* Original Called Number */
 		copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
+
+		copy_access_transport_to_sngss7(ftdmchan, &iam.accTrnspt);
+
+		copy_NatureOfConnection_to_sngss7(ftdmchan, &iam.natConInd);
 	} else {
 		/* Nature of Connection Indicators */
 		copy_natConInd_to_sngss7(ftdmchan, &iam.natConInd);
@@ -199,8 +204,15 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		/* Original Called Number */
 		copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
 
-		/* Access Transport */
+		/* Access Transport - old implementation, taking from channel variable of ss7_clg_subaddr */
 		copy_accTrnspt_to_sngss7(ftdmchan, &iam.accTrnspt);
+		
+		/* Access Transport - taking from channel variable of ss7_access_transport_urlenc.
+		    This will overwirte the IE value set be above old implementation.
+		*/
+		copy_access_transport_to_sngss7(ftdmchan, &iam.accTrnspt);
+		
+		copy_NatureOfConnection_to_sngss7(ftdmchan, &iam.natConInd);
 
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM clg = \"%s\" (NADI=%d), cld = \"%s\" (NADI=%d), loc = %s (NADI=%d)\n",
 									sngss7_info->circuit->cic,
