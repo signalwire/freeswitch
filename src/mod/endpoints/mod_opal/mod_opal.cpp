@@ -364,6 +364,15 @@ switch_status_t FSManager::ReadConfig(int reload)
                 m_codecPrefs = val;
             } else if (var == "disable-transcoding") {
                 m_disableTranscoding = switch_true(val);
+            } else if (var == "dtmf-type") {
+                if (val == "string")
+                  m_h323ep->SetSendUserInputMode(OpalConnection::SendUserInputAsString);
+                else if (val == "signal")
+                  m_h323ep->SetSendUserInputMode(OpalConnection::SendUserInputAsTone);
+                else if (val == "rfc2833")
+                  m_h323ep->SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);
+                else if (val == "in-band")
+                  m_h323ep->SetSendUserInputMode(OpalConnection::SendUserInputInBand);
             } else if (var == "jitter-size") {
                 SetAudioJitterDelay(val.AsUnsigned(), val.Mid(val.Find(',')+1).AsUnsigned()); // In milliseconds
             } else if (var == "gk-address") {
@@ -649,6 +658,7 @@ PBoolean FSConnection::SendUserInputTone(char tone, unsigned duration)
         return false;
 
     switch_dtmf_t dtmf = { tone, duration };
+    PTRACE(4, "mod_opal\tSending DTMF to FS: tone=" << tone << ", duration=" << duration);
     return switch_channel_queue_dtmf(m_fsChannel, &dtmf) == SWITCH_STATUS_SUCCESS;
 }
 
@@ -925,6 +935,7 @@ switch_status_t FSConnection::kill_channel(int sig)
 
 switch_status_t FSConnection::send_dtmf(const switch_dtmf_t *dtmf)
 {
+    PTRACE(4, "mod_opal\tReceived DTMF from FS: tone=" << dtmf->digit << ", duration=" << dtmf->duration);
     OnUserInputTone(dtmf->digit, dtmf->duration);
     return SWITCH_STATUS_SUCCESS;
 }
