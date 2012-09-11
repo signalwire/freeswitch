@@ -2497,12 +2497,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
 	
 	nua_set_params(profile->nua,
-				   SIPTAG_ALLOW_STR("INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, UPDATE, INFO"),
+				   SIPTAG_ALLOW_STR("INVITE, ACK, BYE, CANCEL, OPTIONS, MESSAGE, INFO"),
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOACK(0),
 				   NUTAG_AUTOALERT(0),
 				   NUTAG_ENABLEMESSENGER(1),
 				   NTATAG_EXTRA_100(0),
+				   TAG_IF(sofia_test_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE), NUTAG_ALLOW("UPDATE")),
 				   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 				   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
 				   TAG_IF(!sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_ALLOW("PRACK")),
@@ -3609,6 +3610,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
 						}
+					} else if (!strcasecmp(var, "send-display-update")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
+						}
 					} else if (!strcasecmp(var, "mwi-use-reg-callid")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MWI_USE_REG_CALLID);
@@ -4359,6 +4366,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 				profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
+				sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 				//sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);		
 				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
@@ -4431,6 +4439,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
+						}
+					} else if (!strcasecmp(var, "send-display-update")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
 						}
 					} else if (!strcasecmp(var, "mwi-use-reg-callid")) {
 						if (switch_true(val)) {
