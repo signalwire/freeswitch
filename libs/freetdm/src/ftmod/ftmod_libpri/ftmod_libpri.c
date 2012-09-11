@@ -1938,7 +1938,7 @@ static int on_timeout_t3xx(struct lpwrap_pri *spri, struct lpwrap_timer *timer)
 		if (ftdm_channel_get_type(cur) != FTDM_CHAN_TYPE_B)
 			continue;
 		/* Restart idle b-channels */
-		if (ftdm_channel_get_state(cur) == FTDM_CHANNEL_STATE_DOWN) {
+		if (ftdm_channel_get_state(cur) == FTDM_CHANNEL_STATE_DOWN && !ftdm_test_flag(cur, FTDM_CHANNEL_INUSE)) {
 			ftdm_set_state_locked(cur, FTDM_CHANNEL_STATE_RESTART);
 		}
 	}
