@@ -583,6 +583,7 @@ void sngisdn_t3_timeout(void* p_sngisdn_info);
 void sngisdn_restart_timeout(void* p_signal_data);
 
 /* Stack management functions */
+ftdm_status_t sngisdn_start_gen_cfg(void);
 ftdm_status_t sngisdn_stack_cfg(ftdm_span_t *span);
 ftdm_status_t sngisdn_stack_start(ftdm_span_t *span);
 ftdm_status_t sngisdn_stack_stop(ftdm_span_t *span);

@@ -314,19 +314,12 @@ void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan)
 	sngisdn_chan_data_t *sngisdn_info = (sngisdn_chan_data_t*) ftdmchan->call_data;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) ftdmchan->span->signal_data;
 
-	if (ftdmchan->span->trunk_type != FTDM_TRUNK_BRI &&
-		ftdmchan->span->trunk_type != FTDM_TRUNK_BRI_PTMP) {
-
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Ignoring INFO REQ on non-BRI channel\n");
-		return;
-	}
-
 	memset(&cnStEvnt, 0, sizeof(cnStEvnt));
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Sending INFO REQ (suId:%d dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Requesting Link establishment (suId:%d dchan:%d ces:%d)\n", signal_data->cc_id, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces);
 
 	if (sng_isdn_con_status(signal_data->cc_id, 0, 0, &cnStEvnt, MI_INFO, sngisdn_dchan(signal_data)->link_id, sngisdn_info->ces)) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused INFO request\n");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, 	"stack refused Link establishment\n");
 	}
 	return;
 }
@@ -552,6 +545,8 @@ void sngisdn_snd_event(sngisdn_span_data_t *signal_data, ftdm_oob_event_t event)
 		case FTDM_OOB_ALARM_CLEAR:
 			l1_event.type = SNG_L1EVENT_ALARM_OFF;
 			sng_isdn_event_ind(signal_data->link_id, &l1_event);
+
+			sngisdn_snd_info_req(signal_data->ftdm_span->channels[1]);
 			break;
 		case FTDM_OOB_ALARM_TRAP:
 			l1_event.type = SNG_L1EVENT_ALARM_ON;

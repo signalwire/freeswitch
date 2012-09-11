@@ -232,6 +232,11 @@ ftdm_status_t sngisdn_activate_trace(ftdm_span_t *span, sngisdn_tracetype_t trac
 {
 	sngisdn_span_data_t *signal_data = sngisdn_dchan((sngisdn_span_data_t*)span->signal_data);
 
+	if (!signal_data) {
+		ftdm_log(FTDM_LOG_ERROR, "%s:Span is not used by signalling module\n", span->name);
+		return FTDM_FAIL;
+	}
+
 	switch (trace_opt) {
 		case SNGISDN_TRACE_DISABLE:
 			if (sngisdn_test_trace_flag(signal_data, SNGISDN_TRACE_Q921)) {
