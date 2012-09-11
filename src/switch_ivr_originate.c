@@ -1435,11 +1435,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	struct ent_originate_ringback rb_data = { 0 };
 	const char *ringback_data = NULL;
 	switch_event_t *var_event = NULL;
+	int getcause = 1;
+
+	*cause = SWITCH_CAUSE_SUCCESS;
 
 	switch_core_new_memory_pool(&pool);
 
 	if (zstr(bridgeto)) {
 		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		getcause = 0;
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
@@ -1512,6 +1516,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	if (!(x_argc = switch_separate_string_string(data, SWITCH_ENT_ORIGINATE_DELIM, x_argv, MAX_PEERS))) {
 		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		getcause = 0;
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
@@ -1601,6 +1606,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	if (hp) {
 		*cause = hp->cause;
+		getcause = 0;
 		status = hp->status;
 		*bleg = hp->bleg;
 		switch_mutex_unlock(hp->mutex);
@@ -1625,10 +1631,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			continue;
 		}
 		switch_mutex_unlock(handles[i].mutex);
+
+		if (getcause && *cause != handles[i].cause && handles[i].cause != SWITCH_CAUSE_LOSE_RACE) {
+			*cause = handles[i].cause;
+			getcause++;
+		}
+
 		switch_thread_join(&tstatus, handles[i].thread);
 		switch_event_destroy(&handles[i].ovars);
 	}
-
 
 	if (channel && rb_data.thread) {
 		switch_channel_set_flag(channel, CF_NOT_READY);
@@ -1638,6 +1649,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 
   end:
+
+	if (getcause == 1 && *cause == SWITCH_CAUSE_SUCCESS) {
+		*cause = SWITCH_CAUSE_NO_ANSWER;
+	}
 
 	if (var_event && var_event != ovars) {
 		switch_event_destroy(&var_event);
