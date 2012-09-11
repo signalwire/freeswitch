@@ -2397,3 +2397,11 @@ void mg_apply_tdm_ec(mg_termination_t* term, mg_context_t *mg_ctxt)
 	}
 }
 /*****************************************************************************************************************************/
+void mg_set_term_ec_status(mg_termination_t* term, mg_ec_types_t status)
+{
+	if(NULL != term) {
+		term->ec_type = status;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"Setting Term EC[%s]\n",mg_ec_types_tostr(term->ec_type));	
+	}
+}
+/*****************************************************************************************************************************/

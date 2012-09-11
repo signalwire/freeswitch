@@ -68,6 +68,7 @@ typedef struct mg_stats_s{
 	uint32_t  total_num_of_rtp_add_recvd;
 	uint32_t  total_num_of_sub_recvd;
 	uint32_t  total_num_of_call_recvd;
+	uint32_t  total_num_of_t38_call_recvd;
 	uint32_t  total_num_of_add_failed;
 	uint32_t  total_num_of_term_already_in_ctxt_error;
 	uint32_t  total_num_of_choose_ctxt_failed_error;
@@ -131,6 +132,29 @@ typedef enum {
     MG_T38_FAX_NOTIFY_NO,
     MG_T38_FAX_NOTIFY_INVALID,
 } mg_t38_fax_notify_t;
+
+typedef enum {
+    MG_EC_UNDEFINED = 0,
+    MG_EC_ENABLE,
+    MG_EC_DISABLE,
+    MG_EC_INVALID
+} mg_ec_types_t;
+
+static inline const char *mg_ec_types_tostr(mg_ec_types_t type) {
+    switch (type) {
+        case MG_EC_UNDEFINED:
+            return "UNDEFINED";
+        case MG_EC_ENABLE:
+            return "ENABLE";
+        case MG_EC_DISABLE:
+            return "DISABLE";
+        case MG_EC_INVALID:
+            return "INVALID";
+        default:
+            return "Invalid";
+    }
+    return NULL;
+}
 
 
 typedef enum {
@@ -205,6 +229,7 @@ struct mg_termination_s {
     int  *mg_error_code; /* MEGACO error code */
     uint32_t flags;
     const char *tech; /* Endpoint controlling the TDM interface - only FreeTDM tested so far */
+	mg_ec_types_t ec_type;
     
     union {
         struct {

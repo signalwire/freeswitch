@@ -167,7 +167,9 @@ typedef enum {
    (_reqId)->id.val = 0xFFFFFFFF;
 
 
-switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd, mg_termination_t* term, CmMemListCp     *memCp);
+
+void mg_set_term_ec_status(mg_termination_t* term, mg_ec_types_t status);
+switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *inc_cmd, mg_termination_t* term, CmMemListCp  *memCp);
 void handle_sng_log(uint8_t level, char *fmt, ...);
 void handle_mgco_sta_ind(Pst *pst, SuId suId, MgMgtSta* msg);
 void handle_mgco_txn_sta_ind(Pst *pst, SuId suId, MgMgcoInd* msg);

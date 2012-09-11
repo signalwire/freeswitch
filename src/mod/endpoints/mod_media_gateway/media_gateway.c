@@ -493,6 +493,7 @@ switch_status_t megaco_context_is_term_present(mg_context_t *ctx, mg_termination
 
 switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination_t *term)
 {
+	mg_termination_t* tdm_term = NULL;
     switch_status_t status = SWITCH_STATUS_SUCCESS;
 
     switch_assert(ctx != NULL);
@@ -531,7 +532,19 @@ switch_status_t megaco_context_add_termination(mg_context_t *ctx, mg_termination
         
         switch_ivr_uuid_bridge(ctx->terminations[0]->uuid, ctx->terminations[1]->uuid);
 
-         ctx->terminations[0]->profile->mg_stats->total_num_of_call_recvd++;
+		if(MG_TERM_TDM == ctx->terminations[0]->type){
+			tdm_term = ctx->terminations[0];
+		}else{
+			tdm_term = ctx->terminations[1];
+		}
+		if(MG_EC_ENABLE == tdm_term->ec_type){
+				mg_term_set_ec(tdm_term,0x01);
+		}else if(MG_EC_DISABLE == tdm_term->ec_type){
+				mg_term_set_ec(tdm_term,0x00);
+		}
+		mg_set_term_ec_status(tdm_term, MG_EC_UNDEFINED);
+
+		ctx->terminations[0]->profile->mg_stats->total_num_of_call_recvd++;
     }
 
     return SWITCH_STATUS_SUCCESS;
@@ -893,7 +906,10 @@ void mg_term_set_ec(mg_termination_t *term, int enable)
         switch_core_session_rwunlock(session);
         
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sent echo_cancel event to [%s] to [%s]\n", term->uuid, enable ? "enable" : "disable");
-    }
+	}else{
+			mg_ec_types_t status = ((enable)?MG_EC_ENABLE:MG_EC_DISABLE);
+			mg_set_term_ec_status(term, status);
+	}
     
     switch_event_destroy(&event);
 }

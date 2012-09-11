@@ -248,319 +248,336 @@ switch_status_t mg_prc_sig_desc(MgMgcoSignalsReq* req, megaco_profile_t* mg_prof
 *
 *
 */
-switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *cmd, mg_termination_t* term, CmMemListCp     *memCp)
+switch_status_t mg_prc_descriptors(megaco_profile_t* mg_profile, MgMgcoCommand *cmd, mg_termination_t* term, CmMemListCp  *memCp)
 {
-    CmSdpMedProtoFmts *format;
-    TknU8 *fmt;
-    CmSdpMedFmtRtpList      *fmt_list;
-    MgMgcoTermStateDesc  *tstate;
-    int 		  fmtCnt;
-    int 		  i;
-    int 		  descId = 0x00;
-    int 		  j;
-    MgMgcoLocalParm   *lclParm;
-    CmSdpInfo 	  *sdp;
-    MgMgcoLclCtlDesc  *locCtl;
-    MgMgcoTermStateParm *tsp;
-    MgMgcoAmmReq* desc = NULL;
-    MgMgcoLocalDesc   *local; 
-    MgMgcoRemoteDesc*  remote;
+	CmSdpMedProtoFmts *format;
+	TknU8 *fmt;
+	CmSdpMedFmtRtpList      *fmt_list;
+	MgMgcoTermStateDesc  *tstate;
+	int 		  fmtCnt;
+	int 		  i;
+	int 		  descId = 0x00;
+	int 		  j;
+	MgMgcoLocalParm   *lclParm;
+	CmSdpInfo 	  *sdp;
+	MgMgcoLclCtlDesc  *locCtl;
+	MgMgcoTermStateParm *tsp;
+	MgMgcoAmmReq* desc = NULL;
+	MgMgcoLocalDesc   *local; 
+	MgMgcoRemoteDesc*  remote;
 
-    switch (cmd->cmdType.val)
-    {
-        case CH_CMD_TYPE_IND:
-            switch(cmd->u.mgCmdInd[0]->cmd.type.val)
-            {
-                case MGT_ADD:
-                    {
-                        desc = &cmd->u.mgCmdInd[0]->cmd.u.add;
-                        break;
-                    }
-                case MGT_MOVE:
-                    {
-                        desc = &cmd->u.mgCmdInd[0]->cmd.u.move;
-                        break;
-                    }
-                case MGT_MODIFY:
-                    {
-                        desc = &cmd->u.mgCmdInd[0]->cmd.u.mod;
-                        break;
-                    }
-                default:
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Invalid cmd.type[%d] for descriptor processing \n",
-                            cmd->u.mgCmdInd[0]->cmd.type.val);
-                    return SWITCH_STATUS_FALSE;
-            }
-            break;
-        default:
-            {
-                return SWITCH_STATUS_FALSE;
-            }
-    }
+	switch (cmd->cmdType.val)
+	{
+		case CH_CMD_TYPE_IND:
+			switch(cmd->u.mgCmdInd[0]->cmd.type.val)
+			{
+				case MGT_ADD:
+					{
+						desc = &cmd->u.mgCmdInd[0]->cmd.u.add;
+						break;
+					}
+				case MGT_MOVE:
+					{
+						desc = &cmd->u.mgCmdInd[0]->cmd.u.move;
+						break;
+					}
+				case MGT_MODIFY:
+					{
+						desc = &cmd->u.mgCmdInd[0]->cmd.u.mod;
+						break;
+					}
+				default:
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"Invalid cmd.type[%d] for descriptor processing \n",
+							cmd->u.mgCmdInd[0]->cmd.type.val);
+					return SWITCH_STATUS_FALSE;
+			}
+			break;
+		default:
+			{
+				return SWITCH_STATUS_FALSE;
+			}
+	}
 
-    if(NULL == desc){
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"No Valid descriptor found \n");
-        return SWITCH_STATUS_FALSE;
-    }
+	if(NULL == desc){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"No Valid descriptor found \n");
+		return SWITCH_STATUS_FALSE;
+	}
 
-    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"descriptors[%d] found in-coming megaco request \n", desc->dl.num.val);
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"descriptors[%d] found in-coming megaco request \n", desc->dl.num.val);
 
-    if(NOTPRSNT == desc->dl.num.pres){
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"No descriptor found in-coming megaco request \n");
-        return SWITCH_STATUS_SUCCESS;
-    }
+	if(NOTPRSNT == desc->dl.num.pres){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"No descriptor found in-coming megaco request \n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 
-    for (descId = 0; descId < desc->dl.num.val; descId++) {
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"descriptors[%d] type in-coming megaco request \n", desc->dl.descs[descId]->type.val); 
-        switch (desc->dl.descs[descId]->type.val) {
-            case MGT_MEDIADESC:
-                {
-                    int mediaId;
-                    for (mediaId = 0; mediaId < desc->dl.descs[descId]->u.media.num.val; mediaId++) {
-                        MgMgcoMediaPar *mediaPar = desc->dl.descs[descId]->u.media.parms[mediaId];
-                        switch (mediaPar->type.val) {
-                            case MGT_MEDIAPAR_LOCAL:
-                                {
-                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCAL");
-                                    /* Matt - check local descriptor processing */
-                                    local = &mediaPar->u.local;
-                                    sdp = local->sdp.info[0];
-                                    for (i = 0; i < sdp->mediaDescSet.numComp.val; i++) {
-                                        /* sdp formats  */
-                                        for (j = 0; j <
-                                                sdp->mediaDescSet.mediaDesc[i]->field.par.numProtFmts.val; j++)
-                                        {
-                                            format = sdp->mediaDescSet.mediaDesc[i]->field.par.pflst[j];
-                                            /* Matt - format has field for T38 also  */
-                                            if ((format->protType.pres != NOTPRSNT) &&
-                                                    (format->protType.val == CM_SDP_MEDIA_PROTO_RTP)) {
+	for (descId = 0; descId < desc->dl.num.val; descId++) {
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"descriptors[%d] type in-coming megaco request \n", desc->dl.descs[descId]->type.val); 
+		switch (desc->dl.descs[descId]->type.val) {
+			case MGT_MEDIADESC:
+				{
+					int mediaId;
+					for (mediaId = 0; mediaId < desc->dl.descs[descId]->u.media.num.val; mediaId++) {
+						MgMgcoMediaPar *mediaPar = desc->dl.descs[descId]->u.media.parms[mediaId];
+						switch (mediaPar->type.val) {
+							case MGT_MEDIAPAR_LOCAL:
+								{
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCAL\n");
+									/* Matt - check local descriptor processing */
+									local = &mediaPar->u.local;
+									sdp = local->sdp.info[0];
+									for (i = 0; i < sdp->mediaDescSet.numComp.val; i++) {
+										/* sdp formats  */
+										for (j = 0; j <
+												sdp->mediaDescSet.mediaDesc[i]->field.par.numProtFmts.val; j++)
+										{
+											format = sdp->mediaDescSet.mediaDesc[i]->field.par.pflst[j];
+											/* Matt - format has field for T38 also  */
+											if ((format->protType.pres != NOTPRSNT) &&
+													(format->protType.val == CM_SDP_MEDIA_PROTO_RTP)) {
 
-                                                /* protocol type RTP */
-                                                fmt_list = &format->u.rtp;
+												/* protocol type RTP */
+												fmt_list = &format->u.rtp;
 
-                                                /* print format */
-                                                for(fmtCnt = 0; fmtCnt <  fmt_list->num.val; fmtCnt++){
-                                                    fmt = &fmt_list->fmts[i]->val;
-                                                    if(fmt->pres == NOTPRSNT) continue;
-                                                   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Format [%d]\n", fmt->val);
-                                                }
-                                            }
-                                        }
-                                    }
+												/* print format */
+												for(fmtCnt = 0; fmtCnt <  fmt_list->num.val; fmtCnt++){
+													fmt = &fmt_list->fmts[i]->val;
+													if(fmt->pres == NOTPRSNT) continue;
+													switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Format [%d]\n", fmt->val);
+												}
+											}
+										}
+									}
 
-				    mgco_handle_incoming_sdp(&local->sdp, term, MG_SDP_LOCAL, mg_profile, memCp);
+									mgco_handle_incoming_sdp(&local->sdp, term, MG_SDP_LOCAL, mg_profile, memCp);
 
-                                    break;
-                                }
+									break;
+								}
 
-                            case MGT_MEDIAPAR_REMOTE:
-                                {
-                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_REMOTE");
-                                    /* Matt - check remote descriptor processing */
-                                    remote = &mediaPar->u.remote;
-                                    sdp = remote->sdp.info[0];
-                                    /* for Matt - same like local descriptor */
-                                    mgco_handle_incoming_sdp(&remote->sdp, term, MG_SDP_REMOTE, mg_profile, memCp);
-                                    break;
-                                }
+							case MGT_MEDIAPAR_REMOTE:
+								{
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_REMOTE\n");
+									/* Matt - check remote descriptor processing */
+									remote = &mediaPar->u.remote;
+									sdp = remote->sdp.info[0];
+									/* for Matt - same like local descriptor */
+									mgco_handle_incoming_sdp(&remote->sdp, term, MG_SDP_REMOTE, mg_profile, memCp);
+									break;
+								}
 
-                            case MGT_MEDIAPAR_LOCCTL:
-                                {
-                                    /* Matt - check Local Control descriptor processing */
-                                    locCtl = &mediaPar->u.locCtl;
-                                    for (i = 0; i < locCtl->num.val; i++){
-                                        lclParm = locCtl->parms[i];
-                                        if (PRSNT_NODEF == lclParm->type.pres){
-                                            switch(lclParm->type.val)
-                                            {
-                                                case MGT_LCLCTL_MODE:
-                                                    {
-                                                        /* Mode Property */
-                                                       //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_MODE - Mode value [%d]\n", lclParm->u.mode.val);
-                                                        break;
-                                                    }
-                                                case MGT_LCLCTL_RESVAL:
-                                                    {
-                                                        /* Reserve Value */
-                                                       //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESVAL: Reserve Value[%d] \n", lclParm->u.resVal.val);
-                                                        break;
-                                                    }
-                                                case MGT_LCLCTL_RESGRP:
-                                                    {
-                                                        /* Reserve group */
-                                                       //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESGRP: Reserve Group[%d]\n", lclParm->u.resGrp.val);
-                                                        break;
-                                                    }
-                                                case MGT_LCLCTL_PROPPARM:
-                                                    {
-                                                        /* Properties (of a termination) */
-                                                        /* Matt - See how we can apply this to a termination */
-                                                       //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_PROPPARM: \n");
-                                                        break;
-                                                    }
-                                                default:
-                                                   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Invalid local control descriptor type[%d]\n",lclParm->type.val);
-                                                    break;
-                                            }
-                                        }
-                                    }
+							case MGT_MEDIAPAR_LOCCTL:
+								{
+									/* Matt - check Local Control descriptor processing */
+									locCtl = &mediaPar->u.locCtl;
+									for (i = 0; i < locCtl->num.val; i++){
+										lclParm = locCtl->parms[i];
+										if (PRSNT_NODEF == lclParm->type.pres){
+											switch(lclParm->type.val)
+											{
+												case MGT_LCLCTL_MODE:
+													{
+														/* Mode Property */
+														//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_MODE - Mode value [%d]\n", lclParm->u.mode.val);
+														break;
+													}
+												case MGT_LCLCTL_RESVAL:
+													{
+														/* Reserve Value */
+														//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESVAL: Reserve Value[%d] \n", lclParm->u.resVal.val);
+														break;
+													}
+												case MGT_LCLCTL_RESGRP:
+													{
+														/* Reserve group */
+														//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_RESGRP: Reserve Group[%d]\n", lclParm->u.resGrp.val);
+														break;
+													}
+												case MGT_LCLCTL_PROPPARM:
+													{
+														MgMgcoPropParm* p = &lclParm->u.propParm;
+														/* Properties (of a termination) */
+														switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_LCLCTL_PROPPARM: \n");
 
-                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCCTL");
-                                    break;
-                                }
-                            case MGT_MEDIAPAR_TERMST:
-                                {
-                                    /* Matt - apply termination state descriptor */
-                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_TERMST");
-                                    tstate = &mediaPar->u.tstate;	
-                                    for (i = 0; i < tstate->numComp.val; i++)
-                                    {
-                                        /* Matt to see how to apply below descriptors to a termination */
-                                        tsp = tstate->trmStPar[i];
-                                        if (PRSNT_NODEF == tsp->type.pres) {
-                                            switch(tsp->type.val)
-                                            {
-                                                case MGT_TERMST_PROPLST:
-                                                    {
-                                                        /* Matt to see how to apply properties to a termination */
-                                                        /* Properties of a termination */
-                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_TERMST_PROPLST:\n");
-                                                        break;
-                                                    }
-                                                case MGT_TERMST_EVTBUFCTL:
-                                                    {
-                                                        /* Event /buffer Control Properties */
-                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE," MGT_TERMST_EVTBUFCTL: value[%d]\n", tsp->u.evtBufCtl.val);
-                                                        break;
-                                                    }
-                                                case MGT_TERMST_SVCST:
-                                                    {
-                                                        /* Service State Properties */
-                                                       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE," MGT_TERMST_SVCST: value[%d]\n", tsp->u.svcState.val);
-                                                        break;
-                                                    }
-                                                default:
-                                                   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Invalid termination state descriptor type[%d]\n",tsp->type.val);
-                                                    break;
-                                            }
-                                        }
-                                    }
-                                    break;
-                                }
-                            case MGT_MEDIAPAR_STRPAR:
-                                {
-                                    MgMgcoStreamDesc *mgStream = &mediaPar->u.stream;
+														if((MGT_PKG_KNOWN == p->pkg.valType.val) &&
+																(MGT_PKG_TDM_CKT == p->pkg.u.val.val) && 
+																(MGT_GEN_TYPE_KNOWN == p->name.type.val) && 
+																(MGT_PKG_TDMC_PROP_EC == p->name.u.val.val) && 
+																(PRSNT_NODEF == p->val.type.pres) && 
+																(MGT_VALUE_EQUAL == p->val.type.val) &&
+																(NOTPRSNT != p->val.u.eq.type.pres) && 
+																(MGT_VALTYPE_ENUM == p->val.u.eq.type.val)) {
+															if(MGT_PKG_ENUM_PROPPARMTDMCEC_ON == p->val.u.eq.u.enume.val){
+																switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"TDMC EC=ON\n");
+																mg_term_set_ec(term,0x01);
+															}else if(MGT_PKG_ENUM_PROPPARMTDMCEC_OFF == p->val.u.eq.u.enume.val){ 
+																switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"TDMC EC=OFF\n");
+																mg_term_set_ec(term,0x00);
+															}
+														}
+														break;
+													}
+												default:
+													switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Invalid local control descriptor type[%d]\n",lclParm->type.val);
+													break;
+											}
+										}
+									}
 
-                                    if (mgStream->sl.remote.pres.pres) {
-                                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
-                                        mgco_handle_incoming_sdp(&mgStream->sl.remote.sdp, term, MG_SDP_LOCAL, mg_profile, memCp);
-                                    }
+									//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_LOCCTL\n");
+									break;
+								}
+							case MGT_MEDIAPAR_TERMST:
+								{
+									/* Matt - apply termination state descriptor */
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MGT_MEDIAPAR_TERMST");
+									tstate = &mediaPar->u.tstate;	
+									for (i = 0; i < tstate->numComp.val; i++)
+									{
+										/* Matt to see how to apply below descriptors to a termination */
+										tsp = tstate->trmStPar[i];
+										if (PRSNT_NODEF == tsp->type.pres) {
+											switch(tsp->type.val)
+											{
+												case MGT_TERMST_PROPLST:
+													{
+														/* Matt to see how to apply properties to a termination */
+														/* Properties of a termination */
+														switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"MGT_TERMST_PROPLST:\n");
+														break;
+													}
+												case MGT_TERMST_EVTBUFCTL:
+													{
+														/* Event /buffer Control Properties */
+														switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE," MGT_TERMST_EVTBUFCTL: value[%d]\n", tsp->u.evtBufCtl.val);
+														break;
+													}
+												case MGT_TERMST_SVCST:
+													{
+														/* Service State Properties */
+														switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE," MGT_TERMST_SVCST: value[%d]\n", tsp->u.svcState.val);
+														break;
+													}
+												default:
+													switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Invalid termination state descriptor type[%d]\n",tsp->type.val);
+													break;
+											}
+										}
+									}
+									break;
+								}
+							case MGT_MEDIAPAR_STRPAR:
+								{
+									MgMgcoStreamDesc *mgStream = &mediaPar->u.stream;
 
-                                    if (mgStream->sl.local.pres.pres) {
-                                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
-                                        mgco_handle_incoming_sdp(&mgStream->sl.local.sdp, term, MG_SDP_REMOTE, mg_profile, memCp);
-                                    }
+									if (mgStream->sl.remote.pres.pres) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got remote stream media description:\n");
+										mgco_handle_incoming_sdp(&mgStream->sl.remote.sdp, term, MG_SDP_LOCAL, mg_profile, memCp);
+									}
 
-                                    break;
-                                }
-                        }
-                    }
-                    break;
-                }
-            case MGT_REQEVTDESC:
-                {
-                    MgMgcoReqEvtDesc* evt = &desc->dl.descs[descId]->u.evts; 
+									if (mgStream->sl.local.pres.pres) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got local stream media description:\n");
+										mgco_handle_incoming_sdp(&mgStream->sl.local.sdp, term, MG_SDP_REMOTE, mg_profile, memCp);
+									}
 
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG," Requested Event descriptor\n");
-            
-                    /* If we receive events from MGC , means clear any ongoing events */
-                    /* as such we dont apply any events to term, so for us (as of now) clear events means clear active_events structure*/
+									break;
+								}
+						}
+					}
+					break;
+				}
+			case MGT_REQEVTDESC:
+				{
+					MgMgcoReqEvtDesc* evt = &desc->dl.descs[descId]->u.evts; 
 
-                    if(NULL != term->active_events){
-			mgUtlDelMgMgcoReqEvtDesc(term->active_events);
-			MG_STACK_MEM_FREE(term->active_events, sizeof(MgMgcoReqEvtDesc));
-                    }
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG," Requested Event descriptor\n");
 
-		    MG_STACK_MEM_ALLOC(&term->active_events, sizeof(MgMgcoReqEvtDesc));
+					/* If we receive events from MGC , means clear any ongoing events */
+					/* as such we dont apply any events to term, so for us (as of now) clear events means clear active_events structure*/
 
-		    if(NULL == term->active_events){
-			    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," term->active_events Memory Alloc failed \n");
-			    return SWITCH_STATUS_FALSE;
-		    }
+					if(NULL != term->active_events){
+						mgUtlDelMgMgcoReqEvtDesc(term->active_events);
+						MG_STACK_MEM_FREE(term->active_events, sizeof(MgMgcoReqEvtDesc));
+					}
 
-                    /* copy requested event */
-                    if(RFAILED == mgUtlCpyMgMgcoReqEvtDesc(term->active_events, evt, NULLP)){
-		        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," copy new events to term->active_events failed \n");
-			MG_STACK_MEM_FREE(term->active_events, sizeof(MgMgcoReqEvtDesc));
-                        return SWITCH_STATUS_FALSE;
-                    }
+					MG_STACK_MEM_ALLOC(&term->active_events, sizeof(MgMgcoReqEvtDesc));
 
-                    /* print Requested event descriptor */
-                    /*mgAccEvntPrntMgMgcoReqEvtDesc(term->active_events, stdout);*/
-                    
-                    break;
-                }
-            case MGT_SIGNALSDESC:
-                {
-                    MgMgcoSignalsDesc* sig = &desc->dl.descs[descId]->u.sig; 
-                    MgMgcoSignalsParm* param = NULL;
-                    int i = 0x00;
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG," Requested Signal descriptor\n");
+					if(NULL == term->active_events){
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," term->active_events Memory Alloc failed \n");
+						return SWITCH_STATUS_FALSE;
+					}
 
-                    if((NOTPRSNT != sig->pres.pres) && (NOTPRSNT != sig->num.pres) && (0 != sig->num.val)){
+					/* copy requested event */
+					if(RFAILED == mgUtlCpyMgMgcoReqEvtDesc(term->active_events, evt, NULLP)){
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR," copy new events to term->active_events failed \n");
+						MG_STACK_MEM_FREE(term->active_events, sizeof(MgMgcoReqEvtDesc));
+						return SWITCH_STATUS_FALSE;
+					}
 
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Total number of Signal descriptors[%d]\n", sig->num.val);
+					/* print Requested event descriptor */
+					/*mgAccEvntPrntMgMgcoReqEvtDesc(term->active_events, stdout);*/
 
-                        for(i=0; i< sig->num.val; i++){
-                                param = sig->parms[i];
+					break;
+				}
+			case MGT_SIGNALSDESC:
+				{
+					MgMgcoSignalsDesc* sig = &desc->dl.descs[descId]->u.sig; 
+					MgMgcoSignalsParm* param = NULL;
+					int i = 0x00;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG," Requested Signal descriptor\n");
 
-                                if(NOTPRSNT == param->type.pres) continue;
+					if((NOTPRSNT != sig->pres.pres) && (NOTPRSNT != sig->num.pres) && (0 != sig->num.val)){
 
-                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Signal Descriptor[%d] type[%s]\n",
-                                        i, ((MGT_SIGSPAR_LST == param->type.val)?"MGT_SIGSPAR_LST":"MGT_SIGSPAR_REQ"));
-                                
-                                switch(param->type.val)
-                                {
-                                    case MGT_SIGSPAR_LST:
-                                        {
-                                            MgMgcoSignalsLst* lst = &param->u.lst;
-                                            int sigId = 0x00;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Total number of Signal descriptors[%d]\n", sig->num.val);
 
-                                            if((NOTPRSNT == lst->pl.num.pres) || (0 == lst->pl.num.val)) break;
+						for(i=0; i< sig->num.val; i++){
+							param = sig->parms[i];
 
-                                            for(sigId = 0; sigId < lst->pl.num.val; sigId++){
-                                                mg_prc_sig_desc(lst->pl.reqs[sigId], mg_profile, term);
-                                            }
+							if(NOTPRSNT == param->type.pres) continue;
 
-                                            break;
-                                        }
-                                    case MGT_SIGSPAR_REQ:
-                                        {
-                                            MgMgcoSignalsReq* req = &param->u.req;
-                                            mg_prc_sig_desc(req, mg_profile, term);
-                                            break;
-                                        }
-                                    default:
-                                        break;
-                                }
-                        }
-                    }
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO," Signal Descriptor[%d] type[%s]\n",
+									i, ((MGT_SIGSPAR_LST == param->type.val)?"MGT_SIGSPAR_LST":"MGT_SIGSPAR_REQ"));
 
-                    break;
-                }
-            case MGT_MODEMDESC:
-            case MGT_MUXDESC:
-            case MGT_EVBUFDESC:
-            case MGT_DIGMAPDESC:
-            case MGT_AUDITDESC:
-            case MGT_STATSDESC:
-                break;
+							switch(param->type.val)
+							{
+								case MGT_SIGSPAR_LST:
+									{
+										MgMgcoSignalsLst* lst = &param->u.lst;
+										int sigId = 0x00;
 
-        }
-    }
+										if((NOTPRSNT == lst->pl.num.pres) || (0 == lst->pl.num.val)) break;
 
-    return SWITCH_STATUS_SUCCESS;
+										for(sigId = 0; sigId < lst->pl.num.val; sigId++){
+											mg_prc_sig_desc(lst->pl.reqs[sigId], mg_profile, term);
+										}
+
+										break;
+									}
+								case MGT_SIGSPAR_REQ:
+									{
+										MgMgcoSignalsReq* req = &param->u.req;
+										mg_prc_sig_desc(req, mg_profile, term);
+										break;
+									}
+								default:
+									break;
+							}
+						}
+					}
+
+					break;
+				}
+			case MGT_MODEMDESC:
+			case MGT_MUXDESC:
+			case MGT_EVBUFDESC:
+			case MGT_DIGMAPDESC:
+			case MGT_AUDITDESC:
+			case MGT_STATSDESC:
+				break;
+
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -743,7 +760,9 @@ switch_status_t handle_mg_add_cmd(megaco_profile_t* mg_profile, MgMgcoCommand *i
 
 	mg_apply_tdm_dtmf_removal(term, mg_ctxt);
 
+
 	mg_apply_tdm_ec(term, mg_ctxt);
+
 	mg_print_t38_attributes(term);
 
 
@@ -1063,9 +1082,11 @@ switch_status_t handle_mg_modify_cmd(megaco_profile_t* mg_profile, MgMgcoCommand
 		mg_apply_tdm_dtmf_removal(term, mg_ctxt);
 
 		mg_apply_tdm_ec(term, mg_ctxt);
+
+		if((MG_TERM_RTP == term->type) && (term->u.rtp.t38_options))
+			mg_profile->mg_stats->total_num_of_t38_call_recvd++;
+
 		mg_print_t38_attributes(term);
-
-
 
 		/* SDP updated to termination */
 		if(SWITCH_STATUS_SUCCESS != megaco_activate_termination(term)) {
