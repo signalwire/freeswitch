@@ -1893,7 +1893,7 @@ done:
 	return status;
 }
 
-static ftdm_status_t _ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan)
+static ftdm_status_t _ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan, uint8_t physical)
 {
 	ftdm_channel_t *check = NULL;
 	ftdm_span_t *span = NULL;
@@ -1922,14 +1922,46 @@ static ftdm_status_t _ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm
 		goto done;
 	}
 
-	if (chan_id < 1 || chan_id > span->chan_count) {
-		ftdm_log(FTDM_LOG_ERROR, "Invalid channel %d to open in span %d\n", chan_id, span_id);
-		goto done;
-	}
+	if (physical) { /* Open by physical */
+		ftdm_channel_t *fchan = NULL;
+		ftdm_iterator_t *citer = NULL;
+		ftdm_iterator_t *curr = NULL;
 
-	if (!(check = span->channels[chan_id])) {
-		ftdm_log(FTDM_LOG_CRIT, "Wow, no channel %d in span %d\n", chan_id, span_id);
-		goto done;
+		if (chan_id < 1) {
+			ftdm_log(FTDM_LOG_ERROR, "Invalid physical channel %d to open in span %d\n", chan_id, span_id);
+			status = FTDM_FAIL;
+			goto done;
+		}
+
+		citer = ftdm_span_get_chan_iterator(span, NULL);
+		if (!citer) {
+			status = ENOMEM;
+			goto done;
+		}
+
+		for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
+			fchan = ftdm_iterator_current(curr);
+			if (fchan->physical_chan_id == chan_id) {
+				check = fchan;
+				break;
+			}
+		}
+
+		ftdm_iterator_free(citer);
+		if (!check) {
+			ftdm_log(FTDM_LOG_CRIT, "Wow, no physical channel %d in span %d\n", chan_id, span_id);
+			goto done;
+		}
+	} else { /* Open by logical */
+		if (chan_id < 1 || chan_id > span->chan_count) {
+			ftdm_log(FTDM_LOG_ERROR, "Invalid channel %d to open in span %d\n", chan_id, span_id);
+			goto done;
+		}
+
+		if (!(check = span->channels[chan_id])) {
+			ftdm_log(FTDM_LOG_CRIT, "Wow, no channel %d in span %d\n", chan_id, span_id);
+			goto done;
+		}
 	}
 
 	ftdm_channel_lock(check);
@@ -2000,7 +2032,18 @@ done:
 FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status;
-	status = _ftdm_channel_open(span_id, chan_id, ftdmchan);
+	status = _ftdm_channel_open(span_id, chan_id, ftdmchan, 0);
+	if (status == FTDM_SUCCESS) {
+		ftdm_channel_t *fchan = *ftdmchan;
+		ftdm_channel_unlock(fchan);
+	}
+	return status;
+}
+
+FT_DECLARE(ftdm_status_t) ftdm_channel_open_ph(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan)
+{
+	ftdm_status_t status;
+	status = _ftdm_channel_open(span_id, chan_id, ftdmchan, 1);
 	if (status == FTDM_SUCCESS) {
 		ftdm_channel_t *fchan = *ftdmchan;
 		ftdm_channel_unlock(fchan);
@@ -2377,6 +2420,39 @@ FT_DECLARE(ftdm_channel_t *) ftdm_span_get_channel(const ftdm_span_t *span, uint
 	return chan;
 }
 
+FT_DECLARE(ftdm_channel_t *) ftdm_span_get_channel_ph(const ftdm_span_t *span, uint32_t chanid)
+{
+	ftdm_channel_t *chan = NULL;
+	ftdm_channel_t *fchan = NULL;
+	ftdm_iterator_t *citer = NULL;
+	ftdm_iterator_t *curr = NULL;
+
+	ftdm_mutex_lock(span->mutex);
+	if (chanid == 0) {
+		ftdm_mutex_unlock(span->mutex);
+		return NULL;
+	}
+
+	citer = ftdm_span_get_chan_iterator(span, NULL);
+	if (!citer) {
+		ftdm_mutex_unlock(span->mutex);
+		return NULL;
+	}
+
+	for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
+		fchan = ftdm_iterator_current(curr);
+		if (fchan->physical_chan_id == chanid) {
+			chan = fchan;
+			break;
+		}
+	}
+
+	ftdm_iterator_free(citer);
+
+	ftdm_mutex_unlock(span->mutex);
+	return chan;
+}
+
 FT_DECLARE(uint32_t) ftdm_span_get_chan_count(const ftdm_span_t *span)
 {
 	uint32_t count;
@@ -2673,7 +2749,7 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
 		status = _ftdm_channel_open_by_group(hunting->mode_data.group.group_id, 
 				hunting->mode_data.group.direction, caller_data, &fchan);
 	} else if (hunting->mode == FTDM_HUNT_CHAN) {
-		status = _ftdm_channel_open(hunting->mode_data.chan.span_id, hunting->mode_data.chan.chan_id, &fchan);
+		status = _ftdm_channel_open(hunting->mode_data.chan.span_id, hunting->mode_data.chan.chan_id, &fchan, 0);
 	} else {
 		ftdm_log(FTDM_LOG_ERROR, "Cannot make outbound call with invalid hunting mode %d\n", hunting->mode);
 		return FTDM_EINVAL;

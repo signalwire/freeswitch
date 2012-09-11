@@ -1370,13 +1370,30 @@ FT_DECLARE(uint32_t) ftdm_group_get_id(const ftdm_group_t *group);
  * 	Only use ftdm_channel_close if there is no call (incoming or outgoing) in the channel
  *
  * \param span_id The span id the channel belongs to
- * \param chan_id Channel id of the channel you want to open
+ * \param chan_id Logical channel id of the channel you want to open
  * \param ftdmchan Pointer to store the channel once is open
  *
  * \retval FTDM_SUCCESS success (the channel was found and is available)
  * \retval FTDM_FAIL failure (channel was not found or not available)
  */
 FT_DECLARE(ftdm_status_t) ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan);
+
+/*! 
+ * \brief Open a channel specifying the span id and physical chan id (required before placing a call on the channel)
+ *
+ * \warning Try using ftdm_call_place instead if you plan to place a call after opening the channel
+ *
+ * \note You must call ftdm_channel_close() or ftdm_channel_call_hangup() to release the channel afterwards
+ * 	Only use ftdm_channel_close if there is no call (incoming or outgoing) in the channel
+ *
+ * \param span_id The span id the channel belongs to
+ * \param chan_id Physical channel id of the channel you want to open
+ * \param ftdmchan Pointer to store the channel once is open
+ *
+ * \retval FTDM_SUCCESS success (the channel was found and is available)
+ * \retval FTDM_FAIL failure (channel was not found or not available)
+ */
+FT_DECLARE(ftdm_status_t) ftdm_channel_open_ph(uint32_t span_id, uint32_t chan_id, ftdm_channel_t **ftdmchan);
 
 /*! 
  * \brief Hunts and opens a channel specifying the span id only
@@ -1759,14 +1776,24 @@ FT_DECLARE(ftdm_trunk_type_t) ftdm_span_get_trunk_type(const ftdm_span_t *span);
 FT_DECLARE(const char *) ftdm_span_get_trunk_type_str(const ftdm_span_t *span);
 
 /*! 
- * \brief Return the channel identified by the provided id
+ * \brief Return the channel identified by the provided logical id
  *
  * \param span The span where the channel belongs
- * \param chanid The channel id within the span
+ * \param chanid The logical channel id within the span
  *
  * \return The channel pointer if found, NULL otherwise
  */
 FT_DECLARE(ftdm_channel_t *) ftdm_span_get_channel(const ftdm_span_t *span, uint32_t chanid);
+
+/*! 
+ * \brief Return the channel identified by the provided physical id
+ *
+ * \param span The span where the channel belongs
+ * \param chanid The physical channel id within the span
+ *
+ * \return The channel pointer if found, NULL otherwise
+ */
+FT_DECLARE(ftdm_channel_t *) ftdm_span_get_channel_ph(const ftdm_span_t *span, uint32_t chanid);
 
 /*! \brief Return the channel count number for the given span */
 FT_DECLARE(uint32_t) ftdm_span_get_chan_count(const ftdm_span_t *span);

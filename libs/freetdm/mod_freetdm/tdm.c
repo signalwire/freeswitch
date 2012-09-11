@@ -158,7 +158,7 @@ static ftdm_channel_t *ctdm_get_channel_from_event(switch_event_t *event, ftdm_s
 		return NULL;
 	}
 
-	return ftdm_span_get_channel(span, chan_id);
+	return ftdm_span_get_channel_ph(span, chan_id);
 }
 
 
@@ -362,7 +362,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     
     channel = switch_core_session_get_channel(*new_session);
     
-    if (ftdm_channel_open(span_id, chan_id, &chan) != FTDM_SUCCESS) {
+    if (ftdm_channel_open_ph(span_id, chan_id, &chan) != FTDM_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't open span or channel.\n"); 
         goto fail;
     }
