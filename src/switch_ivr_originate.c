@@ -423,7 +423,7 @@ static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_
 	}
 }
 
-static uint8_t check_channel_status(originate_global_t *oglobals, originate_status_t *originate_status, uint32_t len)
+static uint8_t check_channel_status(originate_global_t *oglobals, originate_status_t *originate_status, uint32_t len, switch_call_cause_t *force_reason)
 {
 
 	uint32_t i;
@@ -781,6 +781,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
   end:
 
 	if (rval == 0 && pickups) {
+		*force_reason = SWITCH_CAUSE_NO_ANSWER;
 		for (i = 0; i < len; i++) {
 			if (originate_status[i].peer_channel && switch_channel_test_flag(originate_status[i].peer_channel, CF_PICKUP) && 
 				switch_channel_up(originate_status[i].peer_channel)) {
@@ -2837,7 +2838,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) &&
-				   check_channel_status(&oglobals, originate_status, and_argc)) {
+				   check_channel_status(&oglobals, originate_status, and_argc, &force_reason)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
 				
 				read_packet = 0;
