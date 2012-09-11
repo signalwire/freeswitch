@@ -68,6 +68,7 @@ typedef struct mg_stats_s{
 	uint32_t  total_num_of_rtp_add_recvd;
 	uint32_t  total_num_of_sub_recvd;
 	uint32_t  total_num_of_call_recvd;
+	uint32_t  total_num_of_fax_call_recvd;
 	uint32_t  total_num_of_add_failed;
 	uint32_t  total_num_of_term_already_in_ctxt_error;
 	uint32_t  total_num_of_choose_ctxt_failed_error;
