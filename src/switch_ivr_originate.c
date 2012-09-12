@@ -781,11 +781,10 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
   end:
 
 	if (rval == 0 && pickups) {
-		*force_reason = SWITCH_CAUSE_NO_ANSWER;
 		for (i = 0; i < len; i++) {
 			if (originate_status[i].peer_channel && switch_channel_test_flag(originate_status[i].peer_channel, CF_PICKUP) && 
 				switch_channel_up(originate_status[i].peer_channel)) {
-				switch_channel_hangup(originate_status[i].peer_channel, SWITCH_CAUSE_NO_ANSWER);
+				switch_channel_hangup(originate_status[i].peer_channel, SWITCH_CAUSE_NO_PICKUP);
 			}
 		}
 	}
@@ -1632,7 +1631,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		}
 		switch_mutex_unlock(handles[i].mutex);
 
-		if (getcause && *cause != handles[i].cause && handles[i].cause != SWITCH_CAUSE_LOSE_RACE) {
+		if (getcause && *cause != handles[i].cause && handles[i].cause != SWITCH_CAUSE_LOSE_RACE && handles[i].cause != SWITCH_CAUSE_NO_PICKUP) {
 			*cause = handles[i].cause;
 			getcause++;
 		}
