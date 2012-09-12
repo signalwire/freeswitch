@@ -42,8 +42,6 @@
 /******************************************************************************/
 
 /* PROTOTYPES *****************************************************************/
-ftdm_status_t handle_relay_connect(RyMngmt *sta);
-ftdm_status_t handle_relay_disconnect(RyMngmt *sta);
 
 /*static ftdm_status_t enable_all_ckts_for_relay(void);*/
 static ftdm_status_t reconfig_all_ckts_for_relay(void);
@@ -66,11 +64,9 @@ ftdm_status_t handle_relay_connect(RyMngmt *sta)
 	
 	SS7_INFO("Relay Channel %d connection UP\n", sng_relay->id);
 	if (sng_relay->type == LRY_CT_TCP_CLIENT) {
-		if (!sngss7_test_flag(sng_relay, SNGSS7_RELAY_INIT)) {
-			if (reconfig_all_ckts_for_relay()) {
-				SS7_ERROR("Failed to reconfigure ISUP Ckts!\n");
-				/* we're done....this is very bad! */
-			}
+		if (reconfig_all_ckts_for_relay()) {
+			SS7_ERROR("Failed to reconfigure ISUP Ckts!\n");
+			/* we're done....this is very bad! */
 		}
 		return FTDM_SUCCESS;
 	} else if (sng_relay->type == LRY_CT_TCP_SERVER) {
@@ -84,23 +80,24 @@ ftdm_status_t handle_relay_connect(RyMngmt *sta)
 /******************************************************************************/
 ftdm_status_t handle_relay_disconnect_on_error(RyMngmt *sta)
 {
+	SS7_DEBUG("SS7 relay disconnect on error\n");
 
 	/* check which procId is in error, if it is 1, disable the ckts */
 	if (sta->t.usta.s.ryErrUsta.errPid == 1 ) {
-		/* we've lost the server, bring down the mtp2 links */
-		disble_all_mtp2_sigs_for_relay();
-
 		/* we've lost the server, bring the sig status down on all ckts */
 		disable_all_ckts_for_relay();
+		
+		/* we've lost the server, bring down the mtp2 links */
+		disble_all_mtp2_sigs_for_relay();
 	}
 
 	/* check if the channel is a server, means we just lost a MGW */
 	if (g_ftdm_sngss7_data.cfg.relay[sta->t.usta.s.ryErrUsta.errPid].type == LRY_CT_TCP_SERVER) {
-		/* we've lost the client, bring down all mtp3 links for this procId */
-		disable_all_sigs_for_relay(sta->t.usta.s.ryErrUsta.errPid);
-
 		/* we've lost the client, bring down all the ckts for this procId */
 		block_all_ckts_for_relay(sta->t.usta.s.ryErrUsta.errPid);
+		
+		/* we've lost the client, bring down all mtp3 links for this procId */
+		disable_all_sigs_for_relay(sta->t.usta.s.ryErrUsta.errPid);
 	}
 
 	return FTDM_SUCCESS;
@@ -109,6 +106,8 @@ ftdm_status_t handle_relay_disconnect_on_error(RyMngmt *sta)
 /******************************************************************************/
 ftdm_status_t handle_relay_disconnect_on_down(RyMngmt *sta)
 {
+
+	SS7_DEBUG("SS7 relay disconnect on down\n");
 
 	/* check if the channel is a server, means we just lost a MGW */
 	if (g_ftdm_sngss7_data.cfg.relay[sta->t.usta.s.ryUpUsta.id].type == LRY_CT_TCP_SERVER) {
@@ -248,7 +247,7 @@ ftdm_status_t block_all_ckts_for_relay(uint32_t procId)
 		if (g_ftdm_sngss7_data.cfg.isupCkt[x].type == SNG_CKT_VOICE) {
 
 			/* send a block request via stack manager */
-			ret = ftmod_ss7_block_isup_ckt(g_ftdm_sngss7_data.cfg.isupCkt[x].id);
+			ret = ftmod_ss7_block_isup_ckt_nowait(g_ftdm_sngss7_data.cfg.isupCkt[x].id);
 			if (ret) {
 				SS7_INFO("Successfully BLOcked CIC:%d(ckt:%d) due to Relay failure\n", 
 							g_ftdm_sngss7_data.cfg.isupCkt[x].cic,
@@ -330,6 +329,7 @@ static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId)
 	return FTDM_SUCCESS;
 }
 #endif
+
 
 /******************************************************************************/
 /* For Emacs:

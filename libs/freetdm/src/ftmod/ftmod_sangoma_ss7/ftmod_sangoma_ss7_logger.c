@@ -114,6 +114,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 {
 	char	buf[50];
 	int		x = 1;
+	int log_level = FTDM_LOG_LEVEL_DEBUG;
 
 	memset(buf, '\0', sizeof(buf));
 
@@ -158,11 +159,22 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 					break;			
 				case (LCM_CAUSE_UNKNOWN):
 				default:
-						ftdm_log(FTDM_LOG_DEBUG,"[MTP2]%s cause:%s event:%s\n",
-								buf,
-								DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
-								DECODE_LSD_EVENT(sta->t.usta.alarm.event));
-						break;
+				{
+					if ((LSD_EVENT_ALIGN_LOST == sta->t.usta.alarm.event) ||
+						(LSD_EVENT_PROT_ST_DN == sta->t.usta.alarm.event)) {
+						log_level = FTDM_LOG_LEVEL_WARNING;
+					} else if ((LSD_EVENT_LINK_ALIGNED == sta->t.usta.alarm.event) ||
+						      (LSD_EVENT_PROT_ST_UP == sta->t.usta.alarm.event)){
+						log_level = FTDM_LOG_LEVEL_INFO;
+					} else {
+						log_level = FTDM_LOG_LEVEL_WARNING;
+					}
+					ftdm_log(FTDM_PRE, log_level,"[MTP2]%s cause:%s event:%s\n",
+						buf,
+						DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
+						DECODE_LSD_EVENT(sta->t.usta.alarm.event));
+					break;
+				}
 			/******************************************************************/
 			} /* switch (sta->t.usta.alarm.cause) */
 			break;
@@ -184,7 +196,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %s\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP2]%s %s : %s\n",
 										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										DECODE_LSD_CAUSE(sta->t.usta.alarm.cause));
@@ -207,7 +219,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
-			ftdm_log(FTDM_LOG_DEBUG,"[MTP2]%s %s : %s\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP2]%s %s : %s\n",
 										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										DECODE_DISC_REASON(sta->t.usta.evntParm[1]));
@@ -231,7 +243,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : RTB Queue Len(%d)|Oldest BSN(%d)|Tx Queue Len(%d)|Outstanding Frames(%d)\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP2]%s %s : RTB Queue Len(%d)|Oldest BSN(%d)|Tx Queue Len(%d)|Outstanding Frames(%d)\n",
 										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.evntParm[1],
@@ -257,7 +269,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : RTB Queue Len(%d)\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP2]%s %s : RTB Queue Len(%d)\n",
 										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.evntParm[1]);
@@ -280,7 +292,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2]%s %s : %s\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP2]%s %s : %d\n",
 										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										DECODE_DISC_REASON(sta->t.usta.evntParm[1]));
@@ -288,7 +300,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 		/**********************************************************************/
 		case (LCM_EVENT_UI_INV_EVT):
 		case (LCM_EVENT_LI_INV_EVT):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2] %s(%d) : %s(%d) : Primitive (%d)\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP2] %s(%d) : %s(%d) : Primitive (%d)\n",
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.alarm.event,
 										DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
@@ -302,14 +314,14 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 			/******************************************************************/
 			case (LCM_CAUSE_UNKNOWN):
 			case (LCM_CAUSE_SWVER_NAVAIL):
-				ftdm_log(FTDM_LOG_ERROR,"[MTP2] %s : %s : Event (%d)\n",
+				ftdm_log(FTDM_LOG_WARNING,"[MTP2] %s : %s : Event (%d)\n",
 											DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 											DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
 											sta->t.usta.evntParm[0]);
 				break;
 			/******************************************************************/
 			case (LCM_CAUSE_DECODE_ERR):
-				ftdm_log(FTDM_LOG_ERROR,"[MTP2] %s : %s : Primitive (%d)|Version (%d)\n",
+				ftdm_log(FTDM_LOG_WARNING,"[MTP2] %s : %s : Primitive (%d)|Version (%d)\n",
 											DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 											DECODE_LCM_CAUSE(sta->t.usta.alarm.cause),
 											sta->t.usta.evntParm[0],
@@ -317,7 +329,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				break;
 			/******************************************************************/
 			default:
-				ftdm_log(FTDM_LOG_ERROR,"[MTP2] %s(%d) : %s(%d)\n",
+				ftdm_log(FTDM_LOG_WARNING,"[MTP2] %s(%d) : %s(%d)\n",
 											DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 											sta->t.usta.alarm.event,
 											DECODE_LSD_CAUSE(sta->t.usta.alarm.cause),
@@ -328,7 +340,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 			break;
 		/**********************************************************************/
 		default:
-			ftdm_log(FTDM_LOG_ERROR,"[MTP2] %s(%d) : %s(%d)\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP2] %s(%d) : %s(%d)\n",
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.alarm.event,
 										DECODE_LSD_CAUSE(sta->t.usta.alarm.cause),
@@ -381,7 +393,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 		/**********************************************************************/
 		case (LSN_EVENT_INV_OPC_OTHER_END):
 			
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s : %s : OPC(0x%X%X%X%X)\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP3]%s %s : %s : OPC(0x%X%X%X%X)\n",
 										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										DECODE_LSN_CAUSE(sta->t.usta.alarm.cause),
@@ -392,7 +404,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 			break;
 		/**********************************************************************/
 		case (LSN_EVENT_INV_SLC_OTHER_END):
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3]%s %s : %s : SLC(%d)\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP3]%s %s : %s : SLC(%d)\n",
 										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										DECODE_LSN_CAUSE(sta->t.usta.alarm.cause),
@@ -400,7 +412,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 			break;
 		/**********************************************************************/
 		default:
-			ftdm_log(FTDM_LOG_DEBUG,"[MTP3]%s %s(%d) : %s(%d)\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP3]%s %s(%d) : %s(%d)\n",
 										buf,
 										DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 										sta->t.usta.alarm.event,
@@ -412,7 +424,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 		break;
 	/**************************************************************************/
 	case (STNSAP):
-		ftdm_log(FTDM_LOG_ERROR,"[MTP3][SAPID:%d] %s : %s\n",
+		ftdm_log(FTDM_LOG_WARNING,"[MTP3][SAPID:%d] %s : %s\n",
 									sta->hdr.elmId.elmntInst1,
 									DECODE_LSN_EVENT(sta->t.usta.alarm.event),
 									DECODE_LSN_CAUSE(sta->t.usta.alarm.cause));
@@ -463,7 +475,7 @@ void handle_sng_mtp3_alarm(Pst *pst, SnMngmt *sta)
 			break;
 		/**********************************************************************/
 		default:
-			ftdm_log(FTDM_LOG_ERROR,"[MTP3][DPC:0x%X%X%X%X] %s : %s\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP3][DPC:0x%X%X%X%X] %s : %s\n",
 										sta->t.usta.evntParm[0],
 										sta->t.usta.evntParm[1],
 										sta->t.usta.evntParm[2],
@@ -733,7 +745,7 @@ void handle_sng_isup_alarm(Pst *pst, SiMngmt *sta)
 		} /* switch (sta->t.usta.dgn.dgnVal[x].t.type) */
 	} /* for  (x = 0; x < 5; x++) */
 		
-	ftdm_log(FTDM_LOG_ERROR,"%s %s : %s\n",
+	ftdm_log(FTDM_LOG_WARNING,"%s %s : %s\n",
 								msg,
 								DECODE_LSI_EVENT(sta->t.usta.alarm.event),
 								DECODE_LSI_CAUSE(sta->t.usta.alarm.cause));
@@ -759,7 +771,7 @@ void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 	switch (sta->hdr.elmId.elmnt) {
 	/**************************************************************************/
 	case (LRY_USTA_ERR): /* ERROR */
-		ftdm_log(FTDM_LOG_ERROR,"[RELAY] Error: tx procId %d: err procId %d: channel %d: seq %s: reason %s\n",
+		ftdm_log(FTDM_LOG_WARNING,"[RELAY] Error: tx procId %d: err procId %d: channel %d: seq %s: reason %s\n",
 												sta->t.usta.s.ryErrUsta.sendPid,
 												sta->t.usta.s.ryErrUsta.errPid,
 												sta->t.usta.s.ryErrUsta.id,
@@ -783,7 +795,7 @@ void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 		break;
 	/**************************************************************************/
 	case (LRY_USTA_CNG): /* Congestion */
-		ftdm_log(FTDM_LOG_ERROR,"[RELAY] Congestion: tx procId %d: rem procId %d: channel %d: %s\n",
+		ftdm_log(FTDM_LOG_WARNING,"[RELAY] Congestion: tx procId %d: rem procId %d: channel %d: %s\n",
 												sta->t.usta.s.ryCongUsta.sendPid,
 												sta->t.usta.s.ryCongUsta.remPid,
 												sta->t.usta.s.ryCongUsta.id,
@@ -791,7 +803,7 @@ void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 		break;
 	/**************************************************************************/
 	case (LRY_USTA_UP): /* channel up */
-		ftdm_log(FTDM_LOG_ERROR,"[RELAY] Channel UP: tx procId %d: channel %d\n",
+		ftdm_log(FTDM_LOG_INFO,"[RELAY] Channel UP: tx procId %d: channel %d\n",
 												sta->t.usta.s.ryUpUsta.sendPid,
 												sta->t.usta.s.ryUpUsta.id);
 
@@ -801,12 +813,17 @@ void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 		break;
 	/**************************************************************************/
 	case (LRY_USTA_DN): /* channel down */
-		ftdm_log(FTDM_LOG_ERROR,"[RELAY] Channel DOWN: tx procId %d: channel %d\n",
+		ftdm_log(FTDM_LOG_WARNING,"[RELAY] Channel DOWN: tx procId %d: channel %d\n",
 												sta->t.usta.s.ryUpUsta.sendPid,
 												sta->t.usta.s.ryUpUsta.id);
 
 		/* process the event */
 		handle_relay_disconnect_on_down(sta);
+
+		break;
+	/**************************************************************************/
+	case (LRY_USTA_TCP_CONN_FAILED):
+		ftdm_log(FTDM_LOG_WARNING,"[RELAY] TCP connection failed \n" );
 
 		break;
 	/**************************************************************************/
@@ -818,6 +835,311 @@ void handle_sng_relay_alarm(Pst *pst, RyMngmt *sta)
 
 	return;
 }
+
+/******************************************************************************/
+void handle_sng_m2ua_alarm(Pst *pst, MwMgmt *sta)
+{
+	/* To print the general information */
+	ftdm_log(FTDM_LOG_INFO, "Recieved a status indication from M2UA layer \n\n");
+	ftdm_log(FTDM_LOG_INFO," Category = %d , event = %d , cause = %d\n", 
+			sta->t.usta.alarm.category, sta->t.usta.alarm.event, sta->t.usta.alarm.cause);
+
+
+	/* To print the affected element value */
+	switch(sta->hdr.elmId.elmnt)
+	{
+		case STMWDLSAP:
+			{
+				ftdm_log(FTDM_LOG_INFO," STMWDLSAP: with lnkNmb (%d) \n\n",
+						sta->t.usta.s.lnkNmb);             
+				break;
+			}
+		case STMWSCTSAP:
+			{
+				ftdm_log(FTDM_LOG_INFO," STMWSCTSAP: suId (%d) \n\n",
+						sta->t.usta.s.suId);             
+				break;
+			}
+		case STMWPEER:
+			{
+				ftdm_log(FTDM_LOG_INFO," STMWPEER: peerId (%d) \n\n",
+						sta->t.usta.s.peerId);             
+				break;
+			}
+		case STMWCLUSTER:
+			{
+				ftdm_log(FTDM_LOG_INFO," STMWCLUSTER: clusterId (%d) \n\n",
+						sta->t.usta.s.peerId);             
+				break;
+			}
+		default:
+			{
+				ftdm_log(FTDM_LOG_ERROR, "[MW_USTA]: Invalid element \n\n");
+				break; 
+			}
+	}
+
+	/* To print the event specific information */
+	switch(sta->t.usta.alarm.event)
+	{
+		case LMW_EVENT_TERM_OK:
+			{
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_TERM_OK: Association Terminated with PeerId[%d]  \n",sta->t.usta.s.peerId);
+				break;
+			}
+		case LMW_EVENT_ENDPOPEN_OK:
+			{
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_ENDPOPEN_OK: \n");
+				break;
+			}
+		case LMW_EVENT_ESTABLISH_OK:
+			{
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_ESTABLISH_OK Event raised on peerId[%d]\n",sta->t.usta.s.peerId);
+				break;
+			}
+		case LMW_EVENT_ESTABLISH_FAIL:     
+			{
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_ESTABLISH_FAIL Event raised on peerId[%d]\n",sta->t.usta.s.peerId);
+				break;
+			}
+		case LMW_EVENT_ASPM:
+			{
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_ASPM Event raised with peerId (%d), aspId (%d),"
+						" msgType (%d)\n\n",sta->t.usta.s.peerId,
+						sta->t.usta.t.aspm.msgType); 
+				break;
+			}
+		case LMW_EVENT_CLUSTER:
+			{
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_CLUSTER Event raised on clusterId (%d), state (%d)\n\n", 
+						sta->t.usta.s.clusterId, sta->t.usta.t.cluster.state);
+
+				break;
+			}
+		case LMW_EVENT_NOTIFY:
+			{
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_NOTIFY: peerId (%d), aspId (%d), ntfy status type (%d),"
+						" ntfy status id (%d)\n\n", sta->t.usta.s.peerId,
+						sta->t.usta.t.ntfy.aspId, sta->t.usta.t.ntfy.stType,
+						sta->t.usta.t.ntfy.stId);
+
+				break;
+			}
+
+
+		case LMW_EVENT_M2UA_PROTO_ERROR:
+			{
+				ftdm_log(FTDM_LOG_ERROR, " M2UA : LMW_EVENT_M2UA_PROTO_ERROR with errorCode (%d)\n\n",
+						sta->t.usta.t.error.errCode);
+				break;
+			}
+		default:
+			break;
+	}
+
+}   /* handle_sng_m2ua_alarm */
+
+/******************************************************************************/
+void handle_sng_nif_alarm(Pst *pst, NwMgmt *sta)
+{
+	/* To print the general information */
+	ftdm_log(FTDM_LOG_INFO," Recieved a status indication from NIF layer\n");
+	ftdm_log(FTDM_LOG_INFO," Category = %d , event = %d , cause = %d\n", sta->t.usta.alarm.category, 
+			sta->t.usta.alarm.event, sta->t.usta.alarm.cause);
+
+	switch(sta->hdr.elmId.elmnt)
+	{
+		case STNWDLSAP:
+			{
+				ftdm_log(FTDM_LOG_INFO," Recieved STNWDLSAP status indication for suId (%d) \n", sta->t.usta.suId);
+				switch(sta->t.usta.alarm.event)
+				{
+					case LCM_EVENT_LI_INV_EVT:
+						{
+							switch(sta->t.usta.alarm.cause)
+							{
+								case LCM_CAUSE_INV_SAP:
+									{
+										ftdm_log(FTDM_LOG_ERROR, " LCM_CAUSE_INV_SAP Alarm \n");
+										break;
+									}
+								case LCM_CAUSE_INV_STATE:
+									{
+										ftdm_log(FTDM_LOG_ERROR, " LCM_CAUSE_INV_STATE Alarm \n");
+										break;
+									}
+								default:
+									break;
+							}
+							break;
+						}
+					case LCM_EVENT_BND_OK:
+						{
+							ftdm_log(FTDM_LOG_INFO," NIF: LCM_EVENT_BND_OK Alarm \n"); 
+							break;
+						}
+					case LCM_EVENT_BND_FAIL:
+						{
+							ftdm_log(FTDM_LOG_INFO," NIF: LCM_EVENT_BND_FAIL Alarm \n"); 
+							break;
+						}
+					default:
+						break;
+				}
+				break;
+			}
+		default:
+			break;
+	}
+}   /* handle_sng_nif_alarm */
+
+/******************************************************************************/
+void handle_sng_tucl_alarm(Pst *pst, HiMngmt *sta)
+{
+	/* To print the general information */
+	ftdm_log(FTDM_LOG_INFO, "Recieved a status indication from TUCL layer \n\n");
+	ftdm_log(FTDM_LOG_INFO, " Category = %d , event = %d , cause = %d\n", 
+			sta->t.usta.alarm.category, 
+			sta->t.usta.alarm.event, sta->t.usta.alarm.cause);
+
+	switch(sta->t.usta.alarm.event)
+	{
+		case LCM_EVENT_INV_EVT: 
+			{ 
+				ftdm_log(FTDM_LOG_INFO," [HI_USTA]: LCM_EVENT_INV_EVT with type (%d)\n\n",
+						sta->t.usta.info.type);
+				break;
+			}
+		case LHI_EVENT_BNDREQ:
+			{ 
+				ftdm_log(FTDM_LOG_INFO," [HI_USTA]: LHI_EVENT_BNDREQ with type (%d) spId (%d)\n\n",
+						sta->t.usta.info.type, sta->t.usta.info.spId);
+				break;
+			}
+		case LHI_EVENT_SERVOPENREQ:
+		case LHI_EVENT_DATREQ:
+		case LHI_EVENT_UDATREQ:
+		case LHI_EVENT_CONREQ:
+		case LHI_EVENT_DISCREQ:
+#if(defined(HI_TLS) && defined(HI_TCP_TLS)) 
+		case LHI_EVENT_TLS_ESTREQ:
+#endif
+			{
+				ftdm_log(FTDM_LOG_INFO," [HI_USTA]: partype (%d) type(%d)\n\n",
+						sta->t.usta.info.inf.parType, sta->t.usta.info.type);
+				break;
+			}
+		case LCM_EVENT_DMEM_ALLOC_FAIL:
+		case LCM_EVENT_SMEM_ALLOC_FAIL:
+			{
+				ftdm_log(FTDM_LOG_ERROR," [HI_USTA]: MEM_ALLOC_FAIL with region(%d) pool (%d) type(%d)\n\n",
+						sta->t.usta.info.inf.mem.region, sta->t.usta.info.inf.mem.pool,
+						sta->t.usta.info.type);
+				break;
+			}
+                 default:
+                        break;
+	}
+
+}   /* handle_sng_tucl_alarm */
+
+/******************************************************************************/
+void handle_sng_sctp_alarm(Pst *pst, SbMgmt *sta)
+{
+	ftdm_log(FTDM_LOG_INFO, "Recieved a status indication from SCTP layer \n\n");
+	ftdm_log(FTDM_LOG_INFO," Category = %d , event = %d , cause = %d "
+			" [SB_USTA]: sapId (%d) and swtch (%d)\n", 
+			sta->t.usta.alarm.category,
+			sta->t.usta.alarm.event, sta->t.usta.alarm.cause,
+			sta->t.usta.sapId, sta->t.usta.swtch);
+
+	switch(sta->t.usta.alarm.category)
+	{
+		case LCM_CATEGORY_INTERFACE:
+			{
+				switch(sta->t.usta.alarm.cause)
+				{
+					case LCM_CAUSE_INV_SPID:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LCM_CAUSE_INV_SPID Alarm \n");
+							break;
+						}
+					case LCM_CAUSE_SWVER_NAVAIL:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LCM_CAUSE_SWVER_NAVAIL Alarm\n");
+							break;
+						}
+					case LCM_CAUSE_INV_PAR_VAL:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LCM_CAUSE_INV_PAR_VAL Alarm\n");
+							break;
+						}
+					case LCM_CAUSE_INV_SUID:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LCM_CAUSE_INV_SUID Alarm\n");
+							break;
+						}
+					case LCM_CAUSE_INV_SAP:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LCM_CAUSE_INV_SAP Alarm\n");
+							break;
+						}
+					default:
+						break;
+				}
+
+				break;
+			}
+		case LCM_CATEGORY_RESOURCE:
+			{
+				switch(sta->t.usta.alarm.cause)
+				{
+					case LCM_CAUSE_MEM_ALLOC_FAIL:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LCM_CAUSE_MEM_ALLOC_FAIL Alarm \n");
+							break;
+						}
+					case LSB_CAUSE_NUM_ADDR_EXCEED:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LSB_CAUSE_NUM_ADDR_EXCEED Alarm\n");
+							break;
+						}
+					default:
+						break;
+				}
+				break;
+			}
+		case LCM_CATEGORY_PROTOCOL:
+			{
+				switch(sta->t.usta.alarm.cause)
+				{
+					case LSB_CAUSE_PATH_FAILURE:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LSB_CAUSE_PATH_FAILURE Alarm \n");
+							break;
+						}
+					case LSB_CAUSE_PATH_ACTIVE:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LSB_CAUSE_PATH_ACTIVE Alarm \n");
+							break;
+						}
+					case LSB_CAUSE_UNRSLVD_ADDR:
+						{
+							ftdm_log(FTDM_LOG_ERROR, "SCTP : LSB_CAUSE_UNRSLVD_ADDR Alarm \n");
+							break;
+						}
+					default:
+						break;
+				}
+				break;
+			}
+		default:
+			break;
+	}
+
+}   /* handle_sng_sctp_alarm */
+/******************************************************************************/
+
 
 /******************************************************************************/
 /* For Emacs:

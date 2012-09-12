@@ -162,6 +162,7 @@ typedef enum {
 	FTDM_SIGTYPE_ANALOG,
 	FTDM_SIGTYPE_SANGOMABOOST,
 	FTDM_SIGTYPE_M3UA,
+	FTDM_SIGTYPE_M2UA,
 	FTDM_SIGTYPE_R2,
 	FTDM_SIGTYPE_SS7,
 	FTDM_SIGTYPE_GSM
@@ -198,6 +199,8 @@ typedef enum {
 	FTDM_SPAN_NON_STOPPABLE = (1 << 13),
 	/* If this flag is set, then this span supports TRANSFER state */
 	FTDM_SPAN_USE_TRANSFER = (1 << 14),
+	/* This is the last flag, no more flags bigger than this */
+	FTDM_SPAN_MAX_FLAG = (1 << 15),
 } ftdm_span_flag_t;
 
 /*! \brief Channel supported features */
@@ -266,6 +269,12 @@ typedef enum {
 #define FTDM_CHANNEL_BLOCKING        (1ULL << 35)
 /*!< Media is digital */
 #define FTDM_CHANNEL_DIGITAL_MEDIA   (1ULL << 36)
+/*!< Native signaling bridge is enabled */
+#define FTDM_CHANNEL_NATIVE_SIGBRIDGE (1ULL << 37)
+
+/*!< This no more flags after this flag */
+#define FTDM_CHANNEL_MAX_FLAG 	     (1ULL << 38)
+/*!<When adding a new flag, need to update ftdm_io.c:channel_flag_strs */
 
 #include "ftdm_state.h"
 

@@ -44,8 +44,11 @@
 /* FUNCTIONS ******************************************************************/
 void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 {	
+	const char *var = NULL;
 	SiConEvnt 			iam;
+	ftdm_bool_t         native_going_up = FTDM_FALSE;
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;;
+	sngss7_event_data_t *event_clone = NULL;
 	
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
@@ -55,9 +58,113 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 	
 	memset (&iam, 0x0, sizeof (iam));
 
-	if (sngss7_info->circuit->transparent_iam &&
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+		ftdm_span_t *peer_span = NULL;
+		ftdm_channel_t *peer_chan = NULL;
+		sngss7_chan_data_t *peer_info = NULL;
+
+		var = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "sigbridge_peer");
+		ftdm_get_channel_from_string(var, &peer_span, &peer_chan);
+		if (!peer_chan) {
+			SS7_ERROR_CHAN(ftdmchan, "Failed to find sigbridge peer from string '%s'\n", var);
+		} else {
+			if (peer_span->signal_type != FTDM_SIGTYPE_SS7) {
+				SS7_ERROR_CHAN(ftdmchan, "Peer channel '%s' has different signaling type %d'\n", 
+						var, peer_span->signal_type);
+			} else {
+				peer_info = peer_chan->call_data;
+				SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Starting native bridge with peer CIC %d\n", 
+						sngss7_info->circuit->cic, peer_info->circuit->cic);
+
+				/* retrieve only first message from the others guys queue (must be IAM) */
+				event_clone = ftdm_queue_dequeue(peer_info->event_queue);
+
+				/* make each one of us aware of the native bridge */
+				peer_info->peer_data = sngss7_info;
+				sngss7_info->peer_data = peer_info;
+
+				/* Go to up until release comes, note that state processing is done different and much simpler when there is a peer,
+				   We can't go to UP state right away yet though, so do not set the state to UP here, wait until the end of this function
+				   because moving from one state to another causes the ftdmchan->usrmsg structure to be wiped 
+				   and we still need those variables for further IAM processing */
+				native_going_up = FTDM_TRUE;
+			}
+		}
+	}
+
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE)) {
+		if (!event_clone) {
+			SS7_ERROR_CHAN(ftdmchan, "No IAM event clone in peer queue!%s\n", "");
+		} else if (event_clone->event_id != SNGSS7_CON_IND_EVENT) {
+			/* first message in the queue should ALWAYS be an IAM */
+			SS7_ERROR_CHAN(ftdmchan, "Invalid initial peer message type '%d'\n", event_clone->event_id);
+		} else {
+			ftdm_caller_data_t *caller_data = &ftdmchan->caller_data;
+
+			SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged, dialing %s)\n", sngss7_info->circuit->cic, caller_data->dnis.digits);
+
+			/* copy original incoming IAM */
+			memcpy(&iam, &event_clone->event.siConEvnt, sizeof(iam));
+
+			/* Change DNIS to whatever was specified, do not change NADI or anything else! */
+			copy_tknStr_to_sngss7(caller_data->dnis.digits, &iam.cdPtyNum.addrSig, &iam.cdPtyNum.oddEven);
+
+			/* SPIROU certification hack 
+			   If the IAM already contain RDINF, just increment the count and set the RDNIS digits
+			   otherwise, honor RDNIS and RDINF stuff coming from the user */
+			if (iam.redirInfo.eh.pres == PRSNT_NODEF) {
+				const char *val = NULL;
+				if (iam.redirInfo.redirCnt.pres) {
+					iam.redirInfo.redirCnt.val++;
+					SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), redirect count incremented = %d\n", sngss7_info->circuit->cic, iam.redirInfo.redirCnt.val);
+				}
+				val = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rdnis_digits");
+				if (!ftdm_strlen_zero(val)) {
+					SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), found user supplied RDNIS digits = %s\n", sngss7_info->circuit->cic, val);
+					copy_tknStr_to_sngss7((char*)val, &iam.redirgNum.addrSig, &iam.redirgNum.oddEven);
+				} else {
+					SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), not found user supplied RDNIS digits\n", sngss7_info->circuit->cic);
+				}
+			} else {
+				SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Bridged), redirect info not present, attempting to copy user supplied values\n", sngss7_info->circuit->cic);
+				/* Redirecting Number */
+				copy_redirgNum_to_sngss7(ftdmchan, &iam.redirgNum);
+
+				/* Redirecting Information */
+				copy_redirgInfo_to_sngss7(ftdmchan, &iam.redirInfo);
+			}
+
+			if (iam.origCdNum.eh.pres != PRSNT_NODEF) {
+				/* Original Called Number */
+				copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
+			}
+			copy_access_transport_to_sngss7(ftdmchan, &iam.accTrnspt);
+		}
+	} else if (sngss7_info->circuit->transparent_iam &&
 		sngss7_retrieve_iam(ftdmchan, &iam) == FTDM_SUCCESS) {
 		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM (Transparent)\n", sngss7_info->circuit->cic);
+
+		/* Called Number information */
+		copy_cdPtyNum_to_sngss7(ftdmchan, &iam.cdPtyNum);
+
+		/* Redirecting Number */
+		copy_redirgNum_to_sngss7(ftdmchan, &iam.redirgNum);
+
+		/* Redirecting Information */
+		copy_redirgInfo_to_sngss7(ftdmchan, &iam.redirInfo);
+
+		/* Location Number information */
+		copy_locPtyNum_to_sngss7(ftdmchan, &iam.cgPtyNum1);
+
+		/* Forward Call Indicators */
+		copy_fwdCallInd_to_sngss7(ftdmchan, &iam.fwdCallInd);
+
+		/* Original Called Number */
+		copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
+
+		copy_access_transport_to_sngss7(ftdmchan, &iam.accTrnspt);
+
+		copy_NatureOfConnection_to_sngss7(ftdmchan, &iam.natConInd);
 	} else {
 		/* Nature of Connection Indicators */
 		copy_natConInd_to_sngss7(ftdmchan, &iam.natConInd);
@@ -79,6 +186,9 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		/* Calling Number information */
 		copy_cgPtyNum_to_sngss7(ftdmchan, &iam.cgPtyNum);
 
+		/* Location Number information */
+		copy_locPtyNum_to_sngss7(ftdmchan, &iam.cgPtyNum1);
+
 		/* Generic Number information */
 		copy_genNmb_to_sngss7(ftdmchan, &iam.genNmb);
 
@@ -88,15 +198,30 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 		/* Redirecting Number */
 		copy_redirgNum_to_sngss7(ftdmchan, &iam.redirgNum);
 
-		/* Access Transport */
-		copy_accTrnspt_to_sngss7(ftdmchan, &iam.accTrnspt);
+		/* Redirecting Information */
+		copy_redirgInfo_to_sngss7(ftdmchan, &iam.redirInfo);
 
-		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM clg = \"%s\" (NADI=%d), cld = \"%s\" (NADI=%d)\n",
+		/* Original Called Number */
+		copy_ocn_to_sngss7(ftdmchan, &iam.origCdNum);
+
+		/* Access Transport - old implementation, taking from channel variable of ss7_clg_subaddr */
+		copy_accTrnspt_to_sngss7(ftdmchan, &iam.accTrnspt);
+		
+		/* Access Transport - taking from channel variable of ss7_access_transport_urlenc.
+		    This will overwirte the IE value set be above old implementation.
+		*/
+		copy_access_transport_to_sngss7(ftdmchan, &iam.accTrnspt);
+		
+		copy_NatureOfConnection_to_sngss7(ftdmchan, &iam.natConInd);
+
+		SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx IAM clg = \"%s\" (NADI=%d), cld = \"%s\" (NADI=%d), loc = %s (NADI=%d)\n",
 									sngss7_info->circuit->cic,
 									ftdmchan->caller_data.cid_num.digits,
 									iam.cgPtyNum.natAddrInd.val,
 									ftdmchan->caller_data.dnis.digits,
-									iam.cdPtyNum.natAddrInd.val);
+									iam.cdPtyNum.natAddrInd.val,
+									ftdmchan->caller_data.loc.digits,
+									iam.cgPtyNum1.natAddrInd.val);
 	}
 
 	sng_cc_con_request (sngss7_info->spId,
@@ -106,8 +231,115 @@ void ft_to_sngss7_iam (ftdm_channel_t * ftdmchan)
 						&iam,
 						0);
 
+	if (native_going_up) {
+		/* 
+	      Note that this function (ft_to_sngss7_iam) is run within the main SS7 processing loop in
+		  response to the DIALING state handler, we can set the state to UP here and that will
+		  implicitly complete the DIALING state, but we *MUST* also advance the state handler
+		  right away for a native bridge, otherwise, the processing state function (ftdm_sangoma_ss7_process_state_change)
+		  will complete the state without having executed the handler for FTDM_CHANNEL_STATE_UP, and we won't notify
+		  the user sending FTDM_SIGEVENT_UP which can cause the application to misbehave (ie, no audio) */
+		ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
+		ftdm_channel_advance_states(ftdmchan);
+	}
+	
+	ftdm_safe_free(event_clone);
+
 	SS7_FUNC_TRACE_EXIT (__FUNCTION__);
 	return;
+}
+
+void ft_to_sngss7_inf(ftdm_channel_t *ftdmchan, SiCnStEvnt *inr)
+{
+	SiCnStEvnt evnt;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+	
+	memset (&evnt, 0x0, sizeof (evnt));
+	
+	evnt.infoInd.eh.pres	   = PRSNT_NODEF;
+	evnt.infoInd.cgPtyAddrRespInd.pres = PRSNT_NODEF;
+	evnt.infoInd.cgPtyCatRespInd.pres = PRSNT_NODEF;
+
+	evnt.infoInd.chrgInfoRespInd.pres =  PRSNT_NODEF;
+	evnt.infoInd.chrgInfoRespInd.val = 0;
+	evnt.infoInd.solInfoInd.pres = PRSNT_NODEF;
+	evnt.infoInd.solInfoInd.val = 0;
+	evnt.infoInd.holdProvInd.pres =  PRSNT_NODEF;
+	evnt.infoInd.holdProvInd.val = 0;	
+	evnt.infoInd.spare.pres =  PRSNT_NODEF;
+	evnt.infoInd.spare.val = 0;
+
+	if (inr->infoReqInd.eh.pres == PRSNT_NODEF) {
+		if ((inr->infoReqInd.holdingInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.holdingInd.val == HOLD_REQ)) {
+			SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Received INR requesting holding information. Holding is not supported in INF.\n", sngss7_info->circuit->cic);
+		}
+		if ((inr->infoReqInd.chrgInfoReqInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.chrgInfoReqInd.val == CHRGINFO_REQ)) {
+			SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Received INR requesting charging information. Charging is not supported in INF.\n", sngss7_info->circuit->cic);
+		}
+		if ((inr->infoReqInd.malCaIdReqInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.malCaIdReqInd.val == CHRGINFO_REQ)) {
+			SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Received INR requesting malicious call id. Malicious call id is not supported in INF.\n", sngss7_info->circuit->cic);
+		}
+		
+		if ((inr->infoReqInd.cgPtyAdReqInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.cgPtyAdReqInd.val == CGPRTYADDREQ_REQ)) {
+			evnt.infoInd.cgPtyAddrRespInd.val=CGPRTYADDRESP_INCL;
+			copy_cgPtyNum_to_sngss7 (ftdmchan, &evnt.cgPtyNum);
+		} else {
+			evnt.infoInd.cgPtyAddrRespInd.val=CGPRTYADDRESP_NOTINCL;
+		}
+		
+		if ((inr->infoReqInd.cgPtyCatReqInd.pres ==  PRSNT_NODEF) && (inr->infoReqInd.cgPtyCatReqInd.val == CGPRTYCATREQ_REQ)) {
+			evnt.infoInd.cgPtyCatRespInd.val = CGPRTYCATRESP_INCL;
+			copy_cgPtyCat_to_sngss7 (ftdmchan, &evnt.cgPtyCat);
+		} else {
+			evnt.infoInd.cgPtyCatRespInd.val = CGPRTYCATRESP_NOTINCL;
+		}
+	}
+	else {
+		SS7_DEBUG_CHAN(ftdmchan,"[CIC:%d]Received INR with no information request. Sending back default INF.\n", sngss7_info->circuit->cic);
+	}
+		
+	sng_cc_inf(1, 
+			  sngss7_info->suInstId,
+			  sngss7_info->spInstId,
+			  sngss7_info->circuit->id, 
+			  &evnt, 
+			  INFORMATION);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx INF\n", sngss7_info->circuit->cic);
+	
+}
+
+void ft_to_sngss7_inr(ftdm_channel_t *ftdmchan)
+{
+	SiCnStEvnt evnt;
+	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
+
+	memset (&evnt, 0x0, sizeof (evnt));
+
+	evnt.infoReqInd.eh.pres	   = PRSNT_NODEF;
+	evnt.infoReqInd.cgPtyAdReqInd.pres = PRSNT_NODEF;
+	evnt.infoReqInd.cgPtyAdReqInd.val=CGPRTYADDREQ_REQ;
+
+	evnt.infoReqInd.holdingInd.pres =  PRSNT_NODEF;
+	evnt.infoReqInd.holdingInd.val = HOLD_REQ;
+
+	evnt.infoReqInd.cgPtyCatReqInd.pres = PRSNT_NODEF;
+	evnt.infoReqInd.cgPtyCatReqInd.val = CGPRTYCATREQ_REQ;
+
+	evnt.infoReqInd.chrgInfoReqInd.pres =  PRSNT_NODEF;
+	evnt.infoReqInd.chrgInfoReqInd.val = CHRGINFO_REQ;
+
+	evnt.infoReqInd.malCaIdReqInd.pres =  PRSNT_NODEF;
+	evnt.infoReqInd.malCaIdReqInd.val = MLBG_INFOREQ;
+
+	sng_cc_inr(1, 
+			  sngss7_info->suInstId,
+			  sngss7_info->spInstId,
+			  sngss7_info->circuit->id, 
+			  &evnt, 
+			  INFORMATREQ);
+
+	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx INR\n", sngss7_info->circuit->cic);
 }
 
 void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
@@ -116,6 +348,7 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	
 	sngss7_chan_data_t	*sngss7_info = ftdmchan->call_data;
 	SiCnStEvnt acm;
+	const char *backwardInd = NULL;
 	
 	memset (&acm, 0x0, sizeof (acm));
 	
@@ -133,8 +366,16 @@ void ft_to_sngss7_acm (ftdm_channel_t * ftdmchan)
 	acm.bckCallInd.intInd.val 			= INTIND_NOINTW;
 	acm.bckCallInd.end2EndInfoInd.pres	= PRSNT_NODEF;
 	acm.bckCallInd.end2EndInfoInd.val	= E2EINF_NOINFO;
+
 	acm.bckCallInd.isdnUsrPrtInd.pres	= PRSNT_NODEF;
-	acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_USED;
+	acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_NOTUSED;
+	backwardInd = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "acm_bi_iup");
+	if (!ftdm_strlen_zero(backwardInd)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied backward indicator ISDN user part indicator ACM, value \"%s\"\n", backwardInd);
+		if (atoi(backwardInd) != 0 ) {
+			acm.bckCallInd.isdnUsrPrtInd.val	= ISUP_USED;
+		}
+	}
 	acm.bckCallInd.holdInd.pres			= PRSNT_NODEF;
 	acm.bckCallInd.holdInd.val			= HOLD_NOTREQD;
 	acm.bckCallInd.isdnAccInd.pres		= PRSNT_NODEF;
@@ -241,6 +482,7 @@ void ft_to_sngss7_anm (ftdm_channel_t * ftdmchan)
 /******************************************************************************/
 void ft_to_sngss7_rel (ftdm_channel_t * ftdmchan)
 {
+	const char *loc_ind = NULL;
 	SS7_FUNC_TRACE_ENTER (__FUNCTION__);
 	
 	sngss7_chan_data_t *sngss7_info = ftdmchan->call_data;
@@ -250,7 +492,15 @@ void ft_to_sngss7_rel (ftdm_channel_t * ftdmchan)
 	
 	rel.causeDgn.eh.pres = PRSNT_NODEF;
 	rel.causeDgn.location.pres = PRSNT_NODEF;
-	rel.causeDgn.location.val = 0x01;
+
+	loc_ind = ftdm_usrmsg_get_var(ftdmchan->usrmsg, "ss7_rel_loc");
+	if (!ftdm_strlen_zero(loc_ind)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Found user supplied location indicator in REL, value \"%s\"\n", loc_ind);
+		rel.causeDgn.location.val = atoi(loc_ind);
+	} else {
+		rel.causeDgn.location.val = 0x01;
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "No user supplied location indicator in REL, using 0x01\"%s\"\n", "");
+	}
 	rel.causeDgn.cdeStand.pres = PRSNT_NODEF;
 	rel.causeDgn.cdeStand.val = 0x00;
 	rel.causeDgn.recommend.pres = NOTPRSNT;
@@ -260,10 +510,10 @@ void ft_to_sngss7_rel (ftdm_channel_t * ftdmchan)
 	
 	/* send the REL request to LibSngSS7 */
 	sng_cc_rel_request (1,
-						sngss7_info->suInstId,
-						sngss7_info->spInstId, 
-						sngss7_info->circuit->id, 
-						&rel);
+			sngss7_info->suInstId,
+			sngss7_info->spInstId, 
+			sngss7_info->circuit->id, 
+			&rel);
 	
 	SS7_INFO_CHAN(ftdmchan,"[CIC:%d]Tx REL cause=%d \n",
 							sngss7_info->circuit->cic,
@@ -517,8 +767,6 @@ void ft_to_sngss7_grs (ftdm_channel_t *fchan)
 		cinfo->circuit->cic,
 		cinfo->circuit->cic,
 		(cinfo->circuit->cic + cinfo->tx_grs.range));
-
-	memset(&cinfo->tx_grs, 0, sizeof(cinfo->tx_grs));
 
 	sngss7_set_ckt_flag(cinfo, FLAG_GRP_RESET_SENT);
 

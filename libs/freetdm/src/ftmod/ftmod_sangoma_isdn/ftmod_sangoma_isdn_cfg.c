@@ -433,6 +433,7 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 
 	signal_data->cid_name_method = SNGISDN_CID_NAME_AUTO;
 	signal_data->send_cid_name = SNGISDN_OPT_DEFAULT;
+	signal_data->send_connect_ack = SNGISDN_OPT_DEFAULT;
 	
 	span->default_caller_data.dnis.plan = FTDM_NPI_INVALID;
 	span->default_caller_data.dnis.type = FTDM_TON_INVALID;
@@ -615,6 +616,8 @@ ftdm_status_t ftmod_isdn_parse_cfg(ftdm_conf_parameter_t *ftdm_parameters, ftdm_
 			parse_timer(val, &signal_data->timer_t322);
 		} else if (!strcasecmp(var, "trunkgroup")) {
 			/* Do nothing, we already parsed this parameter */
+		} else if (!strcasecmp(var, "send-connect-ack")) {
+			parse_yesno(var, val, &signal_data->send_connect_ack);
 		} else {
 			ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown parameter %s\n", ftdm_parameters[paramindex].var);
 		}
