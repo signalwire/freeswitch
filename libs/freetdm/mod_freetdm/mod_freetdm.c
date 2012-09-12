@@ -575,34 +575,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 #endif
 
-	name = switch_channel_get_name(channel);
-
-	span_id = tech_pvt->ftdmchan ? ftdm_channel_get_span_id(tech_pvt->ftdmchan) : 0;
-	chan_id = tech_pvt->ftdmchan ? ftdm_channel_get_id(tech_pvt->ftdmchan) : 0;
-
-
-    /* Now verify the device is still attached to this call :-)
-     * Sometimes the FS core takes too long (more than 3 seconds) in calling
-     * channel_on_hangup() and the FreeTDM core decides to take the brute
-     * force approach and hangup and detach themselves from the call. Later
-     * when FS finally comes around, we might end up hanging up the device
-     * attached to another call, this verification avoids that. */
-    uuid = switch_core_session_get_uuid(session);
-    tokencnt = ftdm_channel_get_token_count(tech_pvt->ftdmchan);
-    for (t = 0; t < tokencnt; t++) {
-        token = ftdm_channel_get_token(tech_pvt->ftdmchan, t);
-        if (!zstr(token) && !strcasecmp(uuid, token)) {
-            uuid_found = 1;
-            break;
-        }
-    }
-
-    if (!uuid_found) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device [%d:%d] is no longer attached to %s. Nothing to do.\n", span_id, chan_id, name);
-        goto end;
-    }
-	
-
 	ftdm_channel_clear_token(tech_pvt->ftdmchan, switch_core_session_get_uuid(session));
 
 	chantype = ftdm_channel_get_type(tech_pvt->ftdmchan);
