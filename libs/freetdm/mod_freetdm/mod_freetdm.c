@@ -3729,7 +3729,6 @@ static switch_status_t load_config(void)
 			SPAN_CONFIG[span_id].analog_options = analog_options | globals.analog_options;
 
 			chaniter = ftdm_span_get_chan_iterator(span, NULL);
-			curr = chaniter;
 			for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
 				fchan = ftdm_iterator_current(curr);
 				ftdm_channel_set_private(fchan, &SPAN_CONFIG[span_id].pvts[i]);
