@@ -812,7 +812,7 @@ ftdm_status_t handle_rel_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circ
 			/* send out the release complete */
 			ft_to_sngss7_rlc (ftdmchan);
 		} else {
-			SS7_DEBUG_CHAN(ftdmchan, "Collision of REL messages - resetting state.\n", " ");
+			SS7_DEBUG_CHAN(ftdmchan, "Collision of REL messages - resetting state.%s\n", " ");
 			ft_to_sngss7_rlc (ftdmchan);
 			goto rel_ind_reset;
 		}

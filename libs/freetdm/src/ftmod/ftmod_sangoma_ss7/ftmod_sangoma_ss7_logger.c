@@ -292,7 +292,7 @@ void handle_sng_mtp2_alarm(Pst *pst, SdMngmt *sta)
 				sprintf(buf, "[%s]", g_ftdm_sngss7_data.cfg.mtp2Link[x].name);
 			}
 
-			ftdm_log(FTDM_LOG_WARNING,"[MTP2]%s %s : %d\n",
+			ftdm_log(FTDM_LOG_WARNING,"[MTP2]%s %s : %s\n",
 										buf,
 										DECODE_LSD_EVENT(sta->t.usta.alarm.event),
 										DECODE_DISC_REASON(sta->t.usta.evntParm[1]));
@@ -904,7 +904,7 @@ void handle_sng_m2ua_alarm(Pst *pst, MwMgmt *sta)
 			}
 		case LMW_EVENT_ASPM:
 			{
-				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_ASPM Event raised with peerId (%d), aspId (%d),"
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_ASPM Event raised with peerId (%d),"
 						" msgType (%d)\n\n",sta->t.usta.s.peerId,
 						sta->t.usta.t.aspm.msgType); 
 				break;
@@ -918,9 +918,9 @@ void handle_sng_m2ua_alarm(Pst *pst, MwMgmt *sta)
 			}
 		case LMW_EVENT_NOTIFY:
 			{
-				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_NOTIFY: peerId (%d), aspId (%d), ntfy status type (%d),"
+				ftdm_log(FTDM_LOG_INFO," M2UA : LMW_EVENT_NOTIFY: peerId (%d), aspId (%u), ntfy status type (%d),"
 						" ntfy status id (%d)\n\n", sta->t.usta.s.peerId,
-						sta->t.usta.t.ntfy.aspId, sta->t.usta.t.ntfy.stType,
+						(uint32_t) sta->t.usta.t.ntfy.aspId, sta->t.usta.t.ntfy.stType,
 						sta->t.usta.t.ntfy.stId);
 
 				break;
@@ -929,8 +929,8 @@ void handle_sng_m2ua_alarm(Pst *pst, MwMgmt *sta)
 
 		case LMW_EVENT_M2UA_PROTO_ERROR:
 			{
-				ftdm_log(FTDM_LOG_ERROR, " M2UA : LMW_EVENT_M2UA_PROTO_ERROR with errorCode (%d)\n\n",
-						sta->t.usta.t.error.errCode);
+				ftdm_log(FTDM_LOG_ERROR, " M2UA : LMW_EVENT_M2UA_PROTO_ERROR with errorCode (%u)\n\n",
+						(uint32_t) sta->t.usta.t.error.errCode);
 				break;
 			}
 		default:
