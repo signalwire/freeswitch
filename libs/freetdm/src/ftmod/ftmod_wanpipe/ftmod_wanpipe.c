@@ -769,18 +769,18 @@ static FIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case FTDM_COMMAND_ENABLE_DTMF_REMOVAL:
 		{
-#ifdef WP_API_FEATURE_LIBSNG_HWEC
+#ifdef WP_API_FEATURE_DTMF_REMOVAL
 			int return_code = 0;
 			err = sangoma_hwec_set_hwdtmf_removal(ftdmchan->sockfd, ftdmchan->physical_chan_id, &return_code, 1, 0);
 			if (return_code) {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Wanpipe failed to Disable HW-DTMF removal\n");
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Wanpipe failed to Enable HW-DTMF removal\n");
 			}
 #endif
 		}
 		break;
 	case FTDM_COMMAND_DISABLE_DTMF_REMOVAL:
 		{
-#ifdef WP_API_FEATURE_LIBSNG_HWEC
+#ifdef WP_API_FEATURE_DTMF_REMOVAL
 			int return_code = 0;
 			err = sangoma_hwec_set_hwdtmf_removal(ftdmchan->sockfd, ftdmchan->physical_chan_id, &return_code, 0, 0);
 			if (return_code) {
