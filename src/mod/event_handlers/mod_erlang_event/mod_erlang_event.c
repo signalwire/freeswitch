@@ -1720,8 +1720,7 @@ SWITCH_STANDARD_API(erlang_cmd)
 	} else if (!strcasecmp(argv[0], "bindings")) {
 		int found = 0;
 		struct erlang_binding *ptr;
-		switch_thread_rwlock_wrlock(globals.bindings_rwlock);
-		switch_xml_set_binding_sections(bindings.search_binding, SWITCH_XML_SECTION_MAX);
+		switch_thread_rwlock_rdlock(globals.bindings_rwlock);
 
 		for (ptr = bindings.head; ptr; ptr = ptr->next) {
 
