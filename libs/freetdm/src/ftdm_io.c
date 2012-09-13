@@ -3782,6 +3782,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing DTMF %s (debug = %d)\n", dtmf, ftdmchan->dtmfdbg.enabled);
 
+	if (ftdmchan->span->sig_dtmf && (ftdmchan->span->sig_dtmf(ftdmchan, dtmf) == FTDM_BREAK)) {
+		/* Signalling module wants to absorb this DTMF event */
+		return FTDM_SUCCESS;
+	}
+
 	if (!ftdmchan->dtmfdbg.enabled) {
 		goto skipdebug;
 	}
@@ -4230,10 +4235,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 					char digit_str[2] = { 0 };
 
 					digit_str[0] = digit_char;
-					
-					if (!ftdmchan->span->sig_dtmf || (ftdmchan->span->sig_dtmf(ftdmchan, (const char*)digit_str) != FTDM_BREAK)) {
-						ftdm_channel_queue_dtmf(ftdmchan, digit_str);
-					}
+
+					ftdm_channel_queue_dtmf(ftdmchan, digit_str);
 
 					if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF)) {
 						ftdmchan->skip_read_frames = 20;
