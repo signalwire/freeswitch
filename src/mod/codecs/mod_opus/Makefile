@@ -15,16 +15,14 @@ include $(BASE)/build/modmake.rules
 $(OPUS_DIR):
 	$(GETLIB) $(OPUS).tar.gz
 
-$(OPUS_BUILDDIR)/Makefile: $(OPUS_DIR)
-	mkdir -p $(OPUS_BUILDDIR)
+$(OPUS_DIR)/Makefile: $(OPUS_DIR)
 	cd $(OPUS_BUILDDIR) && $(DEFAULT_VARS) $(OPUS_DIR)/configure --disable-shared --with-pic --srcdir=$(OPUS_DIR)
 	$(TOUCH_TARGET)
 
-$(IETF_LA): $(OPUS_BUILDDIR)/Makefile
+$(OPUS_LA): $(OPUS_DIR)/Makefile
 	cd $(OPUS_BUILDDIR) && $(MAKE)
-	$(TOUCH_TARGET)
 
-$(CELT_LA): $(IETF_LA)
-$(SILK_LA): $(IETF_LA)
 
-$(MODNAME).lo: $(IETF_LA) $(CELT_LA) $(SILK_LA)
+
+$(MODNAME).lo: $(OPUS_LA)
+
