@@ -57,27 +57,48 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	if (encoding) {
 		/* come up with a way to specify these */
 		int bitrate_bps = codec->implementation->bits_per_second;
-		int mode = MODE_HYBRID;
 		int use_vbr = 1;
 		int complexity = 10;
 		int use_inbandfec = 1;
 		int use_dtx = 1;
-		int bandwidth = BANDWIDTH_FULLBAND;
+		int bandwidth = OPUS_BANDWIDTH_FULLBAND;
+		int err;
 
-		context->encoder_object = opus_encoder_create(codec->implementation->actual_samples_per_second, codec->implementation->number_of_channels);
+		context->encoder_object = opus_encoder_create(codec->implementation->actual_samples_per_second, 
+													  codec->implementation->number_of_channels, OPUS_APPLICATION_VOIP, &err);
 
-		opus_encoder_ctl(context->encoder_object, OPUS_SET_MODE(mode));
+       if (err != OPUS_OK) {
+		   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create encoder: %s\n", opus_strerror(err));
+		   return SWITCH_STATUS_GENERR;
+       }
+
 		opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(bitrate_bps));
 		opus_encoder_ctl(context->encoder_object, OPUS_SET_BANDWIDTH(bandwidth));
-		opus_encoder_ctl(context->encoder_object, OPUS_SET_VBR_FLAG(use_vbr));
+		opus_encoder_ctl(context->encoder_object, OPUS_SET_VBR(use_vbr));
 		opus_encoder_ctl(context->encoder_object, OPUS_SET_COMPLEXITY(complexity));
-		opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC_FLAG(use_inbandfec));
-		opus_encoder_ctl(context->encoder_object, OPUS_SET_DTX_FLAG(use_dtx));
+		opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(use_inbandfec));
+		opus_encoder_ctl(context->encoder_object, OPUS_SET_DTX(use_dtx));
 
 	}
 	
 	if (decoding) {
-		context->decoder_object = opus_decoder_create(codec->implementation->actual_samples_per_second, codec->implementation->number_of_channels);
+		int err;
+
+		context->decoder_object = opus_decoder_create(codec->implementation->actual_samples_per_second, 
+													  codec->implementation->number_of_channels, &err);
+
+		
+		if (err != OPUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create decoder: %s\n", opus_strerror(err));
+
+			if (context->encoder_object) {
+				opus_encoder_destroy(context->encoder_object);
+				context->encoder_object = NULL;
+			}
+
+			return SWITCH_STATUS_GENERR;
+		}
+
 	}
 
 	codec->private_info = context;
@@ -87,6 +108,19 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 
 static switch_status_t switch_opus_destroy(switch_codec_t *codec)
 {
+	struct opus_context *context = codec->private_info;
+
+	if (context) {
+		if (context->decoder_object) {
+			opus_decoder_destroy(context->decoder_object);
+			context->decoder_object = NULL;
+		}
+		if (context->encoder_object) {
+			opus_encoder_destroy(context->encoder_object);
+			context->encoder_object = NULL;
+		}
+	}
+
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -133,7 +167,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	samples = opus_decode(context->decoder_object, encoded_data, encoded_data_len, decoded_data, *decoded_data_len);
+	samples = opus_decode(context->decoder_object, (*flag & SFF_PLC) ? NULL : encoded_data, encoded_data_len, decoded_data, *decoded_data_len, 0);
 
 	if (samples < 0) {
 		return SWITCH_STATUS_GENERR;
@@ -157,12 +191,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_CODEC(codec_interface, "OPUS (BETA 0.9.0)");
+	SWITCH_ADD_CODEC(codec_interface, "OPUS (STANDARD)");
 
 	for (x = 0; x < 2; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 											 115,	/* the IANA code number */
-											 "Opus-0.9.0",/* the IANA code name */
+											 "opus",/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 rate,	/* samples transferred per second */
 											 rate,	/* actual samples transferred per second */
