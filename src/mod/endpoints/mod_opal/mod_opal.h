@@ -331,7 +331,10 @@ class FSConnection : public OpalLocalConnection
     switch_codec_t m_vid_read_codec;
     switch_codec_t m_vid_write_codec;
 
+    switch_frame_t m_dummy_frame;
+
     bool m_flushAudio;
+    bool m_udptl;
 
     friend PBoolean FSMediaStream::Open();
 };

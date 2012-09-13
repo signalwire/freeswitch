@@ -26,6 +26,9 @@
 #include "mod_opal.h"
 #include <opal/patch.h>
 #include <rtp/rtp.h>
+#if PTLIB_CHECK_VERSION(2,11,1)
+#include <rtp/rtp_session.h>
+#endif
 #include <h323/h323pdu.h>
 #include <h323/gkclient.h>
 
@@ -57,6 +60,7 @@ static FSProcess *opal_process = NULL;
 
 static PConstString const ModuleName("opal");
 static char const ConfigFile[] = "opal.conf";
+#define FS_PREFIX "fs"
 
 
 static switch_io_routines_t opalfs_io_routines = {
@@ -287,9 +291,9 @@ bool FSManager::Initialise(switch_loadable_module_interface_t *iface)
         }
     }
 
-    AddRouteEntry("h323:.* = local:<da>");  // config option for direct routing
-    AddRouteEntry("iax2:.* = local:<da>");  // config option for direct routing
-    AddRouteEntry("local:.* = h323:<da>");  // config option for direct routing
+    AddRouteEntry("h323:.* = "FS_PREFIX":<da>");  // config option for direct routing
+    AddRouteEntry("iax2:.* = "FS_PREFIX":<da>");  // config option for direct routing
+    AddRouteEntry(FS_PREFIX":.* = h323:<da>");  // config option for direct routing
 
     // Make sure all known codecs are instantiated,
     // these are ones we know how to translate into H.323 capabilities
@@ -319,6 +323,10 @@ bool FSManager::Initialise(switch_loadable_module_interface_t *iface)
       }
     }
 #endif // IMPLEMENT_MULTI_FAME_AUDIO
+
+    OpalMediaFormat t38 = OpalT38;
+    t38.SetOptionBoolean("UDPTL-Raw-Mode", true);
+    OpalMediaFormat::SetRegisteredMediaFormat(t38);
 
     if (!m_gkAddress.IsEmpty()) {
       if (m_h323ep->UseGatekeeper(m_gkAddress, m_gkIdentifer, m_gkInterface))
@@ -453,7 +461,7 @@ static switch_call_cause_t create_outgoing_channel(switch_core_session_t   *sess
     params.cancel_cause     = cancel_cause;
     params.fail_cause       = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 
-    if (opal_process->GetManager().SetUpCall("local:", outbound_profile->destination_number, &params) != NULL)
+    if (opal_process->GetManager().SetUpCall(FS_PREFIX":", outbound_profile->destination_number, &params) != NULL)
         return SWITCH_CAUSE_SUCCESS;
 
     if (*new_session != NULL)
@@ -465,7 +473,7 @@ static switch_call_cause_t create_outgoing_channel(switch_core_session_t   *sess
 ///////////////////////////////////////////////////////////////////////
 
 FSEndPoint::FSEndPoint(FSManager & manager)
-  : OpalLocalEndPoint(manager)
+  : OpalLocalEndPoint(manager, FS_PREFIX)
   , m_manager(manager)
 {
     PTRACE(4, "mod_opal\tFSEndPoint created.");
@@ -490,6 +498,7 @@ FSConnection::FSConnection(OpalCall & call,
   , m_fsSession(NULL)
   , m_fsChannel(NULL)
   , m_flushAudio(false)
+  , m_udptl(false)
 {
     memset(&m_read_timer, 0, sizeof(m_read_timer));
     memset(&m_read_codec, 0, sizeof(m_read_codec));
@@ -497,6 +506,8 @@ FSConnection::FSConnection(OpalCall & call,
     memset(&m_vid_read_timer, 0, sizeof(m_vid_read_timer));
     memset(&m_vid_read_codec, 0, sizeof(m_vid_read_codec));
     memset(&m_vid_write_codec, 0, sizeof(m_vid_write_codec));
+    memset(&m_dummy_frame, 0, sizeof(m_dummy_frame));
+    m_dummy_frame.flags = SFF_CNG;
 
     if (params != NULL) {
         // If we fail, this is the cause
@@ -871,7 +882,7 @@ switch_status_t FSConnection::on_destroy()
 {
     PTRACE(3, "mod_opal\tFS on_destroy for connection " << *this);
 
-    m_fsChannel = NULL; // Will be destoyed by FS, so don't use it any more.
+    m_fsChannel = NULL; // Will be destroyed by FS, so don't use it any more.
 
     switch_core_codec_destroy(&m_read_codec);
     switch_core_codec_destroy(&m_write_codec);
@@ -909,7 +920,7 @@ switch_status_t FSConnection::on_exchange_media()
 
 switch_status_t FSConnection::on_soft_execute()
 {
-    PTRACE(4, "mod_opal\tTransmit on connection " << *this);
+    PTRACE(4, "mod_opal\tSoft execute on connection " << *this);
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -920,12 +931,15 @@ switch_status_t FSConnection::kill_channel(int sig)
     case SWITCH_SIG_KILL:
         m_rxAudioOpened.Signal();
         m_txAudioOpened.Signal();
-        PTRACE(4, "mod_opal\tSignal channel KILL on connection " << *this);
+        PTRACE(4, "mod_opal\tSignal KILL received on connection " << *this);
         break;
-    case SWITCH_SIG_XFER:
+
     case SWITCH_SIG_BREAK:
+        PTRACE(4, "mod_opal\tSignal BREAK received on connection " << *this);
+        break;
+
     default:
-        PTRACE(4, "mod_opal\tSignal channel " << sig << " on connection " << *this);
+        PTRACE(4, "mod_opal\tSignal " << sig << " received on connection " << *this);
         break;
     }
 
@@ -1030,6 +1044,7 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
 
     case SWITCH_MESSAGE_INDICATE_UDPTL_MODE:
         PTRACE(2, "mod_opal\tSWITCH_MESSAGE_INDICATE_UDPTL_MODE");
+        m_udptl = true;
         break;
 #endif // HAVE_T38
 
@@ -1092,15 +1107,23 @@ void FSConnection::SetT38OptionsFromMediaFormat(const OpalMediaFormat & mediaFor
 
 void FSConnection::OnSwitchedT38(bool toT38, bool success)
 {
-    if (!toT38 || !success || !IndicateSwitchedT38())
-      AbortT38();
+    if (toT38 && success && IndicateSwitchedT38()) {
+        PTRACE(3, "mod_opal\tMode change request to T.38 succeeded");
+    }
+    else {
+        AbortT38();
+    }
 }
 
 
 void FSConnection::OnSwitchingT38(bool toT38)
 {
-    if (!toT38 || !IndicateSwitchedT38())
+    if (toT38 && IndicateSwitchedT38()) {
+        PTRACE(3, "mod_opal\tMode change request to T.38 started");
+    }
+    else {
       AbortT38();
+    }
 }
 
 
@@ -1117,13 +1140,17 @@ void FSConnection::AbortT38()
 bool FSConnection::IndicateSwitchedT38()
 {
     PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-    if (other == NULL)
+    if (other == NULL) {
+        PTRACE(3, "mod_opal\tCan't change to T.38, no other connection");
         return false;
+    }
 
     OpalMediaFormatList otherFormats = other->GetMediaFormats();
     OpalMediaFormatList::const_iterator t38 = otherFormats.FindFormat(OpalT38);
-    if (t38 == otherFormats.end())
+    if (t38 == otherFormats.end()) {
+        PTRACE(3, "mod_opal\tCan't change to T.38, no remote capability");
         return false;
+    }
 
     SetT38OptionsFromMediaFormat(*t38, "t38_options");
 
@@ -1132,7 +1159,6 @@ bool FSConnection::IndicateSwitchedT38()
 
     switch_channel_execute_on(m_fsChannel, "opal_execute_on_t38");
     switch_channel_api_on(m_fsChannel, "opal_api_on_t38");
-    PTRACE(3, "mod_opal\tMode change request to T.38 succeeded");
     return true;
 }
 #endif // HAVE_T38
@@ -1154,21 +1180,13 @@ switch_status_t FSConnection::state_change()
 
 switch_status_t FSConnection::read_audio_frame(switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
-    // Avoid all the channel closing and re-opening upsetting FS
-    if (ownerCall.IsSwitchingT38())
-      return SWITCH_STATUS_SUCCESS;
-
-    return read_frame((flags&SFF_UDPTL_PACKET) ? OpalMediaType::Fax() : OpalMediaType::Audio(), frame, flags);
+    return read_frame(m_udptl ? OpalMediaType::Fax() : OpalMediaType::Audio(), frame, flags);
 }
 
 
 switch_status_t FSConnection::write_audio_frame(switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
-    // Avoid all the channel closing and re-opening upsetting FS
-    if (ownerCall.IsSwitchingT38())
-      return SWITCH_STATUS_SUCCESS;
-
-    return write_frame((flags&SFF_UDPTL_PACKET) ? OpalMediaType::Fax() : OpalMediaType::Audio(), frame, flags);
+    return write_frame(m_udptl ? OpalMediaType::Fax() : OpalMediaType::Audio(), frame, flags);
 }
 
 
@@ -1186,17 +1204,26 @@ switch_status_t FSConnection::write_video_frame(switch_frame_t *frame, switch_io
 
 switch_status_t FSConnection::read_frame(const OpalMediaType & mediaType, switch_frame_t **frame, switch_io_flag_t flags)
 {
-    PSafePtr <FSMediaStream> stream = PSafePtrCast <OpalMediaStream, FSMediaStream>(GetMediaStream(mediaType, false));
-    if (stream != NULL)
-      return stream->read_frame(frame, flags);
+    if (!ownerCall.IsSwitchingT38()) {
+        PSafePtr <FSMediaStream> stream = PSafePtrCast <OpalMediaStream, FSMediaStream>(GetMediaStream(mediaType, false));
+        if (stream != NULL)
+            return stream->read_frame(frame, flags);
 
-    PTRACE(2, "mod_opal\tNo stream for read of " << mediaType);
+        PTRACE(2, "mod_opal\tNo stream for read of " << mediaType);
+    }
+
+    // Avoid all the channel closing and re-opening, especially with faxa switching, upsetting FS
+    *frame = &m_dummy_frame;
     return SWITCH_STATUS_SUCCESS;
 }
 
 
 switch_status_t FSConnection::write_frame(const OpalMediaType & mediaType, const switch_frame_t *frame, switch_io_flag_t flags)
 {
+    // Avoid all the channel closing and re-opening, especially with faxa switching, upsetting FS
+    if (ownerCall.IsSwitchingT38())
+      return SWITCH_STATUS_SUCCESS;
+
     PSafePtr <FSMediaStream> stream = PSafePtrCast<OpalMediaStream, FSMediaStream>(GetMediaStream(mediaType, true));
     if (stream != NULL)
       return stream->write_frame(frame, flags);
@@ -1211,6 +1238,8 @@ switch_status_t FSConnection::write_frame(const OpalMediaType & mediaType, const
 FSMediaStream::FSMediaStream(FSConnection & conn, const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
     : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
     , m_connection(conn)
+    , m_switchTimer(NULL)
+    , m_switchCodec(NULL)
     , m_readRTP(0, SWITCH_RECOMMENDED_BUFFER_SIZE)
 {
     memset(&m_readFrame, 0, sizeof(m_readFrame));
@@ -1236,8 +1265,8 @@ PBoolean FSMediaStream::Open()
         isAudio = false;
 #if HAVE_T38
     else if (mediaType == OpalMediaType::Fax()) {
-        m_readFrame.flags = SFF_UDPTL_PACKET;
-        return true;
+        m_readFrame.flags = SFF_UDPTL_PACKET|SFF_PROXY_PACKET;
+        return OpalMediaStream::Open();
     }
 #endif
     else {
@@ -1337,11 +1366,6 @@ int FSMediaStream::StartReadWrite(PatchPtr & mediaPatch) const
         return -1;
     }
 
-    if (!m_switchCodec) {
-        PTRACE(1, "mod_opal\tNo codec!");
-        return -1;
-    }
-
     if (!m_connection.IsChannelReady()) {
         PTRACE(1, "mod_opal\tChannel not ready!");
         return -1;
@@ -1362,6 +1386,9 @@ int FSMediaStream::StartReadWrite(PatchPtr & mediaPatch) const
 
 switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag_t flags)
 {
+    *frame = &m_readFrame;
+    m_readFrame.flags |= SFF_CNG;
+
     PatchPtr mediaPatch;
     switch (StartReadWrite(mediaPatch)) {
       case -1 :
@@ -1374,7 +1401,9 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
         mediaPatch->GetSource().EnableJitterBuffer(); // This flushes data and resets jitter buffer
         m_readRTP.SetPayloadSize(0);
     } else {
-        m_readRTP.SetTimestamp(m_readFrame.timestamp + m_switchCodec->implementation->samples_per_packet);
+        if (m_switchCodec != NULL) {
+            m_readRTP.SetTimestamp(m_readFrame.timestamp + m_switchCodec->implementation->samples_per_packet);
+        }
 
         if (!mediaPatch->GetSource().ReadPacket(m_readRTP)) {
             PTRACE(1, "mod_opal\tread_frame: no source data!");
@@ -1393,13 +1422,19 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
         }
     }
 
-    *frame = &m_readFrame;
-
-    m_readFrame.packet    = m_readRTP.GetPointer();
-    m_readFrame.packetlen = m_readRTP.GetHeaderSize() + m_readFrame.datalen;
-
-    if ((m_readFrame.flags & (SFF_UDPTL_PACKET|SFF_RAW_RTP)) != 0)
+    if (switch_test_flag(&m_readFrame, SFF_UDPTL_PACKET)) {
+        m_readFrame.flags    &= ~SFF_CNG;
+        m_readFrame.packet    = m_readRTP.GetPayloadPtr();
+        m_readFrame.packetlen = m_readRTP.GetPayloadSize();
         return SWITCH_STATUS_SUCCESS;
+    }
+
+    if (switch_test_flag(&m_readFrame, SFF_RAW_RTP)) {
+        m_readFrame.flags    &= ~SFF_CNG;
+        m_readFrame.packet    = m_readRTP.GetPointer();
+        m_readFrame.packetlen = m_readRTP.GetHeaderSize() + m_readRTP.GetPayloadSize();
+        return SWITCH_STATUS_SUCCESS;
+    }
 
 #if IMPLEMENT_MULTI_FAME_AUDIO
     // Repackage frames in incoming packet to agree with what FS expects.
@@ -1415,9 +1450,12 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
     m_readFrame.ssrc      = m_readRTP.GetSyncSource();
     m_readFrame.m         = m_readRTP.GetMarker() ? SWITCH_TRUE : SWITCH_FALSE;
     m_readFrame.payload   = (switch_payload_t)m_readRTP.GetPayloadType();
-    m_readFrame.flags     = m_readFrame.datalen == 0 ||
-                            m_readFrame.payload == RTP_DataFrame::CN ||
-                            m_readFrame.payload == RTP_DataFrame::Cisco_CN ? SFF_CNG : 0;
+
+    if (m_readFrame.datalen > 0 &&
+        m_readFrame.payload != RTP_DataFrame::CN &&
+        m_readFrame.payload != RTP_DataFrame::Cisco_CN) {
+        m_readFrame.flags &= ~SFF_CNG;
+    }
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -1433,25 +1471,30 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
         return SWITCH_STATUS_SUCCESS;
     }
 
-    if ((frame->flags & (SFF_UDPTL_PACKET|SFF_RAW_RTP)) != 0) {
-        RTP_DataFrame rtp((const BYTE *)frame->packet, frame->packetlen, false);
-        return mediaPatch->PushFrame(rtp) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+    RTP_DataFrame rtp;
+    if (switch_test_flag(frame, SFF_RAW_RTP)) {
+        rtp = RTP_DataFrame((const BYTE *)frame->packet, frame->packetlen, false);
     }
+    else if (switch_test_flag(frame, SFF_UDPTL_PACKET)) {
+        rtp.SetPayloadSize(frame->packetlen);
+        memcpy(rtp.GetPayloadPtr(), frame->packet, frame->packetlen);
+    }
+    else {
+        rtp.SetPayloadSize(frame->datalen);
+        memcpy(rtp.GetPayloadPtr(), frame->data, frame->datalen);
 
-    RTP_DataFrame rtp(frame->datalen);
-    memcpy(rtp.GetPayloadPtr(), frame->data, frame->datalen);
+        rtp.SetPayloadType(mediaFormat.GetPayloadType());
 
-    rtp.SetPayloadType(mediaFormat.GetPayloadType());
-
-    /* Not sure what FS is going to give us!
-       Suspect it depends on the mod on the other side sending it. */
-    if (frame->timestamp != 0)
-        timestamp = frame->timestamp;
-    else if (frame->samples != 0)
-        timestamp += frame->samples;
-    else
-        timestamp += m_switchCodec->implementation->samples_per_packet;
-    rtp.SetTimestamp(timestamp);
+        /* Not sure what FS is going to give us!
+           Suspect it depends on the mod on the other side sending it. */
+        if (frame->timestamp != 0)
+            timestamp = frame->timestamp;
+        else if (frame->samples != 0)
+            timestamp += frame->samples;
+        else if (m_switchCodec != NULL)
+            timestamp += m_switchCodec->implementation->samples_per_packet;
+        rtp.SetTimestamp(timestamp);
+    }
 
     if (mediaPatch->PushFrame(rtp))
       return SWITCH_STATUS_SUCCESS;

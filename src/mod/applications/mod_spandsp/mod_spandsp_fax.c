@@ -1590,8 +1590,14 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 	while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
-		if (!SWITCH_READ_ACCEPTABLE(status) || pvt->done) {
+		if (pvt->done) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Premature exit while negotiating\n", switch_channel_get_name(channel));
 			/* Our duty is over */
+			goto end_unlock;
+		}
+
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Read failed, status=%u\n", switch_channel_get_name(channel), status);
 			goto end_unlock;
 		}
 
@@ -1600,11 +1606,13 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 		}
 
 		if (switch_core_session_write_frame(other_session, read_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Write failed\n", switch_channel_get_name(channel));
 			goto end_unlock;
 		}
 	}
 
 	if (!(switch_channel_ready(channel) && switch_channel_up(other_channel))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Channel not ready\n", switch_channel_get_name(channel));
 		goto end_unlock;
 	}
 
@@ -1645,6 +1653,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status) || pvt->done) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Premature exit while negotiating\n", switch_channel_get_name(channel), status);
 			/* Our duty is over */
 			goto end_unlock;
 		}
@@ -1654,7 +1663,9 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 		}
 
 		if (switch_test_flag(read_frame, SFF_UDPTL_PACKET)) {
-			udptl_rx_packet(pvt->udptl_state, read_frame->packet, read_frame->packetlen);
+			if (udptl_rx_packet(pvt->udptl_state, read_frame->packet, read_frame->packetlen) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Error decoding UDPTL (%u bytes)\n", switch_channel_get_name(channel), read_frame->packetlen);
+                        }
 		}
 	}
 
