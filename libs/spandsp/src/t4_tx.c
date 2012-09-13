@@ -484,12 +484,23 @@ static int open_tiff_input_file(t4_tx_state_t *s, const char *file)
 static int tiff_row_read_handler(void *user_data, uint8_t buf[], size_t len)
 {
     t4_tx_state_t *s;
+    int i;
+    int j;
 
     s = (t4_tx_state_t *) user_data;
     if (s->tiff.row >= s->image_length)
         return 0;
     memcpy(buf, &s->tiff.image_buffer[s->tiff.row*len], len);
     s->tiff.row++;
+
+    /* If this is a bi-level image which has more vertical resolution than the
+       far end will accept, we need to squash it down to size. */
+    for (i = 1;  i < s->row_squashing_ratio  &&  s->tiff.row < s->image_length;  i++)
+    {
+        for (j = 0;  j < s->image_width/8;  j++)
+            buf[j] |= s->tiff.image_buffer[s->tiff.row*len + j];
+        s->tiff.row++;
+    }
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -497,7 +508,7 @@ static int tiff_row_read_handler(void *user_data, uint8_t buf[], size_t len)
 static int row_read(void *user_data, uint8_t buf[], size_t len)
 {
     t4_tx_state_t *s;
-    
+
     s = (t4_tx_state_t *) user_data;
 
     if (s->tiff.raw_row >= s->tiff.image_length)
@@ -650,7 +661,7 @@ static int make_header(t4_tx_state_t *s)
         if ((s->header_text = malloc(132 + 1)) == NULL)
             return -1;
     }
-    /* This is very English oriented, but then most FAX machines are, too. Some
+    /* This is very English oriented, but then most FAX machines are. Some
        measure of i18n in the time and date, and even the header_info string, is
        entirely possible, although the font area would need some serious work to
        properly deal with East Asian script. There is no spec for what the header
@@ -711,6 +722,7 @@ static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
         repeats = 1;
         break;
     }
+    repeats /= s->row_squashing_ratio;
     if (s->header_overlays_image)
     {
         /* Read and dump a row of the real image, allowing for the possibility
@@ -721,20 +733,34 @@ static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
             return len;
         }
     }
-    row = s->header_row/repeats;
-    pos = 0;
-    for (t = s->header_text;  *t  &&  pos <= len - 2;  t++)
+    switch (s->tiff.image_type)
     {
-        pattern = header_font[(uint8_t) *t][row];
-        buf[pos++] = (uint8_t) (pattern >> 8);
-        buf[pos++] = (uint8_t) (pattern & 0xFF);
+    case T4_IMAGE_TYPE_BILEVEL:
+        row = s->header_row/repeats;
+        pos = 0;
+        for (t = s->header_text;  *t  &&  pos <= len - 2;  t++)
+        {
+            pattern = header_font[(uint8_t) *t][row];
+            buf[pos++] = (uint8_t) (pattern >> 8);
+            buf[pos++] = (uint8_t) (pattern & 0xFF);
+        }
+        while (pos < len)
+            buf[pos++] = 0;
+        s->header_row++;
+        if (s->header_row >= 16*repeats)
+        {
+            /* End of header. Change to normal image row data. */
+            set_row_read_handler(s, s->row_handler, s->row_handler_user_data);
+        }
+        break;
     }
-    while (pos < len)
-        buf[pos++] = 0;
-    s->header_row++;
-    if (s->header_row >= 16*repeats)
-        set_row_read_handler(s, s->row_handler, s->row_handler_user_data);
     return len;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t4_tx_set_row_squashing_ratio(t4_tx_state_t *s, int row_squashing_ratio)
+{
+    s->row_squashing_ratio = row_squashing_ratio;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1142,6 +1168,8 @@ SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int
 
     s->row_handler = tiff_row_read_handler;
     s->row_handler_user_data = (void *) s;
+
+    s->row_squashing_ratio = 1;
 
     if (file)
     {

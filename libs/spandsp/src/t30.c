@@ -1308,6 +1308,7 @@ static int build_dcs(t30_state_t *s)
 {
     int i;
     int bad;
+    int row_squashing_ratio;
     
     /* Make a DCS frame based on local issues and the latest received DIS/DTC frame. Negotiate
        the result based on what both parties can do. */
@@ -1369,6 +1370,7 @@ static int build_dcs(t30_state_t *s)
     set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_RECEIVE_FAX_DOCUMENT);
     /* Set the Y resolution bits */
     bad = T30_ERR_OK;
+    row_squashing_ratio = 1;
     switch (s->y_resolution)
     {
     case T4_Y_RESOLUTION_1200:
@@ -1425,27 +1427,6 @@ static int build_dcs(t30_state_t *s)
             break;
         }
         break;
-    case T4_Y_RESOLUTION_SUPERFINE:
-        if (!(s->supported_resolutions & T30_SUPPORT_SUPERFINE_RESOLUTION))
-        {
-            bad = T30_ERR_NORESSUPPORT;
-        }
-        else
-        {
-            switch (s->x_resolution)
-            {
-            case T4_X_RESOLUTION_R8:
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
-                break;
-            case T4_X_RESOLUTION_R16:
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
-                break;
-            default:
-                bad = T30_ERR_NORESSUPPORT;
-                break;
-            }
-        }
-        break;
     case T4_Y_RESOLUTION_300:
         switch (s->x_resolution)
         {
@@ -1460,12 +1441,27 @@ static int build_dcs(t30_state_t *s)
             break;
         }
         break;
-    case T4_Y_RESOLUTION_FINE:
-        if (!(s->supported_resolutions & T30_SUPPORT_FINE_RESOLUTION))
+    case T4_Y_RESOLUTION_SUPERFINE:
+        if ((s->supported_resolutions & T30_SUPPORT_SUPERFINE_RESOLUTION))
         {
-            bad = T30_ERR_NORESSUPPORT;
+            switch (s->x_resolution)
+            {
+            case T4_X_RESOLUTION_R8:
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
+                break;
+            case T4_X_RESOLUTION_R16:
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
+                break;
+            default:
+                bad = T30_ERR_NORESSUPPORT;
+                break;
+            }
+            break;
         }
-        else
+        row_squashing_ratio <<= 1;
+        /* Fall through */
+    case T4_Y_RESOLUTION_FINE:
+        if ((s->supported_resolutions & T30_SUPPORT_FINE_RESOLUTION))
         {
             switch (s->x_resolution)
             {
@@ -1476,8 +1472,10 @@ static int build_dcs(t30_state_t *s)
                 bad = T30_ERR_NORESSUPPORT;
                 break;
             }
+            break;
         }
-        break;
+        row_squashing_ratio <<= 1;
+        /* Fall through */
     default:
     case T4_Y_RESOLUTION_STANDARD:
         switch (s->x_resolution)
@@ -1491,6 +1489,7 @@ static int build_dcs(t30_state_t *s)
         }
         break;
     }
+    t4_tx_set_row_squashing_ratio(&s->t4.tx, row_squashing_ratio);
     if (bad != T30_ERR_OK)
     {
         t30_set_status(s, bad);
@@ -1915,23 +1914,21 @@ static int set_min_scan_time_code(t30_state_t *s)
     switch (s->y_resolution)
     {
     case T4_Y_RESOLUTION_SUPERFINE:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
+        if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
         {
-            t30_set_status(s, T30_ERR_NORESSUPPORT);
-            span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support super-fine resolution.\n");
-            return -1;
+            s->min_scan_time_code = translate_min_scan_time[(test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MIN_SCAN_TIME_HALVES))  ?  2  :  1][min_bits_field];
+            break;
         }
-        s->min_scan_time_code = translate_min_scan_time[(test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MIN_SCAN_TIME_HALVES))  ?  2  :  1][min_bits_field];
-        break;
+        span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support super-fine resolution. Squashing image.\n");
+        /* Fall through */
     case T4_Y_RESOLUTION_FINE:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
+        if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
         {
-            t30_set_status(s, T30_ERR_NORESSUPPORT);
-            span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support fine resolution.\n");
-            return -1;
+            s->min_scan_time_code = translate_min_scan_time[1][min_bits_field];
+            break;
         }
-        s->min_scan_time_code = translate_min_scan_time[1][min_bits_field];
-        break;
+        span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support fine resolution. Squashing image.\n");
+        /* Fall through */
     default:
     case T4_Y_RESOLUTION_STANDARD:
         s->min_scan_time_code = translate_min_scan_time[0][min_bits_field];
@@ -2122,7 +2119,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             }
         }
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "Selected compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Choose compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
     switch (s->far_dis_dtc_frame[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))
     {
     case (DISBIT6 | DISBIT4 | DISBIT3):
@@ -2410,7 +2407,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     {
         s->line_encoding = T4_COMPRESSION_ITU_T4_1D;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "Selected compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Far end selected compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
     if (!test_ctrl_bit(dcs_frame, T30_DCS_BIT_RECEIVE_FAX_DOCUMENT))
         span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Remote is not requesting receive in DCS\n");
 
@@ -3389,12 +3386,18 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
             send_simple_frame(s, T30_RTP);
             break;
         case T30_COPY_QUALITY_BAD:
+#if 0
+            /* Some people want to keep even the bad pages */
+            if (s->keep_bad_pages)
+                rx_end_page(s);
+#endif
             if (s->phase_d_handler)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
             set_state(s, T30_STATE_III_Q_RTN);
             send_simple_frame(s, T30_RTN);
             break;
         }
+        
         break;
     case T30_DCN:
         t30_set_status(s, T30_ERR_RX_DCNFAX);
@@ -6306,9 +6309,13 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
     /* Default to the basic modems. */
     s->supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
     s->supported_compressions = T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION;
-    s->supported_resolutions = T30_SUPPORT_STANDARD_RESOLUTION | T30_SUPPORT_FINE_RESOLUTION | T30_SUPPORT_SUPERFINE_RESOLUTION
+    s->supported_resolutions = T30_SUPPORT_STANDARD_RESOLUTION
+                             | T30_SUPPORT_FINE_RESOLUTION
+                             | T30_SUPPORT_SUPERFINE_RESOLUTION
                              | T30_SUPPORT_R8_RESOLUTION;
-    s->supported_image_sizes = T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
+    s->supported_image_sizes = T30_SUPPORT_US_LETTER_LENGTH
+                             | T30_SUPPORT_US_LEGAL_LENGTH
+                             | T30_SUPPORT_UNLIMITED_LENGTH
                              | T30_SUPPORT_215MM_WIDTH;
     /* Set the output encoding to something safe. Most things get 1D and 2D
        encoding right. Quite a lot get other things wrong. */

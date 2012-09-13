@@ -342,6 +342,12 @@ SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_tx_state_t *s, int header_
     \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_tx_set_row_read_handler(t4_tx_state_t *s, t4_row_read_handler_t handler, void *user_data);
 
+/*! \brief Set the row squashing ratio, for adjusting row-to-row (y) resolution of bi-level
+           images for a T.4 transmit context.
+    \param s The T.4 transmit context.
+    \param row_squashing_ratio Vertical squashing ratio. */
+SPAN_DECLARE(void) t4_tx_set_row_squashing_ratio(t4_tx_state_t *s, int row_squashing_ratio);
+
 /*! \brief Get the row-to-row (y) resolution of the current page.
     \param s The T.4 context.
     \return The resolution, in pixels per metre. */

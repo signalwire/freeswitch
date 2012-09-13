@@ -534,7 +534,7 @@ fi
 
 if test "$ac_cv_header_tif_dir_h" = "yes" ; then
     AC_DEFINE([SPANDSP_SUPPORT_TIFF_FX], [1], [Support TIFF/FX in TIFF file handling])
-    SPANDSP_SUPPORT_TIFF_FX="#define SPANDSP_SUPPORT_TIFF_FX"
+    SPANDSP_SUPPORT_TIFF_FX="#define SPANDSP_SUPPORT_TIFF_FX 1"
 else
     SPANDSP_SUPPORT_TIFF_FX="#undef SPANDSP_SUPPORT_TIFF_FX"
 fi
