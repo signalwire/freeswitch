@@ -368,7 +368,7 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					switch_time_exp_t tm;
 					
 					if ( !time ) {
-						goto err;
+						return SWITCH_STATUS_SUCCESS;
 					}
 					
 					switch_time_exp_lt(&tm, time);
@@ -387,7 +387,7 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					switch_time_exp_t tm;
 
 					if ( !time ) {
-						goto err;
+						return SWITCH_STATUS_SUCCESS;
 					}
 					
 					switch_time_exp_lt(&tm, time);
@@ -407,7 +407,7 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					switch_time_exp_t tm;
 
 					if ( !time ) {
-						goto err;
+						return SWITCH_STATUS_SUCCESS;
 					}
 					
 					switch_time_exp_lt(&tm, time);
