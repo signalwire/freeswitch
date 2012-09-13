@@ -1,0 +1,403 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.3.4" />
+<title>tpl Perl API</title>
+<link rel="stylesheet" href="./tdh.css" type="text/css" />
+<link rel="stylesheet" href="./tdh-quirks.css" type="text/css" />
+</head>
+<body>
+<div id="header">
+<h1>tpl Perl API</h1>
+<span id="author">Troy D. Hanson</span><br />
+<span id="email"><tt>&lt;<a href="mailto:troydhanson@comcast.net">troydhanson@comcast.net</a>&gt;</tt></span><br />
+<span id="revision">version 1.1,</span>
+April 2007
+</div>
+<div id="preamble">
+<div class="sectionbody">
+<a style="float: right;" href="http://sourceforge.net/projects/tpl"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=157637&amp;type=16" width="150" height="40" alt="SourceForge.net" /></a>
+  <div id="topnav" style="font-size: 9pt; font-family: sans-serif;">
+  <a style="padding: 8px;" href="http://sourceforge.net/projects/tpl/">sf.net summary page</a> &gt;
+  <a style="padding: 8px;" href="index.html">tpl home</a> &gt;
+  tpl Perl API
+  <a style="padding: 8px;" href="userguide.pdf">[View PDF]</a>
+  </div>
+</div>
+</div>
+<h2 id="_perl_api">Perl API</h2>
+<div class="sectionbody">
+<div id="toc"></div>
+<script>
+window.onload=generate_TOC
+
+/* Author: Mihai Bazon, September 2002
+ * <a href="http://students.infoiasi.ro/~mishoo">http://students.infoiasi.ro/~mishoo</a>
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+
+function H_getText(el) {
+  var text = "";
+  for (var i = el.firstChild; i != null; i = i.nextSibling) {
+    if (i.nodeType == 3 /* Node.TEXT_NODE, IE doesn't speak constants */)
+      text += i.data;
+    else if (i.firstChild != null)
+      text += H_getText(i);
+  }
+  return text;
+}
+
+function TOC_EL(el, text, level) {
+  this.element = el;
+  this.text = text;
+  this.level = level;
+}
+
+function getHeadlines(el) {
+  var l = new Array;
+  var rx = /[hH]([2-3])/;
+  // internal recursive function that scans the DOM tree
+  var rec = function (el) {
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+        if (rx.exec(i.tagName))
+          l[l.length] = new TOC_EL(i, H_getText(i), parseInt(RegExp.$1));
+        rec(i);
+      }
+    }
+  }
+  rec(el);
+  return l;
+}
+
+function generate_TOC() {
+  var parent = document.getElementById("toc");
+  var toc_hdr = document.createElement("div");
+  var toc_hdr_txt = document.createTextNode("CONTENTS");
+  toc_hdr.appendChild(toc_hdr_txt);
+  /* toc_hdr.setAttribute("id","hdr"); */
+  toc_hdr.id = "hdr";
+  parent.appendChild(toc_hdr);
+  var hs = getHeadlines(document.getElementsByTagName("body")[0]);
+  for (var i = 0; i < hs.length; ++i) {
+    var hi = hs[i];
+    var d = document.createElement("div");
+    if (hi.element.id == "") hi.element.id = "gen" + i;
+    var a = document.createElement("a");
+    a.href = "#" + hi.element.id;
+    a.appendChild(document.createTextNode(hi.text));
+    d.appendChild(a);
+    d.className = "level" + hi.level;
+    parent.appendChild(d);
+    /*
+    if (hi.level == 3) {
+        var dvtop = document.createElement("div");
+        dvtop.className = "toplink";
+        dvtop.appendChild(document.createTextNode("^top^"));
+        dvtop.onclick=function(){scrollTo(0,0);};
+        hi.element.appendChild(dvtop);
+    }
+    */
+  }
+}
+</script>
+<div class="paragraph"><p>The Perl API for reading and writing tpl is nearly identical to the C API. This
+document will briefly explain the Perl API and provide examples. The chief
+motivation for having a Perl API is to communicate with C programs that use tpl.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Tip</div>
+</td>
+<td class="content">
+<div class="title">Start with the C API</div>This document assumes familiarity with the C API.  The concepts of using tpl
+are not explained here. For an introduction to tpl and its C API, see the
+<a href="userguide.html">User Guide</a>.</td>
+</tr></table>
+</div>
+<h3 id="_tpl_pm">Tpl.pm</h3><div style="clear:left"></div>
+<div class="paragraph"><p>The <tt>Tpl.pm</tt> file (in the <tt>lang/perl</tt>) directory contains the Perl module.  You
+can copy it to another directory if you wish. Your Perl program may need to
+include a <tt>use lib</tt> statement to find the module.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>#!/usr/bin/perl
+use lib "/some/directory";
+use Tpl;</tt></pre>
+</div></div>
+<h3 id="_tpl_map">tpl_map</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This function resembles the C version, except that it&#8217;s invoked via the <tt>Tpl</tt>
+module, and it takes references to Perl variables after the format string.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>my $i;
+my $tpl = Tpl-&gt;tpl_map("A(i)",\$i);</tt></pre>
+</div></div>
+<div class="paragraph"><p>The return value is a tpl object; all other API calls are object methods.
+Incidentally, there is no <tt>tpl_free()</tt> method corresponding to the C API.</p></div>
+<h4 id="_fixed_length_arrays">Fixed-length arrays</h4>
+<div class="paragraph"><p>Format strings such as <tt>i#</tt> denote a fixed-length array. In the Perl API,
+fixed-length arrays require two arguments: a list reference, and the fixed
+length. For example:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>my @x;
+my $tpl = Tpl-&gt;tpl_map("i#", \@x, 10);</tt></pre>
+</div></div>
+<div class="paragraph"><p>When fixed-length arrays are packed or unpacked, the specified number of
+elements will be copied from (or placed into) the designated list.</p></div>
+<h4 id="_structures">Structures</h4>
+<div class="paragraph"><p>Format strings containing <tt>S(&#8230;)</tt> are handled in the Perl API as if only the
+interior, parenthesized part was present. (It does not work like the C API). So
+simply ignore the <tt>S(&#8230;)</tt> and consider only its interior format characters when
+constructing the argument list:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>my ($str, $int);
+my $tpl = Tpl-&gt;tpl_map("S(si)", \$str, \$int);</tt></pre>
+</div></div>
+<div class="paragraph"><p>It really only makes sense to use <tt>S(&#8230;)</tt> in a format string in the Perl API if
+you are communicating with a C program that uses structures.</p></div>
+<h3 id="_tpl_pack">tpl_pack</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This is nearly identical to the C version. The only argument is the index
+number to pack.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>$tpl-&gt;tpl_pack(1);</tt></pre>
+</div></div>
+<h3 id="_tpl_dump">tpl_dump</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This method is a little different than the C version. Given no arguments, it
+returns the tpl image; given one argument it writes a file with that name.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>$tpl-&gt;tpl_dump("demo.tpl");   # writes demo.tpl</tt></pre>
+</div></div>
+<div class="paragraph"><p>Or,</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>my $img = $tpl-&gt;tpl_dump();</tt></pre>
+</div></div>
+<div class="paragraph"><p>The tpl image is a binary buffer. You can do whatever you want with it, such as
+write it to a socket or pipe (probably to C program listening on the other end),
+or save it somewhere and later re-load it using <tt>tpl_load()</tt>.</p></div>
+<h3 id="_tpl_load">tpl_load</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This method loads a tpl image from a file or from a Perl variable.  It takes
+one argument. If it&#8217;s not a reference, it&#8217;s assumed to be a filename to load.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>$tpl-&gt;tpl_load("demo.tpl");</tt></pre>
+</div></div>
+<div class="paragraph"><p>Otherwise, if the argument is a Perl reference, it&#8217;s construed as a variable
+containing the tpl image:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>$tpl-&gt;tpl_load(\$img);</tt></pre>
+</div></div>
+<div class="paragraph"><p>The method will <tt>die</tt> if the image is invalid or the file doesn&#8217;t exist. You
+can wrap it with <tt>eval</tt> to catch such errors:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>eval { $tpl-&gt;tpl_load(\$img); };
+print "failed to load\n" if $@;</tt></pre>
+</div></div>
+<h3 id="_tpl_unpack">tpl_unpack</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This is nearly identical to the C version. The only argument is the index
+number to unpack.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>$tpl-&gt;tpl_unpack(1);</tt></pre>
+</div></div>
+</div>
+<h2 id="_examples">Examples</h2>
+<div class="sectionbody">
+<h3 id="_integer_array">Integer array</h3><div style="clear:left"></div>
+<div class="listingblock">
+<div class="title">Packing A(i) to file</div>
+<div class="content">
+<pre><tt>#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Tpl;
+
+my $i;
+my $tpl = Tpl-&gt;tpl_map("A(i)",\$i);
+for($i=0; $i&lt;10; $i++) {
+    $tpl-&gt;tpl_pack(1);
+}
+$tpl-&gt;tpl_dump("demo.tpl");</tt></pre>
+</div></div>
+<div class="listingblock">
+<div class="title">Unpacking A(i) from file</div>
+<div class="content">
+<pre><tt>#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Tpl;
+
+my $j;
+my $tpl2 = Tpl-&gt;tpl_map("A(i)",\$j);
+$tpl2-&gt;tpl_load("demo.tpl");
+while($tpl2-&gt;tpl_unpack(1) &gt; 0) {
+    print "$j\n";
+}</tt></pre>
+</div></div>
+<h3 id="_message_passing">Message-passing</h3><div style="clear:left"></div>
+<div class="paragraph"><p>While the bulk of this example is socket handling, it demonstrates how you can
+use tpl as a message-passing format. In the real-world, you might have a C
+server and a Perl client, for example. In this example, we&#8217;ll code both a client
+and a server in Perl.</p></div>
+<div class="sidebarblock">
+<div class="sidebar-content">
+<div class="sidebar-title">A server that sums integers</div>
+<div class="paragraph"><p>Programming literature is rife with contrived examples so we will follow in that
+tradition. Our server will do no more than sum a list of integers. But in doing
+so it will demonstrate message passing adequately. Both its input (the integer
+array) and its output (an integer) are tpl images, passed over a TCP/IP socket.</p></div>
+</div></div>
+<h4 id="_server">Server</h4>
+<div class="paragraph"><p>The server waits for a connection from a client. When it gets one, it accepts
+the connection and immediately forks a child process to handle it. Then it goes
+back to waiting for another new connection.</p></div>
+<div class="paragraph"><p>The server child process handles the client by loading and unpacking the tpl
+image sent by the client (containing an array of integers). It calculates their
+sum and constructs a new tpl image containing the sum, which it sends back to
+the client.</p></div>
+<div class="listingblock">
+<div class="title">Server</div>
+<div class="content">
+<pre><tt>#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use IO::Socket::INET;
+use Tpl;
+
+$SIG{CHLD} = "IGNORE"; # don't create zombies
+
+our $port = 2000;
+
+sub handle_client {
+    my $client = shift;
+
+    undef $/;
+    my $request = &lt;$client&gt;; # get request (slurp)
+
+    # read input array, and calculate total
+    my ($i,$total);
+    my $tpl = Tpl-&gt;tpl_map("A(i)", \$i);
+    eval { $tpl-&gt;tpl_load(\$request); };
+    die "received invalid tpl" if $@;
+    $total += $i while $tpl-&gt;tpl_unpack(1) &gt; 0;
+
+    # formulate response and send
+    my $tpl2 = Tpl-&gt;tpl_map("i", \$total);
+    $tpl2-&gt;tpl_pack(0);
+    my $response = $tpl2-&gt;tpl_dump();
+    print $client $response;
+    close $client;
+}
+
+my $server = IO::Socket::INET-&gt;new(LocalPort =&gt; $port,
+                   Type =&gt; SOCK_STREAM,
+                   Reuse =&gt; 1,
+                   Listen =&gt; 10 )
+        or die "Can't listen on port $port: $!\n";
+
+while (1) {
+    my $client = $server-&gt;accept();
+    next unless $client;
+    # new connection
+    my $pid = fork;
+    die "can't fork: $!\n" unless defined $pid;
+    if ($pid &gt; 0) {
+        # parent
+        close $client;
+    } elsif ($pid == 0) {
+        # child
+        handle_client($client);
+        exit(0);
+    }
+}
+close ($server);</tt></pre>
+</div></div>
+<h4 id="_client">Client</h4>
+<div class="paragraph"><p>The client is a simpler program. It constructs the tpl image containing the
+integer array (taken from its command-line arguments), connects to the server
+and sends the tpl image to it, and then awaits the response tpl. The response
+containing the sum is loaded, unpacked and printed.</p></div>
+<div class="listingblock">
+<div class="title">Client</div>
+<div class="content">
+<pre><tt>#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use IO::Socket::INET;
+use Tpl;
+
+our $port = 2000;
+
+# construct tpl
+my $i;
+my $tpl = Tpl-&gt;tpl_map("A(i)",\$i);
+$tpl-&gt;tpl_pack(1) while ($i=shift @ARGV);
+my $request = $tpl-&gt;tpl_dump();
+
+# send to server, get response
+my $socket = IO::Socket::INET-&gt;new("localhost:$port") or die "can't connect";
+print $socket $request;
+shutdown($socket,1);        # done writing (half-close)
+undef $/;
+my $response = &lt;$socket&gt;;       # get reply (slurp)
+
+# decode response (or print error)
+my $total;
+my $tpl2 = Tpl-&gt;tpl_map("i", \$total);
+eval { $tpl2-&gt;tpl_load(\$response); };
+die "invalid response\n" if $@;
+$tpl2-&gt;tpl_unpack(0);
+print "total is $total\n";</tt></pre>
+</div></div>
+<h4 id="_running_thise_example">Running thise example</h4>
+<div class="paragraph"><p>If the client and server programs are in <tt>client.pl</tt> and <tt>server.pl</tt>, then
+you can run the example by starting the server in one window:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>./server.pl</tt></pre>
+</div></div>
+<div class="paragraph"><p>Then run the client in another window. E.g.,</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>./client.pl 1 2 3 4 5</tt></pre>
+</div></div>
+<div class="paragraph"><p>The client runs and then exits, printing:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>total is 15</tt></pre>
+</div></div>
+<div class="paragraph"><p>You can re-run the client with different arguments. When done, type <tt>Ctrl-C</tt> in
+the server window to terminate it.</p></div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Version 1.1<br />
+Last updated 2009-04-30 21:22:12 EDT
+</div>
+</div>
+</body>
+</html>

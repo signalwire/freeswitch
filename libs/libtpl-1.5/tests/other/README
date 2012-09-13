@@ -1,0 +1,2 @@
+Assorted other tests that are not part of the standard test suite.
+other1: a C++ program using "this" as a structure pointer

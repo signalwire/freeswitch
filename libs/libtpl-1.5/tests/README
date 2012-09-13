@@ -1,0 +1,125 @@
+Run "make" in this directory to build the tests and run them.
+
+test1: serialize int into memory, unserialize 
+test2: serialize int into file, unserialize 
+test3: serialize A(i) into file, unserialize 
+test4: serialize A(i) into memory, unserialize 
+test5: serialize A(A(i)) into memory, unserialize 
+test6: serialize string into memory, unserialize 
+test7: serialize A(s) into file, unserialize 
+test8: serialize cA(c) into file, unserialize 
+test9: unpack big-endian tpl data file of A(i) 
+test10: unpack little-endian tpl data file of A(i) 
+test11: try to load a corrupt tpl image w/invalid chars
+test12: try to load a corrupt tpl image w/runaway format string
+test13: try to load a corrupt tpl image w/internal A length -1
+test14: try to load a corrupt tpl image w/internal A length +1
+test15: try to load a corrupt tpl image w/invalid magic
+test16: try to load a corrupt tpl image w/invalid len 
+test17: try to load a good tpl but whose format mismatches map
+test18: try to map a tpl with malformed format- unbalanced parens: missing )
+test19: try to map a tpl with malformed format- unbalanced parens: extra )
+test20: try to map a tpl with malformed format- empty A() 
+test21: serialize A(ii) into file, unserialize
+test22: serialize A(u) into file, unserialize
+test23: serialize A(u) into file, read tpl from fd using TPL_FD 
+test24: read A(u) tpl file with extra trailing bytes, ok in TPL_FD mode 
+test25: same A(u) tpl file with extra trailing bytes, not ok in TPL_FILE mode 
+test26: test non-blocking tpl_gather using async read of 3 tpls across 2 pipes
+test27: test tpl_dump() of A(u) to file using TPL_FD, unserialize
+test28: parent writes A(u) tpl to child through pipe, both use TPL_FD mode
+test29: parent writes consecutive A(u) tpl then A(c) tpl to child through pipe
+test30: test pack B (binary buffer) and unpack
+test31: test pack B (binary buffer) of 0-length and unpack
+test32: test pack A(B) and unpack
+test33: test pack f (double) and unpack
+test34: test pack A(f) and unpack
+test35: pack A(is) 
+test36: unpack A(is) 
+test37: pack A(A(i)) [example from man page]
+test38: unpack A(A(i)) [example from man page]
+test39: try to load a tpl with an unsupported bit flag set
+test40: pack char array - userguide example
+test41: unpack char arrray - userguide example
+test42: test non-aligned pointers in backbone (under Solaris dbx, check -all)
+test43: test non-aligned pointers in backbone (under Solaris dbx, check -all)
+test44: test non-aligned pointers in backbone (under Solaris dbx, check -all)
+test46: test correct-size of backbone "double" datum (Solaris dbx, check -all)
+test47: store A(i) to file - userguide example
+test48: read A(i) from file - userguide example
+test49: write A(s) - userguide example
+test50: read A(s) - userguide example
+test51: test tpl_mem_gather (_0: 1 tpl; _1: 2 tpls; _2/_3/_4: 1 tpl in 3 parts) 
+test52: A(A(i)): pack an int; pack parent; pack int; don't pack parent; ser_osz
+test53: A(A(i)): pack an int; pack parent; pack parent; 0-length 2nd parent el.
+test54: test callback negative return value for tpl_mem_gather
+test55: test callback negative return value for tpl_fd_gather
+test56: test static string using c# format pack/unpack in mem
+test57: test pack static string using c# to file
+test58: test unpack static string using c# from file
+test59: test alignment using cc#cc# pack/unpack in mem
+test60: test pack-then-load (implicit intervening free, using tpl_free_keep_map)
+test61: test load-then-load (implicit intervening free, using tpl_free_keep_map)
+test62: test load-then-pack (implicit intervening free, using tpl_free_keep_map)
+test63: test pack-then-unpack (implicit dump/load) then pack-then-unpack again  
+test64: pack level 0 types, change and re-pack level 0 types, test implicit free
+test65: pack int[] using format character #
+test66: pack two separate int[] using format character #
+test67: test expected failure if format strings agree but array lengths mismatch
+test68: test octothorpe support by packing,unpacking two fixed lengths arrays 
+test69: test octothorpic array support A(i#i#)
+test70: test S(...) structure pack and unpack
+test71: test cS(...) pack/unpack when preceded by non-structure byte
+test72: test wildcard structure unpack 
+test73: test wildcard structure unpack 
+test74: test wildcard structure unpack 
+test75: test sc# (string and byte array)
+test76: test S(sc#) (structure of last)
+test77: test S(sc#) (structure of last) with wildcard unpack
+test78: pack A(i)c 
+test79: unpack A(i)c 
+test80: pack and unpack A(S(ci#))
+test81: pack and unpack A(S(ci#))
+test82: pack cA(i#)S(cf#)A(ci#)
+test83: unpack cA(i#)S(cf#)A(ci#)
+test84: repeat test83 with both big and little endian input files
+test85: tpl_peek at file
+test86: tpl_peek at in-memory tpl
+test87: test tpl_gather(TPL_GATHER_FD_BLOCKING)
+test88: test packing S(ic#f)
+test89: test unpacking S(ic#f) as S(*)
+test90: pack and unpack I
+test91: pack and unpack U
+test92: pack and unpack A(cIcU)
+test93: pack and unpack NULL string
+test94: pack and unpack A(s) with some null
+test95: pack and unpack null string, empty string, non-empty string
+test96: pack and unpack A(null string, empty string, non-empty string)
+test97: pack and unapck 16-bit int/uint (j,v)
+test98: pack and unapck 16-bit int/uint A(j,v)
+test99: data peek at c in complex format
+test100: data peek at i inside S(ic)
+test101: data peek at c inside S(ic) [expected failure test]
+test102: data peek at c in simple format c
+test103: data peek at iscsi in S(iscsiu)
+test104: data peek at iscsi in S(iscsiu) with NULL string pointer
+test105: tpl_jot then unpack by normal then by tpl_peek
+test106: test IS(Iiuijc#)#iiii 
+test107: test S(ic#)#
+test108: test IS(Iiuijc#)#iiii 
+test109: test S(cijc)# where next structure elt alignment based on i
+test110: test ssssiiiiiiiiiiiiiiiiiiiiiiiiiiiiifffiiii
+test111: test S(icfv#)#
+test112: test S(ic#fv#)#
+test113: test icS(ic#fv#)#ci
+test114: test multi-dimension i##
+test115: test S(s)#, S(si)#, S(c#si)#
+test116: test cs#i
+test117: test cA(s#)i
+test118: test tpl_peek(TPL_FXLENS) with cA(i#)S(cf#)A(ci#)
+test119: test tpl_dump(tn,TPL_GETSIZE,&sz);
+test120: test TPL_PREALLOCD and TPL_EXCESS_OK flags
+test121: test s##
+test122: test S(ic#f$(ci))
+test123: setjmp/longjmp based fatal error handler
+test124: test A(S(c#)s) as per bug report from Eric Rose

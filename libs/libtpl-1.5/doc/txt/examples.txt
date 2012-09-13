@@ -1,0 +1,297 @@
+tpl examples
+============
+Troy D. Hanson <troydhanson@comcast.net>>
+v1.0, October 2006
+
+include::sflogo.txt[]
+include::topnav.txt[]
+
+Examples
+--------
+include::toc.txt[]
+
+This document is a set of representative examples demonstrating how to use
+tpl. If you're looking for a more explanatory document, please read the
+link:userguide.html[User Guide].
+
+An integer array
+~~~~~~~~~~~~~~~~
+
+.Storing an array of integers to file
+-------------------------------------------------------------------------------
+#include "tpl.h"
+
+int main() {
+    tpl_node *tn;
+    int i;
+
+    tn = tpl_map( "A(i)", &i );
+    for( i=0; i<10; i++ ) {
+        tpl_pack( tn, 1 );  
+    }
+    tpl_dump( tn, TPL_FILE, "demo.tpl" );
+    tpl_free( tn );
+}
+-------------------------------------------------------------------------------
+
+A program that unpacks this tpl data file is shown below.
+
+.Re-reading an array of integers from file
+-------------------------------------------------------------------------------
+#include <stdio.h>
+#include "tpl.h"
+
+int main() {
+    tpl_node *tn;
+    int i;
+
+    tn = tpl_map( "A(i)", &i );
+    tpl_load( tn, TPL_FILE, "demo.tpl" );
+    while (tpl_unpack( tn, 1 ) > 0) {
+        printf("%d ", i);
+    }
+    tpl_free( tn );
+}
+-------------------------------------------------------------------------------
+
+When run, this program prints:
+
+    0 1 2 3 4 5 6 7 8 9 
+
+
+A nested array
+~~~~~~~~~~~~~~
+
+.Packing nested arrays
+--------------------------------------------------------------------------------
+#include "tpl.h"
+
+int main() {
+    char c;
+    tpl_node *tn;
+
+    tn = tpl_map("A(A(c))", &c);
+
+    for(c='a'; c<'c'; c++) tpl_pack(tn,2);
+    tpl_pack(tn, 1);
+
+    for(c='1'; c<'4'; c++) tpl_pack(tn,2);
+    tpl_pack(tn, 1);
+
+    tpl_dump(tn, TPL_FILE, "test40.tpl");
+    tpl_free(tn);
+}
+--------------------------------------------------------------------------------
+
+This creates a nested array in which the parent has two elements: the first
+element is the two-element nested array 'a', 'b'; and the second element is
+the three-element nested array '1', '2', '3'. 
+
+.Unpacking nested arrays
+--------------------------------------------------------------------------------
+#include "tpl.h"
+#include <stdio.h>
+
+int main() {
+    char c;
+    tpl_node *tn;
+
+    tn = tpl_map("A(A(c))", &c);
+
+    tpl_load(tn, TPL_FILE, "test40.tpl");
+    while (tpl_unpack(tn,1) > 0) {
+        while (tpl_unpack(tn,2) > 0) printf("%c ",c);
+        printf("\n");
+    }
+    tpl_free(tn);
+}
+--------------------------------------------------------------------------------
+
+
+When run, this program prints:
+
+    a b 
+    1 2 3 
+
+A string array
+~~~~~~~~~~~~~~
+
+.Packing a string array
+-------------------------------------------------------------------------------
+    #include "tpl.h"
+
+    int main() {
+        tpl_node *tn;
+        char *s;
+
+        tn = tpl_map( "A(s)", &s );
+
+        s = "bob";
+        tpl_pack(tn, 1);
+
+        s = "betty";
+        tpl_pack(tn, 1);
+
+        tpl_dump(tn, TPL_FILE, "strings.tpl");
+        tpl_free(tn);
+    }
+-------------------------------------------------------------------------------
+
+.Unpacking a string array
+-------------------------------------------------------------------------------
+    #include <stdio.h>
+    #include "tpl.h"
+
+    int main() {
+        tpl_node *tn;
+        char *s;
+
+        tn = tpl_map( "A(s)", &s );
+        tpl_load( tn, TPL_FILE, "strings.tpl" );
+
+        while (tpl_unpack( tn, 1 ) > 0) {
+            printf("%s\n", s);
+            free(s);  /* important! */
+        }
+
+        tpl_free(tn);
+    }
+-------------------------------------------------------------------------------
+
+When run, this program prints:
+
+    bob
+    betty
+
+Integer/string pairs
+~~~~~~~~~~~~~~~~~~~~
+
+.Packing integer/string pairs
+-------------------------------------------------------------------------------
+#include "tpl.h"
+
+int main(int argc, char *argv[]) {
+    tpl_node *tn;
+    int id;
+    char *name, *names[] = { "joe", "bob", "mary" };
+
+    tn = tpl_map("A(is)", &id, &name);
+
+    for(id=0,name=names[id]; id < 3; name=names[++id])
+        tpl_pack(tn,1);
+
+    tpl_dump(tn, TPL_FILE, "/tmp/test35.tpl");
+    tpl_free(tn);
+}
+-------------------------------------------------------------------------------
+
+.Unpacking integer/string pairs
+-------------------------------------------------------------------------------
+#include <stdio.h>
+#include "tpl.h"
+
+int main(int argc, char *argv[]) {
+    tpl_node *tn;
+    int id;
+    char *name;
+
+    tn = tpl_map("A(is)", &id, &name);
+    tpl_load(tn, TPL_FILE, "/tmp/test35.tpl");
+
+    while ( tpl_unpack(tn,1) > 0 )
+        printf("id %d, user %s\n", id, name);
+
+    tpl_free(tn);
+}
+-------------------------------------------------------------------------------
+
+When run, this program prints:
+
+    id 0, user joe
+    id 1, user bob
+    id 2, user mary
+
+A binary buffer
+~~~~~~~~~~~~~~~
+
+.Packing a binary buffer
+-------------------------------------------------------------------------------
+    #include "tpl.h"
+    #include <sys/time.h>
+
+    int main() {
+        tpl_node *tn;
+        tpl_bin tb;
+        struct timeval tv;       /* we'll pack this structure as raw binary */
+        gettimeofday(&tv,NULL);  /* populate the structure with some data */
+
+        tn = tpl_map( "B", &tb );
+        tb.sz = sizeof(struct timeval);
+        tb.addr = &tv;
+        tpl_pack( tn, 0 );
+
+        tpl_dump(tn, TPL_FILE, "bin.tpl");
+        tpl_free(tn);
+    }
+-------------------------------------------------------------------------------
+
+
+.Unpacking a binary buffer
+-------------------------------------------------------------------------------
+    #include "tpl.h"
+
+    int main() {
+        tpl_node *tn;
+        tpl_bin tb;
+
+        tn = tpl_map( "B", &tb );
+        tpl_load( tn, TPL_FILE, "bin.tpl" );
+
+        tpl_unpack( tn, 0 );
+        printf("binary buffer of length %d at address %p\n", tb.sz, tb.addr);
+        free(tb.addr);  /* important! */
+
+        tpl_free(tn);
+    }
+-------------------------------------------------------------------------------
+
+
+Simple pipe IPC 
+~~~~~~~~~~~~~~~
+
+This is a simple example of inter-process communication (IPC) over a pipe.
+
+.IPC over a pipe
+-------------------------------------------------------------------------------
+int main() {
+    tpl_node *tn;
+    unsigned i, sum=0;
+    int fd[2], pid;
+
+    pipe(fd);
+    if ( (pid = fork()) == 0) {   /* child */
+
+        tn = tpl_map("A(u)",&i);
+        tpl_load(tn, TPL_FD, fd[0]);
+        while (tpl_unpack(tn,1) > 0) sum += i;
+        tpl_free(tn);
+        printf("sum is %d\n", sum);
+
+    } else if (pid > 0) {         /* parent */
+
+        tn = tpl_map("A(u)",&i);
+        for(i=0;i<10000;i++) tpl_pack(tn,1);
+        tpl_dump(tn,TPL_FD, fd[1] );
+        tpl_free(tn);
+
+        waitpid(pid,NULL,0);
+    } 
+}
+-------------------------------------------------------------------------------
+
+The child unpacks the integers in the message, and sums them, printing:
+
+    49995000
+
+The example above (with `#include` headers omitted here) is included in the
+file `tests/test28.c`.

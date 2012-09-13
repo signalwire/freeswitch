@@ -1,0 +1,5 @@
+ifdef::backend-xhtml11[]
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+<a style="float: right;" href="http://sourceforge.net/projects/tpl"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=157637&amp;type=16" width="150" height="40" alt="SourceForge.net" /></a>
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+endif::backend-xhtml11[]

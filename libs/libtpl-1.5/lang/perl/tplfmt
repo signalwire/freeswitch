@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+
+# tplfmt 
+# by Troy Hanson  Feb 2006
+# print the format string of a tpl image file 
+
+use strict;
+use warnings;
+
+sub peek_fmt {
+    my $buf = shift;
+    die "invalid tpl file" unless ($$buf =~ /^tpl/);
+    return (unpack("Z*", substr($$buf,8)));
+}
+
+die "usage: $0 <file> [<file> ...]" unless (@ARGV > 0);
+
+undef $/; # slurp
+for (@ARGV) {
+    open TPL, "<$_" or die "can't open $_: $!";
+    my $tpl = <TPL>;
+    print "$_: ", peek_fmt(\$tpl), "\n";
+    close TPL;
+}

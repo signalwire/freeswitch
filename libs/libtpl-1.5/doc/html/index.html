@@ -1,0 +1,162 @@
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XTHML 1.0 Strict//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+    <title>tpl home page</title>
+  </head>
+  <body>
+
+  <div id="banner">
+  <img src="img/banner.png" alt="easy data storage and retrieval in C" />
+  </div> <!-- banner -->
+
+  <div id="topnav">
+  <a href="http://sourceforge.net/projects/tpl/">sf.net summary page</a> &gt;
+  tpl home
+  </div> <!-- topnav -->
+
+  <hr />
+  <div id="mid">
+
+      <div id="nav">
+
+
+        <h2>documentation</h2>
+        <div><a href="userguide.html">user guide</a> (<a href="userguide.html">html</a>, <a href="userguide.pdf">pdf</a>)</div>
+
+        <h2>download</h2>
+        <h3>Linux, Mac OSX, Solaris, BSD</h3>
+        <div><a href="http://downloads.sourceforge.net/tpl/libtpl-1.5.tar.bz2">libtpl-1.5.tar.bz2</a></div>
+        <h3>Visual Studio 2008 Solution</h3>
+        <div><a href="http://downloads.sourceforge.net/tpl/tpl-1.5-vs2008.zip">tpl-1.5-vs2008.zip</a></div>
+
+        <h2>last release</h2>
+        <div>February, 2010</div>
+        <div><a href="ChangeLog.html">ChangeLog</a></div>
+
+        <h2>license</h2>
+        <div><a href="license.html">BSD revised</a></div>
+
+        <h2>news feed</h2>
+        <div><a href="http://troydhanson.wordpress.com/">updates blog</a> (<a href="http://troydhanson.wordpress.com/feed/">rss</a>)<img alt=" rss" src="img/rss.png"/></div>
+
+        <h2>platforms</h2>
+        <div>linux</div>
+        <div>os x</div>
+        <div>windows</div>
+        <div>solaris</div>
+        <div>openbsd</div>
+
+        <h2>other projects</h2>
+        <div><a href="http://uthash.sourceforge.net/">uthash</a></div>
+        <div><a href="http://tkhanson.net/misc/">scripts & snippets</a></div>
+
+        <h2>developer</h2>
+        <div>Troy D. Hanson</div>
+        <div>tdh at tkhanson.net</div>
+
+      </div> <!-- nav -->
+
+      <div id="main">
+
+<div>
+<div class="lead">Efficient serialization in C</div>
+You can use tpl to store and reload your C data quickly and easily.
+Tpl works with files, memory buffers and file descriptors so it's 
+suitable for use as a file format, IPC message format or any scenario
+where you need to store and retrieve your data.
+</div>
+
+<div>
+<div class="lead">Express your data</div>
+Just express the type of data you are working with as a tpl format string. For
+example, if you have a list of numeric ids and corresponding usernames, your
+format string is <em>A(is)</em>.  Map your C variables to the format string and
+then pack or unpack data.  The format string lets you focus on your data,
+rather than the storage format.
+</div>
+
+<div class="listing">
+<table summary="example of storing and reloading an integer array">
+<tr>
+<th>
+Storing ids and usernames
+</th>
+<th>
+Reloading ids and usernames
+</th>
+</tr>
+<tr>
+<td>
+<div class="code">
+<pre>
+#include "tpl.h"
+
+int main(int argc, char *argv[]) {
+    tpl_node *tn;
+    int id=0;
+    char *name, *names[] = { "joe", "bob", "cary" };
+
+    tn = tpl_map("A(is)", &amp;id, &amp;name);
+
+    for(name=names[0]; id &lt; 3; name=names[++id]) {
+        tpl_pack(tn,1);
+    }
+
+    tpl_dump(tn, TPL_FILE, "users.tpl");
+    tpl_free(tn);
+}
+</pre>
+</div> <!-- code -->
+</td>
+<td>
+<div class="code">
+<pre>
+#include "tpl.h"
+
+int main(int argc, char *argv[]) {
+    tpl_node *tn;
+    int id;
+    char *name;
+
+    tn = tpl_map("A(is)", &amp;id, &amp;name);
+    tpl_load(tn, TPL_FILE, "users.tpl");
+
+    while ( tpl_unpack(tn,1) &gt; 0 ) {
+        printf("id %d, user %s\n", id, name);
+        free(name);
+    }
+    tpl_free(tn);
+}
+</pre>
+</div> <!-- code -->
+</td>
+</tr>
+</table>
+</div> <!-- listing -->
+
+<div>
+<div class="lead">No library dependencies</div>
+Tpl does not make your software dependent on any libraries. You can compile its
+source code (one file) right into your program.
+</div>
+
+<div class="lead">For more information</div>
+For a more thorough explanation and more examples, please read the 
+<a href="userguide.html">User Guide.</a>
+
+</div> <!-- main -->
+</div> <!-- mid -->
+
+   <hr />
+  <div id="footer">
+    <a href="http://sourceforge.net/projects/tpl"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=157637&amp;type=13" width="120" height="30" alt="SourceForge.net." /></a>
+    <p>This project is hosted on SourceForge.net</p>
+    <p>$Id: index.html 192 2009-04-24 10:35:30Z thanson $</p>
+  </div> <!-- footer -->
+
+  </body>
+
+</html>

@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Config;
+
+#print "$_: ", ($Config{$_} or ""), "\n" for keys %Config;
+#exit;
+
+my @types = qw(char short int long longlong double);
+for (@types) {
+    my $bytes = $Config{"${_}size"};
+    my $bits = $bytes * 8;
+    printf "size of %-10s: %5d bytes (%d bits)\n", $_, $bytes, $bits;;
+}
+
+print qq/
+ These sizes reflect the platform and compiler options with
+ which Perl was built on this system. The sizes may change
+ if different compiler options are used.
+/;
+

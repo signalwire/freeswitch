@@ -1,0 +1,38 @@
+Compiling libtpl.a and libtpl.so
+--------------------------------
+
+********************************************************************************
+Normally in the top-level directory you simply run:
+
+    ./configure
+    make
+    make install
+
+The rest of the document is not needed if you use this method.
+********************************************************************************
+
+
+Manual compilation of static and shared library on a GNU Linux system:
+----------------------------------------------------------------------
+
+First cd into the "src" directory.
+
+Static library
+~~~~~~~~~~~~~~
+You can build the static library `libtpl.a` using these commands:
+
+    cc -c tpl.c
+    ar rc libtpl.a tpl.o
+    ranlib libtpl.a
+
+Dynamic library
+~~~~~~~~~~~~~~
+You can build the dynamic library `libtpl.so` using these commands:
+
+    cc -fpic -c tpl.c
+    cc -shared -o libtpl.so tpl.o
+
+Keep in mind that you need to set the `LD_LIBRARY_PATH` environment variable
+to include the directory where `libtpl.so` is installed in order for your
+program to run. Alternatively you can put `libtpl.so` in a standard place like
+`/usr/lib` and regenerate `ld.so.cache` using `ldconfig`.

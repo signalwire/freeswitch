@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $pwd = `pwd`;
+chomp $pwd;
+
+my $tmp1 = "$pwd/$0_1.out";
+
+my @i=(1,2,3,4);
+my @j=(-1,-2,-3, -4);
+my $tpl = Tpl->tpl_map("i#i#",\@i, 3, \@j, 4);
+$tpl->tpl_pack(0);
+$tpl->tpl_dump($tmp1);
+
+my $fmt = Tpl->tpl_peek($tmp1);
+print "$fmt\n";

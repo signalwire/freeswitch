@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+# this test only works on 64-bit Perl
+
+my ($i,$j) = (-4294967296,4294967296); # 2^32 (can't fit in a 32-bit value)
+my $tpl = Tpl->tpl_map("IU",\$i,\$j);
+$tpl->tpl_pack(0); 
+my $img = $tpl->tpl_dump();
+
+my ($x,$y);
+my $tpl2 = Tpl->tpl_map("IU",\$x,\$y);
+$tpl2->tpl_load(\$img);
+$tpl2->tpl_unpack(0);
+print "$x $y\n";
+

@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my @tests;
+for (glob "test*[0-9].exe") {
+    push @tests, "$_" if -e substr($_, 0, - 4).".ans";
+}
+
+my $num_failed=0;
+
+for my $test (@tests) {
+    `./$test > $test.out`;
+    my $ansfile = substr($test, 0, - 4).".ans";
+    `diff $test.out $ansfile`;
+    print "$test failed\n" if $?;
+    $num_failed++ if $?;
+}
+
+print scalar @tests . " tests conducted, $num_failed failed.\n";

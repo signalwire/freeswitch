@@ -103,6 +103,7 @@ $(RECURSIVE_TARGETS): freeswitch
 
 CORE_CFLAGS  = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`
 CORE_CFLAGS += `$(switch_builddir)/libs/apr-util/apu-1-config --includes`
+CORE_CFLAGS += -I$(switch_srcdir)/libs/libtpl-1.5/src
 CORE_CFLAGS += -I$(switch_srcdir)/libs/stfu
 CORE_CFLAGS += -I$(switch_builddir)/libs/sqlite
 CORE_CFLAGS += -I$(switch_srcdir)/libs/pcre
@@ -204,6 +205,7 @@ library_include_HEADERS = \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
+	libs/libtpl-1.5/src/tpl.h \
 	src/include/switch_limit.h \
 	src/include/switch_odbc.h
 
@@ -266,6 +268,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_profile.c \
 	src/switch_json.c \
 	src/switch_curl.c \
+	libs/libtpl-1.5/src/tpl.c \
 	libs/stfu/stfu.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \

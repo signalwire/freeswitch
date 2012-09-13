@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $pwd = `pwd`;
+chomp $pwd;
+
+my $tmp1 = "$pwd/$0_1.out";
+my $tmp2 = "$pwd/$0_2.out";
+my $tmp3 = "$pwd/$0_3.out";
+
+my $i;
+my $tpl = Tpl->tpl_map("A(c)",\$i);
+for($i=0; $i<10; $i++) { $tpl->tpl_pack(1); }
+$tpl->tpl_dump($tmp1);
+
+
+`../tplxml $tmp1 > $tmp2`;        # convert tpl to xml
+`../tplxml $tmp2 > $tmp3`;        # convert xml back to tpl
+`diff $tmp1 $tmp3`;
+print "tpl files ", ($? ? "differ" : "identical"), "\n";
+

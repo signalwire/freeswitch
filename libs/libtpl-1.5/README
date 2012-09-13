@@ -1,0 +1,56 @@
+tpl: fast, easy serialization in C
+==============================================================================
+
+Documentation for tpl is available in the doc/ directory or at:
+
+    http://tpl.sourceforge.net
+
+You can build tpl as a library, like so:
+
+    ./configure
+    make
+    make install
+
+This installs libtpl.so and libtpl.a into a standard system library directory.
+You can customize the install directory using configure's "--prefix" option:
+
+    ./configure --prefix=/some/directory
+
+For other options accepted by configure, run "./configure --help".
+
+NON-LIBRARY OPTION
+------------------
+Alternatively, if you don't want to muck around with libraries, you can simply        
+copy these two files into your own C project and build them with your program:
+
+    src/tpl.h
+    src/tpl.c
+
+WINDOWS
+-------
+You can build tpl as a DLL under Visual Studio 2008. Or you can use MinGW or
+Cygwin.
+
+SELF-TEST SUITE
+---------------
+The automated self-test can be run by doing:
+
+    cd tests
+    make
+
+LICENSE
+-------
+The BSD license applies to this software. The text is in the LICENSE file.
+
+CREDITS
+-------
+Many people have contributed to tpl, both bits of code and ideas. Rather than
+listing them all here, at risk of omitting anyone- I just wish to say thank
+you. Some particular features are noted with contributors' names in the
+ChangeLog. 
+
+Feel free to send me questions, comments or bug reports.
+
+Troy D. Hanson, February 5, 2010 
+thanson@users.sourceforge.net
+
