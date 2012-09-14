@@ -6419,19 +6419,22 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		break;
 	case nua_callstate_completing:
 		{
-			const char *wait_for_ack = switch_channel_get_variable(channel, "sip_wait_for_aleg_ack");
 			int send_ack = 1;
 
-			if (switch_true(wait_for_ack)) {
-				switch_core_session_t *other_session;
-
-				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-					if (switch_core_session_compare(session, other_session)) {
-						private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
-						sofia_set_flag(other_tech_pvt, TFLAG_PASS_ACK);
+			if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+				const char *wait_for_ack = switch_channel_get_variable(channel, "sip_wait_for_aleg_ack");
+				
+				if (switch_true(wait_for_ack)) {
+					switch_core_session_t *other_session;
+					
+					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+						if (switch_core_session_compare(session, other_session)) {
+							private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+							sofia_set_flag(other_tech_pvt, TFLAG_PASS_ACK);
 						send_ack = 0;
+						}
+						switch_core_session_rwunlock(other_session);
 					}
-					switch_core_session_rwunlock(other_session);
 				}
 			}
 
