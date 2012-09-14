@@ -27,11 +27,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <float.h>
 #include <limits.h>
 #include <ctype.h>
-#include "switch_json.h"
 #include "switch.h"
+#include "switch_json.h"
+#include <float.h>
 
 static const char *ep;
 
@@ -275,8 +275,8 @@ SWITCH_DECLARE(cJSON *)cJSON_Parse(const char *value)
 }
 
 /* Render a cJSON item/entity/structure to text. */
-char *cJSON_Print(cJSON *item)				{return print_value(item,0,1);}
-char *cJSON_PrintUnformatted(cJSON *item)	{return print_value(item,0,0);}
+SWITCH_DECLARE(char *)cJSON_Print(cJSON *item)				{return print_value(item,0,1);}
+SWITCH_DECLARE(char *)cJSON_PrintUnformatted(cJSON *item)	{return print_value(item,0,0);}
 
 /* Parser core - when encountering text, process appropriately. */
 static const char *parse_value(cJSON *item,const char *value)

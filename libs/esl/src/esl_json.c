@@ -275,8 +275,8 @@ ESL_DECLARE(cJSON *)cJSON_Parse(const char *value)
 }
 
 /* Render a cJSON item/entity/structure to text. */
-char *cJSON_Print(cJSON *item)				{return print_value(item,0,1);}
-char *cJSON_PrintUnformatted(cJSON *item)	{return print_value(item,0,0);}
+ESL_DECLARE(char *) cJSON_Print(cJSON *item)				{return print_value(item,0,1);}
+ESL_DECLARE(char *) cJSON_PrintUnformatted(cJSON *item)	{return print_value(item,0,0);}
 
 /* Parser core - when encountering text, process appropriately. */
 static const char *parse_value(cJSON *item,const char *value)
