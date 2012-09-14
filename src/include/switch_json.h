@@ -79,17 +79,17 @@ SWITCH_DECLARE(cJSON *)cJSON_GetArrayItem(cJSON *array,int item);
 SWITCH_DECLARE(cJSON *)cJSON_GetObjectItem(cJSON *object,const char *string);
 
 /* For analysing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make sense of it. Defined when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds. */
-SWITCH_DECLARE(const char *)cJSON_GetErrorPtr();
+SWITCH_DECLARE(const char *)cJSON_GetErrorPtr(void);
 	
 /* These calls create a cJSON item of the appropriate type. */
-SWITCH_DECLARE(cJSON *)cJSON_CreateNull();
-SWITCH_DECLARE(cJSON *)cJSON_CreateTrue();
-SWITCH_DECLARE(cJSON *)cJSON_CreateFalse();
+SWITCH_DECLARE(cJSON *)cJSON_CreateNull(void);
+SWITCH_DECLARE(cJSON *)cJSON_CreateTrue(void);
+SWITCH_DECLARE(cJSON *)cJSON_CreateFalse(void);
 SWITCH_DECLARE(cJSON *)cJSON_CreateBool(int b);
 SWITCH_DECLARE(cJSON *)cJSON_CreateNumber(double num);
 SWITCH_DECLARE(cJSON *)cJSON_CreateString(const char *string);
-SWITCH_DECLARE(cJSON *)cJSON_CreateArray();
-SWITCH_DECLARE(cJSON *)cJSON_CreateObject();
+SWITCH_DECLARE(cJSON *)cJSON_CreateArray(void);
+SWITCH_DECLARE(cJSON *)cJSON_CreateObject(void);
 
 /* These utilities create an Array of count items. */
 SWITCH_DECLARE(cJSON *)cJSON_CreateIntArray(int *numbers,int count);
