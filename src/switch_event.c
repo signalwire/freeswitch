@@ -1022,6 +1022,7 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 		}
 
 	} else {
+		switch_safe_free(header->value);
 		header->value = data;
 	}
 
