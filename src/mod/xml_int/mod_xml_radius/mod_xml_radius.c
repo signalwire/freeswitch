@@ -368,7 +368,7 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					switch_time_exp_t tm;
 					
 					if ( !time ) {
-						return SWITCH_STATUS_SUCCESS;
+						goto end_loop;
 					}
 					
 					switch_time_exp_lt(&tm, time);
@@ -381,13 +381,16 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option to handle\n");
 						goto err;
 					} 
+					if ( GLOBAL_DEBUG ) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: value: %s\n", (char *) av_value);
+					}
 				} else if ( strncmp( var, "h323-connect-time", 17) == 0 ) {
 					switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
 					switch_time_t time = profile->times->answered;
 					switch_time_exp_t tm;
 
 					if ( !time ) {
-						return SWITCH_STATUS_SUCCESS;
+						goto end_loop;
 					}
 					
 					switch_time_exp_lt(&tm, time);
@@ -401,13 +404,20 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option to handle\n");
 						goto err;
 					} 
+					if ( GLOBAL_DEBUG ) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: value: %s\n", (char *) av_value);
+					}
 				} else if ( strncmp( var, "h323-disconnect-time", 20) == 0 ) {
 					switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
 					switch_time_t time = profile->times->hungup;
 					switch_time_exp_t tm;
 
 					if ( !time ) {
-						return SWITCH_STATUS_SUCCESS;
+						if ( variable_secondary != NULL && strncmp(variable_secondary, "now", 3) == 0 ) {
+							time = switch_time_now();
+						} else {
+							goto end_loop;
+						}
 					}
 					
 					switch_time_exp_lt(&tm, time);
@@ -421,6 +431,9 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option to handle\n");
 						goto err;
 					} 
+					if ( GLOBAL_DEBUG ) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: value: %s\n", (char *) av_value);
+					}
 				} else if ( strncmp( var, "h323-disconnect-cause", 21) == 0 ) {
 					switch_call_cause_t cause = switch_channel_get_cause(channel);
 					av_value = switch_mprintf("h323-disconnect-cause=%x", cause);
@@ -500,6 +513,8 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: all params must have a name attribute\n");
 			goto err;
 		}
+
+	end_loop:
 		if ( av_value != NULL ) {
 			free(av_value);
 			av_value  = NULL;
