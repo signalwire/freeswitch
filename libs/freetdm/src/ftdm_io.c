@@ -4523,7 +4523,7 @@ static struct {
 	ftdm_io_interface_t *pika_interface;
 } interfaces;
 
-static void print_channels_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, uint32_t inchan_id, int32_t flagval, int not, int *count)
+static void print_channels_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, uint32_t inchan_id, unsigned long long flagval, int not, int *count)
 {
 	ftdm_hash_iterator_t *i = NULL;
 	ftdm_span_t *span;
@@ -4615,7 +4615,7 @@ end:
 	ftdm_mutex_unlock(globals.mutex);
 }
 
-static void print_spans_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, int32_t flagval, int not, int *count)
+static void print_spans_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, unsigned long long flagval, int not, int *count)
 {
 	ftdm_hash_iterator_t *i = NULL;
 	ftdm_span_t *span;
@@ -5750,12 +5750,14 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_signaling(ftdm_span_t *span, const
 
 static void *ftdm_span_service_events(ftdm_thread_t *me, void *obj)
 {
-	int i;
+	uint32_t i;
 	unsigned waitms;
 	ftdm_event_t *event;
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_span_t *span = (ftdm_span_t*) obj;
 	short *poll_events = ftdm_malloc(sizeof(short) * span->chan_count);
+
+	if (me == 0) {};
 
 	memset(poll_events, 0, sizeof(short) * span->chan_count);
 
