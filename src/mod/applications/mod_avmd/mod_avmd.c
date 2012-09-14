@@ -535,7 +535,7 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 			/* calculate variance */
 			v = session->sqa_b.sma - (session->sma_b.sma * session->sma_b.sma);
 
-        	   	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_INFO, "<<< AVMD v=%f f=%f %fHz sma=%f sqa=%f >>>\n", v, f, TO_HZ(session->rate, f), session->sma_b.sma, session->sqa_b.sma);
+        	   	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG, "<<< AVMD v=%f f=%f %fHz sma=%f sqa=%f >>>\n", v, f, TO_HZ(session->rate, f), session->sma_b.sma, session->sqa_b.sma);
 		}
 
 		/*! If variance is less than threshold then we have detection */
@@ -558,7 +558,7 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
                 switch_core_session_queue_event(session->session, &event);
                 switch_event_fire(&event_copy);
 
-                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected >>>\n");
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session->session), SWITCH_LOG_DEBUG, "<<< AVMD - Beep Detected >>>\n");
                 switch_channel_set_variable(channel, "avmd_detect", "TRUE");
                 RESET_SMA_BUFFER(&session->sma_b);
 		RESET_SMA_BUFFER(&session->sqa_b);
