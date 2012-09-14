@@ -335,20 +335,23 @@ static switch_status_t hu_say_time(switch_core_session_t *session, char *tosay, 
 		say_today = say_yesterday = 0;
 	}
 
+	if (say_year) {
+		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
+	}
+
 	if (say_month) {
 		say_file("time/mon-%d.wav", tm.tm_mon);
 	}
 	if (say_day) {
-		say_num(tm.tm_mday, SSM_COUNTED);
-	}
-	if (say_year) {
-		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
+		say_num(tm.tm_mday, SSM_PRONOUNCED);
 	}
 
 	if (say_time) {
 		say_num(tm.tm_hour, SSM_PRONOUNCED);
 		say_file("time/hour.wav");
+
 		say_num(tm.tm_min, SSM_PRONOUNCED);
+		say_file("time/minute.wav");
 
 	}
 
