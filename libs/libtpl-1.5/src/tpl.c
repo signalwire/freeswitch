@@ -1620,7 +1620,7 @@ static void tpl_free_atyp(tpl_node *n, tpl_atyp *atyp) {
  */
 static int tpl_serlen(tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
     uint32_t slen;
-    int num,fidx;
+    int num = 0,fidx;
     tpl_node *c;
     size_t len=0, alen, buf_past, itermax;
     tpl_pound_data *pd;
