@@ -41,7 +41,7 @@
 #define OVERLAP_TIMEOUT_MS_MAX		30000	/* 30 sec */
 
 /* NT-mode idle b-channel restart timer */
-#define IDLE_RESTART_TIMEOUT_MS_DEFAULT	900000		/* 15 min */
+#define IDLE_RESTART_TIMEOUT_MS_DEFAULT	0		/* disabled */
 #define IDLE_RESTART_TIMEOUT_MS_MIN	10000		/* 10 sec */
 #define IDLE_RESTART_TIMEOUT_MS_MAX	86400000	/* 1 day */
 
