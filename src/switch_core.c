@@ -520,12 +520,16 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	DWORD dwBufSize = BUFSIZE;
 	char base_dir[1024];
 	char *lastbacklash;
+	char *tmp;
 
 	GetModuleFileName(NULL, base_dir, BUFSIZE);
 	lastbacklash = strrchr(base_dir, '\\');
 	base_dir[(lastbacklash - base_dir)] = '\0';
 	/* set base_dir as cwd, to be able to use relative paths in scripting languages (e.g. mod_lua) when FS is running as a service or while debugging FS using visual studio */
 	SetCurrentDirectory(base_dir);
+	tmp = switch_string_replace(base_dir, "\\", "/");
+	strcpy(base_dir, tmp);
+	free(tmp);
 
 #else
 	char base_dir[1024] = SWITCH_PREFIX_DIR;

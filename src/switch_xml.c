@@ -3076,7 +3076,7 @@ done:
 #define	RANGE		'-'
 #define	RBRACKET	']'
 #define	SEP		'/'
-#define WIN_SEP '\\'
+#define WIN_SEP '/'
 #define	STAR		'*'
 #define	TILDE		'~'
 #define	UNDERSCORE	'_'
