@@ -2479,6 +2479,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *ip = NULL;
 	char *port = 0;
 	const char *call_state = NULL;
+	const char *astate = NULL;
+	const char *event_status = NULL;
+	const char *force_event_status = NULL;
+
 
 	if (mod_sofia_globals.debug_presence > 0) {
 		int i;	
@@ -2596,8 +2600,16 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 	if (helper->hup && helper->calls_up > 0) {
 		call_state = "CS_EXECUTE";
+		astate = "active";
+		event_status = "Active";
+		force_event_status = NULL;
 	} else {
-		call_state = switch_event_get_header(helper->event, "channel-state");
+		if (helper->event) {
+			call_state = switch_event_get_header(helper->event, "channel-state");
+			astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
+			event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
+			force_event_status = switch_str_nil(switch_event_get_header(helper->event, "force-status"));
+		}
 	}
 
 	if (helper->event) {
@@ -2605,10 +2617,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *direction = switch_str_nil(switch_event_get_header(helper->event, "presence-call-direction"));
 		//const char *force_direction = switch_str_nil(switch_event_get_header(helper->event, "force-direction"));
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
-		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));
 		const char *resub = switch_str_nil(switch_event_get_header(helper->event, "resub"));
-		const char *force_event_status = switch_str_nil(switch_event_get_header(helper->event, "force-status"));
-		const char *astate = switch_str_nil(switch_event_get_header(helper->event, "astate"));
 		const char *answer_state = switch_str_nil(switch_event_get_header(helper->event, "answer-state"));
 		const char *dft_state;
 		const char *from_id = NULL, *from_name = NULL;
