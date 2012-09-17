@@ -2265,18 +2265,21 @@ static ftdm_status_t handle_b_channel_event(ftdm_channel_t *chan)
 		int datalen = retval - MISDN_HEADER_LEN;
 		char *data  = buf    + MISDN_HEADER_LEN;
 
-		/* Convert audio data */
-		misdn_convert_audio_bits(data, datalen);
+		/* Discard incoming audio if not active */
+		if (!priv->active) {
+			/* Convert audio data */
+			misdn_convert_audio_bits(data, datalen);
 
-		/* Write audio into receive pipe */
-		if ((retval = write(priv->rx_audio_pipe_in, data, datalen)) < 0) {
-			ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN failed to write audio data into rx pipe: %s\n",
-				strerror(errno));
-			return FTDM_FAIL;
-		} else if (retval < datalen) {
-			ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN short write into rx pipe, written: %d, expected: %d\n",
-				retval, datalen);
-			return FTDM_FAIL;
+			/* Write audio into receive pipe */
+			if ((retval = write(priv->rx_audio_pipe_in, data, datalen)) < 0) {
+				ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN failed to write audio data into rx pipe: %s\n",
+					strerror(errno));
+				return FTDM_FAIL;
+			} else if (retval < datalen) {
+				ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN short write into rx pipe, written: %d, expected: %d\n",
+					retval, datalen);
+				return FTDM_FAIL;
+			}
 		}
 
 		/* Get receive buffer usage */
