@@ -1629,6 +1629,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		caller_data.dnis.type = outbound_profile->destination_number_ton;
 	}
 
+	if ((var = channel_get_variable(session, var_event, "freetdm_outbound_npi"))) {
+		ftdm_set_npi(var, &caller_data.dnis.plan);
+	} else {
+		caller_data.dnis.plan = outbound_profile->destination_number_numplan;
+	}
+
 	if ((var = channel_get_variable(session, var_event, "freetdm_calling_party_category"))) {
 		ftdm_set_calling_party_category(var, (uint8_t *)&caller_data.cpc);
 	}
