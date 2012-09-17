@@ -1320,7 +1320,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		callerid_num = switch_sanitize_number(switch_core_strdup(outbound_profile->pool, outbound_profile->caller_id_number));
 	}
 
-	if (!zstr(callerid_num) && !strcmp(callerid_num, "0000000000")) {
+	if (!zstr(callerid_num) && !strcmp(callerid_num, SWITCH_DEFAULT_CLID_NUMBER)) {
 		callerid_num = NULL;
 	}
 
