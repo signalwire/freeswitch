@@ -144,10 +144,36 @@ const static struct {
 } misdn_control_types[] = {
 #define MISDN_CONTROL_TYPE(x)	{ x, #x }
 	MISDN_CONTROL_TYPE(DTMF_HFC_COEF),
+	MISDN_CONTROL_TYPE(DSP_CONF_JOIN),
+	MISDN_CONTROL_TYPE(DSP_CONF_SPLIT),
+	MISDN_CONTROL_TYPE(DSP_RECEIVE_OFF),
+	MISDN_CONTROL_TYPE(DSP_RECEIVE_ON),
+	MISDN_CONTROL_TYPE(DSP_ECHO_ON),
+	MISDN_CONTROL_TYPE(DSP_ECHO_OFF),
+	MISDN_CONTROL_TYPE(DSP_MIX_ON),
+	MISDN_CONTROL_TYPE(DSP_MIX_OFF),
+	MISDN_CONTROL_TYPE(DSP_DELAY),
+	MISDN_CONTROL_TYPE(DSP_JITTER),
+	MISDN_CONTROL_TYPE(DSP_TXDATA_ON),
+	MISDN_CONTROL_TYPE(DSP_TXDATA_OFF),
+	MISDN_CONTROL_TYPE(DSP_TX_DEJITTER),
+	MISDN_CONTROL_TYPE(DSP_TX_DEJ_OFF),
+	MISDN_CONTROL_TYPE(DSP_TONE_PATT_ON),
+	MISDN_CONTROL_TYPE(DSP_TONE_PATT_OFF),
+	MISDN_CONTROL_TYPE(DSP_VOL_CHANGE_TX),
+	MISDN_CONTROL_TYPE(DSP_VOL_CHANGE_RX),
+	MISDN_CONTROL_TYPE(DSP_BF_ENABLE_KEY),
+	MISDN_CONTROL_TYPE(DSP_BF_DISABLE),
+	MISDN_CONTROL_TYPE(DSP_BF_ACCEPT),
+	MISDN_CONTROL_TYPE(DSP_BF_REJECT),
+	MISDN_CONTROL_TYPE(DSP_PIPELINE_CFG),
+	MISDN_CONTROL_TYPE(HFC_VOL_CHANGE_TX),
+	MISDN_CONTROL_TYPE(HFC_VOL_CHANGE_RX),
+	MISDN_CONTROL_TYPE(HFC_SPL_LOOP_ON),
+	MISDN_CONTROL_TYPE(HFC_SPL_LOOP_OFF),
 #undef MISDN_CONTROL_TYPE
 };
 
-#ifdef MISDN_DEBUG_EVENTS
 static const char *misdn_control2str(const int ctrl)
 {
 	int x;
@@ -158,7 +184,6 @@ static const char *misdn_control2str(const int ctrl)
 	}
 	return "unknown";
 }
-#endif
 
 
 /***********************************************************************************
@@ -759,13 +784,11 @@ out:
 
 static int misdn_handle_ph_control_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len)
 {
-#ifdef MISDN_DEBUG_EVENTS
 	ftdm_log_chan(chan, FTDM_LOG_DEBUG,
 		"PH_CONTROL_IND:\n"
-		"\tMessage:\t%s\n"
+		"\tMessage:\t%s (%#x)\n"
 		"\tPayload:\t%d\n",
-		misdn_control2str(hh->id), data_len);
-#endif
+		misdn_control2str(hh->id), hh->id, data_len);
 
 	switch (hh->id) {
 	case DTMF_HFC_COEF:
@@ -2351,6 +2374,13 @@ static ftdm_status_t handle_b_channel_event(ftdm_channel_t *chan)
 	case PH_ACTIVATE_IND:
 		priv->active = 1;
 		break;
+	case PH_CONTROL_IND: {
+		int datalen = retval - MISDN_HEADER_LEN;
+		char *data  = buf    + MISDN_HEADER_LEN;
+
+		misdn_handle_ph_control_ind(chan, mh, data, datalen);
+		break;
+	}
 	default:
 		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN received unknown/unhandled event primitive: (%d) %s\n",
 			mh->prim, misdn_event2str(mh->prim));
