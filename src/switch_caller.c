@@ -66,7 +66,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 	}
 
 	if (zstr(caller_id_number)) {
-		caller_id_number = "0000000000";
+		caller_id_number = SWITCH_DEFAULT_CLID_NUMBER;
 	}
 
 	profile_dup_clean(username, profile->username, pool);

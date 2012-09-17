@@ -874,7 +874,7 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 	
 	caller_profile = switch_caller_profile_new(pool, switch_str_nil(auth_user), dialplan, 
 		SWITCH_DEFAULT_CLID_NAME, 
-		!zstr(auth_user) ? auth_user : "0000000000", 
+		!zstr(auth_user) ? auth_user : SWITCH_DEFAULT_CLID_NUMBER,
 		rsession->remote_address /* net addr */, 
 		NULL /* ani   */, 
 		NULL /* anii  */, 

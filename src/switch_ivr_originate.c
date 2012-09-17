@@ -2496,7 +2496,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							cid_name_override = SWITCH_DEFAULT_CLID_NAME;
 						}
 						if (!cid_num_override) {
-							cid_num_override = "0000000000";
+							cid_num_override = SWITCH_DEFAULT_CLID_NUMBER;
 						}
 
 						new_profile = switch_caller_profile_new(oglobals.pool,
