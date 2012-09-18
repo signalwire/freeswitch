@@ -931,7 +931,7 @@ static void load_mime_types(void)
 {
 	char *cf = "mime.types";
 	FILE *fd = NULL;
-	char *line_buf;
+	char *line_buf = NULL;
 	switch_size_t llen = 0;
 	char *mime_path = NULL;
 
