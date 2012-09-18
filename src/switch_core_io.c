@@ -729,7 +729,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
   even_more_done:
 
-	if (!*frame || !(*frame)->codec || !(*frame)->codec->implementation || !switch_core_codec_ready((*frame)->codec)) {
+	if (!*frame ||
+                (!switch_test_flag(*frame, SFF_PROXY_PACKET) &&
+                    (!(*frame)->codec || !(*frame)->codec->implementation || !switch_core_codec_ready((*frame)->codec)))) {
 		*frame = &runtime.dummy_cng_frame;
 	}
 
