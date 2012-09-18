@@ -635,7 +635,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 				switch_channel_set_flag(other_channel, CF_REDIRECT);
 				
 				switch_channel_set_state(new_channel, CS_RESET);
-					
+				
 				switch_ivr_uuid_bridge(new_uuid, other_uuid);
 				cmd = switch_core_session_sprintf(session, "sleep:500,sofia_sla:%s inline", new_uuid);
 				
@@ -6554,6 +6554,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 											switch_core_session_rwunlock(tmp);
 										}
 
+										switch_channel_set_variable_printf(channel, "transfer_to", "att:%s", br_b);
+
 										mark_transfer_record(session, br_a, br_b);
 										switch_ivr_uuid_bridge(br_a, br_b);
 										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
@@ -7143,8 +7145,10 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 					if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer"))) {
 						switch_core_media_bug_transfer_recordings(session, a_session);
 					}
+					
 
 					tuuid_str = switch_core_session_get_uuid(tsession);
+					switch_channel_set_variable_printf(channel_a, "transfer_to", "att:%s", tuuid_str);
 					mark_transfer_record(session, nhelper->bridge_to_uuid, tuuid_str);
 					switch_ivr_uuid_bridge(nhelper->bridge_to_uuid, tuuid_str);
 					switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
@@ -7413,6 +7417,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 
 
+							switch_channel_set_variable_printf(channel_b, "transfer_to", "satt:%s", br_a);
+
 							switch_channel_set_variable(channel_b, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 
 
@@ -7517,7 +7523,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_core_session_rwunlock(tmp);
 							}
 
-
+							switch_channel_set_variable_printf(channel_a, "transfer_to", "att:%s", br_b);
+							
 							mark_transfer_record(session, br_b, br_a);
 							
 							switch_ivr_uuid_bridge(br_b, br_a);
@@ -7725,11 +7732,12 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 	if (exten) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
-		const char *br;
+		const char *br = switch_channel_get_partner_uuid(channel);
 		switch_core_session_t *b_session;
 
-		if ((br = switch_channel_get_partner_uuid(channel)) && (b_session = switch_core_session_locate(br))) {
-
+		switch_channel_set_variable_printf(channel, "transfer_to", "blind:%s", br ? br : exten);
+		
+		if (!zstr(br) && (b_session = switch_core_session_locate(br))) {
 			const char *var;
 			switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 
