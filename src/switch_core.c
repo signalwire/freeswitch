@@ -930,19 +930,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, cons
 static void load_mime_types(void)
 {
 	char *cf = "mime.types";
-	int fd = -1;
-	char line_buf[1024] = "";
+	FILE *fd = NULL;
+	char *line_buf;
+	switch_size_t llen = 0;
 	char *mime_path = NULL;
 
 	mime_path = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.conf_dir, cf);
 	switch_assert(mime_path);
 
-	fd = open(mime_path, O_RDONLY | O_BINARY);
-	if (fd <= 0) {
+	fd = fopen(mime_path, "rb");
+
+	if (fd == NULL) {
 		goto end;
 	}
 
-	while ((switch_fd_read_line(fd, line_buf, sizeof(line_buf)))) {
+	while ((switch_fp_read_dline(fd, &line_buf, &llen))) {
 		char *p;
 		char *type = line_buf;
 
@@ -966,9 +968,11 @@ static void load_mime_types(void)
 
 	}
 
-	if (fd > -1) {
-		close(fd);
-		fd = -1;
+	switch_safe_free(line_buf);
+
+	if (fd) {
+		fclose(fd);
+		fd = NULL;
 	}
 
   end:
