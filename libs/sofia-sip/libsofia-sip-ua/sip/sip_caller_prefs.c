@@ -194,39 +194,41 @@ static
 issize_t sip_caller_prefs_d(su_home_t *home, sip_header_t *h,
 			    char *s, isize_t slen)
 {
-  sip_caller_prefs_t *cp = (sip_caller_prefs_t *)h;
-  url_t url[1];
-  char const *ignore = NULL;
-  int kludge = 0;
+	for(;;) {
+		sip_caller_prefs_t *cp = (sip_caller_prefs_t *)h;
+		url_t url[1];
+		char const *ignore = NULL;
+		int kludge = 0;
 
-  assert(h);
+		assert(h);
 
-  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
-    *s = '\0', s += span_lws(s + 1) + 1;
+		while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
+			*s = '\0', s += span_lws(s + 1) + 1;
 
-  /* Kludge: support PoC IS spec with a typo... */
-  if (su_casenmatch(s, "*,", 2))
-    s[1] = ';',  kludge = 0;
-  else if (s[0] != '*' && s[0] != '<') {
-    /* Kludge: missing URL -  */
-    size_t n = span_attribute_value(s);
-    kludge = n > 0 && (s[n] == '\0' || s[n] == ',' || s[n] == ';');
-  }
+		/* Kludge: support PoC IS spec with a typo... */
+		if (su_casenmatch(s, "*,", 2))
+			s[1] = ';',  kludge = 0;
+		else if (s[0] != '*' && s[0] != '<') {
+			/* Kludge: missing URL -  */
+			size_t n = span_attribute_value(s);
+			kludge = n > 0 && (s[n] == '\0' || s[n] == ',' || s[n] == ';');
+		}
 
-  if (kludge) {
-    if (msg_any_list_d(home, &s, (msg_param_t **)&cp->cp_params,
-		       msg_attribute_value_scanner, ';') == -1)
-      return -1;
-  }
-  /* Parse params (and ignore display name and url) */
-  else if (sip_name_addr_d(home, &s, &ignore, url, &cp->cp_params, NULL)
-	   == -1)
-    return -1;
-  /* Be liberal... */
-  /* if (url->url_type != url_any)
-     return -1; */
-
-  return msg_parse_next_field(home, h, s, slen);
+		if (kludge) {
+			if (msg_any_list_d(home, &s, (msg_param_t **)&cp->cp_params,
+							   msg_attribute_value_scanner, ';') == -1)
+				return -1;
+		}
+		/* Parse params (and ignore display name and url) */
+		else if (sip_name_addr_d(home, &s, &ignore, url, &cp->cp_params, NULL)
+				 == -1)
+			return -1;
+		/* Be liberal... */
+		/* if (url->url_type != url_any)
+		   return -1; */
+		msg_parse_next_field_without_recursion();
+	}
+	
 }
 
 static

@@ -1190,6 +1190,7 @@ msg_header_t *error_header_parse(msg_t *msg, msg_pub_t *mo,
   return h;
 }
 
+
 /** Complete this header field and parse next header field.
  *
  * This function completes parsing a multi-field header like @Accept,
@@ -1237,6 +1238,7 @@ issize_t msg_parse_next_field(su_home_t *home, msg_header_t *prev,
 
   return hc->hc_parse(home, h, s, end - s);
 }
+
 
 /** Decode a message header. */
 msg_header_t *msg_header_d(su_home_t *home, msg_t const *msg, char const *b)

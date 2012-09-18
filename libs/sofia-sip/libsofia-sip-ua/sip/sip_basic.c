@@ -1391,18 +1391,23 @@ issize_t sip_contact_d(su_home_t *home,
 		       char *s,
 		       isize_t slen)
 {
-  sip_contact_t *m = (sip_contact_t *)h;
+  sip_contact_t *m;
 
   assert(h);
+  for(;;) {
 
-  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
-    *s = '\0', s += span_lws(s + 1) + 1;
+	  m = (sip_contact_t *)h;
 
-  if (sip_name_addr_d(home, &s, &m->m_display, m->m_url,
-		      &m->m_params, &m->m_comment) == -1)
-    return -1;
+	  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
+		  *s = '\0', s += span_lws(s + 1) + 1;
+	  
+	  if (sip_name_addr_d(home, &s, &m->m_display, m->m_url,
+						  &m->m_params, &m->m_comment) == -1)
+		  return -1;
 
-  return msg_parse_next_field(home, h, s, slen);
+	  msg_parse_next_field_without_recursion();
+  }
+
 }
 
 
@@ -2106,18 +2111,24 @@ issize_t sip_any_route_d(su_home_t *home,
 			 char *s,
 			 isize_t slen)
 {
-  sip_route_t *r = (sip_route_t *)h;
+	sip_route_t *r;
+
 
   assert(h);
+  for (;;) {
+	  r = (sip_route_t *)h;
 
-  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
-    *s = '\0', s += span_lws(s + 1) + 1;
+	  while (*s == ',')  { /* Ignore empty entries (comma-whitespace) */
+		  *s = '\0', s += span_lws(s + 1) + 1;
+	  }
 
-  if (sip_name_addr_d(home, &s, &r->r_display,
-		      r->r_url, &r->r_params, NULL) < 0)
-    return -1;
+	  if (sip_name_addr_d(home, &s, &r->r_display, r->r_url, &r->r_params, NULL) < 0) {
+		  return -1;
+	  }
 
-  return msg_parse_next_field(home, h, s, slen);
+	  msg_parse_next_field_without_recursion();
+  }
+
 }
 
 issize_t sip_any_route_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
@@ -2534,29 +2545,32 @@ SIP_HEADER_CLASS(via, "Via", "v", v_params, prepend, via);
 
 issize_t sip_via_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
-  sip_via_t *v = (sip_via_t *)h;
+  sip_via_t *v;
 
   assert(h);
+  for (;;) {
+	  v = (sip_via_t *)h;
 
-  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
-    *s = '\0', s += span_lws(s + 1) + 1;
+	  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
+		  *s = '\0', s += span_lws(s + 1) + 1;
 
-  /* sent-protocol sent-by *( ";" via-params ) [ comment ] */
+	  /* sent-protocol sent-by *( ";" via-params ) [ comment ] */
+	  
+	  /* Parse protocol */
+	  if (sip_transport_d(&s, &v->v_protocol) == -1)
+		  return -1;
+	  /* Host (and port) */
+	  if (msg_hostport_d(&s, &v->v_host, &v->v_port) == -1)
+		  return -1;
+	  /* Parameters */
+	  if (*s == ';' && msg_params_d(home, &s, &v->v_params) == -1)
+		  return -1;
+	  /* Comment */
+	  if (*s == '(' && msg_comment_d(&s, &v->v_comment) == -1)
+		  return -1;
 
-  /* Parse protocol */
-  if (sip_transport_d(&s, &v->v_protocol) == -1)
-    return -1;
-  /* Host (and port) */
-  if (msg_hostport_d(&s, &v->v_host, &v->v_port) == -1)
-    return -1;
-  /* Parameters */
-  if (*s == ';' && msg_params_d(home, &s, &v->v_params) == -1)
-    return -1;
-  /* Comment */
-  if (*s == '(' && msg_comment_d(&s, &v->v_comment) == -1)
-    return -1;
-
-  return msg_parse_next_field(home, h, s, slen);
+	  msg_parse_next_field_without_recursion();
+  }
 }
 
 issize_t sip_via_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)

@@ -185,6 +185,34 @@ SOFIAPUBFUN issize_t msg_unquoted_e(char *b, isize_t bsiz, char const *s);
 SOFIAPUBFUN issize_t msg_parse_next_field(su_home_t *home, msg_header_t *prev,
 					  char *s, isize_t slen);
 
+#define msg_parse_next_field_without_recursion() {				\
+		msg_header_t *prev = h;									\
+		msg_hclass_t *hc = prev->sh_class;						\
+		char *end = s + slen;									\
+																\
+		if (*s && *s != ',')									\
+			return -1;											\
+																\
+		if (msg_header_update_params(prev->sh_common, 0) < 0)	\
+			return -1;											\
+																\
+		while (*s == ',')										\
+			*s = '\0', s += span_lws(s + 1) + 1;				\
+																\
+		if (*s == 0)											\
+			return 0;											\
+																\
+		h = msg_header_alloc(home, hc, 0);						\
+		if (!h)													\
+			return -1;											\
+																\
+		prev->sh_succ = h, h->sh_prev = &prev->sh_succ;			\
+		prev->sh_next = h;										\
+		slen = end - s;											\
+	}															
+
+
+
 /** Terminate encoding. @HI */
 #define MSG_TERM_E(p, e) ((p) < (e) ? (p)[0] = '\0' : '\0')
 
