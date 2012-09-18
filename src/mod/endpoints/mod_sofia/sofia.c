@@ -1210,7 +1210,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		break;
 	case nua_i_invite:
 		if (session && sofia_private) {
-			if (sofia_private->is_call > 1) {
+			if (sofia_private->is_call > 1 || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				sofia_handle_sip_i_reinvite(session, nua, profile, nh, sofia_private, sip, de, tags);
 			} else {
 				sofia_private->is_call++;
