@@ -4,8 +4,10 @@ the sip-server-addr and sip-server-port to the oreka server
 -->
 <configuration name="oreka.conf" description="Oreka Recorder configuration">
   <settings>
-    <!-- comment or set to false for no color logging -->
-    <param name="sip-server-addr" value="sigchld.sangoma.local"/>
-    <param name="sip-server-port" value="6000"/>
+    <!--  Oreka/Orkaudio recording server address -->
+    <!-- <param name="sip-server-addr" value="192.168.1.200"/> -->
+
+    <!-- Which port to send signaling to in the recording server -->
+    <!-- <param name="sip-server-port" value="6000"/> -->
   </settings>
 </configuration>
