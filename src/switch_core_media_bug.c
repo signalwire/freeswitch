@@ -201,9 +201,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(bug->raw_read_buffer && (bug->raw_write_buffer || !switch_test_flag(bug, SMBF_WRITE_STREAM)))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "%s Buffer Error\n",
-						  switch_channel_get_name(bug->session->channel));
+	if ((!bug->raw_read_buffer && (!bug->raw_write_buffer || !switch_test_flag(bug, SMBF_WRITE_STREAM)))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, 
+				"%s Buffer Error (raw_read_buffer=%p, raw_write_buffer=%p, read=%s, write=%s)\n",
+			        switch_channel_get_name(bug->session->channel),
+				(void *)bug->raw_read_buffer, (void *)bug->raw_write_buffer, 
+				switch_test_flag(bug, SMBF_READ_STREAM) ? "yes" : "no",
+				switch_test_flag(bug, SMBF_WRITE_STREAM) ? "yes" : "no");
 		return SWITCH_STATUS_FALSE;
 	}
 
