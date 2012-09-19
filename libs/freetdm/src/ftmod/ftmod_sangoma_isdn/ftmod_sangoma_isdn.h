@@ -289,6 +289,8 @@ typedef struct sngisdn_span_data {
 	uint8_t			cid_name_method;
 	uint8_t			send_cid_name;	
 	uint8_t 		send_connect_ack;
+	uint8_t                 dl_request_pending; /* Whether we have a DL request pending */
+
 
 	int32_t			timer_t301;
 	int32_t			timer_t302;
@@ -441,7 +443,7 @@ void sngisdn_snd_release(ftdm_channel_t *ftdmchan, uint8_t glare);
 void sngisdn_snd_reset(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_con_complete(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan);
-void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan);
+void sngisdn_snd_dl_req(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_status_enq(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_restart(ftdm_channel_t *ftdmchan);
 void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len);
@@ -581,6 +583,7 @@ void sngisdn_delayed_disconnect(void* p_sngisdn_info);
 void sngisdn_facility_timeout(void* p_sngisdn_info);
 void sngisdn_t3_timeout(void* p_sngisdn_info);
 void sngisdn_restart_timeout(void* p_signal_data);
+void sngisdn_delayed_dl_req(void* p_signal_data);
 
 /* Stack management functions */
 ftdm_status_t sngisdn_start_gen_cfg(void);

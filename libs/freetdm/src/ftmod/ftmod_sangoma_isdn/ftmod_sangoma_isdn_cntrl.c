@@ -70,6 +70,10 @@ void sngisdn_set_span_sig_status(ftdm_span_t *span, ftdm_signaling_status_t stat
 
 	((sngisdn_span_data_t*)span->signal_data)->sigstatus = status;
 
+	if (status == FTDM_SIG_STATE_UP) {
+		((sngisdn_span_data_t*)span->signal_data)->dl_request_pending = 0;
+	}	
+
 	chaniter = ftdm_span_get_chan_iterator(span, NULL);
 	for (curr = chaniter; curr; curr = ftdm_iterator_next(curr)) {
 		sngisdn_set_chan_sig_status(((ftdm_channel_t*)ftdm_iterator_current(curr)), status);

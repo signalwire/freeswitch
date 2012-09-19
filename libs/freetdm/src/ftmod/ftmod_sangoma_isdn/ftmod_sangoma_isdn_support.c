@@ -1211,6 +1211,20 @@ void sngisdn_t3_timeout(void *p_sngisdn_info)
 	ftdm_mutex_unlock(ftdmchan->mutex);
 }
 
+
+void sngisdn_delayed_dl_req(void *p_signal_data)
+{
+	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t *)p_signal_data;
+	ftdm_span_t *span = signal_data->ftdm_span;
+	
+	if (!signal_data->dl_request_pending) {
+		return;
+	}
+	signal_data->dl_request_pending = 0;
+	sngisdn_snd_dl_req(span->channels[1]);
+	return;
+}
+
 void sngisdn_restart_timeout(void *p_signal_data)
 {
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t *)p_signal_data;

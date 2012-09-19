@@ -307,7 +307,7 @@ void sngisdn_snd_fac_req(ftdm_channel_t *ftdmchan)
 }
 
 /* This is used to request Q.921 to initiate link establishment */
-void sngisdn_snd_info_req(ftdm_channel_t *ftdmchan)
+void sngisdn_snd_dl_req(ftdm_channel_t *ftdmchan)
 {
 	CnStEvnt cnStEvnt;
 	
@@ -482,6 +482,9 @@ void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 				len, sizeof(l1_frame.data));
 		return;
 	}
+	if (len <= 2) {
+		return;
+	}
 
 	memset(&l1_frame, 0, sizeof(l1_frame));
 	l1_frame.len = len;
@@ -545,8 +548,9 @@ void sngisdn_snd_event(sngisdn_span_data_t *signal_data, ftdm_oob_event_t event)
 		case FTDM_OOB_ALARM_CLEAR:
 			l1_event.type = SNG_L1EVENT_ALARM_OFF;
 			sng_isdn_event_ind(signal_data->link_id, &l1_event);
-
-			sngisdn_snd_info_req(signal_data->ftdm_span->channels[1]);
+			
+			ftdm_sched_timer(signal_data->sched, "delayed_dl_req", 8000, sngisdn_delayed_dl_req, (void*) signal_data, NULL);
+			signal_data->dl_request_pending = 1;
 			break;
 		case FTDM_OOB_ALARM_TRAP:
 			l1_event.type = SNG_L1EVENT_ALARM_ON;
