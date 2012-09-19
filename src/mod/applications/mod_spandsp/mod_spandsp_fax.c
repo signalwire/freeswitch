@@ -1653,7 +1653,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status) || pvt->done) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Premature exit while negotiating\n", switch_channel_get_name(channel), status);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Premature exit while negotiating (%i)\n", switch_channel_get_name(channel), status);
 			/* Our duty is over */
 			goto end_unlock;
 		}
