@@ -588,6 +588,8 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *callid, const c
 		event = "reboot_now";
 	} else if (switch_stristr("spa", user_agent)) {
 		event = "reboot";
+	} else if (switch_stristr("Cisco-CP7960G", user_agent) || switch_stristr("Cisco-CP7940G", user_agent)) {
+		event = "check-sync";
 	} else if (switch_stristr("cisco", user_agent)) {
 		event = "service-control";
 		contenttype = "text/plain";
