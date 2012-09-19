@@ -662,6 +662,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	int silly = 0;
 	int index = 0;
 	const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
+	const char *skip_var = switch_channel_get_variable(session->channel, SWITCH_SKIP_CDR_CAUSES_VARIABLE);
 	const char *hook_var;
 	int use_session = 0;
 	switch_event_t *event;
@@ -692,6 +693,22 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 			}
 		} else if (!switch_true(var)) {
 			do_extra_handlers = 0;
+		}
+	}
+
+
+	if (!zstr(skip_var)) {
+		int x, ttl = 0;
+		char *list[128] = { 0 };
+		char *dup = switch_core_session_strdup(session, skip_var);
+
+		ttl = switch_split(dup, '|', list);
+
+		for(x = 0; x < ttl; x++) {
+			if (switch_channel_str2cause(list[x]) == cause) {
+				do_extra_handlers = 0;
+				break;
+			}
 		}
 	}
 

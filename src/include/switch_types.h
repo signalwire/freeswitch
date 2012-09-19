@@ -163,6 +163,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_API_REPORTING_HOOK_VARIABLE "api_reporting_hook"
 #define SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE "session_in_hangup_hook"
 #define SWITCH_PROCESS_CDR_VARIABLE "process_cdr"
+#define SWITCH_SKIP_CDR_CAUSES_VARIABLE "skip_cdr_causes"
 #define SWITCH_FORCE_PROCESS_CDR_VARIABLE "force_process_cdr"
 #define SWITCH_BRIDGE_CHANNEL_VARIABLE "bridge_channel"
 #define SWITCH_CHANNEL_NAME_VARIABLE "channel_name"
