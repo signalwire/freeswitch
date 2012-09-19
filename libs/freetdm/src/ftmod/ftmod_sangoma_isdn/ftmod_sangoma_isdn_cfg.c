@@ -333,7 +333,7 @@ done:
 	ftdm_safe_free(name);
 	ftdm_safe_free(dchan_span);
 	ftdm_safe_free(backup_span);
-	return FTDM_SUCCESS;
+	return ret;
 }
 
 static ftdm_status_t parse_early_media(const char* opt, ftdm_span_t *span)
