@@ -2325,7 +2325,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/es/dir/*.xml
 %{MODINSTDIR}/mod_say_en.so*
 
-%files lang-en
+%files lang-pt
 %defattr(-, freeswitch, daemon)
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt/demo
