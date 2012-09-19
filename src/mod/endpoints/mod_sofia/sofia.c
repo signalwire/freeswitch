@@ -1723,6 +1723,7 @@ void sofia_event_callback(nua_event_t event,
 					private_object_t *tech_pvt = switch_core_session_get_private(session);
 
 					if (status == 403) {
+						switch_channel_set_flag(channel, CF_NO_CDR);
 						switch_channel_hangup(channel, SWITCH_CAUSE_CALL_REJECTED);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "detaching session %s\n", sofia_private->uuid);
