@@ -929,9 +929,10 @@ switch_status_t FSConnection::kill_channel(int sig)
 {
     switch (sig) {
     case SWITCH_SIG_KILL:
+        PTRACE(4, "mod_opal\tSignal KILL received on connection " << *this);
         m_rxAudioOpened.Signal();
         m_txAudioOpened.Signal();
-        PTRACE(4, "mod_opal\tSignal KILL received on connection " << *this);
+        CloseMediaStreams();
         break;
 
     case SWITCH_SIG_BREAK:
