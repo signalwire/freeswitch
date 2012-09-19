@@ -1446,7 +1446,7 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 		}
 
 		if ((cmd = strstr(bp, "<!--#"))) {
-			if (fwrite(bp, 1, (unsigned) (cmd - bp), write_fd) != (cmd - bp)) {
+			if (fwrite(bp, 1, (unsigned) (cmd - bp), write_fd) != (unsigned) (cmd - bp)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 			}
 			if ((e = strstr(cmd, "-->"))) {
