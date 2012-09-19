@@ -1910,7 +1910,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	int32_t z = 0;
 	int member_score_sum = 0;
 	int divisor = 0;
-	
+
 	if (!(divisor = conference->rate / 8000)) {
 		divisor = 1;
 	}
@@ -1931,6 +1931,13 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 	conference->is_recording = 0;
 	conference->record_count = 0;
+
+
+
+	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+	conference_add_event_data(conference, event); 
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
+	switch_event_fire(&event);
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
@@ -2448,6 +2455,11 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 	}
 
+
+	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+	conference_add_event_data(conference, event); 
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-destroy");
+	switch_event_fire(&event);
 	
 	switch_core_timer_destroy(&timer);
 	switch_mutex_lock(globals.hash_mutex);
