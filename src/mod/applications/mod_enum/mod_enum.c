@@ -67,7 +67,6 @@ static switch_event_node_t *NODE = NULL;
 
 static struct {
 	char *root;
-	char *server;
 	char *isn_root;
 	enum_route_t *route_order;
 	switch_memory_pool_t *pool;
@@ -79,7 +78,6 @@ static struct {
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_root, globals.root);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_server, globals.server);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_isn_root, globals.isn_root);
 
 static void add_route(char *service, char *regex, char *replace)
@@ -126,8 +124,6 @@ static switch_status_t load_config(void)
 			const char *val = switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "default-root")) {
 				set_global_root(val);
-			} else if (!strcasecmp(var, "use-server")) {
-				set_global_server(val);
 			} else if (!strcasecmp(var, "auto-reload")) {
 				globals.auto_reload = switch_true(val);
 			} else if (!strcasecmp(var, "query-timeout")) {
@@ -140,7 +136,7 @@ static switch_status_t load_config(void)
 				globals.random = switch_true(val);
 			} else if (!strcasecmp(var, "default-isn-root")) {
 				set_global_isn_root(val);
-			} else if (!strcasecmp(var, "nameserver")) {
+			} else if (!strcasecmp(var, "nameserver") || !strcasecmp(var, "use-server")) {
 				if ( inameserver < ENUM_MAXNAMESERVERS ) {
 					globals.nameserver[inameserver] = (char *) val;
 					inameserver++;
@@ -560,6 +556,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 	int argc;
 	int x = 0;
 	char *enum_nameserver_dup;
+	const char *enum_nameserver = NULL;
 
 	*results = NULL;
 
@@ -577,41 +574,45 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 
 	/* Empty the server array */
 	for(inameserver=0; inameserver<ENUM_MAXNAMESERVERS; inameserver++) {
-    server[inameserver] = NULL;
+		server[inameserver] = NULL;
 	}  
 
-	if (!(server[0] = switch_core_get_variable("enum-server"))) {
-		server[0] = globals.server;
-	}
-
-	/* use config param "nameserver" ( can be up to ENUM_MAXNAMESERVERS ) */
-	for(inameserver=0; inameserver<ENUM_MAXNAMESERVERS; inameserver++) {
-		server[inameserver] = NULL;
-		if ( globals.nameserver[inameserver] != NULL )
-		{
-			server[inameserver] = globals.nameserver[inameserver];
-		};
-	}
+	inameserver = 0;
 
 	/* check for enum_nameserver channel var */
-	if ( channel != NULL ) {    
-		const char *enum_nameserver = switch_channel_get_variable(channel, "enum_nameserver");
-		if (!zstr(enum_nameserver))
-		{
-			/* Blank the server array */
-			for(inameserver=0; inameserver<ENUM_MAXNAMESERVERS; inameserver++) {
-				server[inameserver] = NULL;
-			}
+	
+	if (channel) {
+		enum_nameserver = switch_channel_get_variable(channel, "enum_nameserver");
+	}
 
-			enum_nameserver_dup = switch_core_session_strdup(session, enum_nameserver);
-			argc = switch_separate_string(enum_nameserver_dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+	if (zstr(enum_nameserver)) {
+		enum_nameserver = switch_core_get_variable("enum-server");
+	}
 
-			inameserver = 0;
-			for (x = 0; x < argc; x++) {
-				server[inameserver] = argv[x];
-				inameserver++;
+	if (!zstr(enum_nameserver)) {
+		/* Blank the server array */
+		for(inameserver=0; inameserver<ENUM_MAXNAMESERVERS; inameserver++) {
+			server[inameserver] = NULL;
+		}
+
+		enum_nameserver_dup = switch_core_session_strdup(session, enum_nameserver);
+		argc = switch_separate_string(enum_nameserver_dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+
+		inameserver = 0;
+		for (x = 0; x < argc; x++) {
+			server[inameserver] = argv[x];
+			inameserver++;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Enum nameserver override : %s\n", enum_nameserver);
+	}
+
+	if (!inameserver) {
+		/* use config param "nameserver" ( can be up to ENUM_MAXNAMESERVERS ) */
+		for(inameserver = 0; inameserver<ENUM_MAXNAMESERVERS; inameserver++) {
+			server[inameserver] = NULL;
+			if ( globals.nameserver[inameserver] != NULL ) {
+				server[inameserver] = globals.nameserver[inameserver];
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Enum nameserver override : %s\n", enum_nameserver);
 		}
 	}
 
@@ -912,7 +913,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 	}
 
 	switch_safe_free(globals.root);
-	switch_safe_free(globals.server);
 	switch_safe_free(globals.isn_root);
 	
 	return SWITCH_STATUS_UNLOAD;
