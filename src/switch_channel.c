@@ -3274,7 +3274,7 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 	app = switch_core_session_strdup(channel->session, variable);
 	
 	for(p = app; p && *p; p++) {
-		if (*p == ' ') {
+		if (*p == ' ' || (*p == ':' && (*(p+1) != ':'))) {
 			*p++ = '\0';
 			arg = p;
 			break;

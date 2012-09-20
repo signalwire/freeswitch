@@ -567,6 +567,22 @@ SWITCH_STANDARD_APP(mkdir_function)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MKDIR: %s\n",
 					  switch_channel_get_name(switch_core_session_get_channel(session)), data);
 }
+#define RENAME_SYNTAX "<from_path> <to_path>"
+SWITCH_STANDARD_APP(rename_function)
+{
+	char *argv[2] = { 0 };
+	char *lbuf = NULL;
+
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& switch_split(lbuf, ' ', argv) == 2) {
+		switch_file_rename(argv[0], argv[1], switch_core_session_get_pool(session));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s RENAME: %s %s\n",
+						  switch_channel_get_name(switch_core_session_get_channel(session)), argv[0], argv[1]);
+	
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", RENAME_SYNTAX);
+	}
+}
 
 #define SOFT_HOLD_SYNTAX "<unhold key> [<moh_a>] [<moh_b>]"
 SWITCH_STANDARD_APP(soft_hold_function)
@@ -4403,7 +4419,7 @@ struct file_string_context {
 typedef struct file_string_context file_string_context_t;
 
 
-static int next_file(switch_file_handle_t *handle)
+static switch_status_t next_file(switch_file_handle_t *handle)
 {
 	file_string_context_t *context = handle->private_info;
 	char *file;
@@ -4418,7 +4434,7 @@ static int next_file(switch_file_handle_t *handle)
 	}
 
 	if (context->index >= context->argc) {
-		return 0;
+		return SWITCH_STATUS_FALSE;
 	}
 
 
@@ -4434,8 +4450,23 @@ static int next_file(switch_file_handle_t *handle)
 		file = switch_core_sprintf(handle->memory_pool, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, context->argv[context->index]);
 	}
 
-	if (switch_core_file_open(&context->fh,
-							  file, handle->channels, handle->samplerate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		char *path = switch_core_strdup(handle->memory_pool, file);
+		char *p;
+
+		if ((p = strrchr(path, *SWITCH_PATH_SEPARATOR))) {
+			*p = '\0';
+			if (switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", path);
+				return SWITCH_STATUS_FALSE;
+			}
+
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error finding the folder path section in '%s'\n", path);
+		}
+
+	}
+	if (switch_core_file_open(&context->fh, file, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		goto top;
 	}
 
@@ -4461,7 +4492,7 @@ static int next_file(switch_file_handle_t *handle)
 		}
 	}
 
-	return 1;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -4487,11 +4518,6 @@ static switch_status_t file_string_file_open(switch_file_handle_t *handle, const
 	file_string_context_t *context;
 	char *file_dup;
 
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 
 	file_dup = switch_core_strdup(handle->memory_pool, path);
@@ -4500,7 +4526,7 @@ static switch_status_t file_string_file_open(switch_file_handle_t *handle, const
 
 	handle->private_info = context;
 
-	return next_file(handle) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	return next_file(handle);
 }
 
 static switch_status_t file_string_file_close(switch_file_handle_t *handle)
@@ -4533,15 +4559,34 @@ static switch_status_t file_string_file_read(switch_file_handle_t *handle, void 
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
-		if (!next_file(handle)) {
-			return SWITCH_STATUS_FALSE;
+		if ((status = next_file(handle)) != SWITCH_STATUS_SUCCESS) {
+			return status;
 		}
 		*len = llen;
 		status = switch_core_file_read(&context->fh, data, len);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
+
+static switch_status_t file_string_file_write(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	file_string_context_t *context = handle->private_info;
+	switch_status_t status;
+	size_t llen = *len;
+
+	status = switch_core_file_write(&context->fh, data, len);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		if ((status = next_file(handle)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		*len = llen;
+		status = switch_core_file_write(&context->fh, data, len);
+	}
+	return status;
+}
+
 
 /* Registration */
 
@@ -4963,6 +5008,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	file_interface->file_open = file_string_file_open;
 	file_interface->file_close = file_string_file_close;
 	file_interface->file_read = file_string_file_read;
+	file_interface->file_write = file_string_file_write;
 	file_interface->file_seek = file_string_file_seek;
 
 
@@ -5103,6 +5149,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "enable_heartbeat", "Enable Media Heartbeat", "Enable Media Heartbeat",
 				   heartbeat_function, HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mkdir", "Create a directory", "Create a directory", mkdir_function, MKDIR_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "rename", "Rename file", "Rename file", rename_function, RENAME_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "soft_hold", "Put a bridged channel on hold", "Put a bridged channel on hold", soft_hold_function, SOFT_HOLD_SYNTAX,
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "bind_meta_app", "Bind a key to an application", "Bind a key to an application", dtmf_bind_function, BIND_SYNTAX,

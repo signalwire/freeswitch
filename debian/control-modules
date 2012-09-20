@@ -147,6 +147,11 @@ Description: Nibblebill
  This module allows for real-time accounting of a cash balance and
  using that information for call routing.
 
+Module: applications/mod_oreka
+Description: Media recording with Oreka
+ This module provides media recording with the Oreka cross-platfor
+ audio stream recording and retrieval system.
+
 Module: applications/mod_osp
 Description: Open Settlement Protocol
  This module adds support for the Open Settlement Protocol (OSP).
@@ -191,6 +196,11 @@ Description: Snipe hunt
 Module: applications/mod_snom
 Description: SNOM specific features
  This module implements features specific to SNOM phones.
+
+Module: applications/mod_sonar
+Description: Sonar ping timer
+ This module measures the latency on an audio link by sending audible
+ audio sonar pings.
 
 Module: applications/mod_soundtouch
 Description: Soundtouch
@@ -335,6 +345,10 @@ Module: codecs/mod_voipcodecs
 Description: mod_voipcodecs
  Adds mod_voipcodecs.
 
+Module: codecs/mod_vp8
+Description: VP8 video codec
+ This module adds the VP8 video codec, also known as WebM.
+
 ## mod/dialplans
 
 Module: dialplans/mod_dialplan_asterisk
@@ -375,6 +389,10 @@ Module: endpoints/mod_h323
 Description: mod_h323
  Adds mod_h323.
 Build-Depends: libopenh323-dev, libpt-dev
+
+Module: endpoints/mod_html5
+Description: HTML5 endpoint module
+ This module adds support for HTML5 technologies such as WebRTC.
 
 Module: endpoints/mod_khomp
 Description: mod_khomp
@@ -650,6 +668,10 @@ Module: xml_int/mod_xml_ldap
 Description: mod_xml_ldap
  Adds mod_xml_ldap.
 Build-Depends: libsasl2-dev
+
+Module: xml_int/mod_xml_radius
+Description: mod_xml_radius
+ Adds mod_xml_radius
 
 Module: xml_int/mod_xml_rpc
 Description: mod_xml_rpc

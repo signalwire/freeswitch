@@ -1091,7 +1091,7 @@ void sngisdn_rcv_sng_log(uint8_t level, char *fmt,...)
 
     switch (level) {
 		case SNG_LOGLEVEL_DEBUG:
-			ftdm_log(FTDM_LOG_DEBUG, "sng_isdn->%s\n", data);
+			ftdm_log(FTDM_LOG_DEBUG, "sng_isdn->%s", data);
 			break;
 		case SNG_LOGLEVEL_WARN:
 			if ( strncmp(data, "Invalid Q.921/Q.931 frame", 25) ) {
