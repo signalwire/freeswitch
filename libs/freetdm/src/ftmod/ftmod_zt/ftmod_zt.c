@@ -737,6 +737,7 @@ static FIO_COMMAND_FUNCTION(zt_command)
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "OFFHOOK Failed");
 				return FTDM_FAIL;
 			}
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Channel is now offhook\n");
 			ftdm_set_flag_locked(ftdmchan, FTDM_CHANNEL_OFFHOOK);
 		}
 		break;
@@ -747,6 +748,7 @@ static FIO_COMMAND_FUNCTION(zt_command)
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "ONHOOK Failed");
 				return FTDM_FAIL;
 			}
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Channel is now onhook\n");
 			ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_OFFHOOK);
 		}
 		break;
@@ -1084,7 +1086,10 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 	case ZT_EVENT_RINGOFFHOOK:
 		{
 			if (fchan->type == FTDM_CHAN_TYPE_FXS || (fchan->type == FTDM_CHAN_TYPE_EM && fchan->state != FTDM_CHANNEL_STATE_UP)) {
-				ftdm_set_flag_locked(fchan, FTDM_CHANNEL_OFFHOOK);
+				if (fchan->type != FTDM_CHAN_TYPE_EM) {
+					/* In E&M we're supposed to set this flag when the tx side goes offhook, not the rx */
+					ftdm_set_flag_locked(fchan, FTDM_CHANNEL_OFFHOOK);
+				}
 				*event_id = FTDM_OOB_OFFHOOK;
 			} else if (fchan->type == FTDM_CHAN_TYPE_FXO) {
 				*event_id = FTDM_OOB_RING_START;
