@@ -1692,7 +1692,7 @@ static void switch_load_core_config(const char *file)
 						switch_core_session_ctl(SCSC_LOGLEVEL, &level);
 					}
 #ifdef HAVE_SETRLIMIT
-				} else if (!strcasecmp(var, "dump-cores")) {
+				} else if (!strcasecmp(var, "dump-cores") && switch_true(val)) {
 					struct rlimit rlp;
 					memset(&rlp, 0, sizeof(rlp));
 					rlp.rlim_cur = RLIM_INFINITY;
