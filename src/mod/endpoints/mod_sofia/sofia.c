@@ -5845,9 +5845,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
 		}
 
-		if (switch_channel_test_flag(channel, CF_PROXY_MODE) || 
-			switch_channel_test_flag(channel, CF_PROXY_MEDIA) || 
-			(sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && (has_t38 || status > 299))) {
+		if (status > 199 && (switch_channel_test_flag(channel, CF_PROXY_MODE) || 
+							 switch_channel_test_flag(channel, CF_PROXY_MEDIA) || 
+							 (sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && (has_t38 || status > 299)))) {
 
 			if (sofia_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
 				sofia_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
