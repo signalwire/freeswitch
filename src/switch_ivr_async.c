@@ -1083,16 +1083,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				switch_event_fire(&event);
 			}
 
-			if ((var = switch_channel_get_variable(channel, "record_post_process_exec_app"))) {
-				char *app = switch_core_session_strdup(session, var);
-				char *data;
-
-				if ((data = strchr(app, ':'))) {
-					*data++ = '\0';
-				}
-
-				switch_core_session_execute_application(session, app, data);
-			}
+			switch_channel_execute_on(channel, "record_post_process_exec_app");
 
 			if ((var = switch_channel_get_variable(channel, "record_post_process_exec_api"))) {
 				char *cmd = switch_core_session_strdup(session, var);
