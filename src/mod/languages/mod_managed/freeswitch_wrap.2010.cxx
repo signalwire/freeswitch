@@ -5894,6 +5894,132 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_app_log(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_hold_record_t_on_set(void * jarg1, void * jarg2) {
+  switch_hold_record_t *arg1 = (switch_hold_record_t *) 0 ;
+  switch_time_t arg2 ;
+  switch_time_t *argp2 ;
+  
+  arg1 = (switch_hold_record_t *)jarg1; 
+  argp2 = (switch_time_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_time_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->on = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_hold_record_t_on_get(void * jarg1) {
+  void * jresult ;
+  switch_hold_record_t *arg1 = (switch_hold_record_t *) 0 ;
+  switch_time_t result;
+  
+  arg1 = (switch_hold_record_t *)jarg1; 
+  result =  ((arg1)->on);
+  jresult = new switch_time_t((const switch_time_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_hold_record_t_off_set(void * jarg1, void * jarg2) {
+  switch_hold_record_t *arg1 = (switch_hold_record_t *) 0 ;
+  switch_time_t arg2 ;
+  switch_time_t *argp2 ;
+  
+  arg1 = (switch_hold_record_t *)jarg1; 
+  argp2 = (switch_time_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_time_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->off = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_hold_record_t_off_get(void * jarg1) {
+  void * jresult ;
+  switch_hold_record_t *arg1 = (switch_hold_record_t *) 0 ;
+  switch_time_t result;
+  
+  arg1 = (switch_hold_record_t *)jarg1; 
+  result =  ((arg1)->off);
+  jresult = new switch_time_t((const switch_time_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_hold_record_t_uuid_set(void * jarg1, char * jarg2) {
+  switch_hold_record_t *arg1 = (switch_hold_record_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_hold_record_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->uuid) delete [] arg1->uuid;
+    if (arg2) {
+      arg1->uuid = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->uuid, (const char *)arg2);
+    } else {
+      arg1->uuid = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_hold_record_t_uuid_get(void * jarg1) {
+  char * jresult ;
+  switch_hold_record_t *arg1 = (switch_hold_record_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_hold_record_t *)jarg1; 
+  result = (char *) ((arg1)->uuid);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_hold_record_t_next_set(void * jarg1, void * jarg2) {
+  switch_hold_record_t *arg1 = (switch_hold_record_t *) 0 ;
+  switch_hold_record_s *arg2 = (switch_hold_record_s *) 0 ;
+  
+  arg1 = (switch_hold_record_t *)jarg1; 
+  arg2 = (switch_hold_record_s *)jarg2; 
+  if (arg1) (arg1)->next = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_hold_record_t_next_get(void * jarg1) {
+  void * jresult ;
+  switch_hold_record_t *arg1 = (switch_hold_record_t *) 0 ;
+  switch_hold_record_s *result = 0 ;
+  
+  arg1 = (switch_hold_record_t *)jarg1; 
+  result = (switch_hold_record_s *) ((arg1)->next);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_hold_record_t() {
+  void * jresult ;
+  switch_hold_record_t *result = 0 ;
+  
+  result = (switch_hold_record_t *)new switch_hold_record_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_hold_record_t(void * jarg1) {
+  switch_hold_record_t *arg1 = (switch_hold_record_t *) 0 ;
+  
+  arg1 = (switch_hold_record_t *)jarg1; 
+  delete arg1;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_MESSAGE_STRING_ARG_MAX_get() {
   int jresult ;
   int result;
@@ -7586,6 +7712,16 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_id() {
   switch_size_t result;
   
   result = switch_core_session_id();
+  jresult = new switch_size_t((const switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_session_id_dec() {
+  void * jresult ;
+  switch_size_t result;
+  
+  result = switch_core_session_id_dec();
   jresult = new switch_size_t((const switch_size_t &)result); 
   return jresult;
 }
@@ -26110,6 +26246,18 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_partner_uuid(void * jarg
 }
 
 
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_hold_record(void * jarg1) {
+  void * jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_hold_record_t *result = 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (switch_hold_record_t *)switch_channel_get_hold_record(arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_buffer_create(void * jarg1, void * jarg2, void * jarg3) {
   int jresult ;
   switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
@@ -26906,6 +27054,258 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_event(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_serial_event_t_event_id_set(void * jarg1, int jarg2) {
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  int arg2 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->event_id = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_serial_event_t_event_id_get(void * jarg1) {
+  int jresult ;
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  int result;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  result = (int) ((arg1)->event_id);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_serial_event_t_priority_set(void * jarg1, int jarg2) {
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  int arg2 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->priority = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_serial_event_t_priority_get(void * jarg1) {
+  int jresult ;
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  int result;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  result = (int) ((arg1)->priority);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_serial_event_t_flags_set(void * jarg1, int jarg2) {
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  int arg2 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->flags = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_serial_event_t_flags_get(void * jarg1) {
+  int jresult ;
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  int result;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  result = (int) ((arg1)->flags);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_serial_event_t_owner_set(void * jarg1, char * jarg2) {
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->owner) delete [] arg1->owner;
+    if (arg2) {
+      arg1->owner = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->owner, (const char *)arg2);
+    } else {
+      arg1->owner = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_serial_event_t_owner_get(void * jarg1) {
+  char * jresult ;
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  result = (char *) ((arg1)->owner);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_serial_event_t_subclass_name_set(void * jarg1, char * jarg2) {
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->subclass_name) delete [] arg1->subclass_name;
+    if (arg2) {
+      arg1->subclass_name = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->subclass_name, (const char *)arg2);
+    } else {
+      arg1->subclass_name = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_serial_event_t_subclass_name_get(void * jarg1) {
+  char * jresult ;
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  result = (char *) ((arg1)->subclass_name);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_serial_event_t_body_set(void * jarg1, char * jarg2) {
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->body) delete [] arg1->body;
+    if (arg2) {
+      arg1->body = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->body, (const char *)arg2);
+    } else {
+      arg1->body = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_serial_event_t_body_get(void * jarg1) {
+  char * jresult ;
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  result = (char *) ((arg1)->body);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_serial_event_t() {
+  void * jresult ;
+  switch_serial_event_t *result = 0 ;
+  
+  result = (switch_serial_event_t *)new switch_serial_event_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_serial_event_t(void * jarg1) {
+  switch_serial_event_t *arg1 = (switch_serial_event_t *) 0 ;
+  
+  arg1 = (switch_serial_event_t *)jarg1; 
+  delete arg1;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_serial_event_header_t_name_set(void * jarg1, char * jarg2) {
+  switch_serial_event_header_t *arg1 = (switch_serial_event_header_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_serial_event_header_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->name) delete [] arg1->name;
+    if (arg2) {
+      arg1->name = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->name, (const char *)arg2);
+    } else {
+      arg1->name = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_serial_event_header_t_name_get(void * jarg1) {
+  char * jresult ;
+  switch_serial_event_header_t *arg1 = (switch_serial_event_header_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_serial_event_header_t *)jarg1; 
+  result = (char *) ((arg1)->name);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_serial_event_header_t_value_set(void * jarg1, char * jarg2) {
+  switch_serial_event_header_t *arg1 = (switch_serial_event_header_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_serial_event_header_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->value) delete [] arg1->value;
+    if (arg2) {
+      arg1->value = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->value, (const char *)arg2);
+    } else {
+      arg1->value = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_serial_event_header_t_value_get(void * jarg1) {
+  char * jresult ;
+  switch_serial_event_header_t *arg1 = (switch_serial_event_header_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_serial_event_header_t *)jarg1; 
+  result = (char *) ((arg1)->value);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_serial_event_header_t() {
+  void * jresult ;
+  switch_serial_event_header_t *result = 0 ;
+  
+  result = (switch_serial_event_header_t *)new switch_serial_event_header_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_serial_event_header_t(void * jarg1) {
+  switch_serial_event_header_t *arg1 = (switch_serial_event_header_t *) 0 ;
+  
+  arg1 = (switch_serial_event_header_t *)jarg1; 
+  delete arg1;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_init(void * jarg1) {
   int jresult ;
   switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
@@ -27281,6 +27681,46 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_free_subclass_detailed(char * jar
   arg1 = (char *)jarg1; 
   arg2 = (char *)jarg2; 
   result = (switch_status_t)switch_event_free_subclass_detailed((char const *)arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_binary_deserialize(void * jarg1, void * jarg2, void * jarg3, int jarg4) {
+  int jresult ;
+  switch_event_t **arg1 = (switch_event_t **) 0 ;
+  void **arg2 = (void **) 0 ;
+  switch_size_t arg3 ;
+  switch_bool_t arg4 ;
+  switch_size_t *argp3 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t **)jarg1; 
+  arg2 = (void **)jarg2; 
+  argp3 = (switch_size_t *)jarg3; 
+  if (!argp3) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg3 = *argp3; 
+  arg4 = (switch_bool_t)jarg4; 
+  result = (switch_status_t)switch_event_binary_deserialize(arg1,arg2,arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_binary_serialize(void * jarg1, void * jarg2, void * jarg3) {
+  int jresult ;
+  switch_event_t *arg1 = (switch_event_t *) 0 ;
+  void **arg2 = (void **) 0 ;
+  switch_size_t *arg3 = (switch_size_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t *)jarg1; 
+  arg2 = (void **)jarg2; 
+  arg3 = (switch_size_t *)jarg3; 
+  result = (switch_status_t)switch_event_binary_serialize(arg1,arg2,arg3);
   jresult = result; 
   return jresult;
 }

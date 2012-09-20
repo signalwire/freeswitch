@@ -1109,21 +1109,21 @@ static t38_mode_t request_t38(pvt_t *pvt)
 
         if (!(t38_options = switch_channel_get_private(channel, "_preconfigured_t38_options"))) {
             t38_options = switch_core_session_alloc(session, sizeof(*t38_options));
-            switch_channel_set_private(channel, "_preconfigured_t38_options", NULL);
+            t38_options->T38MaxBitRate = (pvt->disable_v17) ? 9600 : 14400;
+            t38_options->T38FaxVersion = 0;
+            t38_options->T38FaxFillBitRemoval = 1;
+            t38_options->T38FaxTranscodingMMR = 0;
+            t38_options->T38FaxTranscodingJBIG = 0;
+            t38_options->T38FaxRateManagement = "transferredTCF";
+            t38_options->T38FaxMaxBuffer = 2000;
+            t38_options->T38FaxMaxDatagram = LOCAL_FAX_MAX_DATAGRAM;
+            t38_options->T38FaxUdpEC = "t38UDPRedundancy";
+            t38_options->T38VendorInfo = "0 0 0";
         }
 
-		t38_options->T38MaxBitRate = (pvt->disable_v17) ? 9600 : 14400;
-		t38_options->T38FaxVersion = 0;
-		t38_options->T38FaxFillBitRemoval = 1;
-		t38_options->T38FaxTranscodingMMR = 0;
-		t38_options->T38FaxTranscodingJBIG = 0;
-		t38_options->T38FaxRateManagement = "transferredTCF";
-		t38_options->T38FaxMaxBuffer = 2000;
-		t38_options->T38FaxMaxDatagram = LOCAL_FAX_MAX_DATAGRAM;
-		t38_options->T38FaxUdpEC = "t38UDPRedundancy";
-		t38_options->T38VendorInfo = "0 0 0";
+	switch_channel_set_private(channel, "t38_options", t38_options);
+        switch_channel_set_private(channel, "_preconfigured_t38_options", NULL);
 
-		switch_channel_set_private(channel, "t38_options", t38_options);
 		pvt->t38_mode = T38_MODE_REQUESTED;
 		switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_REQ);
 
@@ -1590,8 +1590,14 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 	while (switch_channel_ready(channel) && switch_channel_up(other_channel) && !switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
-		if (!SWITCH_READ_ACCEPTABLE(status) || pvt->done) {
+		if (pvt->done) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Premature exit while negotiating\n", switch_channel_get_name(channel));
 			/* Our duty is over */
+			goto end_unlock;
+		}
+
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Read failed, status=%u\n", switch_channel_get_name(channel), status);
 			goto end_unlock;
 		}
 
@@ -1600,11 +1606,13 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 		}
 
 		if (switch_core_session_write_frame(other_session, read_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Write failed\n", switch_channel_get_name(channel));
 			goto end_unlock;
 		}
 	}
 
 	if (!(switch_channel_ready(channel) && switch_channel_up(other_channel))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Channel not ready\n", switch_channel_get_name(channel));
 		goto end_unlock;
 	}
 
@@ -1645,6 +1653,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status) || pvt->done) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Premature exit while negotiating (%i)\n", switch_channel_get_name(channel), status);
 			/* Our duty is over */
 			goto end_unlock;
 		}
@@ -1654,7 +1663,9 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 		}
 
 		if (switch_test_flag(read_frame, SFF_UDPTL_PACKET)) {
-			udptl_rx_packet(pvt->udptl_state, read_frame->packet, read_frame->packetlen);
+			if (udptl_rx_packet(pvt->udptl_state, read_frame->packet, read_frame->packetlen) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Error decoding UDPTL (%u bytes)\n", switch_channel_get_name(channel), read_frame->packetlen);
+                        }
 		}
 	}
 

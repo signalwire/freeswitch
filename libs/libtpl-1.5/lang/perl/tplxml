@@ -1,0 +1,306 @@
+#!/usr/bin/perl
+
+# tplxml 
+# by Troy Hanson   27 Feb 2006
+# convert between tpl and XML
+
+# Copyright (c) 2005-2006, Troy Hanson     http://tpl.sourceforge.net
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+#   * Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#   * Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in
+#     the documentation and/or other materials provided with the
+#     distribution.
+#   * Neither the name of the copyright holder nor the names of its
+#     contributors may be used to endorse or promote products derived
+#     from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+use strict;
+use warnings;
+use XML::Parser;
+use FindBin;
+use lib "$FindBin::Bin";  #locate Tpl.pm in same directory as tplxml
+use Tpl;
+use bytes;
+
+sub quote_chars {
+    my $str = shift;
+    $$str =~ s/&/&amp;/g;  #order matters
+    $$str =~ s/</&lt;/g;
+    $$str =~ s/>/&gt;/g;
+}
+sub unquote_chars {
+    my $str = shift;
+    $$str =~ s/&lt;/</g;
+    $$str =~ s/&gt;/>/g;
+    $$str =~ s/&amp;/&/g;
+}
+sub hex_chars {
+    my $str = shift;
+    my $hex;
+    for(my $i=0; $i < length $$str; $i++) {
+        my $byte = unpack("C",substr($$str,$i,1));
+        $hex .= sprintf("%02x", $byte);
+    }
+    $$str = $hex;
+}
+sub unhex_chars {
+    my $str = shift;
+    my $bytes;
+    for(my $i=0; $i < length $$str; $i+=2) {
+        my $hexbyte = substr($$str,$i,2);
+        $bytes .= pack("C", hex($hexbyte));
+    }
+    $$str= $bytes;
+}
+
+sub tpl2xml {
+    my $src = shift;
+    my (@out,@args);
+
+    # build list of references to hold output of unpacking
+    my ($fmt,@fxlens) = peek_fmt($src);
+    for(my ($i,$j,$k)=(0,0,0);$i<length($fmt);$i++) {
+        push @args, [] if substr($fmt,$i,2) =~ /^[iucfIU]\#$/; # octothorpic
+        push @args, \$out[$j++] if substr($fmt,$i,2) =~ /^[iuBscfIU][^\#]*$/;
+        push @args, $fxlens[$k++] if substr($fmt,$i,1) eq "#";
+    }
+
+    my $tpl = Tpl->tpl_map($fmt,@args);
+    $tpl->tpl_load($src);
+    $tpl->tpl_unpack(0);
+
+    # construct xml preamble
+    my $pre = qq{<?xml version="1.0" encoding="utf-8" ?>
+      <!DOCTYPE tplxml [ 
+      <!ELEMENT tplxml (A|i|u|I|U|B|s|c|f|fx)*>
+      <!ATTLIST tplxml
+         format CDATA #REQUIRED
+         fxlens CDATA #REQUIRED
+      >
+      <!ELEMENT i (#PCDATA)>
+      <!ELEMENT u (#PCDATA)>
+      <!ELEMENT I (#PCDATA)>
+      <!ELEMENT U (#PCDATA)>
+      <!ELEMENT B (#PCDATA)>
+      <!ELEMENT s (#PCDATA)>
+      <!ELEMENT c (#PCDATA)>
+      <!ELEMENT f (#PCDATA)>
+      <!ELEMENT A (el)*>
+      <!ELEMENT el (A|i|u|I|U|B|s|c|f|fx)+>
+      <!ELEMENT fx (i|u|I|U|c|f)*>
+      ]>\n};
+    print $pre;
+    my $fxattr = join ",", @fxlens;
+    print qq{<tplxml format="$fmt" fxlens="$fxattr">\n};
+    tpl2xml_node($tpl,"A0",1);
+    print qq{</tplxml>\n};
+}
+
+sub tpl2xml_node {
+    my $tpl = shift;
+    my $node = shift;
+    my $indent = shift;
+    my $i = "  " x $indent;
+    for my $c (@{ $tpl->{$node} }) {
+        if (ref($c)) { 
+            my ($type,$addr,$fxlen) = @$c;
+            quote_chars $addr if $type eq 's';
+            hex_chars $addr if $type eq 'B';
+            if (not defined $fxlen) {
+                print qq{$i<$type>$$addr</$type>\n}; # singleton
+            } else {
+                # all elements of octothorpic fixed-len array
+                print qq{$i<fx>\n};
+                print qq{$i  <$type>$addr->[$_]</$type>\n} for (0..$fxlen-1); 
+                print qq{$i</fx>\n};
+            }
+        } else { 
+            # A node
+            print qq{$i<A>\n};
+            my $idx = $1 if $c =~ /^A(\d+)$/;
+            while($tpl->tpl_unpack($idx) > 0) {
+                print qq{$i<el>\n};
+                tpl2xml_node($tpl,$c,$indent+1);  
+                print qq{$i</el>\n};
+            }
+            print qq{$i</A>\n};
+        }
+    }
+}
+
+sub xml2tpl {
+    my $src = shift;
+    my $p = new XML::Parser( Style => 'Tree' );
+    my $tree = $p->parse($$src); 
+    die "not a tpl xml document" unless $tree->[0] eq 'tplxml';
+    die "no format attribute" unless defined $tree->[1][0]->{format};
+    my $fmt = $tree->[1][0]->{format};
+    die "no fxlens attribute" unless defined $tree->[1][0]->{fxlens};
+    my @fxlens = split /,/, $tree->[1][0]->{fxlens};
+
+    # build list of references to variables for use in packing
+    my (@args,@out);
+    for(my ($i,$j,$k)=(0,0,0);$i<length($fmt);$i++) {
+        push @args, [] if substr($fmt,$i,2) =~ /^[iucfIU]\#$/; # octothorpic
+        push @args, \$out[$j++] if substr($fmt,$i,2) =~ /^[iuBscfIU][^\#]*$/;
+        push @args, $fxlens[$k++] if substr($fmt,$i,1) eq "#";
+    }
+
+    my $tpl = Tpl->tpl_map($fmt,@args);
+    xml2tpl_dfs($tpl,$tree->[1]);
+    $tpl->tpl_pack(0);
+    print $tpl->tpl_dump;
+}
+
+sub xml2tpl_dfs {
+    my $tpl = shift;
+    my $xml = shift;
+
+    my @next = @$xml;  # ($attr,@tagvals) = $$xml;
+    shift @next;  # discard <tplxml> attributes
+    my @tpltoks = @{ $tpl->{"A0"} }; #expected tokens when parsing
+    
+    TAG: while (@next) {
+        my $xmltag = shift @next;
+        my $xmlval = shift @next;
+
+        # skip whitespace/newlines embedded between tags
+        next TAG if ($xmltag eq "0" and $xmlval =~ /^\s+$/); 
+
+        # pack if necessary. consume tokens by look-ahead until non-pack token.
+        while (@tpltoks > 0 and $tpltoks[0] =~ /^P(\d+)$/) {
+            shift @tpltoks;
+            $tpl->tpl_pack($1);
+        }
+
+        # If tpl format specifies a non-array type should appear at this point 
+        # in the XML tree, then validate the type matches the format and assign 
+        # the value from the XML to the variable from which it'll be packed
+        my $tpltoken = shift @tpltoks;
+        my $octothorpic=0;
+        if (ref $tpltoken) {
+            my ($tpltype,$tpladdr,$fxlen) = @$tpltoken;
+
+            #  This block is how we handle octothorpic (fixed length) arrays.
+            #  If $fxlen is defined then an octothorpic <fx> node is expected.
+            #  After finding the <fx> node we put its subnodes (the array elements)
+            #  onto the @next array for immediate parsing and we use $fxlen:$remaining
+            #  as a signet version of the $fxlen to induce the element-processing loop.
+            if (defined $fxlen) {
+                if ($fxlen =~ /^(\d+):(\d+)$/) { # $1==orig $fxlen, $2==remain $fxlen
+                    $octothorpic=1;
+                    unshift @tpltoks, [$tpltype, $tpladdr, $1.":".($2-1)] if $2 > 1;
+                } else { # octothorpic array expected; look for <fx> parent node
+                    die "expected '<fx>' but got '<$xmltag>'" unless $xmltag eq 'fx';
+                    @{ $tpladdr } = (); # Empty accumulator array for octothorpic values
+                    unshift @tpltoks, [$tpltype, $tpladdr, "$fxlen:$fxlen"]; # x:x signet
+                    shift @$xmlval; # discard 'A' attributes
+                    unshift @next, @$xmlval;  #parse xml subtree now (dfs)
+                    next TAG; # proceed to children of <fx> node
+                }
+            }
+
+            if ($tpltype ne $xmltag) {
+                die "mismatch: xml has '$xmltag' where format specifies '$tpltype'";
+            } 
+            # expect @$xmlval to be ({},0,'value') i.e. a single, terminal text node
+            if (@$xmlval > 3 || $xmlval->[1] ne '0') {
+                die "error: xml tag '$xmltag' cannot enclose sub-tags";
+            }
+            if ($octothorpic) {
+                push @{ $tpladdr }, $xmlval->[2]; 
+            } else {
+                $$tpladdr = $xmlval->[2]; 
+            }
+            unquote_chars $tpladdr if $tpltype eq 's';
+            unhex_chars $tpladdr if $tpltype eq 'B';
+        } elsif ($tpltoken =~ /^A(\d+)$/) {
+            # tpl format specifies an array should appear at this point in the XML
+            if ($xmltag ne 'A') {
+                die "mismatch: xml has '$xmltag' where format specifies 'A'";
+            }
+            shift @$xmlval; # discard 'A' attributes
+
+            # form token that means "replace me with tokens from A(n), x times"
+            # (where x is the number of elements contained by this array).
+            my $array_count=0;
+            for(my $i=0; $i < @$xmlval; $i+=2) {
+                $array_count++ if $xmlval->[$i] eq 'el';
+            }
+
+            unshift @tpltoks, "N$1:$array_count" if $array_count > 0; 
+            unshift @next, @$xmlval;  #parse xml subtree now (dfs)
+        } elsif ($tpltoken =~ /^N(\d+):(\d+)$/) {
+            if ($xmltag ne "el") {
+                die "mismatch: xml has '$xmltag' where array 'el' is expected";
+            }
+            # prepend A$1's tokens (and decremented N:count) to expected tokens 
+            my ($n,$elsleft) = ($1, ($2 - 1));
+            unshift @tpltoks, "N$n:$elsleft" if $elsleft > 0;  
+            unshift @tpltoks, "P$n";  # "pack me now" token
+            unshift @tpltoks, @{ $tpl->{"A$1"} };
+            
+            shift @$xmlval; # discard 'el' attributes
+            unshift @next, @$xmlval;  # proceed to parse el subtree (dfs)
+        } else {
+            die "internal error, unexpected token $tpltoken";
+        }
+    }
+
+    # pack if necessary. consume tokens by look-ahead until non-pack token.
+    while (@tpltoks > 0 and $tpltoks[0] =~ /^P(\d+)$/) {
+        shift @tpltoks;
+        $tpl->tpl_pack($1);
+    }
+
+    if (@tpltoks > 0) {
+        die "error: end of xml document reached but format requires more data";
+    }
+}
+
+sub peek_fmt {
+    my $buf = shift;
+    die "invalid tpl file" unless ($$buf =~ /^tpl/);
+    my $flags = CORE::unpack("C", substr($$buf,3,1));
+    my $UF = ($flags & 1) ? "N" : "V";  # big or little endian fxlens
+    my $fmt = (CORE::unpack("Z*", substr($$buf,8)));
+    my $num_octothorpes = scalar (my @o = ($fmt =~ /#/g));
+    my @fxlens;
+    my $fx = 8 + length($fmt) + 1;
+    for(my $i=0; $i < $num_octothorpes; $i++) {
+        my $fxlen_bytes = substr($$buf,$fx,4);
+        my $fxlen = unpack($UF, $fxlen_bytes);
+        push @fxlens, $fxlen;
+        $fx += 4;
+    }
+    return ($fmt,@fxlens);
+}
+
+##########################################################################
+# Slurp input file, auto-detect if conversion is to tpl or XML, and run.
+##########################################################################
+
+undef $/; 
+my $src = <>;
+our $to = (substr($src,0,3) eq "tpl") ? "xml" : "tpl";
+xml2tpl(\$src) if $to eq "tpl";
+tpl2xml(\$src) if $to eq "xml";
+

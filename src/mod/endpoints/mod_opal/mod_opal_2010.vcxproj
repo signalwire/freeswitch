@@ -47,6 +47,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4100;4101;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <AdditionalOptions>/NODEFAULTLIB:LIMBCTD %(AdditionalOptions)</AdditionalOptions>

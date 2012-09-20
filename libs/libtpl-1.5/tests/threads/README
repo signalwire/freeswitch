@@ -1,0 +1,3 @@
+Tests for using tpl in threaded programs. 
+
+thread_ipc.c    a thread version of the pipe IPC test ../test28.c

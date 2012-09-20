@@ -1,0 +1,11 @@
+This directory contains functions that are missing on the Windows platform.  In
+particular, mmap, munmap, and msync are not available on Windows. These
+replacements are used on both Cygwin and MinGW. (On Cygwin the built-in mmap
+has no write support, and is not used).
+
+mmap.c
+mman.h
+
+Special thanks to Horea Haitonic for contributing mmap.c and mman.h.
+
+April 2007

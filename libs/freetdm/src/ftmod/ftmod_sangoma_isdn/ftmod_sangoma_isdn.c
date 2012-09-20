@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2010, Sangoma Technologies 
  * David Yat Sin <davidy@sangoma.com>
@@ -39,7 +40,6 @@
 #ifdef FTDM_DEBUG_CHAN_MEMORY
 #include <sys/mman.h>
 #endif
-
 
 static void *ftdm_sangoma_isdn_run(ftdm_thread_t *me, void *obj);
 static ftdm_status_t ftdm_sangoma_isdn_stop(ftdm_span_t *span);
@@ -696,7 +696,7 @@ static ftdm_status_t ftdm_sangoma_isdn_process_state_change(ftdm_channel_t *ftdm
 					
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Requesting Q.921 Line activation\n");
 					sngisdn_set_flag(sngisdn_info, FLAG_ACTIVATING);
-					sngisdn_snd_info_req(ftdmchan);
+					sngisdn_snd_dl_req(ftdmchan);
 					ftdm_sched_timer(signal_data->sched, "timer_t3", signal_data->timer_t3*1000, sngisdn_t3_timeout, (void*) sngisdn_info, NULL);
 				} else {
 					sngisdn_snd_setup(ftdmchan);

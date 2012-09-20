@@ -1202,7 +1202,16 @@ void sngisdn_process_rst_cfm (sngisdn_event_data_t *sngisdn_event)
 		return;
 	}
 
-	if (rstEvnt->rstInd.eh.pres == PRSNT_NODEF && rstEvnt->rstInd.rstClass.pres == PRSNT_NODEF) {
+	ftdm_log(FTDM_LOG_DEBUG, "%s: Processing RESTART CFM (suId:%u dChan:%d ces:%d %s(%d))\n",
+									signal_data->ftdm_span->name,
+									suId, dChan, ces,
+									(evntType == IN_LNK_DWN)?"LNK_DOWN":
+									(evntType == IN_LNK_UP)?"LNK_UP":
+									(evntType == IN_INDCHAN)?"b-channel":
+									(evntType == IN_LNK_DWN_DM_RLS)?"NFAS service procedures":
+									(evntType == IN_SWCHD_BU_DCHAN)?"NFAS switchover to backup":"Unknown", evntType);
+
+	if (rstEvnt->rstInd.eh.pres == PRSNT_NODEF && rstEvnt->rstInd.rstClass.pres == PRSNT_NODEF) {			
 		switch(rstEvnt->rstInd.rstClass.val) {
 			case IN_CL_INDCHAN: /* Indicated b-channel */
 				if (rstEvnt->chanId.eh.pres) {

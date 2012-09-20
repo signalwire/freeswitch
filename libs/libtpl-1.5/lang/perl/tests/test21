@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $i;
+my $tpl = Tpl->tpl_map("A(i)",\$i);
+for($i=0; $i<10; $i++) { $tpl->tpl_pack(1); }
+my $img = $tpl->tpl_dump();
+
+my $fmt = Tpl->tpl_peek(\$img);
+print("$fmt\n");

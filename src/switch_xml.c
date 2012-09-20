@@ -104,7 +104,7 @@ void globfree(glob_t *);
 /* Use UTF-8 as the general encoding */
 static switch_bool_t USE_UTF_8_ENCODING = SWITCH_TRUE;
 
-static int preprocess(const char *cwd, const char *file, int write_fd, int rlevel);
+static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rlevel);
 
 typedef struct switch_xml_root *switch_xml_root_t;
 struct switch_xml_root {		/* additional data for the root tag */
@@ -1224,12 +1224,12 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 	return ebuf;
 }
 
-static int preprocess_exec(const char *cwd, const char *command, int write_fd, int rlevel)
+static FILE *preprocess_exec(const char *cwd, const char *command, FILE *write_fd, int rlevel)
 {
 #ifdef WIN32
 	char message[] = "<!-- exec not implemented in windows yet -->";
 
-	if (write(write_fd, message, sizeof(message)) < 0) {
+	if (fwrite( message, 1, sizeof(message), write_fd) < 0) {
 		goto end;
 	}
 #else
@@ -1249,7 +1249,7 @@ static int preprocess_exec(const char *cwd, const char *command, int write_fd, i
 			int bytes;
 			close(fds[1]);
 			while ((bytes = read(fds[0], buf, sizeof(buf))) > 0) {
-				if (write(write_fd, buf, bytes) <= 0) {
+				if (fwrite(buf, 1, bytes, write_fd) <= 0) {
 					break;
 				}
 			}
@@ -1271,7 +1271,7 @@ static int preprocess_exec(const char *cwd, const char *command, int write_fd, i
 
 }
 
-static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, int rlevel)
+static FILE *preprocess_glob(const char *cwd, const char *pattern, FILE *write_fd, int rlevel)
 {
 	char *full_path = NULL;
 	char *dir_path = NULL, *e = NULL;
@@ -1310,28 +1310,43 @@ static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, i
 	return write_fd;
 }
 
-static int preprocess(const char *cwd, const char *file, int write_fd, int rlevel)
+static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rlevel)
 {
-	int read_fd = -1;
+	FILE *read_fd = NULL;
 	switch_size_t cur = 0, ml = 0;
-	char *q, *cmd, buf[2048], ebuf[8192];
+	char *q, *cmd, *buf = NULL, *ebuf = NULL;
 	char *tcmd, *targ;
 	int line = 0;
-
-	if ((read_fd = open(file, O_RDONLY, 0)) < 0) {
-		const char *reason = strerror(errno);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt open %s (%s)\n", file, reason);
-		return read_fd;
-	}
+	switch_size_t len = 0, eblen = 0;
 
 	if (rlevel > 100) {
 		return -1;
 	}
 
-	while ((cur = switch_fd_read_line(read_fd, buf, sizeof(buf))) > 0) {
+	if (!(read_fd = fopen(file, "r"))) {
+		const char *reason = strerror(errno);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt open %s (%s)\n", file, reason);
+		return -1;
+	}
+
+	setvbuf(read_fd, (char *) NULL, _IOFBF, 65536);
+	
+	for(;;) {
 		char *arg, *e;
 		const char *err = NULL;
-		char *bp = expand_vars(buf, ebuf, sizeof(ebuf), &cur, &err);
+		char *bp;
+
+		switch_safe_free(ebuf);
+
+		if ((cur = switch_fp_read_dline(read_fd, &buf, &len)) <= 0) {
+			break;
+		}
+
+		eblen = len *2;
+		ebuf = malloc(eblen);
+		memset(ebuf, 0, eblen);
+		
+		bp = expand_vars(buf, ebuf, eblen, &cur, &err);
 		line++;
 
 		if (err) {
@@ -1360,7 +1375,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 			if ((e = strstr(tcmd, "/>"))) {
 				*e += 2;
 				*e = '\0';
-				if (write(write_fd, e, (unsigned) strlen(e)) != (int) strlen(e)) {
+				if (fwrite(e, 1, (unsigned) strlen(e), write_fd) != (int) strlen(e)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 				}
 			}
@@ -1431,13 +1446,13 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 		}
 
 		if ((cmd = strstr(bp, "<!--#"))) {
-			if (write(write_fd, bp, (unsigned) (cmd - bp)) != (cmd - bp)) {
+			if (fwrite(bp, 1, (unsigned) (cmd - bp), write_fd) != (unsigned) (cmd - bp)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 			}
 			if ((e = strstr(cmd, "-->"))) {
 				*e = '\0';
 				e += 3;
-				if (write(write_fd, e, (unsigned) strlen(e)) != (int) strlen(e)) {
+				if (fwrite(e, 1, (unsigned) strlen(e), write_fd) != (int) strlen(e)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 				}
 			} else {
@@ -1489,13 +1504,18 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 			continue;
 		}
 
-		if (write(write_fd, bp, (unsigned) cur) != (int) cur) {
+		if (fwrite(bp, 1, (unsigned) cur, write_fd) != (int) cur) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
 		}
+
 	}
 
-	close(read_fd);
-	return write_fd;
+	switch_safe_free(buf);
+	switch_safe_free(ebuf);
+
+	fclose(read_fd);
+
+	return 0;
 }
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
@@ -1527,7 +1547,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 {
-	int fd = -1, write_fd = -1;
+	int fd = -1;
+	FILE *write_fd = NULL;
 	switch_xml_t xml = NULL;
 	char *new_file = NULL;
 	const char *abs, *absw;
@@ -1546,13 +1567,15 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 		goto done;
 	}
 
-	if ((write_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+	if ((write_fd = fopen(new_file, "w+")) == NULL) {
 		goto done;
 	}
 
+	setvbuf(write_fd, (char *) NULL, _IOFBF, 65536);
+
 	if (preprocess(SWITCH_GLOBAL_dirs.conf_dir, file, write_fd, 0) > -1) {
-		close(write_fd);
-		write_fd = -1;
+		fclose(write_fd);
+		write_fd = NULL;
 		if ((fd = open(new_file, O_RDONLY, 0)) > -1) {
 			if ((xml = switch_xml_parse_fd(fd))) {
 				xml->free_path = new_file;
@@ -1567,8 +1590,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 
 	switch_mutex_unlock(FILE_LOCK);
 
-	if (write_fd > -1) {
-		close(write_fd);
+	if (write_fd) {
+		fclose(write_fd);
+		write_fd = NULL;
 	}
 
 	if (fd > -1) {
@@ -3076,7 +3100,7 @@ done:
 #define	RANGE		'-'
 #define	RBRACKET	']'
 #define	SEP		'/'
-#define WIN_SEP '\\'
+#define WIN_SEP '/'
 #define	STAR		'*'
 #define	TILDE		'~'
 #define	UNDERSCORE	'_'

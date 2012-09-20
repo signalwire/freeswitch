@@ -1,0 +1,18 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $i;
+my $tpl = Tpl->tpl_map("A(i)",\$i);
+for($i=0; $i<10; $i++) { $tpl->tpl_pack(1); }
+my $img = $tpl->tpl_dump();
+
+my $j;
+my $tpl2 = Tpl->tpl_map("A(i)",\$j);
+$tpl2->tpl_load(\$img);
+while($tpl2->tpl_unpack(1) > 0) { print "$j\n" }
+

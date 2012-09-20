@@ -1,0 +1,25 @@
+# This makes a small Mingw test program. The standard test suite
+# is incompatible with MinGW because it uses UNIX facilities such
+# as pipe/fork and the /tmp directory, not features of Windows.
+SRC = ../src
+LIBTOOL = ../libtool
+LTLIB = $(SRC)/libtpl.la
+CFLAGS = -I$(SRC) -g 
+
+PROG = mgwtest
+
+all: $(PROG)
+
+$(PROG) : $(LTLIB)
+	$(CC) -c $(CFLAGS) $(@).c 
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $@ $(@).o $(LTLIB) -mwindows
+	@echo "you can now run windows application: $@"
+
+$(LTLIB) :
+	@echo "you must first run 'configure; make' in the top-level directory"
+	@exit 1
+
+.PHONY: clean
+
+clean:
+	rm $(PROG) $(PROG).exe $(PROG).o $(PROG).tpl

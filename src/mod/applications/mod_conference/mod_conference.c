@@ -8223,7 +8223,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	/* Caller ID Number */
 	if (zstr(caller_id_number)) {
-		caller_id_number = "0000000000";
+		caller_id_number = SWITCH_DEFAULT_CLID_NUMBER;
 	}
 
 	if (!pool) {

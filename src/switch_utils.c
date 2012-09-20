@@ -453,6 +453,103 @@ SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size
 	return total;
 }
 
+#define DLINE_BLOCK_SIZE 1024
+#define DLINE_MAX_SIZE 1048576
+SWITCH_DECLARE(switch_size_t) switch_fd_read_dline(int fd, char **buf, switch_size_t *len)
+{
+	char c, *p;
+	int cur;
+	switch_size_t total = 0;
+	char *data = *buf;
+	switch_size_t ilen = *len;
+
+	if (!data) {
+		*len = ilen = DLINE_BLOCK_SIZE;
+		data = malloc(ilen);
+		memset(data, 0, ilen);
+	}
+
+	p = data;
+	while ((cur = read(fd, &c, 1)) == 1) {
+
+		if (total + 2 >= ilen) {
+			if (ilen + DLINE_BLOCK_SIZE > DLINE_MAX_SIZE) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Single line limit reached!\n");	
+				break;
+			}
+
+			ilen += DLINE_BLOCK_SIZE;
+			data = realloc(data, ilen);
+			switch_assert(data);
+			p = data + total;
+
+		}
+
+		total += cur;
+		*p++ = c;
+
+		if (c == '\r' || c == '\n') {
+			break;
+		}
+	}
+
+	*p++ = '\0';
+
+	*len = ilen;
+	*buf = data;
+
+	return total;
+}
+
+
+
+SWITCH_DECLARE(switch_size_t) switch_fp_read_dline(FILE *fd, char **buf, switch_size_t *len)
+{
+	char c, *p;
+	switch_size_t total = 0;
+	char *data = *buf;
+	switch_size_t ilen = *len;
+
+	if (!data) {
+		*len = ilen = DLINE_BLOCK_SIZE;
+		data = malloc(ilen);
+		memset(data, 0, ilen);
+	}
+
+	p = data;
+	//while ((c = fgetc(fd)) != EOF) {
+
+	while (fread(&c, 1, 1, fd) == 1) {
+		
+		if (total + 2 >= ilen) {
+			if (ilen + DLINE_BLOCK_SIZE > DLINE_MAX_SIZE) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Single line limit reached!\n");	
+				break;
+			}
+
+			ilen += DLINE_BLOCK_SIZE;
+			data = realloc(data, ilen);
+			switch_assert(data);
+			p = data + total;
+
+		}
+
+		total++;
+		*p++ = c;
+
+		if (c == '\r' || c == '\n') {
+			break;
+		}
+	}
+
+	*p++ = '\0';
+
+	*len = ilen;
+	*buf = data;
+
+	return total;
+}
+
 SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
 {
 	char *p, *q;

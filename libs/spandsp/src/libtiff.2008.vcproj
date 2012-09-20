@@ -16,8 +16,8 @@
 			Name="x64"
 		/>
 	</Platforms>
-	<Tooltiff-4.0.2s>
-	</Tooltiff-4.0.2s>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
@@ -157,7 +157,7 @@
 			ConfigurationType="4"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
-			BuildLogtiff-4.0.2="$(IntDir)\BuildLog $(ProjectName).htm"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -278,206 +278,206 @@
 	</Configurations>
 	<References>
 	</References>
-	<tiff-4.0.2s>
+	<Files>
 		<Filter
 			Name="Source tiff-4.0.2s"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<tiff-4.0.2
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_aux.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_close.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_codec.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_color.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_compress.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dir.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dirinfo.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dirread.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dirwrite.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dumpmode.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_error.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_extension.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_fax3.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_fax3sm.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_flush.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_getimage.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_jpeg.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_luv.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_lzw.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_next.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_ojpeg.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_open.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_packbits.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_pixarlog.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_predict.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_print.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_read.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_strip.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_swab.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_thunder.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_tile.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_unix.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_version.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_warning.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_write.c"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_zip.c"
 				>
-			</tiff-4.0.2>
+			</File>
 		</Filter>
 		<Filter
-			Name="Header tiff-4.0.2s"
+			Name="Header Files"
 			>
-			<tiff-4.0.2
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\t4.h"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_dir.h"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_fax3.h"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tif_predict.h"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tiff.h"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tiffconf.h"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tiffio.h"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tiffio.hxx"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tiffiop.h"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\tiffvers.h"
 				>
-			</tiff-4.0.2>
-			<tiff-4.0.2
+			</File>
+			<File
 				RelativePath="..\..\tiff-4.0.2\libtiff\uvcode.h"
 				>
-			</tiff-4.0.2>
+			</File>
 		</Filter>
-	</tiff-4.0.2s>
+	</Files>
 	<Globals>
 	</Globals>
 </VisualStudioProject>

@@ -1,0 +1,5 @@
+format cA(i#)S(cf#)A(ci#)
+num_fxlens 3
+fxlens[0] 10
+fxlens[1] 5
+fxlens[2] 8

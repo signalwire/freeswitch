@@ -575,7 +575,7 @@ int main(int argc, char *argv[])
                 if (compression < 0  ||  (block_size == 0  &&  compression_step >= 3))
                     break;
             }
-            t4_tx_set_tx_encoding(&send_state, compression, T4_COMPRESSION_NONE);
+            t4_tx_set_tx_encoding(&send_state, compression);
             t4_rx_set_rx_encoding(&receive_state, compression);
 
             rows_read = 0;
@@ -716,7 +716,7 @@ int main(int argc, char *argv[])
                         compression = compression_sequence[compression_step++];
                     }
                 }
-                t4_tx_set_tx_encoding(&send_state, compression, T4_COMPRESSION_NONE);
+                t4_tx_set_tx_encoding(&send_state, compression);
                 t4_rx_set_rx_encoding(&receive_state, compression);
 
                 if (t4_tx_start_page(&send_state))

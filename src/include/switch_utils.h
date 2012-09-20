@@ -234,7 +234,8 @@ static inline uint32_t switch_known_bitrate(switch_payload_t payload)
 }
 
 SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len);
-
+SWITCH_DECLARE(switch_size_t) switch_fd_read_dline(int fd, char **buf, switch_size_t *len);
+SWITCH_DECLARE(switch_size_t) switch_fp_read_dline(FILE *fd, char **buf, switch_size_t *len);
 
 SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switch_size_t size);
 SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_frame_t **clone);

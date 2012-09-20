@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $pwd = `pwd`;
+chomp $pwd;
+
+my $tmp1 = "$pwd/$0_1.out";
+my $tmp2 = "$pwd/$0_2.out";
+my $tmp3 = "$pwd/$0_3.out";
+
+my ($c,@i);
+my $tpl = Tpl->tpl_map("A(S(ci#))",\$c,\@i,10);
+
+# make element 1
+$c = 97;
+@i = (0,1,2,3,4,5,6,7,8,9);
+$tpl->tpl_pack(1);
+
+# make element 2
+$c = 98;
+@i = (1,2,3,4,5,6,7,8,9,10);
+$tpl->tpl_pack(1);
+
+$tpl->tpl_dump($tmp1);
+
+
+`../tplxml $tmp1 > $tmp2`;        # convert tpl to xml
+`../tplxml $tmp2 > $tmp3`;        # convert xml back to tpl
+`diff $tmp1 $tmp3`;
+print "tpl files ", ($? ? "differ" : "identical"), "\n";
+

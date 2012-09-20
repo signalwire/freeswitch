@@ -1,0 +1,16 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $i;
+my $tpl = Tpl->tpl_map("A(u)",\$i);
+for($i=0; $i<10; $i++) { $tpl->tpl_pack(1); }
+my $img = $tpl->tpl_dump();
+
+open TPLXML, "|../tplxml" or die "can't open tplxml: $!";
+print TPLXML $img;
+close TPLXML;

@@ -4032,6 +4032,23 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 			switch_channel_set_variable(channel, "progress_media_stamp", progress_media);
 		}
 
+		if (channel->hold_record) {
+			switch_hold_record_t *hr;
+			switch_stream_handle_t stream = { 0 };
+
+			SWITCH_STANDARD_STREAM(stream);
+
+			stream.write_function(&stream, "{", SWITCH_VA_NONE);
+
+			for (hr = channel->hold_record; hr; hr = hr->next) {
+				stream.write_function(&stream, "{%"SWITCH_TIME_T_FMT",%"SWITCH_TIME_T_FMT"},", hr->on, hr->off);
+			}
+			end_of((char *)stream.data) = '}';
+
+			switch_channel_set_variable(channel, "hold_events", (char *)stream.data);
+			free(stream.data);
+		}
+
 		switch_time_exp_lt(&tm, caller_profile->times->hungup);
 		switch_strftime_nocheck(end, &retsize, sizeof(end), fmt, &tm);
 		switch_channel_set_variable(channel, "end_stamp", end);

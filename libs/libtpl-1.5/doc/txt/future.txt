@@ -1,0 +1,52 @@
+For future reference these are some API design ideas- not working code!
+
+--------------------------------------------------------------------------------
+Java API ideas
+--------------------------------------------------------------------------------
+http://www.ioplex.com/~miallen/encdec/  (binary pack/unpack utilities)
+
+The Java API would take an object, and a list of field  names, then use the
+Java Reflection API to read or write those fields  during packing and
+unpacking.
+
+I.e. if you are going to unpack a tpl with format string A(if), you  
+might create a Java class that has two instance variables (an int and  
+a double). Then you create an object of that class, and pass it to  
+tpl_map (or perhaps a constructor for the Tpl class), like
+
+class Unpacker {
+        int count;
+        double weight;
+}
+... 
+Unpacker up = new Unpacker();
+Tpl tn = new Tpl("A(if)", up, "count", "weight");
+tn.tpl_unpack(1);  // stores unpacked values into count,weight using Reflection
+
+--------------------------------------------------------------------------------
+Ruby API ideas
+--------------------------------------------------------------------------------
+#!/usr/local/ruby/bin/ruby -w
+
+class Tpl < Hash
+       def initialize(fmt, *args)
+         @fmt = fmt
+         @args = args
+       end
+
+       def pack
+         @args.each {|key| puts "#{key} #{self[key]}"}
+       end
+end
+
+
+p = Tpl.new("A(i)", :id);
+10.times do |i|
+   p[:id] = i
+   p.pack
+end
+p.dump("/tmp/file.tpl")  # p.dump(arg) checks arg.respond_to?(:write)
+
+p = Tpl.new("A(i)", :id);
+p.load("/tmp/file.tpl")
+p.unpack(1) {|h| puts h[:id]}

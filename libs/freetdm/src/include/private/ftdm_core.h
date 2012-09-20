@@ -126,6 +126,9 @@
 extern "C" {
 #endif
 
+#define SPAN_PENDING_CHANS_QUEUE_SIZE 1000
+#define SPAN_PENDING_SIGNALS_QUEUE_SIZE 1000
+
 #define GOTO_STATUS(label,st) status = st; goto label ;
 
 #define ftdm_copy_string(x,y,z) strncpy(x, y, z - 1) 
@@ -473,6 +476,7 @@ struct ftdm_channel {
 	int32_t txdrops;
 	int32_t rxdrops;
 	ftdm_usrmsg_t *usrmsg;
+	ftdm_time_t last_state_change_time;
 };
 
 struct ftdm_span {
@@ -689,6 +693,9 @@ FT_DECLARE(ftdm_status_t) ftdm_sigmsg_remove_var(ftdm_sigmsg_t *sigmsg, const ch
  *  \note data must have been allocated using ftdm_calloc, FreeTDM will free data once the usrmsg is processed.
  */
 FT_DECLARE(ftdm_status_t) ftdm_sigmsg_set_raw_data(ftdm_sigmsg_t *sigmsg, void *data, ftdm_size_t datalen);
+
+/*! \brief Retrieve a span and channel data structure from a string in the format 'span_id:chan_id'*/
+FT_DECLARE(ftdm_status_t) ftdm_get_channel_from_string(const char *string_id, ftdm_span_t **out_span, ftdm_channel_t **out_channel);
 
 /*!
   \brief Assert condition

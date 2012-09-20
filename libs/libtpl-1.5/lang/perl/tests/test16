@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $pwd = `pwd`;
+chomp $pwd;
+
+my $i;
+my $tpl = Tpl->tpl_map("B",\$i);
+$i = pack("CCCC", 0xA, 0xB, 0xC, 0xD);
+$tpl->tpl_pack(0); 
+my $img = $tpl->tpl_dump();
+
+
+$tpl = Tpl->tpl_map("B",\$i);
+$tpl->tpl_load(\$img);
+$tpl->tpl_unpack(0);
+print "$i\n";

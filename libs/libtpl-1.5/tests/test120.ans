@@ -1,0 +1,12 @@
+testing undersized output buffer... -1 
+testing sufficient output buffer... 0 
+j is 0
+j is 1
+j is 2
+j is 3
+j is 4
+j is 5
+j is 6
+j is 7
+j is 8
+j is 9

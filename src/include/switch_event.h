@@ -102,6 +102,20 @@ struct switch_event {
 	int flags;
 };
 
+typedef struct switch_serial_event_s {
+	int event_id;
+	int priority;
+	int flags;
+	char *owner;
+	char *subclass_name;
+	char *body;
+} switch_serial_event_t;
+
+typedef struct switch_serial_event_header_s {
+	char *name;
+	char *value;
+} switch_serial_event_header_t;
+
 typedef enum {
 	EF_UNIQ_HEADERS = (1 << 0),
 	EF_NO_CHAT_EXEC = (1 << 1),
@@ -295,6 +309,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note you must free the resulting string when you are finished with it
 */
+SWITCH_DECLARE(switch_status_t) switch_event_binary_deserialize(switch_event_t **eventp, void **data, switch_size_t len, switch_bool_t destroy);
+SWITCH_DECLARE(switch_status_t) switch_event_binary_serialize(switch_event_t *event, void **data, switch_size_t *len);
 SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str, switch_bool_t encode);
 SWITCH_DECLARE(switch_status_t) switch_event_serialize_json(switch_event_t *event, char **str);
 SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event, const char *json);

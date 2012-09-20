@@ -96,20 +96,25 @@ SIP_HEADER_CLASS(reason, "Reason", "", re_params, append, reason);
 
 issize_t sip_reason_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
-  sip_reason_t *re = (sip_reason_t *)h;
-  size_t n;
+	sip_reason_t *re;
+	size_t n;
+	for (;;) {
+		re = (sip_reason_t *)h;
 
-  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
-    *s = '\0', s += span_lws(s + 1) + 1;
+		while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
+			*s = '\0', s += span_lws(s + 1) + 1;
 
-  re->re_protocol = s;
-  if ((n = span_token(s)) == 0)
-    return -1;
-  s += n; while (IS_LWS(*s)) *s++ = '\0';
-  if (*s == ';' && msg_params_d(home, &s, &re->re_params) < 0)
-    return -1;
+		re->re_protocol = s;
+		if ((n = span_token(s)) == 0)
+			return -1;
+		s += n; while (IS_LWS(*s)) *s++ = '\0';
+		if (*s == ';' && msg_params_d(home, &s, &re->re_params) < 0)
+			return -1;
 
-  return msg_parse_next_field(home, h, s, slen);
+		msg_parse_next_field_without_recursion();
+	}
+
+
 }
 
 issize_t sip_reason_e(char b[], isize_t bsiz, sip_header_t const *h, int f)

@@ -1,0 +1,29 @@
+Run 'make' to run the tests.
+
+Run 'make clean' to clean up the temporary files.
+
+Description of tests
+=============================================================================
+test1   pack A(i) to file, unpack
+test2   pack A(i) to memory, unpack
+test3   pack A(i) to memory, pipe through tplxml (to make XML)
+test4   pack A(i) to file, convert to XML, convert back to tpl (using tplxml)
+test5   pack A(b) to file, unpack
+test6   pack A(b) to memory, pipe through tplxml (to make XML)
+test7   pack A(b) to file, convert to XML, convert back to tpl (using tplxml)
+test8   pack A(s) (has embedded &, < and > in strings to test quoting in XML)
+test9   pack A(u) to file, unpack
+test10  pack A(u) to memory, convert via tplxml
+test11  pack format B using a four-byte binary buffer, unpack and print
+test12  pack A(d) to file, unpack
+test13  pack A(d) to memory, convert via tplxml
+test14  unpack big-endian i (-2) (on little-endian machine, tests reversi)
+test15  unpack little-endian i (-3) (on big-endian machine, tests reversi)
+test16  pack to mem format B using a four-byte binary buffer, unpack and print
+test17  pack and unpack S(ic)
+test18  pack and unpack i#
+test19  pack and unpack i#i#
+test20  pack A(S(ci#)) to file, convert to XML, then back to tpl (cf test81.c)
+test21  Tpl->tpl_peek in-memory image
+test22  Tpl->tpl_peek file image
+test23  test I/U (only succeeds on 64-bit perl)

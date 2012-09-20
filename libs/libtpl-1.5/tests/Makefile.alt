@@ -1,0 +1,31 @@
+# This Makefile.alt is subordinate to Makefile (usage: make alt)
+# Its distinction is that it builds the test programs by linking
+# them with libtpl rather than by compiling tpl.c into the tests.
+SRC = ../src
+LIBTOOL = ../libtool
+LTLIB = $(SRC)/libtpl.la
+CFLAGS = -I$(SRC) -g 
+
+# We have an alternate basic test for MinGW
+ifneq ($(strip $(shell $(CC) -v 2>&1 |grep "mingw")),)
+  TARGET=mingw
+else
+  TARGET=$(PROGS)
+endif
+
+all: $(TARGET)
+
+
+$(PROGS) : $(LTLIB)
+	$(CC) -c $(CFLAGS) $(@).c 
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $@ $(@).o $(LTLIB)
+
+$(LTLIB) :
+	@echo "you must first run 'configure; make' in the top-level directory"
+	@exit 1
+
+mingw :
+	@echo ""
+	@echo "MinGW has its own test suite. Please run make -f Makefile.mingw"
+	@echo ""
+	@exit 1

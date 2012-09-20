@@ -50,11 +50,11 @@
 #undef strncasecmp
 
 
-#if _MSC_VER < 1600
+#ifdef _MSC_VER
 /*The following insanity is because libteletone_generate.h defines int8_t in
-  a slightly different manner to most other cases (SDL, PCAP, Java V8, stdint.h
-  etc) and does not provide a mechanism to prevent it's inclusion. Then, to
-  cap it off, VS2008 barfs on the difference. VS2010 seems OK with it.
+  a slightly different manner to most other cases (SDL, PCAP, Java V8,
+  VS2010's own stdint.h, etc) and does not provide a mechanism to prevent it's
+  inclusion. Then, to cap it off, MSVC barfs on the difference.
 
   Sigh.
  */
@@ -76,6 +76,12 @@
 
 
 #define MODNAME "mod_opal"
+
+#ifndef OPAL_CHECK_VERSION
+  #define OPAL_CHECK_VERSION(a,b,c) 0
+#endif
+
+#define HAVE_T38 (OPAL_CHECK_VERSION(3,11,2) && OPAL_T38_CAPABILITY)
 
 
 class FSEndPoint;
@@ -242,12 +248,17 @@ class FSConnection : public OpalLocalConnection
 
     virtual bool OnOutgoingSetUp();
     virtual bool OnIncoming();
+    virtual void OnEstablished();
     virtual void OnReleased();
     virtual PBoolean SetAlerting(const PString & calleeName, PBoolean withMedia);
     virtual OpalMediaStream *CreateMediaStream(const OpalMediaFormat &, unsigned, PBoolean);
     virtual void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
     virtual OpalMediaFormatList GetMediaFormats() const;
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
+#if HAVE_T38
+    virtual void OnSwitchedT38(bool toT38, bool success);
+    virtual void OnSwitchingT38(bool toT38);
+#endif
 
     DECLARE_CALLBACK0(on_init);
     DECLARE_CALLBACK0(on_destroy);
@@ -294,6 +305,11 @@ class FSConnection : public OpalLocalConnection
   protected:
     void SetCodecs();
     bool WaitForMedia();
+#if HAVE_T38
+    void SetT38OptionsFromMediaFormat(const OpalMediaFormat & mediaFormat, const char * varname);
+    bool IndicateSwitchedT38();
+    void AbortT38();
+#endif
 
     switch_status_t read_frame(const OpalMediaType & mediaType, switch_frame_t **frame, switch_io_flag_t flags);
     switch_status_t write_frame(const OpalMediaType & mediaType, const switch_frame_t *frame, switch_io_flag_t flags);
@@ -315,7 +331,10 @@ class FSConnection : public OpalLocalConnection
     switch_codec_t m_vid_read_codec;
     switch_codec_t m_vid_write_codec;
 
+    switch_frame_t m_dummy_frame;
+
     bool m_flushAudio;
+    bool m_udptl;
 
     friend PBoolean FSMediaStream::Open();
 };

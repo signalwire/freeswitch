@@ -1,0 +1,17 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $tmp1 = "test14.tpl";
+
+my $j;
+my $tpl2 = Tpl->tpl_map("i",\$j);
+$tpl2->tpl_load($tmp1);
+$tpl2->tpl_unpack(0);
+print "$j\n";
+
+

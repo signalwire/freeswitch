@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $pwd = `pwd`;
+chomp $pwd;
+
+my $tmp1 = "$pwd/$0_1.out";
+
+my @i=(1,2,3,4);
+my @j=(-1,-2,-3, -4);
+my $tpl = Tpl->tpl_map("i#i#",\@i, 3, \@j, 4);
+$tpl->tpl_pack(0);
+$tpl->tpl_dump($tmp1);
+
+my (@x,@y);
+my $tpl2 = Tpl->tpl_map("i#i#",\@x, 3, \@y, 4);
+$tpl2->tpl_load($tmp1);
+$tpl2->tpl_unpack(0);
+print "$_\n" for @x;
+print "$_\n" for @y;

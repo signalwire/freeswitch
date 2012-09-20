@@ -1,0 +1,10 @@
+ifdef::backend-xhtml11[]
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  <div id="topnav" style="font-size: 9pt; font-family: sans-serif;">
+  <a style="padding: 8px;" href="http://sourceforge.net/projects/tpl/">sf.net summary page</a> &gt;
+  <a style="padding: 8px;" href="index.html">tpl home</a> &gt;
+  {doctitle}
+  <a style="padding: 8px;" href="userguide.pdf">[View PDF]</a> 
+  </div>
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+endif::backend-xhtml11[]

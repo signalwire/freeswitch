@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $pwd = `pwd`;
+chomp $pwd;
+
+my $tmp1 = "$pwd/$0_1.out";
+
+my $i;
+my $tpl = Tpl->tpl_map("A(c)",\$i);
+for($i=0; $i<10; $i++) { $tpl->tpl_pack(1); }
+$tpl->tpl_dump($tmp1);
+
+my $j;
+my $tpl2 = Tpl->tpl_map("A(c)",\$j);
+$tpl2->tpl_load($tmp1);
+while($tpl2->tpl_unpack(1) > 0) { printf("%d\n", $j); }
+

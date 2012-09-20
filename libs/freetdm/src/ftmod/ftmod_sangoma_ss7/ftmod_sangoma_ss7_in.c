@@ -81,6 +81,7 @@ void sngss7_con_ind(uint32_t suInstId, uint32_t spInstId, uint32_t circuit, SiCo
 
 	/* initalize the sngss7_event */
 	sngss7_event = ftdm_malloc(sizeof(*sngss7_event));
+	
 	if (sngss7_event == NULL) {
 		SS7_ERROR("Failed to allocate memory for sngss7_event!\n");
 		SS7_FUNC_TRACE_EXIT(__FUNCTION__);

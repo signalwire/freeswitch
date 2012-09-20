@@ -1,0 +1,11 @@
+# maintainer notes
+
+# IE6 png gamma bug:
+# PNG images in IE6 display with wrong background colors,
+# solution: save PNG in Gimp *Without save gamma checked*
+
+#update sourceforge web site:
+#cd html
+#scp *.{html,css} thanson@shell.sourceforge.net:/home/groups/t/tp/tpl/htdocs
+#cd img
+#scp *.png *.jpg thanson@shell.sourceforge.net:/home/groups/t/tp/tpl/htdocs/img

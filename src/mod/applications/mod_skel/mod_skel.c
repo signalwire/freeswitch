@@ -112,7 +112,47 @@ static switch_status_t do_config(switch_bool_t reload)
 
 SWITCH_STANDARD_API(skel_function)
 {
+	switch_event_t *event;
+	unsigned char frame_buffer[8192] = {0};
+
 	do_config(SWITCH_TRUE);
+
+	if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+		switch_size_t len = 0;
+		int x = 0;
+
+		/* populate the event with some headers */
+
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "testing", "true");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "foo", "bar");
+
+		for (x = 0; x < 10; x++) {
+			char name[128];
+			switch_snprintf(name, sizeof(name), "test-header-%d", x);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, name, "value-%d", x);
+		}
+		
+
+		/* Nothing up my sleeve, here is the event */
+
+		DUMP_EVENT(event);
+
+
+		/* ok, serialize it into frame_buffer and destroy the event *poof* */
+		len = sizeof(frame_buffer);
+		switch_event_binary_serialize(event, (void *)frame_buffer, &len);
+		switch_event_destroy(&event);
+
+
+		/* wave the magic wand and feed frame_buffer to deserialize */
+		switch_event_binary_deserialize(&event, (void *)frame_buffer, len, SWITCH_FALSE);
+
+		/* TA DA */
+		DUMP_EVENT(event);
+
+		switch_event_destroy(&event);
+	}
+
 
 	return SWITCH_STATUS_SUCCESS;
 }

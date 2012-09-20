@@ -302,6 +302,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\rtp.c"
+			>
+		</File>
+		<File
 			RelativePath=".\sip-dig.c"
 			>
 		</File>

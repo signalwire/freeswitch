@@ -1,0 +1,43 @@
+SS7 Native Bridge
+
+Native bridge is enabled on 2 conditions:
+
+* The SIP header FreeTDM-TransUUID is set in the originating leg and matches a freetdm channel
+* The variable freetdm_native_sigbridge is true and the originating leg is also a freetdm channel
+
+Some coding rules apply to this feature:
+
+- Each channel is responsible for clearning its own peer_data and event queue
+  at the end of the call (when moving to DOWN state)
+
+- Each channel dequeues messages only from its own queue and enqueues messages
+  in the peer's queue, with the only exception being messages received before
+  the bridge is stablished (IAM for sure and possible SAM messages) because
+  if the bridge is not yet stablished the messages must be queued by the channel
+  in its own queue temporarily until the bridge is ready
+
+- When the bridge is ready it is the responsibility of the incoming channel to
+  move the messages that stored temporarily in its own queue to the bridged peer queue
+
+- During hangup, each channel is responsible for moving itself to DOWN. The procedure
+  however differs slightly depending on the hangup conditions
+
+  If the user requests hangup (ie, FreeSWITCH) the request will be noted by setting the 
+  FTDM_CHANNEL_USER_HANGUP flag but will not be processed yet because call control is
+  driven only by the link messages (so no hangup from ESL or command line allowed)
+
+  When REL message comes, the channel receiving it must move to TERMINATING state and:
+	    
+	- If the user has not hangup yet (FTDM_CHANNEL_USER_HANGUP flag not set) then
+	  notify the user via SIGEVENT_STOP and wait for the user to move to HANGUP
+	  state by calling ftdm_channel_call_hangup() before sending RLC 
+
+	- If the user did hangup already (FTDM_CHANNEL_USER_HANGUP flag is set) then
+	  skip user notification and move to HANGUP state directly where the RLC message
+	  will be sent
+
+- On HANGUP state the RLC is sent and the channel is moved to DOWN, final state
+  The peer channel will forward the REL message and wait for RLC from the network, when
+  RLC is received the channel can move straight to DOWN itself because the peer channel
+  is completing its own shutdown procedure when it received the REL message
+

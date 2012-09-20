@@ -738,6 +738,14 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 		}
 	}
 
+	if (signal_data->send_connect_ack != SNGISDN_OPT_DEFAULT) {
+		if (signal_data->send_connect_ack == SNGISDN_OPT_TRUE) {
+			cfg.t.cfg.s.inDLSAP.ackOpt = TRUE;
+		} else {
+			cfg.t.cfg.s.inDLSAP.ackOpt = FALSE;
+		}
+	}
+
 	/* Override the restart options if user selected that option */
 	if (signal_data->restart_opt != SNGISDN_OPT_DEFAULT) {
 		if (signal_data->restart_opt == SNGISDN_OPT_TRUE) {

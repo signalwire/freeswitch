@@ -202,6 +202,12 @@
     <ClCompile Include="..\..\src\switch_curl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libs\libtpl-1.5\src\tpl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libs\libtpl-1.5\src\win\mmap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\miniupnpc\declspec.h">
@@ -319,6 +325,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\switch_ivr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libs\libtpl-1.5\src\tpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

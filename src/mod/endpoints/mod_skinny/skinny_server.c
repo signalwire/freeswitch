@@ -326,7 +326,7 @@ switch_status_t skinny_session_send_call_info(switch_core_session_t *session, li
 			zstr((caller_party_number = switch_channel_get_variable(channel, "caller_id_number"))) &&
 			zstr((caller_party_number = switch_channel_get_variable_partner(channel, "effective_caller_id_number"))) &&
 			zstr((caller_party_number = switch_channel_get_variable_partner(channel, "caller_id_number")))) {
-		caller_party_number = "0000000000";
+		caller_party_number = SWITCH_DEFAULT_CLID_NUMBER;
 	}
 	/* Called party */
 	if (zstr((called_party_name = switch_channel_get_variable(channel, "effective_callee_id_name"))) &&
@@ -340,7 +340,7 @@ switch_status_t skinny_session_send_call_info(switch_core_session_t *session, li
 			zstr((called_party_number = switch_channel_get_variable_partner(channel, "effective_callee_id_number"))) &&
 			zstr((called_party_number = switch_channel_get_variable_partner(channel, "callee_id_number"))) &&
 			zstr((called_party_number = switch_channel_get_variable(channel, "destination_number")))) {
-		called_party_number = "0000000000";
+		called_party_number = SWITCH_DEFAULT_CLID_NUMBER;
 	}
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		call_type = SKINNY_INBOUND_CALL;

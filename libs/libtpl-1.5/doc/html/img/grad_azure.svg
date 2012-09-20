@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://inkscape.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.43"
+   sodipodi:docbase="/home/thanson/code/tpl/doc/html/img"
+   sodipodi:docname="grad_cyan.svg">
+  <defs
+     id="defs4">
+    <linearGradient
+       id="linearGradient2194">
+      <stop
+         style="stop-color:#1190ed;stop-opacity:1;"
+         offset="0"
+         id="stop2196" />
+      <stop
+         style="stop-color:#f9f9f9;stop-opacity:0;"
+         offset="1"
+         id="stop2198" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient2184">
+      <stop
+         style="stop-color:#0000e0;stop-opacity:1;"
+         offset="0"
+         id="stop2186" />
+      <stop
+         style="stop-color:#0000e0;stop-opacity:0;"
+         offset="1"
+         id="stop2188" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2184"
+       id="linearGradient2190"
+       x1="76.642857"
+       y1="679.50504"
+       x2="523.35714"
+       y2="679.50504"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2194"
+       id="linearGradient2200"
+       x1="335.5"
+       y1="654.61218"
+       x2="506"
+       y2="654.61218"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="2"
+     inkscape:cx="488.2215"
+     inkscape:cy="372.85714"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     inkscape:window-width="797"
+     inkscape:window-height="575"
+     inkscape:window-x="112"
+     inkscape:window-y="25" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="opacity:0.96629214;fill:url(#linearGradient2200);fill-opacity:1.0;stroke:none;stroke-width:4.68499994;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2192"
+       width="170.5"
+       height="9.5"
+       x="335.5"
+       y="649.86218"
+       inkscape:export-filename="/home/thanson/code/tpl/doc/html/img/grad_cyan.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+  </g>
+</svg>

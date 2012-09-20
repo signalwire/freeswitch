@@ -1,0 +1,59 @@
+tpl ChangeLog
+=============
+
+Version 1.5 (2010-02-05)
+--------------------------
+* tpl now builds as a DLL under Microsoft Visual Studio! (thanks, degski and Zhang Yafei!)
+* there are now two download options: the http://downloads.sourceforge.net/tpl/libtpl-1.5.tar.bz2[tarball] and the Visual Studio http://downloads.sourceforge.net/tpl/tpl-1.5-vs2008.zip[solution] 
+* a crash in `tpl_free` on certain format strings has been fixed (thanks, Eric Rose!)
+* fixed a bug in `tpl_dump` on 64-bit, big-endian platforms
+* changed some pointer casts from `long` to `uintptr_t` since 64-bit Windows has 32-bit longs
+* tpl has been downloaded 4,195 times.
+
+
+Version 1.4 (2009-04-21)
+--------------------------
+* fixed-length arrays can now be multi-dimensional like `i##`
+* fixed-length string arrays like `s#` are now supported
+* nested structures can now be expressed, using the dollar symbol, e.g. `S(ci$(cc))`
+* `tpl_dump` can use a caller-allocated output buffer (`TPL_MEM|TPL_PREALLOCD`)
+* `tpl_load` can tolerate excess space in input buffer (`TPL_MEM|TPL_EXCESS_OK`)
+* implement `TPL_FXLENS` flag for `tpl_peek` to get lengths of fixed-length arrays
+* implement `TPL_GETSIZE` flag for `tpl_dump` to get dump size without dumping
+* fix success return code from `tpl_dump(TPL_FD,...)` (thanks, Max Lapan!)
+* deprecated the wildcard unpacking `S(*)` feature
+
+Version 1.3 (2009-02-10)
+--------------------------
+* added `TPL_DATAPEEK` mode for `tpl_peek`
+* added support for `NULL` strings
+* added support for 16-bit integer types (`j`,`v`)
+* added `tpl_jot`
+* added support for fixed-length arrays of structures `S(...)#`
+* added support for pre-C99 compilers (thanks, Wei Wei!)
+* improved structure alignment calculation (thanks, Wu Yongwei!)
+* added RPM spec file (thanks, Alessandro Ren!)
+* compiles cleanly with `-Wall` and `-pedantic` and with `-O3`
+* made link:license.html[BSD license] terms even more permissive
+* test suite: exit with status zero when all tests pass
+* added PDF user guide 
+* added http://troydhanson.wordpress.com/feed/[update news] image:img/rss.png[(RSS)]
+* added http://apps.sourceforge.net/mediawiki/tpl/[tpl wiki]
+
+Version 1.2 (2007-04-27)
+--------------------------
+* Perl API and XML converter support 64-bit types
+
+Version 1.1 (2007-04-25)
+--------------------------
+* support for serializing C structures
+* support for serializing fixed-length arrays 
+* MinGW support (thanks, Horea Haitonic!)
+* revised User Guide
+
+Version 1.0 (2006-09-28)
+--------------------------
+* Initial version
+
+// vim: set tw=80 wm=2 nowrap syntax=asciidoc:
+

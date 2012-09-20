@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+#
+use  strict;
+use warnings;
+
+use lib "..";
+use Tpl;
+
+my $pwd = `pwd`;
+chomp $pwd;
+
+my $tmp1 = "$pwd/$0_1.out";
+
+my ($i,$j)=(1,ord('a'));
+my $tpl = Tpl->tpl_map("S(ic)",\$i, \$j);
+$tpl->tpl_pack(0);
+$tpl->tpl_dump($tmp1);
+
+($i,$j)=(-9,"x");
+my $tpl2 = Tpl->tpl_map("S(ic)",\$i,\$j);
+$tpl2->tpl_load($tmp1);
+$tpl2->tpl_unpack(0);
+$j = chr($j);
+print "$i,$j\n"; 
+

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+      <!DOCTYPE tplxml [ 
+      <!ELEMENT tplxml (A|i|u|I|U|B|s|c|f|fx)*>
+      <!ATTLIST tplxml
+         format CDATA #REQUIRED
+         fxlens CDATA #REQUIRED
+      >
+      <!ELEMENT i (#PCDATA)>
+      <!ELEMENT u (#PCDATA)>
+      <!ELEMENT I (#PCDATA)>
+      <!ELEMENT U (#PCDATA)>
+      <!ELEMENT B (#PCDATA)>
+      <!ELEMENT s (#PCDATA)>
+      <!ELEMENT c (#PCDATA)>
+      <!ELEMENT f (#PCDATA)>
+      <!ELEMENT A (el)*>
+      <!ELEMENT el (A|i|u|I|U|B|s|c|f|fx)+>
+      <!ELEMENT fx (i|u|I|U|c|f)*>
+      ]>
+<tplxml format="A(f)" fxlens="">
+  <A>
+  <el>
+    <f>0</f>
+  </el>
+  <el>
+    <f>0.666666666666667</f>
+  </el>
+  <el>
+    <f>1.33333333333333</f>
+  </el>
+  <el>
+    <f>2</f>
+  </el>
+  <el>
+    <f>2.66666666666667</f>
+  </el>
+  <el>
+    <f>3.33333333333333</f>
+  </el>
+  <el>
+    <f>4</f>
+  </el>
+  <el>
+    <f>4.66666666666667</f>
+  </el>
+  <el>
+    <f>5.33333333333333</f>
+  </el>
+  <el>
+    <f>6</f>
+  </el>
+  <el>
+    <f>6.66666666666667</f>
+  </el>
+  <el>
+    <f>7.33333333333333</f>
+  </el>
+  <el>
+    <f>8</f>
+  </el>
+  <el>
+    <f>8.66666666666667</f>
+  </el>
+  <el>
+    <f>9.33333333333333</f>
+  </el>
+  <el>
+    <f>10</f>
+  </el>
+  </A>
+</tplxml>

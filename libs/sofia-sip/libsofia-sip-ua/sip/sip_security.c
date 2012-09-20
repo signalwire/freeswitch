@@ -458,20 +458,24 @@ typedef struct sip_security_agree_s sip_security_agree_t;
 static
 issize_t sip_security_agree_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
-  sip_security_agree_t *sa = (sip_security_agree_t *)h;
 
-  isize_t n;
+	for (;;) {
+		sip_security_agree_t *sa = (sip_security_agree_t *)h;
 
-  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
-    *s = '\0', s += span_lws(s + 1) + 1;
+		isize_t n;
 
-  if ((n = span_token(s)) == 0)
-    return -1;
-  sa->sa_mec = s; s += n; while (IS_LWS(*s)) *s++ = '\0';
-  if (*s == ';' && msg_params_d(home, &s, &sa->sa_params) < 0)
-    return -1;
+		while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
+			*s = '\0', s += span_lws(s + 1) + 1;
 
-  return msg_parse_next_field(home, h, s, slen);
+		if ((n = span_token(s)) == 0)
+			return -1;
+		sa->sa_mec = s; s += n; while (IS_LWS(*s)) *s++ = '\0';
+		if (*s == ';' && msg_params_d(home, &s, &sa->sa_params) < 0)
+			return -1;
+
+		msg_parse_next_field_without_recursion();
+	}
+
 }
 
 static

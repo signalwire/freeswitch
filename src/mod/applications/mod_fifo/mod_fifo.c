@@ -1224,9 +1224,14 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	node_name = cbh->rows[0]->node_name;
 
 	switch_mutex_lock(globals.mutex);
-	node = switch_core_hash_find(globals.fifo_hash, node_name);
-	switch_thread_rwlock_rdlock(node->rwlock);
+	if ((node = switch_core_hash_find(globals.fifo_hash, node_name))) {
+		switch_thread_rwlock_rdlock(node->rwlock);
+	}
 	switch_mutex_unlock(globals.mutex);
+
+	if (!node) {
+		goto end;
+	}
 
 	for (i = 0; i < cbh->rowcount; i++) {
 		struct call_helper *h = cbh->rows[i];

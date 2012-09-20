@@ -1,0 +1,1539 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.3.4" />
+<title>tpl User Guide</title>
+<link rel="stylesheet" href="./tdh.css" type="text/css" />
+<link rel="stylesheet" href="./tdh-quirks.css" type="text/css" />
+</head>
+<body>
+<div id="header">
+<h1>tpl User Guide</h1>
+<span id="author">Troy D. Hanson</span><br />
+<span id="email"><tt>&lt;<a href="mailto:thanson@users.sourceforge.net">thanson@users.sourceforge.net</a>&gt;</tt></span><br />
+<span id="revision">version 1.5,</span>
+February 2010
+</div>
+<div id="preamble">
+<div class="sectionbody">
+<a style="float: right;" href="http://sourceforge.net/projects/tpl"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=157637&amp;type=16" width="150" height="40" alt="SourceForge.net" /></a>
+  <div id="topnav" style="font-size: 9pt; font-family: sans-serif;">
+  <a style="padding: 8px;" href="http://sourceforge.net/projects/tpl/">sf.net summary page</a> &gt;
+  <a style="padding: 8px;" href="index.html">tpl home</a> &gt;
+  tpl User Guide
+  <a style="padding: 8px;" href="userguide.pdf">[View PDF]</a>
+  </div>
+</div>
+</div>
+<h2 id="_overview">Overview</h2>
+<div class="sectionbody">
+<div id="toc"></div>
+<script>
+window.onload=generate_TOC
+
+/* Author: Mihai Bazon, September 2002
+ * <a href="http://students.infoiasi.ro/~mishoo">http://students.infoiasi.ro/~mishoo</a>
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+
+function H_getText(el) {
+  var text = "";
+  for (var i = el.firstChild; i != null; i = i.nextSibling) {
+    if (i.nodeType == 3 /* Node.TEXT_NODE, IE doesn't speak constants */)
+      text += i.data;
+    else if (i.firstChild != null)
+      text += H_getText(i);
+  }
+  return text;
+}
+
+function TOC_EL(el, text, level) {
+  this.element = el;
+  this.text = text;
+  this.level = level;
+}
+
+function getHeadlines(el) {
+  var l = new Array;
+  var rx = /[hH]([2-3])/;
+  // internal recursive function that scans the DOM tree
+  var rec = function (el) {
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+        if (rx.exec(i.tagName))
+          l[l.length] = new TOC_EL(i, H_getText(i), parseInt(RegExp.$1));
+        rec(i);
+      }
+    }
+  }
+  rec(el);
+  return l;
+}
+
+function generate_TOC() {
+  var parent = document.getElementById("toc");
+  var toc_hdr = document.createElement("div");
+  var toc_hdr_txt = document.createTextNode("CONTENTS");
+  toc_hdr.appendChild(toc_hdr_txt);
+  /* toc_hdr.setAttribute("id","hdr"); */
+  toc_hdr.id = "hdr";
+  parent.appendChild(toc_hdr);
+  var hs = getHeadlines(document.getElementsByTagName("body")[0]);
+  for (var i = 0; i < hs.length; ++i) {
+    var hi = hs[i];
+    var d = document.createElement("div");
+    if (hi.element.id == "") hi.element.id = "gen" + i;
+    var a = document.createElement("a");
+    a.href = "#" + hi.element.id;
+    a.appendChild(document.createTextNode(hi.text));
+    d.appendChild(a);
+    d.className = "level" + hi.level;
+    parent.appendChild(d);
+    /*
+    if (hi.level == 3) {
+        var dvtop = document.createElement("div");
+        dvtop.className = "toplink";
+        dvtop.appendChild(document.createTextNode("^top^"));
+        dvtop.onclick=function(){scrollTo(0,0);};
+        hi.element.appendChild(dvtop);
+    }
+    */
+  }
+}
+</script>
+<h3 id="_serialization_in_c">Serialization in C</h3><div style="clear:left"></div>
+<div class="paragraph"><p>Tpl is a library for serializing C data. The data is stored in its natural
+binary form. The API is small and tries to stay "out of the way".
+Tpl can serialize many C data types, including structures.</p></div>
+<h3 id="_uses_for_tpl">Uses for tpl</h3><div style="clear:left"></div>
+<div class="paragraph"><p>Tpl makes a convenient file format. For example, suppose a program needs to
+store a list of user names and ids. This can be expressed using the format
+string <tt>A(si)</tt>.  If the program needs two such lists (say, one for regular
+users and one for administrators) this could be expressed as <tt>A(si)A(si)</tt>. It
+is easy to read and write this kind of structured data using tpl.</p></div>
+<div class="paragraph"><p>Tpl can also be used as an IPC message format. It handles byte order issues
+and deframing individual messages off of a stream automatically.</p></div>
+<h3 id="_expressing_type">Expressing type</h3><div style="clear:left"></div>
+<div class="paragraph"><p>The "data type" of a tpl is explicitly stated as a format string. There is
+never any ambiguity about the type of data stored in a tpl.  Some examples:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<tt>A(is)</tt> is a variable-length array of integer-string pairs
+</p>
+</li>
+<li>
+<p>
+<tt>A(is)A(is)</tt> are two such arrays, completely independent of one another
+</p>
+</li>
+<li>
+<p>
+<tt>S(ci)</tt> is a structure containing a char and integer
+</p>
+</li>
+<li>
+<p>
+<tt>S(ci)#</tt> is a fixed-length array of the latter structure
+</p>
+</li>
+<li>
+<p>
+<tt>A(A(i))</tt> is a nested array, that is, an array of integer arrays
+</p>
+</li>
+</ul></div>
+<h3 id="_the_tpl_image">The tpl image</h3><div style="clear:left"></div>
+<div class="paragraph"><p>A tpl image is the serialized form of a tpl, stored in a memory buffer or file,
+or written to a file descriptor.</p></div>
+<h4 id="_what_8217_s_in_a_tpl_image">What&#8217;s in a tpl image?</h4>
+<div class="paragraph"><p>There is no need to understand the internal structure of the tpl image. But for the
+curious, the image is a strictly defined binary buffer having two sections,
+a header and the data.  The header encodes the length of the image, its
+format string, endian order and other flags. The data section contains the
+packed data.</p></div>
+<h4 id="_no_framing_needed">No framing needed</h4>
+<div class="paragraph"><p>A property of the tpl image is that consecutive images can be written to a stream
+without requiring any delimiter between them. The reader making use of
+<tt>tpl_gather</tt> (or <tt>tpl_load</tt> in <tt>TPL_FD</tt> mode) will obtain exactly one tpl image at
+a time.  Therefore tpl images can be used as an IPC message format without any
+higher-level framing protocol.</p></div>
+<h4 id="_data_portability">Data portability</h4>
+<div class="paragraph"><p>A tpl image generated on one kind of CPU will generally be portable to other
+CPU types when tpl is used properly. This may be a surprise considering that
+tpl is a binary format. But tpl has been carefully designed to make this work.
+Each <a href="#types">format character</a> has an associated explicitly-sized type. For
+integer and floating point types, whose "endian" or byte-order convention varies
+from one CPU to another, tpl automatically and transparently corrects the
+endian order (if needed) during the unpacking process.  Floating point numbers
+present their own <a href="#trouble_with_double">special difficulties</a>. <em>No guarantees
+are made with regard to floating point portability.</em> That said, because many
+modern CPU&#8217;s use IEEE 754 floating point representation, data is likely to be
+portable among them.</p></div>
+<h3 id="_xml_and_perl">XML and Perl</h3><div style="clear:left"></div>
+<div class="paragraph"><p><em>Note: The <tt>tplxml</tt> utility and the Perl module are currently unsupported in tpl 1.5.</em></p></div>
+<h4 id="_xml">XML</h4>
+<div class="paragraph"><p>While a tpl image is a binary entity, you can view any tpl image in XML format
+using the included <tt>tplxml</tt> utility, located in the <tt>lang/perl</tt> directory.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tplxml file.tpl &gt; file.xml
+tplxml file.xml &gt; file.tpl</tt></pre>
+</div></div>
+<div class="paragraph"><p>The utility is bidirectional, as shown.  The file extension is not important;
+<tt>tplxml</tt> inspects its input to see if it&#8217;s tpl or XML. You can also pipe data
+into it instead of giving it a filename. The <tt>tplxml</tt> utility is slow. Its
+purpose is two-fold: debugging (manual inspection of the data in a tpl), and
+interoperability with XML-based programs.  The resulting XML is often ten times
+the size of the original binary tpl image.</p></div>
+<h4 id="_perl">Perl</h4>
+<div class="paragraph"><p>There is a Perl module in <tt>lang/perl/Tpl.pm</tt>. The <a href="perl.html">Perl API</a>
+is convenient for writing Perl scripts that interoperate with C programs, and
+need to pass structured data back and forth. It is written in pure Perl.</p></div>
+<h3 id="_platforms">Platforms</h3><div style="clear:left"></div>
+<div class="paragraph"><p>The tpl software was developed for POSIX systems and has been tested on 32- and 64-bit
+platforms including:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Linux
+</p>
+</li>
+<li>
+<p>
+Solaris
+</p>
+</li>
+<li>
+<p>
+Mac OS X
+</p>
+</li>
+<li>
+<p>
+OpenBSD
+</p>
+</li>
+<li>
+<p>
+Windows using Visual Studio 2008 or 2010, or Cygwin or MinGW
+</p>
+</li>
+</ul></div>
+<h3 id="_bsd_licensed">BSD licensed</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This software is made available under the
+<a href="license.html">revised BSD license</a>.
+It is free and open source.</p></div>
+<h3 id="_download">Download</h3><div style="clear:left"></div>
+<div class="paragraph"><p>Please follow the link to download on the
+<a href="http://tpl.sourceforge.net">tpl website</a>.</p></div>
+<h3 id="_getting_help">Getting help</h3><div style="clear:left"></div>
+<div class="paragraph"><p>If you need help, you are welcome to email the author at
+<a href="mailto:thanson@users.sourceforge.net">thanson@users.sourceforge.net</a>.</p></div>
+<h3 id="_resources">Resources</h3><div style="clear:left"></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+News
+</dt>
+<dd>
+<p>
+ The author has a news feed for <a href="http://troydhanson.wordpress.com/feed/">software updates</a> <span class="image">
+<img src="img/rss.png" alt="(RSS)" title="(RSS)" />
+</span>.
+</p>
+</dd>
+</dl></div>
+</div>
+<h2 id="_build_and_install">Build and install</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Tpl has no dependencies on libraries other than the system C library. You
+can simply copy the tpl source into your project, so you have no dependencies.
+Alternatively, you can build tpl as a library and link it to your program.</p></div>
+<h3 id="_as_source">As source</h3><div style="clear:left"></div>
+<div class="paragraph"><p>The simplest way to use tpl is to copy the source files <tt>tpl.h</tt> and <tt>tpl.c</tt>
+(from the <tt>src/</tt> directory) right into your project, and build them with the
+rest of your source files. No special compiler flags are required.</p></div>
+<h3 id="_as_a_library">As a library</h3><div style="clear:left"></div>
+<div class="paragraph"><p>Alternatively, to build tpl as a library, from the top-level directory, run:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>./configure
+make
+make install</tt></pre>
+</div></div>
+<div class="paragraph"><p>This installs a static library <tt>libtpl.a</tt> and a shared library (e.g.,
+<tt>libtpl.so</tt>), if your system supports them, in standard places. The installation
+directory can be customized using <tt>./configure --prefix=/some/directory</tt>. Run
+<tt>configure --help</tt> for further options.</p></div>
+<h4 id="_test_suite">Test suite</h4>
+<div class="paragraph"><p>You can compile and run the built-in test suite by running:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>cd tests/
+make</tt></pre>
+</div></div>
+<h3 id="_on_windows">On Windows</h3><div style="clear:left"></div>
+<h4 id="_dll">DLL</h4>
+<div class="paragraph"><p>On the tpl home page, a Visual Studio 2008 solution package is available for
+download.  This zip file contains pre-built 32- and 64-bit versions of tpl as a
+DLL.  If you like, you can build the DLL yourself using  VS2008 or VS2010 (the
+free Express Edition is sufficient) by opening the solution file and choosing
+Build Solution.</p></div>
+<h4 id="_non_dll_usage">Non-DLL usage</h4>
+<div class="paragraph"><p>Alternatively, tpl can be used directly (instead of as a DLL) by compiling
+the tpl sources right into your program. To do this, add <tt>tpl.c</tt>, <tt>tpl.h</tt>,
+<tt>win/mman.h</tt> and <tt>win/mmap.c</tt> to your program&#8217;s source and header files and
+add the preprocessor definition <tt>TPL_NOLIB</tt>.</p></div>
+<h4 id="_mingw_cygwin">MinGW/Cygwin</h4>
+<div class="paragraph"><p>Prior to tpl release 1.5, using tpl on Windows required building it with MinGW
+or Cygwin. This is no longer necessary. If you want to build it that way anyway,
+use the non-Windows (i.e. tar.bz2) tpl download and follow the "configure; make;
+make install" approach.</p></div>
+</div>
+<h2 id="_api_concepts">API concepts</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>To use tpl, you need to know the order in which to call the API functions, and
+the background concepts of format string, arrays and index numbers.</p></div>
+<h3 id="_order_of_functions">Order of functions</h3><div style="clear:left"></div>
+<div class="paragraph"><p>Creating a tpl is always the first step, and freeing it is the last step. In
+between, you either pack and dump the tpl (if you&#8217;re serializing data) or you
+load a tpl image and unpack it (if you&#8217;re deserializing data).</p></div>
+<div class="tableblock">
+<table rules="none"
+width="50%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Order of usage</caption>
+<col width="9%" />
+<col width="45%" />
+<col width="45%" />
+<thead valign="top">
+<tr>
+<th align="center">Step  </th>
+<th align="center">     If you&#8217;re serializing&#8230;</th>
+<th align="center">      If you&#8217;re deserializing&#8230;</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr>
+<td align="center"><p class="table">1.</p></td>
+<td align="center"><p class="table"><tt>tpl_map()</tt></p></td>
+<td align="center"><p class="table"><tt>tpl_map()</tt></p></td>
+</tr>
+<tr>
+<td align="center"><p class="table">2.</p></td>
+<td align="center"><p class="table"><tt>tpl_pack()</tt></p></td>
+<td align="center"><p class="table"><tt>tpl_load()</tt></p></td>
+</tr>
+<tr>
+<td align="center"><p class="table">3.</p></td>
+<td align="center"><p class="table"><tt>tpl_dump()</tt></p></td>
+<td align="center"><p class="table"><tt>tpl_unpack()</tt></p></td>
+</tr>
+<tr>
+<td align="center"><p class="table">4.</p></td>
+<td align="center"><p class="table"><tt>tpl_free()</tt></p></td>
+<td align="center"><p class="table"><tt>tpl_free()</tt></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="format">Format string</h3><div style="clear:left"></div>
+<div class="paragraph"><p>When a tpl is created using <tt>tpl_map()</tt>, its data type is expressed as a format
+string.  Each character in the format string has an associated argument of a
+specific type.  For example, this is how a format string and its arguments are
+passed in to <tt>tpl_map</tt>:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tpl_node *tn;
+char c;
+int i[10];
+tn = tpl_map("ci#", &amp;c, i, 10);  /* ci# is our format string */</tt></pre>
+</div></div>
+<div class="tableblock" id="types">
+<table rules="none"
+width="90%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Supported format characters</caption>
+<col width="11%" />
+<col width="44%" />
+<col width="44%" />
+<thead valign="top">
+<tr>
+<th align="center">Type </th>
+<th align="left">  Description                                             </th>
+<th align="left"> Required argument type</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr>
+<td align="center"><p class="table"><tt>j</tt></p></td>
+<td align="left"><p class="table">16-bit signed int</p></td>
+<td align="left"><p class="table">int16_t* or equivalent</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>v</tt></p></td>
+<td align="left"><p class="table">16-bit unsigned int</p></td>
+<td align="left"><p class="table">uint16_t* or equivalent</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>i</tt></p></td>
+<td align="left"><p class="table">32-bit signed int</p></td>
+<td align="left"><p class="table">int32_t* or equivalent</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>u</tt></p></td>
+<td align="left"><p class="table">32-bit unsigned int</p></td>
+<td align="left"><p class="table">uint32_t* or equivalent</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>I</tt></p></td>
+<td align="left"><p class="table">64-bit signed int</p></td>
+<td align="left"><p class="table">int64_t* or equivalent</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>U</tt></p></td>
+<td align="left"><p class="table">64-bit unsigned int</p></td>
+<td align="left"><p class="table">uint64_t* or equivalent</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>c</tt></p></td>
+<td align="left"><p class="table">character (byte)</p></td>
+<td align="left"><p class="table">char*</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>s</tt></p></td>
+<td align="left"><p class="table">string</p></td>
+<td align="left"><p class="table">char**</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>f</tt></p></td>
+<td align="left"><p class="table">64-bit double precision float</p></td>
+<td align="left"><p class="table">double* (varies by platform)</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>#</tt></p></td>
+<td align="left"><p class="table">array length; modifies preceding <tt>iujvIUcsf</tt> or <tt>S(&#8230;)</tt></p></td>
+<td align="left"><p class="table">int</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>B</tt></p></td>
+<td align="left"><p class="table">binary buffer (arbitrary-length)</p></td>
+<td align="left"><p class="table">tpl_bin*</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>S</tt></p></td>
+<td align="left"><p class="table">structure (&#8230;)</p></td>
+<td align="left"><p class="table">struct *</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>$</tt></p></td>
+<td align="left"><p class="table">nested structure (&#8230;)</p></td>
+<td align="left"><p class="table">none</p></td>
+</tr>
+<tr>
+<td align="center"><p class="table"><tt>A</tt></p></td>
+<td align="left"><p class="table">array (&#8230;)</p></td>
+<td align="left"><p class="table">none</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h4 id="_explicit_sizes">Explicit sizes</h4>
+<div class="paragraph"><p>The sizes of data types such as <tt>long</tt> and <tt>double</tt> vary by platform. This must
+be kept in mind because most tpl format characters require a pointer argument to
+a specific-sized type, listed above. You can use explicit-sized types such as
+<tt>int32_t</tt> (defined in <tt>inttypes.h</tt>) in your program if you find this helpful.</p></div>
+<h5 id="trouble_with_double">The trouble with double</h5>
+<div class="paragraph"><p>Unfortunately there are no standard explicit-sized floating-point types-- no
+<tt>float64_t</tt>, for example. If you plan to serialize <tt>double</tt> on your platform
+using tpl&#8217;s <tt>f</tt> format character, first be sure that your <tt>double</tt> is 64 bits.
+Second, if you plan to deserialize it on a different kind of CPU, be sure that
+both CPU&#8217;s use the same floating-point representation such as IEEE 754.</p></div>
+<h3 id="arrays">Arrays</h3><div style="clear:left"></div>
+<div class="paragraph"><p>Arrays come in two kinds: <strong>fixed-length</strong> and <strong>variable-length</strong> arrays.
+Intuitively, they can be thought of like conventional C arrays and linked lists.
+In general, use fixed-length arrays if possible, and variable-length arrays
+if necessary. The variable-length arrays support more complex data types, and
+give or receive the elements to your program one by one.</p></div>
+<h4 id="_fixed_length_vs_variable_length_arrays">Fixed-length vs. Variable-length arrays</h4>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+Notation
+</dt>
+<dd>
+<p>
+    Fixed-length arrays are denoted like <tt>i#</tt> (a simple type followed by one or
+    more <tt>#</tt> signs), but variable-length arrays are denoted like <tt>A(i)</tt>.
+</p>
+</dd>
+<dt class="hdlist1">
+Element handling
+</dt>
+<dd>
+<p>
+    All the elements of a fixed-length array are packed or unpacked at once. But
+    the elements of a variable-length array are packed or unpacked one by one.
+</p>
+</dd>
+<dt class="hdlist1">
+Array length
+</dt>
+<dd>
+<p>
+    The number of elements in a fixed-length array is specified before use--
+    before any data is packed. But variable-length arrays do not have a fixed
+    element count. They can have any number of elements packed into them. When
+    unpacking a variable-length array, they are unpacked one by one until they
+    are exhausted.
+</p>
+</dd>
+<dt class="hdlist1">
+Element types
+</dt>
+<dd>
+<p>
+    Elements of fixed-length arrays can be the integer, byte, double, string
+    types or structures. (This excludes format characters <tt>BA</tt>).  Fixed-length
+    arrays can also be multi-dimensional like <tt>i##</tt>. Variable-length arrays can
+    have simple or complex elements-- for example, an array of ints <tt>A(i)</tt>, an
+    array of int/double pairs <tt>A(if)</tt>, or even nested arrays like <tt>A(A(if))</tt>.
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>Before explaining all the concepts, it&#8217;s illustrative to see how both kinds of
+arrays are used. Let&#8217;s pack the integers 0 through 9 both ways.</p></div>
+<div class="listingblock" id="fixed_pack">
+<div class="title">Packing 0-9 as a fixed-length array</div>
+<div class="content">
+<pre><tt>#include "tpl.h"
+int main() {
+    tpl_node *tn;
+    int x[] = {0,1,2,3,4,5,6,7,8,9};
+
+    tn = tpl_map("i#", x, 10);
+    tpl_pack(tn,0);                         /* pack all 10 elements at once */
+    tpl_dump(tn, TPL_FILE, "/tmp/fixed.tpl");
+    tpl_free(tn);
+}</tt></pre>
+</div></div>
+<div class="paragraph"><p>Note that the length of the fixed-length array (10) was passed as an argument to
+<tt>tpl_map()</tt>.  The corresponding unpacking <a href="#fixed_unpack">example</a> is listed
+further below. Now let&#8217;s see how we would pack 0-9 as a variable-length array:</p></div>
+<div class="listingblock">
+<div class="title">Packing 0-9 as a variable-length array</div>
+<div class="content">
+<pre><tt>#include "tpl.h"
+int main() {
+    tpl_node *tn;
+    int x;
+
+    tn = tpl_map("A(i)", &amp;x);
+    for(x = 0; x &lt; 10; x++) tpl_pack(tn,1);  /* pack one element at a time */
+    tpl_dump(tn, TPL_FILE, "/tmp/variable.tpl");
+    tpl_free(tn);
+}</tt></pre>
+</div></div>
+<div class="paragraph"><p>Notice how we called <tt>tpl_pack</tt> in a loop, once for each element 0-9. Again,
+there is a corresponding unpacking <a href="#var_unpack">example</a> shown later in the
+guide. You might also notice that this time, we passed 1 as the final argument
+to tpl_pack. This is an index number designating which variable-length array
+we&#8217;re packing. In this case, there is only one.</p></div>
+<h4 id="index">Index numbers</h4>
+<div class="paragraph"><p>Index numbers identify a particular variable-length array in the format string.
+Each <tt>A(&#8230;)</tt> in a format string has its own index number.  The index numbers
+are assigned left-to-right starting from 1. Examples:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>A(i)        /* index number 1 */
+A(i)A(i)    /* index numbers 1 and 2 */
+A(A(i))     /* index numbers 1 and 2 (order is independent of nesting) */</tt></pre>
+</div></div>
+<h5 id="_special_index_number_0">Special index number 0</h5>
+<div class="paragraph"><p>The special index number 0 designates all the format characters that are not
+inside an <tt>A(&#8230;)</tt>.  Examples of what index 0 does (and does not) designate:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>S(ius)      /* index 0 designates the whole thing */
+iA(c)u      /* index 0 designates the i and the u */
+c#A(i)S(ci) /* index 0 designates the c# and the S(ci) */</tt></pre>
+</div></div>
+<div class="paragraph"><p>An index number is passed to <tt>tpl_pack</tt> and <tt>tpl_unpack</tt> to specify which
+variable-length array (or non-array, in the case of index number 0) to act upon.</p></div>
+<h3 id="_integers">Integers</h3><div style="clear:left"></div>
+<div class="paragraph"><p>The array examples <a href="#fixed_pack">above</a> demonstrated how integers could be
+packed.  We&#8217;ll show some further examples here of unpacking integers and dealing
+with multi-dimensional arrays. The same program could be used to demonstrate
+working with byte, 16-bit shorts, 32-bit or 64-bit signed and unsigned integers
+with only a change to the data type and the format character.</p></div>
+<div class="listingblock" id="fixed_unpack">
+<div class="title">Unpacking 0-9 from a fixed-length array</div>
+<div class="content">
+<pre><tt>#include "tpl.h"
+int main() {
+    tpl_node *tn;
+    int x[10];
+
+    tn = tpl_map("i#", x, 10);
+    tpl_load(tn, TPL_FILE, "/tmp/fixed.tpl");
+    tpl_unpack(tn,0);  /* unpack all 10 elements at once */
+    tpl_free(tn);
+    /* now do something with x[0]...x[9].. (not shown */
+}</tt></pre>
+</div></div>
+<div class="paragraph"><p>For completeness, let&#8217;s also see how to unpack a variable-length integer array.</p></div>
+<div class="listingblock" id="var_unpack">
+<div class="title">Unpacking 0-9 from a variable-length array</div>
+<div class="content">
+<pre><tt>#include "tpl.h"
+int main() {
+    tpl_node *tn;
+    int x;
+
+    tn = tpl_map("A(i)", &amp;x);
+    tpl_load(tn, TPL_FILE, "/tmp/variable.tpl");
+    while (tpl_unpack(tn,1) &gt; 0) printf("%d\n",x); /* unpack one by one */
+    tpl_free(tn);
+}</tt></pre>
+</div></div>
+<h4 id="multidim_int">Multi-dimensional arrays</h4>
+<div class="paragraph"><p>A multi-dimensional matrix of integers can be packed and unpacked the same way
+as any fixed-length array.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>int xy[XDIM][YDIM];
+...
+tn = tpl_map("i##", xy, XDIM, YDIM);
+tpl_pack(tn, 0);</tt></pre>
+</div></div>
+<div class="paragraph"><p>This single call to <tt>tpl_pack</tt> packs the entire matrix.</p></div>
+<h3 id="_strings">Strings</h3><div style="clear:left"></div>
+<div class="paragraph"><p>Tpl can serialize C strings. A different format is used for <tt>char*</tt> vs. <tt>char[ ]</tt>
+as described below. Let&#8217;s look at <tt>char*</tt> first:</p></div>
+<div class="listingblock">
+<div class="title">Packing a string</div>
+<div class="content">
+<pre><tt>    #include "tpl.h"
+
+    int main() {
+        tpl_node *tn;
+        char *s = "hello, world!";
+        tn = tpl_map("s", &amp;s);
+        tpl_pack(tn,0);  /* copies "hello, world!" into the tpl */
+        tpl_dump(tn,TPL_FILE,"string.tpl");
+        tpl_free(tn);
+    }</tt></pre>
+</div></div>
+<div class="paragraph"><p>The <tt>char*</tt> must point to a null-terminated string or be a <tt>NULL</tt> pointer.</p></div>
+<div class="paragraph"><p>When deserializing (unpacking) a C string, space for it will be allocated
+automatically, but you are responsible for freeing it (unless it is <tt>NULL</tt>):</p></div>
+<div class="listingblock">
+<div class="title">Unpacking a string</div>
+<div class="content">
+<pre><tt>    #include "tpl.h"
+
+    int main() {
+        tpl_node *tn;
+        char *s;
+        tn = tpl_map("s", &amp;s);
+        tpl_load(tn,TPL_FILE,"string.tpl");
+        tpl_unpack(tn,0);   /* allocates space, points s to "hello, world!" */
+        printf("unpacked %s\n", s);
+        free(s);            /* our responsibility to free s */
+        tpl_free(tn);
+    }</tt></pre>
+</div></div>
+<h4 id="_char_vs_char">char* vs char[ ]</h4>
+<div class="paragraph"><p>The <tt>s</tt> format character is only for use with <tt>char*</tt> types. In the example
+above, <tt>s</tt> is a <tt>char*</tt>. If it had been a <tt>char s[14]</tt>, we would use the format
+characters <tt>c#</tt> to pack or unpack it, as a fixed-length character array. (This
+unpacks the characters "in-place", instead of into a dynamically allocated
+buffer). Also, a fixed-length buffer described by <tt>c#</tt> need not be
+null-terminated.</p></div>
+<h4 id="_arrays_of_strings">Arrays of strings</h4>
+<div class="paragraph"><p>You can use fixed- or variable-length arrays of strings in tpl. An example of
+packing a fixed-length two-dimensional array of strings is shown here.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>char *labels[2][3] = { {"one", "two", "three"},
+                       {"eins", "zwei", "drei" } };
+tpl_node *tn;
+tn = tpl_map("s##", labels, 2, 3);
+tpl_pack(tn,0);
+tpl_dump(tn,TPL_FILE,filename);
+tpl_free(tn);</tt></pre>
+</div></div>
+<div class="paragraph"><p>Later, when unpacking these strings, the programmer must remember to free them
+one by one, after they are no longer needed.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>char *olabels[2][3];
+int i,j;</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tn = tpl_map("s##", olabels, 2, 3);
+tpl_load(tn,TPL_FILE,filename);
+tpl_unpack(tn,0);
+tpl_free(tn);</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>for(i=0;i&lt;2;i++) {
+  for(j=0;j&lt;3;j++) {
+    printf("%s\n", olabels[i][j]);
+    free(olabels[i][j]);
+  }
+}</tt></pre>
+</div></div>
+<h3 id="_binary_buffers">Binary buffers</h3><div style="clear:left"></div>
+<div class="paragraph"><p>Packing an arbitrary-length binary buffer (tpl format character <tt>B</tt>) makes use
+of the <tt>tpl_bin</tt> structure.  You must declare this structure and populate it
+with the address and length of the binary buffer to be packed.</p></div>
+<div class="listingblock">
+<div class="title">Packing a binary buffer</div>
+<div class="content">
+<pre><tt>    #include "tpl.h"
+    #include &lt;sys/time.h&gt;
+
+    int main() {
+        tpl_node *tn;
+        tpl_bin tb;
+
+        /* we'll use a timeval as our guinea pig */
+        struct timeval tv;
+        gettimeofday(&amp;tv,NULL);
+
+        tn = tpl_map( "B", &amp;tb );
+        tb.sz = sizeof(struct timeval);  /* size of buffer to pack */
+        tb.addr = &amp;tv;                   /* address of buffer to pack */
+        tpl_pack( tn, 0 );
+        tpl_dump(tn, TPL_FILE, "bin.tpl");
+        tpl_free(tn);
+    }</tt></pre>
+</div></div>
+<div class="paragraph"><p>When you unpack a binary buffer, tpl will automatically allocate it, and will
+populate your <tt>tpl_bin</tt> structure with its address and length. You are
+responsible for eventually freeing the buffer.</p></div>
+<div class="listingblock">
+<div class="title">Unpacking a binary buffer</div>
+<div class="content">
+<pre><tt>    #include "tpl.h"
+
+    int main() {
+        tpl_node *tn;
+        tpl_bin tb;
+
+        tn = tpl_map( "B", &amp;tb );
+        tpl_load( tn, TPL_FILE, "bin.tpl" );
+        tpl_unpack( tn, 0 );
+        tpl_free(tn);
+
+        printf("binary buffer of length %d at address %p\n", tb.sz, tb.addr);
+        free(tb.addr);  /* our responsibility to free it */
+    }</tt></pre>
+</div></div>
+<h3 id="_structures">Structures</h3><div style="clear:left"></div>
+<div class="paragraph"><p>You can use tpl to pack and unpack structures, and arrays of structures.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>struct ci {
+    char c;
+    int i;
+};
+struct ci s = {'a', 1};</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tn = tpl_map("S(ci)", &amp;s);  /* pass structure address */
+tpl_pack(tn, 0);
+tpl_dump(tn, TPL_FILE, "struct.tpl");
+tpl_free(tn);</tt></pre>
+</div></div>
+<div class="paragraph"><p>As shown, omit the individual arguments for the format characters inside the
+parenthesis. The exception is for fixed-length arrays; when <tt>S(&#8230;)</tt> contains a
+<tt>#</tt> character, its length argument is required: <tt>tpl_map("S(f#i)", &amp;s, 10);</tt></p></div>
+<div class="paragraph"><p>When using the <tt>S(&#8230;)</tt> format, the only characters allowed inside the
+parentheses are <tt>iujvcsfIU#$()</tt>.</p></div>
+<h4 id="_structure_arrays">Structure arrays</h4>
+<div class="paragraph"><p>Arrays of structures are the same as simple arrays. Fixed- or variable- length
+arrays are supported.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>struct ci sa[100], one;</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tn = tpl_map("S(ci)#", sa, 100);  /* fixed-length array of 100 structures */
+tn = tpl_map("A(S(ci))", &amp;one);   /* variable-length array (one at a time)*/</tt></pre>
+</div></div>
+<div class="paragraph"><p>The differences between fixed- and variable-length arrays are explained in the
+<a href="#arrays">Arrays</a> section.</p></div>
+<h4 id="_nested_structures">Nested structures</h4>
+<div class="paragraph"><p>When dealing with nested structures, the outermost structure uses the <tt>S</tt> format
+character, and the inner nested structures use the <tt>$</tt> format. Only the
+<em>outermost</em> structure&#8217;s address is given to <tt>tpl_map</tt>.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>struct inner_t {
+  char a;
+}</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>struct outer_t {
+  char b;
+  struct inner_t i;
+}</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tpl_node *tn;
+struct outer_t outer = {'b', {'a'}};</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tn = tpl_map("S(c$(c))", &amp;outer);</tt></pre>
+</div></div>
+<div class="paragraph"><p>Structures can nest to any level. Currently tpl does not support fixed-length
+array suffixes on inner structures.  However the outermost structure can have a
+length suffix even if it contains some nested structures.</p></div>
+<h3 id="_linked_lists">Linked lists</h3><div style="clear:left"></div>
+<div class="paragraph"><p>While tpl has no specific data type for a linked list, the technique for
+packing them is illustrated here.  First describe your list element as a
+format string and then surround it with <tt>A(&#8230;)</tt> to describe it as
+variable-length array.  Then, using a temporary variable, iterate over each
+list element, copying it to the temporary variable and packing it.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>struct element {
+  char c;
+  int i;
+  struct element *next;
+}</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>struct element *list, *i, tmp;
+tpl_node *tn;</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>/* add some elements to list.. (not shown)*/</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tn = tpl_map("A(ci)", &amp;tmp);
+for(i = list; i != NULL; i=i-&gt;next) {
+  tmp = *i;
+  tpl_pack(tn, 1);
+}
+tpl_dump(tn,TPL_FILE,"list.tpl");
+tpl_free(tn);</tt></pre>
+</div></div>
+<div class="paragraph"><p>Unpacking is similar. The <tt>for</tt> loop is just replaced with:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>while( tpl_unpack(tn,1) &gt; 0) {
+  struct element *newelt = malloc(sizeof(struct element));
+  *newelt = tmp;
+  add_to_list(list, newelt);
+}</tt></pre>
+</div></div>
+<div class="paragraph"><p>As you can see, tpl does not reinstate the whole list at once-- just one
+element at a time. You need to link the elements manually. A future release of
+tpl may support <em>pointer swizzling</em> to make this easier.</p></div>
+</div>
+<h2 id="_api">API</h2>
+<div class="sectionbody">
+<h3 id="tpl_map">tpl_map</h3><div style="clear:left"></div>
+<div class="paragraph"><p>The only way to create a tpl is to call <tt>tpl_map()</tt>. The first argument is the
+<a href="#format">format string</a>. This is followed by a list of arguments as required by
+the particular characters in the format string. E.g,</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tpl_node *tn;
+int i;
+tn = tpl_map( "A(i)", &amp;i );</tt></pre>
+</div></div>
+<div class="paragraph"><p>The function creates a mapping between the items in the format string and the C
+program variables whose addresses are given. Later, the C variables will be read
+or written as the tpl is packed or unpacked.</p></div>
+<div class="paragraph"><p>This function returns a <tt>tpl_node*</tt> on success, or <tt>NULL</tt> on failure.</p></div>
+<h3 id="tpl_pack">tpl_pack</h3><div style="clear:left"></div>
+<div class="paragraph"><p>The function <tt>tpl_pack()</tt> packs data into a tpl. The arguments to
+<tt>tpl_pack()</tt> are a <tt>tpl_node*</tt> and an <a href="#index">index number</a>.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tn = tpl_map("A(i)A(c)", &amp;i, &amp;c);
+for(i=0; i&lt;10; i++) tpl_pack(tn, 1);    /* pack 0-9 into index 1 */
+for(c='a; c&lt;='z'; c++) tpl_pack(tn, 2); /* pack a-z into index 2 */</tt></pre>
+</div></div>
+<div class="sidebarblock">
+<div class="sidebar-content">
+<div class="sidebar-title">Data is copied when packed</div>
+<div class="paragraph"><p>Every call to <tt>tpl_pack()</tt> immediately <em>copies</em> the data being packed. Thus
+the program is free to immediately overwrite or re-use the packed variables.</p></div>
+</div></div>
+<h4 id="_index_number_0">Index number 0</h4>
+<div class="paragraph"><p>It is necessary to pack index number 0 only if the format string contains
+characters that are not inside an <tt>A(&#8230;)</tt>, such as the <tt>i</tt> in the format string
+<tt>iA(c)</tt>.</p></div>
+<h4 id="_variable_length_arrays">Variable-length arrays</h4>
+<h5 id="_adding_elements_to_an_array">Adding elements to an array</h5>
+<div class="paragraph"><p>To add elements to a variable-length array, call <tt>tpl_pack()</tt> repeatedly.  Each
+call adds another element to the array.</p></div>
+<h5 id="_zero_length_arrays_are_ok">Zero-length arrays are ok</h5>
+<div class="paragraph"><p>It&#8217;s perfectly acceptable to pack nothing into a variable-length array,
+resulting in a zero-length array.</p></div>
+<h5 id="nested_pack">Packing nested arrays</h5>
+<div class="paragraph"><p>In a format string containing a nested, variable-length array, such as
+<tt>A(A(s))</tt>, the inner, child array should be packed prior to the parent array.</p></div>
+<div class="paragraph"><p>When you pack a parent array, a "snapshot" of the current child array is placed
+into the parent&#8217;s new element.  Packing a parent array also empties the child
+array. This way, you can pack new data into the child, then pack the parent
+again. This creates distinct parent elements which each contain distinct child
+arrays.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Tip</div>
+</td>
+<td class="content">When dealing with nested arrays like <tt>A(A(i))</tt>, <em>pack</em> them from the "inside
+out" (child first), but <em>unpack</em> them from the "outside in" (parent first).</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>The example below creates a tpl having the format string <tt>A(A(c))</tt>.</p></div>
+<div class="listingblock">
+<div class="title">Packing nested arrays</div>
+<div class="content">
+<pre><tt>#include "tpl.h"
+
+int main() {
+    char c;
+    tpl_node *tn;
+
+    tn = tpl_map("A(A(c))", &amp;c);
+
+    for(c='a'; c&lt;'c'; c++) tpl_pack(tn,2);  /* pack child (twice) */
+    tpl_pack(tn, 1);                        /* pack parent */
+
+    for(c='1'; c&lt;'4'; c++) tpl_pack(tn,2);  /* pack child (three times) */
+    tpl_pack(tn, 1);                        /* pack parent */
+
+    tpl_dump(tn, TPL_FILE, "test40.tpl");
+    tpl_free(tn);
+}</tt></pre>
+</div></div>
+<div class="paragraph"><p>This creates a nested array in which the parent has two elements: the first
+element is the two-element nested array <em>a</em>, <em>b</em>; and the second element is
+the three-element nested array <em>1</em>, <em>2</em>, <em>3</em>.
+The <a href="#nested_unpack">nested unpacking example</a> shows how this tpl is unpacked.</p></div>
+<h3 id="tpl_dump">tpl_dump</h3><div style="clear:left"></div>
+<div class="paragraph"><p>After packing a tpl, <tt>tpl_dump()</tt> is used to write the tpl image to a file,
+memory buffer or file descriptor. The corresponding modes are shown below. A
+final mode is for querying the output size without actually performing the dump.</p></div>
+<div class="tableblock">
+<table rules="none"
+width="80%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col width="30%" />
+<col width="70%" />
+<thead valign="top">
+<tr>
+<th align="center">Write to&#8230;      </th>
+<th align="left">Usage</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr>
+<td align="center"><p class="table">file</p></td>
+<td align="left"><p class="table"><tt>tpl_dump(tn, TPL_FILE, "file.tpl" );</tt></p></td>
+</tr>
+<tr>
+<td align="center"><p class="table">file descriptor</p></td>
+<td align="left"><p class="table"><tt>tpl_dump(tn, TPL_FD, 2);</tt></p></td>
+</tr>
+<tr>
+<td align="center"><p class="table">memory</p></td>
+<td align="left"><p class="table"><tt>tpl_dump(tn, TPL_MEM, &amp;addr, &amp;len );</tt></p></td>
+</tr>
+<tr>
+<td align="center"><p class="table">caller&#8217;s memory</p></td>
+<td align="left"><p class="table"><tt>tpl_dump(tn, TPL_MEM|TPL_PREALLOCD, buf, sizeof(buf));</tt></p></td>
+</tr>
+<tr>
+<td align="center"><p class="table">just get size</p></td>
+<td align="left"><p class="table"><tt>tpl_dump(tn, TPL_GETSIZE, &amp;sz);</tt></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p>The first argument is the <tt>tpl_node*</tt> and the second is one of these constants:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<tt>TPL_FILE</tt>
+</dt>
+<dd>
+<p>
+    Writes the tpl to a file whose name is given in the following argument.
+    The file is created with permissions 664 (<tt>rw-rw-r--</tt>) unless further
+    restricted by the process <tt>umask</tt>.
+</p>
+</dd>
+<dt class="hdlist1">
+<tt>TPL_FD</tt>
+</dt>
+<dd>
+<p>
+    Writes the tpl to the file descriptor given in the following argument.
+    The descriptor can be either blocking or non-blocking, but will busy-loop
+    if non-blocking and the contents cannot be written immediately.
+</p>
+</dd>
+<dt class="hdlist1">
+<tt>TPL_MEM</tt>
+</dt>
+<dd>
+<p>
+    Writes the tpl to a memory buffer. The following two arguments must be a
+    <tt>void**</tt> and a <tt>size_t*</tt>. The function will allocate a buffer and store
+    its address and length into these locations.  The caller is responsible to
+    <tt>free()</tt> the buffer when done using it.
+</p>
+</dd>
+<dt class="hdlist1">
+<tt>TPL_MEM|TPL_PREALLOCD</tt>
+</dt>
+<dd>
+<p>
+    Writes the tpl to a memory buffer that the caller has already allocated or
+    declared. The following two arguments must be a <tt>void*</tt> and a <tt>size_t</tt>
+    specifying the buffer address and size respectively. (If the buffer is of
+    insufficient size to receive the tpl dump, the function will return -1).
+    This mode can be useful in conjunction with <tt>tpl_load</tt> in <tt>TPL_EXCESS_OK</tt>
+    mode, as shown <a href="#excess_ok">here.</a>
+</p>
+</dd>
+<dt class="hdlist1">
+<tt>TPL_GETSIZE</tt>
+</dt>
+<dd>
+<p>
+    This special mode does not actually dump the tpl. Instead it places the size
+    that the dump <em>would</em> require into the <tt>uint32_t</tt> pointed to by the
+    following argument.
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>The return value is 0 on success, or -1 on error.</p></div>
+<div class="paragraph"><p>The <tt>tpl_dump()</tt> function does not free the tpl.  Use <tt>tpl_free()</tt> to release
+the tpl&#8217;s resources when done.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Tip</div>
+</td>
+<td class="content">
+<div class="title">Back-to-back tpl images require no delimiter</div>If you want to store a series of tpl images, or transmit sequential tpl images
+over a socket (perhaps as messages to another program), you can simply dump them
+sequentially without needing to add any delimiter for the individual tpl images.
+Tpl images are internally delimited, so <tt>tpl_load</tt> will read just one at a time
+even if multiple images are contiguous.</td>
+</tr></table>
+</div>
+<h3 id="tpl_load">tpl_load</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This API function reads a previously-dumped tpl image from a file, memory
+buffer or file descriptor, and prepares it for subsequent unpacking.  The format
+string specified in the preceding call to <tt>tpl_map()</tt> will be cross-checked
+for equality with the format string stored in the tpl image.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tn = tpl_map( "A(i)", &amp;i );
+tpl_load( tn, TPL_FILE, "demo.tpl" );</tt></pre>
+</div></div>
+<div class="paragraph"><p>The first argument to <tt>tpl_load()</tt> is the <tt>tpl_node*</tt>.  The second argument is
+one of the constants:</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<tt>TPL_FILE</tt>
+</dt>
+<dd>
+<p>
+    Loads the tpl from the file named in the following argument. It is also
+    possible to bitwise-OR this flag with <tt>TPL_EXCESS_OK</tt> as explained below.
+</p>
+</dd>
+<dt class="hdlist1">
+<tt>TPL_MEM</tt>
+</dt>
+<dd>
+<p>
+    Loads the tpl from a memory buffer. The following two arguments must be a
+    <tt>void*</tt> and a <tt>size_t</tt>, specifying the buffer address and size,
+    respectively.  The caller must not free the memory buffer until after
+    freeing the tpl with <tt>tpl_free()</tt>. (If the caller wishes to hand over
+    responsibility for freeing the memory buffer, so that it&#8217;s automatically
+    freed along with the tpl when <tt>tpl_free()</tt> is called, the constant
+    <tt>TPL_UFREE</tt> may be bitwise-OR&#8217;d with <tt>TPL_MEM</tt> to achieve this).
+    Furthermore, <tt>TPL_MEM</tt> may be bitwise-OR&#8217;d with <tt>TPL_EXCESS_OK</tt>, explained
+    below.
+</p>
+</dd>
+<dt class="hdlist1">
+<tt>TPL_FD</tt>
+</dt>
+<dd>
+<p>
+    Loads the tpl from the file descriptor given in the following argument.
+    The descriptor is read until one complete tpl image is loaded; no bytes
+    past the end of the tpl image will be read.  The descriptor can be either
+    blocking or non-blocking, but will busy-loop if non-blocking and the
+    contents cannot be read immediately.
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p>During loading, the tpl image will be extensively checked for internal validity.</p></div>
+<div class="paragraph"><p>This function returns 0 on success or -1 on error.</p></div>
+<h4 id="excess_ok"><tt>TPL_EXCESS_OK</tt></h4>
+<div class="paragraph"><p>When reading a tpl image from a file or memory (but not from a file descriptor)
+the size of the file or memory buffer must exactly equal that of the tpl image
+stored therein. In other words, no excess trailing data beyond the tpl image is
+permitted. The bit flag <tt>TPL_EXCESS_OK</tt> can be OR&#8217;d with <tt>TPL_MEM</tt> or <tt>TPL_FILE</tt>
+to relax this requirement.</p></div>
+<div class="paragraph"><p>A situation where this flag can be useful is in conjunction with <tt>tpl_dump</tt> in
+the <tt>TPL_MEM|TPL_PREALLOCD</tt> mode. In this example, the program does not concern
+itself with the actual tpl size as long as <tt>LEN</tt> is sufficiently large.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>char buf[LEN];  /* will store and read tpl images here */
+...
+tpl_dump(tn, TPL_MEM|TPL_PREALLOCD, buf, LEN);
+...
+tpl_load(tn, TPL_MEM|TPL_EXCESS_OK, buf, LEN);</tt></pre>
+</div></div>
+<h3 id="tpl_unpack">tpl_unpack</h3><div style="clear:left"></div>
+<div class="paragraph"><p>The <tt>tpl_unpack()</tt> function unpacks data from the tpl. When data is unpacked,
+it is copied to the C program variables originally specified in <tt>tpl_map()</tt>.
+The first argument to <tt>tpl_unpack</tt> is the <tt>tpl_node*</tt> for the tpl and the
+second argument is an <a href="#index">index number</a>.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tn = tpl_map( "A(i)A(c)", &amp;i, &amp;c );
+tpl_load( tn, TPL_FILE, "nested.tpl" );
+while (tpl_unpack( tn, 1) &gt; 0) printf("i is %d\n", i); /* unpack index 1 */
+while (tpl_unpack( tn, 2) &gt; 0) printf("c is %c\n", c); /* unpack index 2 */</tt></pre>
+</div></div>
+<h4 id="_index_number_0_2">Index number 0</h4>
+<div class="paragraph"><p>It is necessary to unpack index number 0 only if the format string contains
+characters that are not inside an <tt>A(&#8230;)</tt>, such as the <tt>i</tt> in the format string
+<tt>iA(c)</tt>.</p></div>
+<h4 id="_variable_length_arrays_2">Variable-length arrays</h4>
+<h5 id="_unpacking_elements_from_an_array">Unpacking elements from an array</h5>
+<div class="paragraph"><p>For variable-length arrays, each call to <tt>tpl_unpack()</tt> unpacks another element.
+The return value can be used to tell when you&#8217;re done: if it&#8217;s positive, an
+element was unpacked; if it&#8217;s 0, nothing was unpacked because there are no more
+elements. A negative retun value indicates an error (e.g. invalid index number).
+In this document, we usually unpack variable-length arrays using a <tt>while</tt> loop:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>while( tpl_unpack( tn, 1 ) &gt; 0 ) {
+    /* got another element */
+}</tt></pre>
+</div></div>
+<h5 id="_array_length">Array length</h5>
+<div class="paragraph"><p>When unpacking a variable-length array, it may be convenient to know ahead of
+time how many elements will need to be unpacked.  You can use <tt>tpl_Alen()</tt> to
+get this number.</p></div>
+<h5 id="nested_unpack">Unpacking nested arrays</h5>
+<div class="paragraph"><p>In a format string containing a nested variable-length array such as <tt>A(A(s))</tt>,
+unpack the outer, parent array before unpacking the child array.</p></div>
+<div class="paragraph"><p>When you unpack a parent array, it prepares the child array for unpacking.
+After unpacking the elements of the child array, the program can repeat the
+process by unpacking another parent element, then the child elements, and so on.
+The example below unpacks a tpl having the format string <tt>A(A(c))</tt>.</p></div>
+<div class="listingblock">
+<div class="title">Unpacking nested arrays</div>
+<div class="content">
+<pre><tt>#include "tpl.h"
+#include &lt;stdio.h&gt;
+
+int main() {
+    char c;
+    tpl_node *tn;
+
+    tn = tpl_map("A(A(c))", &amp;c);
+
+    tpl_load(tn, TPL_FILE, "test40.tpl");
+    while (tpl_unpack(tn,1) &gt; 0) {
+        while (tpl_unpack(tn,2) &gt; 0) printf("%c ",c);
+        printf("\n");
+    }
+    tpl_free(tn);
+}</tt></pre>
+</div></div>
+<div class="paragraph"><p>The file <tt>test40.tpl</tt> is from the <a href="#nested_pack">nested packing example</a>. When
+run, this program prints:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>a b
+1 2 3</tt></pre>
+</div></div>
+<h3 id="tpl_free">tpl_free</h3><div style="clear:left"></div>
+<div class="paragraph"><p>The final step for any tpl is to release it using <tt>tpl_free()</tt>. Its only
+argument is the the <tt>tpl_node*</tt> to free.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tpl_free( tn );</tt></pre>
+</div></div>
+<div class="paragraph"><p>This function does not return a value (it is <tt>void</tt>).</p></div>
+<h3 id="tpl_alen">tpl_Alen</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This function takes a <tt>tpl_node*</tt> and an index number and returns an <tt>int</tt>
+specifying the number of elements in the variable-length array.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>num_elements = tpl_Alen(tn, index);</tt></pre>
+</div></div>
+<div class="paragraph"><p>This is mainly useful for programs that unpack data and need to know ahead of
+time the number of elements that will need to be unpacked. (It returns the
+current number of elements; it will decrease as elements are unpacked).</p></div>
+<h3 id="tpl_peek">tpl_peek</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This function peeks into a file or a memory buffer containing a tpl image and
+and returns a copy of its format string.  It can also peek at the lengths of
+any fixed-length arrays in the format string, or it can also peek into the data
+stored in the tpl.</p></div>
+<h4 id="_format_peek">Format peek</h4>
+<div class="paragraph"><p>The format string can be obtained
+like this:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>fmt = tpl_peek(TPL_FILE, "file.tpl");
+fmt = tpl_peek(TPL_MEM, addr, sz);</tt></pre>
+</div></div>
+<div class="paragraph"><p>On success, a copy of the format string is returned. The caller must eventually
+free it. On error, such as a non-existent file, or an invalid tpl image, it
+returns <tt>NULL</tt>.</p></div>
+<h4 id="_array_length_peek">Array length peek</h4>
+<div class="paragraph"><p>The lengths of all fixed-length arrays in the format string can be queried using
+the <tt>TPL_FXLENS</tt> mode. It provides the number of such fixed-length arrays and
+their lengths. If the former is non-zero, the caller must free the latter array
+when finished. The format string itself must also be freed.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>uint32_t num_fxlens, *fxlens, j;
+fmt = tpl_peek(TPL_FILE|TPL_FXLENS, filename, &amp;num_fxlens, &amp;fxlens);
+if (fmt) {
+  printf("format %s, num_fxlens %u\n", fmt, num_fxlens);
+  for(j=0; j&lt;num_fxlens; j++) printf("fxlens[%u] %u\n", j, fxlens[j]);
+  if (num_fxlens &gt; 0) free(fxlens);
+  free(fmt);
+}</tt></pre>
+</div></div>
+<div class="paragraph"><p>The <tt>TPL_FXLENS</tt> mode is mutually exclusive with <tt>TPL_DATAPEEK</tt>.</p></div>
+<h4 id="_data_peek">Data peek</h4>
+<div class="paragraph"><p>To peek into the data, additional arguments are used. This is a quick
+alternative to mapping, loading and unpacking the tpl, but peeking is limited
+to the data in index 0. In other words, no peeking into <tt>A(&#8230;)</tt> types.
+Suppose the tpl image in <tt>file.tpl</tt> has the format string <tt>siA(i)</tt>. Then the
+index 0 format characters are <tt>si</tt>. This is how to peek at their content:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>char *s;
+int i;
+fmt = tpl_peek(TPL_FILE | TPL_DATAPEEK, "file.tpl", "si", &amp;s, &amp;i);</tt></pre>
+</div></div>
+<div class="paragraph"><p>Now <tt>s</tt>, <tt>i</tt>, and <tt>fmt</tt> have been populated with data.  The caller must
+eventually free <tt>fmt</tt> and <tt>s</tt> because they are allocated strings.
+Of course, it works with <tt>TPL_MEM</tt> as well as <tt>TPL_FILE</tt>.  Notice that
+<tt>TPL_DATAPEEK</tt> was OR&#8217;d with the mode. You can also specify <em>any leading
+portion</em> of the index 0 format if you don&#8217;t want to peek at the whole thing:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>fmt = tpl_peek(TPL_FILE | TPL_DATAPEEK, "file.tpl", "s", &amp;s);</tt></pre>
+</div></div>
+<div class="paragraph"><p>The <tt>TPL_DATAPEEK</tt> mode is mutually exclusive with <tt>TPL_FXLENS</tt>.</p></div>
+<h5 id="_structure_peek">Structure peek</h5>
+<div class="paragraph"><p>Lastly you can peek into <tt>S(&#8230;)</tt> structures in index 0, but omit the
+surrounding <tt>S(&#8230;)</tt> in the format, and specify an argument to receive
+each structure member individually. You can specify any leading portion
+of the structure format. For example if <tt>struct.tpl</tt> has the format string
+<tt>S(si)</tt>, you can peek at its data in these ways:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>fmt = tpl_peek(TPL_FILE | TPL_DATAPEEK, "struct.tpl", "s", &amp;s);
+fmt = tpl_peek(TPL_FILE | TPL_DATAPEEK, "struct.tpl", "si", &amp;s, &amp;i);</tt></pre>
+</div></div>
+<h3 id="tpl_jot">tpl_jot</h3><div style="clear:left"></div>
+<div class="paragraph"><p>This is a quick shortcut for generating a tpl. It can be used instead of the
+usual "map, pack, dump, and free" lifecycle. With <tt>tpl_jot</tt> all those steps are
+handled for you.  It only works for simple formats-- namely, those without
+<tt>A(&#8230;)</tt> in their format string. Here is how it is used:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>char *hello = "hello", *world = "world";
+tpl_jot( TPL_FILE, "file.tpl", "ss", &amp;hello, &amp;world);</tt></pre>
+</div></div>
+<div class="paragraph"><p>It supports the three standard modes, <tt>TPL_FILE</tt>, <tt>TPL_FD</tt> and <tt>TPL_MEM</tt>.
+It returns -1 on failure (such as a bad format string or error writing the
+file) or 0 on success.</p></div>
+<h3 id="hooks">tpl_hook</h3><div style="clear:left"></div>
+<div class="paragraph"><p>Most users will just leave these hooks at their default values. You can change
+these hook values if you want to modify tpl&#8217;s internal memory management and
+error reporting behavior.</p></div>
+<div class="paragraph"><p>A global structure called <tt>tpl_hook</tt> encapsulates the hooks.  A program can
+reconfigure any hook by specifying an alternative function whose prototype
+matches the default. For example:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>#include "tpl.h"
+extern tpl_hook_t tpl_hook;</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>int main() {
+    tpl_hook.oops = printf;
+    ...
+}</tt></pre>
+</div></div>
+<div class="tableblock">
+<table rules="none"
+width="90%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Configurable hooks</caption>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+<thead valign="top">
+<tr>
+<th align="left">Hook                </th>
+<th align="left">Description                  </th>
+<th align="left"> Default</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr>
+<td align="left"><p class="table"><tt>tpl_hook.oops</tt></p></td>
+<td align="left"><p class="table">log error messages</p></td>
+<td align="left"><p class="table"><tt>tpl_oops</tt></p></td>
+</tr>
+<tr>
+<td align="left"><p class="table"><tt>tpl_hook.malloc</tt></p></td>
+<td align="left"><p class="table">allocate memory</p></td>
+<td align="left"><p class="table"><tt>malloc</tt></p></td>
+</tr>
+<tr>
+<td align="left"><p class="table"><tt>tpl_hook.realloc</tt></p></td>
+<td align="left"><p class="table">reallocate memory</p></td>
+<td align="left"><p class="table"><tt>realloc</tt></p></td>
+</tr>
+<tr>
+<td align="left"><p class="table"><tt>tpl_hook.free</tt></p></td>
+<td align="left"><p class="table">free memory</p></td>
+<td align="left"><p class="table"><tt>free</tt></p></td>
+</tr>
+<tr>
+<td align="left"><p class="table"><tt>tpl_hook.fatal</tt></p></td>
+<td align="left"><p class="table">log fatal message and exit</p></td>
+<td align="left"><p class="table"><tt>tpl_fatal</tt></p></td>
+</tr>
+<tr>
+<td align="left"><p class="table"><tt>tpl_hook.gather_max</tt></p></td>
+<td align="left"><p class="table">tpl_gather max image size</p></td>
+<td align="left"><p class="table"><tt>0 (unlimited)</tt></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h4 id="_the_oops_hook">The oops hook</h4>
+<div class="paragraph"><p>The <tt>oops</tt> has the same prototype as <tt>printf</tt>. The built-in default oops
+handling function writes the error message to <tt>stderr</tt>.</p></div>
+<h4 id="_the_fatal_hook">The fatal hook</h4>
+<div class="paragraph"><p>The fatal hook is invoked when a tpl function cannot continue because of an out-
+of-memory condition or some other usage violation or inconsistency. It has this
+prototype:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>void fatal_fcn(char *fmt, ...);</tt></pre>
+</div></div>
+<div class="paragraph"><p>The <tt>fatal</tt> hook must not return. It must either exit, <em>or</em> if the program needs
+to handle the failure and keep executing, <tt>setjmp</tt> and <tt>longjmp</tt> can be used.
+The default behavior is to <tt>exit(-1)</tt>.</p></div>
+<div class="listingblock">
+<div class="title">Using longjmp in a fatal error handler</div>
+<div class="content">
+<pre><tt>#include &lt;setjmp.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdarg.h&gt;
+#include "tpl.h"
+
+jmp_buf env;
+extern tpl_hook_t tpl_hook;
+
+void catch_fatal(char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  vfprintf(stderr, fmt, ap);
+  va_end(ap);
+  longjmp(env,-1);                /* return to setjmp point */
+}
+
+int main() {
+  int err;
+  tpl_node *tn;
+  tpl_hook.fatal = catch_fatal;    /* install fatal handler */
+
+  err = setjmp(env); /* on error, control will return here  */
+  if (err) {
+    printf("caught error!\n");
+    return -1;
+  }
+
+  tn = tpl_map("@");              /* generate a fatal error */
+  printf("program ending, without error\n");
+  return 0;
+}</tt></pre>
+</div></div>
+<div class="paragraph"><p>This example is included in <tt>tests/test123.c</tt>. When run, this program prints:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>unsupported option @
+failed to parse @
+caught error!</tt></pre>
+</div></div>
+<h3 id="_tpl_gather">tpl_gather</h3><div style="clear:left"></div>
+<div class="sidebarblock">
+<div class="sidebar-content">
+<div class="sidebar-title">Most programs don&#8217;t need this</div>
+<div class="paragraph"><p>Normally, <tt>tpl_load()</tt> is used to read a tpl image having an expected format
+string.  A more generic operation is to acquire a tpl image whose format string is
+unknown. E.g., a generic message-receiving function might gather tpl images of
+varying format and route them to their final destination. This is the purpose of
+<tt>tpl_gather</tt>. It produces a memory buffer containing one tpl image. If there
+are multiple contiguous images in the input, it gathers exactly one image at a
+time.</p></div>
+</div></div>
+<div class="paragraph"><p>The prototype for this function is:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>int tpl_gather( int mode, ...);</tt></pre>
+</div></div>
+<div class="paragraph"><p>The <tt>mode</tt> argument is one of three constants listed below, which must be
+followed by the mode-specific required arguments:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>TPL_GATHER_BLOCKING,    int fd, void **img, size_t *sz
+TPL_GATHER_NONBLOCKING, int fd, tpl_gather_t **gs, tpl_gather_cb *cb, void *data
+TPL_GATHER_MEM,         void *addr, size_t sz, tpl_gather_t **gs, tpl_gather_cb *cb, void *data</tt></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="title"><tt>tpl_hook.gather_max</tt></div>All modes honor <tt>tpl_hook.gather_max</tt>, specifying the maximum byte size for a
+tpl image to be gathered (the default is unlimited, signified by 0). If a source
+attempts to send a tpl image larger than this maximum, whatever partial image
+has been read will be discarded, and no further reading will take place; in this
+case <tt>tpl_gather</tt> will return a negative (error) value to inform the caller that
+it should stop gathering from this source, and close the originating file
+descriptor if there is one. (The whole idea is to prevent untrusted sources from
+sending extremely large tpl images which would consume too much memory.)</td>
+</tr></table>
+</div>
+<h4 id="_tt_tpl_gather_blocking_tt"><tt>TPL_GATHER_BLOCKING</tt></h4>
+<div class="paragraph"><p>In this mode, <tt>tpl_gather</tt> blocks while reading file descriptor <tt>fd</tt> until one
+complete tpl image is read. No bytes past the end of the tpl image will be read.
+The address of the buffer containing the image is returned in <tt>img</tt> and its size
+is placed in <tt>sz</tt>. The caller is responsible for eventually freeing the buffer.
+The function returns 1 on success, 0 on end-of-file, or a negative number on
+error.</p></div>
+<h4 id="_tt_tpl_gather_nonblocking_tt"><tt>TPL_GATHER_NONBLOCKING</tt></h4>
+<div class="paragraph"><p>This mode is for non-blocking, event-driven programs that implement their
+own file descriptor readability testing using <tt>select()</tt> or the like. In this
+mode, tpl images are gathered in chunks as data becomes readable. Whenever a
+full tpl image has been gathered, it invokes a caller-specified callback to do
+something with the image.  The arguments are the file descriptor <tt>fd</tt> which the
+caller has determined to be readable and which must be in non-blocking mode, a
+pointer to a file-descriptor-specific handle which the caller has declared
+(explained below); a callback to invoke when a tpl image has been read; and an
+opaque pointer that will passed to the callback.</p></div>
+<div class="paragraph"><p>For each file descriptor on which <tt>tpl_gather</tt> will be used, the caller must
+declare a <tt>tpl_gather_t*</tt> and initialize it to <tt>NULL</tt>. Thereafter it will be
+used internally by <tt>tpl_gather</tt> whenever data is readable on the descriptor.</p></div>
+<div class="paragraph"><p>The callback will only be invoked whenever <tt>tpl_gather()</tt> has accumulated one
+complete tpl image. It must have this prototype:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>int (tpl_gather_cb)(void *img, size_t sz, void *data);</tt></pre>
+</div></div>
+<div class="paragraph"><p>The callback can do anything with the tpl image but it must not free it. It can
+be copied if it needs to survive past the callback&#8217;s return. The callback should
+return 0 under normal circumstances, or a negative number to abort; that is,
+returning a negative number causes <tt>tpl_gather</tt> itself to discard any remaining
+full or partial tpl images that have been read, and to return a negative number
+(-4 in particular) to signal its caller to close the file descriptor.</p></div>
+<div class="paragraph"><p>The return value of <tt>tpl_gather()</tt> is negative if an error occured or 0 if a
+normal EOF was encountered-- both cases require that the caller close the file
+descriptor (and stop monitoring it for readability, obviously). If the return
+value is positive, the function succeeded in gathering whatever data was
+currently readable, which may have been a partial tpl image, or one or more
+complete images.</p></div>
+<h5 id="_typical_usage">Typical Usage</h5>
+<div class="paragraph"><p>The program will have established a file descriptor in non-blocking mode and
+be monitoring it for readability, using <tt>select()</tt>. Whenever it&#8217;s readable, the
+program calls <tt>tpl_gather()</tt>. In skeletal terms:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>tpl_gather_t *gt=NULL;
+int rc;</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>void fd_is_readable(int fd) {
+  rc = tpl_gather( TPL_GATHER_NONBLOCKING, fd, &amp;gt, callback, NULL );
+  if (rc &lt;= 0) {
+      close(fd);               /* got eof or fatal */
+      stop_watching_fd(fd);
+  }
+}</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>int callback( void *img, size_t sz, void *data ) {
+  printf("got a tpl image\n"); /* do something with img. do not free it. */
+  return 0;                    /* normal (no error) */
+}</tt></pre>
+</div></div>
+<h4 id="_tt_tpl_gather_mem_tt"><tt>TPL_GATHER_MEM</tt></h4>
+<div class="paragraph"><p>This mode is identical to <tt>TPL_GATHER_NONBLOCKING</tt> except that it gathers from a
+memory buffer instead of from a file descriptor. In other words, if some other
+layer of code-- say, a decryption function (that is decrypting fixed-size
+blocks) produces tpl fragments one-by-one, this mode can be used to reconstitute
+the tpl images and invoke the callback for each one. Its parameters are the same
+as for the <tt>TPL_GATHER_NONBLOCKING</tt> mode except that instead of a file
+descriptor, it takes a buffer address and size. The return values are also the
+same as for <tt>TPL_GATHER_NONBLOCKING</tt> noting of course there is no file
+descriptor to close on a non-positive return value.</p></div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Version 1.5<br />
+Last updated 2010-02-05 04:37:37 EDT
+</div>
+</div>
+</body>
+</html>

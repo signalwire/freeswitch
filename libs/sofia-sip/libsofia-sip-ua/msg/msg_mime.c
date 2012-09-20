@@ -1069,28 +1069,33 @@ MSG_HEADER_CLASS(msg_, accept, "Accept", "", ac_params, apndlist,
 
 issize_t msg_accept_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen)
 {
-  msg_accept_t *ac = (msg_accept_t *)h;
+	msg_accept_t *ac;
 
-  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
-    *s = '\0', s += span_lws(s + 1) + 1;
+	for(;;) {
+		ac = (msg_accept_t *)h;
 
-  if (*s == '\0') {
-    /* Empty Accept list is not an error */
-    ac->ac_type = ac->ac_subtype = "";
-    return 0;
-  }
+		while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
+			*s = '\0', s += span_lws(s + 1) + 1;
 
-  /* "Accept:" #(type/subtyp ; *(parameters))) */
-  if (msg_mediatype_d(&s, &ac->ac_type) == -1)
-    return -1;
-  if (!(ac->ac_subtype = strchr(ac->ac_type, '/')))
-    return -1;
-  ac->ac_subtype++;
+		if (*s == '\0') {
+			/* Empty Accept list is not an error */
+			ac->ac_type = ac->ac_subtype = "";
+			return 0;
+		}
 
-  if (*s == ';' && msg_params_d(home, &s, &ac->ac_params) == -1)
-    return -1;
+		/* "Accept:" #(type/subtyp ; *(parameters))) */
+		if (msg_mediatype_d(&s, &ac->ac_type) == -1)
+			return -1;
+		if (!(ac->ac_subtype = strchr(ac->ac_type, '/')))
+			return -1;
+		ac->ac_subtype++;
 
-  return msg_parse_next_field(home, h, s, slen);
+		if (*s == ';' && msg_params_d(home, &s, &ac->ac_params) == -1)
+			return -1;
+  
+		msg_parse_next_field_without_recursion();
+	}
+
 }
 
 issize_t msg_accept_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
@@ -1167,22 +1172,26 @@ issize_t msg_accept_any_d(su_home_t *home,
 			  char *s, isize_t slen)
 {
   /** @relatesalso msg_accept_any_s */
-  msg_accept_any_t *aa = (msg_accept_any_t *)h;
+	msg_accept_any_t *aa;
 
-  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
-    *s = '\0', s += span_lws(s + 1) + 1;
+	for(;;) {
+		aa = (msg_accept_any_t *)h;
+		while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
+			*s = '\0', s += span_lws(s + 1) + 1;
 
-  if (*s == '\0')
-    return -2;			/* Empty list */
+		if (*s == '\0')
+			return -2;			/* Empty list */
 
-  /* "Accept-*:" 1#(token *(SEMI accept-param)) */
-  if (msg_token_d(&s, &aa->aa_value) == -1)
-    return -1;
+		/* "Accept-*:" 1#(token *(SEMI accept-param)) */
+		if (msg_token_d(&s, &aa->aa_value) == -1)
+			return -1;
 
-  if (*s == ';' && msg_params_d(home, &s, &aa->aa_params) == -1)
-    return -1;
+		if (*s == ';' && msg_params_d(home, &s, &aa->aa_params) == -1)
+			return -1;
+		
+		msg_parse_next_field_without_recursion();
+	}
 
-  return msg_parse_next_field(home, h, s, slen);
 }
 
 /** Encode an Accept-* header field. */
@@ -2071,29 +2080,33 @@ MSG_HEADER_CLASS_G(content_transfer_encoding, "Content-Transfer-Encoding",
 
 issize_t msg_warning_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen)
 {
-  msg_warning_t *w = (msg_warning_t *)h;
+	msg_warning_t *w;
   char *text;
 
-  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
-    *s = '\0', s += span_lws(s + 1) + 1;
+  for(;;) {
+	  w = (msg_warning_t *)h;
+	  while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
+		  *s = '\0', s += span_lws(s + 1) + 1;
 
-  /* Parse protocol */
-  if (!IS_DIGIT(*s))
-    return -1;
-  w->w_code = strtoul(s, &s, 10);
-  skip_lws(&s);
+	  /* Parse protocol */
+	  if (!IS_DIGIT(*s))
+		  return -1;
+	  w->w_code = strtoul(s, &s, 10);
+	  skip_lws(&s);
 
-  /* Host (and port) */
-  if (msg_hostport_d(&s, &w->w_host, &w->w_port) == -1)
-    return -1;
-  if (msg_quoted_d(&s, &text) == -1)
-    return -1;
-  if (msg_unquote(text, text) == NULL)
-    return -1;
+	  /* Host (and port) */
+	  if (msg_hostport_d(&s, &w->w_host, &w->w_port) == -1)
+		  return -1;
+	  if (msg_quoted_d(&s, &text) == -1)
+		  return -1;
+	  if (msg_unquote(text, text) == NULL)
+		  return -1;
 
-  w->w_text = text;
+	  w->w_text = text;
+	  
+	  msg_parse_next_field_without_recursion();
+  }
 
-  return msg_parse_next_field(home, h, s, slen);
 }
 
 issize_t msg_warning_e(char b[], isize_t bsiz, msg_header_t const *h, int f)

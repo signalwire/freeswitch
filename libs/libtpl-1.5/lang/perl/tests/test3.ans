@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+      <!DOCTYPE tplxml [ 
+      <!ELEMENT tplxml (A|i|u|I|U|B|s|c|f|fx)*>
+      <!ATTLIST tplxml
+         format CDATA #REQUIRED
+         fxlens CDATA #REQUIRED
+      >
+      <!ELEMENT i (#PCDATA)>
+      <!ELEMENT u (#PCDATA)>
+      <!ELEMENT I (#PCDATA)>
+      <!ELEMENT U (#PCDATA)>
+      <!ELEMENT B (#PCDATA)>
+      <!ELEMENT s (#PCDATA)>
+      <!ELEMENT c (#PCDATA)>
+      <!ELEMENT f (#PCDATA)>
+      <!ELEMENT A (el)*>
+      <!ELEMENT el (A|i|u|I|U|B|s|c|f|fx)+>
+      <!ELEMENT fx (i|u|I|U|c|f)*>
+      ]>
+<tplxml format="A(i)" fxlens="">
+  <A>
+  <el>
+    <i>0</i>
+  </el>
+  <el>
+    <i>1</i>
+  </el>
+  <el>
+    <i>2</i>
+  </el>
+  <el>
+    <i>3</i>
+  </el>
+  <el>
+    <i>4</i>
+  </el>
+  <el>
+    <i>5</i>
+  </el>
+  <el>
+    <i>6</i>
+  </el>
+  <el>
+    <i>7</i>
+  </el>
+  <el>
+    <i>8</i>
+  </el>
+  <el>
+    <i>9</i>
+  </el>
+  </A>
+</tplxml>

@@ -1,0 +1,20 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+my @tests;
+for (glob "test*[0-9]") {
+    push @tests, $_ if -e "$_.ans";
+}
+
+my $num_failed=0;
+
+for my $test (@tests) {
+    `./$test > $test.out`;
+    `diff $test.out $test.ans`;
+    print "$test failed\n" if $?;
+    $num_failed++ if $?;
+}
+
+print scalar @tests . " tests conducted, $num_failed failed.\n";

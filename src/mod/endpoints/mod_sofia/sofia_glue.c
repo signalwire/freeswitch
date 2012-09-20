@@ -2526,7 +2526,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		memset(sofia_private, 0, sizeof(*sofia_private));
-		sofia_private->is_call++;
+		sofia_private->is_call = 2;
 		sofia_private->is_static++;
 
 		if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {

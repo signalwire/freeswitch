@@ -19,9 +19,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 */
-
 #include "switch.h"
-
 #ifndef cJSON__h
 #define cJSON__h
 
@@ -30,7 +28,7 @@ extern "C"
 {
 #endif
 
-// cJSON Types:
+/* cJSON Types: */
 #define cJSON_False 0
 #define cJSON_True 1
 #define cJSON_NULL 2
@@ -41,18 +39,18 @@ extern "C"
 	
 #define cJSON_IsReference 256
 
-// The cJSON structure:
+/* The cJSON structure: */
 typedef struct cJSON {
-	struct cJSON *next,*prev;	// next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem
-	struct cJSON *child;		// An array or object item will have a child pointer pointing to a chain of the items in the array/object.
+	struct cJSON *next,*prev;	/* next/prev allow you to walk array/object chains. Alternatively, use GetArraySize/GetArrayItem/GetObjectItem */
+	struct cJSON *child;		/* An array or object item will have a child pointer pointing to a chain of the items in the array/object. */
 
-	int type;					// The type of the item, as above.
+	int type;					/* The type of the item, as above. */
 
-	char *valuestring;			// The item's string, if type==cJSON_String
-	int valueint;				// The item's number, if type==cJSON_Number
-	double valuedouble;			// The item's number, if type==cJSON_Number
+	char *valuestring;			/* The item's string, if type==cJSON_String */
+	int valueint;				/* The item's number, if type==cJSON_Number */
+	double valuedouble;			/* The item's number, if type==cJSON_Number */
 
-	char *string;				// The item's name string, if this item is the child of, or is in the list of subitems of an object.
+	char *string;				/* The item's name string, if this item is the child of, or is in the list of subitems of an object. */
 } cJSON;
 
 typedef struct cJSON_Hooks {
@@ -60,55 +58,59 @@ typedef struct cJSON_Hooks {
       void (*free_fn)(void *ptr);
 } cJSON_Hooks;
 
-// Supply malloc, realloc and free functions to cJSON
+/* Supply malloc, realloc and free functions to cJSON */
 SWITCH_DECLARE(void) cJSON_InitHooks(cJSON_Hooks* hooks);
 
 
-// Supply a block of JSON, and this returns a cJSON object you can interrogate. Call cJSON_Delete when finished.
+/* Supply a block of JSON, and this returns a cJSON object you can interrogate. Call cJSON_Delete when finished. */
 SWITCH_DECLARE(cJSON *)cJSON_Parse(const char *value);
-// Render a cJSON entity to text for transfer/storage. Free the char* when finished.
+/* Render a cJSON entity to text for transfer/storage. Free the char* when finished. */
 SWITCH_DECLARE(char *)cJSON_Print(cJSON *item);
-// Render a cJSON entity to text for transfer/storage without any formatting. Free the char* when finished.
+/* Render a cJSON entity to text for transfer/storage without any formatting. Free the char* when finished. */
 SWITCH_DECLARE(char *)cJSON_PrintUnformatted(cJSON *item);
-// Delete a cJSON entity and all subentities.
+/* Delete a cJSON entity and all subentities. */
 SWITCH_DECLARE(void)   cJSON_Delete(cJSON *c);
 
-// Returns the number of items in an array (or object).
+/* Returns the number of items in an array (or object). */
 SWITCH_DECLARE(int)	  cJSON_GetArraySize(cJSON *array);
-// Retrieve item number "item" from array "array". Returns NULL if unsuccessful.
+/* Retrieve item number "item" from array "array". Returns NULL if unsuccessful. */
 SWITCH_DECLARE(cJSON *)cJSON_GetArrayItem(cJSON *array,int item);
-// Get item "string" from object. Case insensitive.
+/* Get item "string" from object. Case insensitive. */
 SWITCH_DECLARE(cJSON *)cJSON_GetObjectItem(cJSON *object,const char *string);
+
+/* For analysing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make sense of it. Defined when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds. */
+SWITCH_DECLARE(const char *)cJSON_GetErrorPtr(void);
 	
-// These calls create a cJSON item of the appropriate type.
+/* These calls create a cJSON item of the appropriate type. */
 SWITCH_DECLARE(cJSON *)cJSON_CreateNull(void);
 SWITCH_DECLARE(cJSON *)cJSON_CreateTrue(void);
 SWITCH_DECLARE(cJSON *)cJSON_CreateFalse(void);
+SWITCH_DECLARE(cJSON *)cJSON_CreateBool(int b);
 SWITCH_DECLARE(cJSON *)cJSON_CreateNumber(double num);
 SWITCH_DECLARE(cJSON *)cJSON_CreateString(const char *string);
 SWITCH_DECLARE(cJSON *)cJSON_CreateArray(void);
 SWITCH_DECLARE(cJSON *)cJSON_CreateObject(void);
 
-// These utilities create an Array of count items.
+/* These utilities create an Array of count items. */
 SWITCH_DECLARE(cJSON *)cJSON_CreateIntArray(int *numbers,int count);
 SWITCH_DECLARE(cJSON *)cJSON_CreateFloatArray(float *numbers,int count);
 SWITCH_DECLARE(cJSON *)cJSON_CreateDoubleArray(double *numbers,int count);
 SWITCH_DECLARE(cJSON *)cJSON_CreateStringArray(const char **strings,int count);
 
-// Append item to the specified array/object.
+/* Append item to the specified array/object. */
 SWITCH_DECLARE(void) cJSON_AddItemToArray(cJSON *array, cJSON *item);
 SWITCH_DECLARE(void)	cJSON_AddItemToObject(cJSON *object,const char *string,cJSON *item);
-// Append reference to item to the specified array/object. Use this when you want to add an existing cJSON to a new cJSON, but don't want to corrupt your existing cJSON.
+/* Append reference to item to the specified array/object. Use this when you want to add an existing cJSON to a new cJSON, but don't want to corrupt your existing cJSON. */
 SWITCH_DECLARE(void) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item);
 SWITCH_DECLARE(void)	cJSON_AddItemReferenceToObject(cJSON *object,const char *string,cJSON *item);
 
-// Remove/Detatch items from Arrays/Objects.
+/* Remove/Detatch items from Arrays/Objects. */
 SWITCH_DECLARE(cJSON *)cJSON_DetachItemFromArray(cJSON *array,int which);
 SWITCH_DECLARE(void)   cJSON_DeleteItemFromArray(cJSON *array,int which);
 SWITCH_DECLARE(cJSON *)cJSON_DetachItemFromObject(cJSON *object,const char *string);
 SWITCH_DECLARE(void)   cJSON_DeleteItemFromObject(cJSON *object,const char *string);
 	
-// Update array items.
+/* Update array items. */
 SWITCH_DECLARE(void) cJSON_ReplaceItemInArray(cJSON *array,int which,cJSON *newitem);
 SWITCH_DECLARE(void) cJSON_ReplaceItemInObject(cJSON *object,const char *string,cJSON *newitem);
 

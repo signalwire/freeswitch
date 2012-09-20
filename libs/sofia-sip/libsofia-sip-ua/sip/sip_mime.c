@@ -135,24 +135,28 @@ SIP_HEADER_CLASS(accept_disposition, "Accept-Disposition", "",
 
 issize_t sip_accept_disposition_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
-  sip_accept_disposition_t *ad = (sip_accept_disposition_t *)h;
+	sip_accept_disposition_t *ad;
 
-  assert(h);
+	assert(h);
 
-  /* Ignore empty entries (comma-whitespace) */
-  while (*s == ',')
-    s += span_lws(s + 1) + 1;
+	for(;;) {
+		ad = (sip_accept_disposition_t *)h;
+		/* Ignore empty entries (comma-whitespace) */
+		while (*s == ',')
+			s += span_lws(s + 1) + 1;
 
-  /* "Accept:" #(type/subtyp ; *(parameters))) */
-  if (/* Parse protocol */
-      sip_version_d(&s, &ad->ad_type) == -1 ||
-      (ad->ad_subtype = strchr(ad->ad_type, '/')) == NULL ||
-      (*s == ';' && msg_params_d(home, &s, &ad->ad_params) == -1))
-    return -1;
+		/* "Accept:" #(type/subtyp ; *(parameters))) */
+		if (/* Parse protocol */
+			sip_version_d(&s, &ad->ad_type) == -1 ||
+			(ad->ad_subtype = strchr(ad->ad_type, '/')) == NULL ||
+			(*s == ';' && msg_params_d(home, &s, &ad->ad_params) == -1))
+			return -1;
 
-  if (ad->ad_subtype) ad->ad_subtype++;
+		if (ad->ad_subtype) ad->ad_subtype++;
 
-  return msg_parse_next_field(home, h, s, slen);
+		msg_parse_next_field_without_recursion();
+	}
+
 }
 
 issize_t sip_accept_disposition_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
