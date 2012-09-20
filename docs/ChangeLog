@@ -3,10 +3,14 @@ freeswitch (1.2.3)
 	core: update json lib in core and ESL and re-apply old patches (r:5a956890)
 	core: add skip_cdr_causes variable to list call hangup causes that should not trigger cdr processing (r:3cf238fc)
 	formats: add mod_mp4v2 for mp4 recording, most things are hardcodec, but it should work with 8000hz audio and H264 video (r:7e01bd10)
+	freetdm: M2UA Signaling gateway support (SIGTRAN)
+        freetdm: New TDM endpoint for raw IO access to boards (controllable channel)
+        freetdm: New dialplan paramters and SIP X headers to set ISUP message information elements
+        freetdm: Misc ISUP bug fixes
 	libsofia: Fix DoS vulnerability in processing Route Header (r:016550f2/FS-4627)
 	libtpl: add tpl to tree (r:4985a41f)
 	mod_sofia: add transfer_to variable for call processing (r:1b2b4565)
-	
+
 freeswitch (1.2.2)
 	configuration: Add language config files for es-ES,es-MX,pt-BR,pt-PT (Thanks Francois Delawarde) (r:9cde99b4/FS-3003)
 	core: move recovery engine up into the core (r:66677c94)
