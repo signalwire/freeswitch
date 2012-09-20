@@ -12,9 +12,11 @@ avoid_mods=(
   applications/mod_limit
   applications/mod_mongo
   applications/mod_mp4
+  applications/mod_oreka
   applications/mod_osp
   applications/mod_rad_auth
   applications/mod_skel
+  applications/mod_sonar
   applications/mod_soundtouch
   asr_tts/mod_cepstral
   asr_tts/mod_flite
@@ -26,6 +28,7 @@ avoid_mods=(
   codecs/mod_voipcodecs
   endpoints/mod_gsmopen
   endpoints/mod_h323
+  endpoints/mod_html5
   endpoints/mod_khomp
   endpoints/mod_opal
   endpoints/mod_reference
@@ -35,6 +38,7 @@ avoid_mods=(
   languages/mod_spidermonkey
   sdk/autotools
   xml_int/mod_xml_ldap
+  xml_int/mod_xml_radius
 )
 avoid_mods_sid=(
   endpoints/mod_portaudio
