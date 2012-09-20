@@ -1825,7 +1825,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		file_path = switch_core_session_strdup(session, file);
 	}
 
-	if (file_path) {
+	if (file_path && !strstr(file_path, SWITCH_URL_SEPARATOR)) {
 		char *p;
 		char *path = switch_core_session_strdup(session, file_path);
 
