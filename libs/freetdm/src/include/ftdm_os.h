@@ -87,6 +87,10 @@ typedef uint64_t ftdm_time_t;
 /*! \brief Get value that is in range [vmin,vmax] */
 #define ftdm_clamp(val,vmin,vmax) ftdm_max(vmin,ftdm_min(val,vmax))
 
+/*!< \brief Safer version of ftdm_clamp(), that swaps vmin/vmax parameters if vmin > vmax */
+#define ftdm_clamp_safe(val,vmin,vmax)	\
+	ftdm_clamp(val, ftdm_min(vmin,vmax), ftdm_max(vmin,vmax))
+
 /*!
  * \brief Get offset of member in structure
  * \param[in]	type	Type of struct
