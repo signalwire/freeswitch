@@ -286,7 +286,7 @@ SWITCH_STANDARD_API(shutdown_function)
 
 SWITCH_STANDARD_API(version_function)
 {
-	stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_FULL_HUMAN);
+	stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_REVISION_HUMAN);
 	return SWITCH_STATUS_SUCCESS;
 }
 
