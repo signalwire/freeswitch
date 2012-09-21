@@ -143,11 +143,15 @@ get_nightly_version () {
   echo "$(get_last_release_ver)+git~$(date -u '+%Y%m%dT%H%M%SZ')~$commit"
 }
 
+get_nightly_revision_human () {
+  echo "git $(git rev-list -n1 --abbrev=7 --abbrev-commit HEAD) $(date -u '+%Y-%m-%d %H:%M:%SZ')"
+}
+
 create_orig () {
   {
     set -e
     local OPTIND OPTARG
-    local uver="" bundle_deps=false zl=9e
+    local uver="" hrev="" bundle_deps=false zl=9e
     while getopts 'bnv:z:' o "$@"; do
       case "$o" in
         b) bundle_deps=true;;
@@ -157,8 +161,10 @@ create_orig () {
       esac
     done
     shift $(($OPTIND-1))
-    [ -z "$uver" ] || [ "$uver" = "nightly" ] \
-      && uver="$(get_nightly_version)"
+    if [ -z "$uver" ] || [ "$uver" = "nightly" ]; then
+      uver="$(get_nightly_version)"
+      hrev="$(get_nightly_revision_human)"
+    fi
     local treeish="$1" dver="$(mk_dver "$uver")"
     local orig="../freeswitch_$dver.orig.tar.xz"
     [ -n "$treeish" ] || treeish="HEAD"
@@ -175,7 +181,7 @@ create_orig () {
       (cd libs && getlibs)
       git add -f libs
     fi
-    ./build/set-fs-version.sh "$uver" && git add configure.in
+    ./build/set-fs-version.sh "$uver" "$hrev" && git add configure.in
     echo "$uver" > .version && git add -f .version
     git commit --allow-empty -m "nightly v$uver"
     git archive -v \
