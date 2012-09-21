@@ -163,7 +163,7 @@ static switch_status_t load_config(void)
 
   done:
 #ifdef _MSC_VER
-	if (!globals.server) {
+	if (!globals.nameserver[0]) {
 		HKEY hKey;
 		DWORD data_sz;
 		char* buf;
@@ -183,7 +183,7 @@ static switch_status_t load_config(void)
 					buf[data_sz] = 0;
 				}
 				switch_replace_char(buf, ' ', 0, SWITCH_FALSE); /* only use the first entry ex "192.168.1.1 192.168.1.2" */
-				globals.server = buf;
+				globals.nameserver[0] = buf;
 			}
 		}
 	}
