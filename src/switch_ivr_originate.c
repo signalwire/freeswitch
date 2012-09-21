@@ -1216,24 +1216,28 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 		}
 
 		if (!ringback->asis) {
+			switch_codec_implementation_t peer_read_impl = { 0 };
+
 			if (switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH)) {
 				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_WARNING, "%s Ringback not supported in passthrough codec mode.\n",
 								  switch_channel_get_name(caller_channel));
 				switch_goto_status(SWITCH_STATUS_GENERR, end);
 			}
 
+			switch_core_session_get_read_impl(originate_status[0].peer_session, &peer_read_impl);
+
 			if (switch_core_codec_init(write_codec,
 									   "L16",
 									   NULL,
-									   read_codec->implementation->actual_samples_per_second,
-									   read_codec->implementation->microseconds_per_packet / 1000,
+									   peer_read_impl.actual_samples_per_second,
+									   peer_read_impl.microseconds_per_packet / 1000,
 									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 									   switch_core_session_get_pool(oglobals->session)) == SWITCH_STATUS_SUCCESS) {
 
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals->session), SWITCH_LOG_DEBUG,
 								  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-								  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
+								  peer_read_impl.actual_samples_per_second, peer_read_impl.microseconds_per_packet / 1000);
 				write_frame->codec = write_codec;
 				write_frame->datalen = read_codec->implementation->decoded_bytes_per_packet;
 				write_frame->samples = write_frame->datalen / 2;
