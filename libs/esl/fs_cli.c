@@ -931,17 +931,17 @@ static void print_banner(FILE *stream)
 	WriteFile(hStdout, banner, (DWORD) strlen(banner), NULL, NULL);
 	WriteFile(hStdout, cc, (DWORD) strlen(cc), NULL, NULL);
 	SetConsoleTextAttribute(hStdout, wOldColorAttrs);
-
 	/* Print the rest info in default colors */
 	fprintf(stream, "\n%s\n", inf);
-#else
-	fprintf(stream,
-			"%s%s%s%s%s%s\n%s\n", 
+#elif SHOW_HUGE_CLUECON_NAG
+	fprintf(stream, "%s%s%s%s%s%s\n%s\n",
 			ESL_SEQ_DEFAULT_COLOR,
 			ESL_SEQ_FYELLOW, ESL_SEQ_BBLUE,
 			banner,
 			cc, ESL_SEQ_DEFAULT_COLOR, inf);
-
+	fprintf(stream, "%s", output_text_color);
+#else
+	fprintf(stream, "%s%s%s\n%s\n", ESL_SEQ_DEFAULT_COLOR, banner, cc, inf);
 	fprintf(stream, "%s", output_text_color);
 #endif
 }

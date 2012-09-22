@@ -311,7 +311,7 @@ bin_PROGRAMS = freeswitch fs_cli fs_ivrd tone2wav fs_encode
 ##
 fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c \
 	libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c libs/esl/src/esl_json.c libs/esl/src/esl_buffer.c
-fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
+fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include -include src/include/switch_private.h
 fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm
 
 if HAVE_LIBEDIT
@@ -660,13 +660,15 @@ sofia-reconf:
 	cd libs/sofia-sip && ./configure --prefix=$(prefix) --with-pic --with-glib=no --disable-shared
 
 cluecon:
-	@clear
-	@echo Thank you for updating. This is going to take a while so relax.
-	@echo Now would be a good time to register for ClueCon!
-	@cat cluecon2.tmpl
-	@echo
-	@echo http://www.cluecon.com
-	@sleep 5
+	@if $(ENABLE_CLUECON_NAG); then \
+	  clear; \
+	  echo "Thank you for updating. This is going to take a while so relax."; \
+	  echo "Now would be a good time to register for ClueCon!"; \
+	  cat cluecon2.tmpl; \
+	  echo; \
+	  echo "http://www.cluecon.com"; \
+	  sleep 5; \
+	fi
 current: cluecon update-clean is-scm
 	$(MAKE) update
 	$(MAKE) all
