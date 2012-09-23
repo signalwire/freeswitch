@@ -8,7 +8,6 @@ fs_description="FreeSWITCH is a scalable open source cross-platform telephony pl
 mod_build_depends="."
 supported_distros="squeeze wheezy sid"
 avoid_mods=(
-  applications/mod_fax
   applications/mod_limit
   applications/mod_mongo
   applications/mod_mp4

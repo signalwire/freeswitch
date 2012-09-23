@@ -79,10 +79,6 @@ Module: applications/mod_expr
 Description: Expr
  This module adds expr support for expression evaluation.
 
-Module: applications/mod_fax
-Description: Fax
- This module adds fax support provided by Steve Underwood's SpanDSP.
-
 Module: applications/mod_fifo
 Description: FIFO
  This module adds a first-in first-out queue system.
