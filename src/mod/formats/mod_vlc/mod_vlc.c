@@ -275,8 +275,8 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 	if (!read && (status == 5 || status == 6)) {
 		return SWITCH_STATUS_FALSE;
 	} else if (!read) {
-		read = 2000;
-		memset(data, 255, read);
+		read = 2;
+		memset(data, 0, read);
 	}
 	
 	if (read)
