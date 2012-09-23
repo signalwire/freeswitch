@@ -140,7 +140,7 @@ get_last_release_ver () {
 
 get_nightly_version () {
   local commit="$(git rev-list -n1 --abbrev=10 --abbrev-commit HEAD)"
-  echo "$(get_last_release_ver)+git~$(date -u +%Y%m%dT%H%M%SZ)~$commit"
+  echo "$(get_last_release_ver)+git~$(date -u '+%Y%m%dT%H%M%SZ')~$commit"
 }
 
 create_orig () {
