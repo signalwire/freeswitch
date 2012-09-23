@@ -14,7 +14,6 @@ avoid_mods=(
   applications/mod_osp
   applications/mod_rad_auth
   applications/mod_skel
-  applications/mod_soundtouch
   asr_tts/mod_cepstral
   asr_tts/mod_flite
   codecs/mod_com_g729
