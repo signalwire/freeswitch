@@ -511,6 +511,7 @@ Build-Depends: libogg-dev, libvorbis-dev
 Module: formats/mod_sndfile
 Description: mod_sndfile
  Adds mod_sndfile.
+Build-Depends: libflac-dev, libogg-dev, libvorbis-dev
 
 Module: formats/mod_tone_stream
 Description: mod_tone_stream
