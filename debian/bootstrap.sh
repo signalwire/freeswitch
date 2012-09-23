@@ -332,12 +332,14 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
  freeswitch-mod-h26x (= \${binary:Version}),
+ freeswitch-mod-isac (= \${binary:Version}),
  freeswitch-mod-mp4v (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
  freeswitch-mod-speex (= \${binary:Version}),
- freeswitch-mod-theora (= \${binary:Version})
+ freeswitch-mod-theora (= \${binary:Version}),
+ freeswitch-mod-vp8 (= \${binary:Version})
 Suggests:
  freeswitch-mod-ilbc (= \${binary:Version}),
  freeswitch-mod-siren (= \${binary:Version})
