@@ -25,7 +25,6 @@ avoid_mods=(
   codecs/mod_voipcodecs
   endpoints/mod_gsmopen
   endpoints/mod_h323
-  endpoints/mod_html5
   endpoints/mod_khomp
   endpoints/mod_opal
   endpoints/mod_reference
