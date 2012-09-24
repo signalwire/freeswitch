@@ -335,26 +335,6 @@ AC_ARG_ENABLE(skip-subdirectories,
 [AC_HELP_STRING([--enable-skip-subdirectories],[skip configuration of subdirectories])],
 [enable_skip_subdirectories="$enableval"],[enable_skip_subdirectories="no"])
 
-# Enable ClueCon nag banner (default: on)
-AC_ARG_ENABLE(huge-cluecon-nag,
-[AC_HELP_STRING([--disable-huge-cluecon-nag],[build without huge ClueCon banners])],
-[enable_huge_cluecon_nag="$enableval"],[enable_huge_cluecon_nag="yes"])
-
-AC_ARG_ENABLE(modest-cluecon-nag,
-[AC_HELP_STRING([--enable-modest-cluecon-nag],[build with modest ClueCon announcements])],
-[enable_modest_cluecon_nag="$enableval"],[enable_modest_cluecon_nag="no"])
-
-if test "${enable_modest_cluecon_nag}" = "yes"; then
-   enable_huge_cluecon_nag="no"
-   AC_DEFINE([SHOW_MODEST_CLUECON_NAG],[1],[Show modest ClueCon nag messages.])
-   AC_SUBST([ENABLE_CLUECON_NAG],[false])
-elif test "${enable_huge_cluecon_nag}" = "yes"; then
-   AC_DEFINE([SHOW_HUGE_CLUECON_NAG],[1],[Show huge ClueCon nag messages.])
-   AC_SUBST([ENABLE_CLUECON_NAG],[true])
-else
-   AC_SUBST([ENABLE_CLUECON_NAG],[false])
-fi
-
 # Enable debugging (default: on)
 # (rename option if the default is changed)
 AC_ARG_ENABLE(debug,
@@ -1141,7 +1121,7 @@ AC_OUTPUT
 ##
 ## Registering for ClueCon
 ##
-if ! test -f noreg && test "${enable_huge_cluecon_nag}" = "yes" ; then
+if ! test -f noreg ; then
 echo ""
 echo ""
 echo $ECHO_N "Registering you for ClueCon http://www.cluecon.com $ECHO_C" 1>&6

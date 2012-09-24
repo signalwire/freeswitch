@@ -2002,16 +2002,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 
 #ifdef WIN32
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s\n\n", switch_core_banner(), cc);
-#elif SHOW_HUGE_CLUECON_NAG
+#else
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s%s%s%s\n\n", 
 					  SWITCH_SEQ_DEFAULT_COLOR,
 					  SWITCH_SEQ_FYELLOW, SWITCH_SEQ_BBLUE,
 					  switch_core_banner(), 
 					  cc, SWITCH_SEQ_DEFAULT_COLOR);
-#else
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s\n\n",
-					  SWITCH_SEQ_DEFAULT_COLOR,
-					  switch_core_banner(), cc);
 #endif
 
 
