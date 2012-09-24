@@ -330,11 +330,6 @@ if test "x${enable_visibility}" != "xno" ; then
 	fi
 fi
 
-# Option to skip configuration of subdirectories
-AC_ARG_ENABLE(skip-subdirectories,
-[AC_HELP_STRING([--enable-skip-subdirectories],[skip configuration of subdirectories])],
-[enable_skip_subdirectories="$enableval"],[enable_skip_subdirectories="no"])
-
 # Enable debugging (default: on)
 # (rename option if the default is changed)
 AC_ARG_ENABLE(debug,
@@ -1074,39 +1069,38 @@ ac_configure_args="$ac_configure_args CONFIGURE_CFLAGS='$CFLAGS' CONFIGURE_CXXFL
 #	--localstatedir='$localstatedir' --datadir='$datadir'"
 
 # Run configure in all the subdirs
-if ! test "${enable_skip_subdirectories}" = "yes"; then
-   AC_CONFIG_SUBDIRS([libs/srtp])
-   AC_CONFIG_SUBDIRS([libs/sqlite])
-   if test "$enable_core_libedit_support" = "yes" ; then
-      AC_CONFIG_SUBDIRS([libs/libedit])
-   fi
-   AC_CONFIG_SUBDIRS([libs/pcre])
-   AC_CONFIG_SUBDIRS([libs/apr])
-   AC_CONFIG_SUBDIRS([libs/apr-util])
-   AC_CONFIG_SUBDIRS([libs/ilbc])
-   AC_CONFIG_SUBDIRS([libs/curl])
-   AC_CONFIG_SUBDIRS([libs/iksemel])
-   AC_CONFIG_SUBDIRS([libs/js/nsprpub])
-   AC_CONFIG_SUBDIRS([libs/js])
-   AC_CONFIG_SUBDIRS([libs/libdingaling])
-   AC_CONFIG_SUBDIRS([libs/libsndfile])
-   AC_CONFIG_SUBDIRS([libs/sofia-sip])
-   AC_CONFIG_SUBDIRS([libs/speex])
-   AC_CONFIG_SUBDIRS([libs/portaudio])
-   AC_CONFIG_SUBDIRS([libs/openzap])
-   AC_CONFIG_SUBDIRS([libs/freetdm])
-   AC_CONFIG_SUBDIRS([libs/unimrcp])
-   AC_CONFIG_SUBDIRS([libs/tiff-4.0.2])
-   AC_CONFIG_SUBDIRS([libs/spandsp])
-   AC_CONFIG_SUBDIRS([libs/broadvoice])
-   AC_CONFIG_SUBDIRS([libs/libg722_1])
-   AC_CONFIG_SUBDIRS([libs/silk])
-   AC_CONFIG_SUBDIRS([libs/libcodec2])
-   if test "x${enable_zrtp}" = "xyes"; then
-      AC_CONFIG_SUBDIRS([libs/libzrtp/projects/gnu])
-   fi
-   AC_CONFIG_SUBDIRS([libs/libwebsockets])
+AC_CONFIG_SUBDIRS([libs/srtp])
+AC_CONFIG_SUBDIRS([libs/sqlite])
+if test "$enable_core_libedit_support" = "yes" ; then
+    AC_CONFIG_SUBDIRS([libs/libedit])
 fi
+
+AC_CONFIG_SUBDIRS([libs/pcre])
+AC_CONFIG_SUBDIRS([libs/apr])
+AC_CONFIG_SUBDIRS([libs/apr-util])
+AC_CONFIG_SUBDIRS([libs/ilbc])
+AC_CONFIG_SUBDIRS([libs/curl])
+AC_CONFIG_SUBDIRS([libs/iksemel])
+AC_CONFIG_SUBDIRS([libs/js/nsprpub])
+AC_CONFIG_SUBDIRS([libs/js])
+AC_CONFIG_SUBDIRS([libs/libdingaling])
+AC_CONFIG_SUBDIRS([libs/libsndfile])
+AC_CONFIG_SUBDIRS([libs/sofia-sip])
+AC_CONFIG_SUBDIRS([libs/speex])
+AC_CONFIG_SUBDIRS([libs/portaudio])
+AC_CONFIG_SUBDIRS([libs/openzap])
+AC_CONFIG_SUBDIRS([libs/freetdm])
+AC_CONFIG_SUBDIRS([libs/unimrcp])
+AC_CONFIG_SUBDIRS([libs/tiff-4.0.2])
+AC_CONFIG_SUBDIRS([libs/spandsp])
+AC_CONFIG_SUBDIRS([libs/broadvoice])
+AC_CONFIG_SUBDIRS([libs/libg722_1])
+AC_CONFIG_SUBDIRS([libs/silk])
+AC_CONFIG_SUBDIRS([libs/libcodec2])
+if test "x${enable_zrtp}" = "xyes"; then
+   AC_CONFIG_SUBDIRS([libs/libzrtp/projects/gnu])
+fi
+AC_CONFIG_SUBDIRS([libs/libwebsockets])
 
 case $host in
    *-openbsd*)
