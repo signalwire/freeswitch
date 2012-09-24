@@ -186,6 +186,31 @@ SWITCH_DECLARE(FILE *) switch_core_get_console(void)
 	return runtime.console;
 }
 
+SWITCH_DECLARE(void) switch_core_screen_size(int *x, int *y)
+{
+
+#ifdef WIN32
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	int ret;
+
+	if ((ret = GetConsoleScreenBufferInfo(GetStdHandle( STD_OUTPUT_HANDLE ), &csbi))) {
+		if (x) *x = csbi.dwSize.X;
+		if (y) *y = csbi.dwSize.Y;
+	}
+
+#elif TIOCGWINSZ
+	struct winsize w;
+	ioctl(0, TIOCGWINSZ, &w);
+
+	if (x) *x = w.ws_col;
+	if (y) *y = w.ws_row;
+#else
+	if (x) *x = 24;
+	if (x) *x = 80;
+#endif
+
+}
+
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel)
 {
 	FILE *handle = stdout;
@@ -1964,6 +1989,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 {
 	switch_event_t *event;
 	char *cmd;
+	int x = 0;
+	const char *use = NULL;
 #include "cc.h"
 
 
@@ -2000,14 +2027,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		switch_event_fire(&event);
 	}
 
+	switch_core_screen_size(&x, NULL);
+
+	use = (x > 100) ? cc : cc_s;
+
 #ifdef WIN32
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s\n\n", switch_core_banner(), cc);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s\n\n", switch_core_banner(), use);
 #else
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s%s%s%s\n\n", 
 					  SWITCH_SEQ_DEFAULT_COLOR,
 					  SWITCH_SEQ_FYELLOW, SWITCH_SEQ_BBLUE,
 					  switch_core_banner(), 
-					  cc, SWITCH_SEQ_DEFAULT_COLOR);
+					  use, SWITCH_SEQ_DEFAULT_COLOR);
+	
 #endif
 
 
@@ -2016,6 +2048,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 					  SWITCH_VERSION_FULL, SWITCH_VERSION_REVISION_HUMAN,
 					  switch_core_session_limit(0),
 					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
+
+
+	if (x < 160) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\n[This app Best viewed at 160x60 or more..]\n");
+	}
 
 	switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
 

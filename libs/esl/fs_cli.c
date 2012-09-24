@@ -116,6 +116,31 @@ static void clear_cli(void) {
 	fflush(stdout);
 }
 
+static void screen_size(int *x, int *y)
+{
+
+#ifdef WIN32
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	int ret;
+
+	if ((ret = GetConsoleScreenBufferInfo(GetStdHandle( STD_OUTPUT_HANDLE ), &csbi))) {
+		if (x) *x = csbi.dwSize.X;
+		if (y) *y = csbi.dwSize.Y;
+	}
+
+#elif TIOCGWINSZ
+	struct winsize w;
+	ioctl(0, TIOCGWINSZ, &w);
+
+	if (x) *x = w.ws_col;
+	if (y) *y = w.ws_row;
+#else
+	if (x) *x = 24;
+	if (x) *x = 80;
+#endif
+
+}
+
 /* If a fnkey is configured then process the command */
 static unsigned char console_fnkey_pressed(int i)
 {
@@ -923,13 +948,19 @@ static const char *inf = "Type /help <enter> to see a list of commands\n\n\n";
 
 static void print_banner(FILE *stream)
 {
+	int x;
+	const char *use = NULL;
 #include <cc.h>
+
+	screen_size(&x, NULL);
+
+	use = (x > 100) ? cc : cc_s;
 
 #ifdef WIN32
 	/* Print banner in yellow with blue background */
 	SetConsoleTextAttribute(hStdout, ESL_SEQ_FYELLOW | BACKGROUND_BLUE);
 	WriteFile(hStdout, banner, (DWORD) strlen(banner), NULL, NULL);
-	WriteFile(hStdout, cc, (DWORD) strlen(cc), NULL, NULL);
+	WriteFile(hStdout, use, (DWORD) strlen(use), NULL, NULL);
 	SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 
 	/* Print the rest info in default colors */
@@ -940,10 +971,14 @@ static void print_banner(FILE *stream)
 			ESL_SEQ_DEFAULT_COLOR,
 			ESL_SEQ_FYELLOW, ESL_SEQ_BBLUE,
 			banner,
-			cc, ESL_SEQ_DEFAULT_COLOR, inf);
+			use, ESL_SEQ_DEFAULT_COLOR, inf);
 
 	fprintf(stream, "%s", output_text_color);
 #endif
+
+	if (x < 160) {
+		fprintf(stream, "\n[This app Best viewed at 160x60 or more..]\n");
+	}
 }
 
 static void set_fn_keys(cli_profile_t *profile)
