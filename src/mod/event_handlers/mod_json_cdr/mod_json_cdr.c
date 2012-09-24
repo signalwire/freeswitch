@@ -560,15 +560,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 			} else if (!strcasecmp(var, "enable-cacert-check") && switch_true(val)) {
 				globals.enable_cacert_check = 1;
 			} else if (!strcasecmp(var, "ssl-cert-path")) {
-				globals.ssl_cert_file = val;
+				globals.ssl_cert_file = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "ssl-key-path")) {
-				globals.ssl_key_file = val;
+				globals.ssl_key_file = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "ssl-key-password")) {
-				globals.ssl_key_password = val;
+				globals.ssl_key_password = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "ssl-version")) {
-				globals.ssl_version = val;
+				globals.ssl_version = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "ssl-cacert-file")) {
-				globals.ssl_cacert_file = val;
+				globals.ssl_cacert_file = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "enable-ssl-verifyhost") && switch_true(val)) {
 				globals.enable_ssl_verifyhost = 1;
 			} else if (!strcasecmp(var, "auth-scheme")) {
