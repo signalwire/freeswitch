@@ -186,6 +186,9 @@ SWITCH_DECLARE(FILE *) switch_core_get_console(void)
 	return runtime.console;
 }
 
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
 SWITCH_DECLARE(void) switch_core_screen_size(int *x, int *y)
 {
 
