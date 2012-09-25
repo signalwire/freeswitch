@@ -532,6 +532,12 @@ AC_CHECK_DECL([SCHED_RR],
 	 #include <sched.h>
 	 #endif])
 
+AC_CHECK_DECL([SCHED_FIFO],
+	[AC_DEFINE([HAVE_SCHED_FIFO],[1],[SCHED_FIFO constant for sched_setscheduler])],,
+	[#ifdef HAVE_SCHED_H
+	 #include <sched.h>
+	 #endif])
+
 #
 # use mlockall only on linux (for now; if available)
 #
@@ -572,7 +578,6 @@ if test "x${ac_cv_func_sched_setscheduler}" = "xyes" -a \
 then
 	AC_DEFINE([USE_SCHED_SETSCHEDULER],[1],[Enable round-robin scheduler using sched_setscheduler])
 fi
-
 #
 # xmlrpc-c checks
 #
