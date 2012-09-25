@@ -203,7 +203,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 SWITCH_DECLARE(switch_status_t) switch_stream_write_file_contents(switch_stream_handle_t *stream, const char *path)
 {
 	char *dpath = NULL;
-	int fd;
+	FILE *fd = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (!switch_is_file_path(path)) {
@@ -211,12 +211,14 @@ SWITCH_DECLARE(switch_status_t) switch_stream_write_file_contents(switch_stream_
 		path = dpath;
 	}
 
-	if ((fd = open(path, O_RDONLY)) > -1) {
-		char buf[2048] = { 0 };
-		while (switch_fd_read_line(fd, buf, sizeof(buf))) {
-			stream->write_function(stream, "%s", buf);
+	if ((fd = fopen(path, "r"))) {
+		char *line_buf = NULL;
+		switch_size_t llen = 0;
+
+		while (switch_fp_read_dline(fd, &line_buf, &llen)) {
+			stream->write_function(stream, "%s", line_buf);
 		}
-		close(fd);
+		fclose(fd);
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
@@ -246,7 +248,7 @@ SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg)
 		return NULL;
 	}
 
-	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_persist_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
 		return NULL;
 	}
@@ -682,7 +684,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 #endif
 #endif
 
-	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_persist_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
 		return CC_ERROR;
 	}
@@ -1774,7 +1776,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			SWITCH_STANDARD_STREAM(mystream);
 
 
-			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_persist_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
 				free(mystream.data);
 				free(mydata);
@@ -1857,7 +1859,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 			switch_cache_db_handle_t *db = NULL;
 			char *sql = NULL;
 
-			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_persist_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
 				free(mydata);
 				return SWITCH_STATUS_FALSE;
