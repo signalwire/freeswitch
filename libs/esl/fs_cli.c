@@ -128,7 +128,7 @@ static void screen_size(int *x, int *y)
 		if (y) *y = csbi.dwSize.Y;
 	}
 
-#elif TIOCGWINSZ
+#elif defined(TIOCGWINSZ)
 	struct winsize w;
 	ioctl(0, TIOCGWINSZ, &w);
 
