@@ -644,7 +644,7 @@ void FSConnection::OnReleased()
     m_rxAudioOpened.Signal();   // Just in case
     m_txAudioOpened.Signal();
 
-    if (m_fsChannel == NULL) {
+    if (m_fsChannel != NULL) {
         PTRACE(3, "mod_opal\tHanging up FS side");
         switch_channel_hangup(m_fsChannel, (switch_call_cause_t)callEndReason.q931);
     }
