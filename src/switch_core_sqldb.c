@@ -176,7 +176,7 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 }
 
 
-#define SWITCH_CORE_DB "core"
+#define SWITCH_CORE_DB "file:scoreboard?mode=memory&cache=shared"
 /*!
   \brief Open the default system database
 */
@@ -217,6 +217,49 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 
 	return r;
 }
+
+#define SWITCH_CORE_PERSIST_DB "core"
+/*!
+  \brief Open the default system database
+*/
+SWITCH_DECLARE(switch_status_t) _switch_core_persist_db_handle(switch_cache_db_handle_t **dbh, const char *file, const char *func, int line)
+{
+	switch_cache_db_connection_options_t options = { {0} };
+	switch_status_t r;
+	
+	if (!sql_manager.manage) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(runtime.odbc_dsn)) {
+		if (switch_test_flag((&runtime), SCF_CORE_ODBC_REQ)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (runtime.dbname) {
+			options.core_db_options.db_path = runtime.dbname;
+		} else {
+			options.core_db_options.db_path = SWITCH_CORE_PERSIST_DB;
+		}
+		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_CORE_DB, &options, file, func, line);
+		
+	} else {
+		options.odbc_options.dsn = runtime.odbc_dsn;
+		options.odbc_options.user = runtime.odbc_user;
+		options.odbc_options.pass = runtime.odbc_pass;
+
+		r = _switch_cache_db_get_db_handle(dbh, SCDB_TYPE_ODBC, &options, file, func, line);
+	}
+
+	/* I *think* we can do without this now, if not let me know 
+	   if (r == SWITCH_STATUS_SUCCESS && !(*dbh)->io_mutex) {
+	   (*dbh)->io_mutex = sql_manager.io_mutex;
+	   }
+	*/
+
+	return r;
+}
+
 
 #define SWITCH_CORE_RECOVERY_DB "core_recovery"
 SWITCH_DECLARE(switch_status_t) _switch_core_recovery_db_handle(switch_cache_db_handle_t **dbh, const char *file, const char *func, int line)
