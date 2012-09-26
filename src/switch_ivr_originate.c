@@ -1224,7 +1224,11 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 				switch_goto_status(SWITCH_STATUS_GENERR, end);
 			}
 
-			switch_core_session_get_read_impl(originate_status[0].peer_session, &peer_read_impl);
+			if (oglobals->bridge_early_media > -1 && zstr(ringback_data) && len == 1 && originate_status[0].peer_session) {
+				switch_core_session_get_read_impl(originate_status[0].peer_session, &peer_read_impl);
+			} else {
+				switch_core_session_get_read_impl(oglobals->session, &peer_read_impl);
+			}
 
 			if (switch_core_codec_init(write_codec,
 									   "L16",
