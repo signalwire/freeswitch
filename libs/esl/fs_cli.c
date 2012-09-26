@@ -135,8 +135,8 @@ static void screen_size(int *x, int *y)
 	if (x) *x = w.ws_col;
 	if (y) *y = w.ws_row;
 #else
-	if (x) *x = 24;
 	if (x) *x = 80;
+	if (y) *y = 24;
 #endif
 
 }
