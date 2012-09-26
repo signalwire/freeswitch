@@ -2873,7 +2873,7 @@ SWITCH_STANDARD_API(gsmopen_boost_audio_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
-	private_t *tech_pvt;
+	//private_t *tech_pvt;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -2887,7 +2887,7 @@ SWITCH_STANDARD_API(gsmopen_boost_audio_function)
 			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
 			if (strlen(globals.GSMOPEN_INTERFACES[i].name)
 					&& (strncmp(globals.GSMOPEN_INTERFACES[i].name, argv[0], strlen(argv[0])) == 0)) {
-				tech_pvt = &globals.GSMOPEN_INTERFACES[i];
+				//tech_pvt = &globals.GSMOPEN_INTERFACES[i];
 				stream->write_function(stream, "Using interface: globals.GSMOPEN_INTERFACES[%d].name=|||%s|||\n", i, globals.GSMOPEN_INTERFACES[i].name);
 				found = 1;
 				break;
