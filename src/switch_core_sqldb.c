@@ -2411,7 +2411,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 	{
 		switch_cache_db_handle_t *db = NULL;
-		switch_core_persist_db_handle(&db)
+		switch_core_persist_db_handle(&db);
 		switch_cache_db_test_reactive(db, "select hostname from aliases", "DROP TABLE aliases", create_alias_sql);
 		switch_cache_db_release_db_handle(&db);
 	}
