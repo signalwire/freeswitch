@@ -1961,7 +1961,7 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 			if (tech_pvt->reading_sms_msg > 1 && at_ack == -1) {
 				int c;
 				char sms_body[16000];
-				int err = 0;
+				//int err = 0;
 				memset(sms_body, '\0', sizeof(sms_body));
 
 				if (strncmp(tech_pvt->line_array.result[i], "+CMGR", 5) == 0) {	/* we are reading the "header" of an SMS */
@@ -2005,10 +2005,10 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 								if (which_field == 1) {
 									//FIXME why this? err = ucs2_to_utf8(tech_pvt, content, content2, sizeof(content2));
 									//err = ucs2_to_utf8(tech_pvt, content, content2, sizeof(content2));
-									err = 0;
+									//err = 0;
 									strncpy(content2, content, sizeof(content2));
 								} else {
-									err = 0;
+									//err = 0;
 									strncpy(content2, content, sizeof(content2));
 								}
 								DEBUGA_GSMOPEN("%d content2=%s\n", GSMOPEN_P_LOG, which_field, content2);
@@ -3287,7 +3287,7 @@ int alsa_write(private_t * tech_pvt, short *data, int datalen)
 	static char silencebuf[8000];
 	static int sizpos = 0;
 	int len = sizpos;
-	int pos;
+	//int pos;
 	int res = 0;
 	time_t now_timestamp;
 	/* size_t frames = 0; */
@@ -3313,7 +3313,7 @@ int alsa_write(private_t * tech_pvt, short *data, int datalen)
 		memcpy(sizbuf + sizpos, data, datalen);
 		memset(data, 255, datalen);
 		len += datalen;
-		pos = 0;
+		//pos = 0;
 
 
 #ifdef ALSA_MONITOR
