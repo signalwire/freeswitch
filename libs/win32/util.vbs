@@ -314,31 +314,6 @@ Function GetTimeUTC()
 
 End Function
 
-Function GetWeekDay(DateTime)
-
-	DayOfWeek = DatePart("w", DateTime)
-
-	Select Case DayOfWeek
-		Case 1 GetWeekDay = "Sun"
-		Case 2 GetWeekDay = "Mon"
-		Case 3 GetWeekDay = "Tue"
-		Case 4 GetWeekDay = "Wed"
-		Case 5 GetWeekDay = "Thu"
-		Case 6 GetWeekDay = "Fri"
-		Case 7 GetWeekDay = "Sat"
-	End Select
-
-End Function
-
-Function GetMonthName(DateTime)
-
-	Val = MonthName(Month(DateTime), True)
-	Val = UCase(Left(Val, 1)) & Mid(Val, 2, 4)
-	
-	GetMonthName = Val
-	
-End Function
-
 Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	Dim oExec
 	
@@ -364,7 +339,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		If IsNumeric(strFromProc) Then
 			lastChangedDateTime = DateAdd("s", strFromProc, "01/01/1970 00:00:00")
 			strLastCommit = YEAR(lastChangedDateTime) & Pd(Month(lastChangedDateTime), 2) & Pd(DAY(lastChangedDateTime), 2) & "T" & Pd(Hour(lastChangedDateTime), 2) & Pd(Minute(lastChangedDateTime), 2) & Pd(Second(lastChangedDateTime), 2) & "Z"
-			strLastCommitHuman = GetWeekDay(lastChangedDateTime) & ", " & Pd(DAY(lastChangedDateTime), 2) & " " & GetMonthName(lastChangedDateTime) & " " & YEAR(lastChangedDateTime) & " " & Pd(Hour(lastChangedDateTime), 2) & ":" & Pd(Minute(lastChangedDateTime), 2) & ":" & Pd(Second(lastChangedDateTime), 2) & " Z"
+			strLastCommitHuman = YEAR(lastChangedDateTime) & "-" & Pd(Month(lastChangedDateTime), 2) & "-" & Pd(DAY(lastChangedDateTime), 2) & " " & Pd(Hour(lastChangedDateTime), 2) & ":" & Pd(Minute(lastChangedDateTime), 2) & ":" & Pd(Second(lastChangedDateTime), 2) & "Z"
 		Else
 			strLastCommit = ""
 			strLastCommitHuman = ""
@@ -372,17 +347,19 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 
 		'Get revision hash
 		strRevision = ExecAndGetResult(tmpFolder, VersionDir, "git rev-list -n1 --abbrev=10 --abbrev-commit HEAD")
+		strRevisionHuman = ExecAndGetResult(tmpFolder, VersionDir, "git rev-list -n1 --abbrev=7 --abbrev-commit HEAD")
 		
-		If strLastCommit <> "" And strLastCommitHuman <> "" And strRevision <> "" Then
+		If strLastCommit <> "" And strLastCommitHuman <> "" And strRevision <> "" And strRevisionHuman <> "" Then
 			'Bild version string
 			strGitVer = "+git~" & strLastCommit & "~" & strRevision
-			strVerHuman = strVerRev & "; git at commit " & strRevision & " on " & strLastCommitHuman
+			strVerHuman = "git " & strRevisionHuman & " " & strLastCommitHuman
 
 			'Check for local changes, if found, append to git revision string
 			If ShowUnclean Then
 				If ExecAndGetExitCode(tmpFolder, VersionDir, "git diff-index --quiet HEAD") <> 0 Then
 					lastChangedDateTime = GetTimeUTC()
 					strGitVer = strGitVer & "+unclean~" & YEAR(lastChangedDateTime) & Pd(Month(lastChangedDateTime), 2) & Pd(DAY(lastChangedDateTime), 2) & "T" & Pd(Hour(lastChangedDateTime), 2) & Pd(Minute(lastChangedDateTime), 2) & Pd(Second(lastChangedDateTime), 2) & "Z"
+					strVerHuman = strVerHuman & " unclean " & YEAR(lastChangedDateTime) & "-" & Pd(Month(lastChangedDateTime), 2) & "-" & Pd(DAY(lastChangedDateTime), 2) & " " & Pd(Hour(lastChangedDateTime), 2) & ":" & Pd(Minute(lastChangedDateTime), 2) & ":" & Pd(Second(lastChangedDateTime), 2) & "Z"
 				End If
 			End If
 		Else
@@ -393,7 +370,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		VERSION=VERSION & strGitVer
 
 		sLastVersion = ""
-		Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
+		Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, True, OpenAsASCII)
 		If Not sLastFile.atEndOfStream Then
 			sLastVersion = sLastFile.ReadLine()
 		End If
