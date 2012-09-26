@@ -1398,7 +1398,7 @@ static switch_status_t load_config(int reload_type)
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
-			const char *enable_callerid ;
+			//const char *enable_callerid ;
 
 
 			const char *at_dial_pre_number = "ATD";
@@ -1518,8 +1518,8 @@ static switch_status_t load_config(int reload_type)
 					hold_music = val;
 				} else if (!strcasecmp(var, "fail_dial_regex")) {
 					fail_dial_regex = val;
-				} else if (!strcasecmp(var, "enable_callerid")) {
-					enable_callerid = val;
+				//} else if (!strcasecmp(var, "enable_callerid")) {
+					//enable_callerid = val;
 				} else if (!strcasecmp(var, "at_dial_pre_number")) {
 					at_dial_pre_number = val;
 				} else if (!strcasecmp(var, "at_dial_post_number")) {
