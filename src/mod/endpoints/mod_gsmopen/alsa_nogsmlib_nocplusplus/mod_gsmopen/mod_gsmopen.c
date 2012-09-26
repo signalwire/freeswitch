@@ -1469,10 +1469,12 @@ static switch_status_t load_config(int reload_type)
 #else 
 			const char *no_sound = "1";
 #endif // defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
+#ifdef GSMOPEN_PORTAUDIO
 			const char *portaudiocindex;
 			const char *portaudiopindex;
 			const char *speexecho;
 			const char *speexpreprocess;
+#endif// GSMOPEN_PORTAUDIO
 
 			uint32_t interface_id = 0;
 #ifdef WIN32
@@ -1620,6 +1622,7 @@ static switch_status_t load_config(int reload_type)
 					alsacname = val;
 				} else if (!strcasecmp(var, "alsapname")) {
 					alsapname = val;
+#ifdef GSMOPEN_PORTAUDIO
 				} else if (!strcasecmp(var, "portaudiocindex")) {
 					portaudiocindex = val;
 				} else if (!strcasecmp(var, "portaudiopindex")) {
@@ -1628,6 +1631,7 @@ static switch_status_t load_config(int reload_type)
 					speexecho = val;
 				} else if (!strcasecmp(var, "speexpreprocess")) {
 					speexpreprocess = val;
+#endif// GSMOPEN_PORTAUDIO
 				} else if (!strcasecmp(var, "at_early_audio")) {
 					at_early_audio = val;
 				} else if (!strcasecmp(var, "at_after_preinit_pause")) {
