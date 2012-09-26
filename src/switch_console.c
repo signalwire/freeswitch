@@ -684,7 +684,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 #endif
 #endif
 
-	if (switch_core_persist_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
 		return CC_ERROR;
 	}
@@ -1776,7 +1776,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			SWITCH_STANDARD_STREAM(mystream);
 
 
-			if (switch_core_persist_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
 				free(mystream.data);
 				free(mydata);

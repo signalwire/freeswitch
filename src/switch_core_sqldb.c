@@ -2409,9 +2409,14 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		break;
 	}
 
+	{
+		switch_cache_db_handle_t *db = NULL;
+		switch_core_persist_db_handle(&db)
+		switch_cache_db_test_reactive(db, "select hostname from aliases", "DROP TABLE aliases", create_alias_sql);
+		switch_cache_db_release_db_handle(&db);
+	}
 
 	switch_cache_db_test_reactive(sql_manager.dbh, "select hostname from complete", "DROP TABLE complete", create_complete_sql);
-	switch_cache_db_test_reactive(sql_manager.dbh, "select hostname from aliases", "DROP TABLE aliases", create_alias_sql);
 	switch_cache_db_test_reactive(sql_manager.dbh, "select hostname from nat", "DROP TABLE nat", create_nat_sql);
 	switch_cache_db_test_reactive(sql_manager.dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
 								  "DROP TABLE registrations", create_registrations_sql);
