@@ -977,7 +977,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 			switch_frame_flag_t frame_flags = SFF_NONE;
 			data[0] = 65;
 			rtp_session->cn++;
-			rtp_common_write(rtp_session, NULL, (void *) data, 2, rtp_session->cng_pt, 0, &frame_flags);
+			switch_rtp_write_manual(rtp_session, (void *) data, 2, 0, rtp_session->cng_pt, ntohl(rtp_session->send_msg.header.ts), &frame_flags);
 		}
 
 
