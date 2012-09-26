@@ -1392,9 +1392,9 @@ static switch_status_t load_config(int reload_type)
 			const char *dialplan = "XML";
 			const char *destination = "5000";
 			const char *controldevice_name = "/dev/ttyACM0";
-			char *digit_timeout = NULL;
-			char *max_digits = NULL;
-			char *hotline = NULL;
+			char *digit_timeout;
+			char *max_digits;
+			char *hotline;
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
@@ -1469,10 +1469,10 @@ static switch_status_t load_config(int reload_type)
 #else 
 			const char *no_sound = "1";
 #endif // defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
-			const char *portaudiocindex = "1";
-			const char *portaudiopindex = "1";
-			const char *speexecho = "1";
-			const char *speexpreprocess = "1";
+			const char *portaudiocindex;
+			const char *portaudiopindex;
+			const char *speexecho;
+			const char *speexpreprocess;
 
 			uint32_t interface_id = 0;
 #ifdef WIN32
@@ -2869,7 +2869,7 @@ SWITCH_STANDARD_API(gsmopen_boost_audio_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
-	private_t *tech_pvt = NULL;
+	private_t *tech_pvt;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
