@@ -1392,13 +1392,13 @@ static switch_status_t load_config(int reload_type)
 			const char *dialplan = "XML";
 			const char *destination = "5000";
 			const char *controldevice_name = "/dev/ttyACM0";
-			char *digit_timeout;
-			char *max_digits;
-			char *hotline;
+			//char *digit_timeout;
+			//char *max_digits;
+			//char *hotline;
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
-			const char *enable_callerid = "true";
+			const char *enable_callerid ;
 
 
 			const char *at_dial_pre_number = "ATD";
@@ -1506,12 +1506,12 @@ static switch_status_t load_config(int reload_type)
 					destination = val;
 				} else if (!strcasecmp(var, "controldevice_name")) {
 					controldevice_name = val;
-				} else if (!strcasecmp(var, "digit_timeout")) {
-					digit_timeout = val;
-				} else if (!strcasecmp(var, "max_digits")) {
-					max_digits = val;
-				} else if (!strcasecmp(var, "hotline")) {
-					hotline = val;
+				//} else if (!strcasecmp(var, "digit_timeout")) {
+					//digit_timeout = val;
+				//} else if (!strcasecmp(var, "max_digits")) {
+					//max_digits = val;
+				//} else if (!strcasecmp(var, "hotline")) {
+					//hotline = val;
 				} else if (!strcasecmp(var, "dial_regex")) {
 					dial_regex = val;
 				} else if (!strcasecmp(var, SWITCH_HOLD_MUSIC_VARIABLE)) {
