@@ -449,26 +449,32 @@ libs/curl/lib/libcurl.la: libs/curl libs/curl/Makefile
 	@$(TOUCH_TARGET)
 
 libs/apr/libapr-1.la: libs/apr libs/apr/.update
+	touch src/include/switch.h
 	@cd libs/apr && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update libs/apr/libapr-1.la
+	touch src/include/switch.h
 	@cd libs/apr-util && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
+	touch src/include/switch.h
 	@cd libs/speex && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
+	touch src/include/switch.h
 	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)"
 	@$(TOUCH_TARGET)
 
 libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
+	touch src/include/switch.h
 	@cd libs/pcre && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
+	touch src/include/switch.h
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
 
