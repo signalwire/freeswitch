@@ -49,31 +49,7 @@
 #undef strcasecmp
 #undef strncasecmp
 
-
-#ifdef _MSC_VER
-/*The following insanity is because libteletone_generate.h defines int8_t in
-  a slightly different manner to most other cases (SDL, PCAP, Java V8,
-  VS2010's own stdint.h, etc) and does not provide a mechanism to prevent it's
-  inclusion. Then, to cap it off, MSVC barfs on the difference.
-
-  Sigh.
- */
-#pragma include_alias(<libteletone.h>,          <../../libs/libteletone/src/libteletone.h>)
-#pragma include_alias(<libteletone_generate.h>, <../../libs/libteletone/src/libteletone_generate.h>)
-#pragma include_alias(<libteletone_detect.h>,   <../../libs/libteletone/src/libteletone_detect.h>)
-#define int8_t signed int8_t
-#include <libteletone_generate.h>
-#undef int8_t
-#endif // End of insanity
-
-
-#define HAVE_APR
-#define uint32_t uint32_t // Avoid conflict in stdint definitions
 #include <switch.h>
-#undef uint32_t
-
-#include <switch_version.h>
-
 
 #define MODNAME "mod_opal"
 

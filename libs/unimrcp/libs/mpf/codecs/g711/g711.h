@@ -49,10 +49,12 @@ extern "C" {
 #ifndef __inline__
 #define __inline__ __inline
 #endif
+#if !defined(_STDINT) && !defined(uint32_t)
 typedef unsigned __int8 uint8_t;
 typedef __int16 int16_t;
 typedef __int32 int32_t;
 typedef unsigned __int16 uint16_t;
+#endif
 #endif
 
 #if defined(__i386__)
