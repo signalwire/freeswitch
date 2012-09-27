@@ -633,25 +633,16 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
 struct apr_threadattr_t {
 	apr_pool_t *pool;
 	pthread_attr_t attr;
+	int priority;
 };
 #endif
 
 SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_increase(switch_threadattr_t *attr)
 {
-	int stat = 0;
 #ifndef WIN32
-	struct sched_param param;
-	struct apr_threadattr_t *myattr = attr;
-
-	pthread_attr_getschedparam(&myattr->attr, &param);
-	param.sched_priority = 1;
-	stat = pthread_attr_setschedparam(&myattr->attr, &param);
-
-	if (stat == 0) {
-		return SWITCH_STATUS_SUCCESS;
-	}
+	attr->priority = 10;
 #endif
-	return stat;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static char TT_KEY[] = "1";
