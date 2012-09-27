@@ -640,7 +640,7 @@ struct apr_threadattr_t {
 SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_increase(switch_threadattr_t *attr)
 {
 #ifndef WIN32
-	attr->priority = 10;
+	attr->priority = 99;
 #endif
 	return SWITCH_STATUS_SUCCESS;
 }
