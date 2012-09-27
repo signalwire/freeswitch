@@ -4538,7 +4538,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		goto error;
 	}
 
-	if (!(nsession = switch_core_session_request(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool))) {
+	if (!(nsession = switch_core_session_request_uuid(sofia_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, 
+													  flags, pool, switch_event_get_header(var_event, "origination_uuid")))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
 		goto error;
 	}

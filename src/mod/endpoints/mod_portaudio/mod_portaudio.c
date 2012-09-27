@@ -1157,7 +1157,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return retcause;
 	}
 
-	if (!(*new_session = switch_core_session_request(portaudio_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool))) {
+	if (!(*new_session = switch_core_session_request_uuid(portaudio_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool, switch_event_get_header(var_event, "origination_uuid")))) {
 		return retcause;
 	}
 
