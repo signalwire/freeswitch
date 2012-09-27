@@ -2108,6 +2108,8 @@ SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uin
 				*rate = atoi(cur);
 			} else if (strchr(cur, 'b')) {
 				*bit = atoi(cur);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad syntax for codec string. Missing qualifier [h|k|i|b] for part [%s]!\n", cur);
 			}
 		}
 		cur = next;
