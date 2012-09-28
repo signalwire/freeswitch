@@ -3492,7 +3492,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) || !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || 
 				switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) || 
 				(bytes && bytes < 5) || (!bytes && poll_loop)) {
-				do_2833(rtp_session, session);
 				bytes = 0;
 				return_cng_frame();
 			}
@@ -3691,6 +3690,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (do_cng) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
+
+			do_2833(rtp_session, session);
 
 			if (rtp_session->last_cng_ts == rtp_session->last_read_ts + rtp_session->samples_per_interval) {
 				rtp_session->last_cng_ts = 0;
