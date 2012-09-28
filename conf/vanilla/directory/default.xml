@@ -21,7 +21,7 @@
   <!--the domain or ip (the right hand side of the @ in the addr-->
   <domain name="$${domain}">
     <params>
-      <param name="dial-string" value="{sip_invite_domain=${dialed_domain},presence_id=${dialed_user}@${dialed_domain}}${sofia_contact(${dialed_user}@${dialed_domain})}"/>
+      <param name="dial-string" value="{sip_invite_domain=${dialed_domain},presence_id=${dialed_user}@${dialed_domain}}${sofia_contact(*/${dialed_user}@${dialed_domain})}"/>
     </params>
 
     <variables>
