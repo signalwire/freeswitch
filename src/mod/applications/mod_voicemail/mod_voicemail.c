@@ -167,12 +167,20 @@ switch_cache_db_handle_t *vm_get_db_handle(vm_profile_t *profile)
 	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!zstr(profile->odbc_dsn)) {
-		options.odbc_options.dsn = profile->odbc_dsn;
-		options.odbc_options.user = profile->odbc_user;
-		options.odbc_options.pass = profile->odbc_pass;
+		char *dsn;
+		if ((dsn = strstr(profile->odbc_dsn, "pgsql;")) != NULL) {
+			options.pgsql_options.dsn = (char*)(dsn + 6);
 
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
+			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_PGSQL, &options) != SWITCH_STATUS_SUCCESS)
+				dbh = NULL;
+		} else {
+			options.odbc_options.dsn = profile->odbc_dsn;
+			options.odbc_options.user = profile->odbc_user;
+			options.odbc_options.pass = profile->odbc_pass;
+			
+			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
+				dbh = NULL;
+		}
 		return dbh;
 	} else {
 		options.core_db_options.db_path = profile->dbname;

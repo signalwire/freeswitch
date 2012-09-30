@@ -92,12 +92,20 @@ switch_cache_db_handle_t *limit_get_db_handle(void)
 	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!zstr(globals.odbc_dsn)) {
-		options.odbc_options.dsn = globals.odbc_dsn;
-		options.odbc_options.user = globals.odbc_user;
-		options.odbc_options.pass = globals.odbc_pass;
+		char *dsn;
+		if ((dsn = strstr(globals.odbc_dsn, "pgsql;")) != NULL) {
+			options.pgsql_options.dsn = (char*)(dsn + 6);
 
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
+			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_PGSQL, &options) != SWITCH_STATUS_SUCCESS)
+				dbh = NULL;
+		} else {
+			options.odbc_options.dsn = globals.odbc_dsn;
+			options.odbc_options.user = globals.odbc_user;
+			options.odbc_options.pass = globals.odbc_pass;
+			
+			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
+				dbh = NULL;
+		}
 		return dbh;
 	} else {
 		options.core_db_options.db_path = globals.dbname;
@@ -275,7 +283,7 @@ SWITCH_LIMIT_STATUS(limit_status_db)
 
 /* INIT / Config */
 
-static switch_xml_config_string_options_t limit_config_dsn = { NULL, 0, "[^:]+:[^:]+:.+" };
+static switch_xml_config_string_options_t limit_config_dsn = { NULL, 0, "^pgsql;|[^:]+:[^:]+:.+" };
 
 static switch_xml_config_item_t config_settings[] = {
 	SWITCH_CONFIG_ITEM("odbc-dsn", SWITCH_CONFIG_STRING, 0, &globals.odbc_dsn, NULL, &limit_config_dsn,

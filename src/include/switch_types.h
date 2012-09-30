@@ -324,7 +324,7 @@ typedef enum {
 	SCF_CLEAR_SQL = (1 << 17),
 	SCF_THREADED_SYSTEM_EXEC = (1 << 18),
 	SCF_SYNC_CLOCK_REQUESTED = (1 << 19),
-	SCF_CORE_ODBC_REQ = (1 << 20),
+	SCF_CORE_NON_SQLITE_DB_REQ = (1 << 20),
 	SCF_DEBUG_SQL = (1 << 21),
 	SCF_API_EXPANSION = (1 << 22),
 	SCF_SESSION_THREAD_POOL = (1 << 23)
@@ -1833,6 +1833,8 @@ typedef struct switch_buffer switch_buffer_t;
 typedef struct switch_codec_settings switch_codec_settings_t;
 typedef struct switch_codec_fmtp switch_codec_fmtp_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
+typedef struct switch_pgsql_handle switch_pgsql_handle_t;
+typedef struct switch_pgsql_result switch_pgsql_result_t;
 
 typedef struct switch_io_routines switch_io_routines_t;
 typedef struct switch_speech_handle switch_speech_handle_t;

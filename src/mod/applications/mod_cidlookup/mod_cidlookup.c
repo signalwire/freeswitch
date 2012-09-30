@@ -94,12 +94,20 @@ static switch_cache_db_handle_t *cidlookup_get_db_handle(void)
 	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!zstr(globals.odbc_dsn)) {
-		options.odbc_options.dsn = globals.odbc_dsn;
-		options.odbc_options.user = globals.odbc_user;
-		options.odbc_options.pass = globals.odbc_pass;
+		char *dsn;
+		if ((dsn = strstr(globals.odbc_dsn, "pgsql;")) != NULL) {
+			options.pgsql_options.dsn = (char*)(dsn + 6);
 
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
+			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_PGSQL, &options) != SWITCH_STATUS_SUCCESS)
+				dbh = NULL;
+		} else {
+			options.odbc_options.dsn = globals.odbc_dsn;
+			options.odbc_options.user = globals.odbc_user;
+			options.odbc_options.pass = globals.odbc_pass;
+			
+			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
+				dbh = NULL;
+		}
 	}
 	return dbh;
 }
@@ -112,8 +120,8 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const
 
 	switch_cache_db_handle_t *dbh = NULL;
 
-	if (!switch_odbc_available()) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC is not compiled in.  Do not configure odbc-dsn parameter!\n");
+	if (!switch_odbc_available() && !switch_pgsql_available()) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC and PGSQL are not compiled in.  Do not configure odbc-dsn parameter!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -134,7 +142,7 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, const
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connecting to dsn: %s\n", globals.odbc_dsn);
 
 			if (!(dbh = cidlookup_get_db_handle())) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open Database!\n");
 				switch_goto_status(SWITCH_STATUS_FALSE, done);
 			}
 		}
@@ -195,7 +203,7 @@ static switch_bool_t cidlookup_execute_sql_callback(char *sql, switch_core_db_ca
 			retval = SWITCH_TRUE;
 		}
 	} else {
-		*err = switch_core_sprintf(cbt->pool, "Unable to get ODBC handle.  dsn: %s, dbh is %s\n", globals.odbc_dsn, dbh ? "not null" : "null");
+		*err = switch_core_sprintf(cbt->pool, "Unable to get database handle.  dsn: %s, dbh is %s\n", globals.odbc_dsn, dbh ? "not null" : "null");
 	}
 
 	switch_cache_db_release_db_handle(&dbh);
@@ -564,7 +572,7 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
 
 	/* database always wins */
-	if (switch_odbc_available() && globals.odbc_dsn && globals.sql) {
+	if ((switch_odbc_available() || switch_pgsql_available()) && globals.odbc_dsn && globals.sql) {
 		name = do_db_lookup(pool, event, number, globals.sql);
 		if (name) {
 			cid->name = name;
@@ -610,7 +618,7 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 		switch_assert(cid);
 	}
 	/* append area if we can */
-	if (!cid->area && !skipcitystate && strlen(number) == 11 && number[0] == '1' && switch_odbc_available() && globals.odbc_dsn && globals.citystate_sql) {
+	if (!cid->area && !skipcitystate && strlen(number) == 11 && number[0] == '1' && (switch_odbc_available() || switch_pgsql_available()) && globals.odbc_dsn && globals.citystate_sql) {
 
 		/* yes, this is really area */
 		name = do_db_lookup(pool, event, number, globals.citystate_sql);
@@ -768,7 +776,7 @@ SWITCH_STANDARD_API(cidlookup_function)
 			stream->write_function(stream, " odbc-dsn: %s\n sql: %s\n citystate-sql: %s\n",
 								   globals.odbc_dsn ? globals.odbc_dsn : "(null)",
 								   globals.sql ? globals.sql : "(null)", globals.citystate_sql ? globals.citystate_sql : "(null)");
-			stream->write_function(stream, " ODBC Compiled: %s\n", switch_odbc_available()? "true" : "false");
+			stream->write_function(stream, " ODBC Compiled: %s; PGSQL Compiled: %s\n", switch_odbc_available() ? "true" : "false", switch_pgsql_available() ? "true" : "false");
 
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 		}

@@ -731,12 +731,20 @@ switch_cache_db_handle_t *fifo_get_db_handle(void)
 	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!zstr(globals.odbc_dsn)) {
-		options.odbc_options.dsn = globals.odbc_dsn;
-		options.odbc_options.user = globals.odbc_user;
-		options.odbc_options.pass = globals.odbc_pass;
+		char *dsn;
+		if ((dsn = strstr(globals.odbc_dsn, "pgsql;")) != NULL) {
+			options.pgsql_options.dsn = (char*)(dsn + 6);
 
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) {
-			dbh = NULL;
+			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_PGSQL, &options) != SWITCH_STATUS_SUCCESS)
+				dbh = NULL;
+		} else {
+			options.odbc_options.dsn = globals.odbc_dsn;
+			options.odbc_options.user = globals.odbc_user;
+			options.odbc_options.pass = globals.odbc_pass;
+			
+			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) {
+				dbh = NULL;
+			}
 		}
 		return dbh;
 	} else {
@@ -4010,7 +4018,7 @@ static switch_status_t load_config(int reload, int del_all)
 			}
 
 			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
-				if (switch_odbc_available()) {
+				if (switch_odbc_available() || switch_pgsql_available()) {
 					switch_set_string(globals.odbc_dsn, val);
 					if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
 						*globals.odbc_user++ = '\0';

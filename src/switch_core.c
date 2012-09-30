@@ -1910,7 +1910,7 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "core-db-name") && !zstr(val)) {
 					runtime.dbname = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "core-db-dsn") && !zstr(val)) {
-					if (switch_odbc_available()) {
+					if (switch_odbc_available() || switch_pgsql_available()) {
 						runtime.odbc_dsn = switch_core_strdup(runtime.memory_pool, val);
 						if ((runtime.odbc_user = strchr(runtime.odbc_dsn, ':'))) {
 							*runtime.odbc_user++ = '\0';
@@ -1919,10 +1919,10 @@ static void switch_load_core_config(const char *file)
 							}
 						}
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC AND PGSQL ARE NOT AVAILABLE!\n");
 					}
 				} else if (!strcasecmp(var, "core-recovery-db-dsn") && !zstr(val)) {
-					if (switch_odbc_available()) {
+					if (switch_odbc_available() || switch_pgsql_available()) {
 						runtime.recovery_odbc_dsn = switch_core_strdup(runtime.memory_pool, val);
 						if ((runtime.recovery_odbc_user = strchr(runtime.recovery_odbc_dsn, ':'))) {
 							*runtime.recovery_odbc_user++ = '\0';
@@ -1931,10 +1931,10 @@ static void switch_load_core_config(const char *file)
 							}
 						}
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC AND PGSQL ARE NOT AVAILABLE!\n");
 					}
-				} else if (!strcasecmp(var, "core-odbc-required") && !zstr(val)) {
-					switch_set_flag((&runtime), SCF_CORE_ODBC_REQ);
+				} else if (!strcasecmp(var, "core-non-sqlite-db-required") && !zstr(val)) {
+					switch_set_flag((&runtime), SCF_CORE_NON_SQLITE_DB_REQ);
 				} else if (!strcasecmp(var, "core-dbtype") && !zstr(val)) {
 					if (!strcasecmp(val, "MSSQL")) {
 						runtime.odbc_dbtype = DBTYPE_MSSQL;

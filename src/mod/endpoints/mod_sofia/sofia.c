@@ -4414,7 +4414,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
                                                 sofia_set_flag(profile, TFLAG_CAPTURE);
                                                 nua_set_params(profile->nua, TPTAG_CAPT(mod_sofia_globals.capture_server), TAG_END());
 					} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
-						if (switch_odbc_available()) {
+						if (switch_odbc_available() || switch_pgsql_available()) {
 							profile->odbc_dsn = switch_core_strdup(profile->pool, val);
 							if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
 								*profile->odbc_user++ = '\0';

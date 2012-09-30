@@ -395,7 +395,30 @@ if test "x$enable_core_odbc_support" != "xno"; then
   AC_CHECK_LIB([odbc], [SQLDisconnect],, AC_MSG_ERROR([no usable libodbc; please install unixodbc devel package or equivalent]))
 fi
 
+AC_ARG_ENABLE(core-pgsql-support,     
+	[AS_HELP_STRING([--enable-core-pgsql-support], [Compile with PGSQL Support])],,[enable_core_pgsql_support="no"])
 
+if test x"$enable_core_pgsql_support" = x"yes" ; then
+
+AC_PATH_PROG([PG_CONFIG], [pg_config], [no])
+if test "$PG_CONFIG" != "no"; then
+        AC_MSG_CHECKING([for PostgreSQL libraries])
+        POSTGRESQL_CFLAGS="`$PG_CONFIG --cflags` -I`$PG_CONFIG --includedir`"
+        POSTGRESQL_CXXFLAGS="`$PG_CONFIG --cppflags` -I`$PG_CONFIG --includedir`"
+        POSTGRESQL_LDFLAGS="`$PG_CONFIG --ldflags` -L`$PG_CONFIG --libdir` -lpq"
+        POSTGRESQL_VERSION=`$PG_CONFIG --version | sed -e 's#PostgreSQL ##'`
+        AC_DEFINE([SWITCH_HAVE_PGSQL], [1], [Define to 1 if PostgreSQL libraries are available])
+	AC_CHECK_LIB([pq], [PQgetvalue],, AC_MSG_ERROR([no usable libpq; please install PostgreSQL devel package or equivalent]))
+        AC_MSG_RESULT([yes])
+	SWITCH_AM_CFLAGS="$POSTGRESQL_CFLAGS $SWITCH_AM_CFLAGS"
+	SWITCH_AM_CXXFLAGS="$POSTGRESQL_CXXFLAGS $SWITCH_AM_CXXFLAGS"
+	SWITCH_AM_LDFLAGS="$POSTGRESQL_LDFLAGS $SWITCH_AM_LDFLAGS"
+else
+        AC_MSG_RESULT([no])
+        AC_MSG_FAILURE([Unabled to find pg_config in PATH. Is PostgreSQL installed?])
+fi
+
+fi
 
 AC_ARG_ENABLE(timerfd-wrapper,
 [AC_HELP_STRING([--enable-timerfd-wrapper],[timerfd is in the kernel but not in your libc])],[enable_timer_fd_wrapper="$enableval"],[enable_timer_fd_wrapper="no"])

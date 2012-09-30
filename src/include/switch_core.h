@@ -2210,12 +2210,14 @@ typedef enum {
 
 typedef enum {
 	SCDB_TYPE_CORE_DB,
-	SCDB_TYPE_ODBC
+	SCDB_TYPE_ODBC,
+	SCDB_TYPE_PGSQL
 } switch_cache_db_handle_type_t;
 
 typedef union {
 	switch_core_db_t *core_db_dbh;
 	switch_odbc_handle_t *odbc_dbh;
+	switch_pgsql_handle_t *pgsql_dbh;
 } switch_cache_db_native_handle_t;
 
 typedef struct {
@@ -2228,9 +2230,14 @@ typedef struct {
 	char *pass;
 } switch_cache_db_odbc_options_t;
 
+typedef struct {
+	char *dsn;
+} switch_cache_db_pgsql_options_t;
+
 typedef union {
 	switch_cache_db_core_db_options_t core_db_options;
 	switch_cache_db_odbc_options_t odbc_options;
+	switch_cache_db_pgsql_options_t pgsql_options;
 } switch_cache_db_connection_options_t;
 
 struct switch_cache_db_handle;
@@ -2241,6 +2248,11 @@ static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_
 	const char *type_str = "INVALID";
 
 	switch (type) {
+	case SCDB_TYPE_PGSQL:
+		{
+			type_str = "PGSQL";
+		}
+		break;
 	case SCDB_TYPE_ODBC:
 		{
 			type_str = "ODBC";
