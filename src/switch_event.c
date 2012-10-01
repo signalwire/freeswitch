@@ -276,6 +276,7 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 
 		event = (switch_event_t *) pop;
 		switch_event_deliver(&event);
+		switch_os_yield();
 	}
 
 

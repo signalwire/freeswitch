@@ -2539,7 +2539,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 		switch_threadattr_create(&thd_attr, sql_manager.memory_pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-
+		switch_threadattr_priority_increase(thd_attr);
 		switch_core_sqldb_start_thread();
 		switch_thread_create(&sql_manager.db_thread, thd_attr, switch_core_sql_db_thread, NULL, sql_manager.memory_pool);
 
@@ -2641,6 +2641,7 @@ SWITCH_DECLARE(void) switch_core_sqldb_start_thread(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Starting SQL thread.\n");
 			switch_threadattr_create(&thd_attr, sql_manager.memory_pool);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+			switch_threadattr_priority_increase(thd_attr);
 			switch_thread_create(&sql_manager.thread, thd_attr, switch_core_sql_thread, NULL, sql_manager.memory_pool);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL thread is already running\n");

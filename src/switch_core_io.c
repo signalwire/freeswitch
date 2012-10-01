@@ -112,6 +112,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_assert(session != NULL);
 
 
+	switch_os_yield();
+
 	if (switch_mutex_trylock(session->codec_read_mutex) == SWITCH_STATUS_SUCCESS) {
 		switch_mutex_unlock(session->codec_read_mutex);
 	} else {
