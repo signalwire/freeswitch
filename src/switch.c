@@ -262,7 +262,7 @@ static void daemonize(int do_wait)
 		}
 	}
 
-	pid = fork();
+	pid = switch_fork();
 
 	switch (pid) {
 	case 0:		/* child process */

@@ -2731,14 +2731,32 @@ SWITCH_DECLARE(void) switch_close_extra_files(int *keep, int keep_ttl)
 }
 
 
-
 #ifdef WIN32
 static int switch_system_fork(const char *cmd, switch_bool_t wait)
 {
 	return switch_system_thread(cmd, wait);
 }
 
+SWITCH_DECLARE(pid_t) switch_fork(void)
+{
+	return -1;
+}
+
+
 #else
+
+SWITCH_DECLARE(pid_t) switch_fork(void)
+{
+	int i = fork();
+
+	if (!i) {
+		set_low_priority();
+	}
+
+	return i;
+}
+
+
 
 static int switch_system_fork(const char *cmd, switch_bool_t wait)
 {
@@ -2747,7 +2765,7 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 
 	switch_core_set_signal_handlers();
 
-	pid = fork();
+	pid = switch_fork();
 	
 	if (pid) {
 		if (wait) {
@@ -2757,7 +2775,6 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 	} else {
 		switch_close_extra_files(NULL, 0);
 		
-		set_low_priority();
 		if (system(dcmd) == -1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute because of a command error : %s\n", dcmd);
 		}
@@ -2793,7 +2810,7 @@ SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_han
 	if (pipe(fds)) {
 		goto end;
 	} else {					/* good to go */
-		pid = fork();
+		pid = switch_fork();
 
 		if (pid < 0) {			/* ok maybe not */
 			close(fds[0]);

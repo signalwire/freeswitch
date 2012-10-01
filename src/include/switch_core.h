@@ -2368,6 +2368,9 @@ SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session
 SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_recovery_flush(const char *technology, const char *profile_name);
 
+								
+SWITCH_DECLARE(pid_t) switch_fork(void);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

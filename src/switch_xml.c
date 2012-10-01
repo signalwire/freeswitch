@@ -1238,7 +1238,7 @@ static FILE *preprocess_exec(const char *cwd, const char *command, FILE *write_f
 	if (pipe(fds)) {
 		goto end;
 	} else {					/* good to go */
-		pid = fork();
+		pid = switch_fork();
 
 		if (pid < 0) {			/* ok maybe not */
 			close(fds[0]);

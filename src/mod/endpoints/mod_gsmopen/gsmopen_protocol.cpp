@@ -3101,7 +3101,7 @@ int gsmopen_serial_getstatus_AT(private_t *tech_pvt)
 
 						DEBUGA_AT("incoming SMS message:---%s---\n", GSMOPEN_P_LOG, p->sms_message);
 						pipe(fd1);
-						pid1 = fork();
+						pid1 = switch_fork();
 
 						if (pid1 == 0) {	//child
 							int err;
