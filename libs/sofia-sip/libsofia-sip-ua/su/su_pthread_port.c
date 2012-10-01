@@ -263,11 +263,12 @@ int su_pthreaded_port_start(su_port_create_f *create,
   pthread_attr_init(&attr);
   pthread_attr_setstacksize(&attr, 244);
   pthread_attr_getschedparam(&attr, &param);
-  param.sched_priority = 1;
+  param.sched_priority = 99;
   pthread_attr_setschedparam(&attr, &param);
 
   pthread_mutex_lock(arg.mutex);
   if (pthread_create(&tid, &attr, su_pthread_port_clone_main, &arg) == 0) {
+	  pthread_setschedprio(tid, 99);
     pthread_cond_wait(arg.cv, arg.mutex);
     thread_created = 1;
   }
