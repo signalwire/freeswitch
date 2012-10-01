@@ -614,9 +614,24 @@ SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *bu
 
 /* thread stubs */
 
+#ifndef WIN32
+struct apr_threadattr_t {
+	apr_pool_t *pool;
+	pthread_attr_t attr;
+	int priority;
+};
+#endif
+
+
 SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** new_attr, switch_memory_pool_t *pool)
 {
-	return apr_threadattr_create(new_attr, pool);
+	switch_status_t status;
+
+	if ((status = apr_threadattr_create(new_attr, pool)) == SWITCH_STATUS_SUCCESS) {
+		(*new_attr)->priority = SWITCH_PRI_NORMAL;
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_threadattr_detach_set(switch_threadattr_t *attr, int32_t on)
@@ -629,18 +644,10 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
 	return apr_threadattr_stacksize_set(attr, stacksize);
 }
 
-#ifndef WIN32
-struct apr_threadattr_t {
-	apr_pool_t *pool;
-	pthread_attr_t attr;
-	int priority;
-};
-#endif
-
-SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_increase(switch_threadattr_t *attr)
+SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_set(switch_threadattr_t *attr, switch_thread_priority_t priority)
 {
 #ifndef WIN32
-	attr->priority = 99;
+	attr->priority = priority;
 #endif
 	return SWITCH_STATUS_SUCCESS;
 }

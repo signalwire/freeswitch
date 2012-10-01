@@ -656,7 +656,6 @@ static void chat_thread_start(int idx)
 
 				switch_threadattr_create(&thd_attr, chat_globals.pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				//switch_threadattr_priority_increase(thd_attr);
 				switch_thread_create(&chat_globals.msg_queue_thread[i], 
 									 thd_attr, 
 									 chat_thread_run, 

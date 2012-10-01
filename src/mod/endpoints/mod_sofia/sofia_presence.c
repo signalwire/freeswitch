@@ -1577,7 +1577,7 @@ void sofia_presence_event_thread_start(void)
 	switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_priority_increase(thd_attr);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_IMPORTANT);
 	switch_thread_create(&thread, thd_attr, sofia_presence_event_thread_run, NULL, mod_sofia_globals.pool);
 }
 

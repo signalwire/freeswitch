@@ -533,7 +533,7 @@ SWITCH_DECLARE(switch_thread_t *) switch_core_launch_thread(switch_thread_start_
 		ts->objs[0] = obj;
 		ts->objs[1] = thread;
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_threadattr_priority_increase(thd_attr);
+		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 		switch_thread_create(&thread, thd_attr, func, ts, pool);
 	}
 
@@ -735,7 +735,7 @@ SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 	const char *rt = "/proc/sys/kernel/sched_rt_runtime_us";
 	char data[] = "-1\n";
 	struct sched_param sched = { 0 };
-	sched.sched_priority = 1;
+	sched.sched_priority = SWITCH_PRI_REALTIME;
 	if (sched_setscheduler(0, SCHED_RR, &sched)) {
 		sched.sched_priority = 0;
 		if (sched_setscheduler(0, SCHED_OTHER, &sched)) {

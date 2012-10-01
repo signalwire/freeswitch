@@ -1647,7 +1647,7 @@ void sofia_msg_thread_start(int idx)
 
 				switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				switch_threadattr_priority_increase(thd_attr);
+				switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 				switch_thread_create(&mod_sofia_globals.msg_queue_thread[i], 
 									 thd_attr, 
 									 sofia_msg_thread_run, 
@@ -2373,7 +2373,7 @@ switch_thread_t *launch_sofia_worker_thread(sofia_profile_t *profile)
 
 	switch_threadattr_create(&thd_attr, profile->pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_priority_increase(thd_attr);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 	switch_thread_create(&thread, thd_attr, sofia_profile_worker_thread_run, profile, profile->pool);
 
 	while (!sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
@@ -2753,7 +2753,7 @@ void launch_sofia_profile_thread(sofia_profile_t *profile)
 	switch_threadattr_create(&thd_attr, profile->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_priority_increase(thd_attr);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 	switch_thread_create(&thread, thd_attr, sofia_profile_thread_run, profile, profile->pool);
 }
 
@@ -6114,7 +6114,6 @@ static void launch_media_on_hold(switch_core_session_t *session)
 	switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_priority_increase(thd_attr);
 	switch_thread_create(&thread, thd_attr, media_on_hold_thread_run, session, switch_core_session_get_pool(session));
 }
 
@@ -7198,7 +7197,6 @@ static void launch_nightmare_xfer(nightmare_xfer_helper_t *nhelper)
 	switch_threadattr_create(&thd_attr, nhelper->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_priority_increase(thd_attr);
 	switch_thread_create(&thread, thd_attr, nightmare_xfer_thread_run, nhelper, nhelper->pool);
 }
 

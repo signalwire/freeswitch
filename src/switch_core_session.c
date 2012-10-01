@@ -1554,6 +1554,7 @@ static switch_status_t check_queue(void)
 		switch_threadattr_create(&thd_attr, node->pool);
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_LOW);
 
 		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread_pool_worker, node, node->pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread Failure!\n");

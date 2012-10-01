@@ -545,7 +545,7 @@ SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max)
 
 		switch_threadattr_create(&thd_attr, pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_threadattr_priority_increase(thd_attr);
+		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 		switch_thread_create(&EVENT_DISPATCH_QUEUE_THREADS[index], thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE, pool);
 		while(--sanity && !EVENT_DISPATCH_QUEUE_RUNNING[index]) switch_yield(10000);
 
@@ -603,7 +603,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 #endif
 
 	//switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	//switch_threadattr_priority_increase(thd_attr);
+
 
 	switch_queue_create(&EVENT_DISPATCH_QUEUE, DISPATCH_QUEUE_LEN * MAX_DISPATCH, pool);
 	switch_event_launch_dispatch_threads(1);

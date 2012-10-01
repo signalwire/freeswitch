@@ -2017,6 +2017,13 @@ typedef switch_status_t (*switch_module_shutdown_t) SWITCH_MODULE_SHUTDOWN_ARGS;
 #define SWITCH_MODULE_SHUTDOWN_FUNCTION(name) switch_status_t name SWITCH_MODULE_SHUTDOWN_ARGS
 
 typedef enum {
+	SWITCH_PRI_LOW = 1,
+	SWITCH_PRI_NORMAL = 10,
+	SWITCH_PRI_IMPORTANT = 50,
+	SWITCH_PRI_REALTIME = 99,
+} switch_thread_priority_t;
+
+typedef enum {
 	SMODF_NONE = 0,
 	SMODF_GLOBAL_SYMBOLS = (1 << 0)
 } switch_module_flag_enum_t;

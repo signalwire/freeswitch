@@ -7748,7 +7748,7 @@ static void launch_conference_thread(conference_obj_t *conference)
 	switch_set_flag_locked(conference, CFLAG_RUNNING);
 	switch_threadattr_create(&thd_attr, conference->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
-	switch_threadattr_priority_increase(thd_attr);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_mutex_lock(globals.hash_mutex);
 	switch_mutex_unlock(globals.hash_mutex);
