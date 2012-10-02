@@ -637,7 +637,7 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** 
 
 	if ((status = apr_threadattr_create(new_attr, pool)) == SWITCH_STATUS_SUCCESS) {
 #ifndef WIN32
-		(*new_attr)->priority = SWITCH_PRI_NORMAL;
+		(*new_attr)->priority = SWITCH_PRI_LOW;
 #endif
 	}
 

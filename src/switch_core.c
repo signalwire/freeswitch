@@ -735,7 +735,7 @@ SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 	const char *rt = "/proc/sys/kernel/sched_rt_runtime_us";
 	char data[] = "-1\n";
 	struct sched_param sched = { 0 };
-	sched.sched_priority = SWITCH_PRI_REALTIME;
+	sched.sched_priority = SWITCH_PRI_LOW;
 	if (sched_setscheduler(0, SCHED_RR, &sched)) {
 		sched.sched_priority = 0;
 		if (sched_setscheduler(0, SCHED_OTHER, &sched)) {
