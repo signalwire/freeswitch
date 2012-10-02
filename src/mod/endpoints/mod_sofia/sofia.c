@@ -1326,7 +1326,10 @@ static void our_sofia_event_callback(nua_event_t event,
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "full-url", "true");
 				}
 
-
+				if (sip->sip_call_id && sip->sip_call_id->i_id) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Call-ID", sip->sip_call_id->i_id);
+				}
+				
 				if (!zstr(referred_by)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Request-Sender", "sofia/%s/%s", profile->name, referred_by);
 				}

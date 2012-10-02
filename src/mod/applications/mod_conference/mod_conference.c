@@ -1325,7 +1325,7 @@ static void send_rfc_event(conference_obj_t *conference)
 
 
 
-static void send_conference_notify(conference_obj_t *conference, const char *status, switch_bool_t final)
+static void send_conference_notify(conference_obj_t *conference, const char *status, const char *call_id, switch_bool_t final)
 {
 	switch_event_t *event;
 	char *name = NULL, *domain = NULL, *dup_domain = NULL;
@@ -1352,6 +1352,7 @@ static void send_conference_notify(conference_obj_t *conference, const char *sta
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-name", name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
 
 		if (final) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "final", "true");
@@ -6566,9 +6567,11 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	switch_bool_t have_flags = SWITCH_FALSE;
 	const char *outcall_flags;
 	int track = 0;
+	const char *call_id;
 
 	if (var_event && switch_true(switch_event_get_header(var_event, "conference_track_status"))) {
 		track++;
+		call_id = switch_event_get_header(var_event, "conference_track_call_id");
 	}
 
 	*cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -6613,7 +6616,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	switch_mutex_unlock(conference->mutex);
 
 	if (track) {
-		send_conference_notify(conference, "SIP/2.0 100 Trying\r\n", SWITCH_FALSE);
+		send_conference_notify(conference, "SIP/2.0 100 Trying\r\n", call_id, SWITCH_FALSE);
 	}
 
 
@@ -6630,14 +6633,14 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 		}
 
 		if (track) {
-			send_conference_notify(conference, "SIP/2.0 481 Failure\r\n", SWITCH_TRUE);
+			send_conference_notify(conference, "SIP/2.0 481 Failure\r\n", call_id, SWITCH_TRUE);
 		}
 
 		goto done;
 	}
 
 	if (track) {
-		send_conference_notify(conference, "SIP/2.0 200 OK\r\n", SWITCH_TRUE);
+		send_conference_notify(conference, "SIP/2.0 200 OK\r\n", call_id, SWITCH_TRUE);
 	}
 
 	rdlock = 1;
@@ -8571,6 +8574,7 @@ static void call_setup_event_handler(switch_event_t *event)
 	char *action = switch_event_get_header(event, "Request-Action");
 	char *ext = switch_event_get_header(event, "Request-Target-Extension");
 	char *full_url = switch_event_get_header(event, "full_url");
+	char *call_id = switch_event_get_header(event, "Request-Call-ID");
 
 	if (!ext) ext = dial_str;
 
@@ -8600,6 +8604,7 @@ static void call_setup_event_handler(switch_event_t *event)
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_invite_uri", dial_uri);
 
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_status", "true");
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_call_id", call_id);
 
 				if (!strncasecmp(ostr, "url+", 4)) {
 					ostr += 4;
