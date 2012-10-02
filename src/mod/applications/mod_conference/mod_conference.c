@@ -6567,7 +6567,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	switch_bool_t have_flags = SWITCH_FALSE;
 	const char *outcall_flags;
 	int track = 0;
-	const char *call_id;
+	const char *call_id = NULL;
 
 	if (var_event && switch_true(switch_event_get_header(var_event, "conference_track_status"))) {
 		track++;
