@@ -620,6 +620,14 @@ struct apr_threadattr_t {
 	pthread_attr_t attr;
 	int priority;
 };
+#else
+/* this needs to be revisited when apr for windows supports thread priority settings */
+/* search for WIN32 in this file */
+struct apr_threadattr_t {
+    apr_pool_t *pool;
+    apr_int32_t detach;
+    apr_size_t stacksize;
+};
 #endif
 
 
@@ -628,7 +636,9 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** 
 	switch_status_t status;
 
 	if ((status = apr_threadattr_create(new_attr, pool)) == SWITCH_STATUS_SUCCESS) {
+#ifndef WIN32
 		(*new_attr)->priority = SWITCH_PRI_NORMAL;
+#endif
 	}
 
 	return status;
