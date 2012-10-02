@@ -1970,19 +1970,19 @@ static switch_status_t do_config(void)
 				} else if (!strcasecmp(var, "dial")) {
 					profile->perms.dial.enabled = switch_true(val);
 				} else if (!strcasecmp(var, "dial-set-context")) {
-					profile->perms.dial.enabled = switch_true(val);
+					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
 					profile->perms.dial.set_context = switch_true(val);
 				} else if (!strcasecmp(var, "dial-set-dialplan")) {
-					profile->perms.dial.enabled = switch_true(val);
+					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
 					profile->perms.dial.set_dp = switch_true(val);
 				} else if (!strcasecmp(var, "dial-set-cid-name")) {
-					profile->perms.dial.enabled = switch_true(val);
+					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
 					profile->perms.dial.set_cid_name = switch_true(val);
 				} else if (!strcasecmp(var, "dial-set-cid-number")) {
-					profile->perms.dial.enabled = switch_true(val);
+					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
 					profile->perms.dial.set_cid_number = switch_true(val);
 				} else if (!strcasecmp(var, "dial-full-originate")) {
-					profile->perms.dial.enabled = switch_true(val);
+					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
 					profile->perms.dial.full_originate = switch_true(val);
 				} else if (!strcasecmp(var, "conference")) {
 					profile->perms.conference.enabled = switch_true(val);
