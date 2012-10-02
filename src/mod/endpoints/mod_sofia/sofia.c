@@ -5839,13 +5839,31 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 
-		if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && 
-			sip->sip_payload && sip->sip_payload->pl_data && switch_stristr("m=image", sip->sip_payload->pl_data)) {
+		if (sip->sip_payload && sip->sip_payload->pl_data && switch_stristr("m=image", sip->sip_payload->pl_data)) {
 			has_t38 = 1;
 		}
 		
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
+			has_t38 = 0;
+		}
+
+		if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) && has_t38) {
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+				switch_rtp_udptl_mode(tech_pvt->rtp_session);
+				
+				if ((uuid = switch_channel_get_partner_uuid(channel)) && (other_session = switch_core_session_locate(uuid))) {
+					if (switch_core_session_compare(session, other_session)) {
+						private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+						if (switch_rtp_ready(other_tech_pvt->rtp_session)) {
+							switch_rtp_udptl_mode(other_tech_pvt->rtp_session);
+						}
+					}
+					switch_core_session_rwunlock(other_session);
+				}
+			}
+			
+			has_t38 = 0;
 		}
 
 		if (status > 199 && (switch_channel_test_flag(channel, CF_PROXY_MODE) || 

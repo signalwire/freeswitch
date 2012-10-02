@@ -4520,7 +4520,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		send_msg = frame->packet;
 
-		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) && !switch_test_flag(frame, SFF_UDPTL_PACKET)) {
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 				send_msg->header.pt = rtp_session->payload;
 			}
