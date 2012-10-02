@@ -1304,10 +1304,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 					switch_core_session_rwunlock(peer_session);
 					goto done;
 				}
+			}
 
-				if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
-					switch_channel_answer(caller_channel);
-				}
+			if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
+				switch_channel_answer(caller_channel);
 			}
 
 			switch_channel_wait_for_flag(peer_channel, CF_BROADCAST, SWITCH_FALSE, 10000, caller_channel);
