@@ -992,6 +992,24 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		if (switch_event_dup(&clone, var_event) == SWITCH_STATUS_SUCCESS) {
+			const char *var;
+
+			if ((var = switch_channel_get_variable(channel, "loopback_export"))) {
+				int argc = 0;
+				char *argv[128] = { 0 };
+				char *dup = switch_core_session_strdup(session, var);
+
+				if ((argc = switch_split(dup, ',', argv))) {
+					int i;
+					for (i = 0; i < argc; i++) {
+						if (!zstr(argv[i])) {
+							const char *val = switch_channel_get_variable(channel, argv[i]);
+							switch_event_add_header_string(clone, SWITCH_STACK_BOTTOM, argv[i], val);
+						}
+					}
+				}
+			}
+
 			switch_channel_set_private(channel, "__loopback_vars__", clone);
 		}
 
