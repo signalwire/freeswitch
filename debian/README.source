@@ -1,5 +1,5 @@
 FreeSWITCH for Debian
---------------
+---------------------
 
 You may be reading this because you're wondering where all the files
 are in debian/, such as control.  You may also be here looking for the
@@ -94,4 +94,4 @@ freeswitch-music-*:
   git clone https://github.com/traviscross/freeswitch-sounds.git
   cd freeswitch-sounds && cat debian/README.source
 
- -- Travis Cross <tc@traviscross.com>, Tue,  4 Sep 2012 14:56:52 +0000
+ -- Travis Cross <tc@traviscross.com>, Wed,  3 Oct 2012 02:15:24 +0000
