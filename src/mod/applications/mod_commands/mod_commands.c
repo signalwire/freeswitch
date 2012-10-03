@@ -181,6 +181,141 @@ SWITCH_STANDARD_API(say_string_function)
 	
 }
 
+static void dump_user(const char *dname, const char* gname, switch_xml_t x_user_tag, switch_stream_handle_t *stream, const char *_context)
+{
+	switch_xml_t x_vars, x_var;
+	switch_status_t status;
+	switch_stream_handle_t apistream = { 0 };
+	char *user_context = NULL;
+	char *effective_caller_id_name = NULL;
+	char *effective_caller_id_number = NULL;
+	char *callgroup = NULL;
+
+	if (!x_user_tag) {
+		return;
+	}
+
+	if ((x_vars = switch_xml_child(x_user_tag, "variables"))) {
+		for (x_var = switch_xml_child(x_vars, "variable"); x_var; x_var = x_var->next) {
+			const char *key = switch_xml_attr_soft(x_var, "name");
+			const char *val = switch_xml_attr_soft(x_var, "value");
+
+			if (!strcasecmp(key, "user_context")) {
+				user_context = (char*) val;
+			} else if (!strcasecmp(key, "effective_caller_id_name")) {
+				effective_caller_id_name = (char*) val;
+			} else if (!strcasecmp(key, "effective_caller_id_number")) {
+				effective_caller_id_number = (char*) val;
+			} else if (!strcasecmp(key, "callgroup")) {
+				callgroup = (char*) val;
+			} else {
+				continue;
+			}
+		}
+	}
+
+	if (_context) {
+		if (zstr(user_context) || strcasecmp(_context, user_context)) {
+			return;
+		}
+	}
+
+	SWITCH_STANDARD_STREAM(apistream);
+	if ((status = switch_api_execute("sofia_contact", switch_xml_attr_soft(x_user_tag, "id"), NULL, &apistream)) != SWITCH_STATUS_SUCCESS) {
+		switch_safe_free(apistream.data);
+		return;
+	}
+	stream->write_function(stream, "%s|%s|%s|%s|%s|%s|%s|%s\n", switch_xml_attr_soft(x_user_tag, "id"), user_context, dname, gname, apistream.data, callgroup, effective_caller_id_name, effective_caller_id_number);
+	switch_safe_free(apistream.data);
+
+	return;
+}
+
+#define LIST_USERS_SYNTAX "[group <group>] [domain <domain>] [user <user>] [context <context>]"
+SWITCH_STANDARD_API(list_users_function)
+{
+	int argc;
+	char *pdata, *argv[8];
+	int32_t arg = 0;
+	switch_xml_t xml_root, x_domains, x_domain_tag;
+	switch_xml_t gts, gt, uts, ut;
+	char *_user = NULL, *_domain = NULL, *_context = NULL, *_group = NULL;
+
+
+	if ((pdata = strdup(cmd))) {
+		argc = switch_separate_string(pdata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+		if (argc >= 8) {
+			stream->write_function(stream, "-USAGE: %s\n", LIST_USERS_SYNTAX);
+			goto done;
+		}
+
+		for (arg = 0; arg < argc; arg++) {
+			if (!strcasecmp(argv[arg], "user")) {
+				_user = argv[arg + 1];
+			}
+			if (!strcasecmp(argv[arg], "domain")) {
+				_domain = argv[arg + 1];
+			}
+			if (!strcasecmp(argv[arg], "context")) {
+				_context = argv[arg + 1];
+			}
+			if (!strcasecmp(argv[arg], "group")) {
+				_group = argv[arg + 1];
+			}
+		}
+	}
+
+	stream->write_function(stream, "userid|context|domain|group|contact|callgroup|effective_caller_id_name|effective_caller_id_number\n");
+
+	if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+		const char *dname = NULL;
+		const char *gname = NULL;
+
+		for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
+			dname = switch_xml_attr_soft(x_domain_tag, "name");
+
+			if (_domain && strcasecmp(_domain, dname)) {
+				continue;
+			}
+
+			if ((gts = switch_xml_child(x_domain_tag, "groups"))) {
+				for (gt = switch_xml_child(gts, "group"); gt; gt = gt->next) {
+					gname = switch_xml_attr_soft(gt, "name");
+
+					if (_group && strcasecmp(_group, gname)) {
+						continue;
+					}
+
+					for (uts = switch_xml_child(gt, "users"); uts; uts = uts->next) {
+						for (ut = switch_xml_child(uts, "user"); ut; ut = ut->next) {
+							if (_user && strcasecmp(_user, switch_xml_attr_soft(ut, "id"))) {
+								continue;
+							}
+							dump_user(dname, gname, ut, stream, _context);
+						}
+					}
+				}
+			} else {
+				for (uts = switch_xml_child(x_domain_tag, "users"); uts; uts = uts->next) {
+					for (ut = switch_xml_child(uts, "user"); ut; ut = ut->next) {
+						if (_user && strcasecmp(_user, switch_xml_attr_soft(ut, "id"))) {
+							continue;
+						}
+						dump_user(dname, gname, ut, stream, _context);
+					}
+				}
+			}
+		}
+		switch_xml_free(xml_root);
+	}
+
+	stream->write_function(stream, "\n+OK\n");
+
+done:
+	switch_safe_free(pdata);
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_STANDARD_API(reg_url_function)
 {
@@ -5695,6 +5830,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "limit_status", "Gets the status of a limit backend", limit_status_function, "<backend>");
 	SWITCH_ADD_API(commands_api_interface, "limit_reset", "Reset the counters of a limit backend", limit_reset_function, "<backend>");
 	SWITCH_ADD_API(commands_api_interface, "limit_interval_reset", "Reset the interval counter for a limited resource", limit_interval_reset_function, LIMIT_INTERVAL_RESET_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "list_users", "List Users configured in Directory", list_users_function, LIST_USERS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "log", "Log", log_function, LOG_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "md5", "md5", md5_function, "<data>");
