@@ -286,7 +286,28 @@ SWITCH_STANDARD_API(shutdown_function)
 
 SWITCH_STANDARD_API(version_function)
 {
-	stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_REVISION_HUMAN);
+	int argc;
+	char *mydata = NULL, *argv[2];
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_REVISION_HUMAN);
+		goto end;
+	}
+
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argv[0] && switch_stristr("short", argv[0])) {
+		stream->write_function(stream, "%s.%s.%s\n", SWITCH_VERSION_MAJOR,SWITCH_VERSION_MINOR,SWITCH_VERSION_MICRO);
+	} else {
+		stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_FULL_HUMAN);
+	}
+
+	switch_safe_free(mydata);
+
+end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -5658,7 +5679,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "fsctl", "control messages", ctl_function, CTL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "...", "shutdown", shutdown_function, "");
 	SWITCH_ADD_API(commands_api_interface, "shutdown", "shutdown", shutdown_function, "");
-	SWITCH_ADD_API(commands_api_interface, "version", "version", version_function, "");
+	SWITCH_ADD_API(commands_api_interface, "version", "version", version_function, "[short]");
 	SWITCH_ADD_API(commands_api_interface, "global_getvar", "global_getvar", global_getvar_function, GLOBAL_GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "global_setvar", "global_setvar", global_setvar_function, GLOBAL_SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "group_call", "Generate a dial string to call a group", group_call_function, "<group>[@<domain>]");
