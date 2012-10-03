@@ -299,7 +299,7 @@ SWITCH_STANDARD_API(version_function)
 
 	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argv[0] && switch_stristr("short", argv[0])) {
+	if (argc > 0 && switch_stristr("short", argv[0])) {
 		stream->write_function(stream, "%s.%s.%s\n", SWITCH_VERSION_MAJOR,SWITCH_VERSION_MINOR,SWITCH_VERSION_MICRO);
 	} else {
 		stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_FULL_HUMAN);
