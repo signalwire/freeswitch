@@ -4909,13 +4909,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (session) {
 		const char *vval = NULL;
 
-		if ((vval = switch_channel_get_variable(o_channel, "sip_auto_answer")) && switch_true(vval)) {
-			switch_channel_set_variable_printf(nchannel, "sip_h_Call-Info", "<sip:%s>;answer-after=0", profile->sipip);
-			switch_channel_set_variable(nchannel, "sip_invite_params", "intercom=true");
-		}
-
 		switch_ivr_transfer_variable(session, nsession, SOFIA_REPLACES_HEADER);
-		switch_ivr_transfer_variable(session, nsession, "sip_auto_answer");
+
 		if (!(vval = switch_channel_get_variable(o_channel, "sip_copy_custom_headers")) || switch_true(vval)) {
 			switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_HEADER_PREFIX_T);
 		}
