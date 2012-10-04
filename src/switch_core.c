@@ -731,9 +731,6 @@ SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 	 * Try to use a round-robin scheduler
 	 * with a fallback if that does not work
 	 */
-	int fd;
-	const char *rt = "/proc/sys/kernel/sched_rt_runtime_us";
-	char data[] = "-1\n";
 	struct sched_param sched = { 0 };
 	sched.sched_priority = SWITCH_PRI_LOW;
 	if (sched_setscheduler(0, SCHED_FIFO, &sched)) {
@@ -742,21 +739,6 @@ SWITCH_DECLARE(int32_t) set_realtime_priority(void)
 			return -1;
 		}
 	}
-
-	if ((fd = open(rt, O_WRONLY)) > 0) {
-		int r;
-		
-		if (!(r = write(fd, data, sizeof(data)))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Disablling RT limits [%s][%d]\n", rt, r);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Disabling RT throttling.\n");
-		}
-		close(fd);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error opening %s\n", rt);
-	}
-
-	
 #endif
 
 	
