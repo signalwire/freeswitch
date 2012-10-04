@@ -2193,7 +2193,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *dest_proto, sw
 SWITCH_DECLARE(switch_status_t) switch_core_chat_deliver(const char *dest_proto, switch_event_t **message_event);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_session_t *session, const char *cmds);
-SWITCH_DECLARE(void) switch_core_sqldb_stop_thread(void);
+SWITCH_DECLARE(void) switch_sqldb_stop_thread(switch_sql_manager_t *sql_manager);
+#define switch_core_sqldb_stop_thread() switch_sqldb_stop_thread(&switch_cache_db_sql_manager)
+
+SWITCH_DECLARE(void) switch_sqldb_start_thread(switch_sql_manager_t *sql_manager, void *(SWITCH_THREAD_FUNC * func) (switch_thread_t *, void *),
+											   char **post_connect_sql, int argc);
 SWITCH_DECLARE(void) switch_core_sqldb_start_thread(void);
 
 ///\}
@@ -2240,8 +2244,6 @@ typedef union {
 	switch_cache_db_pgsql_options_t pgsql_options;
 } switch_cache_db_connection_options_t;
 
-struct switch_cache_db_handle;
-typedef struct switch_cache_db_handle switch_cache_db_handle_t;
 
 static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_t type)
 {
@@ -2281,7 +2283,9 @@ SWITCH_DECLARE(void) switch_cache_db_dismiss_db_handle(switch_cache_db_handle_t 
  		other threads until the allocating thread actually terminates.
  \param [in] The handle
 */
+SWITCH_DECLARE(void) _switch_cache_db_release_db_handle(switch_sql_manager_t *sql_manager, switch_cache_db_handle_t ** dbh);
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t ** dbh);
+
 /*! 
  \brief Gets a new cached handle from the pool, potentially creating a new connection.
  		The connection is bound to the thread until it (the thread) terminates unless
@@ -2290,11 +2294,18 @@ SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t 
  \param [in] type - ODBC or SQLLITE
  \param [in] connection_options (userid, password, etc)
 */
+SWITCH_DECLARE(switch_status_t) __switch_cache_db_get_db_handle(switch_sql_manager_t *sql_manager,
+															   switch_cache_db_handle_t ** dbh,
+															   switch_cache_db_handle_type_t type,
+															   switch_cache_db_connection_options_t *connection_options,
+															   const char *file, const char *func, int line);
 SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_handle_t ** dbh,
 															   switch_cache_db_handle_type_t type,
 															   switch_cache_db_connection_options_t *connection_options,
 															   const char *file, const char *func, int line);
 #define switch_cache_db_get_db_handle(_a, _b, _c) _switch_cache_db_get_db_handle(_a, _b, _c, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+
 
 /*! 
  \brief Executes the sql and returns the result as a string
@@ -2330,15 +2341,21 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 */
 SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh);
 
+extern switch_sql_manager_t switch_cache_db_sql_manager;
 /*! 
  \brief Provides some feedback as to the status of the db connection pool
  \param [in] stream stream for status
 */
+SWITCH_DECLARE(void) _switch_cache_db_status(switch_sql_manager_t *sql_manager, switch_stream_handle_t *stream);
 SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream);
+SWITCH_DECLARE(switch_status_t) __switch_core_db_handle(switch_sql_manager_t *sql_manager, switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
 SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
 #define switch_core_db_handle(_a) _switch_core_db_handle(_a, __FILE__, __SWITCH_FUNC__, __LINE__)
-SWITCH_DECLARE(switch_status_t) _switch_core_recovery_db_handle(switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
-#define switch_core_recovery_db_handle(_a) _switch_core_recovery_db_handle(_a, __FILE__, __SWITCH_FUNC__, __LINE__)
+SWITCH_DECLARE(switch_status_t) _switch_core_recovery_db_handle(switch_sql_manager_t *sql_manager, switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
+#define switch_core_recovery_db_handle(_a) _switch_core_recovery_db_handle(&switch_cache_db_sql_manager, _a, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+SWITCH_DECLARE(switch_status_t) _switch_core_persist_db_handle(switch_sql_manager_t *sql_manager, switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
+#define switch_core_persist_db_handle(_a) _switch_core_persist_db_handle(&switch_cache_db_sql_manager, _a, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_handle_t *db,
 															const char *test_sql, const char *drop_sql, const char *reactive_sql);
@@ -2347,7 +2364,9 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_
 
 SWITCH_DECLARE(void) switch_core_set_signal_handlers(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
-SWITCH_DECLARE(void) switch_cache_db_flush_handles(void);
+SWITCH_DECLARE(void) switch_cache_db_flush_handles(switch_sql_manager_t *sql_manager);
+#define switch_core_cache_db_flush_handles() switch_cache_db_flush_handles(&switch_cache_db_sql_manager)
+
 SWITCH_DECLARE(const char *) switch_core_banner(void);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
 SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number);
