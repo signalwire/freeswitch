@@ -1830,6 +1830,9 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 				tech_pvt->video_rm_rate = 90000;
 				tech_pvt->video_codec_ms = 0;
 				switch_snprintf(vport_buf, sizeof(vport_buf), "%u", tech_pvt->adv_sdp_video_port);
+				if (switch_channel_media_ready(tech_pvt->channel) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
+					sofia_glue_activate_rtp(tech_pvt, 0);
+				}
 			}
 
 			strncpy(q, p, 8);
