@@ -181,19 +181,56 @@ SWITCH_STANDARD_API(say_string_function)
 	
 }
 
-static void dump_user(const char *dname, const char* gname, switch_xml_t x_user_tag, switch_stream_handle_t *stream, const char *_context)
+struct user_struct {
+	char *dname;
+	char *gname;
+	char *effective_caller_id_name;
+	char *effective_caller_id_number;
+	char *callgroup;
+	switch_xml_t x_user_tag;
+	switch_stream_handle_t *stream;
+	char *search_context;
+	char *context;
+	switch_xml_t x_domain_tag;
+};
+
+static void dump_user(struct user_struct *us)
 {
-	switch_xml_t x_vars, x_var;
+	switch_xml_t x_vars, x_var, ux, x_user_tag, x_domain_tag;
 	switch_status_t status;
-	switch_stream_handle_t apistream = { 0 };
-	char *user_context = NULL;
+	switch_stream_handle_t apistream = { 0 }, *stream;
+	char *user_context = NULL, *search_context = NULL, *context = NULL;
 	char *effective_caller_id_name = NULL;
 	char *effective_caller_id_number = NULL;
-	char *callgroup = NULL;
+	char *dname = NULL, *gname = NULL, *callgroup = NULL;
+	char *utype = NULL, *uname = NULL;
+	char *apip = NULL;
+
+	x_user_tag = us->x_user_tag;
+	x_domain_tag = us->x_domain_tag;
+	effective_caller_id_name = us->effective_caller_id_name;
+	effective_caller_id_number = us->effective_caller_id_number;
+	callgroup = us->callgroup;
+	dname = us->dname;
+	gname = us->gname;
+	stream = us->stream;
+	context = us->context;
+	search_context = us->search_context;
 
 	if (!x_user_tag) {
 		return;
 	}
+
+	utype = (char *)switch_xml_attr_soft(us->x_user_tag, "type");
+	uname = (char *)switch_xml_attr_soft(us->x_user_tag, "id");
+
+	if (!strcasecmp(utype, "pointer")) {
+		if (switch_xml_locate_user_in_domain(uname, x_domain_tag, &ux, NULL) == SWITCH_STATUS_SUCCESS) {
+			x_user_tag = ux;
+		}
+	}
+
+	user_context = (char *)context;
 
 	if ((x_vars = switch_xml_child(x_user_tag, "variables"))) {
 		for (x_var = switch_xml_child(x_vars, "variable"); x_var; x_var = x_var->next) {
@@ -214,19 +251,28 @@ static void dump_user(const char *dname, const char* gname, switch_xml_t x_user_
 		}
 	}
 
-	if (_context) {
-		if (zstr(user_context) || strcasecmp(_context, user_context)) {
+	if (search_context) {
+		if (zstr(user_context) || strcasecmp(search_context, user_context)) {
 			return;
 		}
 	}
 
+	if(zstr(dname)) {
+		apip = switch_mprintf("%s",switch_xml_attr_soft(x_user_tag, "id"));
+	} else {
+		apip = switch_mprintf("%s@%s",switch_xml_attr_soft(x_user_tag, "id"), dname);
+	}
+
 	SWITCH_STANDARD_STREAM(apistream);
-	if ((status = switch_api_execute("sofia_contact", switch_xml_attr_soft(x_user_tag, "id"), NULL, &apistream)) != SWITCH_STATUS_SUCCESS) {
-		switch_safe_free(apistream.data);
-		return;
+	if ((status = switch_api_execute("sofia_contact", apip, NULL, &apistream)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_contact '%s' failed. status: %d \n", apip, status );
+		goto end;
 	}
 	stream->write_function(stream, "%s|%s|%s|%s|%s|%s|%s|%s\n", switch_xml_attr_soft(x_user_tag, "id"), user_context, dname, gname, apistream.data, callgroup, effective_caller_id_name, effective_caller_id_number);
+
+end:
 	switch_safe_free(apistream.data);
+	switch_safe_free(apip);
 
 	return;
 }
@@ -239,7 +285,7 @@ SWITCH_STANDARD_API(list_users_function)
 	int32_t arg = 0;
 	switch_xml_t xml_root, x_domains, x_domain_tag;
 	switch_xml_t gts, gt, uts, ut;
-	char *_user = NULL, *_domain = NULL, *_context = NULL, *_group = NULL;
+	char *_user = NULL, *_domain = NULL, *_search_context = NULL, *_group = NULL;
 
 
 	if ((pdata = strdup(cmd))) {
@@ -258,7 +304,7 @@ SWITCH_STANDARD_API(list_users_function)
 				_domain = argv[arg + 1];
 			}
 			if (!strcasecmp(argv[arg], "context")) {
-				_context = argv[arg + 1];
+				_search_context = argv[arg + 1];
 			}
 			if (!strcasecmp(argv[arg], "group")) {
 				_group = argv[arg + 1];
@@ -269,22 +315,53 @@ SWITCH_STANDARD_API(list_users_function)
 	stream->write_function(stream, "userid|context|domain|group|contact|callgroup|effective_caller_id_name|effective_caller_id_number\n");
 
 	if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-		const char *dname = NULL;
-		const char *gname = NULL;
+		struct user_struct us = { 0 };
 
 		for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
-			dname = switch_xml_attr_soft(x_domain_tag, "name");
+			switch_xml_t x_vars, x_var;
 
-			if (_domain && strcasecmp(_domain, dname)) {
+			us.dname = (char*)switch_xml_attr_soft(x_domain_tag, "name");
+
+			if (_domain && strcasecmp(_domain, us.dname)) {
 				continue;
+			}
+
+			if ((x_vars = switch_xml_child(x_domain_tag, "variables"))) {
+				if ((x_var = switch_xml_find_child_multi(x_vars, "variable", "name", "user_context",  NULL))) {
+					us.context = (char*)switch_xml_attr_soft(x_var, "value");
+				}
+				if ((x_var = switch_xml_find_child_multi(x_vars, "variable", "name", "callgroup",  NULL))) {
+					us.callgroup = (char*)switch_xml_attr_soft(x_var, "value");
+				}
+				if ((x_var = switch_xml_find_child_multi(x_vars, "variable", "name", "effective_caller_id_name",  NULL))) {
+					us.effective_caller_id_name = (char*)switch_xml_attr_soft(x_var, "value");
+				}
+				if ((x_var = switch_xml_find_child_multi(x_vars, "variable", "name", "effective_caller_id_number",  NULL))) {
+					us.effective_caller_id_number = (char*)switch_xml_attr_soft(x_var, "value");
+				}
 			}
 
 			if ((gts = switch_xml_child(x_domain_tag, "groups"))) {
 				for (gt = switch_xml_child(gts, "group"); gt; gt = gt->next) {
-					gname = switch_xml_attr_soft(gt, "name");
+					us.gname = (char*)switch_xml_attr_soft(gt, "name");
 
-					if (_group && strcasecmp(_group, gname)) {
+					if (_group && strcasecmp(_group, us.gname)) {
 						continue;
+					}
+
+					if ((x_vars = switch_xml_child(gt, "variables"))) {
+						if ((x_var = switch_xml_find_child_multi(x_vars, "variable", "name", "user_context",  NULL))) {
+							us.context = (char*)switch_xml_attr_soft(x_var, "value");
+						}
+						if ((x_var = switch_xml_find_child_multi(x_vars, "variable", "name", "callgroup",  NULL))) {
+							us.callgroup = (char*)switch_xml_attr_soft(x_var, "value");
+						}
+						if ((x_var = switch_xml_find_child_multi(x_vars, "variable", "name", "effective_caller_id_name",  NULL))) {
+							us.effective_caller_id_name = (char*)switch_xml_attr_soft(x_var, "value");
+						}
+						if ((x_var = switch_xml_find_child_multi(x_vars, "variable", "name", "effective_caller_id_number",  NULL))) {
+							us.effective_caller_id_number = (char*)switch_xml_attr_soft(x_var, "value");
+						}
 					}
 
 					for (uts = switch_xml_child(gt, "users"); uts; uts = uts->next) {
@@ -292,7 +369,10 @@ SWITCH_STANDARD_API(list_users_function)
 							if (_user && strcasecmp(_user, switch_xml_attr_soft(ut, "id"))) {
 								continue;
 							}
-							dump_user(dname, gname, ut, stream, _context);
+							us.x_user_tag = ut;
+							us.x_domain_tag = x_domain_tag;
+							us.stream = stream;
+							dump_user(&us);
 						}
 					}
 				}
@@ -302,7 +382,10 @@ SWITCH_STANDARD_API(list_users_function)
 						if (_user && strcasecmp(_user, switch_xml_attr_soft(ut, "id"))) {
 							continue;
 						}
-						dump_user(dname, gname, ut, stream, _context);
+						us.x_user_tag = ut;
+						us.x_domain_tag = x_domain_tag;
+						us.stream = stream;
+						dump_user(&us);
 					}
 				}
 			}
