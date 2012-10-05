@@ -248,7 +248,7 @@ SWITCH_DECLARE(char *) switch_console_expand_alias(char *cmd, char *arg)
 		return NULL;
 	}
 
-	if (switch_core_persist_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
 		return NULL;
 	}
@@ -1859,7 +1859,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 			switch_cache_db_handle_t *db = NULL;
 			char *sql = NULL;
 
-			if (switch_core_persist_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
 				free(mydata);
 				return SWITCH_STATUS_FALSE;
