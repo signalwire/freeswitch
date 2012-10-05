@@ -248,7 +248,6 @@ SWITCH_DECLARE(void) switch_core_hash_this(switch_hash_index_t *hi, const void *
 /* Deprecated */
 SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, switch_hash_t *hash)
 {
-	(void*)(deprecate_me);
 	return switch_core_hash_first(hash);
 }
 
@@ -261,7 +260,7 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *hi)
 /* Deprecated */
 SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val)
 {
-	return switch_core_hash_this(hi, key, klen, val);
+	switch_core_hash_this(hi, key, klen, val);
 }
 
 /* For Emacs:
