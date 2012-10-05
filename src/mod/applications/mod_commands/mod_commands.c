@@ -285,7 +285,7 @@ SWITCH_STANDARD_API(list_users_function)
 	int32_t arg = 0;
 	switch_xml_t xml_root, x_domains, x_domain_tag;
 	switch_xml_t gts, gt, uts, ut;
-	char *_user = NULL, *_domain = NULL, *_search_context = NULL, *_group = NULL;
+	char *_user = NULL, *_domain = NULL, *_group = NULL;
 
 
 	if ((pdata = strdup(cmd))) {
@@ -303,9 +303,7 @@ SWITCH_STANDARD_API(list_users_function)
 			if (!strcasecmp(argv[arg], "domain")) {
 				_domain = argv[arg + 1];
 			}
-			if (!strcasecmp(argv[arg], "context")) {
-				_search_context = argv[arg + 1];
-			}
+
 			if (!strcasecmp(argv[arg], "group")) {
 				_group = argv[arg + 1];
 			}
