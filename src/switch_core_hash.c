@@ -222,17 +222,17 @@ SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(switch_hash_t *hash, const c
 	return val;
 }
 
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, switch_hash_t *hash)
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first(switch_hash_t *hash)
 {
 	return (switch_hash_index_t *) sqliteHashFirst(&hash->table);
 }
 
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *hi)
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(switch_hash_index_t *hi)
 {
 	return (switch_hash_index_t *) sqliteHashNext((HashElem *) hi);
 }
 
-SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val)
+SWITCH_DECLARE(void) switch_core_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val)
 {
 	if (key) {
 		*key = sqliteHashKey((HashElem *) hi);
@@ -243,6 +243,25 @@ SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key,
 	if (val) {
 		*val = sqliteHashData((HashElem *) hi);
 	}
+}
+
+/* Deprecated */
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, switch_hash_t *hash)
+{
+	(void*)(deprecate_me);
+	return switch_core_hash_first(hash);
+}
+
+/* Deprecated */
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *hi)
+{
+	return switch_core_hash_next(hi);
+}
+
+/* Deprecated */
+SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val)
+{
+	return switch_core_hash_this(hi, key, klen, val);
 }
 
 /* For Emacs:
