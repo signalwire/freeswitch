@@ -1098,9 +1098,9 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 	int r = 1;
 
 
-	if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
-		return 1;
-	}
+	//if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
+	//	return 1;
+	//}
 
 	if (!(tech_pvt->transports[LDL_TPORT_RTP].remote_ip && tech_pvt->transports[LDL_TPORT_RTP].remote_port)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "No valid rtp candidates received!\n");
@@ -1415,9 +1415,10 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 		switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
 								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_user, 
 								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_user,
-								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
+								NULL);//tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
 		switch_channel_set_flag(channel, CF_VIDEO);
-		//switch_rtp_set_default_payload(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].r_codec_num);
+		//switch_rtp_set_default_payload(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num);
+		//switch_rtp_set_recv_pt(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num);
 		
 
 		if (tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_port) {
@@ -1425,7 +1426,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 			switch_rtp_activate_rtcp_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
 										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_user, 
 										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].local_user,
-										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_pass);
+										 NULL);//tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_pass);
 		}
 
 
@@ -2235,7 +2236,6 @@ static switch_status_t channel_read_video_frame(switch_core_session_t *session, 
 		tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.flags = SFF_NONE;
 		switch_rtp_zerocopy_read_frame(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, &tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame, flags);
 	}
-
 
 	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.datalen == 0) {
 		switch_set_flag((&tech_pvt->transports[LDL_TPORT_RTP].read_frame), SFF_CNG);
@@ -3599,13 +3599,13 @@ static switch_status_t parse_candidates(ldl_session_t *dlsession, switch_core_se
 		if (tech_pvt->transports[ttype].accepted) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Already Accepted [%s:%d]\n", 
 							  tech_pvt->transports[ttype].remote_ip, tech_pvt->transports[ttype].remote_port);
-			goto end;
+			//goto end;
 		}
 
 
 		if (tech_pvt->transports[ttype].remote_ip) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Already picked an IP [%s]\n", tech_pvt->transports[ttype].remote_ip);
-			goto end;
+			//goto end;
 		}
 
 		
@@ -3663,16 +3663,19 @@ static switch_status_t parse_candidates(ldl_session_t *dlsession, switch_core_se
 			}
 		}
 
-		if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && (ttype == LDL_TPORT_VIDEO_RTP || ttype == LDL_TPORT_VIDEO_RTP) &&
-			tech_pvt->transports[ttype].accepted == 1 && (1||switch_test_flag(tech_pvt, TFLAG_RTP_READY))) {
+		if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 
-			if (ttype == LDL_TPORT_VIDEO_RTP) {
+			if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].accepted &&
+				tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].accepted) {
 				activate_video_rtp(tech_pvt);
 			}
 
-			if (ttype == LDL_TPORT_VIDEO_RTP) {
+
+			if (tech_pvt->transports[LDL_TPORT_RTP].accepted &&
+				tech_pvt->transports[LDL_TPORT_RTCP].accepted) {
 				activate_audio_rtp(tech_pvt);
 			}
+
 
 			tech_pvt->transports[ttype].restart_rtp++;
 		}
