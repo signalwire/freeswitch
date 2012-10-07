@@ -1466,21 +1466,23 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 
 		if (check_status == SWITCH_STATUS_SUCCESS) {
 			switch_core_session_t *session = (switch_core_session_t *) pop;
-
+			switch_size_t id;
+			
 			if (!session) break;
 
+			id = session->id;
 			
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy++;
 			switch_mutex_unlock(session_manager.mutex);
 			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing session %"SWITCH_SIZE_T_FMT" %s\n",
-							  (long) thread, session->id, switch_core_session_get_name(session));
+							  (long) thread, id, switch_core_session_get_name(session));
 
 			switch_core_session_thread(thread, (void *) session);
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing session %"SWITCH_SIZE_T_FMT" %s\n",
-							  (long) thread, session->id, switch_core_session_get_name(session));
+			
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing session %"SWITCH_SIZE_T_FMT"\n",
+							  (long) thread, id);
 
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy--;
