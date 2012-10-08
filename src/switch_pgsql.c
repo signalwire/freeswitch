@@ -122,11 +122,9 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_disconnect(switch_pgsq
 #endif
 }
 
-
-#ifdef SWITCH_HAVE_PGSQL
-
 SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_send_query(switch_pgsql_handle_t *handle, const char* sql)
 {
+#ifdef SWITCH_HAVE_PGSQL
 	char *err_str;
 
 	if (!PQsendQuery(handle->con, sql)) {
@@ -139,14 +137,16 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_send_query(switch_pgsql_handl
 
 	return SWITCH_PGSQL_SUCCESS;
  error:
+#endif
 	return SWITCH_PGSQL_FAIL;
 }
 
 SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_cancel_real(const char *file, const char *func, int line, switch_pgsql_handle_t *handle)
 {
+	switch_pgsql_status_t ret = SWITCH_PGSQL_SUCCESS;
+#ifdef SWITCH_HAVE_PGSQL
 	char err_buf[256];
 	PGcancel *cancel = NULL;
-	switch_pgsql_status_t ret = SWITCH_PGSQL_SUCCESS;
 
 	memset(err_buf, 0, 256);
 	cancel = PQgetCancel(handle->con);
@@ -155,12 +155,14 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_cancel_real(const char *file,
 		ret = SWITCH_PGSQL_FAIL;
 	}
 	PQfreeCancel(cancel);
+#endif
 	return ret;
 }
 
 
 SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pgsql_result_t **result_out, int msec)
 {
+#ifdef SWITCH_HAVE_PGSQL
 	switch_pgsql_result_t *res;
 	switch_time_t start;
 	switch_time_t ctime;
@@ -273,11 +275,14 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 
 	return SWITCH_PGSQL_SUCCESS;
  error:
+#endif
 	return SWITCH_PGSQL_FAIL;
 }
 
 SWITCH_DECLARE(void) switch_pgsql_free_result(switch_pgsql_result_t **result)
 {
+#ifdef SWITCH_HAVE_PGSQL
+
 	if (!*result) {
 		return;
 	}
@@ -287,10 +292,14 @@ SWITCH_DECLARE(void) switch_pgsql_free_result(switch_pgsql_result_t **result)
 	}
 	free(*result);
 	*result = NULL;
+#else
+	return;
+#endif
 }
 
 SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_finish_results_real(const char* file, const char* func, int line, switch_pgsql_handle_t *handle)
 {
+#ifdef SWITCH_HAVE_PGSQL
 	switch_pgsql_result_t *res = NULL;
 	switch_pgsql_status_t final_status = SWITCH_PGSQL_SUCCESS;
 	int done = 0;
@@ -304,8 +313,12 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_finish_results_real(const cha
 		switch_pgsql_free_result(&res);
 	} while (!done);
 	return final_status;
+#else
+	return SWITCH_PGSQL_FAIL;
+#endif
 }
 
+#ifdef SWITCH_HAVE_PG
 static int db_is_up(switch_pgsql_handle_t *handle)
 {
 	int ret = 0;
