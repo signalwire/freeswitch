@@ -2818,8 +2818,13 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 	switch_mutex_lock(sql_manager.dbh_mutex);
 
 	for (dbh = sql_manager.handle_pool; dbh; dbh = dbh->next) {
-		char *needle = "pass=\"";
+		char *needles[3];
 		time_t diff = 0;
+		int i = 0;
+
+		needles[0] = "pass=\"";
+		needles[1] = "password=";
+		needles[2] = "password='";
 
 		diff = now - dbh->last_used;
 
@@ -2832,11 +2837,26 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 
 		/* sanitize password */
 		memset(cleankey_str, 0, sizeof(cleankey_str));
-		pos1 = strstr(dbh->name, needle) + strlen(needle);
-		pos2 = strstr(pos1, "\"");
-		strncpy(cleankey_str, dbh->name, pos1 - dbh->name);
-		strcpy(&cleankey_str[pos1 - dbh->name], pos2);
-		
+		for (i = 0; i < 3; i++) {
+			if((pos1 = strstr(dbh->name, needles[i]))) {
+				pos1 += strlen(needles[i]);
+
+				if (!(pos2 = strstr(pos1, "\""))) {
+					if (!(pos2 = strstr(pos1, "'"))) {
+						if (!(pos2 = strstr(pos1, " "))) {
+							pos2 = pos1 + strlen(pos1);
+						}
+					}
+				}
+				strncpy(cleankey_str, dbh->name, pos1 - dbh->name);
+				strcpy(&cleankey_str[pos1 - dbh->name], pos2);
+				break;
+			}
+		}
+		if (i == 3) {
+			strncpy(cleankey_str, dbh->name, strlen(dbh->name));
+		}
+
 		count++;
 		
 		if (dbh->use_count) {
