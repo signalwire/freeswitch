@@ -607,6 +607,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
 	char *tmp = NULL;
+	char *type = NULL;
 	switch_mutex_t *io_mutex = dbh->io_mutex;
 	
 	if (io_mutex) switch_mutex_lock(io_mutex);
@@ -618,17 +619,20 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	switch (dbh->type) {
 	case SCDB_TYPE_PGSQL:
 		{
+			type = "PGSQL";
 			status = switch_pgsql_handle_exec(dbh->native_handle.pgsql_dbh, sql, &errmsg);
 		}
 		break;
 	case SCDB_TYPE_ODBC:
 		{
+			type = "ODBC";
 			status = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, sql, NULL, &errmsg);
 		}
 		break;
 	case SCDB_TYPE_CORE_DB:
 		{
 			int ret = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, NULL, NULL, &errmsg);
+			type = "NATIVE";
 
 			if (ret == SWITCH_CORE_DB_OK) {
 				status = SWITCH_STATUS_SUCCESS;
@@ -645,7 +649,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 
 	if (errmsg) {
 		if (!switch_stristr("already exists", errmsg) && !switch_stristr("duplicate key name", errmsg)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n%s\n", errmsg, sql);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s SQL ERR [%s]\n%s\n", (type ? type : "Unknown"), errmsg, sql);
 		}
 		if (err) {
 			*err = errmsg;
