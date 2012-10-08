@@ -1836,11 +1836,6 @@ typedef struct switch_odbc_handle switch_odbc_handle_t;
 typedef struct switch_pgsql_handle switch_pgsql_handle_t;
 typedef struct switch_pgsql_result switch_pgsql_result_t;
 
-struct switch_cache_db_handle;
-typedef struct switch_cache_db_handle switch_cache_db_handle_t;
-struct switch_sql_manager;
-typedef struct switch_sql_manager switch_sql_manager_t;
-
 typedef struct switch_io_routines switch_io_routines_t;
 typedef struct switch_speech_handle switch_speech_handle_t;
 typedef struct switch_asr_handle switch_asr_handle_t;

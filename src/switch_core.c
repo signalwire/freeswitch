@@ -2260,7 +2260,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		switch_time_calibrate_clock();
 		break;
 	case SCSC_FLUSH_DB_HANDLES:
-		switch_core_cache_db_flush_handles();
+		switch_cache_db_flush_handles();
 		break;
 	case SCSC_SEND_SIGHUP:
 		handle_SIGHUP(1);
