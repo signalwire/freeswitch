@@ -174,10 +174,12 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
     }
 
     if ((stat = pthread_create((*new)->td, temp, dummy_worker, (*new))) == 0) {
+#ifndef __APPLE__
 		if (attr->priority) {
 			pthread_t *thread = (*new)->td;
 			pthread_setschedprio(*thread, attr->priority);
 		}
+#endif
 
         return APR_SUCCESS;
     }
