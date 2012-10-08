@@ -31,9 +31,9 @@
  */
 
 #include <switch.h>
-#include <switch_private.h>
 
 #ifdef SWITCH_HAVE_PGSQL
+#include <switch_private.h>
 #include <libpq-fe.h>
 #include <poll.h>
 
