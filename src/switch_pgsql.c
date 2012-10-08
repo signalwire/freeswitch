@@ -35,6 +35,7 @@
 
 #ifdef SWITCH_HAVE_PGSQL
 #include <libpq-fe.h>
+#include <poll.h>
 
 
 struct switch_pgsql_handle {
@@ -168,8 +169,8 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 	switch_time_t ctime;
 	unsigned int usec = msec * 1000;
 	char *err_str;
-	fd_set pgset;
-	struct timeval timeout;
+	struct pollfd fds[2] = { {0} };
+	int poll_res = 0;
 	
 	if(!handle) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "**BUG** Null handle passed to switch_pgsql_next_result.\n");
@@ -183,30 +184,37 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 
 			/* Wait for a result to become available, up to msec milliseconds */
 			start = switch_time_now();
-			while((ctime = switch_time_now()) - start <= usec) {
-				FD_ZERO(&pgset);
-				FD_SET(handle->sock, &pgset);
+			while((ctime = switch_micro_time_now()) - start <= usec) {
+				int wait_time = (usec - (ctime - start)) / 1000;
+				fds[0].fd = handle->sock;
+				fds[0].events |= POLLIN;
+				fds[0].events |= POLLERR;
 
-				timeout.tv_sec = 0;
-				timeout.tv_usec = 500;
-		
 				/* Wait for the PostgreSQL socket to be ready for data reads. */
-				if (select(FD_SETSIZE, &pgset, NULL, NULL, &timeout) > 0) {
-					/* Then try to consume any input waiting. */
-					if (PQconsumeInput(handle->con)) {
-						/* And check to see if we have a full result ready for reading */
-						if (!PQisBusy(handle->con)) {
-							/* If we can pull a full result without blocking, then break this loop */
-							break;
+				if ((poll_res = poll(&fds[0], 1, wait_time)) > -1 ) {
+					if (fds[0].revents & POLLIN) {
+						/* Then try to consume any input waiting. */
+						if (PQconsumeInput(handle->con)) {
+							/* And check to see if we have a full result ready for reading */
+							if (!PQisBusy(handle->con)) {
+								/* If we can pull a full result without blocking, then break this loop */
+								break;
+							}
+						} else {
+							/* If we had an error trying to consume input, report it and cancel the query. */
+							err_str = switch_pgsql_handle_get_error(handle);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to consume input for query (%s): %s\n", handle->sql, err_str);
+							switch_safe_free(err_str);
+							switch_pgsql_cancel(handle);
+							goto error;
 						}
-					} else {
-						/* If we had an error trying to consume input, report it and cancel the query. */
-						err_str = switch_pgsql_handle_get_error(handle);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to consume input for query (%s): %s\n", handle->sql, err_str);
-						switch_safe_free(err_str);
-						switch_pgsql_cancel(handle);
+					} else if (fds[0].revents & POLLERR) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Poll error trying to read PGSQL socket for query (%s)\n", handle->sql);
 						goto error;
 					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Poll failed trying to read PGSQL socket for query (%s)\n", handle->sql);
+					goto error;
 				}
 			}
 
@@ -318,7 +326,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_finish_results_real(const cha
 #endif
 }
 
-#ifdef SWITCH_HAVE_PG
+#ifdef SWITCH_HAVE_PGSQL
 static int db_is_up(switch_pgsql_handle_t *handle)
 {
 	int ret = 0;
