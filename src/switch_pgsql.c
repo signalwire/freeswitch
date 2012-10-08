@@ -629,10 +629,12 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 				if (tmp) {
 					len = strlen(tmp);
 					names[col] = malloc(len+1);
+					names[col][len] = '\0';
 					strncpy(names[col], tmp, len);
 					
 					len = PQgetlength(result->result, row, col);
 					vals[col] = malloc(len+1);
+					vals[col][len] = '\0';
 					tmp = PQgetvalue(result->result, row, col);
 					strncpy(vals[col], tmp, len);
 				} else {
