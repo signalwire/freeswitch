@@ -1921,18 +1921,6 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC AND PGSQL ARE NOT AVAILABLE!\n");
 					}
-				} else if (!strcasecmp(var, "core-recovery-db-dsn") && !zstr(val)) {
-					if (switch_odbc_available() || switch_pgsql_available()) {
-						runtime.recovery_odbc_dsn = switch_core_strdup(runtime.memory_pool, val);
-						if ((runtime.recovery_odbc_user = strchr(runtime.recovery_odbc_dsn, ':'))) {
-							*runtime.recovery_odbc_user++ = '\0';
-							if ((runtime.recovery_odbc_pass = strchr(runtime.recovery_odbc_user, ':'))) {
-								*runtime.recovery_odbc_pass++ = '\0';
-							}
-						}
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC AND PGSQL ARE NOT AVAILABLE!\n");
-					}
 				} else if (!strcasecmp(var, "core-non-sqlite-db-required") && !zstr(val)) {
 					switch_set_flag((&runtime), SCF_CORE_NON_SQLITE_DB_REQ);
 				} else if (!strcasecmp(var, "core-dbtype") && !zstr(val)) {
