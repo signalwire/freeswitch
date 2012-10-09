@@ -309,30 +309,29 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 static switch_bool_t directory_execute_sql_callback(switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	switch_bool_t ret = SWITCH_FALSE;
-	switch_core_db_t *db;
+	switch_cache_db_handle_t *dbh = NULL;
 	char *errmsg = NULL;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (!(db = switch_core_db_open_file(globals.dbname))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", globals.dbname);
+	if (!(dbh = directory_get_db_handle())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		goto end;
 	}
 
-	switch_core_db_exec(db, sql, callback, pdata, &errmsg);
+	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
 
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-		switch_core_db_free(errmsg);
+		free(errmsg);
 	}
 
-	if (db) {
-		switch_core_db_close(db);
-	}
 
-  end:
+end:
+	switch_cache_db_release_db_handle(&dbh);
+
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
