@@ -32,8 +32,11 @@
 
 #include <switch.h>
 
-#ifdef SWITCH_HAVE_PGSQL
+#ifndef WIN32
 #include <switch_private.h>
+#endif
+
+#ifdef SWITCH_HAVE_PGSQL
 #include <libpq-fe.h>
 #include <poll.h>
 
