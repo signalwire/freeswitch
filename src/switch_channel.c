@@ -1952,10 +1952,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 
 	channel->running_state = state;
 
-	if (state == CS_ROUTING || state == CS_HANGUP) {
-		switch_channel_presence(channel, "unknown", (const char *) state_names[state], NULL);
-	}
-
 	if (state <= CS_DESTROY) {
 		switch_event_t *event;
 
@@ -2941,11 +2937,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		channel->state = CS_HANGUP;
 		switch_mutex_unlock(channel->state_mutex);
 
-
-		if (hangup_cause == SWITCH_CAUSE_LOSE_RACE) {
-			switch_channel_presence(channel, "unknown", "cancelled", NULL);
-			switch_channel_set_variable(channel, "presence_call_info", NULL);
-		}
 
 		switch_channel_set_callstate(channel, CCS_HANGUP);
 		channel->hangup_cause = hangup_cause;

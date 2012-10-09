@@ -342,6 +342,23 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) State %s going to sleep\n", switch_channel_get_name(session->channel), __STATE_STR); \
 	} while (silly)
 
+
+static void check_presence(switch_core_session_t *session)
+{
+	switch_channel_state_t state = switch_channel_get_running_state(session->channel);
+
+	if (state == CS_ROUTING || state == CS_HANGUP) {
+		if (switch_channel_get_cause(session->channel) == SWITCH_CAUSE_LOSE_RACE) {
+			switch_channel_presence(session->channel, "unknown", "cancelled", NULL);
+			switch_channel_set_variable(session->channel, "presence_call_info", NULL);
+		} else {
+			switch_channel_presence(session->channel, "unknown", switch_channel_state_name(state), NULL);
+		}
+	}
+}
+
+
+
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 {
 	switch_channel_state_t state = CS_NEW, midstate = CS_DESTROY, endstate;
@@ -471,6 +488,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				abort();
 				break;
 			}
+
+			check_presence(session);
 
 			if (midstate == CS_DESTROY) {
 				break;

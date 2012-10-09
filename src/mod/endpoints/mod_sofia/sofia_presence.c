@@ -4185,7 +4185,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 						rpid = act->child->name;
 					}
 				}
-				if (zstr(note_txt)) note_txt = rpid;
+				if (zstr(note_txt)) note_txt = "Available";
 			}
 
 			if (!strcasecmp(open_closed, "closed")) {
