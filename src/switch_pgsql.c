@@ -623,6 +623,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 	}
 
 	while (result != NULL) {
+		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Processing result with %d rows and %d columns.\n", result->rows, result->cols);*/
 		for (row = 0; row < result->rows; ++row) {
 			char **names;
 			char **vals;
@@ -648,13 +649,16 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 					vals[col][len] = '\0';
 					tmp = PQgetvalue(result->result, row, col);
 					strncpy(vals[col], tmp, len);
+					/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Processing result row %d, col %d: %s => %s\n", row, col, names[col], vals[col]);*/
 				} else {
+					/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Processing result row %d, col %d.\n", row, col);*/
 					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "ERR: Column number %d out of range\n", col);
 				}
 			}
 
-			if (callback(pdata, row, vals, names)) {
-				break;
+			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing callback for row %d...\n", row);*/
+			if (callback(pdata, result->cols, vals, names)) {
+				goto done;
 			}
 
 			for (col = 0; col < result->cols; ++col) {
@@ -681,6 +685,12 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 	if (err_cnt) {
 		goto error;
 	}
+
+ done:
+	if (result) {
+		switch_pgsql_free_result(&result);
+	}
+	switch_pgsql_finish_results(handle);
 
 	return SWITCH_PGSQL_SUCCESS;
  error:
