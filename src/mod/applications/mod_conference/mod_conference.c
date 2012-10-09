@@ -8630,8 +8630,20 @@ static void call_setup_event_handler(switch_event_t *event)
 
 
 		switch_thread_rwlock_unlock(conference->rwlock);
-	}
+	} else { // Couldn't find associated conference.  Indicate failure on refer subscription
+		if (switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA) == SWITCH_STATUS_SUCCESS) {
+			event->flags |= EF_UNIQ_HEADERS;
 
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-name", conf);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);		
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "final", "true");		
+			switch_event_add_body(event, "%s", "SIP/2.0 481 Failure\r\n");
+			switch_event_fire(&event);	
+		}
+ 	}
+	
 }
 
 static void conf_data_event_handler(switch_event_t *event)
