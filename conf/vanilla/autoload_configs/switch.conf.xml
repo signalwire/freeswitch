@@ -144,7 +144,6 @@
 
     <param name="rtp-enable-zrtp" value="true"/>
 
-    <!-- Example DSN when using "./configure --enable-core-pgsql-support" -->
     <!-- <param name="core-db-dsn" value="pgsql;hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE' application_name='freeswitch'" /> -->
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
     <!-- 
