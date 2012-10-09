@@ -244,12 +244,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 			if (switch_core_session_get_partner(bug->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				switch_core_session_get_read_impl(other_session, &other_read_impl);
 				switch_core_session_rwunlock(other_session);
-				
-				if (read_impl.decoded_bytes_per_packet < other_read_impl.decoded_bytes_per_packet) {
-					frame_size = other_read_impl.decoded_bytes_per_packet;
+
+				if (read_impl.actual_samples_per_second == other_read_impl.actual_samples_per_second) {
+					if (read_impl.decoded_bytes_per_packet < other_read_impl.decoded_bytes_per_packet) {
+						frame_size = other_read_impl.decoded_bytes_per_packet;
+					}					
+				} else {
+					if (read_impl.decoded_bytes_per_packet > other_read_impl.decoded_bytes_per_packet) {
+						frame_size = other_read_impl.decoded_bytes_per_packet;
+					}
 				}
 			}
-			
+
 			bug->record_frame_size = frame_size;
 		}
 	}
