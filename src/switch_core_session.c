@@ -1032,6 +1032,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 	switch_queue_t *queue;
 
 	switch_assert(session != NULL);
+	switch_assert(event != NULL);
 
 	if (session->private_event_queue) {
 		queue = priority ? session->private_event_queue_pri : session->private_event_queue;
