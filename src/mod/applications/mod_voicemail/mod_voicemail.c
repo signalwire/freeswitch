@@ -3170,7 +3170,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char sql[256];
 	prefs_callback_t cbt;
-	char *uuid = switch_core_session_get_uuid(session);
+	switch_uuid_t tmp_uuid;
+	char tmp_uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1]; 
 	char *file_path = NULL;
 	char *dir_path = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -3330,7 +3331,10 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		vm_ext = vtmp;
 	}
 
-	file_path = switch_mprintf("%s%smsg_%s.%s", dir_path, SWITCH_PATH_SEPARATOR, uuid, vm_ext);
+	switch_uuid_get(&tmp_uuid);
+	switch_uuid_format(tmp_uuid_str, &tmp_uuid);
+
+	file_path = switch_mprintf("%s%smsg_%s.%s", dir_path, SWITCH_PATH_SEPARATOR, tmp_uuid_str, vm_ext);
 
 	if ((voicemail_greeting_number = switch_channel_get_variable(channel, "voicemail_greeting_number"))) {
 		int num = atoi(voicemail_greeting_number);
