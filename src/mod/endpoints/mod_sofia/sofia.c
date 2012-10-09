@@ -4423,14 +4423,14 @@ switch_status_t config_sofia(int reload, char *profile_name)
 								}
 							}
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NEITHER ODBC NOR PGSQL ARE AVAILABLE!\n");
 						}
-                                        } else if (!strcasecmp(var, "forward-unsolicited-mwi-notify")) {
-                                                if (switch_true(val)) {
-                                                        sofia_set_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
-                                                } else {
-                                                        sofia_clear_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
-                                                }
+					} else if (!strcasecmp(var, "forward-unsolicited-mwi-notify")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
+						}
 					} else if (!strcasecmp(var, "registration-thread-frequency")) {
 						profile->ireg_seconds = atoi(val);
 						if (profile->ireg_seconds < 0) {
