@@ -653,6 +653,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 			free(names);
 			free(vals);
 		}
+		switch_pgsql_free_result(&result);
 		if (switch_pgsql_next_result(handle, &result) == SWITCH_PGSQL_FAIL) {
 			err_cnt++;
 			err_str = switch_pgsql_handle_get_error(handle);
