@@ -1163,7 +1163,7 @@ static void qm_wake(switch_sql_queue_manager_t *qm)
 static uint32_t qm_ttl(switch_sql_queue_manager_t *qm)
 {
 	uint32_t ttl = 0;
-	int i;
+	uint32_t i;
 
 	for (i = 0; i < qm->numq; i++) {
 		ttl += switch_queue_size(qm->sql_queue[i]);
@@ -1216,7 +1216,7 @@ SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_destroy(switch_s
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_memory_pool_t *pool;
 	void *pop;
-	int i;
+	uint32_t i;
 
 	switch_assert(qmp);
 	qm = *qmp;
@@ -1270,7 +1270,7 @@ SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_init(switch_sql_
 {
 	switch_memory_pool_t *pool;
 	switch_sql_queue_manager_t *qm;
-	int i;
+	uint32_t i;
 
 	if (!numq) numq = 1;
 
@@ -1316,7 +1316,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 	uint32_t sanity = 120;
 	int auto_pause = 0;
 	switch_sql_queue_manager_t *qm = (switch_sql_queue_manager_t *) obj;
-	int i;
+	uint32_t i;
 
 	switch_assert(sqlbuf);
 
