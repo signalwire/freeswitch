@@ -408,6 +408,14 @@ struct switch_asr_handle {
 	char *param;
 	/*! the handle's memory pool */
 	switch_memory_pool_t *memory_pool;
+	switch_buffer_t *buffer;
+	switch_byte_t *dbuf;
+	switch_size_t dbuflen;
+	switch_audio_resampler_t *resampler;
+	/*! the current samplerate */
+	uint32_t samplerate;
+	/*! the current native samplerate */
+	uint32_t native_rate;
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
 };
