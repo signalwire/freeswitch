@@ -219,6 +219,7 @@ SWITCH_DECLARE(switch_status_t) switch_stream_write_file_contents(switch_stream_
 			stream->write_function(stream, "%s", line_buf);
 		}
 		fclose(fd);
+		switch_safe_free(line_buf);
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
