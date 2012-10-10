@@ -139,9 +139,9 @@ rm -fr $tmpdir
 mkdir -p $tmpdir
 cd $tmpdir
 
-wget --output-file=/dev/null --http-user=pastebin --http-password=freeswitch http://pastebin.freeswitch.org --post-file=$post_file
+wget --output-file=/dev/null --output-document=/tmp/fscore_pb.tmp/pb_out --http-user=pastebin --http-password=freeswitch http://pastebin.freeswitch.org --post-file=$post_file
 
-pb=`cat /tmp/fscore_pb.tmp/index.html | grep parent_pid | awk -F \" '{print $6}'`
+pb=`cat /tmp/fscore_pb.tmp/pb_out | grep parent_pid | awk -F \" '{print $6}'`
 
 mv $post_file $tmpdir
 echo "Finished."
