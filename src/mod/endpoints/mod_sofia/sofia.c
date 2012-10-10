@@ -6759,7 +6759,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						}
 
 						if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-							if (sofia_glue_tech_proxy_remote_addr(tech_pvt, r_sdp) == SWITCH_STATUS_SUCCESS) {
+							if (sofia_glue_tech_proxy_remote_addr(tech_pvt, r_sdp) == SWITCH_STATUS_SUCCESS && !is_t38) {
 								nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params changed, NOT proxying re-invite.\n");
 								switch_core_session_rwunlock(other_session);
