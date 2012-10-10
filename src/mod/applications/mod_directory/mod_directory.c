@@ -74,8 +74,6 @@ static struct {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 	char odbc_dsn[1024];
-	char *odbc_user;
-	char *odbc_pass;
 } globals;
 
 #define DIR_PROFILE_CONFIGITEM_COUNT 100
@@ -192,25 +190,21 @@ char *string_to_keypad_digit(const char *in)
 
 switch_cache_db_handle_t *directory_get_db_handle(void)
 {
-	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
-
+	char *dsn;
+	
 	if (!zstr(globals.odbc_dsn)) {
-		options.odbc_options.dsn = globals.odbc_dsn;
-		options.odbc_options.user = globals.odbc_user;
-		options.odbc_options.pass = globals.odbc_pass;
-
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) {
-			dbh = NULL;
-		}
-		return dbh;
+		dsn = globals.odbc_dsn;
 	} else {
-		options.core_db_options.db_path = globals.dbname;
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS) {
-			dbh = NULL;
-		}
-		return dbh;
+		dsn = globals.dbname;
 	}
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
+	}
+	
+	return dbh;
+
 }
 
 static switch_status_t directory_execute_sql(char *sql, switch_mutex_t *mutex)
@@ -464,12 +458,6 @@ static switch_status_t load_config(switch_bool_t reload)
 			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 				if (switch_odbc_available()) {
 					switch_set_string(globals.odbc_dsn, val);
-					if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
-						*globals.odbc_user++ = '\0';
-						if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
-							*globals.odbc_pass++ = '\0';
-						}
-					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 				}

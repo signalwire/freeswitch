@@ -4414,17 +4414,15 @@ switch_status_t config_sofia(int reload, char *profile_name)
                                                 sofia_set_flag(profile, TFLAG_CAPTURE);
                                                 nua_set_params(profile->nua, TPTAG_CAPT(mod_sofia_globals.capture_server), TAG_END());
 					} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
-						if (switch_odbc_available() || switch_pgsql_available()) {
-							profile->odbc_dsn = switch_core_strdup(profile->pool, val);
-							if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-								*profile->odbc_user++ = '\0';
-								if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-									*profile->odbc_pass++ = '\0';
-								}
-							}
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NEITHER ODBC NOR PGSQL ARE AVAILABLE!\n");
-						}
+						profile->odbc_dsn = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "db-pre-trans-execute") && !zstr(val)) {
+						profile->pre_trans_execute = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "db-post-trans-execute") && !zstr(val)) {
+						profile->post_trans_execute = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "db-inner-pre-trans-execute") && !zstr(val)) {
+						profile->inner_pre_trans_execute = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "db-inner-post-trans-execute") && !zstr(val)) {
+						profile->inner_post_trans_execute = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "forward-unsolicited-mwi-notify")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);

@@ -83,8 +83,6 @@ struct vm_profile {
 	char *name;
 	char *dbname;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
 	char terminator_key[2];
 	char play_new_messages_key[2];
 	char play_saved_messages_key[2];
@@ -163,31 +161,21 @@ typedef struct vm_profile vm_profile_t;
 
 switch_cache_db_handle_t *vm_get_db_handle(vm_profile_t *profile)
 {
-	switch_cache_db_connection_options_t options = { {0} };
+
 	switch_cache_db_handle_t *dbh = NULL;
-
+	char *dsn;
+	
 	if (!zstr(profile->odbc_dsn)) {
-		char *dsn;
-		if ((dsn = strstr(profile->odbc_dsn, "pgsql;")) != NULL) {
-			options.pgsql_options.dsn = (char*)(dsn + 6);
-
-			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_PGSQL, &options) != SWITCH_STATUS_SUCCESS)
-				dbh = NULL;
-		} else {
-			options.odbc_options.dsn = profile->odbc_dsn;
-			options.odbc_options.user = profile->odbc_user;
-			options.odbc_options.pass = profile->odbc_pass;
-			
-			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-				dbh = NULL;
-		}
-		return dbh;
+		dsn = profile->odbc_dsn;
 	} else {
-		options.core_db_options.db_path = profile->dbname;
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = profile->dbname;
 	}
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
+	}
+	
+	return dbh;
 }
 
 
@@ -721,15 +709,6 @@ static vm_profile_t *load_profile(const char *profile_name)
 
 		switch_thread_rwlock_create(&profile->rwlock, pool);
 		profile->name = switch_core_strdup(pool, profile_name);
-
-		if (!zstr(profile->odbc_dsn)) {
-			if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-				*(profile->odbc_user++) = '\0';
-				if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-					*(profile->odbc_pass++) = '\0';
-				}
-			}
-		}
 
 		if (zstr(profile->dbname)) {
 			profile->dbname = switch_core_sprintf(profile->pool, "voicemail_%s", profile_name);

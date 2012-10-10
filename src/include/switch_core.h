@@ -1627,6 +1627,9 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename
 */
 SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries);
 SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries);
+SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries);
+
+
 
 /*! 
   \brief perform a test query then perform a reactive query if the first one fails
@@ -2296,6 +2299,10 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 															   const char *file, const char *func, int line);
 #define switch_cache_db_get_db_handle(_a, _b, _c) _switch_cache_db_get_db_handle(_a, _b, _c, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_db_handle_t **dbh, const char *dsn, 
+																   const char *file, const char *func, int line);
+#define switch_cache_db_get_db_handle_dsn(_a, _b) _switch_cache_db_get_db_handle_dsn(_a, _b, __FILE__, __SWITCH_FUNC__, __LINE__)
+
 /*! 
  \brief Executes the sql and returns the result as a string
  \param [in] dbh The handle
@@ -2341,7 +2348,12 @@ SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t 
 SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_handle_t *db,
 															const char *test_sql, const char *drop_sql, const char *reactive_sql);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
-SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries,
+																			  const char *pre_trans_execute,
+																			  const char *post_trans_execute,
+																			  const char *inner_pre_trans_execute,
+																			  const char *inner_post_trans_execute);
+#define switch_cache_db_persistant_execute_trans(_d, _s, _r) switch_cache_db_persistant_execute_trans_full(_d, _s, _r, NULL, NULL, NULL, NULL)
 
 SWITCH_DECLARE(void) switch_core_set_signal_handlers(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
@@ -2395,12 +2407,25 @@ SWITCH_DECLARE(void) switch_os_yield(void);
 SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, switch_size_t *max);
 
 
+SWITCH_DECLARE(switch_cache_db_handle_type_t) switch_core_dbtype(void);
+SWITCH_DECLARE(void) switch_core_sql_exec(const char *sql);
 SWITCH_DECLARE(int) switch_core_recovery_recover(const char *technology, const char *profile_name);
 SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session, switch_bool_t force);
 SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_recovery_flush(const char *technology, const char *profile_name);
 
-								
+SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_push(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup);
+SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_destroy(switch_sql_queue_manager_t **qmp);
+SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_init(switch_sql_queue_manager_t **qmp, 
+																	 uint32_t numq, const char *dsn,
+																	 const char *pre_trans_execute,
+																	 const char *post_trans_execute,
+																	 const char *inner_pre_trans_execute,
+																	 const char *inner_post_trans_execute);
+
+SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_start(switch_sql_queue_manager_t *qm);
+SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm);
+							
 SWITCH_DECLARE(pid_t) switch_fork(void);
 
 SWITCH_END_EXTERN_C

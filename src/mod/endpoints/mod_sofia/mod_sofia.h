@@ -626,9 +626,10 @@ struct sofia_profile {
 	uint32_t rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
-	//  switch_odbc_handle_t *master_odbc;
+	char *pre_trans_execute;
+	char *post_trans_execute;
+	char *inner_pre_trans_execute;
+	char *inner_post_trans_execute;	
 	switch_queue_t *sql_queue;
 	char *acl[SOFIA_MAX_ACL];
 	uint32_t acl_count;

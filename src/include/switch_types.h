@@ -1819,6 +1819,7 @@ typedef struct switch_loadable_module switch_loadable_module_t;
 typedef struct switch_frame switch_frame_t;
 typedef struct switch_rtcp_frame switch_rtcp_frame_t;
 typedef struct switch_channel switch_channel_t;
+typedef struct switch_sql_queue_manager switch_sql_queue_manager_t;
 typedef struct switch_file_handle switch_file_handle_t;
 typedef struct switch_core_session switch_core_session_t;
 typedef struct switch_caller_profile switch_caller_profile_t;
@@ -2065,6 +2066,7 @@ struct switch_core_session;
 struct switch_media_bug;
 /*! \brief A digit stream parser object */
 struct switch_ivr_digit_stream_parser;
+struct sql_queue_manager;
 
 SWITCH_END_EXTERN_C
 #endif

@@ -304,23 +304,21 @@ switch_core_session_t * skinny_profile_find_session(skinny_profile_t *profile, l
 /*****************************************************************************/
 switch_cache_db_handle_t *skinny_get_db_handle(skinny_profile_t *profile)
 {
-	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
-
+	char *dsn;
+	
 	if (!zstr(profile->odbc_dsn)) {
-		options.odbc_options.dsn = profile->odbc_dsn;
-		options.odbc_options.user = profile->odbc_user;
-		options.odbc_options.pass = profile->odbc_pass;
-
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = profile->odbc_dsn;
 	} else {
-		options.core_db_options.db_path = profile->dbname;
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = profile->dbname;
 	}
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
+	}
+	
+	return dbh;
+
 }
 
 
@@ -1751,6 +1749,7 @@ static switch_status_t load_skinny_config(void)
 {
 	char *cf = "skinny.conf";
 	switch_xml_t xcfg, xml, xprofiles, xprofile;
+	switch_cache_db_handle_t *dbh = NULL;
 
 	if (!(xml = switch_xml_open_cfg(cf, &xcfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -1770,7 +1769,6 @@ static switch_status_t load_skinny_config(void)
 			if ((xsettings = switch_xml_child(xprofile, "settings"))) {
 				switch_memory_pool_t *profile_pool = NULL;
 				char dbname[256];
-				switch_core_db_t *db;
 				skinny_profile_t *profile = NULL;
 				switch_xml_t param;
 
@@ -1914,34 +1912,17 @@ static switch_status_t load_skinny_config(void)
 				switch_snprintf(dbname, sizeof(dbname), "skinny_%s", profile->name);
 				profile->dbname = switch_core_strdup(profile->pool, dbname);
 
-				if (switch_odbc_available() && profile->odbc_dsn) {
-					if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-						continue;
-
-					}
-					if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-						continue;
-					}
-
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-					switch_odbc_handle_exec(profile->master_odbc, devices_sql, NULL, NULL);
-					switch_odbc_handle_exec(profile->master_odbc, lines_sql, NULL, NULL);
-					switch_odbc_handle_exec(profile->master_odbc, buttons_sql, NULL, NULL);
-					switch_odbc_handle_exec(profile->master_odbc, active_lines_sql, NULL, NULL);
-				} else {
-					if ((db = switch_core_db_open_file(profile->dbname))) {
-						switch_core_db_test_reactive(db, "SELECT headset FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
-						switch_core_db_test_reactive(db, "SELECT * FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-						continue;
-					}
-					switch_core_db_close(db);
+				
+				
+				
+				if ((dbh = skinny_get_db_handle(profile))) {
+					switch_cache_db_test_reactive(dbh, "SELECT headset FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
+					switch_cache_db_test_reactive(dbh, "SELECT * FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
+					switch_cache_db_test_reactive(dbh, "SELECT * FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
+					switch_cache_db_test_reactive(dbh, "SELECT * FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
+					switch_cache_db_release_db_handle(&dbh);
 				}
+					
 
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_devices", NULL, NULL);
 				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_lines", NULL, NULL);

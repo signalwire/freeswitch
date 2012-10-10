@@ -133,11 +133,8 @@ struct mdl_profile {
 	char *dbname;
 	char *avatar;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
 	switch_bool_t purge;
 	switch_thread_rwlock_t *rwlock;
-	switch_odbc_handle_t *master_odbc;
 	switch_mutex_t *mutex;
 	ldl_handle_t *handle;
 	uint32_t flags;
@@ -324,72 +321,109 @@ static char *translate_rpid(char *in, char *ext)
 }
 
 
-
-
-static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *mutex)
+static switch_cache_db_handle_t *mdl_get_db_handle(mdl_profile_t *profile)
 {
-	switch_core_db_t *db;
-
-	if (mutex) {
-		switch_mutex_lock(mutex);
-	}
-
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		switch_odbc_statement_handle_t stmt;
-		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt, NULL) != SWITCH_ODBC_SUCCESS) {
-			char *err_str;
-			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
-			switch_safe_free(err_str);
-		}
-		switch_odbc_statement_handle_free(&stmt);
+	switch_cache_db_handle_t *dbh = NULL;
+	char *dsn;
+	
+	if (!zstr(profile->odbc_dsn)) {
+		dsn = profile->odbc_dsn;
 	} else {
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			goto end;
-		}
-		switch_core_db_persistant_execute(db, sql, 1);
-		switch_core_db_close(db);
+		dsn = profile->dbname;
 	}
 
-  end:
-	if (mutex) {
-		switch_mutex_unlock(mutex);
+	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
 	}
+	
+	return dbh;
+
 }
 
 
-static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
-											  switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata)
+static switch_status_t mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *mutex)
 {
-	switch_bool_t ret = SWITCH_FALSE;
-	switch_core_db_t *db;
-	char *errmsg = NULL;
+	switch_cache_db_handle_t *dbh = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata, NULL);
-	} else {
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			goto end;
-		}
-		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
+	if (!(dbh = mdl_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
 
-		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-			switch_core_db_free(errmsg);
-		}
+	status = switch_cache_db_execute_sql(dbh, sql, NULL);
 
-		if (db) {
-			switch_core_db_close(db);
-		}
+  end:
+
+	switch_cache_db_release_db_handle(&dbh);
+
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+
+	return status;
+}
+
+char *mdl_execute_sql2str(mdl_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
+{
+	switch_cache_db_handle_t *dbh = NULL;
+
+	char *ret = NULL;
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	if (!(dbh = mdl_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
+
+	ret = switch_cache_db_execute_sql2str(dbh, sql, resbuf, len, NULL);
+
+end:
+
+	switch_cache_db_release_db_handle(&dbh);
+
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+
+	return ret;
+
+}
+
+
+static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile, switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback,
+											 void *pdata)
+{
+	switch_bool_t ret = SWITCH_FALSE;
+	char *errmsg = NULL;
+	switch_cache_db_handle_t *dbh = NULL;
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	if (!(dbh = mdl_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
+
+	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
+
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+		free(errmsg);
 	}
 
   end:
+
+	switch_cache_db_release_db_handle(&dbh);
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);
@@ -397,6 +431,9 @@ static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
 
 	return ret;
 }
+
+
+
 
 static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -2790,17 +2827,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 	} else if (!strcasecmp(var, "avatar")) {
 		profile->avatar = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
-		if (switch_odbc_available()) {
-			profile->odbc_dsn = switch_core_strdup(module_pool, val);
-			if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-				*profile->odbc_user++ = '\0';
-				if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-					*profile->odbc_pass++ = '\0';
-				}
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-		}
+		profile->odbc_dsn = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 		switch_set_flag(profile, TFLAG_TIMER);
 	} else if (!strcasecmp(var, "dialplan") && !zstr(val)) {
@@ -3109,17 +3136,13 @@ static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_pr
 		(new_profile->user_flags == profile->user_flags) && (new_profile->acl_count == profile->acl_count)
 		) {
 		uint32_t i;
-		if (switch_odbc_available()) {
-			if (!(((!new_profile->odbc_dsn && !profile->odbc_dsn) ||
-				   (new_profile->odbc_dsn && profile->odbc_dsn && !strcasecmp(new_profile->odbc_dsn, profile->odbc_dsn))) &&
-				  ((!new_profile->odbc_user && !profile->odbc_user) ||
-				   (new_profile->odbc_user && profile->odbc_user && !strcasecmp(new_profile->odbc_user, profile->odbc_user))) &&
-				  ((!new_profile->odbc_pass && !profile->odbc_pass) ||
-				   (new_profile->odbc_pass && profile->odbc_pass && !strcasecmp(new_profile->odbc_pass, profile->odbc_pass)))
-				)) {
-				return SWITCH_FALSE;
-			}
+		
+		if (!(((!new_profile->odbc_dsn && !profile->odbc_dsn) ||
+			   (new_profile->odbc_dsn && profile->odbc_dsn && !strcasecmp(new_profile->odbc_dsn, profile->odbc_dsn))) 
+			  )) {
+			return SWITCH_FALSE;
 		}
+		
 
 		for (i = 0; i < new_profile->acl_count; i++) {
 			if (strcasecmp(new_profile->acl[i], profile->acl[i]) != 0) {
@@ -3137,11 +3160,6 @@ static switch_status_t destroy_profile(char *name)
 
 	if ((profile = switch_core_hash_find(globals.profile_hash, name))) {
 		if (profile->user_flags & LDL_FLAG_COMPONENT) {
-			if (switch_odbc_available() && profile->odbc_dsn && profile->master_odbc) {
-				switch_odbc_handle_disconnect(profile->master_odbc);
-				switch_odbc_handle_destroy(&profile->master_odbc);
-			}
-
 			switch_mutex_destroy(profile->mutex);
 		}
 
@@ -3205,7 +3223,7 @@ static switch_status_t soft_reload(void)
 
 		if (profile && type && !strcasecmp(type, "component")) {
 			char dbname[256];
-			switch_core_db_t *db;
+			switch_cache_db_handle_t *dbh = NULL;
 
 			if (!profile->login && profile->name) {
 				profile->login = switch_core_strdup(module_pool, profile->name);
@@ -3218,28 +3236,9 @@ static switch_status_t soft_reload(void)
 			switch_snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
 			profile->dbname = switch_core_strdup(module_pool, dbname);
 
-			if (switch_odbc_available() && profile->odbc_dsn) {
-				if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
-
-				}
-				if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
-				}
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL, NULL);
-				//mdl_execute_sql(profile, sub_sql, NULL);
-			} else {
-				if ((db = switch_core_db_open_file(profile->dbname))) {
-					switch_core_db_test_reactive(db, "select * from jabber_subscriptions", NULL, sub_sql);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-					continue;
-				}
-				switch_core_db_close(db);
+			if ((dbh = mdl_get_db_handle(profile))) {
+				switch_cache_db_test_reactive(dbh, "select * from jabber_subscriptions", NULL, sub_sql);
+				switch_cache_db_release_db_handle(&dbh);
 			}
 		}
 
@@ -3354,7 +3353,7 @@ static switch_status_t load_config(void)
 
 		if (profile && type && !strcasecmp(type, "component")) {
 			char dbname[256];
-			switch_core_db_t *db;
+			switch_cache_db_handle_t *dbh = NULL;
 
 			if (!profile->login && profile->name) {
 				profile->login = switch_core_strdup(module_pool, profile->name);
@@ -3367,28 +3366,10 @@ static switch_status_t load_config(void)
 			switch_snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
 			profile->dbname = switch_core_strdup(module_pool, dbname);
 
-			if (switch_odbc_available() && profile->odbc_dsn) {
-				if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
 
-				}
-				if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
-				}
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL, NULL);
-				//mdl_execute_sql(profile, sub_sql, NULL);
-			} else {
-				if ((db = switch_core_db_open_file(profile->dbname))) {
-					switch_core_db_test_reactive(db, "select * from jabber_subscriptions", NULL, sub_sql);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-					continue;
-				}
-				switch_core_db_close(db);
+			if ((dbh = mdl_get_db_handle(profile))) {
+				switch_cache_db_test_reactive(dbh, "select * from jabber_subscriptions", NULL, sub_sql);
+				switch_cache_db_release_db_handle(&dbh);
 			}
 		}
 

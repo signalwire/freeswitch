@@ -142,8 +142,6 @@ static struct {
 	switch_memory_pool_t *pool;
 	char *dbname;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
 	switch_mutex_t *mutex;
 	switch_hash_t *profile_hash;
 	profile_t *default_profile;
@@ -430,16 +428,19 @@ static switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, c
 
 static switch_cache_db_handle_t *lcr_get_db_handle(void)
 {
-	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
+	char *dsn;
 	
 	if (!zstr(globals.odbc_dsn)) {
-		options.odbc_options.dsn = globals.odbc_dsn;
-		options.odbc_options.user = globals.odbc_user;
-		options.odbc_options.pass = globals.odbc_pass;
-
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS) dbh = NULL;
+		dsn = globals.odbc_dsn;
+	} else {
+		dsn = globals.dbname;
 	}
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
+	}
+	
 	return dbh;
 }
 
@@ -998,12 +999,6 @@ static switch_status_t lcr_load_config()
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "odbc_dsn is %s\n", val);
 				switch_safe_free(globals.odbc_dsn);
 				globals.odbc_dsn = strdup(val);
-				if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
-					*globals.odbc_user++ = '\0';
-					if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
-						*globals.odbc_pass++ = '\0';
-					}
-				}
 			}
 		}
 	}
@@ -1011,8 +1006,8 @@ static switch_status_t lcr_load_config()
 	/* initialize sql here, 'cause we need to verify custom_sql for each profile below */
 	if (globals.odbc_dsn) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG
-						  , "dsn is \"%s\", user is \"%s\"\n"
-						  , globals.odbc_dsn, globals.odbc_user
+						  , "dsn is \"%s\"\n"
+						  , globals.odbc_dsn
 						  );
 		if (!(dbh = lcr_get_db_handle())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
@@ -2020,12 +2015,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 	switch_dialplan_interface_t *dp_interface;
 	
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
-	if (!switch_odbc_available()) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You must have ODBC support in FreeSWITCH to use this module\n");
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "\t./configure --enable-core-odbc-support\n");
-		return SWITCH_STATUS_FALSE;
-	}
 
 	globals.pool = pool;
 

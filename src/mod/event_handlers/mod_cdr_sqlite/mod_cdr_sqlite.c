@@ -79,12 +79,12 @@ SWITCH_MODULE_DEFINITION(mod_cdr_sqlite, mod_cdr_sqlite_load, mod_cdr_sqlite_shu
 
 switch_cache_db_handle_t *cdr_get_db_handle(void)
 {
-	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
 
-	options.core_db_options.db_path = globals.db_name;
-	if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
+	if (switch_cache_db_get_db_handle_dsn(&dbh, globals.db_name) != SWITCH_STATUS_SUCCESS) {
 		dbh = NULL;
+	}
+
 	return dbh;
 }
 

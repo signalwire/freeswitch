@@ -1912,12 +1912,6 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "core-db-dsn") && !zstr(val)) {
 					if (switch_odbc_available() || switch_pgsql_available()) {
 						runtime.odbc_dsn = switch_core_strdup(runtime.memory_pool, val);
-						if ((runtime.odbc_user = strchr(runtime.odbc_dsn, ':'))) {
-							*runtime.odbc_user++ = '\0';
-							if ((runtime.odbc_pass = strchr(runtime.odbc_user, ':'))) {
-								*runtime.odbc_pass++ = '\0';
-							}
-						}
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC AND PGSQL ARE NOT AVAILABLE!\n");
 					}

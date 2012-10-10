@@ -36,8 +36,8 @@
 #include "mod_sofia.h"
 #include <switch_stun.h>
 
-switch_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile);
-
+switch_cache_db_handle_t *_sofia_glue_get_db_handle(sofia_profile_t *profile, const char *file, const char *func, int line);
+#define sofia_glue_get_db_handle(_p) _sofia_glue_get_db_handle(_p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
 {
@@ -6361,33 +6361,22 @@ void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bo
 }
 
 
-switch_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile)
+switch_cache_db_handle_t *_sofia_glue_get_db_handle(sofia_profile_t *profile, const char *file, const char *func, int line)
 {
-	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
-
+	char *dsn;
+	
 	if (!zstr(profile->odbc_dsn)) {
-		char *dsn;
-		if ((dsn = strstr(profile->odbc_dsn, "pgsql;")) != NULL) {
-			options.pgsql_options.dsn = (char*)(dsn + 6);
-
-			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_PGSQL, &options) != SWITCH_STATUS_SUCCESS)
-				dbh = NULL;
-		} else {
-			options.odbc_options.dsn = profile->odbc_dsn;
-			options.odbc_options.user = profile->odbc_user;
-			options.odbc_options.pass = profile->odbc_pass;
-
-			if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-				dbh = NULL;
-		}
-		return dbh;
+		dsn = profile->odbc_dsn;
 	} else {
-		options.core_db_options.db_path = profile->dbname;
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = profile->dbname;
 	}
+
+	if (_switch_cache_db_get_db_handle_dsn(&dbh, dsn, file, func, line) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
+	}
+	
+	return dbh;
 }
 
 void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex)
@@ -6403,7 +6392,12 @@ void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, 
 		switch_mutex_lock(mutex);
 	}
 
-	switch_cache_db_persistant_execute_trans(dbh, sql, 1);
+	switch_cache_db_persistant_execute_trans_full(dbh, sql, 1,
+												  profile->pre_trans_execute,
+												  profile->post_trans_execute,
+												  profile->inner_pre_trans_execute,
+												  profile->inner_post_trans_execute
+												  );
 
 	switch_cache_db_release_db_handle(&dbh);
 

@@ -138,23 +138,23 @@ static switch_status_t load_config(void)
 		set_global_db_dsn("easyroute");
 	}
 
-	if (switch_odbc_available() && globals.db_dsn) {
+	if (globals.db_dsn) {
 		if (!(globals.master_odbc = switch_odbc_handle_new(globals.db_dsn, globals.db_username, globals.db_password))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open Database!\n");
 			status = SWITCH_STATUS_FALSE;
 			goto reallydone;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opened ODBC Database!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opened Database!\n");
 		}
 		if (globals.odbc_num_retries) {
 			switch_odbc_set_num_retries(globals.master_odbc, globals.odbc_num_retries);
 		}
 		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open Database!\n");
 			status = SWITCH_STATUS_FALSE;
 			goto reallydone;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opened ODBC Database!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opened Database!\n");
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.db_dsn);
 		if (!globals.custom_query) {
@@ -191,12 +191,6 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int 
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
 	char *sql = NULL;
 	route_callback_t pdata;
-
-	if (!switch_odbc_available()) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-						  "mod_easyroute requires core ODBC support. Please refer to the documentation on how to enable this\n");
-		return sstatus;
-	}
 
 	memset(&pdata, 0, sizeof(pdata));
 	if (!globals.custom_query) {
@@ -336,12 +330,6 @@ SWITCH_STANDARD_API(easyroute_function)
 	if (session) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "This function cannot be called from the dialplan.\n");
 		status = SWITCH_STATUS_FALSE;
-		goto done;
-	}
-
-	if (!switch_odbc_available()) {
-		stream->write_function(stream, "mod_easyroute requires you enable core odbc support\n");
-		status = SWITCH_STATUS_SUCCESS;
 		goto done;
 	}
 

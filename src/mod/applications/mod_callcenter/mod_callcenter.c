@@ -410,8 +410,6 @@ static struct {
 	switch_hash_t *queue_hash;
 	int debug;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
 	char *dbname;
 	int32_t threads;
 	int32_t running;
@@ -506,23 +504,21 @@ static void destroy_queue(const char *queue_name, switch_bool_t block)
 
 switch_cache_db_handle_t *cc_get_db_handle(void)
 {
-	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
-
+	char *dsn;
+	
 	if (!zstr(globals.odbc_dsn)) {
-		options.odbc_options.dsn = globals.odbc_dsn;
-		options.odbc_options.user = globals.odbc_user;
-		options.odbc_options.pass = globals.odbc_pass;
-
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = globals.odbc_dsn;
 	} else {
-		options.core_db_options.db_path = globals.dbname;
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = globals.dbname;
 	}
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
+	}
+	
+	return dbh;
+
 }
 /*!
  * \brief Sets the queue's configuration instructions 
@@ -1276,15 +1272,6 @@ static switch_status_t load_config(void)
 				globals.dbname = strdup(val);
 			} else if (!strcasecmp(var, "odbc-dsn")) {
 				globals.odbc_dsn = strdup(val);
-
-				if (!zstr(globals.odbc_dsn)) {
-					if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
-						*(globals.odbc_user++) = '\0';
-						if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
-							*(globals.odbc_pass++) = '\0';
-						}
-					}
-				}
 			}
 		}
 	}
