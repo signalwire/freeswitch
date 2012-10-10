@@ -41,7 +41,7 @@ else
 fi
 
 
-core=`ls -1t core.* | head -1 2> /dev/null`
+core=`ls -1t core* | head -1 2> /dev/null`
 
 if [ -z "$core" ] ; then
 	core=`ls -1 core 2> /dev/null`
