@@ -1394,7 +1394,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 														for (i = 0; i < qm->numq; i++) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
 												  "REALLOC QUEUE %ld %d %d\n", 
-												  sql_len,
+												  (long int)sql_len,
 												  i,
 												  switch_queue_size(qm->sql_queue[i]));
 								
