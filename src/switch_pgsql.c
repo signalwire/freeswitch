@@ -496,9 +496,19 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_string(switch_pgs
 		goto error;
 	}
 
-	if (!result || result->status != PGRES_COMMAND_OK) {
-		sstatus = SWITCH_PGSQL_FAIL;
-		goto done;
+	if (!result) {
+		switch (result->status) {
+#if POSTGRESQL_MAJOR_VERSION >= 9 && POSTGRESQL_MINOR_VERSION >= 2
+		case PGRES_SINGLE_TUPLE:
+			/* Added in PostgreSQL 9.2 */
+#endif
+		case PGRES_COMMAND_OK:
+		case PGRES_TUPLES_OK:
+			break;
+		default:
+			sstatus = SWITCH_PGSQL_FAIL;
+			goto done;
+		}
 	}
 
 	if (handle->affected_rows <= 0) {
@@ -658,7 +668,8 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 
 			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing callback for row %d...\n", row);*/
 			if (callback(pdata, result->cols, vals, names)) {
-				goto done;
+				switch_pgsql_finish_results(handle); /* Makes sure next call to switch_pgsql_next_result will return NULL */
+				row = result->rows;                  /* Makes us exit the for loop */
 			}
 
 			for (col = 0; col < result->cols; ++col) {
@@ -685,12 +696,6 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 	if (err_cnt) {
 		goto error;
 	}
-
- done:
-	if (result) {
-		switch_pgsql_free_result(&result);
-	}
-	switch_pgsql_finish_results(handle);
 
 	return SWITCH_PGSQL_SUCCESS;
  error:
