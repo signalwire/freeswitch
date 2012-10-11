@@ -982,6 +982,79 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 	return status;
 }
 
+struct helper {
+	switch_db_event_callback_func_t callback;
+	void *pdata;
+};
+
+static int helper_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct helper *h = (struct helper *) pArg;
+	int r = 0;
+	switch_event_t *event;
+
+	switch_event_create_array_pair(&event, columnNames, argv, argc);
+
+	r = h->callback(h->pdata, event);
+
+	switch_event_destroy(&event);
+	
+	return r;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback(switch_cache_db_handle_t *dbh,
+																	 const char *sql, switch_db_event_callback_func_t callback, void *pdata, char **err)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *errmsg = NULL;
+	switch_mutex_t *io_mutex = dbh->io_mutex;
+	struct helper h;
+
+
+	if (err) {
+		*err = NULL;
+	}
+
+	if (io_mutex) switch_mutex_lock(io_mutex);
+
+	h.callback = callback;
+	h.pdata = pdata;
+	
+	switch (dbh->type) {
+	case SCDB_TYPE_PGSQL:
+		{
+			status = switch_pgsql_handle_callback_exec(dbh->native_handle.pgsql_dbh, sql, helper_callback, &h, err);
+		}
+		break;
+	case SCDB_TYPE_ODBC:
+		{
+			status = switch_odbc_handle_callback_exec(dbh->native_handle.odbc_dbh, sql, helper_callback, &h, err);
+		}
+		break;
+	case SCDB_TYPE_CORE_DB:
+		{
+			int ret = switch_core_db_exec(dbh->native_handle.core_db_dbh, sql, helper_callback, &h, &errmsg);
+
+			if (ret == SWITCH_CORE_DB_OK || ret == SWITCH_CORE_DB_ABORT) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
+
+			if (errmsg) {
+				dbh->last_used = switch_epoch_time_now(NULL) - (SQL_CACHE_TIMEOUT * 2);
+				if (!strstr(errmsg, "query abort")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+				}
+				switch_core_db_free(errmsg);
+			}
+		}
+		break;
+	}
+
+	if (io_mutex) switch_mutex_unlock(io_mutex);
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh,
 																	 const char *sql, switch_core_db_callback_func_t callback, void *pdata, char **err)
 {

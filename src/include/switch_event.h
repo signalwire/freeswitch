@@ -315,6 +315,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 SWITCH_DECLARE(switch_status_t) switch_event_serialize_json(switch_event_t *event, char **str);
 SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event, const char *json);
 SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a, char b, char c, switch_event_t **event, char **new_data, switch_bool_t dup);
+SWITCH_DECLARE(switch_status_t) switch_event_create_array_pair(switch_event_t **event, char **names, char **vals, int len);
 
 #ifndef SWIG
 /*!

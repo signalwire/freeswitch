@@ -1492,6 +1492,27 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_create_array_pair(switch_event_t **event, char **names, char **vals, int len)
+{
+	int r;
+	char *name, *val;
+
+	switch_event_create(event, SWITCH_EVENT_CLONE);
+	
+	for (r = 0; r < len; r++) {
+		val = switch_str_nil(vals[r]);
+		name = names[r];
+		
+		if (zstr(name)) {
+			name = "Unknown";
+		}
+
+		switch_event_add_header(*event, SWITCH_STACK_BOTTOM, name, val);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+	
+}
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a, char b, char c, switch_event_t **event, char **new_data, switch_bool_t dup)
 {
