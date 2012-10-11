@@ -3807,6 +3807,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							profile->ndlb &= ~PFLAG_NDLB_ALLOW_BAD_IANANAME;
 						}
+					} else if (!strcasecmp(var, "NDLB-expires-in-register-response")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE;
+						} else {
+							profile->ndlb &= ~PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE;
+						}
 					} else if (!strcasecmp(var, "NDLB-allow-crypto-in-avp")) {
 						if (switch_true(val)) {
 							profile->ndlb |= PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP;
@@ -4948,6 +4954,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->ndlb |= PFLAG_NDLB_ALLOW_BAD_IANANAME;
 						} else {
 							profile->ndlb &= ~PFLAG_NDLB_ALLOW_BAD_IANANAME;
+						}
+					} else if (!strcasecmp(var, "NDLB-expires-in-register-response")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE;
+						} else {
+							profile->ndlb &= ~PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE;
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-crypto-in-avp")) {
 						if (switch_true(val)) {
