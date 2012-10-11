@@ -531,6 +531,11 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 		switch_assert(peer_channel);
 
+		if (channel && switch_true(switch_channel_get_variable(channel, "session_copy_loglevel"))) {
+			(*new_session)->loglevel = session->loglevel;
+		}
+
+
 		if ((use_uuid = switch_event_get_header(var_event, "origination_uuid"))) {
 			use_uuid = switch_core_session_strdup(*new_session, use_uuid);
 			if (switch_core_session_set_uuid(*new_session, use_uuid) == SWITCH_STATUS_SUCCESS) {

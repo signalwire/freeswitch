@@ -5472,12 +5472,20 @@ SWITCH_STANDARD_API(escape_function)
 #define UUID_LOGLEVEL_SYNTAX "<uuid> <level>"
 SWITCH_STANDARD_API(uuid_loglevel)
 {
-	switch_core_session_t *tsession = NULL;
+	switch_core_session_t *tsession = NULL, *bsession = NULL;
 	char *uuid = NULL, *text = NULL;
+	int b = 0;
 
 	if (!zstr(cmd) && (uuid = strdup(cmd))) {
 		if ((text = strchr(uuid, ' '))) {
 			*text++ = '\0';
+			
+			if (!strncasecmp(text, "-b", 2)) {
+				b++;
+				if ((text = strchr(text, ' '))) {
+					*text++ = '\0';
+				}
+			}
 		}
 	}
 
@@ -5491,6 +5499,12 @@ SWITCH_STANDARD_API(uuid_loglevel)
 		} else if ((tsession = switch_core_session_locate(uuid))) {
 
 			switch_core_session_set_loglevel(tsession, level);
+
+			if (b && switch_core_session_get_partner(tsession, &bsession) == SWITCH_STATUS_SUCCESS) {
+				switch_core_session_set_loglevel(bsession, level);
+				switch_core_session_rwunlock(bsession);
+			}
+
 			stream->write_function(stream, "+OK\n");
 			switch_core_session_rwunlock(tsession);
 		} else {

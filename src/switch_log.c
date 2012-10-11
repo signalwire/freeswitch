@@ -347,9 +347,11 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 	const char *extra_fmt = "%s [%s] %s:%d%c%s";
 #endif
 	switch_log_level_t limit_level = runtime.hard_log_level;
+	switch_log_level_t special_level = SWITCH_LOG_UNINIT;
 
 	if (channel == SWITCH_CHANNEL_ID_SESSION && userdata) {
 		switch_core_session_t *session = (switch_core_session_t *) userdata;
+		special_level = session->loglevel;
 		if (limit_level < session->loglevel) {
 			limit_level = session->loglevel;
 		}
@@ -478,11 +480,13 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		switch_set_string(node->func, funcp);
 		node->line = line;
 		node->level = level;
+		node->slevel = special_level;
 		node->content = content;
 		node->timestamp = now;
 		node->channel = channel;
 		if (channel == SWITCH_CHANNEL_ID_SESSION) {
-			node->userdata = userdata ? strdup(switch_core_session_get_uuid((switch_core_session_t *) userdata)) : NULL;
+			switch_core_session_t *session = (switch_core_session_t *) userdata;
+			node->userdata = userdata ? strdup(switch_core_session_get_uuid(session)) : NULL;
 		} else {
 			node->userdata = !zstr(userdata) ? strdup(userdata) : NULL;
 		}
