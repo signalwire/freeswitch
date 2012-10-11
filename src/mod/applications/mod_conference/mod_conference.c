@@ -5310,6 +5310,11 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 		switch_xml_set_attr_d(x_conference, "enter_sound", "true");
 	}
 	
+	if (conference->max_members > 0) {
+		switch_snprintf(i, sizeof(i), "%d", conference->max_members);
+		switch_xml_set_attr_d(x_conference, "max_members", ival);
+	}
+
 	if (conference->record_count > 0) {
 		switch_xml_set_attr_d(x_conference, "recording", "true");
 	}
