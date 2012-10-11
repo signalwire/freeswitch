@@ -238,6 +238,54 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 
 }
 
+
+SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_matching_var(const char *var_name, const char *var_val)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_core_session_t *session;
+	switch_memory_pool_t *pool;
+	struct str_node *head = NULL, *np;
+	switch_console_callback_match_t *my_matches = NULL;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!var_val)
+		return NULL;
+
+	switch_mutex_lock(runtime.session_hash_mutex);
+	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		if (val) {
+			session = (switch_core_session_t *) val;
+			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
+				np = switch_core_alloc(pool, sizeof(*np));
+				np->str = switch_core_strdup(pool, session->uuid_str);
+				np->next = head;
+				head = np;
+				switch_core_session_rwunlock(session);
+			}
+		}
+	}
+	switch_mutex_unlock(runtime.session_hash_mutex);
+
+	for(np = head; np; np = np->next) {
+		if ((session = switch_core_session_locate(np->str))) {
+			const char *this_val;
+			if (switch_channel_up_nosig(session->channel) &&
+				(this_val = switch_channel_get_variable_dup(session->channel, var_name, SWITCH_FALSE, -1)) && (!strcmp(this_val, var_val))) {			
+				switch_console_push_match(&my_matches, (const char *) np->str);
+			}
+			switch_core_session_rwunlock(session);
+		}
+	}
+
+	switch_core_destroy_memory_pool(&pool);
+
+
+	return my_matches;
+}
+
 SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_interface_t *endpoint_interface, switch_call_cause_t cause)
 {
 	switch_hash_index_t *hi;

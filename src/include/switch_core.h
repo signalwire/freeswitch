@@ -825,6 +825,8 @@ SWITCH_DECLARE(void) switch_core_session_hupall(_In_ switch_call_cause_t cause);
   \param cause the hangup cause to apply to the hungup channels
 */
 SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(_In_ const char *var_name, _In_ const char *var_val, _In_ switch_call_cause_t cause);
+SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_matching_var(const char *var_name, const char *var_val);
+
 /*! 
   \brief Hangup all sessions that belong to an endpoint
   \param endpoint_interface The endpoint interface 
