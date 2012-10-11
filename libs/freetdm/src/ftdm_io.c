@@ -6093,7 +6093,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 
 	case FTDM_SIGEVENT_START:
 		{
-			ftdm_assert(!ftdm_test_flag(fchan, FTDM_CHANNEL_CALL_STARTED), "Started call twice!");
+			ftdm_assert(!ftdm_test_flag(fchan, FTDM_CHANNEL_CALL_STARTED), "Started call twice!\n");
 
 			if (ftdm_test_flag(fchan, FTDM_CHANNEL_OUTBOUND)) {
 				ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "Inbound call taking over outbound channel\n");

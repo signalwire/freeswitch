@@ -38,6 +38,8 @@
 #define PRI_SPAN(p) (((p) >> 8) & 0xff)
 #define PRI_CHANNEL(p) ((p) & 0xff)
 
+#define PRITAP_NETWORK_ANSWER 0x1
+
 typedef enum {
 	PRITAP_RUNNING = (1 << 0),
 } pritap_flags_t;
@@ -279,23 +281,34 @@ static ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 	sig.span_id = ftdmchan->span_id;
 	sig.channel = ftdmchan;
 
-        ftdm_channel_complete_state(ftdmchan);
+	ftdm_channel_complete_state(ftdmchan);
 
 	switch (ftdmchan->state) {
 	case FTDM_CHANNEL_STATE_DOWN:
 		{			
 			ftdmchan->call_data = NULL;
+			ftdmchan->pflags = 0;
 			ftdm_channel_close(&ftdmchan);
 
 			peerchan->call_data = NULL;
+			peerchan->pflags = 0;
 			ftdm_channel_close(&peerchan);
 		}
 		break;
 
 	case FTDM_CHANNEL_STATE_PROGRESS:
 	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
-	case FTDM_CHANNEL_STATE_UP:
 	case FTDM_CHANNEL_STATE_HANGUP:
+		break;
+
+	case FTDM_CHANNEL_STATE_UP:
+		{
+			if (ftdm_test_pflag(ftdmchan, PRITAP_NETWORK_ANSWER)) {
+				ftdm_clear_pflag(ftdmchan, PRITAP_NETWORK_ANSWER);
+				sig.event_id = FTDM_SIGEVENT_UP;
+				ftdm_span_send_signal(ftdmchan->span, &sig);
+			}
+		}
 		break;
 
 	case FTDM_CHANNEL_STATE_RING:
@@ -625,6 +638,8 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 			break;
 		}
 		ftdm_log_chan(pcall->fchan, FTDM_LOG_NOTICE, "Tapped call was answered in state %s\n", ftdm_channel_state2str(pcall->fchan->state));
+		ftdm_set_pflag_locked(pcall->fchan, PRITAP_NETWORK_ANSWER);
+		ftdm_set_state_locked(pcall->fchan, FTDM_CHANNEL_STATE_UP);
 		break;
 
 	case PRI_EVENT_HANGUP_REQ:
