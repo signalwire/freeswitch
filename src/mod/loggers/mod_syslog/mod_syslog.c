@@ -114,6 +114,20 @@ static switch_loadable_module_interface_t console_module_interface = {
 	/*.directory_interface */ NULL
 };
 
+
+static int find_unprintable(const char *s)
+{
+	const char *p;
+
+	for(p = s; p && *p; p++) {
+		if (*p < 10 || *p == 27) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	int syslog_level;
@@ -146,7 +160,7 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 	}
 
 	/* don't log blank lines */
-	if (!zstr(node->data) && (strspn(node->data, " \t\r\n") < strlen(node->data))) {
+	if (!zstr(node->data) && (strspn(node->data, " \t\r\n") < strlen(node->data)) && !find_unprintable(node->data)) {
 		if (globals.log_uuid && !zstr(node->userdata)) {
 			syslog(syslog_level, "%s %s", node->userdata, node->data);
 		} else {
