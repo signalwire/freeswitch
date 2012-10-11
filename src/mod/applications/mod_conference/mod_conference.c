@@ -8571,6 +8571,7 @@ static void kickall_matching_var(conference_obj_t *conference, const char *var, 
 
 static void call_setup_event_handler(switch_event_t *event)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	conference_obj_t *conference = NULL;
 	char *conf = switch_event_get_header(event, "Target-Component");
 	char *domain = switch_event_get_header(event, "Target-Domain");
@@ -8592,62 +8593,74 @@ static void call_setup_event_handler(switch_event_t *event)
 			char *expanded = NULL, *ostr = dial_str;;
 			
 			if (!strcasecmp(action, "call")) {
-	
-				if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
-					abort();
-				}
-			
-				for(hp = event->headers; hp; hp = hp->next) {
-					if (!strncasecmp(hp->name, "var_", 4)) {
-						switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
+				if((conference->max_members > 0) && (conference->count >= conference->max_members)) {
+					// Conference member limit has been reached; do not proceed with setup request
+					status = SWITCH_STATUS_FALSE;
+				} else {
+					if (switch_event_create_plain(&var_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+						abort();
 					}
-				}
-			
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_call_key", key);
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_destination_number", ext);
 
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_invite_uri", dial_uri);
-
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_status", "true");
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_call_id", call_id);
-
-				if (!strncasecmp(ostr, "url+", 4)) {
-					ostr += 4;
-				} else if (!switch_true(full_url) && conference->outcall_templ) {
-					if ((expanded = switch_event_expand_headers(var_event, conference->outcall_templ))) {
-						ostr = expanded;
+					for(hp = event->headers; hp; hp = hp->next) {
+						if (!strncasecmp(hp->name, "var_", 4)) {
+							switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
+						}
 					}
-				}
 
-				conference_outcall_bg(conference, NULL, NULL, ostr, 60, NULL, NULL, NULL, NULL, NULL, NULL, &var_event);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_call_key", key);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_destination_number", ext);
 
-				if (expanded && expanded != conference->outcall_templ) {
-					switch_safe_free(expanded);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_invite_uri", dial_uri);
+
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_status", "true");
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_call_id", call_id);
+
+					if (!strncasecmp(ostr, "url+", 4)) {
+						ostr += 4;
+					} else if (!switch_true(full_url) && conference->outcall_templ) {
+						if ((expanded = switch_event_expand_headers(var_event, conference->outcall_templ))) {
+							ostr = expanded;
+						}
+					}
+
+					status = conference_outcall_bg(conference, NULL, NULL, ostr, 60, NULL, NULL, NULL, NULL, NULL, NULL, &var_event);
+
+					if (expanded && expanded != conference->outcall_templ) {
+						switch_safe_free(expanded);
+					}
 				}
 				
 			} else if (!strcasecmp(action, "end")) {
 				//switch_core_session_hupall_matching_var("conference_call_key", key, SWITCH_CAUSE_NORMAL_CLEARING);
 				kickall_matching_var(conference, "conference_call_key", key);
+				status = SWITCH_STATUS_SUCCESS;
 			}
 
 			switch_safe_free(key);
+		} else { // Conference found but doesn't support referral.
+			status = SWITCH_STATUS_FALSE;
 		}
 
 
 		switch_thread_rwlock_unlock(conference->rwlock);
 	} else { // Couldn't find associated conference.  Indicate failure on refer subscription
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	if(status != SWITCH_STATUS_SUCCESS) {
+		// Unable to setup call, need to generate final NOTIFY
 		if (switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA) == SWITCH_STATUS_SUCCESS) {
 			event->flags |= EF_UNIQ_HEADERS;
 
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-name", conf);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);		
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "final", "true");		
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "final", "true");
 			switch_event_add_body(event, "%s", "SIP/2.0 481 Failure\r\n");
-			switch_event_fire(&event);	
+			switch_event_fire(&event);
 		}
- 	}
+	}
 	
 }
 
