@@ -184,10 +184,10 @@ struct v29_rx_state_s
                This is only for performance analysis purposes. */
     int total_baud_timing_correction;
 
-    /*! \brief Starting phase angles for the coarse carrier aquisition step. */
-    int32_t start_angles[2];
-    /*! \brief History list of phase angles for the coarse carrier aquisition step. */
-    int32_t angles[16];
+    /*! \brief The previous symbol phase angles for the coarse carrier aquisition step. */
+    int32_t last_angles[2];
+    /*! \brief History list of phase angle differences for the coarse carrier aquisition step. */
+    int32_t diff_angles[16];
 
     /*! \brief The position of the current symbol in the constellation, used for
                differential decoding. */
