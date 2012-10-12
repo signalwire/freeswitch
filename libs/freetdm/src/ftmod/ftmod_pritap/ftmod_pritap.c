@@ -55,6 +55,12 @@ typedef struct {
 	int inuse:1;
 } passive_call_t;
 
+typedef enum pritap_iface {
+	PRITAP_IFACE_UNKNOWN = 0,
+	PRITAP_IFACE_CPE = 1,
+	PRITAP_IFACE_NET = 2,
+} pritap_iface_t;
+
 typedef struct pritap {
 	int32_t flags;
 	struct pri *pri;
@@ -65,6 +71,7 @@ typedef struct pritap {
 	ftdm_span_t *peerspan;
 	ftdm_mutex_t *pcalls_lock;
 	passive_call_t pcalls[FTDM_MAX_CHANNELS_PHYSICAL_SPAN];
+	pritap_iface_t iface;
 } pritap_t;
 
 static FIO_IO_UNLOAD_FUNCTION(ftdm_pritap_unload)
@@ -268,11 +275,15 @@ static ftdm_state_map_t pritap_state_map = {
 	}
 };
 
+#define PRITAP_GET_INTERFACE(iface) iface == PRITAP_IFACE_CPE ? "CPE" :  \
+                                    iface == PRITAP_IFACE_NET ? "NET" : "UNKNOWN"
 static ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status;
 	ftdm_sigmsg_t sig;
 	ftdm_channel_t *peerchan = ftdmchan->call_data;
+	pritap_t *pritap = ftdmchan->span->signal_data;
+	pritap_t *peer_pritap = pritap->peerspan->signal_data;
 	
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "processing state %s\n", ftdm_channel_state2str(ftdmchan->state));
 
@@ -314,6 +325,9 @@ static ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 	case FTDM_CHANNEL_STATE_RING:
 		{
 			sig.event_id = FTDM_SIGEVENT_START;
+			/* The ring interface (where the setup was received) is the peer, since we RING the channel
+			 * where PROCEED/PROGRESS is received */
+			ftdm_sigmsg_add_var(&sig, "pritap_ring_interface", PRITAP_GET_INTERFACE(peer_pritap->iface));
 			if ((status = ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS)) {
 				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
 			}
@@ -855,6 +869,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 	ftdm_channel_t *dchan = NULL;
 	pritap_t *pritap = NULL;
 	ftdm_span_t *peerspan = NULL;
+	pritap_iface_t iface = PRITAP_IFACE_UNKNOWN;
 	unsigned paramindex = 0;
 
 	if (span->trunk_type >= FTDM_TRUNK_NONE) {
@@ -882,6 +897,14 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 			debug = val;
 		} else if (!strcasecmp(var, "mixaudio")) {
 			mixaudio = ftdm_true(val);
+		} else if (!strcasecmp(var, "interface")) {
+			if (!strcasecmp(val, "cpe")) {
+				iface = PRITAP_IFACE_CPE;
+			} else if (!strcasecmp(val, "net")) {
+				iface = PRITAP_IFACE_NET;
+			} else {
+				ftdm_log(FTDM_LOG_WARNING, "Ignoring invalid tapping interface type %s\n", val);
+			}
 		} else if (!strcasecmp(var, "peerspan")) {
 			if (ftdm_span_find_by_name(val, &peerspan) != FTDM_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "Invalid tapping peer span %s\n", val);
@@ -906,6 +929,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 	pritap->dchan = dchan;
 	pritap->peerspan = peerspan;
 	pritap->mixaudio = mixaudio;
+	pritap->iface = iface;
 
 	span->start = ftdm_pritap_start;
 	span->stop = ftdm_pritap_stop;
