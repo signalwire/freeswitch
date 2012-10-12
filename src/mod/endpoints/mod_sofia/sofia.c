@@ -3873,7 +3873,25 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						}
 					} else if (!strcasecmp(var, "apply-inbound-acl")) {
 						if (profile->acl_count < SOFIA_MAX_ACL) {
-							profile->acl[profile->acl_count++] = switch_core_strdup(profile->pool, val);
+							char *list, *pass = NULL, *fail = NULL;
+
+							list = switch_core_strdup(profile->pool, val);
+
+							if ((pass = strchr(list, ':'))) {
+								*pass++ = '\0';
+								if ((fail = strchr(pass, ':'))) {
+									*fail++ = '\0';
+								}
+
+								if (zstr(pass)) pass = NULL;
+								if (zstr(fail)) fail = NULL;
+
+								profile->acl_pass_context[profile->acl_count] = pass;
+								profile->acl_fail_context[profile->acl_count] = fail;
+							}
+
+							profile->acl[profile->acl_count++] = list;
+
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
@@ -5127,7 +5145,25 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "apply-inbound-acl")) {
 						if (profile->acl_count < SOFIA_MAX_ACL) {
-							profile->acl[profile->acl_count++] = switch_core_strdup(profile->pool, val);
+							char *list, *pass = NULL, *fail = NULL;
+
+							list = switch_core_strdup(profile->pool, val);
+
+							if ((pass = strchr(list, ':'))) {
+								*pass++ = '\0';
+								if ((fail = strchr(pass, ':'))) {
+									*fail++ = '\0';
+								}
+
+								if (zstr(pass)) pass = NULL;
+								if (zstr(fail)) fail = NULL;
+
+								profile->acl_pass_context[profile->acl_count] = pass;
+								profile->acl_fail_context[profile->acl_count] = fail;
+							}
+
+							profile->acl[profile->acl_count++] = list;
+
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
@@ -8287,7 +8323,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	const char *to_tag = "";
 	const char *from_tag = "";
 	char *sql = NULL;
-
+	char *acl_context = NULL;
 	profile->ib_calls++;
 
 
@@ -8384,7 +8420,18 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		for (x = 0; x < profile->acl_count; x++) {
 			last_acl = profile->acl[x];
 			if ((ok = switch_check_network_list_ip_token(network_ip, last_acl, &token))) {
+
+				if (profile->acl_pass_context[x]) {
+					acl_context = profile->acl_pass_context[x];
+				}
+
 				break;
+			}
+
+			if (profile->acl_fail_context[x]) {
+				acl_context = profile->acl_fail_context[x];
+			} else {
+				acl_context = NULL;
 			}
 		}
 
@@ -8439,10 +8486,14 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			}
 
 			if (!ok) {
+
 				if (!sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", network_ip, switch_str_nil(last_acl));
-					nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
-					goto fail;
+
+					if (!acl_context) {
+						nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
+						goto fail;
+					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl \"%s\". Falling back to Digest auth.\n",
 									  network_ip, switch_str_nil(last_acl));
@@ -8458,7 +8509,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 					switch_set_string(sip_acl_token, acl_token);
 					
 					is_auth = 1;
-					
+
 				}
 			}
 		}
@@ -8868,6 +8919,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		switch_snprintf(max_forwards, sizeof(max_forwards), "%lu", sip->sip_max_forwards->mf_count);
 		switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 	}
+
+	if (acl_context) context = acl_context;
 
 	if (!context) {
 		context = switch_channel_get_variable(channel, "user_context");

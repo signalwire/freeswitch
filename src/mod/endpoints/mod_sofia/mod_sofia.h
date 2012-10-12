@@ -633,6 +633,8 @@ struct sofia_profile {
 	char *inner_post_trans_execute;	
 	switch_queue_t *sql_queue;
 	char *acl[SOFIA_MAX_ACL];
+	char *acl_pass_context[SOFIA_MAX_ACL];
+	char *acl_fail_context[SOFIA_MAX_ACL];
 	uint32_t acl_count;
 	char *proxy_acl[SOFIA_MAX_ACL];
 	uint32_t proxy_acl_count;
