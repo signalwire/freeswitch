@@ -1557,7 +1557,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		} else {
 			char buf[32] = "";
-			sql = switch_mprintf("select count(*) from sip_registrations where sip_user='%q' and sip_host='%q' and contact='%q'", to_user, reg_host, contact_str);
+
+			
+			sql = switch_mprintf("select count(*) from sip_registrations where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'", 
+								 to_user, username, reg_host, contact_str);
 
 
 
@@ -1592,10 +1595,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		} else {
 			sql = switch_mprintf("update sip_registrations set "
 								 "sub_host='%q', network_ip='%q',network_port='%q',"
-								 "expires = %ld where sip_user='%q' and sip_host='%q' and contact='%q'", 
+								 "expires = %ld where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'", 
 								 sub_host, network_ip, network_port_c,
 								 (long) switch_epoch_time_now(NULL) + (long) exptime + 60, 
-								 to_user, reg_host, contact_str);
+								 to_user, username, reg_host, contact_str);
 		}				 
 
 		if (sql) {
