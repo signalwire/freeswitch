@@ -790,6 +790,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 	if (switch_channel_up_nosig(session->channel)) {
 		if (message->message_id == SWITCH_MESSAGE_INDICATE_BRIDGE || message->message_id == SWITCH_MESSAGE_INDICATE_UNBRIDGE) {
 			switch_core_media_bug_flush_all(session);
+			switch_core_recovery_track(session);
 		}
 
 		switch (message->message_id) {
