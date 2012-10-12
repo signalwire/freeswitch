@@ -131,7 +131,9 @@ Sub UnCompress(Archive, DestFolder)
 	Do
 		WScript.Echo OExec.StdOut.ReadLine()
 	Loop While Not OExec.StdOut.atEndOfStream
-	If FSO.FileExists(Left(Archive, Len(Archive)-3))Then  
+	If FSO.FileExists(Left(Archive, Len(Archive)-3))Then
+		WScript.Sleep(100)
+		FSO.DeleteFile UtilsDir & batname, True  
 		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Left(Archive, Len(Archive)-3) & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
@@ -142,7 +144,9 @@ Sub UnCompress(Archive, DestFolder)
 		WScript.Sleep(500)
 		FSO.DeleteFile Left(Archive, Len(Archive)-3) ,true 
 	End If
-	If FSO.FileExists(Left(Archive, Len(Archive)-3) & "tar")Then  
+	If FSO.FileExists(Left(Archive, Len(Archive)-3) & "tar")Then 
+		WScript.Sleep(100)
+		FSO.DeleteFile UtilsDir & batname, True 
 		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Left(Archive, Len(Archive)-3) & "tar" & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
