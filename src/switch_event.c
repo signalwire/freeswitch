@@ -1507,7 +1507,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_array_pair(switch_event_t **
 			name = "Unknown";
 		}
 
-		switch_event_add_header(*event, SWITCH_STACK_BOTTOM, name, val);
+		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, name, val);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
