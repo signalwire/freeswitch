@@ -181,8 +181,8 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 {
 	switch_codec_interface_t *codec_interface;
-	int samples = 80;
-	int bytes = 960;
+	int samples = 480;
+	int bytes = 80;
 	int mss = 10000;
 	int x = 0;
 	int rate = 48000;
@@ -193,9 +193,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "OPUS (STANDARD)");
 
-	for (x = 0; x < 2; x++) {
+	for (x = 0; x < 3; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 115,	/* the IANA code number */
+											 116,	/* the IANA code number */
 											 "opus",/* the IANA code name */
 											 NULL,	/* default fmtp to send (can be overridden by the init function) */
 											 rate,	/* samples transferred per second */
