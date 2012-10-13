@@ -17,10 +17,8 @@ include $(SRCDIR)/tools/common.mk
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(BLDDIR)/include \
-  -I$(SRCDIR)/include \
-  -I$(SRCDIR)/lib/util/include
-
-CFLAGS = $(CFLAGS_COMMON) $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include
 
 LDFLAGS = $(LADD)
 
@@ -35,27 +33,20 @@ UTIL_OBJS = \
 
 UTILS = $(UTIL_OBJS:%=$(UTIL_DIR)/%)
 
-# These are the Libtool .la files.  We use them only for make dependencies.
-# We'd like to use these in the link rule, by using libtool --link, but
-# Libtool adds -l options to the link to cover the dependencies that are
-# recorded inside the shared libraries.  And it doesn't add the necessary
-# -L options (it can't), so we end up with a messy mixture of the two
-# forms of specifying libraries.
-
 LIBS = $(LIBXMLRPC_CLIENT) $(LIBXMLRPC) $(LIBXMLRPC_XML) $(LIBXMLRPC_UTIL)
 
 xmlrpc_transport:%:%.o $(LIBS) $(UTILS)
 	$(CCLD) -o $@ $(LDFLAGS) $< $(CLIENT_LDLIBS) $(UTILS)
 
 %.o:%.c
-	$(CC) -c $(CFLAGS) $<
+	$(CC) -c $(CFLAGS_ALL) $<
 
 # This common.mk dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
 $(SRCDIR)/tools/common.mk: srcdir blddir
 
-include Makefile.depend
+include depend.mk
 
 .PHONY: dep
 dep: dep-common

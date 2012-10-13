@@ -47,22 +47,18 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\curl.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\curl.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\curl.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\curl.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -70,7 +66,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\include;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\lib\abyss\src;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\lib\util\include;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\Windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -87,7 +83,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\include;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\lib\abyss\src;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\lib\util\include;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\Windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -102,7 +98,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\include;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\lib\abyss\src;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\lib\util\include;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\Windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -119,7 +115,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\include;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\lib\abyss\src;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\lib\util\include;%(RootDir)%(Directory)..\..\..\..\libs\xmlrpc-c\Windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -136,25 +132,17 @@
     <ClCompile Include="mod_xml_rpc.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\curl\curllib.2010.vcxproj">
-      <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\xmlrpc-c\Windows\abyss.2010.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\xmlrpc-c\abyss.2010.vcxproj">
       <Project>{d2396dd7-7d38-473a-abb7-6f96d65ae1b9}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\xmlrpc-c\Windows\xmlparse.2010.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\xmlrpc-c\xmlparse.2010.vcxproj">
       <Project>{0d108721-eae8-4baf-8102-d8960ec93647}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\xmlrpc-c\Windows\xmlrpc.2010.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\xmlrpc-c\xmlrpc.2010.vcxproj">
       <Project>{cee544a9-0303-44c2-8ece-efa7d7bcbbba}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\xmlrpc-c\Windows\xmltok.2010.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\xmlrpc-c\xmltok.2010.vcxproj">
       <Project>{b535402e-38d2-4d54-8360-423acbd17192}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2010.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>

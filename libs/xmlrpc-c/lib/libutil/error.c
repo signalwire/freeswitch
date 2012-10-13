@@ -1,5 +1,7 @@
 /* Copyright information is at end of file */
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include "xmlrpc_config.h"
 
 #include <stdlib.h>
@@ -86,7 +88,7 @@ void
 xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
                              int          const code,
                              const char * const format,
-                             va_list      const args) {
+                             va_list            args) {
 
     const char * faultDescription;
 

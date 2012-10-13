@@ -5,7 +5,7 @@
 
 #include "xmlrpc_config.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "cgi.h"
 
 static const char cgiResponse1[] =

@@ -2259,10 +2259,10 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 	}
 
 	if (stream->param_event) {
-		if (cmd_used) {
+		if (cmd_used && *cmd_used) {
 			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_used);
 		}
-		if (arg_used) {
+		if (arg_used && *arg_used) {
 			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_used);
 		}
 	}

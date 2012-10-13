@@ -16,6 +16,7 @@
 #endif
 
 #include <xmlrpc-c/config.h>  /* For XMLRPC_SOCKET */
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server.h>
 
@@ -33,9 +34,11 @@ extern "C" {
 **  of your program, when it is only one thread.
 **=======================================================================*/
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_global_init(xmlrpc_env * const envP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_global_term(void);
 
@@ -68,6 +71,9 @@ typedef struct {
     const char *      uri_path;
     xmlrpc_bool       chunk_response;
     xmlrpc_bool       enable_shutdown;
+    const char *      allow_origin;
+    xmlrpc_bool       access_ctl_expires;
+    unsigned int      access_ctl_max_age;
 } xmlrpc_server_abyss_parms;
 
 
@@ -85,10 +91,11 @@ typedef struct {
 **  Simple server with Abyss under the covers
 **=======================================================================*/
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss(xmlrpc_env *                      const envP,
                     const xmlrpc_server_abyss_parms * const parms,
-                    unsigned int                      const parm_size);
+                    unsigned int                      const parmSize);
 
 /*=========================================================================
 **  Object-oriented XML-RPC server with Abyss under the covers
@@ -96,39 +103,47 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
 
 typedef struct xmlrpc_server_abyss xmlrpc_server_abyss_t;
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
                            const xmlrpc_server_abyss_parms * const parmsP,
                            unsigned int                      const parmSize,
                            xmlrpc_server_abyss_t **          const serverPP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_destroy(xmlrpc_server_abyss_t * const serverP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_run_server(xmlrpc_env *            const envP,
                                xmlrpc_server_abyss_t * const serverP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_terminate(xmlrpc_env *            const envP,
                               xmlrpc_server_abyss_t * const serverP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_reset_terminate(xmlrpc_env *            const envP,
                                     xmlrpc_server_abyss_t * const serverP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_use_sigchld(xmlrpc_server_abyss_t * const serverP);
 
 
 typedef struct xmlrpc_server_abyss_sig xmlrpc_server_abyss_sig;
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_setup_sig(
     xmlrpc_env *               const envP,
     xmlrpc_server_abyss_t *    const serverP,
     xmlrpc_server_abyss_sig ** const oldHandlersPP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_restore_sig(
     const xmlrpc_server_abyss_sig * const oldHandlersP);
@@ -139,20 +154,77 @@ xmlrpc_server_abyss_restore_sig(
 **  Functions to make an XML-RPC server out of your own Abyss server
 **=======================================================================*/
 
+typedef void
+xmlrpc_call_processor(xmlrpc_env *        const envP,
+                      void *              const processorArg,
+                      const char *        const callXml,
+                      size_t              const callXmlLen,
+                      TSession *          const abyssSessionP,
+                      xmlrpc_mem_block ** const responseXmlPP);
+
+typedef struct {
+    xmlrpc_call_processor * xml_processor;
+    void *                  xml_processor_arg;
+    size_t                  xml_processor_max_stack;
+    const char *            uri_path;
+    xmlrpc_bool             chunk_response;
+    const char *            allow_origin;
+        /* NULL means don't answer HTTP access control query */
+    xmlrpc_bool             access_ctl_expires;
+    unsigned int            access_ctl_max_age;
+} xmlrpc_server_abyss_handler_parms;
+
+#define XMLRPC_AHPSIZE(MBRNAME) \
+    XMLRPC_STRUCTSIZE(xmlrpc_server_abyss_handler_parms, MBRNAME)
+
+/* XMLRPC_AHPSIZE(xyz) is the minimum size a struct
+   xmlrpc_server_abyss_handler_parms must be to include the 'xyz' member.
+   This is essential to forward and backward compatibility, as new members
+   will be added to the end of the struct in future releases.  This is how the
+   callee knows whether or not the caller is new enough to have supplied a
+   certain parameter.
+*/
+
+
+XMLRPC_DLLEXPORT
+void
+xmlrpc_server_abyss_set_handler3(
+    xmlrpc_env *                              const envP,
+    TServer *                                 const srvP,
+    const xmlrpc_server_abyss_handler_parms * const parms,
+    unsigned int                              const parmSize);
+
+XMLRPC_DLLEXPORT
+void
+xmlrpc_server_abyss_set_handler2(
+    TServer *         const srvP,
+    const char *      const uriPath,
+    xmlrpc_call_processor   xmlProcessor,
+    void *            const xmlProcessorArg,
+    size_t            const xmlProcessorMaxStackSize,
+    xmlrpc_bool       const chunkResponse);
+
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
                                   const char *      const filename,
                                   xmlrpc_registry * const registryP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_set_handlers(TServer *         const serverP,
                                  xmlrpc_registry * const registryP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
                                 TServer *         const serverP,
                                 const char *      const filename,
                                 xmlrpc_registry * const registryP);
+
+XMLRPC_DLLEXPORT
+void
+xmlrpc_server_abyss_set_default_handler(TServer * const serverP);
 
 /*=========================================================================
 **  Handy Abyss Extensions
@@ -171,6 +243,7 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
 ** Once you call this routine, it is illegal to modify the server any
 ** more, including changing any method registry.
 */
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_abyss_run(void);
 
@@ -180,6 +253,7 @@ xmlrpc_server_abyss_run(void);
 ** function.  'runfirstArg' is the argument the server passes to the runfirst
 ** function.
 **/
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
                               void *     const runfirstArg);
@@ -200,29 +274,34 @@ xmlrpc_server_abyss_run_first(runfirstFn const runfirst,
 ** Or use a regular method registry and call
 ** xmlrpc_server_abyss_set_handlers().
 **/
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_server_abyss_init(int          const flags, 
                          const char * const config_file);
 
 /* This is called automatically by xmlrpc_server_abyss_init. */
+XMLRPC_DLLEXPORT
 void xmlrpc_server_abyss_init_registry (void);
 
 /* Fetch the internal registry, if you happen to need it. 
    If you're using this, you really shouldn't be using the built-in
    registry at all.  It exists today only for backward compatibilty.
 */
+XMLRPC_DLLEXPORT
 extern xmlrpc_registry *
 xmlrpc_server_abyss_registry (void);
 
 /* A quick & easy shorthand for adding a method. Depending on
 ** how you've configured your copy of Abyss, it's probably not safe to
 ** call this method after calling xmlrpc_server_abyss_run. */
+XMLRPC_DLLEXPORT
 void xmlrpc_server_abyss_add_method (char *        const method_name,
                                      xmlrpc_method const method,
                                      void *        const user_data);
     
 /* As above, but provide documentation (see xmlrpc_registry_add_method_w_doc
 ** for more information). You should really use this one. */
+XMLRPC_DLLEXPORT
 extern void
 xmlrpc_server_abyss_add_method_w_doc (char *        const method_name,
                                       xmlrpc_method const method,

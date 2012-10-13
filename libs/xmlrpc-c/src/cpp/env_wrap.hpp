@@ -1,11 +1,12 @@
 #ifndef ENV_INT_HPP_INCLUDED
 #define ENV_INT_HPP_INCLUDED
 
+#include "xmlrpc-c/c_util.h"
 #include "xmlrpc-c/util.h"
 
 namespace xmlrpc_c {
 
-class env_wrap {
+class XMLRPC_DLLEXPORT env_wrap {
 /*----------------------------------------------------------------------------
    A wrapper to assist in using the Xmlrpc-c C libraries in
    Xmlrpc-c C++ code.

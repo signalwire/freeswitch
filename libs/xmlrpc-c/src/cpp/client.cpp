@@ -26,6 +26,7 @@ using girmem::autoObject;
 #include "xmlrpc-c/transport.h"
 #include "xmlrpc-c/base.hpp"
 #include "xmlrpc-c/xml.hpp"
+#include "xmlrpc-c/timeout.hpp"
 #include "xmlrpc-c/client.hpp"
 #include "transport_config.h"
 
@@ -127,7 +128,7 @@ carriageParmPtr::operator->() const {
 
 carriageParm *
 carriageParmPtr::get() const {
-    return dynamic_cast<carriageParm *>(objectP);
+    return dynamic_cast<carriageParm *>(this->objectP);
 }
 
 
@@ -371,6 +372,15 @@ xmlTransaction::finishErr(error const&) const {
 
 
 
+void
+xmlTransaction::progress(struct xmlrpc_progress_data const&) const {
+
+    // This is just the base class method.  A derived class may override
+    // this with something substantial.
+}
+
+
+
 xmlTransactionPtr::xmlTransactionPtr() {}
 
 
@@ -503,6 +513,18 @@ clientXmlTransport::asyncComplete(
 
 
 void
+clientXmlTransport::progress(
+    struct xmlrpc_call_info *   const callInfoP,
+    struct xmlrpc_progress_data const progressData) {
+
+    xmlTranCtl * const xmlTranCtlP = reinterpret_cast<xmlTranCtl *>(callInfoP);
+
+    xmlTranCtlP->xmlTranP->progress(progressData);
+}
+
+
+
+void
 clientXmlTransport::setInterrupt(int *) {
 
     throwf("The client XML transport is not interruptible");
@@ -600,7 +622,7 @@ clientXmlTransport_http::start(
             this->c_transportP,
             carriageParmHttpP->c_serverInfoP,
             tranCtlP->callXmlP,
-            &this->asyncComplete,
+            &this->asyncComplete, &this->progress,
             reinterpret_cast<xmlrpc_call_info *>(tranCtlP));
 
         throwIfError(env);
@@ -1095,7 +1117,19 @@ rpc::notifyComplete() {
 
 }
 
+
+
+void
+rpc::progress(struct xmlrpc_progress_data const&) const {
+/*----------------------------------------------------------------------------
+  If the user is interested in tracking the progress of the RPC, he will
+  derive a class from xmlrpc_c::rpc and override this with a progress()
+  that does something, such as display a progress bar.
+-----------------------------------------------------------------------------*/
+
+}
     
+
 
 value
 rpc::getResult() const {
@@ -1210,6 +1244,15 @@ void
 xmlTransaction_client::finishErr(error const& error) const {
 
     this->tranP->finishErr(error);
+}
+
+
+
+void
+xmlTransaction_client::progress(
+    struct xmlrpc_progress_data const& progressData) const {
+
+    this->tranP->progress(progressData);
 }
 
 

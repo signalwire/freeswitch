@@ -108,27 +108,28 @@ xml_element_new (xmlrpc_env * const env,
 **  Blow away an existing element & all of its child elements.
 */
 void
-xml_element_free(xml_element * const elem) {
+xml_element_free(xml_element * const elemP) {
 
-    xmlrpc_mem_block *children;
-    int size, i;
-    xml_element **contents;
+    xmlrpc_mem_block * childrenP;
+    size_t size, i;
+    xml_element ** contents;
 
-    XMLRPC_ASSERT_ELEM_OK(elem);
+    XMLRPC_ASSERT_ELEM_OK(elemP);
 
-    free(elem->_name);
-    elem->_name = XMLRPC_BAD_POINTER;
-    xmlrpc_mem_block_clean(&elem->_cdata);
+    free(elemP->_name);
+    elemP->_name = XMLRPC_BAD_POINTER;
+    XMLRPC_MEMBLOCK_CLEAN(xml_element *, &elemP->_cdata);
 
     /* Deallocate all of our children recursively. */
-    children = &elem->_children;
-    contents = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(xml_element*, children);
-    size = XMLRPC_TYPED_MEM_BLOCK_SIZE(xml_element*, children);
-    for (i = 0; i < size; i++)
+    childrenP = &elemP->_children;
+    contents = XMLRPC_MEMBLOCK_CONTENTS(xml_element *, childrenP);
+    size = XMLRPC_MEMBLOCK_SIZE(xml_element *, childrenP);
+    for (i = 0; i < size; ++i)
         xml_element_free(contents[i]);
 
-    xmlrpc_mem_block_clean(&elem->_children);
-    free(elem);
+    XMLRPC_MEMBLOCK_CLEAN(xml_element *, &elemP->_children);
+
+    free(elemP);
 }
 
 
@@ -374,9 +375,8 @@ createParser(xmlrpc_env *   const envP,
         xmlrpc_XML_SetCharacterDataHandler(
             parser,
             (XML_CharacterDataHandler) characterData);
-        
-        *parserP = parser;
     }
+    *parserP = parser;
 }
 
 

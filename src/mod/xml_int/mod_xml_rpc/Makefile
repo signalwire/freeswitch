@@ -1,7 +1,8 @@
 BASE=../../../..
 XMLRPC_DIR=$(BASE)/libs/xmlrpc-c
 
-LOCAL_OBJS = $(XMLRPC_DIR)/lib/libutil/asprintf.o\
+LOCAL_OBJS = $(XMLRPC_DIR)/src/version.o\
+$(XMLRPC_DIR)/lib/libutil/asprintf.o\
 $(XMLRPC_DIR)/lib/util/casprintf.o\
 $(XMLRPC_DIR)/lib/abyss/src/channel.o\
 $(XMLRPC_DIR)/lib/abyss/src/chanswitch.o\
@@ -22,6 +23,7 @@ $(XMLRPC_DIR)/lib/libutil/make_printable.o\
 $(XMLRPC_DIR)/lib/libutil/memblock.o\
 $(XMLRPC_DIR)/src/method.o\
 $(XMLRPC_DIR)/src/parse_value.o\
+$(XMLRPC_DIR)/src/parse_datetime.o\
 $(XMLRPC_DIR)/src/registry.o\
 $(XMLRPC_DIR)/src/resource.o\
 $(XMLRPC_DIR)/lib/abyss/src/response.o\
@@ -40,7 +42,8 @@ $(XMLRPC_DIR)/lib/abyss/src/token.o\
 $(XMLRPC_DIR)/src/trace.o\
 $(XMLRPC_DIR)/lib/abyss/src/trace.o\
 $(XMLRPC_DIR)/lib/libutil/utf8.o\
-$(XMLRPC_DIR)/src/version.o\
+$(XMLRPC_DIR)/lib/libutil/string_number.o\
+$(XMLRPC_DIR)/lib/libutil/base64.o\
 $(XMLRPC_DIR)/lib/expat/xmlparse/xmlparse.o\
 $(XMLRPC_DIR)/lib/expat/xmltok/xmlrole.o\
 $(XMLRPC_DIR)/src/xmlrpc_array.o\
@@ -59,14 +62,6 @@ $(XMLRPC_DIR)/src/xmlrpc_string.o\
 $(XMLRPC_DIR)/src/xmlrpc_struct.o\
 $(XMLRPC_DIR)/lib/expat/xmltok/xmltok.o
 
-#XMLRPCLAS  = $(XMLRPC_DIR)/src/libxmlrpc.a 
-#dont ask...
-#XMLRPCLAS  = $(XMLRPC_DIR)/src/*.o
-#XMLRPCLAS += $(XMLRPC_DIR)/src/libxmlrpc_server.so $(XMLRPC_DIR)/src/libxmlrpc.so
-#XMLRPCLAS += $(XMLRPC_DIR)/src/libxmlrpc_server_abyss.so $(XMLRPC_DIR)/lib/abyss/src/libxmlrpc_abyss.so
-#XMLRPCLAS += $(XMLRPC_DIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.so $(XMLRPC_DIR)/lib/expat/xmltok/libxmlrpc_xmltok.so
-#LOCAL_LIBADD =$(XMLRPCLAS)
-
 LOCAL_CFLAGS = -w -I$(XMLRPC_DIR)/lib/expat/xmlparse -I$(XMLRPC_DIR)/lib/expat/xmltok -I$(XMLRPC_DIR) -I$(XMLRPC_DIR)/include
 LOCAL_CFLAGS+= -I$(XMLRPC_DIR)/lib/abyss/src -I$(XMLRPC_DIR)/lib/util/include -D_THREAD -D__EXTENSIONS__
 
@@ -81,3 +76,15 @@ $(XMLRPC_DIR)/lib/expat/xmltok/xmltok.o: $(XMLRPC_DIR)/lib/expat/xmltok/nametab.
 $(XMLRPC_DIR)/lib/expat/xmltok/nametab.h:
 	cd $(XMLRPC_DIR)/lib/expat/gennmtab && $(MAKE)
 	cd $(XMLRPC_DIR)/lib/expat/xmltok   && ../gennmtab/gennmtab > nametab.h
+
+$(XMLRPC_DIR)/src/version.o: $(XMLRPC_DIR)/version.h
+
+$(XMLRPC_DIR)/version.h:
+	cd $(XMLRPC_DIR) && $(MAKE) version.h
+	cd $(XMLRPC_DIR)/include && $(MAKE) xmlrpc-c/config.h
+
+local_clean:
+	cd $(XMLRPC_DIR) && $(MAKE) clean
+
+
+

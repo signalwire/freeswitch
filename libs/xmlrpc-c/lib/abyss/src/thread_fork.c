@@ -157,6 +157,7 @@ ThreadCreate(TThread **      const threadPP,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
              bool            const useSigchld,
+             size_t          const stackSize,
              const char **   const errorP) {
     
     TThread * threadP;
@@ -189,6 +190,9 @@ ThreadCreate(TThread **      const threadPP,
         else if (rc == 0) {
             /* This is the child */
             (*func)(userHandle);
+            /* Note that thread cleanup (threadDone) is done by the _parent_,
+               upon seeing our exit.
+            */
             exit(0);
         } else {
             /* This is the parent */
@@ -249,7 +253,8 @@ ThreadWaitAndRelease(TThread * const threadP) {
 
 
 void
-ThreadExit(int const retValue) {
+ThreadExit(TThread * const threadP ATTR_UNUSED,
+           int       const retValue) {
 
     /* Note that the OS will automatically send a SIGCHLD signal to
        the parent process after we exit.  The handler for that signal
@@ -257,6 +262,10 @@ ThreadExit(int const retValue) {
        the parent is set up for signals, the parent will eventually
        poll for the existence of our PID and call threadDone when he
        sees we've gone.
+    */
+
+    /* Note that thread cleanup (threadDone) is done by the _parent_,
+       upon seeing our exit.
     */
 
     exit(retValue);

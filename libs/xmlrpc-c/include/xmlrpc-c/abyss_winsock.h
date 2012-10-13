@@ -7,17 +7,19 @@ struct abyss_win_chaninfo {
     struct sockaddr peerAddr;
 };
 
-
+XMLRPC_DLLEXPORT
 void
 ChanSwitchWinCreate(unsigned short const portNumber,
                     TChanSwitch ** const chanSwitchPP,
                     const char **  const errorP);
 
+XMLRPC_DLLEXPORT
 void
 ChanSwitchWinCreateWinsock(SOCKET         const winsock,
                            TChanSwitch ** const chanSwitchPP,
                            const char **  const errorP);
 
+XMLRPC_DLLEXPORT
 void
 ChannelWinCreateWinsock(SOCKET                       const fd,
                         TChannel **                  const channelPP,

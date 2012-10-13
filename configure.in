@@ -497,15 +497,39 @@ AC_SUBST(LIBTOOL_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h netdb.h execinfo.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/select.h netdb.h execinfo.h])
 
-# for xmlrpc-c config.h
 if test x"$ac_cv_header_wchar_h" = xyes; then
   HAVE_WCHAR_H_DEFINE=1
 else
   HAVE_WCHAR_H_DEFINE=0
 fi
 AC_SUBST(HAVE_WCHAR_H_DEFINE)
+
+# Needed by Abyss on Solaris:
+
+if test x"$ac_cv_header_sys_filio_h" = xyes; then
+  HAVE_SYS_FILIO_H_DEFINE=1
+else
+  HAVE_SYS_FILIO_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_FILIO_H_DEFINE)
+
+# Needed by Abyss on Solaris:
+
+if test x"$ac_cv_header_sys_ioctl_h" = xyes; then
+  HAVE_SYS_IOCTL_H_DEFINE=1
+else
+  HAVE_SYS_IOCTL_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_IOCTL_H_DEFINE)
+
+if test x"$ac_cv_header_sys_select_h" = xyes; then
+  HAVE_SYS_SELECT_H_DEFINE=1
+else
+  HAVE_SYS_SELECT_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_SELECT_H_DEFINE)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -610,6 +634,7 @@ fi
 # xmlrpc-c checks
 #
 
+AC_CHECK_FUNCS(setenv strtoll strtoull strtoq strtouq __strtoll __strtoull)
 
 HAVE_LIBWWW_SSL_DEFINE=0
 AC_SUBST(HAVE_LIBWWW_SSL_DEFINE)
@@ -1056,8 +1081,10 @@ AC_CONFIG_FILES([Makefile
 		build/getg729.sh
 		build/freeswitch.pc
 		build/modmake.rules
-		libs/xmlrpc-c/include/xmlrpc-c/config.h
 		libs/xmlrpc-c/xmlrpc_config.h
+		libs/xmlrpc-c/config.mk
+		libs/xmlrpc-c/srcdir.mk
+		libs/xmlrpc-c/stamp-h
 		scripts/gentls_cert])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])

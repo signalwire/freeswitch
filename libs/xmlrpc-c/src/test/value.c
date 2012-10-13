@@ -13,7 +13,9 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/string_int.h"
 
-#include "test.h"
+#include "testtool.h"
+#include "value_datetime.h"
+
 #include "value.h"
 
 
@@ -152,197 +154,6 @@ test_value_double(void) {
     xmlrpc_DECREF(v);
     TEST_NO_FAULT(&env);
     TEST(d == 1.0);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_value_datetime_varytime(const char * const datestring,
-                             time_t       const datetime) {
-
-    xmlrpc_value * v;
-    xmlrpc_env env;
-    const char * ds;
-    time_t dt;
-
-    xmlrpc_env_init(&env);
-
-    v = xmlrpc_datetime_new_str(&env, datestring);
-    TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
-
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST_NO_FAULT(&env);
-    TEST(dt == datetime);
-
-    xmlrpc_DECREF(v);
-
-    v = xmlrpc_datetime_new_sec(&env, datetime);
-    TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_DATETIME == xmlrpc_value_type(v));
-
-    xmlrpc_read_datetime_str(&env, v, &ds);
-    TEST_NO_FAULT(&env);
-    TEST(streq(ds, datestring));
-    strfree(ds);
-
-    xmlrpc_DECREF(v);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_value_datetime_not_unix(const char * const datestring) {
-
-    xmlrpc_value * v;
-    xmlrpc_env env;
-    time_t dt;
-
-    xmlrpc_env_init(&env);
-
-    v = xmlrpc_datetime_new_str(&env, datestring);
-    TEST_NO_FAULT(&env);
-
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST_FAULT(&env, XMLRPC_INTERNAL_ERROR);
-
-    xmlrpc_DECREF(v);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_value_datetime_invalid(const char * const datestring) {
-
-    /* Ideally, xmlrpc_datetime_new_str() would fail on these, but
-       the code doesn't implement that today.  However,
-       xmlrpc_read_datetime_sec() does catch many cases, so we
-       use that.
-
-       Note that xmlrpc_read_datetime_sec() doesn't catch them all.
-       Sometimes it just returns garbage, e.g. returns July 1 for
-       June 31.
-    */
-
-    xmlrpc_value * v;
-    xmlrpc_env env;
-    time_t dt;
-
-    xmlrpc_env_init(&env);
-
-    v = xmlrpc_datetime_new_str(&env, datestring);
-    TEST_NO_FAULT(&env);
-
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
-
-    xmlrpc_DECREF(v);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_build_decomp_datetime(void) {
-
-    const char * datestring = "19980717T14:08:55";
-    time_t const datetime = 900684535;
-
-    xmlrpc_env env;
-    xmlrpc_value * v;
-    time_t dt;
-    const char * ds;
-
-    xmlrpc_env_init(&env);
-
-    v = xmlrpc_build_value(&env, "t", datetime);
-    TEST_NO_FAULT(&env);
-    TEST(v != NULL);
-    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_DATETIME);
-
-    dt = 0;
-    xmlrpc_read_datetime_sec(&env, v, &dt);
-    TEST(dt == datetime);
-
-    dt = 0;
-    xmlrpc_decompose_value(&env, v, "t", &dt);
-    xmlrpc_DECREF(v);
-    TEST_NO_FAULT(&env);
-    TEST(dt == datetime);
-
-    v = xmlrpc_int_new(&env, 9);
-    TEST_NO_FAULT(&env);
-    xmlrpc_decompose_value(&env, v, "t", &dt);
-    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
-    xmlrpc_decompose_value(&env, v, "8", &ds);
-    TEST_FAULT(&env, XMLRPC_TYPE_ERROR);
-    xmlrpc_env_clean(&env);
-    xmlrpc_env_init(&env);
-    xmlrpc_DECREF(v);
-
-    v = xmlrpc_build_value(&env, "8", datestring);
-    TEST_NO_FAULT(&env);
-    TEST(v != NULL);
-    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_DATETIME);
-    xmlrpc_decompose_value(&env, v, "8", &ds);
-    xmlrpc_DECREF(v);
-    TEST_NO_FAULT(&env);
-    TEST(streq(ds, datestring));
-    strfree(ds);
-
-    xmlrpc_env_clean(&env);
-}
-
-
-
-static void
-test_value_datetime(void) {
-
-    const char * datestring = "19980717T14:08:55";
-    time_t const datetime = 900684535;
-
-    xmlrpc_env env;
-
-    xmlrpc_env_init(&env);
-
-    TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_DATETIME), "DATETIME"));
-
-    /* Valid datetime, generated from XML-RPC string */
-
-    test_value_datetime_varytime(datestring, datetime);
-
-    /* Leap years */
-    test_value_datetime_varytime("20000229T23:59:59", 951868799);
-    test_value_datetime_varytime("20000301T00:00:00", 951868800);
-    test_value_datetime_varytime("20010228T23:59:59", 983404799);
-    test_value_datetime_varytime("20010301T00:00:00", 983404800);
-    test_value_datetime_varytime("20040229T23:59:59", 1078099199);
-    test_value_datetime_varytime("20040301T00:00:00", 1078099200);
-
-    /* Datetimes that can't be represented as time_t */
-    test_value_datetime_not_unix("19691231T23:59:59");
-
-    /* Invalid datetimes */
-    /* Note that the code today does a pretty weak job of validating datetimes,
-       so we test only the validation that we know is implemented.
-    */
-    test_value_datetime_invalid("19700101T25:00:00");
-    test_value_datetime_invalid("19700101T10:61:01");
-    test_value_datetime_invalid("19700101T10:59:61");
-    test_value_datetime_invalid("19700001T10:00:00");
-    test_value_datetime_invalid("19701301T10:00:00");
-    test_value_datetime_invalid("19700132T10:00:00");
-
-    test_build_decomp_datetime();
 
     xmlrpc_env_clean(&env);
 }
@@ -711,7 +522,7 @@ test_value_string_wide_build(void) {
     xmlrpc_env_init(&env);
 
     /* Build with build_value w# */
-    valueP = xmlrpc_build_value(&env, "w#", wcs_data, 3);
+    valueP = xmlrpc_build_value(&env, "w#", wcs_data, (size_t)3);
     TEST_NO_FAULT(&env);
     TEST(valueP != NULL);
 
@@ -849,7 +660,7 @@ test_value_string_wide(void) {
         TEST(str != NULL);
         TEST(len == 4);
         TEST(str[len] == '\0');
-        TEST(0 == strncmp(str, utf8_data, len));
+        TEST(xmlrpc_strneq(str, utf8_data, len));
         free((void*)str);
     }
 
@@ -952,7 +763,7 @@ test_value_base64(void) {
     TEST_NO_FAULT(&env);
     TEST(len == sizeof(data2));
     TEST(memeq(data, data1, sizeof(data2)));
-    strfree(data);
+    free((void *)data);
 
     xmlrpc_env_clean(&env);
 }
@@ -992,6 +803,7 @@ test_value_array(void) {
     xmlrpc_value *v;
     xmlrpc_env env;
     size_t len;
+    xmlrpc_value * itemP;
 
     /* Basic array-building test. */
 
@@ -1005,6 +817,16 @@ test_value_array(void) {
     len = xmlrpc_array_size(&env, v);
     TEST_NO_FAULT(&env);
     TEST(len == 0);
+
+    itemP = xmlrpc_int_new(&env, 7);
+    TEST_NO_FAULT(&env);
+    xmlrpc_array_append_item(&env, v, itemP);
+    TEST_NO_FAULT(&env);
+    len = xmlrpc_array_size(&env, v);
+    TEST_NO_FAULT(&env);
+    TEST(len == 1);
+    xmlrpc_DECREF(itemP);
+
     xmlrpc_DECREF(v);
 
     v = xmlrpc_build_value(&env, "()");
@@ -1234,20 +1056,48 @@ test_value_array_nil(void) {
 
 
 static void
+destroyMyCptr(void * const context,
+              void * const objectP) {
+/*----------------------------------------------------------------------------
+   This is a xmlrpc_cptr_dtor_fn.
+-----------------------------------------------------------------------------*/
+    int * const destroyConfirmationP = context;
+    int * const objectIntP = objectP;
+
+    *destroyConfirmationP = *objectIntP;
+}
+
+
+
+static void
 test_value_cptr(void) {
+
+    int destroyConfirmation;
 
     xmlrpc_value * v;
     xmlrpc_env env;
     void * ptr;
-
-    /* Test C pointer storage using 'p'.
-       We don't have cleanup functions (yet). 
-    */
+    int myObject;
 
     xmlrpc_env_init(&env);
 
     TEST(streq(xmlrpc_type_name(XMLRPC_TYPE_C_PTR), "C_PTR"));
 
+    myObject = 7;
+
+    v = xmlrpc_cptr_new(&env, &myObject);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_C_PTR);
+    xmlrpc_DECREF(v);
+
+    v = xmlrpc_cptr_new_dtor(&env, &myObject,
+                             &destroyMyCptr, &destroyConfirmation);
+    TEST_NO_FAULT(&env);
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_C_PTR);
+    destroyConfirmation = 3;
+    xmlrpc_DECREF(v);
+    TEST(destroyConfirmation == 7);  // the destructor has set this
+    
     v = xmlrpc_build_value(&env, "p", (void*) 0x00000017);
     TEST_NO_FAULT(&env);
     TEST(XMLRPC_TYPE_C_PTR == xmlrpc_value_type(v));
@@ -1273,7 +1123,7 @@ test_value_nil(void) {
 
     v = xmlrpc_nil_new(&env);
     TEST_NO_FAULT(&env);
-    TEST(XMLRPC_TYPE_NIL == xmlrpc_value_type(v));
+    TEST(xmlrpc_value_type(v) == XMLRPC_TYPE_NIL);
     xmlrpc_DECREF(v);
 
     v = xmlrpc_build_value(&env, "n");
@@ -1465,7 +1315,7 @@ test_value_parse_value(void) {
 
     valueP = xmlrpc_build_value(&env, "(idb8ss#6(i){s:i}np(i))",
                                 7, 3.14, (xmlrpc_bool)1, datestring,
-                                "hello world", "a\0b", 3, 
+                                "hello world", "a\0b", (size_t)3,
                                 "base64 data", strlen("base64 data"),
                                 15, "member9", 9, &valueP, -5);
     
@@ -1610,7 +1460,7 @@ test_struct_get_element(xmlrpc_value * const structP,
 
 static void
 testStructReadout(xmlrpc_value * const structP,
-                  size_t         const expectedSize) {
+                  unsigned int   const expectedSize) {
 
     xmlrpc_env env;
     xmlrpc_value * keyP;
@@ -1753,6 +1603,10 @@ test_struct_decompose(xmlrpc_value * const testStructP) {
                            "foo", &sval,
                            "bar", &ival);
     TEST_NO_FAULT(&env);
+    TEST(ival == 1);
+    TEST(!bval);
+    TEST(streq(sval, "Hello!"));
+    free(sval);
 
     /* First value of wrong type */
     xmlrpc_decompose_value(&env, testStructP, "{s:b,s:i,*}",

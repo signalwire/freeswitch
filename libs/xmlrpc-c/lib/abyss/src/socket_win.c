@@ -36,190 +36,60 @@ typedef struct tagSOCKERRS {
    char * desc;   // description of error
 } SOCKERR;
 
-/* could/should perhaps be by the actual call,
-   but for now, just one big list, with some repeats
-*/
+/* list shamelessly copied from apache apr errorcodes.c - Grmt 2011-06-16 */
 
 SOCKERR sSockErr[] = {
-   { WSANOTINITIALISED,
-     "WSANOTINITIALISED - "
-     "WSAStartup must be called before using this function." },
-   { WSAENETDOWN,
-     "WSAENETDOWN - "
-     "The network subsystem has failed." },
-   { WSAEACCES,
-     "WSAEACCES - "
-     "Attempt to connect datagram socket to broadcast address failed "
-     "because setsockopt option SO_BROADCAST is not enabled." },
-   { WSAEADDRINUSE,
-     "WSAEADDRINUSE - "
-     "A process on the computer is already bound to the same fully-qualified "
-     "address and the socket has not been marked to allow address reuse with "
-     "SO_REUSEADDR. For example, the IP address and port are bound in the "
-     "af_inet case). (See the SO_REUSEADDR socket option under setsockopt.)" },
-   { WSAEADDRNOTAVAIL,
-     "WSAEADDRNOTAVAIL - "
-     "The specified address is not a valid address for this computer." },
-   { WSAEFAULT,
-     "WSAEFAULT - "
-     "The name or namelen parameter is not a valid part of the user "
-     "address space, the namelen parameter is too small, the name parameter "
-     "contains an incorrect address format for the associated "
-     "address family, or the first two bytes of the memory block "
-     "specified by name does not match the address family associated with "
-     "the socket descriptor s." },
-   { WSAEINPROGRESS,
-     "WSAEINPROGRESS - "
-     "A blocking Windows Sockets 1.1 call is in progress, or the "
-     "service provider is still processing a callback function." },
-   { WSAEINVAL,
-     "WSAEINVAL - "
-     "The socket is already bound to an address." },
-   { WSAENOBUFS,
-     "WSAENOBUFS - "
-     "Not enough buffers available, too many connections." },
-   { WSAENOTSOCK,
-     "WSAENOTSOCK - "
-     "The descriptor is not a socket." },
-
-   // setsocketopt
-   { WSAENETRESET,
-     "WSAENETRESET - "
-     "Connection has timed out when SO_KEEPALIVE is set." },
-   { WSAENOPROTOOPT,
-     "WSAENOPROTOOPT - "
-     "The option is unknown or the specified provider "
-     "or socket is not capable of implementing it "
-     "(see SO_GROUP_PRIORITY limitations)." },
-   { WSAENOTCONN,
-     "WSAENOTCONN - "
-     "Connection has been reset when SO_KEEPALIVE is set." },
-
-   // WSAStartup
-   { WSASYSNOTREADY,
-     "WSASYSNOTREADY - "
-     "The underlying network subsystem is not ready for "
-     "network communication." },
-   { WSAVERNOTSUPPORTED,
-     "WSAVERNOTSUPPORTED - "
-     "The version of Windows Sockets function requested is not provided "
-     "by this particular Windows Sockets implementation." },
-   { WSAEINPROGRESS,
-     "WSAEINPROGRESS - "
-     "A blocking Windows Sockets 1.1 operation is in progress." },
-   { WSAEPROCLIM,
-     "WSAEPROCLIM - "
-     "Limit on the number of tasks allowed by the Windows Sockets "
-     "implementation has been reached." },
-   { WSAEFAULT,
-     "WSAEFAULT - "
-     "The lpWSAData is not a valid pointer." },
-   // listen
-   { WSANOTINITIALISED,
-     "WSANOTINITIALISED - "
-     "A successful WSAStartup call must occur before using this function." },
-   { WSAENETDOWN,
-     "WSAENETDOWN - "
-     "The network subsystem has failed." },
-   { WSAEADDRINUSE,
-     "WSAEADDRINUSE - "
-     "The socket's local address is already in use and the socket "
-     "was not marked to allow address reuse with SO_REUSEADDR.  "
-     "This error usually occurs during execution of the bind function, "
-     "but could be delayed until this function if the bind was to "
-     "a partially wildcard address (involving ADDR_ANY) "
-     "and if a specific address needs to be committed at the time "
-     "of this function call." },
-   { WSAEINPROGRESS,
-     "WSAEINPROGRESS - "
-     "A blocking Windows Sockets 1.1 call is in progress, "
-     "or the service provider is still processing a callback function." },
-   { WSAEINVAL,
-     "WSAEINVAL - "
-     "The socket has not been bound with bind." },
-   { WSAEISCONN,
-     "WSAEISCONN - "
-     "The socket is already connected." },
-   { WSAEMFILE,
-     "WSAEMFILE - "
-     "No more socket descriptors are available." },
-   { WSAENOBUFS,
-     "WSAENOBUFS - "
-     "No buffer space is available." },
-   { WSAENOTSOCK,
-     "WSAENOTSOCK - "
-     "The descriptor is not a socket." },
-   { WSAEOPNOTSUPP,
-     "WSAEOPNOTSUPP - "
-     "The referenced socket is not of a type that has a listen operation." },
-
-   // getpeername
-   { WSANOTINITIALISED,
-     "WSANOTINITIALISED - "
-     "A successful WSAStartup call must occur before using this function." },
-   { WSAENETDOWN,
-     "WSAENETDOWN - "
-     "The network subsystem has failed." },
-   { WSAEFAULT,
-     "WSAEFAULT - "
-     "The name or the namelen parameter is not a valid part of the "
-     "user address space, or the namelen parameter is too small." },
-   { WSAEINPROGRESS,
-     "WSAEINPROGRESS - "
-     "A blocking Windows Sockets 1.1 call is in progress, "
-     "or the service provider is still processing a callback function." },
-   { WSAENOTCONN,
-     "WSAENOTCONN - "
-     "The socket is not connected." },
-   { WSAENOTSOCK,
-     "WSAENOTSOCK - "
-     "The descriptor is not a socket." },
-
-   // accept
-   { WSANOTINITIALISED,
-     "WSANOTINITIALISED - "
-     "A successful WSAStartup call must occur before using this function." },
-   { WSAENETDOWN,
-     "WSAENETDOWN - "
-     "The network subsystem has failed." },
-   { WSAEFAULT,
-     "WSAEFAULT - "
-     "The addrlen parameter is too small or addr is not a valid part "
-     "of the user address space." },
-   { WSAEINTR,
-     "WSAEINTR - "
-     "A blocking Windows Sockets 1.1 call was canceled through "
-     "WSACancelBlockingCall." },
-   { WSAEINPROGRESS,
-     "WSAEINPROGRESS - "
-     "A blocking Windows Sockets 1.1 call is in progress, "
-     "or the service provider is still processing a callback function." },
-   { WSAEINVAL,
-     "WSAEINVAL - "
-     "The listen function was not invoked prior to accept." },
-   { WSAEMFILE,
-     "WSAEMFILE - "
-     "The queue is nonempty upon entry to accept and "
-     "there are no descriptors available." },
-   { WSAENOBUFS,
-     "WSAENOBUFS - "
-     "No buffer space is available." },
-   { WSAENOTSOCK,
-     "WSAENOTSOCK - "
-     "The descriptor is not a socket." },
-   { WSAEOPNOTSUPP,
-     "WSAEOPNOTSUPP - "
-     "The referenced socket is not a type that offers connection-oriented "
-     "service." },
-   { WSAEWOULDBLOCK,
-     "WSAEWOULDBLOCK - "
-     "The socket is marked as nonblocking and no connections are present "
-     "to be accepted." },
-
-   /* must be last entry */
-   { 0,            0 }
+    WSAEINTR,           "Interrupted system call",
+    WSAEBADF,           "Bad file number",
+    WSAEACCES,          "Permission denied",
+    WSAEFAULT,          "Bad address",
+    WSAEINVAL,          "Invalid argument",
+    WSAEMFILE,          "Too many open sockets",
+    WSAEWOULDBLOCK,     "Operation would block",
+    WSAEINPROGRESS,     "Operation now in progress",
+    WSAEALREADY,        "Operation already in progress",
+    WSAENOTSOCK,        "Socket operation on non-socket",
+    WSAEDESTADDRREQ,    "Destination address required",
+    WSAEMSGSIZE,        "Message too long",
+    WSAEPROTOTYPE,      "Protocol wrong type for socket",
+    WSAENOPROTOOPT,     "Bad protocol option",
+    WSAEPROTONOSUPPORT, "Protocol not supported",
+    WSAESOCKTNOSUPPORT, "Socket type not supported",
+    WSAEOPNOTSUPP,      "Operation not supported on socket",
+    WSAEPFNOSUPPORT,    "Protocol family not supported",
+    WSAEAFNOSUPPORT,    "Address family not supported",
+    WSAEADDRINUSE,      "Address already in use",
+    WSAEADDRNOTAVAIL,   "Can't assign requested address",
+    WSAENETDOWN,        "Network is down",
+    WSAENETUNREACH,     "Network is unreachable",
+    WSAENETRESET,       "Net connection reset",
+    WSAECONNABORTED,    "Software caused connection abort",
+    WSAECONNRESET,      "Connection reset by peer",
+    WSAENOBUFS,         "No buffer space available",
+    WSAEISCONN,         "Socket is already connected",
+    WSAENOTCONN,        "Socket is not connected",
+    WSAESHUTDOWN,       "Can't send after socket shutdown",
+    WSAETOOMANYREFS,    "Too many references, can't splice",
+    WSAETIMEDOUT,       "Connection timed out",
+    WSAECONNREFUSED,    "Connection refused",
+    WSAELOOP,           "Too many levels of symbolic links",
+    WSAENAMETOOLONG,    "File name too long",
+    WSAEHOSTDOWN,       "Host is down",
+    WSAEHOSTUNREACH,    "No route to host",
+    WSAENOTEMPTY,       "Directory not empty",
+    WSAEPROCLIM,        "Too many processes",
+    WSAEUSERS,          "Too many users",
+    WSAEDQUOT,          "Disc quota exceeded",
+    WSAESTALE,          "Stale NFS file handle",
+    WSAEREMOTE,         "Too many levels of remote in path",
+    WSASYSNOTREADY,     "Network system is unavailable",
+    WSAVERNOTSUPPORTED, "Winsock version out of range",
+    WSANOTINITIALISED,  "WSAStartup not yet called",
+    WSAEDISCON,         "Graceful shutdown in progress",
+    WSAHOST_NOT_FOUND,  "Host not found",
+    WSANO_DATA,         "No host data of that type was found",
+    0,                  NULL
 };
-
 
 
 static const char *
@@ -236,7 +106,7 @@ getWSAError(int const wsaErrno) {
         ++pseP;
     }
 
-    return "(no description available)";
+    return "No description available";
 }
 
 
@@ -325,6 +195,8 @@ channelDestroy(TChannel * const channelP) {
     CloseHandle(socketWinP->interruptEvent);
 
     free(socketWinP);
+    channelP->implP = 0;
+
 }
 
 
@@ -335,32 +207,42 @@ static void
 channelWrite(TChannel *            const channelP,
              const unsigned char * const buffer,
              uint32_t              const len,
-             bool *          const failedP) {
+             bool *                const failedP) {
 
     struct socketWin * const socketWinP = channelP->implP;
 
     size_t bytesLeft;
     bool error;
+	int to_count = 0;
+	int lastError = 0;
 
-    assert(sizeof(size_t) >= sizeof(len));
+	for (bytesLeft = len, error = FALSE; bytesLeft > 0 && !error;) {
+        size_t const maxSend = 	4096 * 2; /* with respect to resource allocation this might be a better value than 2^31 */ 
 
-    for (bytesLeft = len, error = FALSE;
-         bytesLeft > 0 && !error;
-        ) {
-        size_t const maxSend = (size_t)(-1) >> 1;
-
-        int rc;
-        
-        rc = send(socketWinP->winsock, &buffer[len-bytesLeft],
-                  MIN(maxSend, bytesLeft), 0);
-
-        if (rc <= 0)
-            /* 0 means connection closed; < 0 means severe error */
-            error = TRUE;
-        else
-            bytesLeft -= rc;
+        int rc = send(socketWinP->winsock, buffer + len - bytesLeft, MIN(maxSend, bytesLeft), 0);
+		if (rc > 0) {          /* 0 means connection closed; < 0 means severe error */
+			to_count = 0;
+		    bytesLeft -= rc;
+		} 
+		else if (!rc) {
+			error = TRUE;
+			fprintf(stderr, "Abyss: send() failed: connection closed");
+		}
+		else {
+			error = TRUE;
+			lastError = WSAGetLastError();
+            if (lastError == WSAEWOULDBLOCK || lastError == ERROR_IO_PENDING) {
+				SleepEx(20, TRUE);  /* give socket another chance after xx millisec) */
+				if (++to_count < 300) {
+					error = FALSE;
+				}
+			    //  fprintf(stderr, "Abyss: send() failed with errno %d (%s) cnt %d, will retry\n", lastError, getWSAError(lastError), to_count);
+			}
+			if (error) fprintf(stderr, "Abyss: send() failed with errno %d (%s)\n", lastError, getWSAError(lastError));
+		}
     }
-    *failedP = error;
+
+	*failedP = error;
 }
 
 
@@ -375,16 +257,29 @@ channelRead(TChannel *   const channelP,
             bool * const failedP) {
 
     struct socketWin * const socketWinP = channelP->implP;
+    int retries = 300; 
+	
+	for (*failedP = TRUE; *failedP && retries; retries--) {
+		int rc = recv(socketWinP->winsock, buffer, bufferSize, 0);
+		int lastError = WSAGetLastError();
 
-    int rc;
-    rc = recv(socketWinP->winsock, buffer, bufferSize, 0);
+		if (rc < 0) {
+			if (lastError == WSAEWOULDBLOCK || lastError == ERROR_IO_PENDING) {
+				fprintf(stderr, "Abyss: recv() failed with errno %d (%s) cnt %d, will retry\n", lastError, getWSAError(lastError), retries);
+				SleepEx(30, TRUE);  /* give socket another chance after xx millisec)*/
+				*failedP = FALSE;
+			} else {
+				fprintf(stderr, "Abyss: recv() failed with errno %d (%s)\n", lastError, getWSAError(lastError));
+				break;
+			}
+		} else {
+			*failedP = FALSE;
+			*bytesReceivedP = rc;
 
-    if (rc < 0) {
-        *failedP = TRUE;
-    } else {
-        *failedP = FALSE;
-        *bytesReceivedP = rc;
-    }
+			if (ChannelTraceIsActive)
+				fprintf(stderr, "Abyss channel: read %u bytes: '%.*s'\n", bytesReceivedP, (int)(*bytesReceivedP), buffer);
+		}
+	}
 }
 
 

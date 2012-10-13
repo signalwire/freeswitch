@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "bool.h"
+#include "int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/abyss.h"
@@ -81,7 +82,7 @@ ChanSwitchTerm(void) {
    functions that are particular to an implementation.
 */
 
-static uint const switchSignature = 0x06060A;
+static unsigned int const switchSignature = 0x06060A;
 
 void
 ChanSwitchCreate(const struct TChanSwitchVtbl * const vtblP,

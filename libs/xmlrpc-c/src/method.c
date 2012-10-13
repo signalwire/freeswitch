@@ -10,6 +10,8 @@
   Contributed to the public domain by its author.
 =========================================================================*/
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include "xmlrpc_config.h"
 
 #include <assert.h>
@@ -57,6 +59,7 @@ translateTypeSpecifierToName(xmlrpc_env *  const envP,
                       "Method registry contains invalid signature "
                       "data.  It contains the type specifier '%c'",
                       typeSpecifier);
+        *typeNameP = NULL;  /* quiet compiler warning */
     }
 }
                 
@@ -175,9 +178,8 @@ parseOneSignature(xmlrpc_env *               const envP,
         }
         if (envP->fault_occurred)
             free(signatureP);
-        else
-            *signaturePP = signatureP;
     }
+    *signaturePP = signatureP;
 }    
 
 
@@ -210,7 +212,7 @@ listSignatures(xmlrpc_env *               const envP,
     cursorP = &sigListString[0];
     
     while (!envP->fault_occurred && *cursorP != '\0') {
-        struct xmlrpc_signature * signatureP = NULL;
+        struct xmlrpc_signature * signatureP;
         
         parseOneSignature(envP, cursorP, &signatureP, &cursorP);
         
@@ -293,6 +295,8 @@ makeSignatureList(xmlrpc_env *            const envP,
     if (env.fault_occurred)
         xmlrpc_faultf(envP, "Can't interpret signature string '%s'.  %s",
                       signatureString, env.fault_string);
+
+    xmlrpc_env_clean(&env);
 }
 
 
@@ -304,6 +308,7 @@ xmlrpc_methodCreate(xmlrpc_env *           const envP,
                     void *                 const userData,
                     const char *           const signatureString,
                     const char *           const helpText,
+                    size_t                 const stackSize,
                     xmlrpc_methodInfo **   const methodPP) {
 
     xmlrpc_methodInfo * methodP;
@@ -319,12 +324,15 @@ xmlrpc_methodCreate(xmlrpc_env *           const envP,
         methodP->methodFnType1  = methodFnType1;
         methodP->methodFnType2  = methodFnType2;
         methodP->userData       = userData;
-        methodP->helpText       = strdup(helpText);
+        methodP->helpText       = xmlrpc_strdupsol(helpText);
+        methodP->stackSize      = stackSize;
 
         makeSignatureList(envP, signatureString, &methodP->signatureListP);
 
-        if (envP->fault_occurred)
+        if (envP->fault_occurred) {
+            xmlrpc_strfree(methodP->helpText);
             free(methodP);
+        }
 
         *methodPP = methodP;
     }

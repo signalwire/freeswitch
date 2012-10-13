@@ -31,6 +31,8 @@ connJob(void * const userHandle) {
 /*----------------------------------------------------------------------------
    This is the root function for a thread that processes a connection
    (performs HTTP transactions).
+
+   We never return.  We ultimately exit the thread.
 -----------------------------------------------------------------------------*/
     TConn * const connectionP = userHandle;
 
@@ -44,9 +46,19 @@ connJob(void * const userHandle) {
            after we exit.
         */
 
-    //ThreadExit(0);
+
+    /* Note that ThreadExit() runs a cleanup function, which in our
+       case is connDone().
+    */
+    ThreadExit(connectionP->threadP, 0);
 }
 
+
+
+/* This is the maximum amount of stack that 'connJob' itself uses --
+   does not count what user's connection job function uses.
+*/
+#define CONNJOB_STACK 1024
 
 
 static void
@@ -79,6 +91,7 @@ static void
 makeThread(TConn *             const connectionP,
            enum abyss_foreback const foregroundBackground,
            bool                const useSigchld,
+           size_t              const jobStackSize,
            const char **       const errorP) {
            
     switch (foregroundBackground) {
@@ -91,6 +104,7 @@ makeThread(TConn *             const connectionP,
         connectionP->hasOwnThread = TRUE;
         ThreadCreate(&connectionP->threadP, connectionP,
                      &connJob, &threadDone, useSigchld,
+                     CONNJOB_STACK + jobStackSize,
                      &error);
         if (error) {
             xmlrpc_asprintf(errorP, "Unable to create thread to "
@@ -110,6 +124,7 @@ ConnCreate(TConn **            const connectionPP,
            TChannel *          const channelP,
            void *              const channelInfoP,
            TThreadProc *       const job,
+           size_t              const jobStackSize,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
            bool                const useSigchld,
@@ -150,7 +165,7 @@ ConnCreate(TConn **            const connectionPP,
         connectionP->server       = serverP;
         connectionP->channelP     = channelP;
         connectionP->channelInfoP = channelInfoP;
-        connectionP->buffer[0]    = '\0';
+        connectionP->buffer.b[0]  = '\0';
         connectionP->buffersize   = 0;
         connectionP->bufferpos    = 0;
         connectionP->finished     = FALSE;
@@ -160,7 +175,8 @@ ConnCreate(TConn **            const connectionPP,
         connectionP->outbytes     = 0;
         connectionP->trace        = getenv("ABYSS_TRACE_CONN");
 
-        makeThread(connectionP, foregroundBackground, useSigchld, errorP);
+        makeThread(connectionP, foregroundBackground, useSigchld,
+                   jobStackSize, errorP);
     }
     *connectionPP = connectionP;
 }
@@ -185,6 +201,7 @@ ConnProcess(TConn * const connectionP) {
         /* There's a background thread to handle this connection.  Set
            it running.
         */
+        assert(connectionP->threadP);
         retval = ThreadRun(connectionP->threadP);
     } else {
         /* No background thread.  We just handle it here while Caller waits. */
@@ -199,9 +216,11 @@ ConnProcess(TConn * const connectionP) {
 
 void
 ConnWaitAndRelease(TConn * const connectionP) {
-    if (connectionP->hasOwnThread)
+
+    if (connectionP->hasOwnThread) {
+        assert(connectionP->threadP);
         ThreadWaitAndRelease(connectionP->threadP);
-    
+    }
     free(connectionP);
 }
 
@@ -220,16 +239,27 @@ ConnReadInit(TConn * const connectionP) {
 
     if (connectionP->buffersize > connectionP->bufferpos) {
         connectionP->buffersize -= connectionP->bufferpos;
-        memmove(connectionP->buffer,
-                connectionP->buffer + connectionP->bufferpos,
+        memmove(connectionP->buffer.b,
+                connectionP->buffer.b + connectionP->bufferpos,
                 connectionP->buffersize);
         connectionP->bufferpos = 0;
     } else
         connectionP->buffersize = connectionP->bufferpos = 0;
 
-    connectionP->buffer[connectionP->buffersize] = '\0';
+    connectionP->buffer.b[connectionP->buffersize] = '\0';
 
     connectionP->inbytes = connectionP->outbytes = 0;
+}
+
+
+
+static void
+traceReadTimeout(TConn *  const connectionP,
+                 uint32_t const timeout) {
+
+    if (connectionP->trace)
+        fprintf(stderr, "TIMED OUT waiting over %u seconds "
+                "for data from client.\n", timeout);
 }
 
 
@@ -261,9 +291,11 @@ nextLineSize(const char * const string,
 
 
 static void
-traceBuffer(const char * const label,
-            const char * const buffer,
-            unsigned int const size) {
+traceBuffer(const char *          const label,
+            const unsigned char * const buffer,
+            unsigned int          const size) {
+
+    const char * const buffer_t = (const char *)buffer;
 
     size_t cursor;  /* Index into buffer[] */
 
@@ -272,9 +304,9 @@ traceBuffer(const char * const label,
     for (cursor = 0; cursor < size; ) {
         /* Print one line of buffer */
 
-        size_t const lineSize = nextLineSize(buffer, cursor, size);
+        size_t const lineSize = nextLineSize(buffer_t, cursor, size);
         const char * const printableLine =
-            xmlrpc_makePrintable_lp(&buffer[cursor], lineSize);
+            xmlrpc_makePrintable_lp(&buffer_t[cursor], lineSize);
         
         fprintf(stderr, "%s\n", printableLine);
 
@@ -288,12 +320,22 @@ traceBuffer(const char * const label,
 
 
 static void
+traceBufferText(const char * const label,
+                const char * const buffer,
+                unsigned int const size) {
+
+    traceBuffer(label, (const unsigned char *)buffer, size);
+}
+
+
+
+static void
 traceChannelRead(TConn *      const connectionP,
                  unsigned int const size) {
 
     if (connectionP->trace)
         traceBuffer("READ FROM CHANNEL",
-                    connectionP->buffer + connectionP->buffersize, size);
+                    connectionP->buffer.b + connectionP->buffersize, size);
 }
 
 
@@ -307,7 +349,7 @@ traceChannelWrite(TConn *      const connectionP,
     if (connectionP->trace) {
         const char * const label =
             failed ? "FAILED TO WRITE TO CHANNEL" : "WROTE TO CHANNEL";
-        traceBuffer(label, buffer, size);
+        traceBufferText(label, buffer, size);
     }
 }
 
@@ -321,71 +363,136 @@ bufferSpace(TConn * const connectionP) {
                     
 
 
-bool
-ConnRead(TConn *  const connectionP,
-         uint32_t const timeout) {
+static void
+readFromChannel(TConn *       const connectionP,
+                bool *        const eofP,
+                const char ** const errorP) {
 /*----------------------------------------------------------------------------
-   Read some stuff on connection *connectionP from the channel.
+   Read some data from the channel of Connection *connectionP.
 
-   Don't wait more than 'timeout' seconds for data to arrive.  Fail if
-   nothing arrives within that time.
-
-   'timeout' must be before the end of time.
+   Iff there is none available to read, return *eofP == true.
 -----------------------------------------------------------------------------*/
-    time_t const deadline = time(NULL) + timeout;
+    uint32_t bytesRead;
+    bool readError;
 
-    bool cantGetData;
-    bool gotData;
+    ChannelRead(connectionP->channelP,
+                connectionP->buffer.b + connectionP->buffersize,
+                bufferSpace(connectionP) - 1,
+                &bytesRead, &readError);
 
-    cantGetData = FALSE;
-    gotData = FALSE;
-    
-    while (!gotData && !cantGetData) {
-        int const timeLeft = (int)(deadline - time(NULL));
+    if (readError)
+        xmlrpc_asprintf(errorP, "Error reading from channel");
+    else {
+        *errorP = NULL;
+        if (bytesRead > 0) {
+            *eofP = FALSE;
+            traceChannelRead(connectionP, bytesRead);
+            connectionP->inbytes += bytesRead;
+            connectionP->buffersize += bytesRead;
+            connectionP->buffer.t[connectionP->buffersize] = '\0';
+        } else
+            *eofP = TRUE;
+    }
+}
 
-        if (timeLeft <= 0)
-            cantGetData = TRUE;
+
+
+static void
+dealWithReadTimeout(bool *        const timedOutP,
+                    bool          const timedOut,
+                    uint32_t      const timeout,
+                    const char ** const errorP) {
+
+    if (timedOutP)
+        *timedOutP = timedOut;
+    else {
+        if (timedOut)
+            xmlrpc_asprintf(errorP, "Read from Abyss client "
+                            "connection timed out after %u seconds "
+                            "or was interrupted",
+                            timeout);
+    }
+}
+
+
+
+static void
+dealWithReadEof(bool *        const eofP,
+                bool          const eof,
+                const char ** const errorP) {
+
+    if (eofP)
+        *eofP = eof;
+    else {
+        if (eof)
+            xmlrpc_asprintf(errorP, "Read from Abyss client "
+                            "connection failed because client closed the "
+                            "connection");
+    }
+}
+
+
+
+void
+ConnRead(TConn *       const connectionP,
+         uint32_t      const timeout,
+         bool *        const eofP,
+         bool *        const timedOutP,
+         const char ** const errorP) {
+/*----------------------------------------------------------------------------
+   Read some stuff on connection *connectionP from the channel.  Read it into
+   the connection's buffer.
+
+   Don't wait more than 'timeout' seconds for data to arrive.  If no data has
+   arrived by then and 'timedOutP' is null, fail.  If 'timedOut' is non-null,
+   return as *timedOutP whether 'timeout' seconds passed without any data
+   arriving.
+
+   Also, stop waiting upon any interruption and treat it the same as a
+   timeout.  An interruption is either a signal received (and caught) at
+   an appropriate time or a ChannelInterrupt() call before or during the
+   wait.
+
+   If 'eofP' is non-null, return *eofP == true, without reading anything, iff
+   there will no more data forthcoming on the connection because client has
+   closed the connection.  If 'eofP' is null, fail in that case.
+-----------------------------------------------------------------------------*/
+    uint32_t const timeoutMs = timeout * 1000;
+
+    if (timeoutMs < timeout)
+        /* Arithmetic overflow */
+        xmlrpc_asprintf(errorP, "Timeout value is too large");
+    else {
+        bool const waitForRead  = TRUE;
+        bool const waitForWrite = FALSE;
+
+        bool readyForRead;
+        bool failed;
+            
+        ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
+                    timeoutMs, &readyForRead, NULL, &failed);
+            
+        if (failed)
+            xmlrpc_asprintf(errorP,
+                            "Wait for stuff to arrive from client failed.");
         else {
-            bool const waitForRead  = TRUE;
-            bool const waitForWrite = FALSE;
-            
-            bool readyForRead;
-            bool failed;
-            
-            ChannelWait(connectionP->channelP, waitForRead, waitForWrite,
-                        timeLeft * 1000, &readyForRead, NULL, &failed);
-            
-            if (failed)
-                cantGetData = TRUE;
-            else {
-                uint32_t bytesRead;
-                bool readFailed;
-
-                ChannelRead(connectionP->channelP,
-                            connectionP->buffer + connectionP->buffersize,
-                            bufferSpace(connectionP) - 1,
-                            &bytesRead, &readFailed);
-
-                if (readFailed)
-                    cantGetData = TRUE;
-                else {
-                    if (bytesRead > 0) {
-                        traceChannelRead(connectionP, bytesRead);
-                        connectionP->inbytes += bytesRead;
-                        connectionP->buffersize += bytesRead;
-                        connectionP->buffer[connectionP->buffersize] = '\0';
-                        gotData = TRUE;
-                    } else
-                        /* Other end has disconnected */
-                        cantGetData = TRUE;
-                }
+            bool eof;
+            if (readyForRead) {
+                readFromChannel(connectionP, &eof, errorP);
+            } else {
+                /* Wait was interrupted, either by our requested timeout,
+                   a (caught) signal, or a ChannelInterrupt().
+                */
+                traceReadTimeout(connectionP, timeout);
+                *errorP = NULL;
+                eof = FALSE;
             }
+            if (!*errorP)
+                dealWithReadTimeout(timedOutP, !readyForRead, timeout, errorP);
+            if (!*errorP)
+                dealWithReadEof(eofP, eof, errorP);
         }
     }
-    if (gotData)
-        return TRUE;
-    else
-        return FALSE;
 }
 
 
@@ -429,12 +536,13 @@ ConnWriteFromFile(TConn *       const connectionP,
     uint32_t waittime;
     bool success;
     uint32_t readChunkSize;
+	uint32_t ChunkSize = 4096 * 2; /* read buffer size */
 
     if (rate > 0) {
         readChunkSize = MIN(buffersize, rate);  /* One second's worth */
         waittime = (1000 * buffersize) / rate;
     } else {
-        readChunkSize = buffersize;
+        readChunkSize = ChunkSize;
         waittime = 0;
     }
 
@@ -443,30 +551,42 @@ ConnWriteFromFile(TConn *       const connectionP,
         retval = FALSE;
     else {
         uint64_t const totalBytesToRead = last - start + 1;
-        uint64_t bytesread;
+        uint64_t bytesread = 0;
 
-        bytesread = 0;  /* initial value */
+        int32_t bytesReadThisTime = 0;
+        char * chunk = (char *) buffer; /* the beginning */
+        do {
 
-        while (bytesread < totalBytesToRead) {
-            uint64_t const bytesLeft     = totalBytesToRead - bytesread;
-            uint64_t const bytesToRead64 = MIN(readChunkSize, bytesLeft);
-            uint32_t const bytesToRead   = (uint32_t)bytesToRead64;
-            
-            uint32_t bytesReadThisTime;
+			if ((bytesReadThisTime = FileRead(fileP, chunk, readChunkSize)) <= 0 )
+				break;
+			
+			bytesread += bytesReadThisTime;
+			chunk += bytesReadThisTime;
 
-            assert(bytesToRead == bytesToRead64); /* readChunkSize is uint32 */
+			/* fix bug in ms ie as it doesn't render text/plain properly                    */
+			/* if CRLFs are split between reassembled tcp packets,                          */
+			/* ie "might" undeterministically render extra empty lines                      */
+			/* if it ends in CR or LF, read an extra chunk until the buffer is full         */
+			/* or end of file is reached. You may still have bad luck, complaints go to MS) */
 
-            bytesReadThisTime = FileRead(fileP, buffer, bytesToRead);
-            bytesread += bytesReadThisTime;
-            
-            if (bytesReadThisTime > 0)
-                ConnWrite(connectionP, buffer, bytesReadThisTime);
-            else
+/*			if (bytesReadThisTime == readChunkSize &&  chunk - (char *) buffer + readChunkSize < buffersize) { 
+ *				char * end = chunk - 1;
+ *				if (*end == CR || *end == LF) {
+ *					continue;
+ *				}
+ *			}
+ */				          
+            if (!bytesReadThisTime || !ConnWrite(connectionP, buffer, chunk - (char *) buffer)) {
                 break;
-            
-            if (waittime > 0)
+			}
+
+			chunk = (char *) buffer; /* a new beginning */
+
+			if (waittime > 0)
                 xmlrpc_millisecond_sleep(waittime);
-        }
+			
+        } while (bytesReadThisTime == readChunkSize);
+
         retval = (bytesread >= totalBytesToRead);
     }
     return retval;

@@ -884,11 +884,14 @@ opal
 /win32/libshout/*/*/libshout.log
 /win32/pcre/pcre_chartables.c
 /win32/tmp*.bat
-/xmlrpc-c/include/xmlrpc-c/config.h
 !/xmlrpc-c/include/xmlrpc-c/config.h.in
 /xmlrpc-c/stamp-h2
-/xmlrpc-c/xmlrpc_amconfig.h
+/xmlrpc-c/examples/config.h
+/xmlrpc-c/include/xmlrpc-c/config.h
+/xmlrpc-c/transport_config.h
+/xmlrpc-c/version.h
 /xmlrpc-c/xmlrpc_config.h
+# /xmlrpc-c/xmlrpc_amconfig.h
 /yaml/
 /yaml/config.h
 /yaml/stamp-h1
@@ -944,4 +947,3 @@ opal
 !/yaml/config/ltmain.sh
 !/yaml/config/missing
 !/yaml/configure
-

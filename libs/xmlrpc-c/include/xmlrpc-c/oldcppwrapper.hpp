@@ -27,17 +27,18 @@
 
 #include <cstdlib>
 #include <string>
+
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/client.h>
 #include <xmlrpc-c/server.h>
-
 
 //=========================================================================
 //  XmlRpcFault
 //=========================================================================
 //  A C++ exception class representing an XML-RPC fault.
 
-class XmlRpcFault {
+class XMLRPC_DLLEXPORT XmlRpcFault {
 
 private:
     xmlrpc_env   mFault;
@@ -51,9 +52,9 @@ public:
     XmlRpcFault (const xmlrpc_env *env);
     ~XmlRpcFault (void);
 
-    int          getFaultCode (void) const;
-    std::string  getFaultString (void) const;
-    xmlrpc_env  *getFaultEnv (void);
+    inline int getFaultCode (void) const;
+    std::string getFaultString (void) const;
+    inline xmlrpc_env * getFaultEnv (void);
 };
 
 inline int XmlRpcFault::getFaultCode (void) const {
@@ -74,7 +75,7 @@ inline xmlrpc_env *XmlRpcFault::getFaultEnv (void) {
 //    xmlrpc_parse_value(env, v, "(i)", &i);
 //    env.throwIfFaultOccurred();        
 
-class XmlRpcEnv {
+class XMLRPC_DLLEXPORT XmlRpcEnv {
 
 private:
     xmlrpc_env   mEnv;
@@ -128,7 +129,7 @@ inline void XmlRpcEnv::throwIfFaultOccurred (void) const {
 //
 //  So reference counting for the xmlrpc_value is quite a nightmare.
 
-class XmlRpcValue {
+class XMLRPC_DLLEXPORT XmlRpcValue {
 
 private:
     xmlrpc_value *mValue;
@@ -257,7 +258,7 @@ inline xmlrpc_value *XmlRpcValue::borrowReference (void) const {
 //  XmlRpcClient
 //=========================================================================
 
-class XmlRpcClient {
+class XMLRPC_DLLEXPORT XmlRpcClient {
 
 private:
     std::string mServerUrl;
@@ -344,7 +345,7 @@ inline XmlRpcValue XmlRpcClient::call (std::string method_name,
 //  XmlRpcGenSrv
 //=========================================================================
 
-class XmlRpcGenSrv {
+class XMLRPC_DLLEXPORT XmlRpcGenSrv {
 
 private:
 

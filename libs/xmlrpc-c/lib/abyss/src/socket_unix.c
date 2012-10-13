@@ -42,6 +42,7 @@
 
 #define sane_close(_it) do {if (_it > -1) { close(_it) ; _it = -1; }} while (_it > -1)
 
+
 typedef struct {
     int interruptorFd;
     int interrupteeFd;
@@ -164,6 +165,7 @@ channelDestroy(TChannel * const channelP) {
         sane_close(socketUnixP->fd);
 
     free(socketUnixP);
+	channelP->implP = 0;
 }
 
 
@@ -180,37 +182,44 @@ channelWrite(TChannel *            const channelP,
 
     size_t bytesLeft;
     bool error;
+    int to_count = 0;
 
     assert(sizeof(size_t) >= sizeof(len));
 
-    for (bytesLeft = len, error = FALSE;
-         bytesLeft > 0 && !error;
-        ) {
-        size_t const maxSend = (size_t)(-1) >> 1;
+    for (bytesLeft = len, error = FALSE; bytesLeft > 0 && !error; ) {
+        size_t const maxSend = 	4096 * 2; /* with respect to resource allocation this might be a better value than 2^31 */ 
+        ssize_t rc = 0;
 
-        ssize_t rc;
-        
-        rc = send(socketUnixP->fd, &buffer[len-bytesLeft],
-                  MIN(maxSend, bytesLeft), 0);
-
-        if (ChannelTraceIsActive) {
-            if (rc < 0)
-                fprintf(stderr, "Abyss channel: send() failed.  errno=%d (%s)",
-                        errno, strerror(errno));
-            else if (rc == 0)
-                fprintf(stderr, "Abyss channel: send() failed.  "
-                        "Socket closed.\n");
-            else
-                fprintf(stderr, "Abyss channel: sent %u bytes: '%.*s'\n",
-                        rc, rc, &buffer[len-bytesLeft]);
-        }
-        if (rc <= 0)
-            /* 0 means connection closed; < 0 means severe error */
-            error = TRUE;
-        else
-            bytesLeft -= rc;
+        rc = send(socketUnixP->fd, buffer + len - bytesLeft, MIN(maxSend, bytesLeft), 0);
+		if (rc > 0) {          /* 0 means connection closed; < 0 means severe error ; > 0 means bytes transferred */
+			to_count = 0;
+		    bytesLeft -= rc;
+			if (ChannelTraceIsActive)
+                fprintf(stderr, "Abyss: sent %d bytes: '%.*s'\n", rc, MIN(rc, 4096), buffer + len - bytesLeft);
+		} 
+		else if (!rc) {
+			error = TRUE;
+			if (ChannelTraceIsActive)
+				fprintf(stderr, "\nAbyss: send() failed: socket closed");
+		}
+		else {
+			error = TRUE;
+            if (errno == EWOULDBLOCK) {
+				usleep(20 * 1000); /* give socket another chance after xx millisec) */
+				if (++to_count < 300) {
+					error = FALSE;
+				}
+				if (ChannelTraceIsActive)
+					fprintf(stderr, "\nAbyss: send() failed with errno %d (%s) cnt %d, will retry\n", errno, strerror(errno), to_count);
+			}
+			if (ChannelTraceIsActive)
+	            fprintf(stderr, "Abyss: send() failed with errno=%d (%s)", errno, strerror(errno));
+		}
     }
-    *failedP = error;
+
+	*failedP = error;
+
+
 }
 
 
@@ -225,25 +234,29 @@ channelRead(TChannel *      const channelP,
             bool *          const failedP) {
 
     struct socketUnix * const socketUnixP = channelP->implP;
+    int retries = 300; 
+	
+	for (*failedP = TRUE; *failedP && retries; retries--) {
+		int rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
+		if (rc < 0) {
+			if (errno == EWOULDBLOCK) {
+				if (ChannelTraceIsActive)
+					fprintf(stderr, "\nAbyss: recv() failed with errno %d (%s) cnt %d, will retry\n", errno, strerror(errno), retries);
+				usleep(20 * 1000); /* give socket another chance after xx millisec)*/
+				*failedP = FALSE;
+			} else {
+				if (ChannelTraceIsActive)
+					fprintf(stderr, "\nAbyss: recv() failed with errno %d (%s)\n", errno, strerror(errno));
+				break;
+			}
+		} else {
+			*failedP = FALSE;
+			*bytesReceivedP = rc;
 
-    int rc;
-    rc = recv(socketUnixP->fd, buffer, bufferSize, 0);
-
-    if (rc < 0) {
-        *failedP = TRUE;
-        if (ChannelTraceIsActive)
-            fprintf(stderr, "Abyss channel: "
-                    "Failed to receive data from socket.  "
-                    "recv() failed with errno %d (%s)\n",
-                    errno, strerror(errno));
-    } else {
-        *failedP = FALSE;
-        *bytesReceivedP = rc;
-
-        if (ChannelTraceIsActive)
-            fprintf(stderr, "Abyss channel: read %u bytes: '%.*s'\n",
-                    *bytesReceivedP, (int)(*bytesReceivedP), buffer);
-    }
+			if (ChannelTraceIsActive)
+				fprintf(stderr, "Abyss channel: read %u bytes: '%.*s'\n", bytesReceivedP, (int)(*bytesReceivedP), buffer);
+		}
+	}
 }
 
 
@@ -270,7 +283,7 @@ channelWait(TChannel * const channelP,
    one.
 
    We return before the requested condition holds if 'timeoutMs'
-   milliseconds pass.  timoutMs == TIME_INFINITE means infinity.
+   milliseconds pass.  timeoutMs == TIME_INFINITE means infinity.
 
    We return before the requested condition holds if the process receives
    (and catches) a signal, but only if it receives that signal a certain
@@ -312,8 +325,7 @@ channelWait(TChannel * const channelP,
     pollfds[1].events = POLLIN;
     
     rc = poll(pollfds, ARRAY_SIZE(pollfds),
-              timeoutMs == TIME_INFINITE ? -1 : timeoutMs);
-
+              timeoutMs == TIME_INFINITE ? -1 : (int)timeoutMs);
 
     if (rc < 0) {
         if (errno == EINTR) {
@@ -477,10 +489,9 @@ makeChannelInfo(struct abyss_unix_chaninfo ** const channelInfoPP,
         channelInfoP->peerAddrLen = peerAddrLen;
         channelInfoP->peerAddr    = peerAddr;
         
-        *channelInfoPP = channelInfoP;
-
         *errorP = NULL;
     }
+    *channelInfoPP = channelInfoP;
 }
 
 
@@ -493,13 +504,13 @@ makeChannelFromFd(int           const fd,
     struct socketUnix * socketUnixP;
 
     MALLOCVAR(socketUnixP);
-
+    
     if (socketUnixP == NULL)
         xmlrpc_asprintf(errorP, "Unable to allocate memory for Unix "
                         "channel descriptor");
     else {
         TChannel * channelP;
-
+        
         socketUnixP->fd = fd;
         socketUnixP->userSuppliedFd = TRUE;
 
@@ -507,6 +518,7 @@ makeChannelFromFd(int           const fd,
 
         if (!*errorP) {
             ChannelCreate(&channelVtbl, socketUnixP, &channelP);
+        
             if (channelP == NULL)
                 xmlrpc_asprintf(errorP, "Unable to allocate memory for "
                                 "channel descriptor.");
@@ -617,8 +629,12 @@ waitForConnection(struct socketUnix * const listenSocketP,
 
    We return before the requested condition holds if the process receives
    (and catches) a signal, but only if it receives that signal a certain
-   time after we start running.  (That means this function isn't useful
+   time after we start running.  (That means this behavior isn't useful
    for most purposes).
+
+   We furthermore return before the requested condition holds if someone sends
+   a byte through the listening socket's interrupt pipe (or has sent one
+   previously since the most recent time the pipe was drained).
 
    Return *interruptedP == true if we return before there is a connection
    ready to accept.
@@ -665,35 +681,42 @@ createChannelForAccept(int             const acceptedFd,
 
    'peerAddr' is the address of the client, from accept().
 -----------------------------------------------------------------------------*/
-    struct socketUnix * acceptedSocketP;
+    struct abyss_unix_chaninfo * channelInfoP;
 
-    MALLOCVAR(acceptedSocketP);
-	
-    if (!acceptedSocketP)
-        xmlrpc_asprintf(errorP, "Unable to allocate memory");
-    else {
-        struct abyss_unix_chaninfo * channelInfoP;
-        acceptedSocketP->fd = acceptedFd;
-        acceptedSocketP->userSuppliedFd = FALSE;
-                
-        makeChannelInfo(&channelInfoP, peerAddr, sizeof(peerAddr), errorP);
-        if (!*errorP) {
-            TChannel * channelP;
+    makeChannelInfo(&channelInfoP, peerAddr, sizeof(peerAddr), errorP);
+    if (!*errorP) {
+        struct socketUnix * acceptedSocketP;
 
-            ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
-            if (!channelP)
-                xmlrpc_asprintf(errorP,
-                                "Failed to create TChannel object.");
-            else {
-                *errorP        = NULL;
-                *channelPP     = channelP;
-                *channelInfoPP = channelInfoP;
+        MALLOCVAR(acceptedSocketP);
+
+        if (!acceptedSocketP)
+            xmlrpc_asprintf(errorP, "Unable to allocate memory");
+        else {
+            acceptedSocketP->fd = acceptedFd;
+            acceptedSocketP->userSuppliedFd = FALSE;
+
+            initInterruptPipe(&acceptedSocketP->interruptPipe, errorP);
+
+            if (!*errorP) {
+                TChannel * channelP;
+
+                ChannelCreate(&channelVtbl, acceptedSocketP, &channelP);
+                if (!channelP)
+                    xmlrpc_asprintf(errorP,
+                                    "Failed to create TChannel object.");
+                else {
+                    *errorP        = NULL;
+                    *channelPP     = channelP;
+                    *channelInfoPP = channelInfoP;
+                }
+                if (*errorP)
+                    termInterruptPipe(&acceptedSocketP->interruptPipe);
             }
             if (*errorP)
-                free(channelInfoP);
+                free(acceptedSocketP);
         }
         if (*errorP)
-            free(acceptedSocketP);
+            free(channelInfoP);
     }
 }
 

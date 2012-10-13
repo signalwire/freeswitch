@@ -5,6 +5,9 @@
 
    Copyright information is at end of file
 =============================================================================*/
+
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -458,15 +461,15 @@ handleDirectory(TSession *   const sessionP,
                 addLastModifiedHeader(sessionP, fileModTime);
             
                 ResponseChunked(sessionP);
-                ResponseWriteStart(sessionP);
+                if (ResponseWriteStart(sessionP)) {
+     
+					if (sessionP->requestInfo.method!=m_head)
+						sendDirectoryDocument(&list, ascending, sort, text,
+											  sessionP->requestInfo.uri, mimeTypeP,
+											  sessionP);
             
-                if (sessionP->requestInfo.method!=m_head)
-                    sendDirectoryDocument(&list, ascending, sort, text,
-                                          sessionP->requestInfo.uri, mimeTypeP,
-                                          sessionP);
-            
-                HTTPWriteEndChunk(sessionP);
-            
+					HTTPWriteEndChunk(sessionP);
+				}
                 ListFree(&list);
             }
             PoolFree(&pool);
@@ -504,20 +507,20 @@ sendBody(TSession *      const sessionP,
 /*----------------------------------------------------------------------------
    'start0' and 'end0' are meaningful only if the session has ranges.
 -----------------------------------------------------------------------------*/
-    char buffer[4096];
+    char buffer[4096*8];
 
     if (sessionP->ranges.size == 0)
-        ConnWriteFromFile(sessionP->conn, fileP, 0, filesize - 1,
+        ConnWriteFromFile(sessionP->connP, fileP, 0, filesize - 1,
                           buffer, sizeof(buffer), 0);
     else if (sessionP->ranges.size == 1)
-        ConnWriteFromFile(sessionP->conn, fileP, start0, end0,
+        ConnWriteFromFile(sessionP->connP, fileP, start0, end0,
                           buffer, sizeof(buffer), 0);
     else {
         uint64_t i;
         for (i = 0; i <= sessionP->ranges.size; ++i) {
-            ConnWrite(sessionP->conn, "--", 2);
-            ConnWrite(sessionP->conn, BOUNDARY, strlen(BOUNDARY));
-            ConnWrite(sessionP->conn, CRLF, 2);
+            ConnWrite(sessionP->connP, "--", 2);
+            ConnWrite(sessionP->connP, BOUNDARY, strlen(BOUNDARY));
+            ConnWrite(sessionP->connP, CRLF, 2);
 
             if (i < sessionP->ranges.size) {
                 uint64_t start;
@@ -534,12 +537,12 @@ sendBody(TSession *      const sessionP,
                     composeEntityHeader(&entityHeader, mediatype,
                                         start, end, filesize);
 
-                    ConnWrite(sessionP->conn,
+                    ConnWrite(sessionP->connP,
                               entityHeader, strlen(entityHeader));
 
                     xmlrpc_strfree(entityHeader);
                     
-                    ConnWriteFromFile(sessionP->conn, fileP, start, end,
+                    ConnWriteFromFile(sessionP->connP, fileP, start, end,
                                       buffer, sizeof(buffer), 0);
                 }
             }
@@ -559,8 +562,8 @@ sendFileAsResponse(TSession *   const sessionP,
     uint64_t const filesize = FileSize(fileP);
     const char * const mediatype = MIMETypeGuessFromFile2(mimeTypeP, fileName);
 
-    uint64_t start;  /* Defined only if session has one range */
-    uint64_t end;    /* Defined only if session has one range */
+    uint64_t start = 0;  /* Defined only if session has one range */
+    uint64_t end = 0;    /* Defined only if session has one range */
 
     switch (sessionP->ranges.size) {
     case 0:
@@ -601,10 +604,9 @@ sendFileAsResponse(TSession *   const sessionP,
     
     addLastModifiedHeader(sessionP, fileModTime);
 
-    ResponseWriteStart(sessionP);
-
-    if (sessionP->requestInfo.method != m_head)
-        sendBody(sessionP, fileP, filesize, mediatype, start, end);
+    if (ResponseWriteStart(sessionP))
+	    if (sessionP->requestInfo.method != m_head)
+			sendBody(sessionP, fileP, filesize, mediatype, start, end);
 }        
 
 
@@ -747,6 +749,9 @@ HandlerDefaultBuiltin(TSession * const sessionP) {
     return TRUE;
 }
 
+
+
+size_t const HandlerDefaultBuiltinStack = 1024;
 
 
 /******************************************************************************

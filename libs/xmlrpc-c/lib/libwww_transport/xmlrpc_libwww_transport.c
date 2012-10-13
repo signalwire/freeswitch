@@ -884,6 +884,7 @@ sendRequest(xmlrpc_env *                     const envP,
             const xmlrpc_server_info *       const serverP,
             xmlrpc_mem_block *               const xmlP,
             xmlrpc_transport_asynch_complete       complete,
+            xmlrpc_transport_progress              progress ATTR_UNUSED,
             struct xmlrpc_call_info *        const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to

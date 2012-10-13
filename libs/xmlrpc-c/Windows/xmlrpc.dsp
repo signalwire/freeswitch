@@ -91,6 +91,10 @@ SOURCE=..\lib\libutil\asprintf.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\lib\libutil\base64.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\lib\libutil\error.c
 # End Source File
 # Begin Source File
@@ -108,6 +112,10 @@ SOURCE=..\src\method.c
 # Begin Source File
 
 SOURCE=..\lib\util\pthreadx_win32.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\parse_datetime.c
 # End Source File
 # Begin Source File
 
@@ -359,6 +367,10 @@ SOURCE=..\src\method.h
 # Begin Source File
 
 SOURCE=..\lib\util\include\pthreadx.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\parse_datetime.h
 # End Source File
 # Begin Source File
 

@@ -1,11 +1,13 @@
 Build Instructions For XML-RPC For C/C++ On Windows
 ---------------------------------------------------
 
-Latest Windows work was done by
-
-  Geoff McLane
-  19 October, 2007
-  home: http://geoffair.net
+-------------------------------------------------------------------------
+These instructions are for static link libraries, using Microsoft Visual
+Studio 7 and later.  There are project files to create DLLs, using
+Visual Studio 2008 or later, in the 'dll' subdirectory.  People maintain
+those project files separately from the rest of the build system, so it's
+not uncommon for something to work with one but not the other.
+-------------------------------------------------------------------------
 
 
 1. Run the batch file ConfigureWin32.bat, found in the Windows

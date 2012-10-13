@@ -25,31 +25,65 @@
 
 #include "xmlrpc_config.h"
 
-#ifdef WIN32
+#include <process.h>
+
+#include "mallocvar.h"
 
 #include "pthreadx.h"
-
-#include <process.h>
 
 #undef PACKAGE
 #undef VERSION
 
+struct winStartArg {
+    pthread_func * func;
+    void *         arg;
+};
+
+
+
+static unsigned int __stdcall 
+winThreadStart(void * const arg) {
+/*----------------------------------------------------------------------------
+   This is a thread start/root function for the Windows threading facility
+   (i.e. this can be an argument to _beginthreadex()).
+
+   All we do is call the real start/root function, which expects to be
+   called in the pthread format.
+-----------------------------------------------------------------------------*/
+    struct winStartArg * const winStartArgP = arg;
+
+    winStartArgP->func(winStartArgP->arg);
+
+    free(winStartArgP);
+
+    return 0;
+}
+
+
+
 int
-pthread_create(pthread_t *            const new_thread_ID,
+pthread_create(pthread_t *            const newThreadIdP,
                const pthread_attr_t * const attr,
                pthread_func *               func,
                void *                 const arg) {
 
     HANDLE hThread;
     DWORD dwThreadID;
+    struct winStartArg * winStartArgP;
 
-    hThread = (HANDLE) _beginthreadex (
-        NULL, 0, func, (LPVOID)arg, CREATE_SUSPENDED, &dwThreadID);
+    MALLOCVAR_NOFAIL(winStartArgP);
 
-    SetThreadPriority (hThread, THREAD_PRIORITY_NORMAL); 
-    ResumeThread (hThread);
+    winStartArgP->func = func;
+    winStartArgP->arg  = arg;
 
-    *new_thread_ID = hThread;
+    hThread = (HANDLE) _beginthreadex(
+        NULL, 0, &winThreadStart, (LPVOID)winStartArgP, CREATE_SUSPENDED,
+        &dwThreadID);
+
+    SetThreadPriority(hThread, THREAD_PRIORITY_NORMAL); 
+    ResumeThread(hThread);
+
+    *newThreadIdP = hThread;
 
     return hThread ? 0 : -1;
 }
@@ -119,5 +153,3 @@ pthread_mutex_destroy(pthread_mutex_t * const mp) {
     DeleteCriticalSection(mp);
     return 0;
 }
-
-#endif

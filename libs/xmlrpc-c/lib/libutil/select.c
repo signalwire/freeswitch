@@ -1,5 +1,7 @@
 #define _XOPEN_SOURCE 600  /* Get pselect() in <sys/select.h> */
 
+#include "xmlrpc_config.h"
+
 #ifdef WIN32
 #include <winsock.h>
 #else
@@ -8,11 +10,11 @@
    in this order appears to work on all.
 */
 #include <sys/time.h>
+#if HAVE_SYS_SELECT_H
 #include <sys/select.h>
+#endif
 #endif 
 #include <signal.h>
-
-#include "xmlrpc_config.h"
 
 #include "xmlrpc-c/select_int.h"
 

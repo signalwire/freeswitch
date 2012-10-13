@@ -37,15 +37,15 @@
 
      All bytes not part of a control word are literal bytes of a packet.
 
-  You can create a packet socket from any file descriptor from which
-  you can read and write a bidirectional character stream.  Typically,
-  it's a TCP socket.
+  You can create a packet socket from a POSIX stream socket or a
+  Windows emulation of one.
 
   One use of the NOP control word is to validate that the connection
   is still working.  You might send one periodically to detect, for
   example, an unplugged TCP/IP network cable.  It's probably better
   to use the TCP keepalive facility for that.
 ============================================================================*/
+#include "xmlrpc_config.h"
 
 #include <cassert>
 #include <string>
@@ -54,10 +54,18 @@
 #include <sstream>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
+
 #include <errno.h>
 #include <fcntl.h>
-#include <poll.h>
+#if MSVCRT
+# include <winsock2.h>
+# include <io.h>
+#else
+# include <unistd.h>
+# include <poll.h>
+# include <sys/socket.h>
+#endif
+
 #include <sys/types.h>
 
 #include "c_util.h"
@@ -67,9 +75,265 @@ using girerr::throwf;
 
 #include "xmlrpc-c/packetsocket.hpp"
 
+using namespace std;
 
 #define ESC 0x1B   //  ASCII Escape character
 #define ESC_STR "\x1B"
+
+class XMLRPC_DLLEXPORT socketx {
+
+public:
+    socketx(int const sockFd);
+
+    ~socketx();
+
+    void
+    waitForReadable() const;
+
+    void
+    waitForWritable() const;
+
+    void
+    read(unsigned char * const buffer,
+         size_t          const bufferSize,
+         bool *          const wouldblockP,
+         size_t *        const bytesReadP) const;
+
+    void
+    writeWait(const unsigned char * const data,
+              size_t                const size) const;
+private:
+    int fd;
+    bool fdIsBorrowed;
+};
+
+
+
+/* Sockets are similar, but not identical between Unix and Windows.
+   Some Unix socket functions appear to be available on Windows (a
+   Unix compatibility feature), but work only for file descriptor
+   numbers < 32, so we don't use those.
+*/
+
+socketx::socketx(int const sockFd) {
+#if MSVCRT        
+    // We don't have any way to duplicate; we'll just have to borrow.
+    this->fdIsBorrowed = true;
+    this->fd = sockFd;
+    u_long iMode(1);  // Nonblocking mode yes
+    ioctlsocket(this->fd, FIONBIO, &iMode);  // Make socket nonblocking
+#else
+    this->fdIsBorrowed = false;
+
+    int dupRc;
+
+    dupRc = dup(sockFd);
+
+    if (dupRc < 0)
+        throwf("dup() failed.  errno=%d (%s)", errno, strerror(errno));
+    else {
+        this->fd = dupRc;
+        fcntl(this->fd, F_SETFL, O_NONBLOCK);  // Make socket nonblocking
+    }
+#endif
+}
+
+
+
+socketx::~socketx() {
+
+    if (!this->fdIsBorrowed) {
+#if MSVCRT
+        ::closesocket(SOCKET(this->fd));
+#else
+        close(this->fd);
+#endif
+    }
+}
+
+
+
+void
+socketx::waitForReadable() const {
+    /* Return when there is something to read from the socket
+       (an EOF indication counts as something to read).  Also
+       return if there is a signal (handled, of course).  Rarely,
+       it is OK to return when there isn't anything to read.
+    */
+#if  MSVCRT
+    // poll() is not available; settle for select().
+    // Starting in Windows Vista, there is WSApoll()
+    fd_set rd_set;
+    FD_ZERO(&rd_set);
+    FD_SET(this->fd, &rd_set);
+
+    select(this->fd + 1, &rd_set, 0, 0, 0);
+#else
+    // poll() beats select() because higher file descriptor numbers
+    // work.
+    struct pollfd pollfds[1];
+
+    pollfds[0].fd = this->fd;
+    pollfds[0].events = POLLIN;
+
+    poll(pollfds, ARRAY_SIZE(pollfds), -1);
+#endif
+}
+
+
+
+void
+socketx::waitForWritable() const {
+    /* Return when socket is able to be written to. */
+#if MSVCRT
+    fd_set wr_set;
+    FD_ZERO(&wr_set);
+    FD_SET(this->fd, &wr_set);
+
+    select(this->fd + 1, 0, &wr_set, 0, 0);
+#else
+    struct pollfd pollfds[1];
+        
+    pollfds[0].fd = this->fd;
+    pollfds[0].events = POLLOUT;
+        
+    poll(pollfds, ARRAY_SIZE(pollfds), -1);
+#endif
+}
+
+
+
+static bool
+wouldBlock() {
+/*----------------------------------------------------------------------------
+   The most recently executed system socket function, which we assume failed,
+   failed because the situation was such that it wanted to block, but the
+   socket had the nonblocking option.
+-----------------------------------------------------------------------------*/
+#if MSVCRT
+    return (WSAGetLastError() == WSAEWOULDBLOCK ||
+            WSAGetLastError() == WSAEINPROGRESS);
+#else
+    /* EWOULDBLOCK and EAGAIN are normally synonyms, but POSIX allows them
+       to be separate and allows the OS to return whichever one it wants
+       for the "would block" condition.
+    */
+    return (errno == EWOULDBLOCK || errno == EAGAIN);
+#endif
+}
+
+
+
+static string
+lastErrorDesc() {
+/*----------------------------------------------------------------------------
+   A description suitable for an error message of why the most recent
+   failed system socket function failed.
+-----------------------------------------------------------------------------*/
+    ostringstream msg;
+#if MSVCRT
+    int const lastError = WSAGetLastError();
+    msg << "winsock error code " << lastError << " "
+        << "(" << strerror(lastError) << ")";
+#else
+    msg << "errno = " << errno << ", (" << strerror(errno);
+#endif
+    return msg.str();
+}
+
+
+
+
+void
+socketx::read(unsigned char * const buffer,
+              size_t          const bufferSize,
+              bool *          const wouldblockP,
+              size_t *        const bytesReadP) const {
+    
+    int rc;
+
+    // We've seen a Windows library whose recv() expects a char * buffer
+    // (cf POSIX void *), so we cast.
+
+    rc = recv(this->fd, (char *)buffer, bufferSize, 0);
+
+    if (rc < 0) {
+        if (wouldBlock()) {
+            *wouldblockP = true;
+            *bytesReadP  = 0;
+        } else
+            throwf("read() of socket failed with %s", lastErrorDesc().c_str());
+    } else {
+        *wouldblockP = false;
+        *bytesReadP  = rc;
+    }
+}
+
+
+
+static void
+writeFd(int                   const fd,
+        const unsigned char * const data,
+        size_t                const size,
+        size_t *              const bytesWrittenP) {
+
+    size_t totalBytesWritten;
+    bool full;  // File image is "full" for now - won't take any more data
+
+    full = false;
+    totalBytesWritten = 0;
+
+    while (totalBytesWritten < size && !full) {
+        int rc;
+
+        rc = send(fd, (char*)&data[totalBytesWritten],
+                  size - totalBytesWritten, 0);
+
+        if (rc < 0) {
+            if (wouldBlock())
+                full = true;
+            else
+                throwf("write() of socket failed with %s",
+                       lastErrorDesc().c_str());
+        } else if (rc == 0)
+            throwf("Zero byte short write.");
+        else {
+            size_t const bytesWritten(rc);
+            totalBytesWritten += bytesWritten;
+        }
+    }
+    *bytesWrittenP = totalBytesWritten;
+}
+
+
+
+void
+socketx::writeWait(const unsigned char * const data,
+                   size_t                const size) const {
+/*----------------------------------------------------------------------------
+   Write the 'size' bytes at 'data' to the socket.  Wait as long
+   as it takes for the file image to be able to take all the data.
+-----------------------------------------------------------------------------*/
+    size_t totalBytesWritten;
+
+    // We do the first one blind because it will probably just work
+    // and we don't want to waste the poll() call and buffer arithmetic.
+
+    writeFd(this->fd, data, size, &totalBytesWritten);
+
+    while (totalBytesWritten < size) {
+        this->waitForWritable();
+
+        size_t bytesWritten;
+
+        writeFd(this->fd, &data[totalBytesWritten], size - totalBytesWritten,
+                &bytesWritten);
+
+        totalBytesWritten += bytesWritten;
+    }
+}
+
+
 
 namespace xmlrpc_c {
 
@@ -86,7 +350,7 @@ packet::initialize(const unsigned char * const data,
     this->bytes = reinterpret_cast<unsigned char *>(malloc(dataLength));
 
     if (this->bytes == NULL)
-        throwf("Can't get storage for a %u-byte packet.", dataLength);
+        throwf("Can't get storage for a %u-byte packet", (unsigned)dataLength);
 
     this->allocSize = dataLength;
 
@@ -138,7 +402,7 @@ packet::addData(const unsigned char * const data,
             realloc(this->bytes, neededSize));
 
     if (this->bytes == NULL)
-        throwf("Can't get storage for a %u-byte packet.", neededSize);
+        throwf("Can't get storage for a %u-byte packet", (unsigned)neededSize);
 
     memcpy(this->bytes + this->length, data, dataLength);
 
@@ -166,33 +430,83 @@ packetPtr::operator->() const {
 
 
 
-packetSocket::packetSocket(int const sockFd) {
+class packetSocket_impl {
 
-    int dupRc;
+public:
+    packetSocket_impl(int const sockFd);
 
-    dupRc = dup(sockFd);
-    
-    if (dupRc < 0)
-        throwf("dup() failed.  errno=%d (%s)", errno, strerror(errno));
-    else {
-        this->sockFd = dupRc;
+    void
+    writeWait(packetPtr const& packetP) const;
 
-        this->inEscapeSeq = false;
-        this->inPacket    = false;
+    void
+    read(bool *      const eofP,
+         bool *      const gotPacketP,
+         packetPtr * const packetPP);
 
-        this->escAccum.len = 0;
-        
-        fcntl(this->sockFd, F_SETFL, O_NONBLOCK);
+    void
+    readWait(volatile const int * const interruptP,
+             bool *               const eofP,
+             bool *               const gotPacketP,
+             packetPtr *          const packetPP);
 
-        this->eof = false;
-    }
-}
+private:
+    socketx sock;
+        // The kernel stream socket we use.
+    bool eof;
+        // The packet socket is at end-of-file for reads.
+        // 'readBuffer' is empty and there won't be any more data to fill
+        // it because the underlying stream socket is closed.
+    std::queue<packetPtr> readBuffer;
+    packetPtr packetAccumP;
+        // The receive packet we're currently accumulating; it will join
+        // 'readBuffer' when we've received the whole packet (and we've
+        // seen the END escape sequence so we know we've received it all).
+        // If we're not currently accumulating a packet (haven't seen a
+        // PKT escape sequence), this points to nothing.
+    bool inEscapeSeq;
+        // In our trek through the data read from the underlying stream
+        // socket, we are after an ESC character and before the end of the
+        // escape sequence.  'escAccum' shows what of the escape sequence
+        // we've seen so far.
+    bool inPacket;
+        // We're now receiving packet data from the underlying stream
+        // socket.  We've seen a complete PKT escape sequence, but have not
+        // seen a complete END escape sequence since.
+    struct {
+        unsigned char bytes[3];
+        size_t len;
+    } escAccum;
+
+    void
+    takeSomeEscapeSeq(const unsigned char * const buffer,
+                                    size_t                const length,
+                                    size_t *              const bytesTakenP);
+
+    void
+    takeSomePacket(const unsigned char * const buffer,
+                   size_t                const length,
+                   size_t *              const bytesTakenP);
+
+    void
+    verifyNothingAccumulated();
+
+    void
+    processBytesRead(const unsigned char * const buffer,
+                     size_t                const bytesRead);
+
+    void
+    readFromFile();
+};
 
 
 
-packetSocket::~packetSocket() {
+packetSocket_impl::packetSocket_impl(int const sockFd) :
+    sock(sockFd) {
 
-    close(this->sockFd);
+    this->inEscapeSeq  = false;
+    this->inPacket     = false;
+    this->escAccum.len = 0;
+    this->eof          = false;
 }
 
 
@@ -229,106 +543,27 @@ packetSocket::~packetSocket() {
 -----------------------------------------------------------------------------*/
 
 
-static void
-writeFd(int                   const fd,
-        const unsigned char * const data,
-        size_t                const size,
-        size_t *              const bytesWrittenP) {
-
-    size_t totalBytesWritten;
-    bool full;  // File image is "full" for now - won't take any more data
-
-    full = false;
-    totalBytesWritten = 0;
-
-    while (totalBytesWritten < size && !full) {
-        ssize_t rc;
-
-        rc = write(fd, &data[totalBytesWritten], size - totalBytesWritten);
-
-        if (rc < 0) {
-            if (errno == EAGAIN)
-                full = true;
-            else
-                throwf("write() of socket failed with errno %d (%s)",
-                       errno, strerror(errno));
-        } else if (rc == 0)
-            throwf("Zero byte short write.");
-        else {
-            size_t const bytesWritten(rc);
-            totalBytesWritten += bytesWritten;
-        }
-    }
-    *bytesWrittenP = totalBytesWritten;
-}
-
-
-
-static void
-writeFdWait(int                   const fd,
-            const unsigned char * const data,
-            size_t                const size) {
-/*----------------------------------------------------------------------------
-   Write the 'size' bytes at 'data' to the file image 'fd'.  Wait as long
-   as it takes for the file image to be able to take all the data.
------------------------------------------------------------------------------*/
-    size_t totalBytesWritten;
-
-    // We do the first one blind because it will probably just work
-    // and we don't want to waste the poll() call and buffer arithmetic.
-
-    writeFd(fd, data, size, &totalBytesWritten);
-
-    while (totalBytesWritten < size) {
-        struct pollfd pollfds[1];
-        
-        pollfds[0].fd = fd;
-        pollfds[0].events = POLLOUT;
-        
-        poll(pollfds, ARRAY_SIZE(pollfds), -1);
-
-        size_t bytesWritten;
-
-        writeFd(fd, &data[totalBytesWritten], size - totalBytesWritten,
-                &bytesWritten);
-
-        totalBytesWritten += bytesWritten;
-    }
-}
-
-
-
 void
-packetSocket::writeWait(packetPtr const& packetP) const {
+packetSocket_impl::writeWait(packetPtr const& packetP) const {
 
     const unsigned char * const packetStart(
         reinterpret_cast<const unsigned char *>(ESC_STR "PKT"));
     const unsigned char * const packetEnd(
         reinterpret_cast<const unsigned char *>(ESC_STR "END"));
 
-    writeFdWait(this->sockFd, packetStart, 4);
+    this->sock.writeWait(packetStart, 4);
 
-    writeFdWait(this->sockFd, packetP->getBytes(), packetP->getLength());
+    this->sock.writeWait(packetP->getBytes(), packetP->getLength());
 
-    writeFdWait(this->sockFd, packetEnd, 4);
-}
-
-
-
-static ssize_t
-libc_read(int    const fd,
-          void * const buf,
-          size_t const count) {
-
-    return read(fd, buf, count);
+    this->sock.writeWait(packetEnd, 4);
 }
 
 
 
 void
-packetSocket::takeSomeEscapeSeq(const unsigned char * const buffer,
-                                size_t                const length,
-                                size_t *              const bytesTakenP) {
+packetSocket_impl::takeSomeEscapeSeq(const unsigned char * const buffer,
+                                     size_t                const length,
+                                     size_t *              const bytesTakenP) {
 /*----------------------------------------------------------------------------
    Take and process some bytes from the incoming stream 'buffer',
    which contains 'length' bytes, assuming they are within an escape
@@ -378,9 +613,9 @@ packetSocket::takeSomeEscapeSeq(const unsigned char * const buffer,
 
 
 void
-packetSocket::takeSomePacket(const unsigned char * const buffer,
-                             size_t                const length,
-                             size_t *              const bytesTakenP) {
+packetSocket_impl::takeSomePacket(const unsigned char * const buffer,
+                                  size_t                const length,
+                                  size_t *              const bytesTakenP) {
 
     assert(!this->inEscapeSeq);
 
@@ -408,7 +643,7 @@ packetSocket::takeSomePacket(const unsigned char * const buffer,
 
 
 void
-packetSocket::verifyNothingAccumulated() {
+packetSocket_impl::verifyNothingAccumulated() {
 /*----------------------------------------------------------------------------
    Throw an error if there is a partial packet accumulated.
 -----------------------------------------------------------------------------*/
@@ -419,14 +654,14 @@ packetSocket::verifyNothingAccumulated() {
     if (this->inPacket)
         throwf("Stream socket closed in the middle of a packet "
                "(%u bytes of packet received; no END marker to mark "
-               "end of packet)", this->packetAccumP->getLength());
+               "end of packet)", (unsigned)this->packetAccumP->getLength());
 }
 
 
 
 void
-packetSocket::processBytesRead(const unsigned char * const buffer,
-                               size_t                const bytesRead) {
+packetSocket_impl::processBytesRead(const unsigned char * const buffer,
+                                    size_t                const bytesRead) {
 
     unsigned int cursor;  // Cursor into buffer[]
     cursor = 0;
@@ -456,7 +691,7 @@ packetSocket::processBytesRead(const unsigned char * const buffer,
 
 
 void
-packetSocket::readFromFile() {
+packetSocket_impl::readFromFile() {
 /*----------------------------------------------------------------------------
    Read some data from the underlying stream socket.  Read as much as is
    available right now, up to 4K.  Update 'this' to reflect the data read.
@@ -473,19 +708,11 @@ packetSocket::readFromFile() {
 
     while (this->readBuffer.empty() && !this->eof && !wouldblock) {
         unsigned char buffer[4096];
-        ssize_t rc;
+        size_t bytesRead;
 
-        rc = libc_read(this->sockFd, buffer, sizeof(buffer));
+        this->sock.read(buffer, sizeof(buffer), &wouldblock, &bytesRead);
 
-        if (rc < 0) {
-            if (errno == EWOULDBLOCK)
-                wouldblock = true;
-            else
-                throwf("read() of socket failed with errno %d (%s)",
-                       errno, strerror(errno));
-        } else {
-            size_t const bytesRead(rc);
-
+        if (!wouldblock) {
             if (bytesRead == 0) {
                 this->eof = true;
                 this->verifyNothingAccumulated();
@@ -498,9 +725,9 @@ packetSocket::readFromFile() {
 
 
 void
-packetSocket::read(bool *      const eofP,
-                   bool *      const gotPacketP,
-                   packetPtr * const packetPP) {
+packetSocket_impl::read(bool *      const eofP,
+                        bool *      const gotPacketP,
+                        packetPtr * const packetPP) {
 /*----------------------------------------------------------------------------
    Read one packet from the socket, through the internal packet buffer.
 
@@ -535,10 +762,10 @@ packetSocket::read(bool *      const eofP,
 
 
 void
-packetSocket::readWait(volatile const int * const interruptP,
-                       bool *               const eofP,
-                       bool *               const gotPacketP,
-                       packetPtr *          const packetPP) {
+packetSocket_impl::readWait(volatile const int * const interruptP,
+                            bool *               const eofP,
+                            bool *               const gotPacketP,
+                            packetPtr *          const packetPP) {
 
     bool gotPacket;
     bool eof;
@@ -547,18 +774,56 @@ packetSocket::readWait(volatile const int * const interruptP,
     eof = false;
 
     while (!gotPacket && !eof && !*interruptP) {
-        struct pollfd pollfds[1];
 
-        pollfds[0].fd = this->sockFd;
-        pollfds[0].events = POLLIN;
-
-        poll(pollfds, ARRAY_SIZE(pollfds), -1);
-
+        this->sock.waitForReadable();
         this->read(&eof, &gotPacket, packetPP);
     }
 
     *gotPacketP = gotPacket;
     *eofP = eof;
+}
+
+
+
+packetSocket::packetSocket(int const sockFd) {
+
+    this->implP = new packetSocket_impl(sockFd);
+}
+
+
+
+packetSocket::~packetSocket() {
+
+    delete(this->implP);
+}
+
+
+
+void
+packetSocket::writeWait(packetPtr const& packetP) const {
+
+    implP->writeWait(packetP);
+}
+
+
+
+void
+packetSocket::read(bool *      const eofP,
+                   bool *      const gotPacketP,
+                   packetPtr * const packetPP) {
+
+    this->implP->read(eofP, gotPacketP, packetPP);
+}
+
+
+
+void
+packetSocket::readWait(volatile const int * const interruptP,
+                       bool *               const eofP,
+                       bool *               const gotPacketP,
+                       packetPtr *          const packetPP) {
+
+    this->implP->readWait(interruptP, eofP, gotPacketP, packetPP);
 }
 
 
@@ -570,7 +835,7 @@ packetSocket::readWait(volatile const int * const interruptP,
 
     bool gotPacket;
 
-    this->readWait(interruptP, eofP, &gotPacket, packetPP);
+    this->implP->readWait(interruptP, eofP, &gotPacket, packetPP);
 
     if (!gotPacket)
         throwf("Packet read was interrupted");

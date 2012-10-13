@@ -27,16 +27,15 @@ ENABLE_LIBXML2_BACKEND = @ENABLE_LIBXML2_BACKEND@
 MUST_BUILD_WININET_CLIENT = @MUST_BUILD_WININET_CLIENT@
 MUST_BUILD_CURL_CLIENT    = @MUST_BUILD_CURL_CLIENT@
 MUST_BUILD_LIBWWW_CLIENT  = @MUST_BUILD_LIBWWW_CLIENT@
+BUILD_TOOLS  = @BUILD_TOOLS@
+BUILD_XMLRPC_PSTREAM  = @BUILD_XMLRPC_PSTREAM@
 LSOCKET = @LSOCKET@
 WININET_LDADD = @WININET_LDADD@
-WININET_RPATH = @WININET_RPATH@
-WININET_WL_RPATH = @WININET_WL_RPATH@
+WININET_LIBDIR = @WININET_LIBDIR@
 CURL_LDADD = @CURL_LDADD@
-CURL_RPATH = @CURL_RPATH@
-CURL_WL_RPATH = @CURL_WL_RPATH@
+CURL_LIBDIR = @CURL_LIBDIR@
 LIBWWW_LDADD = @LIBWWW_LDADD@
-LIBWWW_RPATH = @LIBWWW_RPATH@
-LIBWWW_WL_RPATH = @LIBWWW_WL_RPATH@
+LIBWWW_LIBDIR = @LIBWWW_LIBDIR@
 FEATURE_LIST = @FEATURE_LIST@
 ABS_SRCDIR = @abs_srcdir@
 PREFIX = @prefix@
@@ -164,7 +163,10 @@ MUST_BUILD_SHLIBLE = N
 shlibfn = $(1:%=%.shlibdummy)
 shliblefn = $(1:%=%.shlibledummy)
 
-ifeq ($(HOST_OS),linux-gnu)
+# HOST_OS is usually has a version number suffix, e.g. "aix5.3.0.0", so
+# we compare based on prefix.
+
+ifeq ($(patsubst linux-gnu%,linux-gnu,$(HOST_OS)),linux-gnu)
   # Assume linker is GNU Compiler (gcc)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
@@ -177,20 +179,28 @@ ifeq ($(HOST_OS),linux-gnu)
   CFLAGS_SHLIB=-fPIC
 endif
 
-ifeq ($(findstring solaris,$(HOST_OS)),solaris)
+ifeq ($(patsubst solaris%,solaris,$(HOST_OS)),solaris)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
   SHLIB_SUFFIX = so
   shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  # We assume Sun compiler and linker here.  It isn't clear what to do
+  # about a user who uses GNU compiler and Ld instead.  For that, the
+  # options should be the same as "linux-gnu" platform, above, except
+  # with NEED_WL_RPATH.  If the user uses the GNU compiler but the Sun
+  # linker, it's even more complicated: we need an rpath option of the
+  # form -Wl,-R .
+
   # Solaris compiler (Sun C 5.5) can't take multiple ld options as
   # -Wl,-a,-b .  Ld sees -a,-b in that case.
   LDFLAGS_SHLIB = -Wl,-Bdynamic -Wl,-G -Wl,-h -Wl,$(SONAME)
   CFLAGS_SHLIB = -Kpic
+  NEED_RPATH=yes
 endif
 
-ifeq ($(HOST_OS),aix)
+ifeq ($(patsubst aix%,aix,$(HOST_OS)),aix)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -200,7 +210,7 @@ ifeq ($(HOST_OS),aix)
   LDFLAGS_SHLIB = -qmkshrobj
 endif
 
-ifeq ($(HOST_OS),hpux)
+ifeq ($(patsubst hpux%,hpux,$(HOST_OS)),hpux)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -210,7 +220,7 @@ ifeq ($(HOST_OS),hpux)
   LDFLAGS_SHLIB: -shared -fPIC
 endif
 
-ifeq ($(HOST_OS),osf)
+ifeq ($(patsubst osf%,osf,$(HOST_OS)),osf)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -220,7 +230,7 @@ ifeq ($(HOST_OS),osf)
   LDFLAGS_SHLIB = -shared -expect_unresolved
 endif
 
-ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
+ifeq ($(patsubst netbsd%,netbsd,$(HOST_OS)),netbsd)
   SHARED_LIB_TYPE = unix
   SHLIB_SUFFIX = so
   MUST_BUILD_SHLIB = Y
@@ -232,7 +242,31 @@ ifeq ($(findstring netbsd,$(HOST_OS)),netbsd)
   NEED_WL_RPATH=yes
 endif
 
-ifeq ($(HOST_OS),dragonfly)
+ifeq ($(patsubst freebsd%,freebsd,$(HOST_OS)),freebsd)
+  SHARED_LIB_TYPE = unix
+  SHLIB_SUFFIX = so
+  MUST_BUILD_SHLIB = Y
+  MUST_BUILD_SHLIBLE = Y
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  CFLAGS_SHLIB = -fpic
+  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+  NEED_WL_RPATH=yes
+endif
+
+ifeq ($(findstring interix,$(HOST_OS)),interix)
+  SHARED_LIB_TYPE = unix
+  SHLIB_SUFFIX = so
+  MUST_BUILD_SHLIB = Y
+  MUST_BUILD_SHLIBLE = Y
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
+  CFLAGS_SHLIB =
+  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+  NEED_WL_RPATH=yes
+endif
+
+ifeq ($(patsubst dragonfly%,dragonfly,$(HOST_OS)),dragonfly)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -243,7 +277,7 @@ ifeq ($(HOST_OS),dragonfly)
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
 
-ifeq ($(HOST_OS),beos)
+ifeq ($(patsubst beos%,beos,$(HOST_OS)),beos)
   SHARED_LIB_TYPE = unix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -253,18 +287,18 @@ ifeq ($(HOST_OS),beos)
   LDFLAGS_SHLIB = -nostart
 endif
 
-ifeq ($(patsubst darwin%, darwin, $(HOST_OS)), darwin)
-  # (I once saw a system that generated 'darwin8.10.1').
+ifeq ($(patsubst darwin%,darwin,$(HOST_OS)),darwin)
   SHARED_LIB_TYPE = dylib
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
   SHLIB_SUFFIX = dylib
   shlibfn = $(1:%=%.$(MAJ).$(MIN).$(SHLIB_SUFFIX))
   shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
-  LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
+  LDFLAGS_SHLIB = -dynamiclib -undefined suppress -single_module \
+	-flat_namespace $(SHLIB_CLIB)
 endif
 
-ifeq ($(HOST_OS),irix)
+ifeq ($(patsubst irix%,irix,$(HOST_OS)),irix)
   SHARED_LIB_TYPE = irix
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = Y
@@ -278,13 +312,13 @@ ifeq ($(HOST_OS),irix)
     -set_version $(shell perl -e '$(VERSIONPERLPROG)') -lc
 endif
 
-ifeq ($(HOST_OS),cygwin)
+ifeq ($(patsubst cygwin%,cygwin,$(HOST_OS)),cygwin)
   SHARED_LIB_TYPE = dll
   MUST_BUILD_SHLIB = Y
   MUST_BUILD_SHLIBLE = N
   SHLIB_SUFFIX = dll
-  shlibfn = $(1:lib%=$(SHLIB_PREFIX)%.$(SHLIB_SUFFIX).$(MAJ).$(MIN))
-  shliblefn = $(1:%=%.shlibledummy)
+  shlibfn = $(1:%=%.$(SHLIB_SUFFIX))
+  shliblefn = $(1:%=%.$(SHLIB_SUFFIX))
   LDFLAGS_SHLIB = -shared -Wl,-soname,$(SONAME) $(SHLIB_CLIB)
 endif
 
@@ -293,12 +327,12 @@ endif
 ##############################################################################
 
 # BUILDTOOL_CC is the compiler to use to generate build tools, which we
-# will then run to build product.  The typical reason this would be
+# will then run to build the product.  The typical reason this would be
 # different from CC is that you're cross-compiling: the product will run
 # in Environment A, but you're building in Environment B, so you must
-# build the build toos for Environment B.
+# build the build tools for Environment B.
 
-# The cross compiling user can update Makefile.config or override
+# The cross compiling user can update config.mk or override
 # BUILDTOOL_CC on a make command.
 
 BUILDTOOL_CC = $(CC)
@@ -316,9 +350,18 @@ INSTALL_SCRIPT = $(INSTALL) -c -m 755
 # PREFIX is designed to be overridden at make time if the user decides
 # he doesn't like the default specified at 'configure' time.
 
-LIBINST_DIR = $(PREFIX)/lib
-HEADERINST_DIR = $(PREFIX)/include
-PROGRAMINST_DIR = $(PREFIX)/bin
+prefix = $(PREFIX)
+
+#datarootdir is the new Autoconf(2.60) name for datadir, which is still
+#accepted, but a warning is issued if datarootdir is not also used.
+
+exec_prefix = @exec_prefix@
+DATAROOT_DIR = @datarootdir@
+DATAINST_DIR = @datadir@
+LIBINST_DIR = @libdir@
+HEADERINST_DIR = @includedir@
+PROGRAMINST_DIR = @bindir@
+MANINST_DIR = @mandir@/man1
 
 # DESTDIR is designed to be overridden at make time in order to relocate
 # the entire install into a subdirectory.

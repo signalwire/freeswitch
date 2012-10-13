@@ -18,7 +18,7 @@
 static __inline__ void
 mallocProduct(void **      const resultP, 
               unsigned int const factor1,
-              unsigned int const factor2) {
+              size_t       const factor2) {
 /*----------------------------------------------------------------------------
    malloc a space whose size in bytes is the product of 'factor1' and
    'factor2'.  But if that size cannot be represented as an unsigned int,
@@ -102,7 +102,7 @@ do { \
 
 
 #define MALLOCVAR(varName) \
-    if (varName = malloc(sizeof(*varName))) memset(varName, 0, sizeof(*varName))
+    varName = malloc(sizeof(*varName))
 
 #define MALLOCVAR_NOFAIL(varName) \
     do {if ((varName = malloc(sizeof(*varName))) == NULL) abort();} while(0)

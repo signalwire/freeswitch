@@ -7,6 +7,7 @@
 
 #include "bool.h"
 #include "mallocvar.h"
+#include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/string_int.h"
 #include "pthreadx.h"
 
@@ -23,12 +24,12 @@ struct abyss_thread {
     TThreadDoneFn * threadDone;
 };
 
-/* We used to have THREAD_STACK_SIZE = 16K, which was said to be the
+/* We used to have MIN_STACK_SIZE = 16K, which was said to be the
    minimum stack size on Win32.  Scott Kolodzeski found in November
    2005 that this was insufficient for 64 bit Solaris -- we fail
    when creating the first thread.  So we changed to 128K.
 */
-#define  THREAD_STACK_SIZE (128*1024L)
+#define  MIN_STACK_SIZE (128*1024L)
 
 
 typedef void * (pthreadStartRoutine)(void *);
@@ -49,8 +50,14 @@ pthreadStart(void * const arg) {
 
     pthread_cleanup_pop(executeTrue);
 
+    /* Note that func() may not return; it may just exit the thread,
+       by calling ThreadExit(), in which case code here doesn't run.
+    */
+    threadP->threadDone(threadP->userHandle);
+
     return NULL;
 }
+
 
 
 
@@ -60,40 +67,46 @@ ThreadCreate(TThread **      const threadPP,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
              bool            const useSigchld ATTR_UNUSED,
+             size_t          const stackSize,
              const char **   const errorP) {
 
-    TThread * threadP;
-
-    MALLOCVAR(threadP);
-    if (threadP == NULL)
-        xmlrpc_asprintf(errorP,
-                        "Can't allocate memory for thread descriptor.");
+    if ((size_t)(int)stackSize != stackSize)
+        xmlrpc_asprintf(errorP, "Stack size %lu is too big",
+                        (unsigned long)stackSize);
     else {
-        pthread_attr_t attr;
-        int rc;
+        TThread * threadP;
 
-        pthread_attr_init(&attr);
+        MALLOCVAR(threadP);
+        if (threadP == NULL)
+            xmlrpc_asprintf(errorP,
+                            "Can't allocate memory for thread descriptor.");
+        else {
+            pthread_attr_t attr;
+            int rc;
 
-        pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
+            pthread_attr_init(&attr);
+
+            pthread_attr_setstacksize(&attr, MAX(MIN_STACK_SIZE, stackSize));
         
-        threadP->userHandle = userHandle;
-        threadP->func       = func;
-        threadP->threadDone = threadDone;
+            threadP->userHandle = userHandle;
+            threadP->func       = func;
+            threadP->threadDone = threadDone;
 
-        rc = pthread_create(&threadP->thread, &attr,
-                            pthreadStart, threadP);
-        if (rc == 0) {
-            *errorP = NULL;
-            *threadPP = threadP;
-        } else
-            xmlrpc_asprintf(
-                errorP, "pthread_create() failed, errno = %d (%s)",
-                errno, strerror(errno));
+            rc = pthread_create(&threadP->thread, &attr,
+                                pthreadStart, threadP);
+            if (rc == 0) {
+                *errorP = NULL;
+                *threadPP = threadP;
+            } else
+                xmlrpc_asprintf(
+                    errorP, "pthread_create() failed, errno = %d (%s)",
+                    errno, strerror(errno));
         
-        pthread_attr_destroy(&attr);
+            pthread_attr_destroy(&attr);
 
-        if (*errorP)
-            free(threadP);
+            if (*errorP)
+                free(threadP);
+        }
     }
 }
 
@@ -134,7 +147,8 @@ ThreadWaitAndRelease(TThread * const threadP) {
 
 
 void
-ThreadExit(int const retValue) {
+ThreadExit(TThread * const threadP ATTR_UNUSED,
+           int       const retValue) {
 
     pthread_exit((void*)&retValue);
 

@@ -41,10 +41,10 @@
 	Builtin events are fired by the core at various points in the execution of the application and custom events can be 
 	reserved and registered so events from an external module can be rendered and handled by an another even handler module.
 
-	If the work time to process an event in a callback is anticipated to grow beyond a very small amount of time it is reccommended
-	that you impelment your own handler thread and FIFO queue so you can accept the events int the callback and queue them 
-	into your own thread rather than tie up the delivery agent.  It is in to opinion of the author that such a necessity 
-	should be judged on a per-use basis and therefore does not fall within the scope of this system to provide that 
+	If the work time to process an event in a callback is anticipated to grow beyond a very small amount of time it is recommended
+	that you implement your own handler thread and FIFO queue so you can accept the events in the callback and queue them 
+	into your own thread rather than tie up the delivery agent.  It is in the opinion of the author that such a necessity 
+	should be judged on a per-use basis and therefore it does not fall within the scope of this system to provide that 
 	functionality at a core level.
 
 */
@@ -294,7 +294,7 @@ SWITCH_DECLARE(switch_status_t) switch_name_event(const char *name, switch_event
   \param owner the owner of the event name
   \param subclass_name the name to reserve
   \return SWITCH_STATUS_SUCCESS if the name was reserved
-  \note There is nothing to enforce this but I reccommend using module::event_name for the subclass names
+  \note There is nothing to enforce this but I recommend using module::event_name for the subclass names
 
 */
 SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const char *owner, const char *subclass_name);
@@ -302,7 +302,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *owner, const char *subclass_name);
 
 /*!
-  \brief Render a string representation of an event sutable for printing or network transport 
+  \brief Render a string representation of an event suitable for printing or network transport 
   \param event the event to render
   \param str a string pointer to point at the allocated data
   \param encode url encode the headers
@@ -319,7 +319,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_array_pair(switch_event_t **
 
 #ifndef SWIG
 /*!
-  \brief Render a XML representation of an event sutable for printing or network transport
+  \brief Render a XML representation of an event suitable for printing or network transport
   \param event the event to render
   \param fmt optional body of the event (varargs see standard sprintf family)
   \return the xml object if the operation was successful
@@ -329,7 +329,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 #endif
 
 /*!
-  \brief Determine if the event system has been initilized
+  \brief Determine if the event system has been initialized
   \return SWITCH_STATUS_SUCCESS if the system is running
 */
 SWITCH_DECLARE(switch_status_t) switch_event_running(void);

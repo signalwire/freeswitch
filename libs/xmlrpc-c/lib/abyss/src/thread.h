@@ -21,6 +21,7 @@ ThreadCreate(TThread **      const threadPP,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
              bool            const useSigchld,
+             size_t          const stackSize,
              const char **   const errorP);
 
 bool
@@ -36,7 +37,8 @@ void
 ThreadWaitAndRelease(TThread * const threadP);
 
 void
-ThreadExit(int const retValue);
+ThreadExit(TThread * const threadP,
+           int       const retValue);
 
 void
 ThreadRelease(TThread * const threadP);

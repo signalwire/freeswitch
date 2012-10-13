@@ -972,7 +972,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t
 	}
 }
 
-/* parse the given xml string and return an switch_xml structure */
+/* parse the given xml string and return a switch_xml structure */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 {
 	switch_xml_root_t root = (switch_xml_root_t) switch_xml_new(NULL);
@@ -2455,7 +2455,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 				*len += sprintf(*s + *len, "%s", XML_INDENT);	/* indent */
 			}
 		}
-		*len += sprintf(*s + (*len), "</%s>\n", xml->name);	/* close tag */
+		*len += sprintf(*s + (*len), "</%s>", xml->name);	/* close tag */
 	}
 
 	while (txt[off] && off < xml->off)
@@ -2496,7 +2496,24 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_head
 	return r;
 }
 
-/* converts an switch_xml structure back to xml, returning a string of xml date that
+SWITCH_DECLARE(char *) switch_xml_tohtml(switch_xml_t xml, switch_bool_t prn_header)
+{
+	char *r, *s, *h;
+	switch_size_t rlen = 0;
+	switch_size_t len = SWITCH_XML_BUFSIZE;
+	switch_mutex_lock(XML_GEN_LOCK);
+	s = (char *) malloc(SWITCH_XML_BUFSIZE);
+	switch_assert(s);
+	h = (char *) malloc(SWITCH_XML_BUFSIZE);
+	switch_assert(h);
+	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
+	h = switch_xml_ampencode(r, 0, &h, &rlen, &len, 1);
+	switch_safe_free(r);
+	switch_mutex_unlock(XML_GEN_LOCK);
+	return h;
+}
+
+/* converts a switch_xml structure back to xml, returning a string of xml data that
    must be freed */
 SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset, switch_bool_t prn_header)
 {
@@ -2684,7 +2701,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 	return &root->xml;
 }
 
-/* inserts an existing tag into an switch_xml structure */
+/* inserts an existing tag into a switch_xml structure */
 SWITCH_DECLARE(switch_xml_t) switch_xml_insert(switch_xml_t xml, switch_xml_t dest, switch_size_t off)
 {
 	switch_xml_t cur, prev, head;

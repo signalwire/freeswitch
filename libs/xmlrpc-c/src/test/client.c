@@ -10,8 +10,28 @@
 #include "xmlrpc-c/client.h"
 #include "xmlrpc-c/transport.h"
 
-#include "test.h"
+#include "bool.h"
+#include "testtool.h"
 #include "client.h"
+
+
+
+static void
+testVersion(void) {
+
+    unsigned int major, minor, point;
+
+    xmlrpc_client_version(&major, &minor, &point);
+
+#ifndef WIN32    
+    /* xmlrpc_client_version_major, etc. are not exported from a Windows DLL */
+
+    TEST(major = xmlrpc_client_version_major);
+    TEST(minor = xmlrpc_client_version_minor);
+    TEST(point = xmlrpc_client_version_point);
+#endif
+}
+
 
 
 static void
@@ -34,6 +54,22 @@ testGlobalConst(void) {
     xmlrpc_client_teardown_global_const();
 
     xmlrpc_env_clean(&env);
+}
+
+
+
+static xmlrpc_progress_fn myProgress;
+
+static void
+myProgress(void *                      const userHandle,
+           struct xmlrpc_progress_data const data) {
+
+    printf("Progress of %p: %f, %f, %f, %f\n",
+           userHandle,
+           data.call.total,
+           data.call.now,
+           data.response.total,
+           data.response.now);
 }
 
 
@@ -78,6 +114,33 @@ testCreateCurlParms(void) {
     TEST_NO_FAULT(&env);
     xmlrpc_client_destroy(clientP);
 
+    curlTransportParms1.ssl_cert          = NULL;
+    curlTransportParms1.sslcerttype       = NULL;
+    curlTransportParms1.sslcertpasswd     = NULL;
+    curlTransportParms1.sslkey            = NULL;
+    curlTransportParms1.sslkeytype        = NULL;
+    curlTransportParms1.sslkeypasswd      = NULL;
+    curlTransportParms1.sslengine         = NULL;
+    curlTransportParms1.sslengine_default = false;
+    curlTransportParms1.sslversion        = XMLRPC_SSLVERSION_DEFAULT;
+    curlTransportParms1.cainfo            = NULL;
+    curlTransportParms1.capath            = NULL;
+    curlTransportParms1.randomfile        = NULL;
+    curlTransportParms1.egdsocket         = NULL;
+    curlTransportParms1.ssl_cipher_list   = NULL;
+    curlTransportParms1.timeout           = 0;
+    curlTransportParms1.dont_advertise    = 1;
+    curlTransportParms1.proxy             = NULL;
+    curlTransportParms1.proxy_port        = 0;
+    curlTransportParms1.proxy_type        = XMLRPC_HTTPPROXY_HTTP;
+    curlTransportParms1.proxy_auth        = XMLRPC_HTTPAUTH_NONE;
+    clientParms1.transportparm_size = XMLRPC_CXPSIZE(proxy_auth);
+    xmlrpc_client_create(&env, 0, "testprog", "1.0",
+                         &clientParms1, XMLRPC_CPSIZE(transportparm_size),
+                         &clientP);
+    TEST_NO_FAULT(&env);
+    xmlrpc_client_destroy(clientP);
+
     xmlrpc_env_clean(&env);
 #endif  /* MUST_BUILD_CURL_CLIENT */
 }
@@ -113,6 +176,8 @@ testCreateSeparateXport(void) {
                          &clientP);
     TEST_NO_FAULT(&env);
 
+    xmlrpc_client_destroy(clientP);
+
     clientParms1.transport = "curl";
     clientParms1.transportparmsP = &curlTransportParms1;
     clientParms1.transportparm_size = 0;
@@ -123,6 +188,8 @@ testCreateSeparateXport(void) {
                          &clientParms1, XMLRPC_CPSIZE(transportP),
                          &clientP);
     TEST_NO_FAULT(&env);
+
+    xmlrpc_client_destroy(clientP);
 
     clientParms1.transportP = transportP;
     xmlrpc_client_create(&env, 0, "", "",
@@ -149,6 +216,8 @@ testCreateSeparateXport(void) {
                          &clientP);
 
     TEST_NO_FAULT(&env);
+
+    xmlrpc_client_destroy(clientP);
 
     xmlrpc_curl_transport_ops.destroy(transportP);
 
@@ -202,8 +271,9 @@ testCreateDestroy(void) {
     clientParms1.transportOpsP = NULL;
     clientParms1.transportP    = NULL;
     clientParms1.dialect       = xmlrpc_dialect_apache;
+    clientParms1.progressFn    = &myProgress;
     xmlrpc_client_create(&env, 0, "testprog", "1.0",
-                         &clientParms1, XMLRPC_CPSIZE(dialect),
+                         &clientParms1, XMLRPC_CPSIZE(progressFn),
                          &clientP);
     TEST_NO_FAULT(&env);
     xmlrpc_client_destroy(clientP);
@@ -420,9 +490,11 @@ test_client(void) {
 
     printf("Running client tests.");
 
+    testVersion();
     testGlobalConst();
     testCreateDestroy();
     testInitCleanup();
+    printf("\n");
     testServerInfo();
     testSynchCall();
 

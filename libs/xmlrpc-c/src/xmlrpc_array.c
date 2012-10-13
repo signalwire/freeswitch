@@ -7,6 +7,7 @@
 
 #include "xmlrpc_config.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -24,7 +25,7 @@ xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP) {
     else if (arrayP->_type != XMLRPC_TYPE_ARRAY)
         abort();
     else {
-        unsigned int const arraySize =
+        size_t const arraySize =
             XMLRPC_MEMBLOCK_SIZE(xmlrpc_value*, &arrayP->_block);
         xmlrpc_value ** const contents = 
             XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value*, &arrayP->_block);
@@ -32,7 +33,7 @@ xmlrpc_abort_if_array_bad(xmlrpc_value * const arrayP) {
         if (contents == NULL)
             abort();
         else {
-            unsigned int index;
+            size_t index;
             
             for (index = 0; index < arraySize; ++index) {
                 xmlrpc_value * const itemP = contents[index];
@@ -53,12 +54,12 @@ xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP) {
    Dispose of the contents of an array (but not the array value itself).
    The value is not valid after this.
 -----------------------------------------------------------------------------*/
-    unsigned int const arraySize =
+    size_t const arraySize =
         XMLRPC_MEMBLOCK_SIZE(xmlrpc_value*, &arrayP->_block);
     xmlrpc_value ** const contents = 
         XMLRPC_MEMBLOCK_CONTENTS(xmlrpc_value*, &arrayP->_block);
 
-    unsigned int index;
+    size_t index;
     
     XMLRPC_ASSERT_ARRAY_OK(arrayP);
 
@@ -73,25 +74,27 @@ xmlrpc_destroyArrayContents(xmlrpc_value * const arrayP) {
 
 
 int 
-xmlrpc_array_size(xmlrpc_env *         const env, 
-                  const xmlrpc_value * const array) {
+xmlrpc_array_size(xmlrpc_env *         const envP,
+                  const xmlrpc_value * const arrayP) {
 
     int retval;
 
-    /* Suppress a compiler warning about uninitialized variables. */
-    retval = 0;
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(arrayP);
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(array);
-    XMLRPC_TYPE_CHECK(env, array, XMLRPC_TYPE_ARRAY);
+    if (arrayP->_type != XMLRPC_TYPE_ARRAY) {
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR, "Value is not an array");
+        retval = -1;
+    } else {
+        size_t const size =
+            XMLRPC_MEMBLOCK_SIZE(xmlrpc_value *, &arrayP->_block);
 
-    retval = XMLRPC_TYPED_MEM_BLOCK_SIZE(xmlrpc_value*, &array->_block);
+        assert((size_t)(int)(size) == size);
 
-                  cleanup:
-    if (env->fault_occurred)
-        return -1;
-    else
-        return retval;
+        retval = (int)size;
+    }
+    return retval;
 }
 
 

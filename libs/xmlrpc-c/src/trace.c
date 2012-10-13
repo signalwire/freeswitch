@@ -36,7 +36,7 @@ nextLineSize(const char * const string,
 void
 xmlrpc_traceXml(const char * const label, 
                 const char * const xml,
-                unsigned int const xmlLength) {
+                size_t       const xmlLength) {
 
     if (getenv("XMLRPC_TRACE_XML")) {
         size_t cursor;  /* Index into xml[] */
@@ -59,4 +59,5 @@ xmlrpc_traceXml(const char * const label,
         fprintf(stderr, "\n");
     }
 }
+
 

@@ -8,7 +8,7 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/xmlparser.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "xml_data.h"
 #include "parse_xml.h"
 
@@ -74,7 +74,7 @@ char const xmldata[] =
     "<param><value><i2>10</i2></value></param>\r\n"
     "<param><value><i4>10</i4></value></param>\r\n"
     "<param><value><i8>10</i8></value></param>\r\n"
-    "<param><value><ex.i8>10</ex.i8></value></param>\r\n"
+    "<param><value><ex:i8>10</ex:i8></value></param>\r\n"
     "<param><value><double>10</double></value></param>\r\n"
     "<param><value><double>10.1</double></value></param>\r\n"
     "<param><value><double>-10.1</double></value></param>\r\n"
@@ -152,9 +152,12 @@ char const xmldata[] =
     "<param><value><boolean>1</boolean></value></param>\r\n"
     "<param><value><dateTime.iso8601>19980717T14:08:55</dateTime.iso8601>"
        "</value></param>\r\n"
+    "<param><value>"
+       "<dateTime.iso8601>19980717T14:08:55.123456</dateTime.iso8601>"
+       "</value></param>\r\n"
     "<param><value><base64>YmFzZTY0IGRhdGE=</base64></value></param>\r\n"
     "<param><value><nil/></value></param>\r\n"
-    "<param><value><ex.nil/></value></param>\r\n"
+    "<param><value><ex:nil/></value></param>\r\n"
     "</params>\r\n"
     "</methodCall>\r\n";
     
@@ -164,7 +167,8 @@ char const xmldata[] =
     int arraySize;
     const char * str_hello;
     xmlrpc_bool b_false, b_true;
-    const char * datetime;
+    const char * datetime_sec;
+    const char * datetime_usec;
     unsigned char * b64_data;
     size_t b64_len;
 
@@ -177,24 +181,27 @@ char const xmldata[] =
     arraySize = xmlrpc_array_size(&env, paramArrayP);
     TEST_NO_FAULT(&env);
 
-    TEST(arraySize == 7);
+    TEST(arraySize == 8);
 
     xmlrpc_decompose_value(
-        &env, paramArrayP, "(sbb86nn)", 
-        &str_hello, &b_false, &b_true, &datetime, &b64_data, &b64_len);
+        &env, paramArrayP, "(sbb886nn)", 
+        &str_hello, &b_false, &b_true, &datetime_sec, &datetime_usec,
+        &b64_data, &b64_len);
 
     TEST_NO_FAULT(&env);
 
     TEST(streq(str_hello, "hello"));
     TEST(!b_false);
     TEST(b_true);
-    TEST(streq(datetime, "19980717T14:08:55")); 
+    TEST(streq(datetime_sec, "19980717T14:08:55")); 
+    TEST(streq(datetime_usec, "19980717T14:08:55.123456")); 
     TEST(b64_len == 11);
     TEST(memcmp(b64_data, "base64 data", b64_len) == 0);
 
     free(b64_data);
     strfree(str_hello);
-    strfree(datetime);
+    strfree(datetime_sec);
+    strfree(datetime_usec);
     xmlrpc_DECREF(paramArrayP);
     strfree(methodName);
 
@@ -496,7 +503,7 @@ testParseFaultResponse(void) {
 
 
 static void
-test_parse_xml_call(void) {
+testParseXmlCall(void) {
 
     xmlrpc_env env;
     const char *method_name;
@@ -547,6 +554,38 @@ test_parse_xml_call(void) {
 
 
 
+static void
+testParseXmlValue(void) {
+
+    const char * const xmlInt7 = "<value><int>7</int ></value>";
+    const char * const xmlBadVal1 = "hello";
+    const char * const xmlBadVal2 = "<junk/>";
+
+    xmlrpc_value * valueP;
+
+    xmlrpc_env env;
+
+    xmlrpc_env_init(&env);    
+
+    xmlrpc_parse_value_xml(&env, xmlInt7, strlen(xmlInt7), &valueP);
+
+    TEST_NO_FAULT(&env);
+
+    xmlrpc_DECREF(valueP);
+
+    xmlrpc_parse_value_xml(&env, xmlBadVal1, strlen(xmlBadVal1), &valueP);
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
+    xmlrpc_env_clean(&env);
+
+    xmlrpc_env_init(&env);
+    xmlrpc_parse_value_xml(&env, xmlBadVal2, strlen(xmlBadVal2), &valueP);
+    TEST_FAULT(&env, XMLRPC_PARSE_ERROR);
+
+    xmlrpc_env_clean(&env);    
+}
+
+
+
 void
 test_parse_xml(void) {
 
@@ -557,7 +596,8 @@ test_parse_xml(void) {
     testParseGoodResponse();
     testParseFaultResponse();
     testParseBadResponse();
-    test_parse_xml_call();
+    testParseXmlCall();
+    testParseXmlValue();
     printf("\n");
     printf("XML parsing tests done.\n");
 }

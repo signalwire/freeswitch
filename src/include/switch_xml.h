@@ -198,7 +198,7 @@ SWITCH_DECLARE(const char *) switch_xml_attr(_In_opt_ switch_xml_t xml, _In_opt_
 ///\return the value
 SWITCH_DECLARE(const char *) switch_xml_attr_soft(_In_ switch_xml_t xml, _In_z_ const char *attr);
 
-///\brief Traverses the switch_xml sturcture to retrieve a specific subtag. Takes a
+///\brief Traverses the switch_xml structure to retrieve a specific subtag. Takes a
 ///\ variable length list of tag names and indexes. The argument list must be
 ///\ terminated by either an index of -1 or an empty string tag name. Example: 
 ///\ title = switch_xml_get(library, "shelf", 0, "book", 2, "title", -1);
@@ -208,13 +208,15 @@ SWITCH_DECLARE(const char *) switch_xml_attr_soft(_In_ switch_xml_t xml, _In_z_ 
 ///\return an xml node or NULL
 SWITCH_DECLARE(switch_xml_t) switch_xml_get(_In_ switch_xml_t xml,...);
 
-///\brief Converts an switch_xml structure back to xml. Returns a string of xml data that
+///\brief Converts an switch_xml structure back to xml in html format. Returns a string of html data that
 ///\ must be freed.
 ///\param xml the xml node
 ///\param prn_header add <?xml version..> header too
-///\return the xml text string
+///\return the ampersanded html text string to display xml
 SWITCH_DECLARE(char *) switch_xml_toxml(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header);
 SWITCH_DECLARE(char *) switch_xml_toxml_nolock(switch_xml_t xml, _In_ switch_bool_t prn_header);
+SWITCH_DECLARE(char *) switch_xml_tohtml(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header);
+
 ///\brief Converts an switch_xml structure back to xml using the buffer passed in the parameters.
 ///\param xml the xml node
 ///\param buf buffer to use

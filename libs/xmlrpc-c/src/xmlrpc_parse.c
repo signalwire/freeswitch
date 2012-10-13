@@ -1,5 +1,7 @@
 /* Copyright information is at end of file. */
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include "xmlrpc_config.h"
 
 #include <stddef.h>
@@ -32,6 +34,19 @@
    invoke XMLRPC_FAIL if something looks wrong.
 */
 
+static void
+setParseFault(xmlrpc_env * const envP,
+              const char * const format,
+              ...) {
+
+    va_list args;
+    va_start(args, format);
+    xmlrpc_set_fault_formatted_v(envP, XMLRPC_PARSE_ERROR, format, args);
+    va_end(args);
+}
+
+
+
 #define CHECK_NAME(env,elem,name) \
     do \
         if (!xmlrpc_streq((name), xml_element_name(elem))) \
@@ -44,41 +59,29 @@
     do \
         if (xml_element_children_size(elem) != (count)) \
             XMLRPC_FAIL3(env, XMLRPC_PARSE_ERROR, \
-             "Expected <%s> to have %d children, found %d", \
+                         "Expected <%s> to have %u children, found %u", \
                          xml_element_name(elem), (count), \
-                         xml_element_children_size(elem)); \
+                         (unsigned)xml_element_children_size(elem)); \
     while (0)
 
 static xml_element *
-get_child_by_name (xmlrpc_env *env, xml_element *parent, char *name)
-{
-    size_t child_count, i;
-    xml_element **children;
+getChildByName (xmlrpc_env *  const envP,
+                xml_element * const parentP,
+                const char *  const name) {
 
-    children = xml_element_children(parent);
-    child_count = xml_element_children_size(parent);
-    for (i = 0; i < child_count; i++) {
-        if (xmlrpc_streq(xml_element_name(children[i]), name))
-            return children[i];
+    size_t const childCount = xml_element_children_size(parentP);
+    xml_element ** const childrenP = xml_element_children(parentP);
+
+    unsigned int i;
+
+    for (i = 0; i < childCount; ++i) {
+        if (xmlrpc_streq(xml_element_name(childrenP[i]), name))
+            return childrenP[i];
     }
     
-    xmlrpc_env_set_fault_formatted(env, XMLRPC_PARSE_ERROR,
-                                   "Expected <%s> to have child <%s>",
-                                   xml_element_name(parent), name);
+    setParseFault(envP, "Expected <%s> to have child <%s>",
+                  xml_element_name(parentP), name);
     return NULL;
-}
-
-
-
-static void
-setParseFault(xmlrpc_env * const envP,
-              const char * const format,
-              ...) {
-
-    va_list args;
-    va_start(args, format);
-    xmlrpc_set_fault_formatted_v(envP, XMLRPC_PARSE_ERROR, format, args);
-    va_end(args);
 }
 
 
@@ -94,10 +97,11 @@ static xmlrpc_value *
 convert_params(xmlrpc_env *        const envP,
                const xml_element * const elemP) {
 /*----------------------------------------------------------------------------
-   Convert an XML element representing a list of parameters (i.e.  a
-   <params> element) to an xmlrpc_value of type array.  Note that an
-   array is normally represented in XML by a <value> element.  We use
-   type xmlrpc_value to represent the parameter list just for convenience.
+   Convert an XML element representing a list of parameters (i.e.  a <params>
+   element) to an xmlrpc_value of type array.  Note that an xmlrpc_value is
+   normally represented in XML by a <value> element, not a <params> element.
+   We use type xmlrpc_value to represent the parameter list just for
+   convenience.
 -----------------------------------------------------------------------------*/
     xmlrpc_value *array, *item;
     int size, i;
@@ -120,7 +124,8 @@ convert_params(xmlrpc_env *        const envP,
     size = xml_element_children_size(elemP);
     params = xml_element_children(elemP);
     for (i = 0; i < size; ++i) {
-        unsigned int const maxNest = xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
+        unsigned int const maxNest = (unsigned int)
+            xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
 
         param = params[i];
         CHECK_NAME(envP, param, "param");
@@ -155,7 +160,7 @@ convert_params(xmlrpc_env *        const envP,
 static void
 parseCallXml(xmlrpc_env *   const envP,
              const char *   const xmlData,
-             size_t         const xmlLen,
+             size_t         const xmlDataLen,
              xml_element ** const callElemPP) {
 /*----------------------------------------------------------------------------
    Parse the XML of an XML-RPC call.
@@ -164,7 +169,7 @@ parseCallXml(xmlrpc_env *   const envP,
     xmlrpc_env env;
 
     xmlrpc_env_init(&env);
-    xml_parse(&env, xmlData, xmlLen, &callElemP);
+    xml_parse(&env, xmlData, xmlDataLen, &callElemP);
     if (env.fault_occurred)
         xmlrpc_env_set_fault_formatted(
             envP, env.fault_code, "Call is not valid XML.  %s",
@@ -176,12 +181,11 @@ parseCallXml(xmlrpc_env *   const envP,
                           "Instead, we have a <%s> element.",
                           xml_element_name(callElemP));
 
-        if (!envP->fault_occurred)
-            *callElemPP = callElemP;
-
         if (envP->fault_occurred)
             xml_element_free(callElemP);
     }
+    *callElemPP = callElemP;
+
     xmlrpc_env_clean(&env);
 }
 
@@ -229,7 +233,7 @@ parseCallChildren(xmlrpc_env *    const envP,
         
     XMLRPC_ASSERT(xmlrpc_streq(xml_element_name(callElemP), "methodCall"));
     
-    nameElemP = get_child_by_name(envP, callElemP, "methodName");
+    nameElemP = getChildByName(envP, callElemP, "methodName");
     
     if (!envP->fault_occurred) {
         parseMethodNameElement(envP, nameElemP, methodNameP);
@@ -239,7 +243,7 @@ parseCallChildren(xmlrpc_env *    const envP,
             if (callChildCount > 1) {
                 xml_element * paramsElemP;
 
-                paramsElemP = get_child_by_name(envP, callElemP, "params");
+                paramsElemP = getChildByName(envP, callElemP, "params");
                     
                 if (!envP->fault_occurred)
                     *paramArrayPP = convert_params(envP, paramsElemP);
@@ -272,7 +276,7 @@ parseCallChildren(xmlrpc_env *    const envP,
 void 
 xmlrpc_parse_call(xmlrpc_env *    const envP,
                   const char *    const xmlData,
-                  size_t          const xmlLen,
+                  size_t          const xmlDataLen,
                   const char **   const methodNameP,
                   xmlrpc_value ** const paramArrayPP) {
 /*----------------------------------------------------------------------------
@@ -290,14 +294,14 @@ xmlrpc_parse_call(xmlrpc_env *    const envP,
        from creating an enormous memory block, so you should try to
        enforce it *before* reading any data off the network.
      */
-    if (xmlLen > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
+    if (xmlDataLen > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
         xmlrpc_env_set_fault_formatted(
             envP, XMLRPC_LIMIT_EXCEEDED_ERROR,
             "XML-RPC request too large.  Max allowed is %u bytes",
-            xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID));
+            (unsigned)xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID));
     else {
         xml_element * callElemP;
-        parseCallXml(envP, xmlData, xmlLen, &callElemP);
+        parseCallXml(envP, xmlData, xmlDataLen, &callElemP);
         if (!envP->fault_occurred) {
             parseCallChildren(envP, callElemP, methodNameP, paramArrayPP);
 
@@ -399,7 +403,7 @@ parseFaultElement(xmlrpc_env *        const envP,
                   int *               const faultCodeP,
                   const char **       const faultStringP) {
                   
-    unsigned int const maxRecursion =
+    unsigned int const maxRecursion = (unsigned int)
         xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
 
     XMLRPC_ASSERT(xmlrpc_streq(xml_element_name(faultElement), "fault"));
@@ -533,7 +537,7 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
   If the XML text is not a valid response or something prevents us from
   parsing it, return a description of the error as *envP and nothing else.
 -----------------------------------------------------------------------------*/
-    xml_element * response;
+    xml_element * responseEltP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(xmlData != NULL);
@@ -547,27 +551,29 @@ xmlrpc_parse_response2(xmlrpc_env *    const envP,
             envP, XMLRPC_LIMIT_EXCEEDED_ERROR,
             "XML-RPC response too large.  Our limit is %u characters.  "
             "We got %u characters",
-            xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID), xmlDataLen);
+            (unsigned)xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID),
+            (unsigned)xmlDataLen);
     else {
         xmlrpc_env env;
         xmlrpc_env_init(&env);
 
-        xml_parse(&env, xmlData, xmlDataLen, &response);
+        xml_parse(&env, xmlData, xmlDataLen, &responseEltP);
 
         if (env.fault_occurred)
             setParseFault(envP, "Not valid XML.  %s", env.fault_string);
         else {
             /* Pick apart and verify our structure. */
-            if (xmlrpc_streq(xml_element_name(response), "methodResponse")) {
-                parseMethodResponseElt(envP, response,
+            if (xmlrpc_streq(xml_element_name(responseEltP),
+                             "methodResponse")) {
+                parseMethodResponseElt(envP, responseEltP,
                                        resultPP, faultCodeP, faultStringP);
             } else
                 setParseFault(envP, "XML-RPC response must consist of a "
                               "<methodResponse> element.  "
                               "This has a <%s> instead.",
-                              xml_element_name(response));
+                              xml_element_name(responseEltP));
             
-            xml_element_free(response);
+            xml_element_free(responseEltP);
         }
         xmlrpc_env_clean(&env);
     }
@@ -603,6 +609,57 @@ xmlrpc_parse_response(xmlrpc_env * const envP,
             retval = result;  /* transfer reference */
     }
     return retval;
+}
+
+
+
+void
+xmlrpc_parse_value_xml(xmlrpc_env *    const envP,
+                       const char *    const xmlData,
+                       size_t          const xmlDataLen,
+                       xmlrpc_value ** const valuePP) {
+/*----------------------------------------------------------------------------
+   Compute the xmlrpc_value represented by the XML document 'xmlData' (of
+   length 'xmlDataLen' characters), which must consist of a single <value>
+   element.  Return that xmlrpc_value.
+
+   We call convert_array() and convert_struct(), which may ultimately
+   call us recursively.  Don't recurse any more than 'maxRecursion'
+   times.
+
+   This isn't generally useful in XML-RPC programs, because such programs
+   parse a whole XML-RPC call or response document, and never see the XML text
+   of just a <value> element.  But a program may do some weird form of XML-RPC
+   processing or just borrow Xmlrpc-c's value serialization facilities for
+   something unrelated to XML-RPC.  In any case, it makes sense to have an
+   inverse of xmlrpc_serialize_value2(), which generates XML text from an
+   xmlrpc_value.
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
+
+    xml_element * valueEltP;
+
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT(xmlData != NULL);
+
+    xmlrpc_env_init(&env);
+
+    xml_parse(&env, xmlData, xmlDataLen, &valueEltP);
+
+    if (env.fault_occurred) {
+        setParseFault(envP, "Not valid XML.  %s", env.fault_string);
+    } else {
+        if (xmlrpc_streq(xml_element_name(valueEltP), "value")) {
+            unsigned int const maxRecursion = (unsigned int)
+                xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
+            xmlrpc_parseValue(envP, maxRecursion, valueEltP, valuePP);
+        } else
+            setParseFault(envP, "XML-RPC value XML document must consist of "
+                          "a <value> element.  This has a <%s> instead.",
+                          xml_element_name(valueEltP));
+        xml_element_free(valueEltP);
+    }
+    xmlrpc_env_clean(&env);
 }
 
 

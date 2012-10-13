@@ -85,6 +85,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=..\src\cpp\test\value.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\cpp\test\registry.cpp
 # End Source File
 # Begin Source File
@@ -94,7 +98,6 @@ SOURCE=..\src\cpp\test\server_abyss.cpp
 # Begin Source File
 
 SOURCE=..\src\cpp\test\server_pstream.cpp
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -107,6 +110,10 @@ SOURCE=..\src\cpp\test\testclient_dummy.cpp
 # Begin Source File
 
 SOURCE=..\src\cpp\test\tools.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\socketpair.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"

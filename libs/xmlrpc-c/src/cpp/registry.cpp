@@ -59,6 +59,24 @@ methodPtr::operator->() const {
 
 
 
+method2::method2() {}
+
+
+
+method2::~method2() {}
+
+
+void
+method2::execute(xmlrpc_c::paramList const& paramList,
+                 xmlrpc_c::value *   const  resultP) {
+
+    callInfo const nullCallInfo;
+
+    execute(paramList, &nullCallInfo, resultP);
+}
+
+
+
 defaultMethod::~defaultMethod() {}
 
 
@@ -90,7 +108,32 @@ defaultMethodPtr::get() const {
 
 
 
-registry::registry() {
+struct registry_impl {
+
+    xmlrpc_registry * c_registryP;
+        // Pointer to the C registry object we use to implement this
+        // object.
+
+    std::list<xmlrpc_c::methodPtr> methodList;
+        // This is a list of all the method objects (actually, pointers
+        // to them).  But since the real registry is the C registry object,
+        // all this list is for is to maintain references to the objects
+        // to which the C registry points so that they continue to exist.
+
+    xmlrpc_c::defaultMethodPtr defaultMethodP;
+        // The real identifier of the default method is the C registry
+        // object; this member exists only to maintain a reference to the
+        // object to which the C registry points so that it will continue
+        // to exist.
+
+    registry_impl();
+
+    ~registry_impl();
+};
+
+
+
+registry_impl::registry_impl() {
 
     env_wrap env;
 
@@ -101,9 +144,22 @@ registry::registry() {
 
 
 
-registry::~registry(void) {
+registry_impl::~registry_impl() {
 
     xmlrpc_registry_free(this->c_registryP);
+}
+
+
+registry::registry() {
+
+    this->implP = new registry_impl();
+}
+
+
+
+registry::~registry(void) {
+
+    delete(this->implP);
 }
 
 
@@ -173,7 +229,8 @@ pListFromXmlrpcArray(xmlrpc_value * const arrayP) {
 static xmlrpc_value *
 c_executeMethod(xmlrpc_env *   const envP,
                 xmlrpc_value * const paramArrayP,
-                void *         const methodPtr) {
+                void *         const methodPtr,
+                void *         const callInfoPtr) {
 /*----------------------------------------------------------------------------
    This is a function designed to be called via a C registry to
    execute an XML-RPC method, but use a C++ method object to do the
@@ -188,18 +245,25 @@ c_executeMethod(xmlrpc_env *   const envP,
    encounter in processing the result it returns, and turn it into an
    XML-RPC method failure.  This will cause a leak if the execute()
    method actually created a result, since it will not get destroyed.
+
+   This function is of type 'xmlrpc_method2'.
 -----------------------------------------------------------------------------*/
-    xmlrpc_c::method * const methodP = 
-        static_cast<xmlrpc_c::method *>(methodPtr);
-    xmlrpc_c::paramList const paramList(pListFromXmlrpcArray(paramArrayP));
+    method * const methodP(static_cast<method *>(methodPtr));
+    paramList const paramList(pListFromXmlrpcArray(paramArrayP));
+    callInfo * const callInfoP(static_cast<callInfo *>(callInfoPtr));
 
     xmlrpc_value * retval;
+    retval = NULL; // silence used-before-set warning
 
     try {
-        xmlrpc_c::value result;
+        value result;
 
         try {
-            methodP->execute(paramList, &result);
+            method2 * const method2P(dynamic_cast<method2 *>(methodP));
+            if (method2P)
+                method2P->execute(paramList, callInfoP, &result);
+            else 
+                methodP->execute(paramList, &result);
         } catch (xmlrpc_c::fault const& fault) {
             xmlrpc_env_set_fault(envP, fault.getCode(), 
                                  fault.getDescription().c_str()); 
@@ -256,6 +320,7 @@ c_executeDefaultMethod(xmlrpc_env *   const envP,
     paramList const paramList(pListFromXmlrpcArray(paramArrayP));
 
     xmlrpc_value * retval;
+    retval = NULL; // silence used-before-set warning
 
     try {
         xmlrpc_c::value result;
@@ -296,15 +361,22 @@ void
 registry::addMethod(string    const name,
                     methodPtr const methodP) {
 
-    this->methodList.push_back(methodP);
+    this->implP->methodList.push_back(methodP);
 
+    struct xmlrpc_method_info3 methodInfo;
     env_wrap env;
+
+    methodInfo.methodName      = name.c_str();
+    methodInfo.methodFunction  = &c_executeMethod;
+    methodInfo.serverInfo      = methodP.get();
+    methodInfo.stackSize       = 0;
+    string const signatureString(methodP->signature());
+    methodInfo.signatureString = signatureString.c_str();
+    string const help(methodP->help());
+    methodInfo.help            = help.c_str();
     
-	xmlrpc_registry_add_method_w_doc(
-        &env.env_c, this->c_registryP, NULL,
-        name.c_str(), &c_executeMethod, 
-        (void*) methodP.get(), 
-        methodP->signature().c_str(), methodP->help().c_str());
+	xmlrpc_registry_add_method3(&env.env_c, this->implP->c_registryP,
+                                &methodInfo);
 
     throwIfError(env);
 }
@@ -314,12 +386,12 @@ registry::addMethod(string    const name,
 void
 registry::setDefaultMethod(defaultMethodPtr const methodP) {
 
-    this->defaultMethodP = methodP;
+    this->implP->defaultMethodP = methodP;
 
     env_wrap env;
     
     xmlrpc_registry_set_default_method(
-        &env.env_c, this->c_registryP,
+        &env.env_c, this->implP->c_registryP,
         &c_executeDefaultMethod, (void*) methodP.get());
 
     throwIfError(env);
@@ -330,7 +402,7 @@ registry::setDefaultMethod(defaultMethodPtr const methodP) {
 void
 registry::disableIntrospection() {
 
-    xmlrpc_registry_disable_introspection(this->c_registryP);
+    xmlrpc_registry_disable_introspection(this->implP->c_registryP);
 }
 
 
@@ -362,7 +434,7 @@ registry::setShutdown(const registry::shutdown * const shutdownP) {
 
     void * const context(const_cast<registry::shutdown *>(shutdownP));
 
-    xmlrpc_registry_set_shutdown(this->c_registryP,
+    xmlrpc_registry_set_shutdown(this->implP->c_registryP,
                                  &shutdownServer,
                                  context);
 }
@@ -374,9 +446,49 @@ registry::setDialect(xmlrpc_dialect const dialect) {
 
     env_wrap env;
 
-    xmlrpc_registry_set_dialect(&env.env_c, this->c_registryP, dialect);
+    xmlrpc_registry_set_dialect(&env.env_c, this->implP->c_registryP, dialect);
 
     throwIfError(env);
+}
+
+
+
+void
+registry::processCall(string           const& callXml,
+                      const callInfo * const  callInfoP,
+                      string *         const  responseXmlP) const {
+/*----------------------------------------------------------------------------
+   Process an XML-RPC call whose XML is 'callXml'.
+
+   Return the response XML as *responseXmlP.
+
+   If we are unable to execute the call, we throw an error.  But if
+   the call executes and the method merely fails in an XML-RPC sense, we
+   don't.  In that case, *responseXmlP indicates the failure.
+-----------------------------------------------------------------------------*/
+    env_wrap env;
+    xmlrpc_mem_block * response;
+
+    // For the pure C++ version, this will have to parse 'callXml'
+    // into a method name and parameters, look up the method name in
+    // the registry, call the method's execute() method, then marshall
+    // the result into XML and return it as *responseXmlP.  It will
+    // also have to execute system methods (e.g. introspection)
+    // itself.  This will be more or less like what
+    // xmlrpc_registry_process_call() does.
+
+    xmlrpc_registry_process_call2(
+        &env.env_c, this->implP->c_registryP,
+        callXml.c_str(), callXml.length(),
+        const_cast<callInfo *>(callInfoP),
+        &response);
+
+    throwIfError(env);
+
+    *responseXmlP = string(XMLRPC_MEMBLOCK_CONTENTS(char, response),
+                           XMLRPC_MEMBLOCK_SIZE(char, response));
+    
+    xmlrpc_mem_block_free(response);
 }
 
 
@@ -405,7 +517,7 @@ registry::processCall(string   const& callXml,
     // xmlrpc_registry_process_call() does.
 
     output = xmlrpc_registry_process_call(
-        &env.env_c, this->c_registryP, NULL,
+        &env.env_c, this->implP->c_registryP, NULL,
         callXml.c_str(), callXml.length());
 
     throwIfError(env);
@@ -416,11 +528,23 @@ registry::processCall(string   const& callXml,
     xmlrpc_mem_block_free(output);
 }
 
-xmlrpc_registry *
-registry::c_registry() const {
 
-    return this->c_registryP;
+
+#define PROCESS_CALL_STACK_SIZE 256
+    // This is our liberal estimate of how much stack space
+    // registry::processCall() needs, not counting what
+    // the call the to C registry uses.
+
+
+
+size_t
+registry::maxStackSize() const {
+
+    return xmlrpc_registry_max_stackSize(this->implP->c_registryP) +
+        PROCESS_CALL_STACK_SIZE;
 }
+
+
 
 }  // namespace
 

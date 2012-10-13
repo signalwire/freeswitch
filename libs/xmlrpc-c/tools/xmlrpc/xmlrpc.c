@@ -35,7 +35,7 @@
 
 */
 
-//#define _GNU_SOURCE
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -55,6 +55,7 @@
 
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/client.h"
+#include "xmlrpc-c/string_int.h"
 
 #define NAME "xmlrpc command line program"
 #define VERSION "1.0"
@@ -260,6 +261,33 @@ buildString(xmlrpc_env *    const envP,
 
 
 static void
+interpretHex(xmlrpc_env *    const envP,
+             const char *    const valueString,
+             size_t          const valueStringSize,
+             unsigned char * const byteString) {
+
+    size_t bsCursor;
+    size_t strCursor;
+
+    for (strCursor = 0, bsCursor = 0;
+         strCursor < valueStringSize && !envP->fault_occurred;
+        ) {
+        int rc;
+
+        rc = sscanf(&valueString[strCursor], "%2hhx",
+                    &byteString[bsCursor++]);
+
+        if (rc != 1)
+            xmlrpc_faultf(envP, "Invalid hex data '%s'",
+                          &valueString[strCursor]);
+        else
+            strCursor += 2;
+    }
+}
+
+
+
+static void
 buildBytestring(xmlrpc_env *    const envP,
                 const char *    const valueString,
                 xmlrpc_value ** const paramPP) {
@@ -269,33 +297,25 @@ buildBytestring(xmlrpc_env *    const envP,
     if (valueStringSize / 2 * 2 != valueStringSize)
         xmlrpc_faultf(envP, "Hexadecimal text is not an even "
                       "number of characters (it is %u characters)",
-                      strlen(valueString));
+                      (unsigned)strlen(valueString));
     else {
         size_t const byteStringSize = strlen(valueString)/2;
         
-        unsigned char byteString[byteStringSize];
-        size_t bsCursor;
-        size_t strCursor;
+        unsigned char * byteString;
 
-        strCursor = 0;
-        bsCursor = 0;
+        MALLOCARRAY(byteString, byteStringSize);
 
-        while (strCursor < valueStringSize && !envP->fault_occurred) {
-            int rc;
+        if (byteString == NULL)
+            xmlrpc_faultf(envP, "Failed to allocate %u-byte buffer",
+                          (unsigned)byteStringSize);
+        else {
+            interpretHex(envP, valueString, valueStringSize, byteString);
 
-            assert(bsCursor < byteStringSize);
+            if (!envP->fault_occurred)
+                *paramPP = xmlrpc_base64_new(envP, byteStringSize, byteString);
 
-            rc = sscanf(&valueString[strCursor], "%2hhx",
-                        &byteString[bsCursor++]);
-
-            if (rc != 1)
-                xmlrpc_faultf(envP, "Invalid hex data '%s'",
-                              &valueString[strCursor]);
-            else
-                strCursor += 2;
+            free(byteString);
         }
-        if (!envP->fault_occurred)
-            *paramPP = xmlrpc_base64_new(envP, byteStringSize, byteString);
     }
 }
 
@@ -409,19 +429,19 @@ computeParameter(xmlrpc_env *    const envP,
                  const char *    const paramArg,
                  xmlrpc_value ** const paramPP) {
 
-    if (strncmp(paramArg, "s/", 2) == 0)
+    if (xmlrpc_strneq(paramArg, "s/", 2))
         buildString(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "h/", 2) == 0)
+    else if (xmlrpc_strneq(paramArg, "h/", 2))
         buildBytestring(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "i/", 2) == 0) 
+    else if (xmlrpc_strneq(paramArg, "i/", 2)) 
         buildInt(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "I/", 2) == 0) 
+    else if (xmlrpc_strneq(paramArg, "I/", 2)) 
         buildI8(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "d/", 2) == 0) 
+    else if (xmlrpc_strneq(paramArg, "d/", 2)) 
         buildDouble(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "b/", 2) == 0)
+    else if (xmlrpc_strneq(paramArg, "b/", 2))
         buildBool(envP, &paramArg[2], paramPP);
-    else if (strncmp(paramArg, "n/", 2) == 0)
+    else if (xmlrpc_strneq(paramArg, "n/", 2))
         buildNil(envP, &paramArg[2], paramPP);
     else {
         /* It's not in normal type/value format, so we take it to be

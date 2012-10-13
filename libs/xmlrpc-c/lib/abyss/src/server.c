@@ -1,4 +1,8 @@
 /* Copyright information is at end of file */
+
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+#define _BSD_SOURCE  /* Make sure setgroups()is in <grp.h> */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +39,17 @@
 #include "server.h"
 
 
+struct uriHandler {
+    initHandlerFn init;
+    termHandlerFn term;
+    handleReq3Fn  handleReq3;
+    handleReq2Fn  handleReq2;
+    URIHandler    handleReq1;
+    void *        userdata;
+};
+
+
+
 void
 ServerTerminate(TServer * const serverP) {
 
@@ -44,9 +59,10 @@ ServerTerminate(TServer * const serverP) {
 
     if (srvP->chanSwitchP) {
         ChanSwitchInterrupt(srvP->chanSwitchP);
-        ChanSwitchDestroy(srvP->chanSwitchP);
 	}
 }
+
+
 
 void
 ServerResetTerminate(TServer * const serverP) {
@@ -108,25 +124,29 @@ logClose(struct _TServer * const srvP) {
 static void
 initChanSwitchStuff(struct _TServer * const srvP,
                     bool              const noAccept,
-                    TChanSwitch *     const userSwitchP,
+                    TChanSwitch *     const chanSwitchP,
+                    bool              const userChanSwitch,
                     unsigned short    const port,
                     const char **     const errorP) {
     
-    if (userSwitchP) {
+
+    if (chanSwitchP) {
         *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
-        srvP->chanSwitchP = userSwitchP;
+        srvP->chanSwitchP = chanSwitchP;
+        srvP->weCreatedChanSwitch = !userChanSwitch;
     } else if (noAccept) {
         *errorP = NULL;
         srvP->serverAcceptsConnections = FALSE;
         srvP->chanSwitchP = NULL;
+        srvP->weCreatedChanSwitch = FALSE;
     } else {
         *errorP = NULL;
         srvP->serverAcceptsConnections = TRUE;
         srvP->chanSwitchP = NULL;
+        srvP->weCreatedChanSwitch = FALSE;
         srvP->port = port;
     }
-    srvP->weCreatedChanSwitch = FALSE;
 }
 
 
@@ -134,7 +154,8 @@ initChanSwitchStuff(struct _TServer * const srvP,
 static void
 createServer(struct _TServer ** const srvPP,
              bool               const noAccept,
-             TChanSwitch *      const userChanSwitchP,
+             TChanSwitch *      const chanSwitchP,
+             bool               const userChanSwitch,
              unsigned short     const portNumber,             
              const char **      const errorP) {
 
@@ -148,8 +169,8 @@ createServer(struct _TServer ** const srvPP,
     } else {
         srvP->terminationRequested = false;
 
-        initChanSwitchStuff(srvP, noAccept, userChanSwitchP, portNumber,
-                            errorP);
+        initChanSwitchStuff(srvP, noAccept, chanSwitchP, userChanSwitch,
+                            portNumber, errorP);
 
         if (!*errorP) {
             srvP->builtinHandlerP = HandlerCreate();
@@ -167,6 +188,7 @@ createServer(struct _TServer ** const srvPP,
                 srvP->timeout          = 15;
                 srvP->advertise        = TRUE;
                 srvP->useSigchld       = FALSE;
+                srvP->uriHandlerStackSize = 0;
             
                 initUnixStuff(srvP);
 
@@ -218,11 +240,14 @@ ServerCreate(TServer *       const serverP,
              const char *    const logFileName) {
 
     bool const noAcceptFalse = FALSE;
+    bool const userChanSwitchFalse = FALSE;
 
     bool success;
     const char * error;
 
-    createServer(&serverP->srvP, noAcceptFalse, NULL, portNumber, &error);
+    createServer(&serverP->srvP, noAcceptFalse,
+                 NULL, userChanSwitchFalse,
+                 portNumber, &error);
 
     if (error) {
         TraceMsg(error);
@@ -291,10 +316,13 @@ ServerCreateSocket(TServer *    const serverP,
         xmlrpc_strfree(error);
     } else {
         bool const noAcceptFalse = FALSE;
+        bool const userChanSwitchFalse = FALSE;
 
         const char * error;
 
-        createServer(&serverP->srvP, noAcceptFalse, chanSwitchP, 0, &error);
+        createServer(&serverP->srvP, noAcceptFalse,
+                     chanSwitchP, userChanSwitchFalse,
+                     0, &error);
 
         if (error) {
             TraceMsg(error);
@@ -305,6 +333,8 @@ ServerCreateSocket(TServer *    const serverP,
             
             setNamePathLog(serverP, name, filesPath, logFileName);
         }
+        if (!success)
+            ChanSwitchDestroy(chanSwitchP);
     }
 
     return success;
@@ -319,11 +349,14 @@ ServerCreateNoAccept(TServer *    const serverP,
                      const char * const logFileName) {
 
     bool const noAcceptTrue = TRUE;
+    bool const userChanSwitchFalse = FALSE;
 
     bool success;
     const char * error;
 
-    createServer(&serverP->srvP, noAcceptTrue, NULL, 0, &error);
+    createServer(&serverP->srvP, noAcceptTrue,
+                 NULL, userChanSwitchFalse,
+                 0, &error);
 
     if (error) {
         TraceMsg(error);
@@ -345,11 +378,14 @@ ServerCreateSwitch(TServer *     const serverP,
                    const char ** const errorP) {
     
     bool const noAcceptFalse = FALSE;
+    bool const userChanSwitchTrue = TRUE;
 
     assert(serverP);
     assert(chanSwitchP);
 
-    createServer(&serverP->srvP, noAcceptFalse, chanSwitchP, 0, errorP);
+    createServer(&serverP->srvP, noAcceptFalse,
+                 chanSwitchP, userChanSwitchTrue,
+                 0, errorP);
 }
 
 
@@ -383,7 +419,7 @@ terminateHandlers(TList * const handlersP) {
     if (handlersP->item) {
         unsigned int i;
         for (i = handlersP->size; i > 0; --i) {
-            URIHandler2 * const handlerP = handlersP->item[i-1];
+            struct uriHandler * const handlerP = handlersP->item[i-1];
             if (handlerP->term)
                 handlerP->term(handlerP->userdata);
         }
@@ -397,7 +433,7 @@ ServerFree(TServer * const serverP) {
 
     struct _TServer * const srvP = serverP->srvP;
 
-    if (srvP->weCreatedChanSwitch)
+    if (srvP->weCreatedChanSwitch && srvP->chanSwitchP)
         ChanSwitchDestroy(srvP->chanSwitchP);
 
     xmlrpc_strfree(srvP->name);
@@ -456,7 +492,7 @@ void
 ServerSetKeepaliveTimeout(TServer *       const serverP,
                           xmlrpc_uint32_t const keepaliveTimeout) {
 
-    serverP->srvP->keepalivetimeout = keepaliveTimeout;
+    serverP->srvP->keepalivetimeout = MAX(keepaliveTimeout, 1);
 }
 
 
@@ -465,7 +501,7 @@ void
 ServerSetKeepaliveMaxConn(TServer *       const serverP,
                           xmlrpc_uint32_t const keepaliveMaxConn) {
 
-    serverP->srvP->keepalivemaxconn = keepaliveMaxConn;
+    serverP->srvP->keepalivemaxconn = MAX(keepaliveMaxConn, 1);
 }
 
 
@@ -497,6 +533,22 @@ ServerSetMimeType(TServer *  const serverP,
 
 
 
+static URIHandler2
+makeUriHandler2(const struct uriHandler * const handlerP) {
+
+    URIHandler2 retval;
+
+    retval.init       = handlerP->init;
+    retval.term       = handlerP->term;
+    retval.handleReq2 = handlerP->handleReq2;
+    retval.handleReq1 = handlerP->handleReq1;
+    retval.userdata   = handlerP->userdata;
+
+    return retval;
+}
+
+
+
 static void
 runUserHandler(TSession *        const sessionP,
                struct _TServer * const srvP) {
@@ -507,11 +559,14 @@ runUserHandler(TSession *        const sessionP,
     for (i = srvP->handlers.size-1, handled = FALSE;
          i >= 0 && !handled;
          --i) {
-        URIHandler2 * const handlerP = srvP->handlers.item[i];
+        const struct uriHandler * const handlerP = srvP->handlers.item[i];
         
-        if (handlerP->handleReq2)
-            handlerP->handleReq2(handlerP, sessionP, &handled);
-        else if (handlerP->handleReq1)
+        if (handlerP->handleReq3)
+            handlerP->handleReq3(handlerP->userdata, sessionP, &handled);
+        if (handlerP->handleReq2) {
+            URIHandler2 handler2 = makeUriHandler2(handlerP);
+            handlerP->handleReq2(&handler2, sessionP, &handled);
+        } else if (handlerP->handleReq1)
             handled = handlerP->handleReq1(sessionP);
     }
 
@@ -524,24 +579,81 @@ runUserHandler(TSession *        const sessionP,
 
 
 static void
-processDataFromClient(TConn *  const connectionP,
-                      bool     const lastReqOnConn,
-                      uint32_t const timeout,
-                      bool *   const keepAliveP) {
+handleReqTooNewHttpVersion(TSession * const sessionP) {
 
-    TSession session = {0};  /* initilization, an afforadble alternative to random memory being misinterpreted! */
+    const char * msg;
+
+    ResponseStatus(sessionP, 505);
+
+    xmlrpc_asprintf(&msg, "Request is in HTTP Version %u"
+                    "We understand only HTTP 1",
+                    sessionP->version.major);
+    
+    ResponseError2(sessionP, msg);
+    
+    xmlrpc_strfree(msg);
+}
+
+
+
+static void
+handleReqInvalidURI(TSession * const sessionP) {
+
+    ResponseStatus(sessionP, 400);
+
+    ResponseError2(sessionP, "Invalid URI");
+}
+
+
+
+static void
+processRequestFromClient(TConn *  const connectionP,
+                         bool     const lastReqOnConn,
+                         uint32_t const timeout,
+                         bool *   const keepAliveP) {
+/*----------------------------------------------------------------------------
+   Get and execute one HTTP request from client connection *connectionP,
+   through the connection buffer.  I.e. Some of the request may already be in
+   the connection buffer, and we may leave some of later requests in the
+   connection buffer.
+
+   In fact, due to timing considerations, we assume the client has begun
+   sending the request, which as a practical matter means Caller has already
+   deposited some of it in the connection buffer.
+
+   If there isn't one full request in the buffer now, we wait for one full
+   request to come through the buffer, up to 'timeout'.
+
+   We return as *keepAliveP whether Caller should keep the connection
+   alive for a while for possible future requests from the client, based
+   on 'lastReqOnConn' and the content of the HTTP request.
+
+   Executing the request consists primarily of calling the URI handlers that
+   are associated with the connection (*connectionP), passing each the request
+   information we read.  Each handler can respond according to the HTTP method
+   (GET, POST, etc) and URL etc, and that response may be either to
+   execute the request and send the response or refuse the request and let
+   us call the next one in the list.
+-----------------------------------------------------------------------------*/
+    TSession session;
+    const char * error;
+    uint16_t httpErrorCode;
 
     RequestInit(&session, connectionP);
 
     session.serverDeniesKeepalive = lastReqOnConn;
         
-    RequestRead(&session, timeout);
+    RequestRead(&session, timeout, &error, &httpErrorCode);
 
-    if (session.status == 0) {
+    if (error) {
+        ResponseStatus(&session, httpErrorCode);
+        ResponseError2(&session, error);
+        xmlrpc_strfree(error);
+    } else {
         if (session.version.major >= 2)
-            ResponseStatus(&session, 505);
+            handleReqTooNewHttpVersion(&session);
         else if (!RequestValidURI(&session))
-            ResponseStatus(&session, 400);
+            handleReqInvalidURI(&session);
         else
             runUserHandler(&session, connectionP->server->srvP);
     }
@@ -582,21 +694,35 @@ serverFunc(void * const userHandle) {
     connectionDone = FALSE;
 
     while (!connectionDone) {
-        bool success;
+        bool timedOut, eof;
+        const char * readError;
         
-        /* Wait to read until timeout */
-        success = ConnRead(connectionP, srvP->keepalivetimeout);
+        /* Wait for and get beginning (at least ) of next request.  We do
+           this separately from getting the rest of the request because we
+           treat dead time between requests differently from dead time in
+           the middle of a request.
+        */
+        ConnRead(connectionP, srvP->keepalivetimeout,
+                 &timedOut, &eof, &readError);
 
-        if (!success)
+        if (readError) {
+            TraceMsg("Failed to read from Abyss connection.  %s", readError);
+            xmlrpc_strfree(readError);
             connectionDone = TRUE;
-        else {
+        } else if (timedOut) {
+            connectionDone = TRUE;
+        } else if (eof) {
+            connectionDone = TRUE;
+        } else if (srvP->terminationRequested) {
+            connectionDone = TRUE;
+        } else {
             bool const lastReqOnConn =
                 requestCount + 1 >= srvP->keepalivemaxconn;
 
             bool keepalive;
             
-            processDataFromClient(connectionP, lastReqOnConn, srvP->timeout,
-                                  &keepalive);
+            processRequestFromClient(connectionP, lastReqOnConn, srvP->timeout,
+                                     &keepalive);
             
             ++requestCount;
 
@@ -608,6 +734,14 @@ serverFunc(void * const userHandle) {
         }
     }
 }
+
+
+
+/* This is the maximum amount of stack space, in bytes, serverFunc()
+   itself requires -- not counting what the user's request handler
+   (which serverFunc() calls) requires.
+*/
+#define SERVER_FUNC_STACK 1024
 
 
 
@@ -700,8 +834,8 @@ ServerInit(TServer * const serverP) {
     }
     if (retError) {
         TraceMsg("ServerInit() failed.  %s", retError);
-		return 0;
         xmlrpc_strfree(retError);
+		return 0;
     }
 
 	return 1;
@@ -920,7 +1054,9 @@ acceptAndProcessNextConnection(
             waitForConnectionCapacity(outstandingConnListP);
             
             ConnCreate(&connectionP, serverP, channelP, channelInfoP,
-                       &serverFunc, &destroyChannel, ABYSS_BACKGROUND,
+                       &serverFunc,
+                       SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
+                       &destroyChannel, ABYSS_BACKGROUND,
                        srvP->useSigchld,
                        &error);
             if (!error) {
@@ -932,6 +1068,8 @@ acceptAndProcessNextConnection(
                    destroy *channelP.
                 */
             } else {
+                TraceMsg("Failed to create an Abyss connection "
+                         "out of new channel %lx.  %s", channelP, error);
                 xmlrpc_strfree(error);
                 ChannelDestroy(channelP);
                 free(channelInfoP);
@@ -998,7 +1136,8 @@ serverRunChannel(TServer *     const serverP,
 
     ConnCreate(&connectionP, 
                serverP, channelP, channelInfoP,
-               &serverFunc, NULL, ABYSS_FOREGROUND, srvP->useSigchld,
+               &serverFunc, SERVER_FUNC_STACK + srvP->uriHandlerStackSize,
+               NULL, ABYSS_FOREGROUND, srvP->useSigchld,
                &error);
     if (error) {
         xmlrpc_asprintf(errorP, "Couldn't create HTTP connection out of "
@@ -1230,24 +1369,43 @@ ServerDaemonize(TServer * const serverP) {
 
 
 
-void
-ServerAddHandler2(TServer *     const serverP,
-                  URIHandler2 * const handlerArgP,
-                  abyss_bool *  const successP) {
+static void
+serverAddHandler(TServer *     const serverP,
+                 initHandlerFn       init,
+                 termHandlerFn       term,
+                 URIHandler          handleReq1,
+                 handleReq2Fn        handleReq2,
+                 handleReq3Fn        handleReq3,
+                 void *        const userdata,
+                 size_t        const handleReqStackSizeReq,
+                 abyss_bool *  const successP) {
 
-    URIHandler2 * handlerP;
+    struct _TServer * const srvP = serverP->srvP;
+    size_t handleReqStackSize =
+        handleReqStackSizeReq ? handleReqStackSizeReq : 128*1024;
+
+    struct uriHandler * handlerP;
 
     MALLOCVAR(handlerP);
     if (handlerP == NULL)
         *successP = FALSE;
     else {
-        *handlerP = *handlerArgP;
+        handlerP->init       = init;
+        handlerP->term       = term;
+        handlerP->handleReq1 = handleReq1;
+        handlerP->handleReq2 = handleReq2;
+        handlerP->handleReq3 = handleReq3;
+        handlerP->userdata   = userdata;
 
+        srvP->uriHandlerStackSize =
+            MAX(srvP->uriHandlerStackSize, handleReqStackSize);
+        
         if (handlerP->init == NULL)
             *successP = TRUE;
-        else
-            handlerP->init(handlerP, successP);
-
+        else {
+            URIHandler2 handler2 = makeUriHandler2(handlerP);
+            handlerP->init(&handler2, successP);
+        }
         if (*successP)
             *successP = ListAdd(&serverP->srvP->handlers, handlerP);
 
@@ -1258,20 +1416,42 @@ ServerAddHandler2(TServer *     const serverP,
 
 
 
-static URIHandler2 *
-createHandler(URIHandler const function) {
+void
+ServerAddHandler3(TServer *                        const serverP,
+                  const struct ServerReqHandler3 * const handlerP,
+                  abyss_bool *                     const successP) {
 
-    URIHandler2 * handlerP;
+    serverAddHandler(serverP, NULL, handlerP->term, NULL, NULL,
+                     handlerP->handleReq, handlerP->userdata,
+                     handlerP->handleReqStackSize, successP);
+}
 
-    MALLOCVAR(handlerP);
-    if (handlerP != NULL) {
-        handlerP->init       = NULL;
-        handlerP->term       = NULL;
-        handlerP->userdata   = NULL;
-        handlerP->handleReq2 = NULL;
-        handlerP->handleReq1 = function;
-    }
-    return handlerP;
+
+
+void
+ServerAddHandler2(TServer *     const serverP,
+                  URIHandler2 * const handlerArgP,
+                  abyss_bool *  const successP) {
+
+    /* This generation of the URI handler interface is strange because
+       it went through an unfortunate evolution.  So it halfway looks like
+       the use supplies a handler object and Abyss calls its methods, and
+       halfway looks like the user simply describes his handler.
+
+       Abyss calls handleReq2 with a pointer to a URIHandler2 like the
+       one which is our argument, but it isn't the same one.  User can
+       discard *handlerArgP as soon as we return.
+    */
+    
+    serverAddHandler(serverP,
+                     handlerArgP->init,
+                     handlerArgP->term,
+                     handlerArgP->handleReq1,
+                     handlerArgP->handleReq2,
+                     NULL,
+                     handlerArgP->userdata,
+                     0,
+                     successP);
 }
 
 
@@ -1280,23 +1460,29 @@ abyss_bool
 ServerAddHandler(TServer *  const serverP,
                  URIHandler const function) {
 
-    URIHandler2 * handlerP;
-    bool success;
+    URIHandler2 handler;
+    abyss_bool success;
 
-    handlerP = createHandler(function);
+    handler.init       = NULL;
+    handler.term       = NULL;
+    handler.userdata   = NULL;
+    handler.handleReq2 = NULL;
+    handler.handleReq1 = function;
 
-    if (handlerP == NULL)
-        success = FALSE;
-    else {
-        success = ListAdd(&serverP->srvP->handlers, handlerP);
+    ServerAddHandler2(serverP, &handler, &success);
 
-        if (!success)
-            free(handlerP);
-    }
     return success;
 }
 
 
+
+/* This is the maximum amount of stack we allow a user's default URI
+   handler to use.  (If he exceeds this, results are undefined).
+
+   We really ought to provide user a way to set this, as he can for
+   his non-default URI handlers.
+*/
+#define USER_DEFAULT_HANDLER_STACK 128*1024
 
 void
 ServerDefaultHandler(TServer *  const serverP,
@@ -1304,11 +1490,15 @@ ServerDefaultHandler(TServer *  const serverP,
 
     struct _TServer * const srvP = serverP->srvP;
 
-    if (handler)
+    if (handler) {
         srvP->defaultHandler = handler;
-    else {
+        srvP->uriHandlerStackSize =
+            MAX(srvP->uriHandlerStackSize, USER_DEFAULT_HANDLER_STACK);
+    } else {
         srvP->defaultHandler = HandlerDefaultBuiltin;
         srvP->defaultHandlerContext = srvP->builtinHandlerP;
+        srvP->uriHandlerStackSize =
+            MAX(srvP->uriHandlerStackSize, HandlerDefaultBuiltinStack);
     }
 }
 

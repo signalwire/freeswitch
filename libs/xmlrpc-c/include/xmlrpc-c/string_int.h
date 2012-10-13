@@ -13,22 +13,37 @@
 extern "C" {
 #endif
 
-extern const char * const xmlrpc_strsol;
+XMLRPC_DLLEXPORT
+bool
+xmlrpc_strnomem(const char * const string);
 
+XMLRPC_DLLEXPORT
+const char *
+xmlrpc_strnomemval(void);
+
+XMLRPC_DLLEXPORT
 void
 xmlrpc_vasprintf(const char ** const retvalP,
                  const char *  const fmt,
                  va_list             varargs);
 
-void GNU_PRINTF_ATTR(2,3)
+XMLRPC_DLLEXPORT
+void XMLRPC_PRINTF_ATTR(2,3)
 xmlrpc_asprintf(const char ** const retvalP, const char * const fmt, ...);
 
+XMLRPC_DLLEXPORT
 const char *
-xmlrpc_strdupnull(const char * const string);
+xmlrpc_strdupsol(const char * const string);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_strfree(const char * const string);
 
+XMLRPC_DLLEXPORT
+const char *
+xmlrpc_strdupnull(const char * const string);
+
+XMLRPC_DLLEXPORT
 void
 xmlrpc_strfreenull(const char * const string);
 
@@ -46,6 +61,11 @@ xmlrpc_memeq(const void * const a,
     return (memcmp(a, b, size) == 0);
 }
 
+/* strcasecmp doesn't exist on some systems without _BSD_SOURCE, so
+   xmlrpc_strcaseeq() can't either.
+*/
+#ifdef _BSD_SOURCE
+
 static __inline__ bool
 xmlrpc_strcaseeq(const char * const a,
                  const char * const b) {
@@ -59,6 +79,7 @@ xmlrpc_strcaseeq(const char * const a,
     #error "This platform has no known case-independent string compare fn"
 #endif
 }
+#endif
 
 static __inline__ bool
 xmlrpc_strneq(const char * const a,
@@ -67,15 +88,41 @@ xmlrpc_strneq(const char * const a,
     return (strncmp(a, b, len) == 0);
 }
 
+XMLRPC_DLLEXPORT
 const char * 
 xmlrpc_makePrintable(const char * const input);
 
+XMLRPC_DLLEXPORT
 const char *
 xmlrpc_makePrintable_lp(const char * const input,
                         size_t       const inputLength);
 
+XMLRPC_DLLEXPORT
 const char *
 xmlrpc_makePrintableChar(char const input);
+
+/*----------------------------------------------------------------*/
+/* Standard string functions with destination array size checking */
+/*----------------------------------------------------------------*/
+#define STRSCPY(A,B) \
+	(strncpy((A), (B), sizeof(A)), *((A)+sizeof(A)-1) = '\0')
+#define STRSCMP(A,B) \
+	(strncmp((A), (B), sizeof(A)))
+#define STRSCAT(A,B) \
+    (strncat((A), (B), sizeof(A)-strlen(A)), *((A)+sizeof(A)-1) = '\0')
+
+/* We could do this, but it works only in GNU C 
+#define SSPRINTF(TARGET, REST...) \
+  (snprintf(TARGET, sizeof(TARGET) , ## REST)) 
+
+Or this, but it works only in C99 compilers, which leaves out MSVC
+before 2005 and can't handle the zero variable argument case except
+by an MSVC extension:
+
+#define SSPRINTF(TARGET, ...) \
+  (snprintf(TARGET, sizeof(TARGET) , __VA_ARGS__)) 
+
+*/
 
 #ifdef __cplusplus
 }

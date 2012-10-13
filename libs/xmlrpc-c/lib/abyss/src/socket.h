@@ -17,10 +17,12 @@
    so there may be few or no users of TSocket.
 ============================================================================*/
 
+#include "int.h"
+
 #include "xmlrpc-c/abyss.h"
 
 struct _TSocket {
-    uint               signature;
+    unsigned int   signature;
         /* With both background and foreground use of sockets, and
            background being both fork and pthread, it is very easy to
            screw up socket lifetime and try to destroy twice.  We use

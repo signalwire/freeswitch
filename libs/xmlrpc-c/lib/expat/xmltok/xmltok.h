@@ -3,15 +3,13 @@ Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd
 See the file copying.txt for copying permission.
 */
 
-#ifndef XmlTok_INCLUDED
-#define XmlTok_INCLUDED 1
+#ifndef XMLTOK_H_INCLUDED
+#define XMLTOK_H_INCLUDED
+
+#include "xmlrpc-c/c_util.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef XMLTOKAPI
-#define XMLTOKAPI /* as nothing */
 #endif
 
 /* The following token may be returned by XmlContentTok */
@@ -130,7 +128,7 @@ struct encoding {
 	          const char *, const char *);
   int (*nameMatchesAscii)(const ENCODING *,
 			  const char *, const char *, const char *);
-  int (*nameLength)(const ENCODING *, const char *);
+  size_t (*nameLength)(const ENCODING *, const char *);
   const char *(*skipS)(const ENCODING *, const char *);
   int (*getAtts)(const ENCODING *enc, const char *ptr,
 	         int attsMax, ATTRIBUTE *atts);
@@ -242,7 +240,8 @@ typedef struct {
   const ENCODING **encPtr;
 } INIT_ENCODING;
 
-XMLTOKAPI int
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XmlParseXmlDecl(int               const isGeneralTextEntity,
                        const ENCODING *  const enc,
                        const char *      const ptr,
@@ -253,34 +252,42 @@ xmlrpc_XmlParseXmlDecl(int               const isGeneralTextEntity,
                        const ENCODING ** const namedEncodingPtr,
                        int *             const standalonePtr);
 
-XMLTOKAPI const ENCODING *
+XMLRPC_DLLEXPORT
+const ENCODING *
 xmlrpc_XmlGetUtf8InternalEncoding(void);
 
-XMLTOKAPI const ENCODING *
+XMLRPC_DLLEXPORT
+const ENCODING *
 xmlrpc_XmlGetUtf16InternalEncoding(void);
 
-XMLTOKAPI int
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XmlInitEncoding(INIT_ENCODING *   const p,
                        const ENCODING ** const encPtr,
                        const char *      const name);
 
-XMLTOKAPI int
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XmlUtf8Encode(int    const c,
                      char * const buf);
 
-XMLTOKAPI int
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XmlUtf16Encode(int              const charNum,
                       unsigned short * const buf);
 
-XMLTOKAPI int
+XMLRPC_DLLEXPORT
+int
 xmlrpc_XmlSizeOfUnknownEncoding(void);
 
-XMLTOKAPI ENCODING *
+XMLRPC_DLLEXPORT
+ENCODING *
 xmlrpc_XmlInitUnknownEncoding(void * const mem,
                               int *  const table,
                               int (*convert)(void *userData, const char *p),
                               void * const userData);
 
+XMLRPC_DLLEXPORT
 int
 xmlrpc_XmlParseXmlDeclNS(int               const isGeneralTextEntity,
                          const ENCODING *  const enc,
@@ -292,17 +299,21 @@ xmlrpc_XmlParseXmlDeclNS(int               const isGeneralTextEntity,
                          const ENCODING ** const namedEncodingPtr,
                          int *             const standalonePtr);
 
+XMLRPC_DLLEXPORT
 int
 xmlrpc_XmlInitEncodingNS(INIT_ENCODING *   const p,
                          const ENCODING ** const encPtr,
                          const char *      const name);
 
+XMLRPC_DLLEXPORT
 const ENCODING *
 xmlrpc_XmlGetUtf8InternalEncodingNS(void);
 
+XMLRPC_DLLEXPORT
 const ENCODING *
 xmlrpc_XmlGetUtf16InternalEncodingNS(void);
 
+XMLRPC_DLLEXPORT
 ENCODING *
 xmlrpc_XmlInitUnknownEncodingNS(void * const mem,
                                 int *  const table,

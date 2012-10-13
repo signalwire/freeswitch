@@ -7,15 +7,20 @@ SUBDIR := tools
 
 include $(BLDDIR)/config.mk
 
-SUBDIRS = binmode-rpc-kit turbocharger
+SUBDIRS = \
+  binmode-rpc-kit \
+  lib \
+  turbocharger \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   SUBDIRS += xmlrpc xmlrpc_transport
 
   ifeq ($(ENABLE_CPLUSPLUS),yes)
-    SUBDIRS += xml-rpc-api2cpp xmlrpc_cpp_proxy
-    # We could add 'xmlrpc_pstream' here, but we don't because we don't
-    # want to deal with finding the Readline/Ncurses libraries.
+    SUBDIRS += xml-rpc-api2cpp xml-rpc-api2txt xmlrpc_cpp_proxy
+
+    ifeq ($(BUILD_XMLRPC_PSTREAM),yes)
+      SUBDIRS += xmlrpc_pstream
+    endif
   endif
 endif
 

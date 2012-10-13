@@ -1,6 +1,8 @@
 #ifndef HTTP_H_INCLUDED
 #define HTTP_H_INCLUDED
 
+#include <sys/types.h>
+
 #include "bool.h"
 #include "conn.h"
 
@@ -13,8 +15,10 @@ bool RequestValidURIPath(TSession * const r);
 bool RequestUnescapeURI(TSession *r);
 
 void
-RequestRead(TSession * const sessionP,
-            uint32_t   const timeout);
+RequestRead(TSession *    const sessionP,
+            uint32_t      const timeout,
+            const char ** const errorP,
+            uint16_t *    const httpErrorCodeP);
 
 void RequestInit(TSession * const r,TConn * const c);
 void RequestFree(TSession * const r);

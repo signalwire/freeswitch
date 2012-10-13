@@ -1,19 +1,24 @@
 #ifndef XMLRPC_BASE_HPP_INCLUDED
 #define XMLRPC_BASE_HPP_INCLUDED
 
+#include <xmlrpc-c/config.h>
+
 #include <climits>
 #include <cfloat>
 #include <ctime>
 #include <vector>
 #include <map>
 #include <string>
+#if XMLRPC_HAVE_TIMEVAL
+#include <sys/time.h>
+#endif
 
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/base.h>
 
 namespace xmlrpc_c {
 
-
-class value {
+class XMLRPC_DLLEXPORT value {
     // This is a handle.  You don't want to create a pointer to this;
     // it is in fact a pointer itself.
 public:
@@ -26,6 +31,8 @@ public:
     ~value();
 
     enum type_t {
+        // These are designed to be identical to the values for
+        // enum xmlrpc_type in the C library.
         TYPE_INT        = 0,
         TYPE_BOOLEAN    = 1,
         TYPE_DOUBLE     = 2,
@@ -62,6 +69,8 @@ public:
 
     xmlrpc_value *
     cValue() const;
+        // Not to be confused with public 'cvalue' method that all the derived
+        // classes have.
 
     value(xmlrpc_value * const valueP);
 
@@ -72,33 +81,42 @@ public:
 
     xmlrpc_value * cValueP;
         // NULL means this is merely a placeholder object.
+
+protected:
+    void
+    validateInstantiated() const;
 };
 
 
+std::ostream& operator<<(std::ostream& out,
+                         xmlrpc_c::value::type_t const& type);
 
-class value_int : public value {
+
+class XMLRPC_DLLEXPORT value_int : public value {
 public:
     value_int(int const cvalue);
 
     value_int(xmlrpc_c::value const baseValue);
 
     operator int() const;
+
+    int cvalue() const;
 };
 
 
-
-class value_boolean : public value {
+class XMLRPC_DLLEXPORT value_boolean : public value {
 public:
     value_boolean(bool const cvalue);
 
     value_boolean(xmlrpc_c::value const baseValue);
 
     operator bool() const;
+
+    bool cvalue() const;
 };
 
 
-
-class value_string : public value {
+class XMLRPC_DLLEXPORT value_string : public value {
 public:
     enum nlCode {nlCode_all, nlCode_lf};
 
@@ -113,49 +131,58 @@ public:
     crlfValue() const;
 
     operator std::string() const;
+
+    std::string cvalue() const;
 };
 
 
-
-class value_double : public value {
+class XMLRPC_DLLEXPORT value_double : public value {
 public:
     value_double(double const cvalue);
 
     value_double(xmlrpc_c::value const baseValue);
 
     operator double() const;
+
+    double cvalue() const;
 };
 
 
-
-class value_datetime : public value {
+class XMLRPC_DLLEXPORT value_datetime : public value {
 public:
     value_datetime(std::string const cvalue);
     value_datetime(time_t const cvalue);
 #if XMLRPC_HAVE_TIMEVAL
     value_datetime(struct timeval const& cvalue);
+    operator timeval() const;
 #endif
 #if XMLRPC_HAVE_TIMESPEC
     value_datetime(struct timespec const& cvalue);
+    operator timespec() const;
 #endif
 
     value_datetime(xmlrpc_c::value const baseValue);
 
     operator time_t() const;
+
+    time_t cvalue() const;
 };
 
 
+typedef std::vector<unsigned char> cbytestring;
 
-class value_bytestring : public value {
+class XMLRPC_DLLEXPORT value_bytestring : public value {
 public:
-    value_bytestring(std::vector<unsigned char> const& cvalue);
+    value_bytestring(cbytestring const& cvalue);
 
     value_bytestring(xmlrpc_c::value const baseValue);
 
     // You can't cast to a vector because the compiler can't tell which
     // constructor to use (complains about ambiguity).  So we have this:
-    std::vector<unsigned char>
+    cbytestring
     vectorUcharValue() const;
+
+    cbytestring cvalue() const;
 
     size_t
     length() const;
@@ -163,25 +190,35 @@ public:
 
 
 
-class value_struct : public value {
+typedef std::map<std::string, xmlrpc_c::value> cstruct;
+
+class XMLRPC_DLLEXPORT value_struct : public value {
 public:
-    value_struct(std::map<std::string, xmlrpc_c::value> const& cvalue);
+    value_struct(cstruct const& cvalue);
 
     value_struct(xmlrpc_c::value const baseValue);
 
-    operator std::map<std::string, xmlrpc_c::value>() const;
+    operator cstruct() const;
+
+    cstruct cvalue() const;
 };
 
 
 
-class value_array : public value {
+typedef std::vector<xmlrpc_c::value> carray;
+
+class XMLRPC_DLLEXPORT value_array : public value {
 public:
-    value_array(std::vector<xmlrpc_c::value> const& cvalue);
+    value_array(carray const& cvalue);
 
     value_array(xmlrpc_c::value const baseValue);
 
-    std::vector<xmlrpc_c::value>
+    // You can't cast to a vector because the compiler can't tell which
+    // constructor to use (complains about ambiguity).  So we have this:
+    carray
     vectorValueValue() const;
+
+    carray cvalue() const;
 
     size_t
     size() const;
@@ -189,27 +226,179 @@ public:
 
 
 
-class value_nil : public value {
+template<class InputIterator> xmlrpc_c::value_array
+arrayValueSlice(InputIterator begin,
+                InputIterator end) {
+/*----------------------------------------------------------------------------
+  convert C++ iterator pair to XML-RPC array
+-----------------------------------------------------------------------------*/
+    carray ret;
+    for (InputIterator p = begin; p != end; ++p) {
+        ret.push_back(toValue(*p));
+    }
+    return xmlrpc_c::value_array(ret);
+}
+
+template<class MemberClass> inline xmlrpc_c::value_array
+arrayValueArray(const MemberClass * const in,
+                size_t              const size) {
+/*----------------------------------------------------------------------------
+  convert C++ array to XML-RPC array
+-----------------------------------------------------------------------------*/
+    return arrayValueSlice(in, in + size);
+}
+
+class XMLRPC_DLLEXPORT value_nil : public value {
 public:
     value_nil();
 
     value_nil(xmlrpc_c::value const baseValue);
+
+    void * cvalue() const;
 };
 
 
-
-class value_i8 : public value {
+class XMLRPC_DLLEXPORT value_i8 : public value {
 public:
     value_i8(xmlrpc_int64 const cvalue);
 
     value_i8(xmlrpc_c::value const baseValue);
 
     operator xmlrpc_int64() const;
+
+    xmlrpc_int64 cvalue() const;
 };
 
 
+inline xmlrpc_c::value_string
+toValue(const char * const x) {
+    return xmlrpc_c::value_string(x);
+}
 
-class fault {
+inline xmlrpc_c::value_string
+toValue(std::string const& x) {
+    return xmlrpc_c::value_string(x);
+}
+
+inline xmlrpc_c::value_int
+toValue(int const x) {
+    return xmlrpc_c::value_int(x);
+}
+
+inline xmlrpc_c::value_boolean
+toValue(bool const x) {
+    return xmlrpc_c::value_boolean(x);
+}
+
+inline xmlrpc_c::value_double
+toValue(double const x) {
+    return xmlrpc_c::value_double(x);
+}
+
+inline xmlrpc_c::value_bytestring
+    toValue(cbytestring const& x) {
+    return xmlrpc_c::value_bytestring(x);
+}
+
+inline const xmlrpc_c::value &
+toValue(xmlrpc_c::value const& v) {
+/*----------------------------------------------------------------------------
+  This does a null conversion; you use it to catch all the XML-RPC types that
+  have no usable C++ equivalent, so you can do a toValue() of any XML-RPC
+  type at all.  In particular: 'value_datetime', 'value_nil'.
+-----------------------------------------------------------------------------*/
+    return v;
+}
+
+template<class K, class V> xmlrpc_c::value_struct
+toValue(std::map<K, V> const& in) {
+/*----------------------------------------------------------------------------
+  convert C++ map to XML-RPC structure
+-----------------------------------------------------------------------------*/
+    cstruct ret;
+    for (typename std::map<std::string, V>::const_iterator p = in.begin();
+         p != in.end();
+         ++p) {
+        ret[p->first] = toValue(p->second);
+    }
+    return xmlrpc_c::value_struct(ret);
+}
+
+template<class T> inline xmlrpc_c::value_array
+toValue(std::vector<T> const& in) {
+/*----------------------------------------------------------------------------
+  convert C++ vector to XML-RPC array
+-----------------------------------------------------------------------------*/
+    return arrayValueSlice(in.begin(), in.end());
+}
+
+// fromValue() returns via reference argument instead of by return value
+// so the compiler can tell which version of it to invoke based on the
+// desired output type.
+
+inline void
+fromValue(std::string & y, xmlrpc_c::value const& x) {
+    y = xmlrpc_c::value_string(x);
+}
+
+inline void
+fromValue(int & y, xmlrpc_c::value const& x) {
+    y = xmlrpc_c::value_int(x);
+}
+
+inline void
+fromValue(bool & y, xmlrpc_c::value const& x) {
+    y = xmlrpc_c::value_boolean(x);
+}
+
+inline void
+fromValue(double & y, xmlrpc_c::value const& x) {
+    y = xmlrpc_c::value_double(x);
+}
+
+inline void
+fromValue(cbytestring & y, xmlrpc_c::value const& x) {
+    y = xmlrpc_c::value_bytestring(x).vectorUcharValue();
+}
+
+inline void
+fromValue(xmlrpc_c::value & y, xmlrpc_c::value const& x) {
+/*----------------------------------------------------------------------------
+  This does a null conversion; it's so you can use fromValue() with
+  an XML-RPC value or C++ value without having to know which it is.
+  One reason you would have an XML-RPC value lying around with C++ values
+  is that some XML-RPC values don't have a common C++ equivalent.
+-----------------------------------------------------------------------------*/
+    y = x;
+}
+
+template<class K, class V> inline void
+fromValue(std::map<K, V> & y, xmlrpc_c::value const& x) {
+/*----------------------------------------------------------------------------
+   Convert XML-RPC structure to C++ map.
+-----------------------------------------------------------------------------*/
+    cstruct m = xmlrpc_c::value_struct(x);
+    y.clear();
+    for (std::map<std::string, xmlrpc_c::value>::const_iterator p = m.begin();
+         p != m.end();
+         ++p) {
+        fromValue(y[p->first], p->second);
+    }
+}
+
+template<class T> inline void
+fromValue(std::vector<T> & y, xmlrpc_c::value const& x) {
+/*----------------------------------------------------------------------------
+   Convert XML-RPC array to C++ vector.
+-----------------------------------------------------------------------------*/
+    carray v = xmlrpc_c::value_array(x).vectorValueValue();
+    y.resize(v.size());
+    for (unsigned int i = 0; i < v.size(); ++i) {
+        fromValue(y[i], v[i]);
+    }
+}
+
+class XMLRPC_DLLEXPORT fault {
 /*----------------------------------------------------------------------------
    This is an XML-RPC fault.
 
@@ -253,7 +442,7 @@ private:
     std::string             description;
 };
 
-class rpcOutcome {
+class XMLRPC_DLLEXPORT rpcOutcome {
 /*----------------------------------------------------------------------------
   The outcome of a validly executed RPC -- either an XML-RPC fault
   or an XML-RPC value of the result.
@@ -275,7 +464,7 @@ private:
     xmlrpc_c::fault fault;   // valid if not 'succeeded'
 };
 
-class paramList {
+class XMLRPC_DLLEXPORT paramList {
 /*----------------------------------------------------------------------------
    A parameter list of an XML-RPC call.
 -----------------------------------------------------------------------------*/
@@ -287,6 +476,11 @@ public:
 
     paramList&
     addx(xmlrpc_c::value const param);
+
+    template<class T > paramList& addc(const T & x) {
+        xmlrpc_c::paramList::add(toValue(x));
+        return *this;
+    }
 
     unsigned int
     size() const;
@@ -316,15 +510,15 @@ public:
     std::string
     getString(unsigned int const paramNumber) const;
 
-    std::vector<unsigned char>
+    cbytestring
     getBytestring(unsigned int const paramNumber) const;
 
-    std::vector<xmlrpc_c::value>
+    carray
     getArray(unsigned int const paramNumber,
              unsigned int const minSize = 0,
              unsigned int const maxSize = UINT_MAX) const;
 
-    std::map<std::string, xmlrpc_c::value>
+    cstruct
     getStruct(unsigned int const paramNumber) const;
 
     void

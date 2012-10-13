@@ -1,10 +1,59 @@
-//#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+	#define _GNU_SOURCE   /* But only when HAVE_ASPRINTF */
+#endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "xmlrpc_config.h"  /* For HAVE_ASPRINTF, __inline__ */
+#include "bool.h"
 #include "casprintf.h"
+
+
+
+static __inline__ void
+newVsnprintf(char *       const buffer,
+             size_t       const bufferSize,
+             const char * const fmt,
+             va_list            varargs,
+             size_t *     const formattedSizeP) {
+/*----------------------------------------------------------------------------
+   This is vsnprintf() with the new behavior, where not fitting in the buffer
+   is not a failure.
+
+   Unfortunately, we can't practically return the size of the formatted string
+   if the C library has old vsnprintf() and the formatted string doesn't fit
+   in the buffer, so in that case we just return something larger than the
+   buffer.
+-----------------------------------------------------------------------------*/
+    if (bufferSize > INT_MAX/2) {
+        /* There's a danger we won't be able to coerce the return value
+           of XMLRPC_VSNPRINTF to an integer (which we have to do because,
+           while for POSIX its return value is ssize_t, on Windows it is int),
+           or return double the buffer size.
+        */
+        *formattedSizeP = 0;
+    } else {
+        int rc;
+
+        rc = XMLRPC_VSNPRINTF(buffer, bufferSize, fmt, varargs);
+
+        if (rc < 0) {
+            /* We have old vsnprintf() (or Windows) and the formatted value
+               doesn't fit in the buffer, but we don't know how big a buffer it
+               needs.
+            */
+            *formattedSizeP = bufferSize * 2;
+        } else {
+            /* Either the string fits in the buffer or we have new vsnprintf()
+               which tells us how big the string is regardless.
+            */
+            *formattedSizeP = rc;
+        }
+    }
+}
 
 
 
@@ -15,29 +64,24 @@ simpleVasprintf(char **      const retvalP,
 /*----------------------------------------------------------------------------
    This is a poor man's implementation of vasprintf(), of GNU fame.
 -----------------------------------------------------------------------------*/
-    size_t const initialSize = 4096;
     char * result;
+    size_t bufferSize;
+    bool outOfMemory;
 
-    result = malloc(initialSize);
-    if (result != NULL) {
-        size_t bytesNeeded;
-        bytesNeeded = XMLRPC_VSNPRINTF(result, initialSize, fmt, varargs);
-        if (bytesNeeded > initialSize) {
-            free(result);
-            result = malloc(bytesNeeded);
-            if (result != NULL)
-                XMLRPC_VSNPRINTF(result, bytesNeeded, fmt, varargs);
-        } else if (bytesNeeded == initialSize) {
-            if (result[initialSize-1] != '\0') {
-                /* This is one of those old systems where vsnprintf()
-                   returns the number of bytes it used, instead of the
-                   number that it needed, and it in fact needed more than
-                   we gave it.  Rather than mess with this highly unlikely
-                   case (old system and string > 4095 characters), we just
-                   treat this like an out of memory failure.
-                */
+    for (result = NULL, bufferSize = 4096, outOfMemory = false;
+         !result && !outOfMemory;
+        ) {
+
+        result = malloc(bufferSize);
+        if (!result)
+            outOfMemory = true;
+        else {
+            size_t bytesNeeded;
+            newVsnprintf(result, bufferSize, fmt, varargs, &bytesNeeded);
+            if (bytesNeeded > bufferSize) {
                 free(result);
                 result = NULL;
+                bufferSize = bytesNeeded;
             }
         }
     }

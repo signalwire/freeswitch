@@ -22,15 +22,18 @@ OMIT_LIBWWW_TRANSPORT_RULE=Y
 
 include $(SRCDIR)/common.mk
 
-LIBWWW_INCLUDES := $(shell libwww-config --cflags)
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+$(SRCDIR)/common.mk: srcdir blddir
+
+LIBWWW_INCLUDES := $(shell libwww-config --cflags)
 
 INCLUDES = \
   -I$(BLDDIR) \
   -I$(BLDDIR)/include \
-  -I$(SRCDIR)/include \
-  -I$(SRCDIR)/lib/util/include \
+  -Isrcdir/include \
+  -Isrcdir/lib/util/include \
   $(LIBWWW_INCLUDES)
 
 .PHONY: clean
@@ -51,8 +54,8 @@ install:
 .PHONY: dep
 dep: dep-common
 
-include Makefile.depend
+include depend.mk
 
-# Need this dependency for those who don't use Makefile.depend.
+# Need this dependency for those who don't use depend.mk.
 # Without it, version.h doesn't get created.
 xmlrpc_libwww_transport.o xmlrpc_libwww_transport.osh: version.h
