@@ -24,7 +24,7 @@
  * Seventh Signal Ltd. & Co. KG, All Rights Reserverd.
  *
  * Contributor(s):
- * Daniel Swarbrick <daniel.swarbrick@seventhsignal.de>
+ * Daniel Swarbrick <daniel.swarbrick@gmail.com>
  * 
  * mod_cdr_sqlite.c -- SQLite CDR Module
  *
