@@ -170,7 +170,7 @@ static int gridfs_insert_file( gridfs *gfs, const char *name,
         bson_append_string( &ret, "contentType", contenttype );
     }
     bson_finish( &ret );
-    result = mongo_insert( gfs->client, gfs->files_ns, &ret );
+    result = mongo_insert( gfs->client, gfs->files_ns, &ret, NULL );
     bson_destroy( &ret );
 
     return result;
@@ -198,7 +198,7 @@ MONGO_EXPORT int gridfs_store_buffer( gridfs *gfs, const char *data,
         chunkLen = DEFAULT_CHUNK_SIZE < ( unsigned int )( end - data_ptr ) ?
                    DEFAULT_CHUNK_SIZE : ( unsigned int )( end - data_ptr );
         oChunk = chunk_new( id, chunkNumber, data_ptr, chunkLen );
-        mongo_insert( gfs->client, gfs->chunks_ns, oChunk );
+        mongo_insert( gfs->client, gfs->chunks_ns, oChunk, NULL );
         chunk_free( oChunk );
         chunkNumber++;
         data_ptr += chunkLen;
@@ -259,7 +259,7 @@ MONGO_EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
             memcpy( buffer + gfile->pending_len, data, data_partial_len );
 
             oChunk = chunk_new( gfile->id, gfile->chunk_num, buffer, DEFAULT_CHUNK_SIZE );
-            mongo_insert( gfile->gfs->client, gfile->gfs->chunks_ns, oChunk );
+            mongo_insert( gfile->gfs->client, gfile->gfs->chunks_ns, oChunk, NULL );
             chunk_free( oChunk );
             gfile->chunk_num++;
             gfile->length += DEFAULT_CHUNK_SIZE;
@@ -272,7 +272,7 @@ MONGO_EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
 
         while( chunks_to_write > 0 ) {
             oChunk = chunk_new( gfile->id, gfile->chunk_num, data, DEFAULT_CHUNK_SIZE );
-            mongo_insert( gfile->gfs->client, gfile->gfs->chunks_ns, oChunk );
+            mongo_insert( gfile->gfs->client, gfile->gfs->chunks_ns, oChunk, NULL );
             chunk_free( oChunk );
             gfile->chunk_num++;
             chunks_to_write--;
@@ -302,7 +302,7 @@ MONGO_EXPORT int gridfile_writer_done( gridfile *gfile ) {
     int response;
     if( gfile->pending_data ) {
         oChunk = chunk_new( gfile->id, gfile->chunk_num, gfile->pending_data, gfile->pending_len );
-        mongo_insert( gfile->gfs->client, gfile->gfs->chunks_ns, oChunk );
+        mongo_insert( gfile->gfs->client, gfile->gfs->chunks_ns, oChunk, NULL );
         chunk_free( oChunk );
         bson_free( gfile->pending_data );
         gfile->length += gfile->pending_len;
@@ -344,7 +344,7 @@ int gridfs_store_file( gridfs *gfs, const char *filename,
     chunkLen = fread( buffer, 1, DEFAULT_CHUNK_SIZE, fd );
     do {
         oChunk = chunk_new( id, chunkNumber, buffer, chunkLen );
-        mongo_insert( gfs->client, gfs->chunks_ns, oChunk );
+        mongo_insert( gfs->client, gfs->chunks_ns, oChunk, NULL );
         chunk_free( oChunk );
         length += chunkLen;
         chunkNumber++;
@@ -390,14 +390,14 @@ MONGO_EXPORT void gridfs_remove_filename( gridfs *gfs, const char *filename ) {
         bson_init( &b );
         bson_append_oid( &b, "_id", &id );
         bson_finish( &b );
-        mongo_remove( gfs->client, gfs->files_ns, &b );
+        mongo_remove( gfs->client, gfs->files_ns, &b, NULL );
         bson_destroy( &b );
 
         /* Remove all chunks from the file with the specified id */
         bson_init( &b );
         bson_append_oid( &b, "files_id", &id );
         bson_finish( &b );
-        mongo_remove( gfs->client, gfs->chunks_ns, &b );
+        mongo_remove( gfs->client, gfs->chunks_ns, &b, NULL );
         bson_destroy( &b );
     }
 

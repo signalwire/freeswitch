@@ -295,7 +295,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	switch_mutex_lock(globals.mongo_mutex);
 
-	if (mongo_insert(globals.mongo_conn, globals.mongo_namespace, &cdr) != MONGO_OK) {
+	if (mongo_insert(globals.mongo_conn, globals.mongo_namespace, &cdr, NULL) != MONGO_OK) {
 		if (globals.mongo_conn->err == MONGO_IO_ERROR) {
 			mongo_error_t db_status;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MongoDB connection failed; attempting reconnect...\n");
@@ -306,7 +306,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				status = SWITCH_STATUS_FALSE;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MongoDB connection re-established.\n");
-				if (mongo_insert(globals.mongo_conn, globals.mongo_namespace, &cdr) != MONGO_OK) {
+				if (mongo_insert(globals.mongo_conn, globals.mongo_namespace, &cdr, NULL) != MONGO_OK) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_insert: error code %d\n", globals.mongo_conn->err);
 					status = SWITCH_STATUS_FALSE;
 				}

@@ -1,5 +1,37 @@
 # MongoDB C Driver History
 
+## 0.6
+2012-6-3
+** API CHANGE **
+
+Version 0.6 supports write concern. This involves a backward-breaking
+API change, as the write functions now take an optional write_concern
+object.
+
+The driver now also supports the MONGO_CONTINUE_ON_ERROR flag for
+batch inserts.
+
+The new function prototypes are as follows:
+
+* int mongo_insert( mongo *conn, const char *ns, const bson *data,
+      mongo_write_concern *custom_write_concern );
+
+* int mongo_insert_batch( mongo *conn, const char *ns,
+    const bson **data, int num, mongo_write_concern *custom_write_concern );
+
+* int mongo_update( mongo *conn, const char *ns, const bson *cond,
+    const bson *op, int flags, mongo_write_concern *custom_write_concern,
+    int flags );
+
+* int mongo_remove( mongo *conn, const char *ns, const bson *cond,
+    mongo_write_concern *custom_write_concern );
+
+* Allow DBRefs (i.e., allows keys $ref, $id, and $db)
+* Added mongo_create_capped_collection().
+* Fixed some bugs in the SCons and Makefile build scripts.
+* Fixes for SCons and Makefile shared library install targets.
+* Other minor bug fixes.
+
 ## 0.5.2
 2012-5-4
 
