@@ -71,7 +71,7 @@ struct v17_rx_state_s
                routine. */
     void *qam_user_data;
 
-#if defined(SPANDSP_USE_FIXED_POINT)
+#if defined(SPANDSP_USE_FIXED_POINTx)
     /*! \brief The scaling factor assessed by the AGC algorithm. */
     int16_t agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
@@ -218,7 +218,7 @@ struct v17_rx_state_s
     int full_path_to_past_state_locations[V17_TRELLIS_STORAGE_DEPTH][8];
     /*! \brief The trellis. */
     int past_state_locations[V17_TRELLIS_STORAGE_DEPTH][8];
-#if defined(SPANDSP_USE_FIXED_POINT)
+#if defined(SPANDSP_USE_FIXED_POINTx)
     /*! \brief Euclidean distances (actually the squares of the distances)
                from the last states of the trellis. */
     uint32_t distances[8];
