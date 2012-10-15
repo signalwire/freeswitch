@@ -506,6 +506,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				if (!--new_loops) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s %s Abandoned\n",
 									  session->uuid_str, switch_core_session_get_name(session));
+					switch_channel_set_flag(session->channel, CF_NO_CDR);
 					switch_channel_hangup(session->channel, SWITCH_CAUSE_WRONG_CALL_STATE);
 				}
 			} else {
