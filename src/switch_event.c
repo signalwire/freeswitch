@@ -911,7 +911,7 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 			fly++;
 		}
 		
-		if ((header = switch_event_get_header_ptr(event, header_name))) {
+		if (header || (header = switch_event_get_header_ptr(event, header_name))) {
 			
 			if (index_ptr) {
 				if (index > -1 && index <= 4000) {
