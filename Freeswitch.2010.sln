@@ -207,6 +207,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_console", "src\mod\loggers\mod_console\mod_console.2010.vcxproj", "{1C453396-D912-4213-89FD-9B489162B7B5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_xml_rpc", "src\mod\xml_int\mod_xml_rpc\mod_xml_rpc.2010.vcxproj", "{CBEC7225-0C21-4DA8-978E-1F158F8AD950}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BED7539C-0099-4A14-AD5D-30828F15A171} = {BED7539C-0099-4A14-AD5D-30828F15A171}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_rss", "src\mod\applications\mod_rss\mod_rss.2010.vcxproj", "{B69247FA-ECD6-40ED-8E44-5CA6C3BAF9A4}"
 EndProject
