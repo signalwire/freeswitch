@@ -142,13 +142,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_curl", "sr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_lua", "src\mod\languages\mod_lua\mod_lua.2010.vcxproj", "{7B077E7F-1BE7-4291-AB86-55E527B25CAC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "abyss", "libs\xmlrpc-c\Windows\abyss.2010.vcxproj", "{D2396DD7-7D38-473A-ABB7-6F96D65AE1B9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "abyss", "libs\win32\xmlrpc-c\abyss.2010.vcxproj", "{D2396DD7-7D38-473A-ABB7-6F96D65AE1B9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmlrpc", "libs\xmlrpc-c\Windows\xmlrpc.2010.vcxproj", "{CEE544A9-0303-44C2-8ECE-EFA7D7BCBBBA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmlrpc", "libs\win32\xmlrpc-c\xmlrpc.2010.vcxproj", "{CEE544A9-0303-44C2-8ECE-EFA7D7BCBBBA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmlparse", "libs\xmlrpc-c\Windows\xmlparse.2010.vcxproj", "{0D108721-EAE8-4BAF-8102-D8960EC93647}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmlparse", "libs\win32\xmlrpc-c\xmlparse.2010.vcxproj", "{0D108721-EAE8-4BAF-8102-D8960EC93647}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmltok", "libs\xmlrpc-c\Windows\xmltok.2010.vcxproj", "{B535402E-38D2-4D54-8360-423ACBD17192}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmltok", "libs\win32\xmlrpc-c\xmltok.2010.vcxproj", "{B535402E-38D2-4D54-8360-423ACBD17192}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download sphinxbase", "libs\win32\Download sphinxbase.2010.vcxproj", "{4F92B672-DADB-4047-8D6A-4BB3796733FD}"
 EndProject
@@ -333,6 +333,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "libs\win32\libjp
 	ProjectSection(ProjectDependencies) = postProject
 		{652AD5F7-8488-489F-AAD0-7FBE064703B6} = {652AD5F7-8488-489F-AAD0-7FBE064703B6}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gennmtab", "libs\win32\xmlrpc-c\gennmtab.2010.vcxproj", "{BED7539C-0099-4A14-AD5D-30828F15A171}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -2043,6 +2045,15 @@ Global
 		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Release|Win32.ActiveCfg = Release|Win32
 		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Release|Win32.Build.0 = Release|Win32
 		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}.Release|x64.ActiveCfg = Release|Win32
+		{BED7539C-0099-4A14-AD5D-30828F15A171}.All|Win32.ActiveCfg = Release|Win32
+		{BED7539C-0099-4A14-AD5D-30828F15A171}.All|Win32.Build.0 = Release|Win32
+		{BED7539C-0099-4A14-AD5D-30828F15A171}.All|x64.ActiveCfg = Release|Win32
+		{BED7539C-0099-4A14-AD5D-30828F15A171}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BED7539C-0099-4A14-AD5D-30828F15A171}.Debug|Win32.Build.0 = Debug|Win32
+		{BED7539C-0099-4A14-AD5D-30828F15A171}.Debug|x64.ActiveCfg = Debug|Win32
+		{BED7539C-0099-4A14-AD5D-30828F15A171}.Release|Win32.ActiveCfg = Release|Win32
+		{BED7539C-0099-4A14-AD5D-30828F15A171}.Release|Win32.Build.0 = Release|Win32
+		{BED7539C-0099-4A14-AD5D-30828F15A171}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
