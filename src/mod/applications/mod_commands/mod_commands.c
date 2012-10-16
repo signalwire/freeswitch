@@ -2421,14 +2421,14 @@ SWITCH_STANDARD_API(reload_function)
 
 	switch_mutex_lock(reload_mutex);
 
+	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Reloading XML\n");
+	}
+
 	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, force, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK module unloaded\n");
 	} else {
 		stream->write_function(stream, "-ERR unloading module [%s]\n", err);
-	}
-
-	if (switch_xml_reload(&err) == SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "+OK Reloading XML\n");
 	}
 
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
