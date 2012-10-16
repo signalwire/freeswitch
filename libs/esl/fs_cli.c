@@ -39,6 +39,7 @@
 #define KEY_RIGHT 7
 #define KEY_INSERT 8
 #define PROMPT_OP 9
+#define KEY_DELETE 10
 static int console_bufferInput (char *buf, int len, char *cmd, int key);
 static unsigned char esl_console_complete(const char *buffer, const char *cursor, const char *lastchar);
 #endif
@@ -318,6 +319,22 @@ static int console_bufferInput (char *addchars, int len, char *cmd, int key)
 	if (key == KEY_INSERT) {
 		insertMode = !insertMode;
 	}
+	if (key == KEY_DELETE) {
+		if (iCmdCursor < iCmdBuffer) {
+			int pos;
+			for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+				cmd[pos] = cmd[pos + 1];
+			}
+			cmd[pos] = 0;
+			iCmdBuffer--;
+
+			for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+				printf("%c", cmd[pos]);
+			}
+			printf(" ");
+			SetConsoleCursorPosition(hOut, position);
+		}
+	}
 	for (iBuf = 0; iBuf < len; iBuf++) {
 		switch (addchars[iBuf]) {
 			case '\r':
@@ -509,6 +526,9 @@ static BOOL console_readConsole(HANDLE conIn, char *buf, int len, int *pRed, int
 			}
 			if (keyEvent.wVirtualKeyCode == 45 && keyEvent.wVirtualScanCode == 82) {
 				*key = KEY_INSERT;
+			}
+			if (keyEvent.wVirtualKeyCode == 46 && keyEvent.wVirtualScanCode == 83) {
+				*key = KEY_DELETE;
 			}
 			while (keyEvent.wRepeatCount && keyEvent.uChar.AsciiChar) {
 				buf[bufferIndex] = keyEvent.uChar.AsciiChar;
