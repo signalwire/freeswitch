@@ -1094,6 +1094,16 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 						switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 					}
+					
+					if (switch_channel_get_variable(tech_pvt->channel, "execute_on_media_timeout")) {
+						*frame = &tech_pvt->read_frame;
+						switch_set_flag((*frame), SFF_CNG);
+						(*frame)->datalen = tech_pvt->read_impl.encoded_bytes_per_packet;
+						memset((*frame)->data, 0, (*frame)->datalen);
+						switch_channel_execute_on(tech_pvt->channel, "execute_on_media_timeout");
+						return SWITCH_STATUS_SUCCESS;
+					}
+
 
 					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 				}
