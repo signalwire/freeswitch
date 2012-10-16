@@ -1885,6 +1885,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				sofia_glue_check_video_codecs(tech_pvt);
 				sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 				sofia_set_pflag(tech_pvt->profile, PFLAG_RENEG_ON_REINVITE);
+				sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 			}
 			
 			sofia_glue_do_invite(session);

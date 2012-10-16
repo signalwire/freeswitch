@@ -653,6 +653,7 @@ struct sofia_profile {
 	uint32_t max_registrations_perext;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
 	switch_rtp_bug_flag_t manual_rtp_bugs;
+	switch_rtp_bug_flag_t manual_video_rtp_bugs;
 	uint32_t ib_calls;
 	uint32_t ob_calls;
 	uint32_t ib_failed_calls;
@@ -821,6 +822,7 @@ struct private_object {
 	uint8_t codec_reinvites;
 	nua_event_t want_event;
 	switch_rtp_bug_flag_t rtp_bugs;
+	switch_rtp_bug_flag_t video_rtp_bugs;
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t write_impl;
 	char *user_via;
