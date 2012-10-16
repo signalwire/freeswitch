@@ -4749,6 +4749,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	if (!reneg && tech_pvt->num_negotiated_codecs) {
 		codec_array = tech_pvt->negotiated_codecs;
 		total_codecs = tech_pvt->num_negotiated_codecs;
+	} else if (reneg) {
+		tech_pvt->num_codecs = 0;
+		sofia_glue_tech_prepare_codecs(tech_pvt);
+		codec_array = tech_pvt->codecs;
+		total_codecs = tech_pvt->num_codecs;
 	}
 
 	if (switch_stristr("T38FaxFillBitRemoval:", r_sdp) || switch_stristr("T38FaxTranscodingMMR:", r_sdp) || 
