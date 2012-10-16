@@ -1831,6 +1831,8 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 				tech_pvt->video_codec_ms = 0;
 				switch_snprintf(vport_buf, sizeof(vport_buf), "%u", tech_pvt->adv_sdp_video_port);
 				if (switch_channel_media_ready(tech_pvt->channel) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
+					sofia_set_flag(tech_pvt, TFLAG_VIDEO);
+					sofia_set_flag(tech_pvt, TFLAG_REINVITE);
 					sofia_glue_activate_rtp(tech_pvt, 0);
 				}
 			}
@@ -3240,7 +3242,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		goto end;
 	}
 
-	if (switch_rtp_ready(tech_pvt->rtp_session) && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+	if (switch_rtp_ready(tech_pvt->rtp_session) && 
+		(!sofia_test_flag(tech_pvt, TFLAG_VIDEO) || switch_rtp_ready(tech_pvt->video_rtp_session)) && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		status = SWITCH_STATUS_SUCCESS;
 		goto end;
 	}
@@ -3248,6 +3251,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	if ((status = sofia_glue_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
+
 
 	if (myflags) {
 		flags = myflags;
@@ -3659,10 +3663,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 
 	video:
-
+		
 		sofia_glue_check_video_codecs(tech_pvt);
+
 		if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding && tech_pvt->remote_sdp_video_port) {
-			
 			/******************************************************************************************/
 			if (tech_pvt->video_rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 				//const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
@@ -3670,6 +3674,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				char *remote_host = switch_rtp_get_remote_host(tech_pvt->video_rtp_session);
 				switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->video_rtp_session);
 				
+
 
 				if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_video_ip) && remote_port == tech_pvt->remote_sdp_video_port) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Video params are unchanged for %s.\n",
