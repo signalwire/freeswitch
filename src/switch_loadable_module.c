@@ -565,6 +565,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 					status = ci->chat_send(message_event);
 					if (status == SWITCH_STATUS_BREAK) {
 						do_skip = 1;
+						status = SWITCH_STATUS_SUCCESS;
 					}
 					
 					if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
