@@ -1943,6 +1943,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
 		switch_core_session_receive_message(session, &msg);
 
+		if (switch_channel_test_flag(tchannel, CF_VIDEO)) {
+
+			msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+
+			switch_core_session_receive_message(tsession, &msg);
+		}
+
 		while (switch_channel_up_nosig(tchannel) && switch_channel_ready(channel)) {
 			uint32_t len = sizeof(buf);
 			switch_event_t *event = NULL;
@@ -2434,6 +2441,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	}
 
 	switch_channel_set_private(channel, file, bug);
+
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_core_session_message_t msg = { 0 };
+
+		msg.from = __FILE__;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+
+		switch_core_session_receive_message(session, &msg);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
