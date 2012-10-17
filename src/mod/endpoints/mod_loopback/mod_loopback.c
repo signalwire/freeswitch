@@ -727,13 +727,16 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 			find_non_loopback_bridge(session, &br_a, &a_uuid);
 			find_non_loopback_bridge(tech_pvt->other_session, &br_b, &b_uuid);
 
+
 			
 			if (br_a) {
 				ch_a = switch_core_session_get_channel(br_a);
+				switch_core_media_bug_transfer_recordings(session, br_a);
 			}
 
 			if (br_b) {
 				ch_b = switch_core_session_get_channel(br_b);
+				switch_core_media_bug_transfer_recordings(tech_pvt->other_session, br_b);
 			}
 			
 			if (ch_a && ch_b && switch_channel_test_flag(ch_a, CF_BRIDGED) && switch_channel_test_flag(ch_b, CF_BRIDGED)) {
