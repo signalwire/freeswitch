@@ -222,12 +222,15 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(switch_xml
 	switch_thread_rwlock_wrlock(B_RWLOCK);
 	for (ptr = BINDINGS; ptr; ptr = ptr->next) {
 		if (ptr->function == function) {
+			status = SWITCH_STATUS_SUCCESS;
+
 			if (last) {
 				last->next = ptr->next;
 			} else {
 				BINDINGS = ptr->next;
+				last = NULL;
+				continue;
 			}
-			status = SWITCH_STATUS_SUCCESS;
 		}
 		last = ptr;
 	}
