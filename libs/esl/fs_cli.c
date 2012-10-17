@@ -1520,6 +1520,9 @@ int main(int argc, char *argv[])
 	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
 	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
 
+	/* "Delete" key. */
+	el_set(el, EL_BIND, "\033[3~", "ed-delete-next-char", NULL);
+
 	if (!(myhistory = history_init())) {
 		esl_log(ESL_LOG_ERROR, "history could not be initialized\n");
 		goto done;

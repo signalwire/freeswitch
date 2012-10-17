@@ -1119,6 +1119,9 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
 	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
 
+	/* "Delete" key. */
+	el_set(el, EL_BIND, "\033[3~", "ed-delete-next-char", NULL);
+
 	myhistory = history_init();
 	if (myhistory == 0) {
 		fprintf(stderr, "history could not be initialized\n");
