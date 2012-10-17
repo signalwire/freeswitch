@@ -961,12 +961,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_call_cause_t *cancel_cause)
 {
 	char name[128];
+	switch_channel_t *ochannel = NULL;
 
 	if (session) {
-		switch_channel_t *channel = switch_core_session_get_channel(session);
-		switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
-		switch_channel_clear_flag(channel, CF_PROXY_MODE);
-		switch_channel_pre_answer(channel);
+		ochannel = switch_core_session_get_channel(session);
+		switch_channel_clear_flag(ochannel, CF_PROXY_MEDIA);
+		switch_channel_clear_flag(ochannel, CF_PROXY_MODE);
+		switch_channel_pre_answer(ochannel);
 	}
 
 	if ((*new_session = switch_core_session_request(loopback_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
@@ -993,8 +994,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		if (switch_event_dup(&clone, var_event) == SWITCH_STATUS_SUCCESS) {
 			const char *var;
-
-			if ((var = switch_channel_get_variable(channel, "loopback_export"))) {
+			
+			if (ochannel && (var = switch_channel_get_variable(ochannel, "loopback_export"))) {
 				int argc = 0;
 				char *argv[128] = { 0 };
 				char *dup = switch_core_session_strdup(session, var);
@@ -1003,7 +1004,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 					int i;
 					for (i = 0; i < argc; i++) {
 						if (!zstr(argv[i])) {
-							const char *val = switch_channel_get_variable(channel, argv[i]);
+							const char *val = switch_channel_get_variable(ochannel, argv[i]);
 							switch_event_add_header_string(clone, SWITCH_STACK_BOTTOM, argv[i], val);
 						}
 					}
