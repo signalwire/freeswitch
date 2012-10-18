@@ -1589,8 +1589,11 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 
 	idx += do_tport_candidates(tech_pvt, LDL_TPORT_RTP, &cand[idx], force);
 	idx += do_tport_candidates(tech_pvt, LDL_TPORT_RTCP, &cand[idx], force);
-	idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTP, &cand[idx], force);
-	idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTCP, &cand[idx], force);
+
+	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index > -1) {
+		idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTP, &cand[idx], force);
+		idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTCP, &cand[idx], force);
+	}
 
 	if (idx && cand[0].name) {
 		if (ldl_session_gateway(tech_pvt->dlsession) && switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
@@ -4349,6 +4352,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		break;
 	case LDL_SIGNAL_REDIRECT:
 		do_describe(tech_pvt, 1);
+		tech_pvt->next_cand = switch_micro_time_now();
+		if (channel) switch_channel_mark_ring_ready(channel);
 		break;
 
 	case LDL_SIGNAL_ERROR:
