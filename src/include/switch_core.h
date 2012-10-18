@@ -741,7 +741,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_loglevel(switch_core_ses
 */
 SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_session_t *session);
 								   
-
+SWITCH_DECLARE(stfu_instance_t *) switch_core_session_get_jb(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec);
 SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target);

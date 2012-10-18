@@ -240,6 +240,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_deactivate_jitter_buffer(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_status_t) switch_rtp_pause_jitter_buffer(switch_rtp_t *rtp_session, switch_bool_t pause);
+SWITCH_DECLARE(stfu_instance_t *) switch_rtp_get_jitter_buffer(switch_rtp_t *rtp_session);
 
 /*!
   \brief Set an RTP Flag

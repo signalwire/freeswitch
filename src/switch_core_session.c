@@ -62,6 +62,16 @@ SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_
 	return NULL;
 }
 
+
+SWITCH_DECLARE(stfu_instance_t *) switch_core_session_get_jb(switch_core_session_t *session, switch_media_type_t type)
+{
+	if (session->endpoint_interface->io_routines->get_jb) {
+		return session->endpoint_interface->io_routines->get_jb(session, type);
+	}
+
+	return NULL;
+}
+
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec)
 {
 	session->soft_lock = sec;

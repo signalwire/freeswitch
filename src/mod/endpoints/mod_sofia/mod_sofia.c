@@ -306,6 +306,24 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	return pai;
 }
 
+static stfu_instance_t *sofia_get_jb(switch_core_session_t *session, switch_media_type_t type)
+{
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_rtp_t *rtp;
+	
+	if (type == SWITCH_MEDIA_TYPE_AUDIO) {
+		rtp = tech_pvt->rtp_session;
+	} else {
+		rtp = tech_pvt->video_rtp_session;
+	}
+
+	if (rtp && switch_rtp_ready(rtp)) {
+		return switch_rtp_get_jitter_buffer(rtp);
+	}
+	
+	return NULL;
+}
+
 /* map QSIG cause codes to SIP from RFC4497 section 8.4.1 */
 static int hangup_cause_to_sip(switch_call_cause_t cause)
 {
@@ -4501,7 +4519,9 @@ switch_io_routines_t sofia_io_routines = {
 	/*.receive_event */ sofia_receive_event,
 	/*.state_change */ NULL,
 	/*.read_video_frame */ sofia_read_video_frame,
-	/*.write_video_frame */ sofia_write_video_frame
+	/*.write_video_frame */ sofia_write_video_frame,
+	/*.state_run*/ NULL,
+	/*.get_jb*/ sofia_get_jb
 };
 
 switch_state_handler_table_t sofia_event_handlers = {

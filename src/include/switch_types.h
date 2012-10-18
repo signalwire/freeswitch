@@ -1427,6 +1427,11 @@ typedef enum {
 	SWITCH_CODEC_TYPE_APP
 } switch_codec_type_t;
 
+typedef enum {
+	SWITCH_MEDIA_TYPE_AUDIO,
+	SWITCH_MEDIA_TYPE_VIDEO
+} switch_media_type_t;
+
 
 /*!
   \enum switch_timer_flag_t

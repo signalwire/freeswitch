@@ -53,7 +53,7 @@
 #define WRITE_INC(rtp_session)  switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
 #define WRITE_DEC(rtp_session) switch_mutex_unlock(rtp_session->write_mutex); rtp_session->writing--
 
-#include "stfu.h"
+
 
 #define rtp_header_len 12
 #define RTP_START_PORT 16384
@@ -2148,6 +2148,15 @@ static void jb_callback(stfu_instance_t *i, void *udata)
 
 }
 
+SWITCH_DECLARE(stfu_instance_t *) switch_rtp_get_jitter_buffer(switch_rtp_t *rtp_session)
+{
+	if (!switch_rtp_ready(rtp_session) || !rtp_session->jb) {
+		return NULL;
+	}
+
+	return rtp_session->jb;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_pause_jitter_buffer(switch_rtp_t *rtp_session, switch_bool_t pause)
 {
 	
@@ -3019,6 +3028,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 		if (stfu_n_eat(rtp_session->jb, rtp_session->last_read_ts, 
+					   ntohs((uint16_t) rtp_session->recv_msg.header.seq),
 					   rtp_session->recv_msg.header.pt,
 					   rtp_session->recv_msg.body, *bytes - rtp_header_len, rtp_session->timer.samplecount) == STFU_ITS_TOO_LATE) {
 			

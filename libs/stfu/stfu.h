@@ -163,6 +163,7 @@ typedef enum {
 
 struct stfu_frame {
 	uint32_t ts;
+	uint16_t seq;
 	uint32_t pt;
 	uint8_t data[STFU_DATALEN];
 	size_t dlen;
@@ -188,7 +189,7 @@ void stfu_n_report(stfu_instance_t *i, stfu_report_t *r);
 void stfu_n_destroy(stfu_instance_t **i);
 stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_per_packet, uint32_t samples_per_second, uint32_t max_drift_ms);
 stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen);
-stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last);
+stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last);
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i);
 void stfu_n_reset(stfu_instance_t *i);
 stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets);
@@ -197,8 +198,8 @@ void stfu_n_debug(stfu_instance_t *i, const char *name);
 int32_t stfu_n_get_drift(stfu_instance_t *i);
 int32_t stfu_n_get_most_qlen(stfu_instance_t *i);
 
-#define stfu_im_done(i) stfu_n_add_data(i, 0, NULL, 0, 0, 1)
-#define stfu_n_eat(i,t,p,d,l,tt) stfu_n_add_data(i, t, p, d, l, tt, 0)
+#define stfu_im_done(i) stfu_n_add_data(i, 0, 0, NULL, 0, 0, 1)
+#define stfu_n_eat(i,t,s,p,d,l,tt) stfu_n_add_data(i, t, s, p, d, l, tt, 0)
 
 #ifdef __cplusplus
 }

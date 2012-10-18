@@ -402,7 +402,7 @@ static void stfu_n_swap(stfu_instance_t *i)
     i->out_queue->last_jitter = 0;
 }
 
-stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last)
+stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last)
 {
 	uint32_t index = 0;
 	stfu_frame_t *frame;
@@ -569,6 +569,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
 
     frame->pt = pt;
 	frame->ts = ts;
+    frame->seq = seq;
 	frame->dlen = cplen;
 	frame->was_read = 0;	
 
