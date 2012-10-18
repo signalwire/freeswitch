@@ -1982,7 +1982,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		case VM_CHECK_PLAY_MESSAGES:
 			{
 				listen_callback_t cbt;
-				char sql[256];
+				char sql[512];
 				int cur_message, total_messages;
 
 				message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
@@ -1996,7 +1996,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				case MSG_NEW:
 					{
 						switch_snprintf(sql, sizeof(sql),
-										"select * from voicemail_msgs where username='%s' and domain='%s' and read_epoch=0"
+										"select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and read_epoch=0"
 										" order by read_flags, created_epoch", myid, domain_name);
 						total_messages = total_new_messages;
 						heard_auto_new = heard_auto_saved = 1;
@@ -2006,7 +2006,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				default:
 					{
 						switch_snprintf(sql, sizeof(sql),
-										"select * from voicemail_msgs where username='%s' and domain='%s' and read_epoch !=0"
+										"select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and read_epoch !=0"
 										" order by read_flags, created_epoch", myid, domain_name);
 						total_messages = total_saved_messages;
 						heard_auto_new = heard_auto_saved = 1;
@@ -4020,7 +4020,7 @@ static void do_play(vm_profile_t *profile, char *user_in, char *domain, char *fi
 	vm_execute_sql(profile, sql, profile->mutex);
 	free(sql);
 
-	sql = switch_mprintf("select * from voicemail_msgs where username='%s' and domain='%s' and file_path like '%%%s' order by created_epoch",
+	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and file_path like '%%%s' order by created_epoch",
 						 user, domain, file);
 	memset(&holder, 0, sizeof(holder));
 	holder.profile = profile;
@@ -4046,7 +4046,7 @@ static void do_del(vm_profile_t *profile, char *user_in, char *domain, char *fil
 		ref = switch_event_get_header(stream->param_event, "http-referer");
 	}
 
-	sql = switch_mprintf("select * from voicemail_msgs where username='%s' and domain='%s' and file_path like '%%%s' order by created_epoch",
+	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and file_path like '%%%s' order by created_epoch",
 						 user, domain, file);
 	memset(&holder, 0, sizeof(holder));
 	holder.profile = profile;
@@ -4311,7 +4311,7 @@ static void do_rss(vm_profile_t *profile, char *user, char *domain, char *host, 
 	x_tmp = switch_xml_add_child_d(holder.x_channel, "ttl", 0);
 	switch_xml_set_txt_d(x_tmp, "15");
 
-	sql = switch_mprintf("select * from voicemail_msgs where username='%s' and domain='%s' order by read_flags, created_epoch", user, domain);
+	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' order by read_flags, created_epoch", user, domain);
 	vm_execute_sql_callback(profile, profile->mutex, sql, rss_callback, &holder);
 
 	xmlstr = switch_xml_toxml(holder.xml, SWITCH_TRUE);
@@ -4354,7 +4354,7 @@ static void do_web(vm_profile_t *profile, const char *user_in, const char *domai
 	cbt.buf = buf;
 	cbt.len = sizeof(buf);
 
-	sql = switch_mprintf("select * from voicemail_msgs where username='%s' and domain='%s' order by read_flags, created_epoch", user, domain);
+	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' order by read_flags, created_epoch", user, domain);
 	vm_execute_sql_callback(profile, profile->mutex, sql, web_callback, &holder);
 	switch_safe_free(sql);
 
@@ -5517,7 +5517,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_forward_function)
 		goto done;
 	} else {
 		const char *file_path = NULL;
-		sql = switch_mprintf("SELECT * FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
+		sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
 		memset(&cbt, 0, sizeof(cbt));
 		switch_event_create(&cbt.my_params, SWITCH_EVENT_REQUEST_PARAMS);
 		vm_execute_sql_callback(profile, profile->mutex, sql, message_get_callback, &cbt);
@@ -5622,7 +5622,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_get_function)
 		goto done;
 	}
 
-	sql = switch_mprintf("SELECT * FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
+	sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
 
 	memset(&cbt, 0, sizeof(cbt));
 
@@ -5699,7 +5699,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 		char duration_str[80];
 		char *formatted_cid_num = NULL;
 
-		sql = switch_mprintf("SELECT * FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
+		sql = switch_mprintf("select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs WHERE username = '%q' AND domain = '%q' AND uuid = '%q' ORDER BY read_flags, created_epoch", id, domain, uuid);
 		memset(&cbt, 0, sizeof(cbt));
 		switch_event_create(&cbt.my_params, SWITCH_EVENT_GENERAL);
 		vm_execute_sql_callback(profile, profile->mutex, sql, message_get_callback, &cbt);
