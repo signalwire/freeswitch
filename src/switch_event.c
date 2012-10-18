@@ -1016,7 +1016,12 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 			switch_assert(hv);
 			header->value = hv;
 
-			switch_snprintf(header->value, len, "ARRAY::");
+			if (header->idx > 1) {
+				switch_snprintf(header->value, len, "ARRAY::");
+			} else {
+				*header->value = '\0';
+			}
+
 			for(j = 0; j < header->idx; j++) {
 				switch_snprintf(header->value + strlen(header->value), len - strlen(header->value), "%s%s", j == 0 ? "" : "|:", header->array[j]);
 			}

@@ -1853,6 +1853,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int read_packet = 0;
 	int check_reject = 1;
 	switch_codec_implementation_t read_impl = { 0 };
+
+	if (session) {
+		switch_channel_set_variable(switch_core_session_get_channel(session), "originated_legs", NULL);
+		switch_channel_set_variable(switch_core_session_get_channel(session), "originate_causes", NULL);
+	}
+	
 	
 	if (strstr(bridgeto, SWITCH_ENT_ORIGINATE_DELIM)) {
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
@@ -2741,7 +2747,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 
 					if (session) {
+						switch_channel_t *channel = switch_core_session_get_channel(session);
+						char *val = 
+							switch_core_session_sprintf(session, "%s;%s;%s", 
+														switch_core_session_get_uuid(originate_status[i].peer_session),
+														switch_str_nil(switch_channel_get_variable(originate_status[i].peer_channel, "callee_id_name")),
+														switch_str_nil(switch_channel_get_variable(originate_status[i].peer_channel, "callee_id_number")));
+						
+
 						switch_channel_set_variable(originate_status[i].peer_channel, "originating_leg_uuid", switch_core_session_get_uuid(session));
+						
+						switch_channel_add_variable_var_check(channel, "originated_legs", val, SWITCH_FALSE, SWITCH_STACK_PUSH);
+															  
 					}
 
 					switch_channel_execute_on(originate_status[i].peer_channel, SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE);
@@ -3573,9 +3590,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			for (i = 0; i < and_argc; i++) {
 				switch_channel_state_t state;
+				char *val;							
 
 				if (!originate_status[i].peer_channel) {
 					continue;
+				}
+				
+				if (session) {
+					val = switch_core_session_sprintf(originate_status[i].peer_session, "%s;%s", 
+													  switch_core_session_get_uuid(originate_status[i].peer_session), 
+													  switch_channel_cause2str(switch_channel_get_cause(originate_status[i].peer_channel)));
+					
+					switch_channel_add_variable_var_check(switch_core_session_get_channel(session), "originate_causes", val, SWITCH_FALSE, SWITCH_STACK_PUSH);
 				}
 
 				if (status == SWITCH_STATUS_SUCCESS) {
