@@ -2333,7 +2333,37 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									 TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
 						} else if (ua && switch_stristr("snom", ua)) {
-							snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", name, number);
+							const char *ver_str = NULL; 
+							int version = 0;
+
+							ver_str = switch_stristr( "/", ua);
+
+							if ( ver_str ) {
+								char *argv[4] = { 0 };
+								char *dotted = strdup( ver_str + 1 );
+								if ( dotted ) {
+									switch_separate_string(dotted, '.', argv, (sizeof(argv) / sizeof(argv[0])));
+									if ( argv[0] && argv[1] && argv[2] ) {
+										version = ( atoi(argv[0]) * 10000 )  + ( atoi(argv[1]) * 100 ) + atoi(argv[2]);
+									}
+								}
+								switch_safe_free( dotted );
+							}
+
+							if ( version >= 80424 ) {
+								if (zstr(name)) {
+									snprintf(message, sizeof(message), "From: %s\r\nTo:\r\n", number);
+								} else {
+									snprintf(message, sizeof(message), "From: \"%s\" %s\r\nTo:\r\n", name, number);
+								}
+							} else {
+								if (zstr(name)) {
+									snprintf(message, sizeof(message), "From:\r\nTo: %s\r\n", number);
+								} else {
+									snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", name, number);
+								}
+							}
+
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
 						} else if ((ua && (switch_stristr("polycom", ua)))) {
