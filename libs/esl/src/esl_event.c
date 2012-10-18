@@ -552,7 +552,12 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 			esl_assert(hv);
 			header->value = hv;
 
-			esl_snprintf(header->value, len, "ARRAY::");
+			if (header->idx > 1) {
+				esl_snprintf(header->value, len, "ARRAY::");
+			} else {
+				*header->value = '\0';
+			}
+
 			for(j = 0; j < header->idx; j++) {
 				esl_snprintf(header->value + strlen(header->value), len - strlen(header->value), "%s%s", j == 0 ? "" : "|:", header->array[j]);
 			}
