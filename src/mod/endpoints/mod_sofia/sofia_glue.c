@@ -4924,7 +4924,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 							const char *b = switch_stristr("AES", crypto);
 
 							/* Change our key every time we can */
-							if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
+							
+							if (sofia_test_flag(tech_pvt, TFLAG_CRYPTO_RECOVER)) {
+								sofia_clear_flag(tech_pvt, TFLAG_CRYPTO_RECOVER);
+							} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
 								switch_channel_set_variable(tech_pvt->channel, SOFIA_HAS_CRYPTO_VARIABLE, SWITCH_RTP_CRYPTO_KEY_32);
 								sofia_glue_build_crypto(tech_pvt, atoi(crypto), AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND);
 								switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), tech_pvt->crypto_type,
@@ -4941,8 +4944,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 							if (a && b && !strncasecmp(a, b, 23)) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Change Remote key to [%s]\n", crypto);
 								tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
+								switch_channel_set_variable(tech_pvt->channel, "srtp_remote_audio_crypto_key", crypto);
 								tech_pvt->crypto_tag = crypto_tag;
-
+								
 								if (switch_rtp_ready(tech_pvt->rtp_session) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
 									sofia_glue_add_crypto(tech_pvt, tech_pvt->remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 									switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, tech_pvt->crypto_tag,
@@ -4956,6 +4960,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					} else if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 						tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set Remote Key [%s]\n", tech_pvt->remote_crypto_key);
+						switch_channel_set_variable(tech_pvt->channel, "srtp_remote_audio_crypto_key", crypto);
 						tech_pvt->crypto_tag = crypto_tag;
 						got_crypto++;
 
@@ -5873,6 +5878,10 @@ int sofia_recover_callback(switch_core_session_t *session)
 	sofia_glue_attach_private(session, profile, tech_pvt, NULL);
 	switch_channel_set_name(tech_pvt->channel, switch_channel_get_variable(channel, "channel_name"));
 
+	if ((tmp = switch_channel_get_variable(channel, "srtp_remote_audio_crypto_key"))) {
+		tech_pvt->remote_crypto_key = switch_core_session_strdup(session, tmp);
+		sofia_set_flag(tech_pvt, TFLAG_CRYPTO_RECOVER);
+	}
 
 	if ((tmp = switch_channel_get_variable(channel, "sip_local_sdp_str"))) {
 		tech_pvt->local_sdp_str = switch_core_session_strdup(session, tmp);

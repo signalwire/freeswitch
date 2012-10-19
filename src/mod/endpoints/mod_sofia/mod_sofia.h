@@ -344,6 +344,7 @@ typedef enum {
 	TFLAG_SLA_BARGE,
 	TFLAG_SLA_BARGING,
 	TFLAG_PASS_ACK,
+	TFLAG_CRYPTO_RECOVER,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -739,6 +740,7 @@ struct private_object {
 	char *fmtp_out;
 	char *remote_sdp_str;
 	int crypto_tag;
+	int callstate;
 	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	switch_rtp_crypto_key_type_t crypto_send_type;
