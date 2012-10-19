@@ -227,6 +227,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	char name[128];
 	switch_caller_profile_t *caller_profile;
 	switch_event_t *vars = NULL;
+	const char *var;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -294,6 +295,29 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			}
 
 			switch_event_destroy(&vars);
+		}
+
+		if ((var = switch_channel_get_variable(channel, "loopback_export"))) {
+			int argc = 0;
+			char *argv[128] = { 0 };
+			char *dup = switch_core_session_strdup(session, var);
+
+			if ((argc = switch_split(dup, ',', argv))) {
+				int i;
+				for (i = 0; i < argc; i++) {
+					
+					if (!zstr(argv[i])) {
+						const char *val = switch_channel_get_variable(channel, argv[i]);
+
+						if(!zstr(val)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer variable [%s]=[%s] %s -> %s\n",
+											  argv[i], val, switch_channel_get_name(channel), switch_channel_get_name(tech_pvt->other_channel));
+											  
+							switch_channel_set_variable(tech_pvt->other_channel, argv[i], val);
+						}
+					}
+				}
+			}
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_APP)) {
@@ -996,24 +1020,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		if (switch_event_dup(&clone, var_event) == SWITCH_STATUS_SUCCESS) {
-			const char *var;
-			
-			if (ochannel && (var = switch_channel_get_variable(ochannel, "loopback_export"))) {
-				int argc = 0;
-				char *argv[128] = { 0 };
-				char *dup = switch_core_session_strdup(session, var);
-
-				if ((argc = switch_split(dup, ',', argv))) {
-					int i;
-					for (i = 0; i < argc; i++) {
-						if (!zstr(argv[i])) {
-							const char *val = switch_channel_get_variable(ochannel, argv[i]);
-							switch_event_add_header_string(clone, SWITCH_STACK_BOTTOM, argv[i], val);
-						}
-					}
-				}
-			}
-
 			switch_channel_set_private(channel, "__loopback_vars__", clone);
 		}
 
