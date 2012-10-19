@@ -6420,8 +6420,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
   state_process:
 
-	tech_pvt->callstate = ss_state;
-
 	switch ((enum nua_callstate) ss_state) {
 	case nua_callstate_terminated:
 	case nua_callstate_terminating:
