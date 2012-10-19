@@ -2786,6 +2786,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		if (vm_email) {
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_email", vm_email);
 		}
+		if (vm_email_from) {
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_email_from", vm_email_from);
+		}
 		if (vm_notify_email) {
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_notify_email", vm_notify_email);
 		}
