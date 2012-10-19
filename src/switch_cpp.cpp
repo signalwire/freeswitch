@@ -1288,6 +1288,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session
 
 	if ((coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession"))) {
 		if (coresession->hook_state != state) {
+			coresession->cause = switch_channel_get_cause(channel);
 			coresession->hook_state = state;
 			coresession->check_hangup_hook();
 		}
