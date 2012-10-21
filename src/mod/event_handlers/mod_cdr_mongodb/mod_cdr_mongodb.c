@@ -33,12 +33,15 @@
 #include <switch.h>
 #include <mongo.h>
 
+#define MONGO_REPLSET_MAX_MEMBERS 12
+
 static struct {
 	switch_memory_pool_t *pool;
 	int shutdown;
 	char *mongo_host;
-	uint32_t mongo_port;
+	int mongo_port;
 	char *mongo_namespace;
+	char *mongo_replset_name;
 	char *mongo_username;
 	char *mongo_password;
 	mongo mongo_conn[1];
@@ -50,11 +53,12 @@ static switch_xml_config_item_t config_settings[] = {
 	/* key, flags, ptr, default_value, syntax, helptext */
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("host", CONFIG_REQUIRED, &globals.mongo_host, "127.0.0.1", NULL, "MongoDB server host address"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("namespace", CONFIG_REQUIRED, &globals.mongo_namespace, NULL, "database.collection", "MongoDB namespace"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("replica_set_name", CONFIG_RELOADABLE, &globals.mongo_replset_name, "cdr_mongodb", NULL, "MongoDB replica set name"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("username", CONFIG_RELOADABLE, &globals.mongo_username, NULL, NULL, "MongoDB username"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("password", CONFIG_RELOADABLE, &globals.mongo_password, NULL, NULL, "MongoDB password"),
 
 	/* key, type, flags, ptr, default_value, data, syntax, helptext */
-	SWITCH_CONFIG_ITEM("port", SWITCH_CONFIG_INT, CONFIG_REQUIRED, &globals.mongo_port, 27017, NULL, NULL, "MongoDB server TCP port"),
+	SWITCH_CONFIG_ITEM("port", SWITCH_CONFIG_INT, CONFIG_REQUIRED, &globals.mongo_port, MONGO_DEFAULT_PORT, NULL, NULL, "MongoDB server TCP port"),
 	SWITCH_CONFIG_ITEM("log-b-leg", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.log_b, SWITCH_TRUE, NULL, NULL, "Log B-leg in addition to A-leg"),
 
 	SWITCH_CONFIG_ITEM_END()
@@ -389,6 +393,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_mongodb_load)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mongo_error_t db_status;
+	char *repl_hosts[MONGO_REPLSET_MAX_MEMBERS];
+	char *mongo_host[2];
+	int num_hosts, mongo_port;
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
@@ -397,7 +404,32 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_mongodb_load)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	db_status = mongo_connect(globals.mongo_conn, globals.mongo_host, globals.mongo_port);
+	num_hosts = switch_separate_string(globals.mongo_host, ',', repl_hosts, MONGO_REPLSET_MAX_MEMBERS);
+
+	if (num_hosts > 1) {
+		int i;
+
+		mongo_replset_init(globals.mongo_conn, globals.mongo_replset_name);
+
+		for (i = 0; i < num_hosts; i++) {
+			switch_separate_string(repl_hosts[i], ':', mongo_host, 2);
+			mongo_port = mongo_host[1] ? atoi(mongo_host[1]) : globals.mongo_port;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding MongoDB server %s:%d to replica set\n", mongo_host[0], mongo_port);
+			mongo_replset_add_seed(globals.mongo_conn, mongo_host[0], mongo_port);
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connecting to MongoDB replica set %s\n", globals.mongo_replset_name);
+		db_status = mongo_replset_connect(globals.mongo_conn);
+	} else {
+		switch_separate_string(globals.mongo_host, ':', mongo_host, 2);
+
+		if (mongo_host[1]) {
+			globals.mongo_port = atoi(mongo_host[1]);
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connecting to MongoDB server %s:%d\n", globals.mongo_host, globals.mongo_port);
+		db_status = mongo_connect(globals.mongo_conn, globals.mongo_host, globals.mongo_port);
+	}
 
 	if (db_status != MONGO_OK) {
 		switch (globals.mongo_conn->err) {
@@ -407,15 +439,24 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_mongodb_load)
 			case MONGO_CONN_FAIL:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_connect: connection failed\n");
 				break;
+			case MONGO_CONN_ADDR_FAIL:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_connect: hostname lookup failed\n");
+				break;
 			case MONGO_CONN_NOT_MASTER:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_connect: not master\n");
 				break;
+			case MONGO_CONN_BAD_SET_NAME:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_replset_connect: configured replica set name does not match\n");
+				break;
+			case MONGO_CONN_NO_PRIMARY:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_replset_connect: cannot find replica set primary member\n");
+				break;
 			default:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_connect: unknown error %d\n", db_status);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_connect: unknown error: status code %d, error code %d\n", db_status, globals.mongo_conn->err);
 		}
 		return SWITCH_STATUS_FALSE;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to MongoDB server %s:%d\n", globals.mongo_host, globals.mongo_port);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connection established\n");
 	}
 
 	if (globals.mongo_username && globals.mongo_password) {
