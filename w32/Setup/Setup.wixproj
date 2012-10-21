@@ -854,8 +854,8 @@
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
   <PropertyGroup>
-    <PreBuildEvent>"$(WIX)bin\heat.exe" dir "$(ProjectDir)..\..\conf\vanilla" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
-"$(WIX)bin\heat.exe" dir "$(ProjectDir)..\..\Win32\Release\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"</PreBuildEvent>
+    <PreBuildEvent>"$(WixToolPath)\heat.exe" dir "$(ProjectDir)..\..\conf\vanilla" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
+"$(WixToolPath)\heat.exe" dir "$(ProjectDir)..\..\Win32\Release\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"</PreBuildEvent>
   </PropertyGroup>
   <!--
 	To modify your build process, add your task inside one of the targets below and uncomment it.
