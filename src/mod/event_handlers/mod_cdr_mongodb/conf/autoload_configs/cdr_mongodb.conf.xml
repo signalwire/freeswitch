@@ -5,6 +5,9 @@
     <param name="host" value="127.0.0.1"/>
     <param name="port" value="27017"/>
 
+    <!-- Optionally override default replica set name -->
+    <!-- <param name="replica_set_name" value="cdr_mongodb"/> -->
+
     <!-- Namespace format is database.collection -->
     <param name="namespace" value="test.cdr"/>
 
