@@ -339,11 +339,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 					status = cdr_mongo_authenticate();
 				}
 
-				if (db_status == MONGO_OK) {
-					if (mongo_insert(globals.mongo_conn, globals.mongo_namespace, &cdr, NULL) != MONGO_OK) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_insert: %s (error code %d)\n", globals.mongo_conn->errstr, globals.mongo_conn->err);
-						status = SWITCH_STATUS_FALSE;
-					}
+				if (mongo_insert(globals.mongo_conn, globals.mongo_namespace, &cdr, NULL) != MONGO_OK) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_insert: %s (error code %d)\n", globals.mongo_conn->errstr, globals.mongo_conn->err);
+					status = SWITCH_STATUS_FALSE;
 				}
 			}
 
@@ -421,7 +419,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_mongodb_load)
 	}
 
 	if (globals.mongo_username && globals.mongo_password) {
-		status = cdr_mongo_authenticate();
+		if (cdr_mongo_authenticate() != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	switch_mutex_init(&globals.mongo_mutex, SWITCH_MUTEX_NESTED, pool);
