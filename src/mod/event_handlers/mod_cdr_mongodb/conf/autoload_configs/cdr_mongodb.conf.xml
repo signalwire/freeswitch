@@ -7,6 +7,10 @@
     <!-- Namespace format is database.collection -->
     <param name="namespace" value="test.cdr"/>
 
+    <!-- Set username and password to enable MongoDB authentication -->
+    <!-- <param name="username" value="freeswitch"/> -->
+    <!-- <param name="password" value="secret"/> -->
+
     <!-- If true, create CDR for B-leg of call (default: true) -->
     <param name="log-b-leg" value="false"/>
   </settings>

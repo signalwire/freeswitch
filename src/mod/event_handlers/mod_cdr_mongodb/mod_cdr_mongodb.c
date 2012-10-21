@@ -39,6 +39,8 @@ static struct {
 	char *mongo_host;
 	uint32_t mongo_port;
 	char *mongo_namespace;
+	char *mongo_username;
+	char *mongo_password;
 	mongo mongo_conn[1];
 	switch_mutex_t *mongo_mutex;
 	switch_bool_t log_b;
@@ -48,6 +50,8 @@ static switch_xml_config_item_t config_settings[] = {
 	/* key, flags, ptr, default_value, syntax, helptext */
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("host", CONFIG_REQUIRED, &globals.mongo_host, "127.0.0.1", NULL, "MongoDB server host address"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("namespace", CONFIG_REQUIRED, &globals.mongo_namespace, NULL, "database.collection", "MongoDB namespace"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("username", CONFIG_RELOADABLE, &globals.mongo_username, NULL, NULL, "MongoDB username"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("password", CONFIG_RELOADABLE, &globals.mongo_password, NULL, NULL, "MongoDB password"),
 
 	/* key, type, flags, ptr, default_value, data, syntax, helptext */
 	SWITCH_CONFIG_ITEM("port", SWITCH_CONFIG_INT, CONFIG_REQUIRED, &globals.mongo_port, 27017, NULL, NULL, "MongoDB server TCP port"),
@@ -76,6 +80,29 @@ static void set_bson_profile_data(bson *b, switch_caller_profile_t *caller_profi
 	bson_append_string(b, "source", caller_profile->source);
 	bson_append_string(b, "context", caller_profile->context);
 	bson_append_string(b, "chan_name", caller_profile->chan_name);
+}
+
+
+static switch_status_t cdr_mongo_authenticate() {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	mongo_error_t db_status;
+	char *ns_tmp, *ns_split[2];
+
+	/* Split namespace db.collection into separate vars */
+	switch_strdup(ns_tmp, globals.mongo_namespace);
+	switch_separate_string(ns_tmp, '.', ns_split, 2);
+
+	db_status = mongo_cmd_authenticate(globals.mongo_conn, ns_split[0], globals.mongo_username, globals.mongo_password);
+
+	if (db_status != MONGO_OK) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_cmd_authenticate: authentication failed\n");
+		status = SWITCH_STATUS_FALSE;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Successfully authenticated %s@%s\n", globals.mongo_username, ns_split[0]);
+	}
+
+	switch_safe_free(ns_tmp);
+	return status;
 }
 
 
@@ -306,14 +333,22 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				status = SWITCH_STATUS_FALSE;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MongoDB connection re-established.\n");
-				if (mongo_insert(globals.mongo_conn, globals.mongo_namespace, &cdr, NULL) != MONGO_OK) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_insert: error code %d\n", globals.mongo_conn->err);
-					status = SWITCH_STATUS_FALSE;
+
+				/* Re-authentication is necessary after a reconnect */
+				if (globals.mongo_username && globals.mongo_password) {
+					status = cdr_mongo_authenticate();
+				}
+
+				if (db_status == MONGO_OK) {
+					if (mongo_insert(globals.mongo_conn, globals.mongo_namespace, &cdr, NULL) != MONGO_OK) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_insert: %s (error code %d)\n", globals.mongo_conn->errstr, globals.mongo_conn->err);
+						status = SWITCH_STATUS_FALSE;
+					}
 				}
 			}
 
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_insert: error code %d\n", globals.mongo_conn->err);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mongo_insert: %s (error code %d)\n", globals.mongo_conn->errstr, globals.mongo_conn->err);
 			status = SWITCH_STATUS_FALSE;
 		}
 	}
@@ -383,6 +418,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_mongodb_load)
 		return SWITCH_STATUS_FALSE;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to MongoDB server %s:%d\n", globals.mongo_host, globals.mongo_port);
+	}
+
+	if (globals.mongo_username && globals.mongo_password) {
+		status = cdr_mongo_authenticate();
 	}
 
 	switch_mutex_init(&globals.mongo_mutex, SWITCH_MUTEX_NESTED, pool);
