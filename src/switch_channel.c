@@ -268,7 +268,7 @@ SWITCH_DECLARE(const char *) switch_channel_callstate2str(switch_channel_callsta
 }
 
 
-SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str)
+SWITCH_DECLARE(switch_channel_callstate_t) switch_channel_str2callstate(const char *str)
 {
 	uint8_t x;
 	switch_channel_callstate_t callstate = (switch_channel_callstate_t) SWITCH_CAUSE_NONE;
@@ -283,7 +283,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str
 			}
 		}
 	}
-	return (switch_call_cause_t) callstate;
+	return callstate;
 }
 
 
