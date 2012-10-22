@@ -97,12 +97,14 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 	if (b) {
 		if (b > 1) {
 			/*german nominativ for "one" in numbers like 21, 171, 4591 is flexed, 2-9 are not*/
-			if ( c == 1 ) {
-				say_file("digits/s-1.wav");
-			} else {
-				say_file("digits/%d.wav", c);
-			} 
-			say_file("currency/and.wav");
+			if (c > 0) {
+				if ( c == 1 ) {
+					say_file("digits/s-1.wav");
+				} else {
+					say_file("digits/%d.wav", c);
+				} 
+				say_file("currency/and.wav");
+			}
 			if (method == SSM_COUNTED) {
 				say_file("digits/h-%d0.wav", b);
 			} else {
