@@ -2899,22 +2899,54 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offse
 	const char *xminday = switch_xml_attr(xcond, "minute-of-day");
 	const char *xtod = switch_xml_attr(xcond, "time-of-day");
 	const char *tzoff = switch_xml_attr(xcond, "tz-offset");
-	int loffset = 0;
+	const char *isdst = switch_xml_attr(xcond, "dst");
 
+	int loffset = -1000;
+	int eoffset = -1000;
+	int dst = -1000;
 	switch_time_t ts = switch_micro_time_now();
 	int time_match = -1;
-	switch_time_exp_t tm;
+	switch_time_exp_t tm, tm2;
+
+	if (!zstr(isdst)) {
+		dst = switch_true(isdst);
+	}
 
 	if (!zstr(tzoff) && switch_is_number(tzoff)) {
 		loffset = atoi(tzoff);
-		offset = &loffset;
+	}
+
+	switch_time_exp_lt(&tm2, ts);
+
+	if (offset) {
+		eoffset = *offset;
+		switch_time_exp_tz(&tm, ts, *offset);
+	} else {
+		tm = tm2;
+	}
+
+	if (eoffset == -1000) {
+		eoffset = tm.tm_gmtoff / 3600;
+	}
+
+	if (loffset == -1000) {
+		loffset = eoffset;
 	}
 
 
-	if (offset) {
-		switch_time_exp_tz(&tm, ts, *offset);
-	} else {
-		switch_time_exp_lt(&tm, ts);
+	if (time_match && tzoff) {
+		time_match = loffset == eoffset;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+						  "XML DateTime Check: TZOFFSET[%d] == %d (%s)\n", eoffset, loffset, time_match ? "PASS" : "FAIL");
+
+	}
+
+	if (time_match && dst > -1) {
+		time_match = (tm2.tm_isdst > 0 && dst > 0);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+						  "XML DateTime Check: DST[%s] == %s (%s)\n", 
+						  tm2.tm_isdst > 0 ? "true" : "false", dst > 0 ? "true" : "false", time_match ? "PASS" : "FAIL");
+
 	}
 
 	if (time_match && xdt) {
