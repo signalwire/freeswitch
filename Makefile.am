@@ -452,8 +452,9 @@ libs/curl/lib/libcurl.la: libs/curl libs/curl/Makefile
 
 libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr/.update
 	@cd libs/apr && ./config.status
+	@$(TOUCH_TARGET)
 
-libs/apr/libapr-1.la: libs/apr/Makefile
+libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
 	touch src/include/switch.h
 	@cd libs/apr && $(MAKE)
 	@$(TOUCH_TARGET)
