@@ -211,7 +211,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 				uint32_t uintval;
 				if (value) {
 					if (switch_is_number(value)) {
-						uintval = (uint32_t) strtoll(value, NULL, 10);
+						uintval = (uint32_t) strtol(value, NULL, 10);
 					} else {
 						uintval = (uint32_t) (uintptr_t) item->defaultvalue;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%u]\n",
