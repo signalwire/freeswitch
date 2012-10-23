@@ -308,7 +308,7 @@ static ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 				peerchan->pflags = 0;
 				ftdm_channel_close(&peerchan);
 			} else {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Odd, no peer chan\n");
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Odd, no peer chan\n");
 			}
 		}
 		break;
@@ -497,13 +497,11 @@ static void tap_pri_put_pcall(pritap_t *pritap, void *callref)
 		}
 		tstcrv = tap_pri_get_crv(pritap->pri, pritap->pcalls[i].callref);
 		if (tstcrv == crv) {
-			ftdm_log(FTDM_LOG_DEBUG, "releasing slot %d in span %s used by callref %d/%p\n", i, 
-					pritap->span->name, crv, pritap->pcalls[i].callref);
-			if (!pritap->pcalls[i].inuse) {
-				ftdm_log(FTDM_LOG_ERROR, "slot %d in span %s used by callref %d/%p was released already?\n", 
-						i, pritap->span->name, crv, pritap->pcalls[i].callref);
+			if (pritap->pcalls[i].inuse) {
+				ftdm_log(FTDM_LOG_DEBUG, "releasing slot %d in span %s used by callref %d/%p\n", i,
+						pritap->span->name, crv, pritap->pcalls[i].callref);
+				pritap->pcalls[i].inuse = 0;
 			}
-			pritap->pcalls[i].inuse = 0;
 		}
 	}
 
@@ -595,7 +593,7 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 		/* check that we already know about this call in the peer PRI (which was the one receiving the PRI_EVENT_RING event) */
 		if (!(pcall = tap_pri_get_pcall_bycrv(peertap, crv))) {
 			ftdm_log(FTDM_LOG_DEBUG, 
-				"ignoring proceeding in channel %s:%d:%d for callref %d since we don't know about it",
+				"ignoring proceeding in channel %s:%d:%d for callref %d since we don't know about it\n",
 				pritap->span->name, PRI_SPAN(e->proceeding.channel), PRI_CHANNEL(e->proceeding.channel), crv);
 			break;
 		}
@@ -646,7 +644,7 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 		fchan->call_data = peerfchan;
 		peerfchan->call_data = fchan;
 
-		ftdm_log_chan_msg(pcall->fchan, FTDM_LOG_NOTICE, "Starting new tapped call\n");
+		ftdm_log_chan(pcall->fchan, FTDM_LOG_NOTICE, "Starting new tapped call with callref %d\n", crv);
 		ftdm_set_state_locked(fchan, FTDM_CHANNEL_STATE_RING);
 		break;
 
@@ -666,9 +664,11 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 				pritap->span->name, PRI_SPAN(e->proceeding.channel), PRI_CHANNEL(e->proceeding.channel), crv);
 			break;
 		}
+		ftdm_channel_lock(pcall->fchan);
 		ftdm_log_chan(pcall->fchan, FTDM_LOG_NOTICE, "Tapped call was answered in state %s\n", ftdm_channel_state2str(pcall->fchan->state));
-		ftdm_set_pflag_locked(pcall->fchan, PRITAP_NETWORK_ANSWER);
-		ftdm_set_state_locked(pcall->fchan, FTDM_CHANNEL_STATE_UP);
+		ftdm_set_pflag(pcall->fchan, PRITAP_NETWORK_ANSWER);
+		ftdm_set_state(pcall->fchan, FTDM_CHANNEL_STATE_UP);
+		ftdm_channel_unlock(pcall->fchan);
 		break;
 
 	case PRI_EVENT_HANGUP_REQ:
@@ -683,15 +683,18 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 			break;
 		}
 
-		if (!pcall->fchan) {
-			ftdm_log(FTDM_LOG_DEBUG,
-				"ignoring hangup in channel %s:%d:%d for callref %d since we never got a channel",
-				pritap->span->name, PRI_SPAN(e->proceeding.channel), PRI_CHANNEL(e->proceeding.channel), crv);
-			break;
+		if (pcall->fchan) {
+			fchan = pcall->fchan;
+			ftdm_channel_lock(fchan);
+			if (fchan->state < FTDM_CHANNEL_STATE_TERMINATING) {
+				ftdm_set_state(fchan, FTDM_CHANNEL_STATE_TERMINATING);
+			}
+			pcall->fchan = NULL; /* after this event we're not supposed to need to do anything with the channel anymore */
+			ftdm_channel_unlock(fchan);
 		}
 
-		fchan = pcall->fchan;
-		ftdm_set_state_locked(fchan, FTDM_CHANNEL_STATE_TERMINATING);
+		tap_pri_put_pcall(pritap, e->hangup.call);
+		tap_pri_put_pcall(peertap, e->hangup.call);
 		break;
 
 	case PRI_EVENT_HANGUP_ACK:
