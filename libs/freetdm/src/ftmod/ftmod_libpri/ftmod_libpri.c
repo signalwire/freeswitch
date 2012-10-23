@@ -2249,6 +2249,7 @@ static int handle_facility_aoc_e(const struct pri_subcmd_aoc_e *aoc_e)
 	ftdm_log(FTDM_LOG_INFO, "AOC-E:\n%s", tmp);
 	return 0;
 }
+#endif
 
 /**
  * \brief Handler for libpri facility events
@@ -2275,6 +2276,7 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 		int res = -1;
 
 		switch (sub->cmd) {
+#ifdef HAVE_LIBPRI_AOC
 		case PRI_SUBCMD_AOC_S:	/* AOC-S: Start of call */
 			res = handle_facility_aoc_s(&sub->u.aoc_s);
 			break;
@@ -2293,6 +2295,7 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 					sub->u.aoc_request_response.charging_request,
 					sub->u.aoc_request_response.charging_response);
 			break;
+#endif
 		default:
 			ftdm_log(FTDM_LOG_DEBUG, "FACILITY subcommand %d is not implemented, ignoring\n", sub->cmd);
 		}
@@ -2303,7 +2306,6 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 	ftdm_log(FTDM_LOG_DEBUG, "Caught Event on span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
-#endif
 
 /**
  * \brief Handler for libpri dchan up event
