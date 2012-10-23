@@ -362,7 +362,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 			return;
 		}
 
-		level = 7;
+		level = 1;
 	}
 
 	if (level > limit_level) {
