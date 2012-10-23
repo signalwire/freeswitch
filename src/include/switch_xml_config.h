@@ -39,6 +39,7 @@ SWITCH_BEGIN_EXTERN_C
 /*! \brief Type of value to parse */
 	typedef enum {
 	SWITCH_CONFIG_INT,			/*< (ptr=int* default=int data=NULL) Integer */
+	SWITCH_CONFIG_ATOMIC,		/*< (ptr=switch_atomic_t* default=uint32_t data=NULL) Integer */
 	SWITCH_CONFIG_STRING,		/*< (ptr=[char* or char ** (for alloc)] default=char* data=switch_xml_config_string_options_t*) Zero-terminated C-string */
 	SWITCH_CONFIG_BOOL,			/*< (ptr=switch_bool_t* default=switch_bool_t data=NULL) Yes and no */
 	SWITCH_CONFIG_CUSTOM,		/*< (ptr=<custom function data> default=<custom function data> data=switch_xml_config_callback_t) Custom, get value through function pointer  */
@@ -69,6 +70,13 @@ typedef struct {
 	switch_bool_t enforce_max;
 	int max;
 } switch_xml_config_int_options_t;
+
+typedef struct {
+	switch_bool_t enforce_min;
+	uint32_t min;
+	switch_bool_t enforce_max;
+	uint32_t max;
+} switch_xml_config_atomic_options_t;
 
 struct switch_xml_config_item;
 typedef struct switch_xml_config_item switch_xml_config_item_t;
