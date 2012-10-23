@@ -269,13 +269,10 @@ int su_pthreaded_port_start(su_port_create_f *create,
   pthread_mutex_lock(arg.mutex);
   if (pthread_create(&tid, &attr, su_pthread_port_clone_main, &arg) == 0) {
 
-#if defined (WIN32)
-    /* this needs to be revisited when pthread for Windows supports thread priority settings */
-#elif defined (__APPLE__)
-    /* no such function on Apple */
-#else
+#ifdef HAVE_PTHREAD_SETSCHEDPRIO
 	  pthread_setschedprio(tid, 99);
 #endif
+
     pthread_cond_wait(arg.cv, arg.mutex);
     thread_created = 1;
   }
