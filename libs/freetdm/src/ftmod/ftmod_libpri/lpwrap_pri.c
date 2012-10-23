@@ -182,7 +182,7 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 
 
 #define timeval_to_ms(x) \
-	(((ftdm_time_t)(x)->tv_sec * 1000) + (ftdm_time_t)((x)->tv_usec / 1000))
+	(ftdm_time_t)(((x)->tv_sec * 1000) + ((x)->tv_usec / 1000))
 
 int lpwrap_start_timer(struct lpwrap_pri *spri, struct lpwrap_timer *timer, const uint32_t timeout_ms, timeout_handler callback)
 {
