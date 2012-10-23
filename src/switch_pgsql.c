@@ -536,32 +536,32 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_string(switch_pgs
 SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base(switch_pgsql_handle_t *handle, const char *sql, char **err)
 {
 #ifdef SWITCH_HAVE_PGSQL
-	char *err_str = NULL;
+	char *err_str = NULL, *er = NULL;
 
 	handle->affected_rows = 0;
 
 	if (!db_is_up(handle)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not up!\n");
+		er = strdup("Database is not up!");
 		goto error;
 	}
 
 	if (handle->auto_commit == SWITCH_FALSE && handle->in_txn == SWITCH_FALSE) {
 		if (switch_pgsql_send_query(handle, "BEGIN") != SWITCH_PGSQL_SUCCESS) {
+			er = strdup("Error sending BEGIN!");
 			switch_pgsql_finish_results(handle);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error sending BEGIN!\n");
 			goto error;
 		}
 
 		if (switch_pgsql_finish_results(handle) != SWITCH_PGSQL_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error sending BEGIN!\n");
+			er = strdup("Error sending BEGIN!");
 			goto error;
 		}
 		handle->in_txn = SWITCH_TRUE;
 	}
 
 	if (switch_pgsql_send_query(handle, sql) != SWITCH_PGSQL_SUCCESS) {
+		er = strdup("Error sending query!");
 		switch_pgsql_finish_results(handle);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error sending query!\n");
 		goto error;
 	}
 
@@ -571,7 +571,15 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base(switch_pgsql
 	err_str = switch_pgsql_handle_get_error(handle);
 
 	if (zstr(err_str)) {
-		err_str = strdup((char *)"SQL ERROR!");
+		if (zstr(er)) {
+			err_str = strdup((char *)"SQL ERROR!");
+		} else {
+			err_str = er;
+		}
+	} else {
+		if (!zstr(er)) {
+			free(er);
+		}
 	}
 	
 	if (err_str) {

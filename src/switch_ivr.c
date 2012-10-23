@@ -1634,6 +1634,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 		}
 
 		switch_channel_clear_flag(channel, CF_MEDIA_TRANS);
+		switch_core_session_rwunlock(session);
 	}
 
 
