@@ -51,8 +51,8 @@ typedef struct {
 	ftdm_number_t callednum;
 	ftdm_channel_t *fchan;
 	char callingname[80];
-	int proceeding:1;
-	int inuse:1;
+	uint8_t proceeding;
+	uint8_t inuse;
 } passive_call_t;
 
 typedef enum pritap_iface {
