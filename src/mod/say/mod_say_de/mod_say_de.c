@@ -91,26 +91,40 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 		} else {
 			say_file("digits/%d.wav", a);
 		}
-			say_file("digits/hundred.wav");
+		say_file("digits/hundred.wav");
 	}
 
 	if (b) {
 		if (b > 1) {
 			/*german nominativ for "one" in numbers like 21, 171, 4591 is flexed, 2-9 are not*/
-			if ( c == 1 ) {
-				say_file("digits/s-1.wav");
-			} else {
-				say_file("digits/%d.wav", c);
-			} 
-			say_file("currency/and.wav");
+			if (c > 0) {
+				if ( c == 1 ) {
+					say_file("digits/s-1.wav");
+				} else {
+					say_file("digits/%d.wav", c);
+				} 
+				say_file("currency/and.wav");
+			}
 			if (method == SSM_COUNTED) {
-				say_file("digits/h-%d0.wav", b);
+				if ( gender == SSG_MASCULINE ) {
+					say_file("digits/h-%d0_m.wav", b);				
+				} else if  ( gender == SSG_NEUTER ) {
+					say_file("digits/h-%d0_n.wav", b);				
+				} else {
+					say_file("digits/h-%d0.wav", b);
+				}
 			} else {
 				say_file("digits/%d0.wav", b);
 			}
 		} else {
 			if (method == SSM_COUNTED) {
-				say_file("digits/h-%d%d.wav", b, c);
+				if ( gender == SSG_MASCULINE ) {
+					say_file("digits/h-%d%d_m.wav", b,c);				
+				} else if  ( gender == SSG_NEUTER ) {
+					say_file("digits/h-%d%d_n.wav", b,c);				
+				} else {
+					say_file("digits/h-%d%d.wav", b,c);
+				}
 			} else {
 				say_file("digits/%d%d.wav", b, c);
 			}
@@ -120,12 +134,18 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 
 	if (c) {
 		if (method == SSM_COUNTED) {
-			say_file("digits/h-%d.wav", c);
+			if ( gender == SSG_MASCULINE ) {
+				say_file("digits/h-%d_m.wav", c);				
+			} else if  ( gender == SSG_NEUTER ) {
+				say_file("digits/h-%d_n.wav", c);				
+			} else {
+				say_file("digits/h-%d.wav", c);
+			}
 		} else {
 			/*"one" used as an article is feminine or masculine in german, e.g. voicemail-message is feminine
 			only applies to the likes of 1, 101, 1001 etc.*/
 			if ( b == 0  && c == 1 && gender == SSG_FEMININE ) {        
-				say_file("digits/%d_f.wav", c);                         
+				say_file("digits/1_f.wav");                         
 			} else if ( b == 0 && c == 1 && what ) {
 				say_file("digits/s-1.wav");
 			} else {
@@ -249,10 +269,11 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		if (hours) {
-			say_num(hours, SSM_PRONOUNCED);
 			if (hours == 1) {
+				say_file("digits/1_f.wav");
 				say_file("time/hour.wav");
 			} else {
+				say_num(hours, SSM_PRONOUNCED);
 				say_file("time/hours.wav");
 			}
 		} else {
@@ -261,10 +282,11 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		if (minutes) {
-			say_num(minutes, SSM_PRONOUNCED);
 			if (minutes == 1) {
+				say_file("digits/1_f.wav");
 				say_file("time/minute.wav");
 			} else {
+				say_num(minutes, SSM_PRONOUNCED);
 				say_file("time/minutes.wav");
 			}
 		} else {
@@ -272,11 +294,13 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
 			say_file("time/minutes.wav");
 		}
 
+		say_file("currency/and.wav");
 		if (seconds) {
-			say_num(seconds, SSM_PRONOUNCED);
 			if (seconds == 1) {
+				say_file("digits/1_f.wav");
 				say_file("time/second.wav");
 			} else {
+				say_num(seconds, SSM_PRONOUNCED);
 				say_file("time/seconds.wav");
 			}
 		} else {
@@ -309,36 +333,35 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
 	}
 
 	if (say_date) {
+		say_args->gender = SSG_MASCULINE;
 		say_file("time/day-%d.wav", tm.tm_wday);
+		say_num(tm.tm_mday, SSM_COUNTED);		
 		say_file("time/mon-%d.wav", tm.tm_mon);
-		say_num(tm.tm_mday, SSM_COUNTED);
 		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
 	}
 
 	if (say_time) {
-		int32_t hour = tm.tm_hour, pm = 0;
-
-		if (hour > 12) {
-			hour -= 12;
-			pm = 1;
-		} else if (hour == 12) {
-			pm = 1;
-		} else if (hour == 0) {
-			hour = 12;
-			pm = 0;
+		if (say_date) {
+	    	say_file("time/at.wav");
 		}
 
-		say_num(hour, SSM_PRONOUNCED);
-		say_file("time/oclock.wav");
-
-		if (tm.tm_min > 9) {
-			say_num(tm.tm_min, SSM_PRONOUNCED);
-		} else if (tm.tm_min) {
-			say_file("time/oh.wav");
-			say_num(tm.tm_min, SSM_PRONOUNCED);
+		if (tm.tm_hour == 1) {
+			say_file("digits/s-1.wav");
+        } else {
+			say_num(tm.tm_hour, SSM_PRONOUNCED);
+        }
+        say_file("time/oclock.wav");
+ 
+        if (tm.tm_min > 0) {
+			say_file("currency/and.wav");
+			if (tm.tm_min == 1) {
+				say_file("digits/1_f.wav")
+				say_file("time/minute.wav");
+			} else {
+				say_num(tm.tm_min, SSM_PRONOUNCED);
+				say_file("time/minutes.wav");
+			}
 		}
-
-		say_file("time/%s.wav", pm ? "p-m" : "a-m");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -376,23 +399,25 @@ static switch_status_t de_say_money(switch_core_session_t *session, char *tosay,
 		dollars++;
 	}
 
+ 
 	/* Say dollar amount */
-	de_say_general_count(session, dollars, say_args, args);
 	if (atoi(dollars) == 1) {
+		say_file("digits/s-1.wav");
 		say_file("currency/dollar.wav");
 	} else {
+		de_say_general_count(session, dollars, say_args, args);
 		say_file("currency/dollars.wav");
 	}
 
-	/* Say "and" */
-	say_file("currency/and.wav");
-
 	/* Say cents */
 	if (cents) {
-		de_say_general_count(session, cents, say_args, args);
+		/* Say "and" */
+		say_file("currency/and.wav");
 		if (atoi(cents) == 1) {
+			say_file("digits/s-1.wav");
 			say_file("currency/cent.wav");
 		} else {
+			de_say_general_count(session, cents, say_args, args);
 			say_file("currency/cents.wav");
 		}
 	} else {
