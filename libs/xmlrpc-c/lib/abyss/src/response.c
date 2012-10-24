@@ -327,7 +327,12 @@ ResponseWriteStart(TSession * const sessionP) {
 -----------------------------------------------------------------------------*/
     struct _TServer * const srvP = ConnServer(sessionP->connP)->srvP;
 
-    assert(!sessionP->responseStarted);
+    //assert(!sessionP->responseStarted);
+
+	if (sessionP->responseStarted) {
+		TraceMsg("Abyss client called ResponseWriteStart() more than once\n");
+		return FALSE;
+	}
 
     if (sessionP->status == 0) {
         /* Handler hasn't set status.  That's an error */
