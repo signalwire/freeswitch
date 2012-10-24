@@ -281,7 +281,6 @@ static ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 {
 	ftdm_status_t status;
 	ftdm_sigmsg_t sig;
-	ftdm_channel_t *peerchan = ftdmchan->call_data;
 	pritap_t *pritap = ftdmchan->span->signal_data;
 	pritap_t *peer_pritap = pritap->peerspan->signal_data;
 	
@@ -299,17 +298,25 @@ static ftdm_status_t state_advance(ftdm_channel_t *ftdmchan)
 		{			
 			ftdm_channel_t *fchan = ftdmchan;
 
+			/* Destroy the peer data first */
+			if (fchan->call_data) {
+				ftdm_channel_t *peerchan = fchan->call_data;
+				ftdm_channel_t *pchan = peerchan;
+
+				ftdm_channel_lock(peerchan);
+
+				pchan->call_data = NULL;
+				pchan->pflags = 0;
+				ftdm_channel_close(&pchan);
+
+				ftdm_channel_unlock(peerchan);
+			} else {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "No call data?\n");
+			}
+
 			ftdmchan->call_data = NULL;
 			ftdmchan->pflags = 0;
 			ftdm_channel_close(&fchan);
-
-			if (peerchan) {
-				peerchan->call_data = NULL;
-				peerchan->pflags = 0;
-				ftdm_channel_close(&peerchan);
-			} else {
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_CRIT, "Odd, no peer chan\n");
-			}
 		}
 		break;
 
@@ -511,6 +518,7 @@ static void tap_pri_put_pcall(pritap_t *pritap, void *callref)
 static __inline__ ftdm_channel_t *tap_pri_get_fchan(pritap_t *pritap, passive_call_t *pcall, int channel)
 {
 	ftdm_channel_t *fchan = NULL;
+	int err = 0;
 	int chanpos = PRI_CHANNEL(channel);
 	if (!chanpos || chanpos > pritap->span->chan_count) {
 		ftdm_log(FTDM_LOG_CRIT, "Invalid pri tap channel %d requested in span %s\n", channel, pritap->span->name);
@@ -518,14 +526,19 @@ static __inline__ ftdm_channel_t *tap_pri_get_fchan(pritap_t *pritap, passive_ca
 	}
 
 	fchan = pritap->span->channels[PRI_CHANNEL(channel)];
+
+	ftdm_channel_lock(fchan);
+
 	if (ftdm_test_flag(fchan, FTDM_CHANNEL_INUSE)) {
 		ftdm_log(FTDM_LOG_ERROR, "Channel %d requested in span %s is already in use!\n", channel, pritap->span->name);
-		return NULL;
+		err = 1;
+		goto done;
 	}
 
 	if (ftdm_channel_open_chan(fchan) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_ERROR, "Could not open tap channel %d requested in span %s\n", channel, pritap->span->name);
-		return NULL;
+		err = 1;
+		goto done;
 	}
 
 	memset(&fchan->caller_data, 0, sizeof(fchan->caller_data));
@@ -538,6 +551,15 @@ static __inline__ ftdm_channel_t *tap_pri_get_fchan(pritap_t *pritap, passive_ca
 	}
 	ftdm_set_string(fchan->caller_data.ani.digits, pcall->callingani.digits);
 	ftdm_set_string(fchan->caller_data.dnis.digits, pcall->callednum.digits);
+
+done:
+	if (fchan) {
+		ftdm_channel_unlock(fchan);
+	}
+
+	if (err) {
+		return NULL;
+	}
 
 	return fchan;
 }
@@ -641,11 +663,17 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 		pcall->fchan = fchan;
 		peerpcall->fchan = fchan;
 
-		fchan->call_data = peerfchan;
-		peerfchan->call_data = fchan;
+		ftdm_log_chan(fchan, FTDM_LOG_NOTICE, "Starting new tapped call with callref %d\n", crv);
 
-		ftdm_log_chan(pcall->fchan, FTDM_LOG_NOTICE, "Starting new tapped call with callref %d\n", crv);
-		ftdm_set_state_locked(fchan, FTDM_CHANNEL_STATE_RING);
+		ftdm_channel_lock(fchan);
+		fchan->call_data = peerfchan;
+		ftdm_set_state(fchan, FTDM_CHANNEL_STATE_RING);
+		ftdm_channel_unlock(fchan);
+
+		ftdm_channel_lock(peerfchan);
+		peerfchan->call_data = fchan;
+		ftdm_channel_unlock(peerfchan);
+
 		break;
 
 	case PRI_EVENT_ANSWER:
@@ -673,7 +701,8 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 
 	case PRI_EVENT_HANGUP_REQ:
 		crv = tap_pri_get_crv(pritap->pri, e->hangup.call);
-		ftdm_log(FTDM_LOG_DEBUG, "Hangup on channel %s:%d:%d with callref %d\n", 
+
+		ftdm_log(FTDM_LOG_DEBUG, "Hangup on channel %s:%d:%d with callref %d\n",
 				pritap->span->name, PRI_SPAN(e->answer.channel), PRI_CHANNEL(e->answer.channel), crv);
 
 		if (!(pcall = tap_pri_get_pcall_bycrv(pritap, crv))) {
