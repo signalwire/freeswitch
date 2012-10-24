@@ -1471,7 +1471,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	
 	runtime.runlevel++;
 	runtime.sql_buffer_len = 1024 * 32;
-	runtime.max_sql_buffer_len = 1024 * 1024;
+	runtime.max_sql_buffer_len = 1024 * 1024 * 10;
 	runtime.dummy_cng_frame.data = runtime.dummy_data;
 	runtime.dummy_cng_frame.datalen = sizeof(runtime.dummy_data);
 	runtime.dummy_cng_frame.buflen = sizeof(runtime.dummy_data);
