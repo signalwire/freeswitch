@@ -2722,6 +2722,10 @@ SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session
 	char *sql = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
+	if (!switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_get_state(channel) < CS_SOFT_EXECUTE) {
+		return;
+	}
+
 	if (!switch_channel_test_flag(channel, CF_TRACKABLE)) {
 		return;
 	}
@@ -2755,6 +2759,11 @@ SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *profile_name;
 	const char *technology;
+
+
+	if (!switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_get_state(channel) < CS_SOFT_EXECUTE) {
+		return;
+	}
 
 	if (switch_channel_test_flag(channel, CF_RECOVERING) || !switch_channel_test_flag(channel, CF_TRACKABLE)) {
 		return;

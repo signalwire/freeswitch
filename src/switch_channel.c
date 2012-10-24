@@ -3395,6 +3395,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 	switch_channel_audio_sync(channel);
 
+	switch_core_recovery_track(channel->session);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
