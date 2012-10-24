@@ -1677,7 +1677,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 			status = SWITCH_STATUS_SUCCESS;
 
-			switch_ivr_bridge_display(originator_session, originatee_session);
+			//switch_ivr_bridge_display(originator_session, originatee_session);
 
 			/* release the read locks we have on the channels */
 			switch_core_session_rwunlock(originator_session);
