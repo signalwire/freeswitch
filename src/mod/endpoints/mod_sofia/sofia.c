@@ -1523,6 +1523,28 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void
 void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 {
 	sofia_dispatch_event_t *de = *dep; 
+	switch_memory_pool_t *pool;
+	sofia_profile_t *profile = (*dep)->profile;
+	switch_thread_data_t *td;
+
+	switch_core_new_memory_pool(&pool);
+
+	*dep = NULL;
+	de->pool = pool;
+
+	td = switch_core_alloc(pool, sizeof(*td));
+	td->func = sofia_msg_thread_run_once;
+	td->obj = de;
+
+	switch_mutex_lock(profile->ireg_mutex);
+	switch_thread_pool_launch_thread(&td);
+	switch_mutex_unlock(profile->ireg_mutex);
+}
+
+#if 0
+void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
+{
+	sofia_dispatch_event_t *de = *dep; 
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
@@ -1551,6 +1573,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 		sofia_process_dispatch_event(&de);
 	}
 }
+#endif
 
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 {
@@ -2158,153 +2181,63 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
 	uint32_t ireg_loops = profile->ireg_seconds;					/* Number of loop iterations done when we haven't checked for registrations */
 	uint32_t gateway_loops = GATEWAY_SECONDS;			/* Number of loop iterations done when we haven't checked for gateways */
-	void *pop = NULL;					/* queue_pop placeholder */
-	switch_size_t sql_len = 1024 * 32;	/* length of sqlbuf */
-	char *tmp, *sqlbuf = NULL;			/* Buffer for SQL statements */
-	char *sql = NULL;					/* Current SQL statement */
-	switch_time_t last_commit;			/* Last time we committed stuff to the DB */
-	switch_time_t last_check;			/* Last time we did the second-resolution loop that checks various stuff */
-	switch_size_t len = 0;				/* Current length of sqlbuf */
-	uint32_t statements = 0;			/* Number of statements in the current sql buffer */
-	
-	last_commit = last_check = switch_micro_time_now();
-	
-	if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
-		sqlbuf = (char *) malloc(sql_len);
-	}
 
 	sofia_set_pflag_locked(profile, PFLAG_WORKER_RUNNING);
 
-	switch_queue_create(&profile->sql_queue, SOFIA_QUEUE_SIZE, profile->pool);
-
-	/* While we're running, or there is a pending sql statment that we haven't appended to sqlbuf yet, because of a lack of buffer space */
-	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || sql) {
-
-		if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
-			/* Do we have enough statements or is the timeout expired */
-			while (sql || (sofia_test_pflag(profile, PFLAG_RUNNING) && mod_sofia_globals.running == 1 &&
-						switch_micro_time_now() - last_check < 1000000 &&
-				    	(statements == 0 || (statements <= 1024 && (switch_micro_time_now() - last_commit)/1000 < profile->trans_timeout)))) {
+	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING))) {
+		
+		if (profile->watchdog_enabled) {
+			uint32_t event_diff = 0, step_diff = 0, event_fail = 0, step_fail = 0;
+			
+			if (profile->step_timeout) {
+				step_diff = (uint32_t) ((switch_time_now() - profile->last_root_step) / 1000);
 				
-				switch_interval_time_t sleepy_time = !statements ? 1000000 : switch_micro_time_now() - last_commit - profile->trans_timeout*1000;
-
-				if (sleepy_time < 1000 || sleepy_time > 1000000) {
-					sleepy_time = 1000;
-				}
-				
-				if (sql || (switch_queue_pop_timeout(profile->sql_queue, &pop, sleepy_time) == SWITCH_STATUS_SUCCESS && pop)) {
-					switch_size_t newlen;
-					
-					if (!sql) sql = (char *) pop;
-
-					newlen = strlen(sql) + 2 /* strlen(";\n") */ ;
-
-					if (len + newlen + 10 > sql_len) {
-						switch_size_t new_mlen = len + newlen + 10 + 10240;
-						
-						if (new_mlen < SQLLEN) {
-							sql_len = new_mlen;
-							
-							if (!(tmp = realloc(sqlbuf, sql_len))) {
-								abort();
-								break;
-							}
-							sqlbuf = tmp;
-						} else {
-							break;
-						}
-					}
-
-					sprintf(sqlbuf + len, "%s;\n", sql);
-					len += newlen;
-					free(sql);
-					sql = NULL;
-					
-					statements++;
+				if (step_diff > profile->step_timeout) {
+					step_fail = 1;
 				}
 			}
 			
-			/* Execute here */
-			last_commit = switch_micro_time_now();
-			
-			if (len) {
-				//printf("TRANS:\n%s\n", sqlbuf);
-				switch_mutex_lock(profile->ireg_mutex);
-				sofia_glue_actually_execute_sql_trans(profile, sqlbuf, NULL);
-				//sofia_glue_actually_execute_sql(profile, "commit;\n", NULL);
-				switch_mutex_unlock(profile->ireg_mutex);
-				statements = 0;
-				len = 0;
+			if (profile->event_timeout) {
+				event_diff = (uint32_t) ((switch_time_now() - profile->last_sip_event) / 1000);
+				
+				if (event_diff > profile->event_timeout) {
+					event_fail = 1;
+				}
 			}
-
-		} else {
-			if (switch_queue_pop_timeout(profile->sql_queue, &pop, 1000000) == SWITCH_STATUS_SUCCESS && pop) {
-				sofia_glue_actually_execute_sql(profile, (char *) pop, profile->ireg_mutex);
-				free(pop);
+			
+			if (step_fail && profile->event_timeout && !event_fail) {
+				step_fail = 0;
+			}
+			
+			if (event_fail || step_fail) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s: SIP STACK FAILURE DETECTED BY WATCHDOG!\n"
+								  "GOODBYE CRUEL WORLD, I'M LEAVING YOU TODAY....GOODBYE, GOODBYE, GOOD BYE\n", profile->name);
+				switch_yield(2000000);
+				watchdog_triggered_abort();
 			}
 		}
 
-		if (switch_micro_time_now() - last_check >= 1000000) {
-			if (profile->watchdog_enabled) {
-				uint32_t event_diff = 0, step_diff = 0, event_fail = 0, step_fail = 0;
-				
-				if (profile->step_timeout) {
-					step_diff = (uint32_t) ((switch_time_now() - profile->last_root_step) / 1000);
 
-					if (step_diff > profile->step_timeout) {
-						step_fail = 1;
-					}
-				}
-
-				if (profile->event_timeout) {
-					event_diff = (uint32_t) ((switch_time_now() - profile->last_sip_event) / 1000);
-
-					if (event_diff > profile->event_timeout) {
-						event_fail = 1;
-					}
-				}
-
-				if (step_fail && profile->event_timeout && !event_fail) {
-					step_fail = 0;
-				}
-
-				if (event_fail || step_fail) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s: SIP STACK FAILURE DETECTED BY WATCHDOG!\n"
-									  "GOODBYE CRUEL WORLD, I'M LEAVING YOU TODAY....GOODBYE, GOODBYE, GOOD BYE\n", profile->name);
-					switch_yield(2000000);
-					watchdog_triggered_abort();
-				}
-			}
-
-
-			if (!sofia_test_pflag(profile, PFLAG_STANDBY)) {
-				if (++ireg_loops >= IREG_SECONDS) {
-					time_t now = switch_epoch_time_now(NULL);
-					sofia_reg_check_expire(profile, now, 0);
-					ireg_loops = 0;
-				}
-
-				if (++gateway_loops >= GATEWAY_SECONDS) {
-					sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
-					gateway_loops = 0;
-				}
-			
-				sofia_sub_check_gateway(profile, time(NULL));
+		if (!sofia_test_pflag(profile, PFLAG_STANDBY)) {
+			if (++ireg_loops >= IREG_SECONDS) {
+				time_t now = switch_epoch_time_now(NULL);
+				sofia_reg_check_expire(profile, now, 0);
+				ireg_loops = 0;
 			}
 			
-			last_check = switch_micro_time_now();
+			if (++gateway_loops >= GATEWAY_SECONDS) {
+				sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
+				gateway_loops = 0;
+			}
+			
+			sofia_sub_check_gateway(profile, time(NULL));
 		}
-	}
 
-	switch_mutex_lock(profile->ireg_mutex);
-	while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-		sofia_glue_actually_execute_sql(profile, (char *) pop, NULL);
-		free(pop);
+		switch_yield(1000000);
+		
 	}
-	switch_mutex_unlock(profile->ireg_mutex);
 
 	sofia_clear_pflag_locked(profile, PFLAG_WORKER_RUNNING);
-	switch_safe_free(sqlbuf);
 
 	return NULL;
 }
@@ -2409,6 +2342,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	int sanity;
 	switch_thread_t *worker_thread;
 	switch_status_t st;
+	char qname [128] = "";
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
@@ -2596,6 +2530,17 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 
+	switch_snprintf(qname, sizeof(qname), "sofia:%s", profile->name);
+	switch_switch_sql_queue_manager_init_name(qname,
+											  &profile->qm,
+											  1,
+											  profile->odbc_dsn ? profile->odbc_dsn : profile->dbname,
+											  profile->pre_trans_execute,
+											  profile->post_trans_execute,
+											  profile->inner_pre_trans_execute,
+											  profile->inner_post_trans_execute);
+	switch_switch_sql_queue_manager_start(profile->qm);
+
 	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
 								(sofia_test_pflag(profile, PFLAG_TLS)) ? ",_sips._tcp" : "");
@@ -2681,6 +2626,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_mutex_lock(profile->flag_mutex);
 	switch_mutex_unlock(profile->flag_mutex);
+
+	switch_switch_sql_queue_manager_stop(profile->qm);
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
@@ -4405,7 +4352,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 				//sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);		
-				sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
 
 				profile->shutdown_type = "false";
 				profile->local_network = "localnet.auto";
@@ -5107,20 +5053,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_PASS_CALLEE_ID);
 						}
-					} else if (!strcasecmp(var, "sql-in-transactions")) {
-						int tmp = atoi(val);
-
-						if (switch_true(val)) {
-							tmp = 500;
-						}
-
-						if (tmp > 0) {
-							profile->trans_timeout = tmp;
-							sofia_set_pflag(profile, PFLAG_SQL_IN_TRANS);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_SQL_IN_TRANS);
-						}
-
 					} else if (!strcasecmp(var, "enable-soa")) {
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_ENABLE_SOA);
@@ -6102,8 +6034,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 										 switch_str_nil(presence_id), switch_str_nil(presence_data), switch_str_nil(p), (long) now);
 					switch_assert(sql);
 
-					sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-					switch_safe_free(sql);
+					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 				}
 			} else if (status == 200 && (profile->pres_type)) {
@@ -9406,9 +9337,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 		switch_assert(sql);
 
-		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-		switch_safe_free(sql);
-
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 	}
 
 	if (is_nat) {

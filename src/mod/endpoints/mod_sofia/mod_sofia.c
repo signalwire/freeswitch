@@ -4900,8 +4900,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		sql = switch_mprintf("insert into sip_dialogs (uuid,presence_id,presence_data,profile_name,hostname,rcd,call_info_state) "
 							 "values ('%q', '%q', '%q', '%q', '%q', %ld, '')", switch_core_session_get_uuid(nsession),
 							 switch_str_nil(presence_id), switch_str_nil(presence_data), profile->name, mod_sofia_globals.hostname, (long) now);
-		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-		switch_safe_free(sql);
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 	}
 #endif
 

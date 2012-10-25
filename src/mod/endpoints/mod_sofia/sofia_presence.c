@@ -3619,9 +3619,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 			
 			switch_assert(sql != NULL);
-			sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-			switch_safe_free(sql);
-			
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 			sstr = switch_mprintf("terminated;reason=noresource");
 
 		} else {
@@ -4522,8 +4520,7 @@ void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now)
 								  "sub del sql: %s\n", sql);		
 			}
 
-			sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-			switch_safe_free(sql);
+			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
 	}
 

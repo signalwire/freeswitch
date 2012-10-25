@@ -241,7 +241,7 @@ typedef enum {
 	PFLAG_DISABLE_HOLD,
 	PFLAG_AUTO_NAT,
 	PFLAG_SIPCOMPACT,
-	PFLAG_SQL_IN_TRANS,
+	PFLAG_USE_ME,
 	PFLAG_PRESENCE_PRIVACY,
 	PFLAG_PASS_CALLEE_ID,
 	PFLAG_LOG_AUTH_FAIL,
@@ -273,6 +273,7 @@ typedef enum {
 	PFLAG_MWI_USE_REG_CALLID,
 	PFLAG_FIRE_MESSAGE_EVENTS,
 	PFLAG_SEND_DISPLAY_UPDATE,
+	PFLAG_RUNNING_TRANS,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -632,7 +633,7 @@ struct sofia_profile {
 	char *post_trans_execute;
 	char *inner_pre_trans_execute;
 	char *inner_post_trans_execute;	
-	switch_queue_t *sql_queue;
+	switch_sql_queue_manager_t *qm;
 	char *acl[SOFIA_MAX_ACL];
 	char *acl_pass_context[SOFIA_MAX_ACL];
 	char *acl_fail_context[SOFIA_MAX_ACL];

@@ -70,6 +70,12 @@ typedef struct switch_hold_record_s {
 } switch_hold_record_t;
 
 
+typedef struct switch_thread_data_s {
+	switch_thread_start_t func;
+	void *obj;
+	int alloc;
+} switch_thread_data_t;
+
 
 #define MESSAGE_STAMP_FFL(_m) _m->_file = __FILE__; _m->_func = __SWITCH_FUNC__; _m->_line = __LINE__
 
@@ -703,6 +709,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(_In_
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(_In_ switch_core_session_t *session);
 
 
+SWITCH_DECLARE(switch_status_t) switch_thread_pool_launch_thread(switch_thread_data_t **tdp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_core_session_t *session);
 
 /*! 
@@ -2418,14 +2425,18 @@ SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session
 SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_recovery_flush(const char *technology, const char *profile_name);
 
+SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_push_confirm(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup);
 SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_push(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup);
 SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_destroy(switch_sql_queue_manager_t **qmp);
-SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_init(switch_sql_queue_manager_t **qmp, 
-																	 uint32_t numq, const char *dsn,
-																	 const char *pre_trans_execute,
-																	 const char *post_trans_execute,
-																	 const char *inner_pre_trans_execute,
-																	 const char *inner_post_trans_execute);
+SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_init_name(const char *name,
+																		  switch_sql_queue_manager_t **qmp, 
+																		  uint32_t numq, const char *dsn,
+																		  const char *pre_trans_execute,
+																		  const char *post_trans_execute,
+																		  const char *inner_pre_trans_execute,
+																		  const char *inner_post_trans_execute);
+
+#define switch_switch_sql_queue_manager_init(_q, _d, _p1, _p2, _ip1, _ip2) switch_switch_sql_queue_manager_init_name(__FILE__, _q, _d, _p1, _p2, _ip1, _ip2)
 
 SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_start(switch_sql_queue_manager_t *qm);
 SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm);

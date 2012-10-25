@@ -6269,7 +6269,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	};
 		
 	switch_cache_db_handle_t *dbh = sofia_glue_get_db_handle(profile);
-		
+	char *test2;
+
 	if (!dbh) {
 		return 0;
 	}
@@ -6283,19 +6284,21 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 
 	switch_cache_db_test_reactive(dbh, test_sql, "drop table sip_registrations", reg_sql);
-
-
-	if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
-		char *test2 = switch_mprintf("%s;%s", test_sql, test_sql);
+	
+	test2 = switch_mprintf("%s;%s", test_sql, test_sql);
 			
-		if (switch_cache_db_execute_sql(dbh, test2, NULL) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "GREAT SCOTT!!! Cannot execute batched statements!\n"
-							  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n");
-			sofia_clear_pflag(profile, PFLAG_SQL_IN_TRANS);
-
-		}
+	if (switch_cache_db_execute_sql(dbh, test2, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "GREAT SCOTT!!! Cannot execute batched statements!\n"
+						  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n");
+		
+		switch_cache_db_release_db_handle(&dbh);
 		free(test2);
+		free(test_sql);
+		return 0;
 	}
+
+	free(test2);
+
 
 	free(test_sql);
 
@@ -6346,45 +6349,31 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *d_sql = NULL, *sql;
+	char *sql;
 
 	switch_assert(sqlp && *sqlp);
-	sql = *sqlp;
+	sql = *sqlp;	
 
-	if (profile->sql_queue) {
-		if (sql_already_dynamic) {
-			d_sql = sql;
-		} else {
-			d_sql = strdup(sql);
-		}
-
-		switch_assert(d_sql);
-		if ((status = switch_queue_trypush(profile->sql_queue, d_sql)) == SWITCH_STATUS_SUCCESS) {
-			d_sql = NULL;
-		}
-	} else if (sql_already_dynamic) {
-		d_sql = sql;
-	}
-
-	if (status != SWITCH_STATUS_SUCCESS) {
-		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-	}
-
-	switch_safe_free(d_sql);
+	switch_switch_sql_queue_manager_push(profile->qm, sql, 0, !sql_already_dynamic);
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;
 	}
 }
 
+
 void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic)
 {
-	sofia_glue_actually_execute_sql(profile, *sqlp, profile->ireg_mutex);
+	char *sql;
+
+	switch_assert(sqlp && *sqlp);
+	sql = *sqlp;	
+
+	switch_switch_sql_queue_manager_push_confirm(profile->qm, sql, 0, !sql_already_dynamic);
+
 	if (sql_already_dynamic) {
-		switch_safe_free(*sqlp);
+		*sqlp = NULL;
 	}
-	*sqlp = NULL;
 }
 
 
