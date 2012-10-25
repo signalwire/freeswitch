@@ -1471,7 +1471,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	
 	runtime.runlevel++;
 	runtime.sql_buffer_len = 1024 * 32;
-	runtime.max_sql_buffer_len = 1024 * 1024 * 10;
+	runtime.max_sql_buffer_len = 1024 * 1024;
 	runtime.dummy_cng_frame.data = runtime.dummy_data;
 	runtime.dummy_cng_frame.datalen = sizeof(runtime.dummy_data);
 	runtime.dummy_cng_frame.buflen = sizeof(runtime.dummy_data);
@@ -1780,7 +1780,7 @@ static void switch_load_core_config(const char *file)
 					if (tmp < runtime.sql_buffer_len) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Value is not larger than sql-buffer-len\n");
 					} else if (tmp >= 32000 && tmp < 10500000) {
-						runtime.sql_buffer_len = tmp;
+						runtime.max_sql_buffer_len = tmp;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-sql-buffer-len: Value is not within rage 32k to 10m\n");
 					}
