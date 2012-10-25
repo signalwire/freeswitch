@@ -1258,7 +1258,7 @@ static uint32_t qm_ttl(switch_sql_queue_manager_t *qm)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm)
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1278,7 +1278,7 @@ SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_stop(switch_sql_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_start(switch_sql_queue_manager_t *qm)
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_start(switch_sql_queue_manager_t *qm)
 {
 	switch_threadattr_t *thd_attr;
 
@@ -1295,7 +1295,7 @@ SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_start(switch_sql
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_destroy(switch_sql_queue_manager_t **qmp)
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_destroy(switch_sql_queue_manager_t **qmp)
 {
 	switch_sql_queue_manager_t *qm;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1307,7 +1307,7 @@ SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_destroy(switch_s
 	qm = *qmp;
 	*qmp = NULL;
 
-	switch_switch_sql_queue_manager_stop(qm);
+	switch_sql_queue_manager_stop(qm);
 
 	for(i = 0; i < qm->numq; i++) {
 		while (switch_queue_trypop(qm->sql_queue[i], &pop) == SWITCH_STATUS_SUCCESS) {
@@ -1321,7 +1321,7 @@ SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_destroy(switch_s
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_push(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup)
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup)
 {
 
 	if (!qm->thread_running) {
@@ -1343,7 +1343,7 @@ SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_push(switch_sql_
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_push_confirm(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup)
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup)
 {
 	int want, size, x = 0, sanity = 0;
 	uint32_t written;
@@ -1389,7 +1389,7 @@ SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_push_confirm(swi
 
 
 
-SWITCH_DECLARE(switch_status_t) switch_switch_sql_queue_manager_init_name(const char *name,
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *name,
 																		  switch_sql_queue_manager_t **qmp, 
 																		  uint32_t numq, const char *dsn,
 																		  const char *pre_trans_execute,
