@@ -2436,7 +2436,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *n
 																		  const char *inner_pre_trans_execute,
 																		  const char *inner_post_trans_execute);
 
-#define switch_sql_queue_manager_init(_q, _d, _p1, _p2, _ip1, _ip2) switch_sql_queue_manager_init_name(__FILE__, _q, _d, _p1, _p2, _ip1, _ip2)
+#define switch_sql_queue_manager_init(_q, _n, _d, _p1, _p2, _ip1, _ip2) switch_sql_queue_manager_init_name(__FILE__, _q, _n, _d, _p1, _p2, _ip1, _ip2)
 
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_start(switch_sql_queue_manager_t *qm);
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm);
