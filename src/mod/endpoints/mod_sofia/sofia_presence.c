@@ -620,9 +620,15 @@ static int sofia_presence_dialog_callback(void *pArg, int argc, char **argv, cha
 
 	if (argc >= 4) {
 
+		if (argc == 5 && !zstr(argv[4])) {
+			if (!switch_ivr_uuid_exists(argv[5])) {
+				return 0;
+			}
+		}
+
 		if (mod_sofia_globals.debug_presence > 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHECK DIALOG state[%s] status[%s] rpid[%s] pres[%s]\n", 
-							  argv[0], argv[1], argv[2], argv[3]);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHECK DIALOG state[%s] status[%s] rpid[%s] pres[%s] uuid[%s]\n", 
+							  argv[0], argv[1], argv[2], argv[3], argv[4]);
 		}
 
 		if (!helper->hits) {
@@ -668,7 +674,7 @@ static void do_normal_probe(switch_event_t *event)
 	}
 
 	if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
-		sql = switch_mprintf("select state,status,rpid,presence_id from sip_dialogs "
+		sql = switch_mprintf("select state,status,rpid,presence_id,uuid from sip_dialogs "
 							 "where hostname='%q' and profile_name='%q' and call_info_state != 'seized' and "
 							 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
 							 mod_sofia_globals.hostname, profile->name, probe_euser, probe_host, probe_euser, probe_host);
@@ -1061,7 +1067,12 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		status = NULL;
 	}
 
-	if (status && switch_stristr("CS_HANGUP", status)) {
+	if (!zstr(uuid) && !switch_ivr_uuid_exists(uuid)) {
+		status = "CS_HANGUP";
+	}
+
+
+	if ((status && switch_stristr("CS_HANGUP", status)) || (!zstr(uuid) && !switch_ivr_uuid_exists(uuid))) {
 		status = "Available";
 		hup = 1;
 	}
@@ -1279,12 +1290,12 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 				if (zstr(uuid)) {
 				
-					sql = switch_mprintf("select state,status,rpid,presence_id from sip_dialogs "
+					sql = switch_mprintf("select state,status,rpid,presence_id,uuid from sip_dialogs "
 										 "where call_info_state != 'seized' and hostname='%q' and profile_name='%q' and "
 										 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
 										 mod_sofia_globals.hostname, profile->name, euser, host, euser, host);
 				} else {
-					sql = switch_mprintf("select state,status,rpid,presence_id from sip_dialogs "
+					sql = switch_mprintf("select state,status,rpid,presence_id,uuid from sip_dialogs "
 										 "where uuid != '%q' and call_info_state != 'seized' and hostname='%q' and profile_name='%q' and "
 										 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
 										 uuid, mod_sofia_globals.hostname, profile->name, euser, host, euser, host);

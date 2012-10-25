@@ -759,6 +759,8 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 	sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
+	sofia_presence_check_subscriptions(profile, now);
+
 	if (now) {
 		sql = switch_mprintf("delete from sip_dialogs where (expires = -1 or (expires > 0 and expires <= %ld)) and hostname='%q'",
 						(long) now, mod_sofia_globals.hostname);
