@@ -621,7 +621,7 @@ static int sofia_presence_dialog_callback(void *pArg, int argc, char **argv, cha
 	if (argc >= 4) {
 
 		if (argc == 5 && !zstr(argv[4])) {
-			if (!switch_ivr_uuid_exists(argv[5])) {
+			if (!switch_ivr_uuid_exists(argv[4])) {
 				return 0;
 			}
 		}
