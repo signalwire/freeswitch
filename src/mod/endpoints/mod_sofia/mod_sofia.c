@@ -3636,7 +3636,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		switch_xml_reload(&err);
 		stream->write_function(stream, "Reload XML [%s]\n", err);
 
-		if (config_sofia(1, argv[0]) == SWITCH_STATUS_SUCCESS) {
+		if (config_sofia(SOFIA_CONFIG_RESCAN, argv[0]) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "%s started successfully\n", argv[0]);
 		} else {
 			stream->write_function(stream, "Failure starting %s\n", argv[0]);
@@ -3713,7 +3713,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		switch_xml_reload(&err);
 		stream->write_function(stream, "Reload XML [%s]\n", err);
 
-		if (reconfig_sofia(profile) == SWITCH_STATUS_SUCCESS) {
+		if (config_sofia(SOFIA_CONFIG_RESCAN, profile->name) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "+OK scan complete\n");
 		} else {
 			stream->write_function(stream, "-ERR cannot find config for profile %s\n", profile->name);
@@ -5707,8 +5707,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	/* start one message thread */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Starting initial message thread.\n");
 	sofia_msg_thread_start(0);
+	
 
-	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (sofia_init() != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	if (config_sofia(SOFIA_CONFIG_LOAD, NULL) != SWITCH_STATUS_SUCCESS) {
 		mod_sofia_globals.running = 0;
 		return SWITCH_STATUS_GENERR;
 	}

@@ -2672,7 +2672,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
 
 	if (sofia_test_pflag(profile, PFLAG_RESPAWN)) {
-		config_sofia(1, profile->name);
+		config_sofia(SOFIA_CONFIG_RESPAWN, profile->name);
 	}
 	
 	sofia_profile_destroy(profile);
@@ -3389,799 +3389,34 @@ static void config_sofia_profile_urls(sofia_profile_t * profile)
 	}
 }
 
-switch_status_t reconfig_sofia(sofia_profile_t *profile)
+switch_status_t sofia_init(void)
 {
-	switch_xml_t cfg, xml = NULL, xprofile, profiles, gateways_tag, domain_tag, domains_tag, aliases_tag, alias_tag, settings, param;
-	char *cf = "sofia.conf";
-	switch_event_t *params = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile->name);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "reconfig", "true");
-
-	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
-		status = SWITCH_STATUS_FALSE;
-		goto done;
+	su_init();
+	if (sip_update_default_mclass(sip_extend_mclass(NULL)) < 0) {
+		su_deinit();
+		return SWITCH_STATUS_GENERR;
 	}
 
-	if ((settings = switch_xml_child(cfg, "global_settings"))) {
-		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
-			if (!strcasecmp(var, "log-level")) {
-				su_log_set_level(NULL, atoi(val));
-			} else if (!strcasecmp(var, "tracelevel")) {
-				mod_sofia_globals.tracelevel = switch_log_str2level(val);
-			} else if (!strcasecmp(var, "debug-presence")) {
-				mod_sofia_globals.debug_presence = atoi(val);
-			} else if (!strcasecmp(var, "debug-sla")) {
-				mod_sofia_globals.debug_sla = atoi(val);
-			} else if (!strcasecmp(var, "auto-restart")) {
-				mod_sofia_globals.auto_restart = switch_true(val);
-			} else if (!strcasecmp(var, "reg-deny-binding-fetch-and-no-lookup")) {          /* backwards compatibility */
-				mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = switch_true(val);  /* remove when noone complains about the extra lookup */
-				if (switch_true(val)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Enabling reg-deny-binding-fetch-and-no-lookup - this functionality is "
-					                                         "deprecated and will be removed - let FS devs know if you think it should stay\n");
-				}
-			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
-				if( (!strcasecmp(val, "to_host")) || (!strcasecmp(val, "1")) ) {
-					/* old behaviour */
-                                	mod_sofia_globals.rewrite_multicasted_fs_path = 1;
-				} else if (!strcasecmp(val, "original_server_host")) {
-                                	mod_sofia_globals.rewrite_multicasted_fs_path = 2;
-				} else if (!strcasecmp(val, "original_hostname")) {
-                                	mod_sofia_globals.rewrite_multicasted_fs_path = 3;
-				} else {
-					mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
-				}
-			}
-			else if (!strcasecmp(var, "capture-server")) {
-                                 mod_sofia_globals.capture_server = switch_core_strdup(mod_sofia_globals.pool, val);
-                        }
-		}
-	}
-
-	if ((profiles = switch_xml_child(cfg, "profiles"))) {
-		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
-			char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
-			char *xprofiledomain = (char *) switch_xml_attr(xprofile, "domain");
-
-			if (strcasecmp(profile->name, xprofilename)) {
-				continue;
-			}
-
-			/* you could change profile->foo here if it was a minor change like context or dialplan ... */
-			profile->acl_count = 0;
-			profile->nat_acl_count = 0;
-			profile->reg_acl_count = 0;
-			profile->proxy_acl_count = 0;
-			sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
-			sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
-			profile->ib_calls = 0;
-			profile->ob_calls = 0;
-			profile->ib_failed_calls = 0;
-			profile->ob_failed_calls = 0;
-			profile->shutdown_type = "false";
-
-			if (xprofiledomain) {
-				profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
-			}
-
-			if ((settings = switch_xml_child(xprofile, "settings"))) {
-				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-					char *var = (char *) switch_xml_attr_soft(param, "name");
-					char *val = (char *) switch_xml_attr_soft(param, "value");
-					if (!strcasecmp(var, "debug")) {
-						profile->debug = atoi(val);
-					} else if (!strcasecmp(var, "shutdown-on-fail")) {
-						profile->shutdown_type = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "pass-callee-id")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_PASS_CALLEE_ID);
-						}
-					} else if (!strcasecmp(var, "rtp-digit-delay")) {
-						int delay = val ? atoi(val) : 0;
-						
-						if (delay < 0) delay = 0;
-
-						profile->rtp_digit_delay = (uint32_t) delay;
-					} else if (!strcasecmp(var, "watchdog-enabled")) {
-						profile->watchdog_enabled = switch_true(val);
-					} else if (!strcasecmp(var, "watchdog-step-timeout")) {
-						profile->step_timeout = (unsigned long) atol(val);
-					} else if (!strcasecmp(var, "watchdog-event-timeout")) {
-						profile->event_timeout = (unsigned long) atol(val);
-					} else if (!strcasecmp(var, "in-dialog-chat")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_IN_DIALOG_CHAT);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_IN_DIALOG_CHAT);
-						}
-					} else if (!strcasecmp(var, "fire-message-events")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_FIRE_MESSAGE_EVENTS);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_FIRE_MESSAGE_EVENTS);
-						}
-					} else if (!strcasecmp(var, "disable-hold")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_DISABLE_HOLD);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_DISABLE_HOLD);
-						}
-					} else if (!strcasecmp(var, "auto-jitterbuffer-msec")) {
-						int msec = atoi(val);
-						if (msec > 19) {
-							profile->jb_msec = switch_core_strdup(profile->pool, val);
-						}
-					} else if (!strcasecmp(var, "sip-trace")) {
-						if (switch_true(val)) {
-							sofia_set_flag(profile, TFLAG_TPORT_LOG);
-						} else {
-							sofia_clear_flag(profile, TFLAG_TPORT_LOG);
-						}
-						nua_set_params(profile->nua, TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)), TAG_END());
-                                        } else if (!strcasecmp(var, "sip-capture")) {
-                                                if (switch_true(val)) {
-                                                        sofia_set_flag(profile, TFLAG_CAPTURE);
-                                                } else {
-                                                        sofia_clear_flag(profile, TFLAG_CAPTURE);
-                                                }
-                                                nua_set_params(profile->nua, TPTAG_CAPT(sofia_test_flag(profile, TFLAG_CAPTURE) ? mod_sofia_globals.capture_server : NULL), TAG_END());						
-					} else if (!strcasecmp(var, "send-message-query-on-register")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
-						} else if (!strcasecmp(val, "first-only")) {
-							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
-							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
-							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
-						}
-					} else if (!strcasecmp(var, "auto-rtp-bugs")) {
-						sofia_glue_parse_rtp_bugs(&profile->auto_rtp_bugs, val);
-					} else if (!strcasecmp(var, "manual-rtp-bugs")) {
-						sofia_glue_parse_rtp_bugs(&profile->manual_rtp_bugs, val);
-					} else if (!strcasecmp(var, "registration-thread-frequency")) {
-						profile->ireg_seconds = atoi(val);
-						if (profile->ireg_seconds < 0) {
-							profile->ireg_seconds = IREG_SECONDS;
-						}
-					} else if (!strcasecmp(var, "user-agent-string")) {
-						profile->user_agent = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "auto-restart")) {
-						profile->auto_restart = switch_true(val);
-					} else if (!strcasecmp(var, "log-auth-failures")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_LOG_AUTH_FAIL);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_LOG_AUTH_FAIL);
-						}
-					} else if (!strcasecmp(var, "confirm-blind-transfer")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
-						}
-					} else if (!strcasecmp(var, "send-display-update")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
-						}
-					} else if (!strcasecmp(var, "mwi-use-reg-callid")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_MWI_USE_REG_CALLID);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_MWI_USE_REG_CALLID);
-						}
-					} else if (!strcasecmp(var, "presence-proto-lookup")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_PRESENCE_MAP);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_PRESENCE_MAP);
-						}
-					} else if (!strcasecmp(var, "profile-standby")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_STANDBY);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_STANDBY);
-						}
-					} else if (!strcasecmp(var, "liberal-dtmf")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_LIBERAL_DTMF);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_LIBERAL_DTMF);
-						}
-					} else if (!strcasecmp(var, "forward-unsolicited-mwi-notify")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
-						}
-					} else if (!strcasecmp(var, "t38-passthru")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_T38_PASSTHRU);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_T38_PASSTHRU);
-						}
-					} else if (!strcasecmp(var, "presence-disable-early")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY);
-						}
-					} else if (!strcasecmp(var, "ignore-183nosdp")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_IGNORE_183NOSDP);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_IGNORE_183NOSDP);
-						}
-					} else if (!strcasecmp(var, "renegotiate-codec-on-hold")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_RENEG_ON_HOLD);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_RENEG_ON_HOLD);
-						}
-					} else if (!strcasecmp(var, "renegotiate-codec-on-reinvite")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_RENEG_ON_REINVITE);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_RENEG_ON_REINVITE);
-						}
-					} else if (!strcasecmp(var, "presence-probe-on-register")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_PRESENCE_PROBE_ON_REGISTER);
-						}
-
-					} else if (!strcasecmp(var, "send-presence-on-register")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
-						} else if (!strcasecmp(val, "first-only")) {
-							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
-							sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_REGISTER);
-							sofia_clear_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
-						}
-					} else if (!strcasecmp(var, "cid-in-1xx")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_CID_IN_1XX);
-						}
-					} else if (!strcasecmp(var, "dtmf-type")) {
-						if (!strcasecmp(val, "rfc2833")) {
-							profile->dtmf_type = DTMF_2833;
-						} else if (!strcasecmp(val, "info")) {
-							profile->dtmf_type = DTMF_INFO;
-						} else {
-							profile->dtmf_type = DTMF_NONE;
-						}
-					} else if (!strcasecmp(var, "caller-id-type")) {
-						profile->cid_type = sofia_cid_name2type(val);
-					} else if (!strcasecmp(var, "record-template")) {
-						profile->record_template = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "record-path")) {
-						profile->record_path = switch_core_strdup(profile->pool, val);
-					} else if ((!strcasecmp(var, "inbound-no-media") || !strcasecmp(var, "inbound-bypass-media"))) {
-						if (switch_true(val)) {
-							sofia_set_flag(profile, TFLAG_INB_NOMEDIA);
-						} else {
-							sofia_clear_flag(profile, TFLAG_INB_NOMEDIA);
-						}
-					} else if (!strcasecmp(var, "force-subscription-expires")) {
-						int tmp = atoi(val);
-						if (tmp > 0) {
-							profile->force_subscription_expires = tmp;
-						}
-					} else if (!strcasecmp(var, "force-publish-expires")) {
-						int tmp = atoi(val);
-						if (tmp > 0) {
-							profile->force_publish_expires = tmp;
-						}
-					} else if (!strcasecmp(var, "inbound-late-negotiation")) {
-						if (switch_true(val)) {
-							sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
-						} else {
-							sofia_clear_flag(profile, TFLAG_LATE_NEGOTIATION);
-						}
-					} else if (!strcasecmp(var, "inbound-proxy-media")) {
-						if (switch_true(val)) {
-							sofia_set_flag(profile, TFLAG_PROXY_MEDIA);
-						} else {
-							sofia_clear_flag(profile, TFLAG_PROXY_MEDIA);
-						}
-					} else if (!strcasecmp(var, "inbound-zrtp-passthru")) {
-						if (switch_true(val)) {
-							sofia_set_flag(profile, TFLAG_ZRTP_PASSTHRU);
-						} else {
-							sofia_clear_flag(profile, TFLAG_ZRTP_PASSTHRU);
-						}
-					} else if (!strcasecmp(var, "inbound-use-callid-as-uuid")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_CALLID_AS_UUID);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_CALLID_AS_UUID);
-						}
-					} else if (!strcasecmp(var, "inbound-reg-in-new-thread")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_THREAD_PER_REG);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_THREAD_PER_REG);
-						}
-					} else if (!strcasecmp(var, "rtp-autoflush-during-bridge")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
-						}
-					} else if (!strcasecmp(var, "rtp-notimer-during-bridge")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE);
-						}
-					} else if (!strcasecmp(var, "manual-redirect")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_MANUAL_REDIRECT);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_MANUAL_REDIRECT);
-						}
-					} else if (!strcasecmp(var, "outbound-use-uuid-as-callid")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_UUID_AS_CALLID);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_UUID_AS_CALLID);
-						}
-					} else if (!strcasecmp(var, "NDLB-received-in-nat-reg-contact")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT);
-						}
-					} else if (!strcasecmp(var, "NDLB-allow-bad-iananame")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_ALLOW_BAD_IANANAME;
-						} else {
-							profile->ndlb &= ~PFLAG_NDLB_ALLOW_BAD_IANANAME;
-						}
-					} else if (!strcasecmp(var, "NDLB-expires-in-register-response")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE;
-						} else {
-							profile->ndlb &= ~PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE;
-						}
-					} else if (!strcasecmp(var, "NDLB-allow-crypto-in-avp")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP;
-						} else {
-							profile->ndlb &= ~PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP;
-						}
-					} else if (!strcasecmp(var, "NDLB-allow-nondup-sdp")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
-						} else {
-							profile->ndlb &= ~PFLAG_NDLB_ALLOW_NONDUP_SDP;
-						}
-					} else if (!strcasecmp(var, "aggressive-nat-detection")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION);
-						}
-					} else if (!strcasecmp(var, "disable-rtp-auto-adjust")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_DISABLE_RTP_AUTOADJ);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_DISABLE_RTP_AUTOADJ);
-						}
-					} else if (!strcasecmp(var, "NDLB-support-asterisk-missing-srtp-auth")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_DISABLE_SRTP_AUTH);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_DISABLE_SRTP_AUTH);
-						}
-					} else if (!strcasecmp(var, "NDLB-funny-stun")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_FUNNY_STUN);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_FUNNY_STUN);
-						}
-					} else if (!strcasecmp(var, "stun-enabled")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_STUN_ENABLED);
-						}
-					} else if (!strcasecmp(var, "stun-auto-disable")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_STUN_AUTO_DISABLE);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_STUN_AUTO_DISABLE);
-						}
-					} else if (!strcasecmp(var, "apply-nat-acl")) {
-						if (profile->nat_acl_count < SOFIA_MAX_ACL) {
-							if (!profile->extsipip && switch_check_network_list_ip(profile->sipip, val)) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not adding acl %s because it's the local network\n", val);
-							} else {
-								profile->nat_acl[profile->nat_acl_count++] = switch_core_strdup(profile->pool, val);
-							}
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
-						}
-					} else if (!strcasecmp(var, "apply-inbound-acl")) {
-						if (profile->acl_count < SOFIA_MAX_ACL) {
-							char *list, *pass = NULL, *fail = NULL;
-
-							list = switch_core_strdup(profile->pool, val);
-
-							if ((pass = strchr(list, ':'))) {
-								*pass++ = '\0';
-								if ((fail = strchr(pass, ':'))) {
-									*fail++ = '\0';
-								}
-
-								if (zstr(pass)) pass = NULL;
-								if (zstr(fail)) fail = NULL;
-
-								profile->acl_pass_context[profile->acl_count] = pass;
-								profile->acl_fail_context[profile->acl_count] = fail;
-							}
-
-							profile->acl[profile->acl_count++] = list;
-
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
-						}
-					} else if (!strcasecmp(var, "apply-proxy-acl")) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "apply proxy acl [%s]\n", val);
-						if (profile->proxy_acl_count < SOFIA_MAX_ACL) {
-							profile->proxy_acl[profile->proxy_acl_count++] = switch_core_strdup(profile->pool, val);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
-						}
-					} else if (!strcasecmp(var, "apply-register-acl")) {
-						if (profile->reg_acl_count < SOFIA_MAX_ACL) {
-							profile->reg_acl[profile->reg_acl_count++] = switch_core_strdup(profile->pool, val);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
-						}
-					} else if (!strcasecmp(var, "user-agent-filter")) {
-						profile->user_agent_filter = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "max-registrations-per-extension")) {
-						profile->max_registrations_perext = atoi(val);
-					} else if (!strcasecmp(var,"presence-privacy")) {
-						profile->presence_privacy = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "rfc2833-pt")) {
-						profile->te = (switch_payload_t) atoi(val);
-					} else if (!strcasecmp(var, "cng-pt") && !(sofia_test_pflag(profile, PFLAG_SUPPRESS_CNG))) {
-						profile->cng_pt = (switch_payload_t) atoi(val);
-					} else if (!strcasecmp(var, "vad")) {
-						if (!strcasecmp(val, "in")) {
-							sofia_set_flag(profile, TFLAG_VAD_IN);
-						} else if (!strcasecmp(val, "out")) {
-							sofia_set_flag(profile, TFLAG_VAD_OUT);
-						} else if (!strcasecmp(val, "both")) {
-							sofia_set_flag(profile, TFLAG_VAD_IN);
-							sofia_set_flag(profile, TFLAG_VAD_OUT);
-						} else if (strcasecmp(val, "none")) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid option %s for VAD\n", val);
-						}
-					} else if (!strcasecmp(var, "unregister-on-options-fail")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL);
-						}
-					} else if (!strcasecmp(var, "require-secure-rtp")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_SECURE);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_SECURE);
-						}
-					} else if (!strcasecmp(var, "multiple-registrations")) {
-						if (!strcasecmp(val, "call-id")) {
-							sofia_set_pflag(profile, PFLAG_MULTIREG);
-						} else if (!strcasecmp(val, "contact") || switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_MULTIREG);
-							sofia_set_pflag(profile, PFLAG_MULTIREG_CONTACT);
-						} else if (switch_true(val)) {
-							sofia_clear_pflag(profile, PFLAG_MULTIREG);
-							//sofia_clear_pflag(profile, PFLAG_MULTIREG_CONTACT);
-						}
-					} else if (!strcasecmp(var, "supress-cng") || !strcasecmp(var, "suppress-cng")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_SUPPRESS_CNG);
-							profile->cng_pt = 0;
-						} else {
-							sofia_clear_pflag(profile, PFLAG_SUPPRESS_CNG);
-						}
-					} else if (!strcasecmp(var, "NDLB-broken-auth-hash")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_BROKEN_AUTH_HASH;
-						} else {
-							profile->ndlb &= ~PFLAG_NDLB_BROKEN_AUTH_HASH;
-						}
-					} else if (!strcasecmp(var, "NDLB-sendrecv-in-session")) {
-						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_SENDRECV_IN_SESSION;
-						} else {
-							profile->ndlb &= ~PFLAG_NDLB_SENDRECV_IN_SESSION;
-						}
-					} else if (!strcasecmp(var, "pass-rfc2833")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_PASS_RFC2833);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_PASS_RFC2833);
-						}
-					} else if (!strcasecmp(var, "rtp-autoflush")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_AUTOFLUSH);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_AUTOFLUSH);
-						}
-					} else if (!strcasecmp(var, "rtp-autofix-timing")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_AUTOFIX_TIMING);
-						}
-					} else if (!strcasecmp(var, "nat-options-ping")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_NAT_OPTIONS_PING);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_NAT_OPTIONS_PING);
-						}
-					} else if (!strcasecmp(var, "all-reg-options-ping")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING);
-						}
-					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
-						if (!strcasecmp(val, "greedy")) {
-							sofia_set_pflag(profile, PFLAG_GREEDY);
-						} else if (!strcasecmp(val, "scrooge")) {
-							sofia_set_pflag(profile, PFLAG_GREEDY);
-							sofia_set_pflag(profile, PFLAG_SCROOGE);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_SCROOGE);
-							sofia_clear_pflag(profile, PFLAG_GREEDY);
-						}
-					} else if (!strcasecmp(var, "disable-transcoding")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_DISABLE_TRANSCODING);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_DISABLE_TRANSCODING);
-						}
-					} else if (!strcasecmp(var, "rtp-rewrite-timestamps")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_REWRITE_TIMESTAMPS);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_REWRITE_TIMESTAMPS);
-						}
-					} else if (!strcasecmp(var, "auth-calls")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_AUTH_CALLS);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_AUTH_CALLS);
-						}
-					} else if (!strcasecmp(var, "extended-info-parsing")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
-						}
-					} else if (!strcasecmp(var, "context")) {
-						profile->context = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "local-network-acl")) {
-						if (!strcasecmp(val, "none")) {
-							profile->local_network = NULL;
-						} else {
-							profile->local_network = switch_core_strdup(profile->pool, val);
-						}
-					} else if (!strcasecmp(var, "force-register-domain")) {
-						profile->reg_domain = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "force-subscription-domain")) {
-						profile->sub_domain = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "force-register-db-domain")) {
-						profile->reg_db_domain = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "hold-music")) {
-						profile->hold_music = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "outbound-proxy")) {
-						profile->outbound_proxy = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "rtcp-audio-interval-msec")) {
-						profile->rtcp_audio_interval_msec = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "rtcp-video-interval-msec")) {
-						profile->rtcp_video_interval_msec = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "session-timeout")) {
-						int v_session_timeout = atoi(val);
-						if (v_session_timeout >= 0) {
-							profile->session_timeout = v_session_timeout;
-						}
-					} else if (!strcasecmp(var, "rtp-timeout-sec")) {
-						int v = atoi(val);
-						if (v >= 0) {
-							profile->rtp_timeout_sec = v;
-						}
-					} else if (!strcasecmp(var, "rtp-hold-timeout-sec")) {
-						int v = atoi(val);
-						if (v >= 0) {
-							profile->rtp_hold_timeout_sec = v;
-						}
-					} else if (!strcasecmp(var, "nonce-ttl")) {
-						profile->nonce_ttl = atoi(val);
-					} else if (!strcasecmp(var, "dialplan")) {
-						profile->dialplan = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "max-calls")) {
-						profile->max_calls = atoi(val);
-					} else if (!strcasecmp(var, "codec-prefs")) {
-						profile->inbound_codec_string = switch_core_strdup(profile->pool, val);
-						profile->outbound_codec_string = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "inbound-codec-prefs")) {
-						profile->inbound_codec_string = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "outbound-codec-prefs")) {
-						profile->outbound_codec_string = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "challenge-realm")) {
-						profile->challenge_realm = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "dtmf-duration")) {
-						uint32_t dur = atoi(val);
-						if (dur >= switch_core_min_dtmf_duration(0) && dur <= switch_core_max_dtmf_duration(0)) {
-							profile->dtmf_duration = dur;
-						} else {
-							profile->dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds, using default of %d!\n",
-											  SWITCH_DEFAULT_DTMF_DURATION);
-						}
-					} else if (!strcasecmp(var, "timer-T1")) {
-						int v = atoi(val);
-						if (v > 0) {
-							profile->timer_t1 = v;
-						} else {
-							profile->timer_t1 = 500;
-						}
-						nua_set_params(profile->nua, NTATAG_SIP_T1(profile->timer_t1), TAG_END());
-					} else if (!strcasecmp(var, "timer-T1X64")) {
-						int v = atoi(val);
-						if (v > 0) {
-							profile->timer_t1x64 = v;
-						} else {
-							profile->timer_t1x64 = 32000;
-						}
-						nua_set_params(profile->nua, NTATAG_SIP_T1X64(profile->timer_t1x64), TAG_END());
-					} else if (!strcasecmp(var, "timer-T2")) {
-						int v = atoi(val);
-						if (v > 0) {
-							profile->timer_t2 = v;
-						} else {
-							profile->timer_t2 = 4000;
-						}
-						nua_set_params(profile->nua, NTATAG_SIP_T2(profile->timer_t2), TAG_END());
-					} else if (!strcasecmp(var, "timer-T4")) {
-						int v = atoi(val);
-						if (v > 0) {
-							profile->timer_t4 = v;
-						} else {
-							profile->timer_t4 = 4000;
-						}
-						nua_set_params(profile->nua, NTATAG_SIP_T4(profile->timer_t4), TAG_END());
-					} else if (!strcasecmp(var, "sip-options-respond-503-on-busy")) {
-                                                if (switch_true(val)) {
-                                                        sofia_set_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
-                                                } else {
-                                                        sofia_clear_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY);
-                                                }
-					} else if (!strcasecmp(var, "sip-force-expires")) {
-						int32_t sip_force_expires = atoi(val);
-						if (sip_force_expires >= 0) {
-							profile->sip_force_expires = sip_force_expires;
-						} else {
-							profile->sip_force_expires = 0;
-						}
-					} else if (!strcasecmp(var, "sip-expires-max-deviation")) {
-						int32_t sip_expires_max_deviation = atoi(val);
-						if (sip_expires_max_deviation >= 0) {
-							profile->sip_expires_max_deviation = sip_expires_max_deviation;
-						} else {
-							profile->sip_expires_max_deviation = 0;
-						}
-					} else if (!strcasecmp(var, "p-asserted-id-parse")) {
-						if (!strncasecmp(val, "default", 7)) {
-							profile->paid_type = PAID_DEFAULT;
-						} else if (!strncasecmp(val, "user-only", 9)) {
-							profile->paid_type = PAID_USER;
-						} else if (!strncasecmp(val, "user-domain", 11)) {
-							profile->paid_type = PAID_USER_DOMAIN;
-						} else if (!strncasecmp(val, "verbatim", 8)) {
-							profile->paid_type = PAID_VERBATIM;
-						} else {
-							profile->paid_type = PAID_DEFAULT;
-						}
-					}
-				}
-			}
-
-			if (sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU)) {
-				sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
-			}
-
-			if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
-				parse_gateways(profile, gateways_tag);
-			}
-
-			status = SWITCH_STATUS_SUCCESS;
-
-			if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
-				switch_event_t *xml_params;
-				switch_event_create(&xml_params, SWITCH_EVENT_REQUEST_PARAMS);
-				switch_assert(xml_params);
-				switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "purpose", "gateways");
-				switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "profile", profile->name);
-
-				for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
-					switch_xml_t droot, x_domain_tag;
-					const char *dname = switch_xml_attr_soft(domain_tag, "name");
-					const char *parse = switch_xml_attr_soft(domain_tag, "parse");
-					const char *alias = switch_xml_attr_soft(domain_tag, "alias");
-
-					if (!zstr(dname)) {
-						if (!strcasecmp(dname, "all")) {
-							switch_xml_t xml_root, x_domains;
-							if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-								for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
-									dname = switch_xml_attr_soft(x_domain_tag, "name");
-									parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
-								}
-								switch_xml_free(xml_root);
-							}
-						} else if (switch_xml_locate_domain(dname, xml_params, &droot, &x_domain_tag) == SWITCH_STATUS_SUCCESS) {
-							parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
-							switch_xml_free(droot);
-						}
-					}
-				}
-
-				switch_event_destroy(&xml_params);
-			}
-
-			if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
-				for (alias_tag = switch_xml_child(aliases_tag, "alias"); alias_tag; alias_tag = alias_tag->next) {
-					char *aname = (char *) switch_xml_attr_soft(alias_tag, "name");
-					if (!zstr(aname)) {
-
-						if (sofia_glue_add_profile(switch_core_strdup(profile->pool, aname), profile) == SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Alias [%s] for profile [%s]\n", aname, profile->name);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Alias [%s] for profile [%s] (already exists)\n",
-											  aname, profile->name);
-						}
-					}
-				}
-			}
-		}
-	}
-
-  done:
-
-	if (xml) {
-		switch_xml_free(xml);
-	}
-
-	switch_event_destroy(&params);
-
-	return status;
+	/* Redirect loggers in sofia */
+	su_log_redirect(su_log_default, logger, NULL);
+	su_log_redirect(tport_log, logger, NULL);
+	su_log_redirect(iptsec_log, logger, NULL);
+	su_log_redirect(nea_log, logger, NULL);
+	su_log_redirect(nta_log, logger, NULL);
+	su_log_redirect(nth_client_log, logger, NULL);
+	su_log_redirect(nth_server_log, logger, NULL);
+	su_log_redirect(nua_log, logger, NULL);
+	su_log_redirect(soa_log, logger, NULL);
+	su_log_redirect(sresolv_log, logger, NULL);
+#ifdef HAVE_SOFIA_STUN
+	su_log_redirect(stun_log, logger, NULL);
+#endif
+	
+	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t config_sofia(int reload, char *profile_name)
+
+switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 {
 	char *cf = "sofia.conf";
 	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles;
@@ -4190,40 +3425,25 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	char url[512] = "";
 	int profile_found = 0;
 	switch_event_t *params = NULL;
+	sofia_profile_t *profile_already_started = NULL;
 
-	if (!reload) {
-		su_init();
-		if (sip_update_default_mclass(sip_extend_mclass(NULL)) < 0) {
-			su_deinit();
-			return SWITCH_STATUS_FALSE;
-		}
-
-		/* Redirect loggers in sofia */
-		su_log_redirect(su_log_default, logger, NULL);
-		su_log_redirect(tport_log, logger, NULL);
-		su_log_redirect(iptsec_log, logger, NULL);
-		su_log_redirect(nea_log, logger, NULL);
-		su_log_redirect(nta_log, logger, NULL);
-		su_log_redirect(nth_client_log, logger, NULL);
-		su_log_redirect(nth_server_log, logger, NULL);
-		su_log_redirect(nua_log, logger, NULL);
-		su_log_redirect(soa_log, logger, NULL);
-		su_log_redirect(sresolv_log, logger, NULL);
-#ifdef HAVE_SOFIA_STUN
-		su_log_redirect(stun_log, logger, NULL);
-#endif
-	}
-	
 	if (!zstr(profile_name) && (profile = sofia_glue_find_profile(profile_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile [%s] Already exists.\n", switch_str_nil(profile_name));
-		status = SWITCH_STATUS_FALSE;
-		sofia_glue_release_profile(profile);
-		return status;
+		if (reload == SOFIA_CONFIG_RESCAN) {
+			profile_already_started = profile;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Profile [%s] Already exists.\n", switch_str_nil(profile_name));
+			status = SWITCH_STATUS_FALSE;
+			sofia_glue_release_profile(profile);
+			return status;
+		}
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", profile_name);
+	if (reload == SOFIA_CONFIG_RESCAN) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "reconfig", "true");
+	}
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -4294,79 +3514,101 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile_found = 1;
 					}
 				}
+				
+				if (!profile_already_started) {
 
-				/* Setup the pool */
-				if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-					sofia_profile_start_failure(NULL, xprofilename);
-					goto done;
+					/* Setup the pool */
+					if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+						sofia_profile_start_failure(NULL, xprofilename);
+						goto done;
+					}
+						
+					if (!(profile = (sofia_profile_t *) switch_core_alloc(pool, sizeof(*profile)))) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+						sofia_profile_start_failure(NULL, xprofilename);
+						goto done;
+					}
+					
+					profile->tls_verify_policy = TPTLS_VERIFY_NONE;
+					/* lib default */
+					profile->tls_verify_depth = 2;
+
+
+					switch_mutex_init(&profile->gw_mutex, SWITCH_MUTEX_NESTED, pool);
+
+					profile->trans_timeout = 100;
+
+					profile->auto_rtp_bugs = RTP_BUG_CISCO_SKIP_MARK_BIT_2833;// | RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
+
+					profile->pool = pool;
+					profile->user_agent = SOFIA_USER_AGENT;
+
+					profile->name = switch_core_strdup(profile->pool, xprofilename);
+					switch_snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
+
+					if (xprofiledomain) {
+						profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
+					}
+
+					profile->dbname = switch_core_strdup(profile->pool, url);
+					switch_core_hash_init(&profile->chat_hash, profile->pool);
+					switch_core_hash_init(&profile->mwi_debounce_hash, profile->pool);
+					switch_thread_rwlock_create(&profile->rwlock, profile->pool);
+					switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+					profile->dtmf_duration = 100;
+					profile->rtp_digit_delay = 40;
+					profile->sip_force_expires = 0;
+					profile->sip_expires_max_deviation = 0;
+					profile->tls_version = 0;
+					profile->tls_timeout = 300;
+					profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
+					profile->server_rport_level = 1;
+					profile->client_rport_level = 1;
+					sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
+					sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
+					profile->auto_restart = 1;
+					sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
+					sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+					profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
+					sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
+					sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
+					sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
+					//sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);		
+
+					profile->shutdown_type = "false";
+					profile->local_network = "localnet.auto";
+					sofia_set_flag(profile, TFLAG_ENABLE_SOA);
+					sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
+					profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
+					profile->te = 101;
+					profile->ireg_seconds = IREG_SECONDS;
+					profile->paid_type = PAID_DEFAULT;
+
+
+					profile->tls_verify_policy = TPTLS_VERIFY_NONE;
+					/* lib default */
+					profile->tls_verify_depth = 2;
+					profile->tls_verify_date = SWITCH_TRUE;
+				} else {
+
+					/* you could change profile->foo here if it was a minor change like context or dialplan ... */
+					profile->acl_count = 0;
+					profile->nat_acl_count = 0;
+					profile->reg_acl_count = 0;
+					profile->proxy_acl_count = 0;
+					sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
+					sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
+					profile->ib_calls = 0;
+					profile->ob_calls = 0;
+					profile->ib_failed_calls = 0;
+					profile->ob_failed_calls = 0;
+					profile->shutdown_type = "false";
+
+					if (xprofiledomain) {
+						profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
+					}
 				}
-
-				if (!(profile = (sofia_profile_t *) switch_core_alloc(pool, sizeof(*profile)))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-					sofia_profile_start_failure(NULL, xprofilename);
-					goto done;
-				}
-				profile->tls_verify_policy = TPTLS_VERIFY_NONE;
-				/* lib default */
-				profile->tls_verify_depth = 2;
-
-
-				switch_mutex_init(&profile->gw_mutex, SWITCH_MUTEX_NESTED, pool);
-
-				profile->trans_timeout = 100;
-
-				profile->auto_rtp_bugs = RTP_BUG_CISCO_SKIP_MARK_BIT_2833;// | RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
-
-				profile->pool = pool;
-				profile->user_agent = SOFIA_USER_AGENT;
-
-				profile->name = switch_core_strdup(profile->pool, xprofilename);
-				switch_snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
-
-				if (xprofiledomain) {
-					profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
-				}
-
-				profile->dbname = switch_core_strdup(profile->pool, url);
-				switch_core_hash_init(&profile->chat_hash, profile->pool);
-				switch_core_hash_init(&profile->mwi_debounce_hash, profile->pool);
-				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
-				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
-				profile->dtmf_duration = 100;
-				profile->rtp_digit_delay = 40;
-				profile->sip_force_expires = 0;
-				profile->sip_expires_max_deviation = 0;
-				profile->tls_version = 0;
-				profile->tls_timeout = 300;
-				profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
-				profile->server_rport_level = 1;
-				profile->client_rport_level = 1;
-				sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
-				sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
-				profile->auto_restart = 1;
-				sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
-				sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
-				profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
-				sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
-				sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
-				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
-				//sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);		
-
-				profile->shutdown_type = "false";
-				profile->local_network = "localnet.auto";
-				sofia_set_flag(profile, TFLAG_ENABLE_SOA);
-				sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
-				profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
-				profile->te = 101;
-				profile->ireg_seconds = IREG_SECONDS;
-				profile->paid_type = PAID_DEFAULT;
-
-
-                                profile->tls_verify_policy = TPTLS_VERIFY_NONE;
-                                /* lib default */
-                                profile->tls_verify_depth = 2;
-				profile->tls_verify_date = SWITCH_TRUE;
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -5343,7 +4585,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				}
 
 			}
-			if (profile) {
+			if (profile && !profile_already_started) {
 				switch_xml_t aliases_tag, alias_tag;
 
 				if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
@@ -5381,6 +4623,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		}
 	}
   done:
+
+	if (profile_already_started) {
+		sofia_glue_release_profile(profile_already_started);
+	}
 
 	switch_event_destroy(&params);
 

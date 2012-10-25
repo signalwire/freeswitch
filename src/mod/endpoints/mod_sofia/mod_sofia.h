@@ -139,6 +139,12 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/uniqueid.h>
 
 typedef enum {
+	SOFIA_CONFIG_LOAD = 0,
+	SOFIA_CONFIG_RESCAN,
+	SOFIA_CONFIG_RESPAWN
+} sofia_config_t;
+
+typedef enum {
 	DTMF_2833,
 	DTMF_INFO,
 	DTMF_NONE
@@ -966,7 +972,7 @@ void sofia_presence_event_handler(switch_event_t *event);
 
 
 void sofia_presence_cancel(void);
-switch_status_t config_sofia(int reload, char *profile_name);
+switch_status_t config_sofia(sofia_config_t reload, char *profile_name);
 void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_dispatch_event_t *de,
 							  sofia_regtype_t regtype, const char *realm, int stale);
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization,
@@ -1118,7 +1124,6 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force);
 char *sofia_glue_get_register_host(const char *uri);
 const char *sofia_glue_strip_proto(const char *uri);
-switch_status_t reconfig_sofia(sofia_profile_t *profile);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);
 void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *stream, int up);
 void sofia_glue_del_every_gateway(sofia_profile_t *profile);
@@ -1199,6 +1204,7 @@ void crtp_init(switch_loadable_module_interface_t *module_interface);
 int sofia_recover_callback(switch_core_session_t *session);
 void sofia_glue_set_name(private_object_t *tech_pvt, const char *channame);
 private_object_t *sofia_glue_new_pvt(switch_core_session_t *session);
+switch_status_t sofia_init(void);
 
 /* For Emacs:
  * Local Variables:
