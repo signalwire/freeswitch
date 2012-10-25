@@ -2531,7 +2531,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 
 	switch_snprintf(qname, sizeof(qname), "sofia:%s", profile->name);
-	switch_switch_sql_queue_manager_init_name(qname,
+	switch_sql_queue_manager_init_name(qname,
 											  &profile->qm,
 											  1,
 											  profile->odbc_dsn ? profile->odbc_dsn : profile->dbname,
@@ -2539,7 +2539,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 											  profile->post_trans_execute,
 											  profile->inner_pre_trans_execute,
 											  profile->inner_post_trans_execute);
-	switch_switch_sql_queue_manager_start(profile->qm);
+	switch_sql_queue_manager_start(profile->qm);
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
@@ -2627,7 +2627,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_mutex_lock(profile->flag_mutex);
 	switch_mutex_unlock(profile->flag_mutex);
 
-	switch_switch_sql_queue_manager_stop(profile->qm);
+	switch_sql_queue_manager_stop(profile->qm);
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
