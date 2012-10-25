@@ -437,17 +437,17 @@ static passive_call_t *tap_pri_get_pcall_bycrv(pritap_t *pritap, int crv)
 	for (i = 0; i < ftdm_array_len(pritap->pcalls); i++) {
 		tstcrv = pritap->pcalls[i].callref ? tap_pri_get_crv(pritap->pri, pritap->pcalls[i].callref) : 0;
 		if (pritap->pcalls[i].callref && tstcrv == crv) {
-			if (!pritap->pcalls[i].inuse) {
-				ftdm_log(FTDM_LOG_ERROR, "Found crv %d in slot %d of span %s with call %p but is no longer in use!\n", 
-						crv, i, pritap->span->name, pritap->pcalls[i].callref);
-				continue;
+			if (pritap->pcalls[i].inuse) {
+				ftdm_mutex_unlock(pritap->pcalls_lock);
+				return &pritap->pcalls[i];
 			}
-
-			ftdm_mutex_unlock(pritap->pcalls_lock);
-
-			return &pritap->pcalls[i];
+			/* This just means the crv is being re-used in another call before this one was destroyed */
+			ftdm_log(FTDM_LOG_DEBUG, "Found crv %d in slot %d of span %s with call %p but is no longer in use\n",
+					crv, i, pritap->span->name, pritap->pcalls[i].callref);
 		}
 	}
+
+	ftdm_log(FTDM_LOG_DEBUG, "crv %d was not found active in span %s\n", crv, pritap->span->name);
 
 	ftdm_mutex_unlock(pritap->pcalls_lock);
 
@@ -471,7 +471,10 @@ static passive_call_t *tap_pri_get_pcall(pritap_t *pritap, void *callref)
 			memset(&pritap->pcalls[i], 0, sizeof(pritap->pcalls[0]));
 		}
 		if (callref == pritap->pcalls[i].callref) {
-			pritap->pcalls[i].inuse = 1;
+			if (callref == NULL) {
+				pritap->pcalls[i].inuse = 1;
+				ftdm_log(FTDM_LOG_DEBUG, "Enabling callref slot %d in span %s\n", i, pritap->span->name);
+			}
 
 			ftdm_mutex_unlock(pritap->pcalls_lock);
 
