@@ -5415,7 +5415,7 @@ SWITCH_STANDARD_API(strftime_tz_api_function)
 	}
 
 	if (zstr(format)) {
-		format = "%Y-%m-%d";
+		format = "%Y-%m-%d %T";
 	}
 
 	if (format && switch_strftime_tz(tz_name, format, date, sizeof(date), when * 1000000) == SWITCH_STATUS_SUCCESS) {	/* The lookup of the zone may fail. */
