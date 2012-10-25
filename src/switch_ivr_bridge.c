@@ -262,7 +262,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if (switch_true(silence_var)) {
 			silence_val = 1400;
 		} else {
-			if ((silence_val = atoi(silence_var)) < 0) {
+			if ((silence_val = atoi(silence_var)) < -1) {
 				silence_val = 0;
 			}
 		}
