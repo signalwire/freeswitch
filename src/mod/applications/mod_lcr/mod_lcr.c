@@ -1236,10 +1236,10 @@ static switch_status_t lcr_load_config()
 					if (!strcasecmp(limit_type, "hash")) {
 						profile->limit_type = "hash";
 					} else {
-						profile->limit_type = "sql";
+						profile->limit_type = "db";
 					}
 				} else {
-					profile->limit_type = "sql";
+					profile->limit_type = "db";
 				}
 				
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
