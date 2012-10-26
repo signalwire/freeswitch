@@ -1504,7 +1504,13 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 		if (!proceed) {
 			for (i = 0; i < qm->numq; i++) {
-				if (switch_queue_trypop(qm->sql_queue[i], &pop) == SWITCH_STATUS_SUCCESS) {
+				switch_status_t status;
+
+				switch_mutex_lock(qm->mutex);
+				status = switch_queue_trypop(qm->sql_queue[i], &pop);
+				switch_mutex_unlock(qm->mutex);
+
+				if (status == SWITCH_STATUS_SUCCESS) {
 					if (sql_manager.thread_running != 1) {
 						if (pop) {
 							switch_cache_db_execute_sql(qm->event_db, (char *) pop, NULL);
