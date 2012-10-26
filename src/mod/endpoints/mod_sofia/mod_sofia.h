@@ -352,6 +352,7 @@ typedef enum {
 	TFLAG_SLA_BARGING,
 	TFLAG_PASS_ACK,
 	TFLAG_CRYPTO_RECOVER,
+	TFLAG_DROP_DTMF,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;

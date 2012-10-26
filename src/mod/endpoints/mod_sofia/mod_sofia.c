@@ -1511,6 +1511,10 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
+	if (sofia_test_flag(tech_pvt, TFLAG_DROP_DTMF)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	dtmf_type = tech_pvt->dtmf_type;
 
 	/* We only can send INFO when we have no media */

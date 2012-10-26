@@ -969,6 +969,11 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	switch_core_session_set_private(session, tech_pvt);
 
+	if (switch_true(switch_channel_get_variable_dup(tech_pvt->channel, "drop_dtmf", SWITCH_FALSE, -1))) {
+		sofia_set_flag(tech_pvt, TFLAG_DROP_DTMF);
+	}
+
+
 	if (channame) {
 		sofia_glue_set_name(tech_pvt, channame);
 	}
