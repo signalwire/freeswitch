@@ -1951,15 +1951,42 @@ static char *parse_presence_data_cols(switch_event_t *event)
 
 
 #define MAX_SQL 5
-#define new_sql() switch_assert(sql_idx+1 < MAX_SQL); sql[sql_idx++]
+#define new_sql() switch_assert(sql_idx+1 < MAX_SQL); if (exists) sql[sql_idx++]
 
 static void core_event_handler(switch_event_t *event)
 {
 	char *sql[MAX_SQL] = { 0 };
 	int sql_idx = 0;
 	char *extra_cols;
+	int exists = 1;
+	char *uuid = NULL;
 
 	switch_assert(event);
+
+	switch (event->event_id) {
+	case SWITCH_EVENT_CHANNEL_UUID:
+	case SWITCH_EVENT_CHANNEL_CREATE:
+	case SWITCH_EVENT_CHANNEL_ANSWER:
+	case SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA:
+	case SWITCH_EVENT_CHANNEL_HOLD:
+	case SWITCH_EVENT_CHANNEL_UNHOLD:
+	case SWITCH_EVENT_CHANNEL_EXECUTE:
+	case SWITCH_EVENT_CHANNEL_ORIGINATE:
+	case SWITCH_EVENT_CALL_UPDATE:
+	case SWITCH_EVENT_CHANNEL_CALLSTATE:
+	case SWITCH_EVENT_CHANNEL_STATE:
+	case SWITCH_EVENT_CHANNEL_BRIDGE:
+	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
+	case SWITCH_EVENT_CALL_SECURE:
+		{
+			if ((uuid = switch_event_get_header(event, "unique-id"))) {
+				exists = switch_ivr_uuid_exists(uuid);
+			}
+		}
+		break;
+	default:
+		break;
+	}
 
 	switch (event->event_id) {
 	case SWITCH_EVENT_ADD_SCHEDULE:
@@ -2035,7 +2062,8 @@ static void core_event_handler(switch_event_t *event)
 								   switch_event_get_header_nil(event, "caller-context"), switch_core_get_switchname()
 								   );
 		break;
-	case SWITCH_EVENT_CODEC:
+	case SWITCH_EVENT_CHANNEL_ANSWER:
+	case SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA:
 
 		new_sql() =
 			switch_mprintf
@@ -2140,6 +2168,8 @@ static void core_event_handler(switch_event_t *event)
 			case CS_NEW:
 			case CS_DESTROY:
 			case CS_REPORTING:
+			case CS_HANGUP:
+			case CS_INIT:
 				break;
 			case CS_EXECUTE:
 				if ((extra_cols = parse_presence_data_cols(event))) {
@@ -3161,7 +3191,8 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_DESTROY, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_UUID, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_CREATE, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
-		switch_event_bind("core_db", SWITCH_EVENT_CODEC, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
+		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_ANSWER, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
+		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_HOLD, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_UNHOLD, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CHANNEL_EXECUTE, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
