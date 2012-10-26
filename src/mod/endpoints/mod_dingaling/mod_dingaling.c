@@ -1511,8 +1511,14 @@ static int do_tport_candidates(struct private_object *tech_pvt, ldl_transport_ty
 	}
 	address = advip;
 
-	if(address && !strncasecmp(address, "host:", 5)) {
-		address = address + 5;
+	if (address && !strncasecmp(address, "host:", 5)) {
+		char *lookup = switch_stun_host_lookup(address + 5, switch_core_session_get_pool(tech_pvt->session));
+
+		if (zstr(lookup)) {
+			address = address + 5;
+		} else {
+			address = lookup;
+		}
 	}
 
 	memset(cand, 0, sizeof(*cand));
