@@ -312,20 +312,20 @@ nth_site_t *nth_site_create(nth_site_t *parent,
   is_path = url->url_path != NULL;
 
   if (is_host && is_path) {
-    SU_DEBUG_3(("nth_site_create(): virtual host and path simultanously\n"));
+    SU_DEBUG_3(("nth_site_create(): virtual host and path simultanously\n" VA_NONE));
     errno = EINVAL;
     goto error;
   }
 
   if (!parent && !is_host) {
-    SU_DEBUG_3(("nth_site_create(): host is required\n"));
+    SU_DEBUG_3(("nth_site_create(): host is required\n" VA_NONE));
     errno = EINVAL;
     goto error;
   }
 
   if (parent) {
     if (!parent->site_isdir) {
-      SU_DEBUG_3(("nth_site_create(): invalid parent resource \n"));
+      SU_DEBUG_3(("nth_site_create(): invalid parent resource \n" VA_NONE));
       errno = EINVAL;
       goto error;
     }
@@ -995,7 +995,7 @@ static void server_reply(server_t *srv, tport_t *tport,
   if (tport_tqsend(tport, response, NULL,
 		   TPTAG_CLOSE_AFTER(close),
 		   TAG_END()) == -1) {
-    SU_DEBUG_3(("server_reply(): cannot queue response\n"));
+    SU_DEBUG_3(("server_reply(): cannot queue response\n" VA_NONE));
     tport_shutdown(tport, 2);
   }
 

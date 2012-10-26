@@ -201,7 +201,7 @@ static tport_t *tport_http_connect(tport_primary_t *pri, su_addrinfo_t *ai,
   msg_set_next(response, thci->thci_stackmsg = tport_msg_alloc(tport, 512));
 
   if (tport_send_msg(tport, msg, tpn, NULL) < 0) {
-    SU_DEBUG_9(("tport_send_msg failed in tpot_http_connect\n"));
+    SU_DEBUG_9(("tport_send_msg failed in tpot_http_connect\n" VA_NONE));
     msg_destroy(msg);
     tport_zap_secondary(tport);
     return NULL;

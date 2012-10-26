@@ -911,7 +911,7 @@ int hc_resolve_and_send(nth_client_t * hc)
 
   if (msg_serialize(msg, http) < 0) {
     assert(hc->hc_tport);
-    SU_DEBUG_3(("nth client create: invalid message"));
+    SU_DEBUG_3(("nth client create: invalid message" VA_NONE));
     return -1;
   }
 

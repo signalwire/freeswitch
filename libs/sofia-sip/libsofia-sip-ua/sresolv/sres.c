@@ -3596,7 +3596,7 @@ sres_decode_msg(sres_resolver_t *res,
   m->m_offset = sizeof(m->m_packet.mp_header);
 
   if (m->m_size < m->m_offset) {
-    SU_DEBUG_5(("sres_decode_msg: truncated message\n"));
+    SU_DEBUG_5(("sres_decode_msg: truncated message\n" VA_NONE));
     return -1;
   }
 

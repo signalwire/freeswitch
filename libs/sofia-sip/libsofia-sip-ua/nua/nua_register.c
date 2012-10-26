@@ -967,7 +967,7 @@ static int nua_register_client_response(nua_client_request_t *cr,
     if (tport && tport != nr->nr_tport) {
       if (nr->nr_error_report_id) {
 	if (tport_release(nr->nr_tport, nr->nr_error_report_id, NULL, NULL, nr, 0) < 0)
-	  SU_DEBUG_1(("nua_register: tport_release() failed\n"));
+	  SU_DEBUG_1(("nua_register: tport_release() failed\n" VA_NONE));
 	nr->nr_error_report_id = 0;
       }
       tport_unref(nr->nr_tport);
@@ -996,7 +996,7 @@ static int nua_register_client_response(nua_client_request_t *cr,
     if (nr->nr_tport) {
       if (nr->nr_error_report_id) {
 	if (tport_release(nr->nr_tport, nr->nr_error_report_id, NULL, NULL, nr, 0) < 0)
-	  SU_DEBUG_1(("nua_register: tport_release() failed\n"));
+	  SU_DEBUG_1(("nua_register: tport_release() failed\n" VA_NONE));
 	nr->nr_error_report_id = 0;
       }
 
@@ -1028,7 +1028,7 @@ void nua_register_connection_closed(tp_stack_t *sip_stack,
   pending = nr->nr_error_report_id;
 
   if (tport_release(tport, pending, NULL, NULL, nr, 0) < 0)
-    SU_DEBUG_1(("nua_register: tport_release() failed\n"));
+    SU_DEBUG_1(("nua_register: tport_release() failed\n" VA_NONE));
   nr->nr_error_report_id = 0;
 
   tpn = tport_name(nr->nr_tport);

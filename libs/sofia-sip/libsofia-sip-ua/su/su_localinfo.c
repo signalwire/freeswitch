@@ -1260,7 +1260,7 @@ int bsd_localinfo(su_localinfo_t const hints[1],
 	flags |= LI_NUMERIC;
 
     if (!(li = calloc(1, sizeof(*li) + sulen + ifnamelen))) {
-      SU_DEBUG_1(("su_getlocalinfo: memory exhausted\n"));
+		SU_DEBUG_1(("su_getlocalinfo: memory exhausted\n" VA_NONE));
       error = ELI_MEMORY;
       break;
     }
@@ -1629,7 +1629,7 @@ int li_name(su_localinfo_t const *hints,
     if (error) {
       if ((flags & LI_NAMEREQD) == LI_NAMEREQD)
 	return 1;
-      SU_DEBUG_7(("li_name: getnameinfo() failed\n"));
+      SU_DEBUG_7(("li_name: getnameinfo() failed\n" VA_NONE));
       if (!su_inet_ntop(su->su_family, SU_ADDR(su), name, sizeof name))
 	return ELI_RESOLVER;
     }
