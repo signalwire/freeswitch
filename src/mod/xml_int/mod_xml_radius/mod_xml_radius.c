@@ -838,7 +838,9 @@ switch_status_t mod_xml_radius_check_conditions(switch_channel_t *channel, switc
 	switch_xml_t condition, param;
 	char *channel_var = NULL;
 	char *regex = NULL;
+	char *anti = NULL;
 	int all_matched = 1;
+	int result = 0;
 	
 	if ( (condition = switch_xml_child(conditions, "condition")) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to locate a condition under the conditions section\n");
@@ -856,14 +858,19 @@ switch_status_t mod_xml_radius_check_conditions(switch_channel_t *channel, switc
 		for (; param && all_matched; param = param->next) {
 			channel_var = (char *) switch_xml_attr(param, "var");
 			regex = (char *) switch_xml_attr(param, "regex");
+			anti = (char *) switch_xml_attr(param, "anti");
 			
 			if ( channel_var == NULL || regex == NULL ) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Improperly constructed mod_radius condition: %s %s\n", channel_var, regex);
 			}
 			
-			if ( switch_regex_match( switch_channel_get_variable(channel, channel_var), regex) != SWITCH_STATUS_SUCCESS) {
+			result = ( switch_regex_match( switch_channel_get_variable(channel, channel_var), regex) != SWITCH_STATUS_SUCCESS);
+			if (( anti == NULL && result ) || ( anti != NULL && !result ) ){
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Didn't match: %s == %s \n", switch_channel_get_variable(channel, channel_var), regex);
 				all_matched = 0;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Result of %s match: %s == %s \n", 
+								  anti, switch_channel_get_variable(channel, channel_var), regex);
 			}
 		}
 
