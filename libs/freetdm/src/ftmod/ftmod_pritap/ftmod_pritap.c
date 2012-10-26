@@ -42,6 +42,7 @@
 
 typedef enum {
 	PRITAP_RUNNING = (1 << 0),
+	PRITAP_MASTER = (1 << 1),
 } pritap_flags_t;
 
 typedef struct {
@@ -373,9 +374,9 @@ static __inline__ void pritap_check_state(ftdm_span_t *span)
 		uint32_t j;
 		ftdm_clear_flag_locked(span, FTDM_SPAN_STATE_CHANGE);
 		for(j = 1; j <= span->chan_count; j++) {
-			ftdm_mutex_lock(span->channels[j]->mutex);
+			ftdm_channel_lock(span->channels[j]);
 			ftdm_channel_advance_states(span->channels[j]);
-			ftdm_mutex_unlock(span->channels[j]->mutex);
+			ftdm_channel_unlock(span->channels[j]);
 		}
 	}
 }
@@ -685,14 +686,14 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 				pritap->span->name, PRI_SPAN(e->answer.channel), PRI_CHANNEL(e->answer.channel), crv);
 		if (!(pcall = tap_pri_get_pcall_bycrv(pritap, crv))) {
 			ftdm_log(FTDM_LOG_DEBUG, 
-				"ignoring answer in channel %s:%d:%d for callref %d since we don't know about it",
-				pritap->span->name, PRI_SPAN(e->proceeding.channel), PRI_CHANNEL(e->proceeding.channel), crv);
+				"ignoring answer in channel %s:%d:%d for callref %d since we don't know about it\n",
+				pritap->span->name, PRI_SPAN(e->answer.channel), PRI_CHANNEL(e->proceeding.channel), crv);
 			break;
 		}
 		if (!pcall->fchan) {
 			ftdm_log(FTDM_LOG_ERROR,
-				"Received answer in channel %s:%d:%d for callref %d but we never got a channel",
-				pritap->span->name, PRI_SPAN(e->proceeding.channel), PRI_CHANNEL(e->proceeding.channel), crv);
+				"Received answer in channel %s:%d:%d for callref %d but we never got a channel\n",
+				pritap->span->name, PRI_SPAN(e->answer.channel), PRI_CHANNEL(e->answer.channel), crv);
 			break;
 		}
 		ftdm_channel_lock(pcall->fchan);
@@ -747,12 +748,14 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 static void *ftdm_pritap_run(ftdm_thread_t *me, void *obj)
 {
 	ftdm_span_t *span = (ftdm_span_t *) obj;
+	ftdm_span_t *peer = NULL;
 	pritap_t *pritap = span->signal_data;
+	pritap_t *p_pritap = NULL;
 	pri_event *event = NULL;
-	struct pollfd dpoll = { 0, 0, 0 };
+	struct pollfd dpoll[2];
 	int rc = 0;
 
-	ftdm_log(FTDM_LOG_DEBUG, "Tapping PRI thread started on span %d\n", span->span_id);
+	ftdm_log(FTDM_LOG_DEBUG, "Tapping PRI thread started on span %s\n", span->name);
 	
 	pritap->span = span;
 
@@ -770,48 +773,80 @@ static void *ftdm_pritap_run(ftdm_thread_t *me, void *obj)
 		goto done;
 	}
 
-	dpoll.fd = pritap->dchan->sockfd;
+	/* The last span starting runs the show ...
+	 * This simplifies locking and avoid races by having multiple threads for a single tapped link
+	 * Since both threads really handle a single tapped link there is no benefit on multi-threading, just complications ... */
+	peer = pritap->peerspan;
+	p_pritap = peer->signal_data;
+	if (!ftdm_test_flag(pritap, PRITAP_MASTER)) {
+		ftdm_log(FTDM_LOG_DEBUG, "Running dummy thread on span %s\n", span->name);
+		while (ftdm_running() && !ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD)) {
+			poll(NULL, 0, 100);
+		}
+	} else {
+		memset(&dpoll, 0, sizeof(dpoll));
+		dpoll[0].fd = pritap->dchan->sockfd;
+		dpoll[1].fd = p_pritap->dchan->sockfd;
 
-	while (ftdm_running() && !ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD)) {
+		ftdm_log(FTDM_LOG_DEBUG, "Master tapping thread on span %s (fd1=%d, fd2=%d)\n", span->name,
+				pritap->dchan->sockfd, p_pritap->dchan->sockfd);
 
+		while (ftdm_running() && !ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD)) {
 
-		pritap_check_state(span);
+			pritap_check_state(span);
+			pritap_check_state(peer);
 
-		dpoll.revents = 0;
-		dpoll.events = POLLIN;
+			dpoll[0].revents = 0;
+			dpoll[0].events = POLLIN;
 
-		rc = poll(&dpoll, 1, 10);
+			dpoll[1].revents = 0;
+			dpoll[1].events = POLLIN;
 
-		if (rc < 0) {
-			if (errno == EINTR) {
-				ftdm_log(FTDM_LOG_DEBUG, "D-channel waiting interrupted, continuing ...\n");
+			rc = poll(&dpoll[0], 2, 10);
+
+			if (rc < 0) {
+				if (errno == EINTR) {
+					ftdm_log(FTDM_LOG_DEBUG, "D-channel waiting interrupted, continuing ...\n");
+					continue;
+				}
+				ftdm_log(FTDM_LOG_ERROR, "poll failed: %s\n", strerror(errno));
 				continue;
 			}
-			ftdm_log(FTDM_LOG_ERROR, "poll failed: %s\n", strerror(errno));
-			continue;
-		}
 
-		pri_schedule_run(pritap->pri);
+			pri_schedule_run(pritap->pri);
+			pri_schedule_run(p_pritap->pri);
 
-		if (rc) {
-			if (dpoll.revents & POLLIN) {
-				event = pri_read_event(pritap->pri);
-				if (event) {
-					handle_pri_passive_event(pritap, event);
+			pritap_check_state(span);
+			pritap_check_state(peer);
+
+			if (rc) {
+				if (dpoll[0].revents & POLLIN) {
+					event = pri_read_event(pritap->pri);
+					if (event) {
+						handle_pri_passive_event(pritap, event);
+						pritap_check_state(span);
+					}
 				}
-			} else {
-				ftdm_log(FTDM_LOG_WARNING, "nothing to read?\n");
-			}
-		}
 
-		pritap_check_state(span);
+				if (dpoll[1].revents & POLLIN) {
+					event = pri_read_event(p_pritap->pri);
+					if (event) {
+						handle_pri_passive_event(p_pritap, event);
+						pritap_check_state(peer);
+					}
+				}
+			}
+
+		}
 	}
 
+
 done:
-	ftdm_log(FTDM_LOG_DEBUG, "Tapping PRI thread ended on span %d\n", span->span_id);
+	ftdm_log(FTDM_LOG_DEBUG, "Tapping PRI thread ended on span %s\n", span->name);
 
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 	ftdm_clear_flag(pritap, PRITAP_RUNNING);
+	ftdm_clear_flag(pritap, PRITAP_MASTER);
 
 	return NULL;
 }
@@ -897,6 +932,7 @@ static ftdm_status_t ftdm_pritap_start(ftdm_span_t *span)
 {
 	ftdm_status_t ret;
 	pritap_t *pritap = span->signal_data;
+	pritap_t *p_pritap = pritap->peerspan->signal_data;
 
 	if (ftdm_test_flag(pritap, PRITAP_RUNNING)) {
 		return FTDM_FAIL;
@@ -908,6 +944,10 @@ static ftdm_status_t ftdm_pritap_start(ftdm_span_t *span)
 	ftdm_clear_flag(span, FTDM_SPAN_IN_THREAD);
 
 	ftdm_set_flag(pritap, PRITAP_RUNNING);
+	if (p_pritap && ftdm_test_flag(p_pritap, PRITAP_RUNNING)) {
+		/* our peer already started, we're the master */
+		ftdm_set_flag(pritap, PRITAP_MASTER);
+	}
 	ret = ftdm_thread_create_detached(ftdm_pritap_run, span);
 
 	if (ret != FTDM_SUCCESS) {
