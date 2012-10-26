@@ -1219,7 +1219,6 @@ struct switch_sql_queue_manager {
 	switch_queue_t **sql_queue;
 	uint32_t *pre_written;
 	uint32_t *written;
-	int *sizes;
 	uint32_t numq;
 	char *dsn;
 	switch_thread_t *thread;
@@ -1257,6 +1256,18 @@ static uint32_t qm_ttl(switch_sql_queue_manager_t *qm)
 	return ttl;
 }
 
+SWITCH_DECLARE(int) switch_sql_queue_manager_size(switch_sql_queue_manager_t *qm, uint32_t index)
+{
+	int size = 0;
+
+	switch_mutex_lock(qm->mutex);
+	if (index < qm->numq) {
+		size = switch_queue_size(qm->sql_queue[index]);
+	}
+	switch_mutex_unlock(qm->mutex);
+
+	return size;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm)
 {
@@ -1335,8 +1346,11 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_m
 	if (pos > qm->numq - 1) {
 		pos = 0;
 	}
-	
+
+	switch_mutex_lock(qm->mutex);
 	switch_queue_push(qm->sql_queue[pos], dup ? strdup(sql) : (char *)sql);
+	switch_mutex_unlock(qm->mutex);
+
 	qm_wake(qm);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1360,11 +1374,10 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 		pos = 0;
 	}
 
-	switch_queue_push(qm->sql_queue[pos], dup ? strdup(sql) : (char *)sql);
-
 	switch_mutex_lock(qm->mutex);
+	switch_queue_push(qm->sql_queue[pos], dup ? strdup(sql) : (char *)sql);
 	written = qm->written[pos];
-	size = qm->sizes[pos];
+	size = switch_sql_queue_manager_size(qm, pos);
 	want = written + size;
 	switch_mutex_unlock(qm->mutex);
 
@@ -1416,7 +1429,6 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *n
 	switch_thread_cond_create(&qm->cond, qm->pool);
 	
 	qm->sql_queue = switch_core_alloc(qm->pool, sizeof(switch_queue_t *) * numq);
-	qm->sizes = switch_core_alloc(qm->pool, sizeof(int) * numq);
 	qm->written = switch_core_alloc(qm->pool, sizeof(uint32_t) * numq);
 	qm->pre_written = switch_core_alloc(qm->pool, sizeof(uint32_t) * numq);
 
@@ -1650,7 +1662,6 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 		
 		switch_mutex_lock(qm->mutex);
 		for (i = 0; i < qm->numq; i++) {
-			qm->sizes[i] = switch_queue_size(qm->sql_queue[i]);
 			qm->written[i] += qm->pre_written[i];
 			qm->pre_written[i] = 0;
 		}
