@@ -1345,8 +1345,8 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_m
 
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup)
 {
-	int want, size, x = 0, sanity = 0;
-	uint32_t written;
+	int size, x = 0, sanity = 0;
+	uint32_t written, want;
 
 	if (!qm->thread_running) {
 		return SWITCH_STATUS_FALSE;
