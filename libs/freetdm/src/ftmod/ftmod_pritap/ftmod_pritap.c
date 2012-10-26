@@ -455,6 +455,30 @@ static passive_call_t *tap_pri_get_pcall_bycrv(pritap_t *pritap, int crv)
 	return NULL;
 }
 
+/*
+ * This is a tricky function with some side effects, some explanation needed ...
+ *
+ * The libpri stack process HDLC frames, then finds Q921 frames and Q931 events, each time
+ * it finds a new Q931 event, checks if the crv of that event matches a known call in the internal
+ * list found in the PRI control block (for us, one control block per span), if it does not find
+ * the call, allocates a new one and then sends the event up to the user (us, ftmod_pritap in this case)
+ *
+ * The user is then expected to destroy the call when done with it (on hangup), but things get tricky here
+ * because in ftmod_pritap we do not destroy the call right away to be sure we only destroy it when no one
+ * else needs that pointer, therefore we decide to delay the destruction of the call pointer until later
+ * when a new call comes which triggers the garbage collecting code in this function
+ *
+ * Now, what happens if a new call arrives right away with the same crv than the last call? the pri stack
+ * does *not* allocate a new call pointer because is still a known call and we must therefore re-use the
+ * same call pointer
+ *
+ * This function accepts a pointer to a callref, even a NULL one. When callref is NULL we search for an
+ * available slot so the caller of this function can use it to store a new callref pointer. In the process
+ * we also scan for slots that still have a callref pointer but are no longer in use (inuse=0) and we
+ * destroy that callref and clear the slot (memset). The trick is, we only do this if the callref to
+ * be garbage collected is NOT the one provided by the parameter callref, of course! otherwise we may
+ * be freeing a pointer to a callref for a new call that used an old (recycled) callref!
+ */
 static passive_call_t *tap_pri_get_pcall(pritap_t *pritap, void *callref)
 {
 	int i;
@@ -463,7 +487,11 @@ static passive_call_t *tap_pri_get_pcall(pritap_t *pritap, void *callref)
 	ftdm_mutex_lock(pritap->pcalls_lock);
 
 	for (i = 0; i < ftdm_array_len(pritap->pcalls); i++) {
-		if (pritap->pcalls[i].callref && !pritap->pcalls[i].inuse) {
+		/* If this slot has a call reference
+		 * and it is different than the *callref provided to us
+		 * and is no longer in use,
+		 * then it is time to garbage collect it ... */
+		if (pritap->pcalls[i].callref  && callref != pritap->pcalls[i].callref && !pritap->pcalls[i].inuse) {
 			crv = tap_pri_get_crv(pritap->pri, pritap->pcalls[i].callref);
 			/* garbage collection */
 			ftdm_log(FTDM_LOG_DEBUG, "Garbage collecting callref %d/%p from span %s in slot %d\n", 
@@ -475,6 +503,13 @@ static passive_call_t *tap_pri_get_pcall(pritap_t *pritap, void *callref)
 			if (callref == NULL) {
 				pritap->pcalls[i].inuse = 1;
 				ftdm_log(FTDM_LOG_DEBUG, "Enabling callref slot %d in span %s\n", i, pritap->span->name);
+			} else if (!pritap->pcalls[i].inuse) {
+				crv = tap_pri_get_crv(pritap->pri, callref);
+				ftdm_log(FTDM_LOG_DEBUG, "Recyclying callref slot %d in span %s for callref %d/%p\n",
+						i, pritap->span->name, crv, callref);
+				memset(&pritap->pcalls[i], 0, sizeof(pritap->pcalls[0]));
+				pritap->pcalls[i].callref = callref;
+				pritap->pcalls[i].inuse = 1;
 			}
 
 			ftdm_mutex_unlock(pritap->pcalls_lock);
@@ -591,10 +626,17 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 			ftdm_log(FTDM_LOG_WARNING, "There is a call with callref %d already, ignoring duplicated ring event\n", crv);
 			break;
 		}
-		pcall = tap_pri_get_pcall(pritap, NULL);
+
+		/* Try to get a recycled call (ie, e->ring.call is a call that the PRI stack allocated previously and then
+		 * re-used for the next RING event because we did not destroy it fast enough) */
+		pcall = tap_pri_get_pcall(pritap, e->ring.call);
 		if (!pcall) {
-			ftdm_log(FTDM_LOG_ERROR, "Failed to get a free passive PRI call slot for callref %d, this is a bug!\n", crv);
-			break;
+			/* ok so the call is really not known to us, let's get a new one */
+			pcall = tap_pri_get_pcall(pritap, NULL);
+			if (!pcall) {
+				ftdm_log(FTDM_LOG_ERROR, "Failed to get a free passive PRI call slot for callref %d, this is a bug!\n", crv);
+				break;
+			}
 		}
 		pcall->callref = e->ring.call;
 		ftdm_set_string(pcall->callingnum.digits, e->ring.callingnum);
@@ -629,13 +671,25 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 		}
 		pcall->proceeding = 1;
 
-		peerpcall = tap_pri_get_pcall(pritap, NULL);
-		if (!peerpcall) {
-			ftdm_log(FTDM_LOG_ERROR, "Failed to get a free peer PRI passive call slot for callref %d in span %s, this is a bug!\n", 
-					crv, pritap->span->name);
+		/* This call should not be known to this PRI yet ... */
+		if ((peerpcall = tap_pri_get_pcall_bycrv(pritap, crv))) {
+			ftdm_log(FTDM_LOG_ERROR,
+				"ignoring proceeding in channel %s:%d:%d for callref %d, dup???\n",
+				pritap->span->name, PRI_SPAN(e->proceeding.channel), PRI_CHANNEL(e->proceeding.channel), crv);
 			break;
 		}
-		peerpcall->callref = e->proceeding.call;
+
+		/* Check if the call pointer is being recycled */
+		peerpcall = tap_pri_get_pcall(pritap, e->proceeding.call);
+		if (!peerpcall) {
+			peerpcall = tap_pri_get_pcall(pritap, NULL);
+			if (!peerpcall) {
+				ftdm_log(FTDM_LOG_ERROR, "Failed to get a free peer PRI passive call slot for callref %d in span %s, this is a bug!\n", 
+						crv, pritap->span->name);
+				break;
+			}
+			peerpcall->callref = e->proceeding.call;
+		}
 
 		/* check that the layer 1 and trans capability are supported */
 		layer1 = pri_get_layer1(peertap->pri, pcall->callref);
@@ -707,12 +761,12 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 		crv = tap_pri_get_crv(pritap->pri, e->hangup.call);
 
 		ftdm_log(FTDM_LOG_DEBUG, "Hangup on channel %s:%d:%d with callref %d\n",
-				pritap->span->name, PRI_SPAN(e->answer.channel), PRI_CHANNEL(e->answer.channel), crv);
+				pritap->span->name, PRI_SPAN(e->hangup.channel), PRI_CHANNEL(e->hangup.channel), crv);
 
 		if (!(pcall = tap_pri_get_pcall_bycrv(pritap, crv))) {
 			ftdm_log(FTDM_LOG_DEBUG, 
 				"ignoring hangup in channel %s:%d:%d for callref %d since we don't know about it",
-				pritap->span->name, PRI_SPAN(e->proceeding.channel), PRI_CHANNEL(e->proceeding.channel), crv);
+				pritap->span->name, PRI_SPAN(e->hangup.channel), PRI_CHANNEL(e->hangup.channel), crv);
 			break;
 		}
 
@@ -733,7 +787,7 @@ static void handle_pri_passive_event(pritap_t *pritap, pri_event *e)
 	case PRI_EVENT_HANGUP_ACK:
 		crv = tap_pri_get_crv(pritap->pri, e->hangup.call);
 		ftdm_log(FTDM_LOG_DEBUG, "Hangup ack on channel %s:%d:%d with callref %d\n", 
-				pritap->span->name, PRI_SPAN(e->answer.channel), PRI_CHANNEL(e->answer.channel), crv);
+				pritap->span->name, PRI_SPAN(e->hangup.channel), PRI_CHANNEL(e->hangup.channel), crv);
 		tap_pri_put_pcall(pritap, e->hangup.call);
 		tap_pri_put_pcall(peertap, e->hangup.call);
 		break;
