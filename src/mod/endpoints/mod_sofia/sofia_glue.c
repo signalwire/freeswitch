@@ -3214,7 +3214,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	const char *err = NULL;
 	const char *val = NULL;
 	switch_rtp_flag_t flags;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char tmp[50];
 	uint32_t rtp_timeout_sec = tech_pvt->profile->rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec = tech_pvt->profile->rtp_hold_timeout_sec;
@@ -3243,10 +3243,15 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		goto end;
 	}
 
-	if (switch_rtp_ready(tech_pvt->rtp_session) && 
-		(!sofia_test_flag(tech_pvt, TFLAG_VIDEO) || switch_rtp_ready(tech_pvt->video_rtp_session)) && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
-		status = SWITCH_STATUS_SUCCESS;
-		goto end;
+
+	if (!sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
+				goto video;
+			} else {
+				goto end;
+			}
+		}
 	}
 
 	if ((status = sofia_glue_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
