@@ -5133,7 +5133,13 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 
 					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate && strcasecmp(map->rm_encoding, "ilbc")) {
-						/* nevermind */
+						/* if a bit rate is specified and doesn't match, this is not a codec match, except for ILBC */
+						match = 0;
+					}
+
+					if (match && map->rm_rate && codec_rate && map->rm_rate != codec_rate && (!strcasecmp(map->rm_encoding, "pcma") || !strcasecmp(map->rm_encoding, "pcmu"))) {
+						/* if the sampling rate is specified and doesn't match, this is not a codec match for G.711 */
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sampling rates have to match for G.711\n");
 						match = 0;
 					}
 					
@@ -5152,8 +5158,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						}
 						mimp = imp;
 						break;
-					} else {
-						match = 0;
 					}
 				}
 
