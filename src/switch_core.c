@@ -1470,11 +1470,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.db_handle_timeout = 5000000;
 	
 	runtime.runlevel++;
-	runtime.sql_buffer_len = 1024 * 32;
-	runtime.max_sql_buffer_len = 1024 * 1024;
 	runtime.dummy_cng_frame.data = runtime.dummy_data;
 	runtime.dummy_cng_frame.datalen = sizeof(runtime.dummy_data);
 	runtime.dummy_cng_frame.buflen = sizeof(runtime.dummy_data);
+	runtime.dbname = "core";
 	switch_set_flag((&runtime.dummy_cng_frame), SFF_CNG);
 	switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
 	switch_set_flag((&runtime), SCF_CLEAR_SQL);
@@ -1754,37 +1753,6 @@ static void switch_load_core_config(const char *file)
 					
 				} else if (!strcasecmp(var, "multiple-registrations")) {
 					runtime.multiple_registrations = switch_true(val);
-				} else if (!strcasecmp(var, "sql-buffer-len")) {
-					int tmp = atoi(val);
-
-					if (end_of(val) == 'k') {
-						tmp *= 1024;
-					} else if (end_of(val) == 'm') {
-						tmp *= (1024 * 1024);
-					}
-
-					if (tmp >= 32000 && tmp < 10500000) {
-						runtime.sql_buffer_len = tmp;
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sql-buffer-len: Value is not within rage 32k to 10m\n");
-					}
-				} else if (!strcasecmp(var, "max-sql-buffer-len")) {
-					int tmp = atoi(val);
-
-					if (end_of(val) == 'k') {
-						tmp *= 1024;
-					} else if (end_of(val) == 'm') {
-						tmp *= (1024 * 1024);
-					}
-
-					if (tmp < runtime.sql_buffer_len) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Value is not larger than sql-buffer-len\n");
-					} else if (tmp >= 32000 && tmp < 10500000) {
-						runtime.max_sql_buffer_len = tmp;
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-sql-buffer-len: Value is not within rage 32k to 10m\n");
-					}
-
 				} else if (!strcasecmp(var, "auto-create-schemas")) {
 					if (switch_true(val)) {
 						switch_set_flag((&runtime), SCF_AUTO_SCHEMAS);
@@ -2256,9 +2224,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		break;
 	case SCSC_SQL:
 		if (oldintval) {
-			switch_core_sqldb_start_thread();
+			switch_core_sqldb_resume();
 		} else {
-			switch_core_sqldb_stop_thread();
+			switch_core_sqldb_pause();
 		}
 		break;
 	case SCSC_PAUSE_ALL:

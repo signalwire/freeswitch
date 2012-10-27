@@ -2205,8 +2205,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *dest_proto, sw
 SWITCH_DECLARE(switch_status_t) switch_core_chat_deliver(const char *dest_proto, switch_event_t **message_event);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_session_t *session, const char *cmds);
-SWITCH_DECLARE(void) switch_core_sqldb_stop_thread(void);
-SWITCH_DECLARE(void) switch_core_sqldb_start_thread(void);
+SWITCH_DECLARE(void) switch_core_sqldb_pause(void);
+SWITCH_DECLARE(void) switch_core_sqldb_resume(void);
+
 
 ///\}
 
