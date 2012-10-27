@@ -1594,7 +1594,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 	while (qm->thread_running == 1) {
 		int lc;
-		int i;
+		uint32_t i;
 		uint32_t iterations = 0;
 
 		if (sql_manager.paused) {

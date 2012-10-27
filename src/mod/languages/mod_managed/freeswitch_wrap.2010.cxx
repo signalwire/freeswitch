@@ -11064,13 +11064,13 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_preprocess_session(void * jarg1, ch
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_sqldb_stop_thread() {
-  switch_core_sqldb_stop_thread();
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_sqldb_pause() {
+  switch_core_sqldb_pause();
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_sqldb_start_thread() {
-  switch_core_sqldb_start_thread();
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_sqldb_resume() {
+  switch_core_sqldb_resume();
 }
 
 
@@ -11983,6 +11983,20 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_recovery_flush(char * jarg1, char
   arg1 = (char *)jarg1; 
   arg2 = (char *)jarg2; 
   switch_core_recovery_flush((char const *)arg1,(char const *)arg2);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_sql_queue_manager_size(void * jarg1, unsigned long jarg2) {
+  int jresult ;
+  switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
+  uint32_t arg2 ;
+  int result;
+  
+  arg1 = (switch_sql_queue_manager_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  result = (int)switch_sql_queue_manager_size(arg1,arg2);
+  jresult = result; 
+  return jresult;
 }
 
 

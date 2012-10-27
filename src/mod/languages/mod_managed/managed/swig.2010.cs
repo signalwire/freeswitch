@@ -2642,12 +2642,12 @@ public class freeswitch {
     return ret;
   }
 
-  public static void switch_core_sqldb_stop_thread() {
-    freeswitchPINVOKE.switch_core_sqldb_stop_thread();
+  public static void switch_core_sqldb_pause() {
+    freeswitchPINVOKE.switch_core_sqldb_pause();
   }
 
-  public static void switch_core_sqldb_start_thread() {
-    freeswitchPINVOKE.switch_core_sqldb_start_thread();
+  public static void switch_core_sqldb_resume() {
+    freeswitchPINVOKE.switch_core_sqldb_resume();
   }
 
   public static string switch_cache_db_type_name(switch_cache_db_handle_type_t type) {
@@ -2840,6 +2840,11 @@ public class freeswitch {
 
   public static void switch_core_recovery_flush(string technology, string profile_name) {
     freeswitchPINVOKE.switch_core_recovery_flush(technology, profile_name);
+  }
+
+  public static int switch_sql_queue_manager_size(SWIGTYPE_p_switch_sql_queue_manager qm, uint index) {
+    int ret = freeswitchPINVOKE.switch_sql_queue_manager_size(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm), index);
+    return ret;
   }
 
   public static switch_status_t switch_sql_queue_manager_push_confirm(SWIGTYPE_p_switch_sql_queue_manager qm, string sql, uint pos, switch_bool_t dup) {
@@ -9296,11 +9301,11 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_preprocess_session")]
   public static extern int switch_ivr_preprocess_session(HandleRef jarg1, string jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sqldb_stop_thread")]
-  public static extern void switch_core_sqldb_stop_thread();
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sqldb_pause")]
+  public static extern void switch_core_sqldb_pause();
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sqldb_start_thread")]
-  public static extern void switch_core_sqldb_start_thread();
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_sqldb_resume")]
+  public static extern void switch_core_sqldb_resume();
 
   [DllImport("mod_managed", EntryPoint="CSharp_CACHE_DB_LEN_get")]
   public static extern int CACHE_DB_LEN_get();
@@ -9523,6 +9528,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_recovery_flush")]
   public static extern void switch_core_recovery_flush(string jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manager_size")]
+  public static extern int switch_sql_queue_manager_size(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manager_push_confirm")]
   public static extern int switch_sql_queue_manager_push_confirm(HandleRef jarg1, string jarg2, uint jarg3, int jarg4);
