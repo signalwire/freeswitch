@@ -1638,7 +1638,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 		if (pop) {
 			sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
 			sofia_process_dispatch_event(&de);
-			switch_os_yield();
+			switch_cond_next();
 		} else {
 			break;
 		}
@@ -1959,12 +1959,7 @@ void sofia_event_callback(nua_event_t event,
 
  end:
 
-	if (profile->pres_type) {
-		switch_cond_next();
-	} else {
-		switch_os_yield();
-	}
-
+	switch_cond_next();
 
 	return;
 }
@@ -2532,13 +2527,14 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_snprintf(qname, sizeof(qname), "sofia:%s", profile->name);
 	switch_sql_queue_manager_init_name(qname,
-											  &profile->qm,
-											  1,
-											  profile->odbc_dsn ? profile->odbc_dsn : profile->dbname,
-											  profile->pre_trans_execute,
-											  profile->post_trans_execute,
-											  profile->inner_pre_trans_execute,
-											  profile->inner_post_trans_execute);
+									   &profile->qm,
+									   1,
+									   profile->odbc_dsn ? profile->odbc_dsn : profile->dbname,
+									   SWITCH_MAX_TRANS,
+									   profile->pre_trans_execute,
+									   profile->post_trans_execute,
+									   profile->inner_pre_trans_execute,
+									   profile->inner_post_trans_execute);
 	switch_sql_queue_manager_start(profile->qm);
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {

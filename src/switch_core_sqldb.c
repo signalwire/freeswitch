@@ -1215,6 +1215,7 @@ struct switch_sql_queue_manager {
 	char *inner_pre_trans_execute;
 	char *inner_post_trans_execute;
 	switch_memory_pool_t *pool;
+	uint32_t max_trans;
 };
 
 static int qm_wake(switch_sql_queue_manager_t *qm)
@@ -1410,12 +1411,12 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 
 
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *name,
-																		  switch_sql_queue_manager_t **qmp, 
-																		  uint32_t numq, const char *dsn,
-																		  const char *pre_trans_execute,
-																		  const char *post_trans_execute,
-																		  const char *inner_pre_trans_execute,
-																		  const char *inner_post_trans_execute)
+																   switch_sql_queue_manager_t **qmp, 
+																   uint32_t numq, const char *dsn, uint32_t max_trans,
+																   const char *pre_trans_execute,
+																   const char *post_trans_execute,
+																   const char *inner_pre_trans_execute,
+																   const char *inner_post_trans_execute)
 {
 	switch_memory_pool_t *pool;
 	switch_sql_queue_manager_t *qm;
@@ -1430,6 +1431,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *n
 	qm->numq = numq;
 	qm->dsn = switch_core_strdup(qm->pool, dsn);
 	qm->name = switch_core_strdup(qm->pool, name);
+	qm->max_trans = max_trans;
 
 	switch_mutex_init(&qm->cond_mutex, SWITCH_MUTEX_NESTED, qm->pool);
 	switch_mutex_init(&qm->mutex, SWITCH_MUTEX_NESTED, qm->pool);
@@ -1458,6 +1460,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *n
 static uint32_t do_trans(switch_cache_db_handle_t *dbh, 
 						 switch_queue_t *q,
 						 switch_mutex_t *mutex,
+						 uint32_t max,
 						 const char *pre_trans_execute,
 						 const char *post_trans_execute,
 						 const char *inner_pre_trans_execute,
@@ -1467,9 +1470,20 @@ static uint32_t do_trans(switch_cache_db_handle_t *dbh,
 	void *pop;
 	switch_status_t status;
 	uint32_t ttl = 0;
+	switch_mutex_t *io_mutex = dbh->io_mutex;
 
 	if (!switch_queue_size(q)) {
 		return 0;
+	}
+
+	if (io_mutex) switch_mutex_lock(io_mutex);
+
+	if (!zstr(pre_trans_execute)) {
+		switch_cache_db_execute_sql_real(dbh, pre_trans_execute, &errmsg);
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC %s [%s]\n", pre_trans_execute, errmsg);
+			free(errmsg);
+		}
 	}
 
 	switch(dbh->type) {
@@ -1509,7 +1523,15 @@ static uint32_t do_trans(switch_cache_db_handle_t *dbh,
 	}
 
 
-	for(;;) {
+	if (!zstr(inner_pre_trans_execute)) {
+		switch_cache_db_execute_sql_real(dbh, inner_pre_trans_execute, &errmsg);
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC %s [%s]\n", inner_pre_trans_execute, errmsg);
+			free(errmsg);
+		}
+	}
+
+	while(max == 0 || ttl <= max) {
 		if (mutex) switch_mutex_lock(mutex);
 		status = switch_queue_trypop(q, &pop);
 		if (mutex) switch_mutex_unlock(mutex);
@@ -1523,6 +1545,15 @@ static uint32_t do_trans(switch_cache_db_handle_t *dbh,
 
 		if (status != SWITCH_STATUS_SUCCESS) break;
 	}
+
+	if (!zstr(inner_post_trans_execute)) {
+		switch_cache_db_execute_sql_real(dbh, inner_post_trans_execute, &errmsg);
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL POST TRANS EXEC %s [%s]\n", inner_post_trans_execute, errmsg);
+			free(errmsg);
+		}
+	}
+
 
  end:
 
@@ -1548,6 +1579,15 @@ static uint32_t do_trans(switch_cache_db_handle_t *dbh,
 	}
 
 
+	if (!zstr(post_trans_execute)) {
+		switch_cache_db_execute_sql_real(dbh, post_trans_execute, &errmsg);
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL POST TRANS EXEC %s [%s]\n", post_trans_execute, errmsg);
+			free(errmsg);
+		}
+	}
+
+	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return ttl;
 }
@@ -1557,7 +1597,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 	uint32_t sanity = 120;
 	switch_sql_queue_manager_t *qm = (switch_sql_queue_manager_t *) obj;
-	uint32_t i;
+	uint32_t i, countdown = 0;
 
 	while (!qm->event_db) {
 		if (switch_cache_db_get_db_handle_dsn(&qm->event_db, qm->dsn) == SWITCH_STATUS_SUCCESS && qm->event_db)
@@ -1605,17 +1645,23 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 		}
 		
 		for (i = 0; i < qm->numq; i++) {
-			uint32_t written = do_trans(qm->event_db, qm->sql_queue[i], qm->mutex,
-										qm->pre_trans_execute,
-										qm->post_trans_execute,
-										qm->inner_pre_trans_execute,
-										qm->inner_post_trans_execute);
+			while(switch_queue_size(qm->sql_queue[i])) {
+				uint32_t written = do_trans(qm->event_db, qm->sql_queue[i], qm->mutex, qm->max_trans,
+											qm->pre_trans_execute,
+											qm->post_trans_execute,
+											qm->inner_pre_trans_execute,
+											qm->inner_post_trans_execute);
 
-			iterations += written;
+				iterations += written;
 			
-			switch_mutex_lock(qm->mutex);
-			qm->written[i] += written;
-			switch_mutex_unlock(qm->mutex);
+				switch_mutex_lock(qm->mutex);
+				qm->written[i] += written;
+				switch_mutex_unlock(qm->mutex);
+
+				if (written < qm->max_trans) {
+					break;
+				}
+			}
 		}
 		
 		if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
@@ -1638,12 +1684,14 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 	check:
 
-		lc = qm_ttl(qm);		
+		countdown = 40;
 
-		if (!lc) {
-			switch_thread_cond_wait(qm->cond, qm->cond_mutex);
-		} else if (lc < 2000) {
-			switch_yield(200000);
+		while (--countdown && (lc = qm_ttl(qm)) < qm->max_trans / 4) {
+			if (lc == 0) {
+				switch_thread_cond_wait(qm->cond, qm->cond_mutex);					
+				break;
+			}
+			switch_yield(5000);
 		}
 	}
 
@@ -3047,6 +3095,7 @@ static void switch_core_sqldb_start_thread(void)
 											   &sql_manager.qm,
 											   4,
 											   dbname,
+											   SWITCH_MAX_TRANS,
 											   runtime.core_db_pre_trans_execute,
 											   runtime.core_db_post_trans_execute,
 											   runtime.core_db_inner_pre_trans_execute,

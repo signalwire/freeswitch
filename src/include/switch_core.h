@@ -2431,14 +2431,14 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup);
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_destroy(switch_sql_queue_manager_t **qmp);
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *name,
-																		  switch_sql_queue_manager_t **qmp, 
-																		  uint32_t numq, const char *dsn,
-																		  const char *pre_trans_execute,
-																		  const char *post_trans_execute,
-																		  const char *inner_pre_trans_execute,
-																		  const char *inner_post_trans_execute);
+																   switch_sql_queue_manager_t **qmp, 
+																   uint32_t numq, const char *dsn, uint32_t max_trans,
+																   const char *pre_trans_execute,
+																   const char *post_trans_execute,
+																   const char *inner_pre_trans_execute,
+																   const char *inner_post_trans_execute);
 
-#define switch_sql_queue_manager_init(_q, _n, _d, _p1, _p2, _ip1, _ip2) switch_sql_queue_manager_init_name(__FILE__, _q, _n, _d, _p1, _p2, _ip1, _ip2)
+#define switch_sql_queue_manager_init(_q, _n, _d, _m, _p1, _p2, _ip1, _ip2) switch_sql_queue_manager_init_name(__FILE__, _q, _n, _d, _m, _p1, _p2, _ip1, _ip2)
 
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_start(switch_sql_queue_manager_t *qm);
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm);
