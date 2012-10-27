@@ -1605,7 +1605,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 		}
 		
 		for (i = 0; i < qm->numq; i++) {
-			uint32_t written = do_trans(qm->event_db, qm->sql_queue[i], NULL,
+			uint32_t written = do_trans(qm->event_db, qm->sql_queue[i], qm->mutex,
 										qm->pre_trans_execute,
 										qm->post_trans_execute,
 										qm->inner_pre_trans_execute,
