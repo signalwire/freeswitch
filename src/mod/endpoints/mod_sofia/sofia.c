@@ -4581,40 +4581,104 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				}
 
 			}
-			if (profile && !profile_already_started) {
-				switch_xml_t aliases_tag, alias_tag;
 
-				if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
-					for (alias_tag = switch_xml_child(aliases_tag, "alias"); alias_tag; alias_tag = alias_tag->next) {
-						char *aname = (char *) switch_xml_attr_soft(alias_tag, "name");
-						if (!zstr(aname)) {
+			if (profile) {
+				if (profile_already_started) {
+					switch_xml_t gateways_tag, domain_tag, domains_tag, aliases_tag, alias_tag;
 
-							if (sofia_glue_add_profile(switch_core_strdup(profile->pool, aname), profile) == SWITCH_STATUS_SUCCESS) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Alias [%s] for profile [%s]\n", aname, profile->name);
-							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding Alias [%s] for profile [%s] (name in use)\n",
-												  aname, profile->name);
+					if (sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU)) {
+						sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
+					}
+
+					if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
+						parse_gateways(profile, gateways_tag);
+					}
+
+					status = SWITCH_STATUS_SUCCESS;
+
+					if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
+						switch_event_t *xml_params;
+						switch_event_create(&xml_params, SWITCH_EVENT_REQUEST_PARAMS);
+						switch_assert(xml_params);
+						switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "purpose", "gateways");
+						switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "profile", profile->name);
+
+						for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
+							switch_xml_t droot, x_domain_tag;
+							const char *dname = switch_xml_attr_soft(domain_tag, "name");
+							const char *parse = switch_xml_attr_soft(domain_tag, "parse");
+							const char *alias = switch_xml_attr_soft(domain_tag, "alias");
+
+							if (!zstr(dname)) {
+								if (!strcasecmp(dname, "all")) {
+									switch_xml_t xml_root, x_domains;
+									if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+										for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
+											dname = switch_xml_attr_soft(x_domain_tag, "name");
+											parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
+										}
+										switch_xml_free(xml_root);
+									}
+								} else if (switch_xml_locate_domain(dname, xml_params, &droot, &x_domain_tag) == SWITCH_STATUS_SUCCESS) {
+									parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
+									switch_xml_free(droot);
+								}
+							}
+						}
+
+						switch_event_destroy(&xml_params);
+					}
+
+					if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
+						for (alias_tag = switch_xml_child(aliases_tag, "alias"); alias_tag; alias_tag = alias_tag->next) {
+							char *aname = (char *) switch_xml_attr_soft(alias_tag, "name");
+							if (!zstr(aname)) {
+
+								if (sofia_glue_add_profile(switch_core_strdup(profile->pool, aname), profile) == SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Alias [%s] for profile [%s]\n", aname, profile->name);
+								} else {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Alias [%s] for profile [%s] (already exists)\n",
+													  aname, profile->name);
+								}
 							}
 						}
 					}
-				}
-
-				if (profile->sipip) {
-					launch_sofia_profile_thread(profile);
-					if (profile->odbc_dsn) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Connecting ODBC Profile %s [%s]\n", profile->name, url);
-						switch_yield(1000000);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);
-					}
+					
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Unable to start Profile %s due to no configured sip-ip\n", profile->name);
-					sofia_profile_start_failure(profile, profile->name);
+					switch_xml_t aliases_tag, alias_tag;
+
+					if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
+						for (alias_tag = switch_xml_child(aliases_tag, "alias"); alias_tag; alias_tag = alias_tag->next) {
+							char *aname = (char *) switch_xml_attr_soft(alias_tag, "name");
+							if (!zstr(aname)) {
+
+								if (sofia_glue_add_profile(switch_core_strdup(profile->pool, aname), profile) == SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Alias [%s] for profile [%s]\n", aname, profile->name);
+								} else {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding Alias [%s] for profile [%s] (name in use)\n",
+													  aname, profile->name);
+								}
+							}
+						}
+					}
+
+					if (profile->sipip) {
+						launch_sofia_profile_thread(profile);
+						if (profile->odbc_dsn) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Connecting ODBC Profile %s [%s]\n", profile->name, url);
+							switch_yield(1000000);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Unable to start Profile %s due to no configured sip-ip\n", profile->name);
+						sofia_profile_start_failure(profile, profile->name);
+					}
+					profile = NULL;
 				}
-				profile = NULL;
-			}
-			if (profile_found) {
-				break;
+				if (profile_found) {
+					break;
+				}
 			}
 		}
 	}
