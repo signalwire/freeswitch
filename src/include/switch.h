@@ -106,7 +106,7 @@
 #include <signal.h>
 #include <errno.h>
 
-#include "../../../libs/stfu/stfu.h"
+#include "stfu.h"
 #include "switch_platform.h"
 #include "switch_types.h"
 #include "switch_apr.h"
