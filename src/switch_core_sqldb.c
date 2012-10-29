@@ -1973,7 +1973,7 @@ static void core_event_handler(switch_event_t *event)
 			case CS_NEW:
 			case CS_DESTROY:
 			case CS_REPORTING:
-			case CS_HANGUP:
+				//case CS_HANGUP: /* marked for deprication */
 			case CS_INIT:
 				break;
 			case CS_EXECUTE:
