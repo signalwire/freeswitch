@@ -2617,7 +2617,15 @@ SWITCH_DECLARE(int) switch_core_recovery_recover(const char *technology, const c
 
 SWITCH_DECLARE(switch_cache_db_handle_type_t) switch_core_dbtype(void)
 {
-	return sql_manager.qm ?  sql_manager.qm->event_db->type : SCDB_TYPE_CORE_DB;
+	switch_cache_db_handle_type_t type = SCDB_TYPE_CORE_DB;
+
+	switch_mutex_lock(sql_manager.ctl_mutex);
+	if (sql_manager.qm && sql_manager.qm->event_db) {
+		type = sql_manager.qm->event_db->type;
+	}
+	switch_mutex_unlock(sql_manager.ctl_mutex);
+
+	return type;
 }
 
 SWITCH_DECLARE(void) switch_core_sql_exec(const char *sql)
