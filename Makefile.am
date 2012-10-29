@@ -202,6 +202,7 @@ library_include_HEADERS = \
 	src/include/switch_xml_config.h \
 	src/include/switch_cpp.h \
 	src/include/switch_json.h \
+	libs/stfu/stfu.h \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
