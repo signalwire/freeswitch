@@ -511,7 +511,7 @@
       <prompt phrase="There is..." filename="ivr-there_is.wav"/>
       <prompt phrase="That number is on the Do Not Call list." filename="ivr-do_not_call_list.wav"/>
       <prompt phrase="The call attempt has been aborted." filename="ivr-call_attempt_aborted.wav"/>
-      <prompt phrase="To wait for the next available representative, please stay on the line." filename="ivr_to_wait_stay_on_the_line.wav"/>
+      <prompt phrase="To wait for the next available representative, please stay on the line." filename="ivr-to_wait_stay_on_the_line.wav"/>
       <prompt phrase="If you would like us to call you back, press..." filename="ivr-if_you_would_like_us_to_call_back.wav"/>
       <prompt phrase="It appears that your phone number is..." filename="ivr-it_appears_that_your_phone_number_is.wav"/>
       <prompt phrase="Would you like to receive a call at this number?" filename="ivr-would_you_like_to_receive_a_call_at_this_number.wav"/>
