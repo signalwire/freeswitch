@@ -575,6 +575,14 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 	}
 
+	if (!SWITCH_GLOBAL_dirs.lib_dir && (SWITCH_GLOBAL_dirs.lib_dir = (char *) malloc(BUFSIZE))) {
+#ifdef SWITCH_LIB_DIR
+		switch_snprintf(SWITCH_GLOBAL_dirs.lib_dir, BUFSIZE, "%s", SWITCH_LIB_DIR);
+#else
+		switch_snprintf(SWITCH_GLOBAL_dirs.lib_dir, BUFSIZE, "%s%slib", base_dir, SWITCH_PATH_SEPARATOR);
+#endif
+	}
+
 	if (!SWITCH_GLOBAL_dirs.conf_dir && (SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(BUFSIZE))) {
 #ifdef SWITCH_CONF_DIR
 		switch_snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%s", SWITCH_CONF_DIR);
@@ -671,6 +679,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 
 	switch_assert(SWITCH_GLOBAL_dirs.base_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.mod_dir);
+	switch_assert(SWITCH_GLOBAL_dirs.lib_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.conf_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.log_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.run_dir);

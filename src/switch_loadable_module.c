@@ -1219,7 +1219,11 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 #ifdef WIN32
 	dso = switch_dso_open("FreeSwitch.dll", load_global, &derr);
 #elif defined (MACOSX) || defined(DARWIN)
-	dso = switch_dso_open(SWITCH_PREFIX_DIR "/lib/libfreeswitch.dylib", load_global, &derr);
+	{
+		char *lib_path = switch_mprintf("%s/libfreeswitch.dylib", SWITCH_GLOBAL_dirs.lib_dir);
+		dso = switch_dso_open(lib_path, load_global, &derr);
+		switch_safe_free(lib_path);
+	}
 #else
 	dso = switch_dso_open(NULL, load_global, &derr);
 #endif
