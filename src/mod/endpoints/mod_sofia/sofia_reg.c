@@ -717,6 +717,8 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 	}
 
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_del_callback, profile);
+	free(sql);
+
 	if (now) {
 		sql = switch_mprintf("delete from sip_registrations where expires > 0 and expires <= %ld and hostname='%q'",
 						(long) now, mod_sofia_globals.hostname);
@@ -733,6 +735,8 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 						"and profile_name='%s' and expires <= %ld", mod_sofia_globals.hostname, profile->name, (long) now);
 
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_sla_dialog_del_callback, profile);
+		free(sql);
+
 		sql = switch_mprintf("delete from sip_shared_appearance_dialogs where expires > 0 and hostname='%q' and expires <= %ld",
 						mod_sofia_globals.hostname, (long) now);
 
@@ -944,6 +948,7 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_mu
 	}
 
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_find_reg_with_positive_expires_callback, &cbt);
+	free(sql);
 
 	return cbt.list;
 }
