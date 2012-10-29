@@ -2420,7 +2420,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			for (i = 0; i < and_argc; i++) {
 				const char *current_variable;
-				switch_event_t *local_var_event = NULL, *originate_var_event = NULL, *event = NULL;
+				switch_event_t *local_var_event = NULL, *originate_var_event = NULL;
 
 				end = NULL;
 				
@@ -2685,11 +2685,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 					}
 				}
-
-				switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
-				switch_assert(event);
-				switch_channel_event_set_data(originate_status[i].peer_channel, event);
-				switch_event_fire(&event);
 
 				if (originate_status[i].peer_channel) {
 					const char *vvar;

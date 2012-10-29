@@ -1638,7 +1638,6 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 		if (pop) {
 			sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
 			sofia_process_dispatch_event(&de);
-			switch_cond_next();
 		} else {
 			break;
 		}
@@ -1958,8 +1957,6 @@ void sofia_event_callback(nua_event_t event,
 	sofia_queue_message(de);
 
  end:
-
-	switch_cond_next();
 
 	return;
 }
