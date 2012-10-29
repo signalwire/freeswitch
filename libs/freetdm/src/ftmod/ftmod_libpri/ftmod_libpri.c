@@ -974,7 +974,13 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 					ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
-				pri_progress(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
+				/*
+				 * Even if we have no media, sending progress without PI is forbidden
+				 * by Q.931 3.1.8, so a protocol error will be issued from libpri
+				 * and from remote equipment.
+				 * So just pretend we have PI.
+				 */
+				pri_progress(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
 			} else {
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 			}
