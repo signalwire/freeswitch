@@ -111,6 +111,7 @@ createFileImage(TFile **     const filePP,
         int rc;
 
         if (createFile)
+            /* Unix prefers S_IWUSR, but some Windows knows only S_IWRITE */
             rc = open(name, attrib | O_CREAT, S_IWRITE | S_IREAD);
         else
             rc = open(name, attrib);

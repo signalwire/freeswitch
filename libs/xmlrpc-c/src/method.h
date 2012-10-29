@@ -65,6 +65,10 @@ typedef struct {
         /* The method function, if it's type 2.  Null if it's not */
     void * userData;
         /* Passed to method function */
+    size_t stackSize;
+        /* Amount of stack space 'methodFnType1' or 'methodFnType2' uses.
+           Zero means unspecified.
+        */
     struct xmlrpc_signatureList * signatureListP;
         /* Stuff returned by system method system.methodSignature.
            Empty list doesn't mean there are no valid forms of calling the
@@ -92,6 +96,7 @@ xmlrpc_methodCreate(xmlrpc_env *           const envP,
                     void *                 const userData,
                     const char *           const signatureString,
                     const char *           const helpText,
+                    size_t                 const stackSize,
                     xmlrpc_methodInfo **   const methodPP);
 
 void

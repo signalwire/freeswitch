@@ -17,7 +17,7 @@ See the file copying.txt for copying permission.
 #include <io.h>
 #endif
 
-#ifdef _POSIX_SOURCE
+#ifdef _XOPEN_SOURCE 600
 #include <unistd.h>
 #endif
 

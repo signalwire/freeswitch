@@ -565,6 +565,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 					status = ci->chat_send(message_event);
 					if (status == SWITCH_STATUS_BREAK) {
 						do_skip = 1;
+						status = SWITCH_STATUS_SUCCESS;
 					}
 					
 					if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -656,7 +657,6 @@ static void chat_thread_start(int idx)
 
 				switch_threadattr_create(&thd_attr, chat_globals.pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				//switch_threadattr_priority_increase(thd_attr);
 				switch_thread_create(&chat_globals.msg_queue_thread[i], 
 									 thd_attr, 
 									 chat_thread_run, 
@@ -2108,6 +2108,8 @@ SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uin
 				*rate = atoi(cur);
 			} else if (strchr(cur, 'b')) {
 				*bit = atoi(cur);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad syntax for codec string. Missing qualifier [h|k|i|b] for part [%s]!\n", cur);
 			}
 		}
 		cur = next;
@@ -2258,10 +2260,10 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 	}
 
 	if (stream->param_event) {
-		if (cmd_used) {
+		if (cmd_used && *cmd_used) {
 			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_used);
 		}
-		if (arg_used) {
+		if (arg_used && *arg_used) {
 			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_used);
 		}
 	}

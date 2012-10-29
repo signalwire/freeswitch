@@ -4,9 +4,9 @@
 
    The printf format specifiers we use appear to be entirely standard,
    except for the "long long" one, which is %I64 on Windows and %lld
-   everywhere else.  So for that, we use the C99 standard macro PRId64,
-   which is defined by inttypes.h.  Ironically, Windows doesn't have
-   inttypes.h either, but we have int.h instead.
+   everywhere else.  We could use the C99 standard macro PRId64 for that,
+   but on at least one 64-bit-long GNU compiler, PRId64 is "ld", which is
+   considered to be incompatible with long long.  So we have XMLRPC_PRId64.
 */
 
 #include "xmlrpc_config.h"
@@ -26,8 +26,9 @@
 #include "double.h"
 
 #define CRLF "\015\012"
-#define SMALL_BUFFER_SZ (128)
 #define XML_PROLOGUE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"CRLF
+#define APACHE_URL "http://ws.apache.org/xmlrpc/namespaces/extensions"
+#define XMLNS_APACHE "xmlns:ex=\"" APACHE_URL "\""
 
 
 static void
@@ -54,26 +55,31 @@ formatOut(xmlrpc_env *       const envP,
   particular, do NOT use this routine to print XML-RPC string values!
 -----------------------------------------------------------------------------*/
     va_list args;
-    char buffer[SMALL_BUFFER_SZ];
-    int count;
+    char buffer[128];
+    int rc;
 
     XMLRPC_ASSERT_ENV_OK(envP);
 
     va_start(args, formatString);
 
-    count = XMLRPC_VSNPRINTF(buffer, SMALL_BUFFER_SZ, formatString, args);
+    rc = XMLRPC_VSNPRINTF(buffer, sizeof(buffer), formatString, args);
 
-    /* Old C libraries return -1 if vsnprintf overflows its buffer.
-    ** New C libraries return the number of characters which *would* have
-    ** been printed if the error did not occur. This is impressively vile.
-    ** Thank the C99 committee for this bright idea. But wait! We also
-    ** need to keep track of the trailing NUL. */
+    /* Old vsnprintf() (and Windows) fails with return value -1 if the full
+       string doesn't fit in the buffer.  New vsnprintf() puts whatever will
+       fit in the buffer, and returns the length of the full string
+       regardless.  For us, this truncation is a failure.
+    */
 
-    if (count < 0 || count >= (SMALL_BUFFER_SZ - 1))
+    if (rc < 0)
         xmlrpc_faultf(envP, "formatOut() overflowed internal buffer");
-    else
-        XMLRPC_MEMBLOCK_APPEND(char, envP, outputP, buffer, count);
+    else {
+        unsigned int const formattedLen = rc;
 
+        if (formattedLen + 1 >= (sizeof(buffer)))
+            xmlrpc_faultf(envP, "formatOut() overflowed internal buffer");
+        else
+            XMLRPC_MEMBLOCK_APPEND(char, envP, outputP, buffer, formattedLen);
+    }
     va_end(args);
 }
 
@@ -271,6 +277,74 @@ xmlrpc_serialize_base64_data(xmlrpc_env *       const envP,
 
 
 
+static void
+serializeDatetime(xmlrpc_env *       const envP,
+                  xmlrpc_mem_block * const outputP,
+                  xmlrpc_value *     const valueP) {
+/*----------------------------------------------------------------------------
+   Add to *outputP the content of a <value> element to represent
+   the datetime value *valueP.  I.e.
+   "<dateTime.iso8601> ... </dateTime.iso8601>".
+-----------------------------------------------------------------------------*/
+
+    addString(envP, outputP, "<dateTime.iso8601>");
+    if (!envP->fault_occurred) {
+        char dtString[64];
+
+        snprintf(dtString, sizeof(dtString),
+                 "%u%02u%02uT%02u:%02u:%02u",
+                 valueP->_value.dt.Y,
+                 valueP->_value.dt.M,
+                 valueP->_value.dt.D,
+                 valueP->_value.dt.h,
+                 valueP->_value.dt.m,
+                 valueP->_value.dt.s);
+
+        if (valueP->_value.dt.u != 0) {
+            char usecString[64];
+            assert(valueP->_value.dt.u < 1000000);
+            snprintf(usecString, sizeof(usecString), ".%06u",
+                     valueP->_value.dt.u);
+            STRSCAT(dtString, usecString);
+        }
+        addString(envP, outputP, dtString);
+
+        if (!envP->fault_occurred) {
+            addString(envP, outputP, "</dateTime.iso8601>");
+        }
+    }
+}
+
+
+
+static void
+serializeStructMember(xmlrpc_env *       const envP,
+                      xmlrpc_mem_block * const outputP,
+                      xmlrpc_value *     const memberKeyP,
+                      xmlrpc_value *     const memberValueP,
+                      xmlrpc_dialect     const dialect) {
+    
+    addString(envP, outputP, "<member><name>");
+
+    if (!envP->fault_occurred) {
+        serializeUtf8MemBlock(envP, outputP, &memberKeyP->_block);
+
+        if (!envP->fault_occurred) {
+            addString(envP, outputP, "</name>"CRLF);
+
+            if (!envP->fault_occurred) {
+                xmlrpc_serialize_value2(envP, outputP, memberValueP, dialect);
+
+                if (!envP->fault_occurred) {
+                    addString(envP, outputP, "</member>"CRLF);
+                }
+            }
+        }
+    }
+}
+
+
+
 static void 
 serializeStruct(xmlrpc_env *       const envP,
                 xmlrpc_mem_block * const outputP,
@@ -280,37 +354,25 @@ serializeStruct(xmlrpc_env *       const envP,
    Add to *outputP the content of a <value> element to represent
    the structure value *valueP.  I.e. "<struct> ... </struct>".
 -----------------------------------------------------------------------------*/
-    size_t size;
-    size_t i;
-    xmlrpc_value * memberKeyP;
-    xmlrpc_value * memberValueP;
-
     addString(envP, outputP, "<struct>"CRLF);
-    XMLRPC_FAIL_IF_FAULT(envP);
+    if (!envP->fault_occurred) {
+        unsigned int const size = xmlrpc_struct_size(envP, structP);
+        if (!envP->fault_occurred) {
+            unsigned int i;
+            for (i = 0; i < size && !envP->fault_occurred; ++i) {
+                xmlrpc_value * memberKeyP;
+                xmlrpc_value * memberValueP;
 
-    size = xmlrpc_struct_size(envP, structP);
-    XMLRPC_FAIL_IF_FAULT(envP);
-    for (i = 0; i < size; ++i) {
-        xmlrpc_struct_get_key_and_value(envP, structP, i,
-                                        &memberKeyP, &memberValueP);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        addString(envP, outputP, "<member><name>");
-        XMLRPC_FAIL_IF_FAULT(envP);
-        serializeUtf8MemBlock(envP, outputP, &memberKeyP->_block);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        addString(envP, outputP, "</name>"CRLF);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        xmlrpc_serialize_value2(envP, outputP, memberValueP, dialect);
-        XMLRPC_FAIL_IF_FAULT(envP);
-        addString(envP, outputP, "</member>"CRLF);
-        XMLRPC_FAIL_IF_FAULT(envP);
+                xmlrpc_struct_get_key_and_value(envP, structP, i,
+                                                &memberKeyP, &memberValueP);
+                if (!envP->fault_occurred) {
+                    serializeStructMember(envP, outputP,
+                                          memberKeyP, memberValueP, dialect);
+                }
+            }
+            addString(envP, outputP, "</struct>");
+        }
     }
-
-    addString(envP, outputP, "</struct>");
-    XMLRPC_FAIL_IF_FAULT(envP);
-
-cleanup:
-    return;
 }
 
 
@@ -366,7 +428,7 @@ formatValueContent(xmlrpc_env *       const envP,
 
     case XMLRPC_TYPE_I8: {
         const char * const elemName =
-            dialect == xmlrpc_dialect_apache ? "ex.i8" : "i8";
+            dialect == xmlrpc_dialect_apache ? "ex:i8" : "i8";
         formatOut(envP, outputP, "<%s>%" PRId64 "</%s>",
                   elemName, valueP->_value.i8, elemName);
     } break;
@@ -391,13 +453,7 @@ formatValueContent(xmlrpc_env *       const envP,
     } break;
 
     case XMLRPC_TYPE_DATETIME:
-        addString(envP, outputP, "<dateTime.iso8601>");
-        if (!envP->fault_occurred) {
-            serializeUtf8MemBlock(envP, outputP, &valueP->_block);
-            if (!envP->fault_occurred) {
-                addString(envP, outputP, "</dateTime.iso8601>");
-            }
-        }
+        serializeDatetime(envP, outputP, valueP);
         break;
 
     case XMLRPC_TYPE_STRING:
@@ -436,7 +492,7 @@ formatValueContent(xmlrpc_env *       const envP,
 
     case XMLRPC_TYPE_NIL: {
         const char * const elemName =
-            dialect == xmlrpc_dialect_apache ? "ex.nil" : "nil";
+            dialect == xmlrpc_dialect_apache ? "ex:nil" : "nil";
         formatOut(envP, outputP, "<%s/>", elemName);
     } break;
 
@@ -502,9 +558,9 @@ xmlrpc_serialize_params2(xmlrpc_env *       const envP,
     addString(envP, outputP, "<params>"CRLF);
     if (!envP->fault_occurred) {
         /* Serialize each parameter. */
-        size_t const paramCount = xmlrpc_array_size(envP, paramArrayP);
+        int const paramCount = xmlrpc_array_size(envP, paramArrayP);
         if (!envP->fault_occurred) {
-            size_t paramSeq;
+            int paramSeq;
             for (paramSeq = 0;
                  paramSeq < paramCount && !envP->fault_occurred;
                  ++paramSeq) {
@@ -567,7 +623,9 @@ xmlrpc_serialize_call2(xmlrpc_env *       const envP,
     
     addString(envP, outputP, XML_PROLOGUE);
     if (!envP->fault_occurred) {
-        addString(envP, outputP, "<methodCall>"CRLF"<methodName>");
+        const char * const xmlns =
+            dialect == xmlrpc_dialect_apache ? " " XMLNS_APACHE : "";
+        formatOut(envP, outputP, "<methodCall%s>"CRLF"<methodName>", xmlns);
         if (!envP->fault_occurred) {
             xmlrpc_mem_block * encodedP;
             escapeForXml(envP, methodName, strlen(methodName), &encodedP);
@@ -623,8 +681,10 @@ xmlrpc_serialize_response2(xmlrpc_env *       const envP,
 
     addString(envP, outputP, XML_PROLOGUE);
     if (!envP->fault_occurred) {
-        addString(envP, outputP,
-                  "<methodResponse>"CRLF"<params>"CRLF"<param>");
+        const char * const xmlns =
+            dialect == xmlrpc_dialect_apache ? " " XMLNS_APACHE : "";
+        formatOut(envP, outputP,
+                  "<methodResponse%s>"CRLF"<params>"CRLF"<param>", xmlns);
         if (!envP->fault_occurred) {
             xmlrpc_serialize_value2(envP, outputP, valueP, dialect);
             if (!envP->fault_occurred) {

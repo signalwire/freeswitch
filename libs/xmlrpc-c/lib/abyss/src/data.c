@@ -32,6 +32,8 @@
 **
 *******************************************************************************/
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -198,20 +200,20 @@ ListAddFromString(TList *      const list,
 
 
 bool
-ListFindString(TList *      const sl,
+ListFindString(TList *      const listP,
                const char * const str,
                uint16_t *   const indexP)
 {
-    uint16_t i;
+    if (listP->item && str) {
+        unsigned int i;
 
-    if (sl->item && str)
-        for (i=0;i<sl->size;i++)
-            if (strcmp(str,(char *)(sl->item[i]))==0)
-            {
-                *indexP=i;
+        for (i = 0; i < listP->size; ++i) {
+            if (xmlrpc_streq(str, (char *)(listP->item[i]))) {
+                *indexP = i;
                 return TRUE;
-            };
-
+            }
+        }
+    }
     return FALSE;
 }
 
@@ -435,7 +437,7 @@ TableFindIndex(TTable *     const t,
     {
         for (i=*index;i<t->size;i++)
             if (hash==t->item[i].hash)
-                if (strcmp(t->item[i].name,name)==0)
+                if (xmlrpc_streq(t->item[i].name,name))
                 {
                     *index=i;
                     return TRUE;

@@ -20,19 +20,23 @@
   #define XMLRPC_SOCKET SOCKET
   #define XMLRPC_HAVE_TIMEVAL 0
   #define XMLRPC_HAVE_TIMESPEC 0
+  #define XMLRPC_HAVE_PTHREAD 0
 #else
   #define XMLRPC_SOCKET int
   #define XMLRPC_HAVE_TIMEVAL 1
   #define XMLRPC_HAVE_TIMESPEC 1
+  #define XMLRPC_HAVE_PTHREAD 1
 #endif
 
 #if defined(_MSC_VER)
   /* Newer MSVC has long long, but MSVC 6 does not */
   #define XMLRPC_INT64 __int64
   #define XMLRPC_INT32 __int32
+  #define XMLRPC_PRId64 PRId64
 #else
   #define XMLRPC_INT64 long long
   #define XMLRPC_INT32 int
+  #define XMLRPC_PRId64 "I64d"
 #endif
 #endif
 

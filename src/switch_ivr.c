@@ -1476,6 +1476,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
+		
+		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS)) {
+			switch_core_session_rwunlock(session);
+			return SWITCH_STATUS_INUSE;
+		}
+
+		switch_channel_set_flag(channel, CF_MEDIA_TRANS);
 
 		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			swap = 1;
@@ -1527,6 +1534,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			}
 		}
 
+		switch_channel_clear_flag(channel, CF_MEDIA_TRANS);
 		switch_core_session_rwunlock(session);
 
 		if (other_channel) {
@@ -1558,6 +1566,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 	if ((session = switch_core_session_locate(uuid))) {
 		status = SWITCH_STATUS_SUCCESS;
 		channel = switch_core_session_get_channel(session);
+
+		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS)) {
+			switch_core_session_rwunlock(session);
+			return SWITCH_STATUS_INUSE;
+		}
+
+		switch_channel_set_flag(channel, CF_MEDIA_TRANS);
 
 		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			swap = 1;
@@ -1617,8 +1632,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 				switch_core_session_rwunlock(other_session);
 			}
 		}
+
+		switch_channel_clear_flag(channel, CF_MEDIA_TRANS);
 		switch_core_session_rwunlock(session);
 	}
+
+
 
 	return status;
 }
@@ -2820,7 +2839,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 			break;
 		}
 
-		stfu_n_eat(jb, ts, read_frame->payload, read_frame->data, read_frame->datalen, 0);
+		stfu_n_eat(jb, ts, 0, read_frame->payload, read_frame->data, read_frame->datalen, 0);
 		ts += read_impl.samples_per_packet;
 
 		if ((jb_frame = stfu_n_read_a_frame(jb))) {

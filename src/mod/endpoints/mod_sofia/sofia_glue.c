@@ -36,8 +36,8 @@
 #include "mod_sofia.h"
 #include <switch_stun.h>
 
-switch_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile);
-
+switch_cache_db_handle_t *_sofia_glue_get_db_handle(sofia_profile_t *profile, const char *file, const char *func, int line);
+#define sofia_glue_get_db_handle(_p) _sofia_glue_get_db_handle(_p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
 {
@@ -1830,6 +1830,11 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 				tech_pvt->video_rm_rate = 90000;
 				tech_pvt->video_codec_ms = 0;
 				switch_snprintf(vport_buf, sizeof(vport_buf), "%u", tech_pvt->adv_sdp_video_port);
+				if (switch_channel_media_ready(tech_pvt->channel) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
+					sofia_set_flag(tech_pvt, TFLAG_VIDEO);
+					sofia_set_flag(tech_pvt, TFLAG_REINVITE);
+					sofia_glue_activate_rtp(tech_pvt, 0);
+				}
 			}
 
 			strncpy(q, p, 8);
@@ -2962,6 +2967,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 
 				switch_core_session_receive_message(tech_pvt->session, &msg);
 
+
 			}
 
 			switch_channel_set_variable(tech_pvt->channel, "sip_use_video_codec_name", tech_pvt->video_rm_encoding);
@@ -3237,7 +3243,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		goto end;
 	}
 
-	if (switch_rtp_ready(tech_pvt->rtp_session) && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+	if (switch_rtp_ready(tech_pvt->rtp_session) && 
+		(!sofia_test_flag(tech_pvt, TFLAG_VIDEO) || switch_rtp_ready(tech_pvt->video_rtp_session)) && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		status = SWITCH_STATUS_SUCCESS;
 		goto end;
 	}
@@ -3245,6 +3252,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	if ((status = sofia_glue_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
+
 
 	if (myflags) {
 		flags = myflags;
@@ -3656,10 +3664,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 
 	video:
-
+		
 		sofia_glue_check_video_codecs(tech_pvt);
+
 		if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding && tech_pvt->remote_sdp_video_port) {
-			
 			/******************************************************************************************/
 			if (tech_pvt->video_rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 				//const char *ip = switch_channel_get_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
@@ -3667,6 +3675,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				char *remote_host = switch_rtp_get_remote_host(tech_pvt->video_rtp_session);
 				switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->video_rtp_session);
 				
+
 
 				if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_video_ip) && remote_port == tech_pvt->remote_sdp_video_port) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Video params are unchanged for %s.\n",
@@ -3693,6 +3702,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->local_sdp_video_port);
 			switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
 			switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, tmp);
+
 
 			if (tech_pvt->video_rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
 				const char *rport = NULL;
@@ -3806,6 +3816,13 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 					switch_rtp_set_ssrc(tech_pvt->video_rtp_session, ssrc_ul);
 				}
 
+
+
+				if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_manual_video_rtp_bugs"))) {
+					sofia_glue_parse_rtp_bugs(&tech_pvt->video_rtp_bugs, val);
+				}
+				
+				switch_rtp_intentional_bugs(tech_pvt->video_rtp_session, tech_pvt->video_rtp_bugs | tech_pvt->profile->manual_video_rtp_bugs);
 
 				if (tech_pvt->video_recv_pt != tech_pvt->video_agreed_pt) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
@@ -4746,6 +4763,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	if (!reneg && tech_pvt->num_negotiated_codecs) {
 		codec_array = tech_pvt->negotiated_codecs;
 		total_codecs = tech_pvt->num_negotiated_codecs;
+	} else if (reneg) {
+		tech_pvt->num_codecs = 0;
+		sofia_glue_tech_prepare_codecs(tech_pvt);
+		codec_array = tech_pvt->codecs;
+		total_codecs = tech_pvt->num_codecs;
 	}
 
 	if (switch_stristr("T38FaxFillBitRemoval:", r_sdp) || switch_stristr("T38FaxTranscodingMMR:", r_sdp) || 
@@ -4902,7 +4924,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 							const char *b = switch_stristr("AES", crypto);
 
 							/* Change our key every time we can */
-							if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
+							
+							if (sofia_test_flag(tech_pvt, TFLAG_CRYPTO_RECOVER)) {
+								sofia_clear_flag(tech_pvt, TFLAG_CRYPTO_RECOVER);
+							} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
 								switch_channel_set_variable(tech_pvt->channel, SOFIA_HAS_CRYPTO_VARIABLE, SWITCH_RTP_CRYPTO_KEY_32);
 								sofia_glue_build_crypto(tech_pvt, atoi(crypto), AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND);
 								switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), tech_pvt->crypto_type,
@@ -4919,8 +4944,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 							if (a && b && !strncasecmp(a, b, 23)) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Change Remote key to [%s]\n", crypto);
 								tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
+								switch_channel_set_variable(tech_pvt->channel, "srtp_remote_audio_crypto_key", crypto);
 								tech_pvt->crypto_tag = crypto_tag;
-
+								
 								if (switch_rtp_ready(tech_pvt->rtp_session) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
 									sofia_glue_add_crypto(tech_pvt, tech_pvt->remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 									switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, tech_pvt->crypto_tag,
@@ -4934,6 +4960,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					} else if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 						tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set Remote Key [%s]\n", tech_pvt->remote_crypto_key);
+						switch_channel_set_variable(tech_pvt->channel, "srtp_remote_audio_crypto_key", crypto);
 						tech_pvt->crypto_tag = crypto_tag;
 						got_crypto++;
 
@@ -5300,7 +5327,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						vmatch = 0;
 					}
 				}
-
 
 				if (mimp) {
 					if ((tech_pvt->video_rm_encoding = switch_core_session_strdup(session, (char *) rm_encoding))) {
@@ -5852,6 +5878,10 @@ int sofia_recover_callback(switch_core_session_t *session)
 	sofia_glue_attach_private(session, profile, tech_pvt, NULL);
 	switch_channel_set_name(tech_pvt->channel, switch_channel_get_variable(channel, "channel_name"));
 
+	if ((tmp = switch_channel_get_variable(channel, "srtp_remote_audio_crypto_key"))) {
+		tech_pvt->remote_crypto_key = switch_core_session_strdup(session, tmp);
+		sofia_set_flag(tech_pvt, TFLAG_CRYPTO_RECOVER);
+	}
 
 	if ((tmp = switch_channel_get_variable(channel, "sip_local_sdp_str"))) {
 		tech_pvt->local_sdp_str = switch_core_session_strdup(session, tmp);
@@ -6358,43 +6388,43 @@ void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bo
 }
 
 
-switch_cache_db_handle_t *sofia_glue_get_db_handle(sofia_profile_t *profile)
+switch_cache_db_handle_t *_sofia_glue_get_db_handle(sofia_profile_t *profile, const char *file, const char *func, int line)
 {
-	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
-
+	char *dsn;
+	
 	if (!zstr(profile->odbc_dsn)) {
-		options.odbc_options.dsn = profile->odbc_dsn;
-		options.odbc_options.user = profile->odbc_user;
-		options.odbc_options.pass = profile->odbc_pass;
-
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = profile->odbc_dsn;
 	} else {
-		options.core_db_options.db_path = profile->dbname;
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = profile->dbname;
 	}
+
+	if (_switch_cache_db_get_db_handle_dsn(&dbh, dsn, file, func, line) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
+	}
+	
+	return dbh;
 }
 
 void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex)
 {
 	switch_cache_db_handle_t *dbh = NULL;
 
+	if (!(dbh = sofia_glue_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		return;
+	}
+
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (!(dbh = sofia_glue_get_db_handle(profile))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
-		goto end;
-	}
-
-	switch_cache_db_persistant_execute_trans(dbh, sql, 1);
-
- end:
+	switch_cache_db_persistant_execute_trans_full(dbh, sql, 1,
+												  profile->pre_trans_execute,
+												  profile->post_trans_execute,
+												  profile->inner_pre_trans_execute,
+												  profile->inner_post_trans_execute
+												  );
 
 	switch_cache_db_release_db_handle(&dbh);
 
@@ -6408,29 +6438,27 @@ void sofia_glue_actually_execute_sql(sofia_profile_t *profile, char *sql, switch
 	switch_cache_db_handle_t *dbh = NULL;
 	char *err = NULL;
 
+	if (!(dbh = sofia_glue_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		return;
+	}
+
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (!(dbh = sofia_glue_get_db_handle(profile))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
-		goto end;
-	}
-
 	switch_cache_db_execute_sql(dbh, sql, &err);
+
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
 
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s]\n%s\n", err, sql);
 		free(err);
 	}
 
- end:
-
 	switch_cache_db_release_db_handle(&dbh);
-
-	if (mutex) {
-		switch_mutex_unlock(mutex);
-	}
 }
 
 switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
@@ -6440,29 +6468,27 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 	char *errmsg = NULL;
 	switch_cache_db_handle_t *dbh = NULL;
 
+	if (!(dbh = sofia_glue_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		return ret;
+	}
+
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (!(dbh = sofia_glue_get_db_handle(profile))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
-		goto end;
-	}
-
 	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
+
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
 
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
 		free(errmsg);
 	}
 
- end:
-
 	switch_cache_db_release_db_handle(&dbh);
-
-	if (mutex) {
-		switch_mutex_unlock(mutex);
-	}
 
 	return ret;
 }
@@ -6484,13 +6510,13 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 
 	ret = switch_cache_db_execute_sql2str(dbh, sql, resbuf, len, &err);
 
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s]\n%s\n", err, sql);
 		free(err);
-	}
-
-	if (mutex) {
-		switch_mutex_unlock(mutex);
 	}
 
 	switch_cache_db_release_db_handle(&dbh);

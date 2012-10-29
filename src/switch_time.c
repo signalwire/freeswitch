@@ -150,6 +150,7 @@ SWITCH_DECLARE(void) switch_os_yield(void)
 #if defined(WIN32)
 	SwitchToThread();
 #else
+	usleep(1);
 	sched_yield();
 #endif
 }
@@ -672,8 +673,10 @@ static switch_status_t timer_next(switch_timer_t *timer)
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
 
+		switch_os_yield();
+
+
 		if (runtime.tipping_point && globals.timer_count >= runtime.tipping_point) {
-			switch_os_yield();
 			globals.use_cond_yield = 0;
 		} else {
 			if (globals.use_cond_yield == 1) {

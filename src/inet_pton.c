@@ -42,6 +42,7 @@
 
 #ifdef WIN32
 #include <winsock2.h>
+#define ENABLE_IPV6
 #if _MSC_VER < 1600
 #define EAFNOSUPPORT    WSAEAFNOSUPPORT
 #endif

@@ -32,10 +32,12 @@ using namespace std;
 
 
 
+namespace {
+
 class sampleAddMethod : public method {
 public:
     sampleAddMethod() {
-        this->_signature = "ii";
+        this->_signature = "i:ii";
         this->_help = "This method adds two integers together";
     }
     void
@@ -78,7 +80,15 @@ public:
 
 
 class clientXmlTransport_direct : public clientXmlTransport {
+/*----------------------------------------------------------------------------
+   Though this fills the shoes of a client XML transport, it's really a
+   simulation, because it doesn't transport anything anywhere.  The call()
+   method, which is supposed to transport a call to a server and then
+   transport the response back, actually just executes the method itself.
 
+   Part of a carriage parameter for a transport of this class is the handle
+   of a method registry, so the transport knows how to execute the method.
+-----------------------------------------------------------------------------*/
 public:    
     void
     call(xmlrpc_c::carriageParm * const  carriageParmP,
@@ -153,6 +163,64 @@ public:
         TEST(rpcSampleAdd1P->isSuccessful());
         value_int const result2(rpcSampleAdd2P->getResult());
         TEST(static_cast<int>(result2) == 20);
+    }
+};
+
+
+
+class MyRpc : public rpc {
+
+public:
+    MyRpc(std::string const  methodName,
+          paramList   const& paramList) :
+        rpc(methodName, paramList) {}
+
+    void
+    progress(struct xmlrpc_progress_data const& data) const {
+
+        // The way the tests are currently written, this never actually
+        // runs; we're just testing for ability to compile.
+
+        cout << "Progress of " << this << ": "
+             << data.call.total << " "
+             << data.call.now << " "
+             << data.response.total << " "
+             << data.response.now
+             << endl;
+    }
+};
+
+
+
+class clientDerivedRpcTestSuite : public testSuite {
+/*----------------------------------------------------------------------------
+  The object of this class tests the ability to derive a class
+  from xmlrpc_c::rpc in order to override certain methods.
+-----------------------------------------------------------------------------*/
+public:
+    virtual string suiteName() {
+        return "clientDerivedRpcTestSuite";
+    }
+    virtual void runtests(unsigned int const ) {
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new sampleAddMethod));
+        
+        carriageParm_direct carriageParmDirect(&myRegistry);
+        clientXmlTransport_direct transportDirect;
+        client_xml clientDirect(&transportDirect);
+        paramList paramListSampleAdd;
+        paramListSampleAdd.add(value_int(5));
+        paramListSampleAdd.add(value_int(7));
+        {
+            /* Test a successful RPC */
+            rpcPtr rpcSampleAddP(new MyRpc("sample.add", paramListSampleAdd));
+            rpcSampleAddP->call(&clientDirect, &carriageParmDirect);
+            TEST(rpcSampleAddP->isFinished());
+            TEST(rpcSampleAddP->isSuccessful());
+            value_int const resultDirect(rpcSampleAddP->getResult());
+            TEST(static_cast<int>(resultDirect) == 12);
+        }
     }
 };
 
@@ -241,6 +309,8 @@ public:
             // Same as above
         
         clientDirectAsyncTestSuite().run(indentation+1);
+
+        clientDerivedRpcTestSuite().run(indentation+1);
     }
 };
 
@@ -263,6 +333,7 @@ public:
             .network_interface("eth0")
             .no_ssl_verifypeer(true)
             .no_ssl_verifyhost(true)
+            .dont_advertise(true)
             .user_agent("my user agent")
             .ssl_cert("/etc/sslcert")
             .sslcerttype("PEM")
@@ -278,6 +349,10 @@ public:
             .randomfile("/dev/random")
             .egdsocket("/tmp/egdsocket")
             .ssl_cipher_list("RC4-SHA:DEFAULT")
+            .proxy("example.com")
+            .proxy_port(8080)
+            .proxy_userpwd("password")
+            .proxy_type(XMLRPC_HTTPPROXY_SOCKS5)
             );            
 
         clientXmlTransport_curl transport5(
@@ -828,6 +903,10 @@ public:
         }
     }
 };
+
+
+
+} // unnamed namespace
 
 
 

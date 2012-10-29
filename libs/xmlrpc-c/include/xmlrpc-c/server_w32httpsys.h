@@ -38,6 +38,7 @@
 #ifndef  _XMLRPC_SERVER_HTTPSYS_H_
 #define  _XMLRPC_SERVER_HTTPSYS_H_ 1
 
+#include "c_util.h"
 #include "transport_config.h"
 
 #ifdef __cplusplus
@@ -81,6 +82,7 @@ typedef struct {
    not the caller is new enough to have supplied a certain parameter.
 */
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_httpsys(
 	xmlrpc_env *                        const envP,

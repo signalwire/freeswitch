@@ -17,16 +17,6 @@
 #include "xmlrpc-c/string_int.h"
 
 
-/*=========================================================================
-**  Creating XML-RPC values.
-**=========================================================================
-**  Build new XML-RPC values from a format string. This code is heavily
-**  inspired by Py_BuildValue from Python 1.5.2. In particular, our
-**  particular abuse of the va_list data type is copied from the equivalent
-**  Python code in modsupport.c. Since Python is portable, our code should
-**  (in theory) also be portable.
-*/
-
 
 static void
 getString(xmlrpc_env *    const envP,
@@ -35,11 +25,11 @@ getString(xmlrpc_env *    const envP,
           xmlrpc_value ** const valPP) {
 
     const char * str;
-    unsigned int len;
+    size_t len;
     
     str = (const char*) va_arg(argsP->v, char*);
-    if (**formatP == '#') {
-        (*formatP)++;
+    if (*(*formatP) == '#') {
+        ++(*formatP);
         len = (size_t) va_arg(argsP->v, size_t);
     } else
         len = strlen(str);
@@ -399,10 +389,12 @@ xmlrpc_build_value(xmlrpc_env * const envP,
 
     if (!envP->fault_occurred) {
         if (*suffix != '\0')
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, "Junk after the argument "
-                "specifier: '%s'.  There must be exactly one arument.",
-                suffix);
+            xmlrpc_faultf(envP, "Junk after the format specifier: '%s'.  "
+                          "The format string must describe exactly "
+                          "one XML-RPC value "
+                          "(but it might be a compound value "
+                          "such as an array)",
+                          suffix);
     
         if (envP->fault_occurred)
             xmlrpc_DECREF(retval);

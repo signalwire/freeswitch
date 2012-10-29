@@ -15,7 +15,7 @@
    interface header files that get compiled as part of a user's program.
 
    This file just uses plain AC_SUBST substitution, the same as
-   Makefile.config.  Wherever you see @XXX@, that gets replaced by the
+   config.mk.  Wherever you see @XXX@, that gets replaced by the
    value of 'configure' variable XXX.
 
    Logical macros are 0 or 1 instead of the more traditional defined and
@@ -62,18 +62,29 @@
 #ifndef HAVE_STRICMP
 #define HAVE_STRICMP 0
 #endif
-#ifndef HAVE__STRICMP
-#define HAVE__STRICMP 0
+#ifndef HAVE_STRTOLL
+#define HAVE_STRTOLL 0
 #endif
-#ifndef HAVE_WCHAR_H
-#define HAVE_WCHAR_H 0
+#ifndef HAVE_STRTOQ
+#define HAVE_STRTOQ 0
 #endif
-#ifndef HAVE_SYS_FILIO_H
-#define HAVE_SYS_FILIO_H 0
+#ifndef HAVE___STRTOLL
+#define HAVE___STRTOLL 0
 #endif
-#ifndef HAVE_SYS_IOCTL_H
-#define HAVE_SYS_IOCTL_H 0
+#ifndef HAVE_STRTOUQ
+#define HAVE_STRTOUQ 0
 #endif
+#ifndef HAVE___STRTOULL
+#define HAVE___STRTOULL 0
+#endif
+#ifndef HAVE__STRTOUI64
+#define HAVE__STRTOUI64 0
+#endif
+
+#define HAVE_WCHAR_H @HAVE_WCHAR_H_DEFINE@
+#define HAVE_SYS_FILIO_H @HAVE_SYS_FILIO_H_DEFINE@
+#define HAVE_SYS_IOCTL_H @HAVE_SYS_IOCTL_H_DEFINE@
+#define HAVE_SYS_SELECT_H @HAVE_SYS_SELECT_H_DEFINE@
 
 #define VA_LIST_IS_ARRAY @VA_LIST_IS_ARRAY_DEFINE@
 
@@ -129,12 +140,37 @@
 #endif
 
 #if MSVCRT
+  #define HAVE_WINDOWS_THREAD 1
+#else
+  #define HAVE_WINDOWS_THREAD 0
+#endif
+
+#define HAVE_PTHREAD 1
+
+/* Note that the return value of XMLRPC_VSNPRINTF is int on Windows,
+   ssize_t on POSIX.
+*/
+#if MSVCRT
   #define XMLRPC_VSNPRINTF _vsnprintf
 #else
   #define XMLRPC_VSNPRINTF vsnprintf
 #endif
 
-#if defined(_MSC_VER)
+#if MSVCRT
+  #define HAVE_REGEX 0
+#else
+  #define HAVE_REGEX 1
+#endif
+
+#if MSVCRT
+  #define XMLRPC_SOCKETPAIR xmlrpc_win32_socketpair
+  #define XMLRPC_CLOSESOCKET closesocket
+#else
+  #define XMLRPC_SOCKETPAIR socketpair
+  #define XMLRPC_CLOSESOCKET close
+#endif
+
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
 /* Starting with MSVC 8, the runtime library defines various POSIX functions
    such as strdup() whose names violate the ISO C standard (the standard
    says the strXXX names are reserved for the standard), but warns you of
@@ -150,6 +186,26 @@
    we can't use it in portable code.
 */
 #pragma warning(disable:4996)
+#endif
+
+#if HAVE_STRTOLL
+  # define XMLRPC_STRTOLL strtoll
+#elif HAVE_STRTOQ
+  # define XMLRPC_STRTOLL strtoq /* Interix */
+#elif HAVE___STRTOLL
+  # define XMLRPC_STRTOLL __strtoll /* HP-UX <= 11.11 */
+#elif HAVE__STRTOUI64
+  #define XMLRPC_STRTOLL _strtoui64  /* Windows MSVC */
+#endif
+
+#if HAVE_STRTOULL
+  # define XMLRPC_STRTOULL strtoull
+#elif HAVE_STRTOUQ
+  # define XMLRPC_STRTOULL strtouq /* Interix */
+#elif HAVE___STRTOULL
+  # define XMLRPC_STRTOULL __strtoull /* HP-UX <= 11.11 */
+#elif HAVE__STRTOUI64
+  #define XMLRPC_STRTOULL _strtoui64  /* Windows MSVC */
 #endif
 
 #endif

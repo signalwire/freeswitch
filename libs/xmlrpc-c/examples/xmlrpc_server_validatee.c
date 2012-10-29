@@ -66,7 +66,7 @@
 static xmlrpc_value *
 array_of_structs(xmlrpc_env *   const envP, 
                  xmlrpc_value * const paramArrayP, 
-                 void *         const user_data ATTR_UNUSED) {
+                 void *         const user_data) {
 
     xmlrpc_value * arrayP;
     xmlrpc_value * retval;
@@ -114,7 +114,7 @@ array_of_structs(xmlrpc_env *   const envP,
 static xmlrpc_value *
 count_entities(xmlrpc_env *   const envP,
                xmlrpc_value * const paramArrayP, 
-               void *         const user_data ATTR_UNUSED) {
+               void *         const user_data) {
 
     const char * str;
     size_t len, i;
@@ -154,7 +154,7 @@ count_entities(xmlrpc_env *   const envP,
 static xmlrpc_value *
 easy_struct(xmlrpc_env *   const envP,
             xmlrpc_value * const paramArrayP,
-            void *         const user_data ATTR_UNUSED) {
+            void *         const user_data) {
 
     xmlrpc_int32 larry, moe, curly;
 
@@ -179,7 +179,7 @@ easy_struct(xmlrpc_env *   const envP,
 static xmlrpc_value *
 echo_struct(xmlrpc_env *   const envP,
             xmlrpc_value * const paramArrayP, 
-            void *         const user_data ATTR_UNUSED) {
+            void *         const user_data) {
 
     xmlrpc_value * sP;
 
@@ -198,9 +198,9 @@ echo_struct(xmlrpc_env *   const envP,
 */
 
 static xmlrpc_value *
-many_types(xmlrpc_env *   const env ATTR_UNUSED, 
+many_types(xmlrpc_env *   const env, 
            xmlrpc_value * const param_array, 
-           void *         const user_data ATTR_UNUSED) {
+           void *         const user_data) {
 
     /* Create another reference to our argument array and return it as is. */
     xmlrpc_INCREF(param_array);
@@ -244,7 +244,7 @@ concatenate(xmlrpc_env *    const envP,
 static xmlrpc_value *
 moderate_array(xmlrpc_env *   const envP,
                xmlrpc_value * const paramArrayP,
-               void *         const user_data ATTR_UNUSED) {
+               void *         const user_data) {
 
     xmlrpc_value * retval;
     xmlrpc_value * arrayP;
@@ -295,7 +295,7 @@ moderate_array(xmlrpc_env *   const envP,
 static xmlrpc_value *
 nested_struct(xmlrpc_env *   const envP,
               xmlrpc_value * const paramArrayP,
-              void *         const user_data ATTR_UNUSED) {
+              void *         const user_data) {
 
     xmlrpc_value * yearsP;
     xmlrpc_value * retval;
@@ -333,7 +333,7 @@ nested_struct(xmlrpc_env *   const envP,
 static xmlrpc_value *
 struct_return(xmlrpc_env *   const envP,
               xmlrpc_value * const paramArrayP,
-              void *         const user_data ATTR_UNUSED) {
+              void *         const user_data) {
 
     xmlrpc_int32 i;
 

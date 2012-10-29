@@ -1198,10 +1198,11 @@ switch_status_t skinny_handle_enbloc_call_message(listener_t *listener, skinny_m
 switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_message_t *request)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	struct speed_dial_stat_res_message *button = NULL;
 	uint32_t line_instance = 0;
 	uint32_t call_id = 0;
 	switch_core_session_t *session = NULL;
+	struct speed_dial_stat_res_message *button_speed_dial = NULL;
+	struct line_stat_res_message *button_line = NULL;
 
 	skinny_check_data_length(request, sizeof(request->data.stimulus)-sizeof(request->data.stimulus.call_id));
 
@@ -1215,10 +1216,10 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 			skinny_session_process_dest(session, listener, line_instance, "redial", '\0', 0);
 			break;
 		case SKINNY_BUTTON_SPEED_DIAL:
-			skinny_speed_dial_get(listener, request->data.stimulus.instance, &button);
-			if(strlen(button->line) > 0) {
+			skinny_speed_dial_get(listener, request->data.stimulus.instance, &button_speed_dial);
+			if(strlen(button_speed_dial->line) > 0) {
 				skinny_create_incoming_session(listener, &line_instance, &session);
-				skinny_session_process_dest(session, listener, line_instance, button->line, '\0', 0);
+				skinny_session_process_dest(session, listener, line_instance, button_speed_dial->line, '\0', 0);
 			}
 			break;
 		case SKINNY_BUTTON_HOLD:
@@ -1239,6 +1240,21 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 			skinny_create_incoming_session(listener, &line_instance, &session);
 			skinny_session_process_dest(session, listener, line_instance, "vmain", '\0', 0);
 			break;
+
+		case SKINNY_BUTTON_LINE:
+			// Get the button data
+			skinny_line_get(listener, request->data.stimulus.instance, &button_line);
+
+			// Set the button and try to open the incoming session with this
+			line_instance = button_line->number;
+			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
+
+			// If session and line match, answer the call
+			if ( session && line_instance == button_line->number ) {
+				status = skinny_session_answer(session, listener, line_instance);
+			}
+			break;
+
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown Stimulus Type Received [%d]\n", request->data.stimulus.instance_type);
 	}

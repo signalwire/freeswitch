@@ -283,7 +283,8 @@ typedef enum {
 	PFLAG_NDLB_SENDRECV_IN_SESSION = (1 << 2),
 	PFLAG_NDLB_ALLOW_BAD_IANANAME = (1 << 3),
 	PFLAG_NDLB_ALLOW_NONDUP_SDP = (1 << 4),
-	PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP = (1 << 5)
+	PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP = (1 << 5),
+	PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE = (1 << 6)
 } sofia_NDLB_t;
 
 typedef enum {
@@ -343,6 +344,7 @@ typedef enum {
 	TFLAG_SLA_BARGE,
 	TFLAG_SLA_BARGING,
 	TFLAG_PASS_ACK,
+	TFLAG_CRYPTO_RECOVER,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -626,11 +628,14 @@ struct sofia_profile {
 	uint32_t rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
-	//  switch_odbc_handle_t *master_odbc;
+	char *pre_trans_execute;
+	char *post_trans_execute;
+	char *inner_pre_trans_execute;
+	char *inner_post_trans_execute;	
 	switch_queue_t *sql_queue;
 	char *acl[SOFIA_MAX_ACL];
+	char *acl_pass_context[SOFIA_MAX_ACL];
+	char *acl_fail_context[SOFIA_MAX_ACL];
 	uint32_t acl_count;
 	char *proxy_acl[SOFIA_MAX_ACL];
 	uint32_t proxy_acl_count;
@@ -649,6 +654,7 @@ struct sofia_profile {
 	uint32_t max_registrations_perext;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
 	switch_rtp_bug_flag_t manual_rtp_bugs;
+	switch_rtp_bug_flag_t manual_video_rtp_bugs;
 	uint32_t ib_calls;
 	uint32_t ob_calls;
 	uint32_t ib_failed_calls;
@@ -817,6 +823,7 @@ struct private_object {
 	uint8_t codec_reinvites;
 	nua_event_t want_event;
 	switch_rtp_bug_flag_t rtp_bugs;
+	switch_rtp_bug_flag_t video_rtp_bugs;
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t write_impl;
 	char *user_via;
@@ -1156,7 +1163,6 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix);
 void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *sip, const char *prefix);
 char *sofia_glue_get_extra_headers_from_event(switch_event_t *event, const char *prefix);
-void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_session_t *bleg);
 void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *profile, sip_t const *sip, switch_bool_t send);
 void sofia_send_callee_id(switch_core_session_t *session, const char *name, const char *number);
 int sofia_sla_supported(sip_t const *sip);

@@ -15,11 +15,12 @@
 #include "xmlrpc_config.h"
 
 #include "int.h"
+#include "casprintf.h"
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/abyss.h"
 
-#include "test.h"
+#include "testtool.h"
 
 #include "abyss.h"
 
@@ -87,7 +88,7 @@ chanSwitchCreate(uint16_t       const portNumber,
 
 static void
 channelCreateFd(int const fd,
-                TChannel ** const channelPP,
+                TChannel **   const channelPP,
                 const char ** const errorP) {
 
 #ifdef WIN32
@@ -104,7 +105,7 @@ channelCreateFd(int const fd,
 static void
 testChanSwitchOsSocket(void) {
 
-    int rc;
+    XMLRPC_SOCKET rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);
     if (rc < 0) {
@@ -165,7 +166,7 @@ testChanSwitch(void) {
 static void
 testChannel(void) {
 
-    int rc;
+    XMLRPC_SOCKET rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);
     if (rc < 0) {
@@ -183,6 +184,8 @@ testChannel(void) {
         TEST(error);
 
         TEST(strstr(error, "not in connected"));
+
+        strfree(error);
     }
 }
 
@@ -191,7 +194,7 @@ testChannel(void) {
 static void
 testOsSocket(void) {
 
-    int rc;
+    XMLRPC_SOCKET rc;
 
     rc = socket(AF_INET, SOCK_STREAM, 0);
     if (rc < 0) {

@@ -86,6 +86,35 @@ xmlrpc_client_event_loop_end (void);
 extern int
 xmlrpc_client_asynch_calls_are_unfinished (void);
 
+
+
+/*=========================================================================
+** Interface between global client and general client functions.
+** (These are necessary because there are some global client functions
+** that don't have exported private client versions because we don't like
+** them and have them for global functions only for backward compatibility.
+** The global client functions existed before any private client ones did).
+**========================================================================= */
+void
+xmlrpc_client_call_server2_va(xmlrpc_env *               const envP,
+                              struct xmlrpc_client *     const clientP,
+                              const xmlrpc_server_info * const serverInfoP,
+                              const char *               const methodName,
+                              const char *               const format,
+                              va_list                          args,
+                              xmlrpc_value **            const resultPP);
+
+void
+xmlrpc_client_start_rpcf_server_va(
+    xmlrpc_env *               const envP,
+    struct xmlrpc_client *     const clientP,
+    const xmlrpc_server_info * const serverInfoP,
+    const char *               const methodName,
+    xmlrpc_response_handler responseHandler,
+    void *                     const userData,
+    const char *               const format,
+    va_list                    args);
+
 /* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
 **
 ** Redistribution and use in source and binary forms, with or without

@@ -1,6 +1,8 @@
 #ifndef GIRMEM_HPP_INCLUDED
 #define GIRMEM_HPP_INCLUDED
 
+#include <xmlrpc-c/config.h>
+#include <xmlrpc-c/c_util.h>
 
 /* The following pthread crap mirrors what is in pthreadx.h, which is
    what girmem.cpp uses to declare the lock interface.  We can't simply
@@ -15,7 +17,7 @@
    a pthread_mutex_t member, and on Windows, there's no such type.
 */
    
-#ifndef WIN32
+#if XMLRPC_HAVE_PTHREAD
 #  include <pthread.h>
    typedef pthread_mutex_t girmem_lock;
 #else
@@ -25,9 +27,9 @@
 
 namespace girmem {
 
-class autoObjectPtr;
+class XMLRPC_DLLEXPORT autoObjectPtr;
 
-class autoObject {
+class XMLRPC_DLLEXPORT autoObject {
     friend class autoObjectPtr;
 
 public:
@@ -43,7 +45,7 @@ private:
     unsigned int refcount;
 };
 
-class autoObjectPtr {
+class XMLRPC_DLLEXPORT autoObjectPtr {
 public:
     autoObjectPtr();
     autoObjectPtr(girmem::autoObject * objectP);

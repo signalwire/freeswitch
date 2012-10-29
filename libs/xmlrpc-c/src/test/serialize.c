@@ -6,7 +6,7 @@
 
 #include "xmlrpc-c/base.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "xml_data.h"
 #include "girstring.h"
 #include "serialize_value.h"
@@ -176,8 +176,8 @@ test_serialize_apache_value(void) {
     char const serializedData[] =
         "<value><array><data>\r\n"
             "<value><i4>7</i4></value>\r\n"
-            "<value><ex.i8>8</ex.i8></value>\r\n"
-            "<value><ex.nil/></value>\r\n"
+            "<value><ex:i8>8</ex:i8></value>\r\n"
+            "<value><ex:nil/></value>\r\n"
         "</data></array></value>";
 
     xmlrpc_env env;
@@ -214,7 +214,7 @@ test_serialize_apache_params(void) {
     char const serializedData[] =
         "<params>\r\n"
             "<param><value><i4>7</i4></value></param>\r\n"
-            "<param><value><ex.i8>8</ex.i8></value></param>\r\n"
+            "<param><value><ex:i8>8</ex:i8></value></param>\r\n"
         "</params>\r\n";
 
     xmlrpc_env env;
@@ -251,9 +251,9 @@ test_serialize_apache_response(void) {
 
     char const serializedData[] =
         XML_PROLOGUE
-        "<methodResponse>\r\n"
+        "<methodResponse " XMLNS_APACHE ">\r\n"
         "<params>\r\n"
-        "<param><value><ex.i8>8</ex.i8></value></param>\r\n"
+        "<param><value><ex:i8>8</ex:i8></value></param>\r\n"
         "</params>\r\n"
         "</methodResponse>\r\n";
 

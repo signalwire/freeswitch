@@ -1,30 +1,6 @@
-/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-** 3. The name of the author may not be used to endorse or promote products
-**    derived from this software without specific prior written permission. 
-**  
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE. */
-
 #include "xmlrpc_config.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,22 +71,28 @@ xmlrpc_struct_new(xmlrpc_env * const envP) {
 */
 
 int 
-xmlrpc_struct_size(xmlrpc_env* env, xmlrpc_value* strct)
-{
+xmlrpc_struct_size(xmlrpc_env *   const envP,
+                   xmlrpc_value * const structP) {
+
     int retval;
 
-    /* Suppress a compiler warning about uninitialized variables. */
-    retval = 0;
+    XMLRPC_ASSERT_ENV_OK(envP);
+    XMLRPC_ASSERT_VALUE_OK(structP);
 
-    XMLRPC_ASSERT_ENV_OK(env);
-    XMLRPC_ASSERT_VALUE_OK(strct);
+    if (structP->_type != XMLRPC_TYPE_STRUCT) {
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_TYPE_ERROR, "Value is not a struct.  It is type #%d",
+            structP->_type);
+        retval = -1;
+    } else {
+        size_t const size =
+            XMLRPC_MEMBLOCK_SIZE(_struct_member, &structP->_block);
 
-    XMLRPC_TYPE_CHECK(env, strct, XMLRPC_TYPE_STRUCT);
-    retval = XMLRPC_MEMBLOCK_SIZE(_struct_member, &strct->_block);
+        assert((size_t)(int)size == size);
+            /* Because structs are defined to have few enough members */
 
- cleanup:
-    if (env->fault_occurred)
-        return -1;
+        retval = (int)size;
+    }
     return retval;
 }
 
@@ -149,30 +131,42 @@ find_member(xmlrpc_value * const strctP,
             const char *   const key, 
             size_t         const keyLen) {
 
+    int retval;
     size_t size, i;
     uint32_t searchHash;
     _struct_member * contents;  /* array */
-    xmlrpc_value * keyvalP;
-    const char * keystr;
-    size_t keystrSize;
+    bool found;
+    size_t foundIndex;  /* Meaningful only when 'found' is true */
 
     XMLRPC_ASSERT_VALUE_OK(strctP);
     XMLRPC_ASSERT(key != NULL);
+    foundIndex = 0;  /* defeat used-before-set compiler warning */
 
     /* Look for our key. */
     searchHash = hashStructKey(key, keyLen);
     size = XMLRPC_MEMBLOCK_SIZE(_struct_member, &strctP->_block);
     contents = XMLRPC_MEMBLOCK_CONTENTS(_struct_member, &strctP->_block);
-    for (i = 0; i < size; ++i) {
+    for (i = 0, found = false; i < size && !found; ++i) {
         if (contents[i].keyHash == searchHash) {
-            keyvalP = contents[i].key;
-            keystr = XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
-            keystrSize = XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block)-1;
-            if (keystrSize == keyLen && memcmp(key, keystr, keyLen) == 0)
-                return i;
+            xmlrpc_value * const keyvalP = contents[i].key;
+            const char * const keystr =
+                XMLRPC_MEMBLOCK_CONTENTS(char, &keyvalP->_block);
+            size_t const keystrSize =
+                XMLRPC_MEMBLOCK_SIZE(char, &keyvalP->_block)-1;
+            if (keystrSize == keyLen && memcmp(key, keystr, keyLen) == 0) {
+                found = true;
+                foundIndex = i;
+            }
         }   
     }
-    return -1;
+    if (found) {
+        assert((size_t)(int)foundIndex == foundIndex);
+            /* Definition of structure says it has few enough members */
+        retval = foundIndex;
+    } else
+        retval = -1;
+
+    return retval;
 }
 
 
@@ -588,3 +582,31 @@ xmlrpc_struct_get_key_and_value(xmlrpc_env *    const envP,
         *valueP = NULL;
     }
 }
+
+
+
+/* Copyright (C) 2001 by First Peer, Inc. All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission. 
+**  
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+** SUCH DAMAGE. */
+

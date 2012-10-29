@@ -483,10 +483,14 @@ SWITCH_STANDARD_API(lua_api_function)
 		}
 
 		if ((error = lua_parse_and_execute(L, mycmd))) {
-			if (switch_event_get_header(stream->param_event, "http-host")) {
-				stream->write_function(stream, "Content-Type: text/html\n\n<H2>Error Executing Script</H2>");
+			char * http = switch_event_get_header(stream->param_event, "http-uri");
+			if (http && (!strncasecmp(http, "/api/", 5) || !strncasecmp(http, "/webapi/", 8))) {
+					/* api -> fs api streams the Content-Type e.g. text/html or text/xml               */
+					/* api -> default Content-Type is text/plain 				                       */
+					/* webapi, txtapi -> Content-Type defined in mod_xmlrpc	text/html resp. text/plain */
+					stream->write_function(stream, "<H2>Error Executing Script</H2>");
 			} else {
-				stream->write_function(stream, "-ERR encountered\n");
+				stream->write_function(stream, "-ERR Cannot execute script\n");
 			}
 		}
 		lua_uninit(L);

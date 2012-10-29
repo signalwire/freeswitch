@@ -1,5 +1,5 @@
-/* A simple standalone XML-RPC server written in C as an example of use of
-   the Xmlrpc-c libraries.
+/* A simple standalone XML-RPC server program written in C as an example of
+   use of the Xmlrpc-c libraries.
 
    This example expects an already bound socket on Standard Input, ready to
    be listened on for client connections.  Also see xmlrpc_sample_add_server,
@@ -7,7 +7,11 @@
    creates the socket itself.  Also see xmlrpc_inetd_server.c, which is
    the same thing except you give it a socket which is already connected
    to a client.
- */
+
+   Example:
+
+   $ socketexec -local_port=8080 ./xmlrpc_socket_server
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -33,7 +37,8 @@
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP,
            xmlrpc_value * const paramArrayP,
-           void *         const user_data ATTR_UNUSED) {
+           void *         const serverInfo,
+           void *         const channelInfo) {
 
     xmlrpc_int32 x, y, z;
 
@@ -61,6 +66,11 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
+    struct xmlrpc_method_info3 const methodInfo = {
+        .methodName     = "sample.add",
+        .methodFunction = &sample_add,
+        .serverInfo = NULL
+    };
     xmlrpc_server_abyss_parms serverparm;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
@@ -77,8 +87,7 @@ main(int           const argc,
 
     registryP = xmlrpc_registry_new(&env);
 
-    xmlrpc_registry_add_method(
-        &env, registryP, NULL, "sample.add", &sample_add, NULL);
+    xmlrpc_registry_add_method3(&env, registryP, &methodInfo);
 
     /* In the modern form of the Abyss API, we supply parameters in memory
        like a normal API.  We select the modern form by setting

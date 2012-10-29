@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/abyss.h"
 #include "channel.h"
@@ -26,7 +27,7 @@
    functions that are particular to an implementation.
 */
 
-static uint const socketSignature = 0x060609;
+static unsigned int const socketSignature = 0x060609;
 
 
 static void

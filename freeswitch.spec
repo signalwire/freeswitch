@@ -1118,6 +1118,22 @@ Requires:        %{name} = %{version}-%{release}
 %description lang-he
 Hebrew language phrases module and directory structure for say module and voicemail
 
+%package lang-es
+Summary:        Provides Spanish language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%description lang-es
+Spanish language phrases module and directory structure for say module and voicemail
+
+%package lang-pt
+Summary:        Provides Portugese language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%description lang-pt
+Hebrew language phrases module and directory structure for say module and voicemail
+
 ######################################################################################################################
 #				FreeSWITCH Timer Modules
 ######################################################################################################################
@@ -1733,6 +1749,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/mongo.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/nibblebill.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/opal.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/oreka.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/osp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pocketsphinx.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/portaudio.conf.xml
@@ -2296,6 +2313,30 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/he/dir/*.xml
 %{MODINSTDIR}/mod_say_he.so*
 
+%files lang-es
+%defattr(-, freeswitch, daemon)
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/es
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/es/demo
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/es/vm
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/es/dir
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/es/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/es/demo/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/es/vm/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/es/dir/*.xml
+%{MODINSTDIR}/mod_say_en.so*
+
+%files lang-pt
+%defattr(-, freeswitch, daemon)
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt/demo
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt/vm
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt/dir
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/pt/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/pt/demo/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/pt/vm/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/pt/dir/*.xml
+%{MODINSTDIR}/mod_say_en.so*
+
 ######################################################################################################################
 #
 #					Timer Modules
@@ -2332,6 +2373,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Thu Sep 19 2012 - krice@freeswitch.org
+- Add support for Spanish and Portugese say language modules
 * Thu Jan 26 2012 - krice@freeswitch.org
 - complete rework of spec file
 * Tue Jun 14 2011 - michal.bielicki@seventhsignal.de

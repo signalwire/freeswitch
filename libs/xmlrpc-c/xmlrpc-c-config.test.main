@@ -52,14 +52,22 @@ while test $# -gt 0; do
       ;;
     c++2)
       needCpp=yes
-      the_libs="${BLDDIR}/src/cpp/libxmlrpc++.a $the_libs"
+      the_libs="${BLDDIR}/src/cpp/lib$LIBXMLRPCPP_NAME.a $the_libs"
       ;;
     server-util)
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
+      if test "${needCpp}" = "yes"; then
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
+        fi
       ;;
     cgi-server)
       the_libs="${BLDDIR}/src/libxmlrpc_server.a $the_libs"
-      the_libs="${BLDDIR}/src/libxmlrpc_server_cgi.a $the_libs"
+      if test "${needCpp}" = "yes"; then
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_server_cgi++.a $the_libs"
+        the_libs="${BLDDIR}/src/cpp/libxmlrpc_server++.a $the_libs"
+      else
+        the_libs="${BLDDIR}/src/libxmlrpc_server_cgi.a $the_libs"
+        fi
       ;;
     abyss-server)
       if test "${ENABLE_ABYSS_THREADS}" = "yes"; then
@@ -87,18 +95,18 @@ while test $# -gt 0; do
       the_libs="${BLDDIR}/src/libxmlrpc_client.a $the_libs"
       if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
         the_libs="$the_libs $WININET_LDADD"
-        the_rpath="$WININET_RPATH $the_rpath"
-        the_wl_rpath="$WININET_WL_RPATH $the_wl_rpath"
+        the_rpath="-R$WININET_LIBDIR $the_rpath"
+        the_wl_rpath="-Wl,-rpath,$WININET_LIBDIR $the_wl_rpath"
         fi
       if test "${MUST_BUILD_CURL_CLIENT}" = "yes"; then
         the_libs="$the_libs $CURL_LDADD"
-        the_rpath="$CURL_RPATH $the_rpath"
-        the_wl_rpath="$CURL_WL_RPATH $the_wl_rpath"
+        the_rpath="-R$CURL_LIBDIR $the_rpath"
+        the_wl_rpath="-Wl,-rpath,$CURL_LIBDIR $the_wl_rpath"
         fi
       if test "${MUST_BUILD_LIBWWW_CLIENT}" = "yes"; then
         the_libs="$the_libs $LIBWWW_LDADD"
-        the_rpath="$LIBWWW_RPATH $the_rpath"
-        the_wl_rpath="$LIBWWW_WL_RPATH $the_wl_rpath"
+        the_rpath="-R$LIBWWW_LIBDIR $the_rpath"
+        the_wl_rpath="-Wl,-rpath,$LIBWWW_LIBDIR $the_wl_rpath"
         fi
       if test "${needCpp}" = "yes"; then
         the_libs="${BLDDIR}/src/cpp/libxmlrpc_client++.a $the_libs"
@@ -118,7 +126,14 @@ while test $# -gt 0; do
       echo "$the_includes"
       ;;
     --libs)
-      echo "$the_libdirs $the_libs $packetsocket_lib $the_wl_rpath"
+      if test "$NEED_WL_RPATH" = "yes"; then
+          rpath=$the_wl_rpath
+      elif test "$NEED_RPATH" = "yes"; then
+          rpath=$the_rpath
+      else
+          rpath=
+      fi
+      echo "$the_libdirs $rpath $the_libs $packetsocket_lib"
       ;;
     --ldadd)
       echo "$the_libdirs $the_libs $packetsocket_lib"

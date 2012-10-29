@@ -36,6 +36,7 @@ SWITCH_DECLARE_DATA switch_xml_config_string_options_t switch_config_string_strd
 
 static switch_xml_config_enum_item_t switch_config_types_enum[] = {
 	{"int", SWITCH_CONFIG_INT},
+	{"switch_atomic_t", SWITCH_CONFIG_INT},
 	{"string", SWITCH_CONFIG_STRING},
 	{"bool", SWITCH_CONFIG_BOOL},
 	{"custom", SWITCH_CONFIG_CUSTOM},
@@ -199,6 +200,48 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 
 				if (*dest != intval) {
 					*dest = intval;
+					changed = SWITCH_TRUE;
+				}
+			}
+			break;
+		case SWITCH_CONFIG_ATOMIC:
+			{
+				switch_xml_config_atomic_options_t *atomic_options = (switch_xml_config_atomic_options_t *) item->data;
+				switch_atomic_t *dest = (switch_atomic_t *) ptr;
+				uint32_t uintval;
+				if (value) {
+					if (switch_is_number(value)) {
+						uintval = (uint32_t) strtol(value, NULL, 10);
+					} else {
+						uintval = (uint32_t) (uintptr_t) item->defaultvalue;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%u]\n",
+										  value, item->key, uintval);
+					}
+
+					if (atomic_options) {
+						/* Enforce validation options */
+						if ((atomic_options->enforce_min && !(uintval >= atomic_options->min)) || (atomic_options->enforce_max && !(uintval <= atomic_options->max))) {
+							/* Validation failed, set default */
+							uintval = (uint32_t) (uintptr_t) item->defaultvalue;
+							/* Then complain */
+							if (atomic_options->enforce_min && atomic_options->enforce_max) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+												  "Invalid value [%s] for parameter [%s], should be between [%u] and [%u], setting default [%u]\n", value,
+												  item->key, atomic_options->min, atomic_options->max, uintval);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+												  "Invalid value [%s] for parameter [%s], should be %s [%u], setting default [%u]\n", value, item->key,
+												  atomic_options->enforce_min ? "at least" : "at max",
+												  atomic_options->enforce_min ? atomic_options->min : atomic_options->max, uintval);
+							}
+						}
+					}
+				} else {
+					uintval = (uint32_t) (uintptr_t) item->defaultvalue;
+				}
+
+				if (switch_atomic_read(dest) != uintval) {
+					switch_atomic_set(dest, uintval);
 					changed = SWITCH_TRUE;
 				}
 			}

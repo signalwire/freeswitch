@@ -1,6 +1,25 @@
 /* A simple XML-RPC server that runs under Inetd.  I.e. it lets the invoking
    program handle all the connection switching and simply processes one
    RPC on the provided connection (Standard Input) and exits.
+
+   A typical example of where this would be useful is with an Inetd
+   "super server."
+
+   xmlrpc_sample_add_server.cpp is a server that does the same thing,
+   but you give it a TCP port number and it listens for TCP connections
+   and processes RPCs ad infinitum.  xmlrpc_socket_server.c is halfway
+   in between those -- you give it an already bound and listening
+   socket, and it listens for TCP connections and processes RPCs ad
+   infinitum.
+
+   Here is an easy way to test this program:
+
+     socketexec --accept --local_port=8080 --stdin -- ./xmlrpc_inetd_server
+
+   Now run the client program 'xmlrpc_sample_add_client'.  Socketexec
+   will accept the connection that the client program requests and pass it
+   to this program on Standard Input.  This program will perform the RPC,
+   respond to the client, then exit.
 */
 
 #ifndef WIN32
@@ -49,10 +68,8 @@ main(int           const,
     myRegistry.addMethod("sample.add", sampleAddMethodP);
 
     xmlrpc_c::serverAbyss myAbyssServer(
-        myRegistry,
-        8080,              // TCP port on which to listen
-        "/tmp/xmlrpc_log"  // Log file
-        );
+         xmlrpc_c::serverAbyss::constrOpt()
+         .registryP(&myRegistry));
 
     myAbyssServer.runConn(STDIN_FILENO);
         /* This reads the HTTP POST request from Standard Input and

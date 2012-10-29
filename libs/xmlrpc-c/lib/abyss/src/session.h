@@ -47,17 +47,29 @@ struct _TSession {
            ResponseWriteStart())
         */
 
-    struct _TConn * conn;
+    struct _TConn * connP;
 
     httpVersion version;
 
-    TTable request_headers;
-        /* All the headers in the HTTP request.  The key is the header
-           name in lower case.  The value is the verbatim value from
-           the header.
+    TTable requestHeaderFields;
+        /* All the fields of the header of the HTTP request.  The key is the
+           field name in lower case.  The value is the verbatim value from
+           the field.
         */
 
-    TTable response_headers;
+    TTable responseHeaderFields;
+        /* All the fields of the header of the HTTP response.
+           This gets successively computed; at any moment, it is the list of
+           fields the user has requested so far.  It also includes fields
+           Abyss itself has decided to include.  (Blechh.  This needs to be
+           cleaned up).
+
+           Each table item is an HTTP header field.  The Name component of the
+           table item is the header field name (it is syntactically valid but
+           not necessarily a defined field name) and the Value comonent is the
+           header field value (it is syntactically valid but not necessarily
+           semantically valid).
+        */
 
     time_t date;
 

@@ -1,7 +1,9 @@
 ###############################################################################
 # This directory builds libxmlrpc_util, which contains utility
-# functions that are used by the Xmlprc-c # libraries, and also
-# directly by Xmlrpc-c programs.
+# functions that are used by the Xmlprc-c libraries, and also
+# directly by Xmlrpc-c programs.  Some of them are documented for use
+# by Xmlrpc-c users, as facilities of the libxmlrpc library (which
+# prerequires libxmlrpc_util).
 #
 # The functions in this library are characterized by being general purpose
 # programming functions, such as one might wish were in the standard C
@@ -29,11 +31,13 @@ SHARED_LIBS_TO_INSTALL := libxmlrpc_util
 
 TARGET_MODS = \
   asprintf \
+  base64 \
   error \
   make_printable \
   memblock \
   select \
   sleep \
+  string_number \
   time \
   utf8 \
 
@@ -43,8 +47,6 @@ MAJ=3
 
 include $(SRCDIR)/common.mk
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
 INCLUDES = -I$(BLDDIR) -Isrcdir \
            -I$(BLDDIR)/include -Isrcdir/include -Isrcdir/lib/util/include
 
@@ -53,17 +55,13 @@ UTIL_SHLIB = $(call shlibfn,libxmlrpc_util)
 UTIL_SHLIBLE = $(call shliblefn,libxmlrpc_util)
 #UTIL_SHLIBLE is e.g. libxmlrpc_util.so
 
-ifneq ($(SHARED_LIB_TYPE),NONE)
-  TARGET_SHARED_LIBS := $(UTIL_SHLIB) $(UTIL_SHLIBLE)
-  endif
-
 # This 'common.mk' dependency makes sure the symlinks get built before
 # this make file is used for anything.
 
 $(SRCDIR)/common.mk: srcdir blddir
 
 .PHONY: all
-all: libxmlrpc_util.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+all: libxmlrpc_util.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
 
 # Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES:
 $(UTIL_SHLIB): $(TARGET_MODS:%=%.osh)
@@ -92,4 +90,4 @@ distclean: clean distclean-common
 .PHONY: dep
 dep: dep-common
 
-include Makefile.depend
+include depend.mk

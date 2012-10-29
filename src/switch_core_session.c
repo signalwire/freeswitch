@@ -62,6 +62,16 @@ SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_
 	return NULL;
 }
 
+
+SWITCH_DECLARE(stfu_instance_t *) switch_core_session_get_jb(switch_core_session_t *session, switch_media_type_t type)
+{
+	if (session->endpoint_interface->io_routines->get_jb) {
+		return session->endpoint_interface->io_routines->get_jb(session, type);
+	}
+
+	return NULL;
+}
+
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec)
 {
 	session->soft_lock = sec;
@@ -236,6 +246,54 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 
 	switch_core_destroy_memory_pool(&pool);
 
+}
+
+
+SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_matching_var(const char *var_name, const char *var_val)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_core_session_t *session;
+	switch_memory_pool_t *pool;
+	struct str_node *head = NULL, *np;
+	switch_console_callback_match_t *my_matches = NULL;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!var_val)
+		return NULL;
+
+	switch_mutex_lock(runtime.session_hash_mutex);
+	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		if (val) {
+			session = (switch_core_session_t *) val;
+			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
+				np = switch_core_alloc(pool, sizeof(*np));
+				np->str = switch_core_strdup(pool, session->uuid_str);
+				np->next = head;
+				head = np;
+				switch_core_session_rwunlock(session);
+			}
+		}
+	}
+	switch_mutex_unlock(runtime.session_hash_mutex);
+
+	for(np = head; np; np = np->next) {
+		if ((session = switch_core_session_locate(np->str))) {
+			const char *this_val;
+			if (switch_channel_up_nosig(session->channel) &&
+				(this_val = switch_channel_get_variable_dup(session->channel, var_name, SWITCH_FALSE, -1)) && (!strcmp(this_val, var_val))) {			
+				switch_console_push_match(&my_matches, (const char *) np->str);
+			}
+			switch_core_session_rwunlock(session);
+		}
+	}
+
+	switch_core_destroy_memory_pool(&pool);
+
+
+	return my_matches;
 }
 
 SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_interface_t *endpoint_interface, switch_call_cause_t cause)
@@ -482,6 +540,11 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		const char *use_uuid;
 
 		switch_assert(peer_channel);
+
+		if (channel && switch_true(switch_channel_get_variable(channel, "session_copy_loglevel"))) {
+			(*new_session)->loglevel = session->loglevel;
+		}
+
 
 		if ((use_uuid = switch_event_get_header(var_event, "origination_uuid"))) {
 			use_uuid = switch_core_session_strdup(*new_session, use_uuid);
@@ -737,6 +800,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 	if (switch_channel_up_nosig(session->channel)) {
 		if (message->message_id == SWITCH_MESSAGE_INDICATE_BRIDGE || message->message_id == SWITCH_MESSAGE_INDICATE_UNBRIDGE) {
 			switch_core_media_bug_flush_all(session);
+			switch_core_recovery_track(session);
 		}
 
 		switch (message->message_id) {
@@ -1032,6 +1096,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 	switch_queue_t *queue;
 
 	switch_assert(session != NULL);
+	switch_assert(event != NULL);
 
 	if (session->private_event_queue) {
 		queue = priority ? session->private_event_queue_pri : session->private_event_queue;
@@ -1466,21 +1531,23 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 
 		if (check_status == SWITCH_STATUS_SUCCESS) {
 			switch_core_session_t *session = (switch_core_session_t *) pop;
-
+			switch_size_t id;
+			
 			if (!session) break;
 
+			id = session->id;
 			
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy++;
 			switch_mutex_unlock(session_manager.mutex);
 			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing session %"SWITCH_SIZE_T_FMT" %s\n",
-							  (long) thread, session->id, switch_core_session_get_name(session));
+							  (long) thread, id, switch_core_session_get_name(session));
 
 			switch_core_session_thread(thread, (void *) session);
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing session %"SWITCH_SIZE_T_FMT" %s\n",
-							  (long) thread, session->id, switch_core_session_get_name(session));
+			
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing session %"SWITCH_SIZE_T_FMT"\n",
+							  (long) thread, id);
 
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy--;
@@ -1554,6 +1621,7 @@ static switch_status_t check_queue(void)
 		switch_threadattr_create(&thd_attr, node->pool);
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_LOW);
 
 		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread_pool_worker, node, node->pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread Failure!\n");
@@ -1681,6 +1749,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 	switch_caller_profile_t *profile;
 
 	switch_assert(use_uuid);
+
+	if (!strcmp(use_uuid, session->uuid_str)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	if (switch_core_hash_find(session_manager.session_table, use_uuid)) {

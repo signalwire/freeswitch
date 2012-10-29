@@ -126,7 +126,7 @@ static void launch_monitor_thread(xml_binding_t *binding)
 
 	switch_threadattr_create(&thd_attr, globals.pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_priority_increase(thd_attr);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_IMPORTANT);
 	switch_thread_create(&binding->thread, thd_attr, monitor_thread_run, binding, globals.pool);
 }
 

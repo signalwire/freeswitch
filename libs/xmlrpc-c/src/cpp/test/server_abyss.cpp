@@ -10,6 +10,8 @@
 #include <vector>
 #include <sstream>
 #include <memory>
+#include <cstring>
+#include <cstdlib>
 #include <time.h>
 #ifdef WIN32
   #include <winsock.h>
@@ -17,6 +19,7 @@
   #include <sys/unistd.h>
   #include <sys/socket.h>
   #include <arpa/inet.h>
+  #include <netinet/in.h>
 #endif
 
 #include "xmlrpc-c/girerr.hpp"
@@ -33,6 +36,9 @@ using girerr::throwf;
 using namespace xmlrpc_c;
 using namespace std;
 
+
+
+namespace {
 
 static void
 closesock(int const fd) {
@@ -75,7 +81,7 @@ public:
         closesock(this->fd);
     }
 
-    int fd;
+    XMLRPC_SOCKET fd;
 };
 
 
@@ -259,6 +265,10 @@ public:
                                     .timeout(20)
                                     .dontAdvertise(true)
                                     .uriPath("/xmlrpc")
+                                    .chunkResponse(true)
+                                    .allowOrigin("*")
+                                    .serverOwnsSignals(false)
+                                    .expectSigchld(true)
                 );
     
         }
@@ -271,6 +281,54 @@ public:
         }
     }
 };
+
+
+
+class testCallInfoMethod : public method2 {
+public:
+    void
+    execute(paramList        const& paramList,
+            const callInfo * const  callInfoPtr,
+            value *          const  retvalP) {
+
+        const callInfo_serverAbyss * const callInfoP(
+            dynamic_cast<const callInfo_serverAbyss *>(callInfoPtr));
+
+        TEST(callInfoP != NULL);
+        
+        paramList.verifyEnd(0);
+
+        TEST(callInfoP->serverAbyssP != NULL);
+        TEST(callInfoP->abyssSessionP != NULL);
+        
+        *retvalP = value_nil();
+    }
+};
+
+
+
+class callInfoTestSuite : public testSuite {
+
+public:
+    virtual string suiteName() {
+        return "callInfoTestSuite";
+    }
+    virtual void runtests(unsigned int const) {
+        
+        registry myRegistry;
+        
+        myRegistry.addMethod("sample.add", methodPtr(new testCallInfoMethod));
+
+        serverAbyss abyssServer(serverAbyss::constrOpt()
+                                .registryP(&myRegistry)
+                                .portNumber(12345)
+            );
+    }
+};
+
+
+
+} // unnamed namespace
 
 
 
@@ -289,4 +347,5 @@ serverAbyssTestSuite::runtests(unsigned int const indentation) {
 
     createTestSuite().run(indentation+1);
 
+    callInfoTestSuite().run(indentation+1);
 }

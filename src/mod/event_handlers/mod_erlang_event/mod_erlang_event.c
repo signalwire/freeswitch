@@ -812,7 +812,6 @@ static void handle_exit(listener_t *listener, erlang_pid * pid)
 
 	}
 
-
 	if (listener->log_process.type == ERLANG_PID && !ei_compare_pids(&listener->log_process.pid, pid)) {
 		void *pop;
 
@@ -1477,15 +1476,14 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 	int argc = 0, argc2 = 0;
 	char *argv[80] = { 0 }, *argv2[80] = { 0 };
 	char *mydata, *myarg;
-	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	session_elem_t *session_element = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* process app arguments */
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 	/* XXX else? */
-	memcpy(uuid, switch_core_session_get_uuid(session), SWITCH_UUID_FORMATTED_LENGTH);
 
 	if (argc < 2) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Parse Error - need registered name and node!\n");
@@ -1518,6 +1516,13 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "enter erlang_outbound_function %s %s\n", argv[0], node);
 
+
+	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is already under control\n");
+		return;
+	}
+
+	
 	/* first work out if there is a listener already talking to the node we want to talk to */
 	listener = find_listener(node);
 	/* if there is no listener, then create one */
@@ -1551,7 +1556,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		switch_thread_rwlock_unlock(globals.listener_rwlock);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "exit erlang_outbound_function\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "exit erlang_outbound_function\n");
 }
 
 

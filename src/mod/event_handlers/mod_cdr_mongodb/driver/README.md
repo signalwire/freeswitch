@@ -9,16 +9,30 @@ by providing an interface for platform-specific modules.
 
 Until the 1.0 release, this driver should be considered alpha. Keep in mind that the API will be in flux until then.
 
+# Documentation
+
+Documentation exists in the project's `docs` folder. You can read the latest
+docs online at (http://api.mongodb.org/c/current/).
+
+The docs are built using Sphinx and Doxygen. If you have these tools installed, then
+you can build the docs with scons:
+
+    scons docs
+
+The html docs will appear in docs/html.
+
 # Building
 
 First check out the version you want to build. *Always build from a particular tag, since HEAD may be
-a work in progress.* For example, to build version 0.5.2, run:
+a work in progress.* For example, to build version 0.6, run:
 
-    git checkout v0.5.2
+    git checkout v0.6
 
 You can then build the driver with scons:
 
     scons
+
+For more build options, see the docs.
 
 ## Running the tests
 Make sure that you're running mongod on 127.0.0.1 on the default port (27017). The replica set
@@ -34,14 +48,6 @@ Most functions return MONGO_OK or BSON_OK on success and MONGO_ERROR or BSON_ERR
 Specific error codes and error strings are then stored in the `err` and `errstr` fields of the
 `mongo` and `bson` objects. It is the client's responsibility to check for errors and handle
 them appropriately.
-
-# Docs
-The docs are built using Sphinx and Doxygen. If you have these tools installed, then
-you can build the docs with scons:
-
-    scons docs
-
-The html docs will appear in docs/html.
 
 # ISSUES
 

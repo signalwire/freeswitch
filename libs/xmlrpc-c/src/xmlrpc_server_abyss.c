@@ -2,6 +2,8 @@
 
 #include "xmlrpc_config.h"
 
+#define _XOPEN_SOURCE 600  /* For strdup(), sigaction */
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,17 +41,12 @@ struct xmlrpc_server_abyss {
 
 
 
-/*=========================================================================
-**  die_if_fault_occurred
-**=========================================================================
-**  If certain kinds of out-of-memory errors occur during server setup,
-**  we want to quit and print an error.
-*/
+static void
+dieIfFaultOccurred(xmlrpc_env * const envP) {
 
-static void die_if_fault_occurred(xmlrpc_env *env) {
-    if (env->fault_occurred) {
+    if (envP->fault_occurred) {
         fprintf(stderr, "Unexpected XML-RPC fault: %s (%d)\n",
-                env->fault_string, env->fault_code);
+                envP->fault_string, envP->fault_code);
         exit(1);
     }
 }
@@ -135,7 +132,7 @@ addAuthCookie(xmlrpc_env * const envP,
     
     xmlrpc_asprintf(&cookieResponse, "auth=%s", authCookie);
     
-    if (cookieResponse == xmlrpc_strsol)
+    if (xmlrpc_strnomem(cookieResponse))
         xmlrpc_faultf(envP, "Insufficient memory to generate cookie "
                       "response header.");
     else {
@@ -148,11 +145,12 @@ addAuthCookie(xmlrpc_env * const envP,
 
 
 static void 
-sendXmlData(xmlrpc_env * const envP,
-            TSession *   const abyssSessionP, 
-            const char * const body, 
-            size_t       const len,
-            bool         const chunked) {
+sendResponse(xmlrpc_env *      const envP,
+             TSession *        const abyssSessionP, 
+             const char *      const body, 
+             size_t            const len,
+             bool              const chunked,
+             ResponseAccessCtl const accessControl) {
 /*----------------------------------------------------------------------------
    Generate an HTTP response containing body 'body' of length 'len'
    characters.
@@ -191,15 +189,37 @@ sendXmlData(xmlrpc_env * const envP,
     else {
         uint32_t const abyssLen = (uint32_t)len;
 
-        ResponseContentType(abyssSessionP, "text/xml; charset=\"utf-8\"");
+        /* See discussion below of quotes around "utf-8" */
+        ResponseContentType(abyssSessionP, "text/xml");
         ResponseContentLength(abyssSessionP, abyssLen);
+        ResponseAccessControl(abyssSessionP, accessControl);
         
-        ResponseWriteStart(abyssSessionP);
-        ResponseWriteBody(abyssSessionP, body, abyssLen);
-        ResponseWriteEnd(abyssSessionP);
+        if (ResponseWriteStart(abyssSessionP))
+			if (ResponseWriteBody(abyssSessionP, body, abyssLen))
+				if (ResponseWriteEnd(abyssSessionP))
+					return;
+
+        xmlrpc_faultf(envP, "socket send() problem");
     }
 }
 
+
+
+/* From 0.9.10 (May 2001) through 1.17 (December 2008), the content-type
+   header said charset="utf-8" (i.e. with the value of 'charset' an HTTP quoted
+   string).  Before 0.9.10, the header didn't have charset at all.
+
+   We got a complaint in January 2009 that some client didn't understand that,
+   saying
+
+     apache2: XML-RPC: xmlrpcmsg::parseResponse: invalid charset encoding of
+     received response: "UTF-8"
+
+   And that removing the quotation marks fixes this.
+
+   From what I can tell, the module is wrong to distinguish between the
+   two, but I don't think it hurts anything to use a basic HTTP token instead
+   of an HTTP quoted string here, so starting in 1.18, we do.  */
 
 
 static void
@@ -287,9 +307,8 @@ getBody(xmlrpc_env *        const envP,
         }
         if (envP->fault_occurred)
             xmlrpc_mem_block_free(body);
-        else
-            *bodyP = body;
     }
+    *bodyP = body;
 }
 
 
@@ -320,44 +339,6 @@ storeCookies(TSession *     const httpRequestP,
 
 
 static void
-validateContentType(TSession *     const httpRequestP,
-                    const char **  const errorP) {
-/*----------------------------------------------------------------------------
-   If the client didn't specify a content-type of "text/xml", fail.
-   We can't allow the client to default this header, because some
-   firewall software may rely on all XML-RPC requests using the POST
-   method and a content-type of "text/xml".x
------------------------------------------------------------------------------*/
-    const char * const content_type =
-        RequestHeaderValue(httpRequestP, "content-type");
-
-    if (content_type == NULL)
-        xmlrpc_asprintf(errorP,
-                        "You did not supply a content-type HTTP header");
-    else {
-        const char * const sempos = strchr(content_type, ';');
-        unsigned int baselen;
-            /* Length of the base portion of the content type, e.g.
-               "text/xml" int "text/xml;charset=utf-8"
-            */
-
-        if (sempos)
-            baselen = sempos - content_type;
-        else
-            baselen = strlen(content_type);
-
-        if (!xmlrpc_strneq(content_type, "text/xml", baselen))
-            xmlrpc_asprintf(errorP, "Your content-type HTTP header value '%s' "
-                            "does not have a base type of 'text/xml'",
-                            content_type);
-        else
-            *errorP = NULL;
-    }
-}
-
-
-
-static void
 processContentLength(TSession *    const httpRequestP,
                      size_t *      const inputLenP,
                      bool *        const missingP,
@@ -376,6 +357,7 @@ processContentLength(TSession *    const httpRequestP,
         *errorP = NULL;
     } else {
         *missingP = FALSE;
+        *inputLenP = 0;  /* quiet compiler warning */
         if (content_length[0] == '\0')
             xmlrpc_asprintf(errorP, "The value in your content-length "
                             "HTTP header value is a null string");
@@ -444,11 +426,13 @@ traceHandlerCalled(TSession * const abyssSessionP) {
 
 
 static void
-processCall(TSession *        const abyssSessionP,
-            size_t            const contentSize,
-            xmlrpc_registry * const registryP,
-            bool              const wantChunk,
-            const char *      const trace) {
+processCall(TSession *            const abyssSessionP,
+            size_t                const contentSize,
+            xmlrpc_call_processor       xmlProcessor,
+            void *                const xmlProcessorArg,
+            bool                  const wantChunk,
+            ResponseAccessCtl     const accessControl,
+            const char *          const trace) {
 /*----------------------------------------------------------------------------
    Handle an RPC request.  This is an HTTP request that has the proper form
    to be an XML-RPC call.
@@ -469,26 +453,27 @@ processCall(TSession *        const abyssSessionP,
     if (contentSize > xmlrpc_limit_get(XMLRPC_XML_SIZE_LIMIT_ID))
         xmlrpc_env_set_fault_formatted(
             &env, XMLRPC_LIMIT_EXCEEDED_ERROR,
-            "XML-RPC request too large (%d bytes)", contentSize);
+            "XML-RPC request too large (%u bytes)", (unsigned)contentSize);
     else {
         xmlrpc_mem_block * body = NULL;
         /* Read XML data off the wire. */
         getBody(&env, abyssSessionP, contentSize, trace, &body);
         if (!env.fault_occurred) {
             xmlrpc_mem_block * output;
+
             /* Process the RPC. */
-            xmlrpc_registry_process_call2(
-                &env, registryP,
+            xmlProcessor(
+                &env, xmlProcessorArg,
                 XMLRPC_MEMBLOCK_CONTENTS(char, body),
                 XMLRPC_MEMBLOCK_SIZE(char, body),
                 abyssSessionP,
                 &output);
             if (!env.fault_occurred) {
                 /* Send out the result. */
-                sendXmlData(&env, abyssSessionP, 
-                            XMLRPC_MEMBLOCK_CONTENTS(char, output),
-                            XMLRPC_MEMBLOCK_SIZE(char, output),
-                            wantChunk);
+                sendResponse(&env, abyssSessionP, 
+                             XMLRPC_MEMBLOCK_CONTENTS(char, output),
+                             XMLRPC_MEMBLOCK_SIZE(char, output),
+                             wantChunk, accessControl);
                 
                 XMLRPC_MEMBLOCK_FREE(char, output);
             }
@@ -510,12 +495,25 @@ processCall(TSession *        const abyssSessionP,
 
 
 
-/****************************************************************************
-    Abyss handlers (to be registered with and called by Abyss)
-****************************************************************************/
+static void
+processXmlrpcCall(xmlrpc_env *        const envP,
+                  void *              const arg,
+                  const char *        const callXml,
+                  size_t              const callXmlLen,
+                  TSession *          const abyssSessionP,                  
+                  xmlrpc_mem_block ** const responseXmlPP) {
+
+    xmlrpc_registry * const registryP = arg;
+
+    xmlrpc_registry_process_call2(envP, registryP,
+                                  callXml, callXmlLen, abyssSessionP,
+                                  responseXmlPP);
+
+}
+
+
 
 static const char * trace_abyss;
-
 
 
 struct uriHandlerXmlrpc {
@@ -523,11 +521,22 @@ struct uriHandlerXmlrpc {
    This is the part of an Abyss HTTP request handler (aka URI handler)
    that is specific to the Xmlrpc-c handler.
 -----------------------------------------------------------------------------*/
-    xmlrpc_registry * registryP;
-    const char *      uriPath;  /* malloc'ed */
-    bool              chunkResponse;
+    xmlrpc_registry *       registryP;
+    const char *            uriPath;  /* malloc'ed */
+    bool                    chunkResponse;
         /* The handler should chunk its response whenever possible */
+    xmlrpc_call_processor * xmlProcessor;
+    void *                  xmlProcessorArg;
+    ResponseAccessCtl       accessControl;
 };
+
+
+
+static void
+termAccessControl(ResponseAccessCtl * const accessCtlP) {
+
+    xmlrpc_strfreenull(accessCtlP->allowOrigin);
+}
 
 
 
@@ -537,15 +546,86 @@ termUriHandler(void * const arg) {
     struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = arg;
 
     xmlrpc_strfree(uriHandlerXmlrpcP->uriPath);
+    termAccessControl(&uriHandlerXmlrpcP->accessControl);
     free(uriHandlerXmlrpcP);
 }
 
 
 
 static void
-handleXmlrpcReq(URIHandler2 * const this,
-                TSession *    const abyssSessionP,
-                abyss_bool *  const handledP) {
+handleXmlRpcCallReq(TSession *           const abyssSessionP,
+                    const TRequestInfo * const requestInfoP ATTR_UNUSED,
+                    xmlrpc_call_processor      xmlProcessor,
+                    void *               const xmlProcessorArg,
+                    bool                 const wantChunk,
+                    ResponseAccessCtl    const accessControl) {
+/*----------------------------------------------------------------------------
+   Handle the HTTP request described by *requestInfoP, which arrived over
+   Abyss HTTP session *abyssSessionP, which is an XML-RPC call
+   (i.e. a POST request to /RPC2 or whatever other URI our server is
+   supposed to handle).
+
+   Handle it by feeding the XML which is its content to 'xmlProcessor'
+   along with argument 'xmlProcessorArg'.
+-----------------------------------------------------------------------------*/
+    /* We used to reject the call if content-type was not present and
+       text/xml, on some security theory (a firewall may block text/xml with
+       the intent of blocking XML-RPC.  Now, we believe that is silly, and we
+       have seen an incorrectly implemented client that says text/plain.
+    */
+    const char * error;
+
+    assert(requestInfoP->method == m_post);
+
+    storeCookies(abyssSessionP, &error);
+    if (error) {
+        sendError(abyssSessionP, 400, error);
+        xmlrpc_strfree(error);
+    } else {
+        const char * error;
+        bool missing;
+        size_t contentSize;
+
+        processContentLength(abyssSessionP, 
+                             &contentSize, &missing, &error);
+        if (error) {
+            sendError(abyssSessionP, 400, error);
+            xmlrpc_strfree(error);
+        } else {
+            if (missing)
+                sendError(abyssSessionP, 411, "You must send a "
+                          "content-length HTTP header in an "
+                          "XML-RPC call.");
+            else
+                processCall(abyssSessionP, contentSize,
+                            xmlProcessor, xmlProcessorArg,
+                            wantChunk, accessControl,
+                            trace_abyss);
+        }
+    }
+}
+
+
+
+static void
+handleXmlRpcOptionsReq(TSession *        const abyssSessionP,
+                       ResponseAccessCtl const accessControl) {
+
+    ResponseAddField(abyssSessionP, "Allow", "POST");
+    
+    ResponseAccessControl(abyssSessionP, accessControl);
+    ResponseContentLength(abyssSessionP, 0);
+    ResponseStatus(abyssSessionP, 200);
+    if (ResponseWriteStart(abyssSessionP))
+		ResponseWriteEnd(abyssSessionP);
+}
+
+
+
+static void
+handleIfXmlrpcReq(void *        const handlerArg,
+                  TSession *    const abyssSessionP,
+                  abyss_bool *  const handledP) {
 /*----------------------------------------------------------------------------
    Our job is to look at this HTTP request that the Abyss server is
    trying to process and see if we can handle it.  If it's an XML-RPC
@@ -557,9 +637,9 @@ handleXmlrpcReq(URIHandler2 * const this,
    Note that failing the request counts as handling it, and not handling
    it does not mean we failed it.
 
-   This is an Abyss HTTP Request handler -- type URIHandler2.
+   This is an Abyss HTTP Request handler -- type handleReqFn3.
 -----------------------------------------------------------------------------*/
-    struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = this->userdata;
+    struct uriHandlerXmlrpc * const uriHandlerXmlrpcP = handlerArg;
 
     const TRequestInfo * requestInfoP;
 
@@ -571,59 +651,39 @@ handleXmlrpcReq(URIHandler2 * const this,
     /* Note that requestInfoP->uri is not the whole URI.  It is just
        the "file name" part of it.
     */
-    if (strcmp(requestInfoP->uri, uriHandlerXmlrpcP->uriPath) != 0)
-        /* It's for the path (e.g. "/RPC2") that we're supposed to
+    if (!xmlrpc_streq(requestInfoP->uri, uriHandlerXmlrpcP->uriPath))
+        /* It's not for the path (e.g. "/RPC2") that we're supposed to
            handle.
         */
         *handledP = FALSE;
     else {
         *handledP = TRUE;
 
-        if (requestInfoP->method != m_post)
+        switch (requestInfoP->method) {
+        case m_post:
+            handleXmlRpcCallReq(abyssSessionP, requestInfoP,
+                                uriHandlerXmlrpcP->xmlProcessor,
+                                uriHandlerXmlrpcP->xmlProcessorArg,
+                                uriHandlerXmlrpcP->chunkResponse,
+                                uriHandlerXmlrpcP->accessControl);
+            break;
+        case m_options:
+            handleXmlRpcOptionsReq(abyssSessionP,
+                                   uriHandlerXmlrpcP->accessControl);
+            break;
+        default:
             sendError(abyssSessionP, 405,
                       "POST is the only HTTP method this server understands");
                 /* 405 = Method Not Allowed */
-        else {
-            const char * error;
-            storeCookies(abyssSessionP, &error);
-            if (error) {
-                sendError(abyssSessionP, 400, error);
-                xmlrpc_strfree(error);
-            } else {
-                const char * error;
-                validateContentType(abyssSessionP, &error);
-                if (error) {
-                    sendError(abyssSessionP, 400, error);
-                        /* 400 = Bad Request */
-                    xmlrpc_strfree(error);
-                } else {
-                    const char * error;
-                    bool missing;
-                    size_t contentSize;
-
-                    processContentLength(abyssSessionP, 
-                                         &contentSize, &missing, &error);
-                    if (error) {
-                        sendError(abyssSessionP, 400, error);
-                        xmlrpc_strfree(error);
-                    } else {
-                        if (missing)
-                            sendError(abyssSessionP, 411, "You must send a "
-                                      "content-length HTTP header in an "
-                                      "XML-RPC call.");
-                        else
-                            processCall(abyssSessionP, contentSize,
-                                        uriHandlerXmlrpcP->registryP,
-                                        uriHandlerXmlrpcP->chunkResponse,
-                                        trace_abyss);
-                    }
-                }
-            }
         }
     }
     if (trace_abyss)
         fprintf(stderr, "xmlrpc_server_abyss URI path handler returning.\n");
 }
+
+
+/* This doesn't include what the user's method function requires */
+#define HANDLE_XMLRPC_REQ_STACK 1024
 
 
 
@@ -664,38 +724,149 @@ xmlrpc_server_abyss_default_handler(TSession * const sessionP) {
 
 
 static void
-setHandler(xmlrpc_env *      const envP,
-           TServer *         const srvP,
-           const char *      const uriPath,
-           xmlrpc_registry * const registryP,
-           bool              const chunkResponse) {
+setHandler(xmlrpc_env *              const envP,
+           TServer *                 const srvP,
+           struct uriHandlerXmlrpc * const uriHandlerXmlrpcP,
+           size_t                    const xmlProcessorMaxStackSize) {
     
-    struct uriHandlerXmlrpc * uriHandlerXmlrpcP;
-    URIHandler2 uriHandler;
     abyss_bool success;
 
     trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
                                  
-    MALLOCVAR_NOFAIL(uriHandlerXmlrpcP);
-
-    uriHandlerXmlrpcP->registryP     = registryP;
-    uriHandlerXmlrpcP->uriPath       = strdup(uriPath);
-    uriHandlerXmlrpcP->chunkResponse = chunkResponse;
-
-    uriHandler.handleReq2 = handleXmlrpcReq;
-    uriHandler.handleReq1 = NULL;
-    uriHandler.userdata   = uriHandlerXmlrpcP;
-    uriHandler.init       = NULL;
-    uriHandler.term       = &termUriHandler;
-
-    ServerAddHandler2(srvP, &uriHandler, &success);
-
+    {
+        size_t const stackSize = 
+            HANDLE_XMLRPC_REQ_STACK + xmlProcessorMaxStackSize;
+        struct ServerReqHandler3 const handlerDesc = {
+            /* .term               = */ &termUriHandler,
+            /* .handleReq          = */ &handleIfXmlrpcReq,
+            /* .userdata           = */ uriHandlerXmlrpcP,
+            /* .handleReqStackSize = */ stackSize
+        };
+        ServerAddHandler3(srvP, &handlerDesc, &success);
+    }
     if (!success)
         xmlrpc_faultf(envP, "Abyss failed to register the Xmlrpc-c request "
-                      "handler.  ServerAddHandler2() failed.");
+                      "handler.  ServerAddHandler3() failed.");
+
+    if (envP->fault_occurred){
+		free((void *)uriHandlerXmlrpcP->uriPath);
+        free(uriHandlerXmlrpcP);
+	}
+}
+
+
+
+static void
+interpretHttpAccessControl(
+    const xmlrpc_server_abyss_handler_parms * const parmsP,
+    unsigned int                              const parmSize,
+    ResponseAccessCtl *                       const accessCtlP) {
+
+    if (parmSize >= XMLRPC_AHPSIZE(allow_origin) && parmsP->allow_origin)
+        accessCtlP->allowOrigin = xmlrpc_strdupsol(parmsP->allow_origin);
+    else
+        accessCtlP->allowOrigin = NULL;
+
+    if (parmSize >= XMLRPC_AHPSIZE(access_ctl_expires)
+        && parmsP->access_ctl_expires) {
+        accessCtlP->expires = true;
+
+        if (parmSize >= XMLRPC_AHPSIZE(access_ctl_max_age))
+            accessCtlP->maxAge = parmsP->access_ctl_max_age;
+        else
+            accessCtlP->maxAge = 0;
+    }            
+}
+
+
+
+void
+xmlrpc_server_abyss_set_handler3(
+    xmlrpc_env *                              const envP,
+    TServer *                                 const srvP,
+    const xmlrpc_server_abyss_handler_parms * const parmsP,
+    unsigned int                              const parmSize) {
+
+    struct uriHandlerXmlrpc * uriHandlerXmlrpcP;
+    size_t xmlProcessorMaxStackSize;
+
+    MALLOCVAR_NOFAIL(uriHandlerXmlrpcP);
+
+    if (!envP->fault_occurred) {
+        if (parmSize >= XMLRPC_AHPSIZE(xml_processor))
+            uriHandlerXmlrpcP->xmlProcessor = parmsP->xml_processor;
+        else
+            xmlrpc_faultf(envP, "Parameter too short to contain the required "
+                          "'xml_processor' member");
+    }
+    if (!envP->fault_occurred) {
+        if (parmSize >= XMLRPC_AHPSIZE(xml_processor_arg))
+            uriHandlerXmlrpcP->xmlProcessorArg = parmsP->xml_processor_arg;
+        else
+            xmlrpc_faultf(envP, "Parameter too short to contain the required "
+                          "'xml_processor_arg' member");
+    }
+    if (!envP->fault_occurred) {
+        if (parmSize >= XMLRPC_AHPSIZE(xml_processor_max_stack))
+            xmlProcessorMaxStackSize = parmsP->xml_processor_max_stack;
+        else
+            xmlrpc_faultf(envP, "Parameter too short to contain the required "
+                          "'xml_processor_max_stack' member");
+    }
+    if (!envP->fault_occurred) {
+        if (parmSize >= XMLRPC_AHPSIZE(uri_path) && parmsP->uri_path)
+            uriHandlerXmlrpcP->uriPath = xmlrpc_strdupsol(parmsP->uri_path);
+        else
+            uriHandlerXmlrpcP->uriPath = xmlrpc_strdupsol("/RPC2");
+
+        if (parmSize >= XMLRPC_AHPSIZE(chunk_response) &&
+            parmsP->chunk_response)
+            uriHandlerXmlrpcP->chunkResponse = parmsP->chunk_response;
+        else
+            uriHandlerXmlrpcP->chunkResponse = false;
+        
+        interpretHttpAccessControl(parmsP, parmSize,
+                                   &uriHandlerXmlrpcP->accessControl);
+
+        if (envP->fault_occurred)
+            termAccessControl(&uriHandlerXmlrpcP->accessControl);
+    }
+    if (!envP->fault_occurred)
+        setHandler(envP, srvP, uriHandlerXmlrpcP, xmlProcessorMaxStackSize);
 
     if (envP->fault_occurred)
         free(uriHandlerXmlrpcP);
+}
+
+
+
+void
+xmlrpc_server_abyss_set_handler2(
+    TServer *         const srvP,
+    const char *      const uriPath,
+    xmlrpc_call_processor   xmlProcessor,
+    void *            const xmlProcessorArg,
+    size_t            const xmlProcessorMaxStackSize,
+    xmlrpc_bool       const chunkResponse) {
+
+    xmlrpc_env env;
+    xmlrpc_server_abyss_handler_parms parms;
+
+    xmlrpc_env_init(&env);
+
+    parms.xml_processor = xmlProcessor;
+    parms.xml_processor_arg = xmlProcessorArg;
+    parms.xml_processor_max_stack = xmlProcessorMaxStackSize;
+    parms.uri_path = uriPath;
+    parms.chunk_response = chunkResponse;
+
+    xmlrpc_server_abyss_set_handler3(&env, srvP,
+                                     &parms, XMLRPC_AHPSIZE(chunk_response));
+    
+    if (env.fault_occurred)
+        abort();
+
+    xmlrpc_env_clean(&env);
 }
 
 
@@ -706,31 +877,59 @@ xmlrpc_server_abyss_set_handler(xmlrpc_env *      const envP,
                                 const char *      const uriPath,
                                 xmlrpc_registry * const registryP) {
 
-    setHandler(envP, srvP, uriPath, registryP, false);
+    xmlrpc_server_abyss_handler_parms parms;
+
+    parms.xml_processor = &processXmlrpcCall;
+    parms.xml_processor_arg = registryP;
+    parms.xml_processor_max_stack = xmlrpc_registry_max_stackSize(registryP);
+    parms.uri_path = uriPath;
+
+    xmlrpc_server_abyss_set_handler3(envP, srvP,
+                                     &parms, XMLRPC_AHPSIZE(uri_path));
 }
 
     
 
+void
+xmlrpc_server_abyss_set_default_handler(TServer * const srvP) {
+
+    ServerDefaultHandler(srvP, xmlrpc_server_abyss_default_handler);
+}
+    
+
+
 static void
-setHandlers(TServer *         const srvP,
-            const char *      const uriPath,
-            xmlrpc_registry * const registryP,
-            bool              const chunkResponse) {
+setHandlersRegistry(TServer *         const srvP,
+                    const char *      const uriPath,
+                    xmlrpc_registry * const registryP,
+                    bool              const chunkResponse,
+                    const char *      const allowOrigin,
+                    bool              const expires,
+                    unsigned int      const maxAge) {
 
     xmlrpc_env env;
+    xmlrpc_server_abyss_handler_parms parms;
 
     xmlrpc_env_init(&env);
 
-    trace_abyss = getenv("XMLRPC_TRACE_ABYSS");
-                                 
-    setHandler(&env, srvP, uriPath, registryP, chunkResponse);
+    parms.xml_processor = &processXmlrpcCall;
+    parms.xml_processor_arg = registryP;
+    parms.xml_processor_max_stack = xmlrpc_registry_max_stackSize(registryP),
+    parms.uri_path = uriPath;
+    parms.chunk_response = chunkResponse;
+    parms.allow_origin = allowOrigin;
+    parms.access_ctl_expires = expires;
+    parms.access_ctl_max_age = maxAge;
+
+    xmlrpc_server_abyss_set_handler3(
+        &env, srvP, &parms, XMLRPC_AHPSIZE(access_ctl_max_age));
     
     if (env.fault_occurred)
         abort();
 
-    ServerDefaultHandler(srvP, xmlrpc_server_abyss_default_handler);
-
     xmlrpc_env_clean(&env);
+
+    xmlrpc_server_abyss_set_default_handler(srvP);
 }
 
 
@@ -740,7 +939,7 @@ xmlrpc_server_abyss_set_handlers2(TServer *         const srvP,
                                   const char *      const uriPath,
                                   xmlrpc_registry * const registryP) {
 
-    setHandlers(srvP, uriPath, registryP, false);
+    setHandlersRegistry(srvP, uriPath, registryP, false, NULL, false, 0);
 }
 
 
@@ -749,7 +948,7 @@ void
 xmlrpc_server_abyss_set_handlers(TServer *         const srvP,
                                  xmlrpc_registry * const registryP) {
 
-    setHandlers(srvP, "/RPC2", registryP, false);
+    setHandlersRegistry(srvP, "/RPC2", registryP, false, NULL, false, 0);
 }
 
 
@@ -762,11 +961,6 @@ static void
 setAdditionalServerParms(const xmlrpc_server_abyss_parms * const parmsP,
                          unsigned int                      const parmSize,
                          TServer *                         const serverP) {
-
-    /* The following ought to be parameters on ServerCreate(), but it
-       looks like plugging them straight into the TServer structure is
-       the only way to set them.  
-    */
 
     if (parmSize >= XMLRPC_APSIZE(keepalive_timeout) &&
         parmsP->keepalive_timeout > 0)
@@ -903,8 +1097,13 @@ createServerBare(xmlrpc_env *                      const envP,
             createServerBoundSocket(envP, socketFd, logFileName,
                                     serverP, chanSwitchPP);
         else {
-            ServerCreate(serverP, "XmlRpcServer", portNumber, DEFAULT_DOCS, 
-                         logFileName);
+            abyss_bool success;
+
+            success = ServerCreate(serverP, "XmlRpcServer", portNumber,
+                                   DEFAULT_DOCS, logFileName);
+
+            if (!success)
+                xmlrpc_faultf(envP, "Failed to create an Abyss server object");
             
             *chanSwitchPP = NULL;
         }
@@ -912,17 +1111,6 @@ createServerBare(xmlrpc_env *                      const envP,
             xmlrpc_strfree(logFileName);
     }
 }
-
-
-
-static bool
-chunkResponseParm(const xmlrpc_server_abyss_parms * const parmsP,
-                  unsigned int                      const parmSize) {
-
-    return
-        parmSize >= XMLRPC_APSIZE(chunk_response) &&
-        parmsP->chunk_response;
-}    
 
 
 
@@ -942,6 +1130,50 @@ uriPathParm(const xmlrpc_server_abyss_parms * const parmsP,
 
 
 
+static bool
+chunkResponseParm(const xmlrpc_server_abyss_parms * const parmsP,
+                  unsigned int                      const parmSize) {
+
+    return
+        parmSize >= XMLRPC_APSIZE(chunk_response) &&
+        parmsP->chunk_response;
+}    
+
+
+
+static const char *
+allowOriginParm(const xmlrpc_server_abyss_parms * const parmsP,
+                unsigned int                      const parmSize) {
+
+    return
+        parmSize >= XMLRPC_APSIZE(allow_origin) ?
+        parmsP->allow_origin : NULL;
+}    
+
+
+
+static bool
+expiresParm(const xmlrpc_server_abyss_parms * const parmsP,
+            unsigned int                      const parmSize) {
+
+    return
+        parmSize >= XMLRPC_APSIZE(access_ctl_expires) ?
+        parmsP->access_ctl_expires : false;
+}    
+
+
+
+static unsigned int
+maxAgeParm(const xmlrpc_server_abyss_parms * const parmsP,
+           unsigned int                      const parmSize) {
+
+    return
+        parmSize >= XMLRPC_APSIZE(access_ctl_max_age) ?
+        parmsP->access_ctl_max_age : 0;
+}    
+
+
+
 static void
 createServer(xmlrpc_env *                      const envP,
              const xmlrpc_server_abyss_parms * const parmsP,
@@ -954,9 +1186,12 @@ createServer(xmlrpc_env *                      const envP,
     if (!envP->fault_occurred) {
         setAdditionalServerParms(parmsP, parmSize, abyssServerP);
         
-        setHandlers(abyssServerP, uriPathParm(parmsP, parmSize),
-                    parmsP->registryP,
-                    chunkResponseParm(parmsP, parmSize));
+        setHandlersRegistry(abyssServerP, uriPathParm(parmsP, parmSize),
+                            parmsP->registryP,
+                            chunkResponseParm(parmsP, parmSize),
+                            allowOriginParm(parmsP, parmSize),
+                            expiresParm(parmsP, parmSize),
+                            maxAgeParm(parmsP, parmSize));
         
         ServerInit(abyssServerP);
     }
@@ -1030,9 +1265,9 @@ xmlrpc_server_abyss_create(xmlrpc_env *                      const envP,
             xmlrpc_faultf(envP,
                           "You must specify members at least up through "
                           "'registryP' in the server parameters argument.  "
-                          "That would mean the parameter size would be >= %lu "
+                          "That would mean the parameter size would be >= %u "
                           "but you specified a size of %u",
-                          XMLRPC_APSIZE(registryP), parmSize);
+                          (unsigned)XMLRPC_APSIZE(registryP), parmSize);
         else {
             MALLOCVAR(serverP);
 
@@ -1123,9 +1358,11 @@ sigchld(int const signalClass ATTR_UNUSED) {
    The only child processes we have are those that belong to the Abyss
    server (and then only if the Abyss server was configured to use
    forking as a threading mechanism), so we respond by passing the
-   signal on to the Abyss server.
+   signal on to the Abyss server.  And reaping the dead child.
 -----------------------------------------------------------------------------*/
 #ifndef WIN32
+    /* Reap zombie children / report to Abyss until there aren't any more. */
+
     bool childrenLeft;
     bool error;
 
@@ -1270,7 +1507,7 @@ runServerDaemon(TServer *  const serverP,
 
 
 static void
-oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
+oldHighLevelAbyssRun(xmlrpc_env *                      const envP,
                      const xmlrpc_server_abyss_parms * const parmsP,
                      unsigned int                      const parmSize) {
 /*----------------------------------------------------------------------------
@@ -1285,31 +1522,38 @@ oldHighLevelAbyssRun(xmlrpc_env *                      const envP ATTR_UNUSED,
    flexible API.
 -----------------------------------------------------------------------------*/
     TServer server;
-    runfirstFn runfirst;
-    void * runfirstArg;
-    
-    ServerCreate(&server, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+    abyss_bool success;
 
-    assert(parmSize >= XMLRPC_APSIZE(config_file_name));
+    success = ServerCreate(&server, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
+
+    if (!success)
+        xmlrpc_faultf(envP, "Failed to create Abyss server object");
+    else {
+        runfirstFn runfirst;
+        void * runfirstArg;
+
+        assert(parmSize >= XMLRPC_APSIZE(config_file_name));
     
-    ConfReadServerFile(parmsP->config_file_name, &server);
+        ConfReadServerFile(parmsP->config_file_name, &server);
         
-    assert(parmSize >= XMLRPC_APSIZE(registryP));
+        assert(parmSize >= XMLRPC_APSIZE(registryP));
     
-    setHandlers(&server, "/RPC2", parmsP->registryP, false);
+        setHandlersRegistry(&server, "/RPC2", parmsP->registryP, false, NULL,
+                            false, 0);
         
-    ServerInit(&server);
+        ServerInit(&server);
     
-    if (parmSize >= XMLRPC_APSIZE(runfirst_arg)) {
-        runfirst    = parmsP->runfirst;
-        runfirstArg = parmsP->runfirst_arg;
-    } else {
-        runfirst    = NULL;
-        runfirstArg = NULL;
+        if (parmSize >= XMLRPC_APSIZE(runfirst_arg)) {
+            runfirst    = parmsP->runfirst;
+            runfirstArg = parmsP->runfirst_arg;
+        } else {
+            runfirst    = NULL;
+            runfirstArg = NULL;
+        }
+        runServerDaemon(&server, runfirst, runfirstArg);
+
+        ServerFree(&server);
     }
-    runServerDaemon(&server, runfirst, runfirstArg);
-
-    ServerFree(&server);
 }
 
 
@@ -1351,7 +1595,7 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
    a thread of a multi-threaded program, use
    xmlrpc_server_abyss_create() instead.  As required by that
    subroutine, your program will contain a call to
-   xmlrpc_server_abyss_init() early in your program, when it is only
+   xmlrpc_server_abyss_global_init() early in your program, when it is only
    one thread.
 -----------------------------------------------------------------------------*/
     XMLRPC_ASSERT_ENV_OK(envP);
@@ -1363,9 +1607,9 @@ xmlrpc_server_abyss(xmlrpc_env *                      const envP,
             xmlrpc_faultf(envP,
                           "You must specify members at least up through "
                           "'registryP' in the server parameters argument.  "
-                          "That would mean the parameter size would be >= %lu "
+                          "That would mean the parameter size would be >= %u "
                           "but you specified a size of %u",
-                          XMLRPC_APSIZE(registryP), parmSize);
+                          (unsigned)XMLRPC_APSIZE(registryP), parmSize);
         else {
             if (parmsP->config_file_name)
                 oldHighLevelAbyssRun(envP, parmsP, parmSize);
@@ -1416,10 +1660,11 @@ xmlrpc_server_abyss_init_registry(void) {
 
     xmlrpc_env_init(&env);
     builtin_registryP = xmlrpc_registry_new(&env);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);
 
-    setHandlers(&globalSrv, "/RPC2", builtin_registryP, false);
+    setHandlersRegistry(&globalSrv, "/RPC2", builtin_registryP, false, NULL,
+                        false, 0);
 }
 
 
@@ -1446,7 +1691,7 @@ xmlrpc_server_abyss_add_method(char *        const method_name,
     xmlrpc_env_init(&env);
     xmlrpc_registry_add_method(&env, builtin_registryP, NULL, method_name,
                                method, user_data);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);
 }
 
@@ -1464,7 +1709,7 @@ xmlrpc_server_abyss_add_method_w_doc(char *        const method_name,
     xmlrpc_registry_add_method_w_doc(
         &env, builtin_registryP, NULL, method_name,
         method, user_data, signature, help);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     xmlrpc_env_clean(&env);    
 }
 
@@ -1474,16 +1719,23 @@ void
 xmlrpc_server_abyss_init(int          const flags ATTR_UNUSED, 
                          const char * const config_file) {
 
-    ServerCreate(&globalSrv, "XmlRpcServer", 8080, DEFAULT_DOCS, NULL);
-    
-    ConfReadServerFile(config_file, &globalSrv);
+    abyss_bool success;
 
-    xmlrpc_server_abyss_init_registry();
-        /* Installs /RPC2 handler and default handler that use the
-           built-in registry.
-        */
+    success = ServerCreate(&globalSrv, "XmlRpcServer", 8080,
+                           DEFAULT_DOCS, NULL);
 
-    ServerInit(&globalSrv);
+    if (!success)
+        abort();
+    else {
+        ConfReadServerFile(config_file, &globalSrv);
+
+        xmlrpc_server_abyss_init_registry();
+            /* Installs /RPC2 handler and default handler that use the
+               built-in registry.
+            */
+
+        ServerInit(&globalSrv);
+    }
 }
 
 

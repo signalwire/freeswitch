@@ -67,6 +67,7 @@ static char *hfile = NULL;
 #define KEY_RIGHT 7
 #define KEY_INSERT 8
 #define PROMPT_OP 9
+#define KEY_DELETE 10
 
 static int console_bufferInput(char *buf, int len, char *cmd, int key);
 #endif
@@ -203,7 +204,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream
 SWITCH_DECLARE(switch_status_t) switch_stream_write_file_contents(switch_stream_handle_t *stream, const char *path)
 {
 	char *dpath = NULL;
-	int fd;
+	FILE *fd = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (!switch_is_file_path(path)) {
@@ -211,12 +212,15 @@ SWITCH_DECLARE(switch_status_t) switch_stream_write_file_contents(switch_stream_
 		path = dpath;
 	}
 
-	if ((fd = open(path, O_RDONLY)) > -1) {
-		char buf[2048] = { 0 };
-		while (switch_fd_read_line(fd, buf, sizeof(buf))) {
-			stream->write_function(stream, "%s", buf);
+	if ((fd = fopen(path, "r"))) {
+		char *line_buf = NULL;
+		switch_size_t llen = 0;
+
+		while (switch_fp_read_dline(fd, &line_buf, &llen)) {
+			stream->write_function(stream, "%s", line_buf);
 		}
-		close(fd);
+		fclose(fd);
+		switch_safe_free(line_buf);
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1115,6 +1119,9 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
 	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
 
+	/* "Delete" key. */
+	el_set(el, EL_BIND, "\033[3~", "ed-delete-next-char", NULL);
+
 	myhistory = history_init();
 	if (myhistory == 0) {
 		fprintf(stderr, "history could not be initialized\n");
@@ -1281,6 +1288,22 @@ static int console_bufferInput(char *addchars, int len, char *cmd, int key)
 	}
 	if (key == KEY_INSERT) {
 		insertMode = !insertMode;
+	}
+	if (key == KEY_DELETE) {
+		if (iCmdCursor < iCmdBuffer) {
+			int pos;
+			for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+				cmd[pos] = cmd[pos + 1];
+			}
+			cmd[pos] = 0;
+			iCmdBuffer--;
+
+			for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+				printf("%c", cmd[pos]);
+			}
+			printf(" ");
+			SetConsoleCursorPosition(hOut, position);
+		}
 	}
 	for (iBuf = 0; iBuf < len; iBuf++) {
 		switch (addchars[iBuf]) {
@@ -1472,6 +1495,9 @@ static BOOL console_readConsole(HANDLE conIn, char *buf, int len, int *pRed, int
 			}
 			if (keyEvent.wVirtualKeyCode == 45 && keyEvent.wVirtualScanCode == 82) {
 				*key = KEY_INSERT;
+			}
+			if (keyEvent.wVirtualKeyCode == 46 && keyEvent.wVirtualScanCode == 83) {
+				*key = KEY_DELETE;
 			}
 			while (keyEvent.wRepeatCount && keyEvent.uChar.AsciiChar) {
 				buf[bufferIndex] = keyEvent.uChar.AsciiChar;
@@ -1769,26 +1795,16 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 
 	if (string && (mydata = strdup(string))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-			switch_cache_db_handle_t *db = NULL;
 			switch_stream_handle_t mystream = { 0 };
 			SWITCH_STANDARD_STREAM(mystream);
-
-
-			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
-				free(mystream.data);
-				free(mydata);
-				return SWITCH_STATUS_FALSE;
-			}
-
-
+			
 			if (!strcasecmp(argv[0], "stickyadd")) {
 				mystream.write_function(&mystream, "insert into complete values (1,");
 				for (x = 0; x < 10; x++) {
 					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
 						mystream.write_function(&mystream, "%s", "'', ");
 					} else {
-						if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
+						if (switch_core_dbtype() == SCDB_TYPE_CORE_DB) {
 							mystream.write_function(&mystream, "'%q', ", switch_str_nil(argv[x + 1]));
 						} else {
 							mystream.write_function(&mystream, "'%w', ", switch_str_nil(argv[x + 1]));
@@ -1796,7 +1812,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 					}
 				}
 				mystream.write_function(&mystream, " '%s')", switch_core_get_switchname());
-				switch_cache_db_persistant_execute(db, mystream.data, 5);
+				switch_core_sql_exec(mystream.data);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "add")) {
 				mystream.write_function(&mystream, "insert into complete values (0,");
@@ -1804,7 +1820,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
 						mystream.write_function(&mystream, "%s", "'', ");
 					} else {
-						if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
+						if (switch_core_dbtype() == SCDB_TYPE_CORE_DB) {
 							mystream.write_function(&mystream, "'%q', ", switch_str_nil(argv[x + 1]));
 						} else {
 							mystream.write_function(&mystream, "'%w', ", switch_str_nil(argv[x + 1]));
@@ -1813,29 +1829,28 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 				}
 				mystream.write_function(&mystream, " '%s')", switch_core_get_switchname());
 
-				switch_cache_db_persistant_execute(db, mystream.data, 5);
+				switch_core_sql_exec(mystream.data);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "del")) {
 				char *what = argv[1];
 				if (!strcasecmp(what, "*")) {
-					switch_cache_db_persistant_execute(db, "delete from complete", 1);
+					switch_core_sql_exec("delete from complete");
 				} else {
 					mystream.write_function(&mystream, "delete from complete where ");
 					for (x = 0; x < argc - 1; x++) {
-						if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
+						if (switch_core_dbtype() == SCDB_TYPE_CORE_DB) {
 							mystream.write_function(&mystream, "a%d = '%q'%q", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
 						} else {
 							mystream.write_function(&mystream, "a%d = '%w'%w", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
 						}
 					}
 					mystream.write_function(&mystream, " and hostname='%s'", switch_core_get_switchname());
-					switch_cache_db_persistant_execute(db, mystream.data, 1);
+					switch_core_sql_exec(mystream.data);
 				}
 				status = SWITCH_STATUS_SUCCESS;
 			}
 
 			switch_safe_free(mystream.data);
-			switch_cache_db_release_db_handle(&db);
 		}
 	}
 

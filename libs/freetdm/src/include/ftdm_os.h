@@ -64,10 +64,10 @@ typedef uint64_t ftdm_time_t;
 #endif
 
 /*! \brief strncpy replacement */
-#define ftdm_copy_string(x,y,z) strncpy(x, y, z - 1) 
+#define ftdm_copy_string(x,y,z) strncpy(x, y, z - 1)
 
 /*! \brief strncpy into a fixed-length buffer */
-#define ftdm_set_string(x,y) strncpy(x, y, sizeof(x)-1) 
+#define ftdm_set_string(x,y) strncpy(x, y, sizeof(x)-1)
 
 /*! \brief check for null or zero length string buffer */
 #define ftdm_strlen_zero(s) (!s || *s == '\0')
@@ -86,6 +86,10 @@ typedef uint64_t ftdm_time_t;
 
 /*! \brief Get value that is in range [vmin,vmax] */
 #define ftdm_clamp(val,vmin,vmax) ftdm_max(vmin,ftdm_min(val,vmax))
+
+/*!< \brief Safer version of ftdm_clamp(), that swaps vmin/vmax parameters if vmin > vmax */
+#define ftdm_clamp_safe(val,vmin,vmax)	\
+	ftdm_clamp(val, ftdm_min(vmin,vmax), ftdm_max(vmin,vmax))
 
 /*!
  * \brief Get offset of member in structure

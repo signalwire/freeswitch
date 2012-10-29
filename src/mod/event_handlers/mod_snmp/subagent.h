@@ -24,7 +24,7 @@
  * Seventh Signal Ltd. & Co. KG, All Rights Reserverd.
  *
  * Contributor(s):
- * Daniel Swarbrick <daniel.swarbrick@seventhsignal.de>
+ * Daniel Swarbrick <daniel.swarbrick@gmail.com>
  * Stefan Knoblich <s.knoblich@axsentis.de>
  * 
  * subagent.h -- SNMP Agent Definitions

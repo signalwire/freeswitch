@@ -16,7 +16,7 @@
 #include "xmlrpc-c/server.h"
 #include "xmlrpc-c/server_cgi.h"
 
-#include "test.h"
+#include "testtool.h"
 
 
 int total_tests;

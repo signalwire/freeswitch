@@ -8,14 +8,12 @@ fs_description="FreeSWITCH is a scalable open source cross-platform telephony pl
 mod_build_depends="."
 supported_distros="squeeze wheezy sid"
 avoid_mods=(
-  applications/mod_fax
   applications/mod_limit
   applications/mod_mongo
   applications/mod_mp4
   applications/mod_osp
   applications/mod_rad_auth
   applications/mod_skel
-  applications/mod_soundtouch
   asr_tts/mod_cepstral
   asr_tts/mod_flite
   codecs/mod_com_g729
@@ -35,6 +33,7 @@ avoid_mods=(
   languages/mod_spidermonkey
   sdk/autotools
   xml_int/mod_xml_ldap
+  xml_int/mod_xml_radius
 )
 avoid_mods_sid=(
   endpoints/mod_portaudio
@@ -322,6 +321,207 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  This is a metapackage which depends on the packages needed for
  running the FreeSWITCH vanilla example configuration.
 
+Package: freeswitch-meta-sorbet
+Architecture: any
+Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
+Recommends:
+ freeswitch-init (= \${binary:Version}),
+ freeswitch-meta-codecs (= \${binary:Version}),
+ freeswitch-music (= \${binary:Version}),
+ freeswitch-sounds (= \${binary:Version}),
+ freeswitch-mod-abstraction (= \${binary:Version}),
+ freeswitch-mod-avmd (= \${binary:Version}),
+ freeswitch-mod-blacklist (= \${binary:Version}),
+ freeswitch-mod-callcenter (= \${binary:Version}),
+ freeswitch-mod-cidlookup (= \${binary:Version}),
+ freeswitch-mod-commands (= \${binary:Version}),
+ freeswitch-mod-conference (= \${binary:Version}),
+ freeswitch-mod-curl (= \${binary:Version}),
+ freeswitch-mod-db (= \${binary:Version}),
+ freeswitch-mod-directory (= \${binary:Version}),
+ freeswitch-mod-distributor (= \${binary:Version}),
+ freeswitch-mod-dptools (= \${binary:Version}),
+ freeswitch-mod-easyroute (= \${binary:Version}),
+ freeswitch-mod-enum (= \${binary:Version}),
+ freeswitch-mod-esf (= \${binary:Version}),
+ freeswitch-mod-esl (= \${binary:Version}),
+ freeswitch-mod-expr (= \${binary:Version}),
+ freeswitch-mod-fifo (= \${binary:Version}),
+ freeswitch-mod-fsk (= \${binary:Version}),
+ freeswitch-mod-fsv (= \${binary:Version}),
+ freeswitch-mod-hash (= \${binary:Version}),
+ freeswitch-mod-httapi (= \${binary:Version}),
+ freeswitch-mod-http-cache (= \${binary:Version}),
+ freeswitch-mod-lcr (= \${binary:Version}),
+ freeswitch-mod-nibblebill (= \${binary:Version}),
+ freeswitch-mod-oreka (= \${binary:Version}),
+ freeswitch-mod-random (= \${binary:Version}),
+ freeswitch-mod-redis (= \${binary:Version}),
+ freeswitch-mod-rss (= \${binary:Version}),
+ freeswitch-mod-sms (= \${binary:Version}),
+ freeswitch-mod-snapshot (= \${binary:Version}),
+ freeswitch-mod-snom (= \${binary:Version}),
+ freeswitch-mod-sonar (= \${binary:Version}),
+ freeswitch-mod-soundtouch (= \${binary:Version}),
+ freeswitch-mod-spandsp (= \${binary:Version}),
+ freeswitch-mod-spy (= \${binary:Version}),
+ freeswitch-mod-stress (= \${binary:Version}),
+ freeswitch-mod-valet-parking (= \${binary:Version}),
+ freeswitch-mod-vmd (= \${binary:Version}),
+ freeswitch-mod-voicemail (= \${binary:Version}),
+ freeswitch-mod-voicemail-ivr (= \${binary:Version}),
+ freeswitch-mod-pocketsphinx (= \${binary:Version}),
+ freeswitch-mod-tts-commandline (= \${binary:Version}),
+ freeswitch-mod-dialplan-xml (= \${binary:Version}),
+ freeswitch-mod-html5 (= \${binary:Version}),
+ freeswitch-mod-loopback (= \${binary:Version}),
+ freeswitch-mod-rtmp (= \${binary:Version}),
+ freeswitch-mod-skinny (= \${binary:Version}),
+ freeswitch-mod-sofia (= \${binary:Version}),
+ freeswitch-mod-cdr-csv (= \${binary:Version}),
+ freeswitch-mod-cdr-sqlite (= \${binary:Version}),
+ freeswitch-mod-event-socket (= \${binary:Version}),
+ freeswitch-mod-json-cdr (= \${binary:Version}),
+ freeswitch-mod-local-stream (= \${binary:Version}),
+ freeswitch-mod-native-file (= \${binary:Version}),
+ freeswitch-mod-shell-stream (= \${binary:Version}),
+ freeswitch-mod-sndfile (= \${binary:Version}),
+ freeswitch-mod-tone-stream (= \${binary:Version}),
+ freeswitch-mod-lua (= \${binary:Version}),
+ freeswitch-mod-console (= \${binary:Version}),
+ freeswitch-mod-logfile (= \${binary:Version}),
+ freeswitch-mod-syslog (= \${binary:Version}),
+ freeswitch-mod-say-en (= \${binary:Version}),
+ freeswitch-mod-posix-timer (= \${binary:Version}),
+ freeswitch-mod-timerfd (= \${binary:Version}),
+ freeswitch-mod-xml-cdr (= \${binary:Version}),
+ freeswitch-mod-xml-curl (= \${binary:Version}),
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This is a metapackage which recommends most packaged FreeSWITCH
+ modules except a few which aren't recommended.
+
+Package: freeswitch-meta-all
+Architecture: any
+Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
+Recommends:
+ freeswitch-init (= \${binary:Version}),
+ freeswitch-meta-codecs (= \${binary:Version}),
+ freeswitch-music (= \${binary:Version}),
+ freeswitch-sounds (= \${binary:Version}),
+ freeswitch-mod-abstraction (= \${binary:Version}),
+ freeswitch-mod-avmd (= \${binary:Version}),
+ freeswitch-mod-blacklist (= \${binary:Version}),
+ freeswitch-mod-callcenter (= \${binary:Version}),
+ freeswitch-mod-cidlookup (= \${binary:Version}),
+ freeswitch-mod-cluechoo (= \${binary:Version}),
+ freeswitch-mod-commands (= \${binary:Version}),
+ freeswitch-mod-conference (= \${binary:Version}),
+ freeswitch-mod-curl (= \${binary:Version}),
+ freeswitch-mod-db (= \${binary:Version}),
+ freeswitch-mod-directory (= \${binary:Version}),
+ freeswitch-mod-distributor (= \${binary:Version}),
+ freeswitch-mod-dptools (= \${binary:Version}),
+ freeswitch-mod-easyroute (= \${binary:Version}),
+ freeswitch-mod-enum (= \${binary:Version}),
+ freeswitch-mod-esf (= \${binary:Version}),
+ freeswitch-mod-esl (= \${binary:Version}),
+ freeswitch-mod-expr (= \${binary:Version}),
+ freeswitch-mod-fifo (= \${binary:Version}),
+ freeswitch-mod-fsk (= \${binary:Version}),
+ freeswitch-mod-fsv (= \${binary:Version}),
+ freeswitch-mod-hash (= \${binary:Version}),
+ freeswitch-mod-httapi (= \${binary:Version}),
+ freeswitch-mod-http-cache (= \${binary:Version}),
+ freeswitch-mod-ladspa (= \${binary:Version}),
+ freeswitch-mod-lcr (= \${binary:Version}),
+ freeswitch-mod-memcache (= \${binary:Version}),
+ freeswitch-mod-nibblebill (= \${binary:Version}),
+ freeswitch-mod-oreka (= \${binary:Version}),
+ freeswitch-mod-random (= \${binary:Version}),
+ freeswitch-mod-redis (= \${binary:Version}),
+ freeswitch-mod-rss (= \${binary:Version}),
+ freeswitch-mod-sms (= \${binary:Version}),
+ freeswitch-mod-snapshot (= \${binary:Version}),
+ freeswitch-mod-snipe-hunt (= \${binary:Version}),
+ freeswitch-mod-snom (= \${binary:Version}),
+ freeswitch-mod-sonar (= \${binary:Version}),
+ freeswitch-mod-soundtouch (= \${binary:Version}),
+ freeswitch-mod-spandsp (= \${binary:Version}),
+ freeswitch-mod-spy (= \${binary:Version}),
+ freeswitch-mod-stress (= \${binary:Version}),
+ freeswitch-mod-valet-parking (= \${binary:Version}),
+ freeswitch-mod-vmd (= \${binary:Version}),
+ freeswitch-mod-voicemail (= \${binary:Version}),
+ freeswitch-mod-voicemail-ivr (= \${binary:Version}),
+ freeswitch-mod-pocketsphinx (= \${binary:Version}),
+ freeswitch-mod-tts-commandline (= \${binary:Version}),
+ freeswitch-mod-dialplan-asterisk (= \${binary:Version}),
+ freeswitch-mod-dialplan-directory (= \${binary:Version}),
+ freeswitch-mod-dialplan-xml (= \${binary:Version}),
+ freeswitch-mod-ldap (= \${binary:Version}),
+ freeswitch-mod-alsa (= \${binary:Version}),
+ freeswitch-mod-dingaling (= \${binary:Version}),
+ freeswitch-mod-html5 (= \${binary:Version}),
+ freeswitch-mod-loopback (= \${binary:Version}),
+ freeswitch-mod-rtmp (= \${binary:Version}),
+ freeswitch-mod-skinny (= \${binary:Version}),
+ freeswitch-mod-sofia (= \${binary:Version}),
+ freeswitch-mod-cdr-csv (= \${binary:Version}),
+ freeswitch-mod-cdr-mongodb (= \${binary:Version}),
+ freeswitch-mod-cdr-pg-csv (= \${binary:Version}),
+ freeswitch-mod-cdr-sqlite (= \${binary:Version}),
+ freeswitch-mod-erlang-event (= \${binary:Version}),
+ freeswitch-mod-event-multicast (= \${binary:Version}),
+ freeswitch-mod-event-socket (= \${binary:Version}),
+ freeswitch-mod-event-test (= \${binary:Version}),
+ freeswitch-mod-event-zmq (= \${binary:Version}),
+ freeswitch-mod-json-cdr (= \${binary:Version}),
+ freeswitch-mod-radius-cdr (= \${binary:Version}),
+ freeswitch-mod-snmp (= \${binary:Version}),
+ freeswitch-mod-local-stream (= \${binary:Version}),
+ freeswitch-mod-native-file (= \${binary:Version}),
+ freeswitch-mod-shell-stream (= \${binary:Version}),
+ freeswitch-mod-sndfile (= \${binary:Version}),
+ freeswitch-mod-tone-stream (= \${binary:Version}),
+ freeswitch-mod-java (= \${binary:Version}),
+ freeswitch-mod-lua (= \${binary:Version}),
+ freeswitch-mod-perl (= \${binary:Version}),
+ freeswitch-mod-python (= \${binary:Version}),
+ freeswitch-mod-yaml (= \${binary:Version}),
+ freeswitch-mod-console (= \${binary:Version}),
+ freeswitch-mod-logfile (= \${binary:Version}),
+ freeswitch-mod-syslog (= \${binary:Version}),
+ freeswitch-mod-say-en (= \${binary:Version}),
+ freeswitch-mod-posix-timer (= \${binary:Version}),
+ freeswitch-mod-timerfd (= \${binary:Version}),
+ freeswitch-mod-xml-cdr (= \${binary:Version}),
+ freeswitch-mod-xml-curl (= \${binary:Version}),
+ freeswitch-mod-xml-rpc (= \${binary:Version}),
+ freeswitch-mod-xml-scgi (= \${binary:Version}),
+Suggests:
+ freeswitch-mod-vlc (= \${binary:Version}),
+ freeswitch-mod-say-de (= \${binary:Version}),
+ freeswitch-mod-say-es (= \${binary:Version}),
+ freeswitch-mod-say-fa (= \${binary:Version}),
+ freeswitch-mod-say-fr (= \${binary:Version}),
+ freeswitch-mod-say-he (= \${binary:Version}),
+ freeswitch-mod-say-hr (= \${binary:Version}),
+ freeswitch-mod-say-hu (= \${binary:Version}),
+ freeswitch-mod-say-it (= \${binary:Version}),
+ freeswitch-mod-say-ja (= \${binary:Version}),
+ freeswitch-mod-say-nl (= \${binary:Version}),
+ freeswitch-mod-say-pt (= \${binary:Version}),
+ freeswitch-mod-say-ru (= \${binary:Version}),
+ freeswitch-mod-say-th (= \${binary:Version}),
+ freeswitch-mod-say-zh (= \${binary:Version}),
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ This is a metapackage which recommends or suggests all packaged
+ FreeSWITCH modules.
+
 Package: freeswitch-meta-codecs
 Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
@@ -333,12 +533,14 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
  freeswitch-mod-h26x (= \${binary:Version}),
+ freeswitch-mod-isac (= \${binary:Version}),
  freeswitch-mod-mp4v (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
  freeswitch-mod-speex (= \${binary:Version}),
- freeswitch-mod-theora (= \${binary:Version})
+ freeswitch-mod-theora (= \${binary:Version}),
+ freeswitch-mod-vp8 (= \${binary:Version})
 Suggests:
  freeswitch-mod-ilbc (= \${binary:Version}),
  freeswitch-mod-siren (= \${binary:Version})

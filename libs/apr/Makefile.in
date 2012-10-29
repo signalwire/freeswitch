@@ -66,6 +66,18 @@ apr-config.out: $(APR_CONFIG)
 build/apr_rules.out: build/apr_rules.mk
 	sed 's,^\(apr_build.*=\).*$$,\1$(installbuilddir),' < build/apr_rules.mk > $@
 
+.PRECIOUS: Makefile
+
+Makefile: $(srcdir)/Makefile.in $(top_blddir)/config.status
+	cd $(srcdir) && ./config.status
+
+$(top_blddir)/config.status: $(top_srcdir)/configure
+	$(SHELL) ./config.status --recheck
+
+$(top_srcdir)/configure:  $(top_srcdir)/configure.in
+	cd $(srcdir) && autoconf
+	cd $(srcdir) && autoheader
+
 install: $(TARGET_LIB) apr-config.out build/apr_rules.out
 	$(APR_MKDIR) $(DESTDIR)$(libdir) $(DESTDIR)$(bindir) $(DESTDIR)$(installbuilddir) \
 		     $(DESTDIR)$(libdir)/pkgconfig $(DESTDIR)$(includedir)

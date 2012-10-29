@@ -222,12 +222,15 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(switch_xml
 	switch_thread_rwlock_wrlock(B_RWLOCK);
 	for (ptr = BINDINGS; ptr; ptr = ptr->next) {
 		if (ptr->function == function) {
+			status = SWITCH_STATUS_SUCCESS;
+
 			if (last) {
 				last->next = ptr->next;
 			} else {
 				BINDINGS = ptr->next;
+				last = NULL;
+				continue;
 			}
-			status = SWITCH_STATUS_SUCCESS;
 		}
 		last = ptr;
 	}
@@ -972,7 +975,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t
 	}
 }
 
-/* parse the given xml string and return an switch_xml structure */
+/* parse the given xml string and return a switch_xml structure */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 {
 	switch_xml_root_t root = (switch_xml_root_t) switch_xml_new(NULL);
@@ -1238,7 +1241,7 @@ static FILE *preprocess_exec(const char *cwd, const char *command, FILE *write_f
 	if (pipe(fds)) {
 		goto end;
 	} else {					/* good to go */
-		pid = fork();
+		pid = switch_fork();
 
 		if (pid < 0) {			/* ok maybe not */
 			close(fds[0]);
@@ -2455,7 +2458,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 				*len += sprintf(*s + *len, "%s", XML_INDENT);	/* indent */
 			}
 		}
-		*len += sprintf(*s + (*len), "</%s>\n", xml->name);	/* close tag */
+		*len += sprintf(*s + (*len), "</%s>", xml->name);	/* close tag */
 	}
 
 	while (txt[off] && off < xml->off)
@@ -2496,7 +2499,24 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_head
 	return r;
 }
 
-/* converts an switch_xml structure back to xml, returning a string of xml date that
+SWITCH_DECLARE(char *) switch_xml_tohtml(switch_xml_t xml, switch_bool_t prn_header)
+{
+	char *r, *s, *h;
+	switch_size_t rlen = 0;
+	switch_size_t len = SWITCH_XML_BUFSIZE;
+	switch_mutex_lock(XML_GEN_LOCK);
+	s = (char *) malloc(SWITCH_XML_BUFSIZE);
+	switch_assert(s);
+	h = (char *) malloc(SWITCH_XML_BUFSIZE);
+	switch_assert(h);
+	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
+	h = switch_xml_ampencode(r, 0, &h, &rlen, &len, 1);
+	switch_safe_free(r);
+	switch_mutex_unlock(XML_GEN_LOCK);
+	return h;
+}
+
+/* converts a switch_xml structure back to xml, returning a string of xml data that
    must be freed */
 SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset, switch_bool_t prn_header)
 {
@@ -2684,7 +2704,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 	return &root->xml;
 }
 
-/* inserts an existing tag into an switch_xml structure */
+/* inserts an existing tag into a switch_xml structure */
 SWITCH_DECLARE(switch_xml_t) switch_xml_insert(switch_xml_t xml, switch_xml_t dest, switch_size_t off)
 {
 	switch_xml_t cur, prev, head;
@@ -2879,22 +2899,54 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offse
 	const char *xminday = switch_xml_attr(xcond, "minute-of-day");
 	const char *xtod = switch_xml_attr(xcond, "time-of-day");
 	const char *tzoff = switch_xml_attr(xcond, "tz-offset");
-	int loffset = 0;
+	const char *isdst = switch_xml_attr(xcond, "dst");
 
+	int loffset = -1000;
+	int eoffset = -1000;
+	int dst = -1000;
 	switch_time_t ts = switch_micro_time_now();
 	int time_match = -1;
-	switch_time_exp_t tm;
+	switch_time_exp_t tm, tm2;
+
+	if (!zstr(isdst)) {
+		dst = switch_true(isdst);
+	}
 
 	if (!zstr(tzoff) && switch_is_number(tzoff)) {
 		loffset = atoi(tzoff);
-		offset = &loffset;
+	}
+
+	switch_time_exp_lt(&tm2, ts);
+
+	if (offset) {
+		eoffset = *offset;
+		switch_time_exp_tz(&tm, ts, *offset);
+	} else {
+		tm = tm2;
+	}
+
+	if (eoffset == -1000) {
+		eoffset = tm.tm_gmtoff / 3600;
+	}
+
+	if (loffset == -1000) {
+		loffset = eoffset;
 	}
 
 
-	if (offset) {
-		switch_time_exp_tz(&tm, ts, *offset);
-	} else {
-		switch_time_exp_lt(&tm, ts);
+	if (time_match && tzoff) {
+		time_match = loffset == eoffset;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+						  "XML DateTime Check: TZOFFSET[%d] == %d (%s)\n", eoffset, loffset, time_match ? "PASS" : "FAIL");
+
+	}
+
+	if (time_match && dst > -1) {
+		time_match = (tm2.tm_isdst > 0 && dst > 0);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
+						  "XML DateTime Check: DST[%s] == %s (%s)\n", 
+						  tm2.tm_isdst > 0 ? "true" : "false", dst > 0 ? "true" : "false", time_match ? "PASS" : "FAIL");
+
 	}
 
 	if (time_match && xdt) {

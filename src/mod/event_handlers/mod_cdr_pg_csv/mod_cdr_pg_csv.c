@@ -25,7 +25,7 @@
  *
  * Contributor(s):
  * Michal Bielicki <michal.bielicki@halokwadrat.de>
- * Daniel Swarbrick <daniel.swarbrick@seventhsignal.de>
+ * Daniel Swarbrick <daniel.swarbrick@gmail.com>
  * Evgeney Bugorov <evgeney.bugrov@halokwadrat.ru>
  * Sponsored by Halo Kwadrat Sp. z o.o. & Seventh Signal Ltd. & CO. KG
  *

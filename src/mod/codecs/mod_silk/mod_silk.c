@@ -320,8 +320,19 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 	struct silk_context *context = codec->private_info;
 	SKP_int16 ret, len; 
 	int16_t *target = decoded_data;
+	switch_core_session_t *session = codec->session;
+	stfu_instance_t *jb;
 
 	*decoded_data_len = 0;
+
+	if (session) {
+		jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO);
+	}
+
+	if (jb) {
+		/* to allow compile */
+		jb = NULL;
+	}
 
 	do {
 		ret = SKP_Silk_SDK_Decode(context->dec_state,

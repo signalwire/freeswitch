@@ -206,7 +206,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 	}
 #endif
 
-	if (level > hard_log_level) {
+	if (level > hard_log_level && (node->slevel == SWITCH_LOG_UNINIT || level > node->slevel)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 

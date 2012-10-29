@@ -13,8 +13,10 @@
 #include "xmlrpc-c/base.h"
 #include "xmlrpc-c/base_int.h"
 #include "xmlrpc-c/string_int.h"
+#include "xmlrpc-c/string_number.h"
 #include "xmlrpc-c/util.h"
 #include "xmlrpc-c/xmlparser.h"
+#include "parse_datetime.h"
 
 #include "parse_value.h"
 
@@ -72,12 +74,12 @@ parseArray(xmlrpc_env *    const envP,
 
     arrayP = xmlrpc_array_new(envP);
     if (!envP->fault_occurred) {
-        unsigned int const childCount = xml_element_children_size(arrayElemP);
+        size_t const childCount = xml_element_children_size(arrayElemP);
 
         if (childCount != 1)
             setParseFault(envP,
                           "<array> element has %u children.  Only one <data> "
-                          "makes sense.", childCount);
+                          "makes sense.", (unsigned int)childCount);
         else {
             xml_element * const dataElemP =
                 xml_element_children(arrayElemP)[0];
@@ -111,11 +113,11 @@ parseName(xmlrpc_env *    const envP,
           xml_element *   const nameElemP,
           xmlrpc_value ** const valuePP) {
 
-    unsigned int const childCount = xml_element_children_size(nameElemP);
+    size_t const childCount = xml_element_children_size(nameElemP);
 
     if (childCount > 0)
         setParseFault(envP, "<name> element has %u children.  "
-                      "Should have none.", childCount);
+                      "Should have none.", (unsigned int)childCount);
     else {
         const char * const cdata     = xml_element_cdata(nameElemP);
         size_t       const cdataSize = xml_element_cdata_size(nameElemP);
@@ -181,12 +183,12 @@ parseMember(xmlrpc_env *    const envP,
             xmlrpc_value ** const keyPP,
             xmlrpc_value ** const valuePP) {
 
-    unsigned int const childCount = xml_element_children_size(memberP);
+    size_t const childCount = xml_element_children_size(memberP);
 
     if (childCount != 2)
         setParseFault(envP,
                       "<member> element has %u children.  Only one <name> and "
-                      "one <value> make sense.", childCount);
+                      "one <value> make sense.", (unsigned int)childCount);
     else {
         xml_element * nameElemP = NULL;
 
@@ -302,12 +304,12 @@ parseInt(xmlrpc_env *    const envP,
             /* Look for out-of-range errors which didn't produce ERANGE. */
             if (i < XMLRPC_INT32_MIN)
                 setParseFault(envP,
-                              "<int> value %d is below the range allowed "
+                              "<int> value %ld is below the range allowed "
                               "by XML-RPC (minimum is %d)",
                               i, XMLRPC_INT32_MIN);
             else if (i > XMLRPC_INT32_MAX)
                 setParseFault(envP,
-                              "<int> value %d is above the range allowed "
+                              "<int> value %ld is above the range allowed "
                               "by XML-RPC (maximum is %d)",
                               i, XMLRPC_INT32_MAX);
             else {
@@ -581,39 +583,20 @@ parseI8(xmlrpc_env *    const envP,
                       "<i8> content '%s' starts with white space", str);
     else {
         xmlrpc_int64 i;
-        char * tail;
+        xmlrpc_env env;
 
-        errno = 0;
-        i = strtoll(str, &tail, 10);
+        xmlrpc_env_init(&env);
 
-        if (errno == ERANGE)
-            setParseFault(envP, "<i8> XML element value '%s' represents a "
-                          "number beyond the range that "
-                          "XML-RPC allows (%d - %d)", str,
-                          XMLRPC_INT64_MIN, XMLRPC_INT64_MAX);
-        else if (errno != 0)
-            setParseFault(envP, "unexpected error parsing <i8> XML element "
-                          "value '%s'.  strtoll() failed with errno %d (%s)",
-                          str, errno, strerror(errno));
-        else {
-            /* Look for out-of-range errors which didn't produce ERANGE. */
-            if (i < XMLRPC_INT64_MIN)
-                setParseFault(envP, "<i8> value %d is below the range allowed "
-                           "by XML-RPC (minimum is %d)",
-                           i, XMLRPC_INT64_MIN);
-            else if (i > XMLRPC_INT64_MAX)
-                setParseFault(envP, "<i8> value %d is above the range allowed "
-                              "by XML-RPC (maximum is %d)",
-                              i, XMLRPC_INT64_MAX);
-            else {
-                if (tail[0] != '\0')
-                    setParseFault(envP,
-                                  "<i8> value '%s' contains non-numerical "
-                                  "junk: '%s'", str, tail);
-                else
-                    *valuePP = xmlrpc_i8_new(envP, i);
-            }
-        }
+        xmlrpc_parse_int64(&env, str, &i);
+
+        if (env.fault_occurred)
+            setParseFault(envP, "<i8> XML element value '%s' is invalid "
+                          "because it does not represent "
+                          "a 64 bit integer.  %s", env.fault_string);
+        else
+            *valuePP = xmlrpc_i8_new(envP, i);
+
+        xmlrpc_env_clean(&env);
     }
 }
 
@@ -640,33 +623,39 @@ parseSimpleValueCdata(xmlrpc_env *    const envP,
        UTF-8 multibyte sequences or NUL characters.  So will most of the
        others.
 
-       The "ex.XXX" element names are what the Apache XML-RPC facility
-       uses: http://ws.apache.org/xmlrpc/types.html.  i1 and i2 are just
-       from my imagination.
+       The "ex:XXX" element names are what the Apache XML-RPC facility
+       uses: http://ws.apache.org/xmlrpc/types.html.  (Technically, it
+       isn't "ex" but an arbitrary prefix that identifies a namespace
+       declared earlier in the XML document -- this is an XML thing.
+       But we aren't nearly sophisticated enough to use real XML
+       namespaces, so we exploit the fact that XML-RPC actually uses
+       "ex").
+
+       "i1" and "i2" are just from my imagination.
     */
 
     if (xmlrpc_streq(elementName, "int")   ||
         xmlrpc_streq(elementName, "i4")    ||
         xmlrpc_streq(elementName, "i1")    ||
         xmlrpc_streq(elementName, "i2")    ||
-        xmlrpc_streq(elementName, "ex.i1") ||
-        xmlrpc_streq(elementName, "ex.i2"))
+        xmlrpc_streq(elementName, "ex:i1") ||
+        xmlrpc_streq(elementName, "ex:i2"))
         parseInt(envP, cdata, valuePP);
     else if (xmlrpc_streq(elementName, "boolean"))
         parseBoolean(envP, cdata, valuePP);
     else if (xmlrpc_streq(elementName, "double"))
         parseDouble(envP, cdata, valuePP);
     else if (xmlrpc_streq(elementName, "dateTime.iso8601"))
-        *valuePP = xmlrpc_datetime_new_str(envP, cdata);
+        xmlrpc_parseDatetime(envP, cdata, valuePP);
     else if (xmlrpc_streq(elementName, "string"))
         *valuePP = xmlrpc_string_new_lp(envP, cdataLength, cdata);
     else if (xmlrpc_streq(elementName, "base64"))
         parseBase64(envP, cdata, cdataLength, valuePP);
     else if (xmlrpc_streq(elementName, "nil") ||
-             xmlrpc_streq(elementName, "ex.nil"))
+             xmlrpc_streq(elementName, "ex:nil"))
         *valuePP = xmlrpc_nil_new(envP);
     else if (xmlrpc_streq(elementName, "i8") ||
-             xmlrpc_streq(elementName, "ex.i8"))
+             xmlrpc_streq(elementName, "ex:i8"))
         parseI8(envP, cdata, valuePP);
     else
         setParseFault(envP, "Unknown value type -- XML element is named "
@@ -680,13 +669,13 @@ parseSimpleValue(xmlrpc_env *    const envP,
                  xml_element *   const elemP,
                  xmlrpc_value ** const valuePP) {
     
-    unsigned int const childCount = xml_element_children_size(elemP);
+    size_t childCount = xml_element_children_size(elemP);
                     
     if (childCount > 0)
         setParseFault(envP, "The child of a <value> element "
                       "is neither <array> nor <struct>, "
                       "but has %u child elements of its own.",
-                      childCount);
+                      (unsigned int)childCount);
     else {
         const char * const elemName  = xml_element_name(elemP);
         const char * const cdata     = xml_element_cdata(elemP);
@@ -724,7 +713,7 @@ xmlrpc_parseValue(xmlrpc_env *    const envP,
                           "<%s> element where <value> expected",
                           xml_element_name(elemP));
         else {
-            unsigned int const childCount = xml_element_children_size(elemP);
+            size_t const childCount = xml_element_children_size(elemP);
 
             if (childCount == 0) {
                 /* We have no type element, so treat the value as a string. */
@@ -733,7 +722,8 @@ xmlrpc_parseValue(xmlrpc_env *    const envP,
                 *valuePP = xmlrpc_string_new_lp(envP, cdata_size, cdata);
             } else if (childCount > 1)
                 setParseFault(envP, "<value> has %u child elements.  "
-                              "Only zero or one make sense.", childCount);
+                              "Only zero or one make sense.",
+                              (unsigned int)childCount);
             else {
                 /* We should have a type tag inside our value tag. */
                 xml_element * const childP = xml_element_children(elemP)[0];
@@ -749,3 +739,6 @@ xmlrpc_parseValue(xmlrpc_env *    const envP,
         }
     }
 }
+
+
+

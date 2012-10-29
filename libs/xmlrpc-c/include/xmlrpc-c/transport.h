@@ -38,12 +38,17 @@ typedef void (*xmlrpc_transport_asynch_complete)(
     xmlrpc_mem_block *        const responseXmlP,
     xmlrpc_env                const env);
 
+typedef void (*xmlrpc_transport_progress)(
+    struct xmlrpc_call_info *   const callInfoP,
+    struct xmlrpc_progress_data const data);
+
 typedef void (*xmlrpc_transport_send_request)(
     xmlrpc_env *                     const envP, 
     struct xmlrpc_client_transport * const clientTransportP,
     const xmlrpc_server_info *       const serverP,
     xmlrpc_mem_block *               const xmlP,
     xmlrpc_transport_asynch_complete       complete,
+    xmlrpc_transport_progress              progress,
     struct xmlrpc_call_info *        const callInfoP);
 
 typedef void (*xmlrpc_transport_call)(

@@ -24,19 +24,14 @@
 #include <ws2tcpip.h>  // send,recv,socklen_t etc
 #include <wspiapi.h>   // addrinfo
 #else
-#include <windows.h>
-#include <winsock.h>
+#include <ws2tcpip.h>  // send,recv,socklen_t etc
+#include <winsock2.h>
 typedef int socklen_t;
 #endif
 
 #ifndef NI_MAXSERV
 # define NI_MAXSERV 32
 #endif
-
-static void mongo_clear_errors( mongo *conn ) {
-    conn->err = 0;
-    memset( conn->errstr, 0, MONGO_ERR_LEN );
-}
 
 int mongo_env_close_socket( int socket ) {
     return closesocket( socket );

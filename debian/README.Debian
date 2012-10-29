@@ -1,5 +1,5 @@
 FreeSWITCH for Debian
---------------
+---------------------
 
 This debian packaging breaks out every module of freeswitch into a
 separate package, so be sure to verify that you are actually
@@ -23,4 +23,4 @@ recommend doing the following:
   /etc/init.d/freeswitch start
   fs_cli
 
- -- Travis Cross <tc@traviscross.com>, Sat,  5 May 2012 23:41:29 +0000
+ -- Travis Cross <tc@traviscross.com>, Wed,  3 Oct 2012 02:15:32 +0000

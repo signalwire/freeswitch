@@ -28,6 +28,9 @@
 #if !defined(_SPANDSP_DDS_H_)
 #define _SPANDSP_DDS_H_
 
+#define DDS_PHASE_RATE(frequency) (int32_t) ((frequency)*65536.0f*65536.0f/SAMPLE_RATE)
+#define DDS_PHASE(angle) (int32_t) ((uint32_t) (((angle < 0.0f)  ?  (360.0f + angle)  :  angle)*65536.0f*65536.0f/360.0f))
+
 #if defined(__cplusplus)
 extern "C"
 {

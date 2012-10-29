@@ -50,7 +50,7 @@ interpretUll(const char *  const string,
         
         errno = 0;  /* So we can tell if strtoull() overflowed */
 
-        *ullP = strtoull(strippedString, &tail, 10);
+        *ullP = XMLRPC_STRTOULL(strippedString, &tail, 10);
         
         if (tail[0] != '\0')
             casprintf(errorP, "Non-digit stuff in string: %s", tail);
@@ -80,7 +80,7 @@ interpretLl(const char *  const string,
         
         errno = 0;  /* So we can tell if strtoll() overflowed */
 
-        *llP = strtoll(string, &tail, 10);
+        *llP = XMLRPC_STRTOLL(string, &tail, 10);
         
         if (tail[0] != '\0')
             casprintf(errorP, "Non-digit stuff in string: %s", tail);
@@ -94,9 +94,9 @@ interpretLl(const char *  const string,
 
 
 void
-interpretUint(const char *  const string,
-              uint *        const uintP,
-              const char ** const errorP) {
+interpretUint(const char *   const string,
+              unsigned int * const uintP,
+              const char **  const errorP) {
 
     /* strtoul() does a lousy job of dealing with invalid numbers.  A null
        string is just zero; a negative number is a large positive one; a

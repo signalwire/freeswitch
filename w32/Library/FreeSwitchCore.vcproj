@@ -535,6 +535,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_pgsql.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_pcm.c"
 				>
 			</File>
@@ -1030,6 +1034,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_odbc.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_pgsql.h"
 				>
 			</File>
 			<File

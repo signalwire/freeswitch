@@ -1,14 +1,15 @@
 /* Copyright information is at end of file. */
+
 /* COMPILATION NOTE:
-   Note that the Platform SDK headers and
-   link libraries for Windows XP SP2 or newer are required to compile
-   xmlrpc-c for this module.  If you are not using this server, it is 
-   safe to exclude the xmlrpc_server_w32httpsys.c file from the xmlrpc
-   project and these dependencies will not be required.  You can get the 
-   latest platform SDK at 
-   http://www.microsoft.com/msdownload/platformsdk/sdkupdate/
-   Be sure after installation to choose the program to "register the PSDK
-   directories with Visual Studio" so the newer headers are found.
+
+   Note that the Platform SDK headers and link libraries for Windows XP SP2 or
+   newer are required to compile Xmlrpc-c for this module.  If you are not
+   using this XML-RPC server program, it is safe to exclude the
+   xmlrpc_server_w32httpsys.c file from the xmlrpc project and you will not
+   have this dependency.  You can get the latest platform SDK at
+   http://www.microsoft.com/msdownload/platformsdk/sdkupdate/ Be sure after
+   installation to choose the program to "register the PSDK directories with
+   Visual Studio" so the newer headers are found.
 */
 
 #ifndef UNICODE
@@ -19,7 +20,18 @@
 #define _UNICODE
 #endif
 
-/* See compilation note above if this header is not found! */
+/* Declare that we require the Windows XP SP2 or better version of the
+   interface to Windows.
+
+   Microsoft recommends
+   (http://msdn.microsoft.com/en-us/library/aa383745(VS.85).aspx) defining
+   NTDDI_VERSION instead of _WIN32_WINNT for this purpose, but as it was
+   invented recently, it's pretty useless.  Windows header files from old
+   Windows SDKs won't know what to do with it.
+*/
+#define _WIN32_WINNT 0x0502
+
+/* See compilation note above if the compiler doesn't find this header file */
 #include <http.h>
 #include <strsafe.h>
 
@@ -665,7 +677,8 @@ SendHttpResponse(
 
     ADD_KNOWN_HEADER(response, HttpHeaderContentType, "text/html");
     
-    StringCchPrintfA(szServerHeader,20, "xmlrpc-c %s",XMLRPC_C_VERSION);
+    StringCchPrintfA(szServerHeader, sizeof(szServerHeader), "Xmlrpc-c/%s",
+                     XMLRPC_C_VERSION);
     ADD_KNOWN_HEADER(response, HttpHeaderServer, szServerHeader);
    
     if(pEntityString)
@@ -724,7 +737,8 @@ SendHttpResponseAuthRequired(
     ADD_KNOWN_HEADER(response, HttpHeaderWwwAuthenticate,
                      "Basic realm=\"xmlrpc\"");
     
-    StringCchPrintfA(szServerHeader,20, "xmlrpc-c %s",XMLRPC_C_VERSION);
+    StringCchPrintfA(szServerHeader, sizeof(szServerHeader), "Xmlrpc-c/%s",
+                     XMLRPC_C_VERSION);
     ADD_KNOWN_HEADER(response, HttpHeaderServer, szServerHeader);
    
     // Since we are sending all the entity body in one call, we don't have 
@@ -878,8 +892,8 @@ processRPCCall(
                     ADD_KNOWN_HEADER(response, HttpHeaderContentType,
                                      "text/xml");
                     
-                    StringCchPrintfA(szServerHeader,20,
-                                     "xmlrpc-c %s",XMLRPC_C_VERSION);
+                    StringCchPrintfA(szServerHeader, sizeof(szServerHeader),
+                                     "Xmlrpc-c/%s", XMLRPC_C_VERSION);
                     ADD_KNOWN_HEADER(response, HttpHeaderServer,
                                      szServerHeader);
 

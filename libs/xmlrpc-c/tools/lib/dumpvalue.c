@@ -5,7 +5,7 @@
    used for debugging purposes in other places.
 */
 
-//#define _GNU_SOURCE
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -297,12 +297,12 @@ dumpStructMember(const char *   const prefix,
         const char * prefix2;
         const char * blankPrefix;
 
-        casprintf(&prefix2, "%s  Key:   ", prefix);
+        casprintf(&blankPrefix, "%*s", blankCount, "");
+        
+        casprintf(&prefix2, "%s  Key:   ", blankPrefix);
         dumpValue(prefix2, keyP);
         strfree(prefix2);
 
-        casprintf(&blankPrefix, "%*s", blankCount, "");
-        
         casprintf(&prefix2, "%s  Value: ", blankPrefix);
         dumpValue(prefix2, valueP);
         strfree(prefix2);
@@ -407,13 +407,13 @@ dumpI8(const char *   const prefix,
     xmlrpc_env_init(&env);
 
     xmlrpc_read_i8(&env, valueP, &value);
-    
+
     if (env.fault_occurred)
         printf("Internal error: unable to extract value of "
                "64-bit integer xmlrpc_value %lx.  %s\n",
                (unsigned long)valueP, env.fault_string);
     else
-        printf("%s64-bit integer: %" PRId64 "\n", prefix, value);
+        printf("%s64-bit integer: %" XMLRPC_PRId64 "\n", prefix, value);
 
     xmlrpc_env_clean(&env);
 }

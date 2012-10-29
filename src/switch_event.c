@@ -276,6 +276,7 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 
 		event = (switch_event_t *) pop;
 		switch_event_deliver(&event);
+		switch_os_yield();
 	}
 
 
@@ -544,7 +545,7 @@ SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max)
 
 		switch_threadattr_create(&thd_attr, pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_threadattr_priority_increase(thd_attr);
+		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 		switch_thread_create(&EVENT_DISPATCH_QUEUE_THREADS[index], thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE, pool);
 		while(--sanity && !EVENT_DISPATCH_QUEUE_RUNNING[index]) switch_yield(10000);
 
@@ -602,7 +603,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 #endif
 
 	//switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	//switch_threadattr_priority_increase(thd_attr);
+
 
 	switch_queue_create(&EVENT_DISPATCH_QUEUE, DISPATCH_QUEUE_LEN * MAX_DISPATCH, pool);
 	switch_event_launch_dispatch_threads(1);
@@ -910,7 +911,7 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 			fly++;
 		}
 		
-		if ((header = switch_event_get_header_ptr(event, header_name))) {
+		if (header || (header = switch_event_get_header_ptr(event, header_name))) {
 			
 			if (index_ptr) {
 				if (index > -1 && index <= 4000) {
@@ -1015,7 +1016,12 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 			switch_assert(hv);
 			header->value = hv;
 
-			switch_snprintf(header->value, len, "ARRAY::");
+			if (header->idx > 1) {
+				switch_snprintf(header->value, len, "ARRAY::");
+			} else {
+				*header->value = '\0';
+			}
+
 			for(j = 0; j < header->idx; j++) {
 				switch_snprintf(header->value + strlen(header->value), len - strlen(header->value), "%s%s", j == 0 ? "" : "|:", header->array[j]);
 			}
@@ -1491,6 +1497,27 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_create_array_pair(switch_event_t **event, char **names, char **vals, int len)
+{
+	int r;
+	char *name, *val;
+
+	switch_event_create(event, SWITCH_EVENT_CLONE);
+	
+	for (r = 0; r < len; r++) {
+		val = switch_str_nil(vals[r]);
+		name = names[r];
+		
+		if (zstr(name)) {
+			name = "Unknown";
+		}
+
+		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, name, val);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+	
+}
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a, char b, char c, switch_event_t **event, char **new_data, switch_bool_t dup)
 {

@@ -6,7 +6,7 @@
 
 #include "xmlrpc-c/base.h"
 
-#include "test.h"
+#include "testtool.h"
 #include "girstring.h"
 
 #include "serialize_value.h"
@@ -173,6 +173,7 @@ test_serialize_double(void) {
     testOneDouble(1);
     testOneDouble(0.3);
     testOneDouble(4.9);
+    testOneDouble(9.9999999);
     testOneDouble(-8);
     testOneDouble(-.7);
     testOneDouble(-2.5);

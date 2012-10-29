@@ -15,6 +15,7 @@
 
 #include "bool.h"
 #include "int.h"
+#include "xmlrpc-c/util_int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 
@@ -24,7 +25,6 @@
 #include "thread.h"
 
 
-
 struct abyss_thread {
     HANDLE handle;
     void * userHandle;
@@ -32,7 +32,7 @@ struct abyss_thread {
     TThreadDoneFn * threadDone;
 };
 
-#define  THREAD_STACK_SIZE (16*1024L)
+#define  MIN_THREAD_STACK_SIZE (16*1024L)
 
 
 typedef uint32_t (WINAPI WinThreadProc)(void *);
@@ -60,6 +60,7 @@ ThreadCreate(TThread **      const threadPP,
              TThreadProc   * const func,
              TThreadDoneFn * const threadDone,
              bool            const useSigchld,
+             size_t          const stackSize,
              const char **   const errorP) {
 
     TThread * threadP;
@@ -76,12 +77,13 @@ ThreadCreate(TThread **      const threadPP,
         threadP->func       = func;
         threadP->threadDone = threadDone;
 
-        threadP->handle = (HANDLE)_beginthreadex(NULL,
-                                                 THREAD_STACK_SIZE,
-                                                 threadRun,
-                                                 threadP,
-                                                 CREATE_SUSPENDED,
-                                                 &z);
+        threadP->handle = (HANDLE)
+            _beginthreadex(NULL,
+                           MAX(stackSize, MIN_THREAD_STACK_SIZE),
+                           threadRun,
+                           threadP,
+                           CREATE_SUSPENDED,
+                           &z);
 
         if (threadP->handle == NULL)
             xmlrpc_asprintf(errorP, "_beginthreadex() failed.");
@@ -121,13 +123,17 @@ ThreadKill(TThread * const threadP) {
 void
 ThreadWaitAndRelease(TThread * const threadP) {
 
+    WaitForSingleObject(threadP->handle, INFINITE);
     ThreadRelease(threadP);
 }
 
 
 
 void
-ThreadExit(int const retValue) {
+ThreadExit(TThread * const threadP,
+           int       const retValue) {
+
+    threadP->threadDone(threadP->userHandle);
 
     _endthreadex(retValue);
 }
@@ -138,6 +144,7 @@ void
 ThreadRelease(TThread * const threadP) {
 
     CloseHandle(threadP->handle);
+    free(threadP); 
 }
 
 
@@ -189,8 +196,6 @@ MutexCreate(TMutex ** const mutexPP) {
         free(mutexP);
 
     *mutexPP = mutexP;
-
-    TraceMsg( "Created Mutex %s\n", (succeeded ? "ok" : "FAILED") );
 
     return succeeded;
 }

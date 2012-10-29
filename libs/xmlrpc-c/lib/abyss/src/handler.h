@@ -28,4 +28,6 @@ HandlerAddDefaultFN(BIHandler *  const handlerP,
 abyss_bool
 HandlerDefaultBuiltin(TSession * const sessionP);
 
+extern size_t const HandlerDefaultBuiltinStack;
+
 #endif

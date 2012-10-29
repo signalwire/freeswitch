@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/util.h"
 
@@ -19,29 +20,29 @@
 
 
 xmlrpc_mem_block * 
-xmlrpc_mem_block_new(xmlrpc_env * const env, 
+xmlrpc_mem_block_new(xmlrpc_env * const envP, 
                      size_t       const size) {
 
-    xmlrpc_mem_block* block;
+    xmlrpc_mem_block * block;
 
-    XMLRPC_ASSERT_ENV_OK(env);
+    XMLRPC_ASSERT_ENV_OK(envP);
 
-    block = (xmlrpc_mem_block*) malloc(sizeof(xmlrpc_mem_block));
-    XMLRPC_FAIL_IF_NULL(block, env, XMLRPC_INTERNAL_ERROR,
-                        "Can't allocate memory block");
+    MALLOCVAR(block);
+    
+    if (block == NULL)
+        xmlrpc_faultf(envP, "Can't allocate memory block");
+    else {
+        xmlrpc_mem_block_init(envP, block, size);
 
-    xmlrpc_mem_block_init(env, block, size);
-    XMLRPC_FAIL_IF_FAULT(env);
-
-                     cleanup:
-    if (env->fault_occurred) {
-        if (block)
+        if (envP->fault_occurred) {
             free(block);
-        return NULL;
-    } else {
-        return block;
+            block = NULL;
+        }
     }
+    return block;
 }
+
+
 
 /* Destroy an existing xmlrpc_mem_block, and everything it contains. */
 void
@@ -74,7 +75,7 @@ xmlrpc_mem_block_init(xmlrpc_env *       const envP,
     blockP->_block = (void*) malloc(blockP->_allocated);
     if (!blockP->_block)
         xmlrpc_faultf(envP, "Can't allocate %u-byte memory block",
-                      blockP->_allocated);
+                      (unsigned)blockP->_allocated);
 }
 
 
@@ -170,19 +171,15 @@ xmlrpc_mem_block_append(xmlrpc_env *       const envP,
                         const void *       const data, 
                         size_t             const len) {
 
-    int size;
+    size_t const originalSize = blockP->_size;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(blockP != NULL);
 
-    size = blockP->_size;
-    xmlrpc_mem_block_resize(envP, blockP, size + len);
-    XMLRPC_FAIL_IF_FAULT(envP);
-
-    memcpy(((unsigned char*) blockP->_block) + size, data, len);
-
- cleanup:
-    return;
+    xmlrpc_mem_block_resize(envP, blockP, originalSize + len);
+    if (!envP->fault_occurred) {
+        memcpy(((unsigned char*) blockP->_block) + originalSize, data, len);
+    }
 }
 
 

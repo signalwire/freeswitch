@@ -262,7 +262,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if (switch_true(silence_var)) {
 			silence_val = 1400;
 		} else {
-			if ((silence_val = atoi(silence_var)) < 0) {
+			if ((silence_val = atoi(silence_var)) < -1) {
 				silence_val = 0;
 			}
 		}
@@ -1304,10 +1304,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 					switch_core_session_rwunlock(peer_session);
 					goto done;
 				}
+			}
 
-				if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
-					switch_channel_answer(caller_channel);
-				}
+			if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
+				switch_channel_answer(caller_channel);
 			}
 
 			switch_channel_wait_for_flag(peer_channel, CF_BROADCAST, SWITCH_FALSE, 10000, caller_channel);
@@ -1677,7 +1677,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 			status = SWITCH_STATUS_SUCCESS;
 
-			switch_ivr_bridge_display(originator_session, originatee_session);
+			//switch_ivr_bridge_display(originator_session, originatee_session);
 
 			/* release the read locks we have on the channels */
 			switch_core_session_rwunlock(originator_session);

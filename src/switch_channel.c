@@ -268,7 +268,7 @@ SWITCH_DECLARE(const char *) switch_channel_callstate2str(switch_channel_callsta
 }
 
 
-SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str)
+SWITCH_DECLARE(switch_channel_callstate_t) switch_channel_str2callstate(const char *str)
 {
 	uint8_t x;
 	switch_channel_callstate_t callstate = (switch_channel_callstate_t) SWITCH_CAUSE_NONE;
@@ -283,7 +283,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2callstate(const char *str
 			}
 		}
 	}
-	return (switch_call_cause_t) callstate;
+	return callstate;
 }
 
 
@@ -1952,10 +1952,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 
 	channel->running_state = state;
 
-	if (state == CS_ROUTING || state == CS_HANGUP) {
-		switch_channel_presence(channel, "unknown", (const char *) state_names[state], NULL);
-	}
-
 	if (state <= CS_DESTROY) {
 		switch_event_t *event;
 
@@ -2942,11 +2938,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_mutex_unlock(channel->state_mutex);
 
 
-		if (hangup_cause == SWITCH_CAUSE_LOSE_RACE) {
-			switch_channel_presence(channel, "unknown", "cancelled", NULL);
-			switch_channel_set_variable(channel, "presence_call_info", NULL);
-		}
-
 		switch_channel_set_callstate(channel, CCS_HANGUP);
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
@@ -3274,7 +3265,7 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 	app = switch_core_session_strdup(channel->session, variable);
 	
 	for(p = app; p && *p; p++) {
-		if (*p == ' ') {
+		if (*p == ' ' || (*p == ':' && (*(p+1) != ':'))) {
 			*p++ = '\0';
 			arg = p;
 			break;
@@ -3403,6 +3394,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_channel_presence(channel, "unknown", "answered", NULL);
 
 	switch_channel_audio_sync(channel);
+
+	switch_core_recovery_track(channel->session);
 
 	return SWITCH_STATUS_SUCCESS;
 }

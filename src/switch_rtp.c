@@ -53,7 +53,7 @@
 #define WRITE_INC(rtp_session)  switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
 #define WRITE_DEC(rtp_session) switch_mutex_unlock(rtp_session->write_mutex); rtp_session->writing--
 
-#include "stfu.h"
+
 
 #define rtp_header_len 12
 #define RTP_START_PORT 16384
@@ -977,7 +977,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 			switch_frame_flag_t frame_flags = SFF_NONE;
 			data[0] = 65;
 			rtp_session->cn++;
-			rtp_common_write(rtp_session, NULL, (void *) data, 2, rtp_session->cng_pt, 0, &frame_flags);
+			switch_rtp_write_manual(rtp_session, (void *) data, 2, 0, rtp_session->cng_pt, ntohl(rtp_session->send_msg.header.ts), &frame_flags);
 		}
 
 
@@ -1688,7 +1688,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 	memset(policy, 0, sizeof(*policy));
 
-	switch_channel_set_variable(channel, "send_silence_when_idle", "true");
+	switch_channel_set_variable(channel, "send_silence_when_idle", "400");
 
 	switch (crypto_key->type) {
 	case AES_CM_128_HMAC_SHA1_80:
@@ -2146,6 +2146,15 @@ static void jb_callback(stfu_instance_t *i, void *udata)
 					  r.consecutive_bad_count
 					  );
 
+}
+
+SWITCH_DECLARE(stfu_instance_t *) switch_rtp_get_jitter_buffer(switch_rtp_t *rtp_session)
+{
+	if (!switch_rtp_ready(rtp_session) || !rtp_session->jb) {
+		return NULL;
+	}
+
+	return rtp_session->jb;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_pause_jitter_buffer(switch_rtp_t *rtp_session, switch_bool_t pause)
@@ -3019,6 +3028,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 		if (stfu_n_eat(rtp_session->jb, rtp_session->last_read_ts, 
+					   ntohs((uint16_t) rtp_session->recv_msg.header.seq),
 					   rtp_session->recv_msg.header.pt,
 					   rtp_session->recv_msg.body, *bytes - rtp_header_len, rtp_session->timer.samplecount) == STFU_ITS_TOO_LATE) {
 			
@@ -3456,9 +3466,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
-			rtp_session->recv_msg.header.pt != rtp_session->rpayload) {
+			rtp_session->recv_msg.header.pt != rtp_session->rpayload && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
 			/* drop frames of incorrect payload number and return CNG frame instead */
-			return_cng_frame();
+			return_cng_frame();			
 		}
 
 		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
@@ -3492,7 +3502,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) || !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || 
 				switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) || 
 				(bytes && bytes < 5) || (!bytes && poll_loop)) {
-				do_2833(rtp_session, session);
 				bytes = 0;
 				return_cng_frame();
 			}
@@ -3691,6 +3700,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (do_cng) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
+
+			do_2833(rtp_session, session);
 
 			if (rtp_session->last_cng_ts == rtp_session->last_read_ts + rtp_session->samples_per_interval) {
 				rtp_session->last_cng_ts = 0;
@@ -4519,8 +4530,9 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		send_msg = frame->packet;
 
-		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) && !switch_test_flag(frame, SFF_UDPTL_PACKET)) {
+
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO) && rtp_session->payload > 0) {
 				send_msg->header.pt = rtp_session->payload;
 			}
 		

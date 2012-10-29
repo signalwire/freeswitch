@@ -54,7 +54,7 @@ struct _TServer {
            Server calls each one in order until one reports that it handled
            it.
 
-           Each item in the list of of type 'URIHandler2'.
+           Each item in the list of of type 'uriHandler'.
         */
     URIHandler defaultHandler;
         /* The handler for HTTP requests that aren't claimed by any handler
@@ -74,6 +74,12 @@ struct _TServer {
            indication that a child has died.  FALSE means server will not
            be aware of SIGCHLD and will instead poll for existence of PIDs
            to determine if a child has died.
+        */
+    size_t uriHandlerStackSize;
+        /* The maximum amount of stack any URI handler request handler
+           function will use.  Note that this is just the requirement
+           of the function itself, not the stack size for the thread
+           that runs it.
         */
 #ifndef WIN32
     uid_t uid;

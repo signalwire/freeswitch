@@ -502,8 +502,16 @@ static switch_status_t fa_say_telephone(switch_core_session_t *session,	char *to
 	}
 	else
 	{
-		play_group(SSM_PRONOUNCED,0,tosay[0] - 48,tosay[1] - 48,NULL,session,args);
-		fa_say_telephone(session,tosay + 2,say_args,args);
+		if ( tosay_length == 10 && (tosay[0] != '2' || tosay[1] != '1') )
+		{
+			play_group(SSM_PRONOUNCED,tosay[0] - 48,tosay[1] - 48,tosay[2] - 48,NULL,session,args);
+			fa_say_telephone(session,tosay + 3,say_args,args);
+		}
+		else
+		{
+			play_group(SSM_PRONOUNCED,0,tosay[0] - 48,tosay[1] - 48,NULL,session,args);
+			fa_say_telephone(session,tosay + 2,say_args,args);
+		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

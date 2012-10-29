@@ -82,6 +82,48 @@ you have to have a -f option and set SRCDIR and BLDDIR on your 'make'
 command.
 
 
+CROSS-COMPILING
+---------------
+
+Cross compiling is building code on one machine to be run on another,
+particularly when the two machines are different enough that it matters,
+e.g. one executes x86 instructions and the other executes PowerPC
+instructions.
+
+The machine that will run the code is called the target machine.  The one
+that will build the code is the build machine.
+
+To cross-compile, you set up nearly all of the build environment for the
+target machine (that includes such things as the default include file search
+path for the compiler and library search path for the linker).  On your
+'configure' command, you use a --host option to identify the kind of target
+machine (rather than let it default to the kind of machine on which
+'configure' is running).  It's a nontrivial task, and beyond the scope of
+this document as it is not specific to Xmlrpc-c.
+
+There is one area that requires special attention and is specific to Xmlrpc-c:
+The Xmlrpc-c build does part of its job by compiling a program from C source
+code and running that program as part of the build.  That compile, unlike all
+the regular ones, must be done for the build machine, not the target
+machine.
+
+To facilitate that, there are the BUILDTOOL_CC and BUILDTOOL_CCLD make
+variables.  BUILDTOOL_CC is the command name for the appropriate compiler
+which which to build a build tool, i.e. a compiler that generates code to run
+on the build system.  BUILDTOOL_CCLD is similarly for the linker, and should
+be the kind of linker command that invokes a combined compiler/linker,
+e.g. "gcc" instead of "ld".
+
+You can set these make variables on the Make command line, or if you prefer,
+by modifying the file 'config.mk' after 'configure' creates it.  The default
+value of these variables (as set in 'config.mk') is the same compile and link
+commands as for building target code.
+
+(There is probably a way to do this with GNU Autoconf facilities and avoid the
+BUILDTOOL_CC complication.  If you know how (without using Automake), tell the
+Xmlrpc-c maintainer and he will change the build system to use it).
+
+
 COMMON PROBLEMS
 ---------------
 
@@ -135,7 +177,7 @@ to have it.  The make file obviously specifies the path to the current
 libraries that the user just built in the link library search order,
 but the link is picking up the old system version instead.  Why?
 Because the link options say to search /usr/lib _before_ the local
-build directory.  And it does that because curl-config erroneously
+build directory.  And they do that because curl-config erroneously
 says that you need a -L /usr/lib link option to find the Curl library.
 
 

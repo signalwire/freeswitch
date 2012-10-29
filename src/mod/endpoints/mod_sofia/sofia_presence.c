@@ -934,7 +934,7 @@ static void send_conference_data(sofia_profile_t *profile, switch_event_t *event
 		sql = switch_mprintf("select full_to, full_from, contact %q ';_;isfocus', expires, call_id, event, network_ip, network_port, "
 							 "'%q' as ct,'%q' as pt "
 							 " from sip_subscriptions where "
-							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'"
+							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q' "
 							 "and call_id = '%q' ", 
 							 switch_sql_concat(),
 							 type,
@@ -956,10 +956,19 @@ static void send_conference_data(sofia_profile_t *profile, switch_event_t *event
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_send_sql, &cb);
 
 	if (switch_true(final)) {
-		sql = switch_mprintf("delete from sip_subscriptions where "
-							 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
-							 mod_sofia_globals.hostname, profile->name,
-							 from_user, from_host, event_str);
+		if (call_id) {
+                        sql = switch_mprintf("delete from sip_subscriptions where "
+                                                                 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q' "
+								 "and call_id = '%q' ",
+                                                                 mod_sofia_globals.hostname, profile->name,
+                                                                 from_user, from_host, event_str, call_id);
+
+		} else {
+			sql = switch_mprintf("delete from sip_subscriptions where "
+								 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
+								 mod_sofia_globals.hostname, profile->name,
+								 from_user, from_host, event_str);
+		}
 
 		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 	}
@@ -1577,7 +1586,7 @@ void sofia_presence_event_thread_start(void)
 	switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_priority_increase(thd_attr);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_IMPORTANT);
 	switch_thread_create(&thread, thd_attr, sofia_presence_event_thread_run, NULL, mod_sofia_globals.pool);
 }
 
@@ -3138,9 +3147,6 @@ static int broadsoft_sla_notify_callback(void *pArg, int argc, char **argv, char
 	switch_snprintf(key, sizeof(key), "%s%s", user, host);
 	data = switch_core_hash_find(sh->hash, key);
 	
-
-	data = switch_core_hash_find(sh->hash, key);
-
 	if (data) {
 		tmp = switch_core_sprintf(sh->pool, "%s,<sip:%s>;appearance-index=*;appearance-state=idle", data, host);
 	} else {
@@ -3354,7 +3360,7 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 	switch_core_hash_init(&sh->hash, sh->pool);
 
 	sql = switch_mprintf("select sip_from_user,sip_from_host,call_info,call_info_state,uuid from sip_dialogs "
-						 "where call_info_state is not null and call_info_state != '' and hostname='%q' and profile_name='%q' "
+						 "where call_info_state is not null and call_info_state != '' and call_info_state != 'idle' and hostname='%q' and profile_name='%q' "
 						 "and ((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
 						 "and profile_name='%q'", 
 						 mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host, profile->name);
@@ -4179,7 +4185,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 						rpid = act->child->name;
 					}
 				}
-				if (zstr(note_txt)) note_txt = rpid;
+				if (zstr(note_txt)) note_txt = "Available";
 			}
 
 			if (!strcasecmp(open_closed, "closed")) {

@@ -221,6 +221,7 @@ typedef enum {
 #include <winsock2.h>
 #include <windows.h>
 typedef SOCKET esl_socket_t;
+#if !defined(_STDINT) && !defined(uint32_t)
 typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int16 uint16_t;
@@ -229,6 +230,7 @@ typedef __int64 int64_t;
 typedef __int32 int32_t;
 typedef __int16 int16_t;
 typedef __int8 int8_t;
+#endif
 typedef intptr_t esl_ssize_t;
 typedef int esl_filehandle_t;
 #define ESL_SOCK_INVALID INVALID_SOCKET

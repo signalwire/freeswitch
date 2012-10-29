@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,12 +22,37 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * John Wehle <john@feith.com>
- *
+ * Garmt Boekholt <garmt@cimico.com>
  *
  * mod_xml_rpc.c -- XML RPC
+ *
+ * embedded webserver for FS
+ * exposes fs api to web (and ajax, javascript, ...)
+ * supports GET/POST requests (as defined below)
+ * and similar XMLRPC format /RPC2 freeswitch.api and management.api
+ *
+ * usage:
+ * (1) http:/host:port/[txt|web|xml]api/fsapicommand[?arg[ arg]*][ &key=value[+&key=value]*]
+ *     e.g.  http:/host:port/api/show?calls &refresh=5+&weather=nice
+ * (2) http:/host:port/filepath - serves files from conf/htdocs
+ *
+ * NB:
+ * ad (1) - key/value pairs are propagated as event headers
+ *        - if &key=value is "&refresh=xx" - special feature: automatic refresh after xx sec (triggered by browser)
+ *          note that refresh works only
+ *                IF response content-type: text/html (i.e. "webapi" or "api")
+ *                AND fs api command created an event header HTTP-REFRESH before the first write_stream
+ *                NOTE if "api", fs api command has to overwrite content-type to be text/html i.s.o. text/plain (default)
+ *
+ *        - if api format is "api" mod_xml_rpc will automatically assume plain/text (so webunaware fs commands are rendered apropriately)
+ *        - xmlapi doesn't seem to be used, however if a fs api command renders xml, you can set the format type to xml
+ *          txtapi-text/plain or webapi-text/html surround xml with <pre> xml <pre/>
+ *        - typically fs api command arguments are encoded with UrlPathEncode (spaces -> %20), and k/v pairs are urlencoded (space -> +)
+ *
+ * ad (2)   ms ie may show extra empty lines when serving large txt files as ie has problems rendering content-type "plain/text"
  *
  */
 #include <switch.h>
@@ -40,16 +65,17 @@
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
-#include "../../libs/xmlrpc-c/lib/abyss/src/token.h"
-#include "http.h"
-#include "session.h"
+#include <xmlrpc-c/base64_int.h>
+#include <../lib/abyss/src/token.h>
+#include <../lib/abyss/src/http.h>
+#include <../lib/abyss/src/session.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime);
 SWITCH_MODULE_DEFINITION(mod_xml_rpc, mod_xml_rpc_load, mod_xml_rpc_shutdown, mod_xml_rpc_runtime);
 
-static abyss_bool HTTPWrite(TSession * s, char *buffer, uint32_t len);
+static abyss_bool HTTPWrite(TSession * s, const char *buffer, const uint32_t len);
 
 static struct {
 	uint16_t port;
@@ -60,6 +86,7 @@ static struct {
 	char *default_domain;
 	switch_bool_t virtual_host;
 	TServer abyssServer;
+	xmlrpc_registry *registryP;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
@@ -86,18 +113,20 @@ static switch_status_t do_config(void)
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strcasecmp(var, "auth-realm")) {
-				realm = val;
-			} else if (!strcasecmp(var, "auth-user")) {
-				user = val;
-			} else if (!strcasecmp(var, "auth-pass")) {
-				pass = val;
-			} else if (!strcasecmp(var, "http-port")) {
-				globals.port = (uint16_t) atoi(val);
-			} else if (!strcasecmp(var, "default-domain")) {
-				default_domain = val;
-			} else if (!strcasecmp(var, "virtual-host")) {
-				globals.virtual_host = switch_true(val);
+			if (!zstr(var) && !zstr(val)) {
+				if (!strcasecmp(var, "auth-realm")) {
+					realm = val;
+				} else if (!strcasecmp(var, "auth-user")) {
+					user = val;
+				} else if (!strcasecmp(var, "auth-pass")) {
+					pass = val;
+				} else if (!strcasecmp(var, "http-port")) {
+					globals.port = (uint16_t) atoi(val);
+				} else if (!strcasecmp(var, "default-domain")) {
+					default_domain = val;
+				} else if (!strcasecmp(var, "virtual-host")) {
+					globals.virtual_host = switch_true(val);
+				}
 			}
 		}
 	}
@@ -135,7 +164,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load)
 
 static switch_status_t http_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
 {
-	TSession *r = handle->data;
+	TSession *r = (TSession *) handle->data;
 
 	return HTTPWrite(r, (char *) data, (uint32_t) datalen) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 
@@ -143,19 +172,59 @@ static switch_status_t http_stream_raw_write(switch_stream_handle_t *handle, uin
 
 static switch_status_t http_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
 {
-	va_list ap;
-	TSession *r = handle->data;
-	int ret = 0;
+	TSession *r = (TSession *) handle->data;
+	int ret = 1;
 	char *data;
+	switch_event_t *evnt = handle->param_event;
+	va_list ap;
 
 	va_start(ap, fmt);
 	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
 
 	if (data) {
-		ret = 0;
-		HTTPWrite(r, data, (uint32_t) strlen(data));
-		free(data);
+		/* Stream Content-Type (http header) to the xmlrpc (web) client, if fs api command did not do it yet.        */
+		/* If (Content-Type in event) then the header was already replied.                                           */
+		/* If fs api command is not "web aware", this will set the Content-Type to "text/plain".                     */
+		const char *http_refresh = NULL;
+		const char *ct = NULL;
+		const char *refresh = NULL;
+		if (evnt && !(ct = switch_event_get_header(evnt, "Content-Type"))){
+			const char *val = switch_stristr("Content-Type", data);
+			if (!val) {
+				val = "Content-Type: text/plain\r\n\r\n";
+				ret = HTTPWrite(r, val, (uint32_t) strlen(val));
+			}
+			/* flag to prevent running this more than once per http reply  */
+			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "Content-Type", strstr(val,":")+2);
+			ct = switch_event_get_header(evnt, "Content-Type");
+		}
+
+		if (ret) {
+			ret = HTTPWrite(r, data, (uint32_t) strlen(data));
+		}
+		switch_safe_free(data);
+
+		/* e.g. "http://www.cluecon.fs/api/show?calls &refresh=5"  */
+		/* fs api command can set event header "HTTP-REFRESH" so that the web page will automagically refresh, if    */
+		/* "refresh=xxx" was part of the http query kv pairs */
+		if (ret && ct && *ct && (http_refresh = switch_event_get_header(evnt, "HTTP-REFRESH"))
+			                 && (refresh = switch_event_get_header(evnt, "refresh"))
+			                 && !strstr("text/html", ct)
+							 && (atoi(refresh) > 0 )) {
+			const char *query = switch_event_get_header(evnt, "HTTP-QUERY");
+			const char *uri = switch_event_get_header(evnt, "HTTP-URI");
+			if (uri && query && *uri && *query) {
+				char *buf = switch_mprintf("<META HTTP-EQUIV=REFRESH CONTENT=\"%s; URL=%s?%s\">\n", refresh, uri, query);
+				ret = HTTPWrite(r, buf, (uint32_t) strlen(buf));
+				switch_safe_free(buf);
+			}
+		}
+
+		/* only one refresh meta header per reply */
+		if (http_refresh) {
+			switch_event_del_header(evnt, "HTTP-REFRESH");
+		}
 	}
 
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
@@ -192,7 +261,7 @@ static abyss_bool user_attributes(const char *user, const char *domain_name,
 		switch_event_destroy(&params);
 		return FALSE;
 	}
-	
+
 	switch_event_destroy(&params);
 	alias = switch_xml_attr(x_user, "number-alias");
 
@@ -241,9 +310,8 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 	char *dp;
 	char *dup = NULL;
 	char *argv[256] = { 0 };
-	char *status = NULL;
 	int argc = 0, i = 0, ok = 0;
-	int err = 403;
+	unsigned int err = 403;
 
 	if (!r) {
 		return FALSE;
@@ -273,7 +341,7 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 		goto end;
 	}
 
-	
+
 	err = 686;
 
 	if (!user_attributes(user, domain_name, NULL, NULL, NULL, &allowed_commands)) {
@@ -288,8 +356,8 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 
 	if ((dup = allowed_commands)) {
 		argc = switch_separate_string(dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-		
-		for (i = 0; i < argc; i++) {
+
+		for (i = 0; i < argc && argv[i]; i++) {
 			if (!strcasecmp(argv[i], command) || !strcasecmp(argv[i], "any")) {
 				ok = 1;
 				break;
@@ -310,17 +378,17 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 	return ok ? TRUE : FALSE;
 }
 
-static abyss_bool http_directory_auth(TSession * r, char *domain_name)
+static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 {
-	char *p;
-	char *x;
-	char z[256], t[80];
-	char user[512];
-	char *pass;
+	char *p = NULL;
+	char *x = NULL;
+	char z[256] = "", t[80] = "";
+	char user[512] = "" ;
+	char *pass = NULL;
 	const char *mypass1 = NULL, *mypass2 = NULL;
 	const char *box = NULL;
 	int at = 0;
-	char *dp;
+	char *dp = NULL;
 	abyss_bool rval = FALSE;
 	char *dup_domain = NULL;
 
@@ -372,13 +440,13 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 					} else {
 						switch_snprintf(z, sizeof(z), "%s:%s", globals.user, globals.pass);
 					}
-					Base64Encode(z, t);
+					xmlrpc_base64Encode(z, t);
 
 					if (!strcmp(p, t)) {
 						goto authed;
 					}
 				}
-				
+
 				if (!user_attributes(user, domain_name, &mypass1, &mypass2, &box, NULL)) {
 					goto fail;
 				}
@@ -396,7 +464,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 					} else {
 						switch_snprintf(z, sizeof(z), "%s:%s", user, mypass1);
 					}
-					Base64Encode(z, t);
+					xmlrpc_base64Encode(z, t);
 
 					if (!strcmp(p, t)) {
 						goto authed;
@@ -408,7 +476,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 						} else {
 							switch_snprintf(z, sizeof(z), "%s:%s", user, mypass2);
 						}
-						Base64Encode(z, t);
+						xmlrpc_base64Encode(z, t);
 
 						if (!strcmp(p, t)) {
 							goto authed;
@@ -421,7 +489,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 						} else {
 							switch_snprintf(z, sizeof(z), "%s:%s", box, mypass1);
 						}
-						Base64Encode(z, t);
+						xmlrpc_base64Encode(z, t);
 
 						if (!strcmp(p, t)) {
 							goto authed;
@@ -434,7 +502,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 								switch_snprintf(z, sizeof(z), "%s:%s", box, mypass2);
 							}
 
-							Base64Encode(z, t);
+							xmlrpc_base64Encode(z, t);
 
 							if (!strcmp(p, t)) {
 								goto authed;
@@ -536,19 +604,19 @@ abyss_bool auth_hook(TSession * r)
 }
 
 
-static abyss_bool HTTPWrite(TSession * s, char *buffer, uint32_t len)
+static abyss_bool HTTPWrite(TSession * s, const char *buffer, const uint32_t len)
 {
 	if (s->chunkedwrite && s->chunkedwritemode) {
 		char t[16];
 
-		if (ConnWrite(s->conn, t, sprintf(t, "%x" CRLF, len)))
-			if (ConnWrite(s->conn, buffer, len))
-				return ConnWrite(s->conn, CRLF, 2);
+		if (ConnWrite(s->connP, t, sprintf(t, "%x" CRLF, len)))
+			if (ConnWrite(s->connP, buffer, len))
+				return ConnWrite(s->connP, CRLF, 2);
 
 		return FALSE;
 	}
 
-	return ConnWrite(s->conn, buffer, len);
+	return ConnWrite(s->connP, buffer, len);
 }
 
 static abyss_bool HTTPWriteEnd(TSession * s)
@@ -559,7 +627,7 @@ static abyss_bool HTTPWriteEnd(TSession * s)
 	if (s->chunkedwrite) {
 		/* May be one day trailer dumping will be added */
 		s->chunkedwritemode = FALSE;
-		return ConnWrite(s->conn, "0" CRLF CRLF, 5);
+		return ConnWrite(s->connP, "0" CRLF CRLF, 5);
 	}
 
 	s->requestInfo.keepalive = FALSE;
@@ -568,47 +636,48 @@ static abyss_bool HTTPWriteEnd(TSession * s)
 
 abyss_bool handler_hook(TSession * r)
 {
-	//char *mime = "text/html";
-	char buf[80] = "HTTP/1.1 200 OK\n";
 	switch_stream_handle_t stream = { 0 };
 	char *command;
 	int i;
-	TTableItem *ti;
 	char *fs_user = NULL, *fs_domain = NULL;
 	char *path_info = NULL;
 	abyss_bool ret = TRUE;
-	int html = 0, text = 0, xml = 0;
+	int html = 0, text = 0, xml = 0, api = 0;
 	const char *api_str;
+	const char *uri = 0;
+	TRequestInfo *info = 0;
+	switch_event_t *evnt = 0; /* shortcut to stream.param_event */
+
+	if (!r || !(info = &r->requestInfo) || !(uri = info->uri)) {
+		return FALSE;
+	}
 
 	stream.data = r;
 	stream.write_function = http_stream_write;
 	stream.raw_write_function = http_stream_raw_write;
 
-	if (!r || !r->requestInfo.uri) {
-		return FALSE;
-	}
-	
-	if ((command = strstr(r->requestInfo.uri, "/api/"))) {
+	if ((command = strstr(uri, "/api/"))) {
 		command += 5;
-	} else if ((command = strstr(r->requestInfo.uri, "/webapi/"))) {
+		api++;
+	} else if ((command = strstr(uri, "/webapi/"))) {
 		command += 8;
 		html++;
-	} else if ((command = strstr(r->requestInfo.uri, "/txtapi/"))) {
+	} else if ((command = strstr(uri, "/txtapi/"))) {
 		command += 8;
 		text++;
-	} else if ((command = strstr(r->requestInfo.uri, "/xmlapi/"))) {
+	} else if ((command = strstr(uri, "/xmlapi/"))) {
 		command += 8;
 		xml++;
 	} else {
-		return FALSE;
+		return FALSE; /* 404 */
 	}
 
 	if ((path_info = strchr(command, '/'))) {
 		*path_info++ = '\0';
 	}
 
-	for (i = 0; i < r->response_headers.size; i++) {
-		ti = &r->response_headers.item[i];
+	for (i = 0; i < r->responseHeaderFields.size; i++) {
+		TTableItem *ti = &r->responseHeaderFields.item[i];
 		if (!strcasecmp(ti->name, "freeswitch-user")) {
 			fs_user = ti->value;
 		} else if (!strcasecmp(ti->name, "freeswitch-domain")) {
@@ -616,63 +685,58 @@ abyss_bool handler_hook(TSession * r)
 		}
 	}
 
-	if (is_authorized(r, command)) {
-		goto auth;
+	if (!is_authorized(r, command)) {
+		ret = TRUE;
+		goto end;
 	}
 
-	ret = TRUE;
-	goto end;
-
-  auth:
+/*  auth: */
 
 	if (switch_event_create(&stream.param_event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
 		const char *const content_length = RequestHeaderValue(r, "content-length");
+		evnt = stream.param_event;
 
-		if (html)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "text/html");
-		else if (text)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "text/plain");
-		else if (xml)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "text/xml");
-		if (fs_user)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", fs_user);
-		if (fs_domain)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", fs_domain);
-		if (path_info)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", path_info);
-		switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-URI", r->requestInfo.uri);
-		if (r->requestInfo.query)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", r->requestInfo.query);
-		if (r->requestInfo.host)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-HOST", r->requestInfo.host);
-		if (r->requestInfo.from)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-FROM", r->requestInfo.from);
-		if (r->requestInfo.useragent)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", r->requestInfo.useragent);
-		if (r->requestInfo.referer)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-REFERER", r->requestInfo.referer);
-		if (r->requestInfo.requestline)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", r->requestInfo.requestline);
-		if (r->requestInfo.user)
-			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-USER", r->requestInfo.user);
-		if (r->requestInfo.port)
-			switch_event_add_header(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", r->requestInfo.port);
-		if (r->requestInfo.query || content_length) {
+		if (html) {
+			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "Content-Type", "text/html");
+		} else if (text) {
+			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "Content-Type", "text/plain");
+		} else if (xml) {
+			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "Content-Type", "text/xml");
+		}
+		if (api) {
+			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-API", "api");
+		}
+		if (fs_user)   switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", fs_user);
+		if (fs_domain) switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", fs_domain);
+		if (path_info) switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", path_info);
+
+		if (info->host)        switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-HOST", info->host);
+		if (info->from)        switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-FROM", info->from);
+		if (info->useragent)   switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", info->useragent);
+		if (info->referer)     switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-REFERER", info->referer);
+		if (info->requestline) switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", info->requestline);
+		if (info->user)        switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-USER", info->user);
+		if (info->port)        switch_event_add_header(evnt, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", info->port);
+
+		{
 			char *q, *qd;
 			char *next;
-			char *query = (char *) r->requestInfo.query;
+			char *query = (char *) info->query;
 			char *name, *val;
 			char qbuf[8192] = "";
 
-			if (r->requestInfo.method == m_post && content_length) {
+			/* first finish reading from the socket if post method was used*/
+			if (info->method == m_post && content_length) {
 				int len = atoi(content_length);
 				int qlen = 0;
 
 				if (len > 0) {
-					int succeeded;
+					int succeeded = TRUE;
 					char *qp = qbuf;
+					char *readError;
+
 					do {
-						int blen = r->conn->buffersize - r->conn->bufferpos;
+						int blen = r->connP->buffersize - r->connP->bufferpos;
 
 						if ((qlen + blen) > len) {
 							blen = len - qlen;
@@ -684,74 +748,100 @@ abyss_bool handler_hook(TSession * r)
 							break;
 						}
 
-						memcpy(qp, r->conn->buffer + r->conn->bufferpos, blen);
+						memcpy(qp, r->connP->buffer.b + r->connP->bufferpos, blen);
 						qp += blen;
 
 						if (qlen >= len) {
 							break;
 						}
-					} while ((succeeded = ConnRead(r->conn, 2000)));
+
+						ConnRead(r->connP, 2000, NULL, NULL, &readError);
+		                if (readError) {
+							succeeded = FALSE;
+							free(readError);
+						}
+
+					} while (succeeded);
 
 					query = qbuf;
 				}
 			}
+
+			/* parse query and add kv-pairs as event headers  */
+			/* a kv pair starts with '&', '+' or \0 mark the end */
 			if (query) {
-				switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", query);
-
+				switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-QUERY", query);
 				qd = strdup(query);
-				switch_assert(qd != NULL);
-
-				q = qd;
-				next = q;
-
-				do {
-					char *p;
-
-					if ((next = strchr(next, '&'))) {
-						*next++ = '\0';
-					}
-
-					for (p = q; p && *p; p++) {
-						if (*p == '+') {
-							*p = ' ';
-						}
-					}
-
-					switch_url_decode(q);
-
-					name = q;
-					if ((val = strchr(name, '='))) {
-						*val++ = '\0';
-						switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, name, val);
-					}
-					q = next;
-				} while (q != NULL);
-
-				free(qd);
+			} else {
+				qd = strdup(uri);
 			}
+
+			switch_assert(qd != NULL);
+
+			q = qd;
+			next = q;
+
+			do {
+				char *p;
+
+				if (next = strchr(next, '&')) {
+					if (!query) {
+						/* pass kv pairs from uri to query       */
+			            /* "?" is absent in url so parse uri     */
+						*((char *)uri + (next - q - 1)) = '\0';
+						query = next;
+						switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-QUERY", next);
+						/* and strip uri                                     */
+						/* the start of first kv pair marks the end of uri   */
+						/* to prevent kv-pairs confusing fs api commands     */
+						/* that have arguments separated by space            */
+					}
+					*next++ = '\0';
+				}
+
+				for (p = q; p && *p; p++) {
+					if (*p == '+') {
+						*p = ' ';
+					}
+				}
+				/* hmmm, get method requests are already decoded ... */
+				switch_url_decode(q);
+
+				name = q;
+				if ((val = strchr(name, '='))) {
+					*val++ = '\0';
+					switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, name, val);
+				}
+				q = next;
+			} while (q != NULL);
+
+			free(qd);
 		}
 	}
-	//ResponseChunked(r);
 
-	//ResponseContentType(r, mime);
-	//ResponseWrite(r);
+	switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-URI", uri);
 
-	HTTPWrite(r, buf, (uint32_t) strlen(buf));
+	/* We made it this far, always OK */
+	if (!HTTPWrite(r, "HTTP/1.1 200 OK\r\n", (uint32_t) strlen("HTTP/1.1 200 OK\r\n"))) {
+		return TRUE;
+	}
 
-	//HTTPWrite(r, "<pre>\n\n", 7);
+	ResponseAddField(r, "Connection", "close");
 
 	/* generation of the date field */
+	if (evnt)
 	{
+		ResponseAddField(r, "Date", switch_event_get_header(evnt, "Event-Date-GMT"));
+	}
+	else {
 		const char *dateValue;
 
 		DateToString(r->date, &dateValue);
-
 		if (dateValue) {
 			ResponseAddField(r, "Date", dateValue);
-			free(dateValue);
+			free((void *)dateValue);
 		}
 	}
-
 
 	/* Generation of the server field */
 	ResponseAddField(r, "Server", "FreeSWITCH-" SWITCH_VERSION_FULL "-mod_xml_rpc");
@@ -764,48 +854,45 @@ abyss_bool handler_hook(TSession * r)
 		ResponseAddField(r, "Content-Type", "text/xml");
 	}
 
-	for (i = 0; i < r->response_headers.size; i++) {
-		ti = &r->response_headers.item[i];
-		ConnWrite(r->conn, ti->name, (uint32_t) strlen(ti->name));
-		ConnWrite(r->conn, ": ", 2);
-		ConnWrite(r->conn, ti->value, (uint32_t) strlen(ti->value));
-		ConnWrite(r->conn, CRLF, 2);
+	for (i = 0; i < r->responseHeaderFields.size; i++) {
+		TTableItem *ti = &r->responseHeaderFields.item[i];
+		char *header = switch_mprintf("%s: %s\r\n", ti->name, ti->value);
+		if (!ConnWrite(r->connP, header, (uint32_t) strlen(header))) {
+			switch_safe_free(header);
+			return TRUE;
+		}
+		switch_safe_free(header);
 	}
 
-	switch_snprintf(buf, sizeof(buf), "Connection: close\r\n");
-	ConnWrite(r->conn, buf, (uint32_t) strlen(buf));
-
-	if (html || text || xml) {
-		ConnWrite(r->conn, "\r\n", 2);
+	/* send end http header */
+	if (html||text||xml) {
+		if (!ConnWrite(r->connP, CRLF, 2)) {
+			return TRUE;
+		}
+	}
+	else {
+		/* content-type and end of http header will be streamed by fs api or http_stream_write */
 	}
 
-	if (switch_stristr("unload", command) && switch_stristr("mod_xml_rpc", r->requestInfo.query)) {
+	if (switch_stristr("unload", command) && switch_stristr("mod_xml_rpc", info->query)) {
 		command = "bgapi";
 		api_str = "unload mod_xml_rpc";
-	} else if (switch_stristr("reload", command) && switch_stristr("mod_xml_rpc", r->requestInfo.query)) {
+	} else if (switch_stristr("reload", command) && switch_stristr("mod_xml_rpc", info->query)) {
 		command = "bgapi";
 		api_str = "reload mod_xml_rpc";
 	} else {
-		api_str = r->requestInfo.query;
+		api_str = info->query;
 	}
 
-	if (switch_api_execute(command, api_str, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-		ResponseStatus(r, 200);
-		r->responseStarted = TRUE;
-		//r->done = TRUE;
-	} else {
-		ResponseStatus(r, 404);
-		ResponseError(r);
-	}
+	/* TODO (maybe): take "refresh=xxx" out of query as to not confuse fs api commands         */
 
-	//SocketClose(&(r->conn->socket));
+	/* execute actual fs api command                                                            */
+	/* fs api command will write to stream,  calling http_stream_write / http_stream_raw_write	*/
+	/* switch_api_execute will stream INVALID COMMAND before it fails					        */
+	switch_api_execute(command, api_str, NULL, &stream);
 
-	HTTPWriteEnd(r);
-	//if (r->conn->channelP)
-	//ConnKill(r->conn);
-	//ChannelInterrupt(r->conn->channelP);
-	//ConnClose(r->conn);
-	//ChannelDestroy(r->conn->channelP);
+	r->responseStarted = TRUE;
+	ResponseStatus(r, 200);     /* we don't want an assertion failure */
 	r->requestInfo.keepalive = 0;
 
   end:
@@ -925,7 +1012,6 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 {
-	xmlrpc_registry *registryP;
 	xmlrpc_env env;
 	char logfile[512];
 	switch_hash_index_t *hi;
@@ -936,15 +1022,16 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 
 	xmlrpc_env_init(&env);
 
-	registryP = xmlrpc_registry_new(&env);
+	globals.registryP = xmlrpc_registry_new(&env);
 
-	xmlrpc_registry_add_method2(&env, registryP, "freeswitch.api", &freeswitch_api, NULL, NULL, NULL);
-	xmlrpc_registry_add_method2(&env, registryP, "freeswitch_api", &freeswitch_api, NULL, NULL, NULL);
-	xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch.management", &freeswitch_man, NULL);
-	xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch_management", &freeswitch_man, NULL);
+	/* TODO why twice and why add_method for freeswitch.api and add_method2 for freeswitch.management ? */
+    xmlrpc_registry_add_method2(&env, globals.registryP, "freeswitch.api", &freeswitch_api, NULL, NULL, NULL);
+    xmlrpc_registry_add_method2(&env, globals.registryP, "freeswitch_api", &freeswitch_api, NULL, NULL, NULL);
+    xmlrpc_registry_add_method(&env, globals.registryP, NULL, "freeswitch.management", &freeswitch_man, NULL);
+    xmlrpc_registry_add_method(&env, globals.registryP, NULL, "freeswitch_management", &freeswitch_man, NULL);
 
 	MIMETypeInit();
-	MIMETypeAdd("text/html", "html");
+
 	for (hi = switch_core_mime_index(); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
 		if (var && val) {
@@ -955,38 +1042,52 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
 	ServerCreate(&globals.abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
 
-	xmlrpc_server_abyss_set_handler(&env, &globals.abyssServer, "/RPC2", registryP);
+	xmlrpc_server_abyss_set_handler(&env, &globals.abyssServer, "/RPC2", globals.registryP);
+
+	xmlrpc_env_clean(&env);
 
 	if (ServerInit(&globals.abyssServer) != TRUE) {
 		globals.running = 0;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to start HTTP Port %d\n", globals.port);
+		xmlrpc_registry_free(globals.registryP);
+		MIMETypeTerm();
+
 		return SWITCH_STATUS_TERM;
 	}
 
 	ServerAddHandler(&globals.abyssServer, handler_hook);
 	ServerAddHandler(&globals.abyssServer, auth_hook);
-	ServerSetKeepaliveTimeout(&globals.abyssServer, 1);
+	ServerSetKeepaliveTimeout(&globals.abyssServer, 5);
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
 	ServerRun(&globals.abyssServer);
+
 	switch_yield(1000000);
+
 	globals.running = 0;
 
 	return SWITCH_STATUS_TERM;
 }
 
+/* upon module unload */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
-	//globals.abyssServer.running = 0;
-	//shutdown(globals.abyssServer.listensock, 2);
+
+	/* this makes the worker thread (ServerRun) stop */
 	ServerTerminate(&globals.abyssServer);
 
 	do {
 		switch_yield(100000);
 	} while (globals.running);
 
+	ServerFree(&globals.abyssServer);
+	xmlrpc_registry_free(globals.registryP);
+	MIMETypeTerm();
+
 	switch_safe_free(globals.realm);
 	switch_safe_free(globals.user);
 	switch_safe_free(globals.pass);
+	switch_safe_free(globals.default_domain);
 
 	return SWITCH_STATUS_SUCCESS;
 }

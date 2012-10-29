@@ -36,18 +36,22 @@ xmlrpc-c/config.h: $(BLDDIR)/$(SUBDIR)/xmlrpc-c
 	@echo '  #define XMLRPC_SOCKET SOCKET'                            >>$@
 	@echo '  #define XMLRPC_HAVE_TIMEVAL 0'                           >>$@
 	@echo '  #define XMLRPC_HAVE_TIMESPEC 0'                          >>$@
+	@echo '  #define XMLRPC_HAVE_PTHREAD 0'                           >>$@
 	@echo '#else'                                                     >>$@
 	@echo '  #define XMLRPC_SOCKET int'                               >>$@
 	@echo '  #define XMLRPC_HAVE_TIMEVAL 1'                           >>$@
 	@echo '  #define XMLRPC_HAVE_TIMESPEC 1'                          >>$@
+	@echo '  #define XMLRPC_HAVE_PTHREAD 1'                           >>$@
 	@echo '#endif'                                                    >>$@
 	@echo ''                                                          >>$@
 	@echo '#if defined(_MSC_VER)'                                     >>$@
 	@echo '  /* Newer MSVC has long long, but MSVC 6 does not */'     >>$@
 	@echo '  #define XMLRPC_INT64 __int64'				  >>$@
+	@echo '  #define XMLRPC_PRId64 "I64"'                             >>$@
 	@echo '  #define XMLRPC_INT32 __int32'				  >>$@
 	@echo '#else'							  >>$@
 	@echo '  #define XMLRPC_INT64 long long'	                  >>$@
+	@echo '  #define XMLRPC_PRId64 "lld"'                             >>$@
 	@echo '  #define XMLRPC_INT32 int'		                  >>$@
 	@echo '#endif'                                                    >>$@
 	@echo '#endif'                                                    >>$@
@@ -58,7 +62,7 @@ $(BLDDIR)/$(SUBDIR)/xmlrpc-c:
 COMPAT_LINK_CMDS = \
   $(LN_S) xmlrpc-c/oldxmlrpc.h         xmlrpc.h; \
   $(LN_S) xmlrpc-c/server.h            xmlrpc_server.h; \
-  $(LN_S) xmlrpc-c/server_abyss.h      xmlrpc_server_abyss.h; \
+  $(LN_S) xmlrpc-c/server_abyss.h      xmlrpc_abyss.h; \
   $(LN_S) xmlrpc-c/server_w32httpsys.h xmlrpc_server_w32httpsys.h; \
 
 HEADERS_TO_INSTALL = \
@@ -67,6 +71,7 @@ HEADERS_TO_INSTALL = \
   xmlrpc-c/c_util.h \
   xmlrpc-c/util.h \
   xmlrpc-c/base.h \
+  xmlrpc-c/json.h \
   xmlrpc-c/abyss.h \
   xmlrpc-c/abyss_unixsock.h \
   xmlrpc-c/abyss_winsock.h \
@@ -119,21 +124,24 @@ default: all
 all:
 
 .PHONY: install-compat-hdr
-install-compat-hdr:
+install-compat-hdr: install-headers
 # Install old names of header files for backward compatibility
 	cd $(DESTDIR)$(HEADERINST_DIR); \
 	  rm -f xmlrpc.h xmlrpc_client.h xmlrpc_server.h xmlrpc_cgi.h \
-                xmlrpc_server_abyss.h xmlrpc_server_w32httpsys.h \
+                xmlrpc_server_abyss.h xmlrpc_abyss.h \
+		xmlrpc_server_w32httpsys.h \
 	        XmlRpcCpp.h; \
 	  $(COMPAT_LINK_CMDS)
 
 .PHONY: install
 install: install-common install-compat-hdr
 
-.PHONY: clean distclean dep
+.PHONY: clean
 clean:
-distclean:
 	rm -f xmlrpc-c/config.h
+
+.PHONY: distclean
+distclean: clean
 
 .PHONY: check
 check:

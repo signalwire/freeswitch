@@ -79,17 +79,17 @@ ESL_DECLARE(cJSON *)cJSON_GetArrayItem(cJSON *array,int item);
 ESL_DECLARE(cJSON *)cJSON_GetObjectItem(cJSON *object,const char *string);
 
 /* For analysing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make sense of it. Defined when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds. */
-ESL_DECLARE(const char *)cJSON_GetErrorPtr();
+ESL_DECLARE(const char *)cJSON_GetErrorPtr(void);
 	
 /* These calls create a cJSON item of the appropriate type. */
-ESL_DECLARE(cJSON *)cJSON_CreateNull();
-ESL_DECLARE(cJSON *)cJSON_CreateTrue();
-ESL_DECLARE(cJSON *)cJSON_CreateFalse();
+ESL_DECLARE(cJSON *)cJSON_CreateNull(void);
+ESL_DECLARE(cJSON *)cJSON_CreateTrue(void);
+ESL_DECLARE(cJSON *)cJSON_CreateFalse(void);
 ESL_DECLARE(cJSON *)cJSON_CreateBool(int b);
 ESL_DECLARE(cJSON *)cJSON_CreateNumber(double num);
 ESL_DECLARE(cJSON *)cJSON_CreateString(const char *string);
-ESL_DECLARE(cJSON *)cJSON_CreateArray();
-ESL_DECLARE(cJSON *)cJSON_CreateObject();
+ESL_DECLARE(cJSON *)cJSON_CreateArray(void);
+ESL_DECLARE(cJSON *)cJSON_CreateObject(void);
 
 /* These utilities create an Array of count items. */
 ESL_DECLARE(cJSON *)cJSON_CreateIntArray(int *numbers,int count);

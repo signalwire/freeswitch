@@ -956,7 +956,7 @@ int v22bis_rx_restart(v22bis_state_t *s)
     s->rx.training_count = 0;
     s->rx.signal_present = FALSE;
 
-    s->rx.carrier_phase_rate = dds_phase_ratef((s->calling_party)  ?  2400.0f  :  1200.0f);
+    s->rx.carrier_phase_rate = (s->calling_party)  ?  DDS_PHASE_RATE(2400.0f)  :  DDS_PHASE_RATE(1200.0f);
     s->rx.carrier_phase = 0;
     power_meter_init(&s->rx.rx_power, 5);
     v22bis_rx_signal_cutoff(s, -45.5f);

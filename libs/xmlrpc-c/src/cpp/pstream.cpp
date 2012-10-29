@@ -37,9 +37,24 @@ using namespace std;
 namespace xmlrpc_c {
 
 
-clientXmlTransport_pstream::constrOpt::constrOpt() {
 
-    present.fd = false;
+struct clientXmlTransport_pstream::constrOpt_impl {
+
+    constrOpt_impl();
+
+    struct {
+        int         fd;
+    } value;
+    struct {
+        bool fd;
+    } present;
+};
+
+
+
+clientXmlTransport_pstream::constrOpt_impl::constrOpt_impl() {
+
+    this->present.fd = false;
 }
 
 
@@ -47,8 +62,8 @@ clientXmlTransport_pstream::constrOpt::constrOpt() {
 #define DEFINE_OPTION_SETTER(OPTION_NAME, TYPE) \
 clientXmlTransport_pstream::constrOpt & \
 clientXmlTransport_pstream::constrOpt::OPTION_NAME(TYPE const& arg) { \
-    this->value.OPTION_NAME = arg; \
-    this->present.OPTION_NAME = true; \
+    this->implP->value.OPTION_NAME = arg; \
+    this->implP->present.OPTION_NAME = true; \
     return *this; \
 }
 
@@ -58,7 +73,31 @@ DEFINE_OPTION_SETTER(fd, xmlrpc_socket);
 
 
 
-clientXmlTransport_pstream::clientXmlTransport_pstream(constrOpt const& opt) {
+clientXmlTransport_pstream::constrOpt::constrOpt() {
+
+    this->implP = new clientXmlTransport_pstream::constrOpt_impl();
+}
+
+
+
+clientXmlTransport_pstream::constrOpt::~constrOpt() {
+
+    delete(this->implP);
+}
+
+
+
+clientXmlTransport_pstream::constrOpt::constrOpt(constrOpt& arg) {
+
+    this->implP = new clientXmlTransport_pstream::constrOpt_impl(*arg.implP);
+}
+
+
+
+clientXmlTransport_pstream::clientXmlTransport_pstream(
+    constrOpt const& optExt) {
+
+    constrOpt_impl const opt(*optExt.implP);
 
     if (!opt.present.fd)
         throwf("You must provide a 'fd' constructor option.");

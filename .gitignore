@@ -29,6 +29,7 @@
 *.ilk
 *.bsc
 *.pch
+*.opensdf
 *.tar
 *.gz
 *.tgz
@@ -50,6 +51,7 @@ TAGS
 *.unsuccessfulbuild
 *.cache
 *.lastbuildstate
+*.sdf
 
 /w32/Library/lastversion
 /w32/Library/tmpVersion.Bat
@@ -81,9 +83,9 @@ TAGS
 /tone2wav
 
 /All/
-/Debug/
+Debug/
 /bin/
-/Release/
+Release/
 /ipch/
 /*.log
 
@@ -165,63 +167,18 @@ TAGS
 /src/mod/say/mod_say_zh/Makefile
 
 BuildLog.htm
-/w32/Console/Debug/
-/w32/Console/Release/
-/w32/Library/Debug/
-/w32/Library/Release/
 
-Freeswitch.2010.sdf
+Win32/
+win32/
+!/libs/win32/
+*.suo
+*.sdf
+x64/
+ipch/
 
-/Win32/
-/x64/
 
-src/mod/codecs/mod_celt/*/*/mod_celt.log
-src/mod/endpoints/mod_skinny/*/*/mod_skinny_2010.log
-src/mod/formats/mod_shout/*/*/mod_shout.log
+/libs/xmlrpc-c/tools/xml-rpc-api2txt
 
 /w32/Setup/obj
-/src/mod/asr_tts/mod_pocketsphinx/x64/Debug/mod_pocketsphinx_manifest.rc
-/src/mod/endpoints/mod_h323/x64/Debug/mod_h323_manifest.rc
-/src/mod/endpoints/mod_rtmp/Win32/Debug/mod_rtmp_2010.log
-/src/mod/endpoints/mod_rtmp/Win32/Release/mod_rtmp_2010.log
-/src/mod/endpoints/mod_rtmp/x64/Debug/mod_rtmp_2010.log
-/src/mod/endpoints/mod_rtmp/x64/Debug/mod_rtmp_manifest.rc
-/src/mod/endpoints/mod_rtmp/x64/Release/mod_rtmp_2010.log
-/src/mod/endpoints/mod_skinny/x64/Debug/mod_skinny_manifest.rc
-/src/mod/languages/mod_managed/x64/Debug_CLR/FREESWITCH.MANAGED.DLL.metagen
-/src/mod/languages/mod_managed/x64/Debug_CLR/RSAENH.DLL.bi
-/src/mod/languages/mod_managed/x64/Debug_CLR/TZRES.DLL.bi
-/w32/Library/x64/Debug/FreeSwitch_manifest.rc
-/src/mod/endpoints/mod_h323/Win32/Debug/mod_h323_manifest.rc
-/src/mod/endpoints/mod_rtmp/Win32/Debug/mod_rtmp_manifest.rc
-/src/mod/endpoints/mod_skinny/Win32/Debug/mod_skinny_manifest.rc
-/src/mod/languages/mod_managed/Win32/Debug_CLR/FREESWITCH.MANAGED.DLL.metagen
-/src/mod/languages/mod_managed/Win32/Debug_CLR/RSAENH.DLL.bi
-/src/mod/languages/mod_managed/Win32/Debug_CLR/TZRES.DLL.bi
-/w32/Library/Win32/Debug/FreeSwitch_manifest.rc
-/src/mod/languages/mod_managed/Win32/Release_CLR/FREESWITCH.MANAGED.DLL.metagen
-/src/mod/languages/mod_managed/Win32/Release_CLR/RSAENH.DLL.bi
-/src/mod/languages/mod_managed/Win32/Release_CLR/TZRES.DLL.bi
-/src/mod/languages/mod_managed/x64/Release_CLR/FREESWITCH.MANAGED.DLL.metagen
-/src/mod/languages/mod_managed/x64/Release_CLR/RSAENH.DLL.bi
-/src/mod/languages/mod_managed/x64/Release_CLR/TZRES.DLL.bi
-libs/apr-util/a.out.dSYM/Contents/Info.plist
-libs/apr-util/a.out.dSYM/Contents/Resources/DWARF/a.out
-libs/apr/a.out.dSYM/Contents/Info.plist
-libs/apr/a.out.dSYM/Contents/Resources/DWARF/a.out
-libs/iksemel/a.out.dSYM/Contents/Info.plist
-libs/iksemel/a.out.dSYM/Contents/Resources/DWARF/a.out
-libs/ilbc/a.out.dSYM/Contents/Info.plist
-libs/ilbc/a.out.dSYM/Contents/Resources/DWARF/a.out
-libs/libedit/a.out.dSYM/Contents/Info.plist
-libs/libedit/a.out.dSYM/Contents/Resources/DWARF/a.out
-libs/pcre/a.out.dSYM/Contents/Info.plist
-libs/pcre/a.out.dSYM/Contents/Resources/DWARF/a.out
-libs/sqlite/lemon.dSYM/Contents/Info.plist
-libs/sqlite/lemon.dSYM/Contents/Resources/DWARF/lemon
-libs/sqlite/mkkeywordhash.dSYM/Contents/Info.plist
-libs/sqlite/mkkeywordhash.dSYM/Contents/Resources/DWARF/mkkeywordhash
-libs/sqlite/sqlite3.dSYM/Contents/Info.plist
-libs/sqlite/sqlite3.dSYM/Contents/Resources/DWARF/sqlite3
-libs/srtp/a.out.dSYM/Contents/Info.plist
-libs/srtp/a.out.dSYM/Contents/Resources/DWARF/a.out
+*dSYM*
+/libs/xmlrpc-c/lib/expat/xmltok/nametab.h

@@ -1,4 +1,3 @@
-//#define _GNU_SOURCE
 #include <ctype.h>
 
 #include "bool.h"

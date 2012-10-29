@@ -1,15 +1,12 @@
 This directory contains working examples of uses of XML-RPC-c.  There
 are XML-RPC servers and XML-RPC clients that use the Xmlrpc-c libraries.
 
-The simplest example is the 'query-meerkat' program, which contacts an
-XML-RPC server that O'Reilly operates on the Internet called Meerkat.
-Meerkat provides an RPC that returns a list of new articles that match
-a specified search pattern.  Run 'query-meerkat' like this example:
-
-  $ ./query-meerkat Linux
-
-This responds with a list of new articles that contain the work "Linux",
-according to O'reilly's Meerkat service.
+The make file is a combination of an example of how to build programs
+that use Xmlrpc-c libraries and something that actually does build the
+programs in this directory.  As such, it isn't perfect for either of
+those purposes.  To build the examples, you must first build the
+libraries (make dependencies will not take care of that for you).  Then
+you can issue a simple 'make' in this directory.
 
 
 The simplest server program is 'xmlrpc_sample_add_server'.  This

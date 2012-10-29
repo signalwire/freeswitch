@@ -13,6 +13,7 @@
 #include <stdlib.h>
 
 #include "bool.h"
+#include "int.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/util_int.h"
 #include "xmlrpc-c/abyss.h"
@@ -83,7 +84,7 @@ ChannelTerm(void) {
    functions that are particular to an implementation.
 */
 
-static uint const channelSignature = 0x06060B;
+static unsigned int const channelSignature = 0x06060B;
 
 void
 ChannelCreate(const struct TChannelVtbl * const vtblP,

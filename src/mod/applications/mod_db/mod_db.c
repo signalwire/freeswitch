@@ -44,8 +44,6 @@ static struct {
 	char hostname[256];
 	char *dbname;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
 	switch_mutex_t *mutex;
 	switch_mutex_t *db_hash_mutex;
 	switch_hash_t *db_hash;
@@ -88,23 +86,21 @@ static char group_sql[] =
 
 switch_cache_db_handle_t *limit_get_db_handle(void)
 {
-	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
-
+	char *dsn;
+	
 	if (!zstr(globals.odbc_dsn)) {
-		options.odbc_options.dsn = globals.odbc_dsn;
-		options.odbc_options.user = globals.odbc_user;
-		options.odbc_options.pass = globals.odbc_pass;
-
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = globals.odbc_dsn;
 	} else {
-		options.core_db_options.db_path = globals.dbname;
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = globals.dbname;
 	}
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
+	}
+	
+	return dbh;
+
 }
 
 
@@ -275,7 +271,7 @@ SWITCH_LIMIT_STATUS(limit_status_db)
 
 /* INIT / Config */
 
-static switch_xml_config_string_options_t limit_config_dsn = { NULL, 0, "[^:]+:[^:]+:.+" };
+static switch_xml_config_string_options_t limit_config_dsn = { NULL, 0, "^pgsql;|[^:]+:[^:]+:.+" };
 
 static switch_xml_config_item_t config_settings[] = {
 	SWITCH_CONFIG_ITEM("odbc-dsn", SWITCH_CONFIG_STRING, 0, &globals.odbc_dsn, NULL, &limit_config_dsn,
@@ -296,15 +292,8 @@ static switch_status_t do_config()
 	}
 
 	if (globals.odbc_dsn) {
-		if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
-			*globals.odbc_user++ = '\0';
-			if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
-				*globals.odbc_pass++ = '\0';
-			}
-		}
-
 		if (!(dbh = limit_get_db_handle())) {
-			globals.odbc_dsn = globals.odbc_user = globals.odbc_pass;
+			globals.odbc_dsn = NULL;
 		}
 	}
 

@@ -14,6 +14,17 @@
 #include "xmlrpc-c/base_int.h"
 
 
+
+static void
+destroyCptr(xmlrpc_value * const valueP) {
+
+    if (valueP->_value.cptr.dtor)
+        valueP->_value.cptr.dtor(valueP->_value.cptr.dtorContext,
+                                 valueP->_value.cptr.objectP);
+}
+
+
+
 static void
 destroyValue(xmlrpc_value * const valueP) {
 
@@ -29,7 +40,7 @@ destroyValue(xmlrpc_value * const valueP) {
         break;
 
     case XMLRPC_TYPE_DATETIME:
-        xmlrpc_mem_block_clean(&valueP->_block);
+        xmlrpc_destroyDatetime(valueP);
         break;
 
     case XMLRPC_TYPE_STRING:
@@ -49,6 +60,7 @@ destroyValue(xmlrpc_value * const valueP) {
         break;
 
     case XMLRPC_TYPE_C_PTR:
+        destroyCptr(valueP);
         break;
 
     case XMLRPC_TYPE_NIL:
@@ -220,9 +232,9 @@ xmlrpc_read_base64(xmlrpc_env *           const envP,
 
         byteStringValue = malloc(size);
         if (byteStringValue == NULL)
-            xmlrpc_env_set_fault_formatted(
-                envP, XMLRPC_INTERNAL_ERROR, "Unable to allocate %u bytes "
-                "for byte string.", size);
+            xmlrpc_faultf(envP,
+                          "Unable to allocate %u bytes for byte string.",
+                          (unsigned)size);
         else {
             memcpy(byteStringValue, contents, size);
             *byteStringValueP = (const unsigned char *)byteStringValue;
@@ -269,7 +281,7 @@ xmlrpc_read_cptr(xmlrpc_env *         const envP,
 
     validateType(envP, valueP, XMLRPC_TYPE_C_PTR);
     if (!envP->fault_occurred)
-        *ptrValueP = valueP->_value.c_ptr;
+        *ptrValueP = valueP->_value.cptr.objectP;
 }
 
 
@@ -431,13 +443,26 @@ xmlrpc_value *
 xmlrpc_cptr_new(xmlrpc_env *    const envP,
                 void *          const value) {
 
+    return xmlrpc_cptr_new_dtor(envP, value, NULL, NULL);
+}
+
+
+
+xmlrpc_value *
+xmlrpc_cptr_new_dtor(xmlrpc_env *        const envP,
+                     void *              const value,
+                     xmlrpc_cptr_dtor_fn const dtor,
+                     void *              const dtorContext) {
+
     xmlrpc_value * valP;
 
     xmlrpc_createXmlrpcValue(envP, &valP);
 
     if (!envP->fault_occurred) {
         valP->_type = XMLRPC_TYPE_C_PTR;
-        valP->_value.c_ptr = value;
+        valP->_value.cptr.objectP     = value;
+        valP->_value.cptr.dtor        = dtor;
+        valP->_value.cptr.dtorContext = dtorContext;
     }
     return valP;
 }
