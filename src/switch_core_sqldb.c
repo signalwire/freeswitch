@@ -1202,6 +1202,7 @@ struct switch_sql_queue_manager {
 	const char *name;
 	switch_cache_db_handle_t *event_db;
 	switch_queue_t **sql_queue;
+	uint32_t *pre_written;
 	uint32_t *written;
 	uint32_t numq;
 	char *dsn;
@@ -1439,6 +1440,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *n
 	
 	qm->sql_queue = switch_core_alloc(qm->pool, sizeof(switch_queue_t *) * numq);
 	qm->written = switch_core_alloc(qm->pool, sizeof(uint32_t) * numq);
+	qm->pre_written = switch_core_alloc(qm->pool, sizeof(uint32_t) * numq);
 
 	for (i = 0; i < qm->numq; i++) {
 		switch_queue_create(&qm->sql_queue[i], SWITCH_SQL_QUEUE_LEN, qm->pool);
@@ -1467,6 +1469,12 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 	int i;
 
 	if (io_mutex) switch_mutex_lock(io_mutex);
+
+	switch_mutex_lock(qm->mutex);
+	for (i = 0; i < qm->numq; i++) {
+		qm->pre_written[i] = 0;
+	}
+	switch_mutex_unlock(qm->mutex);
 
 	if (!zstr(qm->pre_trans_execute)) {
 		switch_cache_db_execute_sql_real(qm->event_db, qm->pre_trans_execute, &errmsg);
@@ -1534,9 +1542,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 
 		if (pop) {
 			if ((status = switch_cache_db_execute_sql(qm->event_db, (char *) pop, NULL)) == SWITCH_STATUS_SUCCESS) {
-				switch_mutex_lock(qm->mutex);
-				qm->written[i]++;
-				switch_mutex_unlock(qm->mutex);
+				qm->pre_written[i]++;
 				ttl++;
 			}
 			free(pop);
@@ -1587,6 +1593,14 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 			free(errmsg);
 		}
 	}
+
+
+	switch_mutex_lock(qm->mutex);
+	for (i = 0; i < qm->numq; i++) {
+		qm->written[i] += qm->pre_written[i];
+	}
+	switch_mutex_unlock(qm->mutex);
+
 
 	if (io_mutex) switch_mutex_unlock(io_mutex);
 
