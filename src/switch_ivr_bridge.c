@@ -745,7 +745,7 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 
 	cleanup_proxy_mode_b(session);
 
-	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+	if (switch_channel_test_flag(channel, CF_UUID_BRIDGE_ORIGINATOR)) {
 		switch_channel_set_state(channel, CS_SOFT_EXECUTE);
 	}
 
@@ -767,7 +767,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE\n", switch_channel_get_name(channel));
 	switch_channel_clear_state_handler(channel, &uuid_bridge_state_handlers);
 
-	if (!switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+	if (!switch_channel_test_flag(channel, CF_UUID_BRIDGE_ORIGINATOR)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -801,7 +801,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 
 				if (running_state == CS_SOFT_EXECUTE) {
 
-					if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
+					if (switch_channel_test_flag(other_channel, CF_UUID_BRIDGE_ORIGINATOR)) {
 						goto done;
 					} else {
 						break;
@@ -878,7 +878,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		other_session = NULL;
 	}
 
-	switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
+	switch_channel_clear_flag(channel, CF_UUID_BRIDGE_ORIGINATOR);
 
 	return SWITCH_STATUS_FALSE;
 }
@@ -1663,10 +1663,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			//switch_channel_set_variable(originatee_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, NULL);
 			switch_channel_clear_state_handler(originator_channel, NULL);
 			switch_channel_clear_state_handler(originatee_channel, NULL);
-			switch_channel_clear_flag_recursive(originator_channel, CF_BRIDGE_ORIGINATOR);
-			switch_channel_clear_flag_recursive(originatee_channel, CF_BRIDGE_ORIGINATOR);
-			switch_channel_set_state_flag(originator_channel, CF_BRIDGE_ORIGINATOR);
+
+			switch_channel_clear_state_flag(originator_channel, CF_BRIDGE_ORIGINATOR);
 			switch_channel_clear_state_flag(originatee_channel, CF_BRIDGE_ORIGINATOR);
+			switch_channel_set_state_flag(originator_channel, CF_UUID_BRIDGE_ORIGINATOR);
+
 			switch_channel_add_state_handler(originator_channel, &uuid_bridge_state_handlers);
 			switch_channel_add_state_handler(originatee_channel, &uuid_bridge_state_handlers);
 
