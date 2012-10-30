@@ -3597,6 +3597,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->ib_failed_calls = 0;
 					profile->ob_failed_calls = 0;
 					profile->shutdown_type = "false";
+					profile->rtpip_index = 0;
 
 					if (xprofiledomain) {
 						profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
