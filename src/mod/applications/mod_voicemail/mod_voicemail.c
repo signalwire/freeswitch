@@ -1604,7 +1604,18 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				*cc.buf = '\0';
 				goto play_file;
 			} else if (!strcmp(input, profile->callback_key)) {
-				switch_core_session_execute_exten(session, cbt->cid_number, profile->callback_dialplan, profile->callback_context);
+				const char *callback_dialplan;
+				const char *callback_context;
+
+				if (!(callback_dialplan = switch_channel_get_variable(channel, "voicemail_callback_dialplan"))) {
+					callback_dialplan = profile->callback_dialplan;
+				}
+
+				if (!(callback_context = switch_channel_get_variable(channel, "voicemail_callback_context"))) {
+					callback_context = profile->callback_context;
+				}
+
+				switch_core_session_execute_exten(session, cbt->cid_number, callback_dialplan, callback_context);
 			} else if (!strcmp(input, profile->forward_key)) {
 				char *cmd = NULL;
 				char *new_file_path = NULL;
