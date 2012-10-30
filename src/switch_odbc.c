@@ -444,7 +444,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 #ifdef SWITCH_HAVE_ODBC
 	SQLHSTMT stmt = NULL;
 	int result;
-	char *err_str = NULL;
+	char *err_str = NULL, *err2 = NULL;
 	SQLLEN m = 0;
 
 	handle->affected_rows = 0;
@@ -454,16 +454,32 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 	}
 
 	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
+		err2 = "SQLAllocHandle failed.";
 		goto error;
 	}
 
 	if (SQLPrepare(stmt, (unsigned char *) sql, SQL_NTS) != SQL_SUCCESS) {
+		err2 = "SQLPrepare failed.";
 		goto error;
 	}
 
 	result = SQLExecute(stmt);
 
-	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO && result != SQL_NO_DATA) {
+	switch (result) {
+	case SQL_SUCCESS:
+	case SQL_SUCCESS_WITH_INFO:
+	case SQL_NO_DATA:
+		break;
+	case SQL_ERROR:
+		err2 = "SQLExecute returned SQL_ERROR.";
+		goto error;
+		break;
+	case SQL_NEED_DATA:
+		err2 = "SQLExecute returned SQL_NEED_DATA.";
+		goto error;
+		break;
+	default:
+		err2 = "SQLExecute returned unknown result code.";
 		goto error;
 	}
 
@@ -486,7 +502,11 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 	}
 
 	if (zstr(err_str)) {
-		err_str = strdup((char *)"SQL ERROR!");
+		if (err2) {
+			err_str = strdup(err2);
+		} else {
+			err_str = strdup((char *)"SQL ERROR!");
+		}
 	}
 	
 	if (err_str) {
