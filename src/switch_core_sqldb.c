@@ -1466,7 +1466,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 	switch_status_t status;
 	uint32_t ttl = 0;
 	switch_mutex_t *io_mutex = qm->event_db->io_mutex;
-	int i;
+	uint32_t i;
 
 	if (io_mutex) switch_mutex_lock(io_mutex);
 
@@ -1648,8 +1648,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 
 	while (qm->thread_running == 1) {
-		int lc;
-		uint32_t i;
+		uint32_t i, lc;
 		uint32_t written, iterations = 0;
 
 		if (sql_manager.paused) {
