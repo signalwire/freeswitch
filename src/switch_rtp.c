@@ -3054,6 +3054,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			*bytes = jb_frame->dlen + rtp_header_len;
 			rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
 			rtp_session->recv_msg.header.pt = jb_frame->pt;
+			rtp_session->recv_msg.header.seq = htons(jb_frame->seq);
 			status = SWITCH_STATUS_SUCCESS;
 		}
 	}
