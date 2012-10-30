@@ -366,7 +366,7 @@ static void event_handler(switch_event_t *event)
 
 		if (send && switch_test_flag(l, LFLAG_MYEVENTS)) {
 			char *uuid = switch_event_get_header(event, "unique-id");
-			if (!uuid || strcmp(uuid, switch_core_session_get_uuid(l->session))) {
+			if (!uuid || (l->session && strcmp(uuid, switch_core_session_get_uuid(l->session)))) {
 				send = 0;
 			}
 		}
