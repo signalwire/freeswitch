@@ -3037,6 +3037,9 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
+	
+	tech_pvt->read_codec.session = tech_pvt->session;
+
 
 	if (switch_core_codec_init_with_bitrate(&tech_pvt->write_codec,
 							   tech_pvt->iananame,
@@ -3051,6 +3054,8 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
+
+	tech_pvt->write_codec.session = tech_pvt->session;
 
 	switch_channel_set_variable(tech_pvt->channel, "sip_use_codec_name", tech_pvt->iananame);
 	switch_channel_set_variable(tech_pvt->channel, "sip_use_codec_fmtp", tech_pvt->rm_fmtp);

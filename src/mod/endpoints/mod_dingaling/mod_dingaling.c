@@ -1167,6 +1167,8 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 			r = 0;
 			goto end;
 		}
+		tech_pvt->transports[LDL_TPORT_RTP].read_codec.session = tech_pvt->session;
+
 		tech_pvt->transports[LDL_TPORT_RTP].read_frame.rate = tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_second;
 		tech_pvt->transports[LDL_TPORT_RTP].read_frame.codec = &tech_pvt->transports[LDL_TPORT_RTP].read_codec;
 
@@ -1186,6 +1188,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 			r = 0;
 			goto end;
 		}
+		tech_pvt->transports[LDL_TPORT_RTP].write_codec.session = tech_pvt->session;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Write Codec to %s@%d\n",
 						  tech_pvt->transports[LDL_TPORT_RTP].codec_name, (int) tech_pvt->transports[LDL_TPORT_RTP].write_codec.implementation->samples_per_second);
 		

@@ -375,8 +375,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				} else {
 					switch_codec_t *codec = use_codec->implementation?use_codec:read_frame->codec;
 					switch_thread_rwlock_rdlock(session->bug_rwlock);
-					codec->session = session;
 					codec->cur_frame = read_frame;
+					session->read_codec->cur_frame = read_frame;
 					status = switch_core_codec_decode(codec,
 													  session->read_codec,
 													  read_frame->data,
@@ -384,8 +384,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 													  session->read_impl.actual_samples_per_second,
 													  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, 
 													  &read_frame->flags);
-					codec->session = NULL;
 					codec->cur_frame = NULL;
+					session->read_codec->cur_frame = NULL;
 					switch_thread_rwlock_unlock(session->bug_rwlock);
 
 				}
@@ -628,8 +628,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				switch_assert(session->read_codec != NULL);
 				switch_assert(enc_frame != NULL);
 				switch_assert(enc_frame->data != NULL);
-				session->read_codec->session = session;
 				session->read_codec->cur_frame = enc_frame;
+				enc_frame->codec->cur_frame = enc_frame;
 				status = switch_core_codec_encode(session->read_codec,
 												  enc_frame->codec,
 												  enc_frame->data,
@@ -637,7 +637,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 												  session->read_impl.actual_samples_per_second,
 												  session->enc_read_frame.data, &session->enc_read_frame.datalen, &session->enc_read_frame.rate, &flag);
 				session->read_codec->cur_frame = NULL;
-				session->read_codec->session = NULL;
+				enc_frame->codec->cur_frame = NULL;
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fixme 1\n");
@@ -911,17 +911,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (frame->codec) {
 		session->raw_write_frame.datalen = session->raw_write_frame.buflen;
-		frame->codec->session = session;
 		frame->codec->cur_frame = frame;
+		session->write_codec->cur_frame = frame;
 		status = switch_core_codec_decode(frame->codec,
 										  session->write_codec,
 										  frame->data,
 										  frame->datalen,
 										  session->write_impl.actual_samples_per_second,
 										  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &frame->flags);
-		frame->codec->session = NULL;
 		frame->codec->cur_frame = NULL;
-
+		session->write_codec->cur_frame = NULL;
 		if (do_resample && status == SWITCH_STATUS_SUCCESS) {
 			status = SWITCH_STATUS_RESAMPLE;
 		}
@@ -1100,16 +1099,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 			enc_frame = write_frame;
 			session->enc_write_frame.datalen = session->enc_write_frame.buflen;
-			session->write_codec->session = session;
 			session->write_codec->cur_frame = frame;
+			frame->codec->cur_frame = frame;
 			status = switch_core_codec_encode(session->write_codec,
 											  frame->codec,
 											  enc_frame->data,
 											  enc_frame->datalen,
 											  session->write_impl.actual_samples_per_second,
 											  session->enc_write_frame.data, &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
-			session->write_codec->session = NULL;
+
 			session->write_codec->cur_frame = NULL;
+			frame->codec->cur_frame = NULL;
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
 				resample++;
@@ -1203,17 +1203,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				} else {
 					rate = session->write_impl.actual_samples_per_second;
 				}
-				session->write_codec->session = session;
+
 				session->write_codec->cur_frame = frame;
+				frame->codec->cur_frame = frame;
 				status = switch_core_codec_encode(session->write_codec,
 												  frame->codec,
 												  enc_frame->data,
 												  enc_frame->datalen,
 												  rate,
 												  session->enc_write_frame.data, &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
-				session->write_codec->session = NULL;
-				session->write_codec->cur_frame = NULL;
 
+				session->write_codec->cur_frame = NULL;
+				frame->codec->cur_frame = NULL;
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
 					resample++;
