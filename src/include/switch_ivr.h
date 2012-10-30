@@ -927,6 +927,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switch_channel_t *peer_channel, const char *varname, const char *prefix);
 SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid);
+SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_force_exists(const char *uuid);
 
 
 

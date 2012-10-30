@@ -1755,7 +1755,8 @@ static char *parse_presence_data_cols(switch_event_t *event)
 
 
 #define MAX_SQL 5
-#define new_sql() switch_assert(sql_idx+1 < MAX_SQL); if (exists) sql[sql_idx++]
+#define new_sql()   switch_assert(sql_idx+1 < MAX_SQL); if (exists) sql[sql_idx++]
+#define new_sql_f() switch_assert(sql_idx+1 < MAX_SQL); if (force_exists) sql[sql_idx++]
 
 static void core_event_handler(switch_event_t *event)
 {
@@ -1763,6 +1764,7 @@ static void core_event_handler(switch_event_t *event)
 	int sql_idx = 0;
 	char *extra_cols;
 	int exists = 1;
+	int force_exists = 1;
 	char *uuid = NULL;
 
 	switch_assert(event);
@@ -1784,7 +1786,10 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CALL_SECURE:
 		{
 			if ((uuid = switch_event_get_header(event, "unique-id"))) {
-				exists = switch_ivr_uuid_exists(uuid);
+				force_exists = exists = switch_ivr_uuid_exists(uuid);
+				if (!exists) {
+					force_exists = switch_ivr_uuid_force_exists(uuid);
+				}
 			}
 		}
 		break;
@@ -2033,7 +2038,7 @@ static void core_event_handler(switch_event_t *event)
 				}
 				break;
 			default:
-				new_sql() = switch_mprintf("update channels set state='%s' where uuid='%s'",
+				new_sql_f() = switch_mprintf("update channels set state='%s' where uuid='%s'",
 										   switch_event_get_header_nil(event, "channel-state"),
 										   switch_event_get_header_nil(event, "unique-id"));
 				break;
