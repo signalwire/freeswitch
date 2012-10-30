@@ -1664,8 +1664,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_channel_clear_state_handler(originator_channel, NULL);
 			switch_channel_clear_state_handler(originatee_channel, NULL);
 
+
+
 			switch_channel_clear_state_flag(originator_channel, CF_BRIDGE_ORIGINATOR);
 			switch_channel_clear_state_flag(originatee_channel, CF_BRIDGE_ORIGINATOR);
+
+			switch_channel_clear_flag(originator_channel, CF_UUID_BRIDGE_ORIGINATOR);
+			switch_channel_clear_flag(originatee_channel, CF_UUID_BRIDGE_ORIGINATOR);
 			switch_channel_set_state_flag(originator_channel, CF_UUID_BRIDGE_ORIGINATOR);
 
 			switch_channel_add_state_handler(originator_channel, &uuid_bridge_state_handlers);
