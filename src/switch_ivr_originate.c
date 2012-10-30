@@ -1888,6 +1888,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
 
+		switch_channel_execute_on(caller_channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ORIGINATE_VARIABLE);
+		switch_channel_api_on(caller_channel, SWITCH_CHANNEL_API_ON_PRE_ORIGINATE_VARIABLE);
+
 		switch_core_session_get_read_impl(session, &read_impl);
 
 		if ((to_var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
