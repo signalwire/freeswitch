@@ -1169,14 +1169,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 
 	memset(&globals, 0, sizeof(globals));
 
-	SWITCH_ADD_APP(app_interface, "unloop", "Tell loopback to unfold", "Tell loopback to unfold", unloop_function, "", SAF_NO_LOOPBACK);
-
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	loopback_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	loopback_endpoint_interface->interface_name = "loopback";
 	loopback_endpoint_interface->io_routines = &channel_io_routines;
 	loopback_endpoint_interface->state_handler = &channel_event_handlers;
+
+	SWITCH_ADD_APP(app_interface, "unloop", "Tell loopback to unfold", "Tell loopback to unfold", unloop_function, "", SAF_NO_LOOPBACK);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
