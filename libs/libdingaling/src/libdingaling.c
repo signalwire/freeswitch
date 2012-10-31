@@ -623,7 +623,7 @@ static ldl_status parse_jingle_code(ldl_handle_t *handle, iks *xml, char *to, ch
 	}
 
 
-	if (!(id && action)) {
+	if (!(id && action && from)) {
 		globals.logger(DL_LOG_CRIT, "missing required params\n");  
 		return LDL_STATUS_FALSE;
 	}
