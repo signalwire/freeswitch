@@ -2621,7 +2621,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_mutex_lock(profile->flag_mutex);
 	switch_mutex_unlock(profile->flag_mutex);
 
-	switch_sql_queue_manager_stop(profile->qm);
+	switch_sql_queue_manager_destroy(&profile->qm);
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp%s",
