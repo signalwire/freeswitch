@@ -2883,7 +2883,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 	return xml;
 }
 
-SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offset) 
+SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offset, const char *tzname) 
 {
 
 	const char *xdt = switch_xml_attr(xcond, "date-time");
@@ -2921,6 +2921,8 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offse
 	if (offset) {
 		eoffset = *offset;
 		switch_time_exp_tz(&tm, ts, *offset * 3600);
+	} else if (!zstr(tzname)) {
+		switch_time_exp_tz_name(tzname, &tm, ts);
 	} else {
 		tm = tm2;
 	}
