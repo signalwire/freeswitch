@@ -251,7 +251,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 					}					
 				} else {
 					if (read_impl.decoded_bytes_per_packet > other_read_impl.decoded_bytes_per_packet) {
-						frame_size = other_read_impl.decoded_bytes_per_packet;
+						frame_size = read_impl.decoded_bytes_per_packet;
 					}
 				}
 			}
