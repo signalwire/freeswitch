@@ -1304,7 +1304,8 @@ typedef enum {
 	SAF_SUPPORT_NOMEDIA = (1 << 0),
 	SAF_ROUTING_EXEC = (1 << 1),
 	SAF_MEDIA_TAP = (1 << 2),
-	SAF_ZOMBIE_EXEC = (1 << 3)
+	SAF_ZOMBIE_EXEC = (1 << 3),
+	SAF_NO_LOOPBACK = (1 << 4)
 } switch_application_flag_enum_t;
 typedef uint32_t switch_application_flag_t;
 

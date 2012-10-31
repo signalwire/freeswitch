@@ -42,6 +42,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_loopback_shutdown);
 SWITCH_MODULE_DEFINITION(mod_loopback, mod_loopback_load, mod_loopback_shutdown, NULL);
 
+static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, switch_core_session_t **br_session, const char **br_uuid);
+
 static switch_endpoint_interface_t *loopback_endpoint_interface = NULL;
 
 typedef enum {
@@ -409,6 +411,8 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	switch_caller_extension_t *exten;
+	int bow = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -417,6 +421,37 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
+
+
+	if ((exten = switch_channel_get_caller_extension(channel))) {
+		switch_caller_application_t *app_p;
+
+		for (app_p = exten->applications; app_p; app_p = app_p->next) {
+			int32_t flags;
+
+			switch_core_session_get_app_flags(app_p->application_name, &flags);
+
+			if ((flags & SAF_NO_LOOPBACK)) {
+				bow = 1;
+				break;
+			}
+		}
+	}
+
+	if (bow) {
+		switch_core_session_t *other_session;
+		const char *other_uuid;
+
+		if ((find_non_loopback_bridge(tech_pvt->other_session, &other_session, &other_uuid) == SWITCH_STATUS_SUCCESS)) {
+			switch_caller_extension_t *extension;
+			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+			switch_caller_extension_clone(&extension, exten, switch_core_session_get_pool(other_session));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "BOWOUT Transfering current extension to non-loopback leg.\n");
+			switch_channel_transfer_to_extension(other_channel, extension);
+			switch_core_session_rwunlock(other_session);
+		}
+
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1126,10 +1161,15 @@ static switch_io_routines_t channel_io_routines = {
 	/*.receive_message */ channel_receive_message
 };
 
+SWITCH_STANDARD_APP(unloop_function) { /* NOOP */}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 {
+	switch_application_interface_t *app_interface;
 
 	memset(&globals, 0, sizeof(globals));
+
+	SWITCH_ADD_APP(app_interface, "unloop", "Tell loopback to unfold", "Tell loopback to unfold", unloop_function, "", SAF_NO_LOOPBACK);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
