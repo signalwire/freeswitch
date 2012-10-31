@@ -384,7 +384,7 @@ Build-Depends: libx11-dev
 Module: endpoints/mod_h323
 Description: mod_h323
  Adds mod_h323.
-Build-Depends: libopenh323-dev, libpt-dev
+Build-Depends: libopenh323-dev | libh323plus-dev, libpt-dev
 
 Module: endpoints/mod_html5
 Description: HTML5 endpoint module
