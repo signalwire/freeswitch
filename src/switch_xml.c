@@ -2920,7 +2920,7 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offse
 
 	if (offset) {
 		eoffset = *offset;
-		switch_time_exp_tz(&tm, ts, *offset);
+		switch_time_exp_tz(&tm, ts, *offset * 3600);
 	} else {
 		tm = tm2;
 	}
