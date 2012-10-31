@@ -1973,14 +1973,18 @@ static void core_event_handler(switch_event_t *event)
 			case CS_NEW:
 			case CS_DESTROY:
 			case CS_REPORTING:
-				//case CS_HANGUP: /* marked for deprication */
+#ifndef SWITCH_DEPRECATED_CORE_DB
+			case CS_HANGUP: /* marked for deprication */
+#endif
 			case CS_INIT:
 				break;
+#ifdef SWITCH_DEPRECATED_CORE_DB
 			case CS_HANGUP: /* marked for deprication */
 				new_sql_a() = switch_mprintf("update channels set state='%s' where uuid='%s'",
 											 switch_event_get_header_nil(event, "channel-state"),
 											 switch_event_get_header_nil(event, "unique-id"));
 				break;
+#endif
 			case CS_EXECUTE:
 				if ((extra_cols = parse_presence_data_cols(event))) {
 					new_sql() = switch_mprintf("update channels set state='%s',%s where uuid='%q'",
