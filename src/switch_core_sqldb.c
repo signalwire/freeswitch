@@ -209,6 +209,7 @@ static void sql_close(time_t prune)
 {
 	switch_cache_db_handle_t *dbh = NULL;
 	int locked = 0;
+	int sanity = 10000;
 
 	switch_mutex_lock(sql_manager.dbh_mutex);
  top:
@@ -254,7 +255,12 @@ static void sql_close(time_t prune)
 
 		} else {
 			if (!prune) {
-				locked++;
+				if (!sanity) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SANITY CHECK FAILED!  Handle %s (%s;%s) was not properly released.\n", 
+									  dbh->name, dbh->creator, dbh->last_user);
+				} else {
+					locked++;
+				}
 			}
 			continue;
 		}
@@ -262,6 +268,10 @@ static void sql_close(time_t prune)
 	}
 
 	if (locked) {
+		if (!prune) {
+			switch_cond_next();
+			if (sanity) sanity--;
+		}
 		goto top;
 	}
 
