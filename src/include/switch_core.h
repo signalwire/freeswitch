@@ -825,14 +825,22 @@ SWITCH_DECLARE(void) switch_core_dump_variables(_In_ switch_stream_handle_t *str
 */
 SWITCH_DECLARE(void) switch_core_session_hupall(_In_ switch_call_cause_t cause);
 
+typedef enum {
+	SHT_NONE = 0,
+	SHT_UNANSWERED = (1 << 0),
+	SHT_ANSWERED = (1 << 1)
+} switch_hup_type_t;
+
 /*! 
   \brief Hangup all sessions which match a specific channel variable
   \param var_name The variable name to look for
   \param var_val The value to look for 
   \param cause the hangup cause to apply to the hungup channels
 */
-SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(_In_ const char *var_name, _In_ const char *var_val, _In_ switch_call_cause_t cause);
+SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(_In_ const char *var_name, _In_ const char *var_val, _In_ 
+																	 switch_call_cause_t cause, switch_hup_type_t type);
 SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_matching_var(const char *var_name, const char *var_val);
+#define switch_core_session_hupall_matching_var(_vn, _vv, _c) switch_core_session_hupall_matching_var_ans(_vn, _vv, _c, SHT_UNANSWERED | SHT_ANSWERED)
 
 /*! 
   \brief Hangup all sessions that belong to an endpoint
