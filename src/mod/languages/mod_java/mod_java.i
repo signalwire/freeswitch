@@ -2,6 +2,7 @@
 %include ../../../../swig_common.i
 /** insert the following includes into generated code so it compiles */
 %{
+#include "switch.h"
 #include "switch_cpp.h"
 #include "freeswitch_java.h"
 %}
@@ -53,7 +54,11 @@
 %typemap(javain) char *terminator "$javainput"
 %typemap(freearg) char *terminator ""
 
-
+#define SWITCH_DECLARE(type) type
+%javamethodmodifiers CoreSession::originate(CoreSession *, char *, int, switch_state_handler_table_t *) "protected";
+%javaexception ("java.util.TooManyListenersException") setOriginateStateHandler(jobject);
+%typemap(jtype) jobject stateHandler "org.freeswitch.StateHandler"
+%typemap(jstype) jobject stateHandler "org.freeswitch.StateHandler"
 
 %include "enums.swg"
 %include switch_swigable_cpp.h
