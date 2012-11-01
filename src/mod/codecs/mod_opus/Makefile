@@ -5,10 +5,11 @@ OPUS=opus-1.0.1
 OPUS_DIR=$(switch_srcdir)/libs/$(OPUS)
 OPUS_BUILDDIR=$(switch_builddir)/libs/$(OPUS)
 LOCAL_CFLAGS=-I$(OPUS_DIR)/include -g -O2
+LOCAL_LDFLAGS=-lm -lz
 
 OPUS_LA=$(OPUS_BUILDDIR)/.libs/libopus.la
 
-LOCAL_LIBADD=$(OPUS_LA) -lm -lz
+LOCAL_LIBADD=$(OPUS_LA)
 
 include $(BASE)/build/modmake.rules
 
