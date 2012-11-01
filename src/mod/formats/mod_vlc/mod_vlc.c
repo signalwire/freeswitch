@@ -45,6 +45,7 @@
 #include <switch.h>
 #include <vlc/vlc.h>
 #include <vlc/libvlc_media_player.h>
+#include <vlc/libvlc_events.h>
 
 #define VLC_BUFFER_SIZE 65536
 
@@ -82,6 +83,29 @@ typedef struct vlc_file_context vlc_file_context_t;
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vlc_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_vlc_load);
 SWITCH_MODULE_DEFINITION(mod_vlc, mod_vlc_load, mod_vlc_shutdown, NULL);
+
+static void vlc_mediaplayer_error_callback(const libvlc_event_t * event, void * data)
+{
+        vlc_file_context_t *context = (vlc_file_context_t *) data;
+        int status = libvlc_media_get_state(context->m);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a libvlc_MediaPlayerEncounteredError callback. mediaPlayer Status: %d\n", status);
+        if (status == libvlc_Error) {
+               context->err = 1;
+               switch_thread_cond_signal(context->started);
+	     }
+}
+static void vlc_media_state_callback(const libvlc_event_t * event, void * data)
+{
+        vlc_file_context_t *context = (vlc_file_context_t *) data;
+        int new_state = event->u.media_state_changed.new_state;
+
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a libvlc_MediaStateChanged callback. New state: %d\n", new_state);
+        if (new_state == libvlc_Ended || new_state == libvlc_Error) {
+                switch_thread_cond_signal(context->started);
+        }
+}
+
+
 
 void vlc_auto_play_callback(void *data, const void *samples, unsigned count, int64_t pts) {
 
@@ -145,6 +169,7 @@ void vlc_imem_release_callback(void *data, const char *cookie, size_t size, void
 static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *path)
 {
 	vlc_file_context_t *context;
+	libvlc_event_manager_t *mp_event_manager, *m_event_manager;
 	
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
@@ -191,6 +216,12 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 		context->samplerate = handle->samplerate;
 		
 		libvlc_audio_set_format(context->mp, "S16N", context->samplerate, 1);
+		
+		m_event_manager = libvlc_media_event_manager(context->m);
+		libvlc_event_attach(m_event_manager, libvlc_MediaStateChanged, vlc_media_state_callback, (void *) context);
+
+		mp_event_manager = libvlc_media_player_event_manager(context->mp);
+		libvlc_event_attach(mp_event_manager, libvlc_MediaPlayerEncounteredError, vlc_mediaplayer_error_callback, (void *) context);
 		
 		libvlc_audio_set_callbacks(context->mp, vlc_auto_play_callback, NULL,NULL,NULL,NULL, (void *) context);
 
@@ -258,21 +289,29 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 
 	status = libvlc_media_get_state(context->m);
 	
-	if (status == 7) {
+	if (status == libvlc_Error) {
 		return SWITCH_STATUS_GENERR;
 	}
 
 	switch_mutex_lock(context->audio_mutex); 
-	while (context->playing == 0) {
+	while (context->playing == 0 && status != libvlc_Ended && status != libvlc_Error) {
 		switch_thread_cond_wait(context->started, context->audio_mutex);		
+		status = libvlc_media_get_state(context->m);
 	}
+
+	if (context->err == 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VLC error\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_unlock(context->audio_mutex);
 	
 	switch_mutex_lock(context->audio_mutex);
 	read = switch_buffer_read(context->audio_buffer, data, bytes);
 	switch_mutex_unlock(context->audio_mutex);
 	
-	if (!read && (status == 5 || status == 6)) {
+        status = libvlc_media_get_state(context->m);
+	if (!read && (status == libvlc_Stopped || status == libvlc_Ended || status == libvlc_Error)) {
 		return SWITCH_STATUS_FALSE;
 	} else if (!read) {
 		read = 2;
