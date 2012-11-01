@@ -614,9 +614,34 @@ SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *bu
 
 /* thread stubs */
 
+#ifndef WIN32
+struct apr_threadattr_t {
+	apr_pool_t *pool;
+	pthread_attr_t attr;
+	int priority;
+};
+#else
+/* this needs to be revisited when apr for windows supports thread priority settings */
+/* search for WIN32 in this file */
+struct apr_threadattr_t {
+    apr_pool_t *pool;
+    apr_int32_t detach;
+    apr_size_t stacksize;
+};
+#endif
+
+
 SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** new_attr, switch_memory_pool_t *pool)
 {
-	return apr_threadattr_create(new_attr, pool);
+	switch_status_t status;
+
+	if ((status = apr_threadattr_create(new_attr, pool)) == SWITCH_STATUS_SUCCESS) {
+#ifndef WIN32
+		(*new_attr)->priority = SWITCH_PRI_LOW;
+#endif
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_threadattr_detach_set(switch_threadattr_t *attr, int32_t on)
@@ -629,29 +654,12 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
 	return apr_threadattr_stacksize_set(attr, stacksize);
 }
 
-#ifndef WIN32
-struct apr_threadattr_t {
-	apr_pool_t *pool;
-	pthread_attr_t attr;
-};
-#endif
-
-SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_increase(switch_threadattr_t *attr)
+SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_set(switch_threadattr_t *attr, switch_thread_priority_t priority)
 {
-	int stat = 0;
 #ifndef WIN32
-	struct sched_param param;
-	struct apr_threadattr_t *myattr = attr;
-
-	pthread_attr_getschedparam(&myattr->attr, &param);
-	param.sched_priority = 1;
-	stat = pthread_attr_setschedparam(&myattr->attr, &param);
-
-	if (stat == 0) {
-		return SWITCH_STATUS_SUCCESS;
-	}
+	attr->priority = priority;
 #endif
-	return stat;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static char TT_KEY[] = "1";
@@ -1042,13 +1050,7 @@ SWITCH_DECLARE(unsigned int) switch_queue_size(switch_queue_t *queue)
 
 SWITCH_DECLARE(switch_status_t) switch_queue_pop(switch_queue_t *queue, void **data)
 {
-	apr_status_t s;
-
-	do {
-		s = apr_queue_pop(queue, data);
-	} while (s == APR_EINTR);
-
-	return s;
+	return apr_queue_pop(queue, data);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_pop_timeout(switch_queue_t *queue, void **data, switch_interval_time_t timeout)
@@ -1070,14 +1072,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_push(switch_queue_t *queue, void *d
 
 SWITCH_DECLARE(switch_status_t) switch_queue_trypop(switch_queue_t *queue, void **data)
 {
-	apr_status_t s;
-
-	do {
-		s = apr_queue_trypop(queue, data);
-	} while (s == APR_EINTR);
-
-	return s;
-	
+	return apr_queue_trypop(queue, data);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_interrupt_all(switch_queue_t *queue)
