@@ -1190,6 +1190,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_EXECUTE_ON_POST_ORIGINATE_VA
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_EXECUTE_ON_PRE_ORIGINATE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("execute_on_pre_originate");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -1255,6 +1265,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_POST_ORIGINATE_VARIAB
   char *result = 0 ;
   
   result = (char *)("api_on_post_originate");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_API_ON_PRE_ORIGINATE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("api_on_pre_originate");
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -31460,6 +31480,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_uuid_exists(char * jarg1) {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_uuid_force_exists(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (char *)jarg1; 
+  result = (switch_bool_t)switch_ivr_uuid_force_exists((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_dmachine_last_ping(void * jarg1) {
   int jresult ;
   switch_ivr_dmachine_t *arg1 = (switch_ivr_dmachine_t *) 0 ;
@@ -34401,15 +34433,17 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_xml_parse_section_string(char
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_std_datetime_check(void * jarg1, void * jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_std_datetime_check(void * jarg1, void * jarg2, char * jarg3) {
   int jresult ;
   switch_xml_t arg1 = (switch_xml_t) 0 ;
   int *arg2 = (int *) 0 ;
+  char *arg3 = (char *) 0 ;
   int result;
   
   arg1 = (switch_xml_t)jarg1; 
   arg2 = (int *)jarg2; 
-  result = (int)switch_xml_std_datetime_check(arg1,arg2);
+  arg3 = (char *)jarg3; 
+  result = (int)switch_xml_std_datetime_check(arg1,arg2,(char const *)arg3);
   jresult = result; 
   return jresult;
 }
