@@ -340,19 +340,29 @@ static switch_status_t vlc_file_write(switch_file_handle_t *handle, void *data, 
 static switch_status_t vlc_file_close(switch_file_handle_t *handle)
 {
 	vlc_file_context_t *context = handle->private_info;
+	int sanity = 0;	
 	
 	context->playing = 0;
 	
 	/* The clients need to empty the last of the audio buffer */
 	while ( switch_buffer_inuse(context->audio_buffer) > 0 ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC waiting to close the files: %d \n", (int) switch_buffer_inuse(context->audio_buffer));
-		sleep(1);
+		switch_yield(500000);
+		if (++sanity > 10) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Giving up waiting for client to empty the audio buffer\n");
+			break;
+		}
 	}
 
 	/* Let the clients get the last of the audio stream */
+	sanity = 0;
 	while ( 3 == libvlc_media_get_state(context->m) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC waiting for clients: %d \n", libvlc_media_get_state(context->m));
-		sleep(1);
+		switch_yield(500000); 
+                if (++sanity > 10) {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Giving up waiting for client to get the last of the audio stream\n");
+                        break;
+		}
 	}
 
 	if( context->mp ) 
