@@ -126,6 +126,7 @@
  * - NUTAG_M_USERNAME()
  * - NUTAG_OUTBOUND()
  * - NUTAG_PATH_ENABLE()
+ * - NUTAG_RETRY_AFTER_ENABLE()
  * - NUTAG_SERVICE_ROUTE_ENABLE()
  * Specifications:
  * - @RFC3261 section 10, @RFC3327, @RFC3608, @RFC3680, @RFC3840,
@@ -2661,6 +2662,29 @@ tag_typedef_t nutag_path_enable = BOOLTAG_TYPEDEF(path_enable);
 
 /**@def NUTAG_PATH_ENABLE_REF(x)
  * Reference tag for NUTAG_PATH_ENABLE().
+ */
+
+/**@def NUTAG_RETRY_AFTER_ENABLE(x)
+ *
+ * If true, support RFC 3261 Retry-After
+ *
+ * @par Used with
+ * - nua_create(), nua_set_params(), nua_get_params()
+ * - nua_handle(), nua_set_hparams(), nua_get_hparams()
+ * - nua_register()
+ *
+ * @par Parameter type
+ *    int (boolean: nonzero is true, zero is false)
+ *
+ * @par Values
+ *    - 0 (false) - Do not honor Retry-After
+ *    - 1 (true) - honor Retry-After
+ *
+ */
+tag_typedef_t nutag_retry_after_enable = BOOLTAG_TYPEDEF(retry_after_enable);
+
+/**@def NUTAG_RETRY_AFTER_ENABLE_REF(x)
+ * Reference tag for NUTAG_RETRY_AFTER_ENABLE().
  */
 
 
