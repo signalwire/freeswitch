@@ -5154,8 +5154,6 @@ void *SWITCH_THREAD_FUNC call_monitor_thread(switch_thread_t *thread, void *obj)
 			
 		} while (busy);
 
-		/* printf("%ld ASS LAUNCH %s %d %d\n", (long)pthread_self(), argv[sent], sent, size); */
-		
 		launch_call(argv[sent++], cm->path, cm->exten, cm->context, cm->dp, mutex, &counter, &var_event);
 	}
 
