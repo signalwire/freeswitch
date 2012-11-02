@@ -89,7 +89,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;STFU_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -147,7 +147,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;STFU_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -199,7 +199,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;TPL_NOLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;TPL_NOLIB;STFU_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>
@@ -248,7 +248,7 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;TPL_NOLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;ENABLE_ZRTP;TPL_NOLIB;STFU_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>

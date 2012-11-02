@@ -8269,15 +8269,21 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_hupall(int jarg1) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_hupall_matching_var(char * jarg1, char * jarg2, int jarg3) {
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_session_hupall_matching_var_ans(char * jarg1, char * jarg2, int jarg3, int jarg4) {
+  unsigned long jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   switch_call_cause_t arg3 ;
+  switch_hup_type_t arg4 ;
+  uint32_t result;
   
   arg1 = (char *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (switch_call_cause_t)jarg3; 
-  switch_core_session_hupall_matching_var((char const *)arg1,(char const *)arg2,arg3);
+  arg4 = (switch_hup_type_t)jarg4; 
+  result = (uint32_t)switch_core_session_hupall_matching_var_ans((char const *)arg1,(char const *)arg2,arg3,arg4);
+  jresult = (unsigned long)result; 
+  return jresult;
 }
 
 
