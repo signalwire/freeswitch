@@ -56,10 +56,10 @@ struct silk_codec_settings {
 typedef struct silk_codec_settings silk_codec_settings_t;
 
 static silk_codec_settings_t default_codec_settings = {
-	/*.useinbandfec */ 0,
+	/*.useinbandfec */ 1,
 	/*.usedtx */ 0,
 	/*.maxaveragebitrate */ 0,
-	/*.plpct */ 10, // 10% for now
+	/*.plpct */ 20, // 20% for now
 };
 
 struct silk_context {
