@@ -1318,6 +1318,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	if (!zstr(outbound_profile->caller_id_number)) {
 		callerid_num = switch_sanitize_number(switch_core_strdup(outbound_profile->pool, outbound_profile->caller_id_number));
+		if ( callerid_num && *callerid_num == '+' ) {
+			callerid_num++;
+		}
 	}
 
 	if (!zstr(callerid_num) && !strcmp(callerid_num, SWITCH_DEFAULT_CLID_NUMBER)) {
@@ -1394,6 +1397,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		sipvar = switch_channel_get_variable(channel, "sip_h_X-FreeTDM-CallerNumber");
 		if (sipvar) {
+			if ( *sipvar == '+' ) {
+				sipvar++;
+			}
 			ftdm_set_string(caller_data.cid_num.digits, sipvar);
 		}
 
@@ -1653,7 +1659,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	caller_data.rdnis.plan = outbound_profile->rdnis_numplan;
 
 	ftdm_set_string(caller_data.cid_name, outbound_profile->caller_id_name);
-	ftdm_set_string(caller_data.cid_num.digits, switch_str_nil(outbound_profile->caller_id_number));
+	ftdm_set_string(caller_data.cid_num.digits, switch_str_nil(callerid_num));
 
 	memset(&hunting, 0, sizeof(hunting));
 
