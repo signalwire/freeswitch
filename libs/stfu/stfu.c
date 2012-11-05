@@ -652,7 +652,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         for (x = 0; x < i->out_queue->array_len; x++) {
             if (!i->out_queue->array[x].was_read) {
                 i->cur_ts = i->out_queue->array[x].ts;
-                i->cur_ts = i->out_queue->array[x].seq;
+                i->cur_seq = i->out_queue->array[x].seq;
                 break;
             }
             if (i->cur_ts == 0) {
