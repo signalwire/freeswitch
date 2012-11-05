@@ -164,7 +164,7 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     SOLINK="-Bdynamic -dy -G"
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     case "$host" in
-        *darwin12.*|*darwin10.*)
+        *darwin12.*|*darwin11.*|*darwin10.*)
             SOLINK="-dynamic -force-flat-namespace"
         ;;
         *darwin*)
@@ -248,7 +248,7 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
     if test "${enable_64}" = "yes"; then
 	case "$host" in
-             *darwin12.*|*darwin10.*|*darwin9.*|*darwin8.*)
+             *darwin12.*|*darwin11.*|*darwin10.*|*darwin9.*|*darwin8.*)
 		APR_ADDTO(CFLAGS, -arch x86_64)
        		APR_ADDTO(LDFLAGS, -arch x86_64)
        		APR_ADDTO(CXXFLAGS, -arch x86_64)
@@ -454,7 +454,7 @@ PLATFORM_CORE_LDFLAGS=
 PLATFORM_CORE_LIBS=
 # tweak platform specific flags
 case "$host" in
-    *darwin12.*)
+    *darwin12.*|*darwin11.*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations)
         APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
