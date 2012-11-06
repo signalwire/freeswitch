@@ -182,7 +182,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 {
 	switch_codec_interface_t *codec_interface;
 	int samples = 480;
-	int bytes = 80;
+	int bytes = 960;
 	int mss = 10000;
 	int x = 0;
 	int rate = 48000;

@@ -1217,6 +1217,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
 	   status == 500 || status == 503 ||
 	   status == 600 || status == 603) &&
       sip->sip_retry_after &&
+	  NH_PGET(nh, retry_after_enable) &&
       sip->sip_retry_after->af_delta < 3200) {
     su_timer_t *timer;
     char phrase[18];		/* Retry After XXXX\0 */

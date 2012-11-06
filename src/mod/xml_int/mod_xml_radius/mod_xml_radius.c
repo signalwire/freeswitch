@@ -45,7 +45,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_radius_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_radius_shutdown);
 SWITCH_MODULE_DEFINITION(mod_xml_radius, mod_xml_radius_load, mod_xml_radius_shutdown, NULL);
 
-static int GLOBAL_DEBUG = 0;
+int GLOBAL_DEBUG = 0;
 
 switch_status_t mod_xml_radius_new_handle(rc_handle **new_handle, switch_xml_t xml) {
 	switch_xml_t server, param;
@@ -529,6 +529,21 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 	}
 	return SWITCH_STATUS_GENERR;
 	
+}
+
+/* static switch_status_t name (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream) */
+SWITCH_STANDARD_API(mod_xml_radius_debug_api)
+{
+	if ( !strncmp(cmd, "on", 2) ) {
+		GLOBAL_DEBUG = 1;
+	} else if ( !strncmp(cmd, "off", 3)){
+		GLOBAL_DEBUG = 0;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Valid options are [yes|no]\n" );
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "debug is %s\n", (GLOBAL_DEBUG ? "on" : "off") );
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /* static switch_status_t name (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream) */
@@ -1132,6 +1147,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_radius_load)
 	}
 		
 	SWITCH_ADD_API(mod_xml_radius_api_interface, "xml_radius_connect_test", "mod_xml_radius connection test", mod_xml_radius_connect_test, NULL);
+	SWITCH_ADD_API(mod_xml_radius_api_interface, "xml_radius_debug", "mod_xml_radius toggle debug", mod_xml_radius_debug_api, NULL);
 
 	switch_core_add_state_handler(&state_handlers);
 

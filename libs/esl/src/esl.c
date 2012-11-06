@@ -916,6 +916,8 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	int rval = 0;
 	const char *hval;
 	struct addrinfo hints = { 0 }, *result;
+	struct sockaddr_in *sockaddr_in;
+	struct sockaddr_in6 *sockaddr_in6;
 #ifndef WIN32
 	int fd_flags = 0;
 #else
@@ -936,27 +938,36 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	if (!handle->packet_buf) {
 		esl_buffer_create(&handle->packet_buf, BUF_CHUNK, BUF_START, 0);
 	}
-	
-	handle->sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	
-	if (handle->sock == ESL_SOCK_INVALID) {
-		snprintf(handle->err, sizeof(handle->err), "Socket Error");
-		return ESL_FAIL;
-	}
 
-
-	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	
+
 	if (getaddrinfo(host, NULL, &hints, &result)) {
 		strncpy(handle->err, "Cannot resolve host", sizeof(handle->err));
 		goto fail;
 	}
 
 	memcpy(&handle->sockaddr, result->ai_addr, sizeof(handle->sockaddr));	
-	handle->sockaddr.sin_family = AF_INET;
-	handle->sockaddr.sin_port = htons(port);
+        switch(handle->sockaddr.ss_family) {
+		case AF_INET:
+			sockaddr_in = (struct sockaddr_in*)&(handle->sockaddr);
+			sockaddr_in->sin_port = htons(port);
+			break;
+		case AF_INET6:
+			sockaddr_in6 = (struct sockaddr_in6*)&(handle->sockaddr);
+			sockaddr_in6->sin6_port = htons(port);
+			break;
+		default:
+			strncpy(handle->err, "Host resolves to unsupported address family", sizeof(handle->err));
+			goto fail;
+	}
 	freeaddrinfo(result);
+	
+	handle->sock = socket(handle->sockaddr.ss_family, SOCK_STREAM, IPPROTO_TCP);
+	
+	if (handle->sock == ESL_SOCK_INVALID) {
+		snprintf(handle->err, sizeof(handle->err), "Socket Error");
+		return ESL_FAIL;
+	}
 
 	if (timeout) {
 #ifdef WIN32

@@ -2582,6 +2582,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	const char *filename;
 	switch_xml_t x_param, x_params;
+	const char *vm_cc = NULL, *vm_cc_tmp = NULL;
 	char *vm_email = NULL;
 	char *vm_email_from = NULL;
 	char *vm_notify_email = NULL;
@@ -2641,7 +2642,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		const char *var = switch_xml_attr_soft(x_param, "name");
 		const char *val = switch_xml_attr_soft(x_param, "value");
 
-		if (!strcasecmp(var, "vm-mailto")) {
+		if (!strcasecmp(var, "vm-cc")) {
+			vm_cc = switch_core_strdup(pool, val);
+		} else if (!strcasecmp(var, "vm-mailto")) {
 			vm_email = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-notify-mailto")) {
 			vm_notify_email = switch_core_strdup(pool, val);
@@ -2922,18 +2925,34 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
-		const char *vm_cc;
+		if (channel && (vm_cc_tmp = switch_channel_get_variable(channel, "vm_cc"))) {
+			vm_cc = vm_cc_tmp;
+		}
+	}
 
-		if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
+	if (vm_cc) {
+		char *vm_cc_dup;
+		int vm_cc_num = 0;
+		char *vm_cc_list[256] = { 0 };
+		int vm_cc_i;
+
+		vm_cc_dup = strdup(vm_cc);
+		vm_cc_num = switch_separate_string(vm_cc_dup, ',', vm_cc_list, (sizeof(vm_cc_list) / sizeof(vm_cc_list[0])));
+
+		for (vm_cc_i=0; vm_cc_i<vm_cc_num; vm_cc_i++) {
+			const char *vm_cc_current = vm_cc_list[vm_cc_i];
 			char *cmd = switch_core_session_sprintf(session, "%s %s %s '%s' %s@%s %s",
-													vm_cc, file_path, caller_id_number, caller_id_name, myid, domain_name, read_flags);
-			
+													vm_cc_current, file_path, caller_id_number,
+													caller_id_name, myid, domain_name, read_flags);
+
 			if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc_current);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc_current);
 			}
 		}
+
+		switch_safe_free(vm_cc_dup);
 	}
 
 

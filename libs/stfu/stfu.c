@@ -652,7 +652,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         for (x = 0; x < i->out_queue->array_len; x++) {
             if (!i->out_queue->array[x].was_read) {
                 i->cur_ts = i->out_queue->array[x].ts;
-                i->cur_ts = i->out_queue->array[x].seq;
+                i->cur_seq = i->out_queue->array[x].seq;
                 break;
             }
             if (i->cur_ts == 0) {
@@ -806,15 +806,22 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
     return rframe;
 }
 
-int32_t stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame)
+STFU_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame)
 {
 	uint32_t i = 0, j = 0;
+#ifdef WIN32
+#pragma warning (disable:4204)
+#endif
 	stfu_queue_t *queues[] = { jb->out_queue, jb->in_queue, jb->old_queue};
+#ifdef WIN32
+#pragma warning (default:4204)
+#endif
 	stfu_queue_t *queue = NULL;
 	stfu_frame_t *frame = NULL;
 
 	uint32_t target_ts = 0;
 
+	seq = seq;
 	if (!next_frame) return 0;
 
 	target_ts = timestamp + (distance - 1) * jb->samples_per_packet;

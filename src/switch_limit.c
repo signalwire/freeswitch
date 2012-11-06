@@ -83,7 +83,7 @@ static switch_status_t limit_state_handler(switch_core_session_t *session)
 	const char *backendlist = switch_channel_get_variable(channel, LIMIT_BACKEND_VARIABLE);
 	
 	if (zstr(backendlist)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unset limit backendlist!\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Unset limit backendlist!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 

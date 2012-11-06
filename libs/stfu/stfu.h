@@ -191,7 +191,7 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
 stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen);
 stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last);
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i);
-int32_t stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame);
+STFU_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame);
 void stfu_n_reset(stfu_instance_t *i);
 stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets);
 void stfu_n_call_me(stfu_instance_t *i, stfu_n_call_me_t callback, void *udata);

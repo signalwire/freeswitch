@@ -31,7 +31,11 @@
  */
 
 #include "switch.h"
+#ifndef WIN32
 #include "stfu.h"
+#else
+#include "../../../libs/stfu/stfu.h"
+#endif
 #include "SKP_Silk_SDK_API.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_silk_load);
@@ -52,10 +56,10 @@ struct silk_codec_settings {
 typedef struct silk_codec_settings silk_codec_settings_t;
 
 static silk_codec_settings_t default_codec_settings = {
-	/*.useinbandfec */ 0,
+	/*.useinbandfec */ 1,
 	/*.usedtx */ 0,
 	/*.maxaveragebitrate */ 0,
-	/*.plpct */ 10, // 10% for now
+	/*.plpct */ 20, // 20% for now
 };
 
 struct silk_context {
@@ -331,6 +335,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 	SKP_int16 reclen;
 	int32_t found_frame;
 	switch_bool_t did_lbrr = SWITCH_FALSE;
+	int i;
 
 	*decoded_data_len = 0;
 
@@ -339,7 +344,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 			jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO);
 		}
 		if (jb && codec && codec->cur_frame) {
-			for (int i = 1; i <= MAX_LBRR_DELAY; i++) {
+			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
 				found_frame = stfu_n_copy_next_frame(jb, codec->cur_frame->timestamp, codec->cur_frame->seq, i, &next_frame);
 				if (found_frame) {
 					SKP_Silk_SDK_search_for_LBRR(next_frame.data, next_frame.dlen, i, (SKP_uint8*) &recbuff, &reclen);

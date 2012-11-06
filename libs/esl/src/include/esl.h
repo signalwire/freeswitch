@@ -288,7 +288,7 @@ typedef enum {
 /*! \brief A handle that will hold the socket information and
            different events received. */
 typedef struct {
-	struct sockaddr_in sockaddr;
+	struct sockaddr_storage sockaddr;
 	struct hostent hostent;
 	char hostbuf[256];
 	esl_socket_t sock;

@@ -330,13 +330,13 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 	if (!strncasecmp(dsn, "pgsql://", 8)) {
 		type = SCDB_TYPE_PGSQL;
 		connection_options.pgsql_options.dsn = (char *)(dsn + 8);
-	} else if ((!(i = strncasecmp(dsn, "odbc://", 8))) || strchr(dsn, ':')) {
+	} else if ((!(i = strncasecmp(dsn, "odbc://", 7))) || strchr(dsn, ':')) {
 		type = SCDB_TYPE_ODBC;
 
 		if (i) {
 			switch_set_string(tmp, dsn);
 		} else {
-			switch_set_string(tmp, dsn+8);
+			switch_set_string(tmp, dsn+7);
 		}
 		
 		connection_options.odbc_options.dsn = tmp;

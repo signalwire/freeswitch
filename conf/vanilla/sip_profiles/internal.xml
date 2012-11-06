@@ -214,7 +214,7 @@
     <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
 
     <!-- Or, if you have PGSQL support, you can use that -->
-    <!--<param name="odbc-dsn" value="pgsql;hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE' application_name='freeswitch'" />-->
+    <!--<param name="odbc-dsn" value="pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE' application_name='freeswitch'" />-->
 
     <!--Uncomment to set all inbound calls to no media mode-->
     <!--<param name="inbound-bypass-media" value="true"/>-->
