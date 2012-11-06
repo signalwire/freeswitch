@@ -524,11 +524,11 @@ int skypopen_signaling_read(private_t *tech_pvt)
 								skypopen_signaling_write(tech_pvt, msg_to_skype);
 							} else {
 								DEBUGA_SKYPE
-									("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s, chatname=%s, from_handle=%s, from_dispname=%s, body=%s NOT DELETEEEEEEEEEEEEEEEEED\n",
+									("CHATMESSAGE %s is in position %d in the chatmessages array, type=%s, id=%s, chatname=%s, from_handle=%s, from_dispname=%s, body=%s NOT DELETED\n",
 									 SKYPOPEN_P_LOG, id, i, tech_pvt->chatmessages[i].type, tech_pvt->chatmessages[i].id, tech_pvt->chatmessages[i].chatname,
 									 tech_pvt->chatmessages[i].from_handle, tech_pvt->chatmessages[i].from_dispname, tech_pvt->chatmessages[i].body);
 								memset(&tech_pvt->chatmessages[i], '\0', sizeof(&tech_pvt->chatmessages[i]));
-								DEBUGA_SKYPE("chatmessage %s HAS BEEN DELETEEEEEEEEEEEEEEEEED\n", SKYPOPEN_P_LOG, id);
+								DEBUGA_SKYPE("chatmessage %s HAS BEEN DELETED\n", SKYPOPEN_P_LOG, id);
 							}
 
 						}
