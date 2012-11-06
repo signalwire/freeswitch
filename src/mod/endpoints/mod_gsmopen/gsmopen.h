@@ -331,7 +331,7 @@ struct private_object {
 	unsigned long ib_failed_calls;
 	unsigned long ob_failed_calls;
 
-	char controldevice_name[50];	/*!< \brief name of the serial device controlling the interface, possibly none */
+	char controldevice_name[512];	/*!< \brief name of the serial device controlling the interface, possibly none */
 	int controldevprotocol;		/*!< \brief which protocol is used for serial control of this interface */
 	char controldevprotocolname[50];	/*!< \brief name of the serial device controlling protocol, one of "at" "fbus2" "no_serial" "alsa_voicemodem" */
 	int controldevfd;			/*!< \brief serial controlling file descriptor for this interface */
@@ -469,7 +469,7 @@ struct private_object {
 	int network_creg_not_supported;
 	char creg[128];
 
-	char controldevice_audio_name[50];
+	char controldevice_audio_name[512];
 	int controldev_audio_fd;
 	int controldevice_audio_speed;
 	int controldev_audio_dead;
