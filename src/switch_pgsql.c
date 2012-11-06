@@ -289,7 +289,6 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 		free(res);
 		res = NULL;
 		*result_out = NULL;
-		goto error;
 	}
 
 	return SWITCH_PGSQL_SUCCESS;
