@@ -191,7 +191,7 @@ static switch_status_t interface_exists(char *the_interface);
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
-static switch_status_t channel_on_reset(switch_core_session_t *session);
+//static switch_status_t channel_on_reset(switch_core_session_t *session);
 static switch_status_t channel_on_destroy(switch_core_session_t *session);
 static switch_status_t channel_on_routing(switch_core_session_t *session);
 static switch_status_t channel_on_exchange_media(switch_core_session_t *session);
@@ -766,6 +766,7 @@ static switch_status_t channel_on_soft_execute(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#if 0
 static switch_status_t channel_on_reset(switch_core_session_t *session)
 {
 	private_t *tech_pvt = NULL;
@@ -788,6 +789,7 @@ static switch_status_t channel_on_reset(switch_core_session_t *session)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+#endif //0
 
 
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
@@ -1238,7 +1240,7 @@ switch_state_handler_table_t skypopen_state_handlers = {
 	/*.on_soft_execute */ channel_on_soft_execute,
 	/*.on_consume_media */ channel_on_consume_media,
 	/*.on_hibernate */ NULL,
-	/*.on_reset */ channel_on_reset,
+	/*.on_reset */ NULL,
 	/*.on_park */ NULL,
 	/*.on_reporting */ NULL,
 	/*.on_destroy */ channel_on_destroy
