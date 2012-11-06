@@ -645,7 +645,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 	//DEBUGA_SKYPE("debugging_hangup 12\n", SKYPOPEN_P_LOG);
 
-	switch_channel_set_state(channel, CS_DESTROY);
+	//switch_channel_set_state(channel, CS_DESTROY);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2731,6 +2731,8 @@ int skypopen_partner_handle_ring(private_t *tech_pvt)
 	if (tech_pvt && tech_pvt->ringing_state == SKYPOPEN_RINGING_INIT) {
 		/* we are not inside an active call */
 
+		switch_channel_t *channel = NULL;
+
 		tech_pvt->interface_state = SKYPOPEN_STATE_PRERING;
 		gettimeofday(&tech_pvt->ring_time, NULL);
 		switch_copy_string(tech_pvt->callid_number, value, sizeof(tech_pvt->callid_number) - 1);
@@ -2743,6 +2745,22 @@ int skypopen_partner_handle_ring(private_t *tech_pvt)
 
 		new_inbound_channel(tech_pvt);
 
+		switch_sleep(10000);
+
+		session = switch_core_session_locate(tech_pvt->session_uuid_str);
+		if (session) {
+			channel = switch_core_session_get_channel(session);
+			switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
+			if (channel) {
+				switch_channel_mark_ring_ready(channel);
+				DEBUGA_SKYPE("switch_channel_mark_ring_ready(channel);\n", SKYPOPEN_P_LOG);
+			} else {
+				ERRORA("no channel\n", SKYPOPEN_P_LOG);
+			}
+			switch_core_session_rwunlock(session);
+		} else {
+			ERRORA("no session\n", SKYPOPEN_P_LOG);
+		}
 	} else if (!tech_pvt || !tech_pvt->skype_call_id) {
 		ERRORA("No Call ID?\n", SKYPOPEN_P_LOG);
 	} else {
