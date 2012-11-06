@@ -639,6 +639,53 @@ int skypopen_signaling_read(private_t *tech_pvt)
 					//skypopen_sleep(10000);
 				}
 
+
+				if (!strcasecmp(prop, "VM_DURATION") && (!strcasecmp(value, "0"))) {
+					char msg_to_skype[1024];
+
+					NOTICA("We called a Skype contact and he started Skype voicemail on our skype_call: %s.\n", SKYPOPEN_P_LOG, id);
+
+					if (!strlen(tech_pvt->session_uuid_str)) {
+						DEBUGA_SKYPE("no tech_pvt->session_uuid_str\n", SKYPOPEN_P_LOG);
+					}
+					if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
+						if (!strlen(tech_pvt->session_uuid_str) || !strlen(tech_pvt->skype_call_id)
+								|| !strcasecmp(tech_pvt->skype_call_id, id)) {
+							skypopen_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+							DEBUGA_SKYPE("skype_call: %s is now active\n", SKYPOPEN_P_LOG, id);
+
+							if (tech_pvt->skype_callflow != CALLFLOW_STATUS_EARLYMEDIA) {
+								tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
+								tech_pvt->interface_state = SKYPOPEN_STATE_UP;
+
+								if (tech_pvt->tcp_cli_thread == NULL) {
+									DEBUGA_SKYPE("START start_audio_threads\n", SKYPOPEN_P_LOG);
+									if (start_audio_threads(tech_pvt)) {
+										WARNINGA("start_audio_threads FAILED\n", SKYPOPEN_P_LOG);
+										return CALLFLOW_INCOMING_HANGUP;
+									}
+								}
+								//skypopen_sleep(1000);
+								sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id, tech_pvt->tcp_cli_port);
+								skypopen_signaling_write(tech_pvt, msg_to_skype);
+								//skypopen_sleep(1000);
+								sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id, tech_pvt->tcp_srv_port);
+								skypopen_signaling_write(tech_pvt, msg_to_skype);
+							}
+							tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
+							if (skypopen_answered(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+								sprintf(msg_to_skype, "ALTER CALL %s HANGUP", id);
+								skypopen_signaling_write(tech_pvt, msg_to_skype);
+							}
+						} else {
+							DEBUGA_SKYPE("I'm on %s, skype_call %s is NOT MY call, ignoring\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id, id);
+						}
+					} else {
+						tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
+						DEBUGA_SKYPE("Back from REMOTEHOLD!\n", SKYPOPEN_P_LOG);
+					}
+				}
+
 				if (!strcasecmp(prop, "STATUS")) {
 
 					if (!strcasecmp(value, "RINGING")) {
@@ -841,6 +888,8 @@ int skypopen_signaling_read(private_t *tech_pvt)
 						tech_pvt->skype_call_id[0] = '\0';
 						//skypopen_sleep(1000);
 						return CALLFLOW_INCOMING_HANGUP;
+					} else if (!strncmp(value, "VM_", 2)) {
+						DEBUGA_SKYPE ("Our skype_call %s is in Skype voicemail: %s\n", SKYPOPEN_P_LOG, id, value);
 					} else {
 						WARNINGA("skype_call: %s, STATUS: %s is not recognized\n", SKYPOPEN_P_LOG, id, value);
 					}
