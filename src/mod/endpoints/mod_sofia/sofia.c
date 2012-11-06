@@ -1502,6 +1502,10 @@ static void our_sofia_event_callback(nua_event_t event,
 				nua_handle_bind(nh, NULL);
 			}
 
+			if (tech_pvt && (tech_pvt->nh == nh)) {
+				tech_pvt->nh = NULL;
+			}
+
 			nua_handle_destroy(nh);
 			nh = NULL;
 		}
