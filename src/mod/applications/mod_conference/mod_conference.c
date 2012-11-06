@@ -8539,11 +8539,13 @@ static void conference_send_presence(conference_obj_t *conference)
 	}
 	
 }
-
-static void kickall_matching_var(conference_obj_t *conference, const char *var, const char *val)
+#if 0
+static uint32_t kickall_matching_var(conference_obj_t *conference, const char *var, const char *val)
 {
 	conference_member_t *member = NULL;
 	const char *vval = NULL;
+	uint32_t r = 0;
+
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
 
@@ -8560,14 +8562,18 @@ static void kickall_matching_var(conference_obj_t *conference, const char *var, 
 		if (vval && !strcmp(vval, val)) {
 			switch_set_flag_locked(member, MFLAG_KICKED);
 			switch_clear_flag_locked(member, MFLAG_RUNNING);
-			switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);			
+			switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
+			r++;
 		}
 
 	}	
 
 	switch_mutex_unlock(conference->member_mutex);
 	switch_mutex_unlock(conference->mutex);
+
+	return r;
 }
+#endif
 
 static void call_setup_event_handler(switch_event_t *event)
 {
@@ -8631,8 +8637,11 @@ static void call_setup_event_handler(switch_event_t *event)
 				}
 				
 			} else if (!strcasecmp(action, "end")) {
-				//switch_core_session_hupall_matching_var("conference_call_key", key, SWITCH_CAUSE_NORMAL_CLEARING);
-				kickall_matching_var(conference, "conference_call_key", key);
+				if (switch_core_session_hupall_matching_var("conference_call_key", key, SWITCH_CAUSE_NORMAL_CLEARING)) {
+					send_conference_notify(conference, "SIP/2.0 200 OK\r\n", call_id, SWITCH_TRUE);
+				} else {
+					send_conference_notify(conference, "SIP/2.0 481 Failure\r\n", call_id, SWITCH_TRUE);
+				}
 				status = SWITCH_STATUS_SUCCESS;
 			}
 

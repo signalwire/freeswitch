@@ -1176,6 +1176,15 @@ SWITCH_STANDARD_APP(answer_function)
 	switch_channel_answer(channel);
 }
 
+SWITCH_STANDARD_APP(wait_for_answer_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Waiting for answer\n");
+	while (!switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_ready(channel)) {
+		switch_ivr_sleep(session, 100, SWITCH_TRUE, NULL);
+	}
+}
+
 SWITCH_STANDARD_APP(presence_function)
 {
 	char *argv[6] = { 0 };
@@ -5083,6 +5092,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   zombie_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "pre_answer", "Pre-Answer the call", "Pre-Answer the call for a channel.", pre_answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "answer", "Answer the call", "Answer the call for a channel.", answer_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "wait_for_answer", "Wait for call to be answered", "Wait for call to be answered.", wait_for_answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hangup", "Hangup the call", "Hangup the call for a channel.", hangup_function, "[<cause>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "set_name", "Name the channel", "Name the channel", set_name_function, "<name>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "presence", "Send Presence", "Send Presence.", presence_function, "<rpid> <status> [<id>]",

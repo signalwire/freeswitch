@@ -100,17 +100,23 @@ void su_log(char const *fmt, ...)
  *
  * @note This function is used mainly by SU_DEBUG_n() macros.
  */
-void su_llog(su_log_t *log, unsigned level, char const *fmt, ...)
+void _su_llog(su_log_t *log, unsigned level, const char *file, const char *func, int line,
+			 char const *fmt, ...)
 {
   va_list ap;
-
+  char buf[512];
   va_start(ap, fmt);
-  su_vllog(log, level, fmt, ap);
+
+
+  snprintf(buf, sizeof(buf), "%s:%d %s() %s", file, line, func, fmt);
+
+  _su_vllog(log, level, file, func, line, buf, ap);
   va_end(ap);
 }
 
 /** Log a message with level (stdarg version). */
-void su_vllog(su_log_t *log, unsigned level, char const *fmt, va_list ap)
+void _su_vllog(su_log_t *log, unsigned level, const char *file, const char *func, int line,
+			  char const *fmt, va_list ap)
 {
   su_logger_f *logger;
   void *stream;
@@ -133,8 +139,9 @@ void su_vllog(su_log_t *log, unsigned level, char const *fmt, va_list ap)
     stream = su_log_default->log_stream;
   }
 
-  if (logger)
-    logger(stream, fmt, ap);
+  if (logger) {
+	  logger(stream, fmt, ap);
+  }
 }
 
 static char const not_initialized[1];

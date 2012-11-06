@@ -486,6 +486,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 		tech_pvt->session_id = tech_pvt->owner_id;
 	}
 
+	if (switch_true(switch_channel_get_variable_dup(tech_pvt->channel, "drop_dtmf", SWITCH_FALSE, -1))) {
+		sofia_set_flag(tech_pvt, TFLAG_DROP_DTMF);
+	}
+
 	tech_pvt->session_id++;
 
 	if ((tech_pvt->profile->ndlb & PFLAG_NDLB_SENDRECV_IN_SESSION) ||
@@ -968,6 +972,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_cap(tech_pvt->channel, CC_QUEUEABLE_DTMF_DELAY);
 
 	switch_core_session_set_private(session, tech_pvt);
+
 
 	if (channame) {
 		sofia_glue_set_name(tech_pvt, channame);
@@ -3032,6 +3037,9 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
+	
+	tech_pvt->read_codec.session = tech_pvt->session;
+
 
 	if (switch_core_codec_init_with_bitrate(&tech_pvt->write_codec,
 							   tech_pvt->iananame,
@@ -3046,6 +3054,8 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
+
+	tech_pvt->write_codec.session = tech_pvt->session;
 
 	switch_channel_set_variable(tech_pvt->channel, "sip_use_codec_name", tech_pvt->iananame);
 	switch_channel_set_variable(tech_pvt->channel, "sip_use_codec_fmtp", tech_pvt->rm_fmtp);
@@ -3214,7 +3224,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	const char *err = NULL;
 	const char *val = NULL;
 	switch_rtp_flag_t flags;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char tmp[50];
 	uint32_t rtp_timeout_sec = tech_pvt->profile->rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec = tech_pvt->profile->rtp_hold_timeout_sec;
@@ -3243,10 +3253,15 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		goto end;
 	}
 
-	if (switch_rtp_ready(tech_pvt->rtp_session) && 
-		(!sofia_test_flag(tech_pvt, TFLAG_VIDEO) || switch_rtp_ready(tech_pvt->video_rtp_session)) && !sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
-		status = SWITCH_STATUS_SUCCESS;
-		goto end;
+
+	if (!sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
+				goto video;
+			} else {
+				goto end;
+			}
+		}
 	}
 
 	if ((status = sofia_glue_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
@@ -5128,7 +5143,13 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 
 					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate && strcasecmp(map->rm_encoding, "ilbc")) {
-						/* nevermind */
+						/* if a bit rate is specified and doesn't match, this is not a codec match, except for ILBC */
+						match = 0;
+					}
+
+					if (match && map->rm_rate && codec_rate && map->rm_rate != codec_rate && (!strcasecmp(map->rm_encoding, "pcma") || !strcasecmp(map->rm_encoding, "pcmu"))) {
+						/* if the sampling rate is specified and doesn't match, this is not a codec match for G.711 */
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sampling rates have to match for G.711\n");
 						match = 0;
 					}
 					
@@ -5147,8 +5168,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						}
 						mimp = imp;
 						break;
-					} else {
-						match = 0;
 					}
 				}
 
@@ -6269,7 +6288,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	};
 		
 	switch_cache_db_handle_t *dbh = sofia_glue_get_db_handle(profile);
-		
+	char *test2;
+
 	if (!dbh) {
 		return 0;
 	}
@@ -6283,19 +6303,21 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 
 	switch_cache_db_test_reactive(dbh, test_sql, "drop table sip_registrations", reg_sql);
-
-
-	if (sofia_test_pflag(profile, PFLAG_SQL_IN_TRANS)) {
-		char *test2 = switch_mprintf("%s;%s", test_sql, test_sql);
+	
+	test2 = switch_mprintf("%s;%s", test_sql, test_sql);
 			
-		if (switch_cache_db_execute_sql(dbh, test2, NULL) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "GREAT SCOTT!!! Cannot execute batched statements!\n"
-							  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n");
-			sofia_clear_pflag(profile, PFLAG_SQL_IN_TRANS);
-
-		}
+	if (switch_cache_db_execute_sql(dbh, test2, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "GREAT SCOTT!!! Cannot execute batched statements!\n"
+						  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n");
+		
+		switch_cache_db_release_db_handle(&dbh);
 		free(test2);
+		free(test_sql);
+		return 0;
 	}
+
+	free(test2);
+
 
 	free(test_sql);
 
@@ -6346,45 +6368,31 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *d_sql = NULL, *sql;
+	char *sql;
 
 	switch_assert(sqlp && *sqlp);
-	sql = *sqlp;
+	sql = *sqlp;	
 
-	if (profile->sql_queue) {
-		if (sql_already_dynamic) {
-			d_sql = sql;
-		} else {
-			d_sql = strdup(sql);
-		}
-
-		switch_assert(d_sql);
-		if ((status = switch_queue_trypush(profile->sql_queue, d_sql)) == SWITCH_STATUS_SUCCESS) {
-			d_sql = NULL;
-		}
-	} else if (sql_already_dynamic) {
-		d_sql = sql;
-	}
-
-	if (status != SWITCH_STATUS_SUCCESS) {
-		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-	}
-
-	switch_safe_free(d_sql);
+	switch_sql_queue_manager_push(profile->qm, sql, 0, !sql_already_dynamic);
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;
 	}
 }
 
+
 void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic)
 {
-	sofia_glue_actually_execute_sql(profile, *sqlp, profile->ireg_mutex);
+	char *sql;
+
+	switch_assert(sqlp && *sqlp);
+	sql = *sqlp;	
+
+	switch_sql_queue_manager_push_confirm(profile->qm, sql, 0, !sql_already_dynamic);
+
 	if (sql_already_dynamic) {
-		switch_safe_free(*sqlp);
+		*sqlp = NULL;
 	}
-	*sqlp = NULL;
 }
 
 

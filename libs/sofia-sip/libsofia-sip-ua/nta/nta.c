@@ -1276,7 +1276,7 @@ void agent_timer(su_root_magic_t *rm, su_timer_t *timer, nta_agent_t *agent)
 
   if (next == latest) {
     /* Do not set timer? */
-    SU_DEBUG_9(("nta: timer not set\n"));
+    SU_DEBUG_9(("nta: timer not set\n" VA_NONE));
     assert(!agent->sa_out.completed->q_head);
     assert(!agent->sa_out.trying->q_head);
     assert(!agent->sa_out.inv_calling->q_head);
@@ -2162,7 +2162,7 @@ int nta_agent_add_tport(nta_agent_t *self,
     if (url_string_p(uri))
       SU_DEBUG_1(("nta: %s: invalid bind URL\n", uri->us_str));
     else
-      SU_DEBUG_1(("nta: invalid bind URL\n"));
+      SU_DEBUG_1(("nta: invalid bind URL\n" VA_NONE));
     su_seterrno(EINVAL);
     return -1;
   }
@@ -2249,19 +2249,19 @@ int nta_agent_add_tport(nta_agent_t *self,
   /* XXX - when to use maddr? */
   if ((agent_init_via(self, tport_primaries(self->sa_tports), 0)) < 0) {
     error = su_errno();
-    SU_DEBUG_1(("nta: cannot create Via headers\n"));
+    SU_DEBUG_1(("nta: cannot create Via headers\n" VA_NONE));
     goto error;
   }
   else
-    SU_DEBUG_9(("nta: Via fields initialized\n"));
+    SU_DEBUG_9(("nta: Via fields initialized\n" VA_NONE));
 
   if ((agent_init_contact(self)) < 0) {
     error = su_errno();
-    SU_DEBUG_1(("nta: cannot create Contact header\n"));
+    SU_DEBUG_1(("nta: cannot create Contact header\n" VA_NONE));
     goto error;
   }
   else
-    SU_DEBUG_9(("nta: Contact header created\n"));
+    SU_DEBUG_9(("nta: Contact header created\n" VA_NONE));
 
   su_free(self->sa_home, url);
   ta_end(ta);
@@ -2286,7 +2286,7 @@ int agent_create_master_transport(nta_agent_t *self, tagi_t *tags)
   if (!self->sa_tports)
     return -1;
 
-  SU_DEBUG_9(("nta: master transport created\n"));
+  SU_DEBUG_9(("nta: master transport created\n" VA_NONE));
 
   return 0;
 }
@@ -7713,7 +7713,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   home = msg_home(msg);
 
   if (!sip->sip_request || sip_complete_message(msg) < 0) {
-    SU_DEBUG_3(("nta: outgoing_create: incomplete request\n"));
+    SU_DEBUG_3(("nta: outgoing_create: incomplete request\n" VA_NONE));
     return NULL;
   }
 
@@ -7900,7 +7900,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
 	}
       }
       else {
-	SU_DEBUG_1(("outgoing_create: ACK without INVITE\n"));
+	SU_DEBUG_1(("outgoing_create: ACK without INVITE\n" VA_NONE));
 	assert(!"INVITE found for ACK");
       }
     }
@@ -7987,11 +7987,11 @@ outgoing_prepare_send(nta_outgoing_t *orq)
     outgoing_send_via(orq, tp);
   }
   else if (orq->orq_sips) {
-    SU_DEBUG_3(("nta outgoing create: no secure transport\n"));
+    SU_DEBUG_3(("nta outgoing create: no secure transport\n" VA_NONE));
     outgoing_reply(orq, SIP_416_UNSUPPORTED_URI, 1);
   }
   else {
-    SU_DEBUG_3(("nta outgoing create: no transport protocol\n"));
+    SU_DEBUG_3(("nta outgoing create: no transport protocol\n" VA_NONE));
     outgoing_reply(orq, 503, "No transport", 1);
   }
 }
@@ -8013,7 +8013,7 @@ outgoing_send_via(nta_outgoing_t *orq, tport_t *tp)
   if (old_tp) tport_unref(old_tp);
 
   if (outgoing_insert_via(orq, agent_tport_via(tp)) < 0) {
-    SU_DEBUG_3(("nta outgoing create: cannot insert Via line\n"));
+    SU_DEBUG_3(("nta outgoing create: cannot insert Via line\n" VA_NONE));
     outgoing_reply(orq, 503, "Cannot insert Via", 1);
     return;
   }
@@ -9211,7 +9211,7 @@ int outgoing_recv(nta_outgoing_t *_orq,
     if (orq->orq_destroyed && 200 <= status && status < 300) {
       if (orq->orq_uas && su_strcasecmp(sip->sip_to->a_tag, orq->orq_tag) != 0) {
         /* Orphan 200 Ok to INVITE. ACK and BYE it */
-        SU_DEBUG_5(("nta: Orphan 200 Ok send ACK&BYE\n"));
+        SU_DEBUG_5(("nta: Orphan 200 Ok send ACK&BYE\n" VA_NONE));
         return nta_msg_ackbye(sa, msg);
       }
       return -1;  /* Proxy statelessly (RFC3261 section 16.11) */
@@ -9273,7 +9273,7 @@ int outgoing_recv(nta_outgoing_t *_orq,
 	    return outgoing_duplicate(orq, msg, sip);
 
           /* Orphan 200 Ok to INVITE. ACK and BYE it */
-          SU_DEBUG_5(("nta: Orphan 200 Ok send ACK&BYE"));
+          SU_DEBUG_5(("nta: Orphan 200 Ok send ACK&BYE" VA_NONE));
           return nta_msg_ackbye(sa, msg);
 	}
       }

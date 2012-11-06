@@ -64,6 +64,16 @@ typedef enum {
 } break_t;
 
 
+#define check_tz() tzoff = switch_event_get_header(event, "tod_tz_offset"); \
+	tzname = switch_event_get_header(event, "timezone");			\
+	do {																\
+		if (!zstr(tzoff) && switch_is_number(tzoff)) {					\
+			offset = atoi(tzoff);										\
+		} else {														\
+			tzoff = NULL;												\
+		}																\
+		break;															\
+	} while(tzoff)														
 
 static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_t **extension)
 {
@@ -73,6 +83,10 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 	char *expression_expanded = NULL, *field_expanded = NULL;
 	switch_regex_t *re = NULL;
 	const char *to = switch_event_get_header(event, "to");
+	const char *tzoff = NULL, *tzname = NULL;
+	int offset = 0;
+
+	check_tz();
 
 	if (!to) {
 		to = "nobody";
@@ -90,8 +104,10 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 		int ovector[30];
 		switch_bool_t anti_action = SWITCH_TRUE;
 		break_t do_break_i = BREAK_ON_FALSE;
+		int time_match;
 
-		int time_match = switch_xml_std_datetime_check(xcond, NULL);
+		check_tz();
+		time_match = switch_xml_std_datetime_check(xcond, tzoff ? &offset : NULL, tzname);
 
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);

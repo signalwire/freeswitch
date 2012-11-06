@@ -132,13 +132,13 @@ sres_resolver_create(su_root_t *root,
     srs->srs_timer = t;
 
     if (!srs->srs_timer)
-      SU_DEBUG_3(("sres: cannot create timer\n"));
+      SU_DEBUG_3(("sres: cannot create timer\n" VA_NONE));
 #if nomore
     else if (su_timer_set_for_ever(t, sres_sofia_timer, srs) < 0)
-      SU_DEBUG_3(("sres: cannot set timer\n"));
+      SU_DEBUG_3(("sres: cannot set timer\n" VA_NONE));
 #else
     else if (sres_resolver_set_timer_cb(res, sres_sofia_set_timer, srs) < 0)
-      SU_DEBUG_3(("sres: cannot set timer cb\n"));
+      SU_DEBUG_3(("sres: cannot set timer cb\n" VA_NONE));
 #endif
     else
       return res;		/* Success! */

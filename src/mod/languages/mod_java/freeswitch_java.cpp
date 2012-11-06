@@ -1,5 +1,35 @@
 #include "freeswitch_java.h"
 
+jobject originate_state_handler;
+
+SWITCH_DECLARE(void) setOriginateStateHandler(jobject stateHandler)
+{
+        JNIEnv *env = NULL;
+        jint envStatus = javaVM->GetEnv((void**)&env, JNI_VERSION_1_4);
+        if ( envStatus != JNI_OK ) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error getting JNIEnv!\n");
+                return;
+        }
+
+        if ( stateHandler != NULL && originate_state_handler != NULL ) {
+                const char* errorMessage = "Originate state handler is already registered";
+                jclass exceptionClass = env->FindClass("java/util/TooManyListenersException");
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, errorMessage);
+                env->ThrowNew(exceptionClass, errorMessage);
+        } else if ( stateHandler == NULL && originate_state_handler != NULL ) {
+                env->DeleteGlobalRef(originate_state_handler);
+                originate_state_handler = NULL;
+        } else {
+                originate_state_handler = env->NewGlobalRef(stateHandler);
+                if ( originate_state_handler == NULL ) {
+                        const char* errorMessage = "Unable to create global reference for state handler";
+                        jclass exceptionClass = env->FindClass("java/lang/OutOfMemoryError");
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, errorMessage);
+                        env->ThrowNew(exceptionClass, errorMessage);
+                }
+        }
+}
+
 JavaSession::JavaSession() : CoreSession()
 {
 }
@@ -326,5 +356,154 @@ done:
     if (callbackResult != NULL)
         env->DeleteLocalRef(callbackResult);
     return status;
+}
+
+switch_status_t originate_handler_method(switch_core_session_t *session, const char* method) {
+	if ( originate_state_handler != NULL ) {
+		JNIEnv *env = NULL;
+		bool needDetach = false;
+
+		jint envStatus = javaVM->GetEnv((void**)&env, JNI_VERSION_1_4);
+		if ( envStatus == JNI_EDETACHED ) {
+			envStatus = javaVM->AttachCurrentThread((void**)&env, NULL);
+			if ( envStatus == JNI_OK ) needDetach = true;
+		}
+
+		if ( envStatus != JNI_OK ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error getting JNIEnv!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+		jclass handlerClass = env->GetObjectClass(originate_state_handler);
+		if ( handlerClass == NULL ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error getting handler class!\n");
+			if ( needDetach ) javaVM->DetachCurrentThread();
+			return SWITCH_STATUS_FALSE;
+		}
+
+		jint result = SWITCH_STATUS_FALSE;
+		jmethodID handlerMethod = env->GetMethodID(handlerClass, method, "(Ljava/lang/String;)I");
+		if ( handlerMethod != NULL ) {
+			char *uuid = switch_core_session_get_uuid(session);
+			jstring javaUuid = env->NewStringUTF(uuid);
+			result = env->CallIntMethod(originate_state_handler, handlerMethod, javaUuid);
+			env->DeleteLocalRef(javaUuid);
+		}
+
+		env->DeleteLocalRef(handlerClass);
+		if ( needDetach ) javaVM->DetachCurrentThread();
+		return (switch_status_t)result;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+switch_status_t originate_on_init(switch_core_session_t *session) {
+	return originate_handler_method(session, "onInit");
+}
+
+switch_status_t originate_on_routing(switch_core_session_t *session) {
+	return originate_handler_method(session, "onRouting");
+}
+
+switch_status_t originate_on_execute(switch_core_session_t *session) {
+	return originate_handler_method(session, "onExecute");
+}
+
+switch_status_t originate_on_hangup(switch_core_session_t *session) {
+	if ( originate_state_handler != NULL ) {
+		JNIEnv *env = NULL;
+		bool needDetach = false;
+
+		jint envStatus = javaVM->GetEnv((void**)&env, JNI_VERSION_1_4);
+		if ( envStatus == JNI_EDETACHED ) {
+			envStatus = javaVM->AttachCurrentThread((void**)&env, NULL);
+			if ( envStatus == JNI_OK ) needDetach = true;
+                }
+
+		if ( envStatus != JNI_OK ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error getting JNIEnv!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+		jclass handlerClass = env->GetObjectClass(originate_state_handler);
+		if ( handlerClass == NULL ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error getting handler class!\n");
+			if ( needDetach ) javaVM->DetachCurrentThread();
+			return SWITCH_STATUS_FALSE;
+		}
+
+		jint result = SWITCH_STATUS_FALSE;
+		jmethodID handlerMethod = env->GetMethodID(handlerClass, "onHangup", "(Ljava/lang/String;Ljava/lang/String;)I");
+		if ( handlerMethod != NULL ) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *uuid = switch_core_session_get_uuid(session);
+			const char *cause = switch_channel_cause2str(switch_channel_get_cause(channel));
+			jstring javaUuid = env->NewStringUTF(uuid);
+			jstring javaCause = env->NewStringUTF(cause);
+			result = env->CallIntMethod(originate_state_handler, handlerMethod, javaUuid, javaCause);
+			env->DeleteLocalRef(javaUuid);
+			env->DeleteLocalRef(javaCause);
+		}
+
+		env->DeleteLocalRef(handlerClass);
+		if ( needDetach ) javaVM->DetachCurrentThread();
+		return (switch_status_t)result;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+switch_status_t originate_on_exchange_media(switch_core_session_t *session) {
+	return originate_handler_method(session, "onExchangeMedia");
+}
+
+switch_status_t originate_on_soft_execute(switch_core_session_t *session) {
+	return originate_handler_method(session, "onSoftExecute");
+}
+
+switch_status_t originate_on_consume_media(switch_core_session_t *session) {
+	return originate_handler_method(session, "onConsumeMedia");
+}
+
+switch_status_t originate_on_hibernate(switch_core_session_t *session) {
+	return originate_handler_method(session, "onHibernate");
+}
+
+switch_status_t originate_on_reset(switch_core_session_t *session) {
+	return originate_handler_method(session, "onReset");
+}
+
+switch_status_t originate_on_park(switch_core_session_t *session) {
+	return originate_handler_method(session, "onPark");
+}
+
+switch_status_t originate_on_reporting(switch_core_session_t *session) {
+	return originate_handler_method(session, "onReporting");
+}
+
+switch_status_t originate_on_destroy(switch_core_session_t *session) {
+	return originate_handler_method(session, "onDestroy");
+}
+
+switch_state_handler_table_t originate_state_handlers = {
+	/*.on_init */ &originate_on_init,
+	/*.on_routing */ &originate_on_routing,
+	/*.on_execute */ &originate_on_execute,
+	/*.on_hangup */ &originate_on_hangup,
+	/*.on_exchange_media */ &originate_on_exchange_media,
+	/*.on_soft_execute */ &originate_on_soft_execute,
+	/*.on_consume_media */ &originate_on_consume_media,
+	/*.on_hibernate */ &originate_on_hibernate,
+	/*.on_reset */ &originate_on_reset,
+	/*.on_park */ &originate_on_park,
+	/*.on_reporting */ &originate_on_reporting,
+	/*.on_destroy */ &originate_on_destroy
+};
+
+int JavaSession::originate(JavaSession* aleg, char* destination, int timeout) {
+	switch_state_handler_table_t *stateHandlers = NULL;
+	if ( originate_state_handler != NULL ) stateHandlers = &originate_state_handlers;
+	return CoreSession::originate(aleg, destination, timeout, stateHandlers);
 }
 

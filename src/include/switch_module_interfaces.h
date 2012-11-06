@@ -618,6 +618,7 @@ struct switch_codec {
 	switch_mutex_t *mutex;
 	struct switch_codec *next;
 	switch_core_session_t *session;
+	switch_frame_t *cur_frame;
 };
 
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */

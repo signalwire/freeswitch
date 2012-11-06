@@ -1888,6 +1888,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
 
+		switch_channel_execute_on(caller_channel, SWITCH_CHANNEL_EXECUTE_ON_PRE_ORIGINATE_VARIABLE);
+		switch_channel_api_on(caller_channel, SWITCH_CHANNEL_API_ON_PRE_ORIGINATE_VARIABLE);
+
 		switch_core_session_get_read_impl(session, &read_impl);
 
 		if ((to_var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
@@ -2420,7 +2423,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			for (i = 0; i < and_argc; i++) {
 				const char *current_variable;
-				switch_event_t *local_var_event = NULL, *originate_var_event = NULL, *event = NULL;
+				switch_event_t *local_var_event = NULL, *originate_var_event = NULL;
 
 				end = NULL;
 				
@@ -2685,11 +2688,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 					}
 				}
-
-				switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
-				switch_assert(event);
-				switch_channel_event_set_data(originate_status[i].peer_channel, event);
-				switch_event_fire(&event);
 
 				if (originate_status[i].peer_channel) {
 					const char *vvar;
@@ -3732,6 +3730,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_safe_free(fail_on_single_reject_var);
 
 	if (caller_channel) {
+
+		switch_channel_execute_on(caller_channel, SWITCH_CHANNEL_EXECUTE_ON_POST_ORIGINATE_VARIABLE);
+		switch_channel_api_on(caller_channel, SWITCH_CHANNEL_API_ON_POST_ORIGINATE_VARIABLE);
+
 		switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
 		switch_channel_clear_flag(caller_channel, CF_XFER_ZOMBIE);
 	}

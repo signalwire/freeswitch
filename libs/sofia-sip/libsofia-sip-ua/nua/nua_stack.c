@@ -192,7 +192,7 @@ int nua_stack_init(su_root_t *root, nua_t *nua)
       dnh->nh_ds->ds_leg == NULL ||
       nta_agent_set_params(nua->nua_nta, NTATAG_UA(1), TAG_END()) < 0 ||
       nua_stack_init_transport(nua, nua->nua_args) < 0) {
-    SU_DEBUG_1(("nua: initializing SIP stack failed\n"));
+    SU_DEBUG_1(("nua: initializing SIP stack failed\n" VA_NONE));
     return -1;
   }
 

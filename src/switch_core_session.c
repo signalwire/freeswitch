@@ -204,18 +204,20 @@ struct str_node {
 	struct str_node *next;
 };
 
-SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_name, const char *var_val, switch_call_cause_t cause)
+SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(const char *var_name, const char *var_val, switch_call_cause_t cause, 
+																	 switch_hup_type_t type)
 {
 	switch_hash_index_t *hi;
 	void *val;
 	switch_core_session_t *session;
 	switch_memory_pool_t *pool;
 	struct str_node *head = NULL, *np;
+	uint32_t r = 0;
 
 	switch_core_new_memory_pool(&pool);
 
 	if (!var_val)
-		return;
+		return r;
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
@@ -223,10 +225,13 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 		if (val) {
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-				np = switch_core_alloc(pool, sizeof(*np));
-				np->str = switch_core_strdup(pool, session->uuid_str);
-				np->next = head;
-				head = np;
+				int ans = switch_channel_test_flag(switch_core_session_get_channel(session), CF_ANSWERED);
+				if ((ans && (type & SHT_ANSWERED)) || (!ans && (type & SHT_UNANSWERED))) {
+					np = switch_core_alloc(pool, sizeof(*np));
+					np->str = switch_core_strdup(pool, session->uuid_str);
+					np->next = head;
+					head = np;
+				}
 				switch_core_session_rwunlock(session);
 			}
 		}
@@ -239,6 +244,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 			if (switch_channel_up_nosig(session->channel) &&
 				(this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {			
 				switch_channel_hangup(session->channel, cause);
+				r++;
 			}
 			switch_core_session_rwunlock(session);
 		}
@@ -246,6 +252,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 
 	switch_core_destroy_memory_pool(&pool);
 
+	return r;
 }
 
 
@@ -1530,25 +1537,25 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 		}
 
 		if (check_status == SWITCH_STATUS_SUCCESS) {
-			switch_core_session_t *session = (switch_core_session_t *) pop;
-			switch_size_t id;
+			switch_thread_data_t *td = (switch_thread_data_t *) pop;
 			
-			if (!session) break;
+			if (!td) break;
 
-			id = session->id;
-			
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy++;
 			switch_mutex_unlock(session_manager.mutex);
 			
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing session %"SWITCH_SIZE_T_FMT" %s\n",
-							  (long) thread, id, switch_core_session_get_name(session));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing\n", (long) thread);
 
-			switch_core_session_thread(thread, (void *) session);
+
+			td->func(thread, td->obj);
+
+			if (td->alloc) {
+				free(td);
+			}
 			
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing session %"SWITCH_SIZE_T_FMT"\n",
-							  (long) thread, id);
-
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing\n", (long) thread);
+			
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy--;
 			switch_mutex_unlock(session_manager.mutex);
@@ -1656,11 +1663,27 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 	return NULL;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_thread_pool_launch_thread(switch_thread_data_t **tdp)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_thread_data_t *td;
+
+	switch_assert(tdp);
+
+	td = *tdp;
+	*tdp = NULL;
+
+	switch_queue_push(session_manager.thread_queue, td);
+	check_queue();
+
+	return status;	
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_core_session_t *session)
 {
 	switch_status_t status = SWITCH_STATUS_INUSE;
-	
+	switch_thread_data_t *td;
+
 	switch_mutex_lock(session->mutex);
 	if (switch_test_flag(session, SSF_THREAD_RUNNING)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Cannot double-launch thread!\n");
@@ -1670,7 +1693,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_co
 		status = SWITCH_STATUS_SUCCESS;
 		switch_set_flag(session, SSF_THREAD_RUNNING);
 		switch_set_flag(session, SSF_THREAD_STARTED);
-		switch_queue_push(session_manager.thread_queue, session);
+		td = switch_core_session_alloc(session, sizeof(*td));
+		td->obj = session;
+		td->func = switch_core_session_thread;
+		switch_queue_push(session_manager.thread_queue, td);
 		check_queue();
 	}
 	switch_mutex_unlock(session->mutex);

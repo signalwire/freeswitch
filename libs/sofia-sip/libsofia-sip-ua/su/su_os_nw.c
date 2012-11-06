@@ -105,7 +105,7 @@ void nw_changed_cb(SCDynamicStoreRef store,
   su_network_changed_t *snc2;
   su_msg_r rmsg = SU_MSG_R_INIT;
 
-  SU_DEBUG_7(("nw_changed_cb: entering.\n"));
+  SU_DEBUG_7(("nw_changed_cb: entering.\n" VA_NONE));
 
   if (su_msg_create(rmsg,
 		    su_root_task(snc->su_root),

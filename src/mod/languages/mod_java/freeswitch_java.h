@@ -6,6 +6,16 @@
 
 extern JavaVM *javaVM;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+SWITCH_DECLARE(void) setOriginateStateHandler(jobject stateHandler);
+
+#ifdef __cplusplus
+}
+#endif
+
 class JavaSession:public CoreSession {
   public:
 	JavaSession();
@@ -19,6 +29,7 @@ class JavaSession:public CoreSession {
 	void setHangupHook(jobject hangupHook);
 	virtual void check_hangup_hook();
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
+	int originate(JavaSession* aleg, char* destination, int timeout);
 };
 
 #endif

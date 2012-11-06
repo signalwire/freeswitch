@@ -3209,6 +3209,19 @@ SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid)
 	return exists;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_force_exists(const char *uuid)
+{
+	switch_bool_t exists = SWITCH_FALSE;
+	switch_core_session_t *psession = NULL;
+
+	if ((psession = switch_core_session_force_locate(uuid))) {
+		switch_core_session_rwunlock(psession);
+		exists = 1;
+	}
+
+	return exists;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *session, const char *cmd, switch_file_handle_t *fhp)
 {
     if (zstr(cmd)) {

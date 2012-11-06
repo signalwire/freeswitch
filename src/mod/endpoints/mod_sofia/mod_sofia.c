@@ -1511,6 +1511,10 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
+	if (sofia_test_flag(tech_pvt, TFLAG_DROP_DTMF)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	dtmf_type = tech_pvt->dtmf_type;
 
 	/* We only can send INFO when we have no media */
@@ -2015,16 +2019,30 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							  switch_channel_get_name(channel), msg->string_arg);
 			sofia_glue_tech_set_local_sdp(tech_pvt, msg->string_arg, SWITCH_TRUE);
 
-			if(zstr(tech_pvt->local_sdp_str)) {
-				sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
+			if (msg->numeric_arg) { // ACK
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY nomedia - sending ack\n");
+				nua_ack(tech_pvt->nh,
+						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+						SOATAG_USER_SDP_STR(msg->string_arg),
+						SOATAG_REUSE_REJECTED(1),
+						SOATAG_RTP_SELECT(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
+						TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
+						TAG_END());
+				sofia_clear_flag(tech_pvt, TFLAG_3PCC_INVITE);
+				
+			} else {
+				if(zstr(tech_pvt->local_sdp_str)) {
+					sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
+				}
+				
+				sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
+				
+				if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+					switch_channel_set_flag(channel, CF_REQ_MEDIA);
+				}
+				sofia_glue_do_invite(session);
 			}
-
-			sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
-
-			if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-				switch_channel_set_flag(channel, CF_REQ_MEDIA);
-			}
-			sofia_glue_do_invite(session);
 		}
 		break;
 
@@ -3636,7 +3654,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		switch_xml_reload(&err);
 		stream->write_function(stream, "Reload XML [%s]\n", err);
 
-		if (config_sofia(1, argv[0]) == SWITCH_STATUS_SUCCESS) {
+		if (config_sofia(SOFIA_CONFIG_RESCAN, argv[0]) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "%s started successfully\n", argv[0]);
 		} else {
 			stream->write_function(stream, "Failure starting %s\n", argv[0]);
@@ -3713,7 +3731,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		switch_xml_reload(&err);
 		stream->write_function(stream, "Reload XML [%s]\n", err);
 
-		if (reconfig_sofia(profile) == SWITCH_STATUS_SUCCESS) {
+		if (config_sofia(SOFIA_CONFIG_RESCAN, profile->name) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "+OK scan complete\n");
 		} else {
 			stream->write_function(stream, "-ERR cannot find config for profile %s\n", profile->name);
@@ -4900,8 +4918,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		sql = switch_mprintf("insert into sip_dialogs (uuid,presence_id,presence_data,profile_name,hostname,rcd,call_info_state) "
 							 "values ('%q', '%q', '%q', '%q', '%q', %ld, '')", switch_core_session_get_uuid(nsession),
 							 switch_str_nil(presence_id), switch_str_nil(presence_data), profile->name, mod_sofia_globals.hostname, (long) now);
-		sofia_glue_actually_execute_sql(profile, sql, profile->ireg_mutex);
-		switch_safe_free(sql);
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 	}
 #endif
 
@@ -5708,8 +5725,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	/* start one message thread */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Starting initial message thread.\n");
 	sofia_msg_thread_start(0);
+	
 
-	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (sofia_init() != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	if (config_sofia(SOFIA_CONFIG_LOAD, NULL) != SWITCH_STATUS_SUCCESS) {
 		mod_sofia_globals.running = 0;
 		return SWITCH_STATUS_GENERR;
 	}

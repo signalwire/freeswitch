@@ -52,6 +52,15 @@ typedef struct su_log_s su_log_t;
 
 SOFIA_BEGIN_DECLS
 
+#ifdef _MSC_VER
+#define __SOFIA_FUNC__ __FUNCTION__
+#else
+#define __SOFIA_FUNC__ (const char *)__func__
+#endif
+
+
+
+
 /** Prototype for logging function */
 typedef void (su_logger_f)(void *stream, char const *fmt, va_list ap);
 
@@ -77,9 +86,9 @@ enum { SU_LOG_MAX = 9 };
 SOFIAPUBFUN void su_log(char const *fmt, ...)
   __attribute__ ((__format__ (printf, 1, 2)));
 
-SOFIAPUBFUN void su_llog(su_log_t *log, unsigned level, char const *fmt, ...)
-  __attribute__ ((__format__ (printf, 3, 4)));
-SOFIAPUBFUN void su_vllog(su_log_t *log, unsigned level,
+SOFIAPUBFUN void _su_llog(su_log_t *log, unsigned level, const char *file, const char *func, int line, char const *fmt, ...)
+  __attribute__ ((__format__ (printf, 6, 7)));
+SOFIAPUBFUN void _su_vllog(su_log_t *log, unsigned level, const char *file, const char *func, int line,
 			  char const *fmt, va_list ap);
 SOFIAPUBFUN void su_log_redirect(su_log_t *log, su_logger_f *f, void *stream);
 SOFIAPUBFUN void su_log_set_level(su_log_t *log, unsigned level);
@@ -91,6 +100,9 @@ SOFIAPUBVAR su_log_t su_log_global[];
 
 /** Log the latest su error message */
 SOFIAPUBFUN void su_perror(char const *s);
+
+#define su_llog(_l, _ll, _f, ...) _su_llog(_l, _ll, __FILE__, __SOFIA_FUNC__, __LINE__, _f, __VA_ARGS__)
+#define su_vllog(_l, _ll, _f, ...) _su_vllog(_l, _ll, __FILE__, __SOFIA_FUNC__, __LINE__, _f, __VA_ARGS__)
 
 /** Log the su error message. */
 SOFIAPUBFUN void su_perror2(char const *s, int errcode);

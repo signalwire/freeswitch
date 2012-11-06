@@ -3039,11 +3039,11 @@ nh_referral_check(nua_handle_t *nh, tagi_t const *tags)
     ref->ref_event = sip_event_dup(nh->nh_home, event);
 
   if (!nh_validate(nh->nh_nua, ref_handle)) {
-    SU_DEBUG_3(("nua: invalid NOTIFY_REFER handle\n"));
+    SU_DEBUG_3(("nua: invalid NOTIFY_REFER handle\n" VA_NONE));
     return -1;
   }
   else if (!ref->ref_event) {
-    SU_DEBUG_3(("nua: NOTIFY event missing\n"));
+    SU_DEBUG_3(("nua: NOTIFY event missing\n" VA_NONE));
     return -1;
   }
 

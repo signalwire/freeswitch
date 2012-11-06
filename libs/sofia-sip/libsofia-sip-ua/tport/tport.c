@@ -3350,7 +3350,7 @@ tport_t *tport_tsend(tport_t *self,
 
       if (!self) {
 	msg_set_errno(msg, su_errno());
-        SU_DEBUG_9(("tport_socket failed in tsend\n"));
+        SU_DEBUG_9(("tport_socket failed in tsend\n" VA_NONE));
 	return NULL;
       }
 
@@ -3406,7 +3406,7 @@ int tport_prepare_and_send(tport_t *self, msg_t *msg,
       /* ...or we are connecting */
       (self->tp_events & (SU_WAIT_CONNECT | SU_WAIT_OUT))) {
     if (tport_queue(self, msg) < 0) {
-      SU_DEBUG_9(("tport_queue failed in tsend\n"));
+      SU_DEBUG_9(("tport_queue failed in tsend\n" VA_NONE));
       return -1;
     }
     return 0;

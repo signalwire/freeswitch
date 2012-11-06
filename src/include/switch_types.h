@@ -146,6 +146,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE "execute_on_tone_detect"
 #define SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE "execute_on_originate"
 #define SWITCH_CHANNEL_EXECUTE_ON_POST_ORIGINATE_VARIABLE "execute_on_post_originate"
+#define SWITCH_CHANNEL_EXECUTE_ON_PRE_ORIGINATE_VARIABLE "execute_on_pre_originate"
 
 #define SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE "api_on_answer"
 #define SWITCH_CHANNEL_API_ON_PRE_ANSWER_VARIABLE "api_on_pre_answer"
@@ -154,6 +155,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CHANNEL_API_ON_TONE_DETECT_VARIABLE "api_on_tone_detect"
 #define SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE "api_on_originate"
 #define SWITCH_CHANNEL_API_ON_POST_ORIGINATE_VARIABLE "api_on_post_originate"
+#define SWITCH_CHANNEL_API_ON_PRE_ORIGINATE_VARIABLE "api_on_pre_originate"
 
 #define SWITCH_CALL_TIMEOUT_VARIABLE "call_timeout"
 #define SWITCH_HOLDING_UUID_VARIABLE "holding_uuid"
@@ -213,6 +215,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_BITS_PER_BYTE 8
 #define SWITCH_DEFAULT_FILE_BUFFER_LEN 65536
 #define SWITCH_DTMF_LOG_LEN 1000
+#define SWITCH_MAX_TRANS 2000
 typedef uint8_t switch_byte_t;
 
 /*!
@@ -463,6 +466,7 @@ typedef struct {
 struct switch_directories {
 	char *base_dir;
 	char *mod_dir;
+	char *lib_dir;
 	char *conf_dir;
 	char *log_dir;
 	char *run_dir;
@@ -1169,6 +1173,7 @@ typedef enum {
 	CF_OUTBOUND,
 	CF_EARLY_MEDIA,
 	CF_BRIDGE_ORIGINATOR,
+	CF_UUID_BRIDGE_ORIGINATOR,
 	CF_TRANSFER,
 	CF_ACCEPT_CNG,
 	CF_REDIRECT,
@@ -1299,7 +1304,8 @@ typedef enum {
 	SAF_SUPPORT_NOMEDIA = (1 << 0),
 	SAF_ROUTING_EXEC = (1 << 1),
 	SAF_MEDIA_TAP = (1 << 2),
-	SAF_ZOMBIE_EXEC = (1 << 3)
+	SAF_ZOMBIE_EXEC = (1 << 3),
+	SAF_NO_LOOPBACK = (1 << 4)
 } switch_application_flag_enum_t;
 typedef uint32_t switch_application_flag_t;
 
