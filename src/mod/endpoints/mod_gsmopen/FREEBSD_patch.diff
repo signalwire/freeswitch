@@ -1,0 +1,171 @@
+diff --git a/src/mod/endpoints/mod_gsmopen/Makefile b/src/mod/endpoints/mod_gsmopen/Makefile
+index 18943c8..5324c52 100644
+--- a/src/mod/endpoints/mod_gsmopen/Makefile
++++ b/src/mod/endpoints/mod_gsmopen/Makefile
+@@ -1,5 +1,5 @@
+ MODNAME=mod_gsmopen
+-LOCAL_CFLAGS += -I../../../../libs/spandsp/src -I../../../..//libs/tiff-4.0.2/libtiff -DGSMOPEN_C_VER=\"`git log -1 --format="%h" gsmopen_protocol.cpp`\" -DMODGSMOPEN_C_VER=\"`git log -1 --format="%h" mod_gsmopen.cpp`\"
++LOCAL_CFLAGS += -I/usr/local/include -I../../../../libs/spandsp/src -I../../../..//libs/tiff-4.0.2/libtiff -DGSMOPEN_C_VER=\"`git log -1 --format="%h" gsmopen_protocol.cpp`\" -DMODGSMOPEN_C_VER=\"`git log -1 --format="%h" mod_gsmopen.cpp`\"
+ LOCAL_LDFLAGS=-L../../../../libs/spandsp/src -lspandsp -lctb-0.16 -lgsmme
+ LOCAL_OBJS=gsmopen_protocol.o
+ include ../../../../build/modmake.rules
+diff --git a/src/mod/endpoints/mod_gsmopen/gsmopen_protocol.cpp b/src/mod/endpoints/mod_gsmopen/gsmopen_protocol.cpp
+index 5bdda08..73ef93d 100644
+--- a/src/mod/endpoints/mod_gsmopen/gsmopen_protocol.cpp
++++ b/src/mod/endpoints/mod_gsmopen/gsmopen_protocol.cpp
+@@ -2356,7 +2356,7 @@ int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outb
+ 	iconv_t iconv_format;
+ 	int iconv_res;
+ 	char *outbuf;
+-	char *inbuf;
++	//char *inbuf;
+ 	size_t inbytesleft;
+ 	int c;
+ 	char stringa[5];
+@@ -2376,9 +2376,10 @@ int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outb
+ 	}
+ 
+ 	outbuf = utf8_out;
+-	inbuf = converted;
++	const char *inbuf = converted;
+ 
+-	iconv_format = iconv_open("UTF8", "UCS-2BE");
++	//iconv_format = iconv_open("UTF8", "UCS-2BE");
++	iconv_format = iconv_open("UTF-8", "UCS-2BE");
+ 	//iconv_format = iconv_open("UTF8", "UCS2");
+ 	if (iconv_format == (iconv_t) -1) {
+ 		ERRORA("error: %s\n", GSMOPEN_P_LOG, strerror(errno));
+@@ -2417,12 +2418,12 @@ int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, c
+ 	iconv_t iconv_format;
+ 	int iconv_res;
+ 	char *outbuf;
+-	char *inbuf;
++	//char *inbuf;
+ 
+ 	outbuf = iso_8859_1_out;
+-	inbuf = utf8_in;
++	const char *inbuf = utf8_in;
+ 
+-	iconv_format = iconv_open("ISO_8859-1", "UTF8");
++	iconv_format = iconv_open("ISO_8859-1", "UTF-8");
+ 	if (iconv_format == (iconv_t) -1) {
+ 		ERRORA("error: %s\n", GSMOPEN_P_LOG, strerror(errno));
+ 		return -1;
+@@ -2467,7 +2468,7 @@ int iso_8859_1_to_utf8(private_t *tech_pvt, char *iso_8859_1_in, char *utf8_out,
+ 	iconv_t iconv_format;
+ 	int iconv_res;
+ 	char *outbuf;
+-	char *inbuf;
++	//char *inbuf;
+ 	size_t inbytesleft;
+ 	//int c;
+ 	//char stringa[5];
+@@ -2477,9 +2478,9 @@ int iso_8859_1_to_utf8(private_t *tech_pvt, char *iso_8859_1_in, char *utf8_out,
+ 	DEBUGA_GSMOPEN("iso_8859_1_in=%s\n", GSMOPEN_P_LOG, iso_8859_1_in);
+ 
+ 	outbuf = utf8_out;
+-	inbuf = iso_8859_1_in;
++	const char *inbuf = iso_8859_1_in;
+ 
+-	iconv_format = iconv_open("UTF8", "ISO_8859-1");
++	iconv_format = iconv_open("UTF-8", "ISO_8859-1");
+ 	if (iconv_format == (iconv_t) -1) {
+ 		ERRORA("error: %s\n", GSMOPEN_P_LOG, strerror(errno));
+ 		return -1;
+@@ -2514,7 +2515,7 @@ int utf8_to_ucs2(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *u
+ 	iconv_t iconv_format;
+ 	int iconv_res;
+ 	char *outbuf;
+-	char *inbuf;
++	//char *inbuf;
+ 	char converted[16000];
+ 	int i;
+ 	char stringa[16];
+@@ -2523,9 +2524,9 @@ int utf8_to_ucs2(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *u
+ 	memset(converted, '\0', sizeof(converted));
+ 
+ 	outbuf = converted;
+-	inbuf = utf8_in;
++	const char *inbuf = utf8_in;
+ 
+-	iconv_format = iconv_open("UCS-2BE", "UTF8");
++	iconv_format = iconv_open("UCS-2BE", "UTF-8");
+ 	if (iconv_format == (iconv_t) -1) {
+ 		ERRORA("error: %s\n", GSMOPEN_P_LOG, strerror(errno));
+ 		return -1;
+diff --git a/src/mod/endpoints/mod_gsmopen/libctb-0.16/include/ctb-0.16/linux/serport.h b/src/mod/endpoints/mod_gsmopen/libctb-0.16/include/ctb-0.16/linux/serport.h
+index d88528b..f8851cc 100644
+--- a/src/mod/endpoints/mod_gsmopen/libctb-0.16/include/ctb-0.16/linux/serport.h
++++ b/src/mod/endpoints/mod_gsmopen/libctb-0.16/include/ctb-0.16/linux/serport.h
+@@ -10,7 +10,7 @@
+ /////////////////////////////////////////////////////////////////////////////
+ 
+ #include "ctb-0.16/serportx.h"
+-#include <linux/serial.h>
++//#include <linux/serial.h>
+ #include <termios.h>
+ 
+ namespace ctb {
+@@ -40,7 +40,7 @@ namespace ctb {
+ 		need the errors during a active connection, we must save the actual
+ 		error numbers in this separate structurs.
+ 	   */
+-	   struct serial_icounter_struct save_info, last_info;
++	   //struct serial_icounter_struct save_info, last_info;
+ 
+ 	   /*!
+ 		\brief adaptor member function, to convert the plattform independent
+diff --git a/src/mod/endpoints/mod_gsmopen/libctb-0.16/src/linux/serport.cpp b/src/mod/endpoints/mod_gsmopen/libctb-0.16/src/linux/serport.cpp
+index a369abc..d190567 100644
+--- a/src/mod/endpoints/mod_gsmopen/libctb-0.16/src/linux/serport.cpp
++++ b/src/mod/endpoints/mod_gsmopen/libctb-0.16/src/linux/serport.cpp
+@@ -136,7 +136,7 @@ namespace ctb {
+ //
+     int SerialPort::Ioctl(int cmd, void* args)
+     {
+-	   int count = 0;
++	  /* int count = 0;
+ 	   int err = 0;
+ 	   struct serial_icounter_struct info;
+ 	   SerialPort_EINFO einfo;
+@@ -184,7 +184,8 @@ namespace ctb {
+ 		  return -1;
+ 	   }
+ 	   last_info = info;
+-	   return 0;
++	   return 0;*/
++	   return -1;
+     };
+ 
+     int SerialPort::IsOpen()
+@@ -292,9 +293,9 @@ namespace ctb {
+ 		  // request the actual numbers of breaks, framing, overrun
+ 		  // and parity errors (because Linux summing all of them during
+ 		  // system lifetime, not only while serial port is open.
+-		  ioctl(fd,TIOCGICOUNT,&save_info);
++		  //ioctl(fd,TIOCGICOUNT,&save_info);
+ 		  // it's also careless, but we assume, that there was no error
+-		  last_info = save_info;
++		  //last_info = save_info;
+ 
+ 		  // in case of a non-standard rate, the termios struct have to set
+ 		  // with the B38400 rate, see above!
+@@ -359,7 +360,7 @@ namespace ctb {
+ 
+     int SerialPort::SetBaudrateAny( int baudrate )
+     {
+-	   struct serial_struct ser_info; 
++	/*   struct serial_struct ser_info; 
+ 
+ 	   int result = ioctl( fd, TIOCGSERIAL, &ser_info ); 
+ 
+@@ -369,7 +370,8 @@ namespace ctb {
+ 
+ 	   result = ioctl( fd, TIOCSSERIAL, &ser_info );
+ 
+-	   return result;
++	   return result;*/
++	   return -1;
+     }
+ 
+     int SerialPort::SetBaudrateStandard( int baudrate )
