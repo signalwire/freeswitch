@@ -2189,7 +2189,7 @@ int gsmopen_serial_write_AT_expect1(private_t *tech_pvt, const char *data, const
 		return -1;
 	}
 
-	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 100000, seconds, expected_string, expect_crlf);	// minimum 1/10th sec timeout
+	at_result = gsmopen_serial_read_AT(tech_pvt, 1, 500000, seconds, expected_string, expect_crlf);	// minimum half a sec timeout
 	UNLOCKA(tech_pvt->controldev_lock);
 	POPPA_UNLOCKA(tech_pvt->controldev_lock);
 
@@ -2700,6 +2700,8 @@ int gsmopen_hangup(private_t *tech_pvt)
 int gsmopen_call(private_t *tech_pvt, char *rdest, int timeout)
 {
 
+	int result;
+
 	//gsmopen_sleep(5000);
 	DEBUGA_GSMOPEN("Calling GSM, rdest is: %s\n", GSMOPEN_P_LOG, rdest);
 	//gsmopen_signaling_write(tech_pvt, "SET AGC OFF");
@@ -2707,11 +2709,11 @@ int gsmopen_call(private_t *tech_pvt, char *rdest, int timeout)
 	//gsmopen_signaling_write(tech_pvt, "SET AEC OFF");
 	//gsmopen_sleep(10000);
 
-	gsmopen_serial_call(tech_pvt, rdest);
+	result=gsmopen_serial_call(tech_pvt, rdest);
 	//ERRORA("failed to communicate with GSM client, now exit\n", GSMOPEN_P_LOG);
 	//return -1;
 	//}
-	return 0;
+	return result;
 }
 
 int gsmopen_senddigit(private_t *tech_pvt, char digit)

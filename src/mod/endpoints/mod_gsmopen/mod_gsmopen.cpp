@@ -1054,6 +1054,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_call_cause_t *cancel_cause)
 {
 	private_t *tech_pvt = NULL;
+	int result;
+
 	if ((*new_session = switch_core_session_request(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		switch_channel_t *channel = NULL;
 		switch_caller_profile_t *caller_profile;
@@ -1171,8 +1173,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_mutex_unlock(tech_pvt->flag_mutex);
 		switch_channel_set_state(channel, CS_INIT);
-		gsmopen_call(tech_pvt, rdest, 30);
+		result=gsmopen_call(tech_pvt, rdest, 30);
 		switch_mutex_unlock(globals.mutex);
+		if(result != 0){
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		}
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
