@@ -3921,7 +3921,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	if ((x_params = switch_xml_child(x_user, "params"))) {
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
-			const char *pvar = switch_xml_attr(x_param, "name");
+			const char *pvar = switch_xml_attr_soft(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
 
 			if (!strcasecmp(pvar, "dial-string")) {
