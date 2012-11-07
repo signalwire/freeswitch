@@ -2024,10 +2024,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				nua_ack(tech_pvt->nh,
 						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-						SOATAG_USER_SDP_STR(msg->string_arg),
-						SOATAG_REUSE_REJECTED(1),
-						SOATAG_RTP_SELECT(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
-						TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
+						SIPTAG_PAYLOAD_STR(msg->string_arg),
+						SIPTAG_CONTENT_TYPE_STR("application/sdp"),
 						TAG_END());
 				sofia_clear_flag(tech_pvt, TFLAG_3PCC_INVITE);
 				
