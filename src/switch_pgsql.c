@@ -160,6 +160,8 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_cancel_real(const char *file,
 	}
 	PQfreeCancel(cancel);
 #endif
+	/* Make sure the query is fully cancelled */
+	while (PQgetResult(handle->con) != NULL);
 	return ret;
 }
 
@@ -236,7 +238,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 		err_str = switch_pgsql_handle_get_error(handle);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to consume input for query (%s): %s\n", handle->sql, err_str);
 		switch_safe_free(err_str);
-		switch_pgsql_cancel(handle);
+		/* switch_pgsql_cancel(handle); */
 		goto error;
 	}
 
@@ -362,6 +364,9 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 		goto done;
 	}
   
+	/* Try a non-blocking read on the connection to gobble up any EOF from a closed connection and mark the connection BAD if it is closed. */
+	PQconsumeInput(handle->con);
+
 	if (PQstatus(handle->con) == CONNECTION_BAD) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PQstatus returned bad connection; reconnecting...\n");
 		handle->state = SWITCH_PGSQL_STATE_ERROR;
@@ -478,7 +483,8 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_connect(switch_pgsql_h
 #endif
 }
 
-SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_string(switch_pgsql_handle_t *handle, const char *sql, char *resbuf, size_t len, char **err)
+SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_string_detailed(const char *file, const char *func, int line,
+																			   switch_pgsql_handle_t *handle, const char *sql, char *resbuf, size_t len, char **err)
 {
 #ifdef SWITCH_HAVE_PGSQL
 	switch_pgsql_status_t sstatus = SWITCH_PGSQL_SUCCESS;
@@ -487,7 +493,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_string(switch_pgs
 
 	handle->affected_rows = 0;
 
-	if (switch_pgsql_handle_exec_base(handle, sql, err) == SWITCH_PGSQL_FAIL) {
+	if (switch_pgsql_handle_exec_base_detailed(file, func, line, handle, sql, err) == SWITCH_PGSQL_FAIL) {
 		goto error;
 	}
 
@@ -532,7 +538,8 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_string(switch_pgs
 #endif
 }
 
-SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base(switch_pgsql_handle_t *handle, const char *sql, char **err)
+SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base_detailed(const char *file, const char *func, int line,
+																			 switch_pgsql_handle_t *handle, const char *sql, char **err)
 {
 #ifdef SWITCH_HAVE_PGSQL
 	char *err_str = NULL, *er = NULL;
@@ -583,7 +590,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base(switch_pgsql
 	
 	if (err_str) {
 		if (!switch_stristr("already exists", err_str) && !switch_stristr("duplicate key name", err_str)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
 		}
 		if (err) {
 			*err = err_str;
@@ -595,10 +602,11 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base(switch_pgsql
 	return SWITCH_PGSQL_FAIL;
 }
 
-SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec(switch_pgsql_handle_t *handle, const char *sql, char **err)
+SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_detailed(const char *file, const char *func, int line,
+																		switch_pgsql_handle_t *handle, const char *sql, char **err)
 {
 #ifdef SWITCH_HAVE_PGSQL
-	if (switch_pgsql_handle_exec_base(handle, sql, err) == SWITCH_PGSQL_FAIL) {
+	if (switch_pgsql_handle_exec_base_detailed(file, func, line, handle, sql, err) == SWITCH_PGSQL_FAIL) {
 		goto error;
 	}
 

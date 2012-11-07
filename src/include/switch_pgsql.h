@@ -106,11 +106,20 @@ SWITCH_DECLARE(void) switch_pgsql_free_result(switch_pgsql_result_t **result);
 SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_finish_results_real(const char* file, const char *func, int line, switch_pgsql_handle_t *handle);
 #define switch_pgsql_finish_results(handle) switch_pgsql_finish_results_real(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, handle)
 
-SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base(switch_pgsql_handle_t *handle, const char *sql, char **err);
+SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base_detailed(const char *file, const char *func, int line,
+																			 switch_pgsql_handle_t *handle, const char *sql, char **err);
+#define switch_pgsql_handle_exec_base(handle, sql, err) switch_pgsql_handle_exec_base_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, handle, sql, err)
 
 SWITCH_DECLARE(switch_pgsql_state_t) switch_pgsql_handle_get_state(switch_pgsql_handle_t *handle);
-SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec(switch_pgsql_handle_t *handle, const char *sql, char **err);
-SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_string(switch_pgsql_handle_t *handle, const char *sql, char *resbuf, size_t len, char **err);
+
+SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_detailed(const char *file, const char *func, int line,
+															   switch_pgsql_handle_t *handle, const char *sql, char **err);
+#define switch_pgsql_handle_exec(handle, sql, err) switch_pgsql_handle_exec_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, handle, sql, err)
+
+SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_string_detailed(const char *file, const char *func, int line,
+																			   switch_pgsql_handle_t *handle, const char *sql, char *resbuf, size_t len, char **err);
+#define switch_pgsql_handle_exec_string(handle, sql, resbuf, len, err) switch_pgsql_handle_exec_string_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, handle, sql, resbuf, len, err)
+
 SWITCH_DECLARE(switch_bool_t) switch_pgsql_available(void);
 SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_SQLSetAutoCommitAttr(switch_pgsql_handle_t *handle, switch_bool_t on);
 SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_SQLEndTran(switch_pgsql_handle_t *handle, switch_bool_t commit);
