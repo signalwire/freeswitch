@@ -159,9 +159,12 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_cancel_real(const char *file,
 		ret = SWITCH_PGSQL_FAIL;
 	}
 	PQfreeCancel(cancel);
-#endif
+
 	/* Make sure the query is fully cancelled */
 	while (PQgetResult(handle->con) != NULL);
+
+#endif
+
 	return ret;
 }
 
