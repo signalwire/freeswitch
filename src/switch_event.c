@@ -472,7 +472,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch queues\n");
 
-	
 	for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
 		switch_queue_trypush(EVENT_DISPATCH_QUEUE, NULL);
 	}
@@ -487,8 +486,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	}
 
 	x = 0;
-	while (x < 10000 && THREAD_COUNT) {
-		switch_cond_next();
+	while (x < 100 && THREAD_COUNT) {
+		switch_yield(100000);
 		if (THREAD_COUNT == last) {
 			x++;
 		}

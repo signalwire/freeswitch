@@ -1559,7 +1559,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 {
 	sofia_dispatch_event_t *de = *dep; 
 	switch_memory_pool_t *pool;
-	sofia_profile_t *profile = (*dep)->profile;
+	//sofia_profile_t *profile = (*dep)->profile;
 	switch_thread_data_t *td;
 
 	switch_core_new_memory_pool(&pool);
@@ -1571,44 +1571,9 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 	td->func = sofia_msg_thread_run_once;
 	td->obj = de;
 
-	switch_mutex_lock(profile->ireg_mutex);
 	switch_thread_pool_launch_thread(&td);
-	switch_mutex_unlock(profile->ireg_mutex);
+
 }
-
-#if 0
-void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
-{
-	sofia_dispatch_event_t *de = *dep; 
-	switch_threadattr_t *thd_attr = NULL;
-	switch_memory_pool_t *pool;
-	switch_thread_t *thread;
-	sofia_profile_t *profile = (*dep)->profile;
-	switch_status_t status;
-
-	switch_core_new_memory_pool(&pool);
-
-
-	*dep = NULL;
-	de->pool = pool;
-
-	switch_mutex_lock(profile->ireg_mutex);
-	switch_threadattr_create(&thd_attr, de->pool);
-	switch_threadattr_detach_set(thd_attr, 1);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	status = switch_thread_create(&thread, 
-								  thd_attr, 
-								  sofia_msg_thread_run_once, 
-								  de,
-								  de->pool);
-	switch_mutex_unlock(profile->ireg_mutex);
-	
-	if (status != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot create threads!\n");
-		sofia_process_dispatch_event(&de);
-	}
-}
-#endif
 
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 {
@@ -1992,6 +1957,7 @@ void sofia_event_callback(nua_event_t event,
 	sofia_queue_message(de);
 
  end:
+	//switch_cond_next();
 
 	return;
 }
@@ -2133,7 +2099,7 @@ void event_handler(switch_event_t *event)
 			contact_str = fixed_contact_str;
 		}
 
-		switch_mutex_lock(profile->ireg_mutex);
+
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
@@ -2150,7 +2116,7 @@ void event_handler(switch_event_t *event)
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s\n", from_user, from_host, contact_str);
 		}
-		switch_mutex_unlock(profile->ireg_mutex);
+
 
 		if (profile) {
 			sofia_glue_release_profile(profile);
@@ -2557,6 +2523,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+	switch_queue_create(&profile->event_queue, SOFIA_QUEUE_SIZE, profile->pool);
+
 
 	switch_snprintf(qname, sizeof(qname), "sofia:%s", profile->name);
 	switch_sql_queue_manager_init_name(qname,

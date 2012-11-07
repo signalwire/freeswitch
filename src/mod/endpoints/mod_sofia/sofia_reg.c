@@ -635,7 +635,7 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", argv[3]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "expires", argv[6]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", argv[7]);
-			switch_event_fire(&s_event);
+			sofia_event_fire(profile, &s_event);
 		}
 
 		if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
@@ -653,7 +653,7 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "status", "Unregistered");
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_fire(&s_event);
+			sofia_event_fire(profile, &s_event);
 		}
 
 	}
@@ -858,7 +858,6 @@ void sofia_reg_check_sync(sofia_profile_t *profile)
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_del_callback, profile);
 	sql = switch_mprintf("delete from sip_registrations where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-
 
 	sql = switch_mprintf("delete from sip_presence where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);

@@ -389,6 +389,7 @@ struct mod_sofia_globals {
 	int tracelevel;
 	char *capture_server;	
 	int rewrite_multicasted_fs_path;
+	int presence_flush;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -694,6 +695,7 @@ struct sofia_profile {
 	int ireg_seconds;
 	sofia_paid_type_t paid_type;
 	uint32_t rtp_digit_delay;
+	switch_queue_t *event_queue;
 };
 
 struct private_object {
@@ -1206,6 +1208,8 @@ int sofia_recover_callback(switch_core_session_t *session);
 void sofia_glue_set_name(private_object_t *tech_pvt, const char *channame);
 private_object_t *sofia_glue_new_pvt(switch_core_session_t *session);
 switch_status_t sofia_init(void);
+void sofia_glue_fire_events(sofia_profile_t *profile);
+void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event);
 
 /* For Emacs:
  * Local Variables:
