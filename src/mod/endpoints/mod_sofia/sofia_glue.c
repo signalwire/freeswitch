@@ -7162,23 +7162,6 @@ void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event)
 	*event = NULL;
 }
 
-void sofia_glue_fire_events(sofia_profile_t *profile)
-{
-	void *pop = NULL;
-
-	while (profile->event_queue && switch_queue_trypop(profile->event_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-		switch_event_t *event = (switch_event_t *) pop;
-		switch_event_fire(&event);
-	}
-
-}
-
-void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event)
-{
-	switch_queue_push(profile->event_queue, *event);
-	*event = NULL;
-}
-
 
 /* For Emacs:
  * Local Variables:
