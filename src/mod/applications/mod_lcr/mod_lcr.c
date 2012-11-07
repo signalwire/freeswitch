@@ -1318,7 +1318,7 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 	switch_event_t *event = NULL;
 	const char *intrastate = NULL;
 	const char *intralata = NULL;
-	switch_core_session_t *mysession = NULL;
+	switch_core_session_t *mysession = NULL, *locked_session = NULL;
 	switch_channel_t *channel = NULL;
 	
 	dest = strdup(outbound_profile->destination_number);
@@ -1362,7 +1362,7 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 	} else if (var_event) {
 		char *session_uuid = switch_event_get_header(var_event, "ent_originate_aleg_uuid");
 		if (session_uuid) {
-			mysession = switch_core_session_locate(session_uuid);
+			mysession = locked_session = switch_core_session_locate(session_uuid);
 		}
 		cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
@@ -1464,8 +1464,8 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 	if (event) {
 		switch_event_destroy(&event);
 	}
-	if (mysession) {
-		switch_core_session_rwunlock(mysession);
+	if (locked_session) {
+		switch_core_session_rwunlock(locked_session);
 	}
 	lcr_destroy(routes.head);
 	switch_core_destroy_memory_pool(&pool);
