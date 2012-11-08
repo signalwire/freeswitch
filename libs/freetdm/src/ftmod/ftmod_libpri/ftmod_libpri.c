@@ -942,7 +942,7 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 				ftdm_channel_t *chtmp = chan;
 
 				if (call) {
-					pri_destroycall(isdn_data->spri.pri, call);
+					/* pri call destroy is done by libpri itself (on release_ack) */
 					chan_priv->call = NULL;
 				}
 
@@ -952,6 +952,9 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 				/* Stop T316 and reset counter */
 				lpwrap_stop_timer(&isdn_data->spri, &chan_priv->t316);
 				chan_priv->t316_timeout_cnt = 0;
+
+				/* Unset remote hangup */
+				chan_priv->peerhangup = 0;
 
 				if (ftdm_channel_close(&chtmp) != FTDM_SUCCESS) {
 					ftdm_log(FTDM_LOG_WARNING, "-- Failed to close channel %d:%d\n",
@@ -1206,12 +1209,21 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 		{
 			if (call) {
 				ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
-
 				pri_hangup(isdn_data->spri.pri, call, caller_data->hangup_cause);
-//				pri_destroycall(isdn_data->spri.pri, call);
-//				chan_priv->call = NULL;
+
+				if (chan_priv->peerhangup) {
+					/* Call is inbound and hangup has been initiated by peer */
+					if (!ftdm_test_flag(chan, FTDM_CHANNEL_OUTBOUND)) {
+						ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+					} else if (caller_data->hangup_cause == PRI_CAUSE_NO_USER_RESPONSE) {
+						/* Can happen when we have a DL link expire or some timer expired */
+						ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+					} else if (caller_data->hangup_cause == PRI_CAUSE_DESTINATION_OUT_OF_ORDER) {
+						/* Can happen when we have a DL link expire or some timer expired */
+						ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+					}
+				}
 			}
-			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
 		}
 		break;
 
@@ -1368,6 +1380,7 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 {
 	ftdm_span_t *span = spri->span;
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->hangup.channel);
+	ftdm_libpri_b_chan_t *chan_priv = chan->call_data;
 
 	if (!chan) {
 		ftdm_log(FTDM_LOG_CRIT, "-- Hangup on channel %d:%d but it's not in use?\n", ftdm_span_get_id(spri->span), pevent->hangup.channel);
@@ -1386,8 +1399,6 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 		ftdm_log(FTDM_LOG_DEBUG, "-- Hangup REQ on channel %d:%d\n",
 			ftdm_span_get_id(spri->span), pevent->hangup.channel);
 
-		pri_hangup(spri->pri, pevent->hangup.call, pevent->hangup.cause);
-
 		chan->caller_data.hangup_cause = pevent->hangup.cause;
 
 		switch (ftdm_channel_get_state(chan)) {
@@ -1400,18 +1411,26 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 		}
 		break;
 
-	case LPWRAP_PRI_EVENT_HANGUP_ACK:	/* */
+	case LPWRAP_PRI_EVENT_HANGUP_ACK:	/* RELEASE_COMPLETE */
 		ftdm_log(FTDM_LOG_DEBUG, "-- Hangup ACK on channel %d:%d\n",
 			ftdm_span_get_id(spri->span), pevent->hangup.channel);
 
-		pri_hangup(spri->pri, pevent->hangup.call, pevent->hangup.cause);
-
-		ftdm_set_state(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+		switch (ftdm_channel_get_state(chan)) {
+			case FTDM_CHANNEL_STATE_RESTART:
+				/* ACK caused by DL FAILURE in DISC REQ */
+				ftdm_set_state(chan, FTDM_CHANNEL_STATE_DOWN);
+				break;
+			default:
+				ftdm_set_state(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+				break;
+		}
 		break;
 
 	case LPWRAP_PRI_EVENT_HANGUP:	/* "RELEASE/RELEASE_COMPLETE/other" */
 		ftdm_log(FTDM_LOG_DEBUG, "-- Hangup on channel %d:%d\n",
 			ftdm_span_get_id(spri->span), pevent->hangup.channel);
+
+		chan_priv->peerhangup = 1;
 
 		switch (ftdm_channel_get_state(chan)) {
 		case FTDM_CHANNEL_STATE_DIALING:
@@ -1424,8 +1443,18 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 			ftdm_set_state(chan, FTDM_CHANNEL_STATE_TERMINATING);
 			break;
 		case FTDM_CHANNEL_STATE_HANGUP:
+			/* this will send "RELEASE_COMPLETE", eventually */
+			pri_hangup(spri->pri, pevent->hangup.call, chan->caller_data.hangup_cause);
 			chan->caller_data.hangup_cause = pevent->hangup.cause;
 			ftdm_set_state(chan, FTDM_CHANNEL_STATE_HANGUP_COMPLETE);
+			break;
+		case FTDM_CHANNEL_STATE_RESTART:
+			/*
+			 * We got an hungup doing a restart, normally beacause link has been lost during
+			 * a call and the T309 timer has expired. So destroy it :) (DL_RELEASE_IND)
+			 */
+			pri_destroycall(spri->pri, pevent->hangup.call);
+			ftdm_set_state(chan, FTDM_CHANNEL_STATE_DOWN);
 			break;
 //		case FTDM_CHANNEL_STATE_TERMINATING:
 //			ftdm_set_state(chan, FTDM_CHANNEL_STATE_HANGUP);

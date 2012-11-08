@@ -169,6 +169,10 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 
 	if (spri->pri) {
 		pri_set_debug(spri->pri, debug);
+#ifdef HAVE_LIBPRI_BRI
+		/* "follow Q.931 Section 5.3.2 call hangup better" */
+		pri_hangup_fix_enable(spri->pri, 1);
+#endif
 #ifdef HAVE_LIBPRI_AOC
 		pri_aoc_events_enable(spri->pri, 1);
 #endif

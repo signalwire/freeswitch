@@ -131,6 +131,7 @@ struct ftdm_libpri_b_chan {
 	q931_call *call;		/*!< libpri opaque call handle */
 	uint32_t flags;			/*!< channel flags */
 	uint32_t t316_timeout_cnt;	/*!< T316 timeout counter */
+	int peerhangup;			/*!< hangup requested from libpri (RELEASE/RELEASE_ACK/DL_RELEASE/TIMERS EXPIRY) */
 };
 
 typedef struct ftdm_libpri_b_chan ftdm_libpri_b_chan_t;
