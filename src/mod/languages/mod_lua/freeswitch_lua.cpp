@@ -342,6 +342,12 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
     if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) == SWITCH_STATUS_SUCCESS) {
       m_connected = true;
     }
+  } else if (!strncasecmp(dsn, "pgsql://", 8)) {
+    type = SCDB_TYPE_PGSQL;
+    options.pgsql_options.dsn = (char *)(dsn + 8);
+    if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_PGSQL, &options) == SWITCH_STATUS_SUCCESS) {
+      m_connected = true;
+    }
   } else {
     options.odbc_options.dsn = dsn;
     options.odbc_options.user = user;
