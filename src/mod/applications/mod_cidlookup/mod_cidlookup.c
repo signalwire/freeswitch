@@ -695,6 +695,8 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	}
 
 	if (cid && channel) {
+		switch_event_t *event;
+
 		switch_channel_set_variable(channel, "original_caller_id_name", switch_core_strdup(pool, profile->caller_id_name));
 		if (!zstr(cid->src)) {
 			switch_channel_set_variable(channel, "cidlookup_source", cid->src);
@@ -703,6 +705,19 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 			switch_channel_set_variable(channel, "cidlookup_area", cid->area);
 		}
 		profile->caller_id_name = switch_core_strdup(profile->pool, cid->name);;
+
+
+		if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
+			const char *uuid = switch_channel_get_partner_uuid(channel);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
+			
+			if (uuid) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+			}
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
+
 	}
 
 
