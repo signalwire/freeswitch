@@ -335,6 +335,7 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
 {
   switch_cache_db_connection_options_t options = { {0} };
   const char *prefix = "core:";
+  switch_cache_db_handle_type_t type;
   m_connected = false;
 
   if (strstr(dsn, prefix) == dsn) {
