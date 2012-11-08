@@ -135,6 +135,7 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 			goto error;
 		}
 		handle->state = SWITCH_PGSQL_STATE_CONNECTED;
+		handle->sock = PQsocket(handle->con);
 	}
 
 /*	if (!PQsendQuery(handle->con, "SELECT 1")) {
@@ -167,6 +168,7 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 		if (PQstatus(handle->con) == CONNECTION_OK) {
 			handle->state = SWITCH_PGSQL_STATE_CONNECTED;
 			recon = SWITCH_PGSQL_SUCCESS;
+			handle->sock = PQsocket(handle->con);
 		}
 	}
 
