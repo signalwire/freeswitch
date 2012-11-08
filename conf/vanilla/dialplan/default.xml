@@ -141,6 +141,18 @@
 	<!-- <action application="export" data="sip_secure_media=true"/> -->
       </condition>
 
+      <!--
+	 Since we have inbound-late-negotation on by default now the
+	 above behavior isn't the same so you have to do one extra step.
+	-->
+      <condition field="${endpoint_disposition}" expression="^(DELAYED NEGOTIATION)"/>
+      <condition field="${switch_r_sdp}" expression="(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)" break="never">
+	<action application="set" data="sip_secure_media=true"/>
+	<!-- Offer SRTP on outbound legs if we have it on inbound. -->
+	<!-- <action application="export" data="sip_secure_media=true"/> -->
+      </condition>
+
+
       <condition>
 	<action application="hash" data="insert/${domain_name}-spymap/${caller_id_number}/${uuid}"/>
 	<action application="hash" data="insert/${domain_name}-last_dial/${caller_id_number}/${destination_number}"/>
