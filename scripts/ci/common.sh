@@ -103,14 +103,16 @@ set_fs_ver () {
     -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
     -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$ver\2|" \
-    -i configure.in
+    configure.in > configure.in.$$
+    mv configure.in.$$ configure.in
   if [ -n "$rev" ]; then
     [ -n "$hrev" ] || hrev="$rev"
     sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
       -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, \[\).*\(\])\)|\1$hrev\2|" \
       -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
       -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN\)|\1|" \
-      -i configure.in
+      configure.in > configure.in.$$
+      mv configure.in.$$ configure.in
   fi
 }
 
