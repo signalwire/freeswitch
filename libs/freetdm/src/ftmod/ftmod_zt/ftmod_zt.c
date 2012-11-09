@@ -858,6 +858,12 @@ static FIO_COMMAND_FUNCTION(zt_command)
 			err = ioctl(ftdmchan->sockfd, codes.FLUSH, &flushmode);
 		}
 		break;
+	case FTDM_COMMAND_SET_RX_QUEUE_SIZE:
+	case FTDM_COMMAND_SET_TX_QUEUE_SIZE:
+		/* little white lie ... eventually we can implement this, in the meantime, not worth the effort
+		   and this is only used by some sig modules such as ftmod_r2 to behave bettter under load */
+		err = 0;
+		break;
 	default:
 		err = FTDM_NOTIMPL;
 		break;
