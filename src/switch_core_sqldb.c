@@ -2957,6 +2957,8 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	case SCDB_TYPE_ODBC:
 		{
 			char *err;
+			int result = 0;
+
 			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid, read_bit_rate, sent_callee_name from channels", "DROP TABLE channels", create_channels_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from detailed_calls where sent_callee_name=''", "DROP VIEW detailed_calls", detailed_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from basic_calls where sent_callee_name=''", "DROP VIEW basic_calls", basic_calls_sql);
@@ -2973,12 +2975,72 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			switch_cache_db_test_reactive(sql_manager.dbh, "select ikey from interfaces", "DROP TABLE interfaces", create_interfaces_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select hostname from tasks", "DROP TABLE tasks", create_tasks_sql);
 
-			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
-				switch_cache_db_execute_sql(sql_manager.dbh, "begin;delete from channels where hostname='';delete from channels where hostname='';commit;", &err);
-			} else {
-				switch_cache_db_execute_sql(sql_manager.dbh, "delete from channels where hostname='';delete from channels where hostname='';", &err);
+
+			switch(sql_manager.dbh->type) {
+			case SCDB_TYPE_CORE_DB:
+				{
+					switch_cache_db_execute_sql_real(sql_manager.dbh, "BEGIN", &err);
+				}
+				break;
+			case SCDB_TYPE_ODBC:
+				{
+					switch_odbc_status_t result;
+					
+					if ((result = switch_odbc_SQLSetAutoCommitAttr(sql_manager.dbh->native_handle.odbc_dbh, 0)) != SWITCH_ODBC_SUCCESS) {
+						char tmp[100];
+						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to Set AutoCommit Off", result);
+						err = strdup(tmp);
+					}
+				}
+				break;
+			case SCDB_TYPE_PGSQL:
+				{
+					switch_pgsql_status_t result;
+					
+					if ((result = switch_pgsql_SQLSetAutoCommitAttr(sql_manager.dbh->native_handle.pgsql_dbh, 0)) != SWITCH_PGSQL_SUCCESS) {
+						char tmp[100];
+						switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to Set AutoCommit Off", result);
+						err = strdup(tmp);
+					}
+				}
+				break;
+			}
+			
+			switch_cache_db_execute_sql(sql_manager.dbh, "delete from channels where hostname=''", &err);
+			if (!err) {
+				switch_cache_db_execute_sql(sql_manager.dbh, "delete from channels where hostname=''", &err);
+
+				switch(sql_manager.dbh->type) {
+				case SCDB_TYPE_CORE_DB:
+					{
+						switch_cache_db_execute_sql_real(sql_manager.dbh, "COMMIT", &err);
+					}
+					break;
+				case SCDB_TYPE_ODBC:
+					{
+						if (switch_odbc_SQLEndTran(sql_manager.dbh->native_handle.odbc_dbh, 1) != SWITCH_ODBC_SUCCESS ||
+							switch_odbc_SQLSetAutoCommitAttr(sql_manager.dbh->native_handle.odbc_dbh, 1) != SWITCH_ODBC_SUCCESS) {
+							char tmp[100];
+							switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to commit transaction.", result);
+							err = strdup(tmp);
+						}
+					}
+					break;
+				case SCDB_TYPE_PGSQL:
+					{
+						if (switch_pgsql_SQLEndTran(sql_manager.dbh->native_handle.pgsql_dbh, 1) != SWITCH_PGSQL_SUCCESS ||
+							switch_pgsql_SQLSetAutoCommitAttr(sql_manager.dbh->native_handle.pgsql_dbh, 1) != SWITCH_PGSQL_SUCCESS ||
+							switch_pgsql_finish_results(sql_manager.dbh->native_handle.pgsql_dbh) != SWITCH_PGSQL_SUCCESS) {
+							char tmp[100];
+							switch_snprintfv(tmp, sizeof(tmp), "%q-%i", "Unable to commit transaction.", result);
+							err = strdup(tmp);
+						}
+					}
+					break;
+				}
 			}
 
+			
 			if (err) {
 				runtime.odbc_dsn = NULL;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Transactions not supported on your DB, disabling non-SQLite support; using SQLite\n");
@@ -3069,6 +3131,9 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		switch_thread_create(&sql_manager.db_thread, thd_attr, switch_core_sql_db_thread, NULL, sql_manager.memory_pool);
 
 	}
+
+	switch_cache_db_release_db_handle(&sql_manager.dbh);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
