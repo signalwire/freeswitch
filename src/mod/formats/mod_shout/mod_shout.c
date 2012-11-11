@@ -1161,6 +1161,8 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char title_b4[128] = "";
 	char title_aft[128 * 3 + 1] = "";
 	char *mp3, *m3u;
+	int uri_offset = 1;
+
 	const char *uuid = argv[0];
 	const char *created = argv[1];
 	const char *cid_name = argv[2];
@@ -1178,8 +1180,10 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
 	snprintf(title_b4, sizeof(title_b4), "%s <%s>", cid_name, cid_num);
 	switch_url_encode(title_b4, title_aft, sizeof(title_aft));
 
-	mp3 = switch_mprintf("http://%s:%s%s/mp3/%s/%s.mp3", holder->host, holder->port, holder->uri, uuid, cid_num);
-	m3u = switch_mprintf("http://%s:%s%s/m3u/mp3/%s/%s.mp3.m3u", holder->host, holder->port, holder->uri, uuid, cid_num);
+	if (!strncmp(holder->uri, "/webapi", 7)) uri_offset = 4;
+
+	mp3 = switch_mprintf("http://%s:%s/%s/mp3/%s/%s.mp3", holder->host, holder->port, holder->uri + uri_offset, uuid, cid_num);
+	m3u = switch_mprintf("http://%s:%s/%s/m3u/mp3/%s/%s.mp3.m3u", holder->host, holder->port, holder->uri + uri_offset, uuid, cid_num);
 
 	holder->stream->write_function(holder->stream, "[<a href=%s>mp3</a>] ", mp3);
 	holder->stream->write_function(holder->stream, "[<a href=%s>m3u</a>]</td></tr>\n", m3u);
