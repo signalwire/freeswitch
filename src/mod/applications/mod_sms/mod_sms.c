@@ -438,6 +438,16 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 }
 
+SWITCH_STANDARD_CHAT_APP(system_function)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n", data);
+        if (switch_system(data, SWITCH_TRUE) < 0) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", data);
+		return SWITCH_STATUS_FALSE;
+        }
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_CHAT_APP(stop_function)
 {
 	switch_set_flag(message, EF_NO_CHAT_EXEC);
@@ -531,6 +541,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "set", "set a variable", "set a variable", set_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "send", "send the message as-is", "send the message as-is", send_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "fire", "fire the message", "fire the message", fire_function, "", SCAF_NONE);
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "system", "execute a system command", "execute a sytem command", system_function, "", SCAF_NONE);
 						
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
