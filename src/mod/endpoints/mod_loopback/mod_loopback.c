@@ -709,10 +709,26 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	return status;
 }
 
+static void switch_channel_wait_for_state_or_greater(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state)
+{
+
+	switch_assert(channel);
+	
+	for (;;) {
+		if ((switch_channel_get_state(channel) < CS_HANGUP && 
+			 switch_channel_get_state(channel) == switch_channel_get_running_state(channel) && switch_channel_get_running_state(channel) == want_state) ||
+			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down(channel)) {
+			break;
+		}
+		switch_cond_next();
+	}
+}
+
+
 static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, switch_core_session_t **br_session, const char **br_uuid)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	const char *a_uuid;
+	const char *a_uuid = NULL;
 	switch_core_session_t *sp;
 
 	*br_session = NULL;
@@ -722,9 +738,17 @@ static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, 
 
 	while (a_uuid && (sp = switch_core_session_locate(a_uuid))) {
 		if (switch_core_session_check_interface(sp, loopback_endpoint_interface)) {
-			private_t *tech_pvt = switch_core_session_get_private(sp);
+			private_t *tech_pvt;
+			switch_channel_t *spchan = switch_core_session_get_channel(sp);
 
-			a_uuid = switch_channel_get_partner_uuid(tech_pvt->other_channel);
+			switch_channel_wait_for_state_or_greater(spchan, channel, CS_ROUTING);
+			
+			tech_pvt = switch_core_session_get_private(sp);
+
+			if (tech_pvt->other_channel) {
+				a_uuid = switch_channel_get_partner_uuid(tech_pvt->other_channel);
+			}
+
 			switch_core_session_rwunlock(sp);
 			sp = NULL;
 		} else {
