@@ -3584,6 +3584,7 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 
 	pickup = outbound_profile->destination_number;
 
+	flags |= SOF_NO_LIMITS;
 
 	if (!(nsession = switch_core_session_request(pickup_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
