@@ -510,13 +510,20 @@ issize_t su_vsend(su_socket_t s,
 		  su_sockaddr_t const *su, socklen_t sulen)
 {
   struct msghdr hdr[1] = {{0}};
+  int rv;
 
   hdr->msg_name = (void *)su;
   hdr->msg_namelen = sulen;
   hdr->msg_iov = (struct iovec *)iov;
   hdr->msg_iovlen = iovlen;
 
-  return sendmsg(s, hdr, flags);
+  do {
+	  if ((rv = sendmsg(s, hdr, flags)) == -1) {
+		  if (errno == EAGAIN) usleep(1000);
+	  }
+  } while (rv == -1 && (errno == EAGAIN || errno == EINTR));
+
+  return rv;
 }
 
 issize_t su_vrecv(su_socket_t s, su_iovec_t iov[], isize_t iovlen, int flags,
@@ -531,7 +538,9 @@ issize_t su_vrecv(su_socket_t s, su_iovec_t iov[], isize_t iovlen, int flags,
   hdr->msg_iov = (struct iovec *)iov;
   hdr->msg_iovlen = iovlen;
 
-  retval = recvmsg(s, hdr, flags);
+  do {
+	  retval = recvmsg(s, hdr, flags);
+  } while (retval == -1 && errno == EINTR);
 
   if (su && sulen)
     *sulen = hdr->msg_namelen;
