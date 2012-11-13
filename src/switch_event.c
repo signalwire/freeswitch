@@ -1138,17 +1138,21 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 		for (hp = ep->headers; hp;) {
 			this = hp;
 			hp = hp->next;
-			FREE(this->name);
 
 			if (this->idx) {
-				int i = 0;
+				if (!this->array) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "INDEX WITH NO ARRAY WTF?? [%s][%s]\n", this->name, this->value);
+				} else {
+					int i = 0;
 
-				for (i = 0; i < this->idx; i++) {
-					FREE(this->array[i]);
+					for (i = 0; i < this->idx; i++) {
+						FREE(this->array[i]);
+					}
+					FREE(this->array);
 				}
-				FREE(this->array);
 			}
 
+			FREE(this->name);
 			FREE(this->value);
 			
 

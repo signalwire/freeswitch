@@ -4814,10 +4814,6 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 	struct read_frame_data rf = { 0 };
 	long to_val = 0;
 
-	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_FALSE;
-	}
-
 	switch_mutex_lock(globals.mutex_mutex);
 	used = switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_WAIT) || switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_SET);
 
@@ -4877,18 +4873,11 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 	
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex %s is busy, waiting...\n", switch_channel_get_name(channel), key);
 
-	if (!(feedback = switch_channel_get_variable(channel, "mutex_feedback"))) {
-		if ((var = switch_channel_get_variable(channel, "ringback"))) {
-			feedback = switch_core_session_sprintf(session, "tone_stream://%s;loops=-1", var);
-		} else {
-			feedback = switch_channel_get_hold_music(channel);
+	if ((feedback = switch_channel_get_variable(channel, "mutex_feedback"))) {
+		if (!strcasecmp(feedback, "silence")) {
+			feedback = "silence_stream://-1";
 		}
 	}
-
-	if (zstr(feedback) || !strcasecmp(feedback, "silence")) {
-		feedback = "silence_stream://-1";
-	}
-
 
 	if ((rf.exten = switch_channel_get_variable(channel, "mutex_orbit_exten"))) {
 		to_val = 60;
@@ -4917,7 +4906,16 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 	args.user_data = &rf;
 
 	while(switch_channel_ready(channel) && switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_WAIT)) {
-		switch_status_t st = switch_ivr_play_file(session, NULL, feedback, &args);
+		switch_status_t st;
+
+		if (feedback) {
+			switch_channel_pre_answer(channel);
+			st = switch_ivr_play_file(session, NULL, feedback, &args);
+		} else {
+			if ((st = switch_ivr_sleep(session, 20, SWITCH_FALSE, NULL)) == SWITCH_STATUS_SUCCESS) {
+				st = read_frame_callback(session, NULL, &rf);
+			}
+		}
 
 		if (st != SWITCH_STATUS_SUCCESS) {
 			break;
@@ -5519,7 +5517,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "flush_dtmf", "flush any queued dtmf", "flush any queued dtmf", flush_dtmf_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hold", "Send a hold message", "Send a hold message", hold_function, HOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "unhold", "Send a un-hold message", "Send a un-hold message", unhold_function, UNHOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "mutex", "block on a call flow only allowing one at a time", "", mutex_function, MUTEX_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "mutex", "block on a call flow only allowing one at a time", "", mutex_function, MUTEX_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "page", "", "", page_function, PAGE_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "transfer", "Transfer a channel", TRANSFER_LONG_DESC, transfer_function, "<exten> [<dialplan> <context>]",
 				   SAF_SUPPORT_NOMEDIA);
