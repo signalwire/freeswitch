@@ -1766,8 +1766,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 
 	switch_loadable_module_runtime();
 
-	chat_globals.running = 1;
 	memset(&chat_globals, 0, sizeof(chat_globals));
+	chat_globals.running = 1;
 	chat_globals.pool = loadable_modules.pool;
 	switch_mutex_init(&chat_globals.mutex, SWITCH_MUTEX_NESTED, chat_globals.pool);
 
