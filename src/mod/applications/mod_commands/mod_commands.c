@@ -2037,7 +2037,9 @@ SWITCH_STANDARD_API(status_function)
 						duration.sec, duration.sec == 1 ? "" : "s", duration.ms , duration.ms  == 1 ? "" : "s", duration.mms,
 						duration.mms == 1 ? "" : "s", nl);
 
-	stream->write_function(stream, "FreeSWITCH is %s%s", switch_core_ready() ? "ready" : "not ready", nl);
+	stream->write_function(stream, "FreeSWITCH (Version %s) is %s%s", SWITCH_VERSION_FULL_HUMAN,
+						   switch_core_ready() ? "ready" : "not ready", nl);
+	
 	stream->write_function(stream, "%" SWITCH_SIZE_T_FMT " session(s) since startup%s", switch_core_session_id() - 1, nl);
 	switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
 	switch_core_session_ctl(SCSC_SPS, &sps);
