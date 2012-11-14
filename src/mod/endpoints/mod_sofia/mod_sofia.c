@@ -262,12 +262,14 @@ char *generate_pai_str(private_object_t *tech_pvt)
 		return NULL;
 	}
 
-	if (zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
+	if (zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "initial_callee_id_name"))) &&
+		zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
 		zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
 		callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
 	}
 
-	if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_number"))) &&
+	if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "initial_callee_id_number"))) &&
+		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_number"))) &&
 		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number"))) &&
 		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number")))) {
 
