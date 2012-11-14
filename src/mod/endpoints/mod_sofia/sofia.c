@@ -2459,6 +2459,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 #ifdef MANUAL_BYE
 				   NUTAG_APPL_METHOD("BYE"),
 #endif
+				   NUTAG_APPL_METHOD("MESSAGE"),
 
 				   NUTAG_SESSION_TIMER(profile->session_timeout),
 				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),

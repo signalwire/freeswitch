@@ -4351,7 +4351,8 @@ void sofia_presence_handle_sip_i_message(int status,
 
 		if ((us = sofia_glue_get_unknown_header(sip, "X-FS-Sending-Message")) && !strcmp(us, switch_core_get_uuid())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not sending message to ourselves!\n");
-			goto end;
+			nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			return;
 		}
 
 		if (sip->sip_content_type && sip->sip_content_type->c_subtype) {
