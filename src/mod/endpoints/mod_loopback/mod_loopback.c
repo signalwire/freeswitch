@@ -716,7 +716,7 @@ static void switch_channel_wait_for_state_or_greater(switch_channel_t *channel, 
 	
 	for (;;) {
 		if ((switch_channel_get_state(channel) < CS_HANGUP && 
-			 switch_channel_get_state(channel) == switch_channel_get_running_state(channel) && switch_channel_get_running_state(channel) == want_state) ||
+			 switch_channel_get_state(channel) == switch_channel_get_running_state(channel) && switch_channel_get_running_state(channel) >= want_state) ||
 			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down(channel)) {
 			break;
 		}
@@ -807,9 +807,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 			switch_channel_t *ch_a = NULL, *ch_b = NULL;
 			int good_to_go = 0;
 
+			switch_mutex_unlock(tech_pvt->mutex);
 			find_non_loopback_bridge(session, &br_a, &a_uuid);
 			find_non_loopback_bridge(tech_pvt->other_session, &br_b, &b_uuid);
-
+			switch_mutex_lock(tech_pvt->mutex);
 
 			
 			if (br_a) {
