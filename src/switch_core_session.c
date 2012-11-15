@@ -1530,13 +1530,15 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 	while(session_manager.ready) {
 		switch_status_t check_status;
 
+		pop = NULL;
+
 		if (check) {
 			check_status = switch_queue_trypop(session_manager.thread_queue, &pop);
 		} else {
 			check_status = switch_queue_pop(session_manager.thread_queue, &pop);
 		}
 
-		if (check_status == SWITCH_STATUS_SUCCESS) {
+		if (check_status == SWITCH_STATUS_SUCCESS && pop) {
 			switch_thread_data_t *td = (switch_thread_data_t *) pop;
 			
 			if (!td) break;
@@ -1609,10 +1611,9 @@ static switch_status_t check_queue(void)
 	int x = 0;
 
 	switch_mutex_lock(session_manager.mutex);
-	ttl = switch_queue_size(session_manager.thread_queue);
+	ttl = switch_queue_size(session_manager.thread_queue) - session_manager.nuking;
 	x = (session_manager.running - session_manager.busy);
 	switch_mutex_unlock(session_manager.mutex);
-
 
 
 	while (x < ttl) {
@@ -1653,13 +1654,26 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 		switch_yield(100000);
 
 		if (++x == 300) {
-			switch_queue_interrupt_all(session_manager.thread_queue);
-			x = 0;
+			switch_mutex_lock(session_manager.mutex);
+			session_manager.nuking = (session_manager.running - session_manager.busy);
+			switch_mutex_unlock(session_manager.mutex);
+
+			if (session_manager.nuking) {
+				int i = 0;
+
+				for (i = 0; i < session_manager.nuking; i++) {
+					switch_queue_push(session_manager.thread_queue, NULL);
+				}
+				
+				x--;
+			} else {
+				x = 0;
+			}
 		}
 
 		check_queue();
 	}
-
+	
 	return NULL;
 }
 
