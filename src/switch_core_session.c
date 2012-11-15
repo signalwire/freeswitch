@@ -1245,6 +1245,11 @@ SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(switch_core_s
 	return session->channel;
 }
 
+SWITCH_DECLARE(switch_mutex_t *) switch_core_session_get_mutex(switch_core_session_t *session)
+{
+	return session->mutex;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(switch_core_session_t *session)
 {
 	switch_status_t status;
