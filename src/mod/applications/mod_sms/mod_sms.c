@@ -395,7 +395,7 @@ static switch_event_t *chatplan_hunt(switch_event_t *event)
 
 static switch_status_t chat_send(switch_event_t *message_event)
 								 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_BREAK;
 	switch_event_t *exten;
 	int forwards = 0;
 	const char *var;
@@ -428,14 +428,15 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		for (hp = exten->headers; hp; hp = hp->next) {
 			status = switch_core_execute_chat_app(message_event, hp->name, hp->value);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				status = SWITCH_STATUS_SUCCESS;	
 				break;
 			}
 		}
 
 		switch_event_destroy(&exten);
-		status = SWITCH_STATUS_BREAK;		
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS chatplan no actions found\n");
 	}
-	
 
 	return status;
 
