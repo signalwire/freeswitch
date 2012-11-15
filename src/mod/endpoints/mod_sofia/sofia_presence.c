@@ -364,7 +364,9 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 			if (!(mstatus > 199 && mstatus < 300)) {
 				status = SWITCH_STATUS_FALSE;
 			}
-		
+
+			switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "Delivery-Result-Code", "%d", mstatus);
+
 			switch_mutex_lock(profile->flag_mutex);
 			switch_core_hash_delete(profile->chat_hash, uuid_str);
 			switch_mutex_unlock(profile->flag_mutex);
