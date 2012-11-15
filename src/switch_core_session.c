@@ -1540,7 +1540,15 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 		if (check) {
 			check_status = switch_queue_trypop(session_manager.thread_queue, &pop);
 		} else {
+			switch_mutex_lock(session_manager.mutex);
+			session_manager.popping++;
+			switch_mutex_unlock(session_manager.mutex);
+			
 			check_status = switch_queue_pop(session_manager.thread_queue, &pop);
+
+			switch_mutex_lock(session_manager.mutex);
+			session_manager.popping--;
+			switch_mutex_unlock(session_manager.mutex);
 		}
 
 		if (check_status == SWITCH_STATUS_SUCCESS && pop) {
@@ -1616,7 +1624,7 @@ static switch_status_t check_queue(void)
 	int x = 0;
 
 	switch_mutex_lock(session_manager.mutex);
-	ttl = switch_queue_size(session_manager.thread_queue) - session_manager.nuking;
+	ttl = switch_queue_size(session_manager.thread_queue);
 	x = (session_manager.running - session_manager.busy);
 	switch_mutex_unlock(session_manager.mutex);
 
@@ -1659,18 +1667,24 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 		switch_yield(100000);
 
 		if (++x == 300) {
-			switch_mutex_lock(session_manager.mutex);
-			session_manager.nuking = (session_manager.running - session_manager.busy);
-			switch_mutex_unlock(session_manager.mutex);
+			if (session_manager.popping) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, 
+								  "Thread pool: running:%d busy:%d popping:%d\n", session_manager.running, session_manager.busy, session_manager.popping);
 
-			if (session_manager.nuking) {
-				int i = 0;
+				if (session_manager.popping) {
+					int i = 0;
 
-				for (i = 0; i < session_manager.nuking; i++) {
-					switch_queue_push(session_manager.thread_queue, NULL);
+					switch_mutex_lock(session_manager.mutex);
+					for (i = 0; i < session_manager.popping; i++) {
+						switch_queue_trypush(session_manager.thread_queue, NULL);
+					}
+					switch_mutex_unlock(session_manager.mutex);
+
 				}
-				
+
 				x--;
+
+				continue;
 			} else {
 				x = 0;
 			}

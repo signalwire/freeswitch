@@ -285,7 +285,7 @@ struct switch_session_manager {
 	int ready;
 	int running;
 	int busy;
-	int nuking;
+	int popping;
 };
 
 extern struct switch_session_manager session_manager;
