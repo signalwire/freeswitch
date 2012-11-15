@@ -37,7 +37,7 @@
 #include "tpl.h"
 
 //#define SWITCH_EVENT_RECYCLE
-#define DISPATCH_QUEUE_LEN 100
+#define DISPATCH_QUEUE_LEN 10000
 //#define DEBUG_DISPATCH_QUEUES
 
 /*! \brief A node to store binded events */
@@ -291,6 +291,8 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 
 }
 
+static int PENDING = 0;
+
 static switch_status_t switch_event_queue_dispatch_event(switch_event_t **eventp)
 {
 
@@ -302,11 +304,14 @@ static switch_status_t switch_event_queue_dispatch_event(switch_event_t **eventp
 	
 	while (event) {
 		int launch = 0;
-
+		
 		switch_mutex_lock(EVENT_QUEUE_MUTEX);		
 
-		if (switch_queue_size(EVENT_DISPATCH_QUEUE) > (unsigned int)(DISPATCH_QUEUE_LEN * DISPATCH_THREAD_COUNT)) {
-			launch++;
+		if (!PENDING && switch_queue_size(EVENT_DISPATCH_QUEUE) > (unsigned int)(DISPATCH_QUEUE_LEN * DISPATCH_THREAD_COUNT)) {
+			if (SOFT_MAX_DISPATCH + 1 > MAX_DISPATCH) {
+				launch++;
+				PENDING++;
+			}
 		}
 
 		switch_mutex_unlock(EVENT_QUEUE_MUTEX);
@@ -315,6 +320,10 @@ static switch_status_t switch_event_queue_dispatch_event(switch_event_t **eventp
 			if (SOFT_MAX_DISPATCH + 1 < MAX_DISPATCH) {
 				switch_event_launch_dispatch_threads(SOFT_MAX_DISPATCH + 1);
 			}
+
+			switch_mutex_lock(EVENT_QUEUE_MUTEX);
+			PENDING--;
+			switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 		}
 
 		*eventp = NULL;
