@@ -643,8 +643,6 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_queued_extension(
 SWITCH_DECLARE(void) switch_channel_transfer_to_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension);
 SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid(switch_channel_t *channel);
 SWITCH_DECLARE(switch_hold_record_t *) switch_channel_get_hold_record(switch_channel_t *channel);
-SWITCH_DECLARE(void) switch_channel_state_thread_lock(switch_channel_t *channel);
-SWITCH_DECLARE(void) switch_channel_state_thread_unlock(switch_channel_t *channel);
 
 SWITCH_END_EXTERN_C
 #endif
