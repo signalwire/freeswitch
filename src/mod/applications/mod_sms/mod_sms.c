@@ -51,6 +51,9 @@ static void event_handler(switch_event_t *event)
 		DUMP_EVENT(event);
 
 		return;
+	} else if ( check_failure && switch_false(check_failure) ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS Delivery Success\n");
+		return;
 	}
 
 	switch_core_chat_send(dest_proto, event);

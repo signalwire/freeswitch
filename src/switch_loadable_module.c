@@ -512,6 +512,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	switch_chat_interface_t *ci;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_hash_index_t *hi;
+	switch_event_t *dup = NULL;
 	const void *var;
 	void *val;
 	const char *proto;
@@ -588,14 +589,20 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 		}
 	}
 
-	if (status != SWITCH_STATUS_SUCCESS) {
-		switch_event_t *dup;
-		switch_event_dup(&dup, message_event);
-		switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "true");
-		switch_event_fire(&dup);
+
+	switch_event_dup(&dup, message_event);
+
+	if ( switch_true(switch_event_get_header(message_event, "blocking")) ) {
+		if (status == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "false");
+		} else {
+			switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "true");
+		}
+	} else {
+		switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Nonblocking-Delivery", "true");
 	}
 
-
+	switch_event_fire(&dup);
 	return status;
 }
 
