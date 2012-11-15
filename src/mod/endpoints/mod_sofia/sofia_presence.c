@@ -1461,10 +1461,9 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 									  event->event_id == SWITCH_EVENT_PRESENCE_IN ? "IN" : "OUT", profile->name);
 				}
 
-
+#if 0
 				if (hup && dh.hits < 1) { 
 					/* so many phones get confused when whe hangup we have to reprobe to get them all to reset to absolute states so the lights stay correct */
-					
 					if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
@@ -1472,9 +1471,10 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", euser, host);
 						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+						sofia_event_fire(profile, &s_event);
 					}
 				}
-				
+#endif			
 		
 				if (!zstr((char *) helper.stream.data)) {
 					char *this_sql = (char *) helper.stream.data;
