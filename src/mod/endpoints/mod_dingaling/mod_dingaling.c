@@ -2668,7 +2668,7 @@ static switch_status_t list_profiles(const char *line, const char *cursor, switc
 			}
 		} else if (!strncmp("dl_login", line, 8)) {
 			if (!switch_test_flag(profile, TFLAG_IO)) {
-				char *profile_name = switch_mprintf("%s%s", "profile=", profile->name);	
+				char *profile_name = switch_mprintf("profile=%s", profile->name);
 				switch_console_push_match(&my_matches, profile_name);
 				free(profile_name);
 			}
