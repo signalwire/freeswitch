@@ -1389,9 +1389,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	switch_time_t t_agent_answered = 0;
 	switch_time_t t_member_called = atoi(h->member_joined_epoch);
 	switch_event_t *event = NULL;
-	char agent_uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-
-	switch_uuid_str(agent_uuid_str, sizeof(agent_uuid_str));
 
 	switch_mutex_lock(globals.mutex);
 	globals.threads++;
@@ -1421,7 +1418,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", h->agent_type);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid_str);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
@@ -1451,7 +1447,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout", "false");
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout_on_execute", "false");
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
-		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "origination_uuid", "%s", agent_uuid_str);
 
 		switch_channel_process_export(member_channel, NULL, ovars, "cc_export_vars");
 
