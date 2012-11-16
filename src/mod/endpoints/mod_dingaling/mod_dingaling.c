@@ -2650,6 +2650,45 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 }
 
+static switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	mdl_profile_t *profile = NULL;
+	switch_hash_index_t *hi;
+	void *val;
+	const void *vvar;
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &val);
+		profile = (mdl_profile_t *) val;
+		if (!strncmp("dl_logout", line, 9)) {
+			if (profile->handle) {
+				switch_console_push_match(&my_matches, profile->name);
+			}
+		} else if (!strncmp("dl_login", line, 8)) {
+			if (!switch_test_flag(profile, TFLAG_IO)) {
+				char *profile_name = switch_mprintf("%s%s", "profile=", profile->name);	
+				switch_console_push_match(&my_matches, profile_name);
+				free(profile_name);
+			}
+		} else if (!strncmp("dl_pres", line, 7)) {
+			if (profile->user_flags & LDL_FLAG_COMPONENT) {
+				switch_console_push_match(&my_matches, profile->name);
+			}
+		} else {
+			switch_console_push_match(&my_matches, profile->name);
+		} 
+	}
+
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	return status;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 {
 	switch_chat_interface_t *chat_interface;
@@ -2725,6 +2764,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 	SWITCH_ADD_API(api_interface, "dl_login", "DingaLing Login", dl_login, LOGIN_SYNTAX);
 	SWITCH_ADD_API(api_interface, "dingaling", "DingaLing Menu", dingaling, DINGALING_SYNTAX);
 	SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
+
+	switch_console_set_complete("add dl_debug ::[true:false");
+	switch_console_set_complete("add dl_pres ::dingaling::list_profiles");
+	switch_console_set_complete("add dl_logout ::dingaling::list_profiles");
+	switch_console_set_complete("add dl_login ::dingaling::list_profiles");
+	switch_console_set_complete("add dl_login login=");
+	switch_console_set_complete("add dingaling status");
+	switch_console_set_complete("add dingaling reload");
+	switch_console_add_complete_func("::dingaling::list_profiles", list_profiles);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
