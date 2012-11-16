@@ -1,3 +1,7 @@
+freeswitch (1.2.4)
+	core: Add Postgres core db support (r:0c1180d5)
+	mod_cdr_mongodb: update MongoDB driver to v0.6  (r:10093b44)
+	mod_dingaling: do lookup in dingaling when an address is specified as host:foo.bar.com like sofia does  (r:fbfe830a)
 freeswitch (1.2.3)
 	core: add hold_events variable with start and stop times for each hold (r:9a193a9c)
 	core: update json lib in core and ESL and re-apply old patches (r:5a956890)
