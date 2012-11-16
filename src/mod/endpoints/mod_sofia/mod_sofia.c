@@ -2456,25 +2456,31 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_HOLD:
 		{
-			sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-			switch_channel_set_flag(channel, CF_LEG_HOLDING);
-			sofia_glue_do_invite(session);
-			if (!zstr(msg->string_arg)) {
-				char message[256] = "";
-				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 
-				if (ua && switch_stristr("snom", ua)) {
-					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", msg->string_arg, tech_pvt->caller_profile->destination_number);
-					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-							 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
-				} else if (ua && switch_stristr("polycom", ua)) {
-					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
-					nua_update(tech_pvt->nh,
-							   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
-							   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
-							   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
-							   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
-							   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+			if (msg->numeric_arg) {
+				sofia_glue_toggle_hold(tech_pvt, 1);
+			} else {
+
+				sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+				switch_channel_set_flag(channel, CF_LEG_HOLDING);
+				sofia_glue_do_invite(session);
+				if (!zstr(msg->string_arg)) {
+					char message[256] = "";
+					const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+					
+					if (ua && switch_stristr("snom", ua)) {
+						snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", msg->string_arg, tech_pvt->caller_profile->destination_number);
+						nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+								 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
+					} else if (ua && switch_stristr("polycom", ua)) {
+						snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
+						nua_update(tech_pvt->nh,
+								   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+								   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+								   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
+								   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
+								   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+					}
 				}
 			}
 		}
