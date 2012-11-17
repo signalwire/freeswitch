@@ -3090,7 +3090,7 @@ SWITCH_STANDARD_API(dingaling)
 
 SWITCH_STANDARD_API(dl_login)
 {
-	char *argv[10] = { 0 };
+	char *argv[20] = { 0 };
 	int argc = 0;
 	char *var, *val, *myarg = NULL;
 	mdl_profile_t *profile = NULL;
@@ -3112,7 +3112,7 @@ SWITCH_STANDARD_API(dl_login)
 
 	argc = switch_separate_string(myarg, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (zstr(cmd) || argc != 1) {
+	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", LOGIN_SYNTAX);
 		status = SWITCH_STATUS_SUCCESS;
 		goto done;
