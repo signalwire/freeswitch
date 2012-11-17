@@ -2353,6 +2353,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	if (zstr(np)) {
 		nonce_cb_t cb = { 0 };
 		long nc_long = 0;
+		int sanity = 0;
+
 		first = 1;
 
 		if (nc) {
@@ -2366,7 +2368,14 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		cb.nplen = nplen;
 
 		switch_assert(sql != NULL);
-		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_nonce_callback, &cb);
+
+		do {
+			if (sanity) {
+				switch_yield(100000 * sanity);
+			}
+			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_nonce_callback, &cb);
+		} while(nc_long < 2 && ++sanity < 10 && zstr(np));
+
 		free(sql);
 
 		//if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {

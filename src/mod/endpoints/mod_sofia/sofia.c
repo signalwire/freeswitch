@@ -2530,7 +2530,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_snprintf(qname, sizeof(qname), "sofia:%s", profile->name);
 	switch_sql_queue_manager_init_name(qname,
 									   &profile->qm,
-									   1,
+									   2,
 									   profile->odbc_dsn ? profile->odbc_dsn : profile->dbname,
 									   SWITCH_MAX_TRANS,
 									   profile->pre_trans_execute,

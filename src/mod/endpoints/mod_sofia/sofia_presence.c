@@ -1350,7 +1350,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 				}
 
 				if (zstr(call_id)) {
-					
+
 					sql = switch_mprintf("update sip_subscriptions set version=version+1 where hostname='%q' and profile_name='%q' and "
 										 "sip_subscriptions.event != 'line-seize' "
 										 "and sip_subscriptions.proto='%q' and (event='%q' or event='%q') and sub_to_user='%q' and "
@@ -1366,8 +1366,8 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PRES SQL %s\n", sql);
 					}
 
-					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-					
+					sofia_glue_execute_sql_soon(profile, &sql, SWITCH_TRUE);
+
 
 				
 					sql = switch_mprintf("select distinct sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
@@ -1376,7 +1376,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 										 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
 										 "sip_subscriptions.accept,sip_subscriptions.profile_name"
 										 ",'%q','%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.open_closed,'%q','%q',"
-										 "sip_subscriptions.version, '%q',sip_subscriptions.orig_proto,sip_subscriptions.full_to,"
+										 "sip_subscriptions.version+1, '%q',sip_subscriptions.orig_proto,sip_subscriptions.full_to,"
 										 "sip_subscriptions.network_ip, sip_subscriptions.network_port "
 										 "from sip_subscriptions "
 										 "left join sip_presence on "
@@ -1395,6 +1395,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 										 event_type, alt_event_type, euser, host, profile->sipip, 
 										 profile->extsipip ? profile->extsipip : "N/A", host);
 				} else {
+
 					sql = switch_mprintf("update sip_subscriptions set version=version+1 where sip_subscriptions.event != 'line-seize' and "
 										 "hostname='%q' and profile_name = '%q' and sip_subscriptions.call_id='%q'",
 										 mod_sofia_globals.hostname, profile->name, call_id);
@@ -1404,7 +1405,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PRES SQL %s\n", sql);
 					}
 
-					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+					sofia_glue_execute_sql_soon(profile, &sql, SWITCH_TRUE);
 
 
 					sql = switch_mprintf("select distinct sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
@@ -1413,7 +1414,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 										 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
 										 "sip_subscriptions.accept,sip_subscriptions.profile_name"
 										 ",'%q','%q','%q',sip_presence.status,sip_presence.rpid,sip_presence.open_closed,'%q','%q',"
-										 "sip_subscriptions.version, '%q',sip_subscriptions.orig_proto,sip_subscriptions.full_to,"
+										 "sip_subscriptions.version+1, '%q',sip_subscriptions.orig_proto,sip_subscriptions.full_to,"
 										 "sip_subscriptions.network_ip, sip_subscriptions.network_port "
 										 "from sip_subscriptions "
 										 "left join sip_presence on "

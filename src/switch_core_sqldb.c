@@ -835,7 +835,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 		switch(dbh->type) {
 		case SCDB_TYPE_CORE_DB:
 			{
-				switch_cache_db_execute_sql_real(dbh, "BEGIN", &errmsg);
+				switch_cache_db_execute_sql_real(dbh, "BEGIN EXCLUSIVE", &errmsg);
 			}
 			break;
 		case SCDB_TYPE_ODBC:
@@ -1497,7 +1497,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 	switch(qm->event_db->type) {
 	case SCDB_TYPE_CORE_DB:
 		{
-			switch_cache_db_execute_sql_real(qm->event_db, "BEGIN", &errmsg);
+			switch_cache_db_execute_sql_real(qm->event_db, "BEGIN EXCLUSIVE", &errmsg);
 		}
 		break;
 	case SCDB_TYPE_ODBC:
@@ -2979,7 +2979,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			switch(sql_manager.dbh->type) {
 			case SCDB_TYPE_CORE_DB:
 				{
-					switch_cache_db_execute_sql_real(sql_manager.dbh, "BEGIN", &err);
+					switch_cache_db_execute_sql_real(sql_manager.dbh, "BEGIN EXCLUSIVE", &err);
 				}
 				break;
 			case SCDB_TYPE_ODBC:

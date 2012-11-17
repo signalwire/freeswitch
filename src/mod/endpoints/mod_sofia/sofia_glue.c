@@ -6373,7 +6373,7 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t
 	switch_assert(sqlp && *sqlp);
 	sql = *sqlp;	
 
-	switch_sql_queue_manager_push(profile->qm, sql, 0, !sql_already_dynamic);
+	switch_sql_queue_manager_push(profile->qm, sql, 1, !sql_already_dynamic);
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;
@@ -6389,6 +6389,20 @@ void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bo
 	sql = *sqlp;	
 
 	switch_sql_queue_manager_push_confirm(profile->qm, sql, 0, !sql_already_dynamic);
+
+	if (sql_already_dynamic) {
+		*sqlp = NULL;
+	}
+}
+
+void sofia_glue_execute_sql_soon(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic)
+{
+	char *sql;
+
+	switch_assert(sqlp && *sqlp);
+	sql = *sqlp;	
+
+	switch_sql_queue_manager_push(profile->qm, sql, 0, !sql_already_dynamic);
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;
