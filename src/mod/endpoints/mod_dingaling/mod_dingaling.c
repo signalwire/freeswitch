@@ -3112,12 +3112,6 @@ SWITCH_STANDARD_API(dl_login)
 
 	argc = switch_separate_string(myarg, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (zstr(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", LOGIN_SYNTAX);
-		status = SWITCH_STATUS_SUCCESS;
-		goto done;
-	}
-
 	if (argv[0] && !strncasecmp(argv[0], "profile=", 8)) {
 		char *profile_name = argv[0] + 8;
 		profile = switch_core_hash_find(globals.profile_hash, profile_name);
