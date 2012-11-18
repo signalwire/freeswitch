@@ -918,6 +918,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	struct addrinfo hints = { 0 }, *result;
 	struct sockaddr_in *sockaddr_in;
 	struct sockaddr_in6 *sockaddr_in6;
+	socklen_t socklen;
 #ifndef WIN32
 	int fd_flags = 0;
 #else
@@ -951,10 +952,12 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 		case AF_INET:
 			sockaddr_in = (struct sockaddr_in*)&(handle->sockaddr);
 			sockaddr_in->sin_port = htons(port);
+			socklen = sizeof(struct sockaddr_in);
 			break;
 		case AF_INET6:
 			sockaddr_in6 = (struct sockaddr_in6*)&(handle->sockaddr);
 			sockaddr_in6->sin6_port = htons(port);
+			socklen = sizeof(struct sockaddr_in6);
 			break;
 		default:
 			strncpy(handle->err, "Host resolves to unsupported address family", sizeof(handle->err));
@@ -985,7 +988,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 #endif
 	}
 
-	rval = connect(handle->sock, (struct sockaddr*)&handle->sockaddr, sizeof(handle->sockaddr));
+	rval = connect(handle->sock, (struct sockaddr*)&handle->sockaddr, socklen);
 	
 	if (timeout) {
 		int r;
