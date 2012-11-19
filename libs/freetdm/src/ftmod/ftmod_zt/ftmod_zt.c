@@ -274,6 +274,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 {
 	unsigned configured = 0, x;
 	zt_params_t ztp;
+	zt_tone_mode_t mode = 0;
 
 	memset(&ztp, 0, sizeof(ztp));
 
@@ -439,7 +440,7 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 				continue;
 			}
 
-			zt_tone_mode_t mode = ZT_TONEDETECT_ON | ZT_TONEDETECT_MUTE;
+			mode = ZT_TONEDETECT_ON | ZT_TONEDETECT_MUTE;
 			if (ioctl(sockfd, codes.TONEDETECT, &mode)) {
 				ftdm_log(FTDM_LOG_DEBUG, "HW DTMF not available on FreeTDM device %d:%d fd:%d\n", ftdmchan->span_id, ftdmchan->chan_id, sockfd);
 			} else {
