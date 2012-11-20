@@ -670,9 +670,6 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #ifdef WIN32
 		GetTempPath(dwBufSize, lpPathBuffer);
 		lpPathBuffer[strlen(lpPathBuffer)-1] = 0;
-		tmp = switch_string_replace(lpPathBuffer, "\\", "/");
-		strcpy(lpPathBuffer, tmp);
-		free(tmp);
 		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", lpPathBuffer);
 #else
 		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", "/tmp");
