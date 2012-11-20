@@ -1670,7 +1670,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 	while (qm->thread_running == 1) {
 		uint32_t i, lc;
-		uint32_t written, iterations = 0;
+		uint32_t written = 0, iterations = 0;
 
 		if (sql_manager.paused) {
 			for (i = 0; i < qm->numq; i++) {
@@ -1680,7 +1680,10 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 		}
 
 		do {
-			written = do_trans(qm);
+			if (!qm_ttl(qm)) {
+				goto check;
+			}
+			written = do_trans(qm);			
 			iterations += written;
 		} while(written == qm->max_trans);
 		
