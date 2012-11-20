@@ -1,3 +1,7 @@
+freeswitch (1.2.5)
+	mod_lua: Enable mod_lua to use native pgsql dbh support  (r:2cea7f0f)
+	mod_sofia: Add att_xfer_destination_number variable to indicate the original destination number of the attended transfer leg on REFER for semi-attended transfer scenarios.  (r:893cd7be)
+	sounds: Bump Callie sounds ver to 1.0.22  (r:41e00c78)
 freeswitch (1.2.4)
 	core: Add Postgres core db support (r:0c1180d5)
 	mod_cdr_mongodb: update MongoDB driver to v0.6  (r:10093b44)
