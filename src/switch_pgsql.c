@@ -276,11 +276,8 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_cancel_real(const char *file,
 		ret = SWITCH_PGSQL_FAIL;
 	}
 	PQfreeCancel(cancel);
-	{
-		PGresult *tmp = NULL;
-		/* Make sure the query is fully cancelled */
-		while ((tmp = PQgetResult(handle->con)) != NULL) PQclear(tmp);
-	}
+	switch_pgsql_flush(handle);
+
 #endif
 	return ret;
 }
@@ -427,14 +424,13 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 
 	return SWITCH_PGSQL_SUCCESS;
  error:
-	{
-		PGresult *tmp = NULL;
-		/* Make sure the failed connection does not have any transactions marked as in progress */
-		while ((tmp = PQgetResult(handle->con)) != NULL) PQclear(tmp);
 
-		/* Try to reconnect to the DB if we were dropped */
-		db_is_up(handle);
-	}
+	/* Make sure the failed connection does not have any transactions marked as in progress */
+	switch_pgsql_flush(handle);
+
+	/* Try to reconnect to the DB if we were dropped */
+	db_is_up(handle);
+
 #endif
 	return SWITCH_PGSQL_FAIL;
 }
@@ -572,6 +568,9 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_exec_base_detailed(con
 #ifdef SWITCH_HAVE_PGSQL
 	char *err_str = NULL, *er = NULL;
 
+
+
+	switch_pgsql_flush(handle);
 	handle->affected_rows = 0;
 
 	if (!db_is_up(handle)) {
@@ -823,6 +822,29 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_SQLSetAutoCommitAttr(switch_p
 	} else {
 		handle->auto_commit = SWITCH_FALSE;
 	}
+	return SWITCH_PGSQL_SUCCESS;
+#else
+	return (switch_pgsql_status_t) SWITCH_FALSE;
+#endif
+}
+
+SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_flush(switch_pgsql_handle_t *handle)
+{
+#ifdef SWITCH_HAVE_PGSQL
+
+	PGresult *tmp = NULL;
+	int x = 0;
+
+	/* Make sure the query is fully cleared */
+	while ((tmp = PQgetResult(handle->con)) != NULL) {
+		PQclear(tmp);
+		x++;
+	}
+	
+	if (x) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Flushing %d results\n", x);
+	}
+
 	return SWITCH_PGSQL_SUCCESS;
 #else
 	return (switch_pgsql_status_t) SWITCH_FALSE;

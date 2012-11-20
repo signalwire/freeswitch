@@ -156,6 +156,8 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_handle_callback_exec_detailed
 SWITCH_DECLARE(char *) switch_pgsql_handle_get_error(switch_pgsql_handle_t *handle);
 
 SWITCH_DECLARE(int) switch_pgsql_handle_affected_rows(switch_pgsql_handle_t *handle);
+SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_flush(switch_pgsql_handle_t *handle);
+
 
 SWITCH_END_EXTERN_C
 #endif

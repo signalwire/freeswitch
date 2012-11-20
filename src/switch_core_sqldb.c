@@ -293,6 +293,17 @@ SWITCH_DECLARE(void) switch_cache_db_flush_handles(void)
 SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t **dbh)
 {
 	if (dbh && *dbh) {
+
+		switch((*dbh)->type) {
+		case SCDB_TYPE_PGSQL:
+			{
+				switch_pgsql_flush((*dbh)->native_handle.pgsql_dbh);
+			}
+			break;
+		default:
+			break;
+		}
+
 		switch_mutex_lock(sql_manager.dbh_mutex);
 		(*dbh)->last_used = switch_epoch_time_now(NULL);
 
@@ -406,7 +417,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	switch (type) {
 	case SCDB_TYPE_PGSQL:
 		{
-			db_name = connection_options->odbc_options.dsn;
+			db_name = connection_options->pgsql_options.dsn;
 			odbc_user = NULL;
 			odbc_pass = NULL;
 		}
