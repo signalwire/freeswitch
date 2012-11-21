@@ -1054,7 +1054,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_call_cause_t *cancel_cause)
 {
 	private_t *tech_pvt = NULL;
-	if ((*new_session = switch_core_session_request(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
+	int result;
+
+        if ((*new_session = switch_core_session_request_uuid(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool, switch_event_get_header(var_event, "origination_uuid"))) != 0) {
+
 		switch_channel_t *channel = NULL;
 		switch_caller_profile_t *caller_profile;
 		char *rdest;
@@ -1171,8 +1174,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_mutex_unlock(tech_pvt->flag_mutex);
 		switch_channel_set_state(channel, CS_INIT);
-		gsmopen_call(tech_pvt, rdest, 30);
+		result=gsmopen_call(tech_pvt, rdest, 30);
 		switch_mutex_unlock(globals.mutex);
+		if(result != 0){
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		}
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
@@ -1217,6 +1223,14 @@ static switch_status_t load_config(int reload_type)
 	}
 
 	switch_mutex_lock(globals.mutex);
+
+	set_global_dialplan("XML");
+	DEBUGA_GSMOPEN("Default globals.dialplan=%s\n", GSMOPEN_P_LOG, globals.dialplan);
+	set_global_destination("5000");
+	DEBUGA_GSMOPEN("Default globals.destination=%s\n", GSMOPEN_P_LOG, globals.destination);
+	set_global_context("default");
+	DEBUGA_GSMOPEN("Default globals.context=%s\n", GSMOPEN_P_LOG, globals.context);
+
 	if ((global_settings = switch_xml_child(cfg, "global_settings"))) {
 		for (param = switch_xml_child(global_settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1250,16 +1264,16 @@ static switch_status_t load_config(int reload_type)
 		for (myinterface = switch_xml_child(interfaces, "interface"); myinterface; myinterface = myinterface->next) {
 			char *id = (char *) switch_xml_attr(myinterface, "id");
 			char *name = (char *) switch_xml_attr(myinterface, "name");
-			const char *context = "default";
-			const char *dialplan = "XML";
-			const char *destination = "5000";
+			const char *context = globals.context;
+			const char *dialplan = globals.dialplan;
+			const char *destination = globals.destination;
 			const char *controldevice_name = "/dev/ttyUSB3";
 			const char *controldevice_audio_name = "/dev/ttyUSB2";
 			char *digit_timeout = NULL;
 			char *max_digits = NULL;
 			char *hotline = NULL;
 			char *dial_regex = NULL;
-			char *hold_music = NULL;
+			char *hold_music = globals.hold_music;
 			char *fail_dial_regex = NULL;
 			const char *enable_callerid = "true";
 

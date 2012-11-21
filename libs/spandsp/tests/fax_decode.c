@@ -106,6 +106,7 @@ int image_width = 1728;
 int octets_per_ecm_frame = 256;
 int error_correcting_mode = FALSE;
 int current_fallback = 0;
+int end_of_page_detected = FALSE;
 
 static void decode_20digit_msg(const uint8_t *pkt, int len)
 {
@@ -232,8 +233,6 @@ static int check_rx_dcs(const uint8_t *msg, int len)
     if ((current_fallback = find_fallback_entry(dcs_frame[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))) < 0)
         printf("Remote asked for a modem standard we do not support\n");
     error_correcting_mode = ((dcs_frame[6] & DISBIT3) != 0);
-
-    //v17_rx_restart(&v17, fallback_sequence[fallback_entry].bit_rate, FALSE);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -298,6 +297,7 @@ static void t4_begin(void)
 
     t4_rx_start_page(&t4_rx_state);
     t4_up = TRUE;
+    end_of_page_detected = FALSE;
 
     for (i = 0;  i < 256;  i++)
         ecm_len[i] = -1;
@@ -381,7 +381,9 @@ static void v17_put_bit(void *user_data, int bit)
         if (t4_rx_put_bit(&t4_rx_state, bit))
         {
             t4_end();
-            fprintf(stderr, "End of page detected\n");
+            if (!end_of_page_detected)
+                fprintf(stderr, "End of page detected\n");
+            end_of_page_detected = TRUE;
         }
     }
     //printf("V.17 Rx bit %d - %d\n", rx_bits++, bit);
@@ -417,7 +419,9 @@ static void v29_put_bit(void *user_data, int bit)
         if (t4_rx_put_bit(&t4_rx_state, bit))
         {
             t4_end();
-            fprintf(stderr, "End of page detected\n");
+            if (!end_of_page_detected)
+                fprintf(stderr, "End of page detected\n");
+            end_of_page_detected = TRUE;
         }
     }
     //printf("V.29 Rx bit %d - %d\n", rx_bits++, bit);
@@ -453,7 +457,9 @@ static void v27ter_put_bit(void *user_data, int bit)
         if (t4_rx_put_bit(&t4_rx_state, bit))
         {
             t4_end();
-            fprintf(stderr, "End of page detected\n");
+            if (!end_of_page_detected)
+                fprintf(stderr, "End of page detected\n");
+            end_of_page_detected = TRUE;
         }
     }
     //printf("V.27ter Rx bit %d - %d\n", rx_bits++, bit);

@@ -268,9 +268,13 @@ int su_pthreaded_port_start(su_port_create_f *create,
 
   pthread_mutex_lock(arg.mutex);
   if (pthread_create(&tid, &attr, su_pthread_port_clone_main, &arg) == 0) {
+#ifdef HAVE_PTHREAD_SETSCHEDPARAM
+	  int policy;
+	  struct sched_param param;
 
-#ifdef HAVE_PTHREAD_SETSCHEDPRIO
-	  pthread_setschedprio(tid, 99);
+	  pthread_getschedparam(tid, &policy, &param);
+	  param.sched_priority = 99;
+	  pthread_setschedparam(tid, policy, &param);
 #endif
 
     pthread_cond_wait(arg.cv, arg.mutex);

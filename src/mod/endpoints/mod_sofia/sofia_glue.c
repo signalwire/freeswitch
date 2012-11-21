@@ -6373,7 +6373,7 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t
 	switch_assert(sqlp && *sqlp);
 	sql = *sqlp;	
 
-	switch_sql_queue_manager_push(profile->qm, sql, 0, !sql_already_dynamic);
+	switch_sql_queue_manager_push(profile->qm, sql, 1, !sql_already_dynamic);
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;
@@ -6389,6 +6389,20 @@ void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bo
 	sql = *sqlp;	
 
 	switch_sql_queue_manager_push_confirm(profile->qm, sql, 0, !sql_already_dynamic);
+
+	if (sql_already_dynamic) {
+		*sqlp = NULL;
+	}
+}
+
+void sofia_glue_execute_sql_soon(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic)
+{
+	char *sql;
+
+	switch_assert(sqlp && *sqlp);
+	sql = *sqlp;	
+
+	switch_sql_queue_manager_push(profile->qm, sql, 0, !sql_already_dynamic);
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;
@@ -6498,6 +6512,9 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 
 	switch_cache_db_release_db_handle(&dbh);
 
+
+	sofia_glue_fire_events(profile);
+
 	return ret;
 }
 
@@ -6528,6 +6545,9 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 	}
 
 	switch_cache_db_release_db_handle(&dbh);
+
+
+	sofia_glue_fire_events(profile);
 
 	return ret;
 }
@@ -7137,6 +7157,23 @@ char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool)
 	}
 
 	return s;
+}
+
+void sofia_glue_fire_events(sofia_profile_t *profile)
+{
+	void *pop = NULL;
+
+	while (profile->event_queue && switch_queue_trypop(profile->event_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		switch_event_t *event = (switch_event_t *) pop;
+		switch_event_fire(&event);
+	}
+
+}
+
+void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event)
+{
+	switch_queue_push(profile->event_queue, *event);
+	*event = NULL;
 }
 
 

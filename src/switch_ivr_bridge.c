@@ -316,7 +316,16 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if ((b_state = switch_channel_down_nosig(chan_b))) {
 			goto end_of_bridge_loop;
 		}
-		
+
+		if (switch_channel_test_flag(chan_a, CF_HOLD_ON_BRIDGE)) {
+			switch_core_session_message_t hmsg = { 0 };
+			switch_channel_clear_flag(chan_a, CF_HOLD_ON_BRIDGE);
+			hmsg.message_id = SWITCH_MESSAGE_INDICATE_HOLD;
+			hmsg.from = __FILE__;
+			hmsg.numeric_arg = 1;
+			switch_core_session_receive_message(session_a, &hmsg);
+		}
+
 		if (read_frame_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) && switch_core_session_private_event_count(session_a)) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.numeric_arg = 42;
@@ -1554,6 +1563,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 		if ((originatee_session = switch_core_session_locate(originatee_uuid))) {
 			originator_channel = switch_core_session_get_channel(originator_session);
 			originatee_channel = switch_core_session_get_channel(originatee_session);
+
+
+			if (switch_channel_test_flag(originator_channel, CF_LEG_HOLDING)) {
+				switch_channel_set_flag(originator_channel, CF_HOLD_ON_BRIDGE);
+			}
+
+			if (switch_channel_test_flag(originatee_channel, CF_LEG_HOLDING)) {
+				switch_channel_set_flag(originatee_channel, CF_HOLD_ON_BRIDGE);
+			}
+
 
 
 			if (switch_channel_direction(originatee_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(originatee_channel, CF_DIALPLAN)) {

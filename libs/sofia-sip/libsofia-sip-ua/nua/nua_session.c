@@ -1245,6 +1245,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   int status = 200;
   char const *phrase = "OK", *reason = NULL;
   char const *invite_branch;
+  char const *pl_s = NULL;
 
   assert(cr->cr_orq);
   assert(cr->cr_method == sip_method_invite);
@@ -1255,6 +1256,11 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
     /* XXX - fix nua_dialog_usage_remove_at() instead! */
     goto error;
   }
+
+  tl_gets(tags,
+		  SIPTAG_PAYLOAD_STR_REF(pl_s),
+		  TAG_END());
+  
 
   assert(ds->ds_leg);
 
@@ -1305,7 +1311,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
     while (sip->sip_supported)
       sip_header_remove(msg, sip, (sip_header_t*)sip->sip_supported);
 
-    if (ss == NULL || ss->ss_state > nua_callstate_ready)
+    if (ss == NULL || ss->ss_state > nua_callstate_ready || pl_s)
       ;
     else if (cr->cr_offer_recv && !cr->cr_answer_sent) {
       if (nh->nh_soa == NULL) {

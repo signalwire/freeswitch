@@ -1245,6 +1245,11 @@ SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(switch_core_s
 	return session->channel;
 }
 
+SWITCH_DECLARE(switch_mutex_t *) switch_core_session_get_mutex(switch_core_session_t *session)
+{
+	return session->mutex;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(switch_core_session_t *session)
 {
 	switch_status_t status;
@@ -1530,13 +1535,23 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 	while(session_manager.ready) {
 		switch_status_t check_status;
 
+		pop = NULL;
+
 		if (check) {
 			check_status = switch_queue_trypop(session_manager.thread_queue, &pop);
 		} else {
+			switch_mutex_lock(session_manager.mutex);
+			session_manager.popping++;
+			switch_mutex_unlock(session_manager.mutex);
+			
 			check_status = switch_queue_pop(session_manager.thread_queue, &pop);
+
+			switch_mutex_lock(session_manager.mutex);
+			session_manager.popping--;
+			switch_mutex_unlock(session_manager.mutex);
 		}
 
-		if (check_status == SWITCH_STATUS_SUCCESS) {
+		if (check_status == SWITCH_STATUS_SUCCESS && pop) {
 			switch_thread_data_t *td = (switch_thread_data_t *) pop;
 			
 			if (!td) break;
@@ -1614,7 +1629,6 @@ static switch_status_t check_queue(void)
 	switch_mutex_unlock(session_manager.mutex);
 
 
-
 	while (x < ttl) {
 		switch_thread_t *thread;
 		switch_threadattr_t *thd_attr;
@@ -1653,13 +1667,32 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 		switch_yield(100000);
 
 		if (++x == 300) {
-			switch_queue_interrupt_all(session_manager.thread_queue);
-			x = 0;
+			if (session_manager.popping) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, 
+								  "Thread pool: running:%d busy:%d popping:%d\n", session_manager.running, session_manager.busy, session_manager.popping);
+
+				if (session_manager.popping) {
+					int i = 0;
+
+					switch_mutex_lock(session_manager.mutex);
+					for (i = 0; i < session_manager.popping; i++) {
+						switch_queue_trypush(session_manager.thread_queue, NULL);
+					}
+					switch_mutex_unlock(session_manager.mutex);
+
+				}
+
+				x--;
+
+				continue;
+			} else {
+				x = 0;
+			}
 		}
 
 		check_queue();
 	}
-
+	
 	return NULL;
 }
 

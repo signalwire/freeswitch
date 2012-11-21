@@ -9211,7 +9211,7 @@ int outgoing_recv(nta_outgoing_t *_orq,
     if (orq->orq_destroyed && 200 <= status && status < 300) {
       if (orq->orq_uas && su_strcasecmp(sip->sip_to->a_tag, orq->orq_tag) != 0) {
         /* Orphan 200 Ok to INVITE. ACK and BYE it */
-        SU_DEBUG_5(("nta: Orphan 200 Ok send ACK&BYE\n" VA_NONE));
+		  SU_DEBUG_5(("nta: Orphan 200 Ok send ACK&BYE %p\n", (void *)orq));
         return nta_msg_ackbye(sa, msg);
       }
       return -1;  /* Proxy statelessly (RFC3261 section 16.11) */

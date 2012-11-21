@@ -262,12 +262,14 @@ char *generate_pai_str(private_object_t *tech_pvt)
 		return NULL;
 	}
 
-	if (zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
+	if (zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "initial_callee_id_name"))) &&
+		zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
 		zstr((callee_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
 		callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
 	}
 
-	if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_number"))) &&
+	if (zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "initial_callee_id_number"))) &&
+		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_number"))) &&
 		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number"))) &&
 		zstr((callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number")))) {
 
@@ -2024,10 +2026,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				nua_ack(tech_pvt->nh,
 						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-						SOATAG_USER_SDP_STR(msg->string_arg),
-						SOATAG_REUSE_REJECTED(1),
-						SOATAG_RTP_SELECT(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
-						TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
+						SIPTAG_PAYLOAD_STR(msg->string_arg),
+						SIPTAG_CONTENT_TYPE_STR("application/sdp"),
 						TAG_END());
 				sofia_clear_flag(tech_pvt, TFLAG_3PCC_INVITE);
 				
@@ -2456,25 +2456,31 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_HOLD:
 		{
-			sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-			switch_channel_set_flag(channel, CF_LEG_HOLDING);
-			sofia_glue_do_invite(session);
-			if (!zstr(msg->string_arg)) {
-				char message[256] = "";
-				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 
-				if (ua && switch_stristr("snom", ua)) {
-					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", msg->string_arg, tech_pvt->caller_profile->destination_number);
-					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-							 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
-				} else if (ua && switch_stristr("polycom", ua)) {
-					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
-					nua_update(tech_pvt->nh,
-							   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
-							   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
-							   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
-							   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
-							   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+			if (msg->numeric_arg) {
+				sofia_glue_toggle_hold(tech_pvt, 1);
+			} else {
+
+				sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+				switch_channel_set_flag(channel, CF_LEG_HOLDING);
+				sofia_glue_do_invite(session);
+				if (!zstr(msg->string_arg)) {
+					char message[256] = "";
+					const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+					
+					if (ua && switch_stristr("snom", ua)) {
+						snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", msg->string_arg, tech_pvt->caller_profile->destination_number);
+						nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+								 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
+					} else if (ua && switch_stristr("polycom", ua)) {
+						snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
+						nua_update(tech_pvt->nh,
+								   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
+								   NUTAG_SESSION_REFRESHER(tech_pvt->session_refresher),
+								   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
+								   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
+								   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
+					}
 				}
 			}
 		}

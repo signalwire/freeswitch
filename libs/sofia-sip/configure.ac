@@ -254,7 +254,7 @@ if test x"$have_check" = "xyes"; then
 fi
 AC_CHECK_HEADERS([fnmatch.h])
 
-AC_CHECK_LIB(pthread, pthread_setschedprio, [AC_DEFINE(HAVE_PTHREAD_SETSCHEDPRIO, 1, [Define if you have pthread_setschedprio()])])
+AC_CHECK_LIB(pthread, pthread_setschedparam, [AC_DEFINE(HAVE_PTHREAD_SETSCHEDPARAM, 1, [Define if you have pthread_setschedparam()])])
 
 
 dnl dl is currently used only in testing

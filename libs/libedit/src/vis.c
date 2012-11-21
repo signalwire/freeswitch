@@ -88,7 +88,7 @@ __RCSID("$NetBSD: vis.c,v 1.35 2006/08/28 20:42:12 christos Exp $");
 #include <vis.h>
 #include <stdlib.h>
 
-#if defined(__weak_reference) && !defined(__FreeBSD__)
+#if defined(__weak_reference) && !defined(__FreeBSD__) && !defined(__NetBSD__)
 __weak_alias(strsvis,_strsvis)
 __weak_alias(strsvisx,_strsvisx)
 __weak_alias(strvis,_strvis)

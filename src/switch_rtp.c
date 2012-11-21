@@ -3145,8 +3145,8 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 
 				rtp_session->rtcp_fresh_frame = 1;
 
-				rtp_session->stats.rtcp.packet_count += sr->pc;
-				rtp_session->stats.rtcp.octet_count += sr->oc;
+				rtp_session->stats.rtcp.packet_count += ntohl(sr->pc);
+				rtp_session->stats.rtcp.octet_count += ntohl(sr->oc);
 				rtp_session->stats.rtcp.peer_ssrc = ntohl(sr->ssrc);
 
 				/* sender report */

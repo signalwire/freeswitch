@@ -216,7 +216,7 @@ int line_model_monitor_line_spectrum_update(const int16_t amp[], int len)
 #endif
     }
     s->in_ptr = 0;
-#if defined(HAVE_FFTW3_H)    
+#if defined(HAVE_FFTW3_H)
     fftw_execute(s->p);
 #else
     fftw_one(s->p, s->in, s->out);
@@ -227,7 +227,7 @@ int line_model_monitor_line_spectrum_update(const int16_t amp[], int len)
     for (i = 0;  i < 512;  i++)
     {
         s->spec_re_plot[2*i] = i*4000.0/512.0;
-#if defined(HAVE_FFTW3_H)    
+#if defined(HAVE_FFTW3_H)
         s->spec_re_plot[2*i + 1] = 10.0*log10((s->out[i][0]*s->out[i][0] + s->out[i][1]*s->out[i][1])/(256.0*32768*256.0*32768) + 1.0e-10) + 3.14;
 #else
         s->spec_re_plot[2*i + 1] = 10.0*log10((s->out[i].re*s->out[i].re + s->out[i].im*s->out[i].im)/(256.0*32768*256.0*32768) + 1.0e-10) + 3.14;
@@ -395,7 +395,7 @@ int start_line_model_monitor(int len)
     s->w->end();
     s->w->show();
 
-#if defined(HAVE_FFTW3_H)    
+#if defined(HAVE_FFTW3_H)
     s->p = fftw_plan_dft_1d(1024, s->in, s->out, FFTW_BACKWARD, FFTW_ESTIMATE);
     for (i = 0;  i < 1024;  i++)
     {

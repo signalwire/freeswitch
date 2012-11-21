@@ -204,8 +204,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 			bson_append_start_object(&cdr, "extension");
 
-			bson_append_string(&cdr, "name", caller_profile->caller_extension->extension_name);
-			bson_append_string(&cdr, "number", caller_profile->caller_extension->extension_number);
+			bson_append_string(&cdr, "name", switch_str_nil(caller_profile->caller_extension->extension_name));
+			bson_append_string(&cdr, "number", switch_str_nil(caller_profile->caller_extension->extension_number));
 
 			if (caller_profile->caller_extension->current_application) {
 				bson_append_string(&cdr, "current_app", caller_profile->caller_extension->current_application->application_name);

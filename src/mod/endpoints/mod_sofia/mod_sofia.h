@@ -389,6 +389,7 @@ struct mod_sofia_globals {
 	int tracelevel;
 	char *capture_server;	
 	int rewrite_multicasted_fs_path;
+	int presence_flush;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -694,6 +695,7 @@ struct sofia_profile {
 	int ireg_seconds;
 	sofia_paid_type_t paid_type;
 	uint32_t rtp_digit_delay;
+	switch_queue_t *event_queue;
 };
 
 struct private_object {
@@ -1013,6 +1015,7 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t
 void sofia_glue_actually_execute_sql(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex);
 void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, switch_mutex_t *mutex);
 void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic);
+void sofia_glue_execute_sql_soon(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now);
@@ -1206,6 +1209,8 @@ int sofia_recover_callback(switch_core_session_t *session);
 void sofia_glue_set_name(private_object_t *tech_pvt, const char *channame);
 private_object_t *sofia_glue_new_pvt(switch_core_session_t *session);
 switch_status_t sofia_init(void);
+void sofia_glue_fire_events(sofia_profile_t *profile);
+void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event);
 
 /* For Emacs:
  * Local Variables:
