@@ -2212,7 +2212,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 
 		if (!sofia_test_pflag(profile, PFLAG_STANDBY)) {
-			if (++ireg_loops >= IREG_SECONDS) {
+			if (++ireg_loops >= profile->ireg_seconds) {
 				time_t now = switch_epoch_time_now(NULL);
 				sofia_reg_check_expire(profile, now, 0);
 				ireg_loops = 0;
