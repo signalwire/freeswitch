@@ -1264,6 +1264,9 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 
 		switch_rtp_set_ssrc(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_RTP].ssrc);
 
+		switch_rtp_intentional_bugs(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, RTP_BUG_GEN_ONE_GEN_ALL);
+
+
 		if (tech_pvt->transports[LDL_TPORT_RTCP].remote_port) {
 			switch_rtp_activate_rtcp(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, MDL_RTCP_DUR, 
 									 tech_pvt->transports[LDL_TPORT_RTCP].remote_port);
