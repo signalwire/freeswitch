@@ -1595,8 +1595,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		} else {
 			sql = switch_mprintf("update sip_registrations set "
 								 "sub_host='%q', network_ip='%q',network_port='%q',"
+								 "presence_hosts='%q', server_host='%q', orig_server_host='%q',"
+                                                                 "hostname='%q', orig_hostname='%q',"
 								 "expires = %ld where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'", 
 								 sub_host, network_ip, network_port_c,
+								 profile->presence_hosts ? profile->presence_hosts : "", guess_ip4, guess_ip4,
+                                                                 mod_sofia_globals.hostname, mod_sofia_globals.hostname,
 								 (long) switch_epoch_time_now(NULL) + (long) exptime + 60, 
 								 to_user, username, reg_host, contact_str);
 		}				 
