@@ -885,7 +885,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		from = "freeswitch";
 	}
 #ifdef WIN32
-	switch_snprintf(buf, B64BUFFLEN, "\"%s\" -f %s %s %s < \"%s\"", runtime.mailer_app, from, runtime.mailer_app_args, to, filename);
+	switch_snprintf(buf, B64BUFFLEN, "\"\"%s\" -f %s %s %s < \"%s\"\"", runtime.mailer_app, from, runtime.mailer_app_args, to, filename);
 #else
 	switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s -f %s %s %s", filename, runtime.mailer_app, from, runtime.mailer_app_args, to);
 #endif
