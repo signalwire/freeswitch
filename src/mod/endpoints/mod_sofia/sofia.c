@@ -4672,6 +4672,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 
 					if (profile->sipip) {
+
+						if (!profile->extsipport) {
+							profile->extsipport = profile->sip_port;
+						}
+
 						launch_sofia_profile_thread(profile);
 						if (profile->odbc_dsn) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Connecting ODBC Profile %s [%s]\n", profile->name, url);
@@ -4692,10 +4697,6 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 		}
 	}
   done:
-
-	if (!profile->extsipport) {
-		profile->extsipport = profile->sip_port;
-	}
 
 	if (profile_already_started) {
 		sofia_glue_release_profile(profile_already_started);
