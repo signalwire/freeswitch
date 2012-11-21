@@ -600,6 +600,7 @@ struct sofia_profile {
 	sofia_dtmf_t dtmf_type;
 	int auto_restart;
 	switch_port_t sip_port;
+	switch_port_t extsipport;
 	switch_port_t tls_sip_port;
 	int tls_version;
 	unsigned int tls_timeout;

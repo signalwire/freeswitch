@@ -3988,6 +3988,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
 						}
 						profile->sipip = switch_core_strdup(profile->pool, ip);
+					} else if (!strcasecmp(var, "ext-sip-port") && val) {
+						int tmp = atoi(val);
+						if (tmp > 0) profile->extsipport = tmp;
 					} else if (!strcasecmp(var, "ext-sip-ip")) {
 						if (!zstr(val)) {
 							char *ip = mod_sofia_globals.guess_ip;
@@ -4002,8 +4005,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							} else if (!strcasecmp(val, "auto-nat")) {
 								ip = NULL;
 							} else if (strcasecmp(val, "auto")) {
-								switch_port_t port = 0;
-								if (sofia_glue_ext_address_lookup(profile, NULL, &myip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
+								if (!profile->extsipport) {
+									profile->extsipport = profile->sip_port;
+								}
+
+								if (sofia_glue_ext_address_lookup(profile, NULL, &myip, &profile->extsipport, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
 									ip = myip;
 									sofia_clear_pflag(profile, PFLAG_AUTO_NAT);
 								} else {
@@ -4686,6 +4692,10 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 		}
 	}
   done:
+
+	if (!profile->extsipport) {
+		profile->extsipport = profile->sip_port;
+	}
 
 	if (profile_already_started) {
 		sofia_glue_release_profile(profile_already_started);
