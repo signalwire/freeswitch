@@ -873,13 +873,13 @@ static void do_dialog_probe(switch_event_t *event)
 		if (mod_sofia_globals.debug_presence > 1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s DUMP DIALOG_PROBE set version sql:\n%s\n", profile->name, sql);
 		}
-		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		sofia_glue_execute_sql_soon(profile, &sql, SWITCH_TRUE);
 		switch_safe_free(sql);
 
 
 		// The dialog_probe_callback has built up the dialogs to be included in the NOTIFY.
 		// Now send the "full" dialog event to the triggering subscription.
-		sql = switch_mprintf("select call_id,expires,sub_to_user,sub_to_host,event,version, "
+		sql = switch_mprintf("select call_id,expires,sub_to_user,sub_to_host,event,version+1, "
 							 "'full',full_to,full_from,contact,network_ip,network_port "
 							 "from sip_subscriptions "
 							 "where hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and call_id='%q'",
@@ -4543,7 +4543,7 @@ void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now)
 							 "((expires > 0 and expires <= %ld)) and profile_name='%q' and hostname='%q'", 
 							 (long) now, profile->name, mod_sofia_globals.hostname);
 
-		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		sofia_glue_execute_sql_soon(profile, &sql, SWITCH_TRUE);
 		switch_safe_free(sql);
 
 		sql = switch_mprintf("select full_to, full_from, contact, -1, call_id, event, network_ip, network_port, "
