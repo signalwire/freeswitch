@@ -2018,9 +2018,9 @@ void sofia_reg_handle_sip_r_register(int status,
 					expi = (uint32_t) atoi(new_expires);
 
 					if (expi > 0 && expi != sofia_private->gateway->freq) {
-						sofia_private->gateway->freq = expi;
-						sofia_private->gateway->expires_str = switch_core_sprintf(sofia_private->gateway->pool, "%d", expi);
-
+						//sofia_private->gateway->freq = expi;
+						//sofia_private->gateway->expires_str = switch_core_sprintf(sofia_private->gateway->pool, "%d", expi);
+						
 						if (expi > 60) {
 							sofia_private->gateway->expires = switch_epoch_time_now(NULL) + (expi - 15);
 						} else {
