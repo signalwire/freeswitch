@@ -1714,10 +1714,9 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 		if ((lc = qm_ttl(qm)) < qm->max_trans / 4) {
 			switch_yield(500000);
-		} else if (lc == 0) {
-			switch_thread_cond_wait(qm->cond, qm->cond_mutex);
-		} else {
-			switch_cond_next();
+			if ((lc = qm_ttl(qm)) == 0) {
+				switch_thread_cond_wait(qm->cond, qm->cond_mutex);
+			}
 		}
 	}
 
