@@ -1409,9 +1409,9 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 
 	switch_mutex_lock(qm->mutex);
 	switch_queue_push(qm->sql_queue[pos], dup ? strdup(sql) : (char *)sql);
-	written = qm->written[pos];
+	written = qm->pre_written[pos];
 	size = switch_sql_queue_manager_size(qm, pos);
-	want = written + qm->pre_written[pos] + size;
+	want = written + size;
 	switch_mutex_unlock(qm->mutex);
 
 	qm_wake(qm);
@@ -1493,12 +1493,6 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 	uint32_t i;
 
 	if (io_mutex) switch_mutex_lock(io_mutex);
-
-	switch_mutex_lock(qm->mutex);
-	for (i = 0; i < qm->numq; i++) {
-		qm->pre_written[i] = 0;
-	}
-	switch_mutex_unlock(qm->mutex);
 
 	if (!zstr(qm->pre_trans_execute)) {
 		switch_cache_db_execute_sql_real(qm->event_db, qm->pre_trans_execute, &errmsg);
@@ -1623,7 +1617,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 
 	switch_mutex_lock(qm->mutex);
 	for (i = 0; i < qm->numq; i++) {
-		qm->written[i] += qm->pre_written[i];
+		qm->written[i] = qm->pre_written[i];
 	}
 	switch_mutex_unlock(qm->mutex);
 
