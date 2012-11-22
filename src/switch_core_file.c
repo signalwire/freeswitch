@@ -42,7 +42,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 															  uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t *pool)
 {
 	char *ext;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	char stream_name[128] = "";
 	char *rhs = NULL;
 	const char *spool_path = NULL;
