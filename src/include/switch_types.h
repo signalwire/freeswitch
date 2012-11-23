@@ -466,7 +466,6 @@ typedef struct {
 struct switch_directories {
 	char *base_dir;
 	char *mod_dir;
-	char *lib_dir;
 	char *conf_dir;
 	char *log_dir;
 	char *run_dir;
@@ -478,6 +477,7 @@ struct switch_directories {
 	char *storage_dir;
 	char *recordings_dir;
 	char *sounds_dir;
+	char *lib_dir;
 };
 
 typedef struct switch_directories switch_directories;

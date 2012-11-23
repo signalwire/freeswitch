@@ -2212,7 +2212,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 
 		if (!sofia_test_pflag(profile, PFLAG_STANDBY)) {
-			if (++ireg_loops >= IREG_SECONDS) {
+			if (++ireg_loops >= profile->ireg_seconds) {
 				time_t now = switch_epoch_time_now(NULL);
 				sofia_reg_check_expire(profile, now, 0);
 				ireg_loops = 0;
@@ -3988,6 +3988,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
 						}
 						profile->sipip = switch_core_strdup(profile->pool, ip);
+					} else if (!strcasecmp(var, "ext-sip-port") && val) {
+						int tmp = atoi(val);
+						if (tmp > 0) profile->extsipport = tmp;
 					} else if (!strcasecmp(var, "ext-sip-ip")) {
 						if (!zstr(val)) {
 							char *ip = mod_sofia_globals.guess_ip;
@@ -4002,8 +4005,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							} else if (!strcasecmp(val, "auto-nat")) {
 								ip = NULL;
 							} else if (strcasecmp(val, "auto")) {
-								switch_port_t port = 0;
-								if (sofia_glue_ext_address_lookup(profile, NULL, &myip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
+								if (!profile->extsipport) {
+									profile->extsipport = profile->sip_port;
+								}
+
+								if (sofia_glue_ext_address_lookup(profile, NULL, &myip, &profile->extsipport, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
 									ip = myip;
 									sofia_clear_pflag(profile, PFLAG_AUTO_NAT);
 								} else {
@@ -4666,6 +4672,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 
 					if (profile->sipip) {
+
+						if (!profile->extsipport) {
+							profile->extsipport = profile->sip_port;
+						}
+
 						launch_sofia_profile_thread(profile);
 						if (profile->odbc_dsn) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Connecting ODBC Profile %s [%s]\n", profile->name, url);

@@ -341,9 +341,10 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session);
 
 static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_size_t bytes, int *do_cng)
 {
+
 #ifdef DEBUG_2833
 	if (rtp_session->dtmf_data.in_digit_sanity && !(rtp_session->dtmf_data.in_digit_sanity % 100)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sanity %d\n", rtp_session->dtmf_data.in_digit_sanity);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sanity %d\n", rtp_session->dtmf_data.in_digit_sanity);
 	}
 #endif
 
@@ -396,8 +397,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			}
 		}
 #ifdef DEBUG_2833
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "packet[%d]: %02x %02x %02x %02x\n", (int) len, (unsigned) packet[0], (unsigned)
-			   packet[1], (unsigned) packet[2], (unsigned) packet[3]);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "packet[%d]: %02x %02x %02x %02x\n", (int) len, (unsigned) packet[0], (unsigned) packet[1], (unsigned) packet[2], (unsigned) packet[3]);
 #endif
 
 		if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
@@ -405,7 +405,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
 #ifdef DEBUG_2833
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "read: %c %u %u %u %u %d %d %s\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read: %c %u %u %u %u %d %d %s\n",
 				   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq,
 				   ts, duration, rtp_session->recv_msg.header.m, end, end && !rtp_session->dtmf_data.in_digit_ts ? "ignored" : "");
 #endif
@@ -414,7 +414,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 				rtp_session->dtmf_data.in_digit_ts) {
 				switch_dtmf_t dtmf = { key, switch_core_min_dtmf_duration(0), 0, SWITCH_DTMF_RTP };
 #ifdef DEBUG_2833
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Early Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Early Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
 #endif
 				switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
 				rtp_session->dtmf_data.in_digit_queued = 1;
@@ -433,7 +433,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			if (end) {
 				if (!rtp_session->dtmf_data.in_digit_ts && rtp_session->dtmf_data.last_in_digit_ts != ts) {
 #ifdef DEBUG_2833
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "start with end packet %d\n", ts);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "start with end packet %d\n", ts);
 #endif
 					rtp_session->dtmf_data.last_in_digit_ts = ts;
 					rtp_session->dtmf_data.in_digit_ts = ts;
@@ -450,17 +450,17 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 						dtmf.duration += rtp_session->dtmf_data.flip * 0xFFFF;
 						rtp_session->dtmf_data.flip = 0;
 #ifdef DEBUG_2833
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "you're welcome!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "you're welcome!\n");
 #endif
 					}
 #ifdef DEBUG_2833
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "done digit=%c ts=%u start_ts=%u dur=%u ddur=%u\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "done digit=%c ts=%u start_ts=%u dur=%u ddur=%u\n",
 						   dtmf.digit, ts, rtp_session->dtmf_data.in_digit_ts, duration, dtmf.duration);
 #endif
 						
 					if (!(rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION) && !rtp_session->dtmf_data.in_digit_queued) {
 #ifdef DEBUG_2833
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
 #endif
 						switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
 					}
@@ -481,7 +481,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 
 			} else if (!rtp_session->dtmf_data.in_digit_ts) {
 #ifdef DEBUG_2833
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "start %d\n", ts);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "start %d\n", ts);
 #endif
 				rtp_session->dtmf_data.in_digit_ts = ts;
 				rtp_session->dtmf_data.last_in_digit_ts = ts;
@@ -492,7 +492,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			rtp_session->dtmf_data.last_duration = duration;
 		} else {
 #ifdef DEBUG_2833
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "drop: %c %u %u %u %u %d %d\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "drop: %c %u %u %u %u %d %d\n",
 				   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, ts, duration, rtp_session->recv_msg.header.m, end);
 #endif
 			switch_cond_next();
@@ -2822,7 +2822,7 @@ static void do_flush(switch_rtp_t *rtp_session)
 					if (bytes > rtp_header_len && rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 						handle_rfc2833(rtp_session, bytes, &do_cng);
 #ifdef DEBUG_2833
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
 #endif
 					}
 

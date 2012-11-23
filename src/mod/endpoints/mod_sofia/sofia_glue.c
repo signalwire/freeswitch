@@ -1373,7 +1373,7 @@ const char *sofia_glue_transport2str(const sofia_transport_t tp)
 char *sofia_glue_create_external_via(switch_core_session_t *session, sofia_profile_t *profile, sofia_transport_t transport)
 {
 	return sofia_glue_create_via(session, profile->extsipip, (sofia_glue_transport_has_tls(transport))
-								 ? profile->tls_sip_port : profile->sip_port, transport);
+								 ? profile->tls_sip_port : profile->extsipport, transport);
 }
 
 char *sofia_glue_create_via(switch_core_session_t *session, const char *ip, switch_port_t port, sofia_transport_t transport)
