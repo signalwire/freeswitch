@@ -3254,13 +3254,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	}
 
 
-	if (!sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
-		if (switch_rtp_ready(tech_pvt->rtp_session)) {
-			if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
-				goto video;
-			} else {
-				goto end;
-			}
+	if (!sofia_test_flag(tech_pvt, TFLAG_REINVITE) && !sofia_test_flag(tech_pvt, TFLAG_SDP) && switch_rtp_ready(tech_pvt->rtp_session)) {
+		if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
+			goto video;
+		} else {
+			goto end;
 		}
 	}
 
