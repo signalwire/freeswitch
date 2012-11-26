@@ -4478,11 +4478,6 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 		}
 	}
 
-	if (switch_file_exists(file, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] does not exist.\n", file);
-		goto top;
-	}
-
 	if (switch_core_file_open(&context->fh, file, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		goto top;
 	}
