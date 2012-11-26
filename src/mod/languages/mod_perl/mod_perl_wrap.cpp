@@ -2051,6 +2051,24 @@ XS(_wrap_consoleCleanLog) {
 }
 
 
+XS(_wrap_running) {
+  {
+    bool result;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 0) || (items > 0)) {
+      SWIG_croak("Usage: running();");
+    }
+    result = (bool)running();
+    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
+    XSRETURN(argvi);
+  fail:
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_email) {
   {
     char *arg1 = (char *) 0 ;
@@ -9642,6 +9660,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::getGlobalVariable", _wrap_getGlobalVariable},
 {"freeswitchc::consoleLog", _wrap_consoleLog},
 {"freeswitchc::consoleCleanLog", _wrap_consoleCleanLog},
+{"freeswitchc::running", _wrap_running},
 {"freeswitchc::email", _wrap_email},
 {"freeswitchc::new_IVRMenu", _wrap_new_IVRMenu},
 {"freeswitchc::delete_IVRMenu", _wrap_delete_IVRMenu},

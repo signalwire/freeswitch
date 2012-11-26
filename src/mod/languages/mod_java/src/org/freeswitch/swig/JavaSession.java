@@ -69,4 +69,8 @@ public class JavaSession extends CoreSession {
     return new SWIGTYPE_p_switch_status_t(freeswitchJNI.JavaSession_run_dtmf_callback(swigCPtr, this, SWIGTYPE_p_void.getCPtr(input), SWIGTYPE_p_switch_input_type_t.getCPtr(itype)), true);
   }
 
+  public int originate(JavaSession aleg, String destination, int timeout) {
+    return freeswitchJNI.JavaSession_originate(swigCPtr, this, JavaSession.getCPtr(aleg), aleg, destination, timeout);
+  }
+
 }

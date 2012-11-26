@@ -1627,6 +1627,24 @@ fail:
 }
 
 
+static int _wrap_running(lua_State* L) {
+  int SWIG_arg = -1;
+  bool result;
+  
+  SWIG_check_num_args("running",0,0)
+  result = (bool)running();
+  SWIG_arg=0;
+  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_email(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
@@ -7774,6 +7792,7 @@ static const struct luaL_reg swig_commands[] = {
     { "getGlobalVariable", _wrap_getGlobalVariable},
     { "consoleLog", _wrap_consoleLog},
     { "consoleCleanLog", _wrap_consoleCleanLog},
+    { "running", _wrap_running},
     { "email", _wrap_email},
     { "console_log", _wrap_console_log},
     { "console_clean_log", _wrap_console_clean_log},

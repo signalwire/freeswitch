@@ -3133,6 +3133,19 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_running(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)":running")) SWIG_fail;
+  result = (bool)running();
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_email(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   char *arg1 = (char *) 0 ;
@@ -9169,6 +9182,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"getGlobalVariable", _wrap_getGlobalVariable, METH_VARARGS, NULL},
 	 { (char *)"consoleLog", _wrap_consoleLog, METH_VARARGS, NULL},
 	 { (char *)"consoleCleanLog", _wrap_consoleCleanLog, METH_VARARGS, NULL},
+	 { (char *)"running", _wrap_running, METH_VARARGS, NULL},
 	 { (char *)"email", _wrap_email, METH_VARARGS, NULL},
 	 { (char *)"new_IVRMenu", _wrap_new_IVRMenu, METH_VARARGS, NULL},
 	 { (char *)"delete_IVRMenu", _wrap_delete_IVRMenu, METH_VARARGS, NULL},

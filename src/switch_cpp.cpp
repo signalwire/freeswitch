@@ -1205,6 +1205,11 @@ SWITCH_DECLARE(char *) getGlobalVariable(char *var_name)
 }
 
 
+SWITCH_DECLARE(bool) running(void)
+{
+	return switch_core_running() ? true : false;
+}
+
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg)
 {
 	return console_log(level_str, msg);

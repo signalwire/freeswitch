@@ -13,6 +13,7 @@ class freeswitchJNI {
   public final static native String getGlobalVariable(String jarg1);
   public final static native void consoleLog(String jarg1, String jarg2);
   public final static native void consoleCleanLog(String jarg1);
+  public final static native boolean running();
   public final static native boolean email(String jarg1, String jarg2, String jarg3, String jarg4, String jarg5, String jarg6, String jarg7);
   public final static native long new_IVRMenu(long jarg1, IVRMenu jarg1_, String jarg2, String jarg3, String jarg4, String jarg5, String jarg6, String jarg7, String jarg8, String jarg9, String jarg10, int jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16);
   public final static native void delete_IVRMenu(long jarg1);
@@ -162,6 +163,7 @@ class freeswitchJNI {
   public final static native long dtmf_callback(long jarg1, long jarg2, long jarg3, long jarg4, long jarg5);
   public final static native void javaVM_set(long jarg1);
   public final static native long javaVM_get();
+  public final static native void setOriginateStateHandler(org.freeswitch.StateHandler jarg1) throws java.util.TooManyListenersException;
   public final static native long new_JavaSession__SWIG_0();
   public final static native long new_JavaSession__SWIG_1(String jarg1);
   public final static native long new_JavaSession__SWIG_2(long jarg1);
@@ -172,5 +174,6 @@ class freeswitchJNI {
   public final static native void JavaSession_setHangupHook(long jarg1, JavaSession jarg1_, org.freeswitch.HangupHook jarg2);
   public final static native void JavaSession_check_hangup_hook(long jarg1, JavaSession jarg1_);
   public final static native long JavaSession_run_dtmf_callback(long jarg1, JavaSession jarg1_, long jarg2, long jarg3);
+  public final static native int JavaSession_originate(long jarg1, JavaSession jarg1_, long jarg2, JavaSession jarg2_, String jarg3, int jarg4);
   public final static native long SWIGJavaSessionUpcast(long jarg1);
 }

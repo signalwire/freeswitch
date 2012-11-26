@@ -52,6 +52,7 @@ setGlobalVariable = _freeswitch.setGlobalVariable
 getGlobalVariable = _freeswitch.getGlobalVariable
 consoleLog = _freeswitch.consoleLog
 consoleCleanLog = _freeswitch.consoleCleanLog
+running = _freeswitch.running
 email = _freeswitch.email
 class IVRMenu(_object):
     __swig_setmethods__ = {}

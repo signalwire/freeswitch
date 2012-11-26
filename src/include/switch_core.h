@@ -2042,6 +2042,8 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
 */
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void);
 
+SWITCH_DECLARE(switch_bool_t) switch_core_running(void);
+
 /*! 
   \brief Determines if the core is ready to take inbound calls
   \return SWITCH_TRUE or SWITCH_FALSE

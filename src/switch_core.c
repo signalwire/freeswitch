@@ -2428,6 +2428,11 @@ SWITCH_DECLARE(switch_core_flag_t) switch_core_flags(void)
 	return runtime.flags;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_core_running(void)
+{
+	return runtime.running ? SWITCH_TRUE : SWITCH_FALSE;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void)
 {
 	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS) == SCF_NO_NEW_SESSIONS) ? SWITCH_FALSE : SWITCH_TRUE;
