@@ -939,6 +939,17 @@ static void send_conference_data(sofia_profile_t *profile, switch_event_t *event
 	}
 
 	if (call_id) {
+	   if (switch_true(final)) {
+	      sql = switch_mprintf("update sip_subscriptions set expires=%ld where "
+                              "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q' "
+	                           "and call_id = '%q' ",
+	                           (long)0,
+	                           mod_sofia_globals.hostname, profile->name,
+	                           from_user, from_host, event_str, call_id);
+
+	      sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+	   }
+
 		sql = switch_mprintf("select full_to, full_from, contact %q ';_;isfocus', expires, call_id, event, network_ip, network_port, "
 							 "'%q' as ct,'%q' as pt "
 							 " from sip_subscriptions where "
@@ -950,6 +961,16 @@ static void send_conference_data(sofia_profile_t *profile, switch_event_t *event
 							 mod_sofia_globals.hostname, profile->name,
 							 from_user, from_host, event_str, call_id);
 	} else {
+      if (switch_true(final)) {
+         sql = switch_mprintf("update sip_subscriptions set expires=%ld where "
+                              "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
+                              (long)0,
+                              mod_sofia_globals.hostname, profile->name,
+                              from_user, from_host, event_str);
+
+         sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+      }
+
 		sql = switch_mprintf("select full_to, full_from, contact %q ';_;isfocus', expires, call_id, event, network_ip, network_port, "
 							 "'%q' as ct,'%q' as pt "
 							 " from sip_subscriptions where "
