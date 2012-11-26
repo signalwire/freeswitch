@@ -152,7 +152,7 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 			
 	if (!r) {
 		for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
-			if (dbh_ptr->hash == hash && !dbh_ptr->use_count && !switch_test_flag(dbh_ptr, CDF_PRUNE) && 
+			if (dbh_ptr->hash == hash && (dbh_ptr->type != SCDB_TYPE_PGSQL || !dbh_ptr->use_count) && !switch_test_flag(dbh_ptr, CDF_PRUNE) && 
 				switch_mutex_trylock(dbh_ptr->mutex) == SWITCH_STATUS_SUCCESS) {
 				r = dbh_ptr;
 				break;
