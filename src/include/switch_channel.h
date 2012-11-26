@@ -541,6 +541,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
   \return number of digits in the queue
 */
 SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(_In_ switch_channel_t *channel);
+SWITCH_DECLARE(switch_status_t) switch_channel_dtmf_lock(switch_channel_t *channel); 
+SWITCH_DECLARE(switch_status_t) switch_channel_try_dtmf_lock(switch_channel_t *channel);
+SWITCH_DECLARE(switch_status_t) switch_channel_dtmf_unlock(switch_channel_t *channel); 
+
 
 /*!
   \brief Queue DTMF on a given channel

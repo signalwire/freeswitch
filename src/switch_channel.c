@@ -363,6 +363,21 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_dtmf_lock(switch_channel_t *channel) 
+{
+	return switch_mutex_lock(channel->dtmf_mutex);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_channel_try_dtmf_lock(switch_channel_t *channel) 
+{
+	return switch_mutex_trylock(channel->dtmf_mutex);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_channel_dtmf_unlock(switch_channel_t *channel) 
+{
+	return switch_mutex_unlock(channel->dtmf_mutex);
+}
+
 SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
 {
 	switch_size_t has;
