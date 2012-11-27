@@ -1706,11 +1706,14 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 	check:
 
-		if ((lc = qm_ttl(qm)) < qm->max_trans / 4) {
-			switch_yield(500000);
-			if ((lc = qm_ttl(qm)) == 0) {
-				switch_thread_cond_wait(qm->cond, qm->cond_mutex);
-			}
+		if ((lc = qm_ttl(qm)) == 0) {
+			switch_thread_cond_wait(qm->cond, qm->cond_mutex);
+		}
+
+		i = 4;
+
+		while (--i > 0 && (lc = qm_ttl(qm)) < qm->max_trans / 4) {
+			switch_yield(50000);
 		}
 	}
 
