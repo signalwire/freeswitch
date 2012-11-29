@@ -4781,10 +4781,10 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 		gateway->ping = switch_epoch_time_now(NULL) + gateway->ping_freq;
 		sofia_reg_release_gateway(gateway);
 		gateway->pinging = 0;
-	} else if (sofia_test_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL) && (status != 200 && status != 486) && sip && sip->sip_to) {
+	} else if (sofia_test_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL) && (status != 200 && status != 486) && sip && sip->sip_to && strchr(sip->sip_call_id->i_id, '_')) {
 		char *sql;
 		time_t now = switch_epoch_time_now(NULL);
-		const char *call_id = sip->sip_call_id->i_id;
+		const char *call_id = strchr(sip->sip_call_id->i_id, '_') + 1;
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n",
 						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
