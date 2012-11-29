@@ -26,7 +26,7 @@
 #ifdef MEMORY_DEBUG
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
 #endif
-
+#undef SQLITE_OMIT_LOAD_EXTENSION
 
 /*
  * When testing, this global variable stores the location of the
