@@ -472,7 +472,7 @@ libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
 
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
 	touch src/include/switch.h
-	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)" LIBREADLINE="-lreadline -lncurses -ldl"
+	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)" LIBREADLINE="-ldl"
 	@$(TOUCH_TARGET)
 
 libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
