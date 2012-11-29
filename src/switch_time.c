@@ -150,7 +150,6 @@ SWITCH_DECLARE(void) switch_os_yield(void)
 #if defined(WIN32)
 	SwitchToThread();
 #else
-	usleep(1);
 	sched_yield();
 #endif
 }
