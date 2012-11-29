@@ -291,7 +291,7 @@ SWITCH_DECLARE(switch_channel_callstate_t) switch_channel_str2callstate(const ch
 
 SWITCH_DECLARE(void) switch_channel_perform_audio_sync(switch_channel_t *channel, const char *file, const char *func, int line)
 {
-	if (switch_channel_media_ready(channel)) {
+	if (switch_channel_media_up(channel)) {
 		switch_core_session_message_t msg = { 0 };
 		msg.message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
 		msg.from = channel->name;
@@ -3446,7 +3446,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 	switch_channel_presence(channel, "unknown", "answered", NULL);
 
-	switch_channel_audio_sync(channel);
+	//switch_channel_audio_sync(channel);
 
 	switch_core_recovery_track(channel->session);
 

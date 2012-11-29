@@ -1565,7 +1565,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (switch_core_session_in_thread(session)) {
 			de->session = session;
 		}
-		sofia_process_dispatch_event(&de);
+
+		if (de->data->e_event == nua_i_cancel || de->data->e_event == nua_i_bye) {
+			sofia_set_flag(tech_pvt, TFLAG_SIGDEAD);
+		}
+
+		if (!sofia_test_flag(tech_pvt, TFLAG_SIGDEAD) && (switch_channel_media_up(channel) || switch_channel_get_state(channel) > CS_ROUTING)) {
+			sofia_queue_message(de);
+		} else {
+			sofia_process_dispatch_event(&de);
+		}
+
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
 		goto end;
 	}

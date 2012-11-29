@@ -67,6 +67,7 @@ static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
 static switch_port_t NEXT_PORT = RTP_START_PORT;
 static switch_mutex_t *port_lock = NULL;
+static void do_flush(switch_rtp_t *rtp_session);
 
 typedef srtp_hdr_t rtp_hdr_t;
 
@@ -2071,6 +2072,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		rtp_session->ready = 2;
 		rtp_session->rx_host = switch_core_strdup(rtp_session->pool, rx_host);
 		rtp_session->rx_port = rx_port;
+		//switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 	} else {
 		switch_rtp_release_port(rx_host, rx_port);
 	}
@@ -2761,7 +2763,7 @@ SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp
 	
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
-			switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+			
 			switch (flush) {
 			case SWITCH_RTP_FLUSH_STICK:
 				switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
@@ -2780,6 +2782,7 @@ static void do_flush(switch_rtp_t *rtp_session)
 {
 	int was_blocking = 0;
 	switch_size_t bytes;
+	uint32_t flushed = 0;
 
 	if (!switch_rtp_ready(rtp_session) || 
 		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) || 
@@ -2787,11 +2790,11 @@ static void do_flush(switch_rtp_t *rtp_session)
 		) {
 		return;
 	}
+	
 
 	READ_INC(rtp_session);
 
 	if (switch_rtp_ready(rtp_session)) {
-		uint32_t flushed = 0;
 		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DEBUG_RTP_READ)) {
 			switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
@@ -2869,34 +2872,35 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		
 		if (rtp_session->last_seq && rtp_session->last_seq+1 != seq) {
 #ifdef DEBUG_MISSED_SEQ
+			//2012-11-28 18:33:11.799070 [ERR] switch_rtp.c:2883 Missed -65536 RTP frames from sequence [65536] to [-1] (missed). Time since last read [20021]
 			switch_size_t flushed_packets_diff = rtp_session->stats.inbound.flush_packet_count - rtp_session->last_flush_packet_count;
 			switch_size_t num_missed = (switch_size_t)seq - (rtp_session->last_seq+1);
 
 			if (num_missed == 1) { /* We missed one packet */
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Missed one RTP frame with sequence [%d]%s. Time since last read [%d]\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missed one RTP frame with sequence [%d]%s. Time since last read [%ld]\n",
 								  rtp_session->last_seq+1, (flushed_packets_diff == 1) ? " (flushed by FS)" : " (missed)",
 								  rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
 			} else { /* We missed multiple packets */
 				if (flushed_packets_diff == 0) { 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-									  "Missed %d RTP frames from sequence [%d] to [%d] (missed). Time since last read [%d]\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Missed %ld RTP frames from sequence [%d] to [%d] (missed). Time since last read [%ld]\n",
 									  num_missed, rtp_session->last_seq+1, seq-1,
 									  rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
 				} else if (flushed_packets_diff == num_missed) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-									  "Missed %d RTP frames from sequence [%d] to [%d] (flushed by FS). Time since last read [%d]\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Missed %ld RTP frames from sequence [%d] to [%d] (flushed by FS). Time since last read [%ld]\n",
 									  num_missed, rtp_session->last_seq+1, seq-1,
 									  rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
 				} else if (num_missed > flushed_packets_diff) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-									  "Missed %d RTP frames from sequence [%d] to [%d] (%d packets flushed by FS, %d packets missed)."
-									  " Time since last read [%d]\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Missed %ld RTP frames from sequence [%d] to [%d] (%ld packets flushed by FS, %ld packets missed)."
+									  " Time since last read [%ld]\n",
 									  num_missed, rtp_session->last_seq+1, seq-1,
 									  flushed_packets_diff, num_missed-flushed_packets_diff,
 									  rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-									  "Missed %d RTP frames from sequence [%d] to [%d] (%d packets flushed by FS). Time since last read [%d]\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Missed %ld RTP frames from sequence [%d] to [%d] (%ld packets flushed by FS). Time since last read [%ld]\n",
 									  num_missed, rtp_session->last_seq+1, seq-1,
 									  flushed_packets_diff, rtp_session->last_read_time ? switch_micro_time_now()-rtp_session->last_read_time : 0);
 				}
@@ -3240,15 +3244,17 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 					if (bytes) {
 						if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
-							/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Trigger %d\n", rtp_session->hot_hits); */
-							rtp_session->hot_hits += rtp_session->samples_per_interval;
+							rtp_session->hot_hits++;//+= rtp_session->samples_per_interval;
+							
+							//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s Trigger %d\n", 
+							//switch_core_session_get_name(session),
+							//				  rtp_session->hot_hits); 
 						} else {
 							rtp_session->hot_hits = 0;
 						}
 					}
 					
-					if (rtp_session->hot_hits >= rtp_session->samples_per_second * 5) {
-						switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+					if (rtp_session->hot_hits > 1 && !rtp_session->sync_packets) {// >= (rtp_session->samples_per_second * 30)) {
 						hot_socket = 1;
 					}
 				} else {
@@ -3256,19 +3262,27 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 
-			if (hot_socket) {
+
+			if (hot_socket) { 
+				//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Skip timer\n");
 				rtp_session->sync_packets++;
 				switch_core_timer_sync(&rtp_session->timer);
+				
 			} else {
+				
 				if (rtp_session->sync_packets) {
 #if 0
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT,
 									  "Auto-Flush catching up %d packets (%d)ms.\n",
 									  rtp_session->sync_packets, (rtp_session->ms_per_packet * rtp_session->sync_packets) / 1000);
 #endif
-					rtp_session->sync_packets = 0;
+					//switch_core_timer_sync(&rtp_session->timer);
+				} else {
+
+					switch_core_timer_next(&rtp_session->timer);
 				}
-				switch_core_timer_next(&rtp_session->timer);
+
+				rtp_session->sync_packets = 0;
 			}
 		}
 
@@ -4787,3 +4801,4 @@ SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session)
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
+

@@ -1686,7 +1686,7 @@ void sofia_msg_thread_start(int idx)
 }
 
 //static int foo = 0;
-static void sofia_queue_message(sofia_dispatch_event_t *de)
+void sofia_queue_message(sofia_dispatch_event_t *de)
 {
 	int launch = 0;
 
