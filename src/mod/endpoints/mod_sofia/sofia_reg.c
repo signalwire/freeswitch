@@ -1019,6 +1019,7 @@ static int debounce_check(sofia_profile_t *profile, const char *user, const char
 
 	snprintf(key, sizeof(key), "%s%s", user, host);
 
+	switch_mutex_lock(profile->ireg_mutex);
 	if ((last = switch_core_hash_find(profile->mwi_debounce_hash, key))) {
 		if (now - *last > 30) {
 			*last = now;
@@ -1030,6 +1031,7 @@ static int debounce_check(sofia_profile_t *profile, const char *user, const char
 		switch_core_hash_insert(profile->mwi_debounce_hash, key, last);
 		r = 1;
 	}
+	switch_mutex_unlock(profile->ireg_mutex);
 
 	return r;
 }
