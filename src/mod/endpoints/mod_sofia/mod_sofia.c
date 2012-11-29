@@ -2403,7 +2403,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
-						} else if ((ua && (switch_stristr("aastra", ua)))) {
+						} else if ((ua && (switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)))) {
 							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
 
 							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);
