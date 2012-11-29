@@ -438,3 +438,11 @@ int Dbh::affected_rows()
   }
   return 0;
 }
+
+int Dbh::load_extension(const char *extension)
+{
+  if (m_connected) {
+    return switch_cache_db_load_extension(dbh, extension);
+  }
+  return 0;
+}

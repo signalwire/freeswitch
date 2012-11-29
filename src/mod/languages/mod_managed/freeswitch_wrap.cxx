@@ -5444,6 +5444,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_db_changes(void * jarg1) {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_db_load_extension(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_core_db_t *arg1 = (switch_core_db_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  arg1 = (switch_core_db_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (int)switch_core_db_load_extension(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_CORE_DB_OK_get() {
   int jresult ;
   int result;
@@ -12030,6 +12044,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_cache_db_affected_rows(void * jarg1) {
   
   arg1 = (switch_cache_db_handle_t *)jarg1; 
   result = (int)switch_cache_db_affected_rows(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_cache_db_load_extension(void * jarg1, char * jarg2) {
+  int jresult ;
+  switch_cache_db_handle_t *arg1 = (switch_cache_db_handle_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  arg1 = (switch_cache_db_handle_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (int)switch_cache_db_load_extension(arg1,(char const *)arg2);
   jresult = result; 
   return jresult;
 }

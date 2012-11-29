@@ -93,6 +93,7 @@ class Dbh {
     bool test_reactive(char *test_sql, char *drop_sql = NULL, char *reactive_sql = NULL);
     bool query(char *sql, SWIGLUA_FN lua_fun);
     int affected_rows();
+    int load_extension(const char *extension);
 };
 
 }

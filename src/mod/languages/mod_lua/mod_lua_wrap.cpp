@@ -7764,6 +7764,34 @@ fail:
 }
 
 
+static int _wrap_Dbh_load_extension(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Dbh *arg1 = (LUA::Dbh *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  SWIG_check_num_args("load_extension",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("load_extension",1,"LUA::Dbh *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("load_extension",2,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
+    SWIG_fail_ptr("Dbh_load_extension",1,SWIGTYPE_p_LUA__Dbh);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  result = (int)(arg1)->load_extension((char const *)arg2);
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static void swig_delete_Dbh(void *obj) {
 LUA::Dbh *arg1 = (LUA::Dbh *) obj;
 delete arg1;
@@ -7774,6 +7802,7 @@ static swig_lua_method swig_LUA_Dbh_methods[] = {
     {"test_reactive", _wrap_Dbh_test_reactive}, 
     {"query", _wrap_Dbh_query}, 
     {"affected_rows", _wrap_Dbh_affected_rows}, 
+    {"load_extension", _wrap_Dbh_load_extension}, 
     {0,0}
 };
 static swig_lua_attribute swig_LUA_Dbh_attributes[] = {

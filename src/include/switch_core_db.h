@@ -462,6 +462,11 @@ SWITCH_DECLARE(void) switch_core_db_free(char *z);
  */
 SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db);
 
+/**
+ * Call this routine to load an external extension
+ */
+SWITCH_DECLARE(int) switch_core_db_load_extension(switch_core_db_t *db, const char *extension);
+
 /** Return values for switch_core_db_exec() and switch_core_db_step()*/
 #define SWITCH_CORE_DB_OK           0	/* Successful result */
 /* beginning-of-error-codes */

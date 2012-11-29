@@ -986,6 +986,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static int switch_core_db_load_extension(SWIGTYPE_p_sqlite3 db, string extension) {
+    int ret = freeswitchPINVOKE.switch_core_db_load_extension(SWIGTYPE_p_sqlite3.getCPtr(db), extension);
+    return ret;
+  }
+
   public static string switch_sql_concat() {
     string ret = freeswitchPINVOKE.switch_sql_concat();
     return ret;
@@ -2695,6 +2700,11 @@ public class freeswitch {
 
   public static int switch_cache_db_affected_rows(SWIGTYPE_p_switch_cache_db_handle dbh) {
     int ret = freeswitchPINVOKE.switch_cache_db_affected_rows(SWIGTYPE_p_switch_cache_db_handle.getCPtr(dbh));
+    return ret;
+  }
+
+  public static int switch_cache_db_load_extension(SWIGTYPE_p_switch_cache_db_handle dbh, string extension) {
+    int ret = freeswitchPINVOKE.switch_cache_db_load_extension(SWIGTYPE_p_switch_cache_db_handle.getCPtr(dbh), extension);
     return ret;
   }
 
@@ -7968,6 +7978,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_db_changes")]
   public static extern int switch_core_db_changes(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_db_load_extension")]
+  public static extern int switch_core_db_load_extension(HandleRef jarg1, string jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CORE_DB_OK_get")]
   public static extern int SWITCH_CORE_DB_OK_get();
 
@@ -9488,6 +9501,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_affected_rows")]
   public static extern int switch_cache_db_affected_rows(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_load_extension")]
+  public static extern int switch_cache_db_load_extension(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_status")]
   public static extern void switch_cache_db_status(HandleRef jarg1);
