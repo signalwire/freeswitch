@@ -3246,9 +3246,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
 							rtp_session->hot_hits++;//+= rtp_session->samples_per_interval;
 							
-							//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s Trigger %d\n", 
-							//switch_core_session_get_name(session),
-							//				  rtp_session->hot_hits); 
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "%s Hot Hit %d\n", 
+											  switch_core_session_get_name(session),
+											  rtp_session->hot_hits); 
 						} else {
 							rtp_session->hot_hits = 0;
 						}
@@ -3262,21 +3262,21 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 
-
-			if (hot_socket) { 
-				//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Skip timer\n");
+			if (hot_socket && (rtp_session->hot_hits % 10) != 0) { 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "%s timer while HOT\n", switch_core_session_get_name(session));
+				switch_core_timer_next(&rtp_session->timer);
+			} else if (hot_socket) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "%s skip timer once\n", switch_core_session_get_name(session));
 				rtp_session->sync_packets++;
 				switch_core_timer_sync(&rtp_session->timer);
-				
 			} else {
 				
 				if (rtp_session->sync_packets) {
-#if 0
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT,
-									  "Auto-Flush catching up %d packets (%d)ms.\n",
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,
+									  "%s Auto-Flush catching up %d packets (%d)ms.\n",
+									  switch_core_session_get_name(session),
 									  rtp_session->sync_packets, (rtp_session->ms_per_packet * rtp_session->sync_packets) / 1000);
-#endif
-					//switch_core_timer_sync(&rtp_session->timer);
 				} else {
 
 					switch_core_timer_next(&rtp_session->timer);
