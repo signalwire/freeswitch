@@ -1,4 +1,4 @@
-/* A simple standalone XML-RPC server based on Abyss.
+/* A simple standalone XML-RPC server program based on Abyss.
 
    You can terminate this server in controlled fashion with a SIGTERM
    signal.
@@ -7,6 +7,7 @@
    simpler code, but it is not interruptible with SIGTERM.
 */
 
+#define _XOPEN_SOURCE 600
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -36,7 +37,7 @@ dieIfFailed(const char * const description,
 static xmlrpc_server_abyss_t * serverToTerminateP;
 
 static void 
-sigtermHandler(int const signalClass ATTR_UNUSED) {
+sigtermHandler(int const signalClass) {
     
     xmlrpc_env env;
 
@@ -82,8 +83,8 @@ restoreSigtermHandler(void){
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP, 
            xmlrpc_value * const paramArrayP,
-           void *         const serverInfo ATTR_UNUSED,
-           void *         const channelInfo ATTR_UNUSED) {
+           void *         const serverInfo,
+           void *         const channelInfo) {
     
     xmlrpc_int x, y, z;
 
@@ -105,6 +106,11 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
+    struct xmlrpc_method_info3 const methodInfo = {
+        .methodName     = "sample.add",
+        .methodFunction = &sample_add,
+        .serverInfo = NULL
+    };
     xmlrpc_server_abyss_parms serverparm;
     xmlrpc_server_abyss_t * serverP;
     xmlrpc_registry * registryP;
@@ -126,8 +132,7 @@ main(int           const argc,
     registryP = xmlrpc_registry_new(&env);
     dieIfFailed("xmlrpc_registry_new", env);
 
-    xmlrpc_registry_add_method2(
-        &env, registryP, "sample.add", &sample_add, NULL, NULL, NULL);
+    xmlrpc_registry_add_method3(&env, registryP, &methodInfo);
     dieIfFailed("xmlrpc_registry_add_method2", env);
 
     serverparm.config_file_name = NULL;

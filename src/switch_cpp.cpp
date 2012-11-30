@@ -1205,6 +1205,11 @@ SWITCH_DECLARE(char *) getGlobalVariable(char *var_name)
 }
 
 
+SWITCH_DECLARE(bool) running(void)
+{
+	return switch_core_running() ? true : false;
+}
+
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg)
 {
 	return console_log(level_str, msg);
@@ -1288,6 +1293,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session
 
 	if ((coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession"))) {
 		if (coresession->hook_state != state) {
+			coresession->cause = switch_channel_get_cause(channel);
 			coresession->hook_state = state;
 			coresession->check_hangup_hook();
 		}

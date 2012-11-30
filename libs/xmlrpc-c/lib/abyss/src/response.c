@@ -6,6 +6,8 @@
   Copyright information is at the end of the file
 =============================================================================*/
 
+#define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+
 #include <ctype.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -16,11 +18,13 @@
 
 #include "xmlrpc_config.h"
 #include "bool.h"
+#include "int.h"
 #include "version.h"
 #include "mallocvar.h"
 #include "xmlrpc-c/string_int.h"
 #include "xmlrpc-c/abyss.h"
 
+#include "trace.h"
 #include "server.h"
 #include "session.h"
 #include "file.h"
@@ -39,10 +43,6 @@ ResponseError2(TSession *   const sessionP,
 
     const char * errorDocument;
 
-    ResponseAddField(sessionP, "Content-type", "text/html");
-
-    ResponseWriteStart(sessionP);
-    
     xmlrpc_asprintf(&errorDocument,
                     "<HTML><HEAD><TITLE>Error %d</TITLE></HEAD>"
                     "<BODY>"
@@ -51,8 +51,12 @@ ResponseError2(TSession *   const sessionP,
                     "</BODY>"
                     "</HTML>",
                     sessionP->status, sessionP->status, explanation);
-    
-    ConnWrite(sessionP->conn, errorDocument, strlen(errorDocument)); 
+
+	ResponseAddField(sessionP, "Content-type", "text/html");
+    ResponseContentLength(sessionP, strlen(errorDocument));
+
+	if (ResponseWriteStart(sessionP))
+        ConnWrite(sessionP->connP, errorDocument, strlen(errorDocument)); 
 
     xmlrpc_strfree(errorDocument);
 }
@@ -123,20 +127,63 @@ ResponseStatusErrno(TSession * const sessionP) {
 
 
 
+static bool
+isValidHttpToken(const char * const token) {
+
+    char const separators[] = "()<>@,;:\\\"/[]?={} \t";
+    const char * p;
+    bool valid;
+
+    for (p = &token[0], valid = true; *p; ++p) {
+        if (!isprint(*p) || strchr(separators, *p))
+            valid = false;
+    }
+    return valid;
+}
+
+
+
+
+static bool
+isValidHttpText(const char * const text) {
+
+    const char * p;
+    bool valid;
+
+    for (p = &text[0], valid = true; *p; ++p) {
+        if (!isprint(*p))
+            valid = false;
+    }
+    return valid;
+}
+
+
+
 abyss_bool
 ResponseAddField(TSession *   const sessionP,
                  const char * const name,
                  const char * const value) {
 
-    return TableAdd(&sessionP->response_headers, name, value);
+    abyss_bool succeeded;
+    
+    if (!isValidHttpToken(name)) {
+        TraceMsg("Supplied HTTP header field name is not a valid HTTP token");
+        succeeded = false;
+    } else if (!isValidHttpText(value)) {
+        TraceMsg("Supplied HTTP header field value is not valid HTTP text");
+        succeeded = false;
+    } else {
+        succeeded = TableAdd(&sessionP->responseHeaderFields, name, value);
+    }
+    return succeeded;
 }
 
 
 
 static void
-addConnectionHeader(TSession * const sessionP) {
+addConnectionHeaderFld(TSession * const sessionP) {
 
-    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
+    struct _TServer * const srvP = ConnServer(sessionP->connP)->srvP;
 
     if (HTTPKeepalive(sessionP)) {
         const char * keepaliveValue;
@@ -156,7 +203,7 @@ addConnectionHeader(TSession * const sessionP) {
 
 
 static void
-addDateHeader(TSession * const sessionP) {
+addDateHeaderFld(TSession * const sessionP) {
 
     if (sessionP->status >= 200) {
         const char * dateValue;
@@ -173,11 +220,11 @@ addDateHeader(TSession * const sessionP) {
 
 
 static void
-addServerHeader(TSession * const sessionP) {
+addServerHeaderFld(TSession * const sessionP) {
 
     const char * serverValue;
 
-    xmlrpc_asprintf(&serverValue, "XMLRPC_ABYSS/%s", XMLRPC_C_VERSION);
+    xmlrpc_asprintf(&serverValue, "Freeswitch xmlrpc-c_abyss /%s", XMLRPC_C_VERSION);
 
     ResponseAddField(sessionP, "Server", serverValue);
 
@@ -186,17 +233,112 @@ addServerHeader(TSession * const sessionP) {
 
 
 
-void
-ResponseWriteStart(TSession * const sessionP) {
-
-    struct _TServer * const srvP = ConnServer(sessionP->conn)->srvP;
+static unsigned int
+leadingWsCt(const char * const arg) {
 
     unsigned int i;
 
-    assert(!sessionP->responseStarted);
+    for (i = 0; arg[i] && isspace(arg[i]); ++i);
+
+    return i;
+}
+
+
+
+static unsigned int
+trailingWsPos(const char * const arg) {
+
+    unsigned int i;
+
+    for (i = strlen(arg); i > 0 && isspace(arg[i-1]); --i);
+
+    return i;
+}
+
+
+
+static const char *
+formatFieldValue(const char * const unformatted) {
+/*----------------------------------------------------------------------------
+   Return the string of characters that goes after the colon on the
+   HTTP header field line, given that 'unformatted' is its basic value.
+-----------------------------------------------------------------------------*/
+    const char * retval;
+
+    /* An HTTP header field value may not have leading or trailing white
+       space.
+    */
+    char * buffer;
+
+    buffer = malloc(strlen(unformatted) + 1);
+
+    if (buffer == NULL)
+        retval = xmlrpc_strnomemval();
+    else {
+        unsigned int const lead  = leadingWsCt(unformatted);
+        unsigned int const trail = trailingWsPos(unformatted);
+        assert(trail >= lead);
+        strncpy(buffer, &unformatted[lead], trail - lead);
+        buffer[trail - lead] = '\0';
+        retval = buffer;
+    }
+    return retval;
+}
+
+
+
+static abyss_bool
+sendHeader(TConn * const connP,
+           TTable  const fields) {
+/*----------------------------------------------------------------------------
+   Send the HTTP response header whose fields are fields[].
+
+   Don't include the blank line that separates the header from the body.
+
+   fields[] contains syntactically valid HTTP header field names and values.
+   But to the extent that int contains undefined field names or semantically
+   invalid values, the header we send is invalid.
+-----------------------------------------------------------------------------*/
+    unsigned int i;
+	abyss_bool ret = TRUE;
+    for (i = 0; i < fields.size && ret; ++i) {
+        TTableItem * const fieldP = &fields.item[i];
+        const char * const fieldValue = formatFieldValue(fieldP->value);
+
+        const char * line;
+
+        xmlrpc_asprintf(&line, "%s: %s\r\n", fieldP->name, fieldValue);
+        if (!ConnWrite(connP, line, strlen(line)))
+			ret = FALSE;
+        xmlrpc_strfree(line);
+        xmlrpc_strfree(fieldValue);
+    }
+	return ret;
+}
+
+
+abyss_bool
+ResponseWriteStart(TSession * const sessionP) {
+/*----------------------------------------------------------------------------
+   Begin the process of sending the response for an HTTP transaction
+   (i.e. Abyss session).
+
+   As part of this, send the entire HTTP header for the response.
+-----------------------------------------------------------------------------*/
+    struct _TServer * const srvP = ConnServer(sessionP->connP)->srvP;
+
+    //assert(!sessionP->responseStarted);
+
+	if (sessionP->responseStarted) {
+		TraceMsg("Abyss client called ResponseWriteStart() more than once\n");
+		return FALSE;
+	}
 
     if (sessionP->status == 0) {
         /* Handler hasn't set status.  That's an error */
+        TraceMsg("Abyss client called ResponseWriteStart() on "
+                 "a session for which he has not set the request status "
+                 "('status' member of TSession).  Using status 500\n");
         sessionP->status = 500;
     }
 
@@ -205,31 +347,33 @@ ResponseWriteStart(TSession * const sessionP) {
     {
         const char * const reason = HTTPReasonByStatus(sessionP->status);
         const char * line;
+		abyss_bool ret = TRUE;
         xmlrpc_asprintf(&line,"HTTP/1.1 %u %s\r\n", sessionP->status, reason);
-        ConnWrite(sessionP->conn, line, strlen(line));
+        ret = ConnWrite(sessionP->connP, line, strlen(line));
         xmlrpc_strfree(line);
+		if (!ret) return FALSE;
     }
 
-    addConnectionHeader(sessionP);
+
+    addConnectionHeaderFld(sessionP);
 
     if (sessionP->chunkedwrite && sessionP->chunkedwritemode)
         ResponseAddField(sessionP, "Transfer-Encoding", "chunked");
 
-    addDateHeader(sessionP);
+    addDateHeaderFld(sessionP);
 
     if (srvP->advertise)
-        addServerHeader(sessionP);
+        addServerHeaderFld(sessionP);
 
-    /* send all the fields */
-    for (i = 0; i < sessionP->response_headers.size; ++i) {
-        TTableItem * const ti = &sessionP->response_headers.item[i];
-        const char * line;
-        xmlrpc_asprintf(&line, "%s: %s\r\n", ti->name, ti->value);
-        ConnWrite(sessionP->conn, line, strlen(line));
-        xmlrpc_strfree(line);
-    }
+    /* Note that sessionP->responseHeaderFields is defined to contain
+       syntactically but not necessarily semantically valid header
+       field names and values.
+    */
+    if (sendHeader(sessionP->connP, sessionP->responseHeaderFields))
+		if (ConnWrite(sessionP->connP, "\r\n", 2))
+			return TRUE;
 
-    ConnWrite(sessionP->conn, "\r\n", 2);  
+	return FALSE;
 }
 
 
@@ -273,6 +417,26 @@ ResponseContentLength(TSession *      const sessionP,
 }
 
 
+
+void
+ResponseAccessControl(TSession *        const abyssSessionP, 
+                      ResponseAccessCtl const accessControl) {
+
+    if (accessControl.allowOrigin) {
+        ResponseAddField(abyssSessionP, "Access-Control-Allow-Origin",
+                         accessControl.allowOrigin);
+        ResponseAddField(abyssSessionP, "Access-Control-Allow-Methods",
+                         "POST");
+        if (accessControl.expires) {
+            char buffer[64];
+            sprintf(buffer, "%u", accessControl.maxAge);
+            ResponseAddField(abyssSessionP, "Access-Control-Max-Age", buffer);
+        }
+    }
+}
+
+
+
 /*********************************************************************
 ** MIMEType
 *********************************************************************/
@@ -309,6 +473,8 @@ void
 MIMETypeDestroy(MIMEType * const MIMETypeP) {
 
     PoolFree(&MIMETypeP->pool);
+
+    free(MIMETypeP);
 }
 
 
@@ -329,6 +495,9 @@ MIMETypeTerm(void) {
 
     if (globalMimeTypeP == NULL)
         abort();
+
+	ListFree(&globalMimeTypeP->extList);
+	ListFree(&globalMimeTypeP->typeList);
 
     MIMETypeDestroy(globalMimeTypeP);
 
@@ -595,13 +764,17 @@ mimeTypeGuessFromFile(MIMEType *   const MIMETypeP,
 
     if (ext && MIMETypeP)
         retval = MIMETypeFromExt2(MIMETypeP, ext);
-    
+
+
     if (!retval) {
         if (fileContainsText(fileName))
             retval = "text/plain";
         else
             retval = "application/octet-stream";  
     }
+
+	if (!strcmp(retval, "text/plain"))
+		retval = "text/plain; charset=utf-8";
     return retval;
 }
 
@@ -624,55 +797,6 @@ MIMETypeGuessFromFile(const char * const fileName) {
 }
 
                                   
-
-/*********************************************************************
-** Base64
-*********************************************************************/
-
-void
-Base64Encode(const char * const chars,
-             char *       const base64) {
-
-    /* Conversion table. */
-    static char tbl[64] = {
-        'A','B','C','D','E','F','G','H',
-        'I','J','K','L','M','N','O','P',
-        'Q','R','S','T','U','V','W','X',
-        'Y','Z','a','b','c','d','e','f',
-        'g','h','i','j','k','l','m','n',
-        'o','p','q','r','s','t','u','v',
-        'w','x','y','z','0','1','2','3',
-        '4','5','6','7','8','9','+','/'
-    };
-
-    uint i;
-    uint32_t length;
-    char * p;
-    const char * s;
-    
-    length = strlen(chars);  /* initial value */
-    s = &chars[0];  /* initial value */
-    p = &base64[0];  /* initial value */
-    /* Transform the 3x8 bits to 4x6 bits, as required by base64. */
-    for (i = 0; i < length; i += 3) {
-        *p++ = tbl[s[0] >> 2];
-        *p++ = tbl[((s[0] & 3) << 4) + (s[1] >> 4)];
-        *p++ = tbl[((s[1] & 0xf) << 2) + (s[2] >> 6)];
-        *p++ = tbl[s[2] & 0x3f];
-        s += 3;
-    }
-    
-    /* Pad the result if necessary... */
-    if (i == length + 1)
-        *(p - 1) = '=';
-    else if (i == length + 2)
-        *(p - 1) = *(p - 2) = '=';
-    
-    /* ...and zero-terminate it. */
-    *p = '\0';
-}
-
-
 
 /******************************************************************************
 **

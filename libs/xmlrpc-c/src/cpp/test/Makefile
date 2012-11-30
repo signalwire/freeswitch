@@ -17,20 +17,16 @@ all: $(PROGS)
 
 XMLRPC_C_CONFIG = $(BLDDIR)/xmlrpc-c-config.test
 
-CXXFLAGS = $(CXXFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
-
-LDFLAGS += $(shell $(XMLRPC_C_CONFIG) client --ldadd)
+LIBS := $(shell $(XMLRPC_C_CONFIG) client --ldadd)
 
 ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
-  LDFLAGS += $(shell curl-config --libs)
+  LIBS += $(shell curl-config --libs)
 endif
 ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
-  LDFLAGS += $(shell libwww-config --libs)
+  LIBS += $(shell libwww-config --libs)
 endif
 
-LDFLAGS += "-lpthread"
-
-LDFLAGS += $(LADD)
+LIBS += -lpthread
 
 INCLUDES = -Isrcdir/include -I$(BLDDIR) -Isrcdir -Isrcdir/lib/util/include
 
@@ -42,7 +38,15 @@ Makefile: srcdir
 include $(SRCDIR)/common.mk
 
 
-TEST_OBJS = test.o registry.o server_abyss.o server_pstream.o tools.o
+TEST_OBJS = \
+  test.o \
+  base64.o \
+  registry.o \
+  server_abyss.o \
+  server_pstream.o \
+  tools.o \
+  value.o \
+  xml.o \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
   TEST_OBJS += testclient.o
@@ -69,16 +73,17 @@ TEST_LIBS = \
 ifneq ($(ENABLE_LIBXML2_BACKEND),yes)
   # We're using the internal Expat XML parser
   TEST_LIBS += $(LIBXMLRPC_XMLPARSE_A) $(LIBXMLRPC_XMLTOK_A)
-  LDADD_XML =
+  LIB_XML =
+  registry.o: D_INTERNAL_EXPAT=-DINTERNAL_EXPAT
 else
-  LDADD_XML = $(shell xml2-config --libs)
+  LIB_XML = $(shell xml2-config --libs)
 endif
 
 test: $(TEST_OBJS) $(TEST_LIBS)
-	$(CXXLD) -o $@ $(LDFLAGS) $(LDADD_XML) $^
+	$(CXXLD) -o $@ $(LDFLAGS) $(LADD) $^ $(LIB_XML) $(LIBS)
 
 %.o:%.cpp
-	$(CXX) -c $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c $(INCLUDES) $(CXXFLAGS_ALL) $(D_INTERNAL_EXPAT) $<
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check
 # our own correctness.  'runtests' means to run the tests that check our
@@ -104,4 +109,4 @@ distclean: clean distclean-common
 .PHONY: dep
 dep: dep-common
 
-include Makefile.depend
+include depend.mk

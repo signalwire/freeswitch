@@ -4,7 +4,10 @@
 
   This is the interface to the libxmlrpc_util library, which contains
   utility routines that have nothing to do with XML-RPC.  The library
-  exists because other Xmlrpc-c libraries use the utilities.
+  exists primarily because other Xmlrpc-c libraries use the utilities,
+  but the utilities are also documented for use by Xmlrpc-c users.
+  For use by Xmlrpc-c users, they are considered to be part of the
+  libxmlrpc library.  libxmlrpc_util is a prerequisite of libxmlrpc.
 
   By Bryan Henderson, San Jose, CA 05.09.21.
 
@@ -18,7 +21,7 @@
 #include <stdarg.h>
 
 #include <xmlrpc-c/config.h>  /* Defines XMLRPC_HAVE_WCHAR */
-#include <xmlrpc-c/c_util.h>  /* for GNU_PRINTF_ATTR */
+#include <xmlrpc-c/c_util.h>  /* for XMLRPC_PRINTF_ATTR */
 
 #if XMLRPC_HAVE_WCHAR
 #include <wchar.h>
@@ -27,7 +30,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /*=========================================================================
 **  C struct size computations
@@ -40,7 +42,7 @@ extern "C" {
 */
 
 #define _XMLRPC_STRUCT_MEMBER_OFFSET(TYPE, MBRNAME) \
-  ((unsigned long)(char*)&((TYPE *)0)->MBRNAME)
+  ((size_t)(char*)&((TYPE *)0)->MBRNAME)
 #define _XMLRPC_STRUCT_MEMBER_SIZE(TYPE, MBRNAME) \
   sizeof(((TYPE *)0)->MBRNAME)
 #define XMLRPC_STRUCTSIZE(TYPE, MBRNAME) \
@@ -71,6 +73,7 @@ extern "C" {
 #define XMLRPC_ASSERT(cond) while (0) {}
 #endif
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_assertion_failed(const char * const fileName,
                         int          const lineNumber);
@@ -124,38 +127,44 @@ typedef struct _xmlrpc_env {
 
 /* Initialize and destroy the contents of the provided xmlrpc_env object.
 ** These functions will never fail. */
+XMLRPC_DLLEXPORT
 void xmlrpc_env_init (xmlrpc_env* env);
+XMLRPC_DLLEXPORT
 void xmlrpc_env_clean (xmlrpc_env* const env);
 
 /* Fill out an xmlrpc_fault with the specified values, and set the
 ** fault_occurred flag. This function will make a private copy of 'string',
 ** so you retain responsibility for your copy. */
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_env_set_fault(xmlrpc_env * const env, 
                      int          const faultCode, 
                      const char * const faultDescription);
 
 /* The same as the above, but using varargs */
+XMLRPC_DLLEXPORT
 void
 xmlrpc_set_fault_formatted_v(xmlrpc_env * const envP,
                              int          const code,
                              const char * const format,
-                             va_list      const args);
+                             va_list            args);
 
 /* The same as the above, but using a printf-style format string. */
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_env_set_fault_formatted(xmlrpc_env * const envP, 
                                int          const code,
                                const char * const format, 
-                               ...) GNU_PRINTF_ATTR(3,4);
+                               ...) XMLRPC_PRINTF_ATTR(3,4);
 
 /* This one infers XMLRPC_INTERNAL_ERROR and has a shorter name.
    So a call takes up less source code space.
 */
+XMLRPC_DLLEXPORT
 void
 xmlrpc_faultf(xmlrpc_env * const envP,
               const char * const format,
-              ...) GNU_PRINTF_ATTR(2,3);
+              ...) XMLRPC_PRINTF_ATTR(2,3);
 
 /* A simple debugging assertion. */
 #define XMLRPC_ASSERT_ENV_OK(envP) \
@@ -223,32 +232,40 @@ typedef struct _xmlrpc_mem_block {
 } xmlrpc_mem_block;
 
 /* Allocate a new xmlrpc_mem_block. */
+XMLRPC_DLLEXPORT
 xmlrpc_mem_block* xmlrpc_mem_block_new (xmlrpc_env* const env, size_t const size);
 
 /* Destroy an existing xmlrpc_mem_block, and everything it contains. */
+XMLRPC_DLLEXPORT
 void xmlrpc_mem_block_free (xmlrpc_mem_block* const block);
 
 /* Initialize the contents of the provided xmlrpc_mem_block. */
+XMLRPC_DLLEXPORT
 void xmlrpc_mem_block_init
     (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
 
 /* Deallocate the contents of the provided xmlrpc_mem_block, but not the
 ** block itself. */
+XMLRPC_DLLEXPORT
 void xmlrpc_mem_block_clean (xmlrpc_mem_block* const block);
 
 /* Get the size and contents of the xmlrpc_mem_block. */
+XMLRPC_DLLEXPORT
 size_t 
 xmlrpc_mem_block_size(const xmlrpc_mem_block * const block);
 
+XMLRPC_DLLEXPORT
 void * 
 xmlrpc_mem_block_contents(const xmlrpc_mem_block * const block);
 
 /* Resize an xmlrpc_mem_block, preserving as much of the contents as
 ** possible. */
+XMLRPC_DLLEXPORT
 void xmlrpc_mem_block_resize
     (xmlrpc_env* const env, xmlrpc_mem_block* const block, size_t const size);
 
 /* Append data to an existing xmlrpc_mem_block. */
+XMLRPC_DLLEXPORT
 void xmlrpc_mem_block_append
     (xmlrpc_env* const env, xmlrpc_mem_block* const block, const void * const data, size_t const len);
 
@@ -295,12 +312,14 @@ void xmlrpc_mem_block_append
 **  UTF-8 Encoding and Decoding
 **=======================================================================*/
 
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_validate_utf8(xmlrpc_env * const envP,
                      const char * const utf8Data,
                      size_t       const utf8Len);
 
 /* Decode a UTF-8 string. */
+XMLRPC_DLLEXPORT
 xmlrpc_mem_block *
 xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
                    const char * const utf8_data,
@@ -309,15 +328,18 @@ xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
 /* Encode a UTF-8 string. */
 
 #if XMLRPC_HAVE_WCHAR
+XMLRPC_DLLEXPORT
 xmlrpc_mem_block *
 xmlrpc_wcs_to_utf8(xmlrpc_env *    const envP,
                    const wchar_t * const wcsData,
                    size_t          const wcsLen);
 #endif
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_force_to_utf8(char * const buffer);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_force_to_xml_chars(char * const buffer);
 

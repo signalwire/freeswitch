@@ -305,6 +305,11 @@ int ei_decode_string_or_binary(char *buf, int *index, int maxlen, char *dst)
 
 	ei_get_type(buf, index, &type, &size);
 
+	if (type == ERL_NIL_EXT || size == 0) {
+		dst[0] = '\0';
+		return 0;
+	}
+
 	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) {
 		return -1;
 	} else if (size > maxlen) {

@@ -169,6 +169,10 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 
 	if (spri->pri) {
 		pri_set_debug(spri->pri, debug);
+#ifdef HAVE_LIBPRI_BRI
+		/* "follow Q.931 Section 5.3.2 call hangup better" */
+		pri_hangup_fix_enable(spri->pri, 1);
+#endif
 #ifdef HAVE_LIBPRI_AOC
 		pri_aoc_events_enable(spri->pri, 1);
 #endif
@@ -182,7 +186,7 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, ftdm_span_t *span, ftdm_channel_t *
 
 
 #define timeval_to_ms(x) \
-	(((ftdm_time_t)(x)->tv_sec * 1000) + (ftdm_time_t)((x)->tv_usec / 1000))
+	(ftdm_time_t)(((x)->tv_sec * 1000) + ((x)->tv_usec / 1000))
 
 int lpwrap_start_timer(struct lpwrap_pri *spri, struct lpwrap_timer *timer, const uint32_t timeout_ms, timeout_handler callback)
 {

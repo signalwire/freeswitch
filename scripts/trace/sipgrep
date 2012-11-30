@@ -286,8 +286,8 @@ sub print_out
     if(defined $filedebug)
     {
 	open(DBG, ">>$filedebug");
-	$lcolor = 'reset' if(!(defined $debugfilecolors));		
-	print DBG color $lcolor if(!(defined $debugfilecolors));
+	$lcolor = 'reset' if((defined $debugfilecolors));
+	print DBG color $lcolor if((defined $debugfilecolors));
 	print DBG $ltext;
 	close(DBG);	
     }

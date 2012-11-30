@@ -178,6 +178,23 @@ SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db)
 	return sqlite3_changes(db);
 }
 
+SWITCH_DECLARE(int) switch_core_db_load_extension(switch_core_db_t *db, const char *extension)
+{
+	int ret = 0;
+	char *err = NULL;
+
+	sqlite3_enable_load_extension(db, 1);
+	ret = sqlite3_load_extension(db, extension, 0, &err);
+	sqlite3_enable_load_extension(db, 0);
+
+	if (err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "LOAD EXTENSION ERR [%s]\n", err);
+		switch_core_db_free(err);
+		err = NULL;
+	}
+	return ret;
+}
+
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename)
 {
 	switch_core_db_t *db;

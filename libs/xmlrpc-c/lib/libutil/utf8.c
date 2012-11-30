@@ -38,6 +38,7 @@
 **    http://www.cl.cam.ac.uk/~mgk25/unicode.html
 */
 
+#include <assert.h>
 #include "int.h"
 
 #include "xmlrpc_config.h"
@@ -51,31 +52,33 @@
 **  UTF-8 data.
 */
 
-/* The number of bytes in a UTF-8 sequence starting with the character used
-** as the array index.  A zero entry indicates an illegal initial byte.
-** This table was generated using a Perl script and information from the
-** UTF-8 standard.
-**
-** Fredrik Lundh's UTF-8 decoder Python 2.0 uses a similar table.  But
-** since Python 2.0 has the icky CNRI license, I regenerated this
-** table from scratch and wrote my own decoder. */
-static unsigned char utf8_seq_length[256] = {
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-    4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 0, 0
+static unsigned char utf8SeqLength[256] = {
+
+  /* utf8SeqLength[B] is the number of bytes in a UTF-8 sequence that starts
+     with byte B.  Except zero indicates an illegal initial byte.
+
+     Fredrik Lundh's UTF-8 decoder Python 2.0 uses a similar table.  But since
+     Python 2.0 has the icky CNRI license, I generated this table from scratch
+     and wrote my own decoder.
+  */
+
+          /* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  */
+  /* 0 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 1 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 2 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 3 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 4 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 5 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 6 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 7 */    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  /* 8 */    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 9 */    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* A */    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* B */    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* C */    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+  /* D */    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+  /* E */    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+  /* F */    4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 0, 0
 };
 
 /* The minimum legal character value for a UTF-8 sequence of the given
@@ -118,14 +121,129 @@ static uint32_t const utf8_min_char_for_length[] = {
 #if HAVE_UNICODE_WCHAR
 
 
-static void 
-decode_utf8(xmlrpc_env * const envP,
-            const char * const utf8_data,
-            size_t       const utf8_len,
-            wchar_t *    const ioBuff,
-            size_t *     const outBuffLenP) {
+static void
+validateContinuation(xmlrpc_env * const envP,
+                     char         const c) {
+
+    if (!IS_CONTINUATION(c))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INVALID_UTF8_ERROR,
+            "UTF-8 multibyte sequence contains character 0x%02x, "
+            "which does not indicate continuation.", c);
+}
+
+
+
+static void
+validateUtf16(xmlrpc_env * const envP,
+              wchar_t      const wc) {
+
+    if (wc > UCS2_MAX_LEGAL_CHARACTER)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INVALID_UTF8_ERROR,
+            "UCS-2 characters > U+FFFD are illegal.  String contains 0x%04x",
+            (unsigned)wc);
+    else if (UTF16_FIRST_SURROGATE <= wc && wc <= UTF16_LAST_SURROGATE)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INVALID_UTF8_ERROR,
+            "UTF-16 surrogates may not appear in UTF-8 data.  "
+            "String contains %04x", (unsigned)wc);
+}
+
+
+
+/* Microsoft Visual C in debug mode produces code that complains about
+   returning an undefined value from xmlrpc_datetime_new_str().  It's a bogus
+   complaint, because this function is defined to return nothing meaningful
+   those cases.  So we disable the check.
+*/
+#pragma runtime_checks("u", off)
+
+static void
+decodeMultibyte(xmlrpc_env * const envP,
+                const char * const utf8_seq,
+                size_t       const length,
+                wchar_t *    const wcP) {
 /*----------------------------------------------------------------------------
-  Decode to UCS-2 (or validates as UTF-8 that can be decoded to UCS-2)
+   Decode the multibyte UTF-8 sequence which is 'length' characters
+   at 'utf8_data'.
+
+   Return the character in UTF-16 format as *wcP.
+-----------------------------------------------------------------------------*/
+    wchar_t wc;
+
+    assert(utf8_seq[0] & 0x80); /* High bit set: this is multibyte seq */
+
+    switch (length) {
+    case 2:
+        /* 110xxxxx 10xxxxxx */
+        validateContinuation(envP, utf8_seq[1]);
+
+        if (!envP->fault_occurred)
+            wc = ((((wchar_t) (utf8_seq[0] & 0x1F)) <<  6) |
+                  (((wchar_t) (utf8_seq[1] & 0x3F))));
+        break;
+                
+    case 3:
+        /* 1110xxxx 10xxxxxx 10xxxxxx */
+        validateContinuation(envP, utf8_seq[1]);
+        if (!envP->fault_occurred) {
+            validateContinuation(envP, utf8_seq[2]);
+            if (!envP->fault_occurred)
+                wc = ((((wchar_t) (utf8_seq[0] & 0x0F)) << 12) |
+                      (((wchar_t) (utf8_seq[1] & 0x3F)) <<  6) |
+                      (((wchar_t) (utf8_seq[2] & 0x3F))));
+        }
+        break;
+
+    case 4:
+        /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
+    case 5:
+        /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+    case 6:
+        /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+        /* This would require more than 16 bits in UTF-16, so
+           it can't be represented in UCS-2, so it's beyond
+           our capability.  Characters in the BMP fit in 16
+           bits.
+        */
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INVALID_UTF8_ERROR,
+            "UTF-8 string contains a character not in the "
+            "Basic Multilingual Plane (first byte 0x%02x)",
+            utf8_seq[0]);
+        break;
+
+    default:
+        xmlrpc_faultf(envP,
+                      "Internal error: Impossible UTF-8 sequence length %u",
+                      (unsigned)length);
+    }
+
+    if (!envP->fault_occurred)
+        validateUtf16(envP, wc);
+
+    if (!envP->fault_occurred)
+        if ((uint32_t)wc < utf8_min_char_for_length[length])
+            xmlrpc_env_set_fault_formatted(
+                envP, XMLRPC_INVALID_UTF8_ERROR,
+                "Overlong UTF-8 sequence not allowed");
+
+    *wcP = wc;
+}
+
+#pragma runtime_checks("u", restore)
+
+
+
+static void 
+decodeUtf8(xmlrpc_env * const envP,
+           const char * const utf8_data,
+           size_t       const utf8_len,
+           wchar_t *    const ioBuff,
+           size_t *     const outBuffLenP) {
+/*----------------------------------------------------------------------------
+  Decode to UCS-2 (or validate as UTF-8 that can be decoded to UCS-2)
   a UTF-8 string.  To validate, set ioBuff and outBuffLenP to NULL.
   To decode, allocate a sufficiently large buffer, pass it as ioBuff,
   and pass a pointer as as outBuffLenP.  The data will be written to
@@ -134,132 +252,60 @@ decode_utf8(xmlrpc_env * const envP,
   We assume that wchar_t holds a single UCS-2 character in native-endian
   byte ordering.
 -----------------------------------------------------------------------------*/
-    size_t i, length, out_pos;
-    char init, con1, con2;
-    wchar_t wc;
+    size_t utf8Cursor;
+    size_t outPos;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_PTR_OK(utf8_data);
-    XMLRPC_ASSERT((!ioBuff && !outBuffLenP) ||
-                  (ioBuff && outBuffLenP));
+    XMLRPC_ASSERT((!ioBuff && !outBuffLenP) || (ioBuff && outBuffLenP));
 
-    /* Suppress GCC warning about possibly undefined variable. */
-    wc = 0;
+    for (utf8Cursor = 0, outPos = 0;
+         utf8Cursor < utf8_len && !envP->fault_occurred;
+        ) {
 
-    i = 0;
-    out_pos = 0;
-    while (i < utf8_len) {
-        init = utf8_data[i];
+        char const init = utf8_data[utf8Cursor];
+            /* Initial byte of the UTF-8 sequence */
+
+        wchar_t wc;
+
         if ((init & 0x80) == 0x00) {
             /* Convert ASCII character to wide character. */
             wc = init;
-            i++;
+            ++utf8Cursor;
         } else {
             /* Look up the length of this UTF-8 sequence. */
-            length = utf8_seq_length[(unsigned char) init];
-            
-            /* Check to make sure we have enough bytes to convert. */
-            if (i + length > utf8_len)
-                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
-                            "Truncated UTF-8 sequence");
-            
-            /* Decode a multibyte UTF-8 sequence. */
-            switch (length) {
-            case 0:
-                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
-                            "Invalid UTF-8 initial byte");
-                
-            case 2:
-                /* 110xxxxx 10xxxxxx */
-                con1 = utf8_data[i+1];
-                if (!IS_CONTINUATION(con1))
-                    XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
-                                "UTF-8 sequence too short");
-                wc = ((((wchar_t) (init & 0x1F)) <<  6) |
-                      (((wchar_t) (con1 & 0x3F))));
-                break;
-                
-            case 3:
-                /* 1110xxxx 10xxxxxx 10xxxxxx */
-                con1 = utf8_data[i+1];
-                con2 = utf8_data[i+2];
-                if (!IS_CONTINUATION(con1) || !IS_CONTINUATION(con2))
-                    XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
-                                "UTF-8 sequence too short");
-                wc = ((((wchar_t) (init & 0x0F)) << 12) |
-                      (((wchar_t) (con1 & 0x3F)) <<  6) |
-                      (((wchar_t) (con2 & 0x3F))));
-                break;
-                
-            case 4:
-                /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
-            case 5:
-                /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-            case 6:
-                /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-                /* This would require more than 16 bits in UTF-16, so
-                   it can't be represented in UCS-2, so it's beyond
-                   our capability.  Characters in the BMP fit in 16
-                   bits.
-                */
+            size_t const length = utf8SeqLength[(unsigned char) init];
+
+            if (length == 0)
                 xmlrpc_env_set_fault_formatted(
                     envP, XMLRPC_INVALID_UTF8_ERROR,
-                    "UTF-8 string contains a character not in the "
-                    "Basic Multilingual Plane (first byte %08x)",
-                    init);
-                goto cleanup;
-                
-            default:
-                XMLRPC_ASSERT("Error in UTF-8 decoder tables");
+                    "Unrecognized UTF-8 initial byte value 0x%02x", init);
+            else {
+                /* Make sure we have enough bytes to convert. */
+                if (utf8Cursor + length > utf8_len) {
+                    xmlrpc_env_set_fault_formatted(
+                        envP, XMLRPC_INVALID_UTF8_ERROR,
+                        "Invalid UTF-8 sequence indicates a %u-byte sequence "
+                        "when only %u bytes are left in the string",
+                        (unsigned)length, (unsigned)(utf8_len - utf8Cursor));
+                } else {
+                    decodeMultibyte(envP, &utf8_data[utf8Cursor], length, &wc);
+                    
+                    /* Advance to the end of the sequence. */
+                    utf8Cursor += length;
+                }
             }
-            
-            /* Advance to the end of the sequence. */
-            i += length;
-            
-            /* Check for illegal UCS-2 characters. */
-            if (wc > UCS2_MAX_LEGAL_CHARACTER)
-                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
-                            "UCS-2 characters > U+FFFD are illegal");
-            
-            /* Check for UTF-16 surrogates. */
-            if (UTF16_FIRST_SURROGATE <= wc && wc <= UTF16_LAST_SURROGATE)
-                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
-                            "UTF-16 surrogates may not appear in UTF-8 data");
-            
-            /* Check for overlong sequences. */
-            if ((uint32_t)wc < utf8_min_char_for_length[length])
-                XMLRPC_FAIL(envP, XMLRPC_INVALID_UTF8_ERROR,
-                            "Overlong UTF-8 sequence not allowed");
         }
-        
-        /* If we have a buffer, write our character to it. */
-        if (ioBuff) {
-            ioBuff[out_pos++] = wc;
+
+        if (!envP->fault_occurred) {
+            /* If we have a buffer, write our character to it. */
+            if (ioBuff)
+                ioBuff[outPos++] = wc;
         }
     }
-    
-    /* Record the number of characters we found. */
+
     if (outBuffLenP)
-        *outBuffLenP = out_pos;
-    
-            cleanup:
-    if (envP->fault_occurred) {
-        if (outBuffLenP)
-            *outBuffLenP = 0;
-    }
-}
-
-
-
-void 
-xmlrpc_validate_utf8(xmlrpc_env * const env,
-                     const char * const utf8_data,
-                     size_t       const utf8_len) {
-/*----------------------------------------------------------------------------
-   Validate that a string is valid UTF-8.
------------------------------------------------------------------------------*/
-
-    decode_utf8(env, utf8_data, utf8_len, NULL, NULL);
+        *outBuffLenP = envP->fault_occurred ? 0 : outPos;
 }
 
 
@@ -286,9 +332,9 @@ xmlrpc_utf8_to_wcs(xmlrpc_env * const envP,
     wcsP = XMLRPC_MEMBLOCK_NEW(wchar_t, envP, utf8_len);
     if (!envP->fault_occurred) {
         /* Decode the UTF-8 data. */
-        decode_utf8(envP, utf8_data, utf8_len,
-                    XMLRPC_MEMBLOCK_CONTENTS(wchar_t, wcsP),
-                    &wcs_length);
+        decodeUtf8(envP, utf8_data, utf8_len,
+                   XMLRPC_MEMBLOCK_CONTENTS(wchar_t, wcsP),
+                   &wcs_length);
         if (!envP->fault_occurred) {
             /* We can't have overrun our buffer. */
             XMLRPC_ASSERT(wcs_length <= utf8_len);
@@ -329,7 +375,8 @@ xmlrpc_wcs_to_utf8(xmlrpc_env *    const envP,
 
     utf8P = XMLRPC_MEMBLOCK_NEW(char, envP, estimate);
     if (!envP->fault_occurred) {
-        unsigned char * const buffer = XMLRPC_MEMBLOCK_CONTENTS(char, utf8P);
+        unsigned char * const buffer =
+            XMLRPC_MEMBLOCK_CONTENTS(unsigned char, utf8P);
         size_t bytesUsed;
         size_t i;
 
@@ -401,13 +448,12 @@ xmlrpc_force_to_utf8(char * const buffer) {
     char * p;
 
     for (p = &buffer[0]; *p;) {
-        uint const length = utf8_seq_length[(unsigned char) *p];
+        unsigned int const length = utf8SeqLength[(unsigned char) *p];
 
         bool forceDel;
         uint32_t decoded;
 
-        forceDel = false;
-        decoded  = 0;  /* suppress compiler warning; valid when !forceDel */
+        forceDel = false;  /* initial value */
 
         switch (length) {
         case 1:
@@ -482,7 +528,7 @@ xmlrpc_force_to_xml_chars(char * const buffer) {
     char * p;
 
     for (p = &buffer[0]; *p;) {
-        uint const length = utf8_seq_length[(unsigned char) *p];
+        unsigned int const length = utf8SeqLength[(unsigned char) *p];
 
         if (length == 1) {
             if (*p < 0x20 && *p != '\r' && *p != '\n' && *p != '\t')
@@ -505,7 +551,31 @@ xmlrpc_force_to_xml_chars(char * const buffer) {
 
 
 
+void 
+xmlrpc_validate_utf8(xmlrpc_env * const envP,
+                     const char * const utf8_data,
+                     size_t       const utf8_len) {
+/*----------------------------------------------------------------------------
+   Validate that a string is valid UTF-8.
+-----------------------------------------------------------------------------*/
+    xmlrpc_env env;
 
+    xmlrpc_env_init(&env);
 
+#if HAVE_UNICODE_WCHAR
+    decodeUtf8(&env, utf8_data, utf8_len, NULL, NULL);
+#else
+    /* We don't have a convenient way to validate, so we just fake it and
+       call it valid.
+    */
+#endif
 
-
+    if (env.fault_occurred) {
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_INVALID_UTF8_ERROR,
+            "%" XMLRPC_PRId64 "-byte "
+            "supposed UTF-8 string is not valid UTF-8.  %s",
+            (XMLRPC_INT64)utf8_len, env.fault_string);
+    }
+    xmlrpc_env_clean(&env);
+}

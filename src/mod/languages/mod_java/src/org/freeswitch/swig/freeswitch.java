@@ -25,6 +25,10 @@ public class freeswitch {
     freeswitchJNI.consoleCleanLog(msg);
   }
 
+  public static boolean running() {
+    return freeswitchJNI.running();
+  }
+
   public static boolean email(String to, String from, String headers, String body, String file, String convert_cmd, String convert_ext) {
     return freeswitchJNI.email(to, from, headers, body, file, convert_cmd, convert_ext);
   }
@@ -60,6 +64,10 @@ public class freeswitch {
   public static SWIGTYPE_p_JavaVM getJavaVM() {
     long cPtr = freeswitchJNI.javaVM_get();
     return (cPtr == 0) ? null : new SWIGTYPE_p_JavaVM(cPtr, false);
+  }
+
+  public static void setOriginateStateHandler(org.freeswitch.StateHandler stateHandler) throws java.util.TooManyListenersException {
+    freeswitchJNI.setOriginateStateHandler(stateHandler);
   }
 
 }

@@ -116,7 +116,7 @@ NAWK = @AWK@
 
 # You should not have to change anything below this line
 ###############################################################################
-TCC += -DSQLITE_OMIT_LOAD_EXTENSION=1
+#TCC += -DSQLITE_OMIT_LOAD_EXTENSION=1
 
 # Object files for the SQLite library.
 #

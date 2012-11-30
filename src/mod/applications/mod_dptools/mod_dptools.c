@@ -567,6 +567,22 @@ SWITCH_STANDARD_APP(mkdir_function)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s MKDIR: %s\n",
 					  switch_channel_get_name(switch_core_session_get_channel(session)), data);
 }
+#define RENAME_SYNTAX "<from_path> <to_path>"
+SWITCH_STANDARD_APP(rename_function)
+{
+	char *argv[2] = { 0 };
+	char *lbuf = NULL;
+
+	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& switch_split(lbuf, ' ', argv) == 2) {
+		switch_file_rename(argv[0], argv[1], switch_core_session_get_pool(session));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s RENAME: %s %s\n",
+						  switch_channel_get_name(switch_core_session_get_channel(session)), argv[0], argv[1]);
+	
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", RENAME_SYNTAX);
+	}
+}
 
 #define SOFT_HOLD_SYNTAX "<unhold key> [<moh_a>] [<moh_b>]"
 SWITCH_STANDARD_APP(soft_hold_function)
@@ -1158,6 +1174,15 @@ SWITCH_STANDARD_APP(answer_function)
 	}
 
 	switch_channel_answer(channel);
+}
+
+SWITCH_STANDARD_APP(wait_for_answer_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Waiting for answer\n");
+	while (!switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_ready(channel)) {
+		switch_ivr_sleep(session, 100, SWITCH_TRUE, NULL);
+	}
 }
 
 SWITCH_STANDARD_APP(presence_function)
@@ -3559,6 +3584,7 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 
 	pickup = outbound_profile->destination_number;
 
+	flags |= SOF_NO_LIMITS;
 
 	if (!(nsession = switch_core_session_request(pickup_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
@@ -3651,6 +3677,8 @@ SWITCH_STANDARD_APP(pickup_function)
 			caller_profile->callee_id_name = name;
 			caller_profile->callee_id_number = num;
 			
+			switch_channel_flip_cid(channel);
+
 			if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 				const char *uuid = switch_channel_get_partner_uuid(channel);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
@@ -3894,7 +3922,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	if ((x_params = switch_xml_child(x_user, "params"))) {
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
-			const char *pvar = switch_xml_attr(x_param, "name");
+			const char *pvar = switch_xml_attr_soft(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
 
 			if (!strcasecmp(pvar, "dial-string")) {
@@ -4403,7 +4431,7 @@ struct file_string_context {
 typedef struct file_string_context file_string_context_t;
 
 
-static int next_file(switch_file_handle_t *handle)
+static switch_status_t next_file(switch_file_handle_t *handle)
 {
 	file_string_context_t *context = handle->private_info;
 	char *file;
@@ -4418,7 +4446,7 @@ static int next_file(switch_file_handle_t *handle)
 	}
 
 	if (context->index >= context->argc) {
-		return 0;
+		return SWITCH_STATUS_FALSE;
 	}
 
 
@@ -4434,8 +4462,23 @@ static int next_file(switch_file_handle_t *handle)
 		file = switch_core_sprintf(handle->memory_pool, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, context->argv[context->index]);
 	}
 
-	if (switch_core_file_open(&context->fh,
-							  file, handle->channels, handle->samplerate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		char *path = switch_core_strdup(handle->memory_pool, file);
+		char *p;
+
+		if ((p = strrchr(path, *SWITCH_PATH_SEPARATOR))) {
+			*p = '\0';
+			if (switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", path);
+				return SWITCH_STATUS_FALSE;
+			}
+
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error finding the folder path section in '%s'\n", path);
+		}
+	}
+
+	if (switch_core_file_open(&context->fh, file, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		goto top;
 	}
 
@@ -4461,7 +4504,7 @@ static int next_file(switch_file_handle_t *handle)
 		}
 	}
 
-	return 1;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -4487,11 +4530,6 @@ static switch_status_t file_string_file_open(switch_file_handle_t *handle, const
 	file_string_context_t *context;
 	char *file_dup;
 
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 
 	file_dup = switch_core_strdup(handle->memory_pool, path);
@@ -4500,7 +4538,7 @@ static switch_status_t file_string_file_open(switch_file_handle_t *handle, const
 
 	handle->private_info = context;
 
-	return next_file(handle) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	return next_file(handle);
 }
 
 static switch_status_t file_string_file_close(switch_file_handle_t *handle)
@@ -4533,15 +4571,34 @@ static switch_status_t file_string_file_read(switch_file_handle_t *handle, void 
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
-		if (!next_file(handle)) {
-			return SWITCH_STATUS_FALSE;
+		if ((status = next_file(handle)) != SWITCH_STATUS_SUCCESS) {
+			return status;
 		}
 		*len = llen;
 		status = switch_core_file_read(&context->fh, data, len);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
+
+static switch_status_t file_string_file_write(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	file_string_context_t *context = handle->private_info;
+	switch_status_t status;
+	size_t llen = *len;
+
+	status = switch_core_file_write(&context->fh, data, len);
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		if ((status = next_file(handle)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		*len = llen;
+		status = switch_core_file_write(&context->fh, data, len);
+	}
+	return status;
+}
+
 
 /* Registration */
 
@@ -4757,10 +4814,6 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 	struct read_frame_data rf = { 0 };
 	long to_val = 0;
 
-	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_FALSE;
-	}
-
 	switch_mutex_lock(globals.mutex_mutex);
 	used = switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_WAIT) || switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_SET);
 
@@ -4820,18 +4873,11 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 	
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s mutex %s is busy, waiting...\n", switch_channel_get_name(channel), key);
 
-	if (!(feedback = switch_channel_get_variable(channel, "mutex_feedback"))) {
-		if ((var = switch_channel_get_variable(channel, "ringback"))) {
-			feedback = switch_core_session_sprintf(session, "tone_stream://%s;loops=-1", var);
-		} else {
-			feedback = switch_channel_get_hold_music(channel);
+	if ((feedback = switch_channel_get_variable(channel, "mutex_feedback"))) {
+		if (!strcasecmp(feedback, "silence")) {
+			feedback = "silence_stream://-1";
 		}
 	}
-
-	if (zstr(feedback) || !strcasecmp(feedback, "silence")) {
-		feedback = "silence_stream://-1";
-	}
-
 
 	if ((rf.exten = switch_channel_get_variable(channel, "mutex_orbit_exten"))) {
 		to_val = 60;
@@ -4860,7 +4906,16 @@ static switch_bool_t do_mutex(switch_core_session_t *session, const char *key, s
 	args.user_data = &rf;
 
 	while(switch_channel_ready(channel) && switch_channel_test_app_flag_key(key, channel, MUTEX_FLAG_WAIT)) {
-		switch_status_t st = switch_ivr_play_file(session, NULL, feedback, &args);
+		switch_status_t st;
+
+		if (feedback) {
+			switch_channel_pre_answer(channel);
+			st = switch_ivr_play_file(session, NULL, feedback, &args);
+		} else {
+			if ((st = switch_ivr_sleep(session, 20, SWITCH_FALSE, NULL)) == SWITCH_STATUS_SUCCESS) {
+				st = read_frame_callback(session, NULL, &rf);
+			}
+		}
 
 		if (st != SWITCH_STATUS_SUCCESS) {
 			break;
@@ -4910,6 +4965,451 @@ SWITCH_STANDARD_APP(mutex_function)
 }
 
 /* /// mutex /// */
+
+typedef struct page_data_s {
+	uint32_t *counter;
+	const char *dial_str;
+	const char *dp;
+	const char *context;
+	const char *exten;
+	const char *path;
+	switch_event_t *var_event;
+	switch_memory_pool_t *pool;
+	switch_mutex_t *mutex;
+} page_data_t;
+
+static switch_status_t page_hanguphook(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+
+	if (state == CS_HANGUP) {
+		page_data_t *pd;
+
+		if ((pd = (page_data_t *) switch_channel_get_private(channel, "__PAGE_DATA"))) {
+			uint32_t *counter = pd->counter;
+
+			switch_mutex_lock(pd->mutex);
+			(*counter)--;
+			switch_mutex_unlock(pd->mutex);
+
+
+		}
+
+		switch_core_event_hook_remove_state_change(session, page_hanguphook);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+void *SWITCH_THREAD_FUNC page_thread(switch_thread_t *thread, void *obj)
+{
+	page_data_t *mypd, *pd = (page_data_t *) obj;
+	switch_core_session_t *session;
+	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+	uint32_t *counter = pd->counter;
+	switch_memory_pool_t *pool = pd->pool;
+
+
+	if (switch_ivr_originate(NULL, &session, &cause, pd->dial_str, 60, NULL, NULL, NULL, NULL, pd->var_event, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		
+		switch_channel_set_variable(channel, "page_file", pd->path);
+
+		mypd = switch_core_session_alloc(session, sizeof(*mypd));
+		mypd->counter = pd->counter;
+		mypd->mutex = pd->mutex;
+		switch_core_event_hook_add_state_change(session, page_hanguphook);
+		switch_channel_set_private(channel, "__PAGE_DATA", mypd);
+		switch_ivr_session_transfer(session, pd->exten, pd->dp, pd->context);
+		switch_core_session_rwunlock(session);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "originate failed: %s [%s]\n", switch_channel_cause2str(cause), pd->dial_str);
+		switch_mutex_lock(pd->mutex);
+		(*counter)--;
+		switch_mutex_unlock(pd->mutex);
+	}
+
+	switch_event_safe_destroy(&pd->var_event);
+
+	if (pool) {
+		switch_core_destroy_memory_pool(&pool);
+	}
+
+	return NULL;
+}
+
+static void launch_call(const char *dial_str, 
+						const char *path, const char *exten, const char *context, const char *dp, 
+						switch_mutex_t *mutex, uint32_t *counter, switch_event_t **var_event)
+{
+	switch_thread_data_t *td;
+	switch_memory_pool_t *pool;
+	page_data_t *pd;
+	
+	switch_core_new_memory_pool(&pool);
+
+	pd = switch_core_alloc(pool, sizeof(*pd));
+	pd->pool = pool;
+	pd->exten = switch_core_strdup(pool, exten);
+	pd->context = switch_core_strdup(pool, context);
+	pd->dp = switch_core_strdup(pool, dp);
+	pd->dial_str = switch_core_strdup(pool, dial_str);
+	pd->path = switch_core_strdup(pool, path);
+	pd->mutex = mutex;
+
+	if (var_event && *var_event) {
+		switch_event_dup(&pd->var_event, *var_event);
+		switch_event_destroy(var_event);
+	}
+
+	switch_mutex_lock(pd->mutex);
+	(*counter)++;
+	switch_mutex_unlock(pd->mutex);
+
+	pd->counter = counter;
+
+	td = switch_core_alloc(pool, sizeof(*td));
+	td->func = page_thread;
+	td->obj = pd;
+
+	switch_thread_pool_launch_thread(&td);
+	
+}
+
+typedef struct call_monitor_s {
+	switch_memory_pool_t *pool;
+	const char *path;
+	char *data;
+	const char *context;
+	const char *exten;
+	const char *dp;
+	uint32_t chunk_size;
+	int nuke;
+} call_monitor_t;
+
+
+
+void *SWITCH_THREAD_FUNC call_monitor_thread(switch_thread_t *thread, void *obj)
+{
+	call_monitor_t *cm = (call_monitor_t *) obj;
+	uint32_t sent = 0;
+	switch_mutex_t *mutex;
+	uint32_t counter = 0;
+	switch_memory_pool_t *pool = cm->pool;
+	int size;
+	char *argv[512] = { 0 };
+	int busy = 0;
+	switch_event_t *var_event = NULL;
+	char *data;
+
+	switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, cm->pool);
+
+	if (switch_file_exists(cm->path, cm->pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File %s does not exist!\n", cm->path);
+		goto end;
+	}
+
+	data = cm->data;
+
+	while (data && *data && *data == ' ') {
+		data++;
+	}
+	
+	while (*data == '<') {
+		char *parsed = NULL;
+
+		if (switch_event_create_brackets(data, '<', '>', ',', &var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+			goto end;
+		}
+
+		data = parsed;
+	}
+
+	while (data && *data && *data == ' ') {
+		data++;
+	}
+
+	if (!(size = switch_separate_string_string(data, SWITCH_ENT_ORIGINATE_DELIM, argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels specified.\n");
+		goto end;
+	}
+
+
+	if (cm->chunk_size > size) {
+		cm->chunk_size = size;
+	}
+
+	while (sent < size) {
+		do {				
+			switch_mutex_lock(mutex);				
+			busy = (counter >= cm->chunk_size);
+			switch_mutex_unlock(mutex);
+			
+			if (busy) {					
+				switch_yield(100000);
+			}												
+			
+		} while (busy);
+
+		launch_call(argv[sent++], cm->path, cm->exten, cm->context, cm->dp, mutex, &counter, &var_event);
+	}
+
+
+ end:
+
+	while(counter) {
+		switch_mutex_lock(mutex);
+		switch_mutex_unlock(mutex);
+		switch_yield(100000);
+	}
+
+	if (cm->nuke && !zstr(cm->path)) {
+		unlink(cm->path);
+	}
+
+    if (pool) {
+		switch_core_destroy_memory_pool(&pool);
+	}
+
+	return NULL;
+}
+
+static void launch_call_monitor(const char *path, int del, const char *data, uint32_t chunk_size, const char *exten, const char *context, const char *dp)
+{
+	switch_thread_data_t *td;
+	switch_memory_pool_t *pool;
+	call_monitor_t *cm;
+	
+	switch_core_new_memory_pool(&pool);
+
+	cm = switch_core_alloc(pool, sizeof(*cm));
+
+	if (del) {
+		cm->nuke = 1;
+	}
+
+	cm->pool = pool;
+	cm->path = switch_core_strdup(pool, path);
+	cm->data = switch_core_strdup(pool, data);
+	cm->exten = switch_core_strdup(pool, exten);
+	cm->context = switch_core_strdup(pool, context);
+	cm->dp = switch_core_strdup(pool, dp);
+	cm->chunk_size = chunk_size;
+
+	td = switch_core_alloc(pool, sizeof(*td));
+	td->func = call_monitor_thread;
+	td->obj = cm;
+
+	switch_thread_pool_launch_thread(&td);
+	
+}
+
+
+#define PAGE_SYNTAX "<var1=val1,var2=val2><chan1>[:_:<chanN>]"
+SWITCH_STANDARD_APP(page_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	uint32_t limit = 0;
+	const char *path = NULL;
+	switch_input_args_t args = { 0 };
+	switch_file_handle_t fh = { 0 };
+	uint32_t chunk_size = 10;
+	const char *l = NULL;
+	const char *tmp;
+	int del = 0, rate;
+	const char *exten;
+	const char *context = NULL;
+	const char *dp = "inline";
+	const char *pdata = data;
+
+	if (zstr(pdata)) {
+		pdata = switch_channel_get_variable(channel, "page_data");
+	}
+
+	if (zstr(pdata)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No channels specified.\n");
+		return;
+	}
+
+
+	exten = switch_channel_get_variable(channel, "page_exten");
+	context = switch_channel_get_variable(channel, "page_context");
+
+	if ((l = switch_channel_get_variable(channel, "page_dp"))) {
+		dp = l;
+	}
+	
+
+	l = switch_channel_get_variable(channel, "page_record_limit");
+	
+	if (l) {
+		if (*l == '+') {
+			l++;
+		}
+		if (l) {
+			limit = switch_atoui(l);
+		}
+	}
+
+	if ((l = switch_channel_get_variable(channel, "page_record_thresh"))) {
+		fh.thresh = switch_atoui(l);
+	}
+
+	if ((l = switch_channel_get_variable(channel, "page_chunk_size"))) {
+		uint32_t tmp = switch_atoui(l);
+
+		if (tmp > 0) {
+			chunk_size = tmp;
+		}
+	}
+
+	if ((l = switch_channel_get_variable(channel, "page_record_silence_hits"))) {
+		fh.silence_hits = switch_atoui(l);
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "record_rate"))) {
+		rate = atoi(tmp);
+		if (rate > 0) {
+			fh.samplerate = rate;
+		}
+	}
+
+	args.input_callback = on_dtmf;
+
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
+
+
+	if (!(path = switch_channel_get_variable(channel, "page_path"))) {
+		const char *beep;
+
+		path = switch_core_session_sprintf(session, "%s%s%s.wav", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session));
+		del = 1;
+
+		if (!(beep = switch_channel_get_variable(channel, "page_beep"))) {
+			beep = "tone_stream://%(500,0, 620)";
+		}
+
+		switch_ivr_play_file(session, NULL, beep, NULL);
+		
+
+		switch_ivr_record_file(session, &fh, path, &args, limit);
+	}
+
+	if (zstr(exten)) {
+		exten = switch_core_session_sprintf(session, "playback:%s", path);
+	}
+	
+	if (switch_file_exists(path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		launch_call_monitor(path, del, pdata, chunk_size, exten, context, dp);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "File %s does not exist\n", path);
+	}
+
+}
+
+
+SWITCH_STANDARD_API(page_api_function)
+{
+	char *odata = NULL, *data = NULL;
+	switch_event_t *var_event = NULL;
+	const char *exten;
+	char *oexten = NULL;
+	const char *context = NULL;
+	const char *dp = "inline";
+	const char *pdata = data;
+	const char *l;
+	uint32_t chunk_size = 10;
+	const char *path;
+
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR no data");
+		goto end;
+	}
+
+	odata = strdup(cmd);
+	data = odata;
+
+	while (data && *data && *data == ' ') {
+		data++;
+	}
+	
+	while (*data == '(') {
+		char *parsed = NULL;
+
+		if (switch_event_create_brackets(data, '(', ')', ',', &var_event, &parsed, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS || !parsed) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+			goto end;
+		}
+
+		data = parsed;
+	}
+
+	while (data && *data && *data == ' ') {
+		data++;
+	}
+
+	if (!var_event) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		goto end;
+	}	   
+
+	pdata = data;
+
+	if (zstr(pdata)) {
+		pdata = switch_event_get_header(var_event, "page_data");
+	}
+
+	if (zstr(pdata)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels specified.\n");
+		goto end;
+	}
+
+
+	exten = switch_event_get_header(var_event, "page_exten");
+	context = switch_event_get_header(var_event, "page_context");
+
+	if ((l = switch_event_get_header(var_event, "page_dp"))) {
+		dp = l;
+	}
+	
+
+	if ((l = switch_event_get_header(var_event, "page_chunk_size"))) {
+		uint32_t tmp = switch_atoui(l);
+
+		if (tmp > 0) {
+			chunk_size = tmp;
+		}
+	}
+
+	if (!(path = switch_event_get_header(var_event, "page_path"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No file specified.\n");
+		goto end;
+	}
+
+	if (zstr(exten)) {
+		oexten = switch_mprintf("playback:%s", path);
+		exten = oexten;
+	}
+	
+	if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
+		launch_call_monitor(path, 0, pdata, chunk_size, exten, context, dp);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File %s does not exist\n", path);
+	}
+
+
+ end:
+	
+
+	switch_safe_free(odata);
+	switch_safe_free(oexten);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
@@ -4963,6 +5463,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	file_interface->file_open = file_string_file_open;
 	file_interface->file_close = file_string_file_close;
 	file_interface->file_read = file_string_file_read;
+	file_interface->file_write = file_string_file_write;
 	file_interface->file_seek = file_string_file_seek;
 
 
@@ -4987,6 +5488,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_CHAT(chat_interface, "api", api_chat_send);
 
 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
+	SWITCH_ADD_API(api_interface, "page", "Send a file as a page", page_api_function, "(var1=val1,var2=val2)<var1=val1,var2=val2><chan1>[:_:<chanN>]");
 	SWITCH_ADD_API(api_interface, "strmicroepoch", "Convert a date string into micoepoch time", strmicroepoch_api_function, "<string>");
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>|[<content-type>]");
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
@@ -5015,7 +5517,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "flush_dtmf", "flush any queued dtmf", "flush any queued dtmf", flush_dtmf_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hold", "Send a hold message", "Send a hold message", hold_function, HOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "unhold", "Send a un-hold message", "Send a un-hold message", unhold_function, UNHOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "mutex", "block on a call flow only allowing one at a time", "", mutex_function, MUTEX_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "mutex", "block on a call flow only allowing one at a time", "", mutex_function, MUTEX_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "page", "", "", page_function, PAGE_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "transfer", "Transfer a channel", TRANSFER_LONG_DESC, transfer_function, "<exten> [<dialplan> <context>]",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "check_acl", "Check an ip against an ACL list", "Check an ip against an ACL list", check_acl_function,
@@ -5035,6 +5538,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   zombie_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "pre_answer", "Pre-Answer the call", "Pre-Answer the call for a channel.", pre_answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "answer", "Answer the call", "Answer the call for a channel.", answer_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "wait_for_answer", "Wait for call to be answered", "Wait for call to be answered.", wait_for_answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hangup", "Hangup the call", "Hangup the call for a channel.", hangup_function, "[<cause>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "set_name", "Name the channel", "Name the channel", set_name_function, "<name>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "presence", "Send Presence", "Send Presence.", presence_function, "<rpid> <status> [<id>]",
@@ -5103,6 +5607,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "enable_heartbeat", "Enable Media Heartbeat", "Enable Media Heartbeat",
 				   heartbeat_function, HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mkdir", "Create a directory", "Create a directory", mkdir_function, MKDIR_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "rename", "Rename file", "Rename file", rename_function, RENAME_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "soft_hold", "Put a bridged channel on hold", "Put a bridged channel on hold", soft_hold_function, SOFT_HOLD_SYNTAX,
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "bind_meta_app", "Bind a key to an application", "Bind a key to an application", dtmf_bind_function, BIND_SYNTAX,

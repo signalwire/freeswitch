@@ -262,7 +262,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if (switch_true(silence_var)) {
 			silence_val = 1400;
 		} else {
-			if ((silence_val = atoi(silence_var)) < 0) {
+			if ((silence_val = atoi(silence_var)) < -1) {
 				silence_val = 0;
 			}
 		}
@@ -316,7 +316,16 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if ((b_state = switch_channel_down_nosig(chan_b))) {
 			goto end_of_bridge_loop;
 		}
-		
+
+		if (switch_channel_test_flag(chan_a, CF_HOLD_ON_BRIDGE)) {
+			switch_core_session_message_t hmsg = { 0 };
+			switch_channel_clear_flag(chan_a, CF_HOLD_ON_BRIDGE);
+			hmsg.message_id = SWITCH_MESSAGE_INDICATE_HOLD;
+			hmsg.from = __FILE__;
+			hmsg.numeric_arg = 1;
+			switch_core_session_receive_message(session_a, &hmsg);
+		}
+
 		if (read_frame_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) && switch_core_session_private_event_count(session_a)) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.numeric_arg = 42;
@@ -745,7 +754,7 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 
 	cleanup_proxy_mode_b(session);
 
-	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+	if (switch_channel_test_flag(channel, CF_UUID_BRIDGE_ORIGINATOR)) {
 		switch_channel_set_state(channel, CS_SOFT_EXECUTE);
 	}
 
@@ -767,7 +776,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE\n", switch_channel_get_name(channel));
 	switch_channel_clear_state_handler(channel, &uuid_bridge_state_handlers);
 
-	if (!switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+	if (!switch_channel_test_flag(channel, CF_UUID_BRIDGE_ORIGINATOR)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -801,7 +810,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 
 				if (running_state == CS_SOFT_EXECUTE) {
 
-					if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
+					if (switch_channel_test_flag(other_channel, CF_UUID_BRIDGE_ORIGINATOR)) {
 						goto done;
 					} else {
 						break;
@@ -878,7 +887,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		other_session = NULL;
 	}
 
-	switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
+	switch_channel_clear_flag(channel, CF_UUID_BRIDGE_ORIGINATOR);
 
 	return SWITCH_STATUS_FALSE;
 }
@@ -1223,8 +1232,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	switch_channel_set_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);
 	switch_channel_clear_flag(peer_channel, CF_BRIDGE_ORIGINATOR);
 
-	switch_channel_audio_sync(caller_channel);
-	switch_channel_audio_sync(peer_channel);
+	//switch_channel_audio_sync(caller_channel);
+	//switch_channel_audio_sync(peer_channel);
 
 	b_leg->session = peer_session;
 	switch_copy_string(b_leg->b_uuid, switch_core_session_get_uuid(session), sizeof(b_leg->b_uuid));
@@ -1304,10 +1313,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 					switch_core_session_rwunlock(peer_session);
 					goto done;
 				}
+			}
 
-				if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
-					switch_channel_answer(caller_channel);
-				}
+			if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
+				switch_channel_answer(caller_channel);
 			}
 
 			switch_channel_wait_for_flag(peer_channel, CF_BROADCAST, SWITCH_FALSE, 10000, caller_channel);
@@ -1359,6 +1368,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			
 			switch_channel_set_private(peer_channel, "_bridge_", b_leg);
 			switch_channel_set_state(peer_channel, CS_EXCHANGE_MEDIA);
+
 			audio_bridge_thread(NULL, (void *) a_leg);
 
 			switch_channel_clear_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);
@@ -1556,6 +1566,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			originatee_channel = switch_core_session_get_channel(originatee_session);
 
 
+			if (switch_channel_test_flag(originator_channel, CF_LEG_HOLDING)) {
+				switch_channel_set_flag(originator_channel, CF_HOLD_ON_BRIDGE);
+			}
+
+			if (switch_channel_test_flag(originatee_channel, CF_LEG_HOLDING)) {
+				switch_channel_set_flag(originatee_channel, CF_HOLD_ON_BRIDGE);
+			}
+
+
+
 			if (switch_channel_direction(originatee_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(originatee_channel, CF_DIALPLAN)) {
 				switch_channel_flip_cid(originatee_channel);
 				switch_channel_set_flag(originatee_channel, CF_DIALPLAN);
@@ -1663,10 +1683,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			//switch_channel_set_variable(originatee_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE, NULL);
 			switch_channel_clear_state_handler(originator_channel, NULL);
 			switch_channel_clear_state_handler(originatee_channel, NULL);
-			switch_channel_clear_flag_recursive(originator_channel, CF_BRIDGE_ORIGINATOR);
-			switch_channel_clear_flag_recursive(originatee_channel, CF_BRIDGE_ORIGINATOR);
-			switch_channel_set_state_flag(originator_channel, CF_BRIDGE_ORIGINATOR);
+
+
+
+			switch_channel_clear_state_flag(originator_channel, CF_BRIDGE_ORIGINATOR);
 			switch_channel_clear_state_flag(originatee_channel, CF_BRIDGE_ORIGINATOR);
+
+			switch_channel_clear_flag(originator_channel, CF_UUID_BRIDGE_ORIGINATOR);
+			switch_channel_clear_flag(originatee_channel, CF_UUID_BRIDGE_ORIGINATOR);
+			switch_channel_set_state_flag(originator_channel, CF_UUID_BRIDGE_ORIGINATOR);
+
 			switch_channel_add_state_handler(originator_channel, &uuid_bridge_state_handlers);
 			switch_channel_add_state_handler(originatee_channel, &uuid_bridge_state_handlers);
 
@@ -1677,7 +1703,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 			status = SWITCH_STATUS_SUCCESS;
 
-			switch_ivr_bridge_display(originator_session, originatee_session);
+			//switch_ivr_bridge_display(originator_session, originatee_session);
 
 			/* release the read locks we have on the channels */
 			switch_core_session_rwunlock(originator_session);

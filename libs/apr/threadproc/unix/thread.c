@@ -146,6 +146,7 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
 {
     apr_status_t stat;
     pthread_attr_t *temp;
+	pthread_t tt;
 
     (*new) = (apr_thread_t *)apr_pcalloc(pool, sizeof(apr_thread_t));
 
@@ -173,7 +174,21 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
         return stat;
     }
 
-    if ((stat = pthread_create((*new)->td, temp, dummy_worker, (*new))) == 0) {
+    if ((stat = pthread_create(&tt, temp, dummy_worker, (*new))) == 0) {
+
+#ifdef HAVE_PTHREAD_SETSCHEDPARAM
+		if (attr && attr->priority) {
+			int policy;
+			struct sched_param param = { 0 };
+
+			pthread_getschedparam(tt, &policy, &param);
+			param.sched_priority = attr->priority;
+			pthread_setschedparam(tt, policy, &param);
+		}
+#endif
+
+		*(*new)->td = tt;
+
         return APR_SUCCESS;
     }
     else {

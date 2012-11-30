@@ -106,6 +106,11 @@
 #include <signal.h>
 #include <errno.h>
 
+#ifndef WIN32
+#include "stfu.h"
+#else
+#include "../../../libs/stfu/stfu.h"
+#endif
 #include "switch_platform.h"
 #include "switch_types.h"
 #include "switch_apr.h"
@@ -135,10 +140,11 @@
 #include "switch_config.h"
 #include "switch_nat.h"
 #include "switch_odbc.h"
+#include "switch_pgsql.h"
 #include "switch_json.h"
 #include "switch_limit.h"
-
 #include <libteletone.h>
+
 
 /** \mainpage FreeSWITCH
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application

@@ -42,7 +42,7 @@
 #endif  /* WIN32 */
 
 #ifdef _UNIX
-#include <sys/signal.h>
+#include <signal.h>
 #include <sys/wait.h>
 #endif
 
@@ -75,7 +75,7 @@ abyss_bool HandleTime(TSession *r)
     const char * dateString;
     const char * answer;
 
-    if (strcmp(r->uri,"/time")!=0)
+    if (!xmlrpc_streq(r->uri,"/time"))
         return FALSE;
 
     if (!RequestAuth(r,"Mot de passe","moez","hello"))
@@ -100,7 +100,7 @@ abyss_bool HandleDump(TSession *r)
 {
     char z[50];
 
-    if (strcmp(r->uri,"/name")!=0)
+    if (!xmlrpc_streq(r->uri,"/name"))
         return FALSE;
 
     sprintf(z,"Server name is %s", (r->server)->name );
@@ -125,7 +125,7 @@ abyss_bool HandleMIMEType(TSession *r)
 {
     char *m;
 
-    if (strncmp(r->uri,"/mime/",6)!=0)
+    if (!xmlrpc_strneq(r->uri, "/mime/", 6))
         return FALSE;
 
     m=MIMETypeFromExt(r->uri+6);

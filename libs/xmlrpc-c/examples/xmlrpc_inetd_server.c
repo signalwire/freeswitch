@@ -1,4 +1,4 @@
-/* A simple standalone XML-RPC server based on Abyss that processes a
+/* A simple standalone XML-RPC server program based on Abyss that processes a
    single RPC from an existing TCP connection on Standard Input.
 
    A typical example of where this would be useful is with an Inetd
@@ -21,6 +21,7 @@
    respond to the client, then exit.
 */
 
+#define _XOPEN_SOURCE 600
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -63,8 +64,8 @@ setupSignalHandlers(void) {
 static xmlrpc_value *
 sample_add(xmlrpc_env *   const envP, 
            xmlrpc_value * const paramArrayP,
-           void *         const serverInfo ATTR_UNUSED,
-           void *         const channelInfo ATTR_UNUSED) {
+           void *         const serverInfo,
+           void *         const channelInfo) {
     
     xmlrpc_int x, y, z;
 
@@ -86,6 +87,11 @@ int
 main(int           const argc, 
      const char ** const argv) {
 
+    struct xmlrpc_method_info3 const methodInfo = {
+        .methodName     = "sample.add",
+        .methodFunction = &sample_add,
+        .serverInfo = NULL
+    };
     TServer abyssServer;
     xmlrpc_registry * registryP;
     xmlrpc_env env;
@@ -101,8 +107,7 @@ main(int           const argc,
 
     registryP = xmlrpc_registry_new(&env);
 
-    xmlrpc_registry_add_method2(
-        &env, registryP, "sample.add", &sample_add, NULL, NULL, NULL);
+    xmlrpc_registry_add_method3(&env, registryP, &methodInfo);
 
     ServerCreateNoAccept(&abyssServer, "XmlRpcServer", NULL, NULL);
     

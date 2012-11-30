@@ -2,6 +2,7 @@
    both by timeout and by control-C.
 */
 
+#define _XOPEN_SOURCE 600
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -110,7 +111,7 @@ addInterruptibly(xmlrpc_client * const clientP,
 
 int 
 main(int           const argc, 
-     const char ** const argv ATTR_UNUSED) {
+     const char ** const argv) {
 
     const char * const serverUrl = "http://localhost:8080/RPC2";
 

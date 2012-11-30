@@ -128,7 +128,6 @@ SOURCE=..\src\cpp\outcome.cpp
 # Begin Source File
 
 SOURCE=..\src\cpp\packetsocket.cpp
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -149,6 +148,10 @@ SOURCE=..\src\cpp\server_abyss.cpp
 # Begin Source File
 
 SOURCE=..\src\cpp\server_pstream.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\src\cpp\server_pstream_conn.cpp
 # End Source File
 # Begin Source File
 

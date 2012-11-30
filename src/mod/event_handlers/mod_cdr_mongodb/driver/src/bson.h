@@ -959,12 +959,14 @@ typedef int (*bson_sprintf_func)( char *, const char *, ... );
 
 extern void *( *bson_malloc_func )( size_t );
 extern void *( *bson_realloc_func )( void *, size_t );
-extern void ( *bson_free )( void * );
+extern void ( *bson_free_func )( void * );
 
 extern bson_printf_func bson_printf;
 extern bson_fprintf_func bson_fprintf;
 extern bson_sprintf_func bson_sprintf;
 extern bson_printf_func bson_errprintf;
+
+MONGO_EXPORT void bson_free( void *ptr );
 
 /**
  * Allocates memory and checks return value, exiting fatally if malloc() fails.

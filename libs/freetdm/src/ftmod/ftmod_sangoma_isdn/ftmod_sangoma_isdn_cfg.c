@@ -273,7 +273,7 @@ static ftdm_status_t parse_trunkgroup(const char *_trunkgroup)
 {
 	int i;
 	char *p, *name, *dchan_span, *backup_span, *trunkgroup;
-	uint8_t num_spans;
+	uint8_t num_spans = 0;
 	ftdm_status_t ret = FTDM_SUCCESS;
 
 	trunkgroup =  ftdm_strdup(_trunkgroup);

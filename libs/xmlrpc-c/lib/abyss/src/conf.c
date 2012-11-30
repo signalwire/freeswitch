@@ -32,6 +32,9 @@
 **
 ******************************************************************************/
 
+#define _XOPEN_SOURCE 600   /* For strdup() */
+#define _BSD_SOURCE  /* For xmlrpc_strcaseeq */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -96,10 +99,10 @@ ConfReadLine(TFile *  const fileP,
             if (c == CR || c == LF)
                 break;
 
-    *buffer = '\0';
+    *z = '\0';
 
     /* Discard comments */
-    p = strchr(z, '#');
+    p = strchr(buffer, '#');
     if (p)
         *p = '\0';
 

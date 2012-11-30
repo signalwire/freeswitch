@@ -153,7 +153,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 	if (!switch_channel_media_ready(channel)) {
 		
-		for (elapsed=0; elapsed<(ms/20); elapsed++) {
+		for (elapsed=0; switch_channel_up(channel) && elapsed<(ms/20); elapsed++) {
 			if (switch_channel_test_flag(channel, CF_BREAK)) {
 				switch_channel_clear_flag(channel, CF_BREAK);
 				return SWITCH_STATUS_BREAK;
@@ -1390,6 +1390,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *stream;
 	const char *other_uuid;
+	switch_event_t *event;
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_HOLD;
 	msg.string_arg = message;
@@ -1404,6 +1405,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 		if ((other_uuid = switch_channel_get_partner_uuid(channel))) {
 			switch_ivr_broadcast(other_uuid, stream, SMF_ECHO_ALEG | SMF_LOOP);
 		}
+	}
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HOLD) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
 	}
 
 
@@ -1428,6 +1434,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *other_uuid;
 	switch_core_session_t *b_session;
+	switch_event_t *event;
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNHOLD;
 	msg.from = __FILE__;
@@ -1445,6 +1452,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 		switch_core_session_rwunlock(b_session);
 	}
 
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNHOLD) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1476,6 +1488,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 
 	if ((session = switch_core_session_locate(uuid))) {
 		channel = switch_core_session_get_channel(session);
+		
+		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS)) {
+			switch_core_session_rwunlock(session);
+			return SWITCH_STATUS_INUSE;
+		}
+
+		switch_channel_set_flag(channel, CF_MEDIA_TRANS);
 
 		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			swap = 1;
@@ -1527,6 +1546,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			}
 		}
 
+		switch_channel_clear_flag(channel, CF_MEDIA_TRANS);
 		switch_core_session_rwunlock(session);
 
 		if (other_channel) {
@@ -1558,6 +1578,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 	if ((session = switch_core_session_locate(uuid))) {
 		status = SWITCH_STATUS_SUCCESS;
 		channel = switch_core_session_get_channel(session);
+
+		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS)) {
+			switch_core_session_rwunlock(session);
+			return SWITCH_STATUS_INUSE;
+		}
+
+		switch_channel_set_flag(channel, CF_MEDIA_TRANS);
 
 		if ((flags & SMF_REBRIDGE) && !switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			swap = 1;
@@ -1617,8 +1644,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 				switch_core_session_rwunlock(other_session);
 			}
 		}
+
+		switch_channel_clear_flag(channel, CF_MEDIA_TRANS);
 		switch_core_session_rwunlock(session);
 	}
+
+
 
 	return status;
 }
@@ -2820,7 +2851,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 			break;
 		}
 
-		stfu_n_eat(jb, ts, read_frame->payload, read_frame->data, read_frame->datalen, 0);
+		stfu_n_eat(jb, ts, 0, read_frame->payload, read_frame->data, read_frame->datalen, 0);
 		ts += read_impl.samples_per_packet;
 
 		if ((jb_frame = stfu_n_read_a_frame(jb))) {
@@ -3183,6 +3214,19 @@ SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid)
 	switch_core_session_t *psession = NULL;
 
 	if ((psession = switch_core_session_locate(uuid))) {
+		switch_core_session_rwunlock(psession);
+		exists = 1;
+	}
+
+	return exists;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_force_exists(const char *uuid)
+{
+	switch_bool_t exists = SWITCH_FALSE;
+	switch_core_session_t *psession = NULL;
+
+	if ((psession = switch_core_session_force_locate(uuid))) {
 		switch_core_session_rwunlock(psession);
 		exists = 1;
 	}

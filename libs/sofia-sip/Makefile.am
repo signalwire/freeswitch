@@ -40,6 +40,9 @@ dist_man_MANS =
 #		man/man1/localinfo.1 man/man1/addrinfo.1 \
 #		man/man1/stunc.1 man/man1/sip-dig.1
 
+noop:
+	@echo ok
+
 $(dist_man_MANS): manpages
 
 manpages:

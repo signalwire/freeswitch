@@ -43,6 +43,8 @@ static void event_handler(switch_event_t *event)
 {
 	const char *dest_proto = switch_event_get_header(event, "dest_proto");
 	const char *check_failure = switch_event_get_header(event, "Delivery-Failure");
+	const char *check_nonblocking = switch_event_get_header(event, "Nonblocking-Delivery");
+
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
 
 	if (switch_true(check_failure)) {
@@ -50,6 +52,12 @@ static void event_handler(switch_event_t *event)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Delivery Failure\n");
 		DUMP_EVENT(event);
 
+		return;
+	} else if ( check_failure && switch_false(check_failure) ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS Delivery Success\n");
+		return;
+	} else if ( check_nonblocking && switch_true(check_nonblocking) ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS Delivery assumed successful due to being sent in non-blocking manner\n");
 		return;
 	}
 
@@ -64,6 +72,16 @@ typedef enum {
 } break_t;
 
 
+#define check_tz() tzoff = switch_event_get_header(event, "tod_tz_offset"); \
+	tzname = switch_event_get_header(event, "timezone");			\
+	do {																\
+		if (!zstr(tzoff) && switch_is_number(tzoff)) {					\
+			offset = atoi(tzoff);										\
+		} else {														\
+			tzoff = NULL;												\
+		}																\
+		break;															\
+	} while(tzoff)														
 
 static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_t **extension)
 {
@@ -73,6 +91,10 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 	char *expression_expanded = NULL, *field_expanded = NULL;
 	switch_regex_t *re = NULL;
 	const char *to = switch_event_get_header(event, "to");
+	const char *tzoff = NULL, *tzname = NULL;
+	int offset = 0;
+
+	check_tz();
 
 	if (!to) {
 		to = "nobody";
@@ -90,8 +112,10 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 		int ovector[30];
 		switch_bool_t anti_action = SWITCH_TRUE;
 		break_t do_break_i = BREAK_ON_FALSE;
+		int time_match;
 
-		int time_match = switch_xml_std_datetime_check(xcond, NULL);
+		check_tz();
+		time_match = switch_xml_std_datetime_check(xcond, tzoff ? &offset : NULL, tzname);
 
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);
@@ -376,7 +400,7 @@ static switch_event_t *chatplan_hunt(switch_event_t *event)
 
 static switch_status_t chat_send(switch_event_t *message_event)
 								 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_BREAK;
 	switch_event_t *exten;
 	int forwards = 0;
 	const char *var;
@@ -409,17 +433,28 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		for (hp = exten->headers; hp; hp = hp->next) {
 			status = switch_core_execute_chat_app(message_event, hp->name, hp->value);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				status = SWITCH_STATUS_SUCCESS;	
 				break;
 			}
 		}
 
 		switch_event_destroy(&exten);
-		status = SWITCH_STATUS_BREAK;		
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS chatplan no actions found\n");
 	}
-	
 
 	return status;
 
+}
+
+SWITCH_STANDARD_CHAT_APP(system_function)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n", data);
+        if (switch_system(data, SWITCH_TRUE) < 0) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", data);
+		return SWITCH_STATUS_FALSE;
+        }
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_STANDARD_CHAT_APP(stop_function)
@@ -515,6 +550,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "set", "set a variable", "set a variable", set_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "send", "send the message as-is", "send the message as-is", send_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "fire", "fire the message", "fire the message", fire_function, "", SCAF_NONE);
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "system", "execute a system command", "execute a sytem command", system_function, "", SCAF_NONE);
 						
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

@@ -410,8 +410,6 @@ static struct {
 	switch_hash_t *queue_hash;
 	int debug;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
 	char *dbname;
 	int32_t threads;
 	int32_t running;
@@ -506,23 +504,21 @@ static void destroy_queue(const char *queue_name, switch_bool_t block)
 
 switch_cache_db_handle_t *cc_get_db_handle(void)
 {
-	switch_cache_db_connection_options_t options = { {0} };
 	switch_cache_db_handle_t *dbh = NULL;
-
+	char *dsn;
+	
 	if (!zstr(globals.odbc_dsn)) {
-		options.odbc_options.dsn = globals.odbc_dsn;
-		options.odbc_options.user = globals.odbc_user;
-		options.odbc_options.pass = globals.odbc_pass;
-
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_ODBC, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = globals.odbc_dsn;
 	} else {
-		options.core_db_options.db_path = globals.dbname;
-		if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) != SWITCH_STATUS_SUCCESS)
-			dbh = NULL;
-		return dbh;
+		dsn = globals.dbname;
 	}
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
+	}
+	
+	return dbh;
+
 }
 /*!
  * \brief Sets the queue's configuration instructions 
@@ -1276,15 +1272,6 @@ static switch_status_t load_config(void)
 				globals.dbname = strdup(val);
 			} else if (!strcasecmp(var, "odbc-dsn")) {
 				globals.odbc_dsn = strdup(val);
-
-				if (!zstr(globals.odbc_dsn)) {
-					if ((globals.odbc_user = strchr(globals.odbc_dsn, ':'))) {
-						*(globals.odbc_user++) = '\0';
-						if ((globals.odbc_pass = strchr(globals.odbc_user, ':'))) {
-							*(globals.odbc_pass++) = '\0';
-						}
-					}
-				}
 			}
 		}
 	}
@@ -1402,9 +1389,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	switch_time_t t_agent_answered = 0;
 	switch_time_t t_member_called = atoi(h->member_joined_epoch);
 	switch_event_t *event = NULL;
-	char agent_uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-
-	switch_uuid_str(agent_uuid_str, sizeof(agent_uuid_str));
 
 	switch_mutex_lock(globals.mutex);
 	globals.threads++;
@@ -1434,7 +1418,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", h->agent_type);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid_str);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
@@ -1464,7 +1447,6 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout", "false");
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout_on_execute", "false");
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
-		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "origination_uuid", "%s", agent_uuid_str);
 
 		switch_channel_process_export(member_channel, NULL, ovars, "cc_export_vars");
 
@@ -1780,10 +1762,13 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause", switch_channel_cause2str(cause));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" SWITCH_TIME_T_FMT, t_agent_called);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Aborted-Time", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT, t_member_called);
 			switch_event_fire(&event);
 		}
 
@@ -2272,7 +2257,7 @@ void cc_agent_dispatch_thread_start(void)
 	switch_threadattr_create(&thd_attr, globals.pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_priority_increase(thd_attr);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
 	switch_thread_create(&thread, thd_attr, cc_agent_dispatch_thread_run, NULL, globals.pool);
 }
 

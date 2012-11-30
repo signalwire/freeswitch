@@ -202,12 +202,14 @@ library_include_HEADERS = \
 	src/include/switch_xml_config.h \
 	src/include/switch_cpp.h \
 	src/include/switch_json.h \
+	libs/stfu/stfu.h \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
 	libs/libtpl-1.5/src/tpl.h \
 	src/include/switch_limit.h \
-	src/include/switch_odbc.h
+	src/include/switch_odbc.h \
+	src/include/switch_pgsql.h
 
 nodist_libfreeswitch_la_SOURCES = \
 	src/include/switch_frame.h \
@@ -262,6 +264,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_config.c \
 	src/switch_time.c \
 	src/switch_odbc.c \
+	src/switch_pgsql.c \
 	src/switch_limit.c \
 	src/g711.c \
 	src/switch_pcm.c \
@@ -448,27 +451,37 @@ libs/curl/lib/libcurl.la: libs/curl libs/curl/Makefile
 	@cd libs/curl && $(MAKE)
 	@$(TOUCH_TARGET)
 
-libs/apr/libapr-1.la: libs/apr libs/apr/.update
+libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr/.update
+	@cd libs/apr && ./config.status
+	@$(TOUCH_TARGET)
+
+libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
+	touch src/include/switch.h
 	@cd libs/apr && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update libs/apr/libapr-1.la
+	touch src/include/switch.h
 	@cd libs/apr-util && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
+	touch src/include/switch.h
 	@cd libs/speex && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
+	touch src/include/switch.h
 	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)"
 	@$(TOUCH_TARGET)
 
 libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
+	touch src/include/switch.h
 	@cd libs/pcre && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
+	touch src/include/switch.h
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
 
@@ -593,6 +606,10 @@ version:
 
 reinstall: modwipe uninstall install
 
+pristine:
+	git clean -fdx
+	git reset --hard
+
 update-clean: clean libs/openzap/Makefile python-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
@@ -604,13 +621,6 @@ update-clean: clean libs/openzap/Makefile python-reconf
 swigall:
 	@echo reswigging all
 	sh $(switch_srcdir)/build/swigall.sh
-
-sure: current
-
-speedy-sure: update-clean
-	$(MAKE) -j core
-	cd libs/sofia-sip && $(MAKE) -j
-	$(MAKE) -j modules
 
 speex-reconf:
 	cd libs/speex && autoreconf
@@ -667,6 +677,14 @@ cluecon:
 	@echo
 	@echo http://www.cluecon.com
 	@sleep 5
+
+sure: is-scm pristine update
+	git pull
+	sh bootstrap.sh
+	sh configure $(CONFIGURE_ARGS)
+	make $(MAKE_ARGS)
+	make reinstall
+
 current: cluecon update-clean is-scm
 	$(MAKE) update
 	$(MAKE) all

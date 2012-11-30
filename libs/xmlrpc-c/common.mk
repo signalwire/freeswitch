@@ -9,7 +9,7 @@
 # SRCDIR:  Name of directory which is the top of the Xmlrpc-c source tree.
 # BLDDIR: Name of directory which is the top of the Xmlrpc-c build tree.
 
-include $(SRCDIR)/Makefile.version
+include $(SRCDIR)/version.mk
 
 # .DELETE_ON_ERROR is a special predefined Make target that says to delete
 # the target if a command in the rule for it fails.  That's important,
@@ -17,13 +17,27 @@ include $(SRCDIR)/Makefile.version
 # fully made.
 .DELETE_ON_ERROR:
 
-GCC_WARNINGS = -Wall -Wundef -Wimplicit -W -Winline -Wundef
+GCC_WARNINGS = -Wall -W -Wno-uninitialized -Wundef -Wimplicit -Winline \
+  -Wno-unknown-pragmas
   # We need -Wwrite-strings after we fix all the missing consts
+  #
+  # -Wuninitialized catches some great bugs, but it also flags a whole lot
+  # of perfectly good code that can't be written any better.  Too bad there's
+  # no way to annotate particular variables as being OK, so we could turn
+  # on -Wuninitialized for all the others.
 
 GCC_C_WARNINGS = $(GCC_WARNINGS) \
   -Wmissing-declarations -Wstrict-prototypes -Wmissing-prototypes
 
-GCC_CXX_WARNINGS = $(GCC_WARNINGS) -Woverloaded-virtual -Wsynth
+GCC_CXX_WARNINGS = $(GCC_WARNINGS)  -Wsynth
+
+# Before 09.05.20, we had -Woverloaded-virtual, but it doesn't seem to do
+# anything useful.  It causes a warning that a method was hidden, but
+# experiments show nothing is actually hidden.  The GCC manual's description
+# of what it does does not match empirical evidence.  The option causes
+# warnings when a derived class of xmlrpc_c::method2 overrides one of the
+# execute() methods and not the other (as cpp/test/registry.cpp does), but the
+# code works fine.
 
 # The NDEBUG macro says not to build code that assumes there are no bugs.
 # This makes the code go faster.  The main thing it does is tell the C library
@@ -55,12 +69,21 @@ ifeq ($(CURDIR)x,x)
   CURDIR := $(shell /bin/pwd)
 endif
 
+# The package XmlRpc++ on Sourceforge includes a library named
+# libxmlrpc++ just as Xmlrpc-c does.  To use them both, you may need
+# to rename one.  To rename the Xmlrpc-c one, set the make variable
+# LIBXMLRPCPP_NAME, e.g. on the 'make' command line.
+
+ifeq ($(LIBXMLRPCPP_NAME),)
+  LIBXMLRPCPP_NAME := xmlrpc++
+endif
+
 ##############################################################################
 #                        STATIC LINK LIBRARY RULES                           #
 ##############################################################################
 
 
-# To use this rule, the including make file must set a target_specific
+# To use this rule, the including make file must set a target-specific
 # variable LIBOBJECTS (and declare dependencies that include LIBOBJECTS).
 # Example:
 #   FOO_OBJECTS = foo1.o foo2.o
@@ -81,19 +104,19 @@ $(TARGET_STATIC_LIBRARIES):
 ##############################################################################
 
 ifeq ($(SHARED_LIB_TYPE),unix)
-  include $(SRCDIR)/unix-common.make
+  include $(SRCDIR)/unix-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),irix)
-  include $(SRCDIR)/irix-common.make
+  include $(SRCDIR)/irix-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),dll)
-  include $(SRCDIR)/dll-common.make
+  include $(SRCDIR)/dll-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),dylib)
-  include $(SRCDIR)/dylib-common.make
+  include $(SRCDIR)/dylib-common.mk
   endif
 
 ifeq ($(SHARED_LIB_TYPE),NONE)
@@ -127,10 +150,10 @@ endif
 
 #------ the actual rules ----------------------------------------------------
 $(TARGET_SHARED_LIBRARIES) dummyshlib:
-	$(CCLD) $(LDFLAGS_SHLIB) $(LIBDEP) -o $@ $(LIBOBJECTS) $(LADD)
+	$(CCLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
 
 $(TARGET_SHARED_LIBS_PP) dummyshlibpp:
-	$(CXXLD) $(LDFLAGS_SHLIB) $(LIBDEP) -o $@ $(LIBOBJECTS) $(LADD)
+	$(CXXLD) $(LADD) $(LDFLAGS_SHLIB) $(LIBOBJECTS) $(LIBDEP) -o $@  
 #----------------------------------------------------------------------------
 
 LIBXMLRPC_UTIL_DIR = $(BLDDIR)/lib/libutil
@@ -186,7 +209,6 @@ LIBXMLRPC_ABYSS          = \
 LIBXMLRPC_ABYSS_A        = $(LIBXMLRPC_ABYSS_DIR)/libxmlrpc_abyss.a
 endif
 
-ifneq ($(OMIT_CPP_LIB_RULES),Y)
 LIBXMLRPC_CPP              = \
   $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_cpp)
 LIBXMLRPC_CPP_A            = $(BLDDIR)/src/cpp/libxmlrpc_cpp.a
@@ -208,7 +230,6 @@ LIBXMLRPC_SERVER_ABYSSPP_A = $(BLDDIR)/src/cpp/libxmlrpc_server_abyss++.a
 LIBXMLRPC_SERVER_PSTREAMPP = \
   $(call shliblefn, $(BLDDIR)/src/cpp/libxmlrpc_server_pstream++)
 LIBXMLRPC_SERVER_PSTREAMPP_A = $(BLDDIR)/src/cpp/libxmlrpc_server_pstream++.a
-endif
 
 # LIBXMLRPC_XML is the list of Xmlrpc-c libraries we need to parse
 # XML.  If we're using an external library to parse XML, this is null.
@@ -239,31 +260,41 @@ endif
 #   foo.o foo.osh: INCLUDES = -Iinclude -I/usr/include/foostuff
 #   bar.o bar.osh: INCLUDES = -Iinclude -I/usr/include/barstuff
 #
-#   include Makefile.common
+#   include common.mk
 #
 # The above generates rules to build foo.o, bar.o, foo.osh, and bar.osh
 #
 # For C++ source files, use TARGET_MODS_PP instead.
 
-# CFLAGS and CXXFLAGS are designed to be overridden on the make command
-# line.  We pile all the options except -I into these variables so the
-# user can override them all if he wants.
+# CFLAGS and CXXFLAGS are designed to be picked up as environment
+# variables.  The user may use them to add inclusion search directories
+# (-I) or control 32/64 bitness or the like.  Using these is always
+# iffy, because the options one might include can interact in unpredictable
+# ways with what the make file is trying to do.  But at least some users
+# get useful results.
+
+CFLAGS_ALL = $(CFLAGS_COMMON) $(CFLAGS_LOCAL) $(CFLAGS) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+
+CXXFLAGS_ALL = $(CXXFLAGS_COMMON) $(CFLAGS_LOCAL) $(CXXFLAGS) \
+  $(INCLUDES) $(CFLAGS_PERSONAL) $(CADD)
+
 
 $(TARGET_MODS:%=%.o):%.o:%.c
-	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS_ALL) $<
 
 $(TARGET_MODS:%=%.osh): CFLAGS_COMMON += $(CFLAGS_SHLIB)
 
 $(TARGET_MODS:%=%.osh):%.osh:%.c
-	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS) $(CFLAGS_SHLIB) $<
+	$(CC) -c -o $@ $(INCLUDES) $(CFLAGS_ALL) $(CFLAGS_SHLIB) $<
 
 $(TARGET_MODS_PP:%=%.o):%.o:%.cpp
-	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS_ALL) $<
 
 $(TARGET_MODS_PP:%=%.osh): CXXFLAGS_COMMON += $(CFLAGS_SHLIB)
 
 $(TARGET_MODS_PP:%=%.osh):%.osh:%.cpp
-	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS) $<
+	$(CXX) -c -o $@ $(INCLUDES) $(CXXFLAGS_ALL) $<
 
 
 ##############################################################################
@@ -277,11 +308,6 @@ $(TARGET_MODS_PP:%=%.osh):%.osh:%.cpp
 # is a dependency is newer than the symbolic link pointing to it and wants
 # to rebuild the symbolic link.  So we don't make $(SRCDIR) a
 # dependency of 'srcdir'.
-
-# We should do the same for 'blddir'.  We did once before, then undid
-# it in an erroneous effort to enable parallel make.  It's a little harder
-# with blddir; when we did it before, we had to use the non-symlink
-# version in a few places.
 
 srcdir:
 	$(LN_S) $(SRCDIR) $@
@@ -343,6 +369,12 @@ endif
 ifneq ($(OMIT_CURL_TRANSPORT_RULE),Y)
 $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.o \
 $(BLDDIR)/lib/curl_transport/xmlrpc_curl_transport.osh \
+$(BLDDIR)/lib/curl_transport/curltransaction.o \
+$(BLDDIR)/lib/curl_transport/curltransaction.osh \
+$(BLDDIR)/lib/curl_transport/curlmulti.o \
+$(BLDDIR)/lib/curl_transport/curlmulti.osh \
+$(BLDDIR)/lib/curl_transport/lock_pthread.o \
+$(BLDDIR)/lib/curl_transport/lock_pthread.osh \
 : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/curl_transport/Makefile \
 	    $(notdir $@)
@@ -385,6 +417,8 @@ $(LIBXMLRPC_ABYSS) $(LIBXMLRPC_ABYSS_A): FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/lib/abyss/src/Makefile \
 	    $(notdir $@)
 
+ifneq ($(OMIT_CPP_LIB_RULES),Y)
+
 $(LIBXMLRPCPP) $(LIBXMLRPCPP_A) \
 $(LIBXMLRPC_PACKETSOCKET) $(LIBXMLRPC_PACKETSOCKET_A) \
 $(LIBXMLRPC_CLIENTPP) $(LIBXMLRPC_CLIENTPP_A) \
@@ -394,6 +428,7 @@ $(LIBXMLRPC_SERVER_PSTREAMPP) $(LIBXMLRPC_SERVER_PSTREAMPP_A) \
 $(LIBXMLRPC_CPP) $(LIBXMLRPC_CPP_A) : FORCE
 	$(MAKE) -C $(dir $@) -f $(SRCDIR)/src/cpp/Makefile \
 	    $(notdir $@)
+endif
 
 # For the following utilities, we don't bother with a library -- we
 # just explicitly link the object file we need.  This is to save
@@ -421,12 +456,12 @@ CASPRINTF = $(UTIL_DIR)/casprintf.o
 
 # About version.h:  This is a built header file, which means it is a supreme
 # pain in the ass.  The biggest problem is that when we automatically make
-# dependencies (Makefile.depend), it doesn't exist yet.  This means Gcc
+# dependencies (depend.mk), it doesn't exist yet.  This means Gcc
 # generates a dependency on it being in the local directory.  Therefore,
 # we generate it in the local directory, as a symbolic link, wherever it
 # is needed.  But the original is always in the top level directory,
 # generated by a rule in that directory's make file.  Problem 2 is that
-# the top directory's make file includes Makefile.common, so the rules
+# the top directory's make file includes common.mk, so the rules
 # below conflict with it.  That's what OMIT_VERSION_H is for.
 
 ifneq ($(OMIT_VERSION_H),Y)
@@ -471,10 +506,10 @@ $(SUBDIRS:%=$(CURDIR)/%):
 
 MKINSTALLDIRS = $(SHELL) $(SRCDIR)/mkinstalldirs
 
-.PHONY: install-common install-ltlibraries install-headers install-bin
+.PHONY: install-common install-headers install-bin install-man
 install-common: \
-  install-ltlibraries install-static-libraries install-shared-libraries \
-  install-headers install-bin
+  install-static-libraries install-shared-libraries \
+  install-headers install-bin install-man
 
 INSTALL_LIB_CMD = $(INSTALL_DATA) $$p $(DESTDIR)$(LIBINST_DIR)/$$p
 RANLIB_CMD = $(RANLIB) $(DESTDIR)$(LIBINST_DIR)/$$p
@@ -520,6 +555,16 @@ install-bin: $(PROGRAMS_TO_INSTALL) $(DESTDIR)$(PROGRAMINST_DIR)
 $(DESTDIR)$(PROGRAMINST_DIR):
 	$(MKINSTALLDIRS) $@
 
+MANDESTDIR = $(DESTDIR)$(MANINST_DIR)
+INSTALL_MAN_CMD = $(INSTALL_DATA) $$p $(MANDESTDIR)/$$p
+
+install-man: $(MAN_FILES_TO_INSTALL)
+	$(MKINSTALLDIRS) $(MANDESTDIR)
+	@list='$(MAN_FILES_TO_INSTALL)'; \
+         for p in $$list; do \
+	   echo "$(MAN_FILES_TO_INSTALL)"; \
+	   $(INSTALL_MAN_CMD); \
+	 done
 
 ##############################################################################
 #                           MISCELLANEOUS RULES                              #
@@ -536,29 +581,30 @@ endif
 
 .PHONY: distclean-common
 distclean-common:
-# Makefile.depend is generated by 'make dep' and contains only dependencies
+# depend.mk is generated by 'make dep' and contains only dependencies
 # that make parts get _rebuilt_ when parts upon which they depend change.
 # It does not contain dependencies that are necessary to cause a part to
 # get built in the first place.  E.g. if foo.c uses bar.h and bar.h gets built
 # by a make rule, you must put the dependency of foo.c on bar.h somewhere
-# besides Makefile.depend.
+# besides depend.mk.
 #
-# Because of this, a user doesn't need Makefile.depend, because he
+# Because of this, a user doesn't need depend.mk, because he
 # doesn't modify source files.  A developer, on the other hand, must make his
-# own Makefile.depend, because 'make dep' creates Makefile.depend with 
+# own depend.mk, because 'make dep' creates depend.mk with 
 # absolute pathnames, specific to the developer's system.
 #
-# So we obliterate Makefile.depend here.  The build will automatically
-# create an empty Makefile.depend when it is needed for the user.  The
+# So we obliterate depend.mk here.  The build will automatically
+# create an empty depend.mk when it is needed for the user.  The
 # developer must do 'make dep' if he wants to edit and rebuild.
 #
 # Other projects have the build automatically build a true
-# Makefile.depend, suitable for a developer.  We have found that to be
+# depend.mk, suitable for a developer.  We have found that to be
 # an utter disaster -- it's way too complicated and prone to failure,
 # especially with built .h files.  Better not to burden the user, who
 # gains nothing from it, with that.
 #
-	rm -f Makefile.depend
+	rm -f depend.mk
+	rm -f Makefile.depend  # We used to create a file by this name
 	rm -f srcdir blddir
 
 .PHONY: distdir-common
@@ -589,17 +635,17 @@ dep-common: FORCE
 ifneq ($(DEP_SOURCES)x,x)
 	-$(CC) -MM -MG -I. $(INCLUDES) $(DEP_SOURCES) | \
 	  $(DEPEND_MASSAGER) \
-	  >Makefile.depend
+	  >depend.mk
 endif
 
-Makefile.depend:
+depend.mk:
 	cat /dev/null >$@
 
 # The automatic dependency generation is a pain in the butt and
 # totally unnecessary for people just installing the distributed code,
 # so to avoid needless failures in the field and a complex build, the
-# 'distclean' target simply makes Makefile.depend an empty file.  A
-# developer may do 'make dep' to create a Makefile.depend full of real
+# 'distclean' target simply makes depend.mk an empty file.  A
+# developer may do 'make dep' to create a depend.mk full of real
 # dependencies.
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

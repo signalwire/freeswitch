@@ -550,6 +550,7 @@ AC_CHECK_LIB(truerand, main)
 AC_SEARCH_LIBS(modf, m)
 AC_CHECK_LIB(dl, dlopen)
 
+
 dnl ----------------------------- Checking for Threads
 echo "${nl}Checking for Threads..."
 
@@ -1619,6 +1620,8 @@ APR_CHECK_DEFINE_FILES(POLLIN, poll.h sys/poll.h)
 if test "$threads" = "1"; then
     APR_CHECK_DEFINE(PTHREAD_PROCESS_SHARED, pthread.h)
     AC_CHECK_FUNCS(pthread_mutexattr_setpshared)
+    AC_CHECK_LIB(pthread, pthread_setschedparam, [AC_DEFINE(HAVE_PTHREAD_SETSCHEDPARAM, 1, [Define if you have pthread_setschedparam()])])
+
     # Some systems have setpshared and define PROCESS_SHARED, but don't 
     # really support PROCESS_SHARED locks.  So, we must validate that we 
     # can go through the steps without receiving some sort of system error.

@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/girerr.hpp>
 #include <xmlrpc-c/girmem.hpp>
 #include <xmlrpc-c/base.hpp>
@@ -13,9 +14,9 @@
 
 namespace xmlrpc_c {
 
-class clientTransactionPtr;
+class XMLRPC_DLLEXPORT clientTransactionPtr;
 
-class clientTransaction : public girmem::autoObject {
+class XMLRPC_DLLEXPORT clientTransaction : public girmem::autoObject {
 
     friend class clientTransactionPtr;
 
@@ -26,11 +27,14 @@ public:
     virtual void
     finishErr(girerr::error const& error) = 0;
 
+    virtual void
+    progress(struct xmlrpc_progress_data const& progressData) const = 0;
+
 protected:
     clientTransaction();
 };
 
-class clientTransactionPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT clientTransactionPtr : public girmem::autoObjectPtr {
     
 public:
     clientTransactionPtr();
@@ -43,9 +47,9 @@ public:
     operator->() const;
 };
 
-class clientPtr;
+class XMLRPC_DLLEXPORT clientPtr;
 
-class client : public girmem::autoObject {
+class XMLRPC_DLLEXPORT client : public girmem::autoObject {
 /*----------------------------------------------------------------------------
    A generic client -- a means of performing an RPC.  This is so generic
    that it can be used for clients that are not XML-RPC.
@@ -77,7 +81,7 @@ public:
     setInterrupt(int *);
 };
 
-class clientPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT clientPtr : public girmem::autoObjectPtr {
 public:
     clientPtr();
 
@@ -90,7 +94,7 @@ public:
     get() const;
 };
 
-class serverAccessor : public girmem::autoObject {
+class XMLRPC_DLLEXPORT serverAccessor : public girmem::autoObject {
     
 public:
     serverAccessor(xmlrpc_c::clientPtr       const clientP,
@@ -106,7 +110,7 @@ private:
     xmlrpc_c::carriageParmPtr const carriageParmP;
 };
 
-class serverAccessorPtr : public girmem::autoObjectPtr {
+class XMLRPC_DLLEXPORT serverAccessorPtr : public girmem::autoObjectPtr {
 public:
     serverAccessorPtr();
 
@@ -120,7 +124,7 @@ public:
     get() const;
 };
 
-class connection {
+class XMLRPC_DLLEXPORT connection {
 /*----------------------------------------------------------------------------
    A nexus of a particular client and a particular server, along with
    carriage parameters for performing RPCs between the two.
@@ -140,7 +144,7 @@ public:
     xmlrpc_c::carriageParm * carriageParmP;
 };
 
-class client_xml : public xmlrpc_c::client {
+class XMLRPC_DLLEXPORT client_xml : public xmlrpc_c::client {
 /*----------------------------------------------------------------------------
    A client that uses XML-RPC XML in the RPC.  This class does not define
    how the XML gets transported, though (i.e. does not require HTTP).
@@ -180,7 +184,7 @@ private:
     struct client_xml_impl * implP;
 };
 
-class xmlTransaction_client : public xmlrpc_c::xmlTransaction {
+class XMLRPC_DLLEXPORT xmlTransaction_client : public xmlrpc_c::xmlTransaction {
 
 public:
     xmlTransaction_client(xmlrpc_c::clientTransactionPtr const& tranP);
@@ -190,11 +194,15 @@ public:
 
     void
     finishErr(girerr::error const& error) const;
+
+    void
+    progress(xmlrpc_progress_data const& progressData) const;
+
 private:
     xmlrpc_c::clientTransactionPtr const tranP;
 };
 
-class xmlTransaction_clientPtr : public xmlTransactionPtr {
+class XMLRPC_DLLEXPORT xmlTransaction_clientPtr : public xmlTransactionPtr {
 public:
     xmlTransaction_clientPtr();
     
@@ -206,21 +214,23 @@ public:
 
 class rpcPtr;
 
-class rpc : public clientTransaction {
+class XMLRPC_DLLEXPORT rpc : public clientTransaction {
 /*----------------------------------------------------------------------------
    An RPC.  An RPC consists of method name, parameters, and result.  It
    does not specify in any way how the method name and parameters get
    turned into a result.  It does not presume XML or HTTP.
-
-   You don't create an object of this class directly.  All references to
-   an rpc object should be by an rpcPtr object.  Create a new RPC by
-   creating a new rpcPtr.  Accordingly, our constructors and destructors
-   are protected, but available to our friend class rpcPtr.
-
+  
+   You don't normally create or reference an object of this class directly,
+   but rather via an 'rpcPtr' object.  That takes care of deleting the object
+   when you are done with it (but not before).  This is critical if you plan
+   to use the 'start' method, because without an rpcPtr reference, the system
+   will destroy the object under the covers when the RPC finishes, and there
+   is no way for you to guarantee you won't still access it after it finishes
+   (because of accesses within Xmlrpc-c calls such as the call that finishes
+   the RPC or just rpc::start).
+ 
    In order to do asynchronous RPCs, you normally have to create a derived
-   class that defines a useful notifyComplete().  If you do that, you'll
-   want to make sure the derived class objects get accessed only via rpcPtrs
-   as well.
+   class that defines a useful notifyComplete().
 -----------------------------------------------------------------------------*/
     friend class xmlrpc_c::rpcPtr;
 
@@ -248,6 +258,9 @@ public:
     virtual void
     notifyComplete();
 
+    virtual void
+    progress(struct xmlrpc_progress_data const& progressData) const;
+
     bool
     isFinished() const;
 
@@ -269,7 +282,7 @@ private:
     struct rpc_impl * implP;
 };
 
-class rpcPtr : public clientTransactionPtr {
+class XMLRPC_DLLEXPORT rpcPtr : public clientTransactionPtr {
 public:
     rpcPtr();
 

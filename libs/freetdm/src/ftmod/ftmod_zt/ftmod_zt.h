@@ -195,7 +195,9 @@ typedef enum {
 	ZT_EVENT_TIMER_EXPIRED	= 15,
 	ZT_EVENT_TIMER_PING		= 16,
 	ZT_EVENT_POLARITY		= 17,
-	ZT_EVENT_RINGBEGIN		= 18
+	ZT_EVENT_RINGBEGIN		= 18,
+	ZT_EVENT_DTMFDOWN		= (1 << 17),
+	ZT_EVENT_DTMFUP			= (1 << 18),
 } zt_event_t;
 
 typedef enum {
@@ -258,6 +260,12 @@ ZT_BBIT = 4,
 ZT_ABIT = 8
 } zt_cas_bit_t;
 
+typedef enum {
+/* Tone Detection */
+ZT_TONEDETECT_ON = (1 << 0), /* Detect tones */
+ZT_TONEDETECT_MUTE = (1 << 1) /* Mute audio in received channel */
+} zt_tone_mode_t;
+
 /* Defines */
 
 #define		ZT_MAX_BLOCKSIZE	8192
@@ -312,6 +320,11 @@ ZT_ABIT = 8
 #define ZT_SETTXBITS _IOW (ZT_CODE, 43, int)
 #define ZT_GETRXBITS _IOR (ZT_CODE, 45, int)
 
+/*
+ * Enable tone detection -- implemented by low level driver
+ */
+#define ZT_TONEDETECT                _IOW(ZT_CODE, 91, int)
+
 #define		DAHDI_GET_BLOCKSIZE	_IOR  (DAHDI_CODE, 1, int)					/* Get Transfer Block Size. */
 #define		DAHDI_SET_BLOCKSIZE	_IOW  (DAHDI_CODE, 1, int)					/* Set Transfer Block Size. */
 #define		DAHDI_FLUSH			_IOW  (DAHDI_CODE, 3, int)					/* Flush Buffer(s) and stop I/O */
@@ -360,6 +373,11 @@ ZT_ABIT = 8
 #define DAHDI_GETRXBITS _IOR (DAHDI_CODE, 43, int)
 
 #define DAHDI_SETPOLARITY _IOW (DAHDI_CODE, 92, int) /* Polarity setting for FXO lines */
+
+/*
+ * Enable tone detection -- implemented by low level driver
+ */
+#define DAHDI_TONEDETECT                _IOW(DAHDI_CODE, 91, int)
 
 #endif
 

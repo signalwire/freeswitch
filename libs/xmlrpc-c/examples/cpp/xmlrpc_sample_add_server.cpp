@@ -62,10 +62,9 @@ main(int           const,
         myRegistry.addMethod("sample.add", sampleAddMethodP);
         
         xmlrpc_c::serverAbyss myAbyssServer(
-            myRegistry,
-            8080,              // TCP port on which to listen
-            "/tmp/xmlrpc_log"  // Log file
-            );
+            xmlrpc_c::serverAbyss::constrOpt()
+            .registryP(&myRegistry)
+            .portNumber(8080));
         
         myAbyssServer.run();
         // xmlrpc_c::serverAbyss.run() never returns

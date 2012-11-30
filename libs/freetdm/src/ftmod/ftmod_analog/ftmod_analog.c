@@ -779,6 +779,9 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 			case FTDM_CHANNEL_STATE_GET_CALLERID:
 				{
 					memset(&ftdmchan->caller_data, 0, sizeof(ftdmchan->caller_data));
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Initializing cid data!\n");
+					ftdm_set_string(ftdmchan->caller_data.ani.digits, "unknown");
+					ftdm_set_string(ftdmchan->caller_data.cid_name, ftdmchan->caller_data.ani.digits);
 					ftdm_channel_command(ftdmchan, FTDM_COMMAND_ENABLE_CALLERID_DETECT, NULL);
 					continue;
 				}

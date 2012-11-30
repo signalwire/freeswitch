@@ -11,7 +11,7 @@
 
 usage()
 {
-  test X$1 == X0 || exec >&2
+  test X$1 = X0 || exec >&2
   cat <<EOF
 usage: uncovered OPTIONS
 where OPTIONS are

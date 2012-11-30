@@ -623,7 +623,7 @@ static ldl_status parse_jingle_code(ldl_handle_t *handle, iks *xml, char *to, ch
 	}
 
 
-	if (!(id && action)) {
+	if (!(id && action && from)) {
 		globals.logger(DL_LOG_CRIT, "missing required params\n");  
 		return LDL_STATUS_FALSE;
 	}
@@ -820,6 +820,9 @@ static ldl_status parse_jingle_code(ldl_handle_t *handle, iks *xml, char *to, ch
 										break;
 									}
 								}
+							} else {
+								globals.logger(DL_LOG_WARNING, "No preference specified");
+								continue; 
 							}
 						
 							if (index < 0) {

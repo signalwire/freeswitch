@@ -122,38 +122,6 @@ xmlrpc_client_transport_call(
 
 
 
-static void
-clientCall_va(xmlrpc_env *               const envP,
-              const xmlrpc_server_info * const serverInfoP,
-              const char *               const methodName,
-              const char *               const format,
-              va_list                          args,
-              xmlrpc_value **            const resultPP) {
-
-    validateGlobalClientExists(envP);
-    if (!envP->fault_occurred) {
-        xmlrpc_value * paramArrayP;
-        const char * suffix;
-        
-        xmlrpc_build_value_va(envP, format, args, &paramArrayP, &suffix);
-        
-        if (!envP->fault_occurred) {
-            if (*suffix != '\0')
-                xmlrpc_faultf(envP, "Junk after the argument "
-                              "specifier: '%s'.  "
-                              "There must be exactly one arument.",
-                              suffix);
-            else
-                xmlrpc_client_call2(envP, globalClientP, serverInfoP,
-                                    methodName, paramArrayP, resultPP);
-            
-            xmlrpc_DECREF(paramArrayP);
-        }
-    }
-}
-
-
-
 xmlrpc_value * 
 xmlrpc_client_call(xmlrpc_env * const envP,
                    const char * const serverUrl,
@@ -162,21 +130,19 @@ xmlrpc_client_call(xmlrpc_env * const envP,
                    ...) {
 
     xmlrpc_value * resultP;
-    
-    xmlrpc_server_info * serverInfoP;
 
-    serverInfoP = xmlrpc_server_info_new(envP, serverUrl);
-        
+    validateGlobalClientExists(envP);
+
     if (!envP->fault_occurred) {
         va_list args;
+
         va_start(args, format);
     
-        clientCall_va(envP, serverInfoP, methodName, format, args, &resultP);
+        xmlrpc_client_call2f_va(envP, globalClientP, serverUrl,
+                                methodName, format, &resultP, args);
 
         va_end(args);
-        xmlrpc_server_info_free(serverInfoP);
     }
-    
     return resultP;
 }
 
@@ -184,18 +150,24 @@ xmlrpc_client_call(xmlrpc_env * const envP,
 
 xmlrpc_value * 
 xmlrpc_client_call_server(xmlrpc_env *               const envP,
-                          const xmlrpc_server_info * const serverP,
+                          const xmlrpc_server_info * const serverInfoP,
                           const char *               const methodName,
                           const char *               const format, 
                           ...) {
 
-    va_list args;
     xmlrpc_value * resultP;
 
-    va_start(args, format);
-    clientCall_va(envP, serverP, methodName, format, args, &resultP);
-    va_end(args);
+    validateGlobalClientExists(envP);
 
+    if (!envP->fault_occurred) {
+        va_list args;
+
+        va_start(args, format);
+
+        xmlrpc_client_call_server2_va(envP, globalClientP, serverInfoP,
+                                      methodName, format, args, &resultP);
+        va_end(args);
+    }
     return resultP;
 }
 
@@ -300,25 +272,16 @@ xmlrpc_client_call_asynch(const char * const serverUrl,
     validateGlobalClientExists(&env);
 
     if (!env.fault_occurred) {
-        xmlrpc_value * paramArrayP;
-        const char * suffix;
         va_list args;
-    
+
         va_start(args, format);
-        xmlrpc_build_value_va(&env, format, args, &paramArrayP, &suffix);
-        va_end(args);
     
-        if (!env.fault_occurred) {
-            if (*suffix != '\0')
-                xmlrpc_faultf(&env, "Junk after the argument "
-                              "specifier: '%s'.  "
-                              "There must be exactly one arument.",
-                              suffix);
-            else
-                xmlrpc_client_call_asynch_params(
-                    serverUrl, methodName, responseHandler, userData,
-                    paramArrayP);
-        }
+        xmlrpc_client_start_rpcf_va(&env, globalClientP,
+                                    serverUrl, methodName,
+                                    responseHandler, userData,
+                                    format, args);
+
+        va_end(args);
     }
     if (env.fault_occurred)
         (*responseHandler)(serverUrl, methodName, NULL, userData, &env, NULL);
@@ -364,28 +327,21 @@ xmlrpc_client_call_server_asynch(xmlrpc_server_info * const serverInfoP,
                                  ...) {
 
     xmlrpc_env env;
-    xmlrpc_value * paramArrayP;
-    const char * suffix;
-    va_list args;
-    
-    xmlrpc_env_init(&env);
 
-    va_start(args, format);
-    xmlrpc_build_value_va(&env, format, args, &paramArrayP, &suffix);
-    va_end(args);
+    validateGlobalClientExists(&env);
 
     if (!env.fault_occurred) {
-        if (*suffix != '\0')
-            xmlrpc_faultf(&env, "Junk after the argument "
-                          "specifier: '%s'.  "
-                          "There must be exactly one arument.",
-                          suffix);
-        else
-            xmlrpc_client_call_server_asynch_params(
-                serverInfoP, methodName, responseHandler, userData,
-                paramArrayP);
+        va_list args;
+    
+        xmlrpc_env_init(&env);
 
-        xmlrpc_DECREF(paramArrayP);
+        va_start(args, format);
+
+        xmlrpc_client_start_rpcf_server_va(
+            &env, globalClientP, serverInfoP, methodName,
+            responseHandler, userData, format, args);
+
+        va_end(args);
     }
     if (env.fault_occurred)
         (*responseHandler)(serverInfoP->serverUrl, methodName, NULL,

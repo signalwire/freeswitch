@@ -31,6 +31,8 @@
 /* From xmlrpc_amconfig.h */
 
 #define HAVE__STRICMP 1
+#define HAVE__STRTOUI64 1
+
 /* Name of package */
 #define PACKAGE "xmlrpc-c"
 /*----------------------------------*/
@@ -72,6 +74,7 @@
 #define HAVE_WCHAR_H 1
 #define HAVE_SYS_FILIO_H 0
 #define HAVE_SYS_IOCTL_H 0
+#define HAVE_SYS_SELECT_H 0
 
 #define VA_LIST_IS_ARRAY 0
 
@@ -127,9 +130,39 @@
 #endif
 
 #if MSVCRT
+  #define HAVE_WINDOWS_THREAD 1
+#else
+  #define HAVE_WINDOWS_THREAD 0
+#endif
+
+/* Some people have and use pthreads on Windows.  See
+   http://sourceware.org/pthreads-win32 .  For that case, we can set
+   HAVE_PTHREAD to 1.  The builder prefers to use pthreads if it has
+   a choice.
+*/
+#define HAVE_PTHREAD 0
+
+/* Note that the return value of XMLRPC_VSNPRINTF is int on Windows,
+   ssize_t on POSIX.
+*/
+#if MSVCRT
   #define XMLRPC_VSNPRINTF _vsnprintf
 #else
   #define XMLRPC_VSNPRINTF vsnprintf
+#endif
+
+#if MSVCRT
+  #define HAVE_REGEX 0
+#else
+  #define HAVE_REGEX 1
+#endif
+
+#if MSVCRT
+  #define XMLRPC_SOCKETPAIR xmlrpc_win32_socketpair
+  #define XMLRPC_CLOSESOCKET closesocket
+#else
+  #define XMLRPC_SOCKETPAIR socketpair
+  #define XMLRPC_CLOSESOCKET close
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
@@ -149,10 +182,42 @@
 */
 #pragma warning(disable:4996)
 #endif
+/* Warning C4090 is "different 'const' qualifiers".
+
+   We disable this warning because MSVC erroneously issues it when there is
+   in fact no difference in const qualifiers:
+
+     const char ** p;
+     void * q;
+     q = p;
+
+   Note that both p and q are pointers to non-const.
+
+   We have seen this in MSVC 7.1, 8, and 9 (but not 6).
+*/
+#pragma warning(disable:4090)
+
+#if HAVE_STRTOLL
+  # define XMLRPC_STRTOLL strtoll
+#elif HAVE_STRTOQ
+  # define XMLRPC_STRTOLL strtoq /* Interix */
+#elif HAVE___STRTOLL
+  # define XMLRPC_STRTOLL __strtoll /* HP-UX <= 11.11 */
+#elif HAVE__STRTOUI64
+  #define XMLRPC_STRTOLL _strtoui64  /* Windows MSVC */
+#endif
+
+#if HAVE_STRTOULL
+  # define XMLRPC_STRTOULL strtoull
+#elif HAVE_STRTOUQ
+  # define XMLRPC_STRTOULL strtouq /* Interix */
+#elif HAVE___STRTOULL
+  # define XMLRPC_STRTOULL __strtoull /* HP-UX <= 11.11 */
+#elif HAVE__STRTOUI64
+  #define XMLRPC_STRTOULL _strtoui64  /* Windows MSVC */
+#endif
 
 #define snprintf _snprintf
 #define popen _popen
-#define strtoll _strtoui64
-#define strtoull _strtoui64
 
 #endif

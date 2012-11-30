@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="windows-1251"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="xmlrpc"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(XMLRPCDir)&quot;;&quot;$(XMLRPCDir)include&quot;;&quot;$(XMLRPCDir)lib\util\include&quot;;%(AdditionalIncludeDirectories)"
+	/>
+	<UserMacro
+		Name="XMLRPCDir"
+		Value="$(SolutionDir)libs\xmlrpc-c\"
+	/>
+</VisualStudioPropertySheet>

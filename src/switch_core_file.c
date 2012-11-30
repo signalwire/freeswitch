@@ -42,7 +42,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 															  uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t *pool)
 {
 	char *ext;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	char stream_name[128] = "";
 	char *rhs = NULL;
 	const char *spool_path = NULL;
@@ -76,6 +76,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
 	}
 
+	if (switch_directory_exists(file_path, fh->memory_pool) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] is a directory not a file.\n", file_path);
+		goto fail;
+	}
 
 	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
 		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
@@ -197,6 +201,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	return status;
 
   fail:
+
+	switch_clear_flag(fh, SWITCH_FILE_OPEN);
 
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&fh->memory_pool);

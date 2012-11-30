@@ -26,8 +26,8 @@
 MONGO_EXTERN_C_START
 
 #define MONGO_MAJOR 0
-#define MONGO_MINOR 5
-#define MONGO_PATCH 2
+#define MONGO_MINOR 6
+#define MONGO_PATCH 0
 
 #define MONGO_OK 0
 #define MONGO_ERROR -1
@@ -51,10 +51,12 @@ typedef enum mongo_error_t {
     MONGO_SOCKET_ERROR,      /**< Other socket error. */
     MONGO_READ_SIZE_ERROR,   /**< The response is not the expected length. */
     MONGO_COMMAND_FAILED,    /**< The command returned with 'ok' value of 0. */
+    MONGO_WRITE_ERROR,       /**< Write with given write_concern returned an error. */
     MONGO_NS_INVALID,        /**< The name for the ns (database or collection) is invalid. */
     MONGO_BSON_INVALID,      /**< BSON not valid for the specified op. */
     MONGO_BSON_NOT_FINISHED, /**< BSON object has not been finished. */
-    MONGO_BSON_TOO_LARGE     /**< BSON object exceeds max BSON size. */
+    MONGO_BSON_TOO_LARGE,    /**< BSON object exceeds max BSON size. */
+    MONGO_WRITE_CONCERN_INVALID /**< Supplied write concern object is invalid. */
 } mongo_error_t;
 
 typedef enum mongo_cursor_error_t {
@@ -83,6 +85,10 @@ enum mongo_update_opts {
     MONGO_UPDATE_UPSERT = 0x1,
     MONGO_UPDATE_MULTI = 0x2,
     MONGO_UPDATE_BASIC = 0x4
+};
+
+enum mongo_insert_opts {
+    MONGO_CONTINUE_ON_ERROR = 0x1
 };
 
 enum mongo_cursor_opts {
@@ -137,6 +143,16 @@ typedef struct mongo_host_port {
     struct mongo_host_port *next;
 } mongo_host_port;
 
+typedef struct mongo_write_concern {
+    int w;            /**< Number of nodes this write should be replicated to. */
+    int wtimeout;     /**< Number of milliseconds before replication timeout. */
+    int j;            /**< If non-zero, block until the journal sync. */
+    int fsync;        /**< Same a j with journaling enabled; otherwise, call fsync. */
+    const char *mode; /**< Either "majority" or a getlasterrormode. Overrides w value. */
+
+    bson *cmd; /**< The BSON object representing the getlasterror command. */
+} mongo_write_concern;
+
 typedef struct {
     mongo_host_port *seeds;        /**< List of seeds provided by the user. */
     mongo_host_port *hosts;        /**< List of host/ports given by the replica set */
@@ -153,6 +169,7 @@ typedef struct mongo {
     int op_timeout_ms;         /**< Read and write timeout in milliseconds. */
     int max_bson_size;         /**< Largest BSON object allowed on this connection. */
     bson_bool_t connected;     /**< Connection status. */
+    mongo_write_concern *write_concern; /**< The default write concern. */
 
     mongo_error_t err;          /**< Most recent driver error code. */
     int errcode;                /**< Most recent errno or WSAGetLastError(). */
@@ -176,38 +193,9 @@ typedef struct {
     int skip;          /**< Bitfield containing cursor options. */
 } mongo_cursor;
 
-/* Connection API */
-
-MONGO_EXPORT mongo* mongo_create();
-MONGO_EXPORT void mongo_dispose(mongo* conn);
-MONGO_EXPORT int mongo_get_err(mongo* conn);
-MONGO_EXPORT int mongo_is_connected(mongo* conn);
-MONGO_EXPORT int mongo_get_op_timeout(mongo* conn);
-MONGO_EXPORT const char* mongo_get_primary(mongo* conn);
-MONGO_EXPORT int mongo_get_socket(mongo* conn) ;
-MONGO_EXPORT int mongo_get_host_count(mongo* conn);
-MONGO_EXPORT const char* mongo_get_host(mongo* conn, int i);
-MONGO_EXPORT mongo_cursor* mongo_cursor_create();
-MONGO_EXPORT void mongo_cursor_dispose(mongo_cursor* cursor);
-MONGO_EXPORT int  mongo_get_server_err(mongo* conn);
-MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
-
-/**
- * Set an error this mongo connection object. Mostly for internal use.
- *
- * @param conn a mongo connection object.
- * @param err a driver error code of mongo_error_t.
- * @param errstr a string version of the error.
- * @param errorcode Currently errno or WSAGetLastError().
- */
-MONGO_EXPORT void __mongo_set_error( mongo *conn, mongo_error_t err,
-                                     const char *errstr, int errorcode );
-/**
- * Clear all errors stored on this mongo connection object.
- *
- * @param conn a mongo connection object.
- */
-MONGO_EXPORT void mongo_clear_errors( mongo *conn );
+/*********************************************************************
+Connection API
+**********************************************************************/
 
 /** Initialize sockets for Windows.
  */
@@ -345,60 +333,129 @@ MONGO_EXPORT void mongo_disconnect( mongo *conn );
 MONGO_EXPORT void mongo_destroy( mongo *conn );
 
 /**
+ * Specify the write concern object that this connection should use
+ * by default for all writes (inserts, updates, and deletes). This value
+ * can be overridden by passing a write_concern object to any write function.
+ *
+ * @param conn a mongo object.
+ * @param write_concern pointer to a write concern object.
+ *
+ */
+MONGO_EXPORT void mongo_set_write_concern( mongo *conn,
+    mongo_write_concern *write_concern );
+
+
+/*********************************************************************
+CRUD API
+**********************************************************************/
+
+/**
  * Insert a BSON document into a MongoDB server. This function
  * will fail if the supplied BSON struct is not UTF-8 or if
  * the keys are invalid for insert (contain '.' or start with '$').
  *
+ * The default write concern set on the conn object will be used.
+ *
  * @param conn a mongo object.
  * @param ns the namespace.
  * @param data the bson data.
+ * @param custom_write_concern a write concern object that will
+ *     override any write concern set on the conn object.
  *
  * @return MONGO_OK or MONGO_ERROR. If the conn->err
  *     field is MONGO_BSON_INVALID, check the err field
  *     on the bson struct for the reason.
  */
-MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns, const bson *data );
+MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns, const bson *data,
+    mongo_write_concern *custom_write_concern );
 
 /**
  * Insert a batch of BSON documents into a MongoDB server. This function
  * will fail if any of the documents to be inserted is invalid.
  *
+ * The default write concern set on the conn object will be used.
+ *
  * @param conn a mongo object.
  * @param ns the namespace.
  * @param data the bson data.
  * @param num the number of documents in data.
+ * @param custom_write_concern a write concern object that will
+ *     override any write concern set on the conn object.
+ * @param flags flags on this batch insert. Currently, this value
+ *     may be 0 or MONGO_CONTINUE_ON_ERROR, which will cause the
+ *     batch insert to continue even if a given insert in the batch fails.
  *
  * @return MONGO_OK or MONGO_ERROR.
  *
  */
-MONGO_EXPORT int mongo_insert_batch( mongo *conn , const char *ns ,
-                        const bson **data , int num );
+MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
+    const bson **data, int num, mongo_write_concern *custom_write_concern,
+    int flags );
 
 /**
  * Update a document in a MongoDB server.
+ *
+ * The default write concern set on the conn object will be used.
  *
  * @param conn a mongo object.
  * @param ns the namespace.
  * @param cond the bson update query.
  * @param op the bson update data.
  * @param flags flags for the update.
+ * @param custom_write_concern a write concern object that will
+ *     override any write concern set on the conn object.
  *
  * @return MONGO_OK or MONGO_ERROR with error stored in conn object.
  *
  */
 MONGO_EXPORT int mongo_update( mongo *conn, const char *ns, const bson *cond,
-                  const bson *op, int flags );
+    const bson *op, int flags, mongo_write_concern *custom_write_concern );
 
 /**
  * Remove a document from a MongoDB server.
  *
+ * The default write concern set on the conn object will be used.
+ *
  * @param conn a mongo object.
  * @param ns the namespace.
  * @param cond the bson query.
+ * @param custom_write_concern a write concern object that will
+ *     override any write concern set on the conn object.
  *
  * @return MONGO_OK or MONGO_ERROR with error stored in conn object.
  */
-MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond );
+MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond,
+    mongo_write_concern *custom_write_concern );
+
+
+/*********************************************************************
+Write Concern API
+**********************************************************************/
+
+/**
+ * Initialize a mongo_write_concern object. Effectively zeroes out the struct.
+ *
+ */
+MONGO_EXPORT void mongo_write_concern_init( mongo_write_concern *write_concern );
+
+/**
+ * Finish this write concern object by serializing the literal getlasterror
+ * command that will be sent to the server.
+ *
+ * You must call mongo_write_concern_destroy() to free the serialized BSON.
+ *
+ */
+MONGO_EXPORT int mongo_write_concern_finish( mongo_write_concern *write_concern );
+
+/**
+ * Free the write_concern object (specifically, the BSON that it owns).
+ *
+ */
+MONGO_EXPORT void mongo_write_concern_destroy( mongo_write_concern *write_concern );
+
+/*********************************************************************
+Cursor API
+**********************************************************************/
 
 /**
  * Find documents in a MongoDB server.
@@ -527,7 +584,10 @@ MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor );
 MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, const bson *query,
                             const bson *fields, bson *out );
 
-/* MongoDB Helper Functions */
+
+/*********************************************************************
+Command API and Helpers
+**********************************************************************/
 
 /**
  * Count the number of documents in a collection matching a query.
@@ -544,7 +604,7 @@ MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *coll,
                      const bson *query );
 
 /**
- * Create a compouned index.
+ * Create a compound index.
  *
  * @param conn a mongo object.
  * @param ns the namespace.
@@ -556,7 +616,23 @@ MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *coll,
  *
  * @return MONGO_OK if index is created successfully; otherwise, MONGO_ERROR.
  */
-MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *key, int options, bson *out );
+MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns,
+    const bson *key, int options, bson *out );
+
+/**
+ * Create a capped collection.
+ *
+ * @param conn a mongo object.
+ * @param ns the namespace (e.g., "dbname.collectioname")
+ * @param size the size of the capped collection in bytes.
+ * @param max the max number of documents this collection is
+ *   allowed to contain. If zero, this argument will be ignored
+ *   and the server will use the collection's size to age document out.
+ *   If using this option, ensure that the total size can contain this
+ *   number of documents.
+ */
+MONGO_EXPORT int mongo_create_capped_collection( mongo *conn, const char *db,
+    const char *collection, int size, int max, bson *out );
 
 /**
  * Create an index with a single key.
@@ -569,11 +645,8 @@ MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *ke
  *
  * @return true if the index was created.
  */
-bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns, const char *field, int options, bson *out );
-
-/* ----------------------------
-   COMMANDS
-   ------------------------------ */
+MONGO_EXPORT bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns,
+    const char *field, int options, bson *out );
 
 /**
  * Run a command on a MongoDB server.
@@ -585,7 +658,8 @@ bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns, const char *
  *
  * @return MONGO_OK if the command ran without error.
  */
-MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *command, bson *out );
+MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db,
+    const bson *command, bson *out );
 
 /**
  * Run a command that accepts a simple string key and integer value.
@@ -614,7 +688,8 @@ MONGO_EXPORT int mongo_simple_int_command( mongo *conn, const char *db,
  * @return true if the command ran without error.
  *
  */
-MONGO_EXPORT int mongo_simple_str_command( mongo *conn, const char *db, const char *cmd, const char *arg, bson *out );
+MONGO_EXPORT int mongo_simple_str_command( mongo *conn, const char *db,
+    const char *cmd, const char *arg, bson *out );
 
 /**
  * Drop a database.
@@ -636,7 +711,8 @@ MONGO_EXPORT int mongo_cmd_drop_db( mongo *conn, const char *db );
  *
  * @return true if the collection drop was successful.
  */
-MONGO_EXPORT int mongo_cmd_drop_collection( mongo *conn, const char *db, const char *collection, bson *out );
+MONGO_EXPORT int mongo_cmd_drop_collection( mongo *conn, const char *db,
+    const char *collection, bson *out );
 
 /**
  * Add a database user.
@@ -648,7 +724,8 @@ MONGO_EXPORT int mongo_cmd_drop_collection( mongo *conn, const char *db, const c
  *
  * @return MONGO_OK or MONGO_ERROR.
   */
-MONGO_EXPORT int mongo_cmd_add_user( mongo *conn, const char *db, const char *user, const char *pass );
+MONGO_EXPORT int mongo_cmd_add_user( mongo *conn, const char *db,
+    const char *user, const char *pass );
 
 /**
  * Authenticate a user.
@@ -660,7 +737,8 @@ MONGO_EXPORT int mongo_cmd_add_user( mongo *conn, const char *db, const char *us
  *
  * @return MONGO_OK on sucess and MONGO_ERROR on failure.
  */
-MONGO_EXPORT int mongo_cmd_authenticate( mongo *conn, const char *db, const char *user, const char *pass );
+MONGO_EXPORT int mongo_cmd_authenticate( mongo *conn, const char *db,
+    const char *user, const char *pass );
 
 /**
  * Check if the current server is a master.
@@ -705,6 +783,41 @@ MONGO_EXPORT int mongo_cmd_get_prev_error( mongo *conn, const char *db, bson *ou
  */
 MONGO_EXPORT void mongo_cmd_reset_error( mongo *conn, const char *db );
 
+
+/*********************************************************************
+Utility API
+**********************************************************************/
+
+MONGO_EXPORT mongo* mongo_create();
+MONGO_EXPORT void mongo_dispose(mongo* conn);
+MONGO_EXPORT int mongo_get_err(mongo* conn);
+MONGO_EXPORT int mongo_is_connected(mongo* conn);
+MONGO_EXPORT int mongo_get_op_timeout(mongo* conn);
+MONGO_EXPORT const char* mongo_get_primary(mongo* conn);
+MONGO_EXPORT int mongo_get_socket(mongo* conn) ;
+MONGO_EXPORT int mongo_get_host_count(mongo* conn);
+MONGO_EXPORT const char* mongo_get_host(mongo* conn, int i);
+MONGO_EXPORT mongo_cursor* mongo_cursor_create();
+MONGO_EXPORT void mongo_cursor_dispose(mongo_cursor* cursor);
+MONGO_EXPORT int  mongo_get_server_err(mongo* conn);
+MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
+
+/**
+ * Set an error on a mongo connection object. Mostly for internal use.
+ *
+ * @param conn a mongo connection object.
+ * @param err a driver error code of mongo_error_t.
+ * @param errstr a string version of the error.
+ * @param errorcode Currently errno or WSAGetLastError().
+ */
+MONGO_EXPORT void __mongo_set_error( mongo *conn, mongo_error_t err,
+                                     const char *errstr, int errorcode );
+/**
+ * Clear all errors stored on a mongo connection object.
+ *
+ * @param conn a mongo connection object.
+ */
+MONGO_EXPORT void mongo_clear_errors( mongo *conn );
 
 MONGO_EXTERN_C_END
 

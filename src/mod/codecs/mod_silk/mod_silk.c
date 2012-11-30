@@ -31,6 +31,11 @@
  */
 
 #include "switch.h"
+#ifndef WIN32
+#include "stfu.h"
+#else
+#include "../../../libs/stfu/stfu.h"
+#endif
 #include "SKP_Silk_SDK_API.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_silk_load);
@@ -51,10 +56,10 @@ struct silk_codec_settings {
 typedef struct silk_codec_settings silk_codec_settings_t;
 
 static silk_codec_settings_t default_codec_settings = {
-	/*.useinbandfec */ 0,
+	/*.useinbandfec */ 1,
 	/*.usedtx */ 0,
 	/*.maxaveragebitrate */ 0,
-	/*.plpct */ 10, // 10% for now
+	/*.plpct */ 20, // 20% for now
 };
 
 struct silk_context {
@@ -320,13 +325,45 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 	struct silk_context *context = codec->private_info;
 	SKP_int16 ret, len; 
 	int16_t *target = decoded_data;
+	switch_core_session_t *session = codec->session;
+	stfu_instance_t *jb = NULL;
+
+	SKP_int lost_flag = (*flag & SFF_PLC);
+	stfu_frame_t next_frame;
+
+	SKP_uint8 recbuff[STFU_DATALEN];
+	SKP_int16 reclen;
+	int32_t found_frame;
+	switch_bool_t did_lbrr = SWITCH_FALSE;
+	int i;
 
 	*decoded_data_len = 0;
+
+	if (lost_flag) {
+		if (session) {
+			jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO);
+		}
+		if (jb && codec && codec->cur_frame) {
+			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
+				found_frame = stfu_n_copy_next_frame(jb, codec->cur_frame->timestamp, codec->cur_frame->seq, i, &next_frame);
+				if (found_frame) {
+					SKP_Silk_SDK_search_for_LBRR(next_frame.data, next_frame.dlen, i, (SKP_uint8*) &recbuff, &reclen);
+					if (reclen) {
+						encoded_data = &recbuff;
+						encoded_data_len = reclen;
+						lost_flag = SKP_FALSE;
+						did_lbrr = SWITCH_TRUE;
+						break;
+					}
+				}
+			}
+		}
+	}
 
 	do {
 		ret = SKP_Silk_SDK_Decode(context->dec_state,
 								  &context->decoder_object,
-								  ((*flag & SFF_PLC)),
+								  lost_flag,
 								  encoded_data,
 								  encoded_data_len,
 								  target,
@@ -334,6 +371,8 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 		if (ret){
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SKP_Silk_Decode returned %d!\n", ret);
 			printSilkError(ret);
+			/* if FEC was activated, we can ignore bit errors*/
+			if (! (ret == SKP_SILK_DEC_PAYLOAD_ERROR && did_lbrr))
 			return SWITCH_STATUS_FALSE;
 		}
 

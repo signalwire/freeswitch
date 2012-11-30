@@ -46,6 +46,9 @@
     <Filter Include="Public Header Files">
       <UniqueIdentifier>{ee62af10-73ee-4af5-85d1-442efcd33aa2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\xml">
+      <UniqueIdentifier>{0ea472ce-22be-43c7-b06d-a50dd027a9fe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\apr-util\buckets\apr_brigade.c">

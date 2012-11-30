@@ -69,6 +69,7 @@ struct stfu_instance {
 	struct stfu_queue *old_queue;
     struct stfu_frame *last_frame;
 	uint32_t cur_ts;
+	uint16_t cur_seq;
 	uint32_t last_wr_ts;
 	uint32_t last_rd_ts;
 	uint32_t samples_per_packet;
@@ -361,6 +362,7 @@ void stfu_n_reset(stfu_instance_t *i)
     stfu_n_sync(i, 1);
     
     i->cur_ts = 0;
+    i->cur_seq = 0;
 	i->last_wr_ts = 0;
 	i->last_rd_ts = 0;
 	i->miss_count = 0;	
@@ -402,7 +404,7 @@ static void stfu_n_swap(stfu_instance_t *i)
     i->out_queue->last_jitter = 0;
 }
 
-stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last)
+stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last)
 {
 	uint32_t index = 0;
 	stfu_frame_t *frame;
@@ -569,6 +571,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint32_t pt, void
 
     frame->pt = pt;
 	frame->ts = ts;
+    frame->seq = seq;
 	frame->dlen = cplen;
 	frame->was_read = 0;	
 
@@ -649,6 +652,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         for (x = 0; x < i->out_queue->array_len; x++) {
             if (!i->out_queue->array[x].was_read) {
                 i->cur_ts = i->out_queue->array[x].ts;
+                i->cur_seq = i->out_queue->array[x].seq;
                 break;
             }
             if (i->cur_ts == 0) {
@@ -660,6 +664,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         }
     } else {
         i->cur_ts = i->cur_ts + i->samples_per_packet;
+        i->cur_seq++;
     }
     
     found = stfu_n_find_frame(i, i->out_queue, i->last_wr_ts, i->cur_ts, &rframe);
@@ -678,12 +683,14 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
     if (found) {
         i->cur_ts = rframe->ts;
+        i->cur_seq = rframe->seq;
     }
 
     if (i->sync_out) {
         if (!found) {
             if ((found = stfu_n_find_any_frame(i, i->out_queue, &rframe))) {
                 i->cur_ts = rframe->ts;
+                i->cur_seq = rframe->seq;
             }
             
             if (stfu_log != null_logger && i->debug) {
@@ -782,6 +789,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         rframe->dlen = i->plc_len;
         rframe->pt = i->plc_pt;
         rframe->ts = i->cur_ts;
+        rframe->seq = i->cur_seq;
         i->miss_count++;
         
         if (stfu_log != null_logger && i->debug) {
@@ -797,6 +805,45 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
     return rframe;
 }
+
+STFU_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame)
+{
+	uint32_t i = 0, j = 0;
+#ifdef WIN32
+#pragma warning (disable:4204)
+#endif
+	stfu_queue_t *queues[] = { jb->out_queue, jb->in_queue, jb->old_queue};
+#ifdef WIN32
+#pragma warning (default:4204)
+#endif
+	stfu_queue_t *queue = NULL;
+	stfu_frame_t *frame = NULL;
+
+	uint32_t target_ts = 0;
+
+	seq = seq;
+	if (!next_frame) return 0;
+
+	target_ts = timestamp + (distance - 1) * jb->samples_per_packet;
+
+	for (i = 0; i < sizeof(queues)/sizeof(queues[0]); i++) {
+		queue = queues[i];
+
+		if (!queue) continue;
+
+		for(j = 0; j < queue->array_size; j++) {
+			frame = &queue->array[j];
+			/* FIXME: ts rollover happened? bad luck */
+			if (frame->ts > target_ts) {
+				memcpy(next_frame, frame, sizeof(stfu_frame_t));
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
 
 #ifdef WIN32
 #ifndef vsnprintf
@@ -925,7 +972,6 @@ static void default_logger(const char *file, const char *func, int line, int lev
 	va_end(ap);
 
 }
-
 
 /* For Emacs:
  * Local Variables:

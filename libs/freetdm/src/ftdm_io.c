@@ -4735,7 +4735,7 @@ static void print_core_usage(ftdm_stream_handle_t *stream)
 
 static unsigned long long ftdm_str2val(const char *str, val_str_t *val_str_table, ftdm_size_t array_size, unsigned long long default_val)
 {
-	int i;
+	ftdm_size_t i;
 	for (i = 0; i < array_size; i++) {
 		if (!strcasecmp(val_str_table[i].str, str)) {
 			return val_str_table[i].val;
@@ -4746,7 +4746,7 @@ static unsigned long long ftdm_str2val(const char *str, val_str_t *val_str_table
 
 static const char *ftdm_val2str(unsigned long long val, val_str_t *val_str_table, ftdm_size_t array_size, const char *default_str)
 {
-	int i;
+	ftdm_size_t i;
 	for (i = 0; i < array_size; i++) {
 		if (val_str_table[i].val == val) {
 			return val_str_table[i].str;
@@ -6093,7 +6093,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 
 	case FTDM_SIGEVENT_START:
 		{
-			ftdm_assert(!ftdm_test_flag(fchan, FTDM_CHANNEL_CALL_STARTED), "Started call twice!");
+			ftdm_assert(!ftdm_test_flag(fchan, FTDM_CHANNEL_CALL_STARTED), "Started call twice!\n");
 
 			if (ftdm_test_flag(fchan, FTDM_CHANNEL_OUTBOUND)) {
 				ftdm_log_chan_msg(fchan, FTDM_LOG_WARNING, "Inbound call taking over outbound channel\n");

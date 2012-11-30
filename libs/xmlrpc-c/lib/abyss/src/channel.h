@@ -60,7 +60,7 @@ struct TChannelVtbl {
 };
 
 struct _TChannel {
-    uint                signature;
+    unsigned int        signature;
         /* With both background and foreground use of sockets, and
            background being both fork and pthread, it is very easy to
            screw up socket lifetime and try to destroy twice.  We use

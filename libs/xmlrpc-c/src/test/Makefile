@@ -19,7 +19,7 @@ LDADD_CGI_SERVER = \
 
 default: all
 
-INCLUDES = -I$(BLDDIR) -I $(SRCDIR)/include -I$(SRCDIR)/lib/util/include \
+INCLUDES = -I$(BLDDIR) -Isrcdir/include -Isrcdir/lib/util/include \
 
 PROGS = test cgitest1
 
@@ -28,6 +28,7 @@ all: $(PROGS)
 LDFLAGS = $(LADD)
 
 TEST_OBJS = \
+  testtool.o \
   test.o \
   abyss.o \
   cgi.o \
@@ -37,6 +38,7 @@ TEST_OBJS = \
   serialize_value.o \
   server_abyss.o \
   value.o \
+  value_datetime.o \
   xml_data.o \
 
 ifeq ($(MUST_BUILD_CLIENT),yes)
@@ -49,6 +51,11 @@ endif
 
 include $(SRCDIR)/common.mk
 
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
+
 test: \
   $(XMLRPC_C_CONFIG) \
   $(TEST_OBJS) $(LIBXMLRPC_A) $(LIBXMLRPC_UTIL_A) \
@@ -59,16 +66,16 @@ test: \
 	$(CCLD) -o $@ $(LDFLAGS) \
 	    $(TEST_OBJS) $(LDADD_CLIENT) $(LDADD_ABYSS_SERVER) $(CASPRINTF)
 
-cgitest1:%:%.o $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_CGI_A) \
-  $(LIBXMLRPC_A) $(LIBXMLRPC_UTIL_A) $(LIBXMLRPC_XML)
-	$(CCLD) -o $@ $< $(LDFLAGS) $(LDADD_CGI_SERVER)
+CGITEST1_OBJS = cgitest1.o testtool.o
 
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_PERSONAL) $(CADD)
+cgitest1: $(CGITEST1_OBJS) $(LIBXMLRPC_SERVER_A) $(LIBXMLRPC_SERVER_CGI_A) \
+  $(LIBXMLRPC_A) $(LIBXMLRPC_UTIL_A) $(LIBXMLRPC_XML)
+	$(CCLD) -o $@ $(CGITEST1_OBJS) $(LDFLAGS) $(LDADD_CGI_SERVER)
 
 OBJS = $(TEST_OBJS) cgitest1.o
 
 $(OBJS):%.o:%.c
-	$(CC) -c $(INCLUDES) $(CFLAGS) $<
+	$(CC) -c $(INCLUDES) $(CFLAGS_ALL) $<
 
 # Note the difference between 'check' and 'runtests'.  'check' means to check
 # our own correctness.  'runtests' means to run the tests that check our
@@ -94,4 +101,4 @@ distclean: clean distclean-common
 .PHONY: dep
 dep: dep-common
 
-include Makefile.depend
+include depend.mk

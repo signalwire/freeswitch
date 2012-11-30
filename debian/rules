@@ -6,7 +6,7 @@
 
 FS_CC?=gcc
 FS_CXX?=g++
-FS_CFLAGS?=-ggdb3 -O2
+FS_CFLAGS?=-ggdb3 -O2 -fPIC
 FS_CPPFLAGS?=
 FS_CXXFLAGS?=$(FS_CFLAGS)
 export PATH?=/usr/lib/ccache:/usr/sbin:/usr/bin:/sbin:/bin

@@ -4,6 +4,7 @@ See the file copying.txt for copying permission.
 */
 
 #include "xmlrpc_config.h"
+#include "bool.h"
 #include "xmldef.h"
 #include "xmltok.h"
 #include "nametab.h"
@@ -357,30 +358,47 @@ static const struct normal_encoding internal_utf8_encoding = {
   STANDARD_VTABLE(sb_) NORMAL_VTABLE(utf8_)
 };
 
-static
-void latin1_toUtf8(const ENCODING *enc ATTR_UNUSED,
-		   const char **fromP, const char *fromLim,
-		   char **toP, const char *toLim)
-{
-  for (;;) {
-    unsigned char c;
-    if (*fromP == fromLim)
-      break;
-    c = (unsigned char)**fromP;
-    if (c & 0x80) {
-      if (toLim - *toP < 2)
-	break;
-      *(*toP)++ = ((c >> 6) | UTF8_cval2);
-      *(*toP)++ = ((c & 0x3f) | 0x80);
-      (*fromP)++;
+
+
+static void
+latin1_toUtf8(const ENCODING * const enc ATTR_UNUSED,
+              const char **    const fromP,
+              const char *     const fromLim,
+              char **          const toP,
+              const char *     const toLim) {
+/*----------------------------------------------------------------------------
+   Convert the Latin1 string that starts at *fromP and ends at 'fromLim'
+   to UTF8 in the buffer that starts at *toP and ends at 'toLim'.
+
+   Go from left to right and stop when the output buffer is full.
+
+   Note that the buffer can be full while still having a byte left in it
+   because a Latin1 character may require two bytes of the output buffer.
+
+   Leave *fromP and *toP pointing after the last character converted.
+-----------------------------------------------------------------------------*/
+    bool bufferIsFull;
+
+    for (bufferIsFull = false; *fromP != fromLim && !bufferIsFull;) {
+        unsigned char const c = (unsigned char)**fromP;
+        if (c & 0x80) {
+            if (toLim - *toP < 2)
+                bufferIsFull = true;
+            else {
+                *(*toP)++ = ((c >> 6) | UTF8_cval2);
+                *(*toP)++ = ((c & 0x3f) | 0x80);
+                ++(*fromP);
+            }
+        } else {
+            if (*toP == toLim)
+                bufferIsFull = true;
+            else
+                *(*toP)++ = *(*fromP)++;
+        }
     }
-    else {
-      if (*toP == toLim)
-	break;
-      *(*toP)++ = *(*fromP)++;
-    }
-  }
 }
+
+
 
 static
 void latin1_toUtf16(const ENCODING *enc ATTR_UNUSED,

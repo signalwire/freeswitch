@@ -77,6 +77,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 	}
 	ah->rate = rate;
 	ah->name = switch_core_strdup(ah->memory_pool, module_name);
+	ah->samplerate = rate;
+	ah->native_rate = rate;
 
 	status = ah->asr_interface->asr_open(ah, codec, rate, dest, flags);
 
@@ -223,6 +225,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
 	status = ah->asr_interface->asr_close(ah, flags);
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
 
+	switch_resample_destroy(&ah->resampler);
+
 	UNPROTECT_INTERFACE(ah->asr_interface);
 
 	if (switch_test_flag(ah, SWITCH_ASR_FLAG_FREE_POOL)) {
@@ -234,7 +238,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
 {
+	switch_size_t orig_len = len;
 	switch_assert(ah != NULL);
+
+	if (ah->native_rate && ah->samplerate && ah->native_rate != ah->samplerate) {
+		if (!ah->resampler) {
+			if (switch_resample_create(&ah->resampler,
+									   ah->samplerate, ah->native_rate, (uint32_t) orig_len, SWITCH_RESAMPLE_QUALITY, 1) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
+				return SWITCH_STATUS_GENERR;
+			}
+		}
+
+		switch_resample_process(ah->resampler, data, len / 2);
+		if (ah->resampler->to_len > orig_len) {
+			if (!ah->dbuf) {
+				void *mem;
+				ah->dbuflen = ah->resampler->to_len * 2;
+				mem = realloc(ah->dbuf, ah->dbuflen);
+				switch_assert(mem);
+				ah->dbuf = mem;
+			}
+			switch_assert(ah->resampler->to_len * 2 <= ah->dbuflen);
+			memcpy(ah->dbuf, ah->resampler->to, ah->resampler->to_len * 2);
+			data = ah->dbuf;
+		} else {
+			memcpy(data, ah->resampler->to, ah->resampler->to_len * 2);
+		}
+
+		len = ah->resampler->to_len;
+	}
 
 	return ah->asr_interface->asr_feed(ah, data, len, flags);
 }

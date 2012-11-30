@@ -328,7 +328,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_snapshot_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_API(api_interface, "uuid_snapshot", "Snapshot API", snapshot_function, SNAP_API_SYNTAX);
-	SWITCH_ADD_APP(app_interface, "snapshot", "", "", snapshot_app_function, SNAP_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "snapshot", "", "", snapshot_app_function, SNAP_SYNTAX, SAF_MEDIA_TAP);
 	switch_console_set_complete("add uuid_snapshot ::console::list_uuid");
 
 	/* indicate that the module should continue to be loaded */

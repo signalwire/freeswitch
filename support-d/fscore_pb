@@ -41,7 +41,7 @@ else
 fi
 
 
-core=`ls -1t core.* | head -1 2> /dev/null`
+core=`ls -1t core* | head -1 2> /dev/null`
 
 if [ -z "$core" ] ; then
 	core=`ls -1 core 2> /dev/null`
@@ -139,11 +139,9 @@ rm -fr $tmpdir
 mkdir -p $tmpdir
 cd $tmpdir
 
+wget --output-file=/dev/null --output-document=/tmp/fscore_pb.tmp/pb_out --http-user=pastebin --http-password=freeswitch http://pastebin.freeswitch.org --post-file=$post_file
 
-
-wget --output-file=/dev/null --http-user=pastebin --http-password=freeswitch http://pastebin.freeswitch.org --post-file=$post_file
-
-pb=`ls [0-9]*`
+pb=`cat /tmp/fscore_pb.tmp/pb_out | grep parent_pid | awk -F \" '{print $6}'`
 
 mv $post_file $tmpdir
 echo "Finished."

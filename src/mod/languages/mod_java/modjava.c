@@ -38,7 +38,7 @@ static switch_memory_pool_t *memoryPool = NULL;
 static switch_dso_handle_t *javaVMHandle = NULL;
 
 JavaVM *javaVM = NULL;
-
+jclass launcherClass = NULL;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_java_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_java_shutdown);
@@ -62,19 +62,16 @@ static vm_control_t  vmControl;
 
 static void launch_java(switch_core_session_t *session, const char *data, JNIEnv *env)
 {
-    jclass Launcher = NULL;
     jmethodID launch = NULL;
     jstring uuid = NULL;
     jstring args = NULL;
 
-    Launcher = (*env)->FindClass(env, "org/freeswitch/Launcher");
-    if (Launcher == NULL)
+    if (launcherClass == NULL)
     {
-        (*env)->ExceptionDescribe(env);
         goto done;
     }
 
-    launch = (*env)->GetStaticMethodID(env, Launcher, "launch", "(Ljava/lang/String;Ljava/lang/String;)V");
+    launch = (*env)->GetStaticMethodID(env, launcherClass, "launch", "(Ljava/lang/String;Ljava/lang/String;)V");
     if (launch == NULL)
     {
         (*env)->ExceptionDescribe(env);
@@ -95,7 +92,7 @@ static void launch_java(switch_core_session_t *session, const char *data, JNIEnv
         goto done;
     }
 
-    (*env)->CallStaticVoidMethod(env, Launcher, launch, uuid, args);
+    (*env)->CallStaticVoidMethod(env, launcherClass, launch, uuid, args);
     if ((*env)->ExceptionOccurred(env))
         (*env)->ExceptionDescribe(env);
 
@@ -104,8 +101,6 @@ done:
         (*env)->DeleteLocalRef(env, args);
     if (uuid != NULL)
         (*env)->DeleteLocalRef(env, uuid);
-    if (Launcher != NULL)
-        (*env)->DeleteLocalRef(env, Launcher);
 }
 
 static switch_status_t exec_user_method(user_method_t * userMethod) {
@@ -145,12 +140,14 @@ static switch_status_t exec_user_method(user_method_t * userMethod) {
         goto done;
     }
 
-    arg = (*env)->NewStringUTF(env, userMethod->arg);
+    if (userMethod->arg != NULL) {
+        arg = (*env)->NewStringUTF(env, userMethod->arg);
 
-    if (arg == NULL) {
-        (*env)->ExceptionDescribe(env);
-        status =  SWITCH_STATUS_FALSE;
-        goto done;
+        if (arg == NULL) {
+            (*env)->ExceptionDescribe(env);
+            status =  SWITCH_STATUS_FALSE;
+            goto done;
+        }
     }
 
     (*env)->CallStaticVoidMethod(env, class, method, arg);
@@ -311,8 +308,31 @@ static switch_status_t create_java_vm(JavaVMOption *options, int optionCount, vm
         res = pJNI_CreateJavaVM(&javaVM, (void*) &env, &initArgs);
         if (res == JNI_OK)
         {
+        	// call FindClass here already so that the Java VM executes the static
+        	// initializer (@see org.freeswitch.Launcher) which loads the jni library
+        	// so we can use jni functions right away (for example in the startup method)
+        	launcherClass = (*env)->FindClass(env, "org/freeswitch/Launcher");
+        	if ( launcherClass == NULL )
+        	{
+        		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find 'org.freeswitch.Launcher' class!\n");
+        		(*env)->ExceptionDescribe(env);
+        		status = SWITCH_STATUS_FALSE;
+        	}
+
+        	// store a global reference for use in the launch_java() function
+            launcherClass = (*env)->NewGlobalRef(env, launcherClass);
+        	if ( launcherClass == NULL )
+        	{
+        		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory!\n");
+        		(*env)->ExceptionDescribe(env);
+        		status = SWITCH_STATUS_FALSE;
+        	}
+        	else
+        	{
+        		status = SWITCH_STATUS_SUCCESS;
+        	}
+
             (*javaVM)->DetachCurrentThread(javaVM);
-            status = SWITCH_STATUS_SUCCESS;
         }
         else
         {

@@ -25,7 +25,7 @@
 #include <string>
 #include <iostream>
 #include <unistd.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <xmlrpc-c/girerr.hpp>
 #include <xmlrpc-c/base.hpp>
 #include <xmlrpc-c/client.hpp>

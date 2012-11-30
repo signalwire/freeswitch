@@ -24,10 +24,10 @@ include $(BLDDIR)/config.mk
 # we started using the Gcc -Wundef option, that generates a warning, so
 # se set it explicitly to 0 here.
 
-CFLAGS = $(CFLAGS_COMMON) -DXML_BYTE_ORDER=0 $(CFLAGS_PERSONAL) $(CADD)
+CFLAGS_LOCAL = -DXML_BYTE_ORDER=0
 
 # -I. is necessary when blddir != srcdir
-INCLUDES = -I. -I$(BLDDIR) -I$(SRCDIR)/lib/util/include
+INCLUDES = -I. -I$(BLDDIR) -Isrcdir/lib/util/include -Isrcdir/include
 
 default: all
 
@@ -46,19 +46,20 @@ MAJ=3
 
 include $(SRCDIR)/common.mk
 
+# This 'common.mk' dependency makes sure the symlinks get built before
+# this make file is used for anything.
+
+$(SRCDIR)/common.mk: srcdir blddir
+
 XMLTOK_SHLIB = $(call shlibfn,libxmlrpc_xmltok)
 #XMLTOK_SHLIB is e.g. libxmlrpc_xmltok.so.3.1
 XMLTOK_SHLIBLE = $(call shliblefn,libxmlrpc_xmltok)
 #XMLTOK_SHLIBLE is e.g. libxmlrpc_xmltok.so
 
-ifneq ($(SHARED_LIB_TYPE),NONE)
-  TARGET_SHARED_LIBS := $(XMLTOK_SHLIB) $(XMLTOK_SHLIBLE)
-  endif
-
 .PHONY: all
-all: libxmlrpc_xmltok.a $(TARGET_SHARED_LIBS) $(TARGET_SHARED_LE_LIBS)
+all: libxmlrpc_xmltok.a $(TARGET_SHARED_LIBRARIES) $(TARGET_SHARED_LE_LIBS)
 
-# Rule for this is in common.mk, courtesy of TARGET_SHARED_LIBRARIES:
+# Rule for this is in common.mk, courtesy of TARGET_LIBRARY_NAMES
 $(XMLTOK_SHLIB): $(TARGET_MODS:%=%.osh)
 $(XMLTOK_SHLIB): LIBOBJECTS = $(TARGET_MODS:%=%.osh)
 
@@ -103,6 +104,6 @@ nametab.h: $(GENNMTAB)
 $(GENNMTAB):
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
-xmltok.o xmltok.osh: nametab.h
+xmltok.o xmltok.osh: nametab.h xmltok_impl.c
 
-include Makefile.depend
+include depend.mk

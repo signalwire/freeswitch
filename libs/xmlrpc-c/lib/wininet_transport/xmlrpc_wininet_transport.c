@@ -398,6 +398,15 @@ performWinInetTransaction(
         XMLRPC_FAIL(envP, XMLRPC_INTERNAL_ERROR,
                     "Could not set Content-Type.");
 
+    {
+        /* By default, a request times out after 30 seconds.  We don't want
+           it to timeout at all, since we don't know what the user is doing.
+        */
+        DWORD dwTimeOut = 0x7FFFFFFF;  /* Approximation of infinity */
+        InternetSetOption(winInetTransactionP->hHttpRequest,
+                          INTERNET_OPTION_RECEIVE_TIMEOUT,
+                          &dwTimeOut, sizeof(dwTimeOut));
+    }
 Again:
     /* Send the requested XML remote procedure command */ 
     succeeded = HttpSendRequest(winInetTransactionP->hHttpRequest, NULL, 0, 
@@ -558,17 +567,22 @@ Again:
 
 
 
-static unsigned __stdcall 
+static void *
 doAsyncRpc(void * const arg) {
+
     rpc * const rpcP = arg;
+
     xmlrpc_env env;
     xmlrpc_env_init(&env);
+
     performWinInetTransaction(&env, rpcP->winInetTransactionP,
                               rpcP->clientTransportP );
+
     rpcP->complete(rpcP->callInfoP, rpcP->responseXmlP, env);
+
     xmlrpc_env_clean(&env);
 
-    return 0;
+    return NULL;
 }
 
 
@@ -837,6 +851,7 @@ sendRequest(xmlrpc_env *                     const envP,
             const xmlrpc_server_info *       const serverP,
             xmlrpc_mem_block *               const callXmlP,
             xmlrpc_transport_asynch_complete       complete,
+            xmlrpc_transport_progress              progress,
             struct xmlrpc_call_info *        const callInfoP) {
 /*----------------------------------------------------------------------------
    Initiate an XML-RPC rpc asynchronously.  Don't wait for it to go to

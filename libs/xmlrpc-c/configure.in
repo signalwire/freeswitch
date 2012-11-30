@@ -86,10 +86,45 @@ AC_MSG_RESULT($MUST_BUILD_LIBWWW_CLIENT)
 AC_SUBST(MUST_BUILD_LIBWWW_CLIENT)
 
 
+AC_ARG_ENABLE(tools,
+  [  --enable-tools            Build the tools], , 
+[enable_tools=no])
+
+# The first AC_CHECK_LIB has to be in unconditional code because as a
+# side effect, it determines what the object file suffix is on this system,
+# and if it is statically present even though not actually executed, Autoconf
+# later thinks it has already computed the object file suffix and uses it
+# without computing it.  This was with Autoconf 2.59
+AC_CHECK_LIB(ncurses, main, [have_libncurses=yes], [have_libncurses=no])
+AC_CHECK_LIB(readline, main, [have_libreadline=yes], [have_libreadline=no])
+
+AC_MSG_CHECKING(whether to build tools)
+
+BUILD_XMLRPC_PSTREAM=no
+
+if test $enable_tools = yes; then
+  if ! test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
+    if test $have_libreadline = yes && test $have_libncurses = yes; then
+      BUILD_XMLRPC_PSTREAM=yes
+    fi
+    BUILD_TOOLS=yes
+  fi
+else
+  BUILD_TOOLS=$enable_tools
+fi
+
+AC_MSG_RESULT($BUILD_TOOLS)
+AC_SUBST(BUILD_TOOLS)
+
+if test $BUILD_TOOLS = yes; then
+  AC_MSG_CHECKING(whether to build the xmlrpc_pstream tool)
+  AC_MSG_RESULT($BUILD_XMLRPC_PSTREAM)
+  AC_SUBST(BUILD_XMLRPC_PSTREAM)
+fi
+
+
 dnl Set up the appropriate Makefile substitutions.
 
-LIBXMLRPC_CLIENT_LA=libxmlrpc_client.la
-AC_SUBST(LIBXMLRPC_CLIENT_LA)
 CLIENTTEST=clienttest
 AC_SUBST(CLIENTTEST)
 XMLRPC_CLIENT_H=xmlrpc_client.h
@@ -126,7 +161,6 @@ AC_SUBST(ENABLE_ABYSS_SERVER)
 
 dnl Set up the appropriate Makefile substitutions.
 ABYSS_SUBDIR=
-LIBXMLRPC_ABYSS_SERVER_LA=
 SERVERTEST=
 VALIDATEE=
 XMLRPC_ABYSS_H=
@@ -134,14 +168,12 @@ SERVER=
 if test x"$enable_abyss_server" != xno; then
     FEATURE_LIST="abyss-server $FEATURE_LIST"
     ABYSS_SUBDIR=abyss
-    LIBXMLRPC_ABYSS_SERVER_LA=libxmlrpc_abyss_server.la
     SERVERTEST=servertest
     VALIDATEE=validatee
     XMLRPC_ABYSS_H=xmlrpc_abyss.h
     SERVER=server
 fi
 AC_SUBST(ABYSS_SUBDIR)
-AC_SUBST(LIBXMLRPC_ABYSS_SERVER_LA)
 AC_SUBST(SERVERTEST)
 AC_SUBST(VALIDATEE)
 AC_SUBST(XMLRPC_ABYSS_H)
@@ -198,7 +230,9 @@ dnl Checks for programs.
 dnl =======================================================================
 
 AC_PROG_CC
-AC_PROG_CXX
+if test x"$enable_cplusplus" != xno; then
+    AC_PROG_CXX
+fi
 
 
 dnl =======================================================================
@@ -272,6 +306,14 @@ else
 fi
 AC_SUBST(HAVE_SYS_IOCTL_H_DEFINE)
 
+AC_CHECK_HEADERS(sys/select.h)
+if test x"$ac_cv_header_sys_select_h" = xyes; then
+  HAVE_SYS_SELECT_H_DEFINE=1
+else
+  HAVE_SYS_SELECT_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_SELECT_H_DEFINE)
+
 
 AC_CHECK_HEADERS(stdarg.h, , [
 AC_MSG_ERROR(stdarg.h is required to build this library)
@@ -329,7 +371,7 @@ AC_CHECK_FUNCS(setgroups)
 
 AC_CHECK_FUNCS(asprintf)
 
-AC_CHECK_FUNCS(setenv)
+AC_CHECK_FUNCS(setenv strtoll strtoull strtoq strtouq __strtoll __strtoull)
 
 dnl uclib doesn't have pselect
 AC_CHECK_FUNCS(pselect)
@@ -380,22 +422,22 @@ dnl you will need to configure this way..
 
 if test $MUST_BUILD_WININET_CLIENT = yes; then
 
-    dnl You can control which of these gets chosen by fooling around with PATH.
+    dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(WININET_CONFIG, wininet-xmlrpc-config wininet-config, no)
     if test "x$WININET_CONFIG" = "xno"; then
-        AC_MSG_ERROR(wininet lib not found; see './configure --help')
+        AC_MSG_ERROR(Configure INTERNAL ERROR - first wininet-config found, then not found)
     fi
 
     dnl Get our wininet version.
     dnl Adapted from a macro which called gtk-config.
     AC_MSG_CHECKING(for wininet version >= 1.0.0)
-    W3VER=`$WININET_CONFIG --version`
+    W3VER=$($WININET_CONFIG --version)
     WININET_MAJOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/')
     WININET_MINOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/')
     WININET_MICRO=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/')
     AC_MSG_RESULT($WININET_MAJOR.$WININET_MINOR.$WININET_MICRO)
 
     dnl Check to make sure our version is OK.
@@ -417,61 +459,44 @@ if test $MUST_BUILD_WININET_CLIENT = yes; then
     fi
 
     dnl Get the necessary CFLAGS, and merge them into our master list.
-    WININET_CFLAGS="`$WININET_CONFIG --cflags`"
+    WININET_CFLAGS=$($WININET_CONFIG --cflags)
     AC_SUBST(WININET_CFLAGS)
     CFLAGS="$CFLAGS $WININET_CFLAGS" 
 
     dnl Get the huge list of libraries we need to link against.
-    WININET_LDADD="`$WININET_CONFIG --libs`"
+    WININET_LDADD=$($WININET_CONFIG --libs)
     AC_SUBST(WININET_LDADD)
 
-    dnl Oh, such massive brain damage! Because there may be another copy
-    dnl of libwww in the default dynamic loader search path, we need to
-    dnl adjust the search patch manually. Just gag me with a backquote, OK?
     AC_MSG_CHECKING(for wininet library directory)
-    if $WININET_CONFIG --rpath-dir > /dev/null 2>&1; then
-       dnl Yay! We're using our smart version of wininet.
-       WININET_LIBDIR="`$WININET_CONFIG --rpath-dir`"
-    else
-       dnl Yawn. We're using the regular boring version.
-       WININET_LIBDIR="`$WININET_CONFIG --prefix`/lib"
-    fi
+    WININET_LIBDIR="$($WININET_CONFIG --prefix)/lib"
     AC_MSG_RESULT($WININET_LIBDIR)
     AC_SUBST(WININET_LIBDIR)
-    WININET_RPATH="-rpath $WININET_LIBDIR"
-    AC_SUBST(WININET_RPATH)
-    WININET_WL_RPATH="-Wl,--rpath -Wl,$WININET_LIBDIR"
-    AC_SUBST(WININET_WL_RPATH)
 
 fi # MUST_BUILD_WININET_CLIENT
 
 dnl =======================================================================
 dnl Finding w3c-libwww
 dnl =======================================================================
-dnl Once upon a time, we used a patched copy of libwww that needed to
-dnl co-exist with the system copy of libwww. We have some vestigal function
-dnl for keeping track of libwww's rpath, although this is no longer really
-dnl necessary.
 
 if test $MUST_BUILD_LIBWWW_CLIENT = yes; then
 
-    dnl First of all, locate the semi-broken libwww config program.
-    dnl You can control which of these gets chosen by fooling around with PATH.
+    dnl First of all, locate the libwww config program.
+    dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(LIBWWW_CONFIG, libwww-xmlrpc-config libwww-config, no)
     if test "x$LIBWWW_CONFIG" = "xno"; then
-        AC_MSG_ERROR(w3c-libwww not found; see './configure --help')
+        AC_MSG_ERROR(Configure INTERNAL ERROR - first libwww-config found, then not found)
     fi
 
     dnl Get our libwww version.
     dnl Adapted from a macro which called gtk-config.
     AC_MSG_CHECKING(for w3c-libwww version >= 5.2.8)
-    W3VER=`$LIBWWW_CONFIG --version`
+    W3VER=$($LIBWWW_CONFIG --version)
     LIBWWW_MAJOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/')
     LIBWWW_MINOR=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/')
     LIBWWW_MICRO=\
-`echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+$(echo $W3VER|sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/')
     AC_MSG_RESULT($LIBWWW_MAJOR.$LIBWWW_MINOR.$LIBWWW_MICRO)
 
     dnl Check to make sure our version is OK.
@@ -493,78 +518,46 @@ if test $MUST_BUILD_LIBWWW_CLIENT = yes; then
     fi
 
     dnl Get the huge list of libraries we need to link against.
-    LIBWWW_LDADD="`$LIBWWW_CONFIG --libs`"
+    LIBWWW_LDADD=$(LIBWWW_CONFIG --libs)
     AC_SUBST(LIBWWW_LDADD)
 
-    dnl Oh, such massive brain damage! Because there may be another copy
-    dnl of libwww in the default dynamic loader search path, we need to
-    dnl adjust the search patch manually. Just gag me with a backquote, OK?
     AC_MSG_CHECKING(for libwww library directory)
-    if $LIBWWW_CONFIG --rpath-dir > /dev/null 2>&1; then
-       dnl Yay! We're using our smart version of libwww.
-       LIBWWW_LIBDIR="`$LIBWWW_CONFIG --rpath-dir`"
-    else
-       dnl Yawn. We're using the regular boring version.
-       LIBWWW_LIBDIR="`$LIBWWW_CONFIG --prefix`/lib"
-    fi
+    LIBWWW_LIBDIR="$(LIBWWW_CONFIG --prefix)/lib"
     AC_MSG_RESULT($LIBWWW_LIBDIR)
     AC_SUBST(LIBWWW_LIBDIR)
-
-    # Some ancient rpath stuff, now disabled.  I turned this off because it
-    # breaks Debian (and Mandrake?) policy, and we don't use it anymore.
-    # If you have multiple copies of w3c-libwww lying around, you can turn
-    # it back on.
-    #LIBWWW_RPATH="-rpath $LIBWWW_LIBDIR"
-    LIBWWW_RPATH=""
-    AC_SUBST(LIBWWW_RPATH)
-    #LIBWWW_WL_RPATH="-Wl,--rpath -Wl,$LIBWWW_LIBDIR"
-    LIBWWW_WL_RPATH=""
-    AC_SUBST(LIBWWW_WL_RPATH)
 
 fi # MUST_BUILD_LIBWWW_CLIENT
 
 
 dnl =======================================================================
-dnl Finding cURL
+dnl Finding Curl
 dnl =======================================================================
 
 if test $MUST_BUILD_CURL_CLIENT = yes; then
 
-    dnl First of all, locate the curl config program.
-    dnl You can control which of these gets chosen by fooling around with PATH.
+    dnl First of all, locate the Curl config program.
+    dnl You can control which of these gets chosen by controlling PATH.
     AC_PATH_PROGS(CURL_CONFIG, curl-xmlrpc-config curl-config, no)
     if test "x$CURL_CONFIG" = "xno"; then
-        AC_MSG_ERROR(cURL not found; see './configure --help')
+        AC_MSG_ERROR(Configure INTERNAL ERROR - first curl-config found, then not found)
     fi
     
     dnl There used to be code here to check the Curl version and make sure
     dnl it is at least 7.8.  But there were bugs both in the code and in 
-    dnl curl (curl-config --vernum, at least in older versios of Curl,
+    dnl curl (curl-config --vernum, at least in older versions of Curl,
     dnl omits the leading zero).  So it didn't work.  Plus, checking version
     dnl numbers isn't a good idea.  Better to check for feature presence.
     dnl So we don't do any check now.  If we find out there's a problem with
     dnl older Curls, we will revisit that.
 
-    dnl Get the huge list of libraries we need to link against.
-    dnl MRB-20010516-For some reason, curl-config
-    dnl does not list itself '-lcurl'.  2004.12.12.  It seems to do so
-    dnl now.
-    CURL_LDADD=`$CURL_CONFIG --libs`
+    CURL_LDADD=$($CURL_CONFIG --libs)
     AC_SUBST(CURL_LDADD)
 
-    dnl Oh, such massive brain damage! Because there may be another copy
-    dnl of curl in the default dynamic loader search path, we need to
-    dnl adjust the search path manually. Just gag me with a backquote, OK?
-    AC_MSG_CHECKING(for curl library directory)
-    dnl Yawn. We're using the regular boring version.
-    CURL_LIBDIR="`$CURL_CONFIG --prefix`/lib"
+    AC_MSG_CHECKING(for Curl library directory)
+    CURL_LIBDIR="$($CURL_CONFIG --prefix)/lib"
 
     AC_MSG_RESULT($CURL_LIBDIR)
     AC_SUBST(CURL_LIBDIR)
-    CURL_RPATH="-rpath $CURL_LIBDIR"
-    AC_SUBST(CURL_RPATH)
-    CURL_WL_RPATH="-Wl,--rpath -Wl,$CURL_LIBDIR"
-    AC_SUBST(CURL_WL_RPATH)
 
 fi # MUST_BUILD_CURL_CLIENT
 
@@ -620,7 +613,7 @@ CPP_WARN_FLAGS=
 AC_SUBST(CPP_WARN_FLAGS)
 
 
-BUILDDIR=`pwd`
+BUILDDIR=$(pwd)
 AC_SUBST(BUILDDIR)
 
 
@@ -632,7 +625,7 @@ dnl Note that AM_CONFIG_HEADER at the top of this file outputs another
 dnl result: xmlrpc_amconfig.h .
 
 AC_OUTPUT( \
-          Makefile.srcdir \
+          srcdir.mk \
           config.mk \
           xmlrpc_config.h \
           )
@@ -647,7 +640,9 @@ fi
 
 
 if test "$MUST_BUILD_WININET_CLIENT $MUST_BUILD_CURL_CLIENT $MUST_BUILD_LIBWWW_CLIENT" = "no no no"; then
-  AC_MSG_NOTICE([\n\n==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY.])
+  AC_MSG_NOTICE([==>])
+  AC_MSG_NOTICE([==>We are not building any client XML transport (see earlier messages explaining why), therefore WE WILL NOT BUILD THE CLIENT LIBRARY.])
+  AC_MSG_NOTICE([==>])
 fi
 
 

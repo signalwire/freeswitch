@@ -56,7 +56,7 @@ init_va_listx(va_listx * const argsxP,
 #if VA_LIST_IS_ARRAY
     /* 'args' is NOT a va_list.  It is a pointer to the first element of a
        'va_list', which is the same address as a pointer to the va_list
-       itself.
+       itself.  (That's what happens when you pass an array in C).
     */
     memcpy(&argsxP->v, args, sizeof(argsxP->v));
 #else

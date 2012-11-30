@@ -88,7 +88,7 @@ SWITCH_BEGIN_EXTERN_C
 #endif
 #undef inline
 #define inline __inline
-#ifndef uint32_t
+#if !defined(_STDINT) && !defined(uint32_t)
 typedef unsigned __int8 uint8_t;
 typedef unsigned __int16 uint16_t;
 typedef unsigned __int32 uint32_t;

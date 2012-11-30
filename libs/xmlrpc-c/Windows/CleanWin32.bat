@@ -1,16 +1,3 @@
-@echo Windows build
-@echo This batch file deletes the copied header files,
-@echo Deleting Win32 header files...
-@echo #####################################################
-@echo IF YOU HAVE MADE CHANGES IN ..\xmlrpc_config.h, ..\include\xmlrpc-c\config.h etc ...
-@echo THESE CHANGES WILL BE LOST!
-@echo You should run diffcfg.bat first to check for changes,
-@echo and updcfg.bat if you have made changes ...
-@echo #####################################################
-@echo ARE YOU SURE YOU WANT TO DO THIS? Ctrl+C to abort ...
-@echo #####################################################
-@pause
-@set TEMP1=
 @if NOT EXIST ..\include\xmlrpc-c\config.h goto DN1
 del ..\include\xmlrpc-c\config.h > nul
 @set TEMP1=%TEMP1% ..\include\xmlrpc-c\config.h

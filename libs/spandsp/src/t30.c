@@ -132,19 +132,19 @@ enum
 
 static const char *phase_names[] =
 {
-    "T30_PHASE_IDLE",
-    "T30_PHASE_A_CED",
-    "T30_PHASE_A_CNG",
-    "T30_PHASE_B_RX",
-    "T30_PHASE_B_TX",
-    "T30_PHASE_C_NON_ECM_RX",
-    "T30_PHASE_C_NON_ECM_TX",
-    "T30_PHASE_C_ECM_RX",
-    "T30_PHASE_C_ECM_TX",
-    "T30_PHASE_D_RX",
-    "T30_PHASE_D_TX",
-    "T30_PHASE_E",
-    "T30_PHASE_CALL_FINISHED"
+    "IDLE",
+    "A_CED",
+    "A_CNG",
+    "B_RX",
+    "B_TX",
+    "C_NON_ECM_RX",
+    "C_NON_ECM_TX",
+    "C_ECM_RX",
+    "C_ECM_TX",
+    "D_RX",
+    "D_TX",
+    "E",
+    "CALL_FINISHED"
 };
 
 /* These state names are modelled after places in the T.30 flow charts. */
@@ -182,6 +182,43 @@ enum
     T30_STATE_IV_EOR,
     T30_STATE_IV_EOR_RNR,
     T30_STATE_CALL_FINISHED
+};
+
+static const char *state_names[] =
+{
+    "NONE",
+    "ANSWERING",
+    "B",
+    "C",
+    "D",
+    "D_TCF",
+    "D_POST_TCF",
+    "F_TCF",
+    "F_CFR",
+    "F_FTT",
+    "F_DOC_NON_ECM",
+    "F_POST_DOC_NON_ECM",
+    "F_DOC_ECM",
+    "F_POST_DOC_ECM",
+    "F_POST_RCP_MCF",
+    "F_POST_RCP_PPR",
+    "F_POST_RCP_RNR",
+    "R",
+    "T",
+    "I",
+    "II",
+    "II_Q",
+    "III_Q_MCF",
+    "III_Q_RTP",
+    "III_Q_RTN",
+    "IV",
+    "IV_PPS_NULL",
+    "IV_PPS_Q",
+    "IV_PPS_RNR",
+    "IV_CTC",
+    "IV_EOR",
+    "IV_EOR_RNR",
+    "CALL_FINISHED"
 };
 
 enum
@@ -1309,7 +1346,7 @@ static int build_dcs(t30_state_t *s)
     int i;
     int bad;
     int row_squashing_ratio;
-    
+
     /* Make a DCS frame based on local issues and the latest received DIS/DTC frame. Negotiate
        the result based on what both parties can do. */
     s->dcs_frame[0] = ADDRESS_FIELD;
@@ -2017,7 +2054,7 @@ static int start_receiving_document(t30_state_t *s)
 
 static void unexpected_non_final_frame(t30_state_t *s, const uint8_t *msg, int len)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected %s frame in state %d\n", t30_frametype(msg[2]), s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected %s frame in state %s\n", t30_frametype(msg[2]), state_names[s->state]);
     if (s->current_status == T30_ERR_OK)
         t30_set_status(s, T30_ERR_UNEXPECTED);
 }
@@ -2025,7 +2062,7 @@ static void unexpected_non_final_frame(t30_state_t *s, const uint8_t *msg, int l
 
 static void unexpected_final_frame(t30_state_t *s, const uint8_t *msg, int len)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected %s frame in state %d\n", t30_frametype(msg[2]), s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Unexpected %s frame in state %s\n", t30_frametype(msg[2]), state_names[s->state]);
     if (s->current_status == T30_ERR_OK)
         t30_set_status(s, T30_ERR_UNEXPECTED);
     send_dcn(s);
@@ -2473,17 +2510,15 @@ static int send_response_to_pps(t30_state_t *s)
     {
         set_state(s, T30_STATE_F_POST_RCP_MCF);
         send_simple_frame(s, T30_MCF);
+        return TRUE;
     }
-    else
-    {
-        /* We need to send the PPR frame we have created, to try to fill in the missing/bad data. */
-        set_state(s, T30_STATE_F_POST_RCP_PPR);
-        s->ecm_frame_map[0] = ADDRESS_FIELD;
-        s->ecm_frame_map[1] = CONTROL_FIELD_FINAL_FRAME;
-        s->ecm_frame_map[2] = (uint8_t) (T30_PPR | s->dis_received);
-        send_frame(s, s->ecm_frame_map, 3 + 32);
-    }
-    return 0;
+    /* We need to send the PPR frame we have created, to try to fill in the missing/bad data. */
+    set_state(s, T30_STATE_F_POST_RCP_PPR);
+    s->ecm_frame_map[0] = ADDRESS_FIELD;
+    s->ecm_frame_map[1] = CONTROL_FIELD_FINAL_FRAME;
+    s->ecm_frame_map[2] = (uint8_t) (T30_PPR | s->dis_received);
+    send_frame(s, s->ecm_frame_map, 3 + 32);
+    return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2685,7 +2720,17 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
         }
         else
         {
-            send_response_to_pps(s);
+            if (send_response_to_pps(s))
+            {
+                switch (s->last_pps_fcf2)
+                {
+                case T30_PRI_EOP:
+                case T30_EOP:
+                    span_log(&s->logging, SPAN_LOG_FLOW, "End of procedure detected\n");
+                    s->end_of_procedure_detected = TRUE;
+                    break;
+                }
+            }
         }
         break;
     default:
@@ -3364,6 +3409,8 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
         }
         /* Fall through */
     case T30_EOP:
+        span_log(&s->logging, SPAN_LOG_FLOW, "End of procedure detected\n");
+        s->end_of_procedure_detected = TRUE;
         s->next_rx_step = fcf;
         queue_phase(s, T30_PHASE_D_TX);
         switch (copy_quality(s))
@@ -3397,7 +3444,6 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
             send_simple_frame(s, T30_RTN);
             break;
         }
-        
         break;
     case T30_DCN:
         t30_set_status(s, T30_ERR_RX_DCNFAX);
@@ -3565,7 +3611,17 @@ static void process_state_f_post_rcp_rnr(t30_state_t *s, const uint8_t *msg, int
         else
         {
             /* Now we send the deferred response */
-            send_response_to_pps(s);
+            if (send_response_to_pps(s))
+            {
+                switch (s->last_pps_fcf2)
+                {
+                case T30_PRI_EOP:
+                case T30_EOP:
+                    span_log(&s->logging, SPAN_LOG_FLOW, "End of procedure detected\n");
+                    s->end_of_procedure_detected = TRUE;
+                    break;
+                }
+            }
         }
         break;
     case T30_CRP:
@@ -4656,7 +4712,7 @@ static void process_rx_control_msg(t30_state_t *s, const uint8_t *msg, int len)
         /* The following handles context sensitive message types, which should
            occur at the end of message sequences. They should, therefore have
            the final frame flag set. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Rx final frame in state %d\n", s->state);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Rx final frame in state %s\n", state_names[s->state]);
 
         switch (s->state)
         {
@@ -4891,7 +4947,7 @@ static void set_state(t30_state_t *s, int state)
 {
     if (s->state != state)
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Changing from state %d to %d\n", s->state, state);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Changing from state %s to %s\n", state_names[s->state], state_names[state]);
         s->state = state;
     }
     s->step = 0;
@@ -4982,9 +5038,9 @@ static void repeat_last_command(t30_state_t *s)
     default:
         span_log(&s->logging,
                  SPAN_LOG_FLOW,
-                 "Repeat command called with nothing to repeat - phase %s, state %d\n",
+                 "Repeat command called with nothing to repeat - phase %s, state %s\n",
                  phase_names[s->phase],
-                 s->state);
+                 state_names[s->state]);
         break;
     }
 }
@@ -5098,7 +5154,7 @@ static void timer_t2_t4_stop(t30_state_t *s)
 
 static void timer_t0_expired(t30_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "T0 expired in state %d\n", s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T0 expired in state %s\n", state_names[s->state]);
     t30_set_status(s, T30_ERR_T0_EXPIRED);
     /* Just end the call */
     disconnect(s);
@@ -5107,7 +5163,7 @@ static void timer_t0_expired(t30_state_t *s)
 
 static void timer_t1_expired(t30_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "T1 expired in state %d\n", s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T1 expired in state %s\n", state_names[s->state]);
     /* The initial connection establishment has timeout out. In other words, we
        have been unable to communicate successfully with a remote machine.
        It is time to abandon the call. */
@@ -5132,7 +5188,7 @@ static void timer_t1_expired(t30_state_t *s)
 static void timer_t2_expired(t30_state_t *s)
 {
     if (s->timer_t2_t4_is != TIMER_IS_T2B)
-        span_log(&s->logging, SPAN_LOG_FLOW, "T2 expired in phase %s, state %d\n", phase_names[s->phase], s->state);
+        span_log(&s->logging, SPAN_LOG_FLOW, "T2 expired in phase %s, state %s\n", phase_names[s->phase], state_names[s->state]);
     switch (s->state)
     {
     case T30_STATE_III_Q_MCF:
@@ -5202,7 +5258,7 @@ static void timer_t2_expired(t30_state_t *s)
 
 static void timer_t1a_expired(t30_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "T1A expired in phase %s, state %d. An HDLC frame lasted too long.\n", phase_names[s->phase], s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T1A expired in phase %s, state %s. An HDLC frame lasted too long.\n", phase_names[s->phase], state_names[s->state]);
     t30_set_status(s, T30_ERR_HDLC_CARRIER);
     disconnect(s);
 }
@@ -5210,7 +5266,7 @@ static void timer_t1a_expired(t30_state_t *s)
 
 static void timer_t2a_expired(t30_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "T2A expired in phase %s, state %d. An HDLC frame lasted too long.\n", phase_names[s->phase], s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T2A expired in phase %s, state %s. An HDLC frame lasted too long.\n", phase_names[s->phase], state_names[s->state]);
     t30_set_status(s, T30_ERR_HDLC_CARRIER);
     disconnect(s);
 }
@@ -5218,14 +5274,14 @@ static void timer_t2a_expired(t30_state_t *s)
 
 static void timer_t2b_expired(t30_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "T2B expired in phase %s, state %d. The line is now quiet.\n", phase_names[s->phase], s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T2B expired in phase %s, state %s. The line is now quiet.\n", phase_names[s->phase], state_names[s->state]);
     timer_t2_expired(s);
 }
 /*- End of function --------------------------------------------------------*/
 
 static void timer_t3_expired(t30_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "T3 expired in phase %s, state %d\n", phase_names[s->phase], s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T3 expired in phase %s, state %s\n", phase_names[s->phase], state_names[s->state]);
     t30_set_status(s, T30_ERR_T3_EXPIRED);
     disconnect(s);
 }
@@ -5235,7 +5291,7 @@ static void timer_t4_expired(t30_state_t *s)
 {
     /* There was no response (or only a corrupt response) to a command,
        within the T4 timeout period. */
-    span_log(&s->logging, SPAN_LOG_FLOW, "T4 expired in phase %s, state %d\n", phase_names[s->phase], s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T4 expired in phase %s, state %s\n", phase_names[s->phase], state_names[s->state]);
     /* Of course, things might just be a little late, especially if there are T.38
        links in the path. There is no point in simply timing out, and resending,
        if we are currently receiving something from the far end - its a half-duplex
@@ -5249,7 +5305,7 @@ static void timer_t4_expired(t30_state_t *s)
 
 static void timer_t4a_expired(t30_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "T4A expired in phase %s, state %d. An HDLC frame lasted too long.\n", phase_names[s->phase], s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T4A expired in phase %s, state %s. An HDLC frame lasted too long.\n", phase_names[s->phase], state_names[s->state]);
     t30_set_status(s, T30_ERR_HDLC_CARRIER);
     disconnect(s);
 }
@@ -5257,7 +5313,7 @@ static void timer_t4a_expired(t30_state_t *s)
 
 static void timer_t4b_expired(t30_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "T4B expired in phase %s, state %d. The line is now quiet.\n", phase_names[s->phase], s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T4B expired in phase %s, state %s. The line is now quiet.\n", phase_names[s->phase], state_names[s->state]);
     timer_t4_expired(s);
 }
 /*- End of function --------------------------------------------------------*/
@@ -5265,7 +5321,7 @@ static void timer_t4b_expired(t30_state_t *s)
 static void timer_t5_expired(t30_state_t *s)
 {
     /* Give up waiting for the receiver to become ready in error correction mode */
-    span_log(&s->logging, SPAN_LOG_FLOW, "T5 expired in phase %s, state %d\n", phase_names[s->phase], s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "T5 expired in phase %s, state %s\n", phase_names[s->phase], state_names[s->state]);
     t30_set_status(s, T30_ERR_TX_T5EXP);
 }
 /*- End of function --------------------------------------------------------*/
@@ -5351,7 +5407,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
     int was_trained;
 
     s = (t30_state_t *) user_data;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM signal status is %s (%d) in state %d\n", signal_status_to_str(status), status, s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM signal status is %s (%d) in state %s\n", signal_status_to_str(status), status, state_names[s->state]);
     switch (status)
     {
     case SIG_STATUS_TRAINING_IN_PROGRESS:
@@ -5555,7 +5611,7 @@ SPAN_DECLARE_NONSTD(int) t30_non_ecm_get_bit(void *user_data)
         bit = 0;
         break;
     default:
-        span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get_bit in bad state %d\n", s->state);
+        span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get_bit in bad state %s\n", state_names[s->state]);
         bit = SIG_STATUS_END_OF_DATA;
         break;
     }
@@ -5590,7 +5646,7 @@ SPAN_DECLARE(int) t30_non_ecm_get(void *user_data, uint8_t buf[], int max_len)
         len = 0;
         break;
     default:
-        span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get in bad state %d\n", s->state);
+        span_log(&s->logging, SPAN_LOG_WARNING, "t30_non_ecm_get in bad state %s\n", state_names[s->state]);
         len = -1;
         break;
     }
@@ -5604,7 +5660,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
     int was_trained;
 
     s = (t30_state_t *) user_data;
-    span_log(&s->logging, SPAN_LOG_FLOW, "HDLC signal status is %s (%d) in state %d\n", signal_status_to_str(status), status, s->state);
+    span_log(&s->logging, SPAN_LOG_FLOW, "HDLC signal status is %s (%d) in state %s\n", signal_status_to_str(status), status, state_names[s->state]);
     switch (status)
     {
     case SIG_STATUS_TRAINING_IN_PROGRESS:
@@ -5798,7 +5854,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
     switch (status)
     {
     case T30_FRONT_END_SEND_STEP_COMPLETE:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Send complete in phase %s, state %d\n", phase_names[s->phase], s->state);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Send complete in phase %s, state %s\n", phase_names[s->phase], state_names[s->state]);
         /* We have finished sending our messages, so move on to the next operation. */
         switch (s->state)
         {
@@ -6025,12 +6081,12 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
                disconnect from the far end overlaps something. */
             break;
         default:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Bad state for send complete in t30_front_end_status - %d\n", s->state);
+            span_log(&s->logging, SPAN_LOG_FLOW, "Bad state for send complete in t30_front_end_status - %s\n", state_names[s->state]);
             break;
         }
         break;
     case T30_FRONT_END_RECEIVE_COMPLETE:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Receive complete in phase %s, state %d\n", phase_names[s->phase], s->state);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Receive complete in phase %s, state %s\n", phase_names[s->phase], state_names[s->state]);
         /* Usually receive complete is notified by a carrier down signal. However,
            in cases like a T.38 packet stream dying in the middle of reception
            there needs to be a means to stop things. */
@@ -6175,8 +6231,12 @@ SPAN_DECLARE(void) t30_terminate(t30_state_t *s)
                hussle things along. */
             break;
         default:
-            /* The call terminated prematurely. */
-            t30_set_status(s, T30_ERR_CALLDROPPED);
+            /* If we have seen a genuine EOP or PRI_EOP, that's good enough. */
+            if (!s->end_of_procedure_detected)
+            {
+                /* The call terminated prematurely. */
+                t30_set_status(s, T30_ERR_CALLDROPPED);
+            }
             break;
         }
         if (s->phase_e_handler)
@@ -6268,6 +6328,7 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
     s->rtp_events = 0;
     s->local_interrupt_pending = FALSE;
     s->far_end_detected = FALSE;
+    s->end_of_procedure_detected = FALSE;
     s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T0);
     if (s->calling_party)
     {

@@ -1,7 +1,10 @@
-/* A simple synchronous XML-RPC client written in C, as an example of
+/* A simple synchronous XML-RPC client program written in C, as an example of
    an Xmlrpc-c client.  This invokes the sample.add procedure that the
-   Xmlrpc-c example server.c server provides.  I.e. it adds to numbers
-   together, the hard way.
+   Xmlrpc-c example xmlrpc_sample_add_server.c server provides.  I.e. it adds
+   two numbers together, the hard way.
+
+   This sends the RPC to the server running on the local system ("localhost"),
+   HTTP Port 8080.
 */
 
 #include <stdlib.h>
@@ -16,9 +19,9 @@
 #define VERSION "1.0"
 
 static void 
-die_if_fault_occurred (xmlrpc_env * const envP) {
+dieIfFaultOccurred (xmlrpc_env * const envP) {
     if (envP->fault_occurred) {
-        fprintf(stderr, "XML-RPC Fault: %s (%d)\n",
+        fprintf(stderr, "ERROR: %s (%d)\n",
                 envP->fault_string, envP->fault_code);
         exit(1);
     }
@@ -28,7 +31,7 @@ die_if_fault_occurred (xmlrpc_env * const envP) {
 
 int 
 main(int           const argc, 
-     const char ** const argv ATTR_UNUSED) {
+     const char ** const argv) {
 
     xmlrpc_env env;
     xmlrpc_value * resultP;
@@ -46,7 +49,7 @@ main(int           const argc,
 
     /* Start up our XML-RPC client library. */
     xmlrpc_client_init2(&env, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, NULL, 0);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
 
     printf("Making XMLRPC call to server url '%s' method '%s' "
            "to request the sum "
@@ -55,11 +58,11 @@ main(int           const argc,
     /* Make the remote procedure call */
     resultP = xmlrpc_client_call(&env, serverUrl, methodName,
                                  "(ii)", (xmlrpc_int32) 5, (xmlrpc_int32) 7);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     
     /* Get our sum and print it out. */
     xmlrpc_read_int(&env, resultP, &sum);
-    die_if_fault_occurred(&env);
+    dieIfFaultOccurred(&env);
     printf("The sum is %d\n", sum);
     
     /* Dispose of our result value. */

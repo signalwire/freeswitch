@@ -512,6 +512,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	switch_chat_interface_t *ci;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_hash_index_t *hi;
+	switch_event_t *dup = NULL;
 	const void *var;
 	void *val;
 	const char *proto;
@@ -563,11 +564,21 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 			if ((ci = (switch_chat_interface_t *) val)) {
 				if (ci->chat_send && !strncasecmp(ci->interface_name, "GLOBAL_", 7)) {
 					status = ci->chat_send(message_event);
-					if (status == SWITCH_STATUS_BREAK) {
+					if (status == SWITCH_STATUS_SUCCESS) {
+						/* The event was handled by an extension in the chatplan, 
+						 * so the event will be duplicated, modified and queued again, 
+						 * but it won't be processed by the chatplan again.
+						 * So this copy of the event can be destroyed by the caller.
+						 */ 
+						switch_mutex_unlock(loadable_modules.mutex);
+						return SWITCH_STATUS_SUCCESS;
+					} else if (status == SWITCH_STATUS_BREAK) {
+						/* The event went through the chatplan, but no extension matched
+						 * to handle the sms messsage. It'll be attempted to be delivered
+						 * directly, and unless that works the sms delivery will have failed.
+						 */
 						do_skip = 1;
-					}
-					
-					if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Chat Interface Error [%s]!\n", dest_proto);
 						break;
 					}
@@ -587,14 +598,20 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 		}
 	}
 
-	if (status != SWITCH_STATUS_SUCCESS) {
-		switch_event_t *dup;
-		switch_event_dup(&dup, message_event);
-		switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "true");
-		switch_event_fire(&dup);
+
+	switch_event_dup(&dup, message_event);
+
+	if ( switch_true(switch_event_get_header(message_event, "blocking")) ) {
+		if (status == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "false");
+		} else {
+			switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "true");
+		}
+	} else {
+		switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Nonblocking-Delivery", "true");
 	}
 
-
+	switch_event_fire(&dup);
 	return status;
 }
 
@@ -656,7 +673,6 @@ static void chat_thread_start(int idx)
 
 				switch_threadattr_create(&thd_attr, chat_globals.pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				//switch_threadattr_priority_increase(thd_attr);
 				switch_thread_create(&chat_globals.msg_queue_thread[i], 
 									 thd_attr, 
 									 chat_thread_run, 
@@ -1219,7 +1235,11 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 #ifdef WIN32
 	dso = switch_dso_open("FreeSwitch.dll", load_global, &derr);
 #elif defined (MACOSX) || defined(DARWIN)
-	dso = switch_dso_open(SWITCH_PREFIX_DIR "/lib/libfreeswitch.dylib", load_global, &derr);
+	{
+		char *lib_path = switch_mprintf("%s/libfreeswitch.dylib", SWITCH_GLOBAL_dirs.lib_dir);
+		dso = switch_dso_open(lib_path, load_global, &derr);
+		switch_safe_free(lib_path);
+	}
 #else
 	dso = switch_dso_open(NULL, load_global, &derr);
 #endif
@@ -1762,8 +1782,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 
 	switch_loadable_module_runtime();
 
-	chat_globals.running = 1;
 	memset(&chat_globals, 0, sizeof(chat_globals));
+	chat_globals.running = 1;
 	chat_globals.pool = loadable_modules.pool;
 	switch_mutex_init(&chat_globals.mutex, SWITCH_MUTEX_NESTED, chat_globals.pool);
 
@@ -2108,6 +2128,8 @@ SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uin
 				*rate = atoi(cur);
 			} else if (strchr(cur, 'b')) {
 				*bit = atoi(cur);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad syntax for codec string. Missing qualifier [h|k|i|b] for part [%s]!\n", cur);
 			}
 		}
 		cur = next;
@@ -2258,10 +2280,10 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 	}
 
 	if (stream->param_event) {
-		if (cmd_used) {
+		if (cmd_used && *cmd_used) {
 			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_used);
 		}
-		if (arg_used) {
+		if (arg_used && *arg_used) {
 			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_used);
 		}
 	}

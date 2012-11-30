@@ -3,6 +3,9 @@
 
 #define XML_PROLOGUE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
 
+#define APACHE_URL "http://ws.apache.org/xmlrpc/namespaces/extensions"
+#define XMLNS_APACHE "xmlns:ex=\"" APACHE_URL "\""
+
 extern char const serialized_data[];
 
 extern char const serialized_call[];

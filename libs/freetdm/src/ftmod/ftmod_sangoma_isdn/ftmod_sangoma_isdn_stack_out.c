@@ -475,7 +475,15 @@ void sngisdn_snd_restart(ftdm_channel_t *ftdmchan)
 void sngisdn_snd_data(ftdm_channel_t *dchan, uint8_t *data, ftdm_size_t len)
 {
 	sng_l1_frame_t l1_frame;
+	ftdm_alarm_flag_t alarmbits = 0;
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t*) dchan->span->signal_data;
+
+	ftdm_channel_get_alarms(dchan, &alarmbits);
+
+	if (alarmbits) {
+		ftdm_log_chan_msg(dchan, FTDM_LOG_WARNING, "Dropping incoming data due to L1 alarm\n");
+		return;
+	}
 
 	if (len > sizeof(l1_frame.data)) {
 		ftdm_log_chan(dchan, FTDM_LOG_ERROR, "Received frame of %"FTDM_SIZE_FMT" bytes, exceeding max size of %"FTDM_SIZE_FMT" bytes\n", 
@@ -548,9 +556,11 @@ void sngisdn_snd_event(sngisdn_span_data_t *signal_data, ftdm_oob_event_t event)
 		case FTDM_OOB_ALARM_CLEAR:
 			l1_event.type = SNG_L1EVENT_ALARM_OFF;
 			sng_isdn_event_ind(signal_data->link_id, &l1_event);
-			
-			ftdm_sched_timer(signal_data->sched, "delayed_dl_req", 8000, sngisdn_delayed_dl_req, (void*) signal_data, NULL);
-			signal_data->dl_request_pending = 1;
+
+			if (!signal_data->dl_request_pending) {
+				signal_data->dl_request_pending = 1;
+				ftdm_sched_timer(signal_data->sched, "delayed_dl_req", 8000, sngisdn_delayed_dl_req, (void*) signal_data, NULL);
+			}
 			break;
 		case FTDM_OOB_ALARM_TRAP:
 			l1_event.type = SNG_L1EVENT_ALARM_ON;

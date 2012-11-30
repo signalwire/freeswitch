@@ -335,11 +335,18 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
 {
   switch_cache_db_connection_options_t options = { {0} };
   const char *prefix = "core:";
+  switch_cache_db_handle_type_t type;
   m_connected = false;
 
   if (strstr(dsn, prefix) == dsn) {
     options.core_db_options.db_path = &dsn[strlen(prefix)];
     if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_CORE_DB, &options) == SWITCH_STATUS_SUCCESS) {
+      m_connected = true;
+    }
+  } else if (!strncasecmp(dsn, "pgsql://", 8)) {
+    type = SCDB_TYPE_PGSQL;
+    options.pgsql_options.dsn = (char *)(dsn + 8);
+    if (switch_cache_db_get_db_handle(&dbh, SCDB_TYPE_PGSQL, &options) == SWITCH_STATUS_SUCCESS) {
       m_connected = true;
     }
   } else {
@@ -428,6 +435,14 @@ int Dbh::affected_rows()
 {
   if (m_connected) {
     return switch_cache_db_affected_rows(dbh);
+  }
+  return 0;
+}
+
+int Dbh::load_extension(const char *extension)
+{
+  if (m_connected) {
+    return switch_cache_db_load_extension(dbh, extension);
   }
   return 0;
 }

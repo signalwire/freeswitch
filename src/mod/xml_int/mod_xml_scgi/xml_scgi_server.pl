@@ -65,7 +65,7 @@ $SIG{CHLD} = "IGNORE";
 
 while (my $request = $scgi->accept) {
   # fork every new req into its own process (optional)
-  my $pid = fork();
+  my $pid = switch_fork();
 
   if ($pid) {
     $request->close();

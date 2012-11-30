@@ -60,6 +60,7 @@ struct apr_thread_t {
 struct apr_threadattr_t {
     apr_pool_t *pool;
     pthread_attr_t attr;
+	int priority;
 };
 
 struct apr_threadkey_t {

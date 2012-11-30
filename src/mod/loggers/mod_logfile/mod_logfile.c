@@ -161,7 +161,8 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 			}
 
 			if ((status = switch_file_rename(from_filename, to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error renaming log from %s to %s\n",from_filename, to_filename);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error renaming log from %s to %s [%s]\n",
+								  from_filename, to_filename, strerror(errno));
 				goto end;
 			}
 		}
@@ -170,19 +171,19 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 			
 		if (switch_file_exists(to_filename, pool) == SWITCH_STATUS_SUCCESS) {
 			if ((status = switch_file_remove(to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error removing log %s\n",to_filename);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error removing log %s [%s]\n", to_filename, strerror(errno));
 				goto end;
 			}
 		}
 
 		switch_file_close(profile->log_afd);
 		if ((status = switch_file_rename(profile->logfile, to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error renaming log from %s to %s\n", profile->logfile, to_filename);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error renaming log from %s to %s [%s]\n", profile->logfile, to_filename, strerror(errno));
 			goto end;
 		}
 
 		if ((status = mod_logfile_openlogfile(profile, SWITCH_FALSE)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error reopening log %s\n",profile->logfile);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error reopening log %s\n", profile->logfile);
 		}
 		if (profile->suffix < profile->max_rot) {
 			profile->suffix++;

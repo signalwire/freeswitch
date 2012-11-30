@@ -177,7 +177,7 @@ public class CoreSession {
     return freeswitchJNI.CoreSession_recordFile(swigCPtr, this, file_name, time_limit, silence_threshold, silence_hits);
   }
 
-  public int originate(CoreSession a_leg_session, String dest, int timeout, SWIGTYPE_p_switch_state_handler_table_t handlers) {
+  protected int originate(CoreSession a_leg_session, String dest, int timeout, SWIGTYPE_p_switch_state_handler_table_t handlers) {
     return freeswitchJNI.CoreSession_originate(swigCPtr, this, CoreSession.getCPtr(a_leg_session), a_leg_session, dest, timeout, SWIGTYPE_p_switch_state_handler_table_t.getCPtr(handlers));
   }
 

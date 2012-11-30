@@ -36,6 +36,7 @@
 
 #include "xmlrpc_config.h"
 
+#include "bool.h"
 #include "xmlrpc-c/base.h"
 
 #define CRLF    "\015\012"
@@ -89,178 +90,190 @@ static char table_a2b_base64[] = {
 #define BASE64_MAXBIN 57    /* Max binary chunk size (76 char line) */
 #define BASE64_LINE_SZ 128      /* Buffer size for a single line. */    
 
-static unsigned char table_b2a_base64[] =
+static unsigned char const table_b2a_base64[] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+
+
 static xmlrpc_mem_block *
-xmlrpc_base64_encode_internal (xmlrpc_env *env,
-                               unsigned char *bin_data,
-                               size_t bin_len,
-                               int want_newlines)
-{
-    size_t chunk_start, chunk_left;
-    unsigned char *ascii_data;
+base64Encode(xmlrpc_env *          const envP,
+             const unsigned char * const binData,
+             size_t                const binLen,
+             bool                  const wantNewlines) {
+
+    size_t chunkStart, chunkLeft;
+    unsigned char * asciiData;
     int leftbits;
-    unsigned char this_ch;
+    unsigned char thisCh;
     unsigned int leftchar;
-    xmlrpc_mem_block *output;
-    unsigned char line_buffer[BASE64_LINE_SZ];
+    xmlrpc_mem_block * outputP;
+    unsigned char lineBuffer[BASE64_LINE_SZ];
+    const unsigned char * cursor;
 
     /* Create a block to hold our lines when we finish them. */
-    output = xmlrpc_mem_block_new(env, 0);
-    XMLRPC_FAIL_IF_FAULT(env);
+    outputP = xmlrpc_mem_block_new(envP, 0);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
     /* Deal with empty data blocks gracefully. Yuck. */
-    if (bin_len == 0) {
-        if (want_newlines)
-            XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, output, CRLF, 2);
+    if (binLen == 0) {
+        if (wantNewlines)
+            XMLRPC_MEMBLOCK_APPEND(char, envP, outputP, CRLF, 2);
         goto cleanup;
     }
 
     /* Process our binary data in line-sized chunks. */
-    for (chunk_start=0; chunk_start < bin_len; chunk_start += BASE64_MAXBIN) {
+    for (chunkStart = 0, cursor = &binData[0];
+         chunkStart < binLen;
+         chunkStart += BASE64_MAXBIN) {
 
         /* Set up our per-line state. */
-        ascii_data = &line_buffer[0];
-        chunk_left = bin_len - chunk_start;
-        if (chunk_left > BASE64_MAXBIN)
-            chunk_left = BASE64_MAXBIN;
+        asciiData = &lineBuffer[0];
+        chunkLeft = binLen - chunkStart;
+        if (chunkLeft > BASE64_MAXBIN)
+            chunkLeft = BASE64_MAXBIN;
         leftbits = 0;
         leftchar = 0;
 
-        for(; chunk_left > 0; chunk_left--, bin_data++) {
+        for(; chunkLeft > 0; --chunkLeft, ++cursor) {
             /* Shift the data into our buffer */
-            leftchar = (leftchar << 8) | *bin_data;
+            leftchar = (leftchar << 8) | *cursor;
             leftbits += 8;
 
             /* See if there are 6-bit groups ready */
             while (leftbits >= 6) {
-                this_ch = (leftchar >> (leftbits-6)) & 0x3f;
+                thisCh = (leftchar >> (leftbits-6)) & 0x3f;
                 leftbits -= 6;
-                *ascii_data++ = table_b2a_base64[this_ch];
+                *asciiData++ = table_b2a_base64[thisCh];
             }
         }
         if (leftbits == 2) {
-            *ascii_data++ = table_b2a_base64[(leftchar&3) << 4];
-            *ascii_data++ = BASE64_PAD;
-            *ascii_data++ = BASE64_PAD;
+            *asciiData++ = table_b2a_base64[(leftchar&3) << 4];
+            *asciiData++ = BASE64_PAD;
+            *asciiData++ = BASE64_PAD;
         } else if (leftbits == 4) {
-            *ascii_data++ = table_b2a_base64[(leftchar&0xf) << 2];
-            *ascii_data++ = BASE64_PAD;
+            *asciiData++ = table_b2a_base64[(leftchar&0xf) << 2];
+            *asciiData++ = BASE64_PAD;
         } 
 
         /* Append a courtesy CRLF. */
-        if (want_newlines) {
-            *ascii_data++ = CR;
-            *ascii_data++ = LF;
+        if (wantNewlines) {
+            *asciiData++ = CR;
+            *asciiData++ = LF;
         }
     
         /* Save our line. */
-        XMLRPC_TYPED_MEM_BLOCK_APPEND(char, env, output, line_buffer,
-                                      ascii_data - &line_buffer[0]);
-        XMLRPC_FAIL_IF_FAULT(env);
+        XMLRPC_MEMBLOCK_APPEND(char, envP, outputP, lineBuffer,
+                               asciiData - &lineBuffer[0]);
+        XMLRPC_FAIL_IF_FAULT(envP);
     }
 
  cleanup:
-    if (env->fault_occurred) {
-        if (output)
-            xmlrpc_mem_block_free(output);
+    if (envP->fault_occurred) {
+        if (outputP)
+            xmlrpc_mem_block_free(outputP);
         return NULL;
     }
-    return output;
+    return outputP;
 }
 
 
+
 xmlrpc_mem_block *
-xmlrpc_base64_encode (xmlrpc_env *env, unsigned char *bin_data, size_t bin_len)
-{
-    return xmlrpc_base64_encode_internal(env, bin_data, bin_len, 1);
+xmlrpc_base64_encode(xmlrpc_env *          const envP,
+                     const unsigned char * const binData,
+                     size_t                const binLen) {
+
+    return base64Encode(envP, binData, binLen, true);
 }
 
 
+
 xmlrpc_mem_block *
-xmlrpc_base64_encode_without_newlines (xmlrpc_env *env,
-                                       unsigned char *bin_data,
-                                       size_t bin_len)
-{
-    return xmlrpc_base64_encode_internal(env, bin_data, bin_len, 0);
+xmlrpc_base64_encode_without_newlines(xmlrpc_env *          const envP,
+                                      const unsigned char * const binData,
+                                      size_t                const binLen) {
+
+    return base64Encode(envP, binData, binLen, false);
 }
 
 
-xmlrpc_mem_block *
-xmlrpc_base64_decode (xmlrpc_env * const env,
-                      const char * const ascii_data,
-                      size_t       const ascii_len) {
 
-    unsigned char *bin_data;
+xmlrpc_mem_block *
+xmlrpc_base64_decode(xmlrpc_env * const envP,
+                     const char * const asciiData,
+                     size_t       const acsiiLen) {
+
+    unsigned char * binData;
     int leftbits;
-    unsigned char this_ch;
+    unsigned char thisCh;
     unsigned int leftchar;
     size_t npad;
-    size_t bin_len, buffer_size;
-    xmlrpc_mem_block *output;
-    const char * next_char;
-    size_t remaining_len;
+    size_t binLen, bufferSize;
+    xmlrpc_mem_block * outputP;
+    const char * nextCharP;
+    size_t remainingLen;
 
     /* Create a block to hold our chunks when we finish them.
     ** We overestimate the size now, and fix it later. */
-    buffer_size = ((ascii_len+3)/4)*3;
-    output = xmlrpc_mem_block_new(env, buffer_size);
-    XMLRPC_FAIL_IF_FAULT(env);
+    bufferSize = ((acsiiLen + 3) / 4) * 3;
+    outputP = xmlrpc_mem_block_new(envP, bufferSize);
+    XMLRPC_FAIL_IF_FAULT(envP);
 
     /* Set up our decoder state. */
     leftbits = 0;
     leftchar = 0;
     npad = 0;
-    bin_data = XMLRPC_TYPED_MEM_BLOCK_CONTENTS(unsigned char, output);
-    bin_len = 0;
+    binData = XMLRPC_MEMBLOCK_CONTENTS(unsigned char, outputP);
+    binLen = 0;
 
-    for (remaining_len = ascii_len, next_char = ascii_data;
-         remaining_len > 0; 
-         --remaining_len, ++next_char) {
+    for (remainingLen = acsiiLen, nextCharP = asciiData;
+         remainingLen > 0; 
+         --remainingLen, ++nextCharP) {
 
         /* Skip some punctuation. */
-        this_ch = (*next_char & 0x7f);
-        if ( this_ch == '\r' || this_ch == '\n' || this_ch == ' ' )
+        thisCh = (*nextCharP & 0x7f);
+        if (thisCh == '\r' || thisCh == '\n' || thisCh == ' ')
             continue;
-        if ( this_ch == BASE64_PAD )
-            npad++;
-        this_ch = table_a2b_base64[(*next_char) & 0x7f];
+        if (thisCh == BASE64_PAD)
+            ++npad;
+        thisCh = table_a2b_base64[(*nextCharP) & 0x7f];
 
         /* XXX - We just throw away invalid characters. Is this right? */
-        if ( this_ch == (unsigned char) -1 ) continue;
+        if (thisCh == (unsigned char) -1)
+            continue;
 
-        /* Shift it in on the low end, and see if there's
-        ** a byte ready for output. */
-        leftchar = (leftchar << 6) | (this_ch);
+        /* Shift it in on the low end, and see if there's a byte ready for
+           output.
+        */
+        leftchar = (leftchar << 6) | (thisCh);
         leftbits += 6;
-        if ( leftbits >= 8 ) {
+        if (leftbits >= 8) {
             leftbits -= 8;
-            XMLRPC_ASSERT(bin_len < buffer_size);
-            *bin_data++ = (leftchar >> leftbits) & 0xFF;
+            XMLRPC_ASSERT(binLen < bufferSize);
+            *binData++ = (leftchar >> leftbits) & 0xFF;
             leftchar &= ((1 << leftbits) - 1);
-            bin_len++;
+            ++binLen;
         }
     }
 
     /* Check that no bits are left. */
-    if ( leftbits )
-        XMLRPC_FAIL(env, XMLRPC_PARSE_ERROR, "Incorrect Base64 padding");
+    if (leftbits)
+        XMLRPC_FAIL(envP, XMLRPC_PARSE_ERROR, "Incorrect Base64 padding");
 
     /* Check to make sure we have a sane amount of padding. */
-    if (npad > bin_len || npad > 2)
-        XMLRPC_FAIL(env, XMLRPC_PARSE_ERROR, "Malformed Base64 data");
+    if (npad > binLen || npad > 2)
+        XMLRPC_FAIL(envP, XMLRPC_PARSE_ERROR, "Malformed Base64 data");
 
     /* Remove any padding and set the correct size. */
-    bin_len -= npad;
-    XMLRPC_TYPED_MEM_BLOCK_RESIZE(char, env, output, bin_len);
-    XMLRPC_ASSERT(!env->fault_occurred);
+    binLen -= npad;
+    XMLRPC_MEMBLOCK_RESIZE(char, envP, outputP, binLen);
+    XMLRPC_ASSERT(!envP->fault_occurred);
 
-                      cleanup:
-    if (env->fault_occurred) {
-        if (output)
-            xmlrpc_mem_block_free(output);
+                     cleanup:
+    if (envP->fault_occurred) {
+        if (outputP)
+            xmlrpc_mem_block_free(outputP);
         return NULL;
     }
-    return output;
+    return outputP;
 }

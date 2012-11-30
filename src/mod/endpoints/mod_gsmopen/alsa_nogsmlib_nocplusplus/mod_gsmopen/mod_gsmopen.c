@@ -1392,13 +1392,13 @@ static switch_status_t load_config(int reload_type)
 			const char *dialplan = "XML";
 			const char *destination = "5000";
 			const char *controldevice_name = "/dev/ttyACM0";
-			char *digit_timeout = NULL;
-			char *max_digits = NULL;
-			char *hotline = NULL;
+			//char *digit_timeout;
+			//char *max_digits;
+			//char *hotline;
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
-			const char *enable_callerid = "true";
+			//const char *enable_callerid ;
 
 
 			const char *at_dial_pre_number = "ATD";
@@ -1469,10 +1469,12 @@ static switch_status_t load_config(int reload_type)
 #else 
 			const char *no_sound = "1";
 #endif // defined(GSMOPEN_ALSA) || defined(GSMOPEN_PORTAUDIO)
-			const char *portaudiocindex = "1";
-			const char *portaudiopindex = "1";
-			const char *speexecho = "1";
-			const char *speexpreprocess = "1";
+#ifdef GSMOPEN_PORTAUDIO
+			const char *portaudiocindex;
+			const char *portaudiopindex;
+			const char *speexecho;
+			const char *speexpreprocess;
+#endif// GSMOPEN_PORTAUDIO
 
 			uint32_t interface_id = 0;
 #ifdef WIN32
@@ -1504,20 +1506,20 @@ static switch_status_t load_config(int reload_type)
 					destination = val;
 				} else if (!strcasecmp(var, "controldevice_name")) {
 					controldevice_name = val;
-				} else if (!strcasecmp(var, "digit_timeout")) {
-					digit_timeout = val;
-				} else if (!strcasecmp(var, "max_digits")) {
-					max_digits = val;
-				} else if (!strcasecmp(var, "hotline")) {
-					hotline = val;
+				//} else if (!strcasecmp(var, "digit_timeout")) {
+					//digit_timeout = val;
+				//} else if (!strcasecmp(var, "max_digits")) {
+					//max_digits = val;
+				//} else if (!strcasecmp(var, "hotline")) {
+					//hotline = val;
 				} else if (!strcasecmp(var, "dial_regex")) {
 					dial_regex = val;
 				} else if (!strcasecmp(var, SWITCH_HOLD_MUSIC_VARIABLE)) {
 					hold_music = val;
 				} else if (!strcasecmp(var, "fail_dial_regex")) {
 					fail_dial_regex = val;
-				} else if (!strcasecmp(var, "enable_callerid")) {
-					enable_callerid = val;
+				//} else if (!strcasecmp(var, "enable_callerid")) {
+					//enable_callerid = val;
 				} else if (!strcasecmp(var, "at_dial_pre_number")) {
 					at_dial_pre_number = val;
 				} else if (!strcasecmp(var, "at_dial_post_number")) {
@@ -1620,6 +1622,7 @@ static switch_status_t load_config(int reload_type)
 					alsacname = val;
 				} else if (!strcasecmp(var, "alsapname")) {
 					alsapname = val;
+#ifdef GSMOPEN_PORTAUDIO
 				} else if (!strcasecmp(var, "portaudiocindex")) {
 					portaudiocindex = val;
 				} else if (!strcasecmp(var, "portaudiopindex")) {
@@ -1628,6 +1631,7 @@ static switch_status_t load_config(int reload_type)
 					speexecho = val;
 				} else if (!strcasecmp(var, "speexpreprocess")) {
 					speexpreprocess = val;
+#endif// GSMOPEN_PORTAUDIO
 				} else if (!strcasecmp(var, "at_early_audio")) {
 					at_early_audio = val;
 				} else if (!strcasecmp(var, "at_after_preinit_pause")) {
@@ -2869,7 +2873,7 @@ SWITCH_STANDARD_API(gsmopen_boost_audio_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
 	int argc = 0;
-	private_t *tech_pvt = NULL;
+	//private_t *tech_pvt;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -2883,7 +2887,7 @@ SWITCH_STANDARD_API(gsmopen_boost_audio_function)
 			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
 			if (strlen(globals.GSMOPEN_INTERFACES[i].name)
 					&& (strncmp(globals.GSMOPEN_INTERFACES[i].name, argv[0], strlen(argv[0])) == 0)) {
-				tech_pvt = &globals.GSMOPEN_INTERFACES[i];
+				//tech_pvt = &globals.GSMOPEN_INTERFACES[i];
 				stream->write_function(stream, "Using interface: globals.GSMOPEN_INTERFACES[%d].name=|||%s|||\n", i, globals.GSMOPEN_INTERFACES[i].name);
 				found = 1;
 				break;

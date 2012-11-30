@@ -566,15 +566,14 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
         {
             s->gardner_step = 32;
             s->training_stage = TRAINING_STAGE_LOG_PHASE;
-            s->angles[0] =
-            s->start_angles[0] = arctan2(z.im, z.re);
+            vec_zeroi32(s->diff_angles, 16);
+            s->last_angles[0] = arctan2(z.im, z.re);
         }
         break;
     case TRAINING_STAGE_LOG_PHASE:
         /* Record the current alternate phase angle */
         target = &zero;
-        s->angles[1] =
-        s->start_angles[1] = arctan2(z.im, z.re);
+        s->last_angles[1] = arctan2(z.im, z.re);
         s->training_count = 1;
         s->training_stage = TRAINING_STAGE_WAIT_FOR_HOP;
         break;
@@ -583,9 +582,11 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
         angle = arctan2(z.im, z.re);
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled ABAB segment */
-        ang = angle - s->angles[(s->training_count - 1) & 0xF];
-        s->angles[(s->training_count + 1) & 0xF] = angle;
-        if ((ang > 0x20000000  ||  ang < -0x20000000)  &&  s->training_count >= 3)
+        i = s->training_count + 1;
+        ang = angle - s->last_angles[i & 1];
+        s->last_angles[i & 1] = angle;
+        s->diff_angles[i & 0xF] = s->diff_angles[(i - 2) & 0xF] + (ang >> 4);
+        if ((ang > DDS_PHASE(45.0f)  ||  ang < DDS_PHASE(-45.0f))  &&  s->training_count >= 13)
         {
             /* We seem to have a phase reversal */
             /* Slam the carrier frequency into line, based on the total phase drift over the last
@@ -595,20 +596,20 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
             /* Step back a few symbols so we don't get ISI distorting things. */
             i = (s->training_count - 8) & ~1;
             /* Avoid the possibility of a divide by zero */
-            if (i)
+            if (i > 1)
             {
                 j = i & 0xF;
-                ang = (s->angles[j] - s->start_angles[0])/i + (s->angles[j | 0x1] - s->start_angles[1])/i;
+                ang = (s->diff_angles[j] + s->diff_angles[j | 0x1])/(i - 1);
                 if (s->bit_rate == 4800)
-                    s->carrier_phase_rate += ang/10;
+                    s->carrier_phase_rate += 16*(ang/10);
                 else
-                    s->carrier_phase_rate += 3*(ang/40);
+                    s->carrier_phase_rate += 3*16*(ang/40);
             }
             span_log(&s->logging, SPAN_LOG_FLOW, "Coarse carrier frequency %7.2f (%d)\n", dds_frequencyf(s->carrier_phase_rate), s->training_count);
             /* Check if the carrier frequency is plausible */
-            if (s->carrier_phase_rate < dds_phase_ratef(CARRIER_NOMINAL_FREQ - 20.0f)
+            if (s->carrier_phase_rate < DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ - 20.0f)
                 ||
-                s->carrier_phase_rate > dds_phase_ratef(CARRIER_NOMINAL_FREQ + 20.0f))
+                s->carrier_phase_rate > DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ + 20.0f))
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
                 /* Park this modem */
@@ -1065,7 +1066,7 @@ SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_
     }
     else
     {
-        s->carrier_phase_rate = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
+        s->carrier_phase_rate = DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ);
 #if defined(SPANDSP_USE_FIXED_POINT)
         s->agc_scaling = (float) (1024.0f*FP_FACTOR)*1.414f/283.0f;
 #else

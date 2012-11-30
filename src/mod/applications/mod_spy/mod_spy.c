@@ -46,22 +46,39 @@ struct mod_spy_globals {
 	uint32_t spy_count;
 } globals;
 
+typedef struct spy {
+	const char *uuid;
+	struct spy *next;
+} spy_t;
+
+
 static switch_status_t spy_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *data = switch_channel_get_private(channel, "_userspy_");
+	const char *uuid = switch_core_session_get_uuid(session);
+	spy_t *spy = NULL, *p = NULL, *prev = NULL;
 
-	char *data = switch_channel_get_private(channel, "_userspy_");
 	switch_thread_rwlock_wrlock(globals.spy_hash_lock);
 
-	if ((switch_core_hash_delete(globals.spy_hash, data) != SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No such key in userspy: %s \n", data);
-
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Userspy deactivated on %s\n", data);
-		globals.spy_count--;
+	spy = switch_core_hash_find(globals.spy_hash, data);
+	for (p = spy; p; p = p->next) {
+		if (p->uuid == uuid) {
+			if (prev) {
+				prev->next = p->next;
+			} else {
+				spy = p->next;
+			}
+			globals.spy_count--;
+			break;
+		}
+		prev = p;
 	}
 
+	switch_core_hash_insert(globals.spy_hash, data, spy);
+
 	switch_thread_rwlock_unlock(globals.spy_hash_lock);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -115,12 +132,20 @@ SWITCH_STANDARD_API(dump_hash)
 	switch_hash_index_t *hi;
 	const void *key;
 	void *val;
+	spy_t *spy;
 
 	switch_thread_rwlock_rdlock(globals.spy_hash_lock);
 
 	for (hi = switch_hash_first(NULL, globals.spy_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &key, NULL, &val);
-		stream->write_function(stream, "%s : %s\n", (char *) key, (const char *) val);
+		spy = (spy_t *) val;
+
+		stream->write_function(stream, "%s :");
+		while (spy) {
+			stream->write_function(stream, " %s", spy->uuid);
+			spy = spy->next;
+		}
+		stream->write_function(stream, "\n");
 	}
 
 	stream->write_function(stream, "\n%d total spy\n", globals.spy_count);
@@ -130,9 +155,10 @@ SWITCH_STANDARD_API(dump_hash)
 
 static switch_status_t process_event(switch_event_t *event)
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_core_session_t *session = NULL;
-	char *username[3] = { 0 };
-	char *domain[3] = { 0 };
+	char *username[3] = { NULL };
+	char *domain[3] = { NULL };
 	char key[512];
 	char *uuid = NULL, *my_uuid = NULL;
 	int i;
@@ -147,8 +173,8 @@ static switch_status_t process_event(switch_event_t *event)
 	username[0] = switch_event_get_header(event, "Caller-Username");
 	domain[0] = switch_event_get_header(event, "variable_domain_name");
 
-	domain[1] = switch_event_get_header(event, "variable_dialed_domain");
 	username[1] = switch_event_get_header(event, "variable_dialed_user");
+	domain[1] = switch_event_get_header(event, "variable_dialed_domain");
 
 	username[2] = switch_event_get_header(event, "variable_user_name");
 	domain[2] = switch_event_get_header(event, "variable_domain_name");
@@ -156,35 +182,39 @@ static switch_status_t process_event(switch_event_t *event)
 	for (i = 0; i < 3; i++) {
 
 		if (username[i] && domain[i]) {
+			spy_t *spy = NULL;
 			switch_snprintf(key, sizeof(key), "%s@%s", username[i], domain[i]);
 
-			if ((uuid = switch_core_hash_find(globals.spy_hash, key))) {
+			if ((spy = switch_core_hash_find(globals.spy_hash, key))) {
+				while (spy) {
+					if ((session = switch_core_session_locate(spy->uuid))) {
+						switch_channel_t *channel = switch_core_session_get_channel(session);
+						
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UserSpy retrieved uuid %s for key %s, activating eavesdrop\n", uuid, key);
+						my_uuid = switch_event_get_header(event, "Unique-ID");
+						
+						switch_channel_set_variable(channel, "spy_uuid", my_uuid);
+						
+						switch_channel_set_state(channel, CS_EXCHANGE_MEDIA);
+						switch_channel_set_flag(channel, CF_BREAK);
+						
+						switch_core_session_rwunlock(session);
+					}
+					spy = spy->next;
+				}
 				break;
+			} else {
+				/* not found */
+				status = SWITCH_STATUS_FALSE;
 			}
 		}
 	}
-
+	
+	
  done:
 	switch_thread_rwlock_unlock(globals.spy_hash_lock);
+	return status;
 
-	if (!uuid) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if ((session = switch_core_session_locate(uuid))) {
-		switch_channel_t *channel = switch_core_session_get_channel(session);
-
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UserSpy retrieved uuid %s for key %s, activating eavesdrop \n", uuid, key);
-		my_uuid = switch_event_get_header(event, "Unique-ID");
-
-		switch_channel_set_variable(channel, "spy_uuid", my_uuid);
-
-		switch_channel_set_state(channel, CS_EXCHANGE_MEDIA);
-		switch_channel_set_flag(channel, CF_BREAK);
-
-		switch_core_session_rwunlock(session);
-	}
-	return SWITCH_STATUS_SUCCESS;
 
 }
 
@@ -233,20 +263,20 @@ SWITCH_STANDARD_APP(userspy_function)
 
 	if (!zstr(data) && (params = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(params, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
-
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			char *uuid = switch_core_session_get_uuid(session);
 			switch_status_t status;
+			spy_t *spy = NULL;
+
+			spy = switch_core_session_alloc(session, sizeof(spy_t));
+			switch_assert(spy != NULL);
+			spy->uuid = uuid;
 
 			switch_thread_rwlock_wrlock(globals.spy_hash_lock);
-			if (switch_core_hash_find(globals.spy_hash, argv[0])) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Spy already exists for %s\n", argv[0]);
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-				switch_thread_rwlock_unlock(globals.spy_hash_lock);
-				return;
-			}
 
-			status = switch_core_hash_insert(globals.spy_hash, argv[0], (void *) uuid);
+			spy->next = (spy_t *) switch_core_hash_find(globals.spy_hash, argv[0]);
+
+			status = switch_core_hash_insert(globals.spy_hash, argv[0], (void *) spy);
 
 			if ((status != SWITCH_STATUS_SUCCESS)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't insert to spy hash\n");
@@ -270,11 +300,10 @@ SWITCH_STANDARD_APP(userspy_function)
 			}
 
 			switch_channel_set_state(channel, CS_PARK);
-			return;
 		}
-		return;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", USERSPY_SYNTAX);
 	}
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", USERSPY_SYNTAX);
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spy_load)

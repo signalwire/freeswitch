@@ -61,7 +61,7 @@ switch_bool_t sonar_ping_callback(switch_core_session_t *session, const char *ap
 	end = switch_time_now();
 	diff = end - start;
 	start = 0;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sonar ping took %lu milliseconds\n", diff / 1000);	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sonar ping took %ld milliseconds\n", (long)diff / 1000);
 	
 	return SWITCH_TRUE;
 }

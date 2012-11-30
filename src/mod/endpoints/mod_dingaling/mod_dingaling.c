@@ -133,11 +133,8 @@ struct mdl_profile {
 	char *dbname;
 	char *avatar;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
 	switch_bool_t purge;
 	switch_thread_rwlock_t *rwlock;
-	switch_odbc_handle_t *master_odbc;
 	switch_mutex_t *mutex;
 	ldl_handle_t *handle;
 	uint32_t flags;
@@ -324,72 +321,109 @@ static char *translate_rpid(char *in, char *ext)
 }
 
 
-
-
-static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *mutex)
+static switch_cache_db_handle_t *mdl_get_db_handle(mdl_profile_t *profile)
 {
-	switch_core_db_t *db;
-
-	if (mutex) {
-		switch_mutex_lock(mutex);
-	}
-
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		switch_odbc_statement_handle_t stmt;
-		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt, NULL) != SWITCH_ODBC_SUCCESS) {
-			char *err_str;
-			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
-			switch_safe_free(err_str);
-		}
-		switch_odbc_statement_handle_free(&stmt);
+	switch_cache_db_handle_t *dbh = NULL;
+	char *dsn;
+	
+	if (!zstr(profile->odbc_dsn)) {
+		dsn = profile->odbc_dsn;
 	} else {
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			goto end;
-		}
-		switch_core_db_persistant_execute(db, sql, 1);
-		switch_core_db_close(db);
+		dsn = profile->dbname;
 	}
 
-  end:
-	if (mutex) {
-		switch_mutex_unlock(mutex);
+	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
+		dbh = NULL;
 	}
+	
+	return dbh;
+
 }
 
 
-static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
-											  switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback, void *pdata)
+static switch_status_t mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *mutex)
 {
-	switch_bool_t ret = SWITCH_FALSE;
-	switch_core_db_t *db;
-	char *errmsg = NULL;
+	switch_cache_db_handle_t *dbh = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
 	}
 
-	if (switch_odbc_available() && profile->odbc_dsn) {
-		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata, NULL);
-	} else {
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			goto end;
-		}
-		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
+	if (!(dbh = mdl_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
 
-		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-			switch_core_db_free(errmsg);
-		}
+	status = switch_cache_db_execute_sql(dbh, sql, NULL);
 
-		if (db) {
-			switch_core_db_close(db);
-		}
+  end:
+
+	switch_cache_db_release_db_handle(&dbh);
+
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+
+	return status;
+}
+
+char *mdl_execute_sql2str(mdl_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
+{
+	switch_cache_db_handle_t *dbh = NULL;
+
+	char *ret = NULL;
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	if (!(dbh = mdl_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
+
+	ret = switch_cache_db_execute_sql2str(dbh, sql, resbuf, len, NULL);
+
+end:
+
+	switch_cache_db_release_db_handle(&dbh);
+
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+
+	return ret;
+
+}
+
+
+static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile, switch_mutex_t *mutex, char *sql, switch_core_db_callback_func_t callback,
+											 void *pdata)
+{
+	switch_bool_t ret = SWITCH_FALSE;
+	char *errmsg = NULL;
+	switch_cache_db_handle_t *dbh = NULL;
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	if (!(dbh = mdl_get_db_handle(profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+		goto end;
+	}
+
+	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
+
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+		free(errmsg);
 	}
 
   end:
+
+	switch_cache_db_release_db_handle(&dbh);
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);
@@ -397,6 +431,9 @@ static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
 
 	return ret;
 }
+
+
+
 
 static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -1098,9 +1135,9 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 	int r = 1;
 
 
-	if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
-		return 1;
-	}
+	//if (switch_rtp_ready(tech_pvt->transports[LDL_TPORT_RTP].rtp_session)) {
+	//	return 1;
+	//}
 
 	if (!(tech_pvt->transports[LDL_TPORT_RTP].remote_ip && tech_pvt->transports[LDL_TPORT_RTP].remote_port)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "No valid rtp candidates received!\n");
@@ -1130,6 +1167,8 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 			r = 0;
 			goto end;
 		}
+		tech_pvt->transports[LDL_TPORT_RTP].read_codec.session = tech_pvt->session;
+
 		tech_pvt->transports[LDL_TPORT_RTP].read_frame.rate = tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_second;
 		tech_pvt->transports[LDL_TPORT_RTP].read_frame.codec = &tech_pvt->transports[LDL_TPORT_RTP].read_codec;
 
@@ -1149,6 +1188,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 			r = 0;
 			goto end;
 		}
+		tech_pvt->transports[LDL_TPORT_RTP].write_codec.session = tech_pvt->session;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Write Codec to %s@%d\n",
 						  tech_pvt->transports[LDL_TPORT_RTP].codec_name, (int) tech_pvt->transports[LDL_TPORT_RTP].write_codec.implementation->samples_per_second);
 		
@@ -1223,6 +1263,9 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 		uint8_t inb = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
 
 		switch_rtp_set_ssrc(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_RTP].ssrc);
+
+		switch_rtp_intentional_bugs(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, RTP_BUG_GEN_ONE_GEN_ALL);
+
 
 		if (tech_pvt->transports[LDL_TPORT_RTCP].remote_port) {
 			switch_rtp_activate_rtcp(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, MDL_RTCP_DUR, 
@@ -1415,9 +1458,10 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 		switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
 								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_user, 
 								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_user,
-								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
+								NULL);//tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
 		switch_channel_set_flag(channel, CF_VIDEO);
-		//switch_rtp_set_default_payload(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].r_codec_num);
+		//switch_rtp_set_default_payload(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num);
+		//switch_rtp_set_recv_pt(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num);
 		
 
 		if (tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_port) {
@@ -1425,7 +1469,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 			switch_rtp_activate_rtcp_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
 										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_user, 
 										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].local_user,
-										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_pass);
+										 NULL);//tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_pass);
 		}
 
 
@@ -1473,8 +1517,14 @@ static int do_tport_candidates(struct private_object *tech_pvt, ldl_transport_ty
 	}
 	address = advip;
 
-	if(address && !strncasecmp(address, "host:", 5)) {
-		address = address + 5;
+	if (address && !strncasecmp(address, "host:", 5)) {
+		char *lookup = switch_stun_host_lookup(address + 5, switch_core_session_get_pool(tech_pvt->session));
+
+		if (zstr(lookup)) {
+			address = address + 5;
+		} else {
+			address = lookup;
+		}
 	}
 
 	memset(cand, 0, sizeof(*cand));
@@ -1551,8 +1601,11 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 
 	idx += do_tport_candidates(tech_pvt, LDL_TPORT_RTP, &cand[idx], force);
 	idx += do_tport_candidates(tech_pvt, LDL_TPORT_RTCP, &cand[idx], force);
-	idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTP, &cand[idx], force);
-	idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTCP, &cand[idx], force);
+
+	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index > -1) {
+		idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTP, &cand[idx], force);
+		idx += do_tport_candidates(tech_pvt, LDL_TPORT_VIDEO_RTCP, &cand[idx], force);
+	}
 
 	if (idx && cand[0].name) {
 		if (ldl_session_gateway(tech_pvt->dlsession) && switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
@@ -2236,7 +2289,6 @@ static switch_status_t channel_read_video_frame(switch_core_session_t *session, 
 		switch_rtp_zerocopy_read_frame(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, &tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame, flags);
 	}
 
-
 	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.datalen == 0) {
 		switch_set_flag((&tech_pvt->transports[LDL_TPORT_RTP].read_frame), SFF_CNG);
 		tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_frame.datalen = 2;
@@ -2601,6 +2653,45 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 }
 
+static switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	mdl_profile_t *profile = NULL;
+	switch_hash_index_t *hi;
+	void *val;
+	const void *vvar;
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &val);
+		profile = (mdl_profile_t *) val;
+		if (!strncmp("dl_logout", line, 9)) {
+			if (profile->handle) {
+				switch_console_push_match(&my_matches, profile->name);
+			}
+		} else if (!strncmp("dl_login", line, 8)) {
+			if (!switch_test_flag(profile, TFLAG_IO)) {
+				char *profile_name = switch_mprintf("profile=%s", profile->name);
+				switch_console_push_match(&my_matches, profile_name);
+				free(profile_name);
+			}
+		} else if (!strncmp("dl_pres", line, 7)) {
+			if (profile->user_flags & LDL_FLAG_COMPONENT) {
+				switch_console_push_match(&my_matches, profile->name);
+			}
+		} else {
+			switch_console_push_match(&my_matches, profile->name);
+		} 
+	}
+
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	return status;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 {
 	switch_chat_interface_t *chat_interface;
@@ -2676,6 +2767,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 	SWITCH_ADD_API(api_interface, "dl_login", "DingaLing Login", dl_login, LOGIN_SYNTAX);
 	SWITCH_ADD_API(api_interface, "dingaling", "DingaLing Menu", dingaling, DINGALING_SYNTAX);
 	SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
+
+	switch_console_set_complete("add dl_debug ::[true:false");
+	switch_console_set_complete("add dl_pres ::dingaling::list_profiles");
+	switch_console_set_complete("add dl_logout ::dingaling::list_profiles");
+	switch_console_set_complete("add dl_login ::dingaling::list_profiles");
+	switch_console_set_complete("add dl_login login=");
+	switch_console_set_complete("add dingaling status");
+	switch_console_set_complete("add dingaling reload");
+	switch_console_add_complete_func("::dingaling::list_profiles", list_profiles);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -2790,17 +2890,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 	} else if (!strcasecmp(var, "avatar")) {
 		profile->avatar = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
-		if (switch_odbc_available()) {
-			profile->odbc_dsn = switch_core_strdup(module_pool, val);
-			if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-				*profile->odbc_user++ = '\0';
-				if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-					*profile->odbc_pass++ = '\0';
-				}
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-		}
+		profile->odbc_dsn = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 		switch_set_flag(profile, TFLAG_TIMER);
 	} else if (!strcasecmp(var, "dialplan") && !zstr(val)) {
@@ -3003,7 +3093,7 @@ SWITCH_STANDARD_API(dingaling)
 
 SWITCH_STANDARD_API(dl_login)
 {
-	char *argv[10] = { 0 };
+	char *argv[20] = { 0 };
 	int argc = 0;
 	char *var, *val, *myarg = NULL;
 	mdl_profile_t *profile = NULL;
@@ -3024,12 +3114,6 @@ SWITCH_STANDARD_API(dl_login)
 	myarg = strdup(cmd);
 
 	argc = switch_separate_string(myarg, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-
-	if (zstr(cmd) || argc != 1) {
-		stream->write_function(stream, "USAGE: %s\n", LOGIN_SYNTAX);
-		status = SWITCH_STATUS_SUCCESS;
-		goto done;
-	}
 
 	if (argv[0] && !strncasecmp(argv[0], "profile=", 8)) {
 		char *profile_name = argv[0] + 8;
@@ -3109,17 +3193,13 @@ static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_pr
 		(new_profile->user_flags == profile->user_flags) && (new_profile->acl_count == profile->acl_count)
 		) {
 		uint32_t i;
-		if (switch_odbc_available()) {
-			if (!(((!new_profile->odbc_dsn && !profile->odbc_dsn) ||
-				   (new_profile->odbc_dsn && profile->odbc_dsn && !strcasecmp(new_profile->odbc_dsn, profile->odbc_dsn))) &&
-				  ((!new_profile->odbc_user && !profile->odbc_user) ||
-				   (new_profile->odbc_user && profile->odbc_user && !strcasecmp(new_profile->odbc_user, profile->odbc_user))) &&
-				  ((!new_profile->odbc_pass && !profile->odbc_pass) ||
-				   (new_profile->odbc_pass && profile->odbc_pass && !strcasecmp(new_profile->odbc_pass, profile->odbc_pass)))
-				)) {
-				return SWITCH_FALSE;
-			}
+		
+		if (!(((!new_profile->odbc_dsn && !profile->odbc_dsn) ||
+			   (new_profile->odbc_dsn && profile->odbc_dsn && !strcasecmp(new_profile->odbc_dsn, profile->odbc_dsn))) 
+			  )) {
+			return SWITCH_FALSE;
 		}
+		
 
 		for (i = 0; i < new_profile->acl_count; i++) {
 			if (strcasecmp(new_profile->acl[i], profile->acl[i]) != 0) {
@@ -3137,11 +3217,6 @@ static switch_status_t destroy_profile(char *name)
 
 	if ((profile = switch_core_hash_find(globals.profile_hash, name))) {
 		if (profile->user_flags & LDL_FLAG_COMPONENT) {
-			if (switch_odbc_available() && profile->odbc_dsn && profile->master_odbc) {
-				switch_odbc_handle_disconnect(profile->master_odbc);
-				switch_odbc_handle_destroy(&profile->master_odbc);
-			}
-
 			switch_mutex_destroy(profile->mutex);
 		}
 
@@ -3205,7 +3280,7 @@ static switch_status_t soft_reload(void)
 
 		if (profile && type && !strcasecmp(type, "component")) {
 			char dbname[256];
-			switch_core_db_t *db;
+			switch_cache_db_handle_t *dbh = NULL;
 
 			if (!profile->login && profile->name) {
 				profile->login = switch_core_strdup(module_pool, profile->name);
@@ -3218,28 +3293,9 @@ static switch_status_t soft_reload(void)
 			switch_snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
 			profile->dbname = switch_core_strdup(module_pool, dbname);
 
-			if (switch_odbc_available() && profile->odbc_dsn) {
-				if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
-
-				}
-				if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
-				}
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL, NULL);
-				//mdl_execute_sql(profile, sub_sql, NULL);
-			} else {
-				if ((db = switch_core_db_open_file(profile->dbname))) {
-					switch_core_db_test_reactive(db, "select * from jabber_subscriptions", NULL, sub_sql);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-					continue;
-				}
-				switch_core_db_close(db);
+			if ((dbh = mdl_get_db_handle(profile))) {
+				switch_cache_db_test_reactive(dbh, "select * from jabber_subscriptions", NULL, sub_sql);
+				switch_cache_db_release_db_handle(&dbh);
 			}
 		}
 
@@ -3354,7 +3410,7 @@ static switch_status_t load_config(void)
 
 		if (profile && type && !strcasecmp(type, "component")) {
 			char dbname[256];
-			switch_core_db_t *db;
+			switch_cache_db_handle_t *dbh = NULL;
 
 			if (!profile->login && profile->name) {
 				profile->login = switch_core_strdup(module_pool, profile->name);
@@ -3367,28 +3423,10 @@ static switch_status_t load_config(void)
 			switch_snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
 			profile->dbname = switch_core_strdup(module_pool, dbname);
 
-			if (switch_odbc_available() && profile->odbc_dsn) {
-				if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
 
-				}
-				if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
-				}
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL, NULL);
-				//mdl_execute_sql(profile, sub_sql, NULL);
-			} else {
-				if ((db = switch_core_db_open_file(profile->dbname))) {
-					switch_core_db_test_reactive(db, "select * from jabber_subscriptions", NULL, sub_sql);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-					continue;
-				}
-				switch_core_db_close(db);
+			if ((dbh = mdl_get_db_handle(profile))) {
+				switch_cache_db_test_reactive(dbh, "select * from jabber_subscriptions", NULL, sub_sql);
+				switch_cache_db_release_db_handle(&dbh);
 			}
 		}
 
@@ -3599,13 +3637,13 @@ static switch_status_t parse_candidates(ldl_session_t *dlsession, switch_core_se
 		if (tech_pvt->transports[ttype].accepted) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Already Accepted [%s:%d]\n", 
 							  tech_pvt->transports[ttype].remote_ip, tech_pvt->transports[ttype].remote_port);
-			goto end;
+			//goto end;
 		}
 
 
 		if (tech_pvt->transports[ttype].remote_ip) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Already picked an IP [%s]\n", tech_pvt->transports[ttype].remote_ip);
-			goto end;
+			//goto end;
 		}
 
 		
@@ -3663,16 +3701,19 @@ static switch_status_t parse_candidates(ldl_session_t *dlsession, switch_core_se
 			}
 		}
 
-		if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && (ttype == LDL_TPORT_VIDEO_RTP || ttype == LDL_TPORT_VIDEO_RTP) &&
-			tech_pvt->transports[ttype].accepted == 1 && (1||switch_test_flag(tech_pvt, TFLAG_RTP_READY))) {
+		if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 
-			if (ttype == LDL_TPORT_VIDEO_RTP) {
+			if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].accepted &&
+				tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].accepted) {
 				activate_video_rtp(tech_pvt);
 			}
 
-			if (ttype == LDL_TPORT_VIDEO_RTP) {
+
+			if (tech_pvt->transports[LDL_TPORT_RTP].accepted &&
+				tech_pvt->transports[LDL_TPORT_RTCP].accepted) {
 				activate_audio_rtp(tech_pvt);
 			}
+
 
 			tech_pvt->transports[ttype].restart_rtp++;
 		}
@@ -4190,7 +4231,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->them = switch_core_session_strdup(session, ldl_session_get_callee(dlsession));
 				tech_pvt->us = switch_core_session_strdup(session, ldl_session_get_caller(dlsession));
 
-				if ((tmp = strdup(tech_pvt->us))) {
+				if (tech_pvt->us && (tmp = strdup(tech_pvt->us))) {
 					char *p, *q;
 
 					if ((p = strchr(tmp, '@'))) {
@@ -4365,6 +4406,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		break;
 	case LDL_SIGNAL_REDIRECT:
 		do_describe(tech_pvt, 1);
+		tech_pvt->next_cand = switch_micro_time_now();
+		if (channel) switch_channel_mark_ring_ready(channel);
 		break;
 
 	case LDL_SIGNAL_ERROR:

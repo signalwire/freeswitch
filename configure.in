@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.2.3], BUG-REPORT-ADDRESS)
+AC_INIT([freeswitch], [1.2.5.2], BUG-REPORT-ADDRESS)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [2])
-AC_SUBST(SWITCH_VERSION_MICRO, [3])
+AC_SUBST(SWITCH_VERSION_MICRO, [5.2])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -155,8 +155,8 @@ fi
 AX_PATH_LIBGNUTLS()
 
 # set defaults for use on all platforms
-SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
-SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
+SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src -I${switch_srcdir}/libs/stfu"
+SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src -I${switch_srcdir}/libs/stfu"
 SWITCH_AM_LDFLAGS="-lm"
 
 #set SOLINK variable based on compiler and host
@@ -164,7 +164,7 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     SOLINK="-Bdynamic -dy -G"
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     case "$host" in
-        *darwin10.*)
+        *darwin12.*|*darwin11.*|*darwin10.*)
             SOLINK="-dynamic -force-flat-namespace"
         ;;
         *darwin*)
@@ -248,7 +248,7 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
     if test "${enable_64}" = "yes"; then
 	case "$host" in
-             *darwin10.*|*darwin9.*|*darwin8.*)
+             *darwin12.*|*darwin11.*|*darwin10.*|*darwin9.*|*darwin8.*)
 		APR_ADDTO(CFLAGS, -arch x86_64)
        		APR_ADDTO(LDFLAGS, -arch x86_64)
        		APR_ADDTO(CXXFLAGS, -arch x86_64)
@@ -395,7 +395,42 @@ if test "x$enable_core_odbc_support" != "xno"; then
   AC_CHECK_LIB([odbc], [SQLDisconnect],, AC_MSG_ERROR([no usable libodbc; please install unixodbc devel package or equivalent]))
 fi
 
+AC_ARG_ENABLE(core-pgsql-support,     
+	[AS_HELP_STRING([--enable-core-pgsql-support], [Compile with PGSQL Support])],,[enable_core_pgsql_support="no"])
 
+if test x"$enable_core_pgsql_support" = x"yes" ; then
+
+AC_PATH_PROG([PG_CONFIG], [pg_config], [no])
+if test "$PG_CONFIG" != "no"; then
+        AC_MSG_CHECKING([for PostgreSQL libraries])
+        POSTGRESQL_CXXFLAGS="`$PG_CONFIG --cppflags` -I`$PG_CONFIG --includedir`"
+        POSTGRESQL_LDFLAGS="`$PG_CONFIG --ldflags` -L`$PG_CONFIG --libdir` -lpq"
+        POSTGRESQL_VERSION=`$PG_CONFIG --version | sed -e 's#PostgreSQL ##'`
+        POSTGRESQL_MAJOR_VERSION=`$PG_CONFIG --version | sed -re 's#PostgreSQL ([0-9]+).[0-9]+.[0-9]+#\1#'`
+        POSTGRESQL_MINOR_VERSION=`$PG_CONFIG --version | sed -re 's#PostgreSQL [0-9]+.([0-9]+).[0-9]+#\1#'`
+        POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | sed -re 's#PostgreSQL [0-9]+.[0-9]+.([0-9]+)#\1#'`
+        AC_DEFINE([SWITCH_HAVE_PGSQL], [1], [Define to 1 if PostgreSQL libraries are available])
+	AC_DEFINE_UNQUOTED([POSTGRESQL_VERSION], "${POSTGRESQL_VERSION}", [Specifies the version of PostgreSQL we are linking against])
+	AC_DEFINE_UNQUOTED([POSTGRESQL_MAJOR_VERSION], ${POSTGRESQL_MAJOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
+	AC_DEFINE_UNQUOTED([POSTGRESQL_MINOR_VERSION], ${POSTGRESQL_MINOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
+	AC_DEFINE_UNQUOTED([POSTGRESQL_PATCH_VERSION], ${POSTGRESQL_PATCH_VERSION}, [Specifies the version of PostgreSQL we are linking against])
+	AC_CHECK_LIB([pq], [PQgetvalue],, AC_MSG_ERROR([no usable libpq; please install PostgreSQL devel package or equivalent]))
+        AC_MSG_RESULT([yes])
+	SWITCH_AM_CXXFLAGS="$POSTGRESQL_CXXFLAGS $SWITCH_AM_CXXFLAGS"
+	SWITCH_AM_LDFLAGS="$POSTGRESQL_LDFLAGS $SWITCH_AM_LDFLAGS"
+else
+        AC_MSG_RESULT([no])
+        AC_MSG_FAILURE([Unabled to find pg_config in PATH. Is PostgreSQL installed?])
+fi
+
+fi
+
+AC_ARG_ENABLE(deprecated-core-db-events,
+	[AS_HELP_STRING([--enable-deprecated-core-db-events], [Keep deprecated core db events])],,[enable_deprecated_core_db_events="no"])
+
+if test x"$enable_deprecated_core_db_events" = x"yes" ; then
+        AC_DEFINE([SWITCH_DEPRECATED_CORE_DB], [1], [Define to 1 to enable deprecated core db events])
+fi
 
 AC_ARG_ENABLE(timerfd-wrapper,
 [AC_HELP_STRING([--enable-timerfd-wrapper],[timerfd is in the kernel but not in your libc])],[enable_timer_fd_wrapper="$enableval"],[enable_timer_fd_wrapper="no"])
@@ -419,6 +454,17 @@ PLATFORM_CORE_LDFLAGS=
 PLATFORM_CORE_LIBS=
 # tweak platform specific flags
 case "$host" in
+    *darwin12.*|*darwin11.*)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
+        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations)
+        APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
+        APR_ADDTO(CXXFLAGS, -pipe)
+        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
+	if test "x$enable_core_odbc_support" != "xno"; then
+	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
+	fi
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
+    ;;
     *darwin10.*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp)
@@ -469,15 +515,39 @@ AC_SUBST(LIBTOOL_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h netdb.h execinfo.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/select.h netdb.h execinfo.h])
 
-# for xmlrpc-c config.h
 if test x"$ac_cv_header_wchar_h" = xyes; then
   HAVE_WCHAR_H_DEFINE=1
 else
   HAVE_WCHAR_H_DEFINE=0
 fi
 AC_SUBST(HAVE_WCHAR_H_DEFINE)
+
+# Needed by Abyss on Solaris:
+
+if test x"$ac_cv_header_sys_filio_h" = xyes; then
+  HAVE_SYS_FILIO_H_DEFINE=1
+else
+  HAVE_SYS_FILIO_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_FILIO_H_DEFINE)
+
+# Needed by Abyss on Solaris:
+
+if test x"$ac_cv_header_sys_ioctl_h" = xyes; then
+  HAVE_SYS_IOCTL_H_DEFINE=1
+else
+  HAVE_SYS_IOCTL_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_IOCTL_H_DEFINE)
+
+if test x"$ac_cv_header_sys_select_h" = xyes; then
+  HAVE_SYS_SELECT_H_DEFINE=1
+else
+  HAVE_SYS_SELECT_H_DEFINE=0
+fi
+AC_SUBST(HAVE_SYS_SELECT_H_DEFINE)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -507,6 +577,8 @@ AX_HAVE_CPU_SET
 AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime()])])
 AC_CHECK_LIB(rt, clock_getres, [AC_DEFINE(HAVE_CLOCK_GETRES, 1, [Define if you have clock_getres()])])
 AC_CHECK_LIB(rt, clock_nanosleep, [AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1, [Define if you have clock_nanosleep()])])
+AC_CHECK_LIB(pthread, pthread_setschedparam, [AC_DEFINE(HAVE_PTHREAD_SETSCHEDPARAM, 1, [Define if you have pthread_setschedparam()])])
+
 AC_CHECK_FUNC(socket, , AC_CHECK_LIB(socket, socket))
 
 AC_CHECK_FILE(/dev/ptmx, [AC_DEFINE(HAVE_DEV_PTMX, 1, [Define if you have /dev/ptmx])])
@@ -528,6 +600,12 @@ AC_CHECK_DECL([RLIMIT_MEMLOCK],
 
 AC_CHECK_DECL([SCHED_RR],
 	[AC_DEFINE([HAVE_SCHED_RR],[1],[SCHED_RR constant for sched_setscheduler])],,
+	[#ifdef HAVE_SCHED_H
+	 #include <sched.h>
+	 #endif])
+
+AC_CHECK_DECL([SCHED_FIFO],
+	[AC_DEFINE([HAVE_SCHED_FIFO],[1],[SCHED_FIFO constant for sched_setscheduler])],,
 	[#ifdef HAVE_SCHED_H
 	 #include <sched.h>
 	 #endif])
@@ -572,11 +650,11 @@ if test "x${ac_cv_func_sched_setscheduler}" = "xyes" -a \
 then
 	AC_DEFINE([USE_SCHED_SETSCHEDULER],[1],[Enable round-robin scheduler using sched_setscheduler])
 fi
-
 #
 # xmlrpc-c checks
 #
 
+AC_CHECK_FUNCS(setenv strtoll strtoull strtoq strtouq __strtoll __strtoull)
 
 HAVE_LIBWWW_SSL_DEFINE=0
 AC_SUBST(HAVE_LIBWWW_SSL_DEFINE)
@@ -1023,8 +1101,10 @@ AC_CONFIG_FILES([Makefile
 		build/getg729.sh
 		build/freeswitch.pc
 		build/modmake.rules
-		libs/xmlrpc-c/include/xmlrpc-c/config.h
 		libs/xmlrpc-c/xmlrpc_config.h
+		libs/xmlrpc-c/config.mk
+		libs/xmlrpc-c/srcdir.mk
+		libs/xmlrpc-c/stamp-h
 		scripts/gentls_cert])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])

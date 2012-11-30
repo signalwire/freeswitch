@@ -11,6 +11,14 @@
    long long mask= ULL(1) << 33;
 */
 
+/* 'uint' is quite convenient, but there's no simple way have it everywhere.
+   Some systems have it in the base system (e.g. GNU C library has it in
+   <sys/types.h>, and others (e.g. Solaris - 08.12.02) don't.  Since we
+   can't define it unless we know it's not defined already, and we don't
+   want to burden the reader with a special Xmlrpc-c name such as xuint,
+   we just use standard "unsigned int" instead.
+*/
+
 #ifdef _MSC_VER
 #  define PRId64 "I64d"
 #  define PRIu64 "I64u"
@@ -33,9 +41,6 @@ typedef __int64           int64_t;
 #ifndef uint64_t
 typedef unsigned __int64  uint64_t;
 #endif
-#ifndef uint
-typedef unsigned int      uint;
-#endif
 #ifndef uint8_t
 typedef unsigned char     uint8_t;
 #endif
@@ -43,6 +48,11 @@ typedef unsigned char     uint8_t;
 /* Older Microsoft compilers don't know the standard ll/ull suffixes */
 #define LL(x) x ## i64
 #define ULL(x) x ## u64
+
+#elif defined(__INTERIX)
+#  include <stdint.h>
+#  define PRId64 "I64d"
+#  define PRIu64 "I64u"
 
 #else
   /* Not Microsoft compiler */

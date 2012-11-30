@@ -1214,14 +1214,23 @@ void sngisdn_t3_timeout(void *p_sngisdn_info)
 
 void sngisdn_delayed_dl_req(void *p_signal_data)
 {
+	ftdm_signaling_status_t sigstatus = FTDM_SIG_STATE_DOWN;	
 	sngisdn_span_data_t *signal_data = (sngisdn_span_data_t *)p_signal_data;
 	ftdm_span_t *span = signal_data->ftdm_span;
 	
 	if (!signal_data->dl_request_pending) {
 		return;
 	}
-	signal_data->dl_request_pending = 0;
+	
+	ftdm_span_get_sig_status(span, &sigstatus);
+	if (sigstatus == FTDM_SIG_STATE_UP) {
+		signal_data->dl_request_pending = 0;
+		return;
+	}
+
 	sngisdn_snd_dl_req(span->channels[1]);
+	ftdm_sched_timer(signal_data->sched, "delayed_dl_req", 4000, sngisdn_delayed_dl_req, (void*) signal_data, NULL);
+
 	return;
 }
 

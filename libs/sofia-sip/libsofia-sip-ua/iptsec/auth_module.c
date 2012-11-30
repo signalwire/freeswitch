@@ -744,7 +744,7 @@ void auth_check_digest(auth_mod_t *am,
       auth_challenge_digest(am, as, ach);
       as->as_blacklist = am->am_blacklist;
     }
-    SU_DEBUG_5(("auth_method_digest: response did not match\n"));
+    SU_DEBUG_5(("auth_method_digest: response did not match\n" VA_NONE));
 
     return;
   }
@@ -761,7 +761,7 @@ void auth_check_digest(auth_mod_t *am,
   if (am->am_challenge)
     auth_challenge_digest(am, as, ach);
 
-  SU_DEBUG_7(("auth_method_digest: successful authentication\n"));
+  SU_DEBUG_7(("auth_method_digest: successful authentication\n" VA_NONE));
 
   as->as_status = 0;	/* Successful authentication! */
   as->as_phrase = "";
@@ -1412,11 +1412,11 @@ int auth_validate_digest_nonce(auth_mod_t *am,
 
   /* Check nonce */
   if (!ar->ar_nonce) {
-    SU_DEBUG_5(("auth_method_digest: no nonce\n"));
+    SU_DEBUG_5(("auth_method_digest: no nonce\n" VA_NONE));
     return -1;
   }
   if (base64_d((void*)nonce, (sizeof nonce), ar->ar_nonce) != (sizeof nonce)) {
-    SU_DEBUG_5(("auth_method_digest: too short nonce\n"));
+    SU_DEBUG_5(("auth_method_digest: too short nonce\n" VA_NONE));
     return -1;
   }
 
@@ -1426,7 +1426,7 @@ int auth_validate_digest_nonce(auth_mod_t *am,
   auth_md5_hmac_digest(am, md5, hmac, sizeof hmac);
 
   if (memcmp(nonce->digest, hmac, sizeof nonce->digest)) {
-    SU_DEBUG_5(("auth_method_digest: bad nonce\n"));
+    SU_DEBUG_5(("auth_method_digest: bad nonce\n" VA_NONE));
     return -1;
   }
 

@@ -26,10 +26,12 @@
 #ifndef PTHREADX_H_INCLUDED
 #define PTHREADX_H_INCLUDED
 
-#ifndef WIN32
+#include "xmlrpc_config.h"
+
+#if HAVE_PTHREAD
 #  define _REENTRANT
 #  include <pthread.h>
-#elif defined (WIN32)
+#elif HAVE_WINDOWS_THREAD
 #include <windows.h>
 
 #ifdef __cplusplus
@@ -52,11 +54,7 @@ struct {
     int attrs; /* currently unused. placeholder. */
 } pthread_mutexattr_t;
 
-/* We make pthread_func identical to a Windows thread start function
-   so we can use Windows thread functions to implement these pthread
-   functions directly.
-*/
-typedef unsigned (WINAPI pthread_func)(void *);
+typedef void * pthread_func(void *);
 
 extern int pthread_create(pthread_t *            const new_thread_ID,
                           const pthread_attr_t * const attr,
@@ -75,6 +73,10 @@ extern int pthread_mutex_destroy(pthread_mutex_t * const mp);
 #ifdef __cplusplus
 }
 #endif
-#endif  /* WIN32 */
+#else  /* HAVE_WINDOWS_THREAD */
+  #error "You don't have any thread facility.  (According to "
+  #error "HAVE_PTHREAD and HAVE_WINDOWS_THREAD macros defined in "
+  #error "xmlrpc_config.h)"
+#endif
 
 #endif

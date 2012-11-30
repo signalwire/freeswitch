@@ -47,8 +47,15 @@ struct _TConn {
         */
     const char * trace;
     TThreadProc * job;
+        /* The function to run, in a connection thread, to conduct business
+           on the connection.  It reads stuff and writes stuff and, when it
+           is done with the connection, exits.
+        */
     TThreadDoneFn * done;
-    char buffer[BUFFER_SIZE];
+    union {
+        unsigned char b[BUFFER_SIZE];  /* Just bytes */
+        char          t[BUFFER_SIZE];  /* Taken as text */
+    } buffer;
 };
 
 typedef struct _TConn TConn;
@@ -63,6 +70,7 @@ ConnCreate(TConn **            const connectionPP,
            TChannel *          const channelP,
            void *              const channelInfoP,
            TThreadProc *       const job,
+           size_t              const jobStackSize,
            TThreadDoneFn *     const done,
            enum abyss_foreback const foregroundBackground,
            bool                const useSigchld,
@@ -82,9 +90,12 @@ ConnWrite(TConn *      const connectionP,
           const void * const buffer,
           uint32_t     const size);
 
-bool
-ConnRead(TConn *  const c,
-         uint32_t const timems);
+void
+ConnRead(TConn *       const connectionP,
+         uint32_t      const timeout,
+         bool *        const eofP,
+         bool *        const timedOutP,
+         const char ** const errorP);
 
 void
 ConnReadInit(TConn * const connectionP);

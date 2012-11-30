@@ -212,6 +212,9 @@ struct t30_state_s
 
     /*! \brief TRUE once the far end FAX entity has been detected. */
     int far_end_detected;
+    
+    /*! \brief TRUE once the end of procedure condition has been detected. */
+    int end_of_procedure_detected;
 
     /*! \brief TRUE if a local T.30 interrupt is pending. */
     int local_interrupt_pending;

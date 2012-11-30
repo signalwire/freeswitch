@@ -590,7 +590,7 @@ switch_call_cause_t rtmp_outgoing_channel(switch_core_session_t *session, switch
 		goto fail;
 	}
 	
-	if (!(*newsession = switch_core_session_request(rtmp_globals.rtmp_endpoint_interface, flags, SWITCH_CALL_DIRECTION_OUTBOUND, inpool))) {
+	if (!(*newsession = switch_core_session_request_uuid(rtmp_globals.rtmp_endpoint_interface, flags, SWITCH_CALL_DIRECTION_OUTBOUND, inpool, switch_event_get_header(var_event, "origination_uuid")))) {
 		goto fail;
 	}
 	

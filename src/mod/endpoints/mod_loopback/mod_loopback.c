@@ -42,6 +42,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_loopback_shutdown);
 SWITCH_MODULE_DEFINITION(mod_loopback, mod_loopback_load, mod_loopback_shutdown, NULL);
 
+static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, switch_core_session_t **br_session, const char **br_uuid);
+
 static switch_endpoint_interface_t *loopback_endpoint_interface = NULL;
 
 typedef enum {
@@ -227,6 +229,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	char name[128];
 	switch_caller_profile_t *caller_profile;
 	switch_event_t *vars = NULL;
+	const char *var;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -294,6 +297,29 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			}
 
 			switch_event_destroy(&vars);
+		}
+
+		if ((var = switch_channel_get_variable(channel, "loopback_export"))) {
+			int argc = 0;
+			char *argv[128] = { 0 };
+			char *dup = switch_core_session_strdup(session, var);
+
+			if ((argc = switch_split(dup, ',', argv))) {
+				int i;
+				for (i = 0; i < argc; i++) {
+					
+					if (!zstr(argv[i])) {
+						const char *val = switch_channel_get_variable(channel, argv[i]);
+
+						if(!zstr(val)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer variable [%s]=[%s] %s -> %s\n",
+											  argv[i], val, switch_channel_get_name(channel), switch_channel_get_name(tech_pvt->other_channel));
+											  
+							switch_channel_set_variable(tech_pvt->other_channel, argv[i], val);
+						}
+					}
+				}
+			}
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_APP)) {
@@ -385,6 +411,8 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	switch_caller_extension_t *exten;
+	int bow = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -393,6 +421,37 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
+
+
+	if ((exten = switch_channel_get_caller_extension(channel))) {
+		switch_caller_application_t *app_p;
+
+		for (app_p = exten->applications; app_p; app_p = app_p->next) {
+			int32_t flags;
+
+			switch_core_session_get_app_flags(app_p->application_name, &flags);
+
+			if ((flags & SAF_NO_LOOPBACK)) {
+				bow = 1;
+				break;
+			}
+		}
+	}
+
+	if (bow) {
+		switch_core_session_t *other_session;
+		const char *other_uuid;
+
+		if ((find_non_loopback_bridge(tech_pvt->other_session, &other_session, &other_uuid) == SWITCH_STATUS_SUCCESS)) {
+			switch_caller_extension_t *extension;
+			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+			switch_caller_extension_clone(&extension, exten, switch_core_session_get_pool(other_session));
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "BOWOUT Transfering current extension to non-loopback leg.\n");
+			switch_channel_transfer_to_extension(other_channel, extension);
+			switch_core_session_rwunlock(other_session);
+		}
+
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -650,10 +709,26 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	return status;
 }
 
+static void switch_channel_wait_for_state_or_greater(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state)
+{
+
+	switch_assert(channel);
+	
+	for (;;) {
+		if ((switch_channel_get_state(channel) < CS_HANGUP && 
+			 switch_channel_get_state(channel) == switch_channel_get_running_state(channel) && switch_channel_get_running_state(channel) >= want_state) ||
+			(other_channel && switch_channel_down_nosig(other_channel)) || switch_channel_down(channel)) {
+			break;
+		}
+		switch_cond_next();
+	}
+}
+
+
 static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, switch_core_session_t **br_session, const char **br_uuid)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	const char *a_uuid;
+	const char *a_uuid = NULL;
 	switch_core_session_t *sp;
 
 	*br_session = NULL;
@@ -663,9 +738,17 @@ static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, 
 
 	while (a_uuid && (sp = switch_core_session_locate(a_uuid))) {
 		if (switch_core_session_check_interface(sp, loopback_endpoint_interface)) {
-			private_t *tech_pvt = switch_core_session_get_private(sp);
+			private_t *tech_pvt;
+			switch_channel_t *spchan = switch_core_session_get_channel(sp);
 
-			a_uuid = switch_channel_get_partner_uuid(tech_pvt->other_channel);
+			switch_channel_wait_for_state_or_greater(spchan, channel, CS_ROUTING);
+			
+			tech_pvt = switch_core_session_get_private(sp);
+
+			if (tech_pvt->other_channel) {
+				a_uuid = switch_channel_get_partner_uuid(tech_pvt->other_channel);
+			}
+
 			switch_core_session_rwunlock(sp);
 			sp = NULL;
 		} else {
@@ -724,16 +807,20 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 			switch_channel_t *ch_a = NULL, *ch_b = NULL;
 			int good_to_go = 0;
 
+			switch_mutex_unlock(tech_pvt->mutex);
 			find_non_loopback_bridge(session, &br_a, &a_uuid);
 			find_non_loopback_bridge(tech_pvt->other_session, &br_b, &b_uuid);
+			switch_mutex_lock(tech_pvt->mutex);
 
 			
 			if (br_a) {
 				ch_a = switch_core_session_get_channel(br_a);
+				switch_core_media_bug_transfer_recordings(session, br_a);
 			}
 
 			if (br_b) {
 				ch_b = switch_core_session_get_channel(br_b);
+				switch_core_media_bug_transfer_recordings(tech_pvt->other_session, br_b);
 			}
 			
 			if (ch_a && ch_b && switch_channel_test_flag(ch_a, CF_BRIDGED) && switch_channel_test_flag(ch_b, CF_BRIDGED)) {
@@ -961,12 +1048,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_call_cause_t *cancel_cause)
 {
 	char name[128];
+	switch_channel_t *ochannel = NULL;
 
 	if (session) {
-		switch_channel_t *channel = switch_core_session_get_channel(session);
-		switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
-		switch_channel_clear_flag(channel, CF_PROXY_MODE);
-		switch_channel_pre_answer(channel);
+		ochannel = switch_core_session_get_channel(session);
+		switch_channel_clear_flag(ochannel, CF_PROXY_MEDIA);
+		switch_channel_clear_flag(ochannel, CF_PROXY_MODE);
+		switch_channel_pre_answer(ochannel);
 	}
 
 	if ((*new_session = switch_core_session_request(loopback_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
@@ -1098,8 +1186,11 @@ static switch_io_routines_t channel_io_routines = {
 	/*.receive_message */ channel_receive_message
 };
 
+SWITCH_STANDARD_APP(unloop_function) { /* NOOP */}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 {
+	switch_application_interface_t *app_interface;
 
 	memset(&globals, 0, sizeof(globals));
 
@@ -1109,6 +1200,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load)
 	loopback_endpoint_interface->interface_name = "loopback";
 	loopback_endpoint_interface->io_routines = &channel_io_routines;
 	loopback_endpoint_interface->state_handler = &channel_event_handlers;
+
+	SWITCH_ADD_APP(app_interface, "unloop", "Tell loopback to unfold", "Tell loopback to unfold", unloop_function, "", SAF_NO_LOOPBACK);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

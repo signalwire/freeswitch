@@ -29,11 +29,10 @@
 /* Target length for the equalizer is about 63 taps, to deal with the worst stuff
    in V.56bis. */
 /*! The length of the equalizer buffer */
-//#define V17_EQUALIZER_LEN           33
-#define V17_EQUALIZER_LEN           17
+#define V17_EQUALIZER_LEN           33
+
 /*! Samples before the target position in the equalizer buffer */
-//#define V17_EQUALIZER_PRE_LEN       16
-#define V17_EQUALIZER_PRE_LEN       8
+#define V17_EQUALIZER_PRE_LEN       16
 
 /*! The number of taps in the pulse shaping/bandpass filter */
 #define V17_RX_FILTER_STEPS         27
@@ -202,10 +201,10 @@ struct v17_rx_state_s
                This is only for performance analysis purposes. */
     int total_baud_timing_correction;
 
-    /*! \brief Starting phase angles for the coarse carrier aquisition step. */
-    int32_t start_angles[2];
-    /*! \brief History list of phase angles for the coarse carrier aquisition step. */
-    int32_t angles[16];
+    /*! \brief The previous symbol phase angles for the coarse carrier aquisition step. */
+    int32_t last_angles[2];
+    /*! \brief History list of phase angle differences for the coarse carrier aquisition step. */
+    int32_t diff_angles[16];
 
     /*! \brief A pointer to the current space map. There is a space map for
                each trellis state. */

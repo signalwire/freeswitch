@@ -36,7 +36,7 @@ struct TChanSwitchVtbl {
 };
 
 struct _TChanSwitch {
-    uint                   signature;
+    unsigned int           signature;
         /* With both background and foreground use of switches, and
            background being both fork and pthread, it is very easy to
            screw up switch lifetime and try to destroy twice.  We use

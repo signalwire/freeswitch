@@ -702,16 +702,12 @@ static JSBool event_chat_execute(JSContext * cx, JSObject * obj, uintN argc, jsv
 				arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 			}
 
-			goto end;
-		
 			switch_core_execute_chat_app(eo->event, app, arg);
 
 			*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 			return JS_TRUE;
 		}
 	}
-
- end:
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 	return JS_FALSE;

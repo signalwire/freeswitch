@@ -137,6 +137,11 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	profile->pool = pool;
 	profile->direction = tocopy->direction;
 
+	if (tocopy->times) {
+		profile->old_times = (switch_channel_timetable_t *) switch_core_alloc(profile->pool, sizeof(switch_channel_timetable_t));
+		*profile->old_times = *tocopy->times;
+	}
+
 	if (tocopy->soft) {
 		profile_node_t *pn;
 
@@ -289,6 +294,7 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, const char *prefix, switch_event_t *event)
 {
 	char header_name[1024];
+	switch_channel_timetable_t *times = NULL;
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Direction", prefix);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND ? 
@@ -371,22 +377,35 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		}
 
 	}
+	
+	if (!(times = caller_profile->times)) {
+		times = caller_profile->old_times;
+	}
 
-	if (caller_profile->times) {
+
+	if (times) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Created-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->profile_created);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Created-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->created);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Answered-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->answered);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Progress-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->progress);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Progress-Media-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->progress_media);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Hangup-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->hungup);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Transfer-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->transferred);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Resurrect-Time", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->resurrected);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Bridged-Time", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->bridged);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Last-Hold", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->last_hold);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Hold-Accum", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->hold_accum);
 	}
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Screen-Bit", prefix);

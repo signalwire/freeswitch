@@ -126,6 +126,8 @@ channelDestroy(TChannel * const channelP) {
         SSL_shutdown(channelOpensslP->sslP);
 
     free(channelOpensslP);
+	channelP->implP = 0;
+
 }
 
 

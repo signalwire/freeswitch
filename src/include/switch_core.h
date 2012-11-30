@@ -70,6 +70,12 @@ typedef struct switch_hold_record_s {
 } switch_hold_record_t;
 
 
+typedef struct switch_thread_data_s {
+	switch_thread_start_t func;
+	void *obj;
+	int alloc;
+} switch_thread_data_t;
+
 
 #define MESSAGE_STAMP_FFL(_m) _m->_file = __FILE__; _m->_func = __SWITCH_FUNC__; _m->_line = __LINE__
 
@@ -139,6 +145,7 @@ struct switch_core_port_allocator;
 ///\{
 
 
+SWITCH_DECLARE(void) switch_core_screen_size(int *x, int *y);
 SWITCH_DECLARE(void) switch_core_session_sched_heartbeat(switch_core_session_t *session, uint32_t seconds);
 SWITCH_DECLARE(void) switch_core_session_unsched_heartbeat(switch_core_session_t *session);
 
@@ -702,6 +709,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(_In_
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(_In_ switch_core_session_t *session);
 
 
+SWITCH_DECLARE(switch_status_t) switch_thread_pool_launch_thread(switch_thread_data_t **tdp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_core_session_t *session);
 
 /*! 
@@ -714,6 +722,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_co
 /*! 
   \brief Signal a session's state machine thread that a state change has occured
 */
+SWITCH_DECLARE(switch_mutex_t *) switch_core_session_get_mutex(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(_In_ switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(_In_ switch_core_session_t *session);
 
@@ -740,7 +749,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_loglevel(switch_core_ses
 */
 SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_session_t *session);
 								   
-
+SWITCH_DECLARE(stfu_instance_t *) switch_core_session_get_jb(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_session_soft_lock(switch_core_session_t *session, uint32_t sec);
 SWITCH_DECLARE(void) switch_core_session_soft_unlock(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target);
@@ -817,13 +826,23 @@ SWITCH_DECLARE(void) switch_core_dump_variables(_In_ switch_stream_handle_t *str
 */
 SWITCH_DECLARE(void) switch_core_session_hupall(_In_ switch_call_cause_t cause);
 
+typedef enum {
+	SHT_NONE = 0,
+	SHT_UNANSWERED = (1 << 0),
+	SHT_ANSWERED = (1 << 1)
+} switch_hup_type_t;
+
 /*! 
   \brief Hangup all sessions which match a specific channel variable
   \param var_name The variable name to look for
   \param var_val The value to look for 
   \param cause the hangup cause to apply to the hungup channels
 */
-SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(_In_ const char *var_name, _In_ const char *var_val, _In_ switch_call_cause_t cause);
+SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(_In_ const char *var_name, _In_ const char *var_val, _In_ 
+																	 switch_call_cause_t cause, switch_hup_type_t type);
+SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_matching_var(const char *var_name, const char *var_val);
+#define switch_core_session_hupall_matching_var(_vn, _vv, _c) switch_core_session_hupall_matching_var_ans(_vn, _vv, _c, SHT_UNANSWERED | SHT_ANSWERED)
+
 /*! 
   \brief Hangup all sessions that belong to an endpoint
   \param endpoint_interface The endpoint interface 
@@ -1331,17 +1350,42 @@ SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(_In_ switch_hash_t *hash, _I
  \param hash the hashtable to use
  \return The element, or NULL if it wasn't found 
 */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, _In_ switch_hash_t *hash);
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first(_In_ switch_hash_t *hash);
 
 /*!
  \brief Gets the next element of a hashtable
  \param hi The current element
  \return The next element, or NULL if there are no more
 */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(_In_ switch_hash_index_t *hi);
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(_In_ switch_hash_index_t *hi);
 
 /*!
  \brief Gets the key and value of the current hash element
+ \param hi The current element 
+ \param key [out] the key
+ \param klen [out] the key's size
+ \param val [out] the value 
+*/
+SWITCH_DECLARE(void) switch_core_hash_this(_In_ switch_hash_index_t *hi, _Out_opt_ptrdiff_cap_(klen)
+									  const void **key, _Out_opt_ switch_ssize_t *klen, _Out_ void **val);
+
+/*!
+ \brief DEPRECATED in favor of switch_core_hash_first(). Gets the first element of a hashtable.
+ \param deprecate_me [deprecated] NULL
+ \param hash the hashtable to use
+ \return The element, or NULL if it wasn't found 
+*/
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, _In_ switch_hash_t *hash);
+
+/*!
+ \brief DEPRECATED in favor of switch_core_hash_next(). Gets the next element of a hashtable.
+ \param hi The current element
+ \return The next element, or NULL if there are no more
+*/
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(_In_ switch_hash_index_t *hi);
+
+/*!
+ \brief DEPRECATED in favor of switch_core_hash_this(). Gets the key and value of the current hash element.
  \param hi The current element 
  \param key [out] the key
  \param klen [out] the key's size
@@ -1601,6 +1645,9 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename
 */
 SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries);
 SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries);
+SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries);
+
+
 
 /*! 
   \brief perform a test query then perform a reactive query if the first one fails
@@ -1995,6 +2042,8 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
 */
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void);
 
+SWITCH_DECLARE(switch_bool_t) switch_core_running(void);
+
 /*! 
   \brief Determines if the core is ready to take inbound calls
   \return SWITCH_TRUE or SWITCH_FALSE
@@ -2167,14 +2216,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *dest_proto, sw
 SWITCH_DECLARE(switch_status_t) switch_core_chat_deliver(const char *dest_proto, switch_event_t **message_event);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_preprocess_session(switch_core_session_t *session, const char *cmds);
-SWITCH_DECLARE(void) switch_core_sqldb_stop_thread(void);
-SWITCH_DECLARE(void) switch_core_sqldb_start_thread(void);
+SWITCH_DECLARE(void) switch_core_sqldb_pause(void);
+SWITCH_DECLARE(void) switch_core_sqldb_resume(void);
+
 
 ///\}
 
 /*!
   \}
 */
+
+typedef int (*switch_db_event_callback_func_t) (void *pArg, switch_event_t *event);
 
 #define CACHE_DB_LEN 256
 typedef enum {
@@ -2184,12 +2236,14 @@ typedef enum {
 
 typedef enum {
 	SCDB_TYPE_CORE_DB,
-	SCDB_TYPE_ODBC
+	SCDB_TYPE_ODBC,
+	SCDB_TYPE_PGSQL
 } switch_cache_db_handle_type_t;
 
 typedef union {
 	switch_core_db_t *core_db_dbh;
 	switch_odbc_handle_t *odbc_dbh;
+	switch_pgsql_handle_t *pgsql_dbh;
 } switch_cache_db_native_handle_t;
 
 typedef struct {
@@ -2202,9 +2256,14 @@ typedef struct {
 	char *pass;
 } switch_cache_db_odbc_options_t;
 
+typedef struct {
+	char *dsn;
+} switch_cache_db_pgsql_options_t;
+
 typedef union {
 	switch_cache_db_core_db_options_t core_db_options;
 	switch_cache_db_odbc_options_t odbc_options;
+	switch_cache_db_pgsql_options_t pgsql_options;
 } switch_cache_db_connection_options_t;
 
 struct switch_cache_db_handle;
@@ -2215,6 +2274,11 @@ static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_
 	const char *type_str = "INVALID";
 
 	switch (type) {
+	case SCDB_TYPE_PGSQL:
+		{
+			type_str = "PGSQL";
+		}
+		break;
 	case SCDB_TYPE_ODBC:
 		{
 			type_str = "ODBC";
@@ -2258,6 +2322,10 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 															   const char *file, const char *func, int line);
 #define switch_cache_db_get_db_handle(_a, _b, _c) _switch_cache_db_get_db_handle(_a, _b, _c, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_db_handle_t **dbh, const char *dsn, 
+																   const char *file, const char *func, int line);
+#define switch_cache_db_get_db_handle_dsn(_a, _b) _switch_cache_db_get_db_handle_dsn(_a, _b, __FILE__, __SWITCH_FUNC__, __LINE__)
+
 /*! 
  \brief Executes the sql and returns the result as a string
  \param [in] dbh The handle
@@ -2292,6 +2360,13 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 */
 SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh);
 
+/*!
+ \brief load an external extension to db
+ \param [in] dbh The handle
+ \param [out] the path to the extension
+*/
+SWITCH_DECLARE(int) switch_cache_db_load_extension(switch_cache_db_handle_t *dbh, const char *extension);
+
 /*! 
  \brief Provides some feedback as to the status of the db connection pool
  \param [in] stream stream for status
@@ -2299,13 +2374,16 @@ SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh)
 SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream);
 SWITCH_DECLARE(switch_status_t) _switch_core_db_handle(switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
 #define switch_core_db_handle(_a) _switch_core_db_handle(_a, __FILE__, __SWITCH_FUNC__, __LINE__)
-SWITCH_DECLARE(switch_status_t) _switch_core_recovery_db_handle(switch_cache_db_handle_t ** dbh, const char *file, const char *func, int line);
-#define switch_core_recovery_db_handle(_a) _switch_core_recovery_db_handle(_a, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_handle_t *db,
 															const char *test_sql, const char *drop_sql, const char *reactive_sql);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_db_handle_t *dbh, const char *sql, uint32_t retries);
-SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(switch_cache_db_handle_t *dbh, char *sql, uint32_t retries,
+																			  const char *pre_trans_execute,
+																			  const char *post_trans_execute,
+																			  const char *inner_pre_trans_execute,
+																			  const char *inner_post_trans_execute);
+#define switch_cache_db_persistant_execute_trans(_d, _s, _r) switch_cache_db_persistant_execute_trans_full(_d, _s, _r, NULL, NULL, NULL, NULL)
 
 SWITCH_DECLARE(void) switch_core_set_signal_handlers(void);
 SWITCH_DECLARE(uint32_t) switch_core_debug_level(void);
@@ -2359,10 +2437,33 @@ SWITCH_DECLARE(void) switch_os_yield(void);
 SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, switch_size_t *max);
 
 
+SWITCH_DECLARE(switch_cache_db_handle_type_t) switch_core_dbtype(void);
+SWITCH_DECLARE(void) switch_core_sql_exec(const char *sql);
 SWITCH_DECLARE(int) switch_core_recovery_recover(const char *technology, const char *profile_name);
 SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session, switch_bool_t force);
 SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_recovery_flush(const char *technology, const char *profile_name);
+
+SWITCH_DECLARE(int) switch_sql_queue_manager_size(switch_sql_queue_manager_t *qm, uint32_t index);
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup);
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup);
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_destroy(switch_sql_queue_manager_t **qmp);
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *name,
+																   switch_sql_queue_manager_t **qmp, 
+																   uint32_t numq, const char *dsn, uint32_t max_trans,
+																   const char *pre_trans_execute,
+																   const char *post_trans_execute,
+																   const char *inner_pre_trans_execute,
+																   const char *inner_post_trans_execute);
+
+#define switch_sql_queue_manager_init(_q, _n, _d, _m, _p1, _p2, _ip1, _ip2) switch_sql_queue_manager_init_name(__FILE__, _q, _n, _d, _m, _p1, _p2, _ip1, _ip2)
+
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_start(switch_sql_queue_manager_t *qm);
+SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm);
+SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback(switch_cache_db_handle_t *dbh,
+																		   const char *sql, switch_db_event_callback_func_t callback, void *pdata, char **err);
+							
+SWITCH_DECLARE(pid_t) switch_fork(void);
 
 SWITCH_END_EXTERN_C
 #endif

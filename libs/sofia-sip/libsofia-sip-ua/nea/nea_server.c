@@ -424,12 +424,12 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
     throttle = min_throttle;
 
   if (!url) {
-    SU_DEBUG_5(("nea_server_create(): invalid url\n"));
+    SU_DEBUG_5(("nea_server_create(): invalid url\n" VA_NONE));
     return NULL;
   }
 
   if (min_expires > expires || expires > max_expires) {
-    SU_DEBUG_5(("nea_server_create(): invalid expiration range\n"));
+    SU_DEBUG_5(("nea_server_create(): invalid expiration range\n" VA_NONE));
     return NULL;
   }
 

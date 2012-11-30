@@ -1,4 +1,4 @@
-/* A simple synchronous XML-RPC client written in C. */
+/* A simple synchronous XML-RPC client program written in C. */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,7 +24,7 @@ die_if_fault_occurred(xmlrpc_env * const envP) {
 
 int 
 main(int           const argc, 
-     const char ** const argv ATTR_UNUSED) {
+     const char ** const argv) {
 
     xmlrpc_env env;
     xmlrpc_value * resultP;

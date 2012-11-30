@@ -1185,7 +1185,7 @@ int celliax_serial_getstatus_AT(struct celliax_pvt *p)
 
             NOTICA("incoming SMS message:>>>%s<<<\n", CELLIAX_P_LOG, p->sms_message);
             pipe(fd1);
-            pid1 = fork();
+            pid1 = switch_fork();
 
             if (pid1 == 0) {    //child
               int err;
@@ -1735,7 +1735,7 @@ int celliax_serial_read_AT(struct celliax_pvt *p, int look_for_ack, int timeout_
 
                 NOTICA("incoming SMS message:>>>%s<<<\n", CELLIAX_P_LOG, p->sms_message);
                 pipe(fd1);
-                pid1 = fork();
+                pid1 = switch_fork();
 
                 if (pid1 == 0) {    //child
                   int err;

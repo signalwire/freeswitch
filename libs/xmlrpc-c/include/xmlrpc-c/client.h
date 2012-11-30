@@ -10,6 +10,8 @@
 #ifndef  XMLRPC_CLIENT_H_INCLUDED
 #define  XMLRPC_CLIENT_H_INCLUDED
 
+#include <stdarg.h>
+#include <xmlrpc-c/c_util.h>
 #include <xmlrpc-c/base.h>
 
 #ifdef __cplusplus
@@ -39,8 +41,11 @@ typedef struct xmlrpc_client_transport_ops xmlrpc_client_transport_ops;
    so now we just use void * as a base class pointer.
 */
 
+XMLRPC_DLLEXPORT
 extern struct xmlrpc_client_transport_ops xmlrpc_libwww_transport_ops;
+XMLRPC_DLLEXPORT
 extern struct xmlrpc_client_transport_ops xmlrpc_wininet_transport_ops;
+XMLRPC_DLLEXPORT
 extern struct xmlrpc_client_transport_ops xmlrpc_curl_transport_ops;
 
 enum xmlrpc_sslversion {
@@ -48,6 +53,29 @@ enum xmlrpc_sslversion {
     XMLRPC_SSLVERSION_TLSv1,
     XMLRPC_SSLVERSION_SSLv2,
     XMLRPC_SSLVERSION_SSLv3
+};
+
+
+enum xmlrpc_httpauthtype {
+    /* These are just constants.  They can be or'ed as integers to create
+       a set.
+    */
+    XMLRPC_HTTPAUTH_BASIC         = (1<<0),
+    XMLRPC_HTTPAUTH_DIGEST        = (1<<1),
+    XMLRPC_HTTPAUTH_GSSNEGOTIATE  = (1<<2),
+    XMLRPC_HTTPAUTH_NTLM          = (1<<3), 
+};
+
+/* The following are useful combinations of the HTTP authentication types
+   above.
+*/
+#define XMLRPC_HTTPAUTH_NONE 0
+#define XMLRPC_HTTPAUTH_ANY  ~0
+#define XMLRPC_HTTPAUTH_ANYSAFE (~XMLRPC_HTTPAUTH_BASIC)
+
+enum xmlrpc_httpproxytype {
+    XMLRPC_HTTPPROXY_HTTP   = 0,
+    XMLRPC_HTTPPROXY_SOCKS5 = 5
 };
 
 struct xmlrpc_curl_xportparms {
@@ -71,6 +99,15 @@ struct xmlrpc_curl_xportparms {
     const char * egdsocket;
     const char * ssl_cipher_list;
     unsigned int timeout;
+    xmlrpc_bool dont_advertise;
+    const char * proxy;
+    unsigned int proxy_port;
+    enum xmlrpc_httpproxytype proxy_type;
+    unsigned int proxy_auth;
+        /* A set of authentication schemes -- an OR of
+           enum xmlrpc_httpproxyauth values
+        */
+    const char * proxy_userpwd;
 };
 
 
@@ -88,6 +125,19 @@ struct xmlrpc_wininet_xportparms {
 
 /* XMLRPC_WXPSIZE(xyz) is analogous to XMLRPC_CPSIZE, below */
 
+struct xmlrpc_transfer_progress {
+    double total;
+    double now;
+};
+
+struct xmlrpc_progress_data {
+    struct xmlrpc_transfer_progress call;
+    struct xmlrpc_transfer_progress response;
+};
+
+typedef void xmlrpc_progress_fn(void * const,
+                                struct xmlrpc_progress_data const);
+
 struct xmlrpc_clientparms {
     /* (transport, transportparmsP, transportparm_size) and
        (transportOpsP, transportP) are mutually exclusive.
@@ -100,6 +150,7 @@ struct xmlrpc_clientparms {
     const struct xmlrpc_client_transport_ops * transportOpsP;
     xmlrpc_client_transport *  transportP;
     xmlrpc_dialect             dialect;
+    xmlrpc_progress_fn *       progressFn;
 };
 
 #define XMLRPC_CPSIZE(mbrname) \
@@ -112,23 +163,24 @@ struct xmlrpc_clientparms {
    not the caller is new enough to have supplied a certain parameter.
 */
 
+XMLRPC_DLLEXPORT
 const char * 
 xmlrpc_client_get_default_transport(xmlrpc_env * const env);
 
 /* A callback function to handle the response to an asynchronous call.
 ** If 'fault->fault_occurred' is true, then response will be NULL. All
-** arguments except 'user_data' will be deallocated internally; please do
+** arguments except 'userHandle' will be deallocated internally; please do
 ** not free any of them yourself.
-** WARNING: param_array may (or may not) be NULL if fault->fault_occurred
+** WARNING: 'paramArray' may (or may not) be NULL if fault->fault_occurred
 ** is true, and you set up the call using xmlrpc_client_call_asynch.
 ** WARNING: If asynchronous calls are still pending when the library is
 ** shut down, your handler may (or may not) be called with a fault. */
-typedef void (*xmlrpc_response_handler) (const char *server_url,
-                                         const char *method_name,
-                                         xmlrpc_value *param_array,
-                                         void *user_data,
-                                         xmlrpc_env *fault,
-                                         xmlrpc_value *result);
+typedef void xmlrpc_response_handler(const char *   serverUrl,
+                                     const char *   methodName,
+                                     xmlrpc_value * paramArray,
+                                     void *         userHandle,
+                                     xmlrpc_env *   fault,
+                                     xmlrpc_value * result);
 
 
 /*=========================================================================
@@ -147,73 +199,98 @@ typedef void (*xmlrpc_response_handler) (const char *server_url,
 typedef struct _xmlrpc_server_info xmlrpc_server_info;
 
 /* Create a new server info record, pointing to the specified server. */
+XMLRPC_DLLEXPORT
 xmlrpc_server_info *
 xmlrpc_server_info_new(xmlrpc_env * const envP,
                        const char * const serverUrl);
 
 /* Create a new server info record, with a copy of the old server. */
+XMLRPC_DLLEXPORT
 extern xmlrpc_server_info * 
 xmlrpc_server_info_copy(xmlrpc_env *         const envP,
                         xmlrpc_server_info * const srcP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_info_free(xmlrpc_server_info * const serverP);
 
 
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_server_info_set_user(xmlrpc_env *         const envP,
                             xmlrpc_server_info * const serverInfoP,
                             const char *         const username,
                             const char *         const password);
 
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_server_info_set_basic_auth(xmlrpc_env *         const envP,
                                   xmlrpc_server_info * const serverP,
                                   const char *         const username,
                                   const char *         const password);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_info_allow_auth_basic(xmlrpc_env *         const envP,
                                     xmlrpc_server_info * const sP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_info_disallow_auth_basic(xmlrpc_env *         const envP,
                                        xmlrpc_server_info * const sP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_info_allow_auth_digest(xmlrpc_env *         const envP,
                                      xmlrpc_server_info * const sP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_info_disallow_auth_digest(xmlrpc_env *         const envP,
                                         xmlrpc_server_info * const sP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_info_allow_auth_negotiate(xmlrpc_env *         const envP,
                                         xmlrpc_server_info * const sP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_info_disallow_auth_negotiate(xmlrpc_env *         const envP,
                                            xmlrpc_server_info * const sP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_info_allow_auth_ntlm(xmlrpc_env *         const envP,
                                    xmlrpc_server_info * const sP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_server_info_disallow_auth_ntlm(xmlrpc_env *         const envP,
                                       xmlrpc_server_info * const sP);
 
+/* These are for backward compatibility -- they can't be exported from a
+   Windows DLL.  xmlrpc_server_version() is preferred.
+*/
 extern unsigned int const xmlrpc_client_version_major;
 extern unsigned int const xmlrpc_client_version_minor;
 extern unsigned int const xmlrpc_client_version_point;
 
+XMLRPC_DLLEXPORT
+void
+xmlrpc_client_version(unsigned int * const majorP,
+                      unsigned int * const minorP,
+                      unsigned int * const pointP);
+
+XMLRPC_DLLEXPORT
 void
 xmlrpc_client_setup_global_const(xmlrpc_env * const envP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_client_teardown_global_const(void);
 
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_client_create(xmlrpc_env *                      const envP,
                      int                               const flags,
@@ -223,9 +300,11 @@ xmlrpc_client_create(xmlrpc_env *                      const envP,
                      unsigned int                      const parmSize,
                      xmlrpc_client **                  const clientPP);
 
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_client_destroy(xmlrpc_client * const clientP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_client_transport_call2(
     xmlrpc_env *               const envP,
@@ -234,6 +313,7 @@ xmlrpc_client_transport_call2(
     xmlrpc_mem_block *         const callXmlP,
     xmlrpc_mem_block **        const respXmlPP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_client_call2(xmlrpc_env *               const envP,
                     struct xmlrpc_client *     const clientP,
@@ -242,6 +322,7 @@ xmlrpc_client_call2(xmlrpc_env *               const envP,
                     xmlrpc_value *             const paramArrayP,
                     xmlrpc_value **            const resultPP);
 
+XMLRPC_DLLEXPORT
 void
 xmlrpc_client_call2f(xmlrpc_env *    const envP,
                      xmlrpc_client * const clientP,
@@ -251,32 +332,58 @@ xmlrpc_client_call2f(xmlrpc_env *    const envP,
                      const char *    const format,
                      ...);
 
+XMLRPC_DLLEXPORT
+void
+xmlrpc_client_call2f_va(xmlrpc_env *               const envP,
+                        xmlrpc_client *            const clientP,
+                        const char *               const serverUrl,
+                        const char *               const methodName,
+                        const char *               const format,
+                        xmlrpc_value **            const resultPP,
+                        va_list                          args);
+
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_client_event_loop_finish(xmlrpc_client * const clientP);
 
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_client_event_loop_finish_timeout(xmlrpc_client * const clientP,
                                         unsigned long   const milliseconds);
 
+XMLRPC_DLLEXPORT
 void
-xmlrpc_client_start_rpc(xmlrpc_env *             const envP,
-                        struct xmlrpc_client *   const clientP,
-                        xmlrpc_server_info *     const serverInfoP,
-                        const char *             const methodName,
-                        xmlrpc_value *           const argP,
-                        xmlrpc_response_handler        responseHandler,
-                        void *                   const userData);
+xmlrpc_client_start_rpc(xmlrpc_env *               const envP,
+                        struct xmlrpc_client *     const clientP,
+                        const xmlrpc_server_info * const serverInfoP,
+                        const char *               const methodName,
+                        xmlrpc_value *             const paramArrayP,
+                        xmlrpc_response_handler          responseHandler,
+                        void *                     const userData);
 
+XMLRPC_DLLEXPORT
 void 
 xmlrpc_client_start_rpcf(xmlrpc_env *    const envP,
                          xmlrpc_client * const clientP,
                          const char *    const serverUrl,
                          const char *    const methodName,
-                         xmlrpc_response_handler callback,
+                         xmlrpc_response_handler responseHandler,
                          void *          const userData,
                          const char *    const format,
                          ...);
 
+XMLRPC_DLLEXPORT
+void
+xmlrpc_client_start_rpcf_va(xmlrpc_env *    const envP,
+                            xmlrpc_client * const clientP,
+                            const char *    const serverUrl,
+                            const char *    const methodName,
+                            xmlrpc_response_handler responseHandler,
+                            void *          const userData,
+                            const char *    const format,
+                            va_list               args);
+
+XMLRPC_DLLEXPORT
 void
 xmlrpc_client_set_interrupt(xmlrpc_client * const clientP,
                             int *           const interruptP);

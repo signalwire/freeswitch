@@ -39,6 +39,7 @@
 #define KEY_RIGHT 7
 #define KEY_INSERT 8
 #define PROMPT_OP 9
+#define KEY_DELETE 10
 static int console_bufferInput (char *buf, int len, char *cmd, int key);
 static unsigned char esl_console_complete(const char *buffer, const char *cursor, const char *lastchar);
 #endif
@@ -114,6 +115,31 @@ static void clear_cli(void) {
 	printf("\033[%dC", bare_prompt_str_len);
 	printf("\033[K");
 	fflush(stdout);
+}
+
+static void screen_size(int *x, int *y)
+{
+
+#ifdef WIN32
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	int ret;
+
+	if ((ret = GetConsoleScreenBufferInfo(GetStdHandle( STD_OUTPUT_HANDLE ), &csbi))) {
+		if (x) *x = csbi.dwSize.X;
+		if (y) *y = csbi.dwSize.Y;
+	}
+
+#elif defined(TIOCGWINSZ)
+	struct winsize w;
+	ioctl(0, TIOCGWINSZ, &w);
+
+	if (x) *x = w.ws_col;
+	if (y) *y = w.ws_row;
+#else
+	if (x) *x = 80;
+	if (y) *y = 24;
+#endif
+
 }
 
 /* If a fnkey is configured then process the command */
@@ -292,6 +318,22 @@ static int console_bufferInput (char *addchars, int len, char *cmd, int key)
 	}
 	if (key == KEY_INSERT) {
 		insertMode = !insertMode;
+	}
+	if (key == KEY_DELETE) {
+		if (iCmdCursor < iCmdBuffer) {
+			int pos;
+			for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+				cmd[pos] = cmd[pos + 1];
+			}
+			cmd[pos] = 0;
+			iCmdBuffer--;
+
+			for (pos = iCmdCursor; pos < iCmdBuffer; pos++) {
+				printf("%c", cmd[pos]);
+			}
+			printf(" ");
+			SetConsoleCursorPosition(hOut, position);
+		}
 	}
 	for (iBuf = 0; iBuf < len; iBuf++) {
 		switch (addchars[iBuf]) {
@@ -484,6 +526,9 @@ static BOOL console_readConsole(HANDLE conIn, char *buf, int len, int *pRed, int
 			}
 			if (keyEvent.wVirtualKeyCode == 45 && keyEvent.wVirtualScanCode == 82) {
 				*key = KEY_INSERT;
+			}
+			if (keyEvent.wVirtualKeyCode == 46 && keyEvent.wVirtualScanCode == 83) {
+				*key = KEY_DELETE;
 			}
 			while (keyEvent.wRepeatCount && keyEvent.uChar.AsciiChar) {
 				buf[bufferIndex] = keyEvent.uChar.AsciiChar;
@@ -923,13 +968,19 @@ static const char *inf = "Type /help <enter> to see a list of commands\n\n\n";
 
 static void print_banner(FILE *stream)
 {
+	int x;
+	const char *use = NULL;
 #include <cc.h>
+
+	screen_size(&x, NULL);
+
+	use = (x > 100) ? cc : cc_s;
 
 #ifdef WIN32
 	/* Print banner in yellow with blue background */
 	SetConsoleTextAttribute(hStdout, ESL_SEQ_FYELLOW | BACKGROUND_BLUE);
 	WriteFile(hStdout, banner, (DWORD) strlen(banner), NULL, NULL);
-	WriteFile(hStdout, cc, (DWORD) strlen(cc), NULL, NULL);
+	WriteFile(hStdout, use, (DWORD) strlen(use), NULL, NULL);
 	SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 
 	/* Print the rest info in default colors */
@@ -940,10 +991,14 @@ static void print_banner(FILE *stream)
 			ESL_SEQ_DEFAULT_COLOR,
 			ESL_SEQ_FYELLOW, ESL_SEQ_BBLUE,
 			banner,
-			cc, ESL_SEQ_DEFAULT_COLOR, inf);
+			use, ESL_SEQ_DEFAULT_COLOR, inf);
 
 	fprintf(stream, "%s", output_text_color);
 #endif
+
+	if (x < 160) {
+		fprintf(stream, "\n[This app Best viewed at 160x60 or more..]\n");
+	}
 }
 
 static void set_fn_keys(cli_profile_t *profile)
@@ -1464,6 +1519,9 @@ int main(int argc, char *argv[])
 
 	el_set(el, EL_ADDFN, "ed-complete", "Complete argument", complete);
 	el_set(el, EL_BIND, "^I", "ed-complete", NULL);
+
+	/* "Delete" key. */
+	el_set(el, EL_BIND, "\033[3~", "ed-delete-next-char", NULL);
 
 	if (!(myhistory = history_init())) {
 		esl_log(ESL_LOG_ERROR, "history could not be initialized\n");

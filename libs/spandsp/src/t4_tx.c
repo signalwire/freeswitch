@@ -661,7 +661,7 @@ static int make_header(t4_tx_state_t *s)
         if ((s->header_text = malloc(132 + 1)) == NULL)
             return -1;
     }
-    /* This is very English oriented, but then most FAX machines are. Some
+    /* This is very English oriented, but then most FAX machines are, too. Some
        measure of i18n in the time and date, and even the header_info string, is
        entirely possible, although the font area would need some serious work to
        properly deal with East Asian script. There is no spec for what the header
@@ -733,26 +733,21 @@ static int header_row_read_handler(void *user_data, uint8_t buf[], size_t len)
             return len;
         }
     }
-    switch (s->tiff.image_type)
+    row = s->header_row/repeats;
+    pos = 0;
+    for (t = s->header_text;  *t  &&  pos <= len - 2;  t++)
     {
-    case T4_IMAGE_TYPE_BILEVEL:
-        row = s->header_row/repeats;
-        pos = 0;
-        for (t = s->header_text;  *t  &&  pos <= len - 2;  t++)
-        {
-            pattern = header_font[(uint8_t) *t][row];
-            buf[pos++] = (uint8_t) (pattern >> 8);
-            buf[pos++] = (uint8_t) (pattern & 0xFF);
-        }
-        while (pos < len)
-            buf[pos++] = 0;
-        s->header_row++;
-        if (s->header_row >= 16*repeats)
-        {
-            /* End of header. Change to normal image row data. */
-            set_row_read_handler(s, s->row_handler, s->row_handler_user_data);
-        }
-        break;
+        pattern = header_font[(uint8_t) *t][row];
+        buf[pos++] = (uint8_t) (pattern >> 8);
+        buf[pos++] = (uint8_t) (pattern & 0xFF);
+    }
+    while (pos < len)
+        buf[pos++] = 0;
+    s->header_row++;
+    if (s->header_row >= 16*repeats)
+    {
+        /* End of header. Change to normal image row data. */
+        set_row_read_handler(s, s->row_handler, s->row_handler_user_data);
     }
     return len;
 }
@@ -1113,7 +1108,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
         break;
     }
     /* If there is a page header, create that first */
-    if (s->header_info  &&  s->header_info[0]  &&  make_header(s) == 0)
+    if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL  &&  s->header_info  &&  s->header_info[0]  &&  make_header(s) == 0)
     {
         s->header_row = 0;
         set_row_read_handler(s, header_row_read_handler, (void *) s);

@@ -3,9 +3,10 @@
 #include <string>
 #include <vector>
 #include <list>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
 #include <unistd.h>
 #include <signal.h>
 #include <readline/readline.h>

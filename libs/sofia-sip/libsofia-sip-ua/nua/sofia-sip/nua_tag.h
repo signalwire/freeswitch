@@ -550,6 +550,11 @@ SOFIAPUBVAR tag_typedef_t nutag_path_enable;
 #define NUTAG_PATH_ENABLE_REF(x) nutag_path_enable_ref, tag_bool_vr(&(x))
 SOFIAPUBVAR tag_typedef_t nutag_path_enable_ref;
 
+#define NUTAG_RETRY_AFTER_ENABLE(x)   nutag_retry_after_enable, tag_bool_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_retry_after_enable;
+#define NUTAG_RETRY_AFTER_ENABLE_REF(x) nutag_retry_after_enable_ref, tag_bool_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_retry_after_enable_ref;
+
 #define NUTAG_SERVICE_ROUTE_ENABLE(x) nutag_service_route_enable, tag_bool_v(x)
 SOFIAPUBVAR tag_typedef_t nutag_service_route_enable;
 #define NUTAG_SERVICE_ROUTE_ENABLE_REF(x) \

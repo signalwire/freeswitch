@@ -32,7 +32,7 @@ static const int zero = 0;
 /* Custom standard function pointers. */
 void *( *bson_malloc_func )( size_t ) = malloc;
 void *( *bson_realloc_func )( void *, size_t ) = realloc;
-void  ( *bson_free )( void * ) = free;
+void  ( *bson_free_func )( void * ) = free;
 #ifdef R_SAFETY_NET
 bson_printf_func bson_printf;
 #else
@@ -308,7 +308,7 @@ MONGO_EXPORT void bson_print_raw( const char *data , int depth ) {
    ------------------------------ */
 
 MONGO_EXPORT bson_iterator* bson_iterator_create() {
-    return (bson_iterator*)malloc(sizeof(bson_iterator*));
+    return ( bson_iterator* )malloc( sizeof( bson_iterator ) );
 }
 
 MONGO_EXPORT void bson_iterator_dispose(bson_iterator* i) {
@@ -971,6 +971,10 @@ MONGO_EXPORT bson_err_handler set_bson_err_handler( bson_err_handler func ) {
     bson_err_handler old = err_handler;
     err_handler = func;
     return old;
+}
+
+MONGO_EXPORT void bson_free( void *ptr ) {
+    bson_free_func( ptr );
 }
 
 MONGO_EXPORT void *bson_malloc( int size ) {

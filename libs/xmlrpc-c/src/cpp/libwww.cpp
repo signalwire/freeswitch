@@ -141,7 +141,8 @@ clientXmlTransport_libwww::clientXmlTransport_libwww(
 }
 
 #else  // MUST_BUILD_LIBWWW_CLIENT
- clientXmlTransport_libwww::clientXmlTransport_libwww(string, string) {
+ clientXmlTransport_libwww::clientXmlTransport_libwww(string const,
+                                                      string const) {
 
     throw(error("There is no Libwww client XML transport "
                 "in this XML-RPC client library"));

@@ -77,7 +77,7 @@ public:
 
         assert(bitsInBuffer >= 8);
 
-        *outputP = (this->buffer >> (this->bitsInBuffer - 8)) & 0x3f;
+        *outputP = (this->buffer >> (this->bitsInBuffer - 8)) & 0xff;
         this->bitsInBuffer -= 8;
     }
 

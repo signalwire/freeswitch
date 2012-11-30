@@ -288,7 +288,10 @@ private:
         return true;
 
 /*
-        //BUG in Freeswitch
+        //BUG in Freeswitch  
+
+THANKS FOR NOT REPORTING IT SO WE MUST LIVE WITH A PROBLEM YOU KNOW ABOUT .....
+
         if(switch_threadattr_priority_increase(
                 (switch_threadattr_t *)_thread_info->_attribute) != 0)
             return false;
