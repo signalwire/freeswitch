@@ -4034,20 +4034,6 @@ static switch_status_t load_config(int reload, int del_all)
 		globals.dbname = "fifo";
 	}
 
-	switch_sql_queue_manager_init_name("fifo",
-									   &globals.qm,
-									   2,
-									   globals.odbc_dsn ? globals.odbc_dsn : globals.dbname,
-									   SWITCH_MAX_TRANS,
-									   globals.pre_trans_execute,
-									   globals.post_trans_execute,
-									   globals.inner_pre_trans_execute,
-									   globals.inner_post_trans_execute);
-
-	switch_sql_queue_manager_start(globals.qm);
-
-
-
 	if (!(dbh = fifo_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
 		goto done;
@@ -4499,6 +4485,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 		return status;
 	}
 
+	if (globals.odbc_dsn || globals.dbname) {
+		switch_sql_queue_manager_init_name("fifo",
+										   &globals.qm,
+										   2,
+										   globals.odbc_dsn ? globals.odbc_dsn : globals.dbname,
+										   SWITCH_MAX_TRANS,
+										   globals.pre_trans_execute,
+										   globals.post_trans_execute,
+										   globals.inner_pre_trans_execute,
+										   globals.inner_post_trans_execute);
+	}
+
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_APP(app_interface, "fifo", "Park with FIFO", FIFO_DESC, fifo_function, FIFO_USAGE, SAF_NONE);
@@ -4528,6 +4527,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
 	switch_event_t *pop = NULL;
 	fifo_node_t *node, *this_node;
 	switch_mutex_t *mutex = globals.mutex;
+
+	switch_sql_queue_manager_destroy(&globals.qm);
 
 	switch_event_unbind(&globals.node);
 	switch_event_free_subclass(FIFO_EVENT);
