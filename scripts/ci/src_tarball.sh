@@ -8,8 +8,12 @@ sdir="."
 check_pwd
 check_input_ver_build $@
 eval $(parse_version "$1")
+if [ -n "$grev" ]; then 
+	dst_name="freeswitch-$cmajor.$cminor.$cmicro.$grev"
+else
+	dst_name="freeswitch-$cmajor.$cminor.$cmicro"
+fi
 
-dst_name="freeswitch-$cmajor.$cminor.$cmicro"
 dst_dir="${tmp_dir}/jenkins.$$/$dst_name"
 
 if [ -d "$dst_dir" ]; then
