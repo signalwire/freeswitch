@@ -1582,7 +1582,6 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	nua_t *nua = de->nua;
 	sofia_profile_t *profile = de->profile;
 	sofia_private_t *sofia_private = nua_handle_magic(de->nh);
-	switch_core_session_t *session = de->session;
 	*dep = NULL;
 
 	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
@@ -1597,10 +1596,6 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 
 	nua_handle_unref(nh);
 	nua_stack_unref(nua);
-
-	if (session) {
-		switch_ivr_parse_all_signal_data(session);
-	}
 }
 
 
