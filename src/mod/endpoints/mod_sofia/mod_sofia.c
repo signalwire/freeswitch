@@ -1097,8 +1097,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 
 		if (sofia_test_flag(tech_pvt, TFLAG_SIMPLIFY) && sofia_test_flag(tech_pvt, TFLAG_GOT_ACK)) {
-			sofia_glue_tech_simplify(tech_pvt);
-			sofia_clear_flag(tech_pvt, TFLAG_SIMPLIFY);
+			if (sofia_glue_tech_simplify(tech_pvt)) {
+				sofia_clear_flag(tech_pvt, TFLAG_SIMPLIFY);
+			}
 		}
 
 		while (sofia_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
@@ -1714,7 +1715,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, NULL);
 
-			sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
+			if (switch_true(switch_channel_get_variable(tech_pvt->channel, "sip_auto_simplify"))) {
+				sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
+			}
 
 			
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {

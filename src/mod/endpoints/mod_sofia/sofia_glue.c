@@ -6785,27 +6785,27 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 }
 
 
-void sofia_glue_tech_simplify(private_object_t *tech_pvt)
+int sofia_glue_tech_simplify(private_object_t *tech_pvt)
 {
 	const char *uuid, *network_addr_a = NULL, *network_addr_b = NULL, *simplify, *simplify_other_channel;
 	switch_channel_t *other_channel = NULL, *inbound_channel = NULL;
 	switch_core_session_t *other_session = NULL, *inbound_session = NULL;
 	uint8_t did_simplify = 0;
+	int r = 0;
 
 	if (!switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) || switch_channel_test_flag(tech_pvt->channel, CF_SIMPLIFY)) {
-		return;
+		goto end;
 	}
 
-
-
-	if ((uuid = switch_channel_get_partner_uuid(tech_pvt->channel))
-		&& (other_session = switch_core_session_locate(uuid))) {
+	if ((uuid = switch_channel_get_partner_uuid(tech_pvt->channel)) && (other_session = switch_core_session_locate(uuid))) {
 
 		other_channel = switch_core_session_get_channel(other_session);
 
 		if (switch_channel_test_flag(other_channel, CF_ANSWERED)) {	/* Check if the other channel is answered */
 			simplify = switch_channel_get_variable(tech_pvt->channel, "sip_auto_simplify");
 			simplify_other_channel = switch_channel_get_variable(other_channel, "sip_auto_simplify");
+
+			r = 1;
 
 			if (switch_true(simplify) && !switch_channel_test_flag(tech_pvt->channel, CF_BRIDGE_ORIGINATOR)) {
 				network_addr_a = switch_channel_get_variable(tech_pvt->channel, "network_addr");
@@ -6851,6 +6851,11 @@ void sofia_glue_tech_simplify(private_object_t *tech_pvt)
 
 		switch_core_session_rwunlock(other_session);
 	}
+
+
+ end:
+
+	return r;
 }
 
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on)
