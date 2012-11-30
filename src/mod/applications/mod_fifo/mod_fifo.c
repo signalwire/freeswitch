@@ -4040,6 +4040,21 @@ static switch_status_t load_config(int reload, int del_all)
 	}
 
 	if (!reload) {
+
+
+		switch_sql_queue_manager_init_name("fifo",
+										   &globals.qm,
+										   2,
+										   globals.odbc_dsn ? globals.odbc_dsn : globals.dbname,
+										   SWITCH_MAX_TRANS,
+										   globals.pre_trans_execute,
+										   globals.post_trans_execute,
+										   globals.inner_pre_trans_execute,
+										   globals.inner_post_trans_execute);
+
+
+
+
 		switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1 or taking_calls < 0 or stop_time < 0",
 									  "drop table fifo_outbound", outbound_sql);
 		switch_cache_db_test_reactive(dbh, "delete from fifo_bridge", "drop table fifo_bridge", bridge_sql);
@@ -4483,18 +4498,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 		switch_event_free_subclass(FIFO_EVENT);
 		switch_core_hash_destroy(&globals.fifo_hash);
 		return status;
-	}
-
-	if (globals.odbc_dsn || globals.dbname) {
-		switch_sql_queue_manager_init_name("fifo",
-										   &globals.qm,
-										   2,
-										   globals.odbc_dsn ? globals.odbc_dsn : globals.dbname,
-										   SWITCH_MAX_TRANS,
-										   globals.pre_trans_execute,
-										   globals.post_trans_execute,
-										   globals.inner_pre_trans_execute,
-										   globals.inner_post_trans_execute);
 	}
 
 
