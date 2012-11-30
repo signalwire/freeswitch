@@ -152,7 +152,7 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 			
 	if (!r) {
 		for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
-			if (dbh_ptr->hash == hash && !dbh_ptr->use_count && !switch_test_flag(dbh_ptr, CDF_PRUNE) && 
+			if (dbh_ptr->hash == hash && (dbh_ptr->type != SCDB_TYPE_PGSQL || !dbh_ptr->use_count) && !switch_test_flag(dbh_ptr, CDF_PRUNE) && 
 				switch_mutex_trylock(dbh_ptr->mutex) == SWITCH_STATUS_SUCCESS) {
 				r = dbh_ptr;
 				break;
@@ -697,6 +697,29 @@ SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh)
 	case SCDB_TYPE_PGSQL:
 		{
 			return switch_pgsql_handle_affected_rows(dbh->native_handle.pgsql_dbh);
+		}
+		break;
+	}
+	return 0;
+}
+
+SWITCH_DECLARE(int) switch_cache_db_load_extension(switch_cache_db_handle_t *dbh, const char *extension)
+{
+	switch (dbh->type) {
+	case SCDB_TYPE_CORE_DB:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "try to load extension [%s]!\n", extension);
+			return switch_core_db_load_extension(dbh->native_handle.core_db_dbh, extension);
+		}
+		break;
+	case SCDB_TYPE_ODBC:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "load extension not supported by type ODBC!\n");
+		}
+		break;
+	case SCDB_TYPE_PGSQL:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "load extension not supported by type PGSQL!\n");
 		}
 		break;
 	}
@@ -1706,11 +1729,14 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 	check:
 
-		if ((lc = qm_ttl(qm)) < qm->max_trans / 4) {
-			switch_yield(500000);
-			if ((lc = qm_ttl(qm)) == 0) {
-				switch_thread_cond_wait(qm->cond, qm->cond_mutex);
-			}
+		if ((lc = qm_ttl(qm)) == 0) {
+			switch_thread_cond_wait(qm->cond, qm->cond_mutex);
+		}
+
+		i = 4;
+
+		while (--i > 0 && (lc = qm_ttl(qm)) < qm->max_trans / 4) {
+			switch_yield(50000);
 		}
 	}
 

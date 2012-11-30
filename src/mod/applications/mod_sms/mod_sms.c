@@ -43,6 +43,8 @@ static void event_handler(switch_event_t *event)
 {
 	const char *dest_proto = switch_event_get_header(event, "dest_proto");
 	const char *check_failure = switch_event_get_header(event, "Delivery-Failure");
+	const char *check_nonblocking = switch_event_get_header(event, "Nonblocking-Delivery");
+
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
 
 	if (switch_true(check_failure)) {
@@ -53,6 +55,9 @@ static void event_handler(switch_event_t *event)
 		return;
 	} else if ( check_failure && switch_false(check_failure) ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS Delivery Success\n");
+		return;
+	} else if ( check_nonblocking && switch_true(check_nonblocking) ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS Delivery assumed successful due to being sent in non-blocking manner\n");
 		return;
 	}
 

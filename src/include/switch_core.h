@@ -2042,6 +2042,8 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
 */
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void);
 
+SWITCH_DECLARE(switch_bool_t) switch_core_running(void);
+
 /*! 
   \brief Determines if the core is ready to take inbound calls
   \return SWITCH_TRUE or SWITCH_FALSE
@@ -2357,6 +2359,13 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
  \param [out] the number of affected rows
 */
 SWITCH_DECLARE(int) switch_cache_db_affected_rows(switch_cache_db_handle_t *dbh);
+
+/*!
+ \brief load an external extension to db
+ \param [in] dbh The handle
+ \param [out] the path to the extension
+*/
+SWITCH_DECLARE(int) switch_cache_db_load_extension(switch_cache_db_handle_t *dbh, const char *extension);
 
 /*! 
  \brief Provides some feedback as to the status of the db connection pool

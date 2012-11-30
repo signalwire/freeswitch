@@ -8620,6 +8620,7 @@ static void call_setup_event_handler(switch_event_t *event)
 
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_status", "true");
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_call_id", call_id);
+                                        switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_invite_domain", domain);
 
 					if (!strncasecmp(ostr, "url+", 4)) {
 						ostr += 4;

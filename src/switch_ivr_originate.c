@@ -3115,7 +3115,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			do_continue:
 
 				if (!read_packet) {
-					switch_cond_next();
+					switch_yield(20000);
 				}
 			}
 
@@ -3373,13 +3373,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
 						status = SWITCH_STATUS_SUCCESS;
 					} else {
-					status = switch_channel_answer(caller_channel);
+						status = switch_channel_answer(caller_channel);
 					}
 				} else if (switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 					if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
 						status = SWITCH_STATUS_SUCCESS;
 					} else {
-					status = switch_channel_pre_answer(caller_channel);
+						status = switch_channel_pre_answer(caller_channel);
 					}
 				} else {
 					status = SWITCH_STATUS_SUCCESS;
@@ -3707,11 +3707,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_cond_next();
 		}
 
-		switch_channel_audio_sync(bchan);
+		//switch_channel_audio_sync(bchan);
 
-		if (caller_channel) {
-			switch_channel_audio_sync(caller_channel);
-		}
+		//if (caller_channel) {
+		//	switch_channel_audio_sync(caller_channel);
+		//}
 	}
 
 	if (oglobals.session) {

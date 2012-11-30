@@ -1613,6 +1613,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 
 		if (vnext) {
 			vdata = vnext;
+			vnext = NULL;
 		} else {
 			break;
 		}

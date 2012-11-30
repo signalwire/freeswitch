@@ -524,7 +524,11 @@ int sofia_reg_find_reg_with_positive_expires_callback(void *pArg, int argc, char
 	long int expires;
 	char *contact = NULL;
 
-	expires = atol(argv[1]) - 60 - (long) switch_epoch_time_now(NULL);
+	if (argv[0] && cbt->contact_str && !strcasecmp(argv[0], cbt->contact_str)) {
+		expires = cbt->exptime;
+	} else {
+		expires = atol(argv[1]) - 60 - (long) cbt->time;
+	}
 
 	if (expires > 0) {
 		dst = sofia_glue_get_destination(argv[0]);
@@ -553,16 +557,23 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 {
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
 	nua_handle_t *nh;
-	char to[512] = "";
+	char to[512] = "", call_id[512] = "";
 	sofia_destination_t *dst = NULL;
+	switch_uuid_t uuid;
 
 	switch_snprintf(to, sizeof(to), "sip:%s@%s", argv[1], argv[2]);
+
+	// create call-id for OPTIONS in the form "<uuid>_<original-register-call-id>"
+	switch_uuid_get(&uuid);
+	switch_uuid_format(call_id, &uuid);
+	strcat(call_id, "_");
+	strncat(call_id, argv[0], sizeof(call_id) - SWITCH_UUID_FORMATTED_LENGTH - 2);
 
 	dst = sofia_glue_get_destination(argv[3]);
 	switch_assert(dst);
 	
 	nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(profile->url), SIPTAG_TO_STR(to), NUTAG_URL(dst->contact), SIPTAG_CONTACT_STR(profile->url),
-					SIPTAG_CALL_ID_STR(argv[0]), TAG_END());
+					SIPTAG_CALL_ID_STR(call_id), TAG_END());
 	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 	nua_options(nh, 
 				NTATAG_SIP_T2(5000),
@@ -929,7 +940,7 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *p
 }
 
 
-switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_multi(sofia_profile_t *profile, const char *user, const char *host)
+switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_multi(sofia_profile_t *profile, const char *user, const char *host, time_t reg_time, const char *contact_str, long exptime)
 {
 	struct callback_t cbt = { 0 };
 	char *sql;
@@ -945,6 +956,10 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_mu
 	} else {
 		sql = switch_mprintf("select contact,expires from sip_registrations where sip_user='%q'", user);
 	}
+
+	cbt.time = reg_time;
+	cbt.contact_str = contact_str;
+	cbt.exptime = exptime;
 
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_find_reg_with_positive_expires_callback, &cbt);
 	free(sql);
@@ -1010,6 +1025,7 @@ static int debounce_check(sofia_profile_t *profile, const char *user, const char
 
 	snprintf(key, sizeof(key), "%s%s", user, host);
 
+	switch_mutex_lock(profile->ireg_mutex);
 	if ((last = switch_core_hash_find(profile->mwi_debounce_hash, key))) {
 		if (now - *last > 30) {
 			*last = now;
@@ -1021,6 +1037,7 @@ static int debounce_check(sofia_profile_t *profile, const char *user, const char
 		switch_core_hash_insert(profile->mwi_debounce_hash, key, last);
 		r = 1;
 	}
+	switch_mutex_unlock(profile->ireg_mutex);
 
 	return r;
 }
@@ -1074,6 +1091,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	int send_pres = 0;
 	int is_tls = 0, is_tcp = 0;
 	char expbuf[35] = "";
+	time_t reg_time = switch_epoch_time_now(NULL);
+	
 
 	if (v_event && *v_event) pres_on_reg = switch_event_get_header(*v_event, "send-presence-on-register");
 
@@ -1576,7 +1595,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		contact = sofia_glue_get_url_from_contact(contact_str, 1);
 		url = switch_mprintf("sofia/%q/sip:%q", profile->name, sofia_glue_strip_proto(contact));
 		
-		switch_core_add_registration(to_user, reg_host, call_id, url, (long) switch_epoch_time_now(NULL) + (long) exptime + 60,
+		switch_core_add_registration(to_user, reg_host, call_id, url, (long) reg_time + (long) exptime + 60,
 									 network_ip, network_port_c, is_tls ? "tls" : is_tcp ? "tcp" : "udp", reg_meta);
 
 		switch_safe_free(url);
@@ -1589,7 +1608,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host) "
 					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q')", 
 					call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : "", 
-					contact_str, reg_desc, rpid, (long) switch_epoch_time_now(NULL) + (long) exptime + 60, 
+					contact_str, reg_desc, rpid, (long) reg_time + (long) exptime + 60, 
 					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm, 
 								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host);
 		} else {
@@ -1601,7 +1620,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 								 sub_host, network_ip, network_port_c,
 								 profile->presence_hosts ? profile->presence_hosts : "", guess_ip4, guess_ip4,
                                                                  mod_sofia_globals.hostname, mod_sofia_globals.hostname,
-								 (long) switch_epoch_time_now(NULL) + (long) exptime + 60, 
+								 (long) reg_time + (long) exptime + 60, 
 								 to_user, username, reg_host, contact_str);
 		}				 
 
@@ -1793,7 +1812,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 						TAG_IF(!zstr(expbuf), SIPTAG_EXPIRES_STR(expbuf)),
 						NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_DATE_STR(date), TAG_END());
  
-		} else if ((contact_list = sofia_reg_find_reg_url_with_positive_expires_multi(profile, from_user, reg_host))) {
+		} else if ((contact_list = sofia_reg_find_reg_url_with_positive_expires_multi(profile, from_user, reg_host, reg_time, contact_str, exptime))) {
 			/* all + 1 tag_i elements initialized as NULL - last one implies TAG_END() */
 			switch_zmalloc(contact_tags, sizeof(*contact_tags) * (contact_list->count + 1));
 			i = 0;
@@ -2357,7 +2376,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	if (zstr(np)) {
 		nonce_cb_t cb = { 0 };
 		long nc_long = 0;
-		int sanity = 0;
 
 		first = 1;
 
@@ -2373,13 +2391,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 		switch_assert(sql != NULL);
 
-		do {
-			if (sanity) {
-				switch_yield(100000 * sanity);
-			}
-			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_nonce_callback, &cb);
-		} while(nc_long < 2 && ++sanity < 10 && zstr(np));
-
+		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_nonce_callback, &cb);
 		free(sql);
 
 		//if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {

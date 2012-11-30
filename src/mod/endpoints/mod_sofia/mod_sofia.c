@@ -1097,8 +1097,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 
 		if (sofia_test_flag(tech_pvt, TFLAG_SIMPLIFY) && sofia_test_flag(tech_pvt, TFLAG_GOT_ACK)) {
-			sofia_glue_tech_simplify(tech_pvt);
-			sofia_clear_flag(tech_pvt, TFLAG_SIMPLIFY);
+			if (sofia_glue_tech_simplify(tech_pvt)) {
+				sofia_clear_flag(tech_pvt, TFLAG_SIMPLIFY);
+			}
 		}
 
 		while (sofia_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
@@ -1565,7 +1566,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (switch_core_session_in_thread(session)) {
 			de->session = session;
 		}
-		sofia_process_dispatch_event(&de);
+
+		if (de->data->e_event == nua_i_cancel || de->data->e_event == nua_i_bye) {
+			sofia_set_flag(tech_pvt, TFLAG_SIGDEAD);
+		}
+
+		if (!sofia_test_flag(tech_pvt, TFLAG_SIGDEAD) && (switch_channel_media_up(channel) || switch_channel_get_state(channel) > CS_ROUTING)) {
+			sofia_queue_message(de);
+		} else {
+			sofia_process_dispatch_event(&de);
+		}
+
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
 		goto end;
 	}
@@ -1704,7 +1715,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, NULL);
 
-			sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
+			if (switch_true(switch_channel_get_variable(tech_pvt->channel, "sip_auto_simplify"))) {
+				sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
+			}
 
 			
 			if (switch_rtp_ready(tech_pvt->rtp_session)) {
@@ -2393,7 +2406,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									   TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 									   TAG_IF(!zstr_buf(message), SIPTAG_HEADER_STR(message)),
 									   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), TAG_END());
-						} else if ((ua && (switch_stristr("aastra", ua)))) {
+						} else if ((ua && (switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)))) {
 							snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <sip:%s@%s>", name, number, tech_pvt->profile->sipip);
 
 							sofia_set_flag_locked(tech_pvt, TFLAG_UPDATING_DISPLAY);

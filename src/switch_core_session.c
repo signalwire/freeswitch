@@ -891,9 +891,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_se
 
 		switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 
-		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_THREAD_SLEEPING)) {
-			switch_core_session_wake_session_thread(session);
-		}
+		switch_core_session_wake_session_thread(session);
+
 	}
 
 	return status;
@@ -975,9 +974,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_signal_data(switch_cor
 
 		switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 
-		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_THREAD_SLEEPING)) {
-			switch_core_session_wake_session_thread(session);
-		}
+		switch_core_session_wake_session_thread(session);
+
 	}
 	
 	return status;
@@ -1048,9 +1046,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 			*event = NULL;
 			status = SWITCH_STATUS_SUCCESS;
 
-			if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_THREAD_SLEEPING)) {
-				switch_core_session_wake_session_thread(session);
-			}
+			switch_core_session_wake_session_thread(session);
 		}
 	}
 

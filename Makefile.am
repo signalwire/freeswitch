@@ -606,6 +606,10 @@ version:
 
 reinstall: modwipe uninstall install
 
+pristine:
+	git clean -fdx
+	git reset --hard
+
 update-clean: clean libs/openzap/Makefile python-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
@@ -617,13 +621,6 @@ update-clean: clean libs/openzap/Makefile python-reconf
 swigall:
 	@echo reswigging all
 	sh $(switch_srcdir)/build/swigall.sh
-
-sure: current
-
-speedy-sure: update-clean
-	$(MAKE) -j core
-	cd libs/sofia-sip && $(MAKE) -j
-	$(MAKE) -j modules
 
 speex-reconf:
 	cd libs/speex && autoreconf
@@ -680,6 +677,14 @@ cluecon:
 	@echo
 	@echo http://www.cluecon.com
 	@sleep 5
+
+sure: is-scm pristine update
+	git pull
+	sh bootstrap.sh
+	sh configure $(CONFIGURE_ARGS)
+	make $(MAKE_ARGS)
+	make reinstall
+
 current: cluecon update-clean is-scm
 	$(MAKE) update
 	$(MAKE) all
