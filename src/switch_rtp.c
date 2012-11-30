@@ -3254,7 +3254,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						}
 					}
 					
-					if (rtp_session->hot_hits > 1 && !rtp_session->sync_packets) {// >= (rtp_session->samples_per_second * 30)) {
+					if (rtp_session->hot_hits > 10 && !rtp_session->sync_packets) {// >= (rtp_session->samples_per_second * 30)) {
 						hot_socket = 1;
 					}
 				} else {
@@ -3277,6 +3277,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 									  "%s Auto-Flush catching up %d packets (%d)ms.\n",
 									  switch_core_session_get_name(session),
 									  rtp_session->sync_packets, (rtp_session->ms_per_packet * rtp_session->sync_packets) / 1000);
+					switch_core_timer_sync(&rtp_session->timer);
 				} else {
 
 					switch_core_timer_next(&rtp_session->timer);
