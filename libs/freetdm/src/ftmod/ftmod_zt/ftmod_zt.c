@@ -1309,8 +1309,20 @@ static FIO_READ_FUNCTION(zt_read)
 		else {
 			if (errno == EAGAIN || errno == EINTR)
 				continue;
-			if (errno == ELAST)
-				break;
+			if (errno == ELAST) {
+				zt_event_t zt_event_id = 0;
+				if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event after ELAST on read: %s\n", strerror(errno));
+					r = -1;
+					break;
+				}
+
+				if (handle_dtmf_event(ftdmchan, zt_event_id)) {
+					/* we should enqueue this event somewhere so it can be retrieved by the user, for now, dropping it to see what it is! */
+					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dropping event %d to be able to read data\n", zt_event_id);
+				}
+				continue;
+			}
 
 			ftdm_log(FTDM_LOG_ERROR, "read failed: %s\n", strerror(errno));
 		}
