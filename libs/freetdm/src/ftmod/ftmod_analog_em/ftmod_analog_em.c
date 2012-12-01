@@ -488,9 +488,15 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			continue;
 		}
 
+		len = 0;
 		if (ftdm_channel_read(ftdmchan, frame, &len) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "READ ERROR [%s]\n", ftdmchan->last_error);
 			goto done;
+		}
+
+		if (0 == len) {
+			ftdm_log(FTDM_LOG_DEBUG, "Nothing read\n");
+			continue;
 		}
 
 		if (ftdmchan->detected_tones[0]) {
