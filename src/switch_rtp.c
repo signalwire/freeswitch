@@ -3234,7 +3234,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
-				rtp_session->read_pollfd && (!rtp_session->jb || rtp_session->pause_jb)) {
+				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
 					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_FALSE);
 					/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Initial (%i) %d\n", status, bytes); */
