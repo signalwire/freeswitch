@@ -2565,7 +2565,12 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	}
 
 
-	fetch_cache_data(context, url, &headers, context->cache_file);
+	if ((status = fetch_cache_data(context, url, &headers, context->cache_file)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error checking file cache (check permissions)\n");
+		goto end;
+	}
+
+
 	metadata = switch_core_sprintf(context->pool, "%s:%s:%s:%s",
 								   url,
 								   switch_event_get_header_nil(headers, "last-modified"),
