@@ -759,8 +759,12 @@ static switch_status_t fifo_execute_sql_queued(char **sqlp, switch_bool_t sql_al
 	if (switch_stristr("insert", sql)) {
 		index = 0;
 	}
-
-	switch_sql_queue_manager_push(globals.qm, sql, index, !sql_already_dynamic);
+	
+	if (block) {
+		switch_sql_queue_manager_push_confirm(globals.qm, sql, index, !sql_already_dynamic);
+	} else {
+		switch_sql_queue_manager_push(globals.qm, sql, index, !sql_already_dynamic);
+	}
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;
@@ -2248,7 +2252,7 @@ static void fifo_caller_add(fifo_node_t *node, switch_core_session_t *session)
 						 switch_str_nil(switch_channel_get_variable(channel, "caller_id_number")),
 						 switch_epoch_time_now(NULL));
 
-	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 }
 
 static void fifo_caller_del(const char *uuid)
@@ -2261,7 +2265,7 @@ static void fifo_caller_del(const char *uuid)
 		sql = switch_mprintf("delete from fifo_callers");
 	}
 
-	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 }
 
@@ -3998,6 +4002,8 @@ static switch_status_t load_config(int reload, int del_all)
 		return SWITCH_STATUS_TERM;
 	}
 
+	globals.dbname = "fifo";
+	
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = NULL;
@@ -4030,9 +4036,6 @@ static switch_status_t load_config(int reload, int del_all)
 		}
 	}
 
-	if (zstr(globals.odbc_dsn)) {
-		globals.dbname = "fifo";
-	}
 
 	if (!(dbh = fifo_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
@@ -4040,18 +4043,17 @@ static switch_status_t load_config(int reload, int del_all)
 	}
 
 	if (!reload) {
-
-
 		switch_sql_queue_manager_init_name("fifo",
 										   &globals.qm,
 										   2,
-										   globals.odbc_dsn ? globals.odbc_dsn : globals.dbname,
+										   !zstr(globals.odbc_dsn) ? globals.odbc_dsn : globals.dbname,
 										   SWITCH_MAX_TRANS,
 										   globals.pre_trans_execute,
 										   globals.post_trans_execute,
 										   globals.inner_pre_trans_execute,
 										   globals.inner_post_trans_execute);
-
+		
+		switch_sql_queue_manager_start(globals.qm);
 
 
 
