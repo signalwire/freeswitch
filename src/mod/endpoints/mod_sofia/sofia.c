@@ -1354,7 +1354,7 @@ static void our_sofia_event_callback(nua_event_t event,
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Extension", ref_to_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Domain", ref_to_host);
 				if (switch_true(full_url)) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "full-url", "true");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "full_url", "true");
 				}
 
 				if (sip->sip_call_id && sip->sip_call_id->i_id) {
