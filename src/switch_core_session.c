@@ -1688,6 +1688,12 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 
 		check_queue();
 	}
+
+	while(session_manager.running) {
+		switch_queue_trypush(session_manager.thread_queue, NULL);
+		switch_yield(20000);
+	}
+
 	
 	return NULL;
 }
