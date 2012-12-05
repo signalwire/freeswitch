@@ -2072,7 +2072,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		rtp_session->ready = 2;
 		rtp_session->rx_host = switch_core_strdup(rtp_session->pool, rx_host);
 		rtp_session->rx_port = rx_port;
-		//switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 	} else {
 		switch_rtp_release_port(rx_host, rx_port);
 	}
@@ -2763,7 +2763,8 @@ SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp
 	
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
 			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
-			
+			switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+
 			switch (flush) {
 			case SWITCH_RTP_FLUSH_STICK:
 				switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
@@ -2818,6 +2819,7 @@ static void do_flush(switch_rtp_t *rtp_session)
 			if (switch_rtp_ready(rtp_session)) {
 				bytes = sizeof(rtp_msg_t);
 				switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, &bytes);
+				
 				if (bytes) {
 					int do_cng = 0;
 

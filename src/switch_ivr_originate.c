@@ -3707,11 +3707,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_cond_next();
 		}
 
-		//switch_channel_audio_sync(bchan);
+		switch_channel_audio_sync(bchan);
 
-		//if (caller_channel) {
-		//	switch_channel_audio_sync(caller_channel);
-		//}
+		if (caller_channel) {
+			switch_channel_audio_sync(caller_channel);
+		}
 	}
 
 	if (oglobals.session) {
