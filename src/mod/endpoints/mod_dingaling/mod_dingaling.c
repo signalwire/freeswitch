@@ -83,7 +83,8 @@ typedef enum {
 	TFLAG_TRANSPORT_ACCEPT = (1 << 22),
 	TFLAG_READY = (1 << 23),
 	TFLAG_NAT_MAP = (1 << 24),
-	TFLAG_SECURE = (1 << 25)
+	TFLAG_SECURE = (1 << 25),
+	TFLAG_VIDEO_RTP_READY = (1 << 7)
 } TFLAGS;
 
 typedef enum {
@@ -240,7 +241,7 @@ struct private_object {
 	switch_mutex_t *flag_mutex;
 
 	int read_count;
-
+	switch_time_t audio_ready;
 
 };
 
@@ -1345,10 +1346,6 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 			switch_rtp_destroy(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session);
 		}
 
-
-
-
-
 	} else {
 		if (switch_core_codec_init(&tech_pvt->transports[LDL_TPORT_VIDEO_RTP].read_codec,
 								   tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_name,
@@ -1460,6 +1457,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_user,
 								NULL);//tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
 		switch_channel_set_flag(channel, CF_VIDEO);
+		switch_set_flag(tech_pvt, TFLAG_VIDEO_RTP_READY);
 		//switch_rtp_set_default_payload(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num);
 		//switch_rtp_set_recv_pt(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num);
 		
@@ -1491,11 +1489,15 @@ static int activate_rtp(struct private_object *tech_pvt)
 	int r = 0;
 
 	if (tech_pvt->transports[LDL_TPORT_RTP].ready) {
-		r += activate_audio_rtp(tech_pvt);
+		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) || tech_pvt->transports[LDL_TPORT_RTCP].accepted) {
+			r += activate_audio_rtp(tech_pvt);
+		}
 	}
 
 	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].ready) {
-		r += activate_video_rtp(tech_pvt);
+		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) || tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].accepted) {
+			r += activate_video_rtp(tech_pvt);
+		}
 	}
 
 	return r;
@@ -1631,6 +1633,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 	if ((tech_pvt->transports[LDL_TPORT_RTP].ready && tech_pvt->transports[LDL_TPORT_RTCP].ready)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT);
 		switch_set_flag_locked(tech_pvt, TFLAG_RTP_READY);
+		tech_pvt->audio_ready = switch_micro_time_now();
 	}
 
 
@@ -1793,7 +1796,7 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 	switch_time_t started;
 	switch_time_t now;
-	unsigned int elapsed;
+	unsigned int elapsed, audio_elapsed;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1815,11 +1818,19 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 	while (!(switch_test_flag(tech_pvt, TFLAG_CODEC_READY) &&
 			 switch_test_flag(tech_pvt, TFLAG_RTP_READY) &&
+			 (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) || switch_test_flag(tech_pvt, TFLAG_VIDEO_RTP_READY)) &&
 			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT) && //tech_pvt->read_count &&
 			 tech_pvt->transports[LDL_TPORT_RTP].remote_ip && tech_pvt->transports[LDL_TPORT_RTP].remote_port && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
 		now = switch_micro_time_now();
 		elapsed = (unsigned int) ((now - started) / 1000);
 
+
+		if (switch_test_flag(tech_pvt, TFLAG_RTP_READY) && !switch_test_flag(tech_pvt, TFLAG_VIDEO_RTP_READY)) {
+			audio_elapsed = (unsigned int) ((now - tech_pvt->audio_ready) / 1000);
+			if (audio_elapsed > 1000) {
+				switch_set_flag(tech_pvt, TFLAG_VIDEO_RTP_READY);
+			}
+		}
 
 		if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
 			goto out;
