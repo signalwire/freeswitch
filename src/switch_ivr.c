@@ -640,6 +640,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 				switch_channel_set_flag(channel, CF_BREAK); 
 			}
 			
+			switch_channel_audio_sync(channel);
 		}
 	} else if (cmd_hash == CMD_UNICAST) {
 		char *local_ip = switch_event_get_header(event, "local-ip");
@@ -1771,6 +1772,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		switch_channel_set_caller_profile(channel, new_profile);
 
 		switch_channel_set_state(channel, CS_ROUTING);
+		switch_channel_audio_sync(channel);
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSFER;
 		msg.from = __FILE__;

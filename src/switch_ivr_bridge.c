@@ -1232,8 +1232,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	switch_channel_set_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);
 	switch_channel_clear_flag(peer_channel, CF_BRIDGE_ORIGINATOR);
 
-	//switch_channel_audio_sync(caller_channel);
-	//switch_channel_audio_sync(peer_channel);
+	switch_channel_audio_sync(caller_channel);
+	switch_channel_audio_sync(peer_channel);
 
 	b_leg->session = peer_session;
 	switch_copy_string(b_leg->b_uuid, switch_core_session_get_uuid(session), sizeof(b_leg->b_uuid));
