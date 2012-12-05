@@ -1490,11 +1490,11 @@ static int activate_rtp(struct private_object *tech_pvt)
 {
 	int r = 0;
 
-	if (tech_pvt->transports[LDL_TPORT_RTP].ready && tech_pvt->transports[LDL_TPORT_RTCP].ready) {
+	if (tech_pvt->transports[LDL_TPORT_RTP].ready) {
 		r += activate_audio_rtp(tech_pvt);
 	}
 
-	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].ready && tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].ready) {
+	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].ready) {
 		r += activate_video_rtp(tech_pvt);
 	}
 
