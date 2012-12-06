@@ -1261,6 +1261,7 @@ struct switch_sql_queue_manager {
 	char *inner_post_trans_execute;
 	switch_memory_pool_t *pool;
 	uint32_t max_trans;
+	uint32_t confirm;
 };
 
 static int qm_wake(switch_sql_queue_manager_t *qm)
@@ -1431,6 +1432,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 	}
 
 	switch_mutex_lock(qm->mutex);
+	qm->confirm++;
 	switch_queue_push(qm->sql_queue[pos], dup ? strdup(sql) : (char *)sql);
 	written = qm->pre_written[pos];
 	size = switch_sql_queue_manager_size(qm, pos);
@@ -1450,6 +1452,10 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 			}
 		}
 	}
+
+	switch_mutex_lock(qm->mutex);
+	qm->confirm--;
+	switch_mutex_unlock(qm->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1733,11 +1739,13 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 			switch_thread_cond_wait(qm->cond, qm->cond_mutex);
 		}
 
-		i = 4;
+		i = 40;
 
-		while (--i > 0 && (lc = qm_ttl(qm)) < qm->max_trans / 4) {
-			switch_yield(50000);
+		while (--i > 0 && (lc = qm_ttl(qm)) < qm->max_trans / 4 && !qm->confirm) {
+			switch_yield(5000);
 		}
+
+
 	}
 
 	switch_mutex_unlock(qm->cond_mutex);
