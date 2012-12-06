@@ -20,13 +20,13 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  * The Initial Developer of this module is
- * Ken Rice <krice at rmktek dot com>
+ * Ken Rice <krice@freeswitch.org>
  *
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * Ken Rice <krice at rmktek dot com>
+ * Ken Rice <krice@freeswitch.org>
  *
  * mod_easyroute.c -- EasyRoute
  * Take Incoming DIDs and Lookup where to send them as well as retrieve
