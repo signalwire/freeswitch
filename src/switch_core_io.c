@@ -151,10 +151,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	
 	for(i = 0; i < 2; i++) {
 		if (session->dmachine[i] && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
-			if (switch_channel_try_dtmf_lock(session->channel) == SWITCH_STATUS_SUCCESS) {
-				switch_ivr_dmachine_ping(session->dmachine[i], NULL);
-				switch_channel_dtmf_unlock(session->channel);
-			}
+			switch_ivr_dmachine_ping(session->dmachine[i], NULL);
 		}
 	}
 	
