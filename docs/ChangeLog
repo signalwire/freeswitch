@@ -1,3 +1,7 @@
+freeswitch (1.2.5.2)
+	Maintenance release/bug fixes
+freeswitch (1.2.5.1)
+	Maintenance release/bug fixes
 freeswitch (1.2.5)
 	mod_lua: Enable mod_lua to use native pgsql dbh support  (r:2cea7f0f)
 	mod_sofia: Add att_xfer_destination_number variable to indicate the original destination number of the attended transfer leg on REFER for semi-attended transfer scenarios.  (r:893cd7be)

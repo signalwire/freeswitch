@@ -470,9 +470,15 @@ libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
 	@cd libs/speex && $(MAKE)
 	@$(TOUCH_TARGET)
 
-libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
+libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/Makefile libs/sqlite/.update
 	touch src/include/switch.h
 	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)"
+	@$(TOUCH_TARGET)
+
+libs/sqlite/Makefile: libs/sqlite/configure.ac
+	cd libs/sqlite && autoconf
+	cd libs/sqlite && ./config.status --recheck
+	cd libs/sqlite && ./config.status
 	@$(TOUCH_TARGET)
 
 libs/pcre/libpcre.la: libs/pcre libs/pcre/.update

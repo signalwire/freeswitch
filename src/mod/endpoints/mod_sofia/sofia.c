@@ -1354,7 +1354,7 @@ static void our_sofia_event_callback(nua_event_t event,
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Extension", ref_to_user);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Request-Target-Domain", ref_to_host);
 				if (switch_true(full_url)) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "full-url", "true");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "full_url", "true");
 				}
 
 				if (sip->sip_call_id && sip->sip_call_id->i_id) {
@@ -1582,7 +1582,6 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	nua_t *nua = de->nua;
 	sofia_profile_t *profile = de->profile;
 	sofia_private_t *sofia_private = nua_handle_magic(de->nh);
-	switch_core_session_t *session = de->session;
 	*dep = NULL;
 
 	our_sofia_event_callback(de->data->e_event, de->data->e_status, de->data->e_phrase, de->nua, de->profile, 
@@ -1597,10 +1596,6 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 
 	nua_handle_unref(nh);
 	nua_stack_unref(nua);
-
-	if (session) {
-		switch_ivr_parse_all_signal_data(session);
-	}
 }
 
 
@@ -2428,7 +2423,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n"
 						  "The likely causes for this are:\n" "1) Another application is already listening on the specified address.\n"
-						  "2) The IP the profile is attempting to bind to is not local to this system.", profile->name);
+						  "2) The IP the profile is attempting to bind to is not local to this system.\n", profile->name);
 		sofia_profile_start_failure(profile, profile->name);
 		sofia_glue_del_profile(profile);
 		goto end;
