@@ -312,6 +312,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				if (gateway_ptr->ib_vars) {
 					switch_event_destroy(&gateway_ptr->ib_vars);
 				}
+			} else {
+				last = gateway_ptr;
 			}
 		} else {
 			last = gateway_ptr;
