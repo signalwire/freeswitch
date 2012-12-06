@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice <krice at suspicious dot org
+ * Ken Rice <krice@freeswitch.org>
  * Mathieu Rene <mathieu.rene@gmail.com>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Rupa Schomaker <rupa@rupa.com>
