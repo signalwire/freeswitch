@@ -269,6 +269,11 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 			if (p != sip->sip_from->a_display) free(p);
 			if ((full = sip_header_as_string(nh->nh_home, (void *) sip->sip_from))) {
 				switch_channel_set_variable(channel, "sip_full_from", full);
+
+				if (!switch_channel_get_variable_dup(channel, "sip_orig_full_from", SWITCH_FALSE, -1)) {
+					switch_channel_set_variable(channel, "sip_orig_full_from", full);
+				}
+
 				su_free(nh->nh_home, full);
 			}
 		}
@@ -284,6 +289,11 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 
 			if ((full = sip_header_as_string(nh->nh_home, (void *) sip->sip_to))) {
 				switch_channel_set_variable(channel, "sip_full_to", full);
+
+				if (!switch_channel_get_variable_dup(channel, "sip_orig_full_to", SWITCH_FALSE, -1)) {
+					switch_channel_set_variable(channel, "sip_orig_full_to", full);
+				}
+				
 				su_free(nh->nh_home, full);
 			}
 		}
