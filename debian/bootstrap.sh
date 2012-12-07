@@ -174,7 +174,7 @@ Build-Depends:
  libc6-dev (>= 2.11.3), make (>= 3.81),
  wget, pkg-config,
 # configure options
- libssl-dev, unixodbc-dev,
+ libssl-dev, unixodbc-dev, libpq-dev,
  libncurses5-dev, libjpeg62-dev | libjpeg8-dev,
  python-dev, erlang-dev,
 # documentation
