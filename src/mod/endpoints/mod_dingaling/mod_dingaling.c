@@ -1825,26 +1825,25 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 		if (switch_test_flag(tech_pvt, TFLAG_RTP_READY) && !switch_test_flag(tech_pvt, TFLAG_VIDEO_RTP_READY)) {
 			audio_elapsed = (unsigned int) ((now - tech_pvt->audio_ready) / 1000);
-			printf("WTF %d\n", elapsed);
 			if (audio_elapsed > 1000) {
 				switch_set_flag(tech_pvt, TFLAG_VIDEO_RTP_READY);
 			}
 		}
 
 		if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
-			printf("FUCK %d\n", __LINE__);goto out;
+			goto out;
 		}
 
 
 		if (now >= tech_pvt->next_desc) {
 			if (!do_describe(tech_pvt, 0)) {
-				printf("FUCK %d\n", __LINE__);goto out;
+				goto out;
 			}
 		}
 
 		if (tech_pvt->next_cand && now >= tech_pvt->next_cand) {
 			if (!do_candidates(tech_pvt, 0)) {
-				printf("FUCK %d\n", __LINE__);goto out;
+				goto out;
 			}
 		}
 		if (elapsed > 60000) {
@@ -1870,16 +1869,16 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 	}
 
 	if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		printf("FUCK %d\n", __LINE__);goto out;
+		goto done;
 	}
 
 	if (!activate_rtp(tech_pvt)) {
-		printf("FUCK %d\n", __LINE__);goto out;
+		goto done;
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		if (!do_candidates(tech_pvt, 0)) {
-			printf("FUCK %d\n", __LINE__);goto out;
+			goto done;
 		}
 		if (switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT)) {
 			switch_channel_answer(channel);
