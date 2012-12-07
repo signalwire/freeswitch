@@ -972,7 +972,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 	int ret = 0;
 
 
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) &&
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) && rtp_session->send_msg.header.ts &&
 			rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 50))) {
 			uint8_t data[10] = { 0 };
 			switch_frame_flag_t frame_flags = SFF_NONE;
