@@ -1489,9 +1489,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	int r = 0;
 
 	if (tech_pvt->transports[LDL_TPORT_RTP].ready) {
-		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) || tech_pvt->transports[LDL_TPORT_RTCP].accepted) {
-			r += activate_audio_rtp(tech_pvt);
-		}
+		r += activate_audio_rtp(tech_pvt);
 	}
 
 	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].ready) {
@@ -1827,25 +1825,26 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 		if (switch_test_flag(tech_pvt, TFLAG_RTP_READY) && !switch_test_flag(tech_pvt, TFLAG_VIDEO_RTP_READY)) {
 			audio_elapsed = (unsigned int) ((now - tech_pvt->audio_ready) / 1000);
+			printf("WTF %d\n", elapsed);
 			if (audio_elapsed > 1000) {
 				switch_set_flag(tech_pvt, TFLAG_VIDEO_RTP_READY);
 			}
 		}
 
 		if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
-			goto out;
+			printf("FUCK %d\n", __LINE__);goto out;
 		}
 
 
 		if (now >= tech_pvt->next_desc) {
 			if (!do_describe(tech_pvt, 0)) {
-				goto out;
+				printf("FUCK %d\n", __LINE__);goto out;
 			}
 		}
 
 		if (tech_pvt->next_cand && now >= tech_pvt->next_cand) {
 			if (!do_candidates(tech_pvt, 0)) {
-				goto out;
+				printf("FUCK %d\n", __LINE__);goto out;
 			}
 		}
 		if (elapsed > 60000) {
@@ -1871,16 +1870,16 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 	}
 
 	if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		goto out;
+		printf("FUCK %d\n", __LINE__);goto out;
 	}
 
 	if (!activate_rtp(tech_pvt)) {
-		goto out;
+		printf("FUCK %d\n", __LINE__);goto out;
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		if (!do_candidates(tech_pvt, 0)) {
-			goto out;
+			printf("FUCK %d\n", __LINE__);goto out;
 		}
 		if (switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT)) {
 			switch_channel_answer(channel);
