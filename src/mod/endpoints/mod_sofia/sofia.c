@@ -3212,14 +3212,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->sip_port, params, str_rfc_5626);
+							profile->tls_sip_port : profile->extsipport, params, str_rfc_5626);
 
 				} else {
 					format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->sip_port, params);
+							profile->tls_sip_port : profile->extsipport, params);
 				}
 			} else {
 				if (rfc_5626) {
@@ -3227,14 +3227,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->sip_port, params, str_rfc_5626);
+							profile->tls_sip_port : profile->extsipport, params, str_rfc_5626);
 
 				} else {
 					format = strchr(sipip, ':') ? "<sip:gw+%s@[%s]:%d%s>" : "<sip:gw+%s@%s:%d%s>";
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->sip_port, params);
+							profile->tls_sip_port : profile->extsipport, params);
 
 				}
 			}
@@ -3301,14 +3301,14 @@ static void config_sofia_profile_urls(sofia_profile_t * profile)
 		profile->public_url = switch_core_sprintf(profile->pool,
 												  "sip:%s@%s%s%s:%d",
 												  profile->contact_user,
-												  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->sip_port);
+												  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->extsipport);
 	}
 
 	if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
 		char *ipv6 = strchr(profile->extsipip, ':');
 		profile->url = switch_core_sprintf(profile->pool,
 										   "sip:%s@%s%s%s:%d",
-										   profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->sip_port);
+										   profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->extsipport);
 		profile->bindurl = switch_core_sprintf(profile->pool, "%s;maddr=%s", profile->url, profile->sipip);
 	} else {
 		char *ipv6 = strchr(profile->sipip, ':');
@@ -7999,7 +7999,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			if (sip->sip_contact->m_url->url_port) {
 				port = atoi(sip->sip_contact->m_url->url_port);
 			} else {
-				port = sofia_glue_transport_has_tls(transport) ? profile->tls_sip_port : profile->sip_port;
+				port = sofia_glue_transport_has_tls(transport) ? profile->tls_sip_port : profile->extsipport;
 			}
 
 			ipv6 = strchr(host, ':');
