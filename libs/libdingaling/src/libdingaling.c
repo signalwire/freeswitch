@@ -1567,6 +1567,7 @@ static int on_stream_component(ldl_handle_t *handle, int type, iks *node)
 					}
 					globals.logger(DL_LOG_DEBUG, "XMPP authenticated\n");
 					ldl_set_flag_locked(handle, LDL_FLAG_AUTHORIZED);
+					ldl_set_flag_locked(handle, LDL_FLAG_CONNECTED);
 					handle->fail_count = 0;
 				}
 			} else {
@@ -1966,8 +1967,9 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 				ldl_flush_queue(handle, 0);
 			}
 
-			handle->counter--;
 			if (!ldl_test_flag(handle, LDL_FLAG_CONNECTED)) {
+				handle->counter--;
+
 				if (IKS_NET_TLSFAIL == e) {
 					globals.logger(DL_LOG_CRIT, "tls handshake failed\n");
 					microsleep(500);
