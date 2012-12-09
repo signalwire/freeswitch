@@ -3,7 +3,7 @@ Upstream-Name: freeswitch
 Source: http://freeswitch.org/
 
 Files: *
-Copyright: 2012 Anthony Minessale II <anthm@freeswitch.org> and many other contributors
+Copyright: 2005-2012 Anthony Minessale II <anthm@freeswitch.org>
 License: MPL-1.1
                            MOZILLA PUBLIC LICENSE
                                  Version 1.1
@@ -1009,3 +1009,459 @@ License: MPL-1.1 or GPL-2+
       the notices in the Source Code files of the Original Code. You should
       use the text of this Exhibit A rather than the text found in the
       Original Code Source Code for Your Modifications.]
+
+Files: libs/unimrcp/*
+Copyright: 2008-2010 Arsen Chaloyan
+License: Apache-2.0
+
+Files: libs/curl/*
+Copyright: 1996-2012, Daniel Stenberg <daniel@haxx.se>
+License: curl
+
+Files: libs/curl/tests/certs/scripts/genroot.sh
+ libs/curl/tests/certs/scripts/genserv.sh
+Copyright: 2000-2009, EdelWeb for EdelKey and OpenEvidence
+License: curl
+
+Files: libs/curl/tests/server/tftpd.c
+Copyright: 1983 Regents of the University of California
+License: BSD-4-Clause
+
+Files: libs/curl/tests/server/fake_ntlm.c
+Copyright: 1998-2010, Mandy Wu <mandy.wu@intel.com>
+License: curl
+
+Files: libs/curl/docs/examples/fopen.c
+Copyright: 2003, Simtec Electronics
+License: BSD-3-Clause
+
+Files: libs/curl/docs/examples/rtsp.c
+Copyright: 2011, Jim Hollinger / HOLDERS AND CONTRIBUTORS
+License: BSD-3-Clause
+
+Files: libs/curl/docs/examples/curlgtk.c
+Copyright: 2003, The OpenEvidence Project
+License: curl
+
+Files: libs/curl/docs/examples/curlx.c
+Copyright: 2003, The OpenEvidence Project
+License:
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions, the following disclaimer,
+    and the original OpenSSL and SSLeay Licences below.
+ .
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions, the following disclaimer
+    and the original OpenSSL and SSLeay Licences below in
+    the documentation and/or other materials provided with the
+    distribution.
+ .
+ 3. All advertising materials mentioning features or use of this
+    software must display the following acknowledgments:
+    "This product includes software developed by the Openevidence Project
+    for use in the OpenEvidence Toolkit. (http://www.openevidence.org/)"
+    This product includes software developed by the OpenSSL Project
+    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+    This product includes cryptographic software written by Eric Young
+    (eay@cryptsoft.com).  This product includes software written by Tim
+    Hudson (tjh@cryptsoft.com)."
+ .
+ 4. The names "OpenEvidence Toolkit" and "OpenEvidence Project" must not be
+    used to endorse or promote products derived from this software without
+    prior written permission. For written permission, please contact
+    openevidence-core@openevidence.org.
+ .
+ 5. Products derived from this software may not be called "OpenEvidence"
+    nor may "OpenEvidence" appear in their names without prior written
+    permission of the OpenEvidence Project.
+ .
+ 6. Redistributions of any form whatsoever must retain the following
+    acknowledgments:
+    "This product includes software developed by the OpenEvidence Project
+    for use in the OpenEvidence Toolkit (http://www.openevidence.org/)
+    This product includes software developed by the OpenSSL Project
+    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+    This product includes cryptographic software written by Eric Young
+    (eay@cryptsoft.com).  This product includes software written by Tim
+    Hudson (tjh@cryptsoft.com)."
+ .
+ THIS SOFTWARE IS PROVIDED BY THE OpenEvidence PROJECT ``AS IS'' AND ANY
+ EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenEvidence PROJECT OR
+ ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Files: libs/curl/src/macos/src/macos_main.cpp
+Copyright: 2001, Eric Lavigne
+License:
+ Permission is granted to anyone to use this software for any purpose on any computer system, and to redistribute it freely, subject to the following restrictions: - The author is not responsible for the consequences of use of this software, no matter how awful, even if they arise from defects in it. - The origin of this software must not be misrepresented, either by explicit claim or by omission. - You are allowed to distributed modified copies of the software, in source and binary form, provided they are marked plainly as altered versions, and are not misrepresented as being the original software.
+
+Files: libs/curl/lib/polarssl.*
+Copyright: 2010, Hoi-Ho Chan <hoiho.chan@gmail.com>
+License: curl
+
+Files: libs/curl/lib/curl_rtmp.*
+Copyright: 2010, Howard Chu <hyc@highlandsun.com>
+License: curl
+
+Files: libs/curl/lib/openldap.c
+Copyright: 2011, Daniel Stenberg <daniel@haxx.se>, et al
+ 2010, Howard Chu <hyc@openldap.org>
+License: curl
+
+Files: libs/curl/lib/krb5.c
+ libs/curl/lib/krb4.c
+ libs/curl/lib/security.c
+Copyright: 2004-2011 Daniel Stenberg
+ 1995-1999 Kungliga Tekniska Högskolan
+License: BSD-3-Clause
+
+Files: libs/curl/lib/inet_pton.c
+ libs/curl/lib/inet_ntop.c
+Copyright: 1996-2001 Internet Software Consortium
+License: ISC
+
+Files: libs/curl/lib/socks_gssapi.c
+ libs/curl/lib/socks_sspi.c
+Copyright: 2009-2011, Markus Moeller <markus_moeller@compuserve.com>
+License: curl
+
+Files: libs/curl/lib/md5.c
+Copyright: 1998 - 2005, Daniel Stenberg, <daniel@haxx.se>, et al
+ 1991-2, RSA Data Security, Inc.
+License: curl
+
+Files: libs/curl/lib/md4.c
+Copyright: 1990-1992, RSA Data Security, Inc
+License:
+ License to copy and use this software is granted provided that it
+ is identified as the "RSA Data Security, Inc. MD4 Message-Digest
+ Algorithm" in all material mentioning or referencing this software
+ or this function.
+ .
+ License is also granted to make and use derivative works provided
+ that such works are identified as "derived from the RSA Data
+ Security, Inc. MD4 Message-Digest Algorithm" in all material
+ mentioning or referencing the derived work.
+ .
+ RSA Data Security, Inc. makes no representations concerning either
+ the merchantability of this software or the suitability of this
+ software for any particular purpose. It is provided "as is"
+ without express or implied warranty of any kind.
+ .
+ These notices must be retained in any copies of any part of this
+ documentation and/or software.
+
+License: curl
+ All rights reserved.
+ .
+ Permission to use, copy, modify, and distribute this software for any purpose
+ with or without fee is hereby granted, provided that the above copyright
+ notice and this permission notice appear in all copies.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN
+ NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+ OR OTHER DEALINGS IN THE SOFTWARE.
+ .
+ Except as contained in this notice, the name of a copyright holder shall not
+ be used in advertising or otherwise to promote the sale, use or other dealings
+ in this Software without prior written authorization of the copyright holder.
+
+License: BSD-3-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ .
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ .
+ 3. Neither the name of the Institute nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+
+License: BSD-4-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ .
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ .
+ 3. Neither the name of the Institute nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+ .
+ 4. Neither the name of the <organization> nor the
+    names of its contributors may be used to endorse or promote products
+    derived from this software without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+
+License: ISC
+ Permission to use, copy, modify, and/or distribute this software for any
+ purpose with or without fee is hereby granted, provided that the above
+ copyright notice and this permission notice appear in all copies.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+Files: libs/sqlite/*
+Copyright: D. Richard Hipp <drh@hwaci.com>
+License: public-domain
+ The author disclaims all copyright. The library is in the public domain.
+
+Files: libs/freetdm/*
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2012, Anthony Minessale II
+ 2009,2010 Moises Silva <moy@sangoma.com>
+ David Yat Sin <dyatsin@sangoma.com>
+ 2007, Jan Vidar Berger, Case Labs, Ltd.
+ 2007,2008 Michael Jerris
+ 2001-2006 Steve Underwood <steveu@coppice.org>
+ 2001-2006 Steve Underwood
+ 2005 Robert Krten
+ 2002,2004 Christopher Clark <firstname.lastname@cl.cam.ac.uk>
+ 2006 Nenad Corbic <ncorbic@sangoma.com>
+ 1984-2011 Sangoma Technologies Inc.
+ 2007, Michael S. Collins
+License: BSD-2-clause
+
+Files: libs/freetdm/src/priserver.c
+Copyright: 2005-2012, Anthony Minessale II
+ Nenad Corbic <ncorbic@sangoma.com>
+License: GPL-2+
+
+Files: libs/iksemel/*
+Copyright: 2000-2007 Gurer Ozen <madcat@e-kolay.net>
+License: LGPL-2.1
+
+Files: libs/apr*/*
+Copyright: 2000-2005 The Apache Software Foundation or its licensors
+ 1991-2, RSA Data Security, Inc.
+ 1996 by Internet Software Consortium.
+ 2000 by Martin Pool <mbp@humbug.org.au>
+ 2000-2004 Ryan Bloom
+ 1998, 1999 Thai Open Source Software Center Ltd
+ 1998, 1999 Enbridge Pipelines Inc.
+ 1999-2001 Dave Carrigan
+ 2000, Clark Cooper
+License: Apache-2.0
+
+Files: libs/miniupnpc/*
+Copyright: 2005-2008, Thomas Bernard
+License: BSD-2-clause
+
+Files: libs/ldns/*
+Copyright: 2001-2008, NLnet Labs
+ 2000-2001, Aaron D. Gifford
+ 2001-2008 NLnet Labs. This is free software.
+ 2001-2008 NLnet Labs, 2005, 2006, 2007, 2008
+ 2001-2008 NLnet Labs, All right reserved
+ 2004-2008 NLnet Labs, 2004-2008
+ 2005 NLnet Labs, 2005
+ 2000-2003 Damien Miller
+ 1999 WIDE Project
+ 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+ 1996, 1998 Internet Software Consortium.
+ 1995 International Business Machines
+License: BSD-2-clause
+
+Files: libs/js/*
+Copyright: 1998-2006 Mozilla <http://www.mozilla.org/>
+ 1996-2000 Netscape Communications Corporation
+ 2000 International Business Machines Corporation
+ 1989-1991, Apple Computer, Inc. 1989-1991
+ 1992 Charles Petzold, 1992
+ 1991 Lucent Technologies
+License: MPL-1.1 or GPL-2 or LGPL-2.1
+
+Files: libs/spandsp/*
+Copyright: 2006 Steve Underwood
+License: LGPL-2.1
+
+Files: libs/speex/*
+Copyright: 2002-2008     Xiph.org Foundation
+ 2002-2008     Jean-Marc Valin
+ 2005-2007     Analog Devices Inc.
+ 2005-2008     Commonwealth Scientific and Industrial Research Organisation (CSIRO)
+ 1993, 2002, 2006 David Rowe
+ 2003          EpicGames
+ 1992-1994     Jutta Degener, Carsten Bormann
+License: BSD-3-clause
+
+Files: libs/spandsp/tests/*
+Copyright: 2006 Steve Underwood
+License: GPL-2
+
+Files: src/mod/event_handlers/mod_cdr_mongodb/*
+Copyright: 2009-2012 10gen Inc.
+License: Apache-2.0
+
+Files: libs/sofia-sip/*
+Copyright: 2005,2006 Nokia Corporation
+License: LGPL-2.1+
+
+Files: libs/libsndfile/*
+Copyright: 2004-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+License: LGPL-2.1+
+
+Files: libs/libsndfile/src/GSM610/*
+Copyright: 1992, 1993, 1994 by Jutta Degener and Carsten Bormann
+License:
+ Their work was released under the following license which is 
+ assumed to be compatible with The GNU Lesser General Public License.
+ 
+ ----------------------------------------------------------------------------
+ 
+ Copyright 1992, 1993, 1994 by Jutta Degener and Carsten Bormann,
+ Technische Universitaet Berlin
+ 
+ Any use of this software is permitted provided that this notice is not
+ removed and that neither the authors nor the Technische Universitaet Berlin
+ are deemed to have made any representations as to the suitability of this
+ software for any purpose nor are held responsible for any defects of
+ this software.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
+ 
+ As a matter of courtesy, the authors request to be informed about uses
+ this software has found, about bugs in this software, and about any
+ improvements that may be of general interest.
+ 
+ Berlin, 28.11.1994
+ Jutta Degener (jutta@cs.tu-berlin.de)
+ Carsten Bormann (cabo@cs.tu-berlin.de)
+
+Files: libs/libsndfile/src/G72x/*
+Copyright: Sun Microsystems, Inc.
+License: public-domain
+
+Files: src/mod/endpoints/mod_khomp/*
+Copyright: 2007-2009 Khomp Ind. & Com.
+License: MPL-1.1 or LGPL-2.1
+
+Files: libs/pcre/*
+Copyright: 1997-2009 University of Cambridge
+License: BSD-3-clause
+
+Files: libs/silk/*
+Copyright: 2006-2010, Skype Limited.
+License: BSD-2-clause
+
+Files: libs/libdingaling/*
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ 2001-2003 Allan Saddi <allan@saddi.com>
+License: MPL-1.1
+
+Files: libs/libcodec2/*
+Copyright: 1990-2010 David Rowe
+ 2010 Perens LLC <bruce@perens.com>
+ 1990-2010 David Rowe 2009
+License: LGPL-2.1
+
+Files: libs/srtp/*
+Copyright: 2001-2005, Cisco Systems, Inc.
+License: BSD-3-clause
+
+Files: libs/portaudio/*
+Copyright: 1999-2006 Ross Bencina and Phil Burk
+License: MIT/X11 (BSD like)
+
+Files: libs/tiff-4.0.2/*
+Copyright: 1988-1997 Sam Leffler
+ 1991-1997 Silicon Graphics, Inc.
+License: MIT/X11 (BSD like)
+
+Files: libs/libks/*
+Copyright: 2000 by Gray Watson
+License: BSD
+
+Files: libs/libedit/*
+Copyright: 1992, 1993 The Regents of the University of California.
+ 1997-2005 The NetBSD Foundation, Inc.
+ 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+License: BSD-3-clause
+
+Files: src/mod/endpoints/mod_portaudio/*
+Copyright: 1999-2000 Ross Bencina and Phil Burk
+ 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+License: MIT/X11 (BSD like)
+
+Files: libs/esl/*
+Copyright: 2007 Michael Jerris
+ 2002 Todd C. Miller <Todd.Miller@courtesan.com>
+ 2007-2012, Anthony Minessale II
+ 2000 The NetBSD Foundation, Inc.
+ 2009 Dave Gamble
+License: BSD-like
+
+Files: libs/broadvoice/*
+Copyright: 2000-2009 Broadcom Corporation
+ 2008-2009 Steve Underwood <steveu@coppice.org>
+ 2001-2009 Steve Underwood
+ 2006 Michael Jerris
+License: LGPL-2.1
+
+Files: libs/ilbc/*
+Copyright: 2007-2008, Steve Underwood
+ 2006 Michael Jerris
+ 2004, The Internet Society
+Comment: Disclaimer: non-comercial use, perhaps, and non-modifiable (standards compliance)
+License: GIPS
+
+Files: libs/libg722_1/*
+Copyright: 2004 Polycom, Inc
+ 2006 Michael Jerris
+ 2001-2009 Steve Underwood <steveu@coppice.org>
+ 2001-2006 Steve Underwood
+Comment: Disclaimer: non-comercial use, perhaps, and non-modifiable (standards compliance)
+License: patent-mess
+
