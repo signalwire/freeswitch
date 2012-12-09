@@ -56,8 +56,8 @@ struct modem_state {
 
 static struct modem_state MODEM_STATE[] = {
 	{MODEM_STATE_INIT, "INIT"},
-	{MODEM_STATE_ONHOOK,	"ONHOOK"},
-	{MODEM_STATE_OFFHOOK,  "OFFHOOK"},
+	{MODEM_STATE_ONHOOK, "ONHOOK"},
+	{MODEM_STATE_OFFHOOK, "OFFHOOK"},
 	{MODEM_STATE_ACQUIRED, "ACQUIRED"},
 	{MODEM_STATE_RINGING, "RINGING"},
 	{MODEM_STATE_ANSWERED, "ANSWERED"},
@@ -214,9 +214,10 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 #ifdef WIN32
-	COMMTIMEOUTS timeouts={0};
+	COMMTIMEOUTS timeouts = {0};
 #endif
-	
+    logging_state_t *logging;
+
 	memset(modem, 0, sizeof(*modem));
 
 	modem->master = -1;
@@ -239,7 +240,7 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 		modem->stty = ttyname(modem->slave);
 	}
 #else
-#if WIN32
+#ifdef WIN32
 	modem->slot = 4+globals.NEXT_ID++; /* need work here we start at COM4 for now*/
 	snprintf(modem->devlink, sizeof(modem->devlink), "COM%d", modem->slot);
 
@@ -250,9 +251,9 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 					OPEN_EXISTING,
 					FILE_FLAG_OVERLAPPED,
 					0);
-	if(modem->master==INVALID_HANDLE_VALUE) {
+	if (modem->master == INVALID_HANDLE_VALUE) {
 		status = SWITCH_STATUS_FALSE;
-		if(GetLastError()==ERROR_FILE_NOT_FOUND) {
+		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: Serial port does not exist\n");
 			goto end;
 		}
@@ -321,16 +322,16 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 		goto end;
 	}
 #else
-	timeouts.ReadIntervalTimeout=50;
-	timeouts.ReadTotalTimeoutConstant=50;
-	timeouts.ReadTotalTimeoutMultiplier=10;
+	timeouts.ReadIntervalTimeout = 50;
+	timeouts.ReadTotalTimeoutConstant = 50;
+	timeouts.ReadTotalTimeoutMultiplier = 10;
 
-	timeouts.WriteTotalTimeoutConstant=50;
-	timeouts.WriteTotalTimeoutMultiplier=10;
+	timeouts.WriteTotalTimeoutConstant = 50;
+	timeouts.WriteTotalTimeoutMultiplier = 10;
 
 	SetCommMask(modem->master, EV_RXCHAR);
 
-	if(!SetCommTimeouts(modem->master, &timeouts)){
+	if (!SetCommTimeouts(modem->master, &timeouts)){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set up non-blocking read on %s\n", modem->devlink);
 		modem_close(modem);
 		status = SWITCH_STATUS_FALSE;
@@ -347,15 +348,21 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 	}
 
 	if (spandsp_globals.modem_verbose) {
-		span_log_set_message_handler(&modem->t31_state->logging, spanfax_log_message, NULL);
-		span_log_set_message_handler(&modem->t31_state->audio.modems.fast_modems.v17_rx.logging, spanfax_log_message, NULL);
-		span_log_set_message_handler(&modem->t31_state->audio.modems.fast_modems.v29_rx.logging, spanfax_log_message, NULL);
-		span_log_set_message_handler(&modem->t31_state->audio.modems.fast_modems.v27ter_rx.logging, spanfax_log_message, NULL);
+        logging = t31_get_logging_state(modem->t31_state);
+		span_log_set_message_handler(logging, spanfax_log_message, NULL);
+		span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 
-		modem->t31_state->logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
-		modem->t31_state->audio.modems.fast_modems.v17_rx.logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
-		modem->t31_state->audio.modems.fast_modems.v29_rx.logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
-		modem->t31_state->audio.modems.fast_modems.v27ter_rx.logging.level = SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW;
+        logging = v17_rx_get_logging_state(&modem->t31_state->audio.modems.fast_modems.v17_rx);
+		span_log_set_message_handler(logging, spanfax_log_message, NULL);
+		span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+
+        logging = v29_rx_get_logging_state(&modem->t31_state->audio.modems.fast_modems.v29_rx);
+		span_log_set_message_handler(logging, spanfax_log_message, NULL);
+		span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+
+        logging = v27ter_rx_get_logging_state(&modem->t31_state->audio.modems.fast_modems.v27ter_rx);
+		span_log_set_message_handler(logging, spanfax_log_message, NULL);
+		span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 	}
 
 	modem->control_handler = control_handler;
@@ -1311,8 +1318,8 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 			if (!strncasecmp(buf, "AT", 2)) {
 				int x;
 				strncpy(tmp, buf, r);
-				for(x = 0; x < r; x++) {
-					if(tmp[x] == '\r' || tmp[x] == '\n') {
+				for (x = 0; x < r; x++) {
+					if (tmp[x] == '\r' || tmp[x] == '\n') {
 						tmp[x] = '\0';
 					}
 				}
