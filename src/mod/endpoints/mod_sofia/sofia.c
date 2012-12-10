@@ -2481,6 +2481,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		for (via = vias; via; via = via->v_next) {
 			if (sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_PORT) && !strcmp(via->v_protocol, "SIP/2.0/UDP")) {
 				profile->sip_port = atoi(via->v_port);
+				if (!profile->extsipport) profile->extsipport = profile->sip_port;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found auto sip port %d for %s\n", profile->sip_port, profile->name);
 			}
 
@@ -3922,6 +3923,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_AUTO_ASSIGN_PORT);
 						} else {
 							profile->sip_port = (switch_port_t) atoi(val);
+							if (!profile->extsipport) profile->extsipport = profile->sip_port;
 						}
 					} else if (!strcasecmp(var, "vad")) {
 						if (!strcasecmp(val, "in")) {
@@ -4000,10 +4002,6 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							} else if (!strcasecmp(val, "auto-nat")) {
 								ip = NULL;
 							} else if (strcasecmp(val, "auto")) {
-								if (!profile->extsipport) {
-									profile->extsipport = profile->sip_port;
-								}
-
 								if (sofia_glue_ext_address_lookup(profile, NULL, &myip, &profile->extsipport, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
 									ip = myip;
 									sofia_clear_pflag(profile, PFLAG_AUTO_NAT);
@@ -4547,6 +4545,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 				if (!profile->sip_port && !sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_PORT)) {
 					profile->sip_port = (switch_port_t) atoi(SOFIA_DEFAULT_PORT);
+					if (!profile->extsipport) profile->extsipport = profile->sip_port;
 				}
 
 				if (!profile->dialplan) {
@@ -4667,10 +4666,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 
 					if (profile->sipip) {
-
-						if (!profile->extsipport) {
-							profile->extsipport = profile->sip_port;
-						}
+						if (!profile->extsipport) profile->extsipport = profile->sip_port;
 
 						launch_sofia_profile_thread(profile);
 						if (profile->odbc_dsn) {
