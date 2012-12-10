@@ -2265,7 +2265,7 @@ static void fifo_caller_del(const char *uuid)
 		sql = switch_mprintf("delete from fifo_callers");
 	}
 
-	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
 
 }
 
