@@ -1972,6 +1972,19 @@ struct switch_ivr_dmachine_match {
 typedef struct switch_ivr_dmachine_match switch_ivr_dmachine_match_t;
 typedef switch_status_t (*switch_ivr_dmachine_callback_t) (switch_ivr_dmachine_match_t *match);
 
+#define MAX_ARG_RECURSION 25
+
+#define arg_recursion_check_start(_args) if (_args) {					\
+		if (_args->loops >= MAX_ARG_RECURSION) {						\
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,		\
+							  "RECURSION ERROR!  It's not the best idea to call things that collect input recursively from an input callback.\n"); \
+			return SWITCH_STATUS_GENERR;								\
+		} else {_args->loops++;}										\
+	}
+
+
+#define arg_recursion_check_stop(_args) if (_args) _args->loops--
+
 typedef struct {
 	switch_input_callback_function_t input_callback;
 	void *buf;
@@ -1979,6 +1992,7 @@ typedef struct {
 	switch_read_frame_callback_function_t read_frame_callback;
 	void *user_data;
 	switch_ivr_dmachine_t *dmachine;
+	int loops;
 } switch_input_args_t;
 
 

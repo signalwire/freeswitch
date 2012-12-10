@@ -133,6 +133,8 @@ SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *na
 SWITCH_DECLARE(switch_status_t) switch_ivr_say_spell(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	char *p;
+	
+	arg_recursion_check_start(args);
 
 	for (p = tosay; p && *p; p++) {
 		int a = tolower((int) *p);
@@ -146,6 +148,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_spell(switch_core_session_t *sess
 			}
 		}
 	}
+
+	arg_recursion_check_stop(args);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -172,24 +176,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_ip(switch_core_session_t *session
 												  switch_input_args_t *args)
 {
 	char *a, *b, *c, *d;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	arg_recursion_check_start(args);
+
 	if (!(a = switch_core_session_strdup(session, tosay))) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if (!(b = strchr(a, '.'))) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	*b++ = '\0';
 
 	if (!(c = strchr(b, '.'))) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	*c++ = '\0';
 
 	if (!(d = strchr(c, '.'))) {
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	*d++ = '\0';
@@ -202,7 +210,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_ip(switch_core_session_t *session
 	say_file("digits/dot.wav");
 	say_num(atoi(d), say_args->method);
 
-	return SWITCH_STATUS_SUCCESS;
+ end:
+
+	arg_recursion_check_stop(args);
+
+	return status;
 }
 
 
