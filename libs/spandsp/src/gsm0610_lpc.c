@@ -560,8 +560,7 @@ static void quantization_and_coding(int16_t LAR[8])
 #undef STEP
 #define STEP(A,B,MAC,MIC)                                       \
         temp = saturated_mul16(A, *LAR);                        \
-        temp = saturated_add16(temp, B);                        \
-        temp = saturated_add16(temp, 256);                      \
+        temp = saturated_add16(temp, (B + 256));                \
         temp >>= 9;                                             \
         *LAR  = (int16_t) ((temp > MAC)                         \
                          ?                                      \

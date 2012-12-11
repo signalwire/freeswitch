@@ -45,68 +45,123 @@ extern "C"
 /* This is the same as saturate16(), but is here for historic reasons */
 static __inline__ int16_t saturate(int32_t amp)
 {
-    int16_t amp16;
+#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    int16_t z;
+
+    __asm__ __volatile__(
+        " ssat %[z],#16,%[amp];\n"
+        : [z] "=r" (z)
+        : [amp] "r" (amp)
+    );
+    return z;
+#else
+    int16_t z;
 
     /* Hopefully this is optimised for the common case - not clipping */
-    amp16 = (int16_t) amp;
-    if (amp == amp16)
-        return amp16;
+    z = (int16_t) amp;
+    if (amp == z)
+        return z;
     if (amp > INT16_MAX)
         return INT16_MAX;
     return INT16_MIN;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
 static __inline__ int16_t saturate16(int32_t amp)
 {
-    int16_t amp16;
+#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    int16_t z;
+
+    __asm__ __volatile__(
+        " ssat %[z],#16,%[amp];\n"
+        : [z] "=r" (z)
+        : [amp] "r" (amp)
+    );
+    return z;
+#else
+    int16_t z;
 
     /* Hopefully this is optimised for the common case - not clipping */
-    amp16 = (int16_t) amp;
-    if (amp == amp16)
-        return amp16;
+    z = (int16_t) amp;
+    if (amp == z)
+        return z;
     if (amp > INT16_MAX)
         return INT16_MAX;
     return INT16_MIN;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
 /*! Saturate to 15 bits, rather than the usual 16 bits. This is often a useful function. */
 static __inline__ int16_t saturate15(int32_t amp)
 {
+#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    int16_t z;
+
+    __asm__ __volatile__(
+        " ssat %[z],#15,%[amp];\n"
+        : [z] "=r" (z)
+        : [amp] "r" (amp)
+    );
+    return z;
+#else
     if (amp > 16383)
         return 16383;
     if (amp < -16384)
         return -16384;
     return (int16_t) amp;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
 static __inline__ uint16_t saturateu16(int32_t amp)
 {
-    uint16_t amp16;
+#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    uint16_t z;
+
+    __asm__ __volatile__(
+        " usat %[z],#16,%[amp];\n"
+        : [z] "=r" (z)
+        : [amp] "r" (amp)
+    );
+    return z;
+#else
+    uint16_t z;
 
     /* Hopefully this is optimised for the common case - not clipping */
-    amp16 = (uint16_t) amp;
-    if (amp == amp16)
-        return amp16;
+    z = (uint16_t) amp;
+    if (amp == z)
+        return z;
     if (amp > UINT16_MAX)
         return UINT16_MAX;
     return 0;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
 static __inline__ uint8_t saturateu8(int32_t amp)
 {
-    uint8_t amp8;
+#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    uint8_t z;
+
+    __asm__ __volatile__(
+        " usat %[z],#8,%[amp];\n"
+        : [z] "=r" (z)
+        : [amp] "r" (amp)
+    );
+    return z;
+#else
+    uint8_t z;
 
     /* Hopefully this is optimised for the common case - not clipping */
-    amp8 = (uint8_t) amp;
-    if (amp == amp8)
-        return amp8;
+    z = (uint8_t) amp;
+    if (amp == z)
+        return z;
     if (amp > UINT8_MAX)
         return UINT8_MAX;
     return 0;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -188,15 +243,15 @@ static __inline__ int16_t saturated_add16(int16_t a, int16_t b)
         : "cc"
     );
     return a;
-#elif defined(__GNUC__)  &&  defined(__arm5__)
-    int16_t result;
+#elif defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    int16_t z;
 
     __asm__ __volatile__(
-        " sadd16 %0,%1,%2;\n"
-        : "=r" (result)
-        : "0" (a), "ir" (b)
+        " qsub16 %[z],%[a],%[b];\n"
+        : [z] "=r" (z)
+        : [a] "r" (a), [b] "r" (b)
     );
-    return result;
+    return z;
 #else
     return saturate((int32_t) a + (int32_t) b);
 #endif
@@ -217,25 +272,25 @@ static __inline__ int32_t saturated_add32(int32_t a, int32_t b)
         : "cc"
     );
     return a;
-#elif defined(__GNUC__)  &&  defined(__arm5__)
-    int32_t result;
+#elif defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    int32_t z;
 
     __asm__ __volatile__(
-        " qadd %0,%1,%2;\n"
-        : "=r" (result)
-        : "0" (a), "ir" (b)
+        " qadd %[z],%[a],%[b];\n"
+        : [z] "=r" (z)
+        : [a] "r" (a), [b] "r" (b)
     );
-    return result;
+    return z;
 #else
-    int32_t sum;
+    int32_t z;
 
-    sum = a + b;
+    z = a + b;
     if ((a ^ b) >= 0)
     {
-        if ((sum ^ a) < 0)
-            sum = (a < 0)  ?  INT32_MIN  :  INT32_MAX;
+        if ((z ^ a) < 0)
+            z = (a < 0)  ?  INT32_MIN  :  INT32_MAX;
     }
-    return sum;
+    return z;
 #endif
 }
 /*- End of function --------------------------------------------------------*/
@@ -254,15 +309,15 @@ static __inline__ int16_t saturated_sub16(int16_t a, int16_t b)
         : "cc"
     );
     return a;
-#elif defined(__GNUC__)  &&  defined(__arm5__)
-    int16_t result;
+#elif defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    int16_t z;
 
     __asm__ __volatile__(
-        " ssub16 %0,%1,%2;\n"
-        : "=r" (result)
-        : "0" (a), "ir" (b)
+        " qsub16 %[z],%[a],%[b];\n"
+        : [z] "=r" (z)
+        : [a] "r" (a), [b] "r" (b)
     );
-    return result;
+    return z;
 #else
     return saturate((int32_t) a - (int32_t) b);
 #endif
@@ -283,25 +338,25 @@ static __inline__ int32_t saturated_sub32(int32_t a, int32_t b)
         : "cc"
     );
     return a;
-#elif defined(__GNUC__)  &&  defined(__arm5__)
-    int32_t result;
+#elif defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    int32_t z;
 
     __asm__ __volatile__(
-        " qsub %0,%1,%2;\n"
-        : "=r" (result)
-        : "0" (a), "ir" (b)
+        " qsub %[z],%[a],%[b];\n"
+        : [z] "=r" (z)
+        : [a] "r" (a), [b] "r" (b)
     );
-    return result;
+    return z;
 #else
-    int32_t diff;
+    int32_t z;
 
-    diff = a - b;
+    z = a - b;
     if ((a ^ b) < 0)
     {
-        if ((diff ^ a) & INT32_MIN)
-            diff = (a < 0L)  ?  INT32_MIN  :  INT32_MAX;
+        if ((z ^ a) & INT32_MIN)
+            z = (a < 0L)  ?  INT32_MIN  :  INT32_MAX;
     }
-    return diff;
+    return z;
 #endif
 }
 /*- End of function --------------------------------------------------------*/

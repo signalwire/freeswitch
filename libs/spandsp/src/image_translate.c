@@ -201,10 +201,9 @@ static int image_gray8_to_colour16_row(uint16_t colour16[], uint8_t gray8[], int
 
     for (i = pixels - 1;  i >= 0;  i--)
     {
-        /* TODO: need to balance the colours */
-        colour16[3*i] = gray8[i] << 8;
-        colour16[3*i + 1] = gray8[i] << 8;
-        colour16[3*i + 2] = gray8[i] << 8;
+        colour16[3*i] = saturateu16((gray8[i]*36532U) >> 7);
+        colour16[3*i + 1] = saturateu16((gray8[i]*37216U) >> 8);
+        colour16[3*i + 2] = saturateu16((gray8[i]*47900U) >> 6);
     }
     return pixels;
 }
@@ -216,10 +215,9 @@ static int image_gray8_to_colour8_row(uint8_t colour8[], uint8_t gray8[], int pi
 
     for (i = pixels - 1;  i >= 0;  i--)
     {
-        /* TODO: need to balance the colours */
-        colour8[3*i] = gray8[i];
-        colour8[3*i + 1] = gray8[i];
-        colour8[3*i + 2] = gray8[i];
+        colour8[3*i] = saturateu8((gray8[i]*36532U) >> 15);
+        colour8[3*i + 1] = saturateu8((gray8[i]*37216U) >> 16);
+        colour8[3*i + 2] = saturateu8((gray8[i]*47900U) >> 14);
     }
     return pixels;
 }

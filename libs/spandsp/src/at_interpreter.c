@@ -128,6 +128,68 @@ static const char *at_response_codes[] =
     "+FRH:3"
 };
 
+SPAN_DECLARE(const char *) at_call_state_to_str(int state)
+{
+    switch (state)
+    {
+    case AT_CALL_EVENT_ALERTING:
+        return "Alerting";
+    case AT_CALL_EVENT_CONNECTED:
+        return "Connected";
+    case AT_CALL_EVENT_ANSWERED:
+        return "Answered";
+    case AT_CALL_EVENT_BUSY:
+        return "Busy";
+    case AT_CALL_EVENT_NO_DIALTONE:
+        return "No dialtone";
+    case AT_CALL_EVENT_NO_ANSWER:
+        return "No answer";
+    case AT_CALL_EVENT_HANGUP:
+        return "Hangup";
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(const char *) at_modem_control_to_str(int state)
+{
+    switch (state)
+    {
+    case AT_MODEM_CONTROL_CALL:
+        return "Call";
+    case AT_MODEM_CONTROL_ANSWER:
+        return "Answer";
+    case AT_MODEM_CONTROL_HANGUP:
+        return "Hangup";
+    case AT_MODEM_CONTROL_OFFHOOK:
+        return "Off hook";
+    case AT_MODEM_CONTROL_ONHOOK:
+        return "On hook";
+    case AT_MODEM_CONTROL_DTR:
+        return "DTR";
+    case AT_MODEM_CONTROL_RTS:
+        return "RTS";
+    case AT_MODEM_CONTROL_CTS:
+        return "CTS";
+    case AT_MODEM_CONTROL_CAR:
+        return "CAR";
+    case AT_MODEM_CONTROL_RNG:
+        return "RNG";
+    case AT_MODEM_CONTROL_DSR:
+        return "DSR";
+    case AT_MODEM_CONTROL_SETID:
+        return "Set ID";
+    case AT_MODEM_CONTROL_RESTART:
+        return "Restart";
+    case AT_MODEM_CONTROL_DTE_TIMEOUT:
+        return "DTE timeout";
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode)
 {
     /* The use of a DTE timeout is mode dependent. Set the timeout appropriately in
@@ -363,8 +425,8 @@ SPAN_DECLARE(void) at_display_call_info(at_state_t *s)
         snprintf(buf,
                  sizeof(buf),
                  "%s=%s", 
-                 call_id->id  ?  call_id->id  :  "NULL",
-                 call_id->value  ?  call_id->value  :  "<NONE>");
+                 (call_id->id)  ?  call_id->id  :  "NULL",
+                 (call_id->value)  ?  call_id->value  :  "<NONE>");
         at_put_response(s, buf);
         call_id = call_id->next;
     }
