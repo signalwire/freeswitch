@@ -736,12 +736,17 @@ typedef enum {
 
 	 */
 
-	RTP_BUG_CHANGE_SSRC_ON_MARKER = (1 << 9)
+	RTP_BUG_CHANGE_SSRC_ON_MARKER = (1 << 9),
 
 	/*
 	  By default FS will change the SSRC when the marker is set and it detects a timestamp reset.
 	  If this setting is enabled it will NOT do this (old behaviour).
 	 */
+
+	RTP_BUG_FLUSH_JB_ON_DTMF = (1 << 10)
+	
+	/* FLUSH JITTERBUFFER When getting RFC2833 to reduce bleed through */
+
 
 } switch_rtp_bug_flag_t;
 
