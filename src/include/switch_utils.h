@@ -51,35 +51,66 @@ static inline uint32_t switch_toupper(uint32_t eax)
 	return eax - ebx;
 }
 
+#ifdef FS_64BIT
+
+static inline void switch_toupper_max(char *s)
+{
+	uint64_t *b,*p;
+	char *c;
+	size_t l;
+
+	l = strlen(s);
+
+	p = (uint64_t *) s;
+
+	while (l > 8) {
+		b = p;
+		*b = (uint32_t) switch_toupper(*b);
+		b++;
+		p++;
+		l -= 8;
+	}
+
+	c = (char *)p;
+
+	while(l > 0) {
+		*c = (char) switch_toupper(*c);
+		c++;
+		l--;
+	}
+
+}
+
+#else 
 
 static inline void switch_toupper_max(char *s)
 {
 	uint32_t *b,*p;
 	char *c;
 	size_t l;
-	int div = 0, rem = 0;
-	int i;
 
 	l = strlen(s);
-	div = (int) (l / 4);
-	rem = l % 4;
 
 	p = (uint32_t *) s;
 
-	for (i = 0; i < div; i++) {
+	while (l > 4) {
 		b = p;
 		*b = (uint32_t) switch_toupper(*b);
 		b++;
 		p++;
+		l -= 4;
 	}
 
 	c = (char *)p;
 
-	for (i = 0; i < rem; i++) {
+	while(l > 0) {
 		*c = (char) switch_toupper(*c);
 		c++;
+		l--;
 	}
+	
 }
+#endif
 
 
 SWITCH_DECLARE(int) old_switch_toupper(int c);
