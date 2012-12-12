@@ -411,14 +411,20 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 				   ts, duration, rtp_session->recv_msg.header.m, end, end && !rtp_session->dtmf_data.in_digit_ts ? "ignored" : "");
 #endif
 
-			if (!rtp_session->dtmf_data.in_digit_queued && (rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION) &&
-				rtp_session->dtmf_data.in_digit_ts) {
-				switch_dtmf_t dtmf = { key, switch_core_min_dtmf_duration(0), 0, SWITCH_DTMF_RTP };
+			if (!rtp_session->dtmf_data.in_digit_queued && rtp_session->dtmf_data.in_digit_ts) {
+				if ((rtp_session->rtp_bugs & RTP_BUG_IGNORE_DTMF_DURATION)) {
+					switch_dtmf_t dtmf = { key, switch_core_min_dtmf_duration(0), 0, SWITCH_DTMF_RTP };
 #ifdef DEBUG_2833
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Early Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Early Queuing digit %c:%d\n", dtmf.digit, dtmf.duration / 8);
 #endif
-				switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
-				rtp_session->dtmf_data.in_digit_queued = 1;
+					switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
+					rtp_session->dtmf_data.in_digit_queued = 1;
+				}
+
+				if (rtp_session->jb && (rtp_session->rtp_bugs & RTP_BUG_FLUSH_JB_ON_DTMF)) {
+					stfu_n_reset(rtp_session->jb);
+				}
+				
 			}
 
 			/* only set sanity if we do NOT ignore the packet */
