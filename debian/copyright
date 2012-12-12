@@ -1274,7 +1274,7 @@ Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  2006 Nenad Corbic <ncorbic@sangoma.com>
  1984-2011 Sangoma Technologies Inc.
  2007, Michael S. Collins
-License: BSD-2-clause
+License: BSD-3-clause
 
 Files: libs/freetdm/src/priserver.c
 Copyright: 2005-2012, Anthony Minessale II
@@ -1287,7 +1287,7 @@ License: LGPL-2.1
 
 Files: libs/apr*/*
 Copyright: 2000-2005 The Apache Software Foundation or its licensors
- 1991-2, RSA Data Security, Inc.
+ 1991-1992, RSA Data Security, Inc.
  1996 by Internet Software Consortium.
  2000 by Martin Pool <mbp@humbug.org.au>
  2000-2004 Ryan Bloom
@@ -1298,23 +1298,44 @@ Copyright: 2000-2005 The Apache Software Foundation or its licensors
 License: Apache-2.0
 
 Files: libs/miniupnpc/*
-Copyright: 2005-2008, Thomas Bernard
-License: BSD-2-clause
+Copyright: 2005-2009, Thomas Bernard
+License: BSD-3-clause
+
+Files: libs/miniupnpc/bsdqueue.h
+Copyright: 1991,1993, The Regents of the University of California
+License: BSD-3-clause
 
 Files: libs/ldns/*
-Copyright: 2001-2008, NLnet Labs
+Copyright: 2001-2010, NLnet Labs
  2000-2001, Aaron D. Gifford
- 2001-2008 NLnet Labs. This is free software.
- 2001-2008 NLnet Labs, 2005, 2006, 2007, 2008
- 2001-2008 NLnet Labs, All right reserved
- 2004-2008 NLnet Labs, 2004-2008
- 2005 NLnet Labs, 2005
  2000-2003 Damien Miller
  1999 WIDE Project
  1998 Todd C. Miller <Todd.Miller@courtesan.com>
  1996, 1998 Internet Software Consortium.
  1995 International Business Machines
 License: BSD-2-clause
+
+Files: libs/ldns/compat/fake-rfc2553.c
+ libs/ldns/compat/fake-rfc2553.h
+ libs/ldns/ldns/rbtree.h
+Copyright: 2001-2010, NLnet Labs
+ 2000-2003 Damien Miller
+ 1999 WIDE Project
+License: BSD-3-clause
+
+Files: libs/ldns/compat/b32_ntop.c
+Copyright: 1996, 1998 Internet Software Consortium.
+ 1995 International Business Machines, Inc.
+License: BSD-style
+
+Files: libs/ldns/compat/b32_pton.c
+ libs/ldns/compat/strlcpy.c
+ libs/ldns/compat/b64_ntop.c
+ libs/ldns/compat/inet_pton.c
+Copyright: 1996, 1998 Internet Software Consortium.
+ 1995 International Business Machines, Inc.
+ 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+License: ISC
 
 Files: libs/js/*
 Copyright: 1998-2006 Mozilla <http://www.mozilla.org/>
@@ -1323,24 +1344,74 @@ Copyright: 1998-2006 Mozilla <http://www.mozilla.org/>
  1989-1991, Apple Computer, Inc. 1989-1991
  1992 Charles Petzold, 1992
  1991 Lucent Technologies
-License: MPL-1.1 or GPL-2 or LGPL-2.1
+License: MPL-1.1 or GPL-2+ or LGPL-2.1+
 
-Files: libs/spandsp/*
-Copyright: 2006 Steve Underwood
-License: LGPL-2.1
+Files: libs/js/nsprpub/pr/tests/tmocon.c
+ libs/js/nsprpub/pr/src/md/beos/brng.c
+ libs/js/nsprpub/pr/src/md/unix/os_Irix.s
+ libs/js/nsprpub/pr/src/md/unix/os_SunOS_x86.s
+ libs/js/nsprpub/pr/src/md/unix/os_SunOS_x86_64.s
+ libs/js/nsprpub/pr/src/md/beos/bfile.c
+ libs/js/nsprpub/pr/src/linking/prlink.c
+ libs/js/nsprpub/pr/src/md/unix/os_SunOS.s
+ libs/js/nsprpub/pr/src/md/unix/os_ReliantUNIX.s
+ libs/js/nsprpub/pr/src/md/unix/os_Darwin_ppc.s
+ libs/js/nsprpub/pr/src/md/unix/os_SunOS_ultrasparc.s
+ libs/js/nsprpub/pr/src/md/unix/os_Linux_ia64.s 
+ libs/js/nsprpub/pr/tests/testfile.c
+ libs/js/nsprpub/pr/src/md/unix/os_Darwin_x86.s
+ libs/js/nsprpub/pr/src/md/unix/os_AIX.s
+ libs/js/nsprpub/pr/src/md/unix/os_HPUX_ia64.s
+ libs/js/nsprpub/pr/src/md/unix/os_BSD_386_2.s
+ libs/js/nsprpub/pr/src/md/unix/unix.c
+ libs/js/nsprpub/pr/src/md/unix/os_Linux_x86_64.s
+ libs/js/nsprpub/pr/tests/testfile.c
+ libs/js/nsprpub/pr/src/md/unix/os_Darwin_x86.s
+ libs/js/nsprpub/pr/src/md/unix/os_AIX.s
+ libs/js/nsprpub/pr/src/md/unix/os_HPUX_ia64.s
+ libs/js/nsprpub/pr/src/md/unix/os_BSD_386_2.s
+ libs/js/nsprpub/pr/src/md/unix/unix.c
+ libs/js/nsprpub/pr/src/md/unix/os_Linux_x86_64.s
+ libs/js/nsprpub/pr/src/md/unix/os_SunOS_sparcv9.s
+ libs/js/nsprpub/pr/src/md/os2/os2vaclegacy.s
+ libs/js/nsprpub/pr/src/md/os2/os2emx.s
+ libs/js/nsprpub/pr/src/md/unix/os_Linux_x86.s
+ libs/js/nsprpub/pr/include/md/_beos.cfg
+ libs/js/nsprpub/configure.in
+ libs/js/nsprpub/pr/src/md/unix/os_HPUX.s
+ libs/js/nsprpub/pr/include/md/_netbsd.h
+Copyright: 1998-2004 Netscape Communications Corporation
+License: MPL-1.1 or GPL-2+
 
 Files: libs/speex/*
 Copyright: 2002-2008     Xiph.org Foundation
- 2002-2008     Jean-Marc Valin
+ 2002-2008 Jean-Marc Valin
+ 2006-2008 CSIRO, Jean-Marc Valin, Xiph.Org Foundation
+ 2005 Jean-Marc Valin, CSIRO, Christopher Montgomery
+ 1994-2001 the XIPHOPHORUS Company
+ 2002 Jean-Marc Valin & David Rowe
+ 2003-2004, Mark Borgerding
  2005-2007     Analog Devices Inc.
  2005-2008     Commonwealth Scientific and Industrial Research Organisation (CSIRO)
  1993, 2002, 2006 David Rowe
- 2003          EpicGames
+ 2003-2006     EpicGames
+ 2003 Epic Games (written by Jean-Marc Valin)
  1992-1994     Jutta Degener, Carsten Bormann
+ 2008      Thorvald Natvig
+ 2002, John Edwards
+ 2005-2007 Psi Systems, Inc.
 License: BSD-3-clause
 
+Files: libs/speex/src/getopt*
+Copyright: 1987-1999 Free Software Foundation, Inc.
+License: LGPL-2+
+
+Files: libs/spandsp/*
+Copyright: 2001-2012, Steve Underwood
+License: LGPL-2.1
+
 Files: libs/spandsp/tests/*
-Copyright: 2006 Steve Underwood
+Copyright: 2001-2012, Steve Underwood
 License: GPL-2
 
 Files: src/mod/event_handlers/mod_cdr_mongodb/*
@@ -1348,12 +1419,103 @@ Copyright: 2009-2012 10gen Inc.
 License: Apache-2.0
 
 Files: libs/sofia-sip/*
-Copyright: 2005,2006 Nokia Corporation
+Copyright: 2005-2009 Nokia Corporation
+ 2001-2006 Nokia Research Center
+ 1996 Pekka Pessi
+ 2006 Dimitri E. Prado
+ 1996,1999 Internet Software Consortium
+ 2004 Internet Systems Consortium, Inc. ("ISC")
+ 1994 Sun Microsystems, Inc
+ 1988 The Regents of the University of California
+ 1995-1999 and WIDE Project
+ 2001 First Peer
 License: LGPL-2.1+
 
-Files: libs/libsndfile/*
-Copyright: 2004-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+Files: libs/sofia-sip/libsofia-sip-ua/su/poll.c
+Copyright: 2005 Nokia Corporation
+ 1994-2002 Free Software Foundation, Inc.
 License: LGPL-2.1+
+
+Files: libs/sofia-sip/libsofia-sip-ua/su/sofia-sip/su_addrinfo.h
+ libs/sofia-sip/libsofia-sip-ua/su/su_addrinfo.c
+Copyright: 1995-1999, WIDE Project.
+License: BSD-3-clause
+
+Files: libs/sofia-sip/libsofia-sip-ua/su/inet_pton.c
+ libs/sofia-sip/libsofia-sip-ua/su/inet_ntop.c
+Copyright: 2004 Internet Systems Consortium, Inc. ("ISC")
+ 1996,1999 Internet Software Consortium.
+License: ISC
+
+Files: libs/libsndfile/src/G72x/*
+Copyright: Sun Microsystems, Inc.
+License: public-domain
+
+Files: libs/libsndfile/*
+ libs/win32/libsndfile/*
+Copyright: 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+ 1999-2009 Erik de Castro Lopo
+ 2007 <robs@users.sourceforge.net>
+ 2007 Reuben Thomas
+ 2004 Paavo Jumppanen
+ 2004-2005 David Viens <davidv@plogue.com>
+ 2006 Paul Davis <paul@linuxaudiosystems.com>
+ 2007 Jonatan Liljedahl <lijon@kymatica.com>
+ 1993 by NuEdge Development
+ 2003 Ross Bencina <rbencina@iprimus.com.au>
+ 2004 Tobias Gehrig <tgehrig@ira.uka.de>
+License: LGPL-2.1+
+
+Files: libs/libsndfile/src/ima_oki_adpcm.c
+ libs/libsndfile/src/test_ima_oki_adpcm.c
+Copyright: 2007-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+ 2007 <robs@users.sourceforge.net>
+License: LGPL-2+
+
+Files: libs/libsndfile/tests/*
+ libs/libsndfile/Octave/sndfile_save.m
+ libs/libsndfile/examples/sndfile-play.c
+ libs/libsndfile/examples/sndfilehandle.cc
+ libs/libsndfile/programs/sndfile-play-beos.cpp
+ libs/libsndfile/examples/sndfile-play-beos.cpp
+ libs/libsndfile/regtest/database.c
+ libs/libsndfile/Octave/sndfile_play.m
+ libs/libsndfile/regtest/sndfile-regtest.c
+ libs/libsndfile/Octave/sndfile_load.m
+ libs/libsndfile/regtest/regtest.h
+ libs/libsndfile/examples/cooledit-fixer.c
+ libs/libsndfile/examples/sndfile-info.c
+ libs/libsndfile/src/G72x/g72x_test.c
+ libs/libsndfile/regtest/checksum.c
+ libs/libsndfile/examples/sndfile-convert.c
+Copyright: 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+ 1999-2009 Erik de Castro Lopo
+ 2001 Marcus Overhagen <marcus@overhagen.de>
+License: GPL-2+
+
+Files: libs/libsndfile/programs/common.?
+ libs/libsndfile/programs/sndfile-info.c
+ libs/libsndfile/programs/sndfile-cmp.c
+ libs/libsndfile/programs/sndfile-metadata-set.c
+ libs/libsndfile/examples/make_sine.c
+ libs/libsndfile/programs/test-sndfile-metadata-set.py
+ libs/libsndfile/programs/sndfile-convert.c
+ libs/libsndfile/programs/sndfile-metadata-get.c
+ libs/libsndfile/programs/sndfile-play.c
+ libs/libsndfile/examples/list_formats.c
+ libs/libsndfile/examples/sfprocess.c
+ libs/libsndfile/examples/generate.c
+ libs/libsndfile/src/create_symbols_file.py
+ libs/libsndfile/src/binheader_writef_check.py
+ libs/libsndfile/src/ogg.c
+ libs/libsndfile/Mingw-make-dist.sh
+ libs/libsndfile/examples/sndfile-to-text.c
+ libs/libsndfile/src/sndfile.hh
+Copyright: 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+ 2008 George Blood Audio
+ 2007 John ffitch
+ 2002 Xiph.org Foundation
+License: BSD-3-clause
 
 Files: libs/libsndfile/src/GSM610/*
 Copyright: 1992, 1993, 1994 by Jutta Degener and Carsten Bormann
@@ -1380,20 +1542,24 @@ License:
  Jutta Degener (jutta@cs.tu-berlin.de)
  Carsten Bormann (cabo@cs.tu-berlin.de)
 
-Files: libs/libsndfile/src/G72x/*
-Copyright: Sun Microsystems, Inc.
-License: public-domain
-
 Files: src/mod/endpoints/mod_khomp/*
-Copyright: 2007-2009 Khomp Ind. & Com.
-License: MPL-1.1 or LGPL-2.1
+Copyright: 2007-2010 Khomp Ind. & Com.
+License: MPL-1.1 or LGPL-2.1+
+
+Files: src/mod/endpoints/mod_skinny/*
+Copyright: 2010, Mathieu Parent <math.parent@gmail.com>
+License: MPL-1.1
+
+Files: src/mod/endpoints/mod_skinny/*.p[lm]
+Copyright: 2010, Mathieu Parent <math.parent@gmail.com>
+License: Perl
 
 Files: libs/pcre/*
 Copyright: 1997-2009 University of Cambridge
 License: BSD-3-clause
 
 Files: libs/silk/*
-Copyright: 2006-2010, Skype Limited.
+Copyright: 2006-2011, Skype Limited.
 License: BSD-2-clause
 
 Files: libs/libdingaling/*
@@ -1407,21 +1573,47 @@ Copyright: 1990-2010 David Rowe
  1990-2010 David Rowe 2009
 License: LGPL-2.1
 
-Files: libs/srtp/*
-Copyright: 2001-2005, Cisco Systems, Inc.
+Files: src/mod/codecs/mod_isac/*
+Copyright: 2011 The WebRTC project authors
 License: BSD-3-clause
 
+Files: libs/srtp/*
+Copyright: 2001-2006, Cisco Systems, Inc.
+ 2005 Ingate Systems AB
+License: BSD-3-clause
+
+Files: libs/libsndfile/src/ima_oki_adpcm.h
+Copyright: 2007 <robs@users.sourceforge.net>
+ 2007-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+License: LGPL-2+
+
 Files: libs/portaudio/*
-Copyright: 1999-2006 Ross Bencina and Phil Burk
+Copyright: 1999-2007 Ross Bencina and Phil Burk
 License: MIT/X11 (BSD like)
 
 Files: libs/tiff-4.0.2/*
 Copyright: 1988-1997 Sam Leffler
  1991-1997 Silicon Graphics, Inc.
+ 2006-2010 Richard Nolde
+ 1999-2000 Frank Warmerdam
+ 1990 by Digital Equipment Corporation, Maynard, Massachusetts.
+ 1990 by Sun Microsystems, Inc.
+ Joris Van Damme <info@awaresystems.be>
+ AWare Systems <http://www.awaresystems.be/>
 License: MIT/X11 (BSD like)
 
+Files: libs/tiff-4.0.2/port/getopt.c
+ libs/tiff-4.0.2/port/strcasecmp.c
+ libs/tiff-4.0.2/port/lfind.c
+Copyright: 1987, 1993, 1994, The Regents of the University of California.
+License: BSD-3-clause
+
+Files: libs/tiff-4.0.2/port/strtoull.c
+Copyright: 1992, 1993, The Regents of the University of California.
+License: BSD-4-clause
+
 Files: libs/libks/*
-Copyright: 2000 by Gray Watson
+Copyright: 1996,2000, Gray Watson
 License: BSD
 
 Files: libs/libedit/*
@@ -1443,12 +1635,41 @@ Copyright: 2007 Michael Jerris
  2009 Dave Gamble
 License: BSD-like
 
+Files: libs/xmlrpc-c/*
+Copyright: 2005 Steven A. Bone, sbone@pobox.com
+ 2000 Moez Mahfoudh <mmoez@bigfoot.com>
+ 1998-2000 Thai Open Source Software Center Ltd
+ 2001 First Peer, Inc.
+ 1991-1994 Stichting Mathematisch Centrum
+ 1995-2000 The Apache Group.
+License: BSD-3-clause
+
+Files: libs/xmlrpc-c/lib/util/getoptx.h
+Copyright: 1987-1999 Free Software Foundation, Inc.
+License: GPL-1+
+
 Files: libs/broadvoice/*
 Copyright: 2000-2009 Broadcom Corporation
  2008-2009 Steve Underwood <steveu@coppice.org>
  2001-2009 Steve Underwood
  2006 Michael Jerris
 License: LGPL-2.1
+
+Files: libs/libzrtp/*
+Copyright: 2006-2012 Philip R. Zimmermann.
+ 1993-2005 Colin Plumb
+ 1998-2006, Dr Brian Gladman, Worcester, UK.
+ 2002, Bryce "Zooko" Wilcox-O'Hearn
+ 2010 Soft Industry
+License: AGPL-3
+
+Files: libs/libzrtp/test/cmockery/cmockery.c
+Copyright: 2008 Google Inc
+License: Apache-2.0
+
+Files: libs/libzrtp/third_party/bnlib/test/md5.c
+Copyright: 1993-1995 Colin Plumb
+License: Public domain
 
 Files: libs/ilbc/*
 Copyright: 2007-2008, Steve Underwood
@@ -1462,6 +1683,6 @@ Copyright: 2004 Polycom, Inc
  2006 Michael Jerris
  2001-2009 Steve Underwood <steveu@coppice.org>
  2001-2006 Steve Underwood
-Comment: Disclaimer: non-comercial use, perhaps, and non-modifiable (standards compliance)
+Comment: Disclaimer: non-comercial use,gital Equipment Corporation, Maynard, Massachusetts. 
 License: patent-mess
 
