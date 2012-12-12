@@ -45,40 +45,40 @@ SWITCH_BEGIN_EXTERN_C
 /* https://code.google.com/p/stringencoders/wiki/PerformanceAscii */
 static inline uint32_t switch_toupper(uint32_t eax)
 {
-    uint32_t ebx = (0x7f7f7f7ful & eax) + 0x05050505ul;
-    ebx = (0x7f7f7f7ful & ebx) + 0x1a1a1a1aul;
-    ebx = ((ebx & ~eax) >> 2 ) & 0x20202020ul;
-    return eax - ebx;
+	uint32_t ebx = (0x7f7f7f7ful & eax) + 0x05050505ul;
+	ebx = (0x7f7f7f7ful & ebx) + 0x1a1a1a1aul;
+	ebx = ((ebx & ~eax) >> 2 ) & 0x20202020ul;
+	return eax - ebx;
 }
 
 
 static inline void switch_toupper_max(char *s)
-{   
-    uint32_t *b,*p;
-    char *c;
-    size_t l;
-    int div = 0, rem = 0;
-    int i;
+{
+	uint32_t *b,*p;
+	char *c;
+	size_t l;
+	int div = 0, rem = 0;
+	int i;
 
-    l = strlen(s);
-    div = l / 4;
-    rem = l % 4;
+	l = strlen(s);
+	div = l / 4;
+	rem = l % 4;
 
-    p = (uint32_t *) s;
+	p = (uint32_t *) s;
 
-    for (i = 0; i < div; i++) {
-        b = p;
-        *b = (uint32_t) switch_toupper(*b);
-        b++;
-        p++;
-    }
+	for (i = 0; i < div; i++) {
+		b = p;
+		*b = (uint32_t) switch_toupper(*b);
+		b++;
+		p++;
+	}
 
-    c = (char *)p;
+	c = (char *)p;
 
-    for (i = 0; i < rem; i++) {
-        *c = (char) switch_toupper(*c);
-        c++;
-    }
+	for (i = 0; i < rem; i++) {
+		*c = (char) switch_toupper(*c);
+		c++;
+	}
 }
 
 
