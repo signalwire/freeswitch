@@ -56,8 +56,8 @@ static inline void switch_toupper_max(char *s)
 {
 	uint32_t *b,*p;
 	char *c;
-	size_t l;
-	int div = 0, rem = 0;
+	size_t l, div = 0;
+	int rem = 0;
 	int i;
 
 	l = strlen(s);
