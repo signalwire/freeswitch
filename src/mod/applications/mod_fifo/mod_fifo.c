@@ -2217,7 +2217,7 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 
 	sql = switch_mprintf("update fifo_outbound set stop_time=0,start_time=%ld,outbound_fail_count=0,use_count=use_count+1,%s=%s+1,%s=%s+1 where uuid='%q'",
 						 (long) switch_epoch_time_now(NULL), col1, col1, col2, col2, data);
-	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
 
 
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
