@@ -1613,9 +1613,24 @@ License: MPL-1.1
 
 Files: libs/libcodec2/*
 Copyright: 1990-2010 David Rowe
- 2010 Perens LLC <bruce@perens.com>
  1990-2010 David Rowe 2009
 License: LGPL-2.1
+
+Files: libs/libcodec2/unittest/*
+Copyright: 2009,2010 David Rowe
+License: LGPL
+
+Files: libs/libcodec2/script/menu.sh
+Copyright: 1990-2010 David Rowe
+License: GPL-2
+
+Files: libs/libcodec2/src/pack.c
+Copyright: 2010 Perens LLC <bruce@perens.com>
+License: GPL-3+
+
+Files: src/mod/codecs/mod_sangoma_codec/mod_sangoma_codec.c
+Copyright: 2010, Sangoma Technologies
+License: BSD-3-clause
 
 Files: src/mod/codecs/mod_isac/*
 Copyright: 2011 The WebRTC project authors
@@ -1676,8 +1691,15 @@ Copyright: 2007 Michael Jerris
  2002 Todd C. Miller <Todd.Miller@courtesan.com>
  2007-2012, Anthony Minessale II
  2000 The NetBSD Foundation, Inc.
- 2009 Dave Gamble
-License: BSD-like
+License: BSD-3-clause
+
+Files: libs/esl/src/*/esl_json.c
+Copyright: 2009 Dave Gamble
+License: MIT/X11 (BSD like)
+
+Files: libs/esl/managed/ManagedEslTest/Program.cs
+Copyright: Diego Toro <dftoro@yahoo.com>
+License: MPL-1.1
 
 Files: libs/xmlrpc-c/*
 Copyright: 2005 Steven A. Bone, sbone@pobox.com
