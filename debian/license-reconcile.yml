@@ -57,9 +57,24 @@ Rules:
    Copyright: D. Richard Hipp <drh@hwaci.com>
    License: public-domain
   -
-   Glob: libs/apr-util/crypto/apr_md4.c
+   Glob: libs/apr-util/crypto/apr_md5.c
+   Matches: Licensed\sunder\sthe\sApache\sLicense,\sVersion\s2.0
+   Matches: THE\sBEER-WARE\sLICENSE
+   License: RSA and Apache-2.0 and Beerware
+   Copyright: 1991-1992, RSA Data Security, Inc.
+   Copyright: 2000-2005 The Apache Software Foundation or its licensors
+   Copyright: phk@login.dknet.dk
+  -
+   Glob: libs/apr-util/*/apr_md[45].[ch]
    Matches: Copyright\s\(C\)\s1991-2,\sRSA\sData\sSecurity,\sInc.
    Copyright: 1991-1992, RSA Data Security, Inc.
+  -
+   Glob: libs/apr/file_io/unix/mktemp.c
+   Matches:  The\sASF\slicenses\sthis\sfile\sto\sYou\sunder\sthe\sApache\sLicense,\sVersion\s2.0
+   Matches:  Copyright\s\(c\)\s1987,\s1993
+   Matches:  The\sRegents\sof\sthe\sUniversity\sof\sCalifornia.\s+All\srights\sreserved.
+   Copyright: 1987, 1993 The Regents of the University of California
+   License: Apache-2.0 or BSD-4-clause
   -
    Glob: libs/js/*
    Matches: Version:\sMPL\s1.1/GPL\s2.0/LGPL\s2.1
@@ -130,6 +145,16 @@ Rules:
    Matches: Copyright\s\(c\)\s2006-2011,\sSkype\sLimited.
    Matches: THIS\sSOFTWARE\sIS\sPROVIDED\sBY\sTHE\sCOPYRIGHT\sHOLDERS\sAND
    Copyright: 2006-2011, Skype Limited.
+  -
+   Glob: libs/openzap/src/ozmod/ozmod_wanpipe/wanpipe_tdm_api_iface.h
+   Matches: Copyright\s\(c\)\s2007\s-\s08,\sSangoma\sTechnologies
+   Copyright: 2007-2008, Sangoma Technologies
+  -
+   Glob: libs/openzap/src/testm3ua.c
+   Matches: Created\sby\sShane\sBurrell\son\s4/8/08.
+   Matches: Copyright\s2008\s__MyCompanyName__.
+   Copyright: 2008, Shane Burrell
+   Justification: I presume that __MyCompanyName__ is nonsense, which is why I'm crediting Shane Burrell
   -
    Glob: debian/*
    Copyright: 2012 Travis Cross <tc@traviscross.com>

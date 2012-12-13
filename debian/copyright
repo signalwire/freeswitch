@@ -1144,7 +1144,9 @@ License: curl
 
 Files: libs/curl/lib/md4.c
 Copyright: 1990-1992, RSA Data Security, Inc
-License:
+License: RSA
+
+License: RSA
  License to copy and use this software is granted provided that it
  is identified as the "RSA Data Security, Inc. MD4 Message-Digest
  Algorithm" in all material mentioning or referencing this software
@@ -1325,6 +1327,24 @@ Copyright: 2000-2005 The Apache Software Foundation or its licensors
  1999-2001 Dave Carrigan
  2000, Clark Cooper
 License: Apache-2.0
+
+Files: libs/apr/include/apr_fnmatch.h
+Copyright: 1992, 1993 The Regents of the University of California
+License: BSD-4-clause
+
+Files: libs/apr/strings/apr_strnatcmp.c
+Copyright: 2000 by Martin Pool <mbp@humbug.org.au>
+License: zlib/libpng
+
+Files: libs/apr/file_io/unix/mktemp.c
+Copyright: 1987, 1993 The Regents of the University of California
+License: Apache-2.0 or BSD-4-clause
+
+Files: libs/apr-util/crypto/apr_md5.c
+Copyright: 1991-2, RSA Data Security, Inc.
+ 2000-2005 The Apache Software Foundation or its licensors
+ phk@login.dknet.dk
+License: RSA and Apache-2.0 and Beerware
 
 Files: libs/miniupnpc/*
 Copyright: 2005-2009, Thomas Bernard
@@ -1691,6 +1711,45 @@ Copyright: 2006-2012 Philip R. Zimmermann.
  2002, Bryce "Zooko" Wilcox-O'Hearn
  2010 Soft Industry
 License: AGPL-3
+
+Files: libs/openzap/*
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ 2007-2012, Anthony Minessale II, Nenad Corbic
+ 2005-2012, Anthony Minessale II
+ 2006 Nenad Corbic <ncorbic@sangoma.com>
+ 2007 Jan Vidar Berger, Case Labs, Ltd.
+ 2007,2008 Michael Jerris
+ 2008 Shane Burrell
+ 2007 Michael S. Collins
+ 2001 Steve Underwood <steveu@coppice.org>
+ 2002,2004 Christopher Clark <firstname.lastname@cl.cam.ac.uk>
+ 2002 Christopher Clark
+ 2007-2009, Sangoma Technologies
+ 2009, Moises Silva <moy@sangoma.com>
+ 1984-2007 Sangoma Technologies Inc.
+ 2008, Stefan Knoblich, axsentis GmbH.
+ 2005  Xygnada Technology, Inc.
+ 2001 Steve Underwood
+License: BSD-3-clause
+
+Files: libs/openzap/src/fsk.c
+ libs/openzap/src/include/uart.h
+ libs/openzap/src/uart.c
+Copyright: 2009-2012, Anthony Minessale II
+ 2005 Robert Krten
+License: BSD-2-clause
+
+Files: libs/openzap/src/include/libteletone.h
+ libs/openzap/mod_openzap/mod_openzap.c
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2012, Anthony Minessale II
+License: MPL-1.1
+
+Files: libs/openzap/src/sangoma_pri.[ch]
+ libs/openzap/src/priserver.c
+Copyright: 2005-2012 Anthony Minessale II
+ 2006 Nenad Corbic <ncorbic@sangoma.com>
+License: GPL-2+
 
 Files: libs/libzrtp/test/cmockery/cmockery.c
 Copyright: 2008 Google Inc
