@@ -5233,9 +5233,15 @@ static switch_status_t conf_api_sub_enforce_floor(conference_member_t *member, s
 
 static switch_xml_t add_x_tag(switch_xml_t x_member, const char *name, const char *value, int off)
 {
-	switch_size_t dlen = strlen(value) * 3 + 1;
+	switch_size_t dlen;
 	char *data;
 	switch_xml_t x_tag;
+
+	if (!value) {
+		return 0;
+	}
+
+	dlen = strlen(value) * 3 + 1;
 
 	x_tag = switch_xml_add_child_d(x_member, name, off);
 	switch_assert(x_tag);
