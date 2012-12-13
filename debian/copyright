@@ -1257,11 +1257,6 @@ License: ISC
  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-Files: libs/sqlite/*
-Copyright: D. Richard Hipp <drh@hwaci.com>
-License: public-domain
- The author disclaims all copyright. The library is in the public domain.
-
 Files: libs/freetdm/*
 Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  2005-2012, Anthony Minessale II
@@ -1497,7 +1492,7 @@ Copyright: 2004 Internet Systems Consortium, Inc. ("ISC")
 License: ISC
 
 Files: libs/libsndfile/src/G72x/*
-Copyright: Sun Microsystems, Inc.
+Copyright: Abandoned, Sun Microsystems, Inc.
 License: public-domain
 
 Files: libs/libsndfile/*
@@ -1711,6 +1706,16 @@ Copyright: 2006-2012 Philip R. Zimmermann.
  2002, Bryce "Zooko" Wilcox-O'Hearn
  2010 Soft Industry
 License: AGPL-3
+
+Files: libs/sqlite/*
+Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
+ 1993 Abandoned Colin Plumb
+License: public-domain
+
+Files: libs/win32/sqlite/sqlite3.[ch]
+ libs/win32/sqlite/parse.c
+Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
+License: public-domain
 
 Files: libs/openzap/*
 Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>

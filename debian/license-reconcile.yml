@@ -52,9 +52,33 @@ Rules:
    Glob: libs/srtp/update.sh
    Copyright: Ingate Systems AB
   -
-   Glob: libs/sqlite/src/build.c
+   Glob: libs/sqlite/*
    Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
-   Copyright: D. Richard Hipp <drh@hwaci.com>
+   Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
+   License: public-domain
+  -
+   Glob: libs/win32/sqlite/*.[ch]
+   Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
+   Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
+   License: public-domain
+  -
+   Glob: libs/sqlite/src/test_md5.c
+   Matches: written\sby\sColin\sPlumb\sin\s1993,\sno\scopyright\sis\sclaimed.
+   Matches: This\scode\sis\sin\sthe\spublic\sdomain;\sdo\swith\sit\swhat\syou\swish.
+   Copyright: 1993 Abandoned Colin Plumb
+   License: public-domain
+  -
+   Glob: libs/sqlite/src/printf.c
+   Matches: The\s\"printf\"\scode\sthat\sfollows\sdates\sfrom\sthe\s1980\'s.\s\sIt\sis\sin
+   Matches: the\spublic\sdomain.
+   License: public-domain
+  -
+   Glob: libs/sqlite/src/test_md5.c
+   Matches: This\scode\sis\sin\sthe\spublic\sdomain;\sdo\swith\sit\swhat\syou\swish.
+   License: public-domain
+  -
+   Glob: libs/win32/sqlite/parse.c
+   Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
    License: public-domain
   -
    Glob: libs/apr-util/crypto/apr_md5.c
