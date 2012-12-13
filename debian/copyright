@@ -1381,13 +1381,9 @@ Copyright: 2001-2010, NLnet Labs
  1999 WIDE Project
 License: BSD-3-clause
 
-Files: libs/ldns/compat/b32_ntop.c
-Copyright: 1996, 1998 Internet Software Consortium.
- 1995 International Business Machines, Inc.
-License: BSD-style
-
 Files: libs/ldns/compat/b32_pton.c
  libs/ldns/compat/strlcpy.c
+ libs/ldns/compat/b32_ntop.c
  libs/ldns/compat/b64_ntop.c
  libs/ldns/compat/inet_pton.c
 Copyright: 1996, 1998 Internet Software Consortium.

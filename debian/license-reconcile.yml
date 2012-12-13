@@ -5,9 +5,6 @@ Rules:
    Matches: NLnet\s*Labs,?\s*(20\d\d(|\s*-\s*20\d\d)|All\sright\sreserved)
    Copyright: 2004-2010, NLnet Labs
   -
-   Glob: libs/ldns/compat/b32_ntop.c
-   License: BSD-style
-  -
    Glob: libs/miniupnpc/*
    Matches: Thomas\sBERNARD
    Copyright: Thomas Bernard
@@ -107,13 +104,6 @@ Rules:
    Copyright: 1990, 1993 The Regents of the University of California
    License: Apache-2.0 or BSD-4-clause
   -
-   Glob: libs/apr/locks/os2/thread_mutex.c
-   Matches: this\swork\sfor\sadditional\sinformation\sregarding\scopyright\sownership.
-   Matches: The\sASF\slicenses\sthis\sfile\sto\sYou\sunder\sthe\sApache\sLicense,\sVersion\s2.0
-   License: Apache-2.0
-   Copyright: Ryan Bloom
-   Justification: silly hack to shut up the 'ownership' problem
-  -
    Glob: libs/apr/dso/aix/dso.c
    Matches: Copyright\s\(c\)\s1992,1993,1995,1996,1997,1988
    Matches: Jens-Uwe\sMager,\sHelios\sSoftware\sGmbH,\sHannover,\sGermany.
@@ -184,11 +174,6 @@ Rules:
    Matches: 1988-1996\sSam\sLeffler..Copyright\s\(c\)\s1991-1996\sSilicon\sGraphics,\sInc.
    Copyright: 1991-1996 Sam Leffler
    Copyright: 1991-1996 Silicon Graphics, Inc
-  -
-   Glob: libs/freetdm/src/ftdm_io.c
-   Matches: Copyright\s(c)\s2007-2012,\sAnthony\sMinessale\sII
-   Matches: IN\sNO\sEVENT\sSHALL\sTHE\sCOPYRIGHT\sOWNER
-   Copyright: 2007-2012, Anthony Minessale II
   -
    Glob: src/mod/endpoints/mod_khomp/*
    Matches: The\scontents\sof\sthis\sfile\sare\ssubject\sto\sthe\sMozilla\sPublic\sLicense\sVersion\s1.1
