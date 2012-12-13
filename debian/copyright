@@ -1332,14 +1332,28 @@ Copyright: 2000 by Martin Pool <mbp@humbug.org.au>
 License: zlib/libpng
 
 Files: libs/apr/file_io/unix/mktemp.c
-Copyright: 1987, 1993 The Regents of the University of California
+ libs/apr/strings/apr_strings.c
+Copyright: 1987-1993 The Regents of the University of California
 License: Apache-2.0 or BSD-4-clause
+
+Files: libs/apr/dso/aix/dso.c
+Copyright: 1992-1998 Jens-Uwe Mager, Helios Software GmbH, Hannover, Germany.
+ 1996 John W. Eaton <jwe@bevo.che.wisc.edu>
+ 1998 Ralf S. Engelschall <rse@apache.org>
+ 2000 David Reid
+License: Apache-2.0
 
 Files: libs/apr-util/crypto/apr_md5.c
 Copyright: 1991-2, RSA Data Security, Inc.
  2000-2005 The Apache Software Foundation or its licensors
  phk@login.dknet.dk
 License: RSA and Apache-2.0 and Beerware
+
+Files: libs/apr-util/ldap/apr_ldap_url.c
+Copyright: 2000-2005 The Apache Software Foundation or its licensors
+ 1998-2002 The OpenLDAP Foundation
+ 1992-1996 Regents of the University of Michigan
+License: Apache-2.0 and OpenLDAP and BSD-like
 
 Files: libs/miniupnpc/*
 Copyright: 2005-2009, Thomas Bernard
@@ -1801,3 +1815,27 @@ Copyright: 2004 Polycom, Inc
 Comment: Disclaimer: non-comercial use,gital Equipment Corporation, Maynard, Massachusetts. 
 License: patent-mess
 
+License: OpenLDAP
+ /* Portions Copyright 1998-2002 The OpenLDAP Foundation
+  * All rights reserved.
+  * 
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted only as authorized by the OpenLDAP
+  * Public License.  A copy of this license is available at
+  * http://www.OpenLDAP.org/license.html or in file LICENSE in the
+  * top-level directory of the distribution.
+  * 
+  * OpenLDAP is a registered trademark of the OpenLDAP Foundation.
+  * 
+  * Individual files and/or contributed packages may be copyright by
+  * other parties and subject to additional restrictions.
+  * 
+  * This work is derived from the University of Michigan LDAP v3.3
+  * distribution.  Information concerning this software is available
+  * at: http://www.umich.edu/~dirsvcs/ldap/
+  * 
+  * This work also contains materials derived from public sources.
+  * 
+  * Additional information about OpenLDAP can be obtained at:
+  *     http://www.openldap.org/
+  */

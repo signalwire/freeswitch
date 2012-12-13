@@ -100,6 +100,45 @@ Rules:
    Copyright: 1987, 1993 The Regents of the University of California
    License: Apache-2.0 or BSD-4-clause
   -
+   Glob: libs/apr/strings/apr_strings.c
+   Matches:  The\sASF\slicenses\sthis\sfile\sto\sYou\sunder\sthe\sApache\sLicense,\sVersion\s2.0
+   Matches:  Copyright\s\(c\)\s1987,\s1993
+   Matches:  The\sRegents\sof\sthe\sUniversity\sof\sCalifornia.\s+All\srights\sreserved.
+   Copyright: 1990, 1993 The Regents of the University of California
+   License: Apache-2.0 or BSD-4-clause
+  -
+   Glob: libs/apr/locks/os2/thread_mutex.c
+   Matches: this\swork\sfor\sadditional\sinformation\sregarding\scopyright\sownership.
+   Matches: The\sASF\slicenses\sthis\sfile\sto\sYou\sunder\sthe\sApache\sLicense,\sVersion\s2.0
+   License: Apache-2.0
+   Copyright: Ryan Bloom
+   Justification: silly hack to shut up the 'ownership' problem
+  -
+   Glob: libs/apr/dso/aix/dso.c
+   Matches: Copyright\s\(c\)\s1992,1993,1995,1996,1997,1988
+   Matches: Jens-Uwe\sMager,\sHelios\sSoftware\sGmbH,\sHannover,\sGermany.
+   Copyright: 1992-1998 Jens-Uwe Mager, Helios Software GmbH, Hannover, Germany.
+  -
+   Glob: libs/apr/build/NWGNUtail.inc
+   Matches: NLM_COPYRIGHT\s=\sLicensed\sto\sthe\sApache\sSoftware\sFoundation\s\(ASF\)\sunder\sone\sor\smore
+   Copyright: The Apache Software Foundation or its licensors
+  -
+   Glob: libs/apr/include/apr_fnmatch.h
+   Matches: Copyright\s\(c\)\s1992,\s1993
+   Matches:  The\sRegents\sof\sthe\sUniversity\sof\sCalifornia.
+   Copyright: 1992, 1993 The Regents of the University of California.
+  -
+   Glob: libs/apr-util/ldap/apr_ldap_url.c
+   Matches: Copyright\s2000-2005\sThe\sApache\sSoftware\sFoundation\sor\sits\slicensors
+   Copyright: 2000-2005 The Apache Software Foundation or its licensors
+   Matches: Copyright\s1998-2002\sThe\sOpenLDAP\sFoundation
+   Copyright: 1998-2002 The OpenLDAP Foundation
+   Matches: Copyright\s\(c\)\s1992-1996\sRegents\sof\sthe\sUniversity\sof\sMichigan.
+   Copyright: 1992-1996 Regents of the University of Michigan.
+   Matches: http://www.OpenLDAP.org/license.html\sor\sin\sfile\sLICENSE\sin\sthe
+   License: Apache-2.0 and OpenLDAP and BSD-like
+   Justification: silly hack to shut up the 'by' problem
+  -
    Glob: libs/js/*
    Matches: Version:\sMPL\s1.1/GPL\s2.0/LGPL\s2.1
    Matches: Portions\screated\sby\sthe\sInitial\sDeveloper\sare\sCopyright\s\(C\)\s(1998-|)2000
@@ -150,13 +189,6 @@ Rules:
    Matches: Copyright\s(c)\s2007-2012,\sAnthony\sMinessale\sII
    Matches: IN\sNO\sEVENT\sSHALL\sTHE\sCOPYRIGHT\sOWNER
    Copyright: 2007-2012, Anthony Minessale II
-  -
-   Glob: libs/apr/locks/os2/thread_mutex.c
-   Matches: this\swork\sfor\sadditional\sinformation\sregarding\scopyright\sownership.
-   Matches: The\sASF\slicenses\sthis\sfile\sto\sYou\sunder\sthe\sApache\sLicense,\sVersion\s2.0
-   License: Apache-2.0
-   Copyright: Ryan Bloom
-   Justification: silly hack to shut up the 'ownership' problem
   -
    Glob: src/mod/endpoints/mod_khomp/*
    Matches: The\scontents\sof\sthis\sfile\sare\ssubject\sto\sthe\sMozilla\sPublic\sLicense\sVersion\s1.1
