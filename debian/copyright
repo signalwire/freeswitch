@@ -1274,13 +1274,42 @@ Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  2006 Nenad Corbic <ncorbic@sangoma.com>
  1984-2011 Sangoma Technologies Inc.
  2007, Michael S. Collins
+ 2012, Kapil Gupta <kgupta@sangoma.com>
+ 2009 Konrad Hammel <konrad@sangoma.com>
+ 2010 Stefan Knoblich <s.knoblich@axsentis.de>
+ 2008 Stefan Knoblich, axsentis GmbH.
+ 2011 Sebastien Trottier
 License: BSD-3-clause
 
 Files: libs/freetdm/src/priserver.c
+ libs/freetdm/src/sangoma_pri.?
 Copyright: 2005-2012, Anthony Minessale II
  Nenad Corbic <ncorbic@sangoma.com>
 License: GPL-2+
 
+Files: libs/freetdm/src/libteletone_detect.c
+ libs/freetdm/mod_freetdm/mod_freetdm.c
+ libs/freetdm/src/include/private/libteletone.h
+ libs/freetdm/src/include/private/libteletone_detect.h
+ libs/freetdm/src/include/private/libteletone_generate.h
+ libs/freetdm/src/libteletone_generate.c
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2012, Anthony Minessale II
+ 2001  Steve Underwood <steveu@coppice.org>
+License: MPL-1.1
+
+Files: libs/freetdm/src/include/private/fsk.h
+ libs/freetdm/src/uart.c
+ libs/freetdm/src/fsk.c
+ libs/freetdm/src/include/private/uart.h
+Copyright: 2005 Robert Krten
+License: BSD-2-clause
+
+Files: libs/freetdm/src/ftmod/ftmod_misdn/ftmod_misdn.c
+Copyright: 2011, Stefan Knoblich <stkn@openisdn.net>
+License: MIT/X11 (BSD like)
+
+Files: libs/freetdm/src/include/private/fsk.h
 Files: libs/iksemel/*
 Copyright: 2000-2007 Gurer Ozen <madcat@e-kolay.net>
 License: LGPL-2.1
