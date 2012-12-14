@@ -4394,7 +4394,7 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 
 		// set some default value
 		t38_options->T38FaxVersion = 0;
-		t38_options->T38MaxBitRate = 9600;
+		t38_options->T38MaxBitRate = 14400;
 		t38_options->T38FaxRateManagement = switch_core_session_strdup(tech_pvt->session, "transferredTCF");
 		t38_options->T38FaxUdpEC = switch_core_session_strdup(tech_pvt->session, "t38UDPRedundancy");
 		t38_options->T38FaxMaxBuffer = 500;

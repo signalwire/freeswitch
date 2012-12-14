@@ -2770,23 +2770,26 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp_flush_t flush)
 {
 
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) ||
+		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO) ||
+		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
+		return;
+	}
+
+
 	if (switch_rtp_ready(rtp_session)) {
 		rtp_session->last_write_ts = RTP_TS_RESET;
-	
-		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
-			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
-			switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+		switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 
-			switch (flush) {
-			case SWITCH_RTP_FLUSH_STICK:
-				switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
+		switch (flush) {
+		case SWITCH_RTP_FLUSH_STICK:
+			switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
+			break;
+		case SWITCH_RTP_FLUSH_UNSTICK:
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
+			break;
+		default:
 				break;
-			case SWITCH_RTP_FLUSH_UNSTICK:
-				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
-				break;
-			default:
-				break;
-			}
 		}
 	}
 }
@@ -2886,7 +2889,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (*bytes) {
 		uint16_t seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 
-		if (rtp_session->recv_msg.header.x) { /* header extensions */
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) &&
+			rtp_session->recv_msg.header.version == 2 && rtp_session->recv_msg.header.x) { /* header extensions */
+
 			rtp_session->recv_msg.ext = (switch_rtp_hdr_ext_t *) rtp_session->recv_msg.body;
 
 			rtp_session->recv_msg.ext->length = ntohs((uint16_t)rtp_session->recv_msg.ext->length);
@@ -3263,6 +3268,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
+				!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
+				!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO) && 
+				!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL) &&
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
 					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_FALSE);
@@ -3665,10 +3673,18 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			*flags |= SFF_PROXY_PACKET;
 
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {
+#if 0
+				if (rtp_session->recv_msg.header.version == 2 && rtp_session->recv_msg.header.pt == rtp_session->rpayload) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+									  "Ignoring udptl packet of size of %ld bytes that looks strikingly like a RTP packet.\n", (long)bytes);
+					bytes = 0;
+					goto do_continue;					
+				}
+#endif
 				*flags |= SFF_UDPTL_PACKET;
+			} else {
+				check_srtp_and_ice(rtp_session);
 			}
-
-			check_srtp_and_ice(rtp_session);
 
 			ret = (int) bytes;
 			goto end;
@@ -4572,7 +4588,6 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		}
 		bytes = frame->packetlen;
 		//tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->remote_addr);
-
 
 		send_msg = frame->packet;
 
