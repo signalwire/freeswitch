@@ -264,8 +264,6 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 		ftdm_wait_flag_t flags = FTDM_READ;
 		ftdm_size_t dlen = 0;
 		
-		len = sizeof(frame);
-		
 		elapsed += interval;
 		state_counter += interval;
 		
@@ -488,7 +486,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			continue;
 		}
 
-		len = 0;
+		len = sizeof(frame);
 		if (ftdm_channel_read(ftdmchan, frame, &len) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "READ ERROR [%s]\n", ftdmchan->last_error);
 			goto done;
