@@ -2889,8 +2889,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		if (rtp_session->recv_msg.header.x) { /* header extensions */
 			rtp_session->recv_msg.ext = (switch_rtp_hdr_ext_t *) rtp_session->recv_msg.body;
 
-			rtp_session->recv_msg.ext->length = ntohs(rtp_session->recv_msg.ext->length);
-			rtp_session->recv_msg.ext->profile = ntohs(rtp_session->recv_msg.ext->profile);
+			rtp_session->recv_msg.ext->length = ntohs((uint16_t)rtp_session->recv_msg.ext->length);
+			rtp_session->recv_msg.ext->profile = ntohs((uint16_t)rtp_session->recv_msg.ext->profile);
 
 			if (rtp_session->recv_msg.ext->length < SWITCH_RTP_MAX_BUF_LEN_WORDS) {
 				rtp_session->recv_msg.ebody = rtp_session->recv_msg.body + (rtp_session->recv_msg.ext->length * 4) + 4;
