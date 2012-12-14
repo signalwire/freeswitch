@@ -767,6 +767,11 @@ typedef struct {
 	unsigned ssrc:32;			/* synchronization source */
 } switch_rtp_hdr_t;
 
+typedef struct {
+	unsigned length:16;			/* length                 */
+	unsigned profile:16;		/* defined by profile     */
+} switch_rtp_hdr_ext_t;
+
 #else /*  BIG_ENDIAN */
 
 typedef struct {
@@ -780,6 +785,11 @@ typedef struct {
 	unsigned ts:32;				/* timestamp              */
 	unsigned ssrc:32;			/* synchronization source */
 } switch_rtp_hdr_t;
+
+typedef struct {
+	unsigned profile:16;		/* defined by profile     */
+	unsigned length:16;			/* length                 */
+} switch_rtp_hdr_ext_t;
 
 #endif
 
