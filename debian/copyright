@@ -1025,7 +1025,7 @@ License: curl
 
 Files: libs/curl/tests/server/tftpd.c
 Copyright: 1983 Regents of the University of California
-License: BSD-4-Clause
+License: BSD-4-clause
 
 Files: libs/curl/tests/server/fake_ntlm.c
 Copyright: 1998-2010, Mandy Wu <mandy.wu@intel.com>
@@ -1033,11 +1033,11 @@ License: curl
 
 Files: libs/curl/docs/examples/fopen.c
 Copyright: 2003, Simtec Electronics
-License: BSD-3-Clause
+License: BSD-3-clause
 
 Files: libs/curl/docs/examples/rtsp.c
 Copyright: 2011, Jim Hollinger / HOLDERS AND CONTRIBUTORS
-License: BSD-3-Clause
+License: BSD-3-clause
 
 Files: libs/curl/docs/examples/curlgtk.c
 Copyright: 2003, The OpenEvidence Project
@@ -1125,10 +1125,11 @@ Files: libs/curl/lib/krb5.c
  libs/curl/lib/security.c
 Copyright: 2004-2011 Daniel Stenberg
  1995-1999 Kungliga Tekniska Högskolan
-License: BSD-3-Clause
+License: BSD-3-clause
 
 Files: libs/curl/lib/inet_pton.c
  libs/curl/lib/inet_ntop.c
+ libs/curl/lib/mprintf.c
 Copyright: 1996-2001 Internet Software Consortium
 License: ISC
 
@@ -1184,7 +1185,7 @@ License: curl
  be used in advertising or otherwise to promote the sale, use or other dealings
  in this Software without prior written authorization of the copyright holder.
 
-License: BSD-3-Clause
+License: BSD-3-clause
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
  are met:
@@ -1212,7 +1213,7 @@ License: BSD-3-Clause
  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  SUCH DAMAGE.
 
-License: BSD-4-Clause
+License: BSD-4-clause
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
  are met:
@@ -1373,9 +1374,10 @@ Copyright: 2001-2010, NLnet Labs
  1995 International Business Machines
 License: BSD-2-clause
 
-Files: libs/ldns/compat/fake-rfc2553.c
- libs/ldns/compat/fake-rfc2553.h
+Files: libs/ldns/compat/fake-rfc2553.[ch]
+ libs/ldns/examples/fake-rfc2553.h
  libs/ldns/ldns/rbtree.h
+ libs/ldns/rbtree.c
 Copyright: 2001-2010, NLnet Labs
  2000-2003 Damien Miller
  1999 WIDE Project
@@ -1465,12 +1467,45 @@ Copyright: 2001-2012, Steve Underwood
 License: LGPL-2.1
 
 Files: libs/spandsp/tests/*
+ libs/spandsp/spandsp-sim/g1050.c
+ libs/spandsp/spandsp-sim/line_model.c
+ libs/spandsp/spandsp-sim/make_line_models.c
+ libs/spandsp/spandsp-sim/spandsp-sim.h
+ libs/spandsp/spandsp-sim/test_utils.c
+ libs/spandsp/src/image_translate.c
+ libs/spandsp/src/make_at_dictionary.c
+ libs/spandsp/src/make_cielab_luts.c
+ libs/spandsp/src/make_math_fixed_tables.c
+ libs/spandsp/src/make_modem_filter.c
+ libs/spandsp/test-data/etsi/fax/generate_etsi_300_242_pages.c
+ libs/spandsp/test-data/itu/fax/generate_dithered_tif.c
+ libs/spandsp/test-data/itu/fax/generate_sized_pages.c
+ libs/spandsp/test-data/itu/fax/generate_striped_pages.c
 Copyright: 2001-2012, Steve Underwood
 License: GPL-2
+
+Files: libs/spandsp/tests/ademco_contactid_tests.c
+ libs/spandsp/tests/regression_tests.sh
+ libs/spandsp/tests/timezone_tests.c
+ libs/spandsp/tests/tsb85_extra_tests.sh
+ libs/spandsp/tests/tsb85_tests.c
+ libs/spandsp/tests/tsb85_tests.sh
+ libs/spandsp/tests/v42bis_tests.sh
+ libs/spandsp/tests/fax_tests.sh
+Copyright: 2001-2012, Steve Underwood
+License: LGPL-2.1
 
 Files: src/mod/event_handlers/mod_cdr_mongodb/*
 Copyright: 2009-2012 10gen Inc.
 License: Apache-2.0
+
+Files: src/mod/event_handlers/mod_cdr_mongodb/*
+Copyright: 2009-2012 10gen Inc.
+License: Apache-2.0
+
+Files: src/mod/say/mod_say_??/mod_say_??.c
+Copyright: 2007-2012, Anthony Minessale II
+License: BSD-3-clause
 
 Files: libs/sofia-sip/*
 Copyright: 2005-2009 Nokia Corporation
@@ -1600,6 +1635,23 @@ Files: src/mod/endpoints/mod_khomp/*
 Copyright: 2007-2010 Khomp Ind. & Com.
 License: MPL-1.1 or LGPL-2.1+
 
+Files: src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/*
+ src/mod/languages/mod_lua/lua-mode.el
+Copyright: 1995-2007 Free Software Foundation, Inc.
+License: GPL-2+
+
+Files: src/mod/endpoints/mod_rtmp/libamf/src/types.[ch]
+Copyright: 2007, 2008 Marc Noirot <marc.noirot AT gmail.com>
+License: GPL-2+
+
+Files: src/mod/endpoints/mod_gsmopen/asterisk/celliax_spandsp.[ch]
+Copyright: 2001, 2003 Steve Underwood
+License: GPL-2
+
+Files: src/mod/endpoints/mod_skypopen/old-stuff/*
+Copyright: Jaroslav Kysela <perex@perex.cz>
+License: GPL-2+
+
 Files: src/mod/endpoints/mod_skinny/*
 Copyright: 2010, Mathieu Parent <math.parent@gmail.com>
 License: MPL-1.1
@@ -1607,6 +1659,20 @@ License: MPL-1.1
 Files: src/mod/endpoints/mod_skinny/*.p[lm]
 Copyright: 2010, Mathieu Parent <math.parent@gmail.com>
 License: Perl
+
+Files: src/mod/endpoints/mod_portaudio/*
+Copyright: 1999-2000 Ross Bencina and Phil Burk
+ 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+License: MIT/X11 (BSD like)
+
+Files: src/mod/applications/mod_fsk/fsk.[ch]
+ src/mod/applications/mod_fsk/uart.[ch]
+Copyright: 2005 Robert Krten
+License: BSD-2-clause
+
+Files: src/mod/applications/mod_redis/credis.[ch]
+Copyright: 2009-2010, Jonas Romfelt <jonas at romfelt dot se>
+License: BSD-3-clause
 
 Files: libs/pcre/*
 Copyright: 1997-2009 University of Cambridge
@@ -1620,6 +1686,10 @@ Files: libs/libdingaling/*
 Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  2001-2003 Allan Saddi <allan@saddi.com>
 License: MPL-1.1
+
+Files: libs/libdingaling/src/sha1.[ch]
+Copyright: 2001-2003 Allan Saddi <allan@saddi.com>
+License: BSD-2-clause
 
 Files: libs/libcodec2/*
 Copyright: 1990-2010 David Rowe
@@ -1682,8 +1752,40 @@ Copyright: 1992, 1993, The Regents of the University of California.
 License: BSD-4-clause
 
 Files: libs/libks/*
-Copyright: 1996,2000, Gray Watson
-License: BSD
+Copyright: 2010-2012, Anthony Minessale II
+License: BSD-3-clause
+
+Files: libs/libks/src/*/ks_json.[ch]
+Copyright: 2009 Dave Gamble
+License: MIT/X11 (BSD like)
+
+Files: libs/libks/src/*/simclist.[ch]
+Copyright: 2007-2011 Mij <mij@bitchx.it>
+License: ISC
+
+Files: libs/libnatpmp/*
+Copyright: 2007-2008, Thomas BERNARD <miniupnp@free.fr>
+License: ISC
+
+Files: libs/libwebsockets/*
+Copyright: 2010 Andy Green <andy@warmcat.com>
+License: LGPL
+
+Files: libs/libwebsockets/win32port/zlib/*
+Copyright: 1995-2005 Jean-loup Gailly
+License: zlib/libpng
+
+Files: libs/libwebsockets/lib/base64-decode.c
+Copyright: 2001 Bob Trower, Trantor Standard Systems Inc.
+License: MIT/X11 (BSD like)
+
+Files: libs/libwebsockets/lib/sha-1.c
+Copyright: 1995-1998 WIDE Project.
+License: BSD-3-clause
+
+Files: libs/libwebsockets/win32port/win32helpers/getopt_long.c
+Copyright: 1987-1996, The Regents of the University of California.
+License: BSD-4-clause
 
 Files: libs/libedit/*
 Copyright: 1992, 1993 The Regents of the University of California.
@@ -1691,10 +1793,9 @@ Copyright: 1992, 1993 The Regents of the University of California.
  1998 Todd C. Miller <Todd.Miller@courtesan.com>
 License: BSD-3-clause
 
-Files: src/mod/endpoints/mod_portaudio/*
-Copyright: 1999-2000 Ross Bencina and Phil Burk
- 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
-License: MIT/X11 (BSD like)
+Files: libs/libedit/src/strlcat.c
+Copyright: 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+License: ISC
 
 Files: libs/esl/*
 Copyright: 2007 Michael Jerris
@@ -1710,6 +1811,11 @@ License: MIT/X11 (BSD like)
 Files: libs/esl/managed/ManagedEslTest/Program.cs
 Copyright: Diego Toro <dftoro@yahoo.com>
 License: MPL-1.1
+
+Files: libs/esl/getopt/getopt_long.c
+Copyright: 2000 The NetBSD Foundation, Inc.
+ 2002 Todd C. Miller <Todd.Miller@courtesan.com>
+License: BSD-2-clause
 
 Files: libs/xmlrpc-c/*
 Copyright: 2005 Steven A. Bone, sbone@pobox.com
@@ -1730,6 +1836,9 @@ Copyright: 2000-2009 Broadcom Corporation
  2001-2009 Steve Underwood
  2006 Michael Jerris
 License: LGPL-2.1
+
+Files: libs/broadvoice/autogen.sh
+License: GPL-2
 
 Files: libs/libzrtp/*
 Copyright: 2006-2012 Philip R. Zimmermann.

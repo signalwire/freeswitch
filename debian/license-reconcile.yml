@@ -182,6 +182,10 @@ Rules:
    Matches: version\s2\.1\sof\sthe\sLicense,\sor\s\(at\syour\soption\)\sany\slater\sversion.
    License: MPL-1.1 or LGPL-2.1+
   -
+   Glob: libs/esl/getopt/getopt_long.c
+   Matches: This\scode\sis\sderived\sfrom\ssoftware\scontributed\sto\sThe\sNetBSD\sFoundation
+   License: BSD-2-clause
+  -
    Glob: libs/silk/*
    Matches: Copyright\s\(c\)\s2006-2011,\sSkype\sLimited.
    Matches: THIS\sSOFTWARE\sIS\sPROVIDED\sBY\sTHE\sCOPYRIGHT\sHOLDERS\sAND
