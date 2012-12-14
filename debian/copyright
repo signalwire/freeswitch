@@ -1127,7 +1127,7 @@ Copyright: 2004-2011 Daniel Stenberg
  1995-1999 Kungliga Tekniska Högskolan
 License: BSD-3-clause
 
-Files: libs/curl/lib/inet_pton.c
+Files: */inet_pton.c
  libs/curl/lib/inet_ntop.c
  libs/curl/lib/mprintf.c
 Copyright: 1996-2001 Internet Software Consortium
@@ -1300,6 +1300,7 @@ Files: libs/freetdm/src/include/private/fsk.h
  libs/freetdm/src/uart.c
  libs/freetdm/src/fsk.c
  libs/freetdm/src/include/private/uart.h
+ libs/freetdm/src/include/private/fsk.h
 Copyright: 2005 Robert Krten
 License: BSD-2-clause
 
@@ -1307,7 +1308,10 @@ Files: libs/freetdm/src/ftmod/ftmod_misdn/ftmod_misdn.c
 Copyright: 2011, Stefan Knoblich <stkn@openisdn.net>
 License: MIT/X11 (BSD like)
 
-Files: libs/freetdm/src/include/private/fsk.h
+Files: src/include/SimpleGlob.h
+Copyright: 2006-2007, Brodie Thiesfield
+License: MIT/X11 (BSD like)
+
 Files: libs/iksemel/*
 Copyright: 2000-2007 Gurer Ozen <madcat@e-kolay.net>
 License: LGPL-2.1
@@ -1499,11 +1503,17 @@ Files: src/mod/event_handlers/mod_cdr_mongodb/*
 Copyright: 2009-2012 10gen Inc.
 License: Apache-2.0
 
-Files: src/mod/event_handlers/mod_cdr_mongodb/*
-Copyright: 2009-2012 10gen Inc.
-License: Apache-2.0
+Files: src/mod/event_handlers/mod_cdr_mongodb/mod_cdr_mongodb.c
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+License: MPL-1.1
+
+Files: src/mod/event_handlers/mod_cdr_mongodb/driver/src/md5.[ch]
+Copyright: 1999, 2000, 2002 Aladdin Enterprises.
+License: zlib/libpng
 
 Files: src/mod/say/mod_say_??/mod_say_??.c
+ scripts/c/socket2me/socket2me.c
+ src/mod/xml_int/mod_xml_scgi/xml_scgi_server.pl
 Copyright: 2007-2012, Anthony Minessale II
 License: BSD-3-clause
 
@@ -1535,6 +1545,18 @@ Files: libs/sofia-sip/libsofia-sip-ua/su/inet_pton.c
 Copyright: 2004 Internet Systems Consortium, Inc. ("ISC")
  1996,1999 Internet Software Consortium.
 License: ISC
+
+Files: libs/win32/libshout/shout/shout.h
+Copyright: 2002-2003 the Icecast team <team@icecast.org>
+License: LGPL-2+
+
+Files: */switch_xml.[ch]
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ 2004, 2006 Aaron Voisine <aaron@voisine.org>
+License: MPL-1.1 or BSD-like
+
+Files: src/switch_mprintf.c
+License: public-domain
 
 Files: libs/libsndfile/src/G72x/*
 Copyright: Abandoned, Sun Microsystems, Inc.
@@ -1635,8 +1657,18 @@ Files: src/mod/endpoints/mod_khomp/*
 Copyright: 2007-2010 Khomp Ind. & Com.
 License: MPL-1.1 or LGPL-2.1+
 
+Files: src/mod/endpoints/mod_khomp/mod_khomp.cpp
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+License: MPL-1.1
+
+Files: src/mod/endpoints/mod_khomp/commons/base/atomic.hpp
+Copyright: 1998 Doug Rabson
+License: BSD-2-clause
+
 Files: src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/*
  src/mod/languages/mod_lua/lua-mode.el
+ libs/iksemel/ltmain.sh
+ libs/yaml/config/ltmain.sh
 Copyright: 1995-2007 Free Software Foundation, Inc.
 License: GPL-2+
 
@@ -1664,6 +1696,14 @@ Files: src/mod/endpoints/mod_portaudio/*
 Copyright: 1999-2000 Ross Bencina and Phil Burk
  2005-2012, Anthony Minessale II <anthm@freeswitch.org>
 License: MIT/X11 (BSD like)
+
+Files: src/mod/endpoints/mod_portaudio/mod_portaudio.c
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+License: MPL-1.1
+
+Files: src/mod/endpoints/mod_sofia/sip-dig.c
+Copyright: 2006 Nokia Corporation
+License: LGPL-2.1+
 
 Files: src/mod/applications/mod_fsk/fsk.[ch]
  src/mod/applications/mod_fsk/uart.[ch]
@@ -1709,12 +1749,18 @@ Copyright: 2010 Perens LLC <bruce@perens.com>
 License: GPL-3+
 
 Files: src/mod/codecs/mod_sangoma_codec/mod_sangoma_codec.c
-Copyright: 2010, Sangoma Technologies
+ src/include/switch_profile.h
+ src/switch_profile.c
+Copyright: 2009,2010, Sangoma Technologies
 License: BSD-3-clause
 
 Files: src/mod/codecs/mod_isac/*
 Copyright: 2011 The WebRTC project authors
 License: BSD-3-clause
+
+Files: src/mod/codecs/mod_isac/mod_isac.c
+Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+License: MPL-1.1
 
 Files: libs/srtp/*
 Copyright: 2001-2006, Cisco Systems, Inc.
@@ -1752,16 +1798,24 @@ Copyright: 1992, 1993, The Regents of the University of California.
 License: BSD-4-clause
 
 Files: libs/libks/*
+ libs/libscgi/src/include/scgi_oop.h
+ libs/libscgi/src/scgi.c
 Copyright: 2010-2012, Anthony Minessale II
 License: BSD-3-clause
 
-Files: libs/libks/src/*/ks_json.[ch]
+Files: libs/libks/*/ks_json.[ch]
+ src/include/switch_json.h
+ src/switch_json.c
 Copyright: 2009 Dave Gamble
 License: MIT/X11 (BSD like)
 
-Files: libs/libks/src/*/simclist.[ch]
+Files: libs/libks/*/simclist.[ch]
 Copyright: 2007-2011 Mij <mij@bitchx.it>
 License: ISC
+
+Files: libs/libtpl-1.5/src/tpl.[ch]
+Copyright: 2005-2010, Troy D. Hanson
+License: BSD-2-clause
 
 Files: libs/libnatpmp/*
 Copyright: 2007-2008, Thomas BERNARD <miniupnp@free.fr>
@@ -1794,6 +1848,7 @@ Copyright: 1992, 1993 The Regents of the University of California.
 License: BSD-3-clause
 
 Files: libs/libedit/src/strlcat.c
+ libs/libedit/src/strlcpy.c
 Copyright: 1998 Todd C. Miller <Todd.Miller@courtesan.com>
 License: ISC
 
@@ -1804,7 +1859,8 @@ Copyright: 2007 Michael Jerris
  2000 The NetBSD Foundation, Inc.
 License: BSD-3-clause
 
-Files: libs/esl/src/*/esl_json.c
+Files: libs/esl/src/esl_json.c
+ libs/esl/src/include/esl_json.h
 Copyright: 2009 Dave Gamble
 License: MIT/X11 (BSD like)
 
@@ -1846,7 +1902,24 @@ Copyright: 2006-2012 Philip R. Zimmermann.
  1998-2006, Dr Brian Gladman, Worcester, UK.
  2002, Bryce "Zooko" Wilcox-O'Hearn
  2010 Soft Industry
-License: AGPL-3
+License: AGPL-3 or MPL-1.1
+
+Files: libs/libzrtp/test/cmockery/cmockery.c
+Copyright: 2008 Google Inc
+License: Apache-2.0
+
+Files: libs/libzrtp/third_party/bnlib/legal.c
+ libs/libzrtp/third_party/bnlib/*
+Copyright: 1995, 2005 Colin Plumb
+License: GPL-2 or GPL-3 or MPL-1.1
+
+Files: libs/libzrtp/third_party/bnlib/test/md5.c
+Copyright: 1995 Abandoned Colin Plumb
+License: public-domain
+
+Files: libs/stfu/*
+Copyright: 2007-2012 Anthony Minessale II <anthm@freeswitch.org>
+License: MIT/X11 (BSD like)
 
 Files: libs/sqlite/*
 Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
@@ -1857,6 +1930,10 @@ Files: libs/win32/sqlite/sqlite3.[ch]
  libs/win32/sqlite/parse.c
 Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
 License: public-domain
+
+Files: libs/win32/pcre/dftables.c
+Copyright: 1997-2008 University of Cambridge
+License: BSD-3-clause
 
 Files: libs/openzap/*
 Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
@@ -1870,9 +1947,9 @@ Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  2001 Steve Underwood <steveu@coppice.org>
  2002,2004 Christopher Clark <firstname.lastname@cl.cam.ac.uk>
  2002 Christopher Clark
+ 1984-2007 Sangoma Technologies Inc.
  2007-2009, Sangoma Technologies
  2009, Moises Silva <moy@sangoma.com>
- 1984-2007 Sangoma Technologies Inc.
  2008, Stefan Knoblich, axsentis GmbH.
  2005  Xygnada Technology, Inc.
  2001 Steve Underwood
@@ -1897,20 +1974,15 @@ Copyright: 2005-2012 Anthony Minessale II
  2006 Nenad Corbic <ncorbic@sangoma.com>
 License: GPL-2+
 
-Files: libs/libzrtp/test/cmockery/cmockery.c
-Copyright: 2008 Google Inc
-License: Apache-2.0
-
-Files: libs/libzrtp/third_party/bnlib/test/md5.c
-Copyright: 1993-1995 Colin Plumb
-License: Public domain
-
 Files: libs/ilbc/*
 Copyright: 2007-2008, Steve Underwood
  2006 Michael Jerris
  2004, The Internet Society
 Comment: Disclaimer: non-comercial use, perhaps, and non-modifiable (standards compliance)
 License: GIPS
+
+Files: libs/ilbc/tests/regression_tests.sh
+License: GPL-2
 
 Files: libs/libg722_1/*
 Copyright: 2004 Polycom, Inc
@@ -1919,6 +1991,15 @@ Copyright: 2004 Polycom, Inc
  2001-2006 Steve Underwood
 Comment: Disclaimer: non-comercial use,gital Equipment Corporation, Maynard, Massachusetts. 
 License: patent-mess
+
+Files: libs/libg722_1/autogen.sh
+License: GPL-2
+
+Files: libs/libg722_1/tests/g192_bit_stream.h
+ libs/libg722_1/tests/timing.h
+Copyright: 2008-2009 Steve Underwood <steveu@coppice.org>
+ 2001 Steve Underwood
+License: LGPL-2.1
 
 License: OpenLDAP
  /* Portions Copyright 1998-2002 The OpenLDAP Foundation
