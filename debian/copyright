@@ -4,6 +4,7 @@ Source: http://freeswitch.org/
 
 Files: *
 Copyright: 2005-2012 Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2012 Anthony Minessale II
 License: MPL-1.1
                            MOZILLA PUBLIC LICENSE
                                  Version 1.1
@@ -1012,6 +1013,8 @@ License: MPL-1.1 or GPL-2+
 
 Files: libs/unimrcp/*
 Copyright: 2008-2010 Arsen Chaloyan
+ 2009-2010 Tomas Valenta, Arsen Chaloyan
+ 2001-2006 Steve Underwood
 License: Apache-2.0
 
 Files: libs/curl/*
@@ -1139,8 +1142,8 @@ Copyright: 2009-2011, Markus Moeller <markus_moeller@compuserve.com>
 License: curl
 
 Files: libs/curl/lib/md5.c
-Copyright: 1998 - 2005, Daniel Stenberg, <daniel@haxx.se>, et al
- 1991-2, RSA Data Security, Inc.
+Copyright: 1998-2005, Daniel Stenberg, <daniel@haxx.se>, et al
+ 1991-1992, RSA Data Security, Inc.
 License: curl
 
 Files: libs/curl/lib/md4.c
@@ -1291,9 +1294,11 @@ Files: libs/freetdm/src/libteletone_detect.c
  libs/freetdm/src/include/private/libteletone_detect.h
  libs/freetdm/src/include/private/libteletone_generate.h
  libs/freetdm/src/libteletone_generate.c
+ libs/libteletone/src/libteletone_detect.[ch]
+ src/mod/applications/mod_spandsp/udptl.[ch]
 Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  2005-2012, Anthony Minessale II
- 2001  Steve Underwood <steveu@coppice.org>
+ 2001-2009, Steve Underwood <steveu@coppice.org>
 License: MPL-1.1
 
 Files: libs/freetdm/src/include/private/fsk.h
@@ -1311,6 +1316,10 @@ License: MIT/X11 (BSD like)
 Files: src/include/SimpleGlob.h
 Copyright: 2006-2007, Brodie Thiesfield
 License: MIT/X11 (BSD like)
+
+Files: src/include/switch_cpp.h
+Copyright: 2007 Yossi Neiman <freeswitch@cartissolutions.com>
+License: MPL-1.1  (well, maybe -- it refers to a COPYING file, so probably docs/COPYING, in which case MPL-1.1)
 
 Files: libs/iksemel/*
 Copyright: 2000-2007 Gurer Ozen <madcat@e-kolay.net>
@@ -1382,6 +1391,7 @@ Files: libs/ldns/compat/fake-rfc2553.[ch]
  libs/ldns/examples/fake-rfc2553.h
  libs/ldns/ldns/rbtree.h
  libs/ldns/rbtree.c
+ libs/win32/ldns/ldns-lib/util.h
 Copyright: 2001-2010, NLnet Labs
  2000-2003 Damien Miller
  1999 WIDE Project
@@ -1468,6 +1478,12 @@ License: LGPL-2+
 
 Files: libs/spandsp/*
 Copyright: 2001-2012, Steve Underwood
+ 2006 Michael Jerris
+ 1991-1997 Silicon Graphics, Inc.
+ 1990-1997 Sam Leffler
+ 1993 CMU
+ 2004, Horizon Wimba, Inc.
+ 1990, 1995  Frank D. Cringle.
 License: LGPL-2.1
 
 Files: libs/spandsp/tests/*
@@ -1499,9 +1515,27 @@ Files: libs/spandsp/tests/ademco_contactid_tests.c
 Copyright: 2001-2012, Steve Underwood
 License: LGPL-2.1
 
+Files: src/mod/applications/mod_cluechoo/sl.h
+Copyright: 1993 Toyoda Masashi
+License: FIXME
+
 Files: src/mod/event_handlers/mod_cdr_mongodb/*
 Copyright: 2009-2012 10gen Inc.
+ 2001 Unicode, Inc.
 License: Apache-2.0
+
+Files: src/mod/applications/mod_stress/FFTReal.h
+ src/mod/applications/mod_stress/FFTReal.cpp
+Copyright: 1999 Laurent de Soras
+License: unclear
+
+Files: libs/win32/celt/float_cast.h
+Copyright: 2001 Erik de Castro Lopo <erikd AT mega-nerd DOT com>
+License: MPL-1.1
+
+Files: src/mod/loggers/mod_syslog/mod_syslog.c
+Copyright: 2005-2010, James Martelletti <james@nerdc0re.com>
+License: MPL-1.1
 
 Files: src/mod/event_handlers/mod_cdr_mongodb/mod_cdr_mongodb.c
 Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
@@ -1511,11 +1545,21 @@ Files: src/mod/event_handlers/mod_cdr_mongodb/driver/src/md5.[ch]
 Copyright: 1999, 2000, 2002 Aladdin Enterprises.
 License: zlib/libpng
 
+Files: src/mod/event_handlers/mod_radius_cdr/mod_radius_cdr.h
+Copyright: 2006, Author: Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>
+License: MPL-1.1
+
 Files: src/mod/say/mod_say_??/mod_say_??.c
  scripts/c/socket2me/socket2me.c
  src/mod/xml_int/mod_xml_scgi/xml_scgi_server.pl
-Copyright: 2007-2012, Anthony Minessale II
+Copyright: 2007-2012, Anthony Minessale II <anthm@freeswitch.org>
+ 2007-2013, Anthony Minessale II
+ 2011-2012, Shahar Hadas
 License: BSD-3-clause
+
+Files: src/mod/xml_int/mod_xml_ldap/lutil_ldap.h
+Copyright: 1998-2008 The OpenLDAP Foundation.
+License: OpenLDAP
 
 Files: libs/sofia-sip/*
 Copyright: 2005-2009 Nokia Corporation
@@ -1552,15 +1596,25 @@ License: LGPL-2+
 
 Files: */switch_xml.[ch]
 Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
- 2004, 2006 Aaron Voisine <aaron@voisine.org>
+ 2004-2006 Aaron Voisine <aaron@voisine.org>
 License: MPL-1.1 or BSD-like
 
 Files: src/switch_mprintf.c
 License: public-domain
 
+Files: src/g711.c
+ src/include/g711.h
+Copyright: 2001,2006 Abandoned Steve Underwood
+License: public-domain
+
 Files: libs/libsndfile/src/G72x/*
 Copyright: Abandoned, Sun Microsystems, Inc.
 License: public-domain
+
+Files: libs/spandsp/src/spandsp/fast_convert.h
+Copyright: 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+ 2009 Steve Underwood
+License: LGPL-2.1
 
 Files: libs/libsndfile/*
  libs/win32/libsndfile/*
@@ -1653,6 +1707,16 @@ License:
  Jutta Degener (jutta@cs.tu-berlin.de)
  Carsten Bormann (cabo@cs.tu-berlin.de)
 
+Files: src/mod/endpoints/mod_opal/*
+Copyright: 2007 Tuyan Ozipek (tuyanozipek@gmail.com)
+ 2008-2012 Vox Lucida Pty. Ltd. (robertj@voxlucida.com.au)
+License: MPL-1.1
+
+Files: src/mod/endpoints/mod_h323/mod_h323.*
+Copyright: 2010 Ilnitskiy Mixim (max.h323@gmail.com)
+ 2010 Georgiewskiy Yuriy (bottleman@icf.org.ru)
+License: MPL-1.1
+
 Files: src/mod/endpoints/mod_khomp/*
 Copyright: 2007-2010 Khomp Ind. & Com.
 License: MPL-1.1 or LGPL-2.1+
@@ -1665,6 +1729,18 @@ Files: src/mod/endpoints/mod_khomp/commons/base/atomic.hpp
 Copyright: 1998 Doug Rabson
 License: BSD-2-clause
 
+Files: src/mod/languages/mod_spidermonkey/mod_spidermonkey_socket.c
+Copyright: 2007, Jonas Gauffin <jonas.gauffin@gmail.com>
+License: MPL-1.1
+
+Files: src/mod/languages/mod_java/modjava.c
+Copyright: 2007, Damjan Jovanovic <d a m j a n d o t j o v a t g m a i l d o t c o m>
+License: MPL-1.1
+
+Files: src/mod/languages/mod_managed/*
+Copyright: 2008, Michael Giagnocavo <mgg@giagnocavo.net>
+License: MPL-1.1
+
 Files: src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/*
  src/mod/languages/mod_lua/lua-mode.el
  libs/iksemel/ltmain.sh
@@ -1672,20 +1748,46 @@ Files: src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/*
 Copyright: 1995-2007 Free Software Foundation, Inc.
 License: GPL-2+
 
+Files: src/mod/endpoints/mod_gsmopen/libctb-0.16/*
+Copyright: 2001-2010 Joachim Buermann
+License: wxWindows
+
+Files: src/mod/endpoints/mod_gsmopen/libctb-0.16/src/win32/getopt.cpp
+Copyright: 2001 ?
+License: clueless and unacceptable
+ FIXME -- this cannot go in Debian -- the license is stated as:
+  (I think Open Source)
+
 Files: src/mod/endpoints/mod_rtmp/libamf/src/types.[ch]
 Copyright: 2007, 2008 Marc Noirot <marc.noirot AT gmail.com>
 License: GPL-2+
 
+Files: src/mod/endpoints/mod_rtmp/rtmp.c
+ src/mod/endpoints/mod_rtmp/mod_rtmp.[ch]
+ src/mod/endpoints/mod_rtmp/rtmp_sig.c
+ src/mod/endpoints/mod_html5/mod_html5.c
+ src/mod/endpoints/mod_rtmp/rtmp_tcp.c
+Copyright: 2011-2012, Barracuda Networks Inc.
+License: MPL-1.1
+
 Files: src/mod/endpoints/mod_gsmopen/asterisk/celliax_spandsp.[ch]
-Copyright: 2001, 2003 Steve Underwood
+Copyright: 2001-2006 Steve Underwood
 License: GPL-2
+
+Files: src/mod/endpoints/mod_skypopen/oss/skypopen.h
+ src/mod/endpoints/mod_skypopen/oss/main.c
+Copyright: 2010 Giovanni Maruzzelli
+ 2001 Alessandro Rubini and Jonathan Corbet
+ 2001 O'Reilly & Associates
+License: MPL-1.1
 
 Files: src/mod/endpoints/mod_skypopen/old-stuff/*
 Copyright: Jaroslav Kysela <perex@perex.cz>
 License: GPL-2+
 
 Files: src/mod/endpoints/mod_skinny/*
-Copyright: 2010, Mathieu Parent <math.parent@gmail.com>
+ src/mod/asr_tts/mod_tts_commandline/mod_tts_commandline.c
+Copyright: 2009-2010, Mathieu Parent <math.parent@gmail.com>
 License: MPL-1.1
 
 Files: src/mod/endpoints/mod_skinny/*.p[lm]
@@ -1714,8 +1816,18 @@ Files: src/mod/applications/mod_redis/credis.[ch]
 Copyright: 2009-2010, Jonas Romfelt <jonas at romfelt dot se>
 License: BSD-3-clause
 
+Files: src/mod/applications/mod_*vmd/mod_vmd.c
+ src/mod/applications/mod_avmd/mod_avmd.c
+Copyright: 2008-2010, Eric des Courtis <eric.des.courtis@benbria.com>
+ Benbria.
+License: MPL-1.1
+
 Files: libs/pcre/*
 Copyright: 1997-2009 University of Cambridge
+ 2003 and onwards Google Inc.
+ 2005-2006, Google Inc
+ 2001 Alexander Tokarev <dwalin@dwalin.ru>
+ 2001 Peter S. Voronov aka Chem O'Dun <petervrn@yahoo.com>
 License: BSD-3-clause
 
 Files: libs/silk/*
@@ -1755,7 +1867,7 @@ Copyright: 2009,2010, Sangoma Technologies
 License: BSD-3-clause
 
 Files: src/mod/codecs/mod_isac/*
-Copyright: 2011 The WebRTC project authors
+Copyright: 2011-2012 The WebRTC project authors
 License: BSD-3-clause
 
 Files: src/mod/codecs/mod_isac/mod_isac.c
@@ -1774,6 +1886,20 @@ License: LGPL-2+
 
 Files: libs/portaudio/*
 Copyright: 1999-2007 Ross Bencina and Phil Burk
+ 1999-2002 Phil Burk, Ross Bencina
+ 1999-2007 Andrew Baldwin, Ross Bencina
+ 1999-2007 Ross Bencina, Andrew Baldwin
+ 1999-2006 Phil Burk, Robert Marsanyi and Ross Bencina
+ 1999-2007 Ross Bencina, Phil Burk, Robert Marsanyi
+ 1999-2007 Ross Bencina
+ 1999-2000 Phil Burk
+ 2004-2007 Arve Knudsen <aknuds-1@broadpark.no>
+ 2005-2006 Bjorn Roche
+ 2006-2007 David Viens
+ 2003 Fred Gleason
+ 2002 Joshua Haberman <joshua@haberman.com>
+ 2005,2006 Ludwig Schwardt
+ 2004 Stefan Westerfeld <stefan@space.twc.de
 License: MIT/X11 (BSD like)
 
 Files: libs/tiff-4.0.2/*
@@ -1797,10 +1923,16 @@ Files: libs/tiff-4.0.2/port/strtoull.c
 Copyright: 1992, 1993, The Regents of the University of California.
 License: BSD-4-clause
 
+Files: src/switch_dso.c
+Copyright: 2008 Michael Jerris
+License: BSD-like
+
 Files: libs/libks/*
  libs/libscgi/src/include/scgi_oop.h
  libs/libscgi/src/scgi.c
-Copyright: 2010-2012, Anthony Minessale II
+Copyright: 2007-2013, Anthony Minessale II
+ 2007 Michael Jerris
+ 1996-2000 Gray Watson
 License: BSD-3-clause
 
 Files: libs/libks/*/ks_json.[ch]
@@ -1822,11 +1954,14 @@ Copyright: 2007-2008, Thomas BERNARD <miniupnp@free.fr>
 License: ISC
 
 Files: libs/libwebsockets/*
-Copyright: 2010 Andy Green <andy@warmcat.com>
+Copyright: 2010-2011 Andy Green <andy@warmcat.com>
 License: LGPL
 
 Files: libs/libwebsockets/win32port/zlib/*
-Copyright: 1995-2005 Jean-loup Gailly
+Copyright: 1995-2010 Jean-loup Gailly
+ 1995-2010 Mark Adler 
+ 1995-2010 Jean-loup Gailly and Mark Adler
+ 1995-2010 Jean-loup Gailly and Mark Adler ";
 License: zlib/libpng
 
 Files: libs/libwebsockets/lib/base64-decode.c
@@ -1910,7 +2045,7 @@ License: Apache-2.0
 
 Files: libs/libzrtp/third_party/bnlib/legal.c
  libs/libzrtp/third_party/bnlib/*
-Copyright: 1995, 2005 Colin Plumb
+Copyright: 1993-2005 Colin Plumb
 License: GPL-2 or GPL-3 or MPL-1.1
 
 Files: libs/libzrtp/third_party/bnlib/test/md5.c
@@ -1945,6 +2080,7 @@ Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  2008 Shane Burrell
  2007 Michael S. Collins
  2001 Steve Underwood <steveu@coppice.org>
+ 2001 Steve Underwood
  2002,2004 Christopher Clark <firstname.lastname@cl.cam.ac.uk>
  2002 Christopher Clark
  1984-2007 Sangoma Technologies Inc.
@@ -1952,7 +2088,6 @@ Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  2009, Moises Silva <moy@sangoma.com>
  2008, Stefan Knoblich, axsentis GmbH.
  2005  Xygnada Technology, Inc.
- 2001 Steve Underwood
 License: BSD-3-clause
 
 Files: libs/openzap/src/fsk.c

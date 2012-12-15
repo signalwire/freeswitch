@@ -5,6 +5,10 @@ Rules:
    Matches: NLnet\s*Labs,?\s*(20\d\d(|\s*-\s*20\d\d)|All\sright\sreserved)
    Copyright: 2004-2010, NLnet Labs
   -
+   Glob: libs/win32/ldns/ldns-lib/util.h
+   Matches: NLnet\s*Labs,?\s*(20\d\d(|\s*-\s*20\d\d)|All\sright\sreserved)
+   Copyright: 2004-2010, NLnet Labs
+  -
    Glob: libs/miniupnpc/*
    Matches: Thomas\sBERNARD
    Copyright: Thomas Bernard
@@ -54,6 +58,18 @@ Rules:
    Copyright: 1995 Abandoned Colin Plumb
    License: public-domain
   -
+   Glob: src/g711.c
+   Matches: Copyright\s\(C\)\s2006\sSteve\sUnderwood
+   Matches: \spublic\sdomain\sfor\sthe\sbenefit\sof\sall\smankind
+   Copyright: 2006 Abandoned Steve Underwood
+   License: public-domain
+  -
+   Glob: src/include/g711.h
+   Matches: Copyright\s\(C\)\s2001\sSteve\sUnderwood
+   Matches: \spublic\sdomain\sfor\sthe\sbenefit\sof\sall\smankind
+   Copyright: 2001 Abandoned Steve Underwood
+   License: public-domain
+  -
    Glob: src/switch_mprintf.c
    Matches: the\spublic\sdomain.
    License: public-domain
@@ -65,6 +81,10 @@ Rules:
    Glob: src/include/switch_xml.h
    Matches: without\slimitation\sthe\srights\sto\suse,\scopy,\smodify,\smerge,\spublish,
    License: MPL-1.1 or BSD-like
+  -
+   Glob: src/include/switch_cpp.h
+   Matches: Author[:]\sYossi\sNeiman\s<freeswitch@cartissolutions.com>,\s\(C\)\s2007////\sCopyright[:]
+   Copyright: 2007 Yossi Neiman <freeswitch@cartissolutions.com>
   -
    Glob: libs/libzrtp/*
    Matches: For\slicensing\sand\sother\slegal\sdetails,\ssee\sthe\sfile\szrtp_legal.c.
@@ -83,6 +103,10 @@ Rules:
    Matches: As\sa\sspecial\sexception,\syou\smay\scombine\sthis\slibrary\swith\sthe\scode
    Matches: License\sVersion\s1.1\s\(MPLv1.1\).
    License: GPL-2 or GPL-3 or MPL-1.1
+  -
+   Glob: libs/libzrtp/projects/symbian/DelayRuner.h
+   Matches: Copyright\s+:\sCopyright\s\(c\)\s2010\sSoft\sIndustry
+   Copyright: 2010 Soft Industry
   -
    Glob: libs/sqlite/*
    Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
@@ -108,6 +132,10 @@ Rules:
    Glob: libs/sqlite/src/test_md5.c
    Matches: This\scode\sis\sin\sthe\spublic\sdomain;\sdo\swith\sit\swhat\syou\swish.
    License: public-domain
+  -
+   Glob: libs/libtpl-1.5/src/tpl.[ch]
+   Matches: Copyright\s\(c\)\s2005-2010,\sTroy\sD.\sHanson\s+http://tpl.sourceforge.net
+   Copyright: 2005-2010, Troy D. Hanson
   -
    Glob: libs/win32/sqlite/parse.c
    Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
@@ -189,6 +217,18 @@ Rules:
    Matches: specification.\sThese\sare\scopyright\smaterial,\sand\sso\scannot\sbe\sdistributed\swith\sthis\stest\ssoftware.
    Copyright: 2006 Steve Underwood
   -
+   Glob: libs/spandsp/*/g722.[ch]
+   Matches: Copyright\s\(c\)\sCMU\s+1993
+   Copyright: 1993 CMU
+  -
+   Glob: libs/libwebsockets/win32port/zlib/inftrees.c
+   Matches: Copyright\s1995-2010\sMark\sAdler\s.;
+   Copyright: 1995-2010 Mark Adler
+  -
+   Glob: libs/libwebsockets/lib/sha-1.c
+   Matches: Copyright\s\(C\)\s1995,\s1996,\s1997,\sand\s1998\sWIDE\sProject.
+   Copyright: 1995-1998 WIDE Project.
+  -
    Glob: libs/libsndfile/programs/common.h
    Matches: Copyright\s\(C\)\s1999-2009\sErik\sde\sCastro\sLopo\s<erikd@mega-nerd.com>
    Matches: const\schar\s\*\scopyright\s;
@@ -217,9 +257,18 @@ Rules:
    Matches: version\s2\.1\sof\sthe\sLicense,\sor\s\(at\syour\soption\)\sany\slater\sversion.
    License: MPL-1.1 or LGPL-2.1+
   -
+   Glob: src/mod/endpoints/mod_khomp/commons/base/atomic.hpp
+   Matches: Original\scopyright\sfollows[:]
+   Matches: Copyright\s\(c\)\s1998\sDoug\sRabson
+   Copyright: 1998 Doug Rabson
+  -
    Glob: libs/esl/getopt/getopt_long.c
    Matches: This\scode\sis\sderived\sfrom\ssoftware\scontributed\sto\sThe\sNetBSD\sFoundation
    License: BSD-2-clause
+  -
+   Glob: libs/curl/lib/md5.c
+   Matches: Copyright\s\(C\)\s1991-2,\sRSA\sData\sSecurity,\sInc.\sCreated\s1991.
+   Copyright: 1991-1992, RSA Data Security, Inc.
   -
    Glob: libs/silk/*
    Matches: Copyright\s\(c\)\s2006-2011,\sSkype\sLimited.
