@@ -1614,12 +1614,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm, 
 								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host);
 		} else {
-			sql = switch_mprintf("update sip_registrations set "
+			sql = switch_mprintf("update sip_registrations set call_id='%q',"
 								 "sub_host='%q', network_ip='%q',network_port='%q',"
 								 "presence_hosts='%q', server_host='%q', orig_server_host='%q',"
-                                                                 "hostname='%q', orig_hostname='%q',"
+								 "hostname='%q', orig_hostname='%q',"
 								 "expires = %ld where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'", 
-								 sub_host, network_ip, network_port_c,
+								 call_id, sub_host, network_ip, network_port_c,
 								 profile->presence_hosts ? profile->presence_hosts : "", guess_ip4, guess_ip4,
                                                                  mod_sofia_globals.hostname, mod_sofia_globals.hostname,
 								 (long) reg_time + (long) exptime + 60, 
