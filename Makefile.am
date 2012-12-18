@@ -179,6 +179,7 @@ library_include_HEADERS = \
 	src/include/switch_core_event_hook.h \
 	src/include/switch_scheduler.h \
 	src/include/switch_core.h \
+	src/include/switch_core_media.h \
 	src/include/switch_core_db.h \
 	src/include/switch_mprintf.h \
 	src/include/switch_config.h \
@@ -240,6 +241,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_core_rwlock.c \
 	src/switch_core_port_allocator.c \
 	src/switch_core.c \
+	src/switch_core_media.c \
 	src/switch_scheduler.c \
 	src/switch_core_db.c \
 	src/switch_dso.c \

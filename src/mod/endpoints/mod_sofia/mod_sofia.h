@@ -1222,6 +1222,9 @@ switch_status_t sofia_init(void);
 void sofia_glue_fire_events(sofia_profile_t *profile);
 void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event);
 void sofia_queue_message(sofia_dispatch_event_t *de);
+switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_session_t *sdp, sdp_media_t *m);
+void find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
+void sofia_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
 
 /* For Emacs:
  * Local Variables:
