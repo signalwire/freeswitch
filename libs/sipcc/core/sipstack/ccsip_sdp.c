@@ -325,7 +325,7 @@ char *
 sipsdp_write_to_buf (cc_sdp_t *sdp_info, uint32_t *retbytes)
 {
     flex_string fs;
-    uint32_t sdp_len;
+	//    uint32_t sdp_len;
     sdp_result_e rc;
 
     flex_string_init(&fs);

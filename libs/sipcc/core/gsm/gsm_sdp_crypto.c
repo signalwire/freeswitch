@@ -401,7 +401,7 @@ gsmdsp_cmp_key (vcm_crypto_key_t *key1, vcm_crypto_key_t *key2)
 static boolean
 gsmsdp_is_supported_session_parm (const char *session_parms)
 {
-    int         len, wsh;
+    int         len;
     const char *parm_ptr;
     long strtol_result;
     char *strtol_end;

@@ -279,6 +279,8 @@ cc_reg_state_t ccapp_get_state() {
    return gCCApp.state;
 }
 
+void ccp_handler(void* msg, int type);
+
 /**
  *
  * CCApp Provider init routine.
@@ -292,6 +294,7 @@ cc_reg_state_t ccapp_get_state() {
 void CCAppInit()
 {
   ccProvider_state_t srvcState;
+  appListener handler = ccp_handler;
 
     gCCApp.state = CC_CREATED_IDLE;
     gCCApp.cause = CC_CAUSE_NONE;
@@ -316,7 +319,7 @@ void CCAppInit()
   DEF_DEBUG(DEB_F_PREFIX"Add ccp listener: type%d", DEB_F_PREFIX_ARGS(SIP_CC_PROV, "CCAppInit"),
           CCAPP_CCPROVIER);
 
-  addCcappListener((appListener *)ccp_handler, CCAPP_CCPROVIER);
+  addCcappListener(&handler, CCAPP_CCPROVIER);
 
 }
 

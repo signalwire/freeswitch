@@ -57,6 +57,7 @@ extern accessory_cfg_info_t g_accessoryCfgInfo;
 static int gTransportLayerProtocol = 4;   //  4 = tcp, 2 = udp
 static boolean gP2PSIP = FALSE;
 static boolean gSDPMODE = FALSE;
+static boolean gRTPSAVPF = TRUE;           /* TRUE = RTP/SAVPF , FALSE = RTP/SAVP */
 static int gVoipControlPort = 5060;
 static int gCcm1_sip_port = 5060;
 
@@ -372,7 +373,7 @@ void config_set_ccm_ip_mac ()
 void config_setup_elements (const char *sipUser, const char *sipPassword, const char *sipDomain)
 {
     unsigned int i;
-    char buf[MAX_SIP_URL_LENGTH] = {'\0'};
+	//    char buf[MAX_SIP_URL_LENGTH] = {'\0'};
     char ip[MAX_SIP_URL_LENGTH] = {'\0'};
     char option[MAX_SIP_URL_LENGTH] = {'\0'};
     int line = 0;

@@ -9,6 +9,7 @@
 #include "plat_api.h"
 #include "phone_debug.h"
 #include "CSFLog.h"
+#include <assert.h>
 
 typedef cc_int32_t (*debug_callback)(cc_int32_t argc, const char *argv[]);
 typedef cc_int32_t (*show_callback)(cc_int32_t argc, const char *argv[]);
@@ -102,6 +103,6 @@ testevent_t TESTGetEvent(void);
 
 // Send debug output to CSFLog
 #define debugif_printf(format, ...) CSFLogDebug("debugif", format, ## __VA_ARGS__ )
-
+#define PR_ASSERT( test ) assert( test )
 
 #endif /* _DEBUG_INCLUDED_H */

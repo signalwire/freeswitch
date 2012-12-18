@@ -129,6 +129,7 @@ cprConnect (cpr_socket_t soc,
             cpr_socklen_t addr_len)
 {
     int retry = 0, retval;
+    cpr_status_e returnValue = CPR_FAILURE;
 
     cprAssert(addr != NULL, CPR_FAILURE);
 
@@ -140,7 +141,6 @@ cprConnect (cpr_socket_t soc,
       retval = connect(soc, (struct sockaddr *)addr, addr_len);
     }
 
-    cpr_status_e returnValue = CPR_FAILURE;
     if ( retval == 0 || (retval == -1 && errno == EISCONN))
     {
         returnValue =  CPR_SUCCESS;

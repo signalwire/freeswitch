@@ -7,7 +7,7 @@
 #include "sdp_private.h"
 #include "CSFLog.h"
 
-static const char* logTag = "sdp_main";
+//static const char* logTag = "sdp_main";
 
 /* Note: These *must* be in the same order as the enum types. */
 const sdp_tokenarray_t sdp_token[SDP_MAX_TOKENS] =

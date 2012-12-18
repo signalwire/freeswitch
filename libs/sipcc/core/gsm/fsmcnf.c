@@ -1656,17 +1656,18 @@ fsmcnf_show_cmd (cc_int32_t argc, const char *argv[])
     fsmcnf_ccb_t *ccb;
     int           i = 0;
 
+	PR_ASSERT(i == 0);
     /*
      * check if need help
      */
     if ((argc == 2) && (argv[1][0] == '?')) {
-        debugif_printf("show fsmcnf\n");
+        debugif_printf("%s", "show fsmcnf\n");
         return (0);
     }
 
-    debugif_printf("\n-------------------------- FSMCNF ccbs --------------------------");
-    debugif_printf("\ni   cnf_id  ccb         cnf_call_id  cns_call_id  active  bridged");
-    debugif_printf("\n-----------------------------------------------------------------"
+    debugif_printf("%s", "\n-------------------------- FSMCNF ccbs --------------------------");
+    debugif_printf("%s", "\ni   cnf_id  ccb         cnf_call_id  cns_call_id  active  bridged");
+    debugif_printf("%s", "\n-----------------------------------------------------------------"
          "\n");
 
     FSM_FOR_ALL_CBS(ccb, fsmcnf_ccbs, FSMCNF_MAX_CCBS) {

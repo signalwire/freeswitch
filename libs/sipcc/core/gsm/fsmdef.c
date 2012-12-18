@@ -2861,7 +2861,7 @@ fsmdef_ev_dialstring (sm_event_t *event)
  */
 static sm_rcs_t
 fsmdef_ev_createoffer (sm_event_t *event) {
-    sm_rcs_t            sm_rc;
+	//    sm_rcs_t            sm_rc;
     fsm_fcb_t           *fcb = (fsm_fcb_t *) event->data;
     fsmdef_dcb_t        *dcb = fcb->dcb;
     cc_causes_t         cause = CC_CAUSE_NORMAL;
@@ -2869,7 +2869,7 @@ fsmdef_ev_createoffer (sm_event_t *event) {
     cc_feature_t        *msg = (cc_feature_t *) event->msg;
     line_t              line = msg->line;
     callid_t            call_id = msg->call_id;
-    cc_causes_t         lsm_rc;
+	//    cc_causes_t         lsm_rc;
     int                 sdpmode = 0;
     char                *ufrag = NULL;
     char                *ice_pwd = NULL;
@@ -2961,7 +2961,7 @@ fsmdef_ev_createoffer (sm_event_t *event) {
  */
 static sm_rcs_t
 fsmdef_ev_createanswer (sm_event_t *event) {
-    sm_rcs_t            sm_rc;
+	//    sm_rcs_t            sm_rc;
     fsm_fcb_t           *fcb = (fsm_fcb_t *) event->data;
     fsmdef_dcb_t        *dcb = fcb->dcb;
     cc_feature_t        *msg = (cc_feature_t *) event->msg;
@@ -2969,12 +2969,12 @@ fsmdef_ev_createanswer (sm_event_t *event) {
     cc_msgbody_info_t   msg_body;
     line_t              line = msg->line;
     callid_t            call_id = msg->call_id;
-    line_t              free_line;
+	//    line_t              free_line;
     int                 sdpmode = 0;
-    const char          *called_number = "1234";
-    cc_causes_t         lsm_rc;
-    cc_msgbody_t        *part;
-    uint32_t            body_length;
+	//    const char          *called_number = "1234";
+	//    cc_causes_t         lsm_rc;
+	//    cc_msgbody_t        *part;
+	//    uint32_t            body_length;
     char                *ufrag = NULL;
     char                *ice_pwd = NULL;
     short               vcm_res;
@@ -3092,11 +3092,11 @@ fsmdef_ev_setlocaldesc(sm_event_t *event) {
     cc_causes_t         cause = CC_CAUSE_NORMAL;
     cc_msgbody_info_t   msg_body;
     int                 action = msg->action;
-    string_t            sdp = msg->sdp;
+	//    string_t            sdp = msg->sdp;
     int                 sdpmode = 0;
     callid_t            call_id = msg->call_id;
     line_t              line = msg->line;
-    cc_causes_t         lsm_rc;
+	//    cc_causes_t         lsm_rc;
 
     FSM_DEBUG_SM(DEB_F_PREFIX"Entered.\n", DEB_F_PREFIX_ARGS(FSM, __FUNCTION__));
 
@@ -3121,7 +3121,7 @@ fsmdef_ev_setlocaldesc(sm_event_t *event) {
 
         /* compare and fail if different:
          * anant: Why? The JS should be able to modify the SDP. Commenting out for now (same for answer)
-        if (strcmp(msg_body.parts[0].body, sdp) != 0) {
+        if (strcmp(msg_body.parts[0].body, msg->sdp) != 0) {
             ui_set_local_description(evSetLocalDescError, line, call_id, dcb->caller_id.call_instance_id, NULL, PC_SDPCHANGED);
             return (SM_RC_END);
         }
@@ -3140,7 +3140,7 @@ fsmdef_ev_setlocaldesc(sm_event_t *event) {
         }
 
         /* compare and fail if different
-        if (strcmp(msg_body.parts[0].body, sdp) != 0) {
+        if (strcmp(msg_body.parts[0].body, msg->sdp) != 0) {
             ui_set_local_description(evSetLocalDescError, line, call_id, dcb->caller_id.call_instance_id, NULL, PC_SDPCHANGED);
             return (SM_RC_END);
         }*/
@@ -3202,7 +3202,7 @@ fsmdef_ev_setremotedesc(sm_event_t *event) {
     int                 sdpmode = 0;
     callid_t            call_id = msg->call_id;
     line_t              line = msg->line;
-    cc_causes_t         lsm_rc;
+	//    cc_causes_t         lsm_rc;
     cc_msgbody_t        *part;
     uint32_t            body_length;
     cc_msgbody_info_t   msg_body;
@@ -3317,12 +3317,12 @@ static sm_rcs_t
 fsmdef_ev_localdesc(sm_event_t *event) {
     fsm_fcb_t           *fcb = (fsm_fcb_t *) event->data;
     fsmdef_dcb_t        *dcb = fcb->dcb;
-    cc_causes_t         cause = CC_CAUSE_NORMAL;
+	//    cc_causes_t         cause = CC_CAUSE_NORMAL;
     int                 sdpmode = 0;
-    cc_causes_t         lsm_rc;
-    cc_msgbody_t        *part;
-    uint32_t            body_length;
-    cc_msgbody_info_t   msg_body;
+	//    cc_causes_t         lsm_rc;
+	//    cc_msgbody_t        *part;
+	//    uint32_t            body_length;
+	//    cc_msgbody_info_t   msg_body;
 
     FSM_DEBUG_SM(DEB_F_PREFIX"Entered.\n", DEB_F_PREFIX_ARGS(FSM, __FUNCTION__));
 
@@ -3344,12 +3344,12 @@ static sm_rcs_t
 fsmdef_ev_remotedesc(sm_event_t *event) {
     fsm_fcb_t           *fcb = (fsm_fcb_t *) event->data;
     fsmdef_dcb_t        *dcb = fcb->dcb;
-    cc_causes_t         cause = CC_CAUSE_NORMAL;
+	//    cc_causes_t         cause = CC_CAUSE_NORMAL;
     int                 sdpmode = 0;
-    cc_causes_t         lsm_rc;
-    cc_msgbody_t        *part;
-    uint32_t            body_length;
-    cc_msgbody_info_t   msg_body;
+	//    cc_causes_t         lsm_rc;
+	//    cc_msgbody_t        *part;
+	//    uint32_t            body_length;
+	//    cc_msgbody_info_t   msg_body;
 
     FSM_DEBUG_SM(DEB_F_PREFIX"Entered.\n", DEB_F_PREFIX_ARGS(FSM, __FUNCTION__));
 
@@ -3372,7 +3372,7 @@ static sm_rcs_t
 fsmdef_ev_setpeerconnection(sm_event_t *event) {
     fsm_fcb_t           *fcb = (fsm_fcb_t *) event->data;
     fsmdef_dcb_t        *dcb = fcb->dcb;
-    cc_causes_t         cause = CC_CAUSE_NORMAL;
+	//    cc_causes_t         cause = CC_CAUSE_NORMAL;
     cc_feature_t        *msg = (cc_feature_t *) event->msg;
     callid_t            call_id = msg->call_id;
     int                 sdpmode = 0;
@@ -3420,13 +3420,13 @@ static sm_rcs_t
 fsmdef_ev_addstream(sm_event_t *event) {
     fsm_fcb_t           *fcb = (fsm_fcb_t *) event->data;
     fsmdef_dcb_t        *dcb = fcb->dcb;
-    cc_causes_t         cause = CC_CAUSE_NORMAL;
+	//    cc_causes_t         cause = CC_CAUSE_NORMAL;
     cc_feature_t        *msg = (cc_feature_t *) event->msg;
-    int                 sdpmode = 0;
-    cc_causes_t         lsm_rc;
-    cc_msgbody_t        *part;
-    uint32_t            body_length;
-    cc_msgbody_info_t   msg_body;
+	int                 sdpmode = 0;
+	//    cc_causes_t         lsm_rc;
+	//    cc_msgbody_t        *part;
+	//    uint32_t            body_length;
+	//    cc_msgbody_info_t   msg_body;
 
     FSM_DEBUG_SM(DEB_F_PREFIX"Entered.\n", DEB_F_PREFIX_ARGS(FSM, __FUNCTION__));
 
@@ -3466,13 +3466,13 @@ static sm_rcs_t
 fsmdef_ev_removestream(sm_event_t *event) {
     fsm_fcb_t           *fcb = (fsm_fcb_t *) event->data;
     fsmdef_dcb_t        *dcb = fcb->dcb;
-    cc_causes_t         cause = CC_CAUSE_NORMAL;
+	//    cc_causes_t         cause = CC_CAUSE_NORMAL;
     cc_feature_t        *msg = (cc_feature_t *) event->msg;
     int                 sdpmode = 0;
-    cc_causes_t         lsm_rc;
-    cc_msgbody_t        *part;
-    uint32_t            body_length;
-    cc_msgbody_info_t   msg_body;
+	//    cc_causes_t         lsm_rc;
+	//    cc_msgbody_t        *part;
+	//    uint32_t            body_length;
+	//    cc_msgbody_info_t   msg_body;
 
     FSM_DEBUG_SM(DEB_F_PREFIX"Entered.\n", DEB_F_PREFIX_ARGS(FSM, __FUNCTION__));
 
@@ -3510,11 +3510,11 @@ static sm_rcs_t
 fsmdef_ev_addcandidate(sm_event_t *event) {
     fsm_fcb_t           *fcb = (fsm_fcb_t *) event->data;
     fsmdef_dcb_t        *dcb = fcb->dcb;
-    cc_causes_t         cause = CC_CAUSE_NORMAL;
+	//    cc_causes_t         cause = CC_CAUSE_NORMAL;
     cc_feature_t        *msg = (cc_feature_t *) event->msg;
     int                 sdpmode = 0;
     short               vcm_res;
-    uint16_t            level;
+	//    uint16_t            level;
 
 
     FSM_DEBUG_SM(DEB_F_PREFIX"Entered.\n", DEB_F_PREFIX_ARGS(FSM, __FUNCTION__));
@@ -7191,15 +7191,16 @@ fsmdef_show_cmd (cc_int32_t argc, const char *argv[])
     unsigned long strtoul_result;
     char *strtoul_end;
 
+	PR_ASSERT( i == 0 );
     /*
      * Check if need help.
      */
     if ((argc == 2) && (argv[1][0] == '?')) {
-        debugif_printf("show fsmdef [all|rel]\n");
+        debugif_printf("%s", "show fsmdef [all|rel]\n");
     } else if ((argc == 1) || (strcmp(argv[1], "all") == 0)) {
-        debugif_printf("\n-------- FSMDEF dcbs --------");
-        debugif_printf("\ni   call_id  dcb         line");
-        debugif_printf("\n-----------------------------\n");
+        debugif_printf("%s", "\n-------- FSMDEF dcbs --------");
+        debugif_printf("%s", "\ni   call_id  dcb         line");
+        debugif_printf("%s", "\n-----------------------------\n");
 
         /*
          * Print info for all dcbs.

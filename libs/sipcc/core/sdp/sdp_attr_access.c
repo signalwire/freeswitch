@@ -7,7 +7,7 @@
 #include "sdp_private.h"
 #include "CSFLog.h"
 
-static const char* logTag = "sdp_attr_access";
+//static const char* logTag = "sdp_attr_access";
 
 /* Attribute access routines are all defined by the following parameters.
  *

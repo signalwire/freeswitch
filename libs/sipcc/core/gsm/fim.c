@@ -594,14 +594,14 @@ fim_process_event (void *data, boolean cac_passed)
      * Skip the head.
      */
     icb = call_chn->next_icb;
-    MOZ_ASSERT(icb);
+    PR_ASSERT(icb);
     while (icb && !done) {
         /*
          * Set the required event data so the entity can process the event.
          */
         cb_hdr = (fim_cb_hdr_t *) (icb->cb);
 
-        MOZ_ASSERT(cb_hdr);
+        PR_ASSERT(cb_hdr);
         if (!cb_hdr) {
             done = TRUE;
             break;
@@ -708,15 +708,15 @@ fim_show_cmd (cc_int32_t argc, const char *argv[])
      * Check if need help.
      */
     if ((argc == 2) && (argv[1][0] == '?')) {
-        debugif_printf("show fim\n");
+        debugif_printf("%s", "show fim\n");
     }
 
     /*
      * Print the icbs.
      */
-    debugif_printf("\n---------------------------------- FIM icbs -----------------------------------");
-    debugif_printf("\ni   call_id  type    icb         next_chn    next_icb    cb          scb");
-    debugif_printf("\n-------------------------------------------------------------------------------\n");
+    debugif_printf("%s", "\n---------------------------------- FIM icbs -----------------------------------");
+    debugif_printf("%s", "\ni   call_id  type    icb         next_chn    next_icb    cb          scb");
+    debugif_printf("%s", "\n-------------------------------------------------------------------------------\n");
 
     FSM_FOR_ALL_CBS(icb, fim_icbs, FIM_MAX_ICBS) {
         debugif_printf("%-3d  %-7d  %-6s  0x%8p  0x%8p  0x%8p  0x%8p  0x%8p\n",
@@ -729,10 +729,10 @@ fim_show_cmd (cc_int32_t argc, const char *argv[])
      */
     i = 0;
     debugif_printf
-        ("\n------------------------ FIM scbs ------------------------");
-    debugif_printf("\ni   type    scb         sm          get_cb      free_cb");
+        ("%s", "\n------------------------ FIM scbs ------------------------");
+    debugif_printf("%s", "\ni   type    scb         sm          get_cb      free_cb");
     debugif_printf
-        ("\n----------------------------------------------------------\n");
+        ("%s", "\n----------------------------------------------------------\n");
 
     FSM_FOR_ALL_CBS(scb, fim_scbs, FIM_MAX_SCBS) {
         debugif_printf("%-2d  %-6s  0x%8p  0x%8p  0x%8p  0x%8p\n",

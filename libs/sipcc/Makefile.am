@@ -172,8 +172,8 @@ plat/csf2g/reset_api.c
 PLAT_DARWIN_SRC = plat/darwin/plat_api_stub.c
 #plat/darwin/netif.c
 
-libsipcc_la_CFLAGS = $(AM_CFLAGS)
-libsipcc_la_LDFLAGS = $(LIBS)
+libsipcc_la_CFLAGS = $(AM_CFLAGS)  $(SWITCH_AM_CFLAGS) 
+libsipcc_la_LDFLAGS = $(LIBS) $(PLATFORM_CORE_LDFLAGS)
 
 libsipcc_la_SOURCES = $(CORE_CCAPP_SRC) $(CORE_COMMON_SRC) $(GSM_SRC) $(CORE_SDP_SRC) $(CORE_SIPSTACK_SRC) $(CORE_SRCCOMMON_SRC) $(CPR_COMMON_SRC) $(PLAT_CSF2G_SRC)
 

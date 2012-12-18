@@ -10,6 +10,7 @@
 #include "cpr_stdlib.h"
 #include "cpr_string.h"
 #include "cpr_strings.h"
+#include "debug.h"
 
 /**
  * sstrncpy
@@ -142,7 +143,7 @@ void flex_string_check_alloc(flex_string *fs, size_t new_min_length) {
 
     /* Sanity check on allocation size */
     if (new_min_length > FLEX_STRING_MAX_SIZE) {
-      MOZ_CRASH();
+		abort();
     }
 
     /* Alloc to nearest chunk */
@@ -193,7 +194,7 @@ void flex_string_sprintf(flex_string *fs, const char *format, ...) {
     /* Try again with new buffer */
     va_start(ap, format);
     vsnprintf_result = vsnprintf(fs->buffer + fs->string_length, fs->buffer_length - fs->string_length, format, ap);
-    MOZ_ASSERT(vsnprintf_result > 0 && vsnprintf_result < (fs->buffer_length - fs->string_length));
+    PR_ASSERT(vsnprintf_result > 0 && vsnprintf_result < (fs->buffer_length - fs->string_length));
     va_end(ap);
   }
 

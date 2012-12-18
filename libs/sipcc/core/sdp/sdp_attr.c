@@ -13,7 +13,7 @@
 //#include "mozilla/Assertions.h"
 #include "CSFLog.h"
 
-static const char* logTag = "sdp_attr";
+//static const char* logTag = "sdp_attr";
 
 /*
  * Macro for sdp_build_attr_fmtp

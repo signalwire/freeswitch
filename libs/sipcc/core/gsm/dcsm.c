@@ -597,7 +597,7 @@ dcsm_show_cmd (cc_int32_t argc, const char *argv[])
      * check if need help
      */
     if ((argc == 2) && (argv[1][0] == '?')) {
-        debugif_printf("show dcsm\n");
+        debugif_printf("%s", "show dcsm\n");
         return (0);
     }
 
@@ -606,18 +606,18 @@ dcsm_show_cmd (cc_int32_t argc, const char *argv[])
         return(0);
     }
 
-    debugif_printf("\n-------------------------- DCSM Data --------------------------");
+    debugif_printf("%s", "\n-------------------------- DCSM Data --------------------------");
     debugif_printf("\nDCSM State = %s",dcsm_get_state_name(dcsm_cb.state));
-    debugif_printf("\nDCSM waiting calls \n");
+    debugif_printf("%s", "\nDCSM waiting calls \n");
 
     for (i=0; i< DCSM_MAX_CALL_IDS; i++) {
         if (dcsm_cb.call_ids[i] != CC_NO_CALL_ID) {
             debugif_printf("%d ", dcsm_cb.call_ids[i]);
         }
     }
-    debugif_printf("\n");
+    debugif_printf("%s", "\n");
 
-    debugif_printf("\nDCSM waiting events \n");
+    debugif_printf("%s", "\nDCSM waiting events \n");
     i = 0;
     msg_ptr = sll_next(dcsm_cb.s_msg_list, NULL);
     while (msg_ptr) {
@@ -637,7 +637,7 @@ dcsm_show_cmd (cc_int32_t argc, const char *argv[])
                         feat_msg ? cc_feature_name(feat_msg->feature_id):" ");
         }
     }
-    debugif_printf("\n-------------------------- DCSM Data Done-----------------------");
+    debugif_printf("%s", "\n-------------------------- DCSM Data Done-----------------------");
 
     return (0);
 }

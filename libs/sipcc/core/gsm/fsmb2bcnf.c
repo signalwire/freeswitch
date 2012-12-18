@@ -1170,19 +1170,20 @@ cc_int32_t
 fsmb2bcnf_show_cmd (cc_int32_t argc, const char *argv[])
 {
     fsmcnf_ccb_t *ccb;
-    int           i = 0;
+	int           i = 0;
 
+	PR_ASSERT( i == 0 );
     /*
      * check if need help
      */
     if ((argc == 2) && (argv[1][0] == '?')) {
-        debugif_printf("show fsmb2bcnf\n");
+        debugif_printf("%s", "show fsmb2bcnf\n");
         return (0);
     }
 
-    debugif_printf("\n-------------------------- FSMB2BCNF ccbs --------------------------");
-    debugif_printf("\ni   b2bcnf_id  ccb         cnf_call_id  cns_call_id  active  bridged");
-    debugif_printf("\n--------------------------------------------------------------------"
+    debugif_printf("%s", "\n-------------------------- FSMB2BCNF ccbs --------------------------");
+    debugif_printf("%s", "\ni   b2bcnf_id  ccb         cnf_call_id  cns_call_id  active  bridged");
+    debugif_printf("%s", "\n--------------------------------------------------------------------"
          "\n");
 
     FSM_FOR_ALL_CBS(ccb, fsmb2bcnf_ccbs, FSMCNF_MAX_CCBS) {

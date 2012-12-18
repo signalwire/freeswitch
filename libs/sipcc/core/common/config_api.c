@@ -284,7 +284,7 @@ show_config_cmd (cc_int32_t argc, const char *argv[])
     char buf[MAX_CONFIG_VAL_PRINT_LEN];
     int i, feat;
 
-    debugif_printf("\n------ Current *Cache* Configuration ------\n");
+    debugif_printf("\n%s\n", "------ Current *Cache* Configuration ------");
     table = prot_cfg_table;
 
     for ( i=0; i < CFGID_LINE_FEATURE; i++ ) {

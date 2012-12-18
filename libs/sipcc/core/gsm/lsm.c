@@ -4939,6 +4939,7 @@ lsm_show_cmd (cc_int32_t argc, const char *arv[])
     int             i = 0;
     lsm_lcb_t      *lcb;
 
+	PR_ASSERT( i == 0 );
     debugif_printf("\n------------------ LSM lcbs -------------------");
     debugif_printf("\ni   call_id  line  state             lcb");
     debugif_printf("\n-----------------------------------------------\n");

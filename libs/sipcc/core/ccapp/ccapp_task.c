@@ -162,7 +162,7 @@ void CCApp_task(void * arg)
 
             listener = getCcappListener(syshdr->Usr.UsrInfo);
             if (listener != NULL) {
-                (* ((appListener)(listener)))(msg, syshdr->Cmd);
+                (* ((listener)))(msg, syshdr->Cmd);
             } else {
                 CCAPP_DEBUG(DEB_F_PREFIX"Event[%d] doesn't have a dedicated listener.\n", DEB_F_PREFIX_ARGS(SIP_CC_PROV, fname),
                         syshdr->Usr.UsrInfo);

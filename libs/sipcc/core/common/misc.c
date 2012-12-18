@@ -32,12 +32,14 @@
 /* The number of arguments (argc) used in the show command */
 #define NUM_OF_SHOW_ARGUMENTS 2
 
+#if 0
 static int last_month = 99;
 static char last_month_str[MAX_NTP_MONTH_STR_LEN] = "";
 static const char *month_ar[MAX_NTP_MONTH_ARRAY_SIZE] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
+#endif
 
 /*--------------------------------------------------------------------------
  * External function prototypes
@@ -53,7 +55,7 @@ void SipNtpUpdateClockFromCCM(void);
  *--------------------------------------------------------------------------
  */
 
-
+#if 0
 /*
  * This function finds month (0 to 11) from month name
  * listed above in month_ar[]. This is used to convert the
@@ -84,7 +86,7 @@ set_month_from_str (char *month_str)
     }
     return (ret_val);
 }
-
+#endif
 
 
 /*

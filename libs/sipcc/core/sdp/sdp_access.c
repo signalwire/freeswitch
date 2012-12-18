@@ -9,7 +9,7 @@
 #include "rtp_defs.h"
 #include "CSFLog.h"
 
-static const char* logTag = "sdp_access";
+//static const char* logTag = "sdp_access";
 
 /* Function:    sdp_find_media_level
  * Description: Find and return a pointer to the specified media level,

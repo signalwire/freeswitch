@@ -12,7 +12,7 @@
 #include "ccapi.h"
 #include "CSFLog.h"
 
-static const char *logTag = "sdp_token";
+//static const char *logTag = "sdp_token";
 
 #define MCAST_STRING_LEN 4
 

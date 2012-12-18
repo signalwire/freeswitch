@@ -2924,17 +2924,18 @@ fsmxfr_show_cmd (cc_int32_t argc, const char *argv[])
     fsmxfr_xcb_t   *xcb;
     int             i = 0;
 
+	PR_ASSERT( i == 0 );
     /*
      * Check if need help.
      */
     if ((argc == 2) && (argv[1][0] == '?')) {
-        debugif_printf("show fsmxfr\n");
+        debugif_printf("%s", "show fsmxfr\n");
         return (0);
     }
 
-    debugif_printf("\n------------------------ FSMXFR xcbs -------------------------");
-    debugif_printf("\ni   xfr_id  xcb         type  method  xfr_call_id  cns_call_id");
-    debugif_printf("\n--------------------------------------------------------------\n");
+    debugif_printf("%s", "\n------------------------ FSMXFR xcbs -------------------------");
+    debugif_printf("%s", "\ni   xfr_id  xcb         type  method  xfr_call_id  cns_call_id");
+    debugif_printf("%s", "\n--------------------------------------------------------------\n");
 
     FSM_FOR_ALL_CBS(xcb, fsmxfr_xcbs, FSMXFR_MAX_XCBS) {
         debugif_printf("%-2d  %-6d  0x%8p  %-4d  %-6d  %-11d  %-11d\n",

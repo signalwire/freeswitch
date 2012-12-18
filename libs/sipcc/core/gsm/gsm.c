@@ -208,7 +208,7 @@ gsm_process_timer_expiration (void *msg)
         break;
     case GSM_FLASH_ONCE_TIMER:
         if (media_timer_callback != NULL) {
-            (* ((media_timer_callback_fp)(media_timer_callback)))();
+            (* ((media_timer_callback)))();
         }
         break;
 	case GSM_TONE_DURATION_TIMER:

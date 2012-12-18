@@ -11,7 +11,7 @@
 
 #define MKI_BUF_LEN 4
 
-static const char* logTag = "sdp_utils";
+//static const char* logTag = "sdp_utils";
 
 sdp_mca_t *sdp_alloc_mca () {
     sdp_mca_t           *mca_p;

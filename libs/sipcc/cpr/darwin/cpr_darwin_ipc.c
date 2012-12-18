@@ -180,6 +180,8 @@ cprCreateMessageQueue (const char *name, uint16_t depth)
     static const char fname[] = "cprCreateMessageQueue";
     cpr_msg_queue_t *msgq;
     static int key_id = 100; /* arbitrary starting number */
+	pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
+	pthread_mutex_t _lock = PTHREAD_MUTEX_INITIALIZER;
 
     msgq = cpr_calloc(1, sizeof(cpr_msg_queue_t));
     if (msgq == NULL) {
@@ -192,9 +194,7 @@ cprCreateMessageQueue (const char *name, uint16_t depth)
     msgq->name = name ? name : unnamed_string;
 	msgq->queueId = key_id++;
 
-	pthread_cond_t _cond = PTHREAD_COND_INITIALIZER;
 	msgq->cond = _cond;
-	pthread_mutex_t _lock = PTHREAD_MUTEX_INITIALIZER;
 	msgq->mutex = _lock;
 
     /*

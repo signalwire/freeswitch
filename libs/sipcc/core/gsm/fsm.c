@@ -368,23 +368,25 @@ cc_int32_t
 fsm_show_cmd (cc_int32_t argc, const char *argv[])
 {
     fsm_fcb_t      *fcb;
-    int             i = 0;
+	int             i = 0;
     void           *cb = NULL;
+
+	PR_ASSERT(i == 0);
 
     /*
      * check if need help
      */
     if ((argc == 2) && (argv[1][0] == '?')) {
-        debugif_printf("show fsm\n");
+        debugif_printf("%s", "show fsm\n");
         return 0;
     }
 
     /*
      * Print the fcbs
      */
-    debugif_printf("\n----------------------------- FSM fcbs -------------------------------");
-    debugif_printf("\ni    call_id  fcb         type       state      dcb         cb        ");
-    debugif_printf("\n----------------------------------------------------------------------\n");
+    debugif_printf("%s", "\n----------------------------- FSM fcbs -------------------------------");
+    debugif_printf("%s", "\ni    call_id  fcb         type       state      dcb         cb        ");
+    debugif_printf("%s", "\n----------------------------------------------------------------------\n");
 
     FSM_FOR_ALL_CBS(fcb, fsm_fcbs, FSM_MAX_FCBS) {
         switch (fcb->fsm_type) {

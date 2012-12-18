@@ -37,6 +37,7 @@ void CSFLogV( CSFLogLevel priority, const char* sourceFile, int sourceLine, cons
 #else
 #endif
 #define CSFLog(pri, file, line, tag, format, ...)
+#define CSFLogV(pri, file, line, tag, format, args)
 #ifdef __cplusplus
 }
 #endif

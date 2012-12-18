@@ -213,7 +213,7 @@ void gsmsdp_process_cap_constraints(fsmdef_dcb_t *dcb,
  */
 void gsmsdp_copy_payloads_to_previous_sdp (fsmdef_media_t *media)
 {
-    static const char *fname = "gsmsdp_copy_payloads_to_previous_sdp";
+	//    static const char *fname = "gsmsdp_copy_payloads_to_previous_sdp";
 
     if ((!media->payloads) && (NULL != media->previous_sdp.payloads))
     {
@@ -2752,7 +2752,7 @@ gsmsdp_negotiate_codec (fsmdef_dcb_t *dcb_p, cc_sdp_t *sdp_p,
     uint16_t        level;
     boolean         explicit_reject = FALSE;
     boolean         found_codec = FALSE;
-    int32_t         num_match_payloads = 0;
+	//    int32_t         num_match_payloads = 0;
     int             codec = RTP_NONE;
     int             remote_pt = RTP_NONE;
     int32_t         payload_types_count = 0; /* count for allocating right amout
@@ -3241,7 +3241,7 @@ static void
 gsmsdp_negotiate_datachannel_attribs(fsmdef_dcb_t* dcb_p, cc_sdp_t* sdp_p, uint16_t level, fsmdef_media_t* media)
 {
     uint32          num_streams;
-    char           *protocol;
+	//    char           *protocol;
 
     sdp_attr_get_fmtp_streams (sdp_p->dest_sdp, level, 0, 1, &num_streams);
 
@@ -3283,7 +3283,7 @@ gsmsdp_add_unsupported_stream_to_local_sdp (cc_sdp_t *sdp_p,
     static const char fname[] = "gsmsdp_add_unsupported_stream_to_local_sdp";
     uint32_t          remote_pt;
     sdp_payload_ind_e remote_pt_indicator;
-    cpr_ip_addr_t     addr;
+	//    cpr_ip_addr_t     addr;
 
     if (sdp_p == NULL) {
         GSM_ERR_MSG(GSM_F_PREFIX"sdp is null.\n", fname);
@@ -4224,10 +4224,10 @@ gsmsdp_negotiate_media_lines (fsm_fcb_t *fcb_p, cc_sdp_t *sdp_p, boolean initial
     fsmdef_media_t *media;
     uint8_t         cap_index;
     sdp_direction_e remote_direction;
-    boolean         result;
+	//    boolean         result;
     int             sdpmode = 0;
-    char           *session_pwd;
-    cc_action_data_t  data;
+	//    char           *session_pwd;
+	//    cc_action_data_t  data;
     int             j=0;
     int             rtcpmux = 0;
     tinybool        rtcp_mux = FALSE;
@@ -4681,7 +4681,7 @@ gsmsdp_get_offered_media_types (fsm_fcb_t *fcb_p, cc_sdp_t *sdp_p, boolean *has_
     uint16_t        i = 0;
     sdp_media_e     media_type;
     fsmdef_dcb_t   *dcb_p = fcb_p->dcb;
-    boolean         result;
+	//    boolean         result;
 
     num_m_lines = sdp_get_num_media_lines(sdp_p->dest_sdp);
     if (num_m_lines == 0) {
@@ -6270,7 +6270,7 @@ gsmsdp_install_peer_ice_attributes(fsm_fcb_t *fcb_p)
     fsmdef_dcb_t    *dcb_p = fcb_p->dcb;
     cc_sdp_t        *sdp_p = dcb_p->sdp;
     fsmdef_media_t  *media;
-    int             level;
+	//    int             level;
     short           result;
 
     /* Tolerate missing ufrag/pwd here at the session level
@@ -6354,12 +6354,12 @@ gsmsdp_configure_dtls_data_attributes(fsm_fcb_t *fcb_p)
     char            *session_fingerprint = NULL;
     sdp_result_e    sdp_res;
     sdp_result_e    sdp_session_res;
-    short           vcm_res;
+	//    short           vcm_res;
     fsmdef_dcb_t    *dcb_p = fcb_p->dcb;
     cc_sdp_t        *sdp_p = dcb_p->sdp;
     fsmdef_media_t  *media;
-    int             level = SDP_SESSION_LEVEL;
-    short           result;
+	//    int             level = SDP_SESSION_LEVEL;
+	//    short           result;
     char           *token;
     char            line_to_split[FSMDEF_MAX_DIGEST_ALG_LEN + FSMDEF_MAX_DIGEST_LEN + 2];
     char           *delim = " ";

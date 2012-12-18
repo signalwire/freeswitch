@@ -7,7 +7,7 @@
 #include "sdp_private.h"
 #include "CSFLog.h"
 
-static const char* logTag = "sdp_config";
+//static const char* logTag = "sdp_config";
 
 /* Function:    sdp_verify_conf_ptr
  * Description: Verify the configuration pointer is valid by checking for

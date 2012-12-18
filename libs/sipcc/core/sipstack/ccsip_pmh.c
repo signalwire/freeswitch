@@ -418,7 +418,7 @@ parseUrlParams (char *url_param, sipUrl_t *sipUrl, genUrl_t *genUrl)
     char *param_val;
     char *url_other_param = NULL;
     uint16_t i;
-    uint32_t ttl_val;
+	//    uint32_t ttl_val;
     unsigned long strtoul_result;
     char *strtoul_end;
 
@@ -4496,7 +4496,7 @@ sippmh_parse_message_summary(sipMessage_t *pSipMessage, sipMessageSummary_t *mes
 
             if (token_found) {
                 errno = 0;
-                strtol_result = (temp, &strtol_end, 10);
+                strtol_result = strtol(temp, &strtol_end, 10);
 
                 if (errno || temp == strtol_end || strtol_result > INT_MAX) {
                     return SIP_ERROR;
