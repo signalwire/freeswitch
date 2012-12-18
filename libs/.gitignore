@@ -918,6 +918,8 @@ opal
 /xmlrpc-c/tools/lib/blddir
 /xmlrpc-c/tools/lib/depend.mk
 /xmlrpc-c/tools/lib/srcdir
+/sipcc/Makefile
+/sipcc/Makefile.in
 
 /yaml/
 /yaml/config.h
