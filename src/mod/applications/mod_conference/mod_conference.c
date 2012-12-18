@@ -3109,6 +3109,24 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			break;
 		}
 
+
+		/* if we have caller digits, feed them to the parser to find an action */
+		if (switch_channel_has_dtmf(channel)) {
+			char dtmf[128] = "";
+		
+			switch_channel_dequeue_dtmf_string(channel, dtmf, sizeof(dtmf));
+
+			if (switch_test_flag(member, MFLAG_DIST_DTMF)) {
+				conference_send_all_dtmf(member, member->conference, dtmf);
+			} else if (member->dmachine) {
+				switch_ivr_dmachine_feed(member->dmachine, dtmf, NULL);
+			}
+		} else if (member->dmachine) {
+			switch_ivr_dmachine_ping(member->dmachine, NULL);
+		}
+
+
+
 		if (switch_test_flag(read_frame, SFF_CNG)) {
 			if (member->conference->agc_level) {
 				member->nt_tally++;
@@ -3582,7 +3600,6 @@ static void conference_loop_output(conference_member_t *member)
 	/* you better not block this thread loop for more than the duration of member->conference->timer_name!  */
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD)
 		   && switch_channel_ready(channel)) {
-		char dtmf[128] = "";
 		switch_event_t *event;
 		int use_timer = 0;
 		switch_buffer_t *use_buffer = NULL;
@@ -3624,19 +3641,6 @@ static void conference_loop_output(conference_member_t *member)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "CLFAG_ANSWERED set, answering inbound channel\n");
 				switch_channel_answer(channel);
 			}
-		}
-
-		/* if we have caller digits, feed them to the parser to find an action */
-		if (switch_channel_has_dtmf(channel)) {
-			switch_channel_dequeue_dtmf_string(channel, dtmf, sizeof(dtmf));
-
-			if (switch_test_flag(member, MFLAG_DIST_DTMF)) {
-				conference_send_all_dtmf(member, member->conference, dtmf);
-			} else if (member->dmachine) {
-				switch_ivr_dmachine_feed(member->dmachine, dtmf, NULL);
-			}
-		} else if (member->dmachine) {
-			switch_ivr_dmachine_ping(member->dmachine, NULL);
 		}
 
 		use_buffer = NULL;
