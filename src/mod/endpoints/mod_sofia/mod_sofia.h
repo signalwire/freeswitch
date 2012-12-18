@@ -289,9 +289,6 @@ typedef enum {
 	PFLAG_NDLB_TO_IN_200_CONTACT = (1 << 0),
 	PFLAG_NDLB_BROKEN_AUTH_HASH = (1 << 1),
 	PFLAG_NDLB_SENDRECV_IN_SESSION = (1 << 2),
-	PFLAG_NDLB_ALLOW_BAD_IANANAME = (1 << 3),
-	PFLAG_NDLB_ALLOW_NONDUP_SDP = (1 << 4),
-	PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP = (1 << 5),
 	PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE = (1 << 6)
 } sofia_NDLB_t;
 
@@ -712,6 +709,8 @@ struct private_object {
 	switch_payload_t video_recv_pt;
 	switch_core_session_t *session;
 	switch_channel_t *channel;
+	switch_media_handle_t *media_handle;
+
 	switch_frame_t read_frame;
 	char *codec_order[SWITCH_MAX_CODECS];
 	int codec_order_last;
@@ -923,7 +922,7 @@ switch_mutex_unlock(obj->flag_mutex);
 
 void sofia_glue_global_standby(switch_bool_t on);
 
-switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags);
+switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt);
 
 void sofia_glue_deactivate_rtp(private_object_t *tech_pvt);
 

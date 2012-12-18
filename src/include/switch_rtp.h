@@ -134,7 +134,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_packet,
-												  switch_rtp_flag_t flags, char *timer_name, const char **err, switch_memory_pool_t *pool);
+												  switch_rtp_flag_t flags[], char *timer_name, const char **err, switch_memory_pool_t *pool);
 
 
 /*!
@@ -159,7 +159,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags, char *timer_name, const char **err, switch_memory_pool_t *pool);
+											  switch_rtp_flag_t flags[], char *timer_name, const char **err, switch_memory_pool_t *pool);
 
 
 /*! 
@@ -248,7 +248,9 @@ SWITCH_DECLARE(stfu_instance_t *) switch_rtp_get_jitter_buffer(switch_rtp_t *rtp
   \param rtp_session the RTP session
   \param flags the flags to set
 */
-SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flags);
+SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flag);
+SWITCH_DECLARE(void) switch_rtp_set_flags(switch_rtp_t *rtp_session, switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID]);
+SWITCH_DECLARE(void) switch_rtp_clear_flags(switch_rtp_t *rtp_session, switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID]);
 
 /*!
   \brief Test an RTP Flag
@@ -263,7 +265,7 @@ SWITCH_DECLARE(uint32_t) switch_rtp_test_flag(switch_rtp_t *rtp_session, switch_
   \param rtp_session the RTP session
   \param flags the flags to clear
 */
-SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flags);
+SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flag);
 
 /*! 
   \brief Retrieve the socket from an existing RTP session

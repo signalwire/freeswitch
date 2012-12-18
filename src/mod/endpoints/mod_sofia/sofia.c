@@ -3606,7 +3606,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->local_network = "localnet.auto";
 					sofia_set_flag(profile, TFLAG_ENABLE_SOA);
 					sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
-					profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
+					profile->ndlb |= SM_NDLB_ALLOW_NONDUP_SDP;
 					profile->te = 101;
 					profile->ireg_seconds = IREG_SECONDS;
 					profile->paid_type = PAID_DEFAULT;
@@ -4187,9 +4187,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-bad-iananame")) {
 						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_ALLOW_BAD_IANANAME;
+							profile->ndlb |= SM_NDLB_ALLOW_BAD_IANANAME;
 						} else {
-							profile->ndlb &= ~PFLAG_NDLB_ALLOW_BAD_IANANAME;
+							profile->ndlb &= ~SM_NDLB_ALLOW_BAD_IANANAME;
 						}
 					} else if (!strcasecmp(var, "NDLB-expires-in-register-response")) {
 						if (switch_true(val)) {
@@ -4199,15 +4199,15 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-crypto-in-avp")) {
 						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP;
+							profile->ndlb |= SM_NDLB_ALLOW_CRYPTO_IN_AVP;
 						} else {
-							profile->ndlb &= ~PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP;
+							profile->ndlb &= ~SM_NDLB_ALLOW_CRYPTO_IN_AVP;
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-nondup-sdp")) {
 						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_ALLOW_NONDUP_SDP;
+							profile->ndlb |= SM_NDLB_ALLOW_NONDUP_SDP;
 						} else {
-							profile->ndlb &= ~PFLAG_NDLB_ALLOW_NONDUP_SDP;
+							profile->ndlb &= ~SM_NDLB_ALLOW_NONDUP_SDP;
 						}
 					} else if (!strcasecmp(var, "pass-rfc2833")) {
 						if (switch_true(val)) {
@@ -5595,7 +5595,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		(sofia_test_flag(profile, TFLAG_INB_NOMEDIA) || sofia_test_flag(profile, TFLAG_PROXY_MEDIA))) {
 
 		/* This marr in our code brought to you by people who can't read........ */
-		if (profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
+		if (profile->ndlb & SM_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
 			p += 4;
 			*p++ = '/';
 			*p++ = '8';
@@ -5643,7 +5643,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 		if (r_sdp) {
 
-			if (!(profile->ndlb & PFLAG_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp))) {
+			if (!(profile->ndlb & SM_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
 				is_dup_sdp = 1;
 			} else {
@@ -5744,7 +5744,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_channel_mark_pre_answered(channel);
 				sofia_set_flag(tech_pvt, TFLAG_SDP);
 				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) || sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
-					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 						goto done;
 					}
 				}
@@ -6172,7 +6172,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 
-						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+						if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite RTP Error!\n");
 							is_ok = 0;
 							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -6231,7 +6231,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
 				sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 
-				if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+				if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					goto done;
@@ -6248,7 +6248,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			sofia_clear_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
 			if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 						goto done;
 					}
 				}
@@ -6285,7 +6285,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 				if (match) {
 					sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
-					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
 						switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RTP ERROR");
 						is_ok = 0;
@@ -6313,7 +6313,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			tech_pvt->nh = tech_pvt->nh2;
 			tech_pvt->nh2 = NULL;
 			if (sofia_glue_tech_choose_port(tech_pvt, 0) == SWITCH_STATUS_SUCCESS) {
-				if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+				if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cheater Reinvite RTP Error!\n");
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				}
@@ -6349,7 +6349,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					switch_channel_mark_answered(channel);
 
 					if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+						if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 							goto done;
 						}
 					}
@@ -6385,7 +6385,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_channel_check_zrtp(channel);
 
 						if (sofia_glue_tech_choose_port(tech_pvt, 0) == SWITCH_STATUS_SUCCESS) {
-							if (sofia_glue_activate_rtp(tech_pvt, 0) == SWITCH_STATUS_SUCCESS) {
+							if (sofia_media_activate_rtp(tech_pvt) == SWITCH_STATUS_SUCCESS) {
 								switch_channel_mark_answered(channel);
 							} else {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");

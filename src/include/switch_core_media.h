@@ -29,13 +29,29 @@
  *
  */
 
-#ifndef SWITCH_CORE_H
-#define SWITCH_CORE_H
+#ifndef SWITCH_CORE_MEDIA_H
+#define SWITCH_CORE_MEDIA_H
 
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
 
+typedef enum {
+	SM_NDLB_ALLOW_BAD_IANANAME = (1 << 0),
+	SM_NDLB_ALLOW_NONDUP_SDP = (1 << 1),
+	SM_NDLB_ALLOW_CRYPTO_IN_AVP = (1 << 2)
+} switch_core_media_NDLB_t;
+
+struct switch_media_handle_s;
+
+
+SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t **smhp, switch_core_session_t *session);
+SWITCH_DECLARE(switch_media_handle_t *) switch_core_session_get_media_handle(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_clear_media_handle(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_media_handle_ready(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_media_handle_set_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
+SWITCH_DECLARE(void) switch_media_handle_clear_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
+SWITCH_DECLARE(int32_t) switch_media_handle_test_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
 
 SWITCH_END_EXTERN_C
 #endif

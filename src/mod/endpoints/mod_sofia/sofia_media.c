@@ -664,7 +664,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 					int crypto_tag;
 
-					if (!(tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_CRYPTO_IN_AVP) && 
+					if (!(tech_pvt->profile->ndlb & SM_NDLB_ALLOW_CRYPTO_IN_AVP) && 
 						!switch_true(switch_channel_get_variable(tech_pvt->channel, "sip_allow_crypto_in_avp"))) {
 						if (m->m_proto != sdp_proto_srtp) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "a=crypto in RTP/AVP, refer to rfc3711\n");
@@ -770,7 +770,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				}
 
 				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == tech_pvt->pt) ? 1 : 0;
 					} else {
 						match = strcasecmp(switch_str_nil(map->rm_encoding), tech_pvt->iananame) ? 0 : 1;
@@ -882,7 +882,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d:%u]/[%s:%d:%u:%d:%u]\n",
 									  rm_encoding, map->rm_pt, (int) map->rm_rate, codec_ms, map_bit_rate,
 									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate);
-					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
@@ -1078,7 +1078,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video Codec Compare [%s:%d]/[%s:%d]\n",
 									  rm_encoding, map->rm_pt, imp->iananame, imp->ianacode);
-					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						vmatch = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						vmatch = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
@@ -1145,11 +1145,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 }
 
 
-switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags)
+switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt)
 {
 	const char *err = NULL;
 	const char *val = NULL;
-	switch_rtp_flag_t flags;
+	switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char tmp[50];
 	uint32_t rtp_timeout_sec = tech_pvt->profile->rtp_timeout_sec;
@@ -1195,15 +1195,14 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		goto end;
 	}
 
+	memset(flags, 0, sizeof(flags));
+	flags[SWITCH_RTP_FLAG_DATAWAIT]++;
 
-	if (myflags) {
-		flags = myflags;
-	} else if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
-			   !((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
-		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
-	} else {
-		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT);
+	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
+		!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
+		flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 	}
+
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_RFC2833)
 		|| ((val = switch_channel_get_variable(tech_pvt->channel, "pass_rfc2833")) && switch_true(val))) {
@@ -1213,28 +1212,28 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFLUSH)
 		|| ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_autoflush")) && switch_true(val))) {
-		flags |= SWITCH_RTP_FLAG_AUTOFLUSH;
+		flags[SWITCH_RTP_FLAG_AUTOFLUSH]++;
 	}
 
 	if (!(sofia_test_pflag(tech_pvt->profile, PFLAG_REWRITE_TIMESTAMPS) ||
 		  ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_rewrite_timestamps")) && switch_true(val)))) {
-		flags |= SWITCH_RTP_FLAG_RAW_WRITE;
+		flags[SWITCH_RTP_FLAG_RAW_WRITE]++;
 	}
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
 		tech_pvt->cng_pt = 0;
 	} else if (tech_pvt->cng_pt) {
-		flags |= SWITCH_RTP_FLAG_AUTO_CNG;
+		flags[SWITCH_RTP_FLAG_AUTO_CNG]++;
 	}
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	if (!strcasecmp(tech_pvt->read_impl.iananame, "L16")) {
-		flags |= SWITCH_RTP_FLAG_BYTESWAP;
+		flags[SWITCH_RTP_FLAG_BYTESWAP]++;
 	}
 #endif
 	
-	if ((flags & SWITCH_RTP_FLAG_BYTESWAP) && (val = switch_channel_get_variable(tech_pvt->channel, "rtp_disable_byteswap")) && switch_true(val)) {
-		flags &= ~SWITCH_RTP_FLAG_BYTESWAP;
+	if ((flags[SWITCH_RTP_FLAG_BYTESWAP]) && (val = switch_channel_get_variable(tech_pvt->channel, "rtp_disable_byteswap")) && switch_true(val)) {
+		flags[SWITCH_RTP_FLAG_BYTESWAP] = 0;
 	}
 
 	if (tech_pvt->rtp_session && sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
@@ -1329,11 +1328,13 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
 		sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL);
 
+		memset(flags, 0, sizeof(flags));
+		flags[SWITCH_RTP_FLAG_DATAWAIT]++;
+		flags[SWITCH_RTP_FLAG_PROXY_MEDIA]++;
+
 		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
 			!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
-			flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_PROXY_MEDIA | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
-		} else {
-			flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_PROXY_MEDIA | SWITCH_RTP_FLAG_DATAWAIT);
+			flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 		}
 		timer_name = NULL;
 
@@ -1365,7 +1366,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 											   tech_pvt->agreed_pt,
 											   tech_pvt->read_impl.samples_per_packet,
 											   tech_pvt->codec_ms * 1000,
-											   (switch_rtp_flag_t) flags, timer_name, &err, switch_core_session_get_pool(tech_pvt->session));
+											   flags, timer_name, &err, switch_core_session_get_pool(tech_pvt->session));
 	}
 
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
@@ -1676,11 +1677,13 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
 				sofia_glue_tech_proxy_remote_addr(tech_pvt, NULL);
 
+				memset(flags, 0, sizeof(flags));
+				flags[SWITCH_RTP_FLAG_PROXY_MEDIA]++;
+				flags[SWITCH_RTP_FLAG_DATAWAIT]++;
+
 				if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
 					!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
-					flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_PROXY_MEDIA | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
-				} else {
-					flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_PROXY_MEDIA | SWITCH_RTP_FLAG_DATAWAIT);
+					flags[SWITCH_RTP_FLAG_AUTOADJ]++;
 				}
 				timer_name = NULL;
 
@@ -1714,27 +1717,30 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				sofia_glue_tech_choose_video_port(tech_pvt, 1);
 			}
 
+			memset(flags, 0, sizeof(flags));
+			flags[SWITCH_RTP_FLAG_DATAWAIT]++;
+			flags[SWITCH_RTP_FLAG_RAW_WRITE]++;
+
 			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
 				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
-				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
-			} else {
-				flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_RAW_WRITE);
+				flags[SWITCH_RTP_FLAG_AUTOADJ]++;				
 			}
 
 			if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
-				flags |= SWITCH_RTP_FLAG_PROXY_MEDIA;
+				flags[SWITCH_RTP_FLAG_PROXY_MEDIA]++;
 			}
 			sofia_glue_tech_set_video_codec(tech_pvt, 0);
 
-			flags &= ~(SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_NOBLOCK);
-			flags |= SWITCH_RTP_FLAG_VIDEO;
+			flags[SWITCH_RTP_FLAG_USE_TIMER] = 0;
+			flags[SWITCH_RTP_FLAG_NOBLOCK] = 0;
+			flags[SWITCH_RTP_FLAG_VIDEO]++;
 
 			tech_pvt->video_rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
 														 tech_pvt->local_sdp_video_port,
 														 tech_pvt->remote_sdp_video_ip,
 														 tech_pvt->remote_sdp_video_port,
 														 tech_pvt->video_agreed_pt,
-														 1, 90000, (switch_rtp_flag_t) flags, NULL, &err, switch_core_session_get_pool(tech_pvt->session));
+														 1, 90000, flags, NULL, &err, switch_core_session_get_pool(tech_pvt->session));
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%sVIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
 							  switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) ? "PROXY " : "",

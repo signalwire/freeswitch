@@ -40,10 +40,85 @@
 #include <switch_curl.h>
 #include <errno.h>
 
+typedef enum {
+	SMH_INIT = (1 << 0),
+	SMH_READY = (1 << 1)
+} smh_flag_t;
 
 
+struct switch_media_handle_s {
+	switch_core_session_t *session;
+	switch_core_media_NDLB_t ndlb;
+	smh_flag_t flags;
+};
 
 
+SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t **smhp, switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_media_handle_t *smh = NULL;
+	
+	*smhp = NULL;
+
+	if ((session->media_handle = switch_core_session_alloc(session, (sizeof(*smh))))) {
+		
+		*smhp = session->media_handle;
+		switch_set_flag(session->media_handle, SMH_INIT);
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+
+	return status;
+}
+
+SWITCH_DECLARE(void) switch_media_handle_set_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag)
+{
+	switch_assert(smh);
+
+	smh->flags |= flag;
+	
+}
+
+SWITCH_DECLARE(void) switch_media_handle_clear_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag)
+{
+	switch_assert(smh);
+
+	smh->flags &= ~flag;
+}
+
+SWITCH_DECLARE(int32_t) switch_media_handle_test_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag)
+{
+	switch_assert(smh);
+	return (smh->flags & flag);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_media_handle_ready(switch_core_session_t *session)
+{
+	if (session->media_handle && switch_test_flag(session->media_handle, SMH_INIT)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	return SWITCH_STATUS_FALSE;
+}
+
+
+SWITCH_DECLARE(switch_media_handle_t *) switch_core_session_get_media_handle(switch_core_session_t *session)
+{
+	if (switch_core_session_media_handle_ready(session)) {
+		return session->media_handle;
+	}
+
+	return NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_clear_media_handle(switch_core_session_t *session)
+{
+	if (!session->media_handle) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
 
 
 

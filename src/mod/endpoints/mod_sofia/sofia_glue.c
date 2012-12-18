@@ -973,8 +973,10 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_cap(tech_pvt->channel, CC_FS_RTP);
 	switch_channel_set_cap(tech_pvt->channel, CC_QUEUEABLE_DTMF_DELAY);
 
+	switch_media_handle_create(&tech_pvt->media_handle, session);
+	switch_media_handle_set_ndlb(tech_pvt->media_handle, tech_pvt->profile->ndlb);
+	
 	switch_core_session_set_private(session, tech_pvt);
-
 
 	if (channame) {
 		sofia_glue_set_name(tech_pvt, channame);
@@ -1857,7 +1859,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 				if (switch_channel_media_ready(tech_pvt->channel) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
 					sofia_set_flag(tech_pvt, TFLAG_VIDEO);
 					sofia_set_flag(tech_pvt, TFLAG_REINVITE);
-					sofia_glue_activate_rtp(tech_pvt, 0);
+					sofia_media_activate_rtp(tech_pvt);
 				}
 			}
 
@@ -3386,7 +3388,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 					for (i = 0; i < num_codecs; i++) {
 						const switch_codec_implementation_t *imp = codecs[i];
 
-						if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+						if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 							match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 						} else {
 							if (map->rm_encoding) {
@@ -3415,7 +3417,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 							continue;
 						}
 
-						if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+						if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 							match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 						} else {
 							if (map->rm_encoding) {
@@ -3453,7 +3455,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 						continue;
 					}
 
-					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & PFLAG_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+					if ((zstr(map->rm_encoding) || (tech_pvt->profile->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						if (map->rm_encoding) {
@@ -3497,7 +3499,7 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_
 		if (sofia_glue_tech_choose_port(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
-		if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+		if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
@@ -4242,7 +4244,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 
-			if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+			if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 				goto end;
 			}
 			

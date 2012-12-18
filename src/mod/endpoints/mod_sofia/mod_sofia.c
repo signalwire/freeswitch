@@ -742,7 +742,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 			sofia_glue_tech_patch_sdp(tech_pvt);
-			if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+			if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 				return SWITCH_STATUS_FALSE;
 			}
 		}
@@ -761,7 +761,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					sofia_glue_tech_patch_sdp(tech_pvt);
-					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 						return SWITCH_STATUS_FALSE;
 					}
 				}
@@ -850,7 +850,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		}
 
 		sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-		if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+		if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		}
 
@@ -2775,7 +2775,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 						sofia_glue_tech_patch_sdp(tech_pvt);
 
-						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+						if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 							status = SWITCH_STATUS_FALSE;
 							goto end_lock;
 						}
@@ -2806,7 +2806,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						goto end_lock;
 					}
 					sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
 					if (tech_pvt->local_sdp_str) {
