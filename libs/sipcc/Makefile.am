@@ -125,7 +125,7 @@ core/src-common/util_ios_queue.c \
 core/src-common/util_parse.c \
 core/src-common/util_string.c
 
-CPR_COMMON_SRC = cpr/common/cpr_string.c
+CPR_COMMON_SRC = cpr/common/cpr_string.c cpr/common/strtok.c
 
 CPR_DARWIN_SRC = \
 cpr/darwin/cpr_darwin_errno.c \
@@ -342,6 +342,7 @@ cpr/darwin/cpr_darwin_timers.h \
 cpr/darwin/cpr_darwin_tst.h \
 cpr/darwin/cpr_darwin_types.h \
 cpr/include/cpr.h \
+cpr/include/plstr.h \
 cpr/include/cpr_assert.h \
 cpr/include/cpr_debug.h \
 cpr/include/cpr_errno.h \

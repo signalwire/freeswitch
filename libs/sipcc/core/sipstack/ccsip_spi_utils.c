@@ -9,7 +9,7 @@
  * CCAPI callids, conversion from CCAPI to SIP cause codes and the
  * like.
  */
-//#include "plstr.h"
+#include "plstr.h"
 #include "cpr_types.h"
 #include "cpr_stdlib.h"
 #include "cpr_string.h"

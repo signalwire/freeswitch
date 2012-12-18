@@ -22,7 +22,7 @@
 #include "platform_api.h"
 #include "vcm.h"
 //#include "prlog.h"
-//#include "plstr.h"
+#include "plstr.h"
 #include "sdp_private.h"
 
 //TODO Need to place this in a portable location

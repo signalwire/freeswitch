@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//#include "plstr.h"
+#include "plstr.h"
 #include "cpr_types.h"
 #include "cpr_time.h"
 #include "cpr_stdio.h"
