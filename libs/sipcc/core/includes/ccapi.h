@@ -5,7 +5,7 @@
 #ifndef _CCAPI_H_
 #define _CCAPI_H_
 
-#include "prtypes.h"
+//#include "prtypes.h"
 #include "cpr_types.h"
 #include "cpr_memory.h"
 #include "phone_types.h"
@@ -170,7 +170,7 @@ static const char *cc_feature_names[] = {
 /* This checks at compile-time that the cc_feature_names list
  * is the same size as the cc_group_feature_t enum
  */
-PR_STATIC_ASSERT(PR_ARRAY_SIZE(cc_feature_names) == CC_FEATURE_MAX + 1);
+//PR_STATIC_ASSERT(PR_ARRAY_SIZE(cc_feature_names) == CC_FEATURE_MAX + 1);
 
 #endif
 
@@ -292,7 +292,7 @@ static const char *cc_msg_names[] = {
 /* This checks at compile-time that the cc_msg_names list
  * is the same size as the cc_msgs_t enum
  */
-PR_STATIC_ASSERT(PR_ARRAY_SIZE(cc_msg_names) == CC_MSG_MAX + 1);
+//PR_STATIC_ASSERT(PR_ARRAY_SIZE(cc_msg_names) == CC_MSG_MAX + 1);
 
 #endif //__CC_MESSAGES_STRINGS__
 

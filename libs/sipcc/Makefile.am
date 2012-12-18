@@ -74,7 +74,6 @@ core/sdp/sdp_base64.c \
 core/sdp/sdp_config.c \
 core/sdp/sdp_main.c \
 core/sdp/sdp_services_unix.c \
-core/sdp/sdp_services_win32.c \
 core/sdp/sdp_token.c \
 core/sdp/sdp_utils.c
 
@@ -104,8 +103,7 @@ core/sipstack/pmhutils.c \
 core/sipstack/sip_common_regmgr.c \
 core/sipstack/sip_common_transport.c \
 core/sipstack/sip_csps_transport.c \
-core/sipstack/sip_interface_regmgr.c \
-core/sipstack/sip_platform_win32_task.c
+core/sipstack/sip_interface_regmgr.c
 
 CORE_SIPSTACK_UNIX_SRC = core/sipstack/sip_platform_task.c
 

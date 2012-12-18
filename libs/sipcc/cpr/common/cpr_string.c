@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "mozilla/Assertions.h"
+//#include "mozilla/Assertions.h"
 #include "cpr_types.h"
 #include "cpr_stdlib.h"
 #include "cpr_string.h"

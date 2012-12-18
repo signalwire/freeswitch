@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <limits.h>
 
-#include "plstr.h"
+//#include "plstr.h"
 #include "cpr_types.h"
 #include "cpr_stdio.h"
 #include "cpr_stdlib.h"

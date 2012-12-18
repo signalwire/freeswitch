@@ -49,7 +49,7 @@
 #include "ccapi_device_info.h"
 #include "conf_roster.h"
 #include "reset_api.h"
-#include "prlog.h"
+//#include "prlog.h"
 
 /*---------------------------------------------------------
  *

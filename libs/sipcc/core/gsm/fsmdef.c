@@ -36,7 +36,7 @@
 #include "text_strings.h"
 #include "platform_api.h"
 #include "peer_connection_types.h"
-#include "prlog.h"
+//#include "prlog.h"
 #include "sessionHash.h"
 
 extern void update_kpmlconfig(int kpmlVal);

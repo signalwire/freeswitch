@@ -5,12 +5,12 @@
 #include <errno.h>
 #include <limits.h>
 
-#include "plstr.h"
+//#include "plstr.h"
 #include "sdp_os_defs.h"
 #include "sdp.h"
 #include "sdp_private.h"
 #include "sdp_base64.h"
-#include "mozilla/Assertions.h"
+//#include "mozilla/Assertions.h"
 #include "CSFLog.h"
 
 static const char* logTag = "sdp_attr";
