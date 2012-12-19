@@ -6188,7 +6188,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 				if (is_ok) {
 
-					if (switch_core_sesson_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
+					if (switch_core_session_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 					}
 					if (sofia_use_soa(tech_pvt)) {

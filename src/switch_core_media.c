@@ -72,7 +72,7 @@ struct switch_media_handle_s {
 };
 
 
-SWITCH_DECLARE(const char *) switch_core_sesson_local_crypto_key(switch_core_session_t *session, switch_media_type_t type)
+SWITCH_DECLARE(const char *) switch_core_session_local_crypto_key(switch_core_session_t *session, switch_media_type_t type)
 {
 	if (!session->media_handle) {
 		return NULL;

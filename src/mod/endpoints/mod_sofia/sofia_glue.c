@@ -186,7 +186,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	int rate;
 	int already_did[128] = { 0 };
 	int ptime = 0, noptime = 0;
-	const char *local_audio_crypto_key = switch_core_sesson_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
+	const char *local_audio_crypto_key = switch_core_session_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP", 
 					port, secure ? "S" : "");
@@ -396,7 +396,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
 	int verbose_sdp = 0;
-	const char *local_audio_crypto_key = switch_core_sesson_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
+	const char *local_audio_crypto_key = switch_core_session_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 
 	switch_zmalloc(buf, SDPBUFLEN);
 	
