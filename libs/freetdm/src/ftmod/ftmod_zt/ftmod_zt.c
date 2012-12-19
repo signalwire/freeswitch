@@ -1098,6 +1098,7 @@ static __inline__ int handle_dtmf_event(ftdm_channel_t *fchan, zt_event_t zt_eve
  */
 static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, ftdm_oob_event_t *event_id, zt_event_t zt_event_id)
 {
+	ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "Processing zap hardware event %d\n", zt_event_id);
 	switch(zt_event_id) {
 	case ZT_EVENT_RINGEROFF:
 		{
@@ -1132,16 +1133,30 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 		break;
 	case ZT_EVENT_RINGOFFHOOK:
 		{
+			*event_id = FTDM_OOB_NOOP;
 			if (fchan->type == FTDM_CHAN_TYPE_FXS || (fchan->type == FTDM_CHAN_TYPE_EM && fchan->state != FTDM_CHANNEL_STATE_UP)) {
 				if (fchan->type != FTDM_CHAN_TYPE_EM) {
-					/* In E&M we're supposed to set this flag when the tx side goes offhook, not the rx */
+					/* In E&M we're supposed to set this flag only when the local side goes offhook, not the remote */
 					ftdm_set_flag_locked(fchan, FTDM_CHANNEL_OFFHOOK);
 				}
-				*event_id = FTDM_OOB_OFFHOOK;
+
+				/* For E&M let's count the ring count (it seems sometimes we receive RINGOFFHOOK once before the other end
+				 * answers, then another RINGOFFHOOK when the other end answers?? anyways, now we count rings before delivering the
+				 * offhook event ... the E&M signaling code in ftmod_analog_em also polls the RBS bits looking for answer, just to
+				 * be safe and not rely on this event, so even if this event does not arrive, when there is answer supervision
+				 * the analog signaling code should detect the cas persistance pattern and answer */
+				if (fchan->type == FTDM_CHAN_TYPE_EM && ftdm_test_flag(fchan, FTDM_CHANNEL_OUTBOUND)) {
+					fchan->ring_count++;
+					/* perhaps some day we'll make this configurable, but since I am not even sure what the hell is going on
+					 * no point in making a configuration option for something that may not be technically correct */
+					if (fchan->ring_count == 2) {
+						*event_id = FTDM_OOB_OFFHOOK;
+					}
+				} else {
+					*event_id = FTDM_OOB_OFFHOOK;
+				}
 			} else if (fchan->type == FTDM_CHAN_TYPE_FXO) {
 				*event_id = FTDM_OOB_RING_START;
-			} else {
-				*event_id = FTDM_OOB_NOOP;
 			}
 		}
 		break;

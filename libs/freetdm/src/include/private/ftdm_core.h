@@ -92,7 +92,7 @@
 			   !strcasecmp(expr, "true") ||		\
 			   !strcasecmp(expr, "enabled") ||	\
 			   !strcasecmp(expr, "active") ||	\
-			   atoi(expr))) ? 1 : 0
+			   atoi(expr))) ? FTDM_TRUE : FTDM_FALSE
 
 #ifdef WIN32_LEAN_AND_MEAN
 #include <winsock2.h>

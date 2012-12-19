@@ -3775,11 +3775,14 @@ static switch_status_t load_config(void)
 			const char *dialplan = "XML";
 			const char *tonegroup = NULL;
 			char *digit_timeout = NULL;
+			char *dial_timeout = NULL;
 			char *max_digits = NULL;
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
-			uint32_t span_id = 0, to = 0, max = 0;
+			char str_false[] = "false";
+			char *answer_supervision = str_false;
+			uint32_t span_id = 0, to = 0, max = 0, dial_timeout_int = 0;
 			ftdm_span_t *span = NULL;
 			analog_option_t analog_options = ANALOG_OPTION_NONE;
 
@@ -3791,6 +3794,8 @@ static switch_status_t load_config(void)
 					tonegroup = val;
 				} else if (!strcasecmp(var, "digit_timeout") || !strcasecmp(var, "digit-timeout")) {
 					digit_timeout = val;
+				} else if (!strcasecmp(var, "dial-timeout")) {
+					dial_timeout = val;
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "dialplan")) {
@@ -3803,6 +3808,8 @@ static switch_status_t load_config(void)
 					hold_music = val;
 				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
 					max_digits = val;
+				} else if (!strcasecmp(var, "answer-supervision")) {
+					answer_supervision = val;
 				} else if (!strcasecmp(var, "enable-analog-option")) {
 					analog_options = enable_analog_option(val, analog_options);
 				}
@@ -3819,6 +3826,10 @@ static switch_status_t load_config(void)
 
 			if (digit_timeout) {
 				to = atoi(digit_timeout);
+			}
+
+			if (dial_timeout) {
+				dial_timeout_int = atoi(dial_timeout);
 			}
 
 			if (max_digits) {
@@ -3851,7 +3862,9 @@ static switch_status_t load_config(void)
 
 			if (ftdm_configure_span(span, "analog_em", on_analog_signal,
 								   "tonemap", tonegroup,
+								   "answer_supervision", answer_supervision,
 								   "digit_timeout", &to,
+								   "dial_timeout", &dial_timeout_int,
 								   "max_dialstr", &max,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				LOAD_ERROR("Error starting FreeTDM span %d\n", span_id);
