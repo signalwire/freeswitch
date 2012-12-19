@@ -186,6 +186,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	int rate;
 	int already_did[128] = { 0 };
 	int ptime = 0, noptime = 0;
+	const char *local_audio_crypto_key = switch_core_sesson_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP", 
 					port, secure ? "S" : "");
@@ -323,7 +324,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	}
 
 	if (secure) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=crypto:%s\n", local_audio_crypto_key);
 		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
 	}
 
@@ -395,7 +396,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
 	int verbose_sdp = 0;
-	
+	const char *local_audio_crypto_key = switch_core_sesson_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
+
 	switch_zmalloc(buf, SDPBUFLEN);
 	
 	sofia_glue_check_dtmf_type(tech_pvt);
@@ -513,7 +515,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 	if (tech_pvt->rm_encoding) {
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio %d RTP/%sAVP", 
-						port, (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) ? "S" : "");
+						port, (!zstr(local_audio_crypto_key) && switch_channel_test_flag(tech_pvt->channel, CF_SECURE)) ? "S" : "");
 
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", tech_pvt->pt);
 
@@ -571,8 +573,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=%s\n", sr);
 		}
 	
-		if (!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
+		if (!zstr(local_audio_crypto_key) && switch_channel_test_flag(tech_pvt->channel, CF_SECURE)) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", local_audio_crypto_key);
 			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=encryption:optional\n");
 		}
 
@@ -595,7 +597,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 			char *bp = buf;
 			int both = 1;
 
-			if ((!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE))) {
+			if ((!zstr(local_audio_crypto_key) && switch_channel_test_flag(tech_pvt->channel, CF_SECURE))) {
 				generate_m(tech_pvt, buf, SDPBUFLEN, port, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
 				bp = (buf + strlen(buf));
 
@@ -631,7 +633,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 					cur_ptime = this_ptime;			
 					
-					if ((!zstr(tech_pvt->local_crypto_key) && sofia_test_flag(tech_pvt, TFLAG_SECURE))) {
+					if ((!zstr(local_audio_crypto_key) && switch_channel_test_flag(tech_pvt->channel, CF_SECURE))) {
 						generate_m(tech_pvt, bp, SDPBUFLEN - strlen(buf), port, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
 						bp = (buf + strlen(buf));
 
@@ -3109,51 +3111,6 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 }
 
 
-switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction)
-{
-	unsigned char b64_key[512] = "";
-	const char *type_str;
-	unsigned char *key;
-	const char *val;
-
-	char *p;
-
-	if (type == AES_CM_128_HMAC_SHA1_80) {
-		type_str = SWITCH_RTP_CRYPTO_KEY_80;
-	} else {
-		type_str = SWITCH_RTP_CRYPTO_KEY_32;
-	}
-
-	if (direction == SWITCH_RTP_CRYPTO_SEND) {
-		key = tech_pvt->local_raw_key;
-	} else {
-		key = tech_pvt->remote_raw_key;
-
-	}
-
-	switch_rtp_get_random(key, SWITCH_RTP_KEY_LEN);
-	switch_b64_encode(key, SWITCH_RTP_KEY_LEN, b64_key, sizeof(b64_key));
-	p = strrchr((char *) b64_key, '=');
-
-	while (p && *p && *p == '=') {
-		*p-- = '\0';
-	}
-
-	tech_pvt->local_crypto_key = switch_core_session_sprintf(tech_pvt->session, "%d %s inline:%s", index, type_str, b64_key);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Set Local Key [%s]\n", tech_pvt->local_crypto_key);
-
-	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_SRTP_AUTH) &&
-		!((val = switch_channel_get_variable(tech_pvt->channel, "NDLB_support_asterisk_missing_srtp_auth")) && switch_true(val))) {
-		tech_pvt->crypto_type = type;
-	} else {
-		tech_pvt->crypto_type = AES_CM_128_NULL_AUTH;
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-
-
 static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size_t buflen)
 {
 	int codec_ms = ptime;
@@ -4131,10 +4088,8 @@ int sofia_recover_callback(switch_core_session_t *session)
 	sofia_glue_attach_private(session, profile, tech_pvt, NULL);
 	switch_channel_set_name(tech_pvt->channel, switch_channel_get_variable(channel, "channel_name"));
 
-	if ((tmp = switch_channel_get_variable(channel, "srtp_remote_audio_crypto_key"))) {
-		tech_pvt->remote_crypto_key = switch_core_session_strdup(session, tmp);
-		sofia_set_flag(tech_pvt, TFLAG_CRYPTO_RECOVER);
-	}
+	
+	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO, "srtp_remote_audio_crypto_key");
 
 	if ((tmp = switch_channel_get_variable(channel, "sip_local_sdp_str"))) {
 		tech_pvt->local_sdp_str = switch_core_session_strdup(session, tmp);

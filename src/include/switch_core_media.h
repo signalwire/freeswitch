@@ -39,7 +39,8 @@ SWITCH_BEGIN_EXTERN_C
 typedef enum {
 	SM_NDLB_ALLOW_BAD_IANANAME = (1 << 0),
 	SM_NDLB_ALLOW_NONDUP_SDP = (1 << 1),
-	SM_NDLB_ALLOW_CRYPTO_IN_AVP = (1 << 2)
+	SM_NDLB_ALLOW_CRYPTO_IN_AVP = (1 << 2),
+	SM_NDLB_DISABLE_SRTP_AUTH = (1 << 3)
 } switch_core_media_NDLB_t;
 
 struct switch_media_handle_s;
@@ -52,6 +53,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_media_handle_ready(switch_co
 SWITCH_DECLARE(void) switch_media_handle_set_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
 SWITCH_DECLARE(void) switch_media_handle_clear_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
 SWITCH_DECLARE(int32_t) switch_media_handle_test_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
+SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session, const char *sec_var);
+SWITCH_DECLARE(const char *) switch_core_sesson_local_crypto_key(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_session_t *session, 
+															  const char *varname,
+															  switch_media_type_t type, const char *crypto, int crypto_tag);
+
+SWITCH_DECLARE(void) switch_core_session_apply_crypto(switch_core_session_t *session, switch_media_type_t type, const char *varname);
+SWITCH_DECLARE(void) switch_core_session_get_recovery_crypto_key(switch_core_session_t *session, switch_media_type_t type, const char *varname);
+
+SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *session, switch_media_type_t type, switch_rtp_t *rtp_session);
 
 SWITCH_END_EXTERN_C
 #endif

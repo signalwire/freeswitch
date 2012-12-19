@@ -3923,7 +3923,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "disable-rtp-auto-adjust") && switch_true(val)) {
 						sofia_set_pflag(profile, PFLAG_DISABLE_RTP_AUTOADJ);
 					} else if (!strcasecmp(var, "NDLB-support-asterisk-missing-srtp-auth") && switch_true(val)) {
-						sofia_set_pflag(profile, PFLAG_DISABLE_SRTP_AUTH);
+						profile->ndlb |= SM_NDLB_DISABLE_SRTP_AUTH;
 					} else if (!strcasecmp(var, "NDLB-funny-stun")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_FUNNY_STUN);
@@ -6187,7 +6187,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 
 				if (is_ok) {
-					if (tech_pvt->local_crypto_key) {
+
+					if (switch_core_sesson_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 					}
 					if (sofia_use_soa(tech_pvt)) {

@@ -224,7 +224,6 @@ typedef enum {
 	PFLAG_RECIEVED_IN_NAT_REG_CONTACT,
 	PFLAG_3PCC,
 	PFLAG_DISABLE_RTP_AUTOADJ,
-	PFLAG_DISABLE_SRTP_AUTH,
 	PFLAG_FUNNY_STUN,
 	PFLAG_STUN_ENABLED,
 	PFLAG_STUN_AUTO_DISABLE,
@@ -309,7 +308,6 @@ typedef enum {
 	TFLAG_BYE,
 	TFLAG_ANS,
 	TFLAG_EARLY_MEDIA,
-	TFLAG_SECURE,
 	TFLAG_VAD_IN,
 	TFLAG_VAD_OUT,
 	TFLAG_VAD,
@@ -349,7 +347,6 @@ typedef enum {
 	TFLAG_SLA_BARGE,
 	TFLAG_SLA_BARGING,
 	TFLAG_PASS_ACK,
-	TFLAG_CRYPTO_RECOVER,
 	TFLAG_DROP_DTMF,
 	/* No new flags below this line */
 	TFLAG_MAX
@@ -754,12 +751,6 @@ struct private_object {
 	char *rm_fmtp;
 	char *fmtp_out;
 	char *remote_sdp_str;
-	int crypto_tag;
-	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
-	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
-	switch_rtp_crypto_key_type_t crypto_send_type;
-	switch_rtp_crypto_key_type_t crypto_recv_type;
-	switch_rtp_crypto_key_type_t crypto_type;
 	char *early_sdp;
 	char *local_sdp_str;
 	char *last_sdp_str;
@@ -777,8 +768,6 @@ struct private_object {
 	char *invite_contact;
 	char *local_url;
 	char *gateway_name;
-	char *local_crypto_key;
-	char *remote_crypto_key;
 	char *record_route;
 	char *extrtpip;
 	char *stun_ip;
@@ -1125,7 +1114,7 @@ char *sofia_glue_strip_uri(const char *str);
 int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
 int sofia_glue_transport_has_tls(const sofia_transport_t tp);
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);
-switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction);
+switch_status_t sofia_media_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction);
 void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt);
 switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, const char *sdp_str);
 void sofia_presence_event_thread_start(void);

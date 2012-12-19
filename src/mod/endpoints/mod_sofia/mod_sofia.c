@@ -93,17 +93,8 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_OUTBOUND) || switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
-		const char *var;
 
-		if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && !zstr(var)) {
-			if (switch_true(var) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_32)) {
-				sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
-				sofia_glue_build_crypto(tech_pvt, 1, AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND);
-			} else if (!strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_80)) {
-				sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
-				sofia_glue_build_crypto(tech_pvt, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
-			}
-		}
+		switch_core_session_check_outgoing_crypto(session, SOFIA_SECURE_MEDIA_VARIABLE);
 
 
 		if (sofia_glue_do_invite(session) != SWITCH_STATUS_SUCCESS) {
@@ -1871,7 +1862,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && 
 				(switch_true(var) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_32) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_80))) {
-				sofia_set_flag_locked(tech_pvt, TFLAG_SECURE);
+				switch_channel_set_flag(tech_pvt->channel, CF_SECURE);
 			}
 
 			if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {

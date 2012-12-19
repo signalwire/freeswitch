@@ -1280,6 +1280,8 @@ typedef enum {
 	CF_EARLY_OK,
 	CF_MEDIA_TRANS,
 	CF_HOLD_ON_BRIDGE,
+	CF_SECURE,
+	CF_CRYPTO_RECOVER,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -1463,6 +1465,7 @@ typedef enum {
 	SWITCH_MEDIA_TYPE_AUDIO,
 	SWITCH_MEDIA_TYPE_VIDEO
 } switch_media_type_t;
+#define SWITCH_MEDIA_TYPE_TOTAL 2
 
 
 /*!
