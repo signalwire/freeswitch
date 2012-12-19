@@ -197,7 +197,7 @@ static void event_handler(switch_event_t *event)
 SWITCH_STANDARD_APP(t38_gateway_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	time_t timeout = switch_epoch_time_now(NULL) + 20;
+	int timeout = 20;
 	const char *var;
 	int argc = 0;
 	char *argv[2] = { 0 };
@@ -226,9 +226,9 @@ SWITCH_STANDARD_APP(t38_gateway_function)
 		t38_gateway_start(session, direction, NULL);
 	} else {
 		if ((var = switch_channel_get_variable(channel, "t38_gateway_detect_timeout"))) {
-			long to = atol(var);
+			int to = atoi(var);
 			if (to > -1) {
-				timeout = (time_t) (switch_epoch_time_now(NULL) + to);
+				timeout = to;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s invalid timeout value.\n", switch_channel_get_name(channel));
 			}
