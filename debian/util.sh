@@ -234,6 +234,7 @@ create_dsc () {
         -e '/\.stamp-build:/{:l2 n; /make/{s/$/ -j/; :l3 n; b l3}; b l2};' ;;
     esac
     git add debian/rules
+    git rm -rf --ignore-unmatch libs/libg722_1 libs/ilbc
     dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
     git add debian/changelog && git commit -m "nightly v$orig_ver"
     dpkg-source -i.* -Zxz -z9 -b .
