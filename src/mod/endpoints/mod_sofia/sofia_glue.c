@@ -188,6 +188,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	int ptime = 0, noptime = 0;
 	const char *local_audio_crypto_key = switch_core_session_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 
+
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP", 
 					port, secure ? "S" : "");
 				
@@ -654,12 +655,17 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	}
 	
 	if (sofia_test_flag(tech_pvt, TFLAG_VIDEO)) {
+		const char *local_video_crypto_key = switch_core_session_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_VIDEO);
+		
 		if (!tech_pvt->local_sdp_video_port) {
 			sofia_glue_tech_choose_video_port(tech_pvt, 0);
 		}
 
 		if ((v_port = tech_pvt->adv_sdp_video_port)) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video %d RTP/AVP", v_port);
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video %d RTP/%sAVP", 
+							v_port, (!zstr(local_video_crypto_key) && switch_channel_test_flag(tech_pvt->channel, CF_SECURE)) ? "S" : "");
+
 
 			/*****************************/
 			if (tech_pvt->video_rm_encoding) {
@@ -767,6 +773,12 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 				}
 				
 			}
+
+			if (switch_channel_test_flag(tech_pvt->channel, CF_SECURE)) {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", local_video_crypto_key);
+				//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
+			}			
+
 
 			if (tech_pvt->local_sdp_video_zrtp_hash) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Adding video a=zrtp-hash:%s\n",
@@ -4090,6 +4102,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 
 	
 	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO, "srtp_remote_audio_crypto_key");
+	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_VIDEO, "srtp_remote_video_crypto_key");
 
 	if ((tmp = switch_channel_get_variable(channel, "sip_local_sdp_str"))) {
 		tech_pvt->local_sdp_str = switch_core_session_strdup(session, tmp);

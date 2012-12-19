@@ -326,7 +326,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
 	const char *crypto = NULL;
-	int got_crypto = 0, got_audio = 0, got_avp = 0, got_savp = 0, got_udptl = 0;
+	int got_crypto = 0, got_video_crypto = 0, got_audio = 0, got_avp = 0, got_video_avp = 0, got_video_savp = 0, got_savp = 0, got_udptl = 0;
 	int scrooge = 0;
 	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
@@ -492,9 +492,17 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		maxptime = dmaxptime;
 
 		if (m->m_proto == sdp_proto_srtp) {
-			got_savp++;
+			if (m->m_type == sdp_media_audio) {
+				got_savp++;
+			} else {
+				got_video_savp++;
+			}
 		} else if (m->m_proto == sdp_proto_rtp) {
-			got_avp++;
+			if (m->m_type == sdp_media_audio) {
+				got_avp++;
+			} else {
+				got_video_avp++;
+			}
 		} else if (m->m_proto == sdp_proto_udptl) {
 			got_udptl++;
 		}
@@ -950,8 +958,34 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 						switch_channel_set_variable(tech_pvt->channel, "sip_remote_video_rtcp_port", attr->a_value);
+
+					} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
+						int crypto_tag;
+						
+						if (!(tech_pvt->profile->ndlb & SM_NDLB_ALLOW_CRYPTO_IN_AVP) && 
+							!switch_true(switch_channel_get_variable(tech_pvt->channel, "sip_allow_crypto_in_avp"))) {
+							if (m->m_proto != sdp_proto_srtp) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "a=crypto in RTP/AVP, refer to rfc3711\n");
+								match = 0;
+								goto done;
+							}
+						}
+						
+						crypto = attr->a_value;
+						crypto_tag = atoi(crypto);
+						
+						got_video_crypto = switch_core_session_check_incoming_crypto(tech_pvt->session, 
+																					 SOFIA_HAS_VIDEO_CRYPTO_VARIABLE, 
+																					 SWITCH_MEDIA_TYPE_VIDEO, crypto, crypto_tag);
+					
 					}
 				}
+
+				if (got_video_crypto && !got_video_avp) {
+					switch_channel_set_variable(tech_pvt->channel, SOFIA_CRYPTO_MANDATORY_VARIABLE, "true");
+					switch_channel_set_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_VARIABLE, "true");
+				}
+
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
 				}
@@ -1664,6 +1698,8 @@ switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt)
 				switch_channel_set_variable_printf(tech_pvt->channel, "sip_use_video_pt", "%d", tech_pvt->video_agreed_pt);
 				tech_pvt->video_ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
 				switch_channel_set_variable_printf(tech_pvt->channel, "rtp_use_video_ssrc", "%u", tech_pvt->ssrc);
+
+				switch_core_session_apply_crypto(tech_pvt->session, SWITCH_MEDIA_TYPE_VIDEO, SOFIA_SECURE_VIDEO_CONFIRMED_VARIABLE);
 
 
 				if ((val = switch_channel_get_variable(tech_pvt->channel, "rtcp_audio_interval_msec"))
