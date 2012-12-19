@@ -232,9 +232,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 														 switch_ivr_dmachine_callback_t callback,
 														 void *user_data)
 {
-	switch_ivr_dmachine_binding_t *binding;
+	switch_ivr_dmachine_binding_t *binding = NULL, *ptr;
 	switch_size_t len;
 	dm_binding_head_t *headp;
+	const char *msg = "";
 
 	if (strlen(digits) > DMACHINE_MAX_DIGIT_LEN -1) {
 		return SWITCH_STATUS_FALSE;
@@ -248,6 +249,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 		headp = switch_core_alloc(dmachine->pool, sizeof(*headp));
 		switch_core_hash_insert(dmachine->binding_hash, realm, headp);
 	}
+
+	for(ptr = headp->binding_list; ptr; ptr = ptr->next) {
+		if ((ptr->is_regex && !strcmp(ptr->digits, digits+1)) || !strcmp(ptr->digits, digits)) {
+			msg = "Reuse Existing ";
+			binding = ptr;
+			binding->callback = callback;
+			binding->user_data = user_data;	
+			goto done;
+		}
+	}
+	
 	
 	binding = switch_core_alloc(dmachine->pool, sizeof(*binding));
 
@@ -281,12 +293,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 		dmachine->max_digit_len = (uint32_t) len;
 	}
 	
+ done:
+
 	if (binding->is_regex) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digit parser %s: binding %s/%s/%d callback: %p data: %p\n", 
-						  dmachine->name, digits, realm, key, (void *)(intptr_t) callback, user_data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%sDigit parser %s: binding %s/%s/%d callback: %p data: %p\n", 
+						  msg, dmachine->name, digits, realm, key, (void *)(intptr_t) callback, user_data);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digit parser %s: binding %s/%s/%d callback: %p data: %p\n", 
-						  dmachine->name, digits, realm, key, (void *)(intptr_t) callback, user_data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%sDigit parser %s: binding %s/%s/%d callback: %p data: %p\n", 
+						  msg, dmachine->name, digits, realm, key, (void *)(intptr_t) callback, user_data);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -305,7 +319,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 {
 	dm_match_t best = DM_MATCH_NONE;
 	switch_ivr_dmachine_binding_t *bp, *exact_bp = NULL, *partial_bp = NULL, *both_bp = NULL, *r_bp = NULL;
-	int pmatches = 0;
+	int pmatches = 0, ematches = 0;
 	
 	if (!dmachine->cur_digit_len || !dmachine->realm) goto end;
 
@@ -315,6 +329,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		} else {
 			if (!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
 				pmatches++;
+				ematches = 1;
 			}
 		}
 	}
@@ -334,7 +349,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		} else {
 			int pmatch = !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits));
 
-			if (!exact_bp && pmatch && (pmatches == 1 || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
+			if (!exact_bp && pmatch && (pmatches == 1 || ematches == 1 || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
 				best = DM_MATCH_EXACT;
 				exact_bp = bp;
 				if (dmachine->cur_digit_len == dmachine->max_digit_len) break;
