@@ -32,7 +32,7 @@
 #include "mod_sofia.h"
 
 
-switch_status_t sofia_glue_get_offered_pt(private_object_t *tech_pvt, const switch_codec_implementation_t *mimp, switch_payload_t *pt)
+switch_status_t sofia_media_get_offered_pt(private_object_t *tech_pvt, const switch_codec_implementation_t *mimp, switch_payload_t *pt)
 {
 	int i = 0;
 
@@ -50,7 +50,7 @@ switch_status_t sofia_glue_get_offered_pt(private_object_t *tech_pvt, const swit
 }
 
 
-void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
+void sofia_media_tech_absorb_sdp(private_object_t *tech_pvt)
 {
 	const char *sdp_str;
 
@@ -83,13 +83,13 @@ void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
 			}
 			sdp_parser_free(parser);
 		}
-		sofia_glue_tech_set_local_sdp(tech_pvt, sdp_str, SWITCH_TRUE);
+		sofia_media_tech_set_local_sdp(tech_pvt, sdp_str, SWITCH_TRUE);
 	}
 }
 
 
 
-switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt)
+switch_status_t sofia_media_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt)
 {
 	sdp_media_t *m;
 	sdp_parser_t *parser = NULL;
@@ -148,7 +148,7 @@ switch_status_t sofia_glue_sdp_map(const char *r_sdp, switch_event_t **fmtp, swi
 }
 
 
-void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
+void sofia_media_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 {
 	sdp_media_t *m;
 	sdp_parser_t *parser = NULL;
@@ -199,7 +199,7 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 				tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, map->rm_encoding);
 				tech_pvt->rm_rate = map->rm_rate;
 				tech_pvt->codec_ms = ptime;
-				sofia_glue_tech_set_codec(tech_pvt, 0);
+				sofia_media_tech_set_codec(tech_pvt, 0);
 				break;
 			}
 
@@ -279,7 +279,7 @@ switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_session
 
 
 
-switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *session, const char *r_sdp)
+switch_t38_options_t *sofia_media_extract_t38_options(switch_core_session_t *session, const char *r_sdp)
 {
 	sdp_media_t *m;
 	sdp_parser_t *parser = NULL;
@@ -312,7 +312,7 @@ switch_t38_options_t *sofia_glue_extract_t38_options(switch_core_session_t *sess
 }
 
 
-uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_sdp)
+uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp)
 {
 	uint8_t match = 0;
 	switch_payload_t best_te = 0, te = 0, cng_pt = 0;
@@ -447,7 +447,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 		if (!tech_pvt->hold_laps) {
 			tech_pvt->hold_laps++;
-			if (sofia_glue_toggle_hold(tech_pvt, sendonly)) {
+			if (sofia_media_toggle_hold(tech_pvt, sendonly)) {
 				reneg = sofia_test_pflag(tech_pvt->profile, PFLAG_RENEG_ON_HOLD);
 				
 				if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_renegotiate_codec_on_hold"))) {
@@ -471,7 +471,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 		total_codecs = tech_pvt->num_negotiated_codecs;
 	} else if (reneg) {
 		tech_pvt->num_codecs = 0;
-		sofia_glue_tech_prepare_codecs(tech_pvt);
+		sofia_media_tech_prepare_codecs(tech_pvt);
 		codec_array = tech_pvt->codecs;
 		total_codecs = tech_pvt->num_codecs;
 	}
@@ -584,7 +584,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 					
 
-					sofia_glue_copy_t38_options(t38_options, other_session);
+					sofia_media_copy_t38_options(t38_options, other_session);
 
 					sofia_set_flag(tech_pvt, TFLAG_T38_PASSTHRU);
 					sofia_set_flag(other_tech_pvt, TFLAG_T38_PASSTHRU);
@@ -870,7 +870,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					if (!switch_true(mirror) && 
 						switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
 						(!sofia_test_flag(tech_pvt, TFLAG_REINVITE) || sofia_test_pflag(tech_pvt->profile, PFLAG_RENEG_ON_REINVITE))) {
-						sofia_glue_get_offered_pt(tech_pvt, mimp, &tech_pvt->audio_recv_pt);
+						sofia_media_get_offered_pt(tech_pvt, mimp, &tech_pvt->audio_recv_pt);
 					}
 					
 					switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->audio_recv_pt);
@@ -879,7 +879,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				}
 				
 				if (match) {
-					if (sofia_glue_tech_set_codec(tech_pvt, 1) == SWITCH_STATUS_SUCCESS) {
+					if (sofia_media_tech_set_codec(tech_pvt, 1) == SWITCH_STATUS_SUCCESS) {
 						got_audio = 1;
 					} else {
 						match = 0;
@@ -1032,12 +1032,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						switch_channel_set_variable(tech_pvt->channel, "sip_video_fmtp", tech_pvt->video_rm_fmtp);
 						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->video_agreed_pt);
 						switch_channel_set_variable(tech_pvt->channel, "sip_video_pt", tmp);
-						sofia_glue_check_video_codecs(tech_pvt);
+						sofia_media_check_video_codecs(tech_pvt);
 
 						tech_pvt->video_recv_pt = (switch_payload_t)map->rm_pt;
 						
 						if (!switch_true(mirror) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-							sofia_glue_get_offered_pt(tech_pvt, mimp, &tech_pvt->video_recv_pt);
+							sofia_media_get_offered_pt(tech_pvt, mimp, &tech_pvt->video_recv_pt);
 						}
 
 						switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->video_recv_pt);
@@ -1112,7 +1112,7 @@ switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt)
 		} 
 	}
 
-	if ((status = sofia_glue_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = sofia_media_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
 
@@ -1524,7 +1524,7 @@ switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt)
 
 	video:
 		
-		sofia_glue_check_video_codecs(tech_pvt);
+		sofia_media_check_video_codecs(tech_pvt);
 
 		if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding && tech_pvt->remote_sdp_video_port) {
 			/******************************************************************************************/
@@ -1645,7 +1645,7 @@ switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt)
 			if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
 				flags[SWITCH_RTP_FLAG_PROXY_MEDIA]++;
 			}
-			sofia_glue_tech_set_video_codec(tech_pvt, 0);
+			sofia_media_tech_set_video_codec(tech_pvt, 0);
 
 			flags[SWITCH_RTP_FLAG_USE_TIMER] = 0;
 			flags[SWITCH_RTP_FLAG_NOBLOCK] = 0;
@@ -1768,7 +1768,7 @@ void sofia_media_set_sdp_codec_string(switch_core_session_t *session, const char
 	if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 
 		if ((sdp = sdp_session(parser))) {
-			sofia_glue_set_r_sdp_codec_string(session, sofia_glue_get_codec_string(tech_pvt), sdp);
+			sofia_media_set_r_sdp_codec_string(session, sofia_media_get_codec_string(tech_pvt), sdp);
 		}
 
 		sdp_parser_free(parser);
@@ -1776,7 +1776,7 @@ void sofia_media_set_sdp_codec_string(switch_core_session_t *session, const char
 
 }
 
-switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force)
+switch_status_t sofia_media_tech_set_video_codec(private_object_t *tech_pvt, int force)
 {
 
 	if (!tech_pvt->video_rm_encoding) {
@@ -1870,7 +1870,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
+switch_status_t sofia_media_tech_set_codec(private_object_t *tech_pvt, int force)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int resetting = 0;
@@ -2000,7 +2000,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_core_session_unlock_codec_read(tech_pvt->session);
 	}
 
-	sofia_glue_tech_set_video_codec(tech_pvt, force);
+	sofia_media_tech_set_video_codec(tech_pvt, force);
 
 	return status;
 }
@@ -2059,7 +2059,7 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 }
 
 
-void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp)
+void sofia_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp)
 {
 	char buf[1024] = { 0 };
 	sdp_media_t *m;
@@ -2239,7 +2239,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_core_session_t *session, const cha
 	}
 }
 
-switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_sdp)
+switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r_sdp)
 {
 	uint8_t match = 0;
 
@@ -2250,7 +2250,7 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((match = sofia_glue_negotiate_sdp(tech_pvt->session, r_sdp))) {
+	if ((match = sofia_media_negotiate_sdp(tech_pvt->session, r_sdp))) {
 		if (sofia_glue_tech_choose_port(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -2267,7 +2267,7 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_
 	return SWITCH_STATUS_FALSE;
 }
 
-int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
+int sofia_media_toggle_hold(private_object_t *tech_pvt, int sendonly)
 {
 	int changed = 0;
 
@@ -2359,7 +2359,7 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 	return changed;
 }
 
-void sofia_glue_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session)
+void sofia_media_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_t38_options_t *local_t38_options = switch_channel_get_private(channel, "t38_options");
@@ -2570,7 +2570,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 
 
 #define SDPBUFLEN 65536
-void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch_port_t port, const char *sr, int force)
+void sofia_media_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch_port_t port, const char *sr, int force)
 {
 	char *buf;
 	int ptime = 0;
@@ -2665,7 +2665,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	}
 
 	if (!tech_pvt->rm_encoding && (b_sdp = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
-		sofia_glue_sdp_map(b_sdp, &map, &ptmap);
+		sofia_media_sdp_map(b_sdp, &map, &ptmap);
 	}
 
 	if (zstr(sr)) {
@@ -2862,7 +2862,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 
 			/*****************************/
 			if (tech_pvt->video_rm_encoding) {
-				sofia_glue_tech_set_video_codec(tech_pvt, 0);
+				sofia_media_tech_set_video_codec(tech_pvt, 0);
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", tech_pvt->video_agreed_pt);
 			} else if (tech_pvt->num_codecs) {
 				int i;
@@ -2991,12 +2991,12 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 		switch_event_destroy(&ptmap);
 	}
 
-	sofia_glue_tech_set_local_sdp(tech_pvt, buf, SWITCH_TRUE);
+	sofia_media_tech_set_local_sdp(tech_pvt, buf, SWITCH_TRUE);
 
 	switch_safe_free(buf);
 }
 
-const char *sofia_glue_get_codec_string(private_object_t *tech_pvt)
+const char *sofia_media_get_codec_string(private_object_t *tech_pvt)
 {
 	const char *preferred = NULL, *fallback = NULL;
 	
@@ -3017,7 +3017,7 @@ const char *sofia_glue_get_codec_string(private_object_t *tech_pvt)
 	return !zstr(preferred) ? preferred : fallback;
 }
 
-void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
+void sofia_media_tech_prepare_codecs(private_object_t *tech_pvt)
 {
 	const char *abs, *codec_string = NULL;
 	const char *ocodec = NULL;
@@ -3045,7 +3045,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 	}
 
 	if (!(codec_string = switch_channel_get_variable(tech_pvt->channel, "codec_string"))) {
-		codec_string = sofia_glue_get_codec_string(tech_pvt);
+		codec_string = sofia_media_get_codec_string(tech_pvt);
 	}
 
 	if (codec_string && *codec_string == '=') {
@@ -3080,7 +3080,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 
 }
 
-void sofia_glue_check_video_codecs(private_object_t *tech_pvt)
+void sofia_media_check_video_codecs(private_object_t *tech_pvt)
 {
 	if (tech_pvt->num_codecs && !sofia_test_flag(tech_pvt, TFLAG_VIDEO)) {
 		int i;
@@ -3098,7 +3098,7 @@ void sofia_glue_check_video_codecs(private_object_t *tech_pvt)
 }
 
 
-void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
+void sofia_media_tech_patch_sdp(private_object_t *tech_pvt)
 {
 	switch_size_t len;
 	char *p, *q, *pe, *qe;
@@ -3370,12 +3370,12 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s Patched SDP\n---\n%s\n+++\n%s\n",
 					  switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str, new_sdp);
 
-	sofia_glue_tech_set_local_sdp(tech_pvt, new_sdp, SWITCH_FALSE);
+	sofia_media_tech_set_local_sdp(tech_pvt, new_sdp, SWITCH_FALSE);
 
 }
 
 
-void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_str, switch_bool_t dup)
+void sofia_media_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_str, switch_bool_t dup)
 {
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 	tech_pvt->local_sdp_str = dup ? switch_core_session_strdup(tech_pvt->session, sdp_str) : (char *) sdp_str;
@@ -3384,7 +3384,7 @@ void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_s
 }
 
 
-char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type)
+char *sofia_media_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type)
 {
 	char *extra_headers = NULL;
 	switch_stream_handle_t stream = { 0 };
