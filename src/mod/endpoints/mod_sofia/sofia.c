@@ -4251,7 +4251,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "disable-transcoding")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_DISABLE_TRANSCODING);
+							profile->media_flags |= SCMF_DISABLE_TRANSCODING;
+						} else {
+							profile->media_flags &= ~SCMF_DISABLE_TRANSCODING;
 						}
 					} else if (!strcasecmp(var, "rtp-rewrite-timestamps")) {
 						if (switch_true(val)) {

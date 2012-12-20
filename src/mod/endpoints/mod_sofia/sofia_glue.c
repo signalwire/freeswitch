@@ -281,7 +281,12 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	switch_media_handle_create(&tech_pvt->media_handle, session);
 	switch_media_handle_set_ndlb(tech_pvt->media_handle, tech_pvt->profile->ndlb);
+	switch_media_handle_set_media_flag(tech_pvt->media_handle, tech_pvt->profile->media_flags);
 	
+	switch_media_set_param(tech_pvt->media_handle, SCM_INBOUND_CODEC_STRING, profile->inbound_codec_string);
+	switch_media_set_param(tech_pvt->media_handle, SCM_OUTBOUND_CODEC_STRING, profile->inbound_codec_string);
+
+
 	switch_core_session_set_private(session, tech_pvt);
 
 	if (channame) {

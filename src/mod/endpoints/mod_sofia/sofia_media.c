@@ -848,7 +848,7 @@ uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_
 
 				if (mimp) {
 					char tmp[50];
-					const char *mirror = switch_channel_get_variable(tech_pvt->channel, "sip_mirror_remote_audio_codec_payload");
+					const char *mirror = switch_channel_get_variable(tech_pvt->channel, "rtp_mirror_remote_audio_codec_payload");
 
 					tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *) map->rm_encoding);
 					tech_pvt->iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
@@ -874,7 +874,7 @@ uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_
 					}
 					
 					switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->audio_recv_pt);
-					switch_channel_set_variable(tech_pvt->channel, "sip_audio_recv_pt", tmp);
+					switch_channel_set_variable(tech_pvt->channel, "rtp_audio_recv_pt", tmp);
 					
 				}
 				
@@ -1768,7 +1768,7 @@ void sofia_media_set_sdp_codec_string(switch_core_session_t *session, const char
 	if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 
 		if ((sdp = sdp_session(parser))) {
-			sofia_media_set_r_sdp_codec_string(session, sofia_media_get_codec_string(tech_pvt), sdp);
+			sofia_media_set_r_sdp_codec_string(session, switch_core_media_get_codec_string(tech_pvt->session), sdp);
 		}
 
 		sdp_parser_free(parser);
@@ -1903,6 +1903,7 @@ switch_status_t sofia_media_tech_set_codec(private_object_t *tech_pvt, int force
 			switch_yield(tech_pvt->read_impl.microseconds_per_packet);
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 			switch_core_codec_destroy(&tech_pvt->write_codec);
+			switch_channel_audio_sync(tech_pvt->channel);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Already using %s\n", tech_pvt->read_impl.iananame);
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
@@ -2996,27 +2997,6 @@ void sofia_media_set_local_sdp(private_object_t *tech_pvt, const char *ip, switc
 	switch_safe_free(buf);
 }
 
-const char *sofia_media_get_codec_string(private_object_t *tech_pvt)
-{
-	const char *preferred = NULL, *fallback = NULL;
-	
-	if (!(preferred = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
-		preferred = switch_channel_get_variable(tech_pvt->channel, "codec_string");
-	}
-	
-	if (!preferred) {
-		if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			preferred = tech_pvt->profile->outbound_codec_string;
-			fallback = tech_pvt->profile->inbound_codec_string;
-		} else {
-			preferred = tech_pvt->profile->inbound_codec_string;
-			fallback = tech_pvt->profile->outbound_codec_string;
-		}
-	}
-
-	return !zstr(preferred) ? preferred : fallback;
-}
-
 void sofia_media_tech_prepare_codecs(private_object_t *tech_pvt)
 {
 	const char *abs, *codec_string = NULL;
@@ -3045,7 +3025,7 @@ void sofia_media_tech_prepare_codecs(private_object_t *tech_pvt)
 	}
 
 	if (!(codec_string = switch_channel_get_variable(tech_pvt->channel, "codec_string"))) {
-		codec_string = sofia_media_get_codec_string(tech_pvt);
+		codec_string = switch_core_media_get_codec_string(tech_pvt->session);
 	}
 
 	if (codec_string && *codec_string == '=') {
@@ -3067,18 +3047,18 @@ void sofia_media_tech_prepare_codecs(private_object_t *tech_pvt)
  ready:
 
 	if (codec_string) {
-		char *tmp_codec_string;
-		if ((tmp_codec_string = switch_core_session_strdup(tech_pvt->session, codec_string))) {
-			tech_pvt->codec_order_last = switch_separate_string(tmp_codec_string, ',', tech_pvt->codec_order, SWITCH_MAX_CODECS);
-			tech_pvt->num_codecs =
-				switch_loadable_module_get_codecs_sorted(tech_pvt->codecs, SWITCH_MAX_CODECS, tech_pvt->codec_order, tech_pvt->codec_order_last);
-		}
+		char *tmp_codec_string = switch_core_session_strdup(tech_pvt->session, codec_string);
+		tech_pvt->codec_order_last = switch_separate_string(tmp_codec_string, ',', tech_pvt->codec_order, SWITCH_MAX_CODECS);
+		tech_pvt->num_codecs =
+			switch_loadable_module_get_codecs_sorted(tech_pvt->codecs, SWITCH_MAX_CODECS, tech_pvt->codec_order, tech_pvt->codec_order_last);
+		
 	} else {
 		tech_pvt->num_codecs = switch_loadable_module_get_codecs(tech_pvt->codecs, sizeof(tech_pvt->codecs) / sizeof(tech_pvt->codecs[0]));
 	}
 
 
 }
+
 
 void sofia_media_check_video_codecs(private_object_t *tech_pvt)
 {

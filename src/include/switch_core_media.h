@@ -43,7 +43,30 @@ typedef enum {
 	SM_NDLB_DISABLE_SRTP_AUTH = (1 << 3)
 } switch_core_media_NDLB_t;
 
+typedef enum {
+	SCMF_DISABLE_TRANSCODING = (1 << 0)
+} switch_core_media_flag_t;
+
 struct switch_media_handle_s;
+
+typedef enum {
+	STYPE_INTVAL,
+	STYPE_UINTVAL,
+	STYPE_CHARVAL,
+} scm_type_t;
+
+typedef enum {
+	SCM_INBOUND_CODEC_STRING,
+	SCM_OUTBOUND_CODEC_STRING,
+	SCM_TEST,
+	SCM_MAX
+} scm_param_t;
+
+#define switch_media_get_param_int(_h, _p) *(int *)switch_media_get_param(_h, _p)
+#define switch_media_get_param_uint(_h, _p) *(uint32_t *)switch_media_get_param(_h, _p)
+#define switch_media_get_param_char(_h, _p) (char *)switch_media_get_param(_h, _p)
+
+
 
 
 SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t **smhp, switch_core_session_t *session);
@@ -53,6 +76,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_media_handle_ready(switch_co
 SWITCH_DECLARE(void) switch_media_handle_set_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
 SWITCH_DECLARE(void) switch_media_handle_clear_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
 SWITCH_DECLARE(int32_t) switch_media_handle_test_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
+SWITCH_DECLARE(void) switch_media_handle_set_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
+SWITCH_DECLARE(void) switch_media_handle_clear_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
+SWITCH_DECLARE(int32_t) switch_media_handle_test_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
 SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session, const char *sec_var);
 SWITCH_DECLARE(const char *) switch_core_session_local_crypto_key(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_session_t *session, 
@@ -63,6 +89,10 @@ SWITCH_DECLARE(void) switch_core_session_apply_crypto(switch_core_session_t *ses
 SWITCH_DECLARE(void) switch_core_session_get_recovery_crypto_key(switch_core_session_t *session, switch_media_type_t type, const char *varname);
 
 SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *session, switch_media_type_t type, switch_rtp_t *rtp_session);
+
+SWITCH_DECLARE(void) switch_media_set_param(switch_media_handle_t *smh, scm_param_t param, ...);
+SWITCH_DECLARE(void *) switch_media_get_param(switch_media_handle_t *smh, scm_param_t param);
+SWITCH_DECLARE(const char *)switch_core_media_get_codec_string(switch_core_session_t *session);
 
 SWITCH_END_EXTERN_C
 #endif

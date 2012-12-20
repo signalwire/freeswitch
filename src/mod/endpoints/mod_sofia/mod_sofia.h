@@ -611,6 +611,7 @@ struct sofia_profile {
 	uint8_t pflags[PFLAG_MAX];
 	unsigned int mflags;
 	unsigned int ndlb;
+	unsigned int media_flags;
 	uint32_t max_calls;
 	uint32_t nonce_ttl;
 	nua_t *nua;
