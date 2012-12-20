@@ -1391,6 +1391,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (switch_event_create(&event, SWITCH_EVENT_PLAYBACK_START) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
+			if (!strncasecmp(file, "local_stream:", 13)) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "local_stream");
+			}
+			if (!strncasecmp(file, "tone_stream:", 12)) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "tone_stream");
+			}
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Path", file);
 			add_playback_vars_to_event(session, event, playback_vars); 
 			switch_event_fire(&event);
@@ -1712,6 +1718,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (switch_event_create(&event, SWITCH_EVENT_PLAYBACK_STOP) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
+			if (!strncasecmp(file, "local_stream:", 13)) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "local_stream");
+			}
+			if (!strncasecmp(file, "tone_stream:", 12)) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "tone_stream");
+			}
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Path", file);
 			if (status == SWITCH_STATUS_BREAK) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-Status", "break");
