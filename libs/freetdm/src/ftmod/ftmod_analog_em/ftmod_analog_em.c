@@ -239,6 +239,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 	int cas_bits = 0;
 	uint32_t cas_answer = 0;
 	int cas_answer_ms = 500;
+	ftdm_bool_t digits_sent = FTDM_FALSE;
 	
 	ftdm_log(FTDM_LOG_DEBUG, "ANALOG EM CHANNEL thread starting.\n");
 
@@ -291,7 +292,8 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			case FTDM_CHANNEL_STATE_DIALING:
 				{
 					if (! ftdmchan->needed_tones[FTDM_TONEMAP_RING]
-						&& ftdm_test_flag(ftdmchan, FTDM_CHANNEL_WINK)) {
+						&& ftdm_test_flag(ftdmchan, FTDM_CHANNEL_WINK)
+						&& !digits_sent) {
 						if (ftdm_strlen_zero(ftdmchan->caller_data.dnis.digits)) {
 							ftdm_log(FTDM_LOG_ERROR, "No Digits to send!\n");
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
@@ -301,6 +303,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 								ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
 							} else {
 								state_counter = 0;
+								digits_sent = FTDM_TRUE;
 								ftdmchan->needed_tones[FTDM_TONEMAP_RING] = 1;
 								ftdmchan->needed_tones[FTDM_TONEMAP_BUSY] = 1;
 								ftdmchan->needed_tones[FTDM_TONEMAP_FAIL1] = 1;
