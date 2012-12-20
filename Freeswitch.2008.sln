@@ -974,6 +974,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmlrpc", "libs\win32\xmlrpc-c\xmlrpc.2008.vcproj", "{510BDAA8-C04D-47DB-8482-E6AF380D3E07}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmltok", "libs\win32\xmlrpc-c\xmltok.2008.vcproj", "{3CF7C0E0-07C2-473A-A1E4-2274AEEC1268}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2390F054-A7F1-4CB9-ACB0-F46EC6E77B5B} = {2390F054-A7F1-4CB9-ACB0-F46EC6E77B5B}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
