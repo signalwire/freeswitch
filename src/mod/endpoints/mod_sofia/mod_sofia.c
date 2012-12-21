@@ -1220,7 +1220,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 					}
 
 					if ((tech_pvt->read_frame.datalen % 10) == 0 &&
-						sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING) && tech_pvt->check_frames < MAX_CODEC_CHECK_FRAMES) {
+						sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING) && tech_pvt->check_frames < MAX_CODEC_CHECK_FRAMES) {
 						tech_pvt->check_frames++;
 
 						if (!tech_pvt->read_impl.encoded_bytes_per_packet) {
@@ -1503,7 +1503,7 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 {
 	private_object_t *tech_pvt;
 	char message[128] = "";
-	sofia_dtmf_t dtmf_type;
+	switch_core_media_dtmf_t dtmf_type;
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1865,7 +1865,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_channel_set_flag(tech_pvt->channel, CF_SECURE);
 			}
 
-			if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {
+			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
 				tech_pvt->check_frames = 0;
 				tech_pvt->last_ts = 0;
 			}
@@ -1904,7 +1904,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				tech_pvt->num_codecs = 0;
 				tech_pvt->rm_encoding = NULL;
 				tech_pvt->video_rm_encoding = NULL;
-				sofia_clear_flag_locked(tech_pvt, TFLAG_VIDEO);
+				switch_channel_clear_flag(tech_pvt->channel, CF_VIDEO_POSSIBLE);
 				sofia_media_tech_prepare_codecs(tech_pvt);
 				sofia_media_check_video_codecs(tech_pvt);
 				sofia_media_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
@@ -5020,7 +5020,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 			if (switch_channel_test_flag(o_channel, CF_ZRTP_PASSTHRU_REQ)) {
 				const char *x = NULL;
-				sofia_glue_pass_zrtp_hash2(session, nsession);
+				switch_core_media_pass_zrtp_hash2(session, nsession);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[zrtp_passthru] Setting a-leg inherit_codec=true\n");
 				switch_channel_set_variable(o_channel, "inherit_codec", "true");
 				if ((x = switch_channel_get_variable(o_channel, "ep_codec_string"))) {
@@ -5047,7 +5047,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				tech_pvt->video_rm_rate = 90000;
 				tech_pvt->video_codec_ms = 0;
 				switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
-				sofia_set_flag(tech_pvt, TFLAG_VIDEO);
+				switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_POSSIBLE);
 			}
 		}
 	}
@@ -5649,14 +5649,14 @@ SWITCH_STANDARD_APP(sofia_sla_function)
 			
 			if (switch_core_session_check_interface(bargee_session, sofia_endpoint_interface)) {
 				tech_pvt = switch_core_session_get_private(bargee_session);
-				sofia_clear_flag(tech_pvt, TFLAG_SLA_BARGING);
-				sofia_set_flag(tech_pvt, TFLAG_SLA_BARGE);
+				switch_channel_clear_flag(tech_pvt->channel, CF_SLA_BARGING);
+				switch_channel_set_flag(tech_pvt->channel, CF_SLA_BARGE);
 				switch_ivr_transfer_variable(bargee_session, session, SWITCH_SIGNAL_BOND_VARIABLE);
 			}
 			
 			if (switch_core_session_check_interface(session, sofia_endpoint_interface)) {
 				tech_pvt = switch_core_session_get_private(session);
-				sofia_set_flag(tech_pvt, TFLAG_SLA_BARGING);
+				switch_channel_set_flag(tech_pvt->channel, CF_SLA_BARGING);
 			}
 			
 			channel = switch_core_session_get_channel(session);

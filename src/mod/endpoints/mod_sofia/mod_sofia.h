@@ -115,9 +115,9 @@ typedef struct private_object private_object_t;
 #define SOFIA_SECURE_MEDIA_VARIABLE "sip_secure_media"
 #define SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE "sip_secure_media_confirmed"
 #define SOFIA_SECURE_VIDEO_CONFIRMED_VARIABLE "sip_secure_video_confirmed"
-#define SOFIA_HAS_CRYPTO_VARIABLE "sip_has_crypto"
-#define SOFIA_HAS_VIDEO_CRYPTO_VARIABLE "sip_has_video_crypto"
-#define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
+//#define SOFIA_HAS_CRYPTO_VARIABLE "sip_has_crypto"
+//#define SOFIA_HAS_VIDEO_CRYPTO_VARIABLE "sip_has_video_crypto"
+//#define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
 #define FREESWITCH_SUPPORT "update_display,send_info"
 
 #include <switch_stun.h>
@@ -145,12 +145,6 @@ typedef enum {
 	SOFIA_CONFIG_RESCAN,
 	SOFIA_CONFIG_RESPAWN
 } sofia_config_t;
-
-typedef enum {
-	DTMF_2833,
-	DTMF_INFO,
-	DTMF_NONE
-} sofia_dtmf_t;
 
 typedef struct sofia_dispatch_event_s {
 	nua_saved_event_t event[1];
@@ -210,7 +204,6 @@ typedef enum {
 	PFLAG_REWRITE_TIMESTAMPS,
 	PFLAG_RUNNING,
 	PFLAG_RESPAWN,
-	PFLAG_GREEDY,
 	PFLAG_MULTIREG,
 	PFLAG_SUPPRESS_CNG,
 	PFLAG_TLS,
@@ -232,7 +225,6 @@ typedef enum {
 	PFLAG_3PCC_PROXY,
 	PFLAG_CALLID_AS_UUID,
 	PFLAG_UUID_AS_CALLID,
-	PFLAG_SCROOGE,
 	PFLAG_MANAGE_SHARED_APPEARANCE,
 	PFLAG_STANDBY,
 	PFLAG_DISABLE_SRV,
@@ -241,15 +233,12 @@ typedef enum {
 	PFLAG_AUTOFLUSH,
 	PFLAG_NAT_OPTIONS_PING,
 	PFLAG_ALL_REG_OPTIONS_PING,
-	PFLAG_AUTOFIX_TIMING,
 	PFLAG_MESSAGE_QUERY_ON_REGISTER,
 	PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER,
 	PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE,
 	PFLAG_MANUAL_REDIRECT,
-	PFLAG_DISABLE_HOLD,
 	PFLAG_AUTO_NAT,
 	PFLAG_SIPCOMPACT,
-	PFLAG_USE_ME,
 	PFLAG_PRESENCE_PRIVACY,
 	PFLAG_PASS_CALLEE_ID,
 	PFLAG_LOG_AUTH_FAIL,
@@ -325,7 +314,6 @@ typedef enum {
 	TFLAG_INB_NOMEDIA,
 	TFLAG_LATE_NEGOTIATION,
 	TFLAG_SDP,
-	TFLAG_VIDEO,
 	TFLAG_TPORT_LOG,
 	TFLAG_SENT_UPDATE,
 	TFLAG_PROXY_MEDIA,
@@ -342,12 +330,9 @@ typedef enum {
 	TFLAG_JB_PAUSED,
 	TFLAG_3PCC_INVITE,
 	TFLAG_NOREPLY,
-	TFLAG_LIBERAL_DTMF,
 	TFLAG_GOT_ACK,
 	TFLAG_CAPTURE,
 	TFLAG_REINVITED,
-	TFLAG_SLA_BARGE,
-	TFLAG_SLA_BARGING,
 	TFLAG_PASS_ACK,
 	TFLAG_DROP_DTMF,
 	/* No new flags below this line */
@@ -596,7 +581,7 @@ struct sofia_profile {
 	char *pnp_prov_url;
 	char *pnp_notify_profile;
 	sofia_cid_type_t cid_type;
-	sofia_dtmf_t dtmf_type;
+	switch_core_media_dtmf_t dtmf_type;
 	int auto_restart;
 	switch_port_t sip_port;
 	switch_port_t extsipport;
@@ -609,9 +594,9 @@ struct sofia_profile {
 	int dtmf_duration;
 	uint8_t flags[TFLAG_MAX];
 	uint8_t pflags[PFLAG_MAX];
+	switch_core_media_flag_t media_flags[SCMF_MAX];
 	unsigned int mflags;
 	unsigned int ndlb;
-	unsigned int media_flags;
 	uint32_t max_calls;
 	uint32_t nonce_ttl;
 	nua_t *nua;
@@ -816,7 +801,7 @@ struct private_object {
 	switch_payload_t video_agreed_pt;
 	char *video_fmtp_out;
 	uint32_t video_count;
-	sofia_dtmf_t dtmf_type;
+	switch_core_media_dtmf_t dtmf_type;
 	int q850_cause;
 	char *remote_ip;
 	int remote_port;
@@ -840,11 +825,6 @@ struct private_object {
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
 	uint32_t session_timeout;
 	enum nua_session_refresher session_refresher;
-	/** ZRTP **/
-	char *local_sdp_audio_zrtp_hash;
-	char *local_sdp_video_zrtp_hash;
-	char *remote_sdp_audio_zrtp_hash;
-	char *remote_sdp_video_zrtp_hash;
 	char *respond_phrase;
 	int respond_code;
 	char *respond_dest;
@@ -891,6 +871,18 @@ typedef struct {
 
 #define NUTAG_WITH_THIS_MSG(msg) nutag_with, tag_ptr_v(msg)
 
+
+
+#define sofia_test_media_flag(obj, flag) ((obj)->media_flags[flag] ? 1 : 0)
+#define sofia_set_media_flag(obj, flag) (obj)->media_flags[flag] = 1
+#define sofia_set_media_flag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
+switch_mutex_lock(obj->flag_mutex);\
+(obj)->media_flags[flag] = 1;\
+switch_mutex_unlock(obj->flag_mutex);
+#define sofia_clear_media_flag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->media_flags[flag] = 0; switch_mutex_unlock(obj->flag_mutex);
+#define sofia_clear_media_flag(obj, flag) (obj)->media_flags[flag] = 0
+
+
 #define sofia_test_pflag(obj, flag) ((obj)->pflags[flag] ? 1 : 0)
 #define sofia_set_pflag(obj, flag) (obj)->pflags[flag] = 1
 #define sofia_set_pflag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
@@ -899,6 +891,8 @@ switch_mutex_lock(obj->flag_mutex);\
 switch_mutex_unlock(obj->flag_mutex);
 #define sofia_clear_pflag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->pflags[flag] = 0; switch_mutex_unlock(obj->flag_mutex);
 #define sofia_clear_pflag(obj, flag) (obj)->pflags[flag] = 0
+
+
 
 #define sofia_set_flag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
 switch_mutex_lock(obj->flag_mutex);\
@@ -958,8 +952,6 @@ void launch_sofia_profile_thread(sofia_profile_t *profile);
 switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
 										 
 void sofia_media_tech_absorb_sdp(private_object_t *tech_pvt);
-void sofia_glue_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session);
-void sofia_glue_pass_zrtp_hash(switch_core_session_t *session);
 
 /*
  * \brief Sets the "ep_codec_string" channel variable, parsing r_sdp and taing codec_string in consideration 
@@ -1197,7 +1189,6 @@ void sofia_media_proxy_codec(switch_core_session_t *session, const char *r_sdp);
 switch_status_t sofia_media_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);
-void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str);
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
@@ -1213,8 +1204,6 @@ switch_status_t sofia_init(void);
 void sofia_glue_fire_events(sofia_profile_t *profile);
 void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event);
 void sofia_queue_message(sofia_dispatch_event_t *de);
-switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_session_t *sdp, sdp_media_t *m);
-void find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
 void sofia_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
 
 /* For Emacs:

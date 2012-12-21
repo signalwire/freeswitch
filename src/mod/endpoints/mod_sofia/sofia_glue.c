@@ -281,7 +281,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	switch_media_handle_create(&tech_pvt->media_handle, session);
 	switch_media_handle_set_ndlb(tech_pvt->media_handle, tech_pvt->profile->ndlb);
-	switch_media_handle_set_media_flag(tech_pvt->media_handle, tech_pvt->profile->media_flags);
+	switch_media_handle_set_media_flags(tech_pvt->media_handle, tech_pvt->profile->media_flags);
 	
 	switch_media_set_param(tech_pvt->media_handle, SCM_INBOUND_CODEC_STRING, profile->inbound_codec_string);
 	switch_media_set_param(tech_pvt->media_handle, SCM_OUTBOUND_CODEC_STRING, profile->inbound_codec_string);
@@ -918,7 +918,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Remote video address:port [%s:%d] has not changed.\n",
 							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
 		} else {
-			sofia_set_flag_locked(tech_pvt, TFLAG_VIDEO);
+			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_POSSIBLE);
 			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
 			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
 				const char *rport = NULL;
@@ -940,7 +940,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 					}
-					if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {
+					if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
 						tech_pvt->check_frames = 0;
 					}
 				}
@@ -977,7 +977,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 				/* Reactivate the NAT buster flag. */
 				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 			}
-			if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING)) {
+			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
 				tech_pvt->check_frames = 0;
 			}
 			status = SWITCH_STATUS_SUCCESS;
@@ -1859,105 +1859,6 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 
 }
 
-void sofia_glue_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session)
-{
-	switch_channel_t *aleg_channel;
-	private_object_t *aleg_tech_pvt;
-	switch_channel_t *bleg_channel;
-	private_object_t *bleg_tech_pvt;
-
-	if (!switch_core_session_compare(aleg_session, bleg_session)) {
-		/* since this digs into channel internals its only compatible with sofia sessions*/
-		return;
-	}
-
-	aleg_channel = switch_core_session_get_channel(aleg_session);
-	aleg_tech_pvt = switch_core_session_get_private(aleg_session);
-	bleg_channel = switch_core_session_get_channel(bleg_session);
-	bleg_tech_pvt = switch_core_session_get_private(bleg_session);
-
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG1, "Deciding whether to pass zrtp-hash between a-leg and b-leg\n");
-	if (!(switch_channel_test_flag(aleg_tech_pvt->channel, CF_ZRTP_PASSTHRU_REQ))) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG1, "CF_ZRTP_PASSTHRU_REQ not set on a-leg, so not propagating zrtp-hash\n");
-		return;
-	}
-	if (aleg_tech_pvt->remote_sdp_audio_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Passing a-leg remote zrtp-hash (audio) to b-leg\n");
-		bleg_tech_pvt->local_sdp_audio_zrtp_hash = switch_core_session_strdup(bleg_tech_pvt->session, aleg_tech_pvt->remote_sdp_audio_zrtp_hash);
-		switch_channel_set_variable(bleg_channel, "l_sdp_audio_zrtp_hash", bleg_tech_pvt->local_sdp_audio_zrtp_hash);
-	}
-	if (aleg_tech_pvt->remote_sdp_video_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Passing a-leg remote zrtp-hash (video) to b-leg\n");
-		bleg_tech_pvt->local_sdp_video_zrtp_hash = switch_core_session_strdup(bleg_tech_pvt->session, aleg_tech_pvt->remote_sdp_video_zrtp_hash);
-		switch_channel_set_variable(bleg_channel, "l_sdp_video_zrtp_hash", bleg_tech_pvt->local_sdp_video_zrtp_hash);
-	}
-	if (bleg_tech_pvt->remote_sdp_audio_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Passing b-leg remote zrtp-hash (audio) to a-leg\n");
-		aleg_tech_pvt->local_sdp_audio_zrtp_hash = switch_core_session_strdup(aleg_tech_pvt->session, bleg_tech_pvt->remote_sdp_audio_zrtp_hash);
-		switch_channel_set_variable(aleg_channel, "l_sdp_audio_zrtp_hash", aleg_tech_pvt->local_sdp_audio_zrtp_hash);
-	}
-	if (bleg_tech_pvt->remote_sdp_video_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_channel), SWITCH_LOG_DEBUG, "Passing b-leg remote zrtp-hash (video) to a-leg\n");
-		aleg_tech_pvt->local_sdp_video_zrtp_hash = switch_core_session_strdup(aleg_tech_pvt->session, bleg_tech_pvt->remote_sdp_video_zrtp_hash);
-		switch_channel_set_variable(aleg_channel, "l_sdp_video_zrtp_hash", aleg_tech_pvt->local_sdp_video_zrtp_hash);
-	}
-}
-
-void sofia_glue_pass_zrtp_hash(switch_core_session_t *session)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	private_object_t *tech_pvt = switch_core_session_get_private(session);
-	switch_core_session_t *other_session;
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Deciding whether to pass zrtp-hash between legs\n");
-	if (!(switch_channel_test_flag(tech_pvt->channel, CF_ZRTP_PASSTHRU_REQ))) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "CF_ZRTP_PASSTHRU_REQ not set, so not propagating zrtp-hash\n");
-		return;
-	} else if (!(switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "No partner channel found, so not propagating zrtp-hash\n");
-		return;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Found peer channel; propagating zrtp-hash if set\n");
-		sofia_glue_pass_zrtp_hash2(session, other_session);
-		switch_core_session_rwunlock(other_session);
-	}
-}
-
-void find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	private_object_t *tech_pvt = switch_core_session_get_private(session);
-	sdp_media_t *m;
-	sdp_attribute_t *attr;
-	int got_audio = 0, got_video = 0;
-
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Looking for zrtp-hash\n");
-	for (m = sdp->sdp_media; m; m = m->m_next) {
-		if (got_audio && got_video) break;
-		if (m->m_port && ((m->m_type == sdp_media_audio && !got_audio)
-						  || (m->m_type == sdp_media_video && !got_video))) {
-			for (attr = m->m_attributes; attr; attr = attr->a_next) {
-				if (zstr(attr->a_name)) continue;
-				if (strcasecmp(attr->a_name, "zrtp-hash") || !(attr->a_value)) continue;
-				if (m->m_type == sdp_media_audio) {
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
-									  "Found audio zrtp-hash; setting r_sdp_audio_zrtp_hash=%s\n", attr->a_value);
-					switch_channel_set_variable(channel, "r_sdp_audio_zrtp_hash", attr->a_value);
-					tech_pvt->remote_sdp_audio_zrtp_hash = switch_core_session_strdup(tech_pvt->session, attr->a_value);
-					got_audio++;
-				} else if (m->m_type == sdp_media_video) {
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
-									  "Found video zrtp-hash; setting r_sdp_video_zrtp_hash=%s\n", attr->a_value);
-					switch_channel_set_variable(channel, "r_sdp_video_zrtp_hash", attr->a_value);
-					tech_pvt->remote_sdp_video_zrtp_hash = switch_core_session_strdup(tech_pvt->session, attr->a_value);
-					got_video++;
-				}
-				switch_channel_set_flag(channel, CF_ZRTP_HASH);
-				break;
-			}
-		}
-	}
-}
-
 /* map sip responses to QSIG cause codes ala RFC4497 section 8.4.4 */
 switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 {
@@ -2548,7 +2449,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 				r_ip = switch_channel_get_variable(channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE);
 				r_port = switch_channel_get_variable(channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE);
 
-				sofia_set_flag(tech_pvt, TFLAG_VIDEO);
+				switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_POSSIBLE);
 
 				if ((tmp = switch_channel_get_variable(channel, "sip_use_video_codec_rate"))) {
 					tech_pvt->video_rm_rate = atoi(tmp);
@@ -3475,102 +3376,6 @@ void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const 
 	switch_core_session_queue_message(session, msg);
 }
 
-
-void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str)
-{
-
-	if (switch_stristr("clear", str)) {
-		*flag_pole = 0;
-	}
-
-	if (switch_stristr("CISCO_SKIP_MARK_BIT_2833", str)) {
-		*flag_pole |= RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
-	}
-
-	if (switch_stristr("~CISCO_SKIP_MARK_BIT_2833", str)) {
-		*flag_pole &= ~RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
-	}
-
-	if (switch_stristr("SONUS_SEND_INVALID_TIMESTAMP_2833", str)) {
-		*flag_pole |= RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
-	}
-
-	if (switch_stristr("~SONUS_SEND_INVALID_TIMESTAMP_2833", str)) {
-		*flag_pole &= ~RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
-	}
-
-	if (switch_stristr("IGNORE_MARK_BIT", str)) {
-		*flag_pole |= RTP_BUG_IGNORE_MARK_BIT;
-	}	
-
-	if (switch_stristr("~IGNORE_MARK_BIT", str)) {
-		*flag_pole &= ~RTP_BUG_IGNORE_MARK_BIT;
-	}	
-
-	if (switch_stristr("SEND_LINEAR_TIMESTAMPS", str)) {
-		*flag_pole |= RTP_BUG_SEND_LINEAR_TIMESTAMPS;
-	}
-
-	if (switch_stristr("~SEND_LINEAR_TIMESTAMPS", str)) {
-		*flag_pole &= ~RTP_BUG_SEND_LINEAR_TIMESTAMPS;
-	}
-
-	if (switch_stristr("START_SEQ_AT_ZERO", str)) {
-		*flag_pole |= RTP_BUG_START_SEQ_AT_ZERO;
-	}
-
-	if (switch_stristr("~START_SEQ_AT_ZERO", str)) {
-		*flag_pole &= ~RTP_BUG_START_SEQ_AT_ZERO;
-	}
-
-	if (switch_stristr("NEVER_SEND_MARKER", str)) {
-		*flag_pole |= RTP_BUG_NEVER_SEND_MARKER;
-	}
-
-	if (switch_stristr("~NEVER_SEND_MARKER", str)) {
-		*flag_pole &= ~RTP_BUG_NEVER_SEND_MARKER;
-	}
-
-	if (switch_stristr("IGNORE_DTMF_DURATION", str)) {
-		*flag_pole |= RTP_BUG_IGNORE_DTMF_DURATION;
-	}
-
-	if (switch_stristr("~IGNORE_DTMF_DURATION", str)) {
-		*flag_pole &= ~RTP_BUG_IGNORE_DTMF_DURATION;
-	}
-
-	if (switch_stristr("ACCEPT_ANY_PACKETS", str)) {
-		*flag_pole |= RTP_BUG_ACCEPT_ANY_PACKETS;
-	}
-
-	if (switch_stristr("~ACCEPT_ANY_PACKETS", str)) {
-		*flag_pole &= ~RTP_BUG_ACCEPT_ANY_PACKETS;
-	}
-
-	if (switch_stristr("GEN_ONE_GEN_ALL", str)) {
-		*flag_pole |= RTP_BUG_GEN_ONE_GEN_ALL;
-	}
-
-	if (switch_stristr("~GEN_ONE_GEN_ALL", str)) {
-		*flag_pole &= ~RTP_BUG_GEN_ONE_GEN_ALL;
-	}
-
-	if (switch_stristr("CHANGE_SSRC_ON_MARKER", str)) {
-		*flag_pole |= RTP_BUG_CHANGE_SSRC_ON_MARKER;
-	}
-
-	if (switch_stristr("~CHANGE_SSRC_ON_MARKER", str)) {
-		*flag_pole &= ~RTP_BUG_CHANGE_SSRC_ON_MARKER;
-	}
-
-	if (switch_stristr("FLUSH_JB_ON_DTMF", str)) {
-		*flag_pole |= RTP_BUG_FLUSH_JB_ON_DTMF;
-	}
-
-	if (switch_stristr("~FLUSH_JB_ON_DTMF", str)) {
-		*flag_pole &= ~RTP_BUG_FLUSH_JB_ON_DTMF;
-	}
-}
 
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np)
 {

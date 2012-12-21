@@ -74,7 +74,7 @@ typedef struct {
     switch_port_t local_port;
     switch_port_t remote_port;
     switch_payload_t agreed_pt; /*XXX*/
-    sofia_dtmf_t dtmf_type;
+    switch_core_media_dtmf_t dtmf_type;
     enum {
         RTP_SENDONLY,
         RTP_RECVONLY,

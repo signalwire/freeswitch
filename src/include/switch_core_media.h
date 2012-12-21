@@ -32,9 +32,19 @@
 #ifndef SWITCH_CORE_MEDIA_H
 #define SWITCH_CORE_MEDIA_H
 
+
+#include <sdp.h>
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
+
+typedef enum {
+	DTMF_2833,
+	DTMF_INFO,
+	DTMF_NONE
+} switch_core_media_dtmf_t;
+
+
 
 typedef enum {
 	SM_NDLB_ALLOW_BAD_IANANAME = (1 << 0),
@@ -44,7 +54,18 @@ typedef enum {
 } switch_core_media_NDLB_t;
 
 typedef enum {
-	SCMF_DISABLE_TRANSCODING = (1 << 0)
+	SCMF_RUNNING,
+	SCMF_DISABLE_TRANSCODING,
+	SCMF_AUTOFIX_TIMING,
+	SCMF_CODEC_GREEDY,
+	SCMF_CODEC_SCROOGE,
+	SCMF_DISABLE_HOLD,
+	SCMF_RENEG_ON_HOLD,
+	SCMF_RENEG_ON_REINVITE,
+	SCMF_T38_PASSTHRU,
+	SCMF_LIBERAL_DTMF,
+	SCMF_SUPPRESS_CNG,
+	SCMF_MAX
 } switch_core_media_flag_t;
 
 struct switch_media_handle_s;
@@ -58,7 +79,8 @@ typedef enum {
 typedef enum {
 	SCM_INBOUND_CODEC_STRING,
 	SCM_OUTBOUND_CODEC_STRING,
-	SCM_TEST,
+	SCM_AUTO_RTP_BUGS,
+	SCM_MANUAL_RTP_BUGS,
 	SCM_MAX
 } scm_param_t;
 
@@ -79,6 +101,7 @@ SWITCH_DECLARE(int32_t) switch_media_handle_test_ndlb(switch_media_handle_t *smh
 SWITCH_DECLARE(void) switch_media_handle_set_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
 SWITCH_DECLARE(void) switch_media_handle_clear_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
 SWITCH_DECLARE(int32_t) switch_media_handle_test_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
+SWITCH_DECLARE(void) switch_media_handle_set_media_flags(switch_media_handle_t *smh, switch_core_media_flag_t flags[]);
 SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session, const char *sec_var);
 SWITCH_DECLARE(const char *) switch_core_session_local_crypto_key(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_session_t *session, 
@@ -93,6 +116,16 @@ SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *se
 SWITCH_DECLARE(void) switch_media_set_param(switch_media_handle_t *smh, scm_param_t param, ...);
 SWITCH_DECLARE(void *) switch_media_get_param(switch_media_handle_t *smh, scm_param_t param);
 SWITCH_DECLARE(const char *)switch_core_media_get_codec_string(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str);
+SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
+SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_extract_t38_options(switch_core_session_t *session, const char *r_sdp);
+SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
+SWITCH_DECLARE(const char *) switch_core_media_get_zrtp_hash(switch_core_session_t *session, switch_media_type_t type, switch_bool_t local);
+SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session);
+SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session, int sendonly);
+SWITCH_DECLARE(void) switch_core_media_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session);
+SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, int reinvite, int codec_flags, switch_payload_t default_te);
 
 SWITCH_END_EXTERN_C
 #endif
