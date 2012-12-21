@@ -1,0 +1,43 @@
+README
+for codec2/unittest
+Created David Rowe 31 July 2012
+
+Training (experimental) sparse phase VQs:
+
+1/ In ../src/phase.c phase_experiment() enable:
+
+   print_sparse_pred_error()
+
+   and 'make' c2sim (in src)
+
+2/ Run over a training database:
+
+  $ ./c2sim /xhome1/codec2/samples/train.spc --phaseexp > train_phtrain.txt
+
+  a) check stats in Octave:
+     octave> load ../src/train_phtrain.txt
+     octave> std(nonzeros(train_phtrain(:,1:20)))
+     octave> hist(nonzeros(train_phtrain(:,1:20)),20)
+3/ Extract and convert to floats vector you wish to train for example
+   first 20 (out of MAX_AMP == 80):
+
+  $ ./extract ../src/train_phtrain.txt train_phtrain.flt 1 20
+
+4/ Convert to rectangular:
+
+  $ ./polar2rect train_phtrain.flt train_phtrainr.flt
+
+5/ Run this program:
+
+  $ ./vqtrainph train_phtrainr.flt 20 1024 vq.txt
+
+  Ouput is vq.txt
+
+Tests
+-----
+
++ build up insmallest possible stesp
++ impl errors v alg errors
++ use actual phase data as codebook
++ test vq with rand phases first or known data
+
