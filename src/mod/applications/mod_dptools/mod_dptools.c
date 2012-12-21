@@ -2003,6 +2003,9 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 			if (!(terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE))) {
 				terminators = "*";
 			}
+			if (!strcasecmp(terminators, "any")) {
+				terminators = "1234567890*#";
+			}
 			if (!strcasecmp(terminators, "none")) {
 				terminators = NULL;
 			}
