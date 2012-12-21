@@ -279,12 +279,22 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_cap(tech_pvt->channel, CC_FS_RTP);
 	switch_channel_set_cap(tech_pvt->channel, CC_QUEUEABLE_DTMF_DELAY);
 
-	switch_media_handle_create(&tech_pvt->media_handle, session);
-	switch_media_handle_set_ndlb(tech_pvt->media_handle, tech_pvt->profile->ndlb);
-	switch_media_handle_set_media_flags(tech_pvt->media_handle, tech_pvt->profile->media_flags);
+	tech_pvt->mparams->ndlb = tech_pvt->profile->ndlb;
+	tech_pvt->mparams->inbound_codec_string = profile->inbound_codec_string;
+	tech_pvt->mparams->outbound_codec_string = profile->outbound_codec_string;
+	tech_pvt->mparams->auto_rtp_bugs = profile->auto_rtp_bugs;
+	tech_pvt->mparams->timer_name = profile->timer_name;
+	tech_pvt->mparams->vflags = profile->vflags;
+	tech_pvt->mparams->manual_rtp_bugs = profile->manual_rtp_bugs;
+	tech_pvt->mparams->manual_video_rtp_bugs = profile->manual_video_rtp_bugs;
+	tech_pvt->mparams->extsipip = profile->extsipip;
+	tech_pvt->mparams->local_network = profile->local_network;
+
 	
-	switch_media_set_param(tech_pvt->media_handle, SCM_INBOUND_CODEC_STRING, profile->inbound_codec_string);
-	switch_media_set_param(tech_pvt->media_handle, SCM_OUTBOUND_CODEC_STRING, profile->inbound_codec_string);
+	switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
+	switch_media_handle_set_media_flags(tech_pvt->media_handle, tech_pvt->profile->media_flags);
+
+
 
 
 	switch_core_session_set_private(session, tech_pvt);
@@ -294,100 +304,6 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	}
 
 }
-
-switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_object_t *tech_pvt, char **ip, switch_port_t *port,
-											  const char *sourceip, switch_memory_pool_t *pool)
-{
-	char *error = "";
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	int x;
-	switch_port_t myport = *port;
-	const char *var;
-	int funny = 0;
-	switch_port_t stun_port = SWITCH_STUN_DEFAULT_PORT;
-	char *stun_ip = NULL;
-
-	if (!sourceip) {
-		return status;
-	}
-
-	if (!strncasecmp(sourceip, "host:", 5)) {
-		status = (*ip = switch_stun_host_lookup(sourceip + 5, pool)) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
-	} else if (!strncasecmp(sourceip, "stun:", 5)) {
-		char *p;
-
-		if (!sofia_test_pflag(profile, PFLAG_STUN_ENABLED)) {
-			*ip = switch_core_strdup(pool, tech_pvt->rtpip);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Trying to use STUN but its disabled!\n");
-			goto out;
-		}
-
-		stun_ip = strdup(sourceip + 5);
-
-		if ((p = strchr(stun_ip, ':'))) {
-			int iport;
-			*p++ = '\0';
-			iport = atoi(p);
-			if (iport > 0 && iport < 0xFFFF) {
-				stun_port = (switch_port_t) iport;
-			}
-		}
-
-		if (zstr(stun_ip)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STUN Failed! NO STUN SERVER\n");
-			goto out;
-		}
-
-		for (x = 0; x < 5; x++) {
-			if (sofia_test_pflag(profile, PFLAG_FUNNY_STUN) ||
-				(tech_pvt && (var = switch_channel_get_variable(tech_pvt->channel, "funny_stun")) && switch_true(var))) {
-				error = "funny";
-				funny++;
-			}
-			if ((status = switch_stun_lookup(ip, port, stun_ip, stun_port, &error, pool)) != SWITCH_STATUS_SUCCESS) {
-				switch_yield(100000);
-			} else {
-				break;
-			}
-		}
-		if (status != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STUN Failed! %s:%d [%s]\n", stun_ip, stun_port, error);
-			goto out;
-		}
-		if (!*ip) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "STUN Failed! No IP returned\n");
-			goto out;
-		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "STUN Success [%s]:[%d]\n", *ip, *port);
-		status = SWITCH_STATUS_SUCCESS;
-		if (tech_pvt) {
-			if (myport == *port && !strcmp(*ip, tech_pvt->rtpip)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "STUN Not Required ip and port match. [%s]:[%d]\n", *ip, *port);
-				if (sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE)) {
-					sofia_clear_pflag(profile, PFLAG_STUN_ENABLED);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "STUN completely disabled.\n");
-				}
-			} else {
-				tech_pvt->stun_ip = switch_core_session_strdup(tech_pvt->session, stun_ip);
-				tech_pvt->stun_port = stun_port;
-				tech_pvt->stun_flags |= STUN_FLAG_SET;
-				if (funny) {
-					tech_pvt->stun_flags |= STUN_FLAG_FUNNY;
-				}
-			}
-		}
-	} else {
-		*ip = (char *) sourceip;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-
- out:
-
-	switch_safe_free(stun_ip);
-
-	return status;
-}
-
 
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name)
 {
@@ -471,69 +387,6 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, int force)
-{
-	char *lookup_rtpip = tech_pvt->rtpip;	/* Pointer to externally looked up address */
-	switch_port_t sdp_port;		/* The external port to be sent in the SDP */
-	const char *use_ip = NULL;	/* The external IP to be sent in the SDP */
-
-	/* Don't do anything if we're in proxy mode or if a (remote) port already has been found */
-	if (!force) {
-		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) ||
-			switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || tech_pvt->adv_sdp_video_port) {
-			return SWITCH_STATUS_SUCCESS;
-		}
-	}
-
-	/* Release the local sdp port */
-	if (tech_pvt->local_sdp_video_port) {
-		switch_rtp_release_port(tech_pvt->rtpip, tech_pvt->local_sdp_video_port);
-	}
-
-	/* Request a local port from the core's allocator */
-	if (!(tech_pvt->local_sdp_video_port = switch_rtp_request_port(tech_pvt->rtpip))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "No RTP ports available!\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	sdp_port = tech_pvt->local_sdp_video_port;
-
-	/* Check if NAT is detected  */
-	if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-		/* Yes, map the port through switch_nat */
-		switch_nat_add_mapping(tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
-
-		/* Find an IP address to use */
-		if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_video_ip"))
-			&& !zstr(tech_pvt->profile->extrtpip)) {
-			use_ip = tech_pvt->profile->extrtpip;
-		}
-
-		if (use_ip) {
-			if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &lookup_rtpip, &sdp_port,
-											  use_ip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-				/* Address lookup was required and fail (external ip was "host:..." or "stun:...") */
-				return SWITCH_STATUS_FALSE;
-			} else {
-				/* Address properly resolved, use it as external ip */
-				use_ip = lookup_rtpip;
-			}
-		} else {
-			/* No external ip found, use the profile's rtp ip */
-			use_ip = tech_pvt->rtpip;
-		}
-	} else {
-		/* No NAT traversal required, use the profile's rtp ip */
-		use_ip = tech_pvt->rtpip;
-	}
-
-	tech_pvt->adv_sdp_video_port = sdp_port;
-	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
-	switch_channel_set_variable_printf(tech_pvt->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, "%d", sdp_port);
-
-	return SWITCH_STATUS_SUCCESS;
-}
 
 sofia_transport_t sofia_glue_str2transport(const char *str)
 {
@@ -726,14 +579,7 @@ char *sofia_glue_strip_uri(const char *str)
 	return r;
 }
 
-int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip)
-{
-	switch_assert(network_ip);
 
-	return (profile->extsipip && 
-			!switch_check_network_list_ip(network_ip, "loopback.auto") && 
-			!switch_check_network_list_ip(network_ip, profile->local_network));
-}
 
 int sofia_glue_transport_has_tls(const sofia_transport_t tp)
 {
@@ -824,172 +670,6 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 	
 	return new_uri;
 }
-
-#define RA_PTR_LEN 512
-switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, const char *sdp_str)
-{
-	const char *err;
-	char rip[RA_PTR_LEN] = "";
-	char rp[RA_PTR_LEN] = "";
-	char rvp[RA_PTR_LEN] = "";
-	char *p, *ip_ptr = NULL, *port_ptr = NULL, *vid_port_ptr = NULL, *pe;
-	int x;
-	const char *val;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	
-	if (zstr(sdp_str)) {
-		sdp_str = tech_pvt->remote_sdp_str;
-	}
-
-	if (zstr(sdp_str)) {
-		goto end;
-	}
-
-	if ((p = (char *) switch_stristr("c=IN IP4 ", sdp_str)) || (p = (char *) switch_stristr("c=IN IP6 ", sdp_str))) {
-		ip_ptr = p + 9;
-	}
-
-	if ((p = (char *) switch_stristr("m=audio ", sdp_str))) {
-		port_ptr = p + 8;
-	}
-
-	if ((p = (char *) switch_stristr("m=image ", sdp_str))) {
-		char *tmp = p + 8;
-
-		if (tmp && atoi(tmp)) {
-			port_ptr = tmp;
-		}
-	}
-
-	if ((p = (char *) switch_stristr("m=video ", sdp_str))) {
-		vid_port_ptr = p + 8;
-	}
-
-	if (!(ip_ptr && port_ptr)) {
-		goto end;
-	}
-
-	p = ip_ptr;
-	pe = p + strlen(p);
-	x = 0;
-	while (x < sizeof(rip) - 1 && p && *p && ((*p >= '0' && *p <= '9') || *p == '.' || *p == ':' || (*p >= 'a' && *p <= 'f') || (*p >= 'A' && *p <= 'F'))) {
-		rip[x++] = *p;
-		p++;
-		if (p >= pe) {
-			goto end;
-		}
-	}
-
-	p = port_ptr;
-	x = 0;
-	while (x < sizeof(rp) - 1 && p && *p && (*p >= '0' && *p <= '9')) {
-		rp[x++] = *p;
-		p++;
-		if (p >= pe) {
-			goto end;
-		}
-	}
-
-	p = vid_port_ptr;
-	x = 0;
-	while (x < sizeof(rvp) - 1 && p && *p && (*p >= '0' && *p <= '9')) {
-		rvp[x++] = *p;
-		p++;
-		if (p >= pe) {
-			goto end;
-		}
-	}
-
-	if (!(*rip && *rp)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "invalid SDP\n");
-		goto end;
-	}
-
-	tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, rip);
-	tech_pvt->remote_sdp_audio_port = (switch_port_t) atoi(rp);
-
-	if (*rvp) {
-		tech_pvt->remote_sdp_video_ip = switch_core_session_strdup(tech_pvt->session, rip);
-		tech_pvt->remote_sdp_video_port = (switch_port_t) atoi(rvp);
-	}
-
-	if (tech_pvt->remote_sdp_video_ip && tech_pvt->remote_sdp_video_port) {
-		if (!strcmp(tech_pvt->remote_sdp_video_ip, rip) && atoi(rvp) == tech_pvt->remote_sdp_video_port) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Remote video address:port [%s:%d] has not changed.\n",
-							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
-		} else {
-			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_POSSIBLE);
-			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
-			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
-				const char *rport = NULL;
-				switch_port_t remote_rtcp_port = 0;
-
-				if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_video_rtcp_port"))) {
-					remote_rtcp_port = (switch_port_t)atoi(rport);
-				}
-
-
-				if (switch_rtp_set_remote_address(tech_pvt->video_rtp_session, tech_pvt->remote_sdp_video_ip,
-												  tech_pvt->remote_sdp_video_port, remote_rtcp_port, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", err);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "VIDEO RTP CHANGING DEST TO: [%s:%d]\n",
-									  tech_pvt->remote_sdp_video_ip, tech_pvt->remote_sdp_video_port);
-					if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
-						!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
-						/* Reactivate the NAT buster flag. */
-						switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-					}
-					if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
-						tech_pvt->check_frames = 0;
-					}
-				}
-			}
-		}
-	}
-
-	if (switch_rtp_ready(tech_pvt->rtp_session)) {
-		char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
-		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
-		const char *rport = NULL;
-		switch_port_t remote_rtcp_port = 0;
-
-		if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
-							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
-			switch_goto_status(SWITCH_STATUS_BREAK, end);
-		}
-
-		if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port"))) {
-			remote_rtcp_port = (switch_port_t)atoi(rport);
-		}
-
-
-		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip,
-										  tech_pvt->remote_sdp_audio_port, remote_rtcp_port, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
-			status = SWITCH_STATUS_GENERR;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "AUDIO RTP CHANGING DEST TO: [%s:%d]\n",
-							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
-			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
-				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
-				/* Reactivate the NAT buster flag. */
-				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-			}
-			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
-				tech_pvt->check_frames = 0;
-			}
-			status = SWITCH_STATUS_SUCCESS;
-		}
-	}
-
- end:
-
-	return status;
-}
-
-
 
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix)
 {
@@ -1159,7 +839,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	cid_name = caller_profile->caller_id_name;
 	cid_num = caller_profile->caller_id_number;
 	sofia_media_tech_prepare_codecs(tech_pvt);
-	sofia_media_check_video_codecs(tech_pvt);
+	switch_core_media_check_video_codecs(tech_pvt->session);
 	check_decode(cid_name, session);
 	check_decode(cid_num, session);
 
@@ -2416,7 +2096,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 				tech_pvt->pt = tech_pvt->agreed_pt = (switch_payload_t)atoi(tmp);
 			}
 			
-			sofia_media_tech_set_codec(tech_pvt, 1);
+			switch_core_media_set_codec(tech_pvt->session, 1, tech_pvt->profile->codec_flags);
 
 			tech_pvt->adv_sdp_audio_ip = tech_pvt->extrtpip = (char *) ip;
 			tech_pvt->adv_sdp_audio_port = tech_pvt->local_sdp_audio_port = (switch_port_t)atoi(port);

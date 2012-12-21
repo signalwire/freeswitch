@@ -44,8 +44,6 @@ typedef enum {
 	DTMF_NONE
 } switch_core_media_dtmf_t;
 
-
-
 typedef enum {
 	SM_NDLB_ALLOW_BAD_IANANAME = (1 << 0),
 	SM_NDLB_ALLOW_NONDUP_SDP = (1 << 1),
@@ -65,39 +63,78 @@ typedef enum {
 	SCMF_T38_PASSTHRU,
 	SCMF_LIBERAL_DTMF,
 	SCMF_SUPPRESS_CNG,
+	SCMF_DISABLE_RTP_AUTOADJ,
+	SCMF_PASS_RFC2833,
+	SCMF_AUTOFLUSH,
+	SCMF_REWRITE_TIMESTAMPS,
 	SCMF_MAX
 } switch_core_media_flag_t;
 
 struct switch_media_handle_s;
 
 typedef enum {
-	STYPE_INTVAL,
-	STYPE_UINTVAL,
-	STYPE_CHARVAL,
-} scm_type_t;
+	STUN_FLAG_SET = (1 << 0),
+	STUN_FLAG_PING = (1 << 1),
+	STUN_FLAG_FUNNY = (1 << 2)
+} STUNFLAGS;
 
 typedef enum {
-	SCM_INBOUND_CODEC_STRING,
-	SCM_OUTBOUND_CODEC_STRING,
-	SCM_AUTO_RTP_BUGS,
-	SCM_MANUAL_RTP_BUGS,
-	SCM_MAX
-} scm_param_t;
+	VAD_IN = (1 << 0),
+	VAD_OUT = (1 << 1)
+} switch_core_media_vflag_t;
 
-#define switch_media_get_param_int(_h, _p) *(int *)switch_media_get_param(_h, _p)
-#define switch_media_get_param_uint(_h, _p) *(uint32_t *)switch_media_get_param(_h, _p)
-#define switch_media_get_param_char(_h, _p) (char *)switch_media_get_param(_h, _p)
+typedef struct switch_core_media_params_s {
+	uint32_t rtp_timeout_sec;
+	uint32_t rtp_hold_timeout_sec;
+	uint32_t dtmf_delay;
+	uint32_t codec_flags;
+	int reinvite;
+	switch_core_media_NDLB_t ndlb;
+	switch_rtp_bug_flag_t auto_rtp_bugs;
+
+	char *inbound_codec_string;
+	char *outbound_codec_string;
+
+	char *timer_name;
+
+	char *remote_sdp_str;
+	char *early_sdp;
+	char *local_sdp_str;
+	char *last_sdp_str;
+
+	char *stun_ip;
+	switch_port_t stun_port;
+	uint32_t stun_flags;
+
+	char *jb_msec;
+
+	switch_core_media_vflag_t vflags;
+
+	switch_rtp_bug_flag_t manual_rtp_bugs;
+	switch_rtp_bug_flag_t manual_video_rtp_bugs;
+
+	char *rtcp_audio_interval_msec;
+	char *rtcp_video_interval_msec;
+
+
+	char *extrtpip;
+	char *rtpip;
+
+	char *remote_ip;
+	int remote_port;
+
+	char *extsipip;
+	char *local_network;
+	
+
+} switch_core_media_params_t;
 
 
 
-
-SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t **smhp, switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t **smhp, switch_core_session_t *session, switch_core_media_params_t *params);
 SWITCH_DECLARE(switch_media_handle_t *) switch_core_session_get_media_handle(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_session_clear_media_handle(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_session_media_handle_ready(switch_core_session_t *session);
-SWITCH_DECLARE(void) switch_media_handle_set_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
-SWITCH_DECLARE(void) switch_media_handle_clear_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
-SWITCH_DECLARE(int32_t) switch_media_handle_test_ndlb(switch_media_handle_t *smh, switch_core_media_NDLB_t flag);
 SWITCH_DECLARE(void) switch_media_handle_set_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
 SWITCH_DECLARE(void) switch_media_handle_clear_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
 SWITCH_DECLARE(int32_t) switch_media_handle_test_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
@@ -113,8 +150,6 @@ SWITCH_DECLARE(void) switch_core_session_get_recovery_crypto_key(switch_core_ses
 
 SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *session, switch_media_type_t type, switch_rtp_t *rtp_session);
 
-SWITCH_DECLARE(void) switch_media_set_param(switch_media_handle_t *smh, scm_param_t param, ...);
-SWITCH_DECLARE(void *) switch_media_get_param(switch_media_handle_t *smh, scm_param_t param);
 SWITCH_DECLARE(const char *)switch_core_media_get_codec_string(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str);
 SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
@@ -126,6 +161,14 @@ SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *al
 SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session, int sendonly);
 SWITCH_DECLARE(void) switch_core_media_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session);
 SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, int reinvite, int codec_flags, switch_payload_t default_te);
+SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_session_t *session, int force);
+SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_t *session, int force, uint32_t codec_flags);
+SWITCH_DECLARE(void) switch_core_media_check_video_codecs(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session_t *session, switch_frame_t **frame,
+															 switch_io_flag_t flags, int stream_id, switch_media_type_t type);
+SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_session_t *session, 
+															  switch_frame_t *frame, switch_io_flag_t flags, int stream_id, switch_media_type_t type);
+SWITCH_DECLARE(int) switch_core_media_check_nat(switch_media_handle_t *smh, const char *network_ip);
 
 SWITCH_END_EXTERN_C
 #endif

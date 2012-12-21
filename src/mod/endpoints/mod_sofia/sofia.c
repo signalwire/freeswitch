@@ -3920,27 +3920,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "aggressive-nat-detection") && switch_true(val)) {
 						sofia_set_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION);
 					} else if (!strcasecmp(var, "disable-rtp-auto-adjust") && switch_true(val)) {
-						sofia_set_pflag(profile, PFLAG_DISABLE_RTP_AUTOADJ);
+						if (switch_true(val)) {
+							sofia_set_media_flag(profile, SCMF_DISABLE_RTP_AUTOADJ);
+						} else {
+							sofia_clear_media_flag(profile, SCMF_DISABLE_RTP_AUTOADJ);
+						}
 					} else if (!strcasecmp(var, "NDLB-support-asterisk-missing-srtp-auth") && switch_true(val)) {
 						profile->ndlb |= SM_NDLB_DISABLE_SRTP_AUTH;
-					} else if (!strcasecmp(var, "NDLB-funny-stun")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_FUNNY_STUN);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_FUNNY_STUN);
-						}
-					} else if (!strcasecmp(var, "stun-enabled")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_STUN_ENABLED);
-						}
-					} else if (!strcasecmp(var, "stun-auto-disable")) {
-						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_STUN_AUTO_DISABLE);
-						} else {
-							sofia_clear_pflag(profile, PFLAG_STUN_AUTO_DISABLE);
-						}
 					} else if (!strcasecmp(var, "user-agent-filter")) {
 						profile->user_agent_filter = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "max-registrations-per-extension")) {
@@ -3958,12 +3944,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "vad")) {
 						if (!strcasecmp(val, "in")) {
-							sofia_set_flag(profile, TFLAG_VAD_IN);
+							profile->vflags |= VAD_IN;
 						} else if (!strcasecmp(val, "out")) {
-							sofia_set_flag(profile, TFLAG_VAD_OUT);
+							profile->vflags |= VAD_OUT;
 						} else if (!strcasecmp(val, "both")) {
-							sofia_set_flag(profile, TFLAG_VAD_IN);
-							sofia_set_flag(profile, TFLAG_VAD_OUT);
+							profile->vflags |= VAD_OUT | VAD_IN;
 						} else if (strcasecmp(val, "none")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid option %s for VAD\n", val);
 						}
@@ -5235,7 +5220,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ);
 						switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_FAIL);
 					} else if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
-						switch_t38_options_t *t38_options = sofia_media_extract_t38_options(session, sip->sip_payload->pl_data);
+						switch_t38_options_t *t38_options = switch_core_media_extract_t38_options(session, sip->sip_payload->pl_data);
 						
 						if (!t38_options) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Could not parse T.38 options from sdp.\n");
@@ -5274,7 +5259,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 								}
 							}
 
-							sofia_media_copy_t38_options(t38_options, other_session);
+							switch_core_media_copy_t38_options(t38_options, other_session);
 						}
 					}
 
@@ -5450,7 +5435,7 @@ void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void 
 					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 				}
 
-				sofia_media_toggle_hold(tech_pvt, 1);
+				switch_core_media_toggle_hold(session, 1);
 			}
 			switch_core_session_rwunlock(other_session);
 		}

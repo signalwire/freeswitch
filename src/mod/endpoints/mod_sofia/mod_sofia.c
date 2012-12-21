@@ -944,15 +944,13 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	uint32_t sanity = 1000;
 
 	switch_assert(tech_pvt != NULL);
 
 	if (sofia_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_FALSE;
 	}
-
+#if 0
 	while (!(tech_pvt->video_read_codec.implementation && switch_rtp_ready(tech_pvt->video_rtp_session) && !switch_channel_test_flag(channel, CF_REQ_MEDIA))) {
 		switch_ivr_parse_all_messages(tech_pvt->session);
 		
@@ -963,59 +961,19 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 			return SWITCH_STATUS_GENERR;
 		}
 	}
+#endif
 
-	tech_pvt->video_read_frame.datalen = 0;
 
-	if (sofia_test_flag(tech_pvt, TFLAG_IO)) {
-		switch_status_t status;
+	return switch_core_media_read_frame(session, frame, flags, stream_id, SWITCH_MEDIA_TYPE_VIDEO);
 
-		if (!sofia_test_flag(tech_pvt, TFLAG_RTP)) {
-			return SWITCH_STATUS_GENERR;
-		}
-
-		switch_assert(tech_pvt->rtp_session != NULL);
-		tech_pvt->video_read_frame.datalen = 0;
-
-		while (sofia_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->video_read_frame.datalen == 0) {
-			tech_pvt->video_read_frame.flags = SFF_NONE;
-
-			status = switch_rtp_zerocopy_read_frame(tech_pvt->video_rtp_session, &tech_pvt->video_read_frame, flags);
-			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-				if (status == SWITCH_STATUS_TIMEOUT) {
-					if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-						sofia_media_toggle_hold(tech_pvt, 0);
-						sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-						switch_channel_clear_flag(channel, CF_LEG_HOLDING);
-					}
-					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
-				}
-				return status;
-			}
-
-			if (tech_pvt->video_read_frame.datalen > 0) {
-				break;
-			}
-		}
-	}
-
-	if (tech_pvt->video_read_frame.datalen == 0) {
-		*frame = NULL;
-		return SWITCH_STATUS_GENERR;
-	}
-
-	*frame = &tech_pvt->video_read_frame;
-
-	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t sofia_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int wrote = 0;
-
 	switch_assert(tech_pvt != NULL);
 
+#if 0
 	while (!(tech_pvt->video_read_codec.implementation && switch_rtp_ready(tech_pvt->video_rtp_session))) {
 		if (switch_channel_ready(channel)) {
 			switch_yield(10000);
@@ -1023,6 +981,7 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 			return SWITCH_STATUS_GENERR;
 		}
 	}
+#endif
 
 	if (sofia_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_FALSE;
@@ -1036,11 +995,8 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!switch_test_flag(frame, SFF_CNG)) {
-		wrote = switch_rtp_write_frame(tech_pvt->video_rtp_session, frame);
-	}
-
-	return wrote > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
+	return switch_core_media_write_frame(session, frame, flags, stream_id, SWITCH_MEDIA_TYPE_VIDEO);
+	
 }
 
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
@@ -1105,7 +1061,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 				if (status == SWITCH_STATUS_TIMEOUT) {
 
 					if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-						sofia_media_toggle_hold(tech_pvt, 0);
+						switch_core_media_toggle_hold(session, 0);
 						sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 						switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 					}
@@ -1274,7 +1230,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 										tech_pvt->codec_ms = codec_ms;
 									}
 
-									if (sofia_media_tech_set_codec(tech_pvt, 2) != SWITCH_STATUS_SUCCESS) {
+									if (switch_core_media_set_codec(tech_pvt->session, 2, tech_pvt->profile->codec_flags) != SWITCH_STATUS_SUCCESS) {
 										*frame = NULL;
 										return SWITCH_STATUS_GENERR;
 									}
@@ -1906,7 +1862,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				tech_pvt->video_rm_encoding = NULL;
 				switch_channel_clear_flag(tech_pvt->channel, CF_VIDEO_POSSIBLE);
 				sofia_media_tech_prepare_codecs(tech_pvt);
-				sofia_media_check_video_codecs(tech_pvt);
+				switch_core_media_check_video_codecs(tech_pvt->session);
 				sofia_media_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 				sofia_set_pflag(tech_pvt->profile, PFLAG_RENEG_ON_REINVITE);
 				sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
@@ -2446,7 +2402,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 
 			if (msg->numeric_arg) {
-				sofia_media_toggle_hold(tech_pvt, 1);
+				switch_core_media_toggle_hold(session, 1);
 			} else {
 
 				sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
