@@ -112,7 +112,7 @@ function plphase(samname, f)
       axis;
       if (file_in_path(".", phase_name_))
         hold on;
-        plot((1:L)*Wo*4000/pi, phase_(f,1:L)*180/pi, "g;phase_;");
+        plot((1:L)*Wo*4000/pi, phase_(f,1:L)*180/pi, "g;phase after;");
 	grid
 	hold off;
       endif

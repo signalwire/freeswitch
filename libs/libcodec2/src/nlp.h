@@ -22,17 +22,17 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __NLP__
 #define __NLP__
 
+#include "comp.h"
+
 void *nlp_create();
 void nlp_destroy(void *nlp_state);
 float nlp(void *nlp_state, float Sn[], int n, int m, int pmin, int pmax, 
-	  float *pitch, COMP Sw[], float *prev_Wo);
-float test_candidate_mbe(COMP Sw[], float f0, COMP Sw_[]);
+	  float *pitch, COMP Sw[], COMP W[], float *prev_Wo);
 
 #endif

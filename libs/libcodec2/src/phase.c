@@ -22,20 +22,22 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not,see <http://www.gnu.org/licenses/>. 
 */
 
 #include "defines.h"
 #include "phase.h"
-#include "four1.h"
+#include "kiss_fft.h"
+#include "comp.h"
+#include "glottal.c"
 
 #include <assert.h>
+#include <ctype.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
 
-#define VTHRESH 4.0
+#define GLOTTAL_FFT_SIZE 512
 
 /*---------------------------------------------------------------------------*\
 
@@ -47,6 +49,7 @@
 \*---------------------------------------------------------------------------*/
 
 void aks_to_H(
+              kiss_fft_cfg fft_fwd_cfg, 
 	      MODEL *model,	/* model parameters */
 	      float  aks[],	/* LPC's */
 	      float  G,	        /* energy term */
@@ -54,7 +57,8 @@ void aks_to_H(
 	      int    order
 )
 {
-  COMP  Pw[FFT_DEC];	/* power spectrum */
+  COMP  pw[FFT_ENC];	/* power spectrum (input) */
+  COMP  Pw[FFT_ENC];	/* power spectrum (output) */
   int   i,m;		/* loop variables */
   int   am,bm;		/* limits of current band */
   float r;		/* no. rads/bin */
@@ -63,19 +67,19 @@ void aks_to_H(
   int   b;		/* centre bin of harmonic */
   float phi_;		/* phase of LPC spectra */
 
-  r = TWO_PI/(FFT_DEC);
+  r = TWO_PI/(FFT_ENC);
 
   /* Determine DFT of A(exp(jw)) ------------------------------------------*/
 
-  for(i=0; i<FFT_DEC; i++) {
-    Pw[i].real = 0.0;
-    Pw[i].imag = 0.0;
+  for(i=0; i<FFT_ENC; i++) {
+    pw[i].real = 0.0;
+    pw[i].imag = 0.0;
   }
 
   for(i=0; i<=order; i++)
-    Pw[i].real = aks[i];
+    pw[i].real = aks[i];
 
-  four1(&Pw[-1].imag,FFT_DEC,-1);
+  kiss_fft(fft_fwd_cfg, (kiss_fft_cpx *)pw, (kiss_fft_cpx *)Pw);
 
   /* Sample magnitude and phase at harmonics */
 
@@ -149,24 +153,26 @@ void aks_to_H(
    This E[m] then gets passed through the LPC synthesis filter to
    determine the final harmonic phase.
      
-   For a while there were prolems with low pitched males like hts1
-   sounding "clicky".  The synthesied time domain waveform also looked
-   clicky.  Many methods were tried to improve the sounds quality of
-   low pitched males. Finally adding a small amount of jitter to each
-   harmonic worked.
+   Comparing to speech synthesised using original phases:
 
-   The current result sounds very close to the original phases, with
-   only 1 voicing bit per frame.  For example hts1a using original
-   amplitudes and this phase model produces speech hard to distinguish
-   from speech synthesise with the orginal phases.  The sound quality
-   of this patrtiallyuantised codec (nb original amplitudes) is higher
-   than g729, even though all the phase information has been
-   discarded.
+   - Through headphones speech synthesised with this model is not as 
+     good. Through a loudspeaker it is very close to original phases.
+
+   - If there are voicing errors, the speech can sound clicky or
+     staticy.  If V speech is mistakenly declared UV, this model tends to
+     synthesise impulses or clicks, as there is usually very little shift or
+     dispersion through the LPC filter.
+
+   - When combined with LPC amplitude modelling there is an additional
+     drop in quality.  I am not sure why, theory is interformant energy
+     is raised making any phase errors more obvious.
 
    NOTES:
 
-     1/ This synthesis model is effectvely the same as simple LPC-10
-     vocoders, and yet sounds much better.  Why?
+     1/ This synthesis model is effectively the same as a simple LPC-10
+     vocoders, and yet sounds much better.  Why? Conventional wisdom
+     (AMBE, MELP) says mixed voicing is required for high quality
+     speech.
 
      2/ I am pretty sure the Lincoln Lab sinusoidal coding guys (like xMBE
      also from MIT) first described this zero phase model, I need to look
@@ -182,52 +188,64 @@ void aks_to_H(
      a small delta-W to make phase tracks line up for voiced
      harmonics.
 
-     4/ Why does this sound so great with 1 V/UV decision?  Conventional
-     wisdom says mixed voicing is required for high qaulity speech.
-
 \*---------------------------------------------------------------------------*/
 
 void phase_synth_zero_order(
+    kiss_fft_cfg fft_fwd_cfg,     
     MODEL *model,
     float  aks[],
-    float *ex_phase             /* excitation phase of fundamental */
+    float *ex_phase,            /* excitation phase of fundamental */
+    int    order
 )
 {
   int   m;
   float new_phi;
-  COMP  Ex[MAX_AMP];		/* excitation samples */
-  COMP  A_[MAX_AMP];		/* synthesised harmonic samples */
-  COMP  H[MAX_AMP];             /* LPC freq domain samples */
+  COMP  Ex[MAX_AMP+1];		/* excitation samples */
+  COMP  A_[MAX_AMP+1];		/* synthesised harmonic samples */
+  COMP  H[MAX_AMP+1];           /* LPC freq domain samples */
   float G;
-  float jitter;
+  float jitter = 0.0;
+  float r;
+  int   b;
 
   G = 1.0;
-  aks_to_H(model,aks,G,H,LPC_ORD);
+  aks_to_H(fft_fwd_cfg, model, aks, G, H, order);
 
   /* 
      Update excitation fundamental phase track, this sets the position
      of each pitch pulse during voiced speech.  After much experiment
-     I found that using just this frame Wo improved quality for UV
+     I found that using just this frame's Wo improved quality for UV
      sounds compared to interpolating two frames Wo like this:
      
-     ex_phase[0] += (*prev_Wo+mode->Wo)*N/2;
+     ex_phase[0] += (*prev_Wo+model->Wo)*N/2;
   */
   
   ex_phase[0] += (model->Wo)*N;
   ex_phase[0] -= TWO_PI*floor(ex_phase[0]/TWO_PI + 0.5);
+  r = TWO_PI/GLOTTAL_FFT_SIZE;
 
   for(m=1; m<=model->L; m++) {
-
+      
     /* generate excitation */
-
+	    
     if (model->voiced) {
-	/* This method of adding jitter really helped remove the clicky
-	   sound in low pitched makes like hts1a. This moves the onset
-	   of each harmonic over at +/- 0.25 of a sample.
+	//float rnd;
+
+        b = floor(m*model->Wo/r + 0.5);
+	if (b > ((GLOTTAL_FFT_SIZE/2)-1)) {
+		b = (GLOTTAL_FFT_SIZE/2)-1;
+	}
+
+	/* I think adding a little jitter helps improve low pitch
+	   males like hts1a. This moves the onset of each harmonic
+	   over +/- 0.25 of a sample.
 	*/
-        jitter = 0.25*(1.0 - 2.0*rand()/RAND_MAX);
-	Ex[m].real = cos(ex_phase[0]*m - jitter*model->Wo*m);
-	Ex[m].imag = sin(ex_phase[0]*m - jitter*model->Wo*m);
+	//jitter = 0.25*(1.0 - 2.0*rand()/RAND_MAX);
+	jitter = 0;
+
+	//rnd = (PI/8)*(1.0 - 2.0*rand()/RAND_MAX);
+	Ex[m].real = cos(ex_phase[0]*m/* - jitter*model->Wo*m + glottal[b]*/);
+	Ex[m].imag = sin(ex_phase[0]*m/* - jitter*model->Wo*m + glottal[b]*/);
     }
     else {
 
@@ -252,3 +270,4 @@ void phase_synth_zero_order(
   }
 
 }
+

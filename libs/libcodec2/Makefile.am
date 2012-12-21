@@ -1,11 +1,9 @@
-AM_CFLAGS = -Isrc -Wall -lm
-AUTOMAKE_OPTIONS = gnu
-NAME = libcodec2
+AM_CFLAGS = -Isrc -fPIC -Wall -O3 -lm
+AUTOMAKE_OPTS = gnu
+NAME = codec2
 AM_CPPFLAGS = $(AM_CFLAGS)
 
-EXTRA_DIST = pitch/hts1a.p \
-pitch/hts2a.p \
-octave/glottal.m \
+EXTRA_DIST = octave/glottal.m \
 octave/lsp_pdf.m \
 octave/phase.m \
 octave/pl2.m \
@@ -68,11 +66,6 @@ wav/hts2a_g729a.wav \
 wav/m2400.wav \
 wav/morig_speex_8k.wav \
 src/globals.c \
-doc/A_m.gif \
-doc/omega_0.gif \
-doc/phi_m.gif \
-doc/s_n.gif \
-doc/s_n.txt \
 unittest/lsp2.txt \
 unittest/lsp7.txt \
 unittest/lspd78.txt \
@@ -87,12 +80,15 @@ unittest/lspd123.txt \
 unittest/lsp1.txt \
 unittest/lsp6.txt \
 unittest/lspd456.txt \
-src/codeall.sh \
-src/fq20.sh \
-src/listen1.sh \
-src/listen.sh \
-src/listensim.sh \
-src/sim.sh
-
+src/codebook/lsp1.txt \
+src/codebook/lsp2.txt \
+src/codebook/lsp3.txt \
+src/codebook/lsp4.txt \
+src/codebook/lsp5.txt \
+src/codebook/lsp6.txt \
+src/codebook/lsp7.txt \
+src/codebook/lsp8.txt \
+src/codebook/lsp9.txt \
+src/codebook/lsp10.txt
 
 SUBDIRS = src unittest

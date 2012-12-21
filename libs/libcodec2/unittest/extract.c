@@ -25,15 +25,16 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
-#define	MAX_STR	256		/* maximum string length		*/
+#define	MAX_STR	2048		/* maximum string length		*/
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
+#include <assert.h>
 
 void scan_line(FILE *fp, float f[], int n);
 
@@ -45,8 +46,8 @@ int main(int argc, char *argv[]) {
     long   lines;	/* lines read so far				*/
 
     if (argc != 5) {
-	printf("usage: extract TextFile FloatFile start end\n");
-	exit(0);
+	printf("usage: %s TextFile FloatFile start(1 .. 10) end(1 .. 10)\n", argv[0]);
+	exit(1);
     }
 
     /* read command line arguments and open files */
@@ -75,8 +76,10 @@ int main(int argc, char *argv[]) {
     lines = 0;
     while(!feof(ftext)) {
 	scan_line(ftext, buf, en);
-	fwrite(&buf[st-1], sizeof(float), en-st+1, ffloat);
-	printf("\r%ld lines",lines++);
+	if (!feof(ftext)) {
+	    fwrite(&buf[st-1], sizeof(float), en-st+1, ffloat);
+	    printf("\r%ld lines",++lines);
+	}
     }
     printf("\n");
 
@@ -108,9 +111,11 @@ void scan_line(FILE *fp, float f[], int n)
     char   s[MAX_STR];
     char   *ps,*pe;
     int	   i;
-
-    fgets(s,MAX_STR,fp);
-    ps = pe = s;
+    
+    memset(s, 0, MAX_STR);
+    ps = pe = fgets(s,MAX_STR,fp); 
+    if (ps == NULL)
+	return;
     for(i=0; i<n; i++) {
 	while( isspace(*pe)) pe++;
 	while( !isspace(*pe)) pe++;

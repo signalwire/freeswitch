@@ -1,6 +1,9 @@
 % Copyright David Rowe 2009
 % This program is distributed under the terms of the GNU General Public License 
 % Version 2
+%
+% Plots a raw speech sample file, you can optionally specify the start and end
+% samples and create a large and small PNGs
 
 function pl(samname1, start_sam, end_sam, pngname)
   
@@ -19,7 +22,7 @@ function pl(samname1, start_sam, end_sam, pngname)
   figure(1);
   clf;
   plot(s(st:en));
-  axis([1 en-st min(s) max(s)]);
+  axis([1 en-st 1.1*min(s) 1.1*max(s)]);
  
   if (nargin == 4)
 

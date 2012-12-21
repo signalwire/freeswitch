@@ -23,8 +23,7 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 /*-----------------------------------------------------------------------*\
@@ -38,6 +37,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include <assert.h>
 
 /*-----------------------------------------------------------------------*\
 
@@ -59,7 +59,7 @@ void acc(float v1[], float v2[], int k);
 void norm(float v[], int k, long n);
 long quantise(float cb[], float vec[], int k, int m, float *se);
 
-/*-----------------------------------------------------------------------*\
+/*-----------------------------------------------------------------------* \
 
 				MAIN
 
@@ -79,12 +79,13 @@ int main(int argc, char *argv[]) {
     float  delta;	/* improvement in distortion 			*/
     FILE   *ftrain;	/* file containing training set			*/
     FILE   *fvq;	/* file containing vector quantiser		*/
+    int     ret;
 
     /* Interpret command line arguments */
 
     if (argc != 5)	{
-	printf("usage: vqtrain TrainFile K M VQFile\n");
-	exit(0);
+	printf("usage: %s TrainFile K(dimension) M(codebook size) VQFile\n", argv[0]);
+	exit(1);
     }
 
     /* Open training file */
@@ -99,7 +100,7 @@ int main(int argc, char *argv[]) {
 
     k = atol(argv[2]);
     m = atol(argv[3]);
-    printf("dimension K=%ld  number of entries M=%ld\n", k,m);
+    printf("dimension K=%ld  number of entries M=%ld\n", k, m);
     vec = (float*)malloc(sizeof(float)*k);
     cb = (float*)malloc(sizeof(float)*k*m);
     cent = (float*)malloc(sizeof(float)*k*m);
@@ -112,14 +113,14 @@ int main(int argc, char *argv[]) {
     /* determine size of training set */
 
     J = 0;
-    while(fread(vec, sizeof(float), k, ftrain) == k)
+    while(fread(vec, sizeof(float), k, ftrain) == (size_t)k)
     J++;
     printf("J=%ld entries in training set\n", J);
 
     /* set up initial codebook state from samples of training set */
 
     rewind(ftrain);
-    fread(cb, sizeof(float), k*m, ftrain);
+    ret = fread(cb, sizeof(float), k*m, ftrain);
 
     /* main loop */
 
@@ -140,7 +141,7 @@ int main(int argc, char *argv[]) {
 	se = 0.0;
 	rewind(ftrain);
 	for(i=0; i<J; i++) {
-	    fread(vec, sizeof(float), k, ftrain);
+	    ret = fread(vec, sizeof(float), k, ftrain);
 	    ind = quantise(cb, vec, k, m, &se);
 	    n[ind]++;
 	    acc(&cent[ind*k], vec, k);
@@ -151,7 +152,7 @@ int main(int argc, char *argv[]) {
 	printf("\r  Iteration %ld, Dn = %f, Delta = %e\n", j, Dn, delta);
 	j++;
 
-	/* determine new codebook from centriods */
+	/* determine new codebook from centroids */
 
 	if (delta > DELTAQ)
 	    for(i=0; i<m; i++) {
@@ -171,6 +172,7 @@ int main(int argc, char *argv[]) {
 	exit(1);
     }
 
+    fprintf(fvq,"%ld %ld\n",k,m);
     for(j=0; j<m; j++) {
 	for(i=0; i<k; i++)
 	    fprintf(fvq,"%f  ",cb[j*k+i]);
@@ -277,13 +279,16 @@ long quantise(float cb[], float vec[], int k, int m, float *se)
    float   beste;	/* best error so far		*/
    long	   j;
    int     i;
+   float   diff;
 
    besti = 0;
    beste = 1E32;
    for(j=0; j<m; j++) {
 	e = 0.0;
-	for(i=0; i<k; i++)
-	    e += pow(cb[j*k+i]-vec[i],2.0);
+	for(i=0; i<k; i++) {
+	    diff = cb[j*k+i]-vec[i];
+	    e += pow(diff,2.0);
+	}
 	if (e < beste) {
 	    beste = e;
 	    besti = j;

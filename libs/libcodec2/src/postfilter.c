@@ -24,15 +24,16 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
 #include "defines.h"
+#include "comp.h"
 #include "dump.h"
 #include "postfilter.h"
 
@@ -44,6 +45,11 @@
 
 #define BG_THRESH 40.0     /* only consider low levels signals for bg_est */
 #define BG_BETA    0.1     /* averaging filter constant                   */
+#define BG_MARGIN  6.0     /* harmonics this far above BG noise are 
+			      randomised.  Helped make bg noise less 
+			      spikey (impulsive) for mmt1, but speech was
+                              perhaps a little rougher.
+			   */
 
 /*---------------------------------------------------------------------------*\
 
@@ -61,7 +67,7 @@
   (5-12) are required to transmit the frequency selective voicing
   information.  Mixed excitation also requires accurate voicing
   estimation (parameter estimators always break occasionally under
-  exceptional condition).
+  exceptional conditions).
 
   In our case we use a post filter approach which requires no
   additional bits to be transmitted.  The decoder measures the average
@@ -105,6 +111,7 @@ void postfilter(
   for(m=1; m<=model->L; m++)
       e += model->A[m]*model->A[m];
 
+  assert(e > 0.0);
   e = 10.0*log10(e/model->L);
 
   /* If beneath threhold, update bg estimate.  The idea
@@ -121,11 +128,13 @@ void postfilter(
   uv = 0;
   if (model->voiced)
       for(m=1; m<=model->L; m++)
-	  if (20.0*log10(model->A[m]) < *bg_est) {
+	  if (20.0*log10(model->A[m]) < (*bg_est + BG_MARGIN)) {
 	      model->phi[m] = TWO_PI*(float)rand()/RAND_MAX;
 	      uv++;
 	  }
 
+#ifdef DUMP
   dump_bg(e, *bg_est, 100.0*uv/model->L);
+#endif
 
 }

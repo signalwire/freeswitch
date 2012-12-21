@@ -22,19 +22,24 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __SINE__
 #define __SINE__
 
-void make_analysis_window(float w[], COMP W[]);
-void dft_speech(COMP Sw[], float Sn[], float w[]);
+#include "defines.h"
+#include "comp.h"
+#include "kiss_fft.h"
+
+void make_analysis_window(kiss_fft_cfg fft_fwd_cfg, float w[], COMP W[]);
+float hpf(float x, float states[]);
+void dft_speech(kiss_fft_cfg fft_fwd_cfg, COMP Sw[], float Sn[], float w[]);
 void two_stage_pitch_refinement(MODEL *model, COMP Sw[]);
 void estimate_amplitudes(MODEL *model, COMP Sw[], COMP W[]);
-float est_voicing_mbe(MODEL *model, COMP Sw[], COMP W[], float f0, COMP Sw_[]);
+float est_voicing_mbe(MODEL *model, COMP Sw[], COMP W[], COMP Sw_[],COMP Ew[], 
+		      float prev_Wo);
 void make_synthesis_window(float Pn[]);
-void synthesise(float Sn_[], MODEL *model, float Pn[], int shift);
+void synthesise(kiss_fft_cfg fft_inv_cfg, float Sn_[], MODEL *model, float Pn[], int shift);
 
 #endif

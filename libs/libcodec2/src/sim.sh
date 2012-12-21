@@ -10,9 +10,13 @@
 
 ../src/c2sim ../raw/$1.raw -o $1_uq.raw
 ../src/c2sim ../raw/$1.raw --phase0 -o $1_phase0.raw --postfilter
-../src/c2sim ../raw/$1.raw --lpc 10 -o $1_lpc10.raw
-../src/c2sim ../raw/$1.raw --lpc 10 --lsp -o $1_lsp.raw
+../src/c2sim ../raw/$1.raw --lpc 10 -o $1_lpc10.raw --postfilter
 ../src/c2sim ../raw/$1.raw --phase0 --lpc 10 -o $1_phase0_lpc10.raw --postfilter
-../src/c2sim ../raw/$1.raw --phase0 --lpc 10 --lsp -o $1_phase0_lsp.raw --postfilter
-../src/c2sim ../raw/$1.raw --phase0 --lpc 10 --lsp -o $1_phase0_lsp_dec.raw --postfilter --dec
+../src/c2sim ../raw/$1.raw --phase0 --lpc 10 --dec -o $1_phase0_lpc10_dec.raw --postfilter
+../src/c2sim ../raw/$1.raw --phase0 --lpc 10 --lsp --dec -o $1_phase0_lsp_dec.raw --postfilter
+
+#../src/c2sim ../raw/$1.raw --lpc 10 --lsp -o $1_lsp.raw
+#../src/c2sim ../raw/$1.raw --phase0 --lpc 10 -o $1_phase0_lpc10.raw --postfilter
+#../src/c2sim ../raw/$1.raw --phase0 --lpc 10 --lsp -o $1_phase0_lsp.raw --postfilter
+#../src/c2sim ../raw/$1.raw --phase0 --lpc 10 --lsp -o $1_phase0_lsp_dec.raw --postfilter --dec
 

@@ -9,7 +9,7 @@
 \*---------------------------------------------------------------------------*/
 
 /*
-  Copyright (C) 2009 David Rowe
+  Copyright (C) 2009-2012 David Rowe
 
   All rights reserved.
 
@@ -22,8 +22,7 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __LPC__
@@ -31,6 +30,8 @@
 
 #define LPC_MAX_ORDER 20
 
+void pre_emp(float Sn_pre[], float Sn[], float *mem, int Nsam);
+void de_emp(float Sn_se[], float Sn[], float *mem, int Nsam);
 void hanning_window(float Sn[],	float Wn[], int Nsam);
 void autocorrelate(float Sn[], float Rn[], int Nsam, int order);
 void levinson_durbin(float R[],	float lpcs[], int order);

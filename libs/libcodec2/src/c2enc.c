@@ -4,13 +4,8 @@
   AUTHOR......: David Rowe
   DATE CREATED: 23/8/2010
 
-  Encodes a file of raw speech samples using codec2 and ouputs a file
-  of bits (each bit is stored in the LSB or each output byte). Demo
-  program for codec2.
-
-  NOTE: the bit file is not packed, 51 bits/frame actually consumes 51
-  bytes/frame on disk.  If you are using this for a real world
-  application you may want to pack the 51 bytes into 7 bytes.
+  Encodes a file of raw speech samples using codec2 and outputs a file
+  of bits.
 
 \*---------------------------------------------------------------------------*/
 
@@ -28,8 +23,7 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "codec2.h"
@@ -41,40 +35,68 @@
 
 int main(int argc, char *argv[])
 {
-    static const int bitsSize = ((CODEC2_BITS_PER_FRAME + 7) / 8);
-    void *codec2;
-    FILE *fin;
-    FILE *fout;
-    short buf[CODEC2_SAMPLES_PER_FRAME];
-    unsigned char  bits[bitsSize];
-
-    if (argc != 3) {
-	printf("usage: %s InputRawspeechFile OutputBitFile\n", argv[0]);
+    int            mode;
+    void          *codec2;
+    FILE          *fin;
+    FILE          *fout;
+    short         *buf;
+    unsigned char *bits;
+    int            nsam, nbit, nbyte;
+ 
+    if (argc != 4) {
+	printf("usage: c2enc 3200|2400|1400|1200 InputRawspeechFile OutputBitFile\n");
+	printf("e.g    c2enc 1400 ../raw/hts1a.raw hts1a.c2\n");
 	exit(1);
     }
  
-    if ( (fin = fopen(argv[1],"rb")) == NULL ) {
-	fprintf(stderr, "Error opening input bit file: %s: %s.\n",
-         argv[1], strerror(errno));
+    if (strcmp(argv[1],"3200") == 0)
+	mode = CODEC2_MODE_3200;
+    else if (strcmp(argv[1],"2400") == 0)
+	mode = CODEC2_MODE_2400;
+    else if (strcmp(argv[1],"1400") == 0)
+	mode = CODEC2_MODE_1400;
+    else if (strcmp(argv[1],"1200") == 0)
+	mode = CODEC2_MODE_1200;
+    else {
+	fprintf(stderr, "Error in mode: %s.  Must be 3200, 2400, 1400 or 1200\n", argv[1]);
 	exit(1);
     }
 
-    if ( (fout = fopen(argv[2],"wb")) == NULL ) {
-	fprintf(stderr, "Error opening output speech file: %s: %s.\n",
+    if (strcmp(argv[2], "-")  == 0) fin = stdin;
+    else if ( (fin = fopen(argv[2],"rb")) == NULL ) {
+	fprintf(stderr, "Error opening input speech file: %s: %s.\n",
          argv[2], strerror(errno));
 	exit(1);
     }
 
-    codec2 = codec2_create();
+    if (strcmp(argv[3], "-") == 0) fout = stdout;
+    else if ( (fout = fopen(argv[3],"wb")) == NULL ) {
+	fprintf(stderr, "Error opening output compressed bit file: %s: %s.\n",
+         argv[3], strerror(errno));
+	exit(1);
+    }
 
-    while(fread(buf, sizeof(short), CODEC2_SAMPLES_PER_FRAME, fin) ==
-	  CODEC2_SAMPLES_PER_FRAME) {
+    codec2 = codec2_create(mode);
+    nsam = codec2_samples_per_frame(codec2);
+    nbit = codec2_bits_per_frame(codec2);
+    buf = (short*)malloc(nsam*sizeof(short));
+    nbyte = (nbit + 7) / 8;
+
+    bits = (unsigned char*)malloc(nbyte*sizeof(char));
+    
+    while(fread(buf, sizeof(short), nsam, fin) == (size_t)nsam) {
 	codec2_encode(codec2, bits, buf);
-	fwrite(bits, sizeof(char), bitsSize, fout);
+	fwrite(bits, sizeof(char), nbyte, fout);
+	// if this is in a pipeline, we probably don't want the usual
+        // buffering to occur
+        if (fout == stdout) fflush(stdout);
+        if (fin == stdin) fflush(stdin);
     }
 
     codec2_destroy(codec2);
 
+    free(buf);
+    free(bits);
     fclose(fin);
     fclose(fout);
 

@@ -24,8 +24,7 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #define N  80		/* frame size          */
@@ -103,8 +102,8 @@ char *argv[];
     float f0;
 
     if (argc < 3) {
-	printf("\nusage: tcontphase OutputRawSpeechFile F0\n");
-        exit(0);
+	printf("\nusage: %s OutputRawSpeechFile F0\n", argv[0]);
+        exit(1);
     }
 
     /* Output file */

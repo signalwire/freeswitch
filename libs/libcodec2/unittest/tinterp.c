@@ -22,8 +22,7 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <assert.h>
@@ -32,6 +31,9 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "defines.h"
 #include "sine.h"
@@ -60,13 +62,14 @@ void write_amp(char file[], MODEL *model)
     fclose(f);
 }
 
-char *get_next_float(char *s, float *num)
+const char *get_next_float(const char *s, float *num)
 {
-    char *p = s;
+    const char *p = s;
     char  tmp[MAX_STR];
 
     while(*p && !isspace(*p)) 
 	p++;
+    assert((p-s) < (int)(sizeof(tmp)-1));
     memcpy(tmp, s, p-s);
     tmp[p-s] = 0;
     *num = atof(tmp);
@@ -74,13 +77,14 @@ char *get_next_float(char *s, float *num)
     return p+1;
 }
 
-char *get_next_int(char *s, int *num)
+const char *get_next_int(const char *s, int *num)
 {
-    char *p = s;
+    const char *p = s;
     char  tmp[MAX_STR];
 
     while(*p && !isspace(*p)) 
 	p++;
+    assert((p-s) < (int)(sizeof(tmp)-1));
     memcpy(tmp, s, p-s);
     tmp[p-s] = 0;
     *num = atoi(tmp);
@@ -88,18 +92,20 @@ char *get_next_int(char *s, int *num)
     return p+1;
 }
 
-void load_amp(MODEL *model, char file[], int frame)
+void load_amp(MODEL *model, const char * file, int frame)
 {
     FILE *f;
     int   i;
     char  s[1024];
-    char *ps;
+    const char *ps;
 
     f = fopen(file,"rt");
+    assert(f);
 
     for(i=0; i<frame; i++)
-	fgets(s, 1023, f);
+	ps = fgets(s, 1023, f);
 
+    /// can frame ever be 0? what if fgets fails?
     ps = s;
     ps = get_next_float(ps, &model->Wo);
     ps = get_next_int(ps, &model->L);
@@ -109,13 +115,30 @@ void load_amp(MODEL *model, char file[], int frame)
     fclose(f);
 }
 
+void load_or_make_amp(MODEL *model, 
+                      const char * filename, int frame,
+                      float f0, float cdB, float mdBHz)
+{
+    struct stat buf;
+    int rc = stat(filename, &buf);
+    if (rc || !S_ISREG(buf.st_mode) || ((buf.st_mode & S_IRUSR) != S_IRUSR))
+    {
+        make_amp(model, f0, cdB, mdBHz);
+    }
+    else
+    {
+        load_amp(model, filename, frame);
+    }
+}
 int main() {
     MODEL  prev, next, interp;
 
-    //make_amp(&prev, 50.0, 60.0, 6E-3);
-    //make_amp(&next, 50.0, 40.0, 6E-3);
-    load_amp(&prev, "../src/hts1a_model.txt", 32);
-    load_amp(&next, "../src/hts1a_model.txt", 34);
+    load_or_make_amp(&prev,
+                     "../src/hts1a_model.txt", 32,
+                     50.0, 60.0, 6E-3);
+    load_or_make_amp(&next,
+                     "../src/hts1a_model.txt", 34,
+                     50.0, 40.0, 6E-3);
 
     interp.voiced = 1;
     interpolate(&interp, &prev, &next);
