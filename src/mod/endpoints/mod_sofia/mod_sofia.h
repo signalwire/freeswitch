@@ -203,7 +203,6 @@ typedef enum {
 	PFLAG_RUNNING,
 	PFLAG_RESPAWN,
 	PFLAG_MULTIREG,
-	PFLAG_SUPPRESS_CNG,
 	PFLAG_TLS,
 	PFLAG_CHECKUSER,
 	PFLAG_SECURE,
@@ -271,8 +270,7 @@ typedef enum {
 typedef enum {
 	PFLAG_NDLB_TO_IN_200_CONTACT = (1 << 0),
 	PFLAG_NDLB_BROKEN_AUTH_HASH = (1 << 1),
-	PFLAG_NDLB_SENDRECV_IN_SESSION = (1 << 2),
-	PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE = (1 << 6)
+	PFLAG_NDLB_EXPIRES_IN_REGISTER_RESPONSE = (1 << 2)
 } sofia_NDLB_t;
 
 typedef enum {
@@ -317,7 +315,6 @@ typedef enum {
 	TFLAG_CAPTURE,
 	TFLAG_REINVITED,
 	TFLAG_PASS_ACK,
-	TFLAG_DROP_DTMF,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -530,7 +527,6 @@ struct sofia_profile {
 	uint32_t rtpip_next;
 	char *sipip;
 	char *extsipip;
-	char *username;
 	char *url;
 	char *public_url;
 	char *bindurl;
@@ -577,6 +573,7 @@ struct sofia_profile {
 	switch_core_media_flag_t media_flags[SCMF_MAX];
 	unsigned int mflags;
 	unsigned int ndlb;
+	unsigned int mdlb;
 	uint32_t max_calls;
 	uint32_t nonce_ttl;
 	nua_t *nua;
@@ -745,8 +742,6 @@ struct private_object {
 	nua_handle_t *nh;
 	nua_handle_t *nh2;
 	sip_contact_t *contact;
-	uint32_t owner_id;
-	uint32_t session_id;
 	uint32_t max_missed_packets;
 	uint32_t max_missed_hold_packets;
 	/** VIDEO **/
@@ -1140,9 +1135,7 @@ void sofia_glue_global_siptrace(switch_bool_t on);
 void sofia_glue_global_capture(switch_bool_t on);
 void sofia_glue_global_watchdog(switch_bool_t on);
 void sofia_media_proxy_codec(switch_core_session_t *session, const char *r_sdp);
-switch_status_t sofia_media_sdp_map(const char *r_sdp, switch_event_t **fmtp, switch_event_t **pt);
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
-void sofia_glue_check_dtmf_type(private_object_t *tech_pvt);
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);

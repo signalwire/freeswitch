@@ -48,7 +48,8 @@ typedef enum {
 	SM_NDLB_ALLOW_BAD_IANANAME = (1 << 0),
 	SM_NDLB_ALLOW_NONDUP_SDP = (1 << 1),
 	SM_NDLB_ALLOW_CRYPTO_IN_AVP = (1 << 2),
-	SM_NDLB_DISABLE_SRTP_AUTH = (1 << 3)
+	SM_NDLB_DISABLE_SRTP_AUTH = (1 << 3),
+	SM_NDLB_SENDRECV_IN_SESSION = (1 << 4)
 } switch_core_media_NDLB_t;
 
 typedef enum {
@@ -125,10 +126,26 @@ typedef struct switch_core_media_params_s {
 
 	char *extsipip;
 	char *local_network;
-	
+
+	char *sdp_username;
+
+	switch_mutex_t *mutex;
+		
 
 } switch_core_media_params_t;
 
+static inline const char *switch_media_type2str(switch_media_type_t type)
+{
+	switch(type) {
+	case SWITCH_MEDIA_TYPE_AUDIO:
+		return "audio";
+	case SWITCH_MEDIA_TYPE_VIDEO:
+		return "video";
+	default:
+		return "!ERR";
+		
+	}
+}
 
 
 SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t **smhp, switch_core_session_t *session, switch_core_media_params_t *params);
@@ -169,6 +186,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_session_t *session, 
 															  switch_frame_t *frame, switch_io_flag_t flags, int stream_id, switch_media_type_t type);
 SWITCH_DECLARE(int) switch_core_media_check_nat(switch_media_handle_t *smh, const char *network_ip);
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_session_t *session, switch_media_type_t type, int force);
 
 SWITCH_END_EXTERN_C
 #endif

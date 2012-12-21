@@ -3605,7 +3605,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->local_network = "localnet.auto";
 					sofia_set_flag(profile, TFLAG_ENABLE_SOA);
 					sofia_set_pflag(profile, PFLAG_CID_IN_1XX);
-					profile->ndlb |= SM_NDLB_ALLOW_NONDUP_SDP;
+					profile->mndlb |= SM_NDLB_ALLOW_NONDUP_SDP;
 					profile->te = 101;
 					profile->ireg_seconds = IREG_SECONDS;
 					profile->paid_type = PAID_DEFAULT;
@@ -3926,7 +3926,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_media_flag(profile, SCMF_DISABLE_RTP_AUTOADJ);
 						}
 					} else if (!strcasecmp(var, "NDLB-support-asterisk-missing-srtp-auth") && switch_true(val)) {
-						profile->ndlb |= SM_NDLB_DISABLE_SRTP_AUTH;
+						profile->mndlb |= SM_NDLB_DISABLE_SRTP_AUTH;
 					} else if (!strcasecmp(var, "user-agent-filter")) {
 						profile->user_agent_filter = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "max-registrations-per-extension")) {
@@ -4165,15 +4165,15 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "NDLB-sendrecv-in-session")) {
 						if (switch_true(val)) {
-							profile->ndlb |= PFLAG_NDLB_SENDRECV_IN_SESSION;
+							profile->mndlb |= SM_NDLB_SENDRECV_IN_SESSION;
 						} else {
-							profile->ndlb &= ~PFLAG_NDLB_SENDRECV_IN_SESSION;
+							profile->mndlb &= ~SM_NDLB_SENDRECV_IN_SESSION;
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-bad-iananame")) {
 						if (switch_true(val)) {
-							profile->ndlb |= SM_NDLB_ALLOW_BAD_IANANAME;
+							profile->mndlb |= SM_NDLB_ALLOW_BAD_IANANAME;
 						} else {
-							profile->ndlb &= ~SM_NDLB_ALLOW_BAD_IANANAME;
+							profile->mndlb &= ~SM_NDLB_ALLOW_BAD_IANANAME;
 						}
 					} else if (!strcasecmp(var, "NDLB-expires-in-register-response")) {
 						if (switch_true(val)) {
@@ -4183,15 +4183,15 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-crypto-in-avp")) {
 						if (switch_true(val)) {
-							profile->ndlb |= SM_NDLB_ALLOW_CRYPTO_IN_AVP;
+							profile->mndlb |= SM_NDLB_ALLOW_CRYPTO_IN_AVP;
 						} else {
-							profile->ndlb &= ~SM_NDLB_ALLOW_CRYPTO_IN_AVP;
+							profile->mndlb &= ~SM_NDLB_ALLOW_CRYPTO_IN_AVP;
 						}
 					} else if (!strcasecmp(var, "NDLB-allow-nondup-sdp")) {
 						if (switch_true(val)) {
-							profile->ndlb |= SM_NDLB_ALLOW_NONDUP_SDP;
+							profile->mndlb |= SM_NDLB_ALLOW_NONDUP_SDP;
 						} else {
-							profile->ndlb &= ~SM_NDLB_ALLOW_NONDUP_SDP;
+							profile->mndlb &= ~SM_NDLB_ALLOW_NONDUP_SDP;
 						}
 					} else if (!strcasecmp(var, "pass-rfc2833")) {
 						if (switch_true(val)) {
@@ -4324,7 +4324,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
 						}
 					} else if (!strcasecmp(var, "username")) {
-						profile->username = switch_core_strdup(profile->pool, val);
+						profile->sdp_username = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "context")) {
 						profile->context = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "apply-nat-acl")) {
@@ -5229,37 +5229,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 							switch_core_session_rwunlock(other_session);
 							goto end;
 						} else {
-							char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
-							switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
-							char tmp[32] = "";
-					
-							tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, t38_options->remote_ip);
-							tech_pvt->remote_sdp_audio_port = t38_options->remote_port;
-							
-							if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && 
-								remote_port == tech_pvt->remote_sdp_audio_port) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
-												  "Audio params are unchanged for %s.\n",
-												  switch_channel_get_name(tech_pvt->channel));
-							} else {
-								const char *err = NULL;
-
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, 
-												  "Audio params changed for %s from %s:%d to %s:%d\n",
-												  switch_channel_get_name(tech_pvt->channel),
-												  remote_host, remote_port, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
-								
-								switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
-								switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
-								switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
-								if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip,
-																  tech_pvt->remote_sdp_audio_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "AUDIO RTP REPORTS ERROR: [%s]\n", err);
-									switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
-								}
-							}
-
-							switch_core_media_copy_t38_options(t38_options, other_session);
+							switch_core_media_process_t38_passthru(session, other_session, t38_options);
 						}
 					}
 
@@ -5629,7 +5599,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 		if (r_sdp) {
 
-			if (!(profile->ndlb & SM_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp))) {
+			if (!(profile->mndlb & SM_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
 				is_dup_sdp = 1;
 			} else {

@@ -178,23 +178,6 @@ void sofia_glue_set_udptl_image_sdp(private_object_t *tech_pvt, switch_t38_optio
 
 }
 
-void sofia_glue_check_dtmf_type(private_object_t *tech_pvt) 
-{
-	const char *val;
-
-	if ((val = switch_channel_get_variable(tech_pvt->channel, "dtmf_type"))) {
-		if (!strcasecmp(val, "rfc2833")) {
-			tech_pvt->dtmf_type = DTMF_2833;
-		} else if (!strcasecmp(val, "info")) {
-			tech_pvt->dtmf_type = DTMF_INFO;
-		} else if (!strcasecmp(val, "none")) {
-			tech_pvt->dtmf_type = DTMF_NONE;
-		} else {
-			tech_pvt->dtmf_type = tech_pvt->profile->dtmf_type;
-		}
-	}
-}
-
 
 private_object_t *sofia_glue_new_pvt(switch_core_session_t *session)
 {
@@ -279,7 +262,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_cap(tech_pvt->channel, CC_FS_RTP);
 	switch_channel_set_cap(tech_pvt->channel, CC_QUEUEABLE_DTMF_DELAY);
 
-	tech_pvt->mparams->ndlb = tech_pvt->profile->ndlb;
+	tech_pvt->mparams->ndlb = tech_pvt->profile->mndlb;
 	tech_pvt->mparams->inbound_codec_string = profile->inbound_codec_string;
 	tech_pvt->mparams->outbound_codec_string = profile->outbound_codec_string;
 	tech_pvt->mparams->auto_rtp_bugs = profile->auto_rtp_bugs;
@@ -289,6 +272,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	tech_pvt->mparams->manual_video_rtp_bugs = profile->manual_video_rtp_bugs;
 	tech_pvt->mparams->extsipip = profile->extsipip;
 	tech_pvt->mparams->local_network = profile->local_network;
+	tech_pvt->mparams->mutex = tech_pvt->sofia_mutex;
 
 	
 	switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
@@ -317,76 +301,6 @@ const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name)
 	}
 	return NULL;
 }
-
-switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int force)
-{
-	char *lookup_rtpip = tech_pvt->rtpip;	/* Pointer to externally looked up address */
-	switch_port_t sdp_port, rtcp_port;	/* The external port to be sent in the SDP */
-	const char *use_ip = NULL;	/* The external IP to be sent in the SDP */
-
-	/* Don't do anything if we're in proxy mode or if a (remote) port already has been found */
-	if (!force) {
-		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) ||
-			switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA) || tech_pvt->adv_sdp_audio_port) {
-			return SWITCH_STATUS_SUCCESS;
-		}
-	}
-
-	/* Release the local sdp port */
-	if (tech_pvt->local_sdp_audio_port) {
-		switch_rtp_release_port(tech_pvt->rtpip, tech_pvt->local_sdp_audio_port);
-	}
-
-	/* Request a local port from the core's allocator */
-	if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(tech_pvt->rtpip))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_CRIT, "No RTP ports available!\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	tech_pvt->local_sdp_audio_ip = tech_pvt->rtpip;
-
-	sdp_port = tech_pvt->local_sdp_audio_port;
-
-	/* Check if NAT is detected  */
-	if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-		/* Yes, map the port through switch_nat */
-		switch_nat_add_mapping(tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
-		switch_nat_add_mapping(tech_pvt->local_sdp_audio_port + 1, SWITCH_NAT_UDP, &rtcp_port, SWITCH_FALSE);
-
-		/* Find an IP address to use */
-		if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip"))
-			&& !zstr(tech_pvt->profile->extrtpip)) {
-			use_ip = tech_pvt->profile->extrtpip;
-		}
-
-		if (use_ip) {
-			if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &lookup_rtpip, &sdp_port,
-											  use_ip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-				/* Address lookup was required and fail (external ip was "host:..." or "stun:...") */
-				return SWITCH_STATUS_FALSE;
-			} else {
-				/* Address properly resolved, use it as external ip */
-				use_ip = lookup_rtpip;
-			}
-		} else {
-			/* No external ip found, use the profile's rtp ip */
-			use_ip = tech_pvt->rtpip;
-		}
-	} else {
-		/* No NAT traversal required, use the profile's rtp ip */
-		use_ip = tech_pvt->rtpip;
-	}
-
-	tech_pvt->adv_sdp_audio_port = sdp_port;
-	tech_pvt->adv_sdp_audio_ip = tech_pvt->extrtpip = switch_core_session_strdup(tech_pvt->session, use_ip);
-
-	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->local_sdp_audio_ip);
-	switch_channel_set_variable_printf(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, "%d", sdp_port);
-	switch_channel_set_variable(tech_pvt->channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 
 sofia_transport_t sofia_glue_str2transport(const char *str)
 {
@@ -1954,6 +1868,12 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
 
+#if 1
+int sofia_recover_callback(switch_core_session_t *session) 
+{
+	return -1;
+}
+#else 
 int sofia_recover_callback(switch_core_session_t *session) 
 {
 
@@ -2184,6 +2104,8 @@ int sofia_recover_callback(switch_core_session_t *session)
 	return r;
 
 }
+#endif
+
 
 int sofia_glue_recover(switch_bool_t flush)
 {
