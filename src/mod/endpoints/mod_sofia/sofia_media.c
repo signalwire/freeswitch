@@ -34,45 +34,6 @@
 
 
 
-void sofia_media_tech_absorb_sdp(private_object_t *tech_pvt)
-{
-	const char *sdp_str;
-
-	if ((sdp_str = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
-		sdp_parser_t *parser;
-		sdp_session_t *sdp;
-		sdp_media_t *m;
-		sdp_connection_t *connection;
-
-		if ((parser = sdp_parse(NULL, sdp_str, (int) strlen(sdp_str), 0))) {
-			if ((sdp = sdp_session(parser))) {
-				for (m = sdp->sdp_media; m; m = m->m_next) {
-					if (m->m_type != sdp_media_audio || !m->m_port) {
-						continue;
-					}
-
-					connection = sdp->sdp_connection;
-					if (m->m_connections) {
-						connection = m->m_connections;
-					}
-
-					if (connection) {
-						tech_pvt->proxy_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, connection->c_address);
-					}
-					tech_pvt->proxy_sdp_audio_port = (switch_port_t) m->m_port;
-					if (tech_pvt->proxy_sdp_audio_ip && tech_pvt->proxy_sdp_audio_port) {
-						break;
-					}
-				}
-			}
-			sdp_parser_free(parser);
-		}
-		sofia_media_tech_set_local_sdp(tech_pvt, sdp_str, SWITCH_TRUE);
-	}
-}
-
-
-
 void sofia_media_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 {
 	sdp_media_t *m;
@@ -141,7 +102,7 @@ uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_
 	uint8_t t, p = 0;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 
-	if ((t = switch_core_media_negotiate_sdp(session, r_sdp, &p, sofia_test_flag(tech_pvt, TFLAG_REINVITE), 
+	if ((t = switch_core_media_negotiate_sdp(session, r_sdp, &p, switch_channel_test_flag(tech_pvt->channel, CF_REINVITE), 
 									   tech_pvt->profile->codec_flags, tech_pvt->profile->te))) {
 		sofia_set_flag_locked(tech_pvt, TFLAG_SDP);
 	}
@@ -155,16 +116,18 @@ uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_
 
 switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt)
 {
-	int ok;
+	switch_status_t status;
 
 	switch_mutex_lock(tech_pvt->sofia_mutex);
+	status = switch_core_media_activate_rtp(tech_pvt->session);
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
-	if (ok) {
+	if (status == SWITCH_STATUS_SUCCESS) {
 		sofia_set_flag(tech_pvt, TFLAG_RTP);
 		sofia_set_flag(tech_pvt, TFLAG_IO);
 	}
 
+	return status;
 }
 
 
@@ -511,279 +474,15 @@ void sofia_media_tech_prepare_codecs(private_object_t *tech_pvt)
 }
 
 
-void sofia_media_tech_patch_sdp(private_object_t *tech_pvt)
+void sofia_media_deactivate_rtp(private_object_t *tech_pvt)
 {
-	switch_size_t len;
-	char *p, *q, *pe, *qe;
-	int has_video = 0, has_audio = 0, has_ip = 0;
-	char port_buf[25] = "";
-	char vport_buf[25] = "";
-	char *new_sdp;
-	int bad = 0;
-
-	if (zstr(tech_pvt->local_sdp_str)) {
-		return;
+	int loops = 0;
+	while (loops < 10 && (sofia_test_flag(tech_pvt, TFLAG_READING) || sofia_test_flag(tech_pvt, TFLAG_WRITING))) {
+		switch_yield(10000);
+		loops++;
 	}
 
-	len = strlen(tech_pvt->local_sdp_str) * 2;
-
-	if (switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) &&
-		(switch_stristr("sendonly", tech_pvt->local_sdp_str) || switch_stristr("0.0.0.0", tech_pvt->local_sdp_str))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
-		return;
-	}
-
-	if (zstr(tech_pvt->adv_sdp_audio_ip) || !tech_pvt->adv_sdp_audio_port) {
-		if (sofia_glue_tech_choose_port(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "%s I/O Error\n",
-							  switch_channel_get_name(tech_pvt->channel));
-			return;
-		}
-		tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, "PROXY");
-		tech_pvt->rm_rate = 8000;
-		tech_pvt->codec_ms = 20;
-	}
-
-	new_sdp = switch_core_session_alloc(tech_pvt->session, len);
-	switch_snprintf(port_buf, sizeof(port_buf), "%u", tech_pvt->adv_sdp_audio_port);
-
-
-	p = tech_pvt->local_sdp_str;
-	q = new_sdp;
-	pe = p + strlen(p);
-	qe = q + len - 1;
-
-
-	while (p && *p) {
-		if (p >= pe) {
-			bad = 1;
-			goto end;
-		}
-
-		if (q >= qe) {
-			bad = 2;
-			goto end;
-		}
-
-		if (tech_pvt->adv_sdp_audio_ip && !strncmp("c=IN IP", p, 7)) {
-			strncpy(q, p, 7);
-			p += 7;
-			q += 7;
-			strncpy(q, strchr(tech_pvt->adv_sdp_audio_ip, ':') ? "6 " : "4 ", 2);
-			p +=2;
-			q +=2;			
-			strncpy(q, tech_pvt->adv_sdp_audio_ip, strlen(tech_pvt->adv_sdp_audio_ip));
-			q += strlen(tech_pvt->adv_sdp_audio_ip);
-
-			while (p && *p && ((*p >= '0' && *p <= '9') || *p == '.' || *p == ':' || (*p >= 'A' && *p <= 'F') || (*p >= 'a' && *p <= 'f'))) {
-				if (p >= pe) {
-					bad = 3;
-					goto end;
-				}
-				p++;
-			}
-
-			has_ip++;
-
-		} else if (!strncmp("o=", p, 2)) {
-			char *oe = strchr(p, '\n');
-			switch_size_t len;
-
-			if (oe) {
-				const char *family = "IP4";
-				char o_line[1024] = "";
-
-				if (oe >= pe) {
-					bad = 5;
-					goto end;
-				}
-
-				len = (oe - p);
-				p += len;
-
-
-				family = strchr(tech_pvt->profile->sipip, ':') ? "IP6" : "IP4";
-
-				if (!tech_pvt->owner_id) {
-					tech_pvt->owner_id = (uint32_t) switch_epoch_time_now(NULL) * 31821U + 13849U;
-				}
-
-				if (!tech_pvt->session_id) {
-					tech_pvt->session_id = tech_pvt->owner_id;
-				}
-
-				tech_pvt->session_id++;
-
-
-				snprintf(o_line, sizeof(o_line), "o=%s %010u %010u IN %s %s\n",
-						 tech_pvt->profile->username, tech_pvt->owner_id, tech_pvt->session_id, family, tech_pvt->profile->sipip);
-
-				strncpy(q, o_line, strlen(o_line));
-				q += strlen(o_line) - 1;
-
-			}
-
-		} else if (!strncmp("s=", p, 2)) {
-			char *se = strchr(p, '\n');
-			switch_size_t len;
-
-			if (se) {
-				char s_line[1024] = "";
-
-				if (se >= pe) {
-					bad = 5;
-					goto end;
-				}
-
-				len = (se - p);
-				p += len;
-
-				snprintf(s_line, sizeof(s_line), "s=%s\n", tech_pvt->profile->username);
-
-				strncpy(q, s_line, strlen(s_line));
-				q += strlen(s_line) - 1;
-
-			}
-
-		} else if ((!strncmp("m=audio ", p, 8) && *(p + 8) != '0') || (!strncmp("m=image ", p, 8) && *(p + 8) != '0')) {
-			strncpy(q, p, 8);
-			p += 8;
-
-			if (p >= pe) {
-				bad = 4;
-				goto end;
-			}
-
-
-			q += 8;
-
-			if (q >= qe) {
-				bad = 5;
-				goto end;
-			}
-
-
-			strncpy(q, port_buf, strlen(port_buf));
-			q += strlen(port_buf);
-
-			if (q >= qe) {
-				bad = 6;
-				goto end;
-			}
-
-			while (p && *p && (*p >= '0' && *p <= '9')) {
-				if (p >= pe) {
-					bad = 7;
-					goto end;
-				}
-				p++;
-			}
-
-			has_audio++;
-
-		} else if (!strncmp("m=video ", p, 8) && *(p + 8) != '0') {
-			if (!has_video) {
-				sofia_glue_tech_choose_video_port(tech_pvt, 1);
-				tech_pvt->video_rm_encoding = "PROXY-VID";
-				tech_pvt->video_rm_rate = 90000;
-				tech_pvt->video_codec_ms = 0;
-				switch_snprintf(vport_buf, sizeof(vport_buf), "%u", tech_pvt->adv_sdp_video_port);
-				if (switch_channel_media_ready(tech_pvt->channel) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
-					switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_POSSIBLE);
-					sofia_set_flag(tech_pvt, TFLAG_REINVITE);
-					sofia_media_activate_rtp(tech_pvt);
-				}
-			}
-
-			strncpy(q, p, 8);
-			p += 8;
-
-			if (p >= pe) {
-				bad = 8;
-				goto end;
-			}
-
-			q += 8;
-
-			if (q >= qe) {
-				bad = 9;
-				goto end;
-			}
-
-			strncpy(q, vport_buf, strlen(vport_buf));
-			q += strlen(vport_buf);
-
-			if (q >= qe) {
-				bad = 10;
-				goto end;
-			}
-
-			while (p && *p && (*p >= '0' && *p <= '9')) {
-
-				if (p >= pe) {
-					bad = 11;
-					goto end;
-				}
-
-				p++;
-			}
-
-			has_video++;
-		}
-
-		while (p && *p && *p != '\n') {
-
-			if (p >= pe) {
-				bad = 12;
-				goto end;
-			}
-
-			if (q >= qe) {
-				bad = 13;
-				goto end;
-			}
-
-			*q++ = *p++;
-		}
-
-		if (p >= pe) {
-			bad = 14;
-			goto end;
-		}
-
-		if (q >= qe) {
-			bad = 15;
-			goto end;
-		}
-
-		*q++ = *p++;
-
-	}
-
- end:
-
-	if (bad) {
-		return;
-	}
-
-
-	if (switch_channel_down(tech_pvt->channel) || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s too late.\n", switch_channel_get_name(tech_pvt->channel));
-		return;
-	}
-
-
-	if (!has_ip && !has_audio) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s SDP has no audio in it.\n%s\n",
-						  switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str);
-		return;
-	}
-
-
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s Patched SDP\n---\n%s\n+++\n%s\n",
-					  switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str, new_sdp);
-
-	sofia_media_tech_set_local_sdp(tech_pvt, new_sdp, SWITCH_FALSE);
+	switch_core_media_deactivate_rtp(tech_pvt->session);
 
 }
 

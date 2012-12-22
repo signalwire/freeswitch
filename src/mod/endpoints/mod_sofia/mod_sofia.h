@@ -195,6 +195,7 @@ typedef enum {
 typedef enum {
 	PFLAG_AUTH_CALLS,
 	PFLAG_AUTH_MESSAGES,
+	PFLAG_PASS_RFC2833,
 	PFLAG_BLIND_REG,
 	PFLAG_AUTH_ALL,
 	PFLAG_FULL_ID,
@@ -286,7 +287,6 @@ typedef enum {
 	TFLAG_EARLY_MEDIA,
 	TFLAG_3PCC,
 	TFLAG_READY,
-	TFLAG_REINVITE,
 	TFLAG_REFER,
 	TFLAG_NOHUP,
 	TFLAG_NOSDP_REINVITE,
@@ -523,8 +523,15 @@ struct sofia_profile {
 	char *shutdown_type;
 	char *extrtpip;
 	char *rtpip[MAX_RTPIP];
+	char *jb_msec;
+	switch_payload_t te;//x:tp
+	switch_payload_t recv_te;//x:tp
 	uint32_t rtpip_index;
 	uint32_t rtpip_next;
+	char *rtcp_audio_interval_msec;
+	char *rtcp_video_interval_msec;
+
+	char *sdp_username;
 	char *sipip;
 	char *extsipip;
 	char *url;
@@ -573,7 +580,7 @@ struct sofia_profile {
 	switch_core_media_flag_t media_flags[SCMF_MAX];
 	unsigned int mflags;
 	unsigned int ndlb;
-	unsigned int mdlb;
+	unsigned int mndlb;
 	uint32_t max_calls;
 	uint32_t nonce_ttl;
 	nua_t *nua;
@@ -907,8 +914,6 @@ void launch_sofia_profile_thread(sofia_profile_t *profile);
 
 switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
 										 
-void sofia_media_tech_absorb_sdp(private_object_t *tech_pvt);
-
 /*
  * \brief Sets the "ep_codec_string" channel variable, parsing r_sdp and taing codec_string in consideration 
  * \param channel Current channel
@@ -1152,6 +1157,10 @@ void sofia_glue_fire_events(sofia_profile_t *profile);
 void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event);
 void sofia_queue_message(sofia_dispatch_event_t *de);
 void sofia_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
+int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
+
+switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, char **ip, switch_port_t *port,
+											  const char *sourceip, switch_memory_pool_t *pool);
 
 /* For Emacs:
  * Local Variables:

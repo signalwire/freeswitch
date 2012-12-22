@@ -89,7 +89,7 @@ typedef struct switch_core_media_params_s {
 	uint32_t rtp_hold_timeout_sec;
 	uint32_t dtmf_delay;
 	uint32_t codec_flags;
-	int reinvite;
+
 	switch_core_media_NDLB_t ndlb;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
 
@@ -127,10 +127,16 @@ typedef struct switch_core_media_params_s {
 	char *extsipip;
 	char *local_network;
 
+	char *sipip;
+
 	char *sdp_username;
 
 	switch_mutex_t *mutex;
-		
+
+	switch_payload_t te;//x:tp
+	switch_payload_t recv_te;//x:tp
+
+	char *adv_sdp_audio_ip;
 
 } switch_core_media_params_t;
 
@@ -188,6 +194,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 SWITCH_DECLARE(int) switch_core_media_check_nat(switch_media_handle_t *smh, const char *network_ip);
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_session_t *session, switch_media_type_t type, int force);
+SWITCH_DECLARE(void) switch_core_media_check_dtmf_type(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_absorb_sdp(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_session_t *session, const char *sdp_str);
+SWITCH_DECLARE(void) switch_core_media_deactivate_rtp(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_ext_address_lookup(switch_core_session_t *session, char **ip, switch_port_t *port, const char *sourceip);
+SWITCH_DECLARE(switch_status_t) switch_core_media_process_t38_passthru(switch_core_session_t *session, 
+																	   switch_core_session_t *other_session, switch_t38_options_t *t38_options);
 
 SWITCH_END_EXTERN_C
 #endif
