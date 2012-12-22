@@ -3593,7 +3593,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 					profile->auto_restart = 1;
 					sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
-					sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+					sofia_set_media_flag(profile, SCMF_RTP_AUTOFLUSH_DURING_BRIDGE);
 					profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 					sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
 					sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
@@ -5958,7 +5958,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (r_sdp) {
 			const char *var;
 			uint8_t match = 0, is_ok = 1, is_t38 = 0;
-			tech_pvt->hold_laps = 0;
+			tech_pvt->mparams.hold_laps = 0;
 
 				if ((var = switch_channel_get_variable(channel, "sip_ignore_reinvites")) && switch_true(var)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ignoring Re-invite\n");
@@ -5977,7 +5977,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && (profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD)) {
 							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
-								tech_pvt->hold_laps = 1;
+								tech_pvt->mparams.hold_laps = 1;
 								switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 								switch_channel_clear_flag(channel, CF_PROXY_MODE);
 								switch_core_media_set_local_sdp(tech_pvt->session, NULL, SWITCH_FALSE);

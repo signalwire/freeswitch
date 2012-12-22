@@ -68,6 +68,7 @@ typedef enum {
 	SCMF_PASS_RFC2833,
 	SCMF_AUTOFLUSH,
 	SCMF_REWRITE_TIMESTAMPS,
+	SCMF_RTP_AUTOFLUSH_DURING_BRIDGE,
 	SCMF_MAX
 } switch_core_media_flag_t;
 
@@ -139,6 +140,8 @@ typedef struct switch_core_media_params_s {
 	char *adv_sdp_audio_ip;
 
     int num_codecs;//x:tp
+	int hold_laps;//x:tp
+
 
 	// HACK REMOVE ME
 	switch_rtp_t *rtp_session;
@@ -214,10 +217,21 @@ SWITCH_DECLARE(void)switch_core_media_set_local_sdp(switch_core_session_t *sessi
 SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_set_image_sdp(switch_core_session_t *session, switch_t38_options_t *t38_options, int insist);
 SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force);
+SWITCH_DECLARE(void) switch_core_media_start_udptl(switch_core_session_t *session, switch_t38_options_t *t38_options);
+SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg);
 
 
 
-
+SWITCH_DECLARE(void) switch_core_media_break(switch_media_handle_t *smh, switch_media_type_t type);
+SWITCH_DECLARE(void) switch_core_media_kill_socket(switch_media_handle_t *smh, switch_media_type_t type);
+SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833(switch_media_handle_t *smh, switch_media_type_t type, const switch_dtmf_t *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833_in(switch_media_handle_t *smh, switch_media_type_t type, const switch_dtmf_t *dtmf);
+SWITCH_DECLARE(uint8_t) switch_core_media_ready(switch_media_handle_t *smh, switch_media_type_t type);
+SWITCH_DECLARE(void) switch_core_media_set_recv_pt(switch_media_handle_t *smh, switch_media_type_t type, switch_payload_t pt);
+SWITCH_DECLARE(void) switch_core_media_set_telephony_event(switch_media_handle_t *smh, switch_media_type_t type, switch_payload_t te);
+SWITCH_DECLARE(void) switch_core_media_set_telephony_recv_event(switch_media_handle_t *smh, switch_media_type_t type, switch_payload_t te);
+SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_stats(switch_media_handle_t *smh, switch_media_type_t type, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_media_handle_t *smh, switch_media_type_t type);
 
 SWITCH_END_EXTERN_C
 #endif
@@ -231,3 +245,4 @@ SWITCH_END_EXTERN_C
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
+

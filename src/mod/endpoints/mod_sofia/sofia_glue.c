@@ -129,6 +129,11 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 		switch_channel_set_flag(tech_pvt->channel, CF_PASS_RFC2833);
 	}
 
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE)) {
+		switch_channel_set_flag(tech_pvt->channel, CF_RTP_NOTIMER_DURING_BRIDGE);
+	}
+
+
 	
 	switch_core_media_check_dtmf_type(session);
 	switch_channel_set_cap(tech_pvt->channel, CC_MEDIA_ACK);

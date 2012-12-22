@@ -228,7 +228,6 @@ typedef enum {
 	PFLAG_ALL_REG_OPTIONS_PING,
 	PFLAG_MESSAGE_QUERY_ON_REGISTER,
 	PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER,
-	PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE,
 	PFLAG_MANUAL_REDIRECT,
 	PFLAG_AUTO_NAT,
 	PFLAG_SIPCOMPACT,
@@ -302,13 +301,11 @@ typedef enum {
 	TFLAG_ZRTP_PASSTHRU,
 	TFLAG_HOLD_LOCK,
 	TFLAG_3PCC_HAS_ACK,
-	TFLAG_PASS_RFC2833,
 	TFLAG_UPDATING_DISPLAY,
 	TFLAG_ENABLE_SOA,
 	TFLAG_T38_PASSTHRU,
 	TFLAG_RECOVERED,
 	TFLAG_AUTOFLUSH_DURING_BRIDGE,
-	TFLAG_JB_PAUSED,
 	TFLAG_3PCC_INVITE,
 	TFLAG_NOREPLY,
 	TFLAG_GOT_ACK,
@@ -524,8 +521,8 @@ struct sofia_profile {
 	char *extrtpip;
 	char *rtpip[MAX_RTPIP];
 	char *jb_msec;
-	switch_payload_t te;//x:tp
-	switch_payload_t recv_te;//x:tp
+	switch_payload_t te;
+	switch_payload_t recv_te;
 	uint32_t rtpip_index;
 	uint32_t rtpip_next;
 	char *rtcp_audio_interval_msec;
@@ -670,6 +667,131 @@ struct sofia_profile {
 	switch_core_media_vflag_t vflags;
 };
 
+#if 0
+struct private_object {
+	sofia_private_t *sofia_private;
+	uint8_t flags[TFLAG_MAX];
+	//	switch_payload_t agreed_pt;
+	//	switch_payload_t audio_recv_pt;
+//	switch_payload_t video_recv_pt;
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+	switch_media_handle_t *media_handle;
+	switch_core_media_params_t mparams;
+
+	//switch_frame_t read_frame;
+	char *codec_order[SWITCH_MAX_CODECS];
+	//int codec_order_last;
+	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
+
+	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
+	//int num_negotiated_codecs;
+	//switch_codec_t read_codec;
+	//switch_codec_t write_codec;
+	//uint32_t codec_ms;
+	//	uint32_t bitrate;
+	switch_caller_profile_t *caller_profile;
+	//uint32_t timestamp_send;
+	switch_rtp_t *rtp_session;
+
+//	uint32_t video_ssrc;
+	sofia_profile_t *profile;
+	char *reply_contact;
+	char *from_uri;
+	char *to_uri;
+	char *from_address;
+	char *to_address;
+	char *callid;
+	char *contact_url;
+	char *from_str;
+	char *rpid;
+	char *asserted_id;
+	char *preferred_id;
+	char *privacy;
+	char *gateway_from_str;
+	char *rm_encoding;
+	char *iananame;
+	char *rm_fmtp;
+	char *fmtp_out;
+	char *dest;
+	char *dest_to;
+	char *key;
+	char *xferto;
+	char *kick;
+	char *origin;
+	char *hash_key;
+	char *chat_from;
+	char *chat_to;
+	char *e_dest;
+	char *call_id;
+	char *invite_contact;
+	char *local_url;
+	char *gateway_name;
+	char *record_route;
+	char *route_uri;
+	char *x_freeswitch_support_remote;
+	char *x_freeswitch_support_local;
+	char *last_sent_callee_id_name;
+	char *last_sent_callee_id_number;
+
+	//unsigned long rm_rate;
+	//switch_payload_t pt;
+	switch_mutex_t *flag_mutex;
+	switch_mutex_t *sofia_mutex;
+	////switch_payload_t te;
+	////switch_payload_t recv_te;
+	//switch_payload_t bte;
+	//switch_payload_t cng_pt;
+	//switch_payload_t bcng_pt;
+	sofia_transport_t transport;
+	nua_handle_t *nh;
+	nua_handle_t *nh2;
+	sip_contact_t *contact;
+	//uint32_t max_missed_packets;
+	//uint32_t max_missed_hold_packets;
+	/** VIDEO **/
+//	switch_frame_t video_read_frame;
+//	switch_codec_t video_read_codec;
+//	switch_codec_t video_write_codec;
+	switch_rtp_t *video_rtp_session;
+//	switch_port_t adv_sdp_video_port;
+//	switch_port_t local_sdp_video_port;
+//	char *video_rm_encoding;
+//	switch_payload_t video_pt;
+//	unsigned long video_rm_rate;
+//	uint32_t video_codec_ms;
+//	char *video_rm_fmtp;
+//	switch_payload_t video_agreed_pt;
+//	char *video_fmtp_out;
+//	uint32_t video_count;
+	//switch_core_media_dtmf_t dtmf_type;
+	int q850_cause;
+	int got_bye;
+	//int hold_laps;
+	switch_thread_id_t locker;
+	//switch_size_t last_ts;
+	//uint32_t check_frames;
+	//uint32_t mismatch_count;
+	//uint32_t last_codec_ms;
+	//uint8_t codec_reinvites;
+	nua_event_t want_event;
+	switch_rtp_bug_flag_t rtp_bugs;
+//	switch_rtp_bug_flag_t video_rtp_bugs;
+	//switch_codec_implementation_t read_impl;
+	//switch_codec_implementation_t write_impl;
+	char *user_via;
+	char *redirected;
+	sofia_cid_type_t cid_type;
+	switch_payload_t payload_space;
+	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
+	uint32_t session_timeout;
+	enum nua_session_refresher session_refresher;
+	char *respond_phrase;
+	int respond_code;
+	char *respond_dest;
+};
+
+#else
 struct private_object {
 	sofia_private_t *sofia_private;
 	uint8_t flags[TFLAG_MAX];
@@ -792,6 +914,7 @@ struct private_object {
 	int respond_code;
 	char *respond_dest;
 };
+#endif
 
 struct callback_t {
 	char *val;

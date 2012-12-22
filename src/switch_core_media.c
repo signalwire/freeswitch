@@ -44,8 +44,9 @@
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
 
 typedef enum {
-	SMH_INIT = (1 << 0),
-	SMH_READY = (1 << 1)
+	SMF_INIT = (1 << 0),
+	SMF_READY = (1 << 1),
+	SMF_JB_PAUSED = (1 << 2)
 } smh_flag_t;
 
 
@@ -138,7 +139,7 @@ struct switch_media_handle_s {
 
 	int payload_space;//x:tp
 	char *origin;//x:tp
-	int hold_laps;//x:tp
+
 	switch_payload_t cng_pt;//x:tp
 	switch_core_media_dtmf_t dtmf_type;//x:tp
 	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];//x:tp
@@ -832,7 +833,7 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 	if ((session->media_handle = switch_core_session_alloc(session, (sizeof(*smh))))) {
 		session->media_handle->session = session;
 		*smhp = session->media_handle;
-		switch_set_flag(session->media_handle, SMH_INIT);
+		switch_set_flag(session->media_handle, SMF_INIT);
 		session->media_handle->media_flags[SCMF_RUNNING] = 1;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
@@ -880,7 +881,7 @@ SWITCH_DECLARE(int32_t) switch_media_handle_test_media_flag(switch_media_handle_
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_media_handle_ready(switch_core_session_t *session)
 {
-	if (session->media_handle && switch_test_flag(session->media_handle, SMH_INIT)) {
+	if (session->media_handle && switch_test_flag(session->media_handle, SMF_INIT)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
@@ -1790,8 +1791,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		sendonly = 0;
 	} else {
 
-		if (!smh->hold_laps) {
-			smh->hold_laps++;
+		if (!smh->mparams->hold_laps) {
+			smh->mparams->hold_laps++;
 			if (switch_core_media_toggle_hold(session, sendonly)) {
 				reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_HOLD);
 				
@@ -4808,6 +4809,504 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 
 }
 
+//?
+SWITCH_DECLARE(void) switch_core_media_start_udptl(switch_core_session_t *session, switch_t38_options_t *t38_options)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *a_engine;;
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	if (switch_channel_down(session->channel)) {
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+
+
+	if (switch_rtp_ready(a_engine->rtp_session)) {
+		char *remote_host = switch_rtp_get_remote_host(a_engine->rtp_session);
+		switch_port_t remote_port = switch_rtp_get_remote_port(a_engine->rtp_session);
+		const char *err, *val;
+
+		switch_channel_clear_flag(session->channel, CF_NOTIMER_DURING_BRIDGE);
+		switch_rtp_udptl_mode(a_engine->rtp_session);
+
+		if (!t38_options || !t38_options->remote_ip) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No remote address\n");
+			return;
+		}
+
+		if (remote_host && remote_port && remote_port == t38_options->remote_port && !strcmp(remote_host, t38_options->remote_ip)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
+							  t38_options->remote_ip, t38_options->remote_port);
+			return;
+		}
+
+		if (switch_rtp_set_remote_address(a_engine->rtp_session, t38_options->remote_ip,
+										  t38_options->remote_port, 0, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "IMAGE UDPTL REPORTS ERROR: [%s]\n", err);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "IMAGE UDPTL CHANGING DEST TO: [%s:%d]\n",
+							  t38_options->remote_ip, t38_options->remote_port);
+			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
+				!((val = switch_channel_get_variable(session->channel, "disable_udptl_auto_adjust")) && switch_true(val))) {
+				/* Reactivate the NAT buster flag. */
+				switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+			}
+		}
+	}
+}
+
+
+
+
+
+//?
+SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *a_engine, *v_engine;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_channel_down(session->channel)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+
+	switch (msg->message_id) {
+
+	case SWITCH_MESSAGE_INDICATE_PROXY_MEDIA:
+		{
+			if (switch_rtp_ready(a_engine->rtp_session)) {
+				if (msg->numeric_arg) {
+					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
+				} else {
+					switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
+				}
+			}
+		}
+		break;
+
+	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
+		{
+			if (switch_rtp_ready(a_engine->rtp_session)) {
+				int len = 0, maxlen = 0, qlen = 0, maxqlen = 50, max_drift = 0;
+
+				if (msg->string_arg) {
+					char *p, *q;
+					const char *s;
+
+					if (!strcasecmp(msg->string_arg, "pause")) {
+						switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
+						goto end;
+					} else if (!strcasecmp(msg->string_arg, "resume")) {
+						switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
+						goto end;
+					} else if (!strncasecmp(msg->string_arg, "debug:", 6)) {
+						s = msg->string_arg + 6;
+						if (s && !strcmp(s, "off")) {
+							s = NULL;
+						}
+						status = switch_rtp_debug_jitter_buffer(a_engine->rtp_session, s);
+						goto end;
+					}
+
+					
+					if ((len = atoi(msg->string_arg))) {
+						qlen = len / (a_engine->read_impl.microseconds_per_packet / 1000);
+						if (qlen < 1) {
+							qlen = 3;
+						}
+					}
+					
+					if (qlen) {
+						if ((p = strchr(msg->string_arg, ':'))) {
+							p++;
+							maxlen = atol(p);
+							if ((q = strchr(p, ':'))) {
+								q++;
+								max_drift = abs(atol(q));
+							}
+						}
+					}
+
+
+					if (maxlen) {
+						maxqlen = maxlen / (a_engine->read_impl.microseconds_per_packet / 1000);
+					}
+				}
+
+				if (qlen) {
+					if (maxqlen < qlen) {
+						maxqlen = qlen * 5;
+					}
+					if (switch_rtp_activate_jitter_buffer(a_engine->rtp_session, qlen, maxqlen,
+														  a_engine->read_impl.samples_per_packet, 
+														  a_engine->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames) (%d max drift)\n", 
+										  len, qlen, maxqlen, max_drift);
+						switch_channel_set_flag(session->channel, CF_JITTERBUFFER);
+						if (!switch_false(switch_channel_get_variable(session->channel, "sip_jitter_buffer_plc"))) {
+							switch_channel_set_flag(session->channel, CF_JITTERBUFFER_PLC);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+										  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+					}
+					
+				} else {
+					switch_rtp_deactivate_jitter_buffer(a_engine->rtp_session);
+				}
+			}
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO:
+		{
+			if (switch_rtp_ready(a_engine->rtp_session) && !zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+				int32_t flags = 0;
+				if (!strcasecmp(msg->string_array_arg[0], "read")) {
+					flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ;
+				} else if (!strcasecmp(msg->string_array_arg[0], "write")) {
+					flags |= SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
+				} else if (!strcasecmp(msg->string_array_arg[0], "both")) {
+					flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ | SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
+				}
+
+				if (flags) {
+					if (switch_true(msg->string_array_arg[1])) {
+						switch_rtp_set_flag(a_engine->rtp_session, flags);
+					} else {
+						switch_rtp_clear_flag(a_engine->rtp_session, flags);
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Options\n");
+				}
+			}
+		}
+		goto end;
+	case SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY:
+		if (a_engine->rtp_session && switch_rtp_test_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Pass 2833 mode may not work on a transcoded call.\n");
+		}
+		goto end;
+
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		{
+
+			if (switch_rtp_ready(a_engine->rtp_session)) {
+				const char *val;
+				int ok = 0;
+				
+				if (!(val = switch_channel_get_variable(session->channel, "sip_jitter_buffer_during_bridge")) || switch_false(val)) {
+					if (switch_channel_test_flag(session->channel, CF_JITTERBUFFER) && switch_channel_test_cap_partner(session->channel, CC_FS_RTP)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+										  "%s PAUSE Jitterbuffer\n", switch_channel_get_name(session->channel));					
+						switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
+						switch_set_flag(smh, SMF_JB_PAUSED);
+					}
+				}
+				
+				if (switch_channel_test_flag(session->channel, CF_PASS_RFC2833) && switch_channel_test_flag_partner(session->channel, CF_FS_RTP)) {
+					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "%s activate passthru 2833 mode.\n", switch_channel_get_name(session->channel));
+				}
+
+
+				if ((val = switch_channel_get_variable(session->channel, "rtp_notimer_during_bridge"))) {
+					ok = switch_true(val);
+				} else {
+					ok = switch_channel_test_flag(session->channel, CF_RTP_NOTIMER_DURING_BRIDGE);
+				}
+
+				if (ok && !switch_rtp_test_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+					ok = 0;
+				}
+
+				if (ok) {
+					switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+					switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+					switch_channel_set_flag(session->channel, CF_NOTIMER_DURING_BRIDGE);
+				}
+
+				if (ok && switch_channel_test_flag(session->channel, CF_NOTIMER_DURING_BRIDGE)) {
+					/* these are not compat */
+					ok = 0;
+				} else {
+					if ((val = switch_channel_get_variable(session->channel, "rtp_autoflush_during_bridge"))) {
+						ok = switch_true(val);
+					} else {
+						ok = smh->media_flags[SCMF_RTP_AUTOFLUSH_DURING_BRIDGE];
+					}
+				}
+				
+				if (ok) {
+					rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_STICK);
+					switch_channel_set_flag(session->channel, CF_AUTOFLUSH_DURING_BRIDGE);
+				} else {
+					rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_ONCE);
+				}
+				
+			}
+		}
+		goto end;
+	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		if (switch_rtp_ready(a_engine->rtp_session)) {
+			
+			if (switch_test_flag(smh, SMF_JB_PAUSED)) {
+				switch_clear_flag(smh, SMF_JB_PAUSED);
+				if (switch_channel_test_flag(session->channel, CF_JITTERBUFFER)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "%s RESUME Jitterbuffer\n", switch_channel_get_name(session->channel));					
+					switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
+				}
+			}
+			
+
+			if (switch_rtp_test_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s deactivate passthru 2833 mode.\n",
+								  switch_channel_get_name(session->channel));
+				switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
+			}
+			
+			if (switch_channel_test_flag(session->channel, CF_NOTIMER_DURING_BRIDGE)) {
+				if (!switch_rtp_test_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_UDPTL) && 
+					!switch_rtp_test_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+				}
+				switch_channel_clear_flag(session->channel, CF_NOTIMER_DURING_BRIDGE);
+			}
+
+			if (switch_channel_test_flag(session->channel, CF_AUTOFLUSH_DURING_BRIDGE)) {
+				rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
+				switch_channel_clear_flag(session->channel, CF_AUTOFLUSH_DURING_BRIDGE);
+			} else {
+				rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_ONCE);
+			}
+
+		}
+		goto end;
+	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
+		if (switch_rtp_ready(a_engine->rtp_session)) {
+			rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_ONCE);
+		}
+		goto end;
+
+	default:
+		break;
+	}
+
+
+	if (smh->mparams->mutex) switch_mutex_lock(smh->mparams->mutex);
+
+
+	if (switch_channel_down(session->channel)) {
+		status = SWITCH_STATUS_FALSE;
+		goto end_lock;
+	}
+
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_MEDIA_RENEG:
+		{
+			switch_core_session_t *nsession;
+			
+			if (msg->string_arg) {
+				switch_channel_set_variable(session->channel, "absolute_codec_string", NULL);
+				if (*msg->string_arg == '=') {
+					switch_channel_set_variable(session->channel, "codec_string", msg->string_arg);
+				} else {
+					switch_channel_set_variable_printf(session->channel, "codec_string", "=%s%s%s,%s", 
+													   v_engine->codec_params.rm_encoding ? v_engine->codec_params.rm_encoding : "",
+													   v_engine->codec_params.rm_encoding ? "," : "",
+													   a_engine->codec_params.rm_encoding, msg->string_arg);					
+				}
+
+
+
+				a_engine->codec_params.rm_encoding = NULL;
+				v_engine->codec_params.rm_encoding = NULL;
+				switch_channel_clear_flag(session->channel, CF_VIDEO_POSSIBLE);
+				switch_core_media_prepare_codecs(session, SWITCH_TRUE);
+				switch_core_media_check_video_codecs(session);
+				switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 1);
+			}
+			
+			if (msg->numeric_arg && switch_core_session_get_partner(session, &nsession) == SWITCH_STATUS_SUCCESS) {
+				msg->numeric_arg = 0;
+				switch_core_session_receive_message(nsession, msg);
+				switch_core_session_rwunlock(nsession);
+			}
+
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
+		{
+			const char *uuid;
+			switch_core_session_t *other_session;
+			switch_channel_t *other_channel;
+			const char *ip = NULL, *port = NULL;
+
+			switch_channel_set_flag(session->channel, CF_PROXY_MODE);
+			if (a_engine->codec_params.rm_encoding) {
+				a_engine->codec_params.rm_encoding = NULL;
+			}
+			switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
+
+			if ((uuid = switch_channel_get_partner_uuid(session->channel))
+				&& (other_session = switch_core_session_locate(uuid))) {
+				other_channel = switch_core_session_get_channel(other_session);
+				ip = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
+				port = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
+				switch_core_session_rwunlock(other_session);
+				if (ip && port) {
+					switch_core_media_gen_local_sdp(session, ip, (switch_port_t)atoi(port), NULL, 1);
+				}
+			}
+
+
+			if (!smh->mparams->local_sdp_str) {
+				switch_core_media_absorb_sdp(session);
+			}
+
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_AUDIO_DATA:
+		{
+			if (switch_rtp_ready(a_engine->rtp_session)) {
+				if (msg->numeric_arg) {
+					if (switch_channel_test_flag(session->channel, CF_JITTERBUFFER)) {
+						switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
+						switch_set_flag(smh, SMF_JB_PAUSED);
+					}
+
+					rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
+					
+				} else {
+					if (switch_test_flag(smh, SMF_JB_PAUSED)) {
+						switch_clear_flag(smh, SMF_JB_PAUSED);
+						if (switch_channel_test_flag(session->channel, CF_JITTERBUFFER)) {
+							switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
+						}
+					}
+				}
+			}
+		}
+		break;
+
+	case SWITCH_MESSAGE_INDICATE_UDPTL_MODE:
+		{
+			switch_t38_options_t *t38_options = switch_channel_get_private(session->channel, "t38_options");
+
+			if (t38_options) {
+				switch_core_media_start_udptl(session, t38_options);
+			}
+
+		}
+
+		
+	default:
+		break;
+	}
+
+
+ end_lock:
+
+	if (smh->mparams->mutex) switch_mutex_unlock(smh->mparams->mutex);
+
+ end:
+
+	if (switch_channel_down(session->channel)) {
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	return status;
+
+}
+
+SWITCH_DECLARE(void) switch_core_media_break(switch_media_handle_t *smh, switch_media_type_t type)
+{
+	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
+		switch_rtp_break(smh->engines[type].rtp_session);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_media_kill_socket(switch_media_handle_t *smh, switch_media_type_t type)
+{
+	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
+		switch_rtp_kill_socket(smh->engines[type].rtp_session);
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833(switch_media_handle_t *smh, switch_media_type_t type, const switch_dtmf_t *dtmf)
+{
+	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
+		return switch_rtp_queue_rfc2833(smh->engines[type].rtp_session, dtmf);
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833_in(switch_media_handle_t *smh, switch_media_type_t type, const switch_dtmf_t *dtmf)
+{
+	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
+		return switch_rtp_queue_rfc2833_in(smh->engines[type].rtp_session, dtmf);
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(uint8_t) switch_core_media_ready(switch_media_handle_t *smh, switch_media_type_t type)
+{
+	return switch_rtp_ready(smh->engines[type].rtp_session);
+}
+
+SWITCH_DECLARE(void) switch_core_media_set_recv_pt(switch_media_handle_t *smh, switch_media_type_t type, switch_payload_t pt)
+{
+	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
+		switch_rtp_set_recv_pt(smh->engines[type].rtp_session, pt);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_media_set_telephony_event(switch_media_handle_t *smh, switch_media_type_t type, switch_payload_t te)
+{
+	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
+		switch_rtp_set_telephony_event(smh->engines[type].rtp_session, te);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_media_set_telephony_recv_event(switch_media_handle_t *smh, switch_media_type_t type, switch_payload_t te)
+{
+	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
+		switch_rtp_set_telephony_recv_event(smh->engines[type].rtp_session, te);
+	}
+}
+
+SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_media_handle_t *smh, switch_media_type_t type, switch_memory_pool_t *pool)
+{
+	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
+		return switch_rtp_get_stats(smh->engines[type].rtp_session, pool);
+	}
+
+	return NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_media_handle_t *smh, switch_media_type_t type)
+{
+	if (switch_rtp_ready(smh->engines[type].rtp_session)) {
+		return switch_rtp_udptl_mode(smh->engines[type].rtp_session);
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
 
 
 
@@ -4822,3 +5321,4 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
+
