@@ -1142,7 +1142,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+		if (switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO)) {
 			switch_core_media_proxy_remote_addr(session, NULL);
 		}
 		switch_core_media_patch_sdp(tech_pvt->session);
@@ -1991,24 +1991,24 @@ int sofia_recover_callback(switch_core_session_t *session)
 				goto end;
 			}
 			
-			if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			if (switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO)) {
 				if ((tmp = switch_channel_get_variable(channel, "sip_audio_recv_pt"))) {
-					switch_rtp_set_recv_pt(tech_pvt->rtp_session, (switch_payload_t)atoi(tmp));
+					switch_core_media_set_recv_pt(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO, (switch_payload_t)atoi(tmp));
 				}
 			}
 
-			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+			if (switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_VIDEO)) {
 				if ((tmp = switch_channel_get_variable(channel, "sip_video_recv_pt"))) {
-					switch_rtp_set_recv_pt(tech_pvt->rtp_session, (switch_payload_t)atoi(tmp));
+					switch_core_media_set_recv_pt(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO, (switch_payload_t)atoi(tmp));
 				}
 			}
 
 			if (tech_pvt->te) {
-				switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+				switch_core_media_set_telephony_event(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO, tech_pvt->te);
 			}
 
 			if (tech_pvt->recv_te) {
-				switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, tech_pvt->recv_te);
+				switch_core_media_set_telephony_recv_event(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO, tech_pvt->recv_te);
 			}
 
 		}
