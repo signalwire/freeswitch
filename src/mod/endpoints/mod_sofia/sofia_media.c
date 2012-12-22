@@ -521,14 +521,14 @@ void sofia_media_tech_patch_sdp(private_object_t *tech_pvt)
 	char *new_sdp;
 	int bad = 0;
 
-	if (zstr(tech-pvt->mparams->local_sdp_str)) {
+	if (zstr(tech_pvt->local_sdp_str)) {
 		return;
 	}
 
-	len = strlen(tech-pvt->mparams->local_sdp_str) * 2;
+	len = strlen(tech_pvt->local_sdp_str) * 2;
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) &&
-		(switch_stristr("sendonly", tech-pvt->mparams->local_sdp_str) || switch_stristr("0.0.0.0", tech-pvt->mparams->local_sdp_str))) {
+		(switch_stristr("sendonly", tech_pvt->local_sdp_str) || switch_stristr("0.0.0.0", tech_pvt->local_sdp_str))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
 		return;
 	}
@@ -548,7 +548,7 @@ void sofia_media_tech_patch_sdp(private_object_t *tech_pvt)
 	switch_snprintf(port_buf, sizeof(port_buf), "%u", tech_pvt->adv_sdp_audio_port);
 
 
-	p = tech-pvt->mparams->local_sdp_str;
+	p = tech_pvt->local_sdp_str;
 	q = new_sdp;
 	pe = p + strlen(p);
 	qe = q + len - 1;
@@ -775,13 +775,13 @@ void sofia_media_tech_patch_sdp(private_object_t *tech_pvt)
 
 	if (!has_ip && !has_audio) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s SDP has no audio in it.\n%s\n",
-						  switch_channel_get_name(tech_pvt->channel), tech-pvt->mparams->local_sdp_str);
+						  switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str);
 		return;
 	}
 
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s Patched SDP\n---\n%s\n+++\n%s\n",
-					  switch_channel_get_name(tech_pvt->channel), tech-pvt->mparams->local_sdp_str, new_sdp);
+					  switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str, new_sdp);
 
 	sofia_media_tech_set_local_sdp(tech_pvt, new_sdp, SWITCH_FALSE);
 

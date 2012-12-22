@@ -173,7 +173,7 @@ void sofia_glue_set_udptl_image_sdp(private_object_t *tech_pvt, switch_t38_optio
 
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s image media sdp:\n%s\n",
-					  switch_channel_get_name(tech_pvt->channel), tech-pvt->mparams->local_sdp_str);
+					  switch_channel_get_name(tech_pvt->channel), tech_pvt->local_sdp_str);
 
 
 }
@@ -222,7 +222,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	tech_pvt->profile = profile;
 
-	tech-pvt->mparams->rtpip = switch_core_session_strdup(session, profile->rtpip[profile->rtpip_next++]);
+	tech_pvt->rtpip = switch_core_session_strdup(session, profile->rtpip[profile->rtpip_next++]);
 	if (profile->rtpip_next >= profile->rtpip_index) {
 		profile->rtpip_next = 0;
 	}
@@ -769,7 +769,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		return status;
 	}
 
-	if (!switch_channel_get_private(tech_pvt->channel, "t38_options") || zstr(tech-pvt->mparams->local_sdp_str)) {
+	if (!switch_channel_get_private(tech_pvt->channel, "t38_options") || zstr(tech_pvt->local_sdp_str)) {
 		sofia_media_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 	}
 
@@ -816,7 +816,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 			sipip = tech_pvt->profile->sipip;
 
-			if (!zstr(tech-pvt->mparams->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech-pvt->mparams->remote_ip)) {
+			if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 				sipip = tech_pvt->profile->extsipip;
 			}
 
@@ -856,7 +856,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTO_NAT)) {
-			if (!zstr(tech-pvt->mparams->remote_ip) && !zstr(tech_pvt->profile->extsipip) && sofia_glue_check_nat(tech_pvt->profile, tech-pvt->mparams->remote_ip)) {
+			if (!zstr(tech_pvt->remote_ip) && !zstr(tech_pvt->profile->extsipip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 				rpid_domain = tech_pvt->profile->extsipip;
 			} else {
 				rpid_domain = tech_pvt->profile->sipip;
@@ -890,7 +890,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 		}
 
-		if (!zstr(tech-pvt->mparams->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech-pvt->mparams->remote_ip)) {
+		if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 			tech_pvt->user_via = sofia_glue_create_external_via(session, tech_pvt->profile, tech_pvt->transport);
 		}
 
@@ -905,7 +905,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				char *ip_addr = tech_pvt->profile->sipip;
 				char *ipv6;
 
-				if ( !zstr(tech-pvt->mparams->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech-pvt->mparams->remote_ip ) ) {
+				if ( !zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip ) ) {
 					ip_addr = tech_pvt->profile->extsipip;
 				}
 
@@ -922,7 +922,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
 					tech_pvt->invite_contact = tech_pvt->profile->tls_url;
 				} else {
-					if (!zstr(tech-pvt->mparams->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech-pvt->mparams->remote_ip)) {
+					if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 						tech_pvt->invite_contact = tech_pvt->profile->public_url;
 					} else {
 						tech_pvt->invite_contact = tech_pvt->profile->url;
@@ -1231,7 +1231,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		tech_pvt->nh->nh_has_invite = 1;
 	}
 
-	if ((mp = sofia_media_get_multipart(session, SOFIA_MULTIPART_PREFIX, tech-pvt->mparams->local_sdp_str, &mp_type))) {
+	if ((mp = sofia_media_get_multipart(session, SOFIA_MULTIPART_PREFIX, tech_pvt->local_sdp_str, &mp_type))) {
 		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 	}
 
@@ -1241,16 +1241,16 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		tech_pvt->session_refresher = nua_no_refresher;
 	}
 
-	if (tech-pvt->mparams->local_sdp_str) {
+	if (tech_pvt->local_sdp_str) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG,
-						  "Local SDP:\n%s\n", tech-pvt->mparams->local_sdp_str);
+						  "Local SDP:\n%s\n", tech_pvt->local_sdp_str);
 	}
 
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
-				   //TAG_IF(zstr(tech-pvt->mparams->local_sdp_str), NUTAG_AUTOACK(0)),
-				   //TAG_IF(!zstr(tech-pvt->mparams->local_sdp_str), NUTAG_AUTOACK(1)),
+				   //TAG_IF(zstr(tech_pvt->local_sdp_str), NUTAG_AUTOACK(0)),
+				   //TAG_IF(!zstr(tech_pvt->local_sdp_str), NUTAG_AUTOACK(1)),
 				   // The code above is breaking things...... grrr WE need this because we handle our own acks and there are 3pcc cases in there too
 				   NUTAG_AUTOACK(0),
 				   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
@@ -1274,16 +1274,16 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),
 				   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
-				   TAG_IF(zstr(tech-pvt->mparams->local_sdp_str), SIPTAG_PAYLOAD_STR("")),
-				   TAG_IF(!zstr(tech-pvt->mparams->local_sdp_str), SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip)),
-				   TAG_IF(!zstr(tech-pvt->mparams->local_sdp_str), SOATAG_USER_SDP_STR(tech-pvt->mparams->local_sdp_str)),
-				   TAG_IF(!zstr(tech-pvt->mparams->local_sdp_str), SOATAG_REUSE_REJECTED(1)),
-				   TAG_IF(!zstr(tech-pvt->mparams->local_sdp_str), SOATAG_ORDERED_USER(1)),
-				   TAG_IF(!zstr(tech-pvt->mparams->local_sdp_str), SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE)),
-				   TAG_IF(!zstr(tech-pvt->mparams->local_sdp_str), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL)),
+				   TAG_IF(zstr(tech_pvt->local_sdp_str), SIPTAG_PAYLOAD_STR("")),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_REUSE_REJECTED(1)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_ORDERED_USER(1)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE)),
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL)),
 				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),
 				   TAG_IF(!require_timer, NUTAG_TIMER_AUTOREQUIRE(0)),
-				   TAG_IF(!zstr(tech-pvt->mparams->local_sdp_str), SOATAG_HOLD(holdstr)), TAG_END());
+				   TAG_IF(!zstr(tech_pvt->local_sdp_str), SOATAG_HOLD(holdstr)), TAG_END());
 	} else {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
@@ -1312,7 +1312,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
 				   NUTAG_MEDIA_ENABLE(0),
 				   SIPTAG_CONTENT_TYPE_STR(mp_type ? mp_type : "application/sdp"),
-				   SIPTAG_PAYLOAD_STR(mp ? mp : tech-pvt->mparams->local_sdp_str), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
+				   SIPTAG_PAYLOAD_STR(mp ? mp : tech_pvt->local_sdp_str), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
 	}
 
 	sofia_glue_free_destination(dst);
@@ -1334,7 +1334,7 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	if (!zstr(tech-pvt->mparams->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech-pvt->mparams->remote_ip)) {
+	if (!zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		sipip = tech_pvt->profile->extsipip;
 		contact_url = tech_pvt->profile->public_url;
 	} else {
@@ -1357,7 +1357,7 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 				   SIPTAG_CONTACT_STR(contact_url),
 				   TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 				   SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
-				   SOATAG_USER_SDP_STR(tech-pvt->mparams->local_sdp_str),
+				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				   SOATAG_REUSE_REJECTED(1),
 				   SOATAG_ORDERED_USER(1),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), TAG_END());
@@ -1430,11 +1430,11 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 	if (tech_pvt->video_rtp_session) {
 		switch_rtp_destroy(&tech_pvt->video_rtp_session);
 	} else if (tech_pvt->local_sdp_video_port) {
-		switch_rtp_release_port(tech-pvt->mparams->rtpip, tech_pvt->local_sdp_video_port);
+		switch_rtp_release_port(tech_pvt->rtpip, tech_pvt->local_sdp_video_port);
 	}
 
 
-	if (tech_pvt->local_sdp_video_port > 0 && !zstr(tech-pvt->mparams->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech-pvt->mparams->remote_ip)) {
+	if (tech_pvt->local_sdp_video_port > 0 && !zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_video_port, SWITCH_NAT_UDP);
 		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_video_port + 1, SWITCH_NAT_UDP);
 	}
@@ -1443,10 +1443,10 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 	if (tech_pvt->rtp_session) {
 		switch_rtp_destroy(&tech_pvt->rtp_session);
 	} else if (tech_pvt->local_sdp_audio_port) {
-		switch_rtp_release_port(tech-pvt->mparams->rtpip, tech_pvt->local_sdp_audio_port);
+		switch_rtp_release_port(tech_pvt->rtpip, tech_pvt->local_sdp_audio_port);
 	}
 
-	if (tech_pvt->local_sdp_audio_port > 0 && !zstr(tech-pvt->mparams->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech-pvt->mparams->remote_ip)) {
+	if (tech_pvt->local_sdp_audio_port > 0 && !zstr(tech_pvt->remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_audio_port, SWITCH_NAT_UDP);
 		switch_nat_del_mapping((switch_port_t) tech_pvt->local_sdp_audio_port + 1, SWITCH_NAT_UDP);
 	}
@@ -1903,8 +1903,8 @@ int sofia_recover_callback(switch_core_session_t *session)
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->sofia_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
-	tech-pvt->mparams->remote_ip = (char *) switch_channel_get_variable(channel, "sip_network_ip");
-	tech-pvt->mparams->remote_port = atoi(switch_str_nil(switch_channel_get_variable(channel, "sip_network_port")));
+	tech_pvt->remote_ip = (char *) switch_channel_get_variable(channel, "sip_network_ip");
+	tech_pvt->remote_port = atoi(switch_str_nil(switch_channel_get_variable(channel, "sip_network_port")));
 	tech_pvt->caller_profile = switch_channel_get_caller_profile(channel);
 
 	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "sip_2833_send_payload"))) {
@@ -1963,11 +1963,11 @@ int sofia_recover_callback(switch_core_session_t *session)
 	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_VIDEO, "srtp_remote_video_crypto_key");
 
 	if ((tmp = switch_channel_get_variable(channel, "sip_local_sdp_str"))) {
-		tech-pvt->mparams->local_sdp_str = switch_core_session_strdup(session, tmp);
+		tech_pvt->local_sdp_str = switch_core_session_strdup(session, tmp);
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
-		tech-pvt->mparams->remote_sdp_str = switch_core_session_strdup(session, tmp);
+		tech_pvt->remote_sdp_str = switch_core_session_strdup(session, tmp);
 	}
 
 	switch_channel_set_variable(channel, "sip_invite_call_id", switch_channel_get_variable(channel, "sip_call_id"));
@@ -2018,12 +2018,12 @@ int sofia_recover_callback(switch_core_session_t *session)
 			
 			switch_core_media_set_codec(tech_pvt->session, 1, tech_pvt->profile->codec_flags);
 
-			tech_pvt->adv_sdp_audio_ip = tech-pvt->mparams->extrtpip = (char *) ip;
+			tech_pvt->adv_sdp_audio_ip = tech_pvt->extrtpip = (char *) ip;
 			tech_pvt->adv_sdp_audio_port = tech_pvt->local_sdp_audio_port = (switch_port_t)atoi(port);
 
 			if (!zstr(ip)) {
 				tech_pvt->local_sdp_audio_ip = switch_core_session_strdup(session, ip);
-				tech-pvt->mparams->rtpip = tech_pvt->local_sdp_audio_ip;
+				tech_pvt->rtpip = tech_pvt->local_sdp_audio_ip;
 			}
 
 			if (!zstr(a_ip)) {
