@@ -138,6 +138,13 @@ typedef struct switch_core_media_params_s {
 
 	char *adv_sdp_audio_ip;
 
+    int num_codecs;//x:tp
+
+	// HACK REMOVE ME
+	switch_rtp_t *rtp_session;
+	switch_rtp_t *video_rtp_session;
+
+
 } switch_core_media_params_t;
 
 static inline const char *switch_media_type2str(switch_media_type_t type)
@@ -202,6 +209,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 SWITCH_DECLARE(switch_status_t) switch_core_media_ext_address_lookup(switch_core_session_t *session, char **ip, switch_port_t *port, const char *sourceip);
 SWITCH_DECLARE(switch_status_t) switch_core_media_process_t38_passthru(switch_core_session_t *session, 
 																	   switch_core_session_t *other_session, switch_t38_options_t *t38_options);
+SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *session, const char *ip, switch_port_t port, const char *sr, int force);
+SWITCH_DECLARE(void)switch_core_media_set_local_sdp(switch_core_session_t *session, const char *sdp_str, switch_bool_t dup);
+SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_set_image_sdp(switch_core_session_t *session, switch_t38_options_t *t38_options, int insist);
+SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force);
+
+
+
+
 
 SWITCH_END_EXTERN_C
 #endif

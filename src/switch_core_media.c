@@ -135,7 +135,7 @@ struct switch_media_handle_s {
 	char *codec_order[SWITCH_MAX_CODECS];//x:tp
     int codec_order_last;//x:tp
     const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];//x:tp
-    int num_codecs;//x:tp
+
 	int payload_space;//x:tp
 	char *origin;//x:tp
 	int hold_laps;//x:tp
@@ -858,7 +858,9 @@ SWITCH_DECLARE(void) switch_media_handle_set_media_flags(switch_media_handle_t *
 	switch_assert(smh);
 
 	for(i = 0; i < SCMF_MAX; i++) {
-		smh->media_flags[i] = flags[i];
+		if (flags[i]) {
+			smh->media_flags[i] = flags[i];
+		}
 	}
 	
 }
@@ -920,10 +922,10 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	}
 
 	if (force) {
-		smh->num_codecs = 0;
+		smh->mparams->num_codecs = 0;
 	}
 
-	if (smh->num_codecs) {
+	if (smh->mparams->num_codecs) {
 		return;
 	}
 
@@ -966,9 +968,9 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	if (codec_string) {
 		char *tmp_codec_string = switch_core_session_strdup(smh->session, codec_string);
 		smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
-		smh->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
+		smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
 	} else {
-		smh->num_codecs = switch_loadable_module_get_codecs(smh->codecs, sizeof(smh->codecs) / sizeof(smh->codecs[0]));
+		smh->mparams->num_codecs = switch_loadable_module_get_codecs(smh->codecs, sizeof(smh->codecs) / sizeof(smh->codecs[0]));
 	}
 }
 
@@ -986,7 +988,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(smh->flags & SCMF_RUNNING)) {
+	if (!smh->media_flags[SCMF_RUNNING]) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1002,11 +1004,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 	engine->read_frame.datalen = 0;
 
 	
-	while ((smh->flags & SCMF_RUNNING) && engine->read_frame.datalen == 0) {
+	while (smh->media_flags[SCMF_RUNNING] && engine->read_frame.datalen == 0) {
 		engine->read_frame.flags = SFF_NONE;
 
 		status = switch_rtp_zerocopy_read_frame(engine->rtp_session, &engine->read_frame, flags);
-			
+
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			if (status == SWITCH_STATUS_TIMEOUT) {
 
@@ -1249,7 +1251,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 	
 	if (engine->read_frame.datalen == 0) {
 		*frame = NULL;
-		return SWITCH_STATUS_GENERR;
 	}
 
 	*frame = &engine->read_frame;
@@ -1270,7 +1271,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(smh->flags & SCMF_RUNNING)) {
+	if (!smh->media_flags[SCMF_RUNNING]) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1355,7 +1356,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_get_offered_pt(switch_core_ses
 	}
 
 
-	for (i = 0; i < smh->num_codecs; i++) {
+	for (i = 0; i < smh->mparams->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = smh->codecs[i];
 
 		if (!strcasecmp(imp->iananame, mimp->iananame)) {
@@ -1629,10 +1630,10 @@ SWITCH_DECLARE(void) switch_core_media_check_video_codecs(switch_core_session_t 
 		return;
 	}
 
-	if (smh->num_codecs && !switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE)) {
+	if (smh->mparams->num_codecs && !switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE)) {
 		int i;
 		smh->video_count = 0;
-		for (i = 0; i < smh->num_codecs; i++) {
+		for (i = 0; i < smh->mparams->num_codecs; i++) {
 			
 			if (smh->codecs[i]->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
 				smh->video_count++;
@@ -1680,7 +1681,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 
 	codec_array = smh->codecs;
-	total_codecs = smh->num_codecs;
+	total_codecs = smh->mparams->num_codecs;
 
 
 	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
@@ -1814,10 +1815,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		codec_array = smh->negotiated_codecs;
 		total_codecs = smh->num_negotiated_codecs;
 	} else if (reneg) {
-		smh->num_codecs = 0;
+		smh->mparams->num_codecs = 0;
 		switch_core_media_prepare_codecs(session, SWITCH_FALSE);
 		codec_array = smh->codecs;
-		total_codecs = smh->num_codecs;
+		total_codecs = smh->mparams->num_codecs;
 	}
 
 	if (switch_stristr("T38FaxFillBitRemoval:", r_sdp) || switch_stristr("T38FaxTranscodingMMR:", r_sdp) || 
@@ -2075,7 +2076,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					last = first + 1;
 				} else {
 					first = 0;
-					last = smh->num_codecs;
+					last = smh->mparams->num_codecs;
 				}
 
 				codec_ms = ptime;
@@ -3132,14 +3133,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	}
 
 	if (switch_channel_up(session->channel)) {
-		a_engine->rtp_session = switch_rtp_new(a_engine->codec_params.remote_sdp_ip,
-											   a_engine->codec_params.remote_sdp_port,
+		a_engine->rtp_session = switch_rtp_new(a_engine->codec_params.local_sdp_ip,
+											   a_engine->codec_params.local_sdp_port,
 											   a_engine->codec_params.remote_sdp_ip,
 											   a_engine->codec_params.remote_sdp_port,
 											   a_engine->codec_params.agreed_pt,
 											   a_engine->read_impl.samples_per_packet,
 											   a_engine->codec_params.codec_ms * 1000,
 											   flags, timer_name, &err, switch_core_session_get_pool(session));
+		//HACK REMOVE ME
+		smh->mparams->rtp_session = a_engine->rtp_session;
 	}
 
 	if (switch_rtp_ready(a_engine->rtp_session)) {
@@ -3502,12 +3505,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			flags[SWITCH_RTP_FLAG_NOBLOCK] = 0;
 			flags[SWITCH_RTP_FLAG_VIDEO]++;
 
-			v_engine->rtp_session = switch_rtp_new(a_engine->codec_params.remote_sdp_ip,
+			v_engine->rtp_session = switch_rtp_new(a_engine->codec_params.local_sdp_ip,
 														 v_engine->codec_params.local_sdp_port,
 														 v_engine->codec_params.remote_sdp_ip,
 														 v_engine->codec_params.remote_sdp_port,
 														 v_engine->codec_params.agreed_pt,
 														 1, 90000, flags, NULL, &err, switch_core_session_get_pool(session));
+
+
+			//HACK REMOVE ME
+			smh->mparams->video_rtp_session = v_engine->rtp_session;
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%sVIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
 							  switch_channel_test_flag(session->channel, CF_PROXY_MEDIA) ? "PROXY " : "",
@@ -3630,7 +3637,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 				
 	
 
-	for (i = 0; i < smh->num_codecs; i++) {
+	for (i = 0; i < smh->mparams->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = smh->codecs[i];
 		int this_ptime = (imp->microseconds_per_packet / 1000);
 
@@ -3679,7 +3686,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 	memset(already_did, 0, sizeof(already_did));
 		
-	for (i = 0; i < smh->num_codecs; i++) {
+	for (i = 0; i < smh->mparams->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = smh->codecs[i];
 		char *fmtp = imp->fmtp;
 		int this_ptime = imp->microseconds_per_packet / 1000;
@@ -3876,7 +3883,7 @@ SWITCH_DECLARE(void)switch_core_media_set_local_sdp(switch_core_session_t *sessi
 
 //?
 #define SDPBUFLEN 65536
-void sofia_media_set_local_sdp(switch_core_session_t *session, const char *ip, switch_port_t port, const char *sr, int force)
+SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *session, const char *ip, switch_port_t port, const char *sr, int force)
 {
 	char *buf;
 	int ptime = 0;
@@ -3929,7 +3936,7 @@ void sofia_media_set_local_sdp(switch_core_session_t *session, const char *ip, s
 
 		smh->payload_space = 98;
 
-		for (i = 0; i < smh->num_codecs; i++) {
+		for (i = 0; i < smh->mparams->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = smh->codecs[i];
 
 			smh->ianacodes[i] = imp->ianacode;
@@ -4095,7 +4102,7 @@ void sofia_media_set_local_sdp(switch_core_session_t *session, const char *ip, s
 			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=encryption:optional\n");
 		}
 
-	} else if (smh->num_codecs) {
+	} else if (smh->mparams->num_codecs) {
 		int i;
 		int cur_ptime = 0, this_ptime = 0, cng_type = 0;
 		const char *mult;
@@ -4131,7 +4138,7 @@ void sofia_media_set_local_sdp(switch_core_session_t *session, const char *ip, s
 
 		} else {
 
-			for (i = 0; i < smh->num_codecs; i++) {
+			for (i = 0; i < smh->mparams->num_codecs; i++) {
 				const switch_codec_implementation_t *imp = smh->codecs[i];
 				
 				if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
@@ -4187,10 +4194,10 @@ void sofia_media_set_local_sdp(switch_core_session_t *session, const char *ip, s
 			if (v_engine->codec_params.rm_encoding) {
 				switch_core_media_set_video_codec(session, 0);
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", v_engine->codec_params.agreed_pt);
-			} else if (smh->num_codecs) {
+			} else if (smh->mparams->num_codecs) {
 				int i;
 				int already_did[128] = { 0 };
-				for (i = 0; i < smh->num_codecs; i++) {
+				for (i = 0; i < smh->mparams->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = smh->codecs[i];
 
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
@@ -4243,11 +4250,11 @@ void sofia_media_set_local_sdp(switch_core_session_t *session, const char *ip, s
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\n", v_engine->codec_params.pt, pass_fmtp);
 				}
 
-			} else if (smh->num_codecs) {
+			} else if (smh->mparams->num_codecs) {
 				int i;
 				int already_did[128] = { 0 };
 
-				for (i = 0; i < smh->num_codecs; i++) {
+				for (i = 0; i < smh->mparams->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = smh->codecs[i];
 					char *fmtp = NULL;
 					uint32_t ianacode = smh->ianacodes[i];

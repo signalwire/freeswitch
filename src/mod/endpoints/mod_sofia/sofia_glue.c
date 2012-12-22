@@ -83,6 +83,9 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_mutex_lock(profile->flag_mutex);
 
+	tech_pvt->mparams = switch_core_session_alloc(session, sizeof(*tech_pvt->mparams));
+
+
 	/* copy flags from profile to the sofia private */
 	for (x = 0; x < TFLAG_MAX; x++) {
 		tech_pvt->flags[x] = profile->flags[x];
@@ -138,6 +141,8 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_cap(tech_pvt->channel, CC_FS_RTP);
 	switch_channel_set_cap(tech_pvt->channel, CC_QUEUEABLE_DTMF_DELAY);
 
+
+
 	tech_pvt->mparams->ndlb = tech_pvt->profile->mndlb;
 	tech_pvt->mparams->inbound_codec_string = profile->inbound_codec_string;
 	tech_pvt->mparams->outbound_codec_string = profile->outbound_codec_string;
@@ -153,6 +158,8 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	tech_pvt->mparams->jb_msec = profile->jb_msec;
 	tech_pvt->mparams->rtcp_audio_interval_msec = profile->rtcp_audio_interval_msec;
 	tech_pvt->mparams->rtcp_video_interval_msec = profile->rtcp_video_interval_msec;
+	tech_pvt->mparams->sdp_username = profile->sdp_username;
+
 
 	switch_media_handle_create(&tech_pvt->media_handle, session, tech_pvt->mparams);
 	switch_media_handle_set_media_flags(tech_pvt->media_handle, tech_pvt->profile->media_flags);
@@ -696,7 +703,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	cid_name = caller_profile->caller_id_name;
 	cid_num = caller_profile->caller_id_number;
-	sofia_media_tech_prepare_codecs(tech_pvt);
+	switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_FALSE);
 	switch_core_media_check_video_codecs(tech_pvt->session);
 	check_decode(cid_name, session);
 	check_decode(cid_num, session);
@@ -708,13 +715,13 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 
-	if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Port Error!\n");
 		return status;
 	}
 
 	if (!switch_channel_get_private(tech_pvt->channel, "t38_options") || zstr(tech_pvt->mparams->local_sdp_str)) {
-		sofia_media_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+		switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 0);
 	}
 
 	sofia_set_flag_locked(tech_pvt, TFLAG_READY);
@@ -1136,7 +1143,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			switch_core_media_proxy_remote_addr(session, NULL);
 		}
-		sofia_media_tech_patch_sdp(tech_pvt);
+		switch_core_media_patch_sdp(tech_pvt->session);
 	}
 
 	if (!zstr(tech_pvt->dest)) {
@@ -1976,7 +1983,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 				//sofia_media_tech_set_video_codec(tech_pvt, 1);
 			}
 
-			sofia_media_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
+			switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 1);
 
 			if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 				goto end;

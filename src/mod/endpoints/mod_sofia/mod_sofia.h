@@ -685,7 +685,7 @@ struct private_object {
 	char *codec_order[SWITCH_MAX_CODECS];
 	int codec_order_last;
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
-	int num_codecs;
+
 	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
 	int num_negotiated_codecs;
 	switch_codec_t read_codec;
@@ -873,17 +873,9 @@ void sofia_glue_global_standby(switch_bool_t on);
 
 switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt);
 
-void sofia_glue_deactivate_rtp(private_object_t *tech_pvt);
-
-void sofia_media_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch_port_t port, const char *sr, int force);
-
-void sofia_media_tech_prepare_codecs(private_object_t *tech_pvt);
-
 const char *sofia_media_get_codec_string(private_object_t *tech_pvt);
 
 void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame);
-
-switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int force);
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session);
 
@@ -1069,7 +1061,7 @@ char *sofia_glue_strip_uri(const char *str);
 int sofia_glue_transport_has_tls(const sofia_transport_t tp);
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);
 switch_status_t sofia_media_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction);
-void sofia_media_tech_patch_sdp(private_object_t *tech_pvt);
+
 void sofia_presence_event_thread_start(void);
 void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int reboot);
 void sofia_reg_check_call_id(sofia_profile_t *profile, const char *call_id);
@@ -1086,7 +1078,6 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *callid, const c
 void sofia_glue_restart_all_profiles(void);
 const char *sofia_state_string(int state);
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);
-void sofia_glue_set_udptl_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist);
 
 /* 
  * Logging control functions
@@ -1111,7 +1102,6 @@ switch_status_t list_profiles_full(const char *line, const char *cursor, switch_
 switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches);
 
 sofia_cid_type_t sofia_cid_name2type(const char *name);
-void sofia_media_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_str, switch_bool_t dup);
 void sofia_glue_set_rtp_stats(private_object_t *tech_pvt);
 void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port);
 sofia_destination_t *sofia_glue_get_destination(char *data);

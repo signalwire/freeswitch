@@ -122,6 +122,10 @@ switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt)
 	status = switch_core_media_activate_rtp(tech_pvt->session);
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
+	///HACK REMOVE ME
+	tech_pvt->rtp_session = tech_pvt->mparams->rtp_session;
+	tech_pvt->video_rtp_session = tech_pvt->mparams->video_rtp_session;
+
 	if (status == SWITCH_STATUS_SUCCESS) {
 		sofia_set_flag(tech_pvt, TFLAG_RTP);
 		sofia_set_flag(tech_pvt, TFLAG_IO);
@@ -394,7 +398,7 @@ switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r
 	}
 
 	if ((match = sofia_media_negotiate_sdp(tech_pvt->session, r_sdp))) {
-		if (sofia_glue_tech_choose_port(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 		if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
@@ -408,69 +412,6 @@ switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r
 
 
 	return SWITCH_STATUS_FALSE;
-}
-
-
-void sofia_media_tech_prepare_codecs(private_object_t *tech_pvt)
-{
-	const char *abs, *codec_string = NULL;
-	const char *ocodec = NULL;
-
-	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
-		return;
-	}
-
-	if (tech_pvt->num_codecs) {
-		return;
-	}
-
-	tech_pvt->payload_space = 0;
-
-	switch_assert(tech_pvt->session != NULL);
-
-	if ((abs = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
-		/* inherit_codec == true will implicitly clear the absolute_codec_string 
-		   variable if used since it was the reason it was set in the first place and is no longer needed */
-		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "inherit_codec"))) {
-			switch_channel_set_variable(tech_pvt->channel, "absolute_codec_string", NULL);
-		}
-		codec_string = abs;
-		goto ready;
-	}
-
-	if (!(codec_string = switch_channel_get_variable(tech_pvt->channel, "codec_string"))) {
-		codec_string = switch_core_media_get_codec_string(tech_pvt->session);
-	}
-
-	if (codec_string && *codec_string == '=') {
-		codec_string++;
-		goto ready;
-	}
-
-
-	if ((ocodec = switch_channel_get_variable(tech_pvt->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
-		if (!codec_string || sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_TRANSCODING)) {
-			codec_string = ocodec;
-		} else {
-			if (!(codec_string = switch_core_session_sprintf(tech_pvt->session, "%s,%s", ocodec, codec_string))) {
-				codec_string = ocodec;
-			}
-		}
-	}
-
- ready:
-
-	if (codec_string) {
-		char *tmp_codec_string = switch_core_session_strdup(tech_pvt->session, codec_string);
-		tech_pvt->codec_order_last = switch_separate_string(tmp_codec_string, ',', tech_pvt->codec_order, SWITCH_MAX_CODECS);
-		tech_pvt->num_codecs =
-			switch_loadable_module_get_codecs_sorted(tech_pvt->codecs, SWITCH_MAX_CODECS, tech_pvt->codec_order, tech_pvt->codec_order_last);
-		
-	} else {
-		tech_pvt->num_codecs = switch_loadable_module_get_codecs(tech_pvt->codecs, sizeof(tech_pvt->codecs) / sizeof(tech_pvt->codecs[0]));
-	}
-
-
 }
 
 
