@@ -573,7 +573,7 @@ struct sofia_profile {
 	switch_core_media_flag_t media_flags[SCMF_MAX];
 	unsigned int mflags;
 	unsigned int ndlb;
-	unsigned int mdlb;
+	unsigned int mndlb;
 	uint32_t max_calls;
 	uint32_t nonce_ttl;
 	nua_t *nua;

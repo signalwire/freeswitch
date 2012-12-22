@@ -200,7 +200,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->local_address = switch_core_session_strdup(*new_session, local_addr);
     tech_pvt->local_port = local_port;
     tech_pvt->remote_address = switch_core_session_strdup(*new_session, remote_addr);
-    tech_pvt->remote_port = remote_port;
+    tech-pvt->mparams->remote_port = remote_port;
     tech_pvt->ptime = ptime;
     tech_pvt->agreed_pt = pt;
     tech_pvt->dtmf_type = DTMF_2833; /* XXX */
