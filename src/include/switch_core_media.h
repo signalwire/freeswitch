@@ -142,12 +142,6 @@ typedef struct switch_core_media_params_s {
     int num_codecs;//x:tp
 	int hold_laps;//x:tp
 
-
-	// HACK REMOVE ME
-	switch_rtp_t *rtp_session;
-	switch_rtp_t *video_rtp_session;
-
-
 } switch_core_media_params_t;
 
 static inline const char *switch_media_type2str(switch_media_type_t type)
@@ -222,16 +216,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 
 
-SWITCH_DECLARE(void) switch_core_media_break(switch_media_handle_t *smh, switch_media_type_t type);
-SWITCH_DECLARE(void) switch_core_media_kill_socket(switch_media_handle_t *smh, switch_media_type_t type);
-SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833(switch_media_handle_t *smh, switch_media_type_t type, const switch_dtmf_t *dtmf);
-SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833_in(switch_media_handle_t *smh, switch_media_type_t type, const switch_dtmf_t *dtmf);
-SWITCH_DECLARE(uint8_t) switch_core_media_ready(switch_media_handle_t *smh, switch_media_type_t type);
-SWITCH_DECLARE(void) switch_core_media_set_recv_pt(switch_media_handle_t *smh, switch_media_type_t type, switch_payload_t pt);
-SWITCH_DECLARE(void) switch_core_media_set_telephony_event(switch_media_handle_t *smh, switch_media_type_t type, switch_payload_t te);
-SWITCH_DECLARE(void) switch_core_media_set_telephony_recv_event(switch_media_handle_t *smh, switch_media_type_t type, switch_payload_t te);
-SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_stats(switch_media_handle_t *smh, switch_media_type_t type, switch_memory_pool_t *pool);
-SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_media_handle_t *smh, switch_media_type_t type);
+SWITCH_DECLARE(void) switch_core_media_break(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(void) switch_core_media_kill_socket(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833(switch_core_session_t *session, switch_media_type_t type, const switch_dtmf_t *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833_in(switch_core_session_t *session, switch_media_type_t type, const switch_dtmf_t *dtmf);
+SWITCH_DECLARE(uint8_t) switch_core_media_ready(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(void) switch_core_media_set_recv_pt(switch_core_session_t *session, switch_media_type_t type, switch_payload_t pt);
+SWITCH_DECLARE(void) switch_core_media_set_telephony_event(switch_core_session_t *session, switch_media_type_t type, switch_payload_t te);
+SWITCH_DECLARE(void) switch_core_media_set_telephony_recv_event(switch_core_session_t *session, switch_media_type_t type, switch_payload_t te);
+SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_core_session_t *session, switch_media_type_t type);
+
+SWITCH_DECLARE(void) switch_core_media_set_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag);
+SWITCH_DECLARE(void) switch_core_media_clear_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag);
+SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
 
 SWITCH_END_EXTERN_C
 #endif

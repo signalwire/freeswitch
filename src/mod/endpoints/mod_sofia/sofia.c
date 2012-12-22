@@ -5154,14 +5154,14 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) && has_t38) {
-			if (switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO)) {
-				switch_core_media_udptl_mode(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO);
+			if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
+				switch_core_media_udptl_mode(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 				
 				if ((uuid = switch_channel_get_partner_uuid(channel)) && (other_session = switch_core_session_locate(uuid))) {
 					if (switch_core_session_compare(session, other_session)) {
 						private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
-						if (switch_rtp_ready(other_tech_pvt->rtp_session)) {
-							switch_rtp_udptl_mode(other_tech_pvt->rtp_session);
+						if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
+							switch_core_media_udptl_mode(other_tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 						}
 					}
 					switch_core_session_rwunlock(other_session);
@@ -5234,9 +5234,10 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 					
 					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
-						if (switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO) && switch_rtp_ready(other_tech_pvt->rtp_session)) {
+						if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && 
+							switch_core_media_ready(other_tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 							switch_channel_clear_flag(tech_pvt->channel, CF_NOTIMER_DURING_BRIDGE);
-							switch_core_media_udptl_mode(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO);
+							switch_core_media_udptl_mode(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating T38 Passthru\n");
 						}
 					}
@@ -5387,8 +5388,8 @@ void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void 
 				
 				switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE);
 
-				if (tech_pvt->rtp_session) {
-					switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
+					switch_core_media_clear_rtp_flag(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_AUTOADJ);
 				}
 
 				switch_core_media_toggle_hold(session, 1);
@@ -5998,7 +5999,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								}
 								
 
-								if (!switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO)) {
+								if (!switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 									switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_FALSE);
 									if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
 										switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -6156,7 +6157,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 		break;
 	case nua_callstate_ready:
-		if (r_sdp && !is_dup_sdp && switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO) && !sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
+		if (r_sdp && !is_dup_sdp && switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && !sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
 			/* sdp changed since 18X w sdp, we're supposed to ignore it but we, of course, were pressured into supporting it */
 			uint8_t match = 0;
 

@@ -1142,7 +1142,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-		if (switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO)) {
+		if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 			switch_core_media_proxy_remote_addr(session, NULL);
 		}
 		switch_core_media_patch_sdp(tech_pvt->session);
@@ -1325,11 +1325,13 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 #define add_stat(_i, _s)												\
 	switch_snprintf(var_name, sizeof(var_name), "rtp_%s_%s", switch_str_nil(prefix), _s) ; \
 	switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_SIZE_T_FMT, _i); \
-	switch_channel_set_variable(tech_pvt->channel, var_name, var_val)
+	switch_channel_set_variable(channel, var_name, var_val)
 
-static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, const char *prefix)
+static void set_stats(switch_core_session_t *session, switch_media_type_t type, const char *prefix)
 {
-	switch_rtp_stats_t *stats = switch_rtp_get_stats(rtp_session, NULL);
+	switch_rtp_stats_t *stats = switch_core_media_get_stats(session, type, NULL);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
 	char var_name[256] = "", var_val[35] = "";
 
 	if (stats) {
@@ -1361,13 +1363,8 @@ static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, con
 
 void sofia_glue_set_rtp_stats(private_object_t *tech_pvt)
 {
-	if (tech_pvt->rtp_session) {
-		set_stats(tech_pvt->rtp_session, tech_pvt, "audio");
-	}
-
-	if (tech_pvt->video_rtp_session) {
-		set_stats(tech_pvt->video_rtp_session, tech_pvt, "video");
-	}
+	set_stats(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, "audio");
+	set_stats(tech_pvt->session, SWITCH_MEDIA_TYPE_VIDEO, "video");
 }
 
 /* map sip responses to QSIG cause codes ala RFC4497 section 8.4.4 */
@@ -1991,24 +1988,24 @@ int sofia_recover_callback(switch_core_session_t *session)
 				goto end;
 			}
 			
-			if (switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO)) {
+			if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 				if ((tmp = switch_channel_get_variable(channel, "sip_audio_recv_pt"))) {
-					switch_core_media_set_recv_pt(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO, (switch_payload_t)atoi(tmp));
+					switch_core_media_set_recv_pt(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, (switch_payload_t)atoi(tmp));
 				}
 			}
 
-			if (switch_core_media_ready(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_VIDEO)) {
+			if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_VIDEO)) {
 				if ((tmp = switch_channel_get_variable(channel, "sip_video_recv_pt"))) {
-					switch_core_media_set_recv_pt(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO, (switch_payload_t)atoi(tmp));
+					switch_core_media_set_recv_pt(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, (switch_payload_t)atoi(tmp));
 				}
 			}
 
 			if (tech_pvt->te) {
-				switch_core_media_set_telephony_event(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO, tech_pvt->te);
+				switch_core_media_set_telephony_event(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, tech_pvt->te);
 			}
 
 			if (tech_pvt->recv_te) {
-				switch_core_media_set_telephony_recv_event(tech_pvt->media_handle, SWITCH_MEDIA_TYPE_AUDIO, tech_pvt->recv_te);
+				switch_core_media_set_telephony_recv_event(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, tech_pvt->recv_te);
 			}
 
 		}

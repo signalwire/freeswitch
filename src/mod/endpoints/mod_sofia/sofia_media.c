@@ -122,9 +122,6 @@ switch_status_t sofia_media_activate_rtp(private_object_t *tech_pvt)
 	status = switch_core_media_activate_rtp(tech_pvt->session);
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
-	///HACK REMOVE ME
-	tech_pvt->rtp_session = tech_pvt->mparams.rtp_session;
-	tech_pvt->video_rtp_session = tech_pvt->mparams.video_rtp_session;
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		sofia_set_flag(tech_pvt, TFLAG_RTP);
