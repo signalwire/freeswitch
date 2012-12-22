@@ -83,9 +83,6 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_mutex_lock(profile->flag_mutex);
 
-	tech_pvt->mparams = switch_core_session_alloc(session, sizeof(*tech_pvt->mparams));
-
-
 	/* copy flags from profile to the sofia private */
 	for (x = 0; x < TFLAG_MAX; x++) {
 		tech_pvt->flags[x] = profile->flags[x];

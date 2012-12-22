@@ -679,7 +679,7 @@ struct private_object {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	switch_media_handle_t *media_handle;
-	switch_core_media_params_t *mparams;
+	switch_core_media_params_t mparams;
 
 	switch_frame_t read_frame;
 	char *codec_order[SWITCH_MAX_CODECS];
