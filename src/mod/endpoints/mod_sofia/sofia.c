@@ -4975,8 +4975,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
 
 			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
-				tech_pvt->check_frames = 0;
-				tech_pvt->last_ts = 0;
+				switch_core_media_reset_autofix_timing(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 			}
 
 		}
@@ -7365,7 +7364,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 			}
 
 			if (dtmf.digit) {
-				if (tech_pvt->dtmf_type == DTMF_INFO || 
+				if (tech_pvt->mparams.dtmf_type == DTMF_INFO || 
 						sofia_test_pflag(tech_pvt->profile, PFLAG_LIBERAL_DTMF) || switch_channel_test_flag(tech_pvt->channel, CF_LIBERAL_DTMF)) {
 					/* queue it up */
 					switch_channel_queue_dtmf(channel, &dtmf);

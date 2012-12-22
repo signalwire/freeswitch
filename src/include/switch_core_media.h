@@ -141,6 +141,7 @@ typedef struct switch_core_media_params_s {
 
     int num_codecs;//x:tp
 	int hold_laps;//x:tp
+	switch_core_media_dtmf_t dtmf_type;//x:tp
 
 } switch_core_media_params_t;
 
@@ -159,6 +160,7 @@ static inline const char *switch_media_type2str(switch_media_type_t type)
 
 
 SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t **smhp, switch_core_session_t *session, switch_core_media_params_t *params);
+SWITCH_DECLARE(void) switch_media_handle_destroy(switch_core_session_t *session);
 SWITCH_DECLARE(switch_media_handle_t *) switch_core_session_get_media_handle(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_session_clear_media_handle(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_session_media_handle_ready(switch_core_session_t *session);
@@ -231,6 +233,12 @@ SWITCH_DECLARE(void) switch_core_media_set_rtp_flag(switch_core_session_t *sessi
 SWITCH_DECLARE(void) switch_core_media_clear_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag);
 SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
+
+
+SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp);
+SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
+SWITCH_DECLARE(void) switch_core_media_reset_autofix_timing(switch_core_session_t *session, switch_media_type_t type);
+
 
 SWITCH_END_EXTERN_C
 #endif

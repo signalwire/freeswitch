@@ -692,7 +692,7 @@ struct private_object {
 	//	uint32_t bitrate;
 	switch_caller_profile_t *caller_profile;
 	//uint32_t timestamp_send;
-	switch_rtp_t *rtp_session;
+	//	switch_rtp_t *rtp_session;
 
 //	uint32_t video_ssrc;
 	sofia_profile_t *profile;
@@ -753,7 +753,7 @@ struct private_object {
 //	switch_frame_t video_read_frame;
 //	switch_codec_t video_read_codec;
 //	switch_codec_t video_write_codec;
-	switch_rtp_t *video_rtp_session;
+//	switch_rtp_t *video_rtp_session;
 //	switch_port_t adv_sdp_video_port;
 //	switch_port_t local_sdp_video_port;
 //	char *video_rm_encoding;

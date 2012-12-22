@@ -141,7 +141,7 @@ struct switch_media_handle_s {
 	char *origin;//x:tp
 
 	switch_payload_t cng_pt;//x:tp
-	switch_core_media_dtmf_t dtmf_type;//x:tp
+
 	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];//x:tp
 	int num_negotiated_codecs;//x:tp
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];//x:tp
@@ -346,7 +346,6 @@ SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_extract_t38_options(swi
 	sdp_media_t *m;
 	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
-	//private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_t38_options_t *t38_options = NULL;
 
 	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
@@ -357,8 +356,6 @@ SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_extract_t38_options(swi
 		sdp_parser_free(parser);
 		return NULL;
 	}
-
-	//switch_assert(tech_pvt != NULL);
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		if (m->m_proto == sdp_proto_udptl && m->m_type == sdp_media_image && m->m_port) {
@@ -820,6 +817,43 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 		}
 	}
 	
+}
+
+SWITCH_DECLARE(void) switch_media_handle_destroy(switch_core_session_t *session)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *a_engine, *v_engine;
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+	
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];	
+
+	
+	if (switch_core_codec_ready(&a_engine->read_codec)) {
+		switch_core_codec_destroy(&a_engine->read_codec);
+	}
+
+	if (switch_core_codec_ready(&a_engine->write_codec)) {
+		switch_core_codec_destroy(&a_engine->write_codec);
+	}
+
+	if (switch_core_codec_ready(&v_engine->read_codec)) {
+		switch_core_codec_destroy(&v_engine->read_codec);
+	}
+
+	if (switch_core_codec_ready(&v_engine->write_codec)) {
+		switch_core_codec_destroy(&v_engine->write_codec);
+	}
+
+	switch_core_session_unset_read_codec(session);
+	switch_core_session_unset_write_codec(session);
+
+	switch_core_media_deactivate_rtp(session);
+
+
 }
 
 
@@ -2263,11 +2297,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!switch_false(switch_channel_get_variable(channel, "sip_info_when_no_2833"))) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No 2833 in SDP.  Disable 2833 dtmf and switch to INFO\n");
 					switch_channel_set_variable(session->channel, "dtmf_type", "info");
-					smh->dtmf_type = DTMF_INFO;
+					smh->mparams->dtmf_type = DTMF_INFO;
 					te = smh->mparams->recv_te = smh->mparams->te = 0;
 				} else {
 					switch_channel_set_variable(session->channel, "dtmf_type", "none");
-					smh->dtmf_type = DTMF_NONE;
+					smh->mparams->dtmf_type = DTMF_NONE;
 					te = smh->mparams->recv_te = smh->mparams->te = 0;
 				}
 			}
@@ -2776,6 +2810,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_ext_address_lookup(switch_core
 
 	return status;
 }
+
+//?
+SWITCH_DECLARE(void) switch_core_media_reset_autofix_timing(switch_core_session_t *session, switch_media_type_t type)
+{
+	switch_rtp_engine_t *engine;
+	switch_media_handle_t *smh;
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	engine = &smh->engines[type];
+
+	engine->check_frames = 0;
+	engine->last_ts = 0;
+}
+
 
 
 //?
@@ -3669,7 +3720,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->ianacodes[i]);
 	}
 
-	if (smh->dtmf_type == DTMF_2833 && smh->mparams->te > 95) {
+	if (smh->mparams->dtmf_type == DTMF_2833 && smh->mparams->te > 95) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->mparams->te);
 	}
 		
@@ -3738,7 +3789,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	}
 
 
-	if ((smh->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
+	if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 		 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
 	}
@@ -3790,11 +3841,11 @@ SWITCH_DECLARE(void) switch_core_media_check_dtmf_type(switch_core_session_t *se
 
 	if ((val = switch_channel_get_variable(session->channel, "dtmf_type"))) {
 		if (!strcasecmp(val, "rfc2833")) {
-			smh->dtmf_type = DTMF_2833;
+			smh->mparams->dtmf_type = DTMF_2833;
 		} else if (!strcasecmp(val, "info")) {
-			smh->dtmf_type = DTMF_INFO;
+			smh->mparams->dtmf_type = DTMF_INFO;
 		} else if (!strcasecmp(val, "none")) {
-			smh->dtmf_type = DTMF_NONE;
+			smh->mparams->dtmf_type = DTMF_NONE;
 		}
 	}
 }
@@ -3938,7 +3989,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			smh->ianacodes[i] = imp->ianacode;
 			
 			if (smh->ianacodes[i] > 64) {
-				if (smh->dtmf_type == DTMF_2833 && smh->mparams->te > 95 && smh->mparams->te == smh->payload_space) {
+				if (smh->mparams->dtmf_type == DTMF_2833 && smh->mparams->te > 95 && smh->mparams->te == smh->payload_space) {
 					smh->payload_space++;
 				}
 				if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) &&
@@ -4037,7 +4088,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", a_engine->codec_params.pt);
 
-		if ((smh->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
+		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 			 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", smh->mparams->te);
 		}
@@ -4059,7 +4110,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 
 
-		if ((smh->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
+		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 			 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))
 			&& smh->mparams->te > 95) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
@@ -4404,8 +4455,6 @@ SWITCH_DECLARE(void) switch_core_media_set_image_sdp(switch_core_session_t *sess
 	ip = t38_options->local_ip;
 	port = t38_options->local_port;
 	username = smh->mparams->sdp_username;
-
-	//sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 
 	var = switch_channel_get_variable(session->channel, "t38_broken_boolean");
 	
@@ -5229,6 +5278,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 }
 
+//?
 SWITCH_DECLARE(void) switch_core_media_break(switch_core_session_t *session, switch_media_type_t type)
 {
 	switch_media_handle_t *smh;
@@ -5242,6 +5292,7 @@ SWITCH_DECLARE(void) switch_core_media_break(switch_core_session_t *session, swi
 	}
 }
 
+//?
 SWITCH_DECLARE(void) switch_core_media_kill_socket(switch_core_session_t *session, switch_media_type_t type)
 {
 	switch_media_handle_t *smh;
@@ -5255,6 +5306,7 @@ SWITCH_DECLARE(void) switch_core_media_kill_socket(switch_core_session_t *sessio
 	}
 }
 
+//?
 SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833(switch_core_session_t *session, switch_media_type_t type, const switch_dtmf_t *dtmf)
 {
 	switch_media_handle_t *smh;
@@ -5270,6 +5322,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833(switch_core_sess
 	return SWITCH_STATUS_FALSE;
 }
 
+//?
 SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833_in(switch_core_session_t *session, switch_media_type_t type, const switch_dtmf_t *dtmf)
 {
 	switch_media_handle_t *smh;
@@ -5285,6 +5338,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833_in(switch_core_s
 	return SWITCH_STATUS_FALSE;
 }
 
+//?
 SWITCH_DECLARE(uint8_t) switch_core_media_ready(switch_core_session_t *session, switch_media_type_t type)
 {
 	switch_media_handle_t *smh;
@@ -5296,6 +5350,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_ready(switch_core_session_t *session, 
 	return switch_rtp_ready(smh->engines[type].rtp_session);
 }
 
+//?
 SWITCH_DECLARE(void) switch_core_media_set_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag)
 {
 	switch_media_handle_t *smh;
@@ -5309,6 +5364,7 @@ SWITCH_DECLARE(void) switch_core_media_set_rtp_flag(switch_core_session_t *sessi
 	}	
 }
 
+//?
 SWITCH_DECLARE(void) switch_core_media_clear_rtp_flag(switch_core_session_t *session, switch_media_type_t type, switch_rtp_flag_t flag)
 {
 	switch_media_handle_t *smh;
@@ -5322,6 +5378,7 @@ SWITCH_DECLARE(void) switch_core_media_clear_rtp_flag(switch_core_session_t *ses
 	}	
 }
 
+//?
 SWITCH_DECLARE(void) switch_core_media_set_recv_pt(switch_core_session_t *session, switch_media_type_t type, switch_payload_t pt)
 {
 	switch_media_handle_t *smh;
@@ -5335,6 +5392,7 @@ SWITCH_DECLARE(void) switch_core_media_set_recv_pt(switch_core_session_t *sessio
 	}
 }
 
+//?
 SWITCH_DECLARE(void) switch_core_media_set_telephony_event(switch_core_session_t *session, switch_media_type_t type, switch_payload_t te)
 {
 	switch_media_handle_t *smh;
@@ -5348,6 +5406,7 @@ SWITCH_DECLARE(void) switch_core_media_set_telephony_event(switch_core_session_t
 	}
 }
 
+//?
 SWITCH_DECLARE(void) switch_core_media_set_telephony_recv_event(switch_core_session_t *session, switch_media_type_t type, switch_payload_t te)
 {
 	switch_media_handle_t *smh;
@@ -5361,6 +5420,7 @@ SWITCH_DECLARE(void) switch_core_media_set_telephony_recv_event(switch_core_sess
 	}
 }
 
+//?
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool)
 {
 	switch_media_handle_t *smh;
@@ -5376,6 +5436,7 @@ SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_ses
 	return NULL;
 }
 
+//?
 SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_core_session_t *session, switch_media_type_t type)
 {
 	switch_media_handle_t *smh;
@@ -5391,6 +5452,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_udptl_mode(switch_core_session
 	return SWITCH_STATUS_FALSE;
 }
 
+//?
 SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t *session, switch_media_type_t type)
 {
 	switch_media_handle_t *smh;
@@ -5405,6 +5467,269 @@ SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t
 
 	return NULL;
 }
+
+
+//?
+SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp)
+{
+	sdp_parser_t *parser;
+	sdp_session_t *sdp;
+	switch_media_handle_t *smh;
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+
+	if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+
+		if ((sdp = sdp_session(parser))) {
+			switch_core_media_set_r_sdp_codec_string(session, switch_core_media_get_codec_string(session), sdp);
+		}
+
+		sdp_parser_free(parser);
+	}
+
+}
+
+
+static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size_t buflen)
+{
+	int codec_ms = ptime;
+	uint32_t map_bit_rate = 0;
+	char ptstr[20] = "";
+	char ratestr[20] = "";
+	char bitstr[20] = "";
+	switch_codec_fmtp_t codec_fmtp = { 0 };
+						
+	if (!codec_ms) {
+		codec_ms = switch_default_ptime(map->rm_encoding, map->rm_pt);
+	}
+
+	map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
+				
+	if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
+		ptime = codec_ms = 30;
+	}
+				
+	if (zstr(map->rm_fmtp)) {
+		if (!strcasecmp(map->rm_encoding, "ilbc")) {
+			ptime = codec_ms = 30;
+			map_bit_rate = 13330;
+		}
+	} else {
+		if ((switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) == SWITCH_STATUS_SUCCESS) {
+			if (codec_fmtp.bits_per_second) {
+				map_bit_rate = codec_fmtp.bits_per_second;
+			}
+			if (codec_fmtp.microseconds_per_packet) {
+				codec_ms = (codec_fmtp.microseconds_per_packet / 1000);
+			}
+		}
+	}
+
+	if (map->rm_rate) {
+		switch_snprintf(ratestr, sizeof(ratestr), "@%uh", (unsigned int) map->rm_rate);
+	}
+
+	if (codec_ms) {
+		switch_snprintf(ptstr, sizeof(ptstr), "@%di", codec_ms);
+	}
+
+	if (map_bit_rate) {
+		switch_snprintf(bitstr, sizeof(bitstr), "@%db", map_bit_rate);
+	}
+
+	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), ",%s%s%s%s", map->rm_encoding, ratestr, ptstr, bitstr);
+
+}
+
+
+SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp)
+{
+	char buf[1024] = { 0 };
+	sdp_media_t *m;
+	sdp_attribute_t *attr;
+	int ptime = 0, dptime = 0;
+	sdp_connection_t *connection;
+	sdp_rtpmap_t *map;
+	short int match = 0;
+	int i;
+	int already_did[128] = { 0 };
+	int num_codecs = 0;
+	char *codec_order[SWITCH_MAX_CODECS];
+	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS] = { 0 };
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int prefer_sdp = 0;
+	const char *var;
+	switch_media_handle_t *smh;
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+
+	if ((var = switch_channel_get_variable(channel, "ep_codec_prefer_sdp")) && switch_true(var)) {
+		prefer_sdp = 1;
+	}
+		
+	if (!zstr(codec_string)) {
+		char *tmp_codec_string;
+		if ((tmp_codec_string = strdup(codec_string))) {
+			num_codecs = switch_separate_string(tmp_codec_string, ',', codec_order, SWITCH_MAX_CODECS);
+			num_codecs = switch_loadable_module_get_codecs_sorted(codecs, SWITCH_MAX_CODECS, codec_order, num_codecs);
+			switch_safe_free(tmp_codec_string);
+		}
+	} else {
+		num_codecs = switch_loadable_module_get_codecs(codecs, SWITCH_MAX_CODECS);
+	}
+
+	if (!channel || !num_codecs) {
+		return;
+	}
+
+	for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
+		if (zstr(attr->a_name)) {
+			continue;
+		}
+		if (!strcasecmp(attr->a_name, "ptime")) {
+			dptime = atoi(attr->a_value);
+			break;
+		}
+	}
+
+	switch_core_media_find_zrtp_hash(session, sdp);
+	switch_core_media_pass_zrtp_hash(session);
+
+	for (m = sdp->sdp_media; m; m = m->m_next) {
+		ptime = dptime;
+		if (m->m_type == sdp_media_image && m->m_port) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",t38");
+		} else if (m->m_type == sdp_media_audio && m->m_port) {
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (zstr(attr->a_name)) {
+					continue;
+				}
+				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
+					ptime = atoi(attr->a_value);
+					break;
+				}
+			}
+			connection = sdp->sdp_connection;
+			if (m->m_connections) {
+				connection = m->m_connections;
+			}
+
+			if (!connection) {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
+				break;
+			}
+
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND || prefer_sdp) {
+				for (map = m->m_rtpmaps; map; map = map->rm_next) {
+					if (map->rm_pt > 127 || already_did[map->rm_pt]) {
+						continue;
+					}
+
+					for (i = 0; i < num_codecs; i++) {
+						const switch_codec_implementation_t *imp = codecs[i];
+
+						if ((zstr(map->rm_encoding) || (smh->mparams->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+							match = (map->rm_pt == imp->ianacode) ? 1 : 0;
+						} else {
+							if (map->rm_encoding) {
+								match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+							} else {
+								match = 0;
+							}
+						}
+
+						if (match) {
+							add_audio_codec(map, ptime, buf, sizeof(buf));
+							break;
+						}
+					
+					}
+				}
+
+			} else {
+				for (i = 0; i < num_codecs; i++) {
+					const switch_codec_implementation_t *imp = codecs[i];
+					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO || imp->ianacode > 127 || already_did[imp->ianacode]) {
+						continue;
+					}
+					for (map = m->m_rtpmaps; map; map = map->rm_next) {
+						if (map->rm_pt > 127 || already_did[map->rm_pt]) {
+							continue;
+						}
+
+						if ((zstr(map->rm_encoding) || (smh->mparams->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+							match = (map->rm_pt == imp->ianacode) ? 1 : 0;
+						} else {
+							if (map->rm_encoding) {
+								match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+							} else {
+								match = 0;
+							}
+						}
+
+						if (match) {
+							add_audio_codec(map, ptime, buf, sizeof(buf));
+							break;
+						}
+					}
+				}
+			}
+
+		} else if (m->m_type == sdp_media_video && m->m_port) {
+			connection = sdp->sdp_connection;
+			if (m->m_connections) {
+				connection = m->m_connections;
+			}
+
+			if (!connection) {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
+				break;
+			}
+			for (i = 0; i < num_codecs; i++) {
+				const switch_codec_implementation_t *imp = codecs[i];
+				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO || imp->ianacode > 127 || already_did[imp->ianacode]) {
+					continue;
+				}
+				for (map = m->m_rtpmaps; map; map = map->rm_next) {
+					if (map->rm_pt > 127 || already_did[map->rm_pt]) {
+						continue;
+					}
+
+					if ((zstr(map->rm_encoding) || (smh->mparams->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
+						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
+					} else {
+						if (map->rm_encoding) {
+							match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+						} else {
+							match = 0;
+						}
+					}
+
+					if (match) {
+						if (ptime > 0) {
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (unsigned int) map->rm_rate,
+											ptime);
+						} else {
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh", imp->iananame, (unsigned int) map->rm_rate);
+						}
+						already_did[imp->ianacode] = 1;
+						break;
+					}
+				}
+			}
+		}
+	}
+	if (buf[0] == ',') {
+		switch_channel_set_variable(channel, "ep_codec_string", buf + 1);
+	}
+}
+
 
 
 
