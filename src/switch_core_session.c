@@ -1186,9 +1186,17 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
 
 	if (session->private_event_queue) {
 		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue_pri, &pop)) == SWITCH_STATUS_SUCCESS) {
+			if (pop) {
+				switch_event_t *event = (switch_event_t *) pop;
+				switch_event_destroy(&event);
+			}
 			x++;
 		}
 		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+			if (pop) {
+				switch_event_t *event = (switch_event_t *) pop;
+				switch_event_destroy(&event);
+			}
 			x++;
 		}
 		check_media(session);
@@ -1319,6 +1327,9 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_event_t *event;
 	switch_endpoint_interface_t *endpoint_interface = (*session)->endpoint_interface;
 	int i;
+
+
+	switch_core_session_flush_private_events(*session);
 
 	if (switch_core_session_running(*session) && !switch_test_flag((*session), SSF_DESTROYABLE)) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_core_session_get_uuid(*session), SWITCH_LOG_ERROR,
