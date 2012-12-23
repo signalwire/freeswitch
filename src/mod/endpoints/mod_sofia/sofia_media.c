@@ -34,69 +34,6 @@
 
 
 
-void sofia_media_proxy_codec(switch_core_session_t *session, const char *r_sdp)
-{
-	sdp_media_t *m;
-	sdp_parser_t *parser = NULL;
-	sdp_session_t *sdp;
-	private_object_t *tech_pvt = switch_core_session_get_private(session);
-	sdp_attribute_t *attr;
-	int ptime = 0, dptime = 0;
-
-	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
-		return;
-	}
-
-	if (!(sdp = sdp_session(parser))) {
-		sdp_parser_free(parser);
-		return;
-	}
-
-	switch_assert(tech_pvt != NULL);
-
-
-	for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
-		if (zstr(attr->a_name)) {
-			continue;
-		}
-
-		if (!strcasecmp(attr->a_name, "ptime")) {
-			dptime = atoi(attr->a_value);
-		}
-	}
-
-
-	for (m = sdp->sdp_media; m; m = m->m_next) {
-
-		ptime = dptime;
-		//maxptime = dmaxptime;
-
-		if (m->m_proto == sdp_proto_rtp) {
-			sdp_rtpmap_t *map;
-			for (attr = m->m_attributes; attr; attr = attr->a_next) {
-				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
-					ptime = atoi(attr->a_value);
-				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
-					//maxptime = atoi(attr->a_value);		
-				}
-			}
-
-			for (map = m->m_rtpmaps; map; map = map->rm_next) {
-				tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, map->rm_encoding);
-				tech_pvt->rm_rate = map->rm_rate;
-				tech_pvt->codec_ms = ptime;
-				switch_core_media_set_codec(tech_pvt->session, 0, tech_pvt->profile->codec_flags);
-				break;
-			}
-
-			break;
-		}
-	}
-
-	sdp_parser_free(parser);
-
-}
-
 uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp)
 {
 	uint8_t t, p = 0;

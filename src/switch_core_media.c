@@ -95,22 +95,22 @@ typedef struct switch_rtp_engine_s {
 	switch_secure_settings_t ssec;
 	switch_media_type_t type;
 
-	switch_rtp_t *rtp_session;//x:tp
-	switch_frame_t read_frame;//x:tp
-	switch_codec_t read_codec;//x:tp
-	switch_codec_t write_codec;//x:tp
+	switch_rtp_t *rtp_session;
+	switch_frame_t read_frame;
+	switch_codec_t read_codec;
+	switch_codec_t write_codec;
 
-	switch_codec_implementation_t read_impl;//x:tp
-	switch_codec_implementation_t write_impl;//x:tp
+	switch_codec_implementation_t read_impl;
+	switch_codec_implementation_t write_impl;
 
-	uint32_t codec_ms;//x:tp
-	switch_size_t last_ts;//x:tp
-	uint32_t check_frames;//x:tp
-	uint32_t mismatch_count;//x:tp
-	uint32_t last_codec_ms;//x:tp
-	uint8_t codec_reinvites;//x:tp
-	uint32_t max_missed_packets;//x:tp
-	uint32_t max_missed_hold_packets;//x:tp
+	uint32_t codec_ms;
+	switch_size_t last_ts;
+	uint32_t check_frames;
+	uint32_t mismatch_count;
+	uint32_t last_codec_ms;
+	uint8_t codec_reinvites;
+	uint32_t max_missed_packets;
+	uint32_t max_missed_hold_packets;
 	uint32_t ssrc;
 
 	switch_rtp_bug_flag_t rtp_bugs;
@@ -133,19 +133,19 @@ struct switch_media_handle_s {
 	smh_flag_t flags;
 	switch_rtp_engine_t engines[SWITCH_MEDIA_TYPE_TOTAL];
 
-	char *codec_order[SWITCH_MAX_CODECS];//x:tp
-    int codec_order_last;//x:tp
-    const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];//x:tp
+	char *codec_order[SWITCH_MAX_CODECS];
+    int codec_order_last;
+    const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 
-	int payload_space;//x:tp
-	char *origin;//x:tp
+	int payload_space;
+	char *origin;
 
-	switch_payload_t cng_pt;//x:tp
+	switch_payload_t cng_pt;
 
-	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];//x:tp
-	int num_negotiated_codecs;//x:tp
-	switch_payload_t ianacodes[SWITCH_MAX_CODECS];//x:tp
-	int video_count;//x:tp
+	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
+	int num_negotiated_codecs;
+	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
+	int video_count;
 
 	uint32_t owner_id;
 	uint32_t session_id;
@@ -5728,6 +5728,127 @@ SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_sessio
 	if (buf[0] == ',') {
 		switch_channel_set_variable(channel, "ep_codec_string", buf + 1);
 	}
+}
+
+//?
+SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t type)
+{
+	switch_rtp_engine_t *engine;
+	switch_media_handle_t *smh;
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	engine = &smh->engines[type];
+
+	if (engine->codec_params.iananame) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
+//?
+SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine, *v_engine;
+	switch_media_handle_t *smh;
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+	
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	a_engine->codec_params.iananame = switch_core_session_strdup(session, "PROXY");
+	a_engine->codec_params.rm_rate = 8000;
+	a_engine->codec_params.codec_ms = 20;
+	
+	if (switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
+		const char *r_sdp = switch_channel_get_variable(session->channel, SWITCH_R_SDP_VARIABLE);
+		
+		if (switch_stristr("m=video", r_sdp)) {
+			switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
+			v_engine->codec_params.rm_encoding = "PROXY-VID";
+			v_engine->codec_params.rm_rate = 90000;
+			v_engine->codec_params.codec_ms = 0;
+			switch_channel_set_flag(session->channel, CF_VIDEO);
+			switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
+		}
+	}
+
+}
+
+//?
+SWITCH_DECLARE(void) switch_core_media_proxy_codec(switch_core_session_t *session, const char *r_sdp)
+{
+	sdp_media_t *m;
+	sdp_parser_t *parser = NULL;
+	sdp_session_t *sdp;
+	sdp_attribute_t *attr;
+	int ptime = 0, dptime = 0;
+	switch_rtp_engine_t *a_engine;
+	switch_media_handle_t *smh;
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+	
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+
+	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+		return;
+	}
+
+	if (!(sdp = sdp_session(parser))) {
+		sdp_parser_free(parser);
+		return;
+	}
+
+
+	for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
+		if (zstr(attr->a_name)) {
+			continue;
+		}
+
+		if (!strcasecmp(attr->a_name, "ptime")) {
+			dptime = atoi(attr->a_value);
+		}
+	}
+
+
+	for (m = sdp->sdp_media; m; m = m->m_next) {
+
+		ptime = dptime;
+		//maxptime = dmaxptime;
+
+		if (m->m_proto == sdp_proto_rtp) {
+			sdp_rtpmap_t *map;
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
+					ptime = atoi(attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
+					//maxptime = atoi(attr->a_value);		
+				}
+			}
+
+			for (map = m->m_rtpmaps; map; map = map->rm_next) {
+				a_engine->codec_params.iananame = switch_core_session_strdup(session, map->rm_encoding);
+				a_engine->codec_params.rm_rate = map->rm_rate;
+				a_engine->codec_params.codec_ms = ptime;
+				switch_core_media_set_codec(session, 0, smh->mparams->codec_flags);
+				break;
+			}
+
+			break;
+		}
+	}
+
+	sdp_parser_free(parser);
+
 }
 
 

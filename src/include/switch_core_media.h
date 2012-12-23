@@ -134,14 +134,14 @@ typedef struct switch_core_media_params_s {
 
 	switch_mutex_t *mutex;
 
-	switch_payload_t te;//x:tp
-	switch_payload_t recv_te;//x:tp
+	switch_payload_t te;
+	switch_payload_t recv_te;
 
 	char *adv_sdp_audio_ip;
 
-    int num_codecs;//x:tp
-	int hold_laps;//x:tp
-	switch_core_media_dtmf_t dtmf_type;//x:tp
+    int num_codecs;
+	int hold_laps;
+	switch_core_media_dtmf_t dtmf_type;
 
 } switch_core_media_params_t;
 
@@ -238,7 +238,8 @@ SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_ses
 SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp);
 SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
 SWITCH_DECLARE(void) switch_core_media_reset_autofix_timing(switch_core_session_t *session, switch_media_type_t type);
-
+SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t media);
 
 SWITCH_END_EXTERN_C
 #endif
