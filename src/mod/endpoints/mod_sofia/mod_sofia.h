@@ -1086,7 +1086,6 @@ switch_status_t sofia_init(void);
 void sofia_glue_fire_events(sofia_profile_t *profile);
 void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event);
 void sofia_queue_message(sofia_dispatch_event_t *de);
-void sofia_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
 int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
 
 switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, char **ip, switch_port_t *port,

@@ -5594,7 +5594,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 
 				if ((sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
-					sofia_media_set_sdp_codec_string(session, r_sdp);
+					switch_core_media_set_sdp_codec_string(session, r_sdp);
 				}
 				
 				sofia_glue_pass_sdp(tech_pvt, (char *) r_sdp);
