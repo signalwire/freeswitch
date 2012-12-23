@@ -1530,6 +1530,9 @@ SWITCH_STANDARD_API(eval_function)
 		free(expanded);
 	}
 
+	switch_event_destroy(&event);
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
