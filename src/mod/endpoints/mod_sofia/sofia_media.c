@@ -39,8 +39,7 @@ uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_
 	uint8_t t, p = 0;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 
-	if ((t = switch_core_media_negotiate_sdp(session, r_sdp, &p, switch_channel_test_flag(tech_pvt->channel, CF_REINVITE), 
-									   tech_pvt->profile->codec_flags, tech_pvt->profile->te))) {
+	if ((t = switch_core_media_negotiate_sdp(session, r_sdp, &p))) {
 		sofia_set_flag_locked(tech_pvt, TFLAG_SDP);
 	}
 

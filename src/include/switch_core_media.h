@@ -189,7 +189,7 @@ SWITCH_DECLARE(const char *) switch_core_media_get_zrtp_hash(switch_core_session
 SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session);
 SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session, int sendonly);
 SWITCH_DECLARE(void) switch_core_media_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session);
-SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, int reinvite, int codec_flags, switch_payload_t default_te);
+SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_session_t *session, int force);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_t *session, int force, uint32_t codec_flags);
 SWITCH_DECLARE(void) switch_core_media_check_video_codecs(switch_core_session_t *session);
@@ -240,6 +240,7 @@ SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_
 SWITCH_DECLARE(void) switch_core_media_reset_autofix_timing(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t media);
+SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *session);
 
 SWITCH_END_EXTERN_C
 #endif

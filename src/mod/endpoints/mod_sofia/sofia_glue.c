@@ -1782,12 +1782,6 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
 
-#if 1
-int sofia_recover_callback(switch_core_session_t *session) 
-{
-	return -1;
-}
-#else 
 int sofia_recover_callback(switch_core_session_t *session) 
 {
 
@@ -1818,7 +1812,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 	switch_mutex_init(&tech_pvt->sofia_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 	tech_pvt->mparams.remote_ip = (char *) switch_channel_get_variable(channel, "sip_network_ip");
-	tech_pvt->remote_port = atoi(switch_str_nil(switch_channel_get_variable(channel, "sip_network_port")));
+	tech_pvt->mparams.remote_port = atoi(switch_str_nil(switch_channel_get_variable(channel, "sip_network_port")));
 	tech_pvt->caller_profile = switch_channel_get_caller_profile(channel);
 
 	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "sip_2833_send_payload"))) {
@@ -1881,7 +1875,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
-		tech_pvt->remote_sdp_str = switch_core_session_strdup(session, tmp);
+		tech_pvt->mparams.remote_sdp_str = switch_core_session_strdup(session, tmp);
 	}
 
 	switch_channel_set_variable(channel, "sip_invite_call_id", switch_channel_get_variable(channel, "sip_call_id"));
@@ -1894,11 +1888,6 @@ int sofia_recover_callback(switch_core_session_t *session)
 	}
 
 	if (session) {
-		const char *ip = switch_channel_get_variable(channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
-		const char *a_ip = switch_channel_get_variable(channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE);
-		const char *port = switch_channel_get_variable(channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
-		const char *r_ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
-		const char *r_port = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
 		const char *use_uuid;
 
 		switch_channel_set_flag(channel, CF_RECOVERING);
@@ -1912,113 +1901,17 @@ int sofia_recover_callback(switch_core_session_t *session)
 								  switch_channel_get_name(channel), use_uuid);
 			}
 		}
-
-		if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && ip && port) {
-			const char *tmp;
-			tech_pvt->iananame = tech_pvt->rm_encoding = (char *) switch_channel_get_variable(channel, "sip_use_codec_name");
-			tech_pvt->rm_fmtp = (char *) switch_channel_get_variable(channel, "sip_use_codec_fmtp");
-
-			if ((tmp = switch_channel_get_variable(channel, "sip_use_codec_rate"))) {
-				tech_pvt->rm_rate = atoi(tmp);
-			}
-
-			if ((tmp = switch_channel_get_variable(channel, "sip_use_codec_ptime"))) {
-				tech_pvt->codec_ms = atoi(tmp);
-			}
-
-			if ((tmp = switch_channel_get_variable(channel, "sip_use_pt"))) {
-				tech_pvt->pt = tech_pvt->agreed_pt = (switch_payload_t)atoi(tmp);
-			}
-			
-			switch_core_media_set_codec(tech_pvt->session, 1, tech_pvt->profile->codec_flags);
-
-			tech_pvt->mparams.adv_sdp_audio_ip = tech_pvt->extrtpip = (char *) ip;
-			tech_pvt->adv_sdp_audio_port = tech_pvt->local_sdp_audio_port = (switch_port_t)atoi(port);
-
-			if (!zstr(ip)) {
-				tech_pvt->local_sdp_audio_ip = switch_core_session_strdup(session, ip);
-				tech_pvt->rtpip = tech_pvt->local_sdp_audio_ip;
-			}
-
-			if (!zstr(a_ip)) {
-				tech_pvt->mparams.adv_sdp_audio_ip = switch_core_session_strdup(session, a_ip);
-			}
-
-			if (r_ip && r_port) {
-				tech_pvt->remote_sdp_audio_ip = (char *) r_ip;
-				tech_pvt->remote_sdp_audio_port = (switch_port_t)atoi(r_port);
-			}
-
-			if (switch_channel_test_flag(channel, CF_VIDEO)) {
-				if ((tmp = switch_channel_get_variable(channel, "sip_use_video_pt"))) {
-					tech_pvt->video_pt = tech_pvt->video_agreed_pt = (switch_payload_t)atoi(tmp);
-				}
-
-
-				tech_pvt->video_rm_encoding = (char *) switch_channel_get_variable(channel, "sip_use_video_codec_name");
-				tech_pvt->video_rm_fmtp = (char *) switch_channel_get_variable(channel, "sip_use_video_codec_fmtp");
-
-				ip = switch_channel_get_variable(channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE);
-				port = switch_channel_get_variable(channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE);
-				r_ip = switch_channel_get_variable(channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE);
-				r_port = switch_channel_get_variable(channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE);
-
-				switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_POSSIBLE);
-
-				if ((tmp = switch_channel_get_variable(channel, "sip_use_video_codec_rate"))) {
-					tech_pvt->video_rm_rate = atoi(tmp);
-				}
-
-				if ((tmp = switch_channel_get_variable(channel, "sip_use_video_codec_ptime"))) {
-					tech_pvt->video_codec_ms = atoi(tmp);
-				}
-
-				tech_pvt->adv_sdp_video_port = tech_pvt->local_sdp_video_port = (switch_port_t)atoi(port);
-
-				if (r_ip && r_port) {
-					tech_pvt->remote_sdp_video_ip = (char *) r_ip;
-					tech_pvt->remote_sdp_video_port = (switch_port_t)atoi(r_port);
-				}
-				//sofia_media_tech_set_video_codec(tech_pvt, 1);
-			}
-
-			switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 1);
-
-			if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-				goto end;
-			}
-			
-			if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
-				if ((tmp = switch_channel_get_variable(channel, "sip_audio_recv_pt"))) {
-					switch_core_media_set_recv_pt(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, (switch_payload_t)atoi(tmp));
-				}
-			}
-
-			if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_VIDEO)) {
-				if ((tmp = switch_channel_get_variable(channel, "sip_video_recv_pt"))) {
-					switch_core_media_set_recv_pt(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, (switch_payload_t)atoi(tmp));
-				}
-			}
-
-			if (tech_pvt->te) {
-				switch_core_media_set_telephony_event(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, tech_pvt->te);
-			}
-
-			if (tech_pvt->recv_te) {
-				switch_core_media_set_telephony_recv_event(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, tech_pvt->recv_te);
-			}
-
-		}
+	
+		switch_core_media_recover_session(session);
+	
 	}
 
 	r++;
 
- end:
-
 	return r;
 
 }
-#endif
+
 
 
 int sofia_glue_recover(switch_bool_t flush)
