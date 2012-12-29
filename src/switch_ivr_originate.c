@@ -399,11 +399,11 @@ static void inherit_codec(switch_channel_t *caller_channel, switch_core_session_
 
 			if (switch_core_session_get_video_read_impl(session, &video_impl) == SWITCH_STATUS_SUCCESS) {
 				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui,%s",
-								impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000,
+								impl.iananame, impl.samples_per_second, (uint32_t)impl.microseconds_per_packet / 1000,
 								video_impl.iananame);
 			} else {
 				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui",
-								impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000);
+								impl.iananame, impl.samples_per_second, (uint32_t)impl.microseconds_per_packet / 1000);
 			}
 		
 			if (ep && switch_stristr(impl.iananame, ep)) {
@@ -3683,7 +3683,7 @@ write_frame.samples = (uint32_t) olen;
 		*bleg = NULL;
 	}
 
-	if (*bleg) {
+	if (bleg && *bleg) {
 		switch_channel_t *bchan = switch_core_session_get_channel(*bleg);
 
 		if (session && caller_channel) {

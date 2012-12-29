@@ -109,7 +109,10 @@ typedef __int8 int8_t;
 #include <fcntl.h>
 #include <math.h>
 #if !defined(powf) && !defined(_WIN64)
+#pragma warning(push)
+#pragma warning(disable: 28251)
 extern float powf (float, float);
+#pragma warning(pop)
 #endif
 #include <string.h>
 #include <errno.h>

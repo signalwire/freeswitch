@@ -506,6 +506,11 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 	len = strlen(txt) + 100;
 	event_buf = malloc(len);
 	assert(event_buf);
+
+	if (!event_buf) {
+		return ESL_FAIL;
+	}
+
 	memset(event_buf, 0, len);
 	
 	snprintf(event_buf, len, "sendevent %s\n%s", esl_event_name(event->event_id), txt);
@@ -566,6 +571,11 @@ ESL_DECLARE(esl_status_t) esl_sendmsg(esl_handle_t *handle, esl_event_t *event, 
 	len = strlen(txt) + 100;
 	cmd_buf = malloc(len);
 	assert(cmd_buf);
+
+	if (!cmd_buf) {
+		return ESL_FAIL;
+	}
+
 	memset(cmd_buf, 0, len);	
 
 	if (uuid) {
