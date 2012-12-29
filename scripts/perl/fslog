@@ -1,0 +1,56 @@
+#!/usr/bin/perl
+#
+# fslog
+#
+# colorizes output according to FS console log colors
+#
+
+use strict;
+use warnings;
+use Term::ANSIColor qw(:constants);;
+$|++;
+
+if ( $ARGV[0] && $ARGV[0] =~ m/--?h/i ) {
+    &usage;
+    exit(0);
+} elsif ( $ARGV[0] && ! -f $ARGV[0] ) {
+    die "File not found: $ARGV[0]\n";
+}
+
+my $color_map = {
+    '[DEBUG]'   => YELLOW,
+    '[INFO]'    => GREEN,
+    '[NOTICE]'  => CYAN,
+    '[WARNING]' => MAGENTA,
+    '[ERR]'     => RED,
+    '[CRIT]'    => RED,
+    '[ALERT]'   => RED,
+};
+
+$SIG{INT} = sub { print RESET; };
+
+while(<>) {
+    #print "Current line is: '$_'\n";
+    if ( m/(\[(DEBUG|INFO|NOTICE|WARNING|ERR|CRIT|ALERT)\])/ ) {
+        print $color_map->{"$1"},$_,RESET;
+    } else {
+        print YELLOW,$_,RESET;
+    }
+}
+
+print RESET;
+
+sub usage {
+  print <<EOT
+
+  fslog reader
+
+  Feed me a FreeSWITCH log file and I will colorize the output
+    fslog freeswitch.log
+    -OR-
+    grep foo freeswitch.log | fslog | more
+
+  NOTE: some versions of more and less do not support colorized text.
+
+EOT
+}
