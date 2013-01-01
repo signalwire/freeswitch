@@ -173,22 +173,19 @@ enum
     T38_TIMED_STEP_HDLC_MODEM_3 = 0x22,
     T38_TIMED_STEP_HDLC_MODEM_4 = 0x23,
     T38_TIMED_STEP_HDLC_MODEM_5 = 0x24,
-    T38_TIMED_STEP_FAKE_HDLC_MODEM = 0x30,
-    T38_TIMED_STEP_FAKE_HDLC_MODEM_2 = 0x31,
-    T38_TIMED_STEP_FAKE_HDLC_MODEM_3 = 0x32,
-    T38_TIMED_STEP_FAKE_HDLC_MODEM_4 = 0x33,
-    T38_TIMED_STEP_FAKE_HDLC_MODEM_5 = 0x34,
-    T38_TIMED_STEP_CED = 0x40,
-    T38_TIMED_STEP_CED_2 = 0x41,
-    T38_TIMED_STEP_CED_3 = 0x42,
-    T38_TIMED_STEP_CNG = 0x50,
-    T38_TIMED_STEP_CNG_2 = 0x51,
-    T38_TIMED_STEP_PAUSE = 0x60,
-    T38_TIMED_STEP_NO_SIGNAL = 0x70
+    T38_TIMED_STEP_CED = 0x30,
+    T38_TIMED_STEP_CED_2 = 0x31,
+    T38_TIMED_STEP_CED_3 = 0x32,
+    T38_TIMED_STEP_CNG = 0x40,
+    T38_TIMED_STEP_CNG_2 = 0x41,
+    T38_TIMED_STEP_PAUSE = 0x50,
+    T38_TIMED_STEP_NO_SIGNAL = 0x60
 };
 
 static int restart_modem(t31_state_t *s, int new_modem);
 static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int ok);
+static void hdlc_accept_frame2(void *user_data, const uint8_t *msg, int len, int ok);
+static void hdlc_accept_frame3(void *user_data, const uint8_t *msg, int len, int ok);
 static int silence_rx(void *user_data, const int16_t amp[], int len);
 static int cng_rx(void *user_data, const int16_t amp[], int len);
 static void non_ecm_put_bit(void *user_data, int bit);
@@ -482,15 +479,31 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC OK (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
-            if (fe->hdlc_rx.len >= 3  &&  (fe->hdlc_rx.buf[2] & 0xFE) == T30_DCS)
+            if (data_type == T38_DATA_V21)
             {
-                /* We need to know if ECM is about to be used, so we can fake HDLC stuff. */
-                fe->ecm_mode = (fe->hdlc_rx.len >= 7  &&  (fe->hdlc_rx.buf[6] & DISBIT3));
-                span_log(&s->logging, SPAN_LOG_FLOW, "ECM mode: %d\n", fe->ecm_mode);
+                if (fe->hdlc_rx.len >= 3)
+                {
+                    if ((fe->hdlc_rx.buf[2] & 0xFE) == T30_DCS)
+                    {
+                        /* We need to know if ECM is about to be used, so we can fake HDLC stuff. */
+                        fe->ecm_mode = (fe->hdlc_rx.len >= 7  &&  (fe->hdlc_rx.buf[6] & DISBIT3))  ?  1  :  0;
+                        span_log(&s->logging, SPAN_LOG_FLOW, "ECM mode: %d\n", fe->ecm_mode);
+                    }
+                    else if (s->t38_fe.ecm_mode == 1  &&  (fe->hdlc_rx.buf[2] & 0xFE) == T30_CFR)
+                    {
+                        s->t38_fe.ecm_mode = 2;
+                    }
+                    /*endif*/
+                }
+                /*endif*/
+                crc_itu16_append(fe->hdlc_rx.buf, fe->hdlc_rx.len);
+                hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
+            }
+            else
+            {
+                hdlc_accept_frame2(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
             }
             /*endif*/
-            crc_itu16_append(fe->hdlc_rx.buf, fe->hdlc_rx.len);
-            hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
         }
         /*endif*/
         fe->hdlc_rx.len = 0;
@@ -511,7 +524,11 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
-            hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+            if (data_type == T38_DATA_V21)
+                hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+            else
+                hdlc_accept_frame2(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+            /*endif*/
         }
         /*endif*/
         fe->hdlc_rx.len = 0;
@@ -532,16 +549,33 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC OK, sig end (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
-            if (fe->hdlc_rx.len >= 3  &&  (fe->hdlc_rx.buf[2] & 0xFE) == T30_DCS)
+            if (data_type == T38_DATA_V21)
             {
-                /* We need to know if ECM is about to be used, so we can fake HDLC stuff. */
-                fe->ecm_mode = (fe->hdlc_rx.len >= 7  &&  (fe->hdlc_rx.buf[6] & DISBIT3));
-                span_log(&s->logging, SPAN_LOG_FLOW, "ECM mode: %d\n", fe->ecm_mode);
+                if (fe->hdlc_rx.len >= 3)
+                {
+                    if ((fe->hdlc_rx.buf[2] & 0xFE) == T30_DCS)
+                    {
+                        /* We need to know if ECM is about to be used, so we can fake HDLC stuff. */
+                        fe->ecm_mode = (fe->hdlc_rx.len >= 7  &&  (fe->hdlc_rx.buf[6] & DISBIT3))  ?  1  :  0;
+                        span_log(&s->logging, SPAN_LOG_FLOW, "ECM mode: %d\n", fe->ecm_mode);
+                    }
+                    else if (s->t38_fe.ecm_mode == 1  &&  (fe->hdlc_rx.buf[2] & 0xFE) == T30_CFR)
+                    {
+                        s->t38_fe.ecm_mode = 2;
+                    }
+                    /*endif*/
+                }
+                /*endif*/
+                crc_itu16_append(fe->hdlc_rx.buf, fe->hdlc_rx.len);
+                hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
+                hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
+            }
+            else
+            {
+                hdlc_accept_frame2(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
+                non_ecm_rx_status(s, SIG_STATUS_CARRIER_DOWN);
             }
             /*endif*/
-            crc_itu16_append(fe->hdlc_rx.buf, fe->hdlc_rx.len);
-            hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
-            hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
         }
         /*endif*/
         fe->hdlc_rx.len = 0;
@@ -562,8 +596,17 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad, sig end (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
-            hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
-            hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
+            if (data_type == T38_DATA_V21)
+            {
+                hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+                hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
+            }
+            else
+            {
+                hdlc_accept_frame2(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+                non_ecm_rx_status(s, SIG_STATUS_CARRIER_DOWN);
+            }
+            /*endif*/
         }
         /*endif*/
         fe->hdlc_rx.len = 0;
@@ -592,19 +635,23 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             fe->hdlc_rx.len = 0;
             fe->rx_data_missing = FALSE;
             fe->timeout_rx_samples = 0;
-            hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
+            if (data_type == T38_DATA_V21)
+                hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
+            else
+                non_ecm_rx_status(s, SIG_STATUS_CARRIER_DOWN);
+            /*endif*/
         }
         /*endif*/
         break;
     case T38_FIELD_T4_NON_ECM_DATA:
-        if (!s->at_state.rx_signal_present)
-        {
-            non_ecm_rx_status(s, SIG_STATUS_TRAINING_SUCCEEDED);
-            s->at_state.rx_signal_present = TRUE;
-        }
-        /*endif*/
         if (len > 0)
         {
+            if (!s->at_state.rx_signal_present)
+            {
+                non_ecm_rx_status(s, SIG_STATUS_TRAINING_SUCCEEDED);
+                s->at_state.rx_signal_present = TRUE;
+            }
+            /*endif*/
             bit_reverse(buf2, buf, len);
             non_ecm_put(s, buf2, len);
         }
@@ -691,11 +738,19 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
     }
     else
     {
-        if (len >= 3  &&  (s->hdlc_tx.buf[2] & 0xFE) == T30_DCS)
+        if (len >= 3)
         {
-            /* We need to know if ECM is about to be used, so we can fake HDLC stuff. */
-            s->t38_fe.ecm_mode = (len >= 7  &&  (s->hdlc_tx.buf[6] & DISBIT3));
-            span_log(&s->logging, SPAN_LOG_FLOW, "ECM mode: %d\n", s->t38_fe.ecm_mode);
+            if ((s->hdlc_tx.buf[2] & 0xFE) == T30_DCS)
+            {
+                /* We need to know if ECM is about to be used, so we can fake HDLC stuff. */
+                s->t38_fe.ecm_mode = (len >= 7  &&  (s->hdlc_tx.buf[6] & DISBIT3))  ?  1  :  0;
+                span_log(&s->logging, SPAN_LOG_FLOW, "ECM mode: %d\n", s->t38_fe.ecm_mode);
+            }
+            else if (s->t38_fe.ecm_mode == 1  &&  (s->hdlc_tx.buf[2] & 0xFE) == T30_CFR)
+            {
+                s->t38_fe.ecm_mode = 2;
+            }
+            /*endif*/
         }
         /*endif*/
         s->t38_fe.hdlc_tx.extra_bits = extra_bits_in_stuffed_frame(msg, len);
@@ -973,7 +1028,9 @@ static int stream_hdlc(t31_state_t *s)
                 return delay;
             /*endif*/
             delay += t38_core_send_flags_delay(&fe->t38, fe->next_tx_indicator);
-            at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
+            if (fe->current_tx_data_type == T38_DATA_V21)
+                at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
+            /*endif*/
             fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
             break;
         case T38_TIMED_STEP_HDLC_MODEM_3:
@@ -981,8 +1038,26 @@ static int stream_hdlc(t31_state_t *s)
             if (s->hdlc_tx.len == 0)
             {
                 /* We don't have a frame ready yet, so wait a little */
-                delay = US_PER_TX_CHUNK;
-                break;
+                if (fe->current_tx_data_type != T38_DATA_V21
+                    &&
+                    s->t38_fe.hdlc_from_t31.in != s->t38_fe.hdlc_from_t31.out)
+                {
+                    bit_reverse(s->hdlc_tx.buf, s->t38_fe.hdlc_from_t31.buf[s->t38_fe.hdlc_from_t31.out].buf, s->t38_fe.hdlc_from_t31.buf[s->t38_fe.hdlc_from_t31.out].len);
+                    s->hdlc_tx.len = s->t38_fe.hdlc_from_t31.buf[s->t38_fe.hdlc_from_t31.out].len;
+                    s->hdlc_tx.ptr = 0;
+                    if (++s->t38_fe.hdlc_from_t31.out >= T31_TX_HDLC_BUFS)
+                        s->t38_fe.hdlc_from_t31.out = 0;
+                    /*endif*/
+                    if (s->t38_fe.hdlc_from_t31.in == s->t38_fe.hdlc_from_t31.out)
+                        s->hdlc_tx.final = s->non_ecm_tx.final;
+                    /*endif*/
+                }
+                else
+                {
+                    delay = US_PER_TX_CHUNK;
+                    break;
+                }
+                /*endif*/
             }
             /*endif*/
             i = s->hdlc_tx.len - s->hdlc_tx.ptr;
@@ -1015,7 +1090,9 @@ static int stream_hdlc(t31_state_t *s)
                         /*endif*/
                         fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
                         delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
-                        at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
+                        if (fe->current_tx_data_type == T38_DATA_V21)
+                            at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
+                        /*endif*/
                     }
                     else
                     {
@@ -1071,7 +1148,9 @@ static int stream_hdlc(t31_state_t *s)
                     return res;
                 /*endif*/
                 fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
-                at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
+                if (fe->current_tx_data_type == T38_DATA_V21)
+                    at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
+                /*endif*/
                 /* We should now wait enough time for everything to clear through an analogue modem at the far end. */
                 delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
             }
@@ -1109,12 +1188,6 @@ static int stream_hdlc(t31_state_t *s)
     }
     /*endfor*/
     return delay;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int stream_fake_hdlc(t31_state_t *s)
-{
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1237,9 +1310,6 @@ SPAN_DECLARE(int) t31_t38_send_timeout(t31_state_t *s, int samples)
     case T38_TIMED_STEP_HDLC_MODEM:
         delay = stream_hdlc(s);
         break;
-    case T38_TIMED_STEP_FAKE_HDLC_MODEM:
-        delay = stream_fake_hdlc(s);
-        break;
     case T38_TIMED_STEP_CED:
         delay = stream_ced(s);
         break;
@@ -1275,9 +1345,9 @@ static int t31_modem_control_handler(at_state_t *s, void *user_data, int op, con
         t->call_samples = 0;
         break;
     case AT_MODEM_CONTROL_ONHOOK:
-        if (t->tx.holding)
+        if (t->non_ecm_tx.holding)
         {
-            t->tx.holding = FALSE;
+            t->non_ecm_tx.holding = FALSE;
             /* Tell the application to release further data */
             at_modem_control(&t->at_state, AT_MODEM_CONTROL_CTS, (void *) 1);
         }
@@ -1401,6 +1471,12 @@ static void non_ecm_put(void *user_data, const uint8_t buf[], int len)
     int i;
 
     s = (t31_state_t *) user_data;
+    if (!s->at_state.rx_signal_present)
+    {
+        non_ecm_rx_status(s, SIG_STATUS_TRAINING_SUCCEEDED);
+        s->at_state.rx_signal_present = TRUE;
+    }
+    /*endif*/
     /* Ignore any fractional bytes which may have accumulated */
     for (i = 0;  i < len;  i++)
     {
@@ -1432,36 +1508,36 @@ static int non_ecm_get_bit(void *user_data)
     s = (t31_state_t *) user_data;
     if (s->audio.bit_no <= 0)
     {
-        if (s->tx.out_bytes != s->tx.in_bytes)
+        if (s->non_ecm_tx.out_bytes != s->non_ecm_tx.in_bytes)
         {
             /* There is real data available to send */
-            s->audio.current_byte = s->tx.data[s->tx.out_bytes++];
-            if (s->tx.out_bytes > T31_TX_BUF_LEN - 1)
+            s->audio.current_byte = s->non_ecm_tx.data[s->non_ecm_tx.out_bytes++];
+            if (s->non_ecm_tx.out_bytes > T31_TX_BUF_LEN - 1)
             {
-                s->tx.out_bytes = T31_TX_BUF_LEN - 1;
+                s->non_ecm_tx.out_bytes = T31_TX_BUF_LEN - 1;
                 span_log(&s->logging, SPAN_LOG_FLOW, "End of transmit buffer reached!\n");
             }
             /*endif*/
-            if (s->tx.holding)
+            if (s->non_ecm_tx.holding)
             {
                 /* See if the buffer is approaching empty. It might be time to
                    release flow control. */
-                if (s->tx.out_bytes > T31_TX_BUF_LOW_TIDE)
+                if (s->non_ecm_tx.out_bytes > T31_TX_BUF_LOW_TIDE)
                 {
-                    s->tx.holding = FALSE;
+                    s->non_ecm_tx.holding = FALSE;
                     /* Tell the application to release further data */
                     at_modem_control(&s->at_state, AT_MODEM_CONTROL_CTS, (void *) 1);
                 }
                 /*endif*/
             }
             /*endif*/
-            s->tx.data_started = TRUE;
+            s->non_ecm_tx.data_started = TRUE;
         }
         else
         {
-            if (s->tx.final)
+            if (s->non_ecm_tx.final)
             {
-                s->tx.final = FALSE;
+                s->non_ecm_tx.final = FALSE;
                 /* This will put the modem into its shutdown sequence. When
                    it has finally shut down, an OK response will be sent. */
                 return SIG_STATUS_END_OF_DATA;
@@ -1469,7 +1545,7 @@ static int non_ecm_get_bit(void *user_data)
             /*endif*/
             /* Fill with 0xFF bytes at the start of transmission, or 0x00 if we are in
                the middle of transmission. This follows T.31 and T.30 practice. */
-            s->audio.current_byte = (s->tx.data_started)  ?  0x00  :  0xFF;
+            s->audio.current_byte = (s->non_ecm_tx.data_started)  ?  0x00  :  0xFF;
         }
         /*endif*/
         s->audio.bit_no = 8;
@@ -1490,35 +1566,35 @@ static int non_ecm_get(void *user_data, uint8_t buf[], int len)
     s = (t31_state_t *) user_data;
     for (i = 0;  i < len;  i++)
     {
-        if (s->tx.out_bytes != s->tx.in_bytes)
+        if (s->non_ecm_tx.out_bytes != s->non_ecm_tx.in_bytes)
         {
             /* There is real data available to send */
-            buf[i] = s->tx.data[s->tx.out_bytes++];
-            if (s->tx.out_bytes > T31_TX_BUF_LEN - 1)
+            buf[i] = s->non_ecm_tx.data[s->non_ecm_tx.out_bytes++];
+            if (s->non_ecm_tx.out_bytes > T31_TX_BUF_LEN - 1)
             {
-                s->tx.out_bytes = T31_TX_BUF_LEN - 1;
+                s->non_ecm_tx.out_bytes = T31_TX_BUF_LEN - 1;
                 span_log(&s->logging, SPAN_LOG_FLOW, "End of transmit buffer reached!\n");
             }
             /*endif*/
-            if (s->tx.holding)
+            if (s->non_ecm_tx.holding)
             {
                 /* See if the buffer is approaching empty. It might be time to release flow control. */
-                if (s->tx.out_bytes > T31_TX_BUF_LOW_TIDE)
+                if (s->non_ecm_tx.out_bytes > T31_TX_BUF_LOW_TIDE)
                 {
-                    s->tx.holding = FALSE;
+                    s->non_ecm_tx.holding = FALSE;
                     /* Tell the application to release further data */
                     at_modem_control(&s->at_state, AT_MODEM_CONTROL_CTS, (void *) 1);
                 }
                 /*endif*/
             }
             /*endif*/
-            s->tx.data_started = TRUE;
+            s->non_ecm_tx.data_started = TRUE;
         }
         else
         {
-            if (s->tx.final)
+            if (s->non_ecm_tx.final)
             {
-                s->tx.final = FALSE;
+                s->non_ecm_tx.final = FALSE;
                 /* This will put the modem into its shutdown sequence. When
                    it has finally shut down, an OK response will be sent. */
                 //return SIG_STATUS_END_OF_DATA;
@@ -1527,7 +1603,7 @@ static int non_ecm_get(void *user_data, uint8_t buf[], int len)
             /*endif*/
             /* Fill with 0xFF bytes at the start of transmission, or 0x00 if we are in
                the middle of transmission. This follows T.31 and T.30 practice. */
-            buf[i] = (s->tx.data_started)  ?  0x00  :  0xFF;
+            buf[i] = (s->non_ecm_tx.data_started)  ?  0x00  :  0xFF;
         }
         /*endif*/
     }
@@ -1572,6 +1648,11 @@ static void hdlc_tx_underflow(void *user_data)
         at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
     }
     /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
+static void hdlc_tx_underflow2(void *user_data)
+{
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1784,6 +1865,131 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
 }
 /*- End of function --------------------------------------------------------*/
 
+static void hdlc_accept_frame2(void *user_data, const uint8_t *msg, int len, int ok)
+{
+    t31_state_t *s;
+    int i;
+    int byte_in_progress;
+    int txbyte;
+    int pos;
+    int ptr;
+    uint16_t crc;
+#if defined(_MSC_VER)
+    uint8_t *buf2 = (uint8_t *) _alloca(2*len + 20);
+#else
+    uint8_t buf2[2*len + 20];
+#endif
+
+    /* Accept an ECM image mode HDLC frame received as T.38 */
+    if (len < 0)
+        return;
+    /*endif*/
+    s = (t31_state_t  *) user_data;
+    span_log(&s->logging, SPAN_LOG_FLOW, "Accept2 %d %d\n", len, ok);
+    crc = crc_itu16_calc(msg, len, 0xFFFF);
+    /* If the frame is not good, don't flip the CRC to the correct value */
+    if (ok)
+        crc ^= 0xFFFF;
+    /*endif*/
+    ptr = 0;
+    buf2[ptr++] = s->t38_fe.hdlc_tx_term.idle_octet;
+    buf2[ptr++] = s->t38_fe.hdlc_tx_term.idle_octet;
+    for (pos = 0;  pos < len;  pos++)
+    {
+        byte_in_progress = msg[pos];
+        i = bottom_bit(byte_in_progress | 0x100);
+        s->t38_fe.hdlc_tx_term.octets_in_progress <<= i;
+        byte_in_progress >>= i;
+        for (  ;  i < 8;  i++)
+        {
+            s->t38_fe.hdlc_tx_term.octets_in_progress = (s->t38_fe.hdlc_tx_term.octets_in_progress << 1) | (byte_in_progress & 0x01);
+            byte_in_progress >>= 1;
+            if ((s->t38_fe.hdlc_tx_term.octets_in_progress & 0x1F) == 0x1F)
+            {
+                /* There are 5 ones - stuff */
+                s->t38_fe.hdlc_tx_term.octets_in_progress <<= 1;
+                s->t38_fe.hdlc_tx_term.num_bits++;
+            }
+            /*endif*/
+        }
+        /*endfor*/
+        /* An input byte will generate between 8 and 10 output bits */
+        buf2[ptr++] = (s->t38_fe.hdlc_tx_term.octets_in_progress >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
+        if (s->t38_fe.hdlc_tx_term.num_bits >= 8)
+        {
+            s->t38_fe.hdlc_tx_term.num_bits -= 8;
+            buf2[ptr++] = (s->t38_fe.hdlc_tx_term.octets_in_progress >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
+        }
+        /*endif*/
+    }
+    /*endfor*/
+
+    for (pos = 0;  pos < 2;  pos++)
+    {
+        byte_in_progress = crc & 0xFF;
+        crc >>= 8;
+        i = bottom_bit(byte_in_progress | 0x100);
+        s->t38_fe.hdlc_tx_term.octets_in_progress <<= i;
+        byte_in_progress >>= i;
+        for (  ;  i < 8;  i++)
+        {
+            s->t38_fe.hdlc_tx_term.octets_in_progress = (s->t38_fe.hdlc_tx_term.octets_in_progress << 1) | (byte_in_progress & 0x01);
+            byte_in_progress >>= 1;
+            if ((s->t38_fe.hdlc_tx_term.octets_in_progress & 0x1F) == 0x1F)
+            {
+                /* There are 5 ones - stuff */
+                s->t38_fe.hdlc_tx_term.octets_in_progress <<= 1;
+                s->t38_fe.hdlc_tx_term.num_bits++;
+            }
+            /*endif*/
+        }
+        /*endfor*/
+        /* An input byte will generate between 8 and 10 output bits */
+        buf2[ptr++] = (s->t38_fe.hdlc_tx_term.octets_in_progress >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
+        if (s->t38_fe.hdlc_tx_term.num_bits >= 8)
+        {
+            s->t38_fe.hdlc_tx_term.num_bits -= 8;
+            buf2[ptr++] = (s->t38_fe.hdlc_tx_term.octets_in_progress >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
+        }
+        /*endif*/
+    }
+    /*endif*/
+
+    /* Finish off the current byte with some flag bits. If we are at the
+       start of a byte we need a at least one whole byte of flag to ensure
+       we cannot end up with back to back frames, and no flag octet at all */
+    txbyte = (uint8_t) ((s->t38_fe.hdlc_tx_term.octets_in_progress << (8 - s->t38_fe.hdlc_tx_term.num_bits)) | (0x7E >> s->t38_fe.hdlc_tx_term.num_bits));
+    /* Create a rotated octet of flag for idling... */
+    s->t38_fe.hdlc_tx_term.idle_octet = (0x7E7E >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
+    /* ...and the partial flag octet needed to start off the next message. */
+    s->t38_fe.hdlc_tx_term.octets_in_progress = s->t38_fe.hdlc_tx_term.idle_octet >> (8 - s->t38_fe.hdlc_tx_term.num_bits);
+    buf2[ptr++] = txbyte;
+
+    buf2[ptr++] = s->t38_fe.hdlc_tx_term.idle_octet;
+    buf2[ptr++] = s->t38_fe.hdlc_tx_term.idle_octet;
+    bit_reverse(buf2, buf2, ptr);
+    non_ecm_put(s, buf2, ptr);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void hdlc_accept_frame3(void *user_data, const uint8_t *msg, int len, int ok)
+{
+    t31_state_t *s;
+
+    /* Accept an ECM image mode HDLC frame received as a bit stream from the FAX software,
+       and to be send as T.38 HDLC data. */
+    if (len < 0)
+        return;
+    /*endif*/
+    s = (t31_state_t *) user_data;
+    memcpy(s->t38_fe.hdlc_from_t31.buf[s->t38_fe.hdlc_from_t31.in].buf, msg, len);
+    s->t38_fe.hdlc_from_t31.buf[s->t38_fe.hdlc_from_t31.in].len = len;
+    if (++s->t38_fe.hdlc_from_t31.in >= T31_TX_HDLC_BUFS)
+        s->t38_fe.hdlc_from_t31.in = 0;
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
 static void t31_v21_rx(t31_state_t *s)
 {
     s->at_state.ok_is_pending = FALSE;
@@ -1809,7 +2015,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
     /*endif*/
     queue_flush(s->rx_queue);
     s->modem = new_modem;
-    s->tx.final = FALSE;
+    s->non_ecm_tx.final = FALSE;
     s->at_state.rx_signal_present = FALSE;
     s->at_state.rx_trained = FALSE;
     s->audio.modems.rx_trained = FALSE;
@@ -1943,15 +2149,15 @@ static int restart_modem(t31_state_t *s, int new_modem)
             }
             /*endswitch*/
             set_octets_per_data_packet(s, s->bit_rate);
-            s->t38_fe.timed_step = (s->t38_fe.ecm_mode)  ?  T38_TIMED_STEP_FAKE_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
+            s->t38_fe.timed_step = (s->t38_fe.ecm_mode == 2)  ?  T38_TIMED_STEP_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
         }
         else
         {
             fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
         }
         /*endif*/
-        s->tx.out_bytes = 0;
-        s->tx.data_started = FALSE;
+        s->non_ecm_tx.out_bytes = 0;
+        s->non_ecm_tx.data_started = FALSE;
         s->at_state.transmit = TRUE;
         break;
     case FAX_MODEM_V27TER_TX:
@@ -1970,15 +2176,15 @@ static int restart_modem(t31_state_t *s, int new_modem)
             }
             /*endswitch*/
             set_octets_per_data_packet(s, s->bit_rate);
-            s->t38_fe.timed_step = (s->t38_fe.ecm_mode)  ?  T38_TIMED_STEP_FAKE_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
+            s->t38_fe.timed_step = (s->t38_fe.ecm_mode == 2)  ?  T38_TIMED_STEP_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
         }
         else
         {
             fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
         }
         /*endif*/
-        s->tx.out_bytes = 0;
-        s->tx.data_started = FALSE;
+        s->non_ecm_tx.out_bytes = 0;
+        s->non_ecm_tx.data_started = FALSE;
         s->at_state.transmit = TRUE;
         break;
     case FAX_MODEM_V29_TX:
@@ -1997,15 +2203,15 @@ static int restart_modem(t31_state_t *s, int new_modem)
             }
             /*endswitch*/
             set_octets_per_data_packet(s, s->bit_rate);
-            s->t38_fe.timed_step = (s->t38_fe.ecm_mode)  ?  T38_TIMED_STEP_FAKE_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
+            s->t38_fe.timed_step = (s->t38_fe.ecm_mode == 2)  ?  T38_TIMED_STEP_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
         }
         else
         {
             fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
         }
         /*endif*/
-        s->tx.out_bytes = 0;
-        s->tx.data_started = FALSE;
+        s->non_ecm_tx.out_bytes = 0;
+        s->non_ecm_tx.data_started = FALSE;
         s->at_state.transmit = TRUE;
         break;
     case FAX_MODEM_SILENCE_TX:
@@ -2060,8 +2266,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
     /*endswitch*/
     s->audio.bit_no = 0;
     s->audio.current_byte = 0xFF;
-    s->tx.in_bytes = 0;
-    s->tx.out_bytes = 0;
+    s->non_ecm_tx.in_bytes = 0;
+    s->non_ecm_tx.out_bytes = 0;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2089,7 +2295,7 @@ static __inline__ void dle_unstuff_hdlc(t31_state_t *s, const char *stuffed, int
                 }
                 /*endif*/
             }
-            else if (stuffed[i] == SUB)
+            else if (s->at_state.p.double_escape  &&  stuffed[i] == SUB)
             {
                 s->hdlc_tx.buf[s->hdlc_tx.len++] = DLE;
                 s->hdlc_tx.buf[s->hdlc_tx.len++] = DLE;
@@ -2114,10 +2320,10 @@ static __inline__ void dle_unstuff_hdlc(t31_state_t *s, const char *stuffed, int
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
+static __inline__ void dle_unstuff_fake_hdlc(t31_state_t *s, const char *stuffed, int len)
 {
     int i;
-    
+
     for (i = 0;  i < len;  i++)
     {
         if (s->dled)
@@ -2125,20 +2331,72 @@ static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
             s->dled = FALSE;
             if (stuffed[i] == ETX)
             {
-                s->tx.final = TRUE;
+                s->non_ecm_tx.final = TRUE;
+                t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
+                return;
+            }
+            else if (s->at_state.p.double_escape  &&  stuffed[i] == SUB)
+            {
+                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_term, bit_reverse8(DLE));
+                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_term, bit_reverse8(DLE));
+            }
+            else
+            {
+                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_term, bit_reverse8(stuffed[i]));
+            }
+            /*endif*/
+        }
+        else
+        {
+            if (stuffed[i] == DLE)
+                s->dled = TRUE;
+            else
+                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_term, bit_reverse8(stuffed[i]));
+            /*endif*/
+        }
+        /*endif*/
+    }
+    /*endfor*/
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
+{
+    int i;
+
+    for (i = 0;  i < len;  i++)
+    {
+        if (s->dled)
+        {
+            s->dled = FALSE;
+            if (stuffed[i] == ETX)
+            {
+                s->non_ecm_tx.final = TRUE;
                 t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
                 return;
             }
             /*endif*/
+            if (s->at_state.p.double_escape  &&  stuffed[i] == SUB)
+            {
+                s->non_ecm_tx.data[s->non_ecm_tx.in_bytes++] = DLE;
+                s->non_ecm_tx.data[s->non_ecm_tx.in_bytes++] = DLE;
+            }
+            else
+            {
+                s->non_ecm_tx.data[s->non_ecm_tx.in_bytes++] = stuffed[i];
+            }
+            /*endif*/
         }
-        else if (stuffed[i] == DLE)
+        else
         {
-            s->dled = TRUE;
-            continue;
+            if (stuffed[i] == DLE)
+                s->dled = TRUE;
+            else
+                s->non_ecm_tx.data[s->non_ecm_tx.in_bytes++] = stuffed[i];
+            /*endif*/
         }
         /*endif*/
-        s->tx.data[s->tx.in_bytes++] = stuffed[i];
-        if (s->tx.in_bytes > T31_TX_BUF_LEN - 1)
+        if (s->non_ecm_tx.in_bytes > T31_TX_BUF_LEN - 2)
         {
             /* Oops. We hit the end of the buffer. Give up. Loose stuff. :-( */
             span_log(&s->logging, SPAN_LOG_FLOW, "No room in buffer for new data!\n");
@@ -2147,12 +2405,12 @@ static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
         /*endif*/
     }
     /*endfor*/
-    if (!s->tx.holding)
+    if (!s->non_ecm_tx.holding)
     {
         /* See if the buffer is approaching full. We might need to apply flow control. */
-        if (s->tx.in_bytes > T31_TX_BUF_HIGH_TIDE)
+        if (s->non_ecm_tx.in_bytes > T31_TX_BUF_HIGH_TIDE)
         {
-            s->tx.holding = TRUE;
+            s->non_ecm_tx.holding = TRUE;
             /* Tell the application to hold further data */
             at_modem_control(&s->at_state, AT_MODEM_CONTROL_CTS, (void *) 0);
         }
@@ -2402,7 +2660,7 @@ SPAN_DECLARE(void) t31_call_event(t31_state_t *s, int event)
 
 SPAN_DECLARE(int) t31_at_rx_free_space(t31_state_t *s)
 {
-    return T31_TX_BUF_LEN - (s->tx.in_bytes - s->tx.out_bytes) - 1;
+    return T31_TX_BUF_LEN - (s->non_ecm_tx.in_bytes - s->non_ecm_tx.out_bytes) - 1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2441,15 +2699,19 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
         dle_unstuff_hdlc(s, t, len);
         break;
     case AT_MODE_STUFFED:
-        if (s->tx.out_bytes)
+        if (s->non_ecm_tx.out_bytes)
         {
             /* Make room for new data in existing data buffer. */
-            s->tx.in_bytes -= s->tx.out_bytes;
-            memmove(&s->tx.data[0], &s->tx.data[s->tx.out_bytes], s->tx.in_bytes);
-            s->tx.out_bytes = 0;
+            s->non_ecm_tx.in_bytes -= s->non_ecm_tx.out_bytes;
+            memmove(&s->non_ecm_tx.data[0], &s->non_ecm_tx.data[s->non_ecm_tx.out_bytes], s->non_ecm_tx.in_bytes);
+            s->non_ecm_tx.out_bytes = 0;
         }
         /*endif*/
-        dle_unstuff(s, t, len);
+        if (s->t38_fe.ecm_mode == 2)
+            dle_unstuff_fake_hdlc(s, t, len);
+        else
+            dle_unstuff(s, t, len);
+        /*endif*/
         break;
     case AT_MODE_CONNECTED:
         /* TODO: Implement for data modem operation */
@@ -2674,6 +2936,12 @@ SPAN_DECLARE(logging_state_t *) t31_get_logging_state(t31_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(at_state_t *) t31_get_at_state(t31_state_t *s)
+{
+    return &s->at_state;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(t38_core_state_t *) t31_get_t38_core_state(t31_state_t *s)
 {
     return &s->t38_fe.t38;
@@ -2707,8 +2975,8 @@ static int t31_t38_fe_init(t31_state_t *t,
 
     t->hdlc_tx.ptr = 0;
 
-    hdlc_tx_init(&s->hdlc_tx_term, FALSE, 1, FALSE, NULL, NULL);
-    hdlc_rx_init(&s->hdlc_rx_term, FALSE, TRUE, 2, NULL, NULL);
+    hdlc_tx_init(&s->hdlc_tx_term, FALSE, 1, FALSE, hdlc_tx_underflow2, s);
+    hdlc_rx_init(&s->hdlc_rx_term, FALSE, TRUE, 2, hdlc_accept_frame3, t);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

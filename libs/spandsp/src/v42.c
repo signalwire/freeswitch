@@ -1456,6 +1456,12 @@ SPAN_DECLARE(int) v42_get_far_busy_status(v42_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) v42_get_logging_state(v42_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, modem_status_func_t status_handler, void *user_data)
 {
     s->lapm.status_handler = status_handler;

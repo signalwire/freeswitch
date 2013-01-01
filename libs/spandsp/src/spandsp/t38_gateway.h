@@ -38,13 +38,6 @@ to maximum the tolerance of jitter and packet loss on the IP network.
 \section t38_gateway_page_sec_2 How does it work?
 */
 
-/*! The receive buffer length */
-#define T38_RX_BUF_LEN          2048
-/*! The number of HDLC transmit buffers */
-#define T38_TX_HDLC_BUFS        256
-/*! The maximum length of an HDLC frame buffer. This must be big enough for ECM frames. */
-#define T38_MAX_HDLC_LEN        260
-
 typedef struct t38_gateway_state_s t38_gateway_state_t;
 
 /*!

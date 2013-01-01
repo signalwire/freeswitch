@@ -41,16 +41,14 @@ in ITU specifications T.4 and T.6.
 #include <unistd.h>
 #include <memory.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
+//#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 
 #include "spandsp.h"
 
 #define XSIZE           1728
 
-t4_t6_encode_state_t send_state;
-t4_t6_decode_state_t receive_state;
+t4_t6_encode_state_t *send_state;
+t4_t6_decode_state_t *receive_state;
 
 /* The following are some test cases from T.4 */
 #define FILL_70      "                                                                      "
@@ -328,30 +326,27 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    /* Create a send and a receive end */
-    memset(&send_state, 0, sizeof(send_state));
-    memset(&receive_state, 0, sizeof(receive_state));
 
     end_of_page = FALSE;
 #if 1
     printf("Testing image_function->compress->decompress->image_function\n");
     /* Send end gets image from a function */
-    if (t4_t6_encode_init(&send_state, compression, 1728, row_read_handler, NULL) == NULL)
+    if ((send_state = t4_t6_encode_init(NULL, compression, 1728, row_read_handler, NULL)) == NULL)
     {
         printf("Failed to init T.4/T.6 encoder\n");
         exit(2);
     }
-    span_log_set_level(&send_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
-    t4_t6_encode_set_min_bits_per_row(&send_state, min_row_bits);
-    t4_t6_encode_set_max_2d_rows_per_1d_row(&send_state, 2);
+    span_log_set_level(t4_t6_encode_get_logging_state(send_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
+    t4_t6_encode_set_min_bits_per_row(send_state, min_row_bits);
+    t4_t6_encode_set_max_2d_rows_per_1d_row(send_state, 2);
 
     /* Receive end puts TIFF to a function. */
-    if (t4_t6_decode_init(&receive_state, compression, 1728, row_write_handler, NULL) == NULL)
+    if ((receive_state = t4_t6_decode_init(NULL, compression, 1728, row_write_handler, NULL)) == NULL)
     {
         printf("Failed to init T.4/T.6 decoder\n");
         exit(2);
     }
-    span_log_set_level(&receive_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
+    span_log_set_level(t4_t6_decode_get_logging_state(receive_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
 
     /* Now send and receive the test data with all compression modes. */
     /* If we are stepping around the compression schemes, reset to the start of the sequence. */
@@ -366,12 +361,12 @@ int main(int argc, char *argv[])
             if (compression < 0)
                 break;
         }
-        t4_t6_encode_set_encoding(&send_state, compression);
-        t4_t6_decode_set_encoding(&receive_state, compression);
+        t4_t6_encode_set_encoding(send_state, compression);
+        t4_t6_decode_set_encoding(receive_state, compression);
 
-        if (t4_t6_encode_restart(&send_state, 1728))
+        if (t4_t6_encode_restart(send_state, 1728))
             break;
-        if (t4_t6_decode_restart(&receive_state, 1728))
+        if (t4_t6_decode_restart(receive_state, 1728))
             break;
         detect_page_end(-1000000, compression);
         switch (block_size)
@@ -380,7 +375,7 @@ int main(int argc, char *argv[])
             end_of_page = FALSE;
             for (;;)
             {
-                bit = t4_t6_encode_get_bit(&send_state);
+                bit = t4_t6_encode_get_bit(send_state);
                 if ((res = detect_page_end(bit, end_of_page)))
                 {
                     if (res != 1)
@@ -391,13 +386,13 @@ int main(int argc, char *argv[])
                     break;
                 }
                 if (!end_of_page)
-                    end_of_page = t4_t6_decode_put_bit(&receive_state, bit & 1);
+                    end_of_page = t4_t6_decode_put_bit(receive_state, bit & 1);
             }
             break;
         default:
             do
             {
-                len = t4_t6_encode_get(&send_state, chunk_buf, block_size);
+                len = t4_t6_encode_get(send_state, chunk_buf, block_size);
                 if (len == 0)
                 {
                     if (++end_marks > 50)
@@ -409,7 +404,7 @@ int main(int argc, char *argv[])
                     chunk_buf[0] = 0xFF;
                     len = 1;
                 }
-                end_of_page = t4_t6_decode_put(&receive_state, chunk_buf, len);
+                end_of_page = t4_t6_decode_put(receive_state, chunk_buf, len);
             }
             while (!end_of_page);
             break;
@@ -417,8 +412,8 @@ int main(int argc, char *argv[])
         if (compression_step < 0)
             break;
     }
-    t4_t6_encode_release(&send_state);
-    t4_t6_decode_release(&receive_state);
+    t4_t6_encode_release(send_state);
+    t4_t6_decode_release(receive_state);
 #endif
     printf("Tests passed\n");
     return 0;

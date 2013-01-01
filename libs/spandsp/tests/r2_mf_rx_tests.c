@@ -37,9 +37,6 @@ distortion this produces is comparable to u-law, so it should be
 a fair test of performance in a real PSTN channel.
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
-//#define WITH_SPANDSP_INTERNALS
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -51,9 +48,7 @@ a fair test of performance in a real PSTN channel.
 #include <time.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 
@@ -179,13 +174,13 @@ static int my_mf_generate(int16_t amp[], char digit)
 {
     int len;
     char *cp;
-    tone_gen_state_t tone;
+    tone_gen_state_t *tone;
 
     len = 0;
     if ((cp = strchr(r2_mf_tone_codes, digit)))
     {
-        tone_gen_init(&tone, &my_mf_digit_tones[cp - r2_mf_tone_codes]);
-        len += tone_gen(&tone, amp + len, 9999);
+        tone = tone_gen_init(NULL, &my_mf_digit_tones[cp - r2_mf_tone_codes]);
+        len += tone_gen(tone, amp + len, 9999);
     }
     return len;
 }
@@ -242,10 +237,10 @@ static int test_a_tone_set(int fwd)
     float rrb;
     float rcfo;
     int16_t amp[100000];
-    r2_mf_rx_state_t mf_state;
-    awgn_state_t noise_source;
+    r2_mf_rx_state_t *mf_state;
+    awgn_state_t *noise_source;
 
-    r2_mf_rx_init(&mf_state, fwd, NULL, NULL);
+    mf_state = r2_mf_rx_init(NULL, fwd, NULL, NULL);
 
     /* Test 1: Mitel's test 1 isn't really a test. Its a calibration step,
        which has no meaning here. */
@@ -268,8 +263,8 @@ static int test_a_tone_set(int fwd)
         {
             len = my_mf_generate(amp, digit);
             codec_munge (amp, len);
-            r2_mf_rx(&mf_state, amp, len);
-            actual = r2_mf_rx_get(&mf_state);
+            r2_mf_rx(mf_state, amp, len);
+            actual = r2_mf_rx_get(mf_state);
             if (actual != digit)
             {
                 printf ("    Sent     '%c'\n", digit);
@@ -320,8 +315,8 @@ static int test_a_tone_set(int fwd)
             my_mf_gen_init((float) i/1000.0, -17, 0.0, -17, 68, fwd);
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            r2_mf_rx(&mf_state, amp, len);
-            if (r2_mf_rx_get(&mf_state) == digit)
+            r2_mf_rx(mf_state, amp, len);
+            if (r2_mf_rx_get(mf_state) == digit)
                 nplus++;
         }
         for (nminus = 0, i = -1;  i >= -60;  i--)
@@ -329,8 +324,8 @@ static int test_a_tone_set(int fwd)
             my_mf_gen_init((float) i/1000.0, -17, 0.0, -17, 68, fwd);
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            r2_mf_rx(&mf_state, amp, len);
-            if (r2_mf_rx_get(&mf_state) == digit)
+            r2_mf_rx(mf_state, amp, len);
+            if (r2_mf_rx_get(mf_state) == digit)
                 nminus++;
         }
         rrb = (float) (nplus + nminus)/10.0;
@@ -353,8 +348,8 @@ static int test_a_tone_set(int fwd)
             my_mf_gen_init(0.0, -17, (float) i/1000.0, -17, 68, fwd);
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            r2_mf_rx(&mf_state, amp, len);
-            if (r2_mf_rx_get(&mf_state) == digit)
+            r2_mf_rx(mf_state, amp, len);
+            if (r2_mf_rx_get(mf_state) == digit)
                 nplus++;
         }
         for (nminus = 0, i = -1;  i >= -60;  i--)
@@ -362,8 +357,8 @@ static int test_a_tone_set(int fwd)
             my_mf_gen_init(0.0, -17, (float) i/1000.0, -17, 68, fwd);
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            r2_mf_rx(&mf_state, amp, len);
-            if (r2_mf_rx_get(&mf_state) == digit)
+            r2_mf_rx(mf_state, amp, len);
+            if (r2_mf_rx_get(mf_state) == digit)
                 nminus++;
         }
         rrb = (float) (nplus + nminus)/10.0;
@@ -399,8 +394,8 @@ static int test_a_tone_set(int fwd)
 
             len = my_mf_generate(amp, digit);
             codec_munge (amp, len);
-            r2_mf_rx(&mf_state, amp, len);
-            if (r2_mf_rx_get(&mf_state) == digit)
+            r2_mf_rx(mf_state, amp, len);
+            if (r2_mf_rx_get(mf_state) == digit)
                 nplus++;
         }
         printf ("    %c normal twist  = %.2fdB\n", digit, (float) nplus/10.0);
@@ -415,8 +410,8 @@ static int test_a_tone_set(int fwd)
 
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            r2_mf_rx(&mf_state, amp, len);
-            if (r2_mf_rx_get(&mf_state) == digit)
+            r2_mf_rx(mf_state, amp, len);
+            if (r2_mf_rx_get(mf_state) == digit)
                 nminus++;
         }
         printf ("    %c reverse twist = %.2fdB\n", digit, (float) nminus/10.0);
@@ -445,8 +440,8 @@ static int test_a_tone_set(int fwd)
             {
                 len = my_mf_generate(amp, digit);
                 codec_munge(amp, len);
-                r2_mf_rx(&mf_state, amp, len);
-                if (r2_mf_rx_get(&mf_state) != digit)
+                r2_mf_rx(mf_state, amp, len);
+                if (r2_mf_rx_get(mf_state) != digit)
                     break;
             }
             if (j < 100)
@@ -488,8 +483,8 @@ static int test_a_tone_set(int fwd)
             {
                 len = my_mf_generate(amp, digit);
                 codec_munge(amp, len);
-                r2_mf_rx(&mf_state, amp, len);
-                if (r2_mf_rx_get(&mf_state) != digit)
+                r2_mf_rx(mf_state, amp, len);
+                if (r2_mf_rx_get(mf_state) != digit)
                     break;
             }
             if (j < 500)
@@ -518,15 +513,15 @@ static int test_a_tone_set(int fwd)
         while (*s)
         {
             digit = *s++;
-            awgn_init_dbm0(&noise_source, 1234567, (float) i);
+            noise_source = awgn_init_dbm0(NULL, 1234567, (float) i);
             for (j = 0;  j < 500;  j++)
             {
                 len = my_mf_generate(amp, digit);
                 for (sample = 0;  sample < len;  sample++)
-                    amp[sample] = saturate(amp[sample] + awgn(&noise_source));
+                    amp[sample] = saturate(amp[sample] + awgn(noise_source));
                 codec_munge(amp, len);
-                r2_mf_rx(&mf_state, amp, len);
-                if (r2_mf_rx_get(&mf_state) != digit)
+                r2_mf_rx(mf_state, amp, len);
+                if (r2_mf_rx_get(mf_state) != digit)
                     break;
             }
             if (j < 500)
@@ -546,24 +541,24 @@ static int test_a_tone_set(int fwd)
     printf("Test 8: Callback digit delivery mode.\n");
     callback_ok = FALSE;
     callback_roll = 0;
-    r2_mf_rx_init(&mf_state, fwd, digit_delivery, (void *) 0x12345678);
+    mf_state = r2_mf_rx_init(NULL, fwd, digit_delivery, (void *) 0x12345678);
     my_mf_gen_init(0.0, -3, 0.0, -3, 68, fwd);
     s = r2_mf_tone_codes;
-    awgn_init_dbm0(&noise_source, 1234567, -40.0f);
+    noise_source = awgn_init_dbm0(NULL, 1234567, -40.0f);
     while (*s)
     {
         digit = *s++;
         len = my_mf_generate(amp, digit);
         for (sample = 0;  sample < len;  sample++)
-            amp[sample] = saturate(amp[sample] + awgn(&noise_source));
+            amp[sample] = saturate(amp[sample] + awgn(noise_source));
         codec_munge(amp, len);
-        r2_mf_rx(&mf_state, amp, len);
+        r2_mf_rx(mf_state, amp, len);
         len = 160;
         memset(amp, '\0', len*sizeof(int16_t));
         for (sample = 0;  sample < len;  sample++)
-            amp[sample] = saturate(amp[sample] + awgn(&noise_source));
+            amp[sample] = saturate(amp[sample] + awgn(noise_source));
         codec_munge(amp, len);
-        r2_mf_rx(&mf_state, amp, len);
+        r2_mf_rx(mf_state, amp, len);
     }
     if (!callback_ok)
     {

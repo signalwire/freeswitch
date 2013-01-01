@@ -47,9 +47,6 @@ T.30<->T.38<--------------------------UDPTL/RTP-------------------------->T.38<-
 
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
-//#define WITH_SPANDSP_INTERNALS
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -79,10 +76,6 @@ T.30<->T.38<--------------------------UDPTL/RTP-------------------------->T.38<-
 #if defined(HAVE_LIBXML_XINCLUDE_H)
 #include <libxml/xinclude.h>
 #endif
-
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "udptl.h"
 #include "spandsp.h"

@@ -23,8 +23,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */
-
 /*! \page queue_tests_page Queue tests
 \section queue_tests_page_sec_1 What does it do?
 */
@@ -41,9 +39,7 @@
 #include <pthread.h>
 #include <sched.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 

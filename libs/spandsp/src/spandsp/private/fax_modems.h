@@ -131,8 +131,8 @@ struct fax_modems_state_s
     span_tx_handler_t tx_handler;
     void *tx_user_data;
 
-    /*! The next transmit signal handler, for two stage transmit operations.
-        E.g. a short silence followed by a modem signal. */
+    /*! \brief The next transmit signal handler, for two stage transmit operations.
+               E.g. a short silence followed by a modem signal. */
     span_tx_handler_t next_tx_handler;
     void *next_tx_user_data;
 

@@ -37,10 +37,6 @@
 #include <string.h>
 #include <time.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 
 #ifndef FALSE

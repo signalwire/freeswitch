@@ -54,9 +54,6 @@ The file ../test-data/local/short_wb_voice.wav will be compressed to the specifi
 and the resulting audio stored in post_g722.wav.
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
-//#define WITH_SPANDSP_INTERNALS
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -71,9 +68,7 @@ and the resulting audio stored in post_g722.wav.
 
 #include "spandsp.h"
 
-#if 1 //defined(WITH_SPANDSP_INTERNALS)
 #include "spandsp/private/g722.h"
-#endif
 
 #define G722_SAMPLE_RATE    16000
 
@@ -218,8 +213,8 @@ static int get_test_vector(const char *file, uint16_t buf[], int max_len)
 
 static void itu_compliance_tests(void)
 {
-    g722_encode_state_t enc_state;
-    g722_decode_state_t dec_state;
+    g722_encode_state_t *enc_state;
+    g722_decode_state_t *dec_state;
     int i;
     int j;
     int k;
@@ -262,9 +257,9 @@ static void itu_compliance_tests(void)
                 break;
         }
         len = j - i;
-        g722_encode_init(&enc_state, 64000, 0);
-        enc_state.itu_test_mode = TRUE;
-        len2 = g722_encode(&enc_state, compressed, itu_data + i, len);
+        enc_state = g722_encode_init(NULL, 64000, 0);
+        enc_state->itu_test_mode = TRUE;
+        len2 = g722_encode(enc_state, compressed, itu_data + i, len);
 
         /* Check the result against the ITU's reference output data */
         j = 0;
@@ -328,9 +323,9 @@ static void itu_compliance_tests(void)
             for (k = 0;  k < len;  k++)
                 compressed[k] = itu_data[k + i] >> ((mode == 3)  ?  10  :  (mode == 2)  ?  9  :  8);
         
-            g722_decode_init(&dec_state, (mode == 3)  ?  48000  :  (mode == 2)  ?  56000  :  64000, 0);
-            dec_state.itu_test_mode = TRUE;
-            len2 = g722_decode(&dec_state, decompressed, compressed, len);
+            dec_state = g722_decode_init(NULL, (mode == 3)  ?  48000  :  (mode == 2)  ?  56000  :  64000, 0);
+            dec_state->itu_test_mode = TRUE;
+            len2 = g722_decode(dec_state, decompressed, compressed, len);
 
             /* Check the result against the ITU's reference output data */
             j = 0;
@@ -360,8 +355,8 @@ static void itu_compliance_tests(void)
 
 static void signal_to_distortion_tests(void)
 {
-    g722_encode_state_t enc_state;
-    g722_decode_state_t dec_state;
+    g722_encode_state_t *enc_state;
+    g722_decode_state_t *dec_state;
     swept_tone_state_t *swept;
     power_meter_t in_meter;
     power_meter_t out_meter;
@@ -377,8 +372,8 @@ static void signal_to_distortion_tests(void)
 
     /* Test a back to back encoder/decoder pair to ensure we comply with Figure 11/G.722 to
        Figure 16/G.722, Figure A.1/G.722, and Figure A.2/G.722 */
-    g722_encode_init(&enc_state, 64000, 0);
-    g722_decode_init(&dec_state, 64000, 0);
+    enc_state = g722_encode_init(NULL, 64000, 0);
+    dec_state = g722_decode_init(NULL, 64000, 0);
     power_meter_init(&in_meter, 7);
     power_meter_init(&out_meter, 7);
 
@@ -387,8 +382,8 @@ static void signal_to_distortion_tests(void)
     memset(original, 0, len*sizeof(original[0]));
     for (i = 0;  i < len;  i++)
         in_level = power_meter_update(&in_meter, original[i]);
-    len2 = g722_encode(&enc_state, compressed, original, len);
-    len3 = g722_decode(&dec_state, decompressed, compressed, len2);
+    len2 = g722_encode(enc_state, compressed, original, len);
+    len3 = g722_decode(dec_state, decompressed, compressed, len2);
     out_level = 0;
     for (i = 0;  i < len3;  i++)
         out_level = power_meter_update(&out_meter, decompressed[i]);
@@ -401,8 +396,8 @@ static void signal_to_distortion_tests(void)
         len = swept_tone(swept, original, 1024);
         for (i = 0;  i < len;  i++)
             in_level = power_meter_update(&in_meter, original[i]);
-        len2 = g722_encode(&enc_state, compressed, original, len);
-        len3 = g722_decode(&dec_state, decompressed, compressed, len2);
+        len2 = g722_encode(enc_state, compressed, original, len);
+        len3 = g722_decode(dec_state, decompressed, compressed, len2);
         for (i = 0;  i < len3;  i++)
             out_level = power_meter_update(&out_meter, decompressed[i]);
         printf("%10d, %10d, %f\n", in_level, out_level, (float) out_level/in_level);
@@ -413,8 +408,8 @@ static void signal_to_distortion_tests(void)
 
 int main(int argc, char *argv[])
 {
-    g722_encode_state_t enc_state;
-    g722_decode_state_t dec_state;
+    g722_encode_state_t *enc_state;
+    g722_decode_state_t *dec_state;
     int len2;
     int len3;
     int i;
@@ -581,9 +576,9 @@ int main(int argc, char *argv[])
                 }
             }
             if (eight_k_in)
-                g722_encode_init(&enc_state, bit_rate, G722_PACKED | G722_SAMPLE_RATE_8000);
+                enc_state = g722_encode_init(NULL, bit_rate, G722_PACKED | G722_SAMPLE_RATE_8000);
             else
-                g722_encode_init(&enc_state, bit_rate, G722_PACKED);
+                enc_state = g722_encode_init(NULL, bit_rate, G722_PACKED);
         }
         else
         {
@@ -608,9 +603,9 @@ int main(int argc, char *argv[])
                 exit(2);
             }
             if (eight_k_out)
-                g722_decode_init(&dec_state, bit_rate, G722_PACKED | G722_SAMPLE_RATE_8000);
+                dec_state = g722_decode_init(NULL, bit_rate, G722_PACKED | G722_SAMPLE_RATE_8000);
             else
-                g722_decode_init(&dec_state, bit_rate, G722_PACKED);
+                dec_state = g722_decode_init(NULL, bit_rate, G722_PACKED);
         }
         else
         {
@@ -632,7 +627,7 @@ int main(int argc, char *argv[])
                     for (i = 0;  i < samples;  i++)
                         indata[i] = dds_modf(&tone_phase, tone_phase_rate, tone_level, 0);
                 }
-                len2 = g722_encode(&enc_state, adpcmdata, indata, samples);
+                len2 = g722_encode(enc_state, adpcmdata, indata, samples);
             }
             else
             {
@@ -642,7 +637,7 @@ int main(int argc, char *argv[])
             }
             if (decode)
             {
-                len3 = g722_decode(&dec_state, outdata, adpcmdata, len2);
+                len3 = g722_decode(dec_state, outdata, adpcmdata, len2);
                 outframes = sf_writef_short(outhandle, outdata, len3);
                 if (outframes != len3)
                 {

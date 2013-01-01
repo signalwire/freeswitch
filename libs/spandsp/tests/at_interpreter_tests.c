@@ -42,7 +42,6 @@ These tests exercise all the commands which should be understood by the AT inter
 #include <assert.h>
 #include <sndfile.h>
 
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include "spandsp.h"
 
 #define DLE 0x10
@@ -78,14 +77,14 @@ static const struct command_response_s general_test_seq[] =
     {"AT+FCLASS=?\r", "\r\n0,1,1.0\r\n\r\nOK\r\n"},
 
     /* Try all the commands */
-    {"AT&C\r", "\r\nOK\r\n"},                                       /* V.250 6.2.8 - Circuit 109 (received line signal detector), behaviour */ 
-    {"AT&D\r", "\r\nOK\r\n"},                                       /* V.250 6.2.9 - Circuit 108 (data terminal ready) behaviour */ 
-    {"AT&F\r", "\r\nOK\r\n"},                                       /* V.250 6.1.2 - Set to factory-defined configuration */ 
+    {"AT&C\r", "\r\nOK\r\n"},                                       /* V.250 6.2.8 - Circuit 109 (received line signal detector), behaviour */
+    {"AT&D\r", "\r\nOK\r\n"},                                       /* V.250 6.2.9 - Circuit 108 (data terminal ready) behaviour */
+    {"AT&F\r", "\r\nOK\r\n"},                                       /* V.250 6.1.2 - Set to factory-defined configuration */
     {"ATE0\r", "ATE0\r\r\nOK\r\n"},                                 /* Counteract the effects of the above */
     {"AT+A8E=?\r", "\r\n+A8E:(0-6),(0-5),(00-FF)\r\n\r\nOK\r\n"},   /* V.251 5.1 - V.8 and V.8bis operation controls */
     {"AT+A8M\r", "\r\nOK\r\n"},                                     /* V.251 5.2 - Send V.8 menu signals */
     {"AT+A8T=?\r", "\r\n+A8T:(0-10)\r\n\r\nOK\r\n"},                /* V.251 5.3 - Send V.8bis signal and/or message(s) */
-    {"AT+ASTO=?\r", "\r\n+ASTO:\r\n\r\nOK\r\n"},                    /* V.250 6.3.15 - Store telephone number */ 
+    {"AT+ASTO=?\r", "\r\n+ASTO:\r\n\r\nOK\r\n"},                    /* V.250 6.3.15 - Store telephone number */
     {"AT+CAAP=?\r", "\r\n+CAAP:\r\n\r\nOK\r\n"},                    /* 3GPP TS 27.007 7.25 - Automatic answer for eMLPP Service */
     {"AT+CACM=?\r", "\r\n+CACM:\r\n\r\nOK\r\n"},                    /* 3GPP TS 27.007 8.25 - Accumulated call meter */
     {"AT+CACSP=?\r", "\r\n+CACSP:\r\n\r\nOK\r\n"},                  /* 3GPP TS 27.007 11.1.7 - Voice Group or Voice Broadcast Call State Attribute Presentation */
@@ -214,120 +213,122 @@ static const struct command_response_s general_test_seq[] =
     {"AT+CV120=?\r", "\r\n+CV120:\r\n\r\nOK\r\n"},                  /* 3GPP TS 27.007 6.21 - V.120 rate adaption protocol */
     {"AT+CVHU=?\r", "\r\n+CVHU:\r\n\r\nOK\r\n"},                    /* 3GPP TS 27.007 6.20 - Voice Hangup Control */
     {"AT+CVIB=?\r", "\r\n+CVIB:\r\n\r\nOK\r\n"},                    /* 3GPP TS 27.007 8.22 - Vibrator mode */
-    {"AT+DR=?\r", "\r\n+DR:\r\n\r\nOK\r\n"},                        /* V.250 6.6.2 - Data compression reporting */ 
-    {"AT+DS=?\r", "\r\n+DS:\r\n\r\nOK\r\n"},                        /* V.250 6.6.1 - Data compression */ 
-    {"AT+EB=?\r", "\r\n+EB:\r\n\r\nOK\r\n"},                        /* V.250 6.5.2 - Break handling in error control operation */ 
-    {"AT+EFCS=?\r", "\r\n+EFCS:(0-2)\r\n\r\nOK\r\n"},               /* V.250 6.5.4 - 32-bit frame check sequence */ 
+    {"AT+DR=?\r", "\r\n+DR:\r\n\r\nOK\r\n"},                        /* V.250 6.6.2 - Data compression reporting */
+    {"AT+DS=?\r", "\r\n+DS:\r\n\r\nOK\r\n"},                        /* V.250 6.6.1 - Data compression */
+    {"AT+EB=?\r", "\r\n+EB:\r\n\r\nOK\r\n"},                        /* V.250 6.5.2 - Break handling in error control operation */
+    {"AT+EFCS=?\r", "\r\n+EFCS:(0-2)\r\n\r\nOK\r\n"},               /* V.250 6.5.4 - 32-bit frame check sequence */
     {"AT+EFCS?\r", "\r\n+EFCS:0\r\n\r\nOK\r\n"},
     {"AT+EFRAM=?\r", "\r\n+EFRAM:(1-65535),(1-65535)\r\n\r\nOK\r\n"},
-                                                                    /* V.250 6.5.8 - Frame length */ 
-    {"AT+ER=?\r", "\r\n+ER:(0,1)\r\n\r\nOK\r\n"},                   /* V.250 6.5.5 - Error control reporting */ 
-    {"AT+ES=?\r", "\r\n+ES:(0-7),(0-4),(0-9)\r\n\r\nOK\r\n"},       /* V.250 6.5.1 - Error control selection */ 
+                                                                    /* V.250 6.5.8 - Frame length */
+    {"AT+ER=?\r", "\r\n+ER:(0,1)\r\n\r\nOK\r\n"},                   /* V.250 6.5.5 - Error control reporting */
+    {"AT+ES=?\r", "\r\n+ES:(0-7),(0-4),(0-9)\r\n\r\nOK\r\n"},       /* V.250 6.5.1 - Error control selection */
     {"AT+ES?\r", "\r\n+ES:0,0,0\r\n\r\nOK\r\n"},
     {"AT+ESA=?\r", "\r\n+ESA:(0-2),(0-1),(0-1),(0-1),(0-2),(0-1),(0-255),(0-255)\r\n\r\nOK\r\n"},
                                                                     /* V.80 8.2 - Synchronous access mode configuration */
     {"AT+ESA?\r", "\r\n+ESA:0,0,0,0,0,0,0,0\r\n\r\nOK\r\n"},
-    {"AT+ESR\r", "\r\nOK\r\n"},                                     /* V.250 6.5.3 - Selective repeat */ 
-    {"AT+ETBM=?\r", "\r\n+ETBM:(0-2),(0-2),(0-30)\r\n\r\nOK\r\n"},  /* T.31 8.5.1 - Adaptive reception control */ 
+    {"AT+ESR\r", "\r\nOK\r\n"},                                     /* V.250 6.5.3 - Selective repeat */
+    {"AT+ETBM=?\r", "\r\n+ETBM:(0-2),(0-2),(0-30)\r\n\r\nOK\r\n"},  /* T.31 8.5.1 - Adaptive reception control */
     {"AT+ETBM?\r", "\r\n+ETBM:0,0\r\n\r\nOK\r\n"},
-    {"AT+EWIND=?\r", "\r\n+EWIND:(1-127),(1-127)\r\n\r\nOK\r\n"},   /* V.250 6.5.7 - Window size */ 
+    {"AT+EWIND=?\r", "\r\n+EWIND:(1-127),(1-127)\r\n\r\nOK\r\n"},   /* V.250 6.5.7 - Window size */
     {"AT+EWIND?\r", "\r\n+EWIND:0,0\r\n\r\nOK\r\n"},
     {"AT+F34=?\r",  "\r\n+F34:(0-14),(0-14),(0-2),(0-14),(0-14)\r\n\r\nOK\r\n"},
                                                                     /* T.31 B.6.1 - Initial V.34 rate controls for FAX */
     {"AT+F34?\r", "\r\n+F34:0,0,0,0,0\r\n\r\nOK\r\n"},
-    {"AT+FAR=?\r", "\r\n0,1\r\n\r\nOK\r\n"},                        /* T.31 8.5.1 - Adaptive reception control */ 
+    {"AT+FAR=?\r", "\r\n0,1\r\n\r\nOK\r\n"},                        /* T.31 8.5.1 - Adaptive reception control */
     {"AT+FAR?\r", "\r\n0\r\n\r\nOK\r\n"},
-    {"AT+FCL=?\r", "\r\n(0-255)\r\n\r\nOK\r\n"},                    /* T.31 8.5.2 - Carrier loss timeout */ 
-    {"AT+FCLASS=?\r", "\r\n0,1,1.0\r\n\r\nOK\r\n"},                 /* T.31 8.2 - Capabilities identification and control */ 
+    {"AT+FCL=?\r", "\r\n(0-255)\r\n\r\nOK\r\n"},                    /* T.31 8.5.2 - Carrier loss timeout */
+    {"AT+FCLASS=?\r", "\r\n0,1,1.0\r\n\r\nOK\r\n"},                 /* T.31 8.2 - Capabilities identification and control */
     {"AT+FCLASS?\r", "\r\n1\r\n\r\nOK\r\n"},
-    {"AT+FDD=?\r", "\r\n(0,1)\r\n\r\nOK\r\n"},                      /* T.31 8.5.3 - Double escape character replacement */ 
+    {"AT+FDD=?\r", "\r\n(0,1)\r\n\r\nOK\r\n"},                      /* T.31 8.5.3 - Double escape character replacement */
     {"AT+FDD?\r", "\r\n0\r\n\r\nOK\r\n"},
-    {"AT+FIT=?\r", "\r\n+FIT:(0-255),(0-1)\r\n\r\nOK\r\n"},         /* T.31 8.5.4 - DTE inactivity timeout */ 
+    {"AT+FIT=?\r", "\r\n+FIT:(0-255),(0-1)\r\n\r\nOK\r\n"},         /* T.31 8.5.4 - DTE inactivity timeout */
     {"AT+FIT?\r", "\r\n+FIT:0,0\r\n\r\nOK\r\n"},
-    {"AT+FLO\r", "\r\nOK\r\n"},                                     /* T.31 says to implement something similar to +IFC */ 
-    {"AT+FMI?\r", "\r\n" MANUFACTURER "\r\n\r\nOK\r\n"},            /* T.31 says to duplicate +GMI */ 
-    {"AT+FMM?\r", "\r\n" PACKAGE "\r\n\r\nOK\r\n"},                 /* T.31 says to duplicate +GMM */ 
-    {"AT+FMR?\r", "\r\n" VERSION "\r\n\r\nOK\r\n"},                 /* T.31 says to duplicate +GMR */ 
-    {"AT+FPR=?\r", "\r\n115200\r\n\r\nOK\r\n"},                     /* T.31 says to implement something similar to +IPR */ 
+    {"AT+FLO=?\r", "\r\n+FLO:(0-2)\r\n\r\nOK\r\n"},                 /* T.31 says to implement something similar to +IFC */
+    {"AT+FLO?\r", "\r\n+FLO:2\r\n\r\nOK\r\n"}, 
+    {"AT+FMI?\r", "\r\n" MANUFACTURER "\r\n\r\nOK\r\n"},            /* T.31 says to duplicate +GMI */
+    {"AT+FMM?\r", "\r\n" PACKAGE "\r\n\r\nOK\r\n"},                 /* T.31 says to duplicate +GMM */
+    {"AT+FMR?\r", "\r\n" VERSION "\r\n\r\nOK\r\n"},                 /* T.31 says to duplicate +GMR */
+    {"AT+FPR=?\r", "\r\n115200\r\n\r\nOK\r\n"},                     /* T.31 says to implement something similar to +IPR */
     {"AT+FPR?\r", "\r\n0\r\n\r\nOK\r\n"},
-    {"AT+FRH=?\r", "\r\n3\r\n\r\nOK\r\n"},                          /* T.31 8.3.6 - HDLC receive */ 
+    {"AT+FRH=?\r", "\r\n3\r\n\r\nOK\r\n"},                          /* T.31 8.3.6 - HDLC receive */
     {"AT+FRH?\r", "\r\n-1\r\n\r\nOK\r\n"},
-    {"AT+FRM=?\r", "\r\n24,48,72,73,74,96,97,98,121,122,145,146\r\n\r\nOK\r\n"}, /* T.31 8.3.4 - Facsimile receive */ 
+    {"AT+FRM=?\r", "\r\n24,48,72,73,74,96,97,98,121,122,145,146\r\n\r\nOK\r\n"}, /* T.31 8.3.4 - Facsimile receive */
     {"AT+FRM?\r", "\r\n-1\r\n\r\nOK\r\n"},
-    {"AT+FRS=?\r", "\r\n0-255\r\n\r\nOK\r\n"},                      /* T.31 8.3.2 - Receive silence */ 
+    {"AT+FRS=?\r", "\r\n0-255\r\n\r\nOK\r\n"},                      /* T.31 8.3.2 - Receive silence */
     {"AT+FRS?\r", "\r\n-1\r\n\r\nOK\r\n"},
-    {"AT+FTH=?\r", "\r\n3\r\n\r\nOK\r\n"},                          /* T.31 8.3.5 - HDLC transmit */ 
+    {"AT+FTH=?\r", "\r\n3\r\n\r\nOK\r\n"},                          /* T.31 8.3.5 - HDLC transmit */
     {"AT+FTH?\r", "\r\n-1\r\n\r\nOK\r\n"},
-    {"AT+FTM=?\r", "\r\n24,48,72,73,74,96,97,98,121,122,145,146\r\n\r\nOK\r\n"}, /* T.31 8.3.3 - Facsimile transmit */ 
+    {"AT+FTM=?\r", "\r\n24,48,72,73,74,96,97,98,121,122,145,146\r\n\r\nOK\r\n"}, /* T.31 8.3.3 - Facsimile transmit */
     {"AT+FTM?\r", "\r\n-1\r\n\r\nOK\r\n"},
-    {"AT+FTS=?\r", "\r\n0-255\r\n\r\nOK\r\n"},                      /* T.31 8.3.1 - Transmit silence */ 
+    {"AT+FTS=?\r", "\r\n0-255\r\n\r\nOK\r\n"},                      /* T.31 8.3.1 - Transmit silence */
     {"AT+FTS?\r", "\r\n-1\r\n\r\nOK\r\n"},
-    {"AT+GCAP\r", "\r\nOK\r\n"},                                    /* V.250 6.1.9 - Request complete capabilities list */ 
-    {"AT+GCI=?\r", "\r\n+GCI:(00-FF)\r\n\r\nOK\r\n"},               /* V.250 6.1.10 - Country of installation, */ 
+    {"AT+GCAP\r", "\r\nOK\r\n"},                                    /* V.250 6.1.9 - Request complete capabilities list */
+    {"AT+GCI=?\r", "\r\n+GCI:(00-FF)\r\n\r\nOK\r\n"},               /* V.250 6.1.10 - Country of installation, */
     {"AT+GCI?\r", "\r\n+GCI:00\r\n\r\nOK\r\n"},
-    {"AT+GMI?\r", "\r\n" MANUFACTURER "\r\n\r\nOK\r\n"},            /* V.250 6.1.4 - Request manufacturer identification */ 
-    {"AT+GMM?\r", "\r\n" PACKAGE "\r\n\r\nOK\r\n"},                 /* V.250 6.1.5 - Request model identification */ 
-    {"AT+GMR?\r", "\r\n" VERSION "\r\n\r\nOK\r\n"},                 /* V.250 6.1.6 - Request revision identification */ 
-    {"AT+GOI\r", "\r\nOK\r\n"},                                     /* V.250 6.1.8 - Request global object identification */ 
-    {"AT+GSN?\r", "\r\n42\r\n\r\nOK\r\n"},                          /* V.250 6.1.7 - Request product serial number identification */ 
+    {"AT+GMI?\r", "\r\n" MANUFACTURER "\r\n\r\nOK\r\n"},            /* V.250 6.1.4 - Request manufacturer identification */
+    {"AT+GMM?\r", "\r\n" PACKAGE "\r\n\r\nOK\r\n"},                 /* V.250 6.1.5 - Request model identification */
+    {"AT+GMR?\r", "\r\n" VERSION "\r\n\r\nOK\r\n"},                 /* V.250 6.1.6 - Request revision identification */
+    {"AT+GOI\r", "\r\nOK\r\n"},                                     /* V.250 6.1.8 - Request global object identification */
+    {"AT+GSN?\r", "\r\n42\r\n\r\nOK\r\n"},                          /* V.250 6.1.7 - Request product serial number identification */
     {"AT+IBC=?\r", "\r\n+IBC:(0-2),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0.1),(0,1)\r\n\r\nOK\r\n"},
                                                                     /* V.80 7.9 - Control of in-band control */
     {"AT+IBC?\r", "\r\n+IBC:0,0,0,0,0,0,0,0,0,0,0,0,0\r\n\r\nOK\r\n"},
     {"AT+IBM=?\r", "\r\n+IBM:(0-7),(0-255),(0-255)\r\n\r\nOK\r\n"}, /* V.80 7.10 - In-band MARK idle reporting control */
     {"AT+IBM?\r", "\r\n+IBM:0,0,0\r\n\r\nOK\r\n"},
-    {"AT+ICF?\r", "\r\n+ICF:0,0\r\n\r\nOK\r\n"},                    /* V.250 6.2.11 - DTE-DCE character framing */ 
-    {"AT+ICLOK?\r", "\r\n+ICLOK:0\r\n\r\nOK\r\n"},                  /* V.250 6.2.14 - Select sync transmit clock source */ 
-    {"AT+IDSR?\r", "\r\n+IDSR:0\r\n\r\nOK\r\n"},                    /* V.250 6.2.16 - Select data set ready option */ 
-    {"AT+IFC\r", "\r\nOK\r\n"},                                     /* V.250 6.2.12 - DTE-DCE local flow control */ 
-    {"AT+ILRR\r", "\r\nOK\r\n"},                                    /* V.250 6.2.13 - DTE-DCE local rate reporting */ 
-    {"AT+ILSD=?\r", "\r\n+ILSD:(0,1)\r\n\r\nOK\r\n"},               /* V.250 6.2.15 - Select long space disconnect option */ 
+    {"AT+ICF?\r", "\r\n+ICF:0,0\r\n\r\nOK\r\n"},                    /* V.250 6.2.11 - DTE-DCE character framing */
+    {"AT+ICLOK?\r", "\r\n+ICLOK:0\r\n\r\nOK\r\n"},                  /* V.250 6.2.14 - Select sync transmit clock source */
+    {"AT+IDSR?\r", "\r\n+IDSR:0\r\n\r\nOK\r\n"},                    /* V.250 6.2.16 - Select data set ready option */
+    {"AT+IFC=?\r", "\r\n+IFC:(0-2),(0-2)\r\n\r\nOK\r\n"},           /* V.250 6.2.12 - DTE-DCE local flow control */
+    {"AT+IFC?\r", "\r\n+IFC:2,2\r\n\r\nOK\r\n"}, 
+    {"AT+ILRR\r", "\r\nOK\r\n"},                                    /* V.250 6.2.13 - DTE-DCE local rate reporting */
+    {"AT+ILSD=?\r", "\r\n+ILSD:(0,1)\r\n\r\nOK\r\n"},               /* V.250 6.2.15 - Select long space disconnect option */
     {"AT+ILSD?\r", "\r\n+ILSD:0\r\n\r\nOK\r\n"},
-    {"AT+IPR=?\r", "\r\n+IPR:(115200),(115200)\r\n\r\nOK\r\n"},     /* V.250 6.2.10 - Fixed DTE rate */ 
+    {"AT+IPR=?\r", "\r\n+IPR:(115200),(115200)\r\n\r\nOK\r\n"},     /* V.250 6.2.10 - Fixed DTE rate */
     {"AT+IPR?\r", "\r\n+IPR:0\r\n\r\nOK\r\n"},
-    {"AT+IRTS=?\r", "\r\n+IRTS:(0,1)\r\n\r\nOK\r\n"},               /* V.250 6.2.17 - Select synchronous mode RTS option */ 
+    {"AT+IRTS=?\r", "\r\n+IRTS:(0,1)\r\n\r\nOK\r\n"},               /* V.250 6.2.17 - Select synchronous mode RTS option */
     {"AT+IRTS?\r", "\r\n+IRTS:0\r\n\r\nOK\r\n"},
-    {"AT+MA\r", "\r\nOK\r\n"},                                      /* V.250 6.4.2 - Modulation automode control */ 
-    {"AT+MR=?\r", "\r\n+MR:(0,1)\r\n\r\nOK\r\n"},                   /* V.250 6.4.3 - Modulation reporting control */ 
+    {"AT+MA\r", "\r\nOK\r\n"},                                      /* V.250 6.4.2 - Modulation automode control */
+    {"AT+MR=?\r", "\r\n+MR:(0,1)\r\n\r\nOK\r\n"},                   /* V.250 6.4.3 - Modulation reporting control */
     {"AT+MR?\r", "\r\n+MR:0\r\n\r\nOK\r\n"},
-    {"AT+MS\r", "\r\nOK\r\n"},                                      /* V.250 6.4.1 - Modulation selection */ 
-    {"AT+MSC=?\r", "\r\n+MSC:(0,1)\r\n\r\nOK\r\n"},                 /* V.250 6.4.8 - Seamless rate change enable */ 
+    {"AT+MS\r", "\r\nOK\r\n"},                                      /* V.250 6.4.1 - Modulation selection */
+    {"AT+MSC=?\r", "\r\n+MSC:(0,1)\r\n\r\nOK\r\n"},                 /* V.250 6.4.8 - Seamless rate change enable */
     {"AT+MSC?\r", "\r\n+MSC:0\r\n\r\nOK\r\n"},
-    {"AT+MV18AM\r", "\r\nOK\r\n"},                                  /* V.250 6.4.6 - V.18 answering message editing */ 
-    {"AT+MV18P=?\r", "\r\n+MV18P:(2-7)\r\n\r\nOK\r\n"},             /* V.250 6.4.7 - Order of probes */ 
+    {"AT+MV18AM\r", "\r\nOK\r\n"},                                  /* V.250 6.4.6 - V.18 answering message editing */
+    {"AT+MV18P=?\r", "\r\n+MV18P:(2-7)\r\n\r\nOK\r\n"},             /* V.250 6.4.7 - Order of probes */
     {"AT+MV18P?\r", "\r\n+MV18P:0\r\n\r\nOK\r\n"},
-    {"AT+MV18R=?\r", "\r\n+MV18R:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.4.5 - V.18 reporting control */ 
+    {"AT+MV18R=?\r", "\r\n+MV18R:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.4.5 - V.18 reporting control */
     {"AT+MV18R?\r", "\r\n+MV18R:0\r\n\r\nOK\r\n"},
-    {"AT+MV18S\r", "\r\nOK\r\n"},                                   /* V.250 6.4.4 - V.18 selection */ 
-    {"AT+TADR\r", "\r\nOK\r\n"},                                    /* V.250 6.7.2.9 - Local V.54 address */ 
-    {"AT+TAL=?\r", "\r\n+TAL:(0,1),(0,1)\r\n\r\nOK\r\n"},           /* V.250 6.7.2.15 - Local analogue loop */ 
+    {"AT+MV18S\r", "\r\nOK\r\n"},                                   /* V.250 6.4.4 - V.18 selection */
+    {"AT+TADR\r", "\r\nOK\r\n"},                                    /* V.250 6.7.2.9 - Local V.54 address */
+    {"AT+TAL=?\r", "\r\n+TAL:(0,1),(0,1)\r\n\r\nOK\r\n"},           /* V.250 6.7.2.15 - Local analogue loop */
     {"AT+TAL?\r", "\r\n+TAL:0,0\r\n\r\nOK\r\n"},
-    {"AT+TALS=?\r", "\r\n+TALS:(0-3)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.6 - Analogue loop status */ 
+    {"AT+TALS=?\r", "\r\n+TALS:(0-3)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.6 - Analogue loop status */
     {"AT+TALS?\r", "\r\n+TALS:0\r\n\r\nOK\r\n"},
-    {"AT+TDLS=?\r", "\r\n+TDLS:(0-4)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.7 - Local digital loop status */ 
+    {"AT+TDLS=?\r", "\r\n+TDLS:(0-4)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.7 - Local digital loop status */
     {"AT+TDLS?\r", "\r\n+TDLS:0\r\n\r\nOK\r\n"},
-    {"AT+TE140=?\r", "\r\n+TE140:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.1 - Enable ckt 140 */ 
+    {"AT+TE140=?\r", "\r\n+TE140:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.1 - Enable ckt 140 */
     {"AT+TE140?\r", "\r\n+TE140:0\r\n\r\nOK\r\n"},
-    {"AT+TE141=?\r", "\r\n+TE141:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.2 - Enable ckt 141 */ 
+    {"AT+TE141=?\r", "\r\n+TE141:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.2 - Enable ckt 141 */
     {"AT+TE141?\r", "\r\n+TE141:0\r\n\r\nOK\r\n"},
-    {"AT+TEPAL=?\r", "\r\n+TEPAL:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.5 - Enable front panel analogue loop */ 
+    {"AT+TEPAL=?\r", "\r\n+TEPAL:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.5 - Enable front panel analogue loop */
     {"AT+TEPAL?\r", "\r\n+TEPAL:0\r\n\r\nOK\r\n"},
-    {"AT+TEPDL=?\r", "\r\n+TEPDL:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.4 - Enable front panel RDL */ 
+    {"AT+TEPDL=?\r", "\r\n+TEPDL:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.4 - Enable front panel RDL */
     {"AT+TEPDL?\r", "\r\n+TEPDL:0\r\n\r\nOK\r\n"},
-    {"AT+TERDL=?\r", "\r\n+TERDL:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.3 - Enable RDL from remote */ 
+    {"AT+TERDL=?\r", "\r\n+TERDL:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.3 - Enable RDL from remote */
     {"AT+TERDL?\r", "\r\n+TERDL:0\r\n\r\nOK\r\n"},
-    {"AT+TLDL=?\r", "\r\n+TLDL:(0,1)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.13 - Local digital loop */ 
+    {"AT+TLDL=?\r", "\r\n+TLDL:(0,1)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.13 - Local digital loop */
     {"AT+TLDL?\r", "\r\n+TLDL:0\r\n\r\nOK\r\n"},
-    {"AT+TMODE=?\r", "\r\n+TMODE:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.10 - Set V.54 mode */ 
+    {"AT+TMODE=?\r", "\r\n+TMODE:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.10 - Set V.54 mode */
     {"AT+TMODE?\r", "\r\n+TMODE:0\r\n\r\nOK\r\n"},
-    {"AT+TNUM\r", "\r\nOK\r\n"},                                    /* V.250 6.7.2.12 - Errored bit and block counts */ 
-    {"AT+TRDL=?\r", "\r\n+TRDL:(0,1)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.14 - Request remote digital loop */ 
+    {"AT+TNUM\r", "\r\nOK\r\n"},                                    /* V.250 6.7.2.12 - Errored bit and block counts */
+    {"AT+TRDL=?\r", "\r\n+TRDL:(0,1)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.14 - Request remote digital loop */
     {"AT+TRDL?\r", "\r\n+TRDL:0\r\n\r\nOK\r\n"},
-    {"AT+TRDLS\r", "\r\nOK\r\n"},                                   /* V.250 6.7.2.8 - Remote digital loop status */ 
-    {"AT+TRES=?\r", "\r\n+TRES:(0-2)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.17 - Self test result */ 
+    {"AT+TRDLS\r", "\r\nOK\r\n"},                                   /* V.250 6.7.2.8 - Remote digital loop status */
+    {"AT+TRES=?\r", "\r\n+TRES:(0-2)\r\n\r\nOK\r\n"},               /* V.250 6.7.2.17 - Self test result */
     {"AT+TRES?\r", "\r\n+TRES:0\r\n\r\nOK\r\n"},
-    {"AT+TSELF=?\r", "\r\n+TSELF:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.16 - Self test */ 
+    {"AT+TSELF=?\r", "\r\n+TSELF:(0,1)\r\n\r\nOK\r\n"},             /* V.250 6.7.2.16 - Self test */
     {"AT+TSELF?\r", "\r\n+TSELF:0\r\n\r\nOK\r\n"},
-    {"AT+TTER=?\r", "\r\n+TTER:(0-65535),(0-65535)\r\n\r\nOK\r\n"}, /* V.250 6.7.2.11 - Test error rate */ 
+    {"AT+TTER=?\r", "\r\n+TTER:(0-65535),(0-65535)\r\n\r\nOK\r\n"}, /* V.250 6.7.2.11 - Test error rate */
     {"AT+TTER?\r", "\r\n+TTER:0,0\r\n\r\nOK\r\n"},
     {"AT+VBT\r", "\r\nOK\r\n"},                                     /* 3GPP TS 27.007 C.2.2 - Buffer threshold setting */
     {"AT+VCID=?\r", "\r\n0,1\r\n\r\nOK\r\n"},                       /* 3GPP TS 27.007 C.2.3 - Calling number ID presentation */
@@ -354,44 +355,44 @@ static const struct command_response_s general_test_seq[] =
     {"AT+VSID?\r", "\r\n12345\r\n\r\nOK\r\n"},
     {"AT+VSM\r", "\r\nOK\r\n"},                                     /* V.253 10.2.8 - Compression method selection */
     {"AT+VSP\r", "\r\nOK\r\n"},                                     /* V.253 10.5.1 - Voice speakerphone state */
-    {"AT+VTA\r", "\r\nOK\r\n"},                                     /* V.253 10.5.4 - Train acoustic echo-canceller */ 
+    {"AT+VTA\r", "\r\nOK\r\n"},                                     /* V.253 10.5.4 - Train acoustic echo-canceller */
     {"AT+VTD\r", "\r\nOK\r\n"},                                     /* V.253 10.2.9 - Beep tone duration timer */
-    {"AT+VTH\r", "\r\nOK\r\n"},                                     /* V.253 10.5.5 - Train line echo-canceller */ 
+    {"AT+VTH\r", "\r\nOK\r\n"},                                     /* V.253 10.5.5 - Train line echo-canceller */
     {"AT+VTR\r", "\r\nOK\r\n"},                                     /* V.253 10.1.4 - Voice duplex state */
     {"AT+VTS\r", "\r\nOK\r\n"},                                     /* V.253 10.1.5 - DTMF and tone generation in voice */
     {"AT+VTX\r", "\r\nOK\r\n"},                                     /* V.253 10.1.6 - Transmit data state */
     {"AT+WS46\r", "\r\nOK\r\n"},                                    /* 3GPP TS 27.007 5.9 - PCCA STD-101 [17] select wireless network */
-    {"ATA\r", "\r\nERROR\r\n"},                                     /* V.250 6.3.5 - Answer */ 
-    {"ATDT -1234567890ABCDPSTW*#+,!@\r;", ""},                      /* V.250 6.3.1 - Dial */ 
-    {"ATE1\r", "\r\nOK\r\n"},                                       /* V.250 6.2.4 - Command echo */ 
-    {"ATE0\r", "ATE0\r\r\nOK\r\n"},                                 /* V.250 6.2.4 - Command echo */ 
-    {"ATH\r", "\r\nOK\r\n"},                                        /* V.250 6.3.6 - Hook control */ 
-    {"ATI\r", "\r\n" PACKAGE "\r\n\r\nOK\r\n"},                     /* V.250 6.1.3 - Request identification information */ 
-    {"ATL\r", "\r\nOK\r\n"},                                        /* V.250 6.3.13 - Monitor speaker loudness */ 
-    {"ATM\r", "\r\nOK\r\n"},                                        /* V.250 6.3.14 - Monitor speaker mode */ 
-    {"ATO\r", "\r\nCONNECT\r\n\r\nOK\r\n"},                         /* V.250 6.3.7 - Return to online data state */ 
-    {"ATP\r", "\r\nOK\r\n"},                                        /* V.250 6.3.3 - Select pulse dialling (command) */ 
-    {"ATQ\r", "\r\nOK\r\n"},                                        /* V.250 6.2.5 - Result code suppression */ 
-    {"ATS0=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.3.8 - Automatic answer */ 
+    {"ATA\r", "\r\nERROR\r\n"},                                     /* V.250 6.3.5 - Answer */
+    {"ATDT -1234567890ABCDPSTW*#+,!@\r;", ""},                      /* V.250 6.3.1 - Dial */
+    {"ATE1\r", "\r\nOK\r\n"},                                       /* V.250 6.2.4 - Command echo */
+    {"ATE0\r", "ATE0\r\r\nOK\r\n"},                                 /* V.250 6.2.4 - Command echo */
+    {"ATH\r", "\r\nOK\r\n"},                                        /* V.250 6.3.6 - Hook control */
+    {"ATI\r", "\r\n" PACKAGE "\r\n\r\nOK\r\n"},                     /* V.250 6.1.3 - Request identification information */
+    {"ATL\r", "\r\nOK\r\n"},                                        /* V.250 6.3.13 - Monitor speaker loudness */
+    {"ATM\r", "\r\nOK\r\n"},                                        /* V.250 6.3.14 - Monitor speaker mode */
+    {"ATO\r", "\r\nCONNECT\r\n\r\nOK\r\n"},                         /* V.250 6.3.7 - Return to online data state */
+    {"ATP\r", "\r\nOK\r\n"},                                        /* V.250 6.3.3 - Select pulse dialling (command) */
+    {"ATQ\r", "\r\nOK\r\n"},                                        /* V.250 6.2.5 - Result code suppression */
+    {"ATS0=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.3.8 - Automatic answer */
     {"ATS0?\r", "\r\n000\r\n\r\nOK\r\n"},
-    {"ATS10=?\r", "\r\n000\r\n\r\nOK\r\n"},                         /* V.250 6.3.12 - Automatic disconnect delay */ 
+    {"ATS10=?\r", "\r\n000\r\n\r\nOK\r\n"},                         /* V.250 6.3.12 - Automatic disconnect delay */
     {"ATS10?\r", "\r\n000\r\n\r\nOK\r\n"},
-    {"ATS3=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.2.1 - Command line termination character */ 
+    {"ATS3=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.2.1 - Command line termination character */
     {"ATS3?\r", "\r\n013\r\n\r\nOK\r\n"},
-    {"ATS4=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.2.2 - Response formatting character */ 
+    {"ATS4=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.2.2 - Response formatting character */
     {"ATS4?\r", "\r\n010\r\n\r\nOK\r\n"},
-    {"ATS5=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.2.3 - Command line editing character */ 
+    {"ATS5=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.2.3 - Command line editing character */
     {"ATS5?\r", "\r\n008\r\n\r\nOK\r\n"},
-    {"ATS6=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.3.9 - Pause before blind dialling */ 
+    {"ATS6=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.3.9 - Pause before blind dialling */
     {"ATS6?\r", "\r\n001\r\n\r\nOK\r\n"},
-    {"ATS7=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.3.10 - Connection completion timeout */ 
+    {"ATS7=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.3.10 - Connection completion timeout */
     {"ATS7?\r", "\r\n060\r\n\r\nOK\r\n"},
-    {"ATS8=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.3.11 - Comma dial modifier time */ 
+    {"ATS8=?\r", "\r\n000\r\n\r\nOK\r\n"},                          /* V.250 6.3.11 - Comma dial modifier time */
     {"ATS8?\r", "\r\n005\r\n\r\nOK\r\n"},
-    {"ATT\r", "\r\nOK\r\n"},                                        /* V.250 6.3.2 - Select tone dialling (command) */ 
-    {"ATV0\r", "0\r"},                                              /* V.250 6.2.6 - DCE response format */ 
+    {"ATT\r", "\r\nOK\r\n"},                                        /* V.250 6.3.2 - Select tone dialling (command) */
+    {"ATV0\r", "0\r"},                                              /* V.250 6.2.6 - DCE response format */
     {"ATV1\r", "\r\nOK\r\n"},
-    {"ATX4\r", "\r\nOK\r\n"},                                       /* V.250 6.2.7 - Result code selection and call progress monitoring control */ 
+    {"ATX4\r", "\r\nOK\r\n"},                                       /* V.250 6.2.7 - Result code selection and call progress monitoring control */
     {"ATZ\r", "\r\nOK\r\n"},                                        /* V.250 6.1.1 - Reset to default configuration */
     {"", ""}
 };
@@ -550,14 +551,14 @@ static int at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, siz
 
 int main(int argc, char *argv[])
 {
-    at_state_t at_state;
+    at_state_t *at_state;
     
-    if (at_init(&at_state, at_tx_handler, NULL, modem_call_control, NULL) == NULL)
+    if ((at_state = at_init(NULL, at_tx_handler, NULL, modem_call_control, NULL)) == NULL)
     {
         fprintf(stderr, "Cannot start the AT interpreter\n");
         exit(2);
     }
-    if (general_test(&at_state))
+    if (general_test(at_state))
     {
         printf("Tests failed.\n");
         exit(2);

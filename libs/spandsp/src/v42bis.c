@@ -708,6 +708,12 @@ SPAN_DECLARE(void) v42bis_compression_control(v42bis_state_t *s, int mode)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) v42bis_get_logging_state(v42bis_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
                                            int negotiated_p0,
                                            int negotiated_p1,

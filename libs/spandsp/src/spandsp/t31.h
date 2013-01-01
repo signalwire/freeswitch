@@ -44,12 +44,6 @@ typedef struct t31_state_s t31_state_t;
 
 typedef int (*t31_modem_control_handler_t)(t31_state_t *s, void *user_data, int op, const char *num);
 
-#define T31_TX_BUF_LEN          (4096)
-#define T31_TX_BUF_HIGH_TIDE    (4096 - 1024)
-#define T31_TX_BUF_LOW_TIDE     (1024)
-#define T31_MAX_HDLC_LEN        284
-#define T31_T38_MAX_HDLC_LEN    260
-
 #if defined(__cplusplus)
 extern "C"
 {
@@ -116,6 +110,11 @@ SPAN_DECLARE(void) t31_set_tep_mode(t31_state_t *s, int use_tep);
 */
 SPAN_DECLARE(void) t31_set_t38_config(t31_state_t *s, int without_pacing);
 
+/*! Set audio or T.38 mode.
+    \brief Set audio or T.38 mode.
+    \param s The T.31 modem context.
+    \param t38_mode TRUE for T.38 mode operation. FALSE for audio mode operation.
+*/
 SPAN_DECLARE(void) t31_set_mode(t31_state_t *s, int t38_mode);
 
 /*! Get a pointer to the logging context associated with a T.31 context.
@@ -125,6 +124,18 @@ SPAN_DECLARE(void) t31_set_mode(t31_state_t *s, int t38_mode);
 */
 SPAN_DECLARE(logging_state_t *) t31_get_logging_state(t31_state_t *s);
 
+/*! Get a pointer to the AT interpreter context associated with a T.31 context.
+    \brief Get a pointer to the AT interpreter context associated with a T.31 context.
+    \param s The T.31 context.
+    \return A pointer to the AT interpreter context, or NULL.
+*/
+SPAN_DECLARE(at_state_t *) t31_get_at_state(t31_state_t *s);
+
+/*! Get a pointer to the T.38 core context associated with a T.31 context.
+    \brief Get a pointer to the T.38 core context associated with a T.31 context.
+    \param s The T.31 context.
+    \return A pointer to the T.38 core context, or NULL.
+*/
 SPAN_DECLARE(t38_core_state_t *) t31_get_t38_core_state(t31_state_t *s);
 
 /*! Initialise a T.31 context. This must be called before the first

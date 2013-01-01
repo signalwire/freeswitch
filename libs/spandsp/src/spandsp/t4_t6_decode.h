@@ -86,6 +86,12 @@ SPAN_DECLARE(uint32_t) t4_t6_decode_get_image_length(t4_t6_decode_state_t *s);
     \return The size of the compressed image, in bits. */
 SPAN_DECLARE(int) t4_t6_decode_get_compressed_image_size(t4_t6_decode_state_t *s);
 
+/*! Get the logging context associated with a T.4 or T.6 decode context.
+    \brief Get the logging context associated with a T.4 or T.6 decode context.
+    \param s The T.4/T.6 context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t4_t6_decode_get_logging_state(t4_t6_decode_state_t *s);
+
 SPAN_DECLARE(int) t4_t6_decode_restart(t4_t6_decode_state_t *s, int image_width);
 
 /*! \brief Prepare to decode an image in T.4 or T.6 format.

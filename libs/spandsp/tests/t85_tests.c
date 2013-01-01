@@ -50,9 +50,7 @@ in ITU specifications T.85.
 #include <stddef.h>
 #include <string.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 
@@ -74,12 +72,7 @@ int clip_to_row = 0;
 
 static int row_read_handler(void *user_data, uint8_t buf[], size_t len)
 {
-    //t85_encode_state_t *s;
-    
-    //s = (t85_encode_state_t *) user_data;
-
     memcpy(buf, &test_image[len*read_row], len);
-    //printf("Read row %d\n", read_row);
     if (clip_to_row  &&  read_row == clip_to_row)
     {
         clip_to_row = 0;
@@ -187,8 +180,8 @@ static int test_cycle(const char *test_id,
                       const uint8_t *comment,
                       size_t correct_length)
 {
-    t85_encode_state_t t85_enc;
-    t85_decode_state_t t85_dec;
+    t85_encode_state_t *t85_enc;
+    t85_decode_state_t *t85_dec;
     long int l;
     size_t image_size;
     int result;
@@ -212,33 +205,33 @@ static int test_cycle(const char *test_id,
 
     if ((optionsx & T85_VLENGTH))
     {
-        t85_encode_init(&t85_enc, width, height + 10, row_read_handler, &t85_enc);
+        t85_enc = t85_encode_init(NULL, width, height + 10, row_read_handler, NULL);
         clip_to_row = height;
     }
     else
     {
-        t85_encode_init(&t85_enc, width, height, row_read_handler, &t85_enc);
+        t85_enc = t85_encode_init(NULL, width, height, row_read_handler, NULL);
         clip_to_row = 0;
     }
     read_row = 0;
-    t85_encode_set_options(&t85_enc, l0, mx, options);
+    t85_encode_set_options(t85_enc, l0, mx, options);
     /* A comment inserted here should always succeed. The later one, inserted some way
        down the image, will only succeed if a new chunk is started afterwards. */
     if (comment)
-        t85_encode_comment(&t85_enc, comment, strlen((const char *) comment) + 1);
+        t85_encode_comment(t85_enc, comment, strlen((const char *) comment) + 1);
     
     testbuf_len = 0;
     max_len = 100;
-    while ((len = t85_encode_get(&t85_enc, &testbuf[testbuf_len], max_len)) > 0)
+    while ((len = t85_encode_get(t85_enc, &testbuf[testbuf_len], max_len)) > 0)
     {
         testbuf_len += len;
         max_len = 100;
         if (testbuf_len + 100 > TESTBUF_SIZE)
             max_len = TESTBUF_SIZE - testbuf_len;
         if (comment  &&  testbuf_len == 1000)
-            t85_encode_comment(&t85_enc, comment, strlen((const char *) comment) + 1);
+            t85_encode_comment(t85_enc, comment, strlen((const char *) comment) + 1);
     }
-    t85_encode_release(&t85_enc);
+    t85_encode_release(t85_enc);
     printf("Encoded BIE has %lu bytes\n", (unsigned long int) testbuf_len);
     if (correct_length > 0)
     {
@@ -257,15 +250,15 @@ static int test_cycle(const char *test_id,
         fprintf(stderr, "Out of memory!\n");
         exit(2);
     }
-    t85_decode_init(&t85_dec, row_write_handler, decoded_image);
+    t85_dec = t85_decode_init(NULL, row_write_handler, decoded_image);
     if (comment  &&  comment[0] != 'X')
-        t85_decode_set_comment_handler(&t85_dec, 1000, comment_handler, NULL);
+        t85_decode_set_comment_handler(t85_dec, 1000, comment_handler, NULL);
     write_row = 0;
-    result = t85_decode_put(&t85_dec, testbuf, testbuf_len);
+    result = t85_decode_put(t85_dec, testbuf, testbuf_len);
     if (result == T4_DECODE_MORE_DATA)
-        result = t85_decode_put(&t85_dec, NULL, 0);
-    cnt_a = t85_encode_get_compressed_image_size(&t85_enc);
-    cnt_b = t85_decode_get_compressed_image_size(&t85_dec);
+        result = t85_decode_put(t85_dec, NULL, 0);
+    cnt_a = t85_encode_get_compressed_image_size(t85_enc);
+    cnt_b = t85_decode_get_compressed_image_size(t85_dec);
     if (cnt_a != cnt_b  ||  cnt_a != testbuf_len*8  ||  result != T4_DECODE_OK)
     {
         printf("Decode result %d\n", result);
@@ -273,7 +266,7 @@ static int test_cycle(const char *test_id,
                (long int) cnt_a,
                (long int) cnt_b,
                (unsigned long int) testbuf_len*8,
-               (unsigned long int) t85_dec.y);
+               (unsigned long int) t85_dec->y);
         printf("Test failed\n");
         exit(2);
     }
@@ -284,7 +277,7 @@ static int test_cycle(const char *test_id,
         exit(2);
     }
     free(decoded_image);
-    t85_decode_release(&t85_dec);
+    t85_decode_release(t85_dec);
     printf("Test passed\n");
 
     printf("%s.3: Decode byte by byte\n", test_id);
@@ -293,14 +286,14 @@ static int test_cycle(const char *test_id,
         fprintf(stderr, "Out of memory!\n");
         exit(2);
     }
-    t85_decode_init(&t85_dec, row_write_handler, decoded_image);
+    t85_dec = t85_decode_init(NULL, row_write_handler, decoded_image);
     if (comment  &&  comment[0] != 'X')
-        t85_decode_set_comment_handler(&t85_dec, 1000, comment_handler, NULL);
+        t85_decode_set_comment_handler(t85_dec, 1000, comment_handler, NULL);
     write_row = 0;
     result = T4_DECODE_MORE_DATA;
     for (l = 0;  l < testbuf_len;  l++)
     {
-        result = t85_decode_put(&t85_dec, &testbuf[l], 1);
+        result = t85_decode_put(t85_dec, &testbuf[l], 1);
         if (result != T4_DECODE_MORE_DATA)
         {
             l++;
@@ -308,14 +301,14 @@ static int test_cycle(const char *test_id,
         }
     }
     if (result == T4_DECODE_MORE_DATA)
-        result = t85_decode_put(&t85_dec, NULL, 0);
+        result = t85_decode_put(t85_dec, NULL, 0);
     if (l != testbuf_len  ||  result != T4_DECODE_OK)
     {
         printf("Decode result %d\n", result);
         printf("%ld bytes of %ld bytes of BIE read. %lu lines decoded.\n",
                (long int) l,
                (unsigned long int) testbuf_len,
-               (unsigned long int) t85_dec.y);
+               (unsigned long int) t85_dec->y);
         printf("Test failed\n");
         exit(2);
     }
@@ -326,7 +319,7 @@ static int test_cycle(const char *test_id,
         exit(2);
     }
     free(decoded_image);
-    t85_decode_release(&t85_dec);
+    t85_decode_release(t85_dec);
     printf("Test passed\n");
     
     return 0;

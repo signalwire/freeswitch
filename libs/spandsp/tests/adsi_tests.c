@@ -34,9 +34,6 @@ tests, these tests do not include line modelling.
 \section adsi_tests_page_sec_2 How does it work?
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
-//#define WITH_SPANDSP_INTERNALS
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -48,16 +45,12 @@ tests, these tests do not include line modelling.
 #include <assert.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
-#define OUTPUT_FILE_NAME    "adsi.wav"
+#define OUTPUT_FILE_NAME            "adsi.wav"
 
-#define BLOCK_LEN           160
+#define BLOCK_LEN                   160
 
 #define MITEL_DIR                   "../test-data/mitel/"
 #define BELLCORE_DIR                "../test-data/bellcore/"
@@ -808,10 +801,10 @@ int main(int argc, char *argv[])
             current_standard = test_standard;
 
         rx_adsi = adsi_rx_init(NULL, current_standard, put_adsi_msg, NULL);
-#if 0
-        span_log_set_level(rx_adsi.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-        span_log_set_tag(rx_adsi.logging, "ADSI");
-#endif
+
+        span_log_set_level(adsi_rx_get_logging_state(rx_adsi), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(adsi_rx_get_logging_state(rx_adsi), "ADSI");
+
         for (;;)
         {
             len = sf_readf_short(inhandle, amp, BLOCK_LEN);

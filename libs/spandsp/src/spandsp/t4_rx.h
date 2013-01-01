@@ -254,6 +254,12 @@ typedef struct
 extern "C" {
 #endif
 
+/*! Get the logging context associated with a T.4 receive context.
+    \brief Get the logging context associated with a T.4 receive context.
+    \param s The T.4 receive context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t4_rx_get_logging_state(t4_rx_state_t *s);
+
 /*! \brief Prepare for reception of a document.
     \param s The T.4 context.
     \param file The name of the file to be received.

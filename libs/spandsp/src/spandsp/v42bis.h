@@ -99,6 +99,12 @@ SPAN_DECLARE(int) v42bis_decompress_flush(v42bis_state_t *s);
             V42BIS_COMPRESSION_MODE_NEVER */
 SPAN_DECLARE(void) v42bis_compression_control(v42bis_state_t *s, int mode);
 
+/*! Get the logging context associated with a V.42bis context.
+    \brief Get the logging context associated with a V.42bis context.
+    \param s The V.42bis context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) v42bis_get_logging_state(v42bis_state_t *s);
+
 /*! Initialise a V.42bis context.
     \param s The V.42bis context.
     \param negotiated_p0 The negotiated P0 parameter, from the V.42bis spec.

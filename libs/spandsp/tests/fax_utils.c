@@ -32,9 +32,7 @@
 #include <string.h>
 #include <assert.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -109,8 +107,8 @@ void fax_log_page_transfer_statistics(t30_state_t *s, const char *tag)
     printf("%s:   Compressed image size %d bytes\n", tag, t.image_size);
     printf("%s:   Image size %d pels x %d pels\n", tag, t.width, t.length);
     printf("%s:   Image resolution %d pels/m x %d pels/m\n", tag, t.x_resolution, t.y_resolution);
-#if defined(WITH_SPANDSP_INTERNALS)
-    printf("%s:   Bits per row - min %d, max %d\n", tag, s->t4.min_row_bits, s->t4.max_row_bits);
+#if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)
+    printf("%s:   Bits per row - min %d, max %d\n", tag, s->t4.tx.encoder.t4_t6.min_row_bits, s->t4.tx.encoder.t4_t6.max_row_bits);
 #endif
 
     fax_log_final_transfer_statistics(s, tag);

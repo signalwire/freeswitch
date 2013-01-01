@@ -40,13 +40,11 @@ These tests exercise the T.38 core ASN.1 processing code.
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#if !defined(_WIN32)
+#if !defined(WIN32)
 #include <unistd.h>
 #endif
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 
@@ -130,7 +128,7 @@ static int tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t
     t38_core_state_t *t;
     
     t = (t38_core_state_t *) user_data;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Send seq %d, len %d, count %d\n", s->tx_seq_no, len, count);
+    span_log(t38_core_get_logging_state(s), SPAN_LOG_FLOW, "Send seq %d, len %d, count %d\n", s->tx_seq_no, len, count);
     if (t38_core_rx_ifp_packet(t, buf, len, seq_no) < 0)
         succeeded = FALSE;
     seq_no++;
@@ -140,7 +138,7 @@ static int tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t
 
 static int tx_concat_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "Send seq %d, len %d, count %d\n", s->tx_seq_no, len, count);
+    span_log(t38_core_get_logging_state(s), SPAN_LOG_FLOW, "Send seq %d, len %d, count %d\n", s->tx_seq_no, len, count);
     memcpy(&concat[concat_len], buf, len);
     concat_len += len;
     seq_no++;
@@ -474,8 +472,10 @@ static int attack_tests(t38_core_state_t *s, int packets)
 
 int main(int argc, char *argv[])
 {
-    t38_core_state_t t38_core_a;
-    t38_core_state_t t38_core_b;
+    t38_core_state_t t38_core_ax;
+    t38_core_state_t t38_core_bx;
+    t38_core_state_t *t38_core_a;
+    t38_core_state_t *t38_core_b;
     int attack_packets;
     int opt;
 
@@ -501,62 +501,62 @@ int main(int argc, char *argv[])
 
         printf("Using T.38 version %d\n", t38_version);
 
-        if (t38_core_init(&t38_core_a,
-                          rx_indicator_handler,
-                          rx_data_handler,
-                          rx_missing_handler,
-                          &t38_core_b,
-                          tx_packet_handler,
-                          &t38_core_b) == NULL)
+        if ((t38_core_a = t38_core_init(&t38_core_ax,
+                                        rx_indicator_handler,
+                                        rx_data_handler,
+                                        rx_missing_handler,
+                                        &t38_core_bx,
+                                        tx_packet_handler,
+                                        &t38_core_bx)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
-        if (t38_core_init(&t38_core_b,
-                          rx_indicator_handler,
-                          rx_data_handler,
-                          rx_missing_handler,
-                          &t38_core_a,
-                          tx_packet_handler,
-                          &t38_core_a) == NULL)
+        if ((t38_core_b = t38_core_init(&t38_core_bx,
+                                        rx_indicator_handler,
+                                        rx_data_handler,
+                                        rx_missing_handler,
+                                        &t38_core_ax,
+                                        tx_packet_handler,
+                                        &t38_core_ax)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
 
-        t38_set_t38_version(&t38_core_a, t38_version);
-        t38_set_t38_version(&t38_core_b, t38_version);
+        t38_set_t38_version(t38_core_a, t38_version);
+        t38_set_t38_version(t38_core_b, t38_version);
 
-        span_log_set_level(&t38_core_a.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(&t38_core_a.logging, "T.38-A");
-        span_log_set_level(&t38_core_b.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(&t38_core_b.logging, "T.38-B");
+        span_log_set_level(t38_core_get_logging_state(t38_core_a), SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
+        span_log_set_tag(t38_core_get_logging_state(t38_core_a), "T.38-A");
+        span_log_set_level(t38_core_get_logging_state(t38_core_b), SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
+        span_log_set_tag(t38_core_get_logging_state(t38_core_b), "T.38-B");
 
         /* Encode and decode all possible frame types, one by one */
-        if (encode_decode_tests(&t38_core_a, &t38_core_b))
+        if (encode_decode_tests(t38_core_a, t38_core_b))
         {
             printf("Encode/decode tests failed\n");
             exit(2);
         }
 
-        if (t38_core_init(&t38_core_a,
-                          rx_indicator_attack_handler,
-                          rx_data_attack_handler,
-                          rx_missing_attack_handler,
-                          &t38_core_b,
-                          tx_packet_handler,
-                          &t38_core_b) == NULL)
+        if ((t38_core_a = t38_core_init(&t38_core_ax,
+                                        rx_indicator_attack_handler,
+                                        rx_data_attack_handler,
+                                        rx_missing_attack_handler,
+                                        &t38_core_bx,
+                                        tx_packet_handler,
+                                        &t38_core_bx)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
 
-        t38_set_t38_version(&t38_core_a, t38_version);
+        t38_set_t38_version(t38_core_a, t38_version);
 
-        //span_log_set_level(&t38_core_a.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-        //span_log_set_tag(&t38_core_a.logging, "T.38-A");
+        //span_log_set_level(t38_core_get_logging_state(t38_core_a), SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
+        //span_log_set_tag(t38_core_get_logging_state(t38_core_a), "T.38-A");
 
-        if (attack_tests(&t38_core_a, attack_packets))
+        if (attack_tests(t38_core_a, attack_packets))
         {
             printf("Attack tests failed\n");
             exit(2);
@@ -571,72 +571,72 @@ int main(int argc, char *argv[])
 
         printf("Using T.38 version %d\n", t38_version);
 
-        if (t38_core_init(&t38_core_a,
-                          rx_indicator_handler,
-                          rx_data_handler,
-                          rx_missing_handler,
-                          &t38_core_b,
-                          tx_concat_packet_handler,
-                          &t38_core_b) == NULL)
+        if ((t38_core_a = t38_core_init(&t38_core_ax,
+                                        rx_indicator_handler,
+                                        rx_data_handler,
+                                        rx_missing_handler,
+                                        &t38_core_bx,
+                                        tx_concat_packet_handler,
+                                        &t38_core_bx)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
-        if (t38_core_init(&t38_core_b,
-                          rx_indicator_handler,
-                          rx_data_handler,
-                          rx_missing_handler,
-                          &t38_core_a,
-                          tx_concat_packet_handler,
-                          &t38_core_a) == NULL)
+        if ((t38_core_b = t38_core_init(&t38_core_bx,
+                                        rx_indicator_handler,
+                                        rx_data_handler,
+                                        rx_missing_handler,
+                                        &t38_core_ax,
+                                        tx_concat_packet_handler,
+                                        &t38_core_ax)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
 
-        t38_set_t38_version(&t38_core_a, t38_version);
-        t38_set_t38_version(&t38_core_b, t38_version);
+        t38_set_t38_version(t38_core_a, t38_version);
+        t38_set_t38_version(t38_core_b, t38_version);
 
-        t38_set_pace_transmission(&t38_core_a, FALSE);
-        t38_set_pace_transmission(&t38_core_b, FALSE);
+        t38_set_pace_transmission(t38_core_a, FALSE);
+        t38_set_pace_transmission(t38_core_b, FALSE);
 
-        t38_set_data_transport_protocol(&t38_core_a, T38_TRANSPORT_TCP);
-        t38_set_data_transport_protocol(&t38_core_b, T38_TRANSPORT_TCP);
+        t38_set_data_transport_protocol(t38_core_a, T38_TRANSPORT_TCP);
+        t38_set_data_transport_protocol(t38_core_b, T38_TRANSPORT_TCP);
 
-        span_log_set_level(&t38_core_a.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(&t38_core_a.logging, "T.38-A");
-        span_log_set_level(&t38_core_b.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(&t38_core_b.logging, "T.38-B");
+        span_log_set_level(t38_core_get_logging_state(t38_core_a), SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
+        span_log_set_tag(t38_core_get_logging_state(t38_core_a), "T.38-A");
+        span_log_set_level(t38_core_get_logging_state(t38_core_b), SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
+        span_log_set_tag(t38_core_get_logging_state(t38_core_b), "T.38-B");
 
         /* Encode all possible frames types into a large block, and then decode them */
-        if (encode_then_decode_tests(&t38_core_a, &t38_core_b))
+        if (encode_then_decode_tests(t38_core_a, t38_core_b))
         {
             printf("Encode then decode tests failed\n");
             exit(2);
         }
 
-        if (t38_core_init(&t38_core_a,
-                          rx_indicator_attack_handler,
-                          rx_data_attack_handler,
-                          rx_missing_attack_handler,
-                          &t38_core_b,
-                          tx_packet_handler,
-                          &t38_core_b) == NULL)
+        if ((t38_core_a = t38_core_init(&t38_core_ax,
+                                        rx_indicator_attack_handler,
+                                        rx_data_attack_handler,
+                                        rx_missing_attack_handler,
+                                        &t38_core_bx,
+                                        tx_packet_handler,
+                                        &t38_core_bx)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
 
-        t38_set_t38_version(&t38_core_a, t38_version);
+        t38_set_t38_version(t38_core_a, t38_version);
 
-        t38_set_pace_transmission(&t38_core_a, FALSE);
+        t38_set_pace_transmission(t38_core_a, FALSE);
 
-        t38_set_data_transport_protocol(&t38_core_a, T38_TRANSPORT_TCP);
+        t38_set_data_transport_protocol(t38_core_a, T38_TRANSPORT_TCP);
 
-        //span_log_set_level(&t38_core_a.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-        //span_log_set_tag(&t38_core_a.logging, "T.38-A");
+        //span_log_set_level(t38_core_get_logging_state(t38_core_a), SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
+        //span_log_set_tag(t38_core_get_logging_state(t38_core_a), "T.38-A");
 
-        if (attack_tests(&t38_core_a, attack_packets))
+        if (attack_tests(t38_core_a, attack_packets))
         {
             printf("Attack tests failed\n");
             exit(2);
@@ -651,71 +651,71 @@ int main(int argc, char *argv[])
 
         printf("Using T.38 version %d\n", t38_version);
 
-        if (t38_core_init(&t38_core_a,
-                          rx_indicator_handler,
-                          rx_data_handler,
-                          rx_missing_handler,
-                          &t38_core_b,
-                          tx_concat_packet_handler,
-                          &t38_core_b) == NULL)
+        if ((t38_core_a = t38_core_init(&t38_core_ax,
+                                        rx_indicator_handler,
+                                        rx_data_handler,
+                                        rx_missing_handler,
+                                        &t38_core_bx,
+                                        tx_concat_packet_handler,
+                                        &t38_core_bx)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
-        if (t38_core_init(&t38_core_b,
-                          rx_indicator_handler,
-                          rx_data_handler,
-                          rx_missing_handler,
-                          &t38_core_a,
-                          tx_concat_packet_handler,
-                          &t38_core_a) == NULL)
+        if ((t38_core_b = t38_core_init(&t38_core_bx,
+                                        rx_indicator_handler,
+                                        rx_data_handler,
+                                        rx_missing_handler,
+                                        &t38_core_ax,
+                                        tx_concat_packet_handler,
+                                        &t38_core_ax)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
 
-        t38_set_t38_version(&t38_core_a, t38_version);
-        t38_set_t38_version(&t38_core_b, t38_version);
+        t38_set_t38_version(t38_core_a, t38_version);
+        t38_set_t38_version(t38_core_b, t38_version);
 
-        t38_set_pace_transmission(&t38_core_a, FALSE);
-        t38_set_pace_transmission(&t38_core_b, FALSE);
+        t38_set_pace_transmission(t38_core_a, FALSE);
+        t38_set_pace_transmission(t38_core_b, FALSE);
 
-        t38_set_data_transport_protocol(&t38_core_a, T38_TRANSPORT_TCP_TPKT);
-        t38_set_data_transport_protocol(&t38_core_b, T38_TRANSPORT_TCP_TPKT);
+        t38_set_data_transport_protocol(t38_core_a, T38_TRANSPORT_TCP_TPKT);
+        t38_set_data_transport_protocol(t38_core_b, T38_TRANSPORT_TCP_TPKT);
 
-        span_log_set_level(&t38_core_a.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(&t38_core_a.logging, "T.38-A");
-        span_log_set_level(&t38_core_b.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(&t38_core_b.logging, "T.38-B");
+        span_log_set_level(t38_core_get_logging_state(t38_core_a), SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
+        span_log_set_tag(t38_core_get_logging_state(t38_core_a), "T.38-A");
+        span_log_set_level(t38_core_get_logging_state(t38_core_b), SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
+        span_log_set_tag(t38_core_get_logging_state(t38_core_b), "T.38-B");
 
         /* Encode all possible frames types into a large block, and then decode them */
-        if (encode_then_decode_tests(&t38_core_a, &t38_core_b))
+        if (encode_then_decode_tests(t38_core_a, t38_core_b))
         {
             printf("Encode then decode tests failed\n");
             exit(2);
         }
 
-        if (t38_core_init(&t38_core_a,
-                          rx_indicator_attack_handler,
-                          rx_data_attack_handler,
-                          rx_missing_attack_handler,
-                          &t38_core_b,
-                          tx_packet_handler,
-                          &t38_core_b) == NULL)
+        if ((t38_core_a = t38_core_init(&t38_core_ax,
+                                        rx_indicator_attack_handler,
+                                        rx_data_attack_handler,
+                                        rx_missing_attack_handler,
+                                        &t38_core_bx,
+                                        tx_packet_handler,
+                                        &t38_core_bx)) == NULL)
         {
             fprintf(stderr, "Cannot start the T.38 core\n");
             exit(2);
         }
-        t38_set_t38_version(&t38_core_a, t38_version);
+        t38_set_t38_version(t38_core_a, t38_version);
 
-        t38_set_pace_transmission(&t38_core_a, FALSE);
+        t38_set_pace_transmission(t38_core_a, FALSE);
 
-        t38_set_data_transport_protocol(&t38_core_a, T38_TRANSPORT_TCP_TPKT);
+        t38_set_data_transport_protocol(t38_core_a, T38_TRANSPORT_TCP_TPKT);
 
-        //span_log_set_level(&t38_core_a.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
-        //span_log_set_tag(&t38_core_a.logging, "T.38-A");
+        //span_log_set_level(t38_core_get_logging_state(t38_core_a), SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG);
+        //span_log_set_tag(t38_core_get_logging_state(t38_core_a), "T.38-A");
 
-        if (attack_tests(&t38_core_a, attack_packets))
+        if (attack_tests(t38_core_a, attack_packets))
         {
             printf("Attack tests failed\n");
             exit(2);

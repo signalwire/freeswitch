@@ -46,9 +46,7 @@ the present time.
 #include <stddef.h>
 #include <string.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 

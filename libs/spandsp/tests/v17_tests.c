@@ -44,9 +44,6 @@ display of modem status is maintained.
 \section v17_tests_page_sec_2 How is it used?
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
-#define WITH_SPANDSP_INTERNALS
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -67,9 +64,7 @@ display of modem status is maintained.
 #include <fenv.h>
 #endif
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -444,7 +439,7 @@ int main(int argc, char *argv[])
         span_log_set_tag(logging, "V.17-tx");
         v17_tx_power(tx, signal_level);
         v17_tx_set_modem_status_handler(tx, v17_tx_status, (void *) tx);
-#if defined(WITH_SPANDSP_INTERNALS)
+#if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)
         /* Move the carrier off a bit */
         tx->carrier_phase_rate = dds_phase_ratef(1792.0f);
         tx->carrier_phase = 0x40000000;
@@ -529,7 +524,7 @@ int main(int argc, char *argv[])
                     break;
                 }
                 memset(&latest_results, 0, sizeof(latest_results));
-#if defined(WITH_SPANDSP_INTERNALS)
+#if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)
                 signal_level--;
                 /* Bump the receiver AGC gain by 1dB, to compensate for the above */
                 rx->agc_scaling_save *= 1.122f;

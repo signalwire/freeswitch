@@ -106,6 +106,12 @@ SPAN_DECLARE(void) t4_t6_encode_set_min_bits_per_row(t4_t6_encode_state_t *s, in
            greater than the maximum number of 2D rows between each 1D row. */
 SPAN_DECLARE(void) t4_t6_encode_set_max_2d_rows_per_1d_row(t4_t6_encode_state_t *s, int max);
 
+/*! Get the logging context associated with a T.4 or T.6 encode context.
+    \brief Get the logging context associated with a T.4 or T.6 encode context.
+    \param s The T.4/T.6 context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t4_t6_encode_get_logging_state(t4_t6_encode_state_t *s);
+
 /*! \brief Restart a T.4 or T.6 encode context.
     \param s The T.4/T.6 context.
     \param image width The image width, in pixels.

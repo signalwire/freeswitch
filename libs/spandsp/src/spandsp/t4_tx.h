@@ -217,6 +217,12 @@ extern "C" {
 SPAN_DECLARE(void) TIFF_FX_init(void);
 #endif
 
+/*! Get the logging context associated with a T.4 transmit context.
+    \brief Get the logging context associated with a T.4 transmit context.
+    \param s The T.4 transmit context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t4_tx_get_logging_state(t4_tx_state_t *s);
+
 /*! \brief Prepare for transmission of a document.
     \param s The T.4 context.
     \param file The name of the file to be sent.

@@ -42,9 +42,7 @@
 #include <math.h>
 #include <errno.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 
@@ -667,6 +665,7 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     im.current_row = 0;
     im.bytes_per_pixel = samples_per_pixel;
 
+    s2 = NULL;
     switch (output_length_scaling)
     {
     case -2:

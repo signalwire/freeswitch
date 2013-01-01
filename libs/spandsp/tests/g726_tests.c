@@ -58,9 +58,6 @@ The test file ../test-data/local/short_nb_voice.wav will be compressed to the sp
 decompressed, and the resulting audio stored in post_g726.wav.
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
-//#define WITH_SPANDSP_INTERNALS
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -73,20 +70,16 @@ decompressed, and the resulting audio stored in post_g726.wav.
 #include <ctype.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
 #define BLOCK_LEN           320
 #define MAX_TEST_VECTOR_LEN 40000
 
-#define TESTDATA_DIR    "../test-data/itu/g726/"
+#define TESTDATA_DIR        "../test-data/itu/g726/"
 
-#define IN_FILE_NAME    "../test-data/local/short_nb_voice.wav"
-#define OUT_FILE_NAME   "post_g726.wav"
+#define IN_FILE_NAME        "../test-data/local/short_nb_voice.wav"
+#define OUT_FILE_NAME       "post_g726.wav"
 
 int16_t outdata[MAX_TEST_VECTOR_LEN];
 uint8_t adpcmdata[MAX_TEST_VECTOR_LEN];
@@ -131,7 +124,7 @@ Algorithm   Input   Intermediate    Output      Input       Output      Input   
 40F         NRM.A   RN40FA.I        RN40FA.O    I40         RI40FA.O    OVR.A   RV40FA.I        RV40FA.O
                     HN40FA.I        HN40FA.O                HI40FA.O            HV40FA.I        HV40FA.O
 
-Table 6 ¡V Reset and homing cross sequences for u-law -> A-law
+Table 6 - Reset and homing cross sequences for u-law -> A-law
             Normal                              Overload
 Algorithm   Input   Intermediate    Output      Input   Intermediate    Output
             (PCM)   (ADPCM)         (PCM)       (PCM)   (ADPCM)         (PCM)
@@ -147,7 +140,7 @@ Algorithm   Input   Intermediate    Output      Input   Intermediate    Output
 40F         NRM.M   RN40FM.I        RN40FC.O    OVR.M   RV40FM.I        RV40FC.O
                     HN40FM.I        HN40FC.O            HV40FM.I        HV40FC.O
 
-Table 7 ¡V Reset and homing cross sequences for A-law -> u-law
+Table 7 - Reset and homing cross sequences for A-law -> u-law
             Normal                              Overload
 Algorithm   Input   Intermediate    Output      Input   Intermediate    Output
             (PCM)   (ADPCM)         (PCM)       (PCM)   (ADPCM)         (PCM)

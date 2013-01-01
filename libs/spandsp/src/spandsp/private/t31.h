@@ -26,6 +26,40 @@
 #if !defined(_SPANDSP_PRIVATE_T31_H_)
 #define _SPANDSP_PRIVATE_T31_H_
 
+#define T31_TX_BUF_LEN          (4096)
+#define T31_TX_BUF_HIGH_TIDE    (4096 - 1024)
+#define T31_TX_BUF_LOW_TIDE     (1024)
+
+#define T31_MAX_HDLC_LEN        284
+/*! The maximum length of an HDLC frame buffer. This must be big enough for ECM frames. */
+#define T31_T38_MAX_HDLC_LEN    260
+/*! The number of HDLC transmit buffers */
+#define T31_TX_HDLC_BUFS        256
+
+/*!
+    T.31 T.38 HDLC buffer.
+*/
+typedef struct
+{
+    /*! \brief HDLC message buffers. */
+    uint8_t buf[T31_MAX_HDLC_LEN];
+    /*! \brief HDLC message lengths. */
+    int16_t len;
+} t31_hdlc_buf_t;
+
+/*!
+    T.31 T.38 HDLC state.
+*/
+typedef struct
+{
+    /*! \brief HDLC message buffers. */
+    t31_hdlc_buf_t buf[T31_TX_HDLC_BUFS];
+    /*! \brief HDLC buffer number for input. */
+    int in;
+    /*! \brief HDLC buffer number for output. */
+    int out;
+} t31_hdlc_state_t;
+
 /*!
     Analogue FAX front end channel descriptor. This defines the state of a single working
     instance of an analogue line FAX front end.
@@ -102,6 +136,8 @@ typedef struct
         int extra_bits;
     } hdlc_tx;
 
+    t31_hdlc_state_t hdlc_from_t31;
+
     /*! \brief TRUE if we are using ECM mode. This is used to select HDLC faking, necessary
                with clunky class 1 modems. */
     int ecm_mode;
@@ -149,6 +185,7 @@ struct t31_state_s
     /*! HDLC buffer, for composing an HDLC frame from the computer to the channel. */
     struct
     {
+        /*! \brief The HDLC transmit buffer. */
         uint8_t buf[T31_MAX_HDLC_LEN];
         int len;
         int ptr;
@@ -158,8 +195,9 @@ struct t31_state_s
     /*! Buffer for data from the computer to the channel. */
     struct
     {
+        /*! \brief The transmit buffer. */
         uint8_t data[T31_TX_BUF_LEN];
-        /*! \brief The number of bytes stored in transmit buffer. */
+        /*! \brief The number of bytes stored in the transmit buffer. */
         int in_bytes;
         /*! \brief The number of bytes sent from the transmit buffer. */
         int out_bytes;
@@ -169,7 +207,7 @@ struct t31_state_s
         int holding;
         /*! \brief TRUE when the end of non-ECM data from the computer has been detected. */
         int final;
-    } tx;
+    } non_ecm_tx;
 
     /*! TRUE if DLE prefix just used */
     int dled;

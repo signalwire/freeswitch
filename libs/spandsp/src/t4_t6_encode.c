@@ -1088,6 +1088,12 @@ SPAN_DECLARE(void) t4_t6_encode_set_max_2d_rows_per_1d_row(t4_t6_encode_state_t 
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) t4_t6_encode_get_logging_state(t4_t6_encode_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width)
 {
     /* Allow for pages being of different width. */

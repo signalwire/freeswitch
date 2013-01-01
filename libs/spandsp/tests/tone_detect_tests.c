@@ -38,10 +38,6 @@
 #include <time.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 
 #define DEC_SAMPLE_RATE     800
@@ -71,8 +67,8 @@ static int periodogram_tests(void)
     int32_t phase_rate2;
     uint32_t phase_acc1;
     uint32_t phase_acc2;
-    awgn_state_t noise_source_re;
-    awgn_state_t noise_source_im;
+    awgn_state_t *noise_source_re;
+    awgn_state_t *noise_source_im;
 
     phase_rate1 = DEC_RATIO*dds_phase_ratef(FREQ1 - 5.0f);
     phase_rate2 = DEC_RATIO*dds_phase_ratef(FREQ2);
@@ -91,8 +87,8 @@ static int periodogram_tests(void)
     for (k = -50;  k < 0;  k++)
     {
         printf("Setting noise to %ddBm0\n", k);
-        awgn_init_dbm0(&noise_source_re, 1234567, (float) k);
-        awgn_init_dbm0(&noise_source_im, 7654321, (float) k);
+        noise_source_re = awgn_init_dbm0(NULL, 1234567, (float) k);
+        noise_source_im = awgn_init_dbm0(NULL, 7654321, (float) k);
         last_result = complex_setf(0.0f, 0.0f);
         for (i = 0;  i < 100;  i++)
         {
@@ -104,8 +100,8 @@ static int periodogram_tests(void)
                 result = dds_complexf(&phase_acc2, phase_rate2);
                 camp[j].re += result.re*scale2;
                 camp[j].im += result.im*scale2;
-                camp[j].re += awgn(&noise_source_re);
-                camp[j].im += awgn(&noise_source_im);
+                camp[j].re += awgn(noise_source_re);
+                camp[j].im += awgn(noise_source_im);
             }
             result = periodogram(coeffs, camp, PG_WINDOW);
             level = sqrtf(result.re*result.re + result.im*result.im);
