@@ -236,7 +236,6 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
     } 
 
     modem->stty = ttyname(modem->slave);
-	
 #else
 #ifdef WIN32
 	modem->slot = 4+globals.NEXT_ID++; /* need work here we start at COM4 for now*/
@@ -427,6 +426,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 	int to_ticks = 60, ring_ticks = 10, rt = ring_ticks;
 	int rest = 500000;
+    at_state_t *at_state;
 	
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -453,15 +453,16 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		ioctl(tech_pvt->modem->slave, TIOCMSET, &tioflags);
 #endif
 
-		at_reset_call_info(&tech_pvt->modem->t31_state->at_state);
-		at_set_call_info(&tech_pvt->modem->t31_state->at_state, "DATE", call_date);
-		at_set_call_info(&tech_pvt->modem->t31_state->at_state, "TIME", call_time);
-		at_set_call_info(&tech_pvt->modem->t31_state->at_state, "NAME", tech_pvt->caller_profile->caller_id_name);
-		at_set_call_info(&tech_pvt->modem->t31_state->at_state, "NMBR", tech_pvt->caller_profile->caller_id_number);
-		at_set_call_info(&tech_pvt->modem->t31_state->at_state, "ANID", tech_pvt->caller_profile->ani);
-		at_set_call_info(&tech_pvt->modem->t31_state->at_state, "USER", tech_pvt->caller_profile->username);
-		at_set_call_info(&tech_pvt->modem->t31_state->at_state, "CDID", tech_pvt->caller_profile->context);
-		at_set_call_info(&tech_pvt->modem->t31_state->at_state, "NDID", tech_pvt->caller_profile->destination_number);
+        at_state = t31_get_at_state(tech_pvt->modem->t31_state);
+		at_reset_call_info(at_state);
+		at_set_call_info(at_state, "DATE", call_date);
+		at_set_call_info(at_state, "TIME", call_time);
+		at_set_call_info(at_state, "NAME", tech_pvt->caller_profile->caller_id_name);
+		at_set_call_info(at_state, "NMBR", tech_pvt->caller_profile->caller_id_number);
+		at_set_call_info(at_state, "ANID", tech_pvt->caller_profile->ani);
+		at_set_call_info(at_state, "USER", tech_pvt->caller_profile->username);
+		at_set_call_info(at_state, "CDID", tech_pvt->caller_profile->context);
+		at_set_call_info(at_state, "NDID", tech_pvt->caller_profile->destination_number);
 
 		modem_set_state(tech_pvt->modem, MODEM_STATE_RINGING);
 		t31_call_event(tech_pvt->modem->t31_state, AT_CALL_EVENT_ALERTING);
@@ -1033,6 +1034,7 @@ static void wake_modem_thread(modem_t *modem)
 static int control_handler(modem_t *modem, const char *num, int op)
 {
 	switch_core_session_t *session = NULL;
+    at_state_t *at_state;
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Control Handler op:%d state:[%s] %s\n", 
 					  op, modem_state2name(modem_get_state(modem)), modem->devlink);
@@ -1116,14 +1118,15 @@ static int control_handler(modem_t *modem, const char *num, int op)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1,
 							  "Modem %s [%s] - CTS %s\n", modem->devlink, modem_state2name(modem_get_state(modem)), (int) (intptr_t) num ? "XON" : "XOFF");
 
+            at_state = t31_get_at_state(modem->t31_state);
 			if (num) {
 				x[0] = 0x11;
-				t31_at_tx_handler(&modem->t31_state->at_state, modem, x, 1);
+				t31_at_tx_handler(at_state, modem, x, 1);
 				switch_clear_flag(modem, MODEM_FLAG_XOFF);
 				wake_modem_thread(modem);
 			} else {
 				x[0] = 0x13;
-				t31_at_tx_handler(&modem->t31_state->at_state, modem, x, 1);
+				t31_at_tx_handler(at_state, modem, x, 1);
 				switch_set_flag(modem, MODEM_FLAG_XOFF);
 			}
 		}
