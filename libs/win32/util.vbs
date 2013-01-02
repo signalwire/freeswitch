@@ -97,9 +97,13 @@ End Sub
 
 Sub GetCompressionTools(DestFolder)
 	Dim oExec
+	Dim tries
+
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
-	If Not FSO.FileExists(DestFolder & "7za.exe") Then 
-		If Not FSO.FileExists(DestFolder & "7za.tag") Then 
+	tries = 0
+	While Not FSO.FileExists(DestFolder & "7za.exe") And tries < 2
+		WScript.Sleep(Int(10000*Rnd)) 
+		If Not FSO.FileExists(DestFolder & "7za.tag") And Not FSO.FileExists(DestFolder & "7za.exe") Then 
 			Set MyFile = fso.CreateTextFile(DestFolder & "7za.tag", True)
 			MyFile.WriteLine("This file marks a pending download for 7za.exe so we don't download it twice at the same time")
 			MyFile.Close
@@ -109,8 +113,9 @@ Sub GetCompressionTools(DestFolder)
 			FSO.DeleteFile DestFolder & "7za.tag" ,true 
 		Else
 			WScript.Sleep(5000)
+			tries = tries + 1
 		End If	
-	End If	
+	WEnd	
 End Sub
 
 Sub GetWgetEXE(DestFolder)
