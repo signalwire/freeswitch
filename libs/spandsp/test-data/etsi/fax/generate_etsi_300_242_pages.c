@@ -627,7 +627,7 @@ int main(int argc, char *argv[])
         TIFFSetField(tiff_file, TIFFTAG_CLEANFAXDATA, CLEANFAXDATA_CLEAN);
         TIFFSetField(tiff_file, TIFFTAG_IMAGELENGTH, image_length);
         TIFFCheckpointDirectory(tiff_file);
-        
+
         /* Write the image first.... */
         switch (sequence[i].type)
         {
