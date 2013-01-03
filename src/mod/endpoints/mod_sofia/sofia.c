@@ -6740,6 +6740,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_core_event_hook_add_state_change(a_session, xfer_hanguphook);
 								switch_channel_set_variable(a_channel, "att_xfer_kill_uuid", switch_core_session_get_uuid(b_session));
 								switch_channel_set_variable(a_channel, "att_xfer_destination_number", prof->destination_number);
+								switch_channel_set_variable(a_channel, "att_xfer_callee_id_name", prof->callee_id_name);
+								switch_channel_set_variable(a_channel, "att_xfer_callee_id_number", prof->callee_id_number);
 
 								if (profile->media_options & MEDIA_OPT_BYPASS_AFTER_ATT_XFER) {
 									switch_channel_set_flag(a_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
