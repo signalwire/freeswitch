@@ -230,6 +230,7 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
     /* Protect against T.38 stuff arriving after we've actually finished. */
     if (fe->current_rx_type == T30_MODEM_DONE)
         return 0;
+    /*endif*/
 
     if (t->current_rx_indicator == indicator)
     {
@@ -333,6 +334,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
     /* Protect against T.38 stuff arriving after we've actually finished. */
     if (fe->current_rx_type == T30_MODEM_DONE)
         return 0;
+    /*endif*/
 
     /* In termination mode we don't care very much what the data type is apart from a couple of
        special cases. */
@@ -608,6 +610,7 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
     {
         if (s->t38_fe.us_per_tx_chunk)
             s->t38_fe.hdlc_tx.extra_bits = extra_bits_in_stuffed_frame(msg, len);
+        /*endif*/
         bit_reverse(s->t38_fe.hdlc_tx.buf, msg, len);
         s->t38_fe.hdlc_tx.len = len;
         s->t38_fe.hdlc_tx.ptr = 0;
@@ -774,6 +777,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                     fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_5;
                     if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
                         return -1;
+                    /*endif*/
                     break;
                 }
                 /*endif*/
@@ -805,6 +809,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 /*endif*/
                 if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
                     return -1;
+                /*endif*/
                 break;
             }
             /*endif*/
@@ -824,6 +829,10 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             {
                 fe->timed_step = fe->queued_timed_step;
                 fe->queued_timed_step = T38_TIMED_STEP_NONE;
+            }
+            else
+            {
+                fe->timed_step = T38_TIMED_STEP_NONE;
             }
             /*endif*/
             return delay;
@@ -910,6 +919,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                     fe->hdlc_tx.len = 0;
                     if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
                         return -1;
+                    /*endif*/
                     /* The above step should have got the next HDLC step ready - either another frame, or an instruction to stop transmission. */
                     if (fe->hdlc_tx.len >= 0)
                     {
@@ -941,6 +951,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                         /*endif*/
                         if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
                             return -1;
+                        /*endif*/
                     }
                     /*endif*/
                     break;
@@ -971,6 +982,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
             fe->hdlc_tx.len = 0;
             if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
                 return -1;
+            /*endif*/
             /* The above step should have got the next HDLC step ready - either another frame, or an instruction to stop transmission. */
             if (fe->hdlc_tx.len >= 0)
             {
@@ -1006,6 +1018,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 /*endif*/
                 if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
                     return -1;
+                /*endif*/
             }
             /*endif*/
             break;
@@ -1017,6 +1030,10 @@ static int stream_hdlc(t38_terminal_state_t *s)
             {
                 fe->timed_step = fe->queued_timed_step;
                 fe->queued_timed_step = T38_TIMED_STEP_NONE;
+            }
+            else
+            {
+                fe->timed_step = T38_TIMED_STEP_NONE;
             }
             /*endif*/
             return delay;
@@ -1063,6 +1080,7 @@ static int stream_ced(t38_terminal_state_t *s)
             fe->timed_step = fe->queued_timed_step;
             if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
                 return -1;
+            /*endif*/
             return 0;
         }
         /*endswitch*/

@@ -1190,7 +1190,7 @@ nua_stack_init_transport(nua_t *nua, tagi_t const *tags)
 			    TPTAG_PUBLIC(tport_type_stun), /* use stun */
 			    TPTAG_CERTIFICATE(certificate_dir),
 			    TAG_NEXT(nua->nua_args)) < 0) {
-      SU_DEBUG_0(("nua: error initializing STUN transport\n"));
+      SU_DEBUG_0(("nua: error initializing STUN transport\n" VA_NONE));
     }
 #endif
   }

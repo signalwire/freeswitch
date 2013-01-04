@@ -2318,7 +2318,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->tls_sip_port);
 				} else {
 					tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s:%d", contact,
-																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->sip_port);
+																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->extsipport);
 				}
 			} else {
 				if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
@@ -3254,12 +3254,15 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	}
 
 
-	if (!sofia_test_flag(tech_pvt, TFLAG_REINVITE) && !sofia_test_flag(tech_pvt, TFLAG_SDP) && switch_rtp_ready(tech_pvt->rtp_session)) {
-		if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
-			goto video;
-		} else {
+	if (!sofia_test_flag(tech_pvt, TFLAG_REINVITE)) {
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			if (sofia_test_flag(tech_pvt, TFLAG_VIDEO) && !switch_rtp_ready(tech_pvt->video_rtp_session)) {
+				goto video;
+			}
+
+			status = SWITCH_STATUS_SUCCESS;
 			goto end;
-		}
+		} 
 	}
 
 	if ((status = sofia_glue_tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
@@ -4391,7 +4394,7 @@ static switch_t38_options_t *tech_process_udptl(private_object_t *tech_pvt, sdp_
 
 		// set some default value
 		t38_options->T38FaxVersion = 0;
-		t38_options->T38MaxBitRate = 9600;
+		t38_options->T38MaxBitRate = 14400;
 		t38_options->T38FaxRateManagement = switch_core_session_strdup(tech_pvt->session, "transferredTCF");
 		t38_options->T38FaxUdpEC = switch_core_session_strdup(tech_pvt->session, "t38UDPRedundancy");
 		t38_options->T38FaxMaxBuffer = 500;
@@ -6971,6 +6974,14 @@ void sofia_glue_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str
 
 	if (switch_stristr("~CHANGE_SSRC_ON_MARKER", str)) {
 		*flag_pole &= ~RTP_BUG_CHANGE_SSRC_ON_MARKER;
+	}
+
+	if (switch_stristr("FLUSH_JB_ON_DTMF", str)) {
+		*flag_pole |= RTP_BUG_FLUSH_JB_ON_DTMF;
+	}
+
+	if (switch_stristr("~FLUSH_JB_ON_DTMF", str)) {
+		*flag_pole &= ~RTP_BUG_FLUSH_JB_ON_DTMF;
 	}
 }
 

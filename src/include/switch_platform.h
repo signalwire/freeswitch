@@ -265,6 +265,11 @@ typedef intptr_t switch_ssize_t;
 #endif
 #endif
 
+
+#if UINTPTR_MAX == 0xffffffffffffffff
+#define FS_64BIT 1
+#endif
+
 #endif
 
 #define SWITCH_TIME_T_FMT SWITCH_INT64_T_FMT

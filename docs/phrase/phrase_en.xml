@@ -591,6 +591,18 @@
       <prompt phrase="For other options, press..." filename="ivr-for_other_options.wav"/>
       <!-- The following phrases still need to be recorded -->
       <prompt phrase="Thank you." filename="ivr-thank_you.wav"/>
+      <prompt phrase="Plus." filename="43.wav"/>
+      <prompt phrase="Your caller I.D. information is..." filename="ivr-your_caller_id_information_is.wav"/>
+      <prompt phrase="Call screening has been enabled." filename="ivr-call_screening_enabled.wav"/>
+      <prompt phrase="Call screening has been disabled." filename="ivr-call_screening_disabled.wav"/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
 
     </ivr>

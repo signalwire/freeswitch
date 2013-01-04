@@ -1050,13 +1050,7 @@ SWITCH_DECLARE(unsigned int) switch_queue_size(switch_queue_t *queue)
 
 SWITCH_DECLARE(switch_status_t) switch_queue_pop(switch_queue_t *queue, void **data)
 {
-	apr_status_t s;
-
-	do {
-		s = apr_queue_pop(queue, data);
-	} while (s == APR_EINTR);
-
-	return s;
+	return apr_queue_pop(queue, data);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_pop_timeout(switch_queue_t *queue, void **data, switch_interval_time_t timeout)
@@ -1078,14 +1072,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_push(switch_queue_t *queue, void *d
 
 SWITCH_DECLARE(switch_status_t) switch_queue_trypop(switch_queue_t *queue, void **data)
 {
-	apr_status_t s;
-
-	do {
-		s = apr_queue_trypop(queue, data);
-	} while (s == APR_EINTR);
-
-	return s;
-	
+	return apr_queue_trypop(queue, data);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_interrupt_all(switch_queue_t *queue)

@@ -558,9 +558,9 @@ void debug_print(stun_buffer_t *buf) {
 		*(buf->data + i*4 +2),
 		*(buf->data + i*4 +3)));
     if (i == 4)
-      SU_DEBUG_9(("---------------------\n"));
+		SU_DEBUG_9(("---------------------\n" VA_NONE));
   }
-  SU_DEBUG_9(("\n"));
+  SU_DEBUG_9(("\n" VA_NONE));
 }
 
 int stun_init_message(stun_msg_t *msg) {

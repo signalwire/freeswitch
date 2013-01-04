@@ -486,7 +486,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
                 if (s->tone_present != MODEM_CONNECT_TONES_FAX_CNG)
                 {
                     if (++s->tone_cycle_duration >= ms_to_samples(415))
-                        report_tone_state(s, MODEM_CONNECT_TONES_FAX_CNG, lfastrintf(log10f(s->channel_level/32768.0f)*20.0f + DBM0_MAX_POWER + 0.8f));
+                        report_tone_state(s, MODEM_CONNECT_TONES_FAX_CNG, lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
                 }
             }
             else
@@ -565,7 +565,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
                         {
                             report_tone_state(s,
                                               (s->am_level*15/256 > s->channel_level)  ?  MODEM_CONNECT_TONES_ANSAM_PR  :  MODEM_CONNECT_TONES_ANS_PR,
-                                              lfastrintf(log10f(s->channel_level/32768.0f)*20.0f + DBM0_MAX_POWER + 0.8f));
+                                              lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
                         }
                     }
                     else
@@ -583,7 +583,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
                         {
                             report_tone_state(s,
                                               (s->am_level*15/256 > s->channel_level)  ?  MODEM_CONNECT_TONES_ANSAM  :  MODEM_CONNECT_TONES_ANS,
-                                              lfastrintf(log10f(s->channel_level/32768.0f)*20.0f + DBM0_MAX_POWER + 0.8f));
+                                              lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
                         }
                         s->good_cycles = 0;
                         s->tone_cycle_duration = ms_to_samples(450 + 100);
@@ -637,7 +637,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
                 if (s->tone_present != MODEM_CONNECT_TONES_BELL_ANS)
                 {
                     if (++s->tone_cycle_duration >= ms_to_samples(415))
-                        report_tone_state(s, MODEM_CONNECT_TONES_BELL_ANS, lfastrintf(log10f(s->channel_level/32768.0f)*20.0f + DBM0_MAX_POWER + 0.8f));
+                        report_tone_state(s, MODEM_CONNECT_TONES_BELL_ANS, lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
                 }
             }
             else
@@ -675,7 +675,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
                 if (s->tone_present != MODEM_CONNECT_TONES_CALLING_TONE)
                 {
                     if (++s->tone_cycle_duration >= ms_to_samples(415))
-                        report_tone_state(s, MODEM_CONNECT_TONES_CALLING_TONE, lfastrintf(log10f(s->channel_level/32768.0f)*20.0f + DBM0_MAX_POWER + 0.8f));
+                        report_tone_state(s, MODEM_CONNECT_TONES_CALLING_TONE, lfastrintf(((s->channel_level == 0)  ?  (-96.329f + DBM0_MAX_POWER)  :  log10f(s->channel_level/32768.0f)*20.0f) + DBM0_MAX_POWER + 0.8f));
                 }
             }
             else

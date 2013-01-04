@@ -426,7 +426,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		is_timeout++;
 	}
 	
-	switch_mutex_lock(dmachine->mutex);
+	if (switch_mutex_trylock(dmachine->mutex) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (zstr(dmachine->digits) && !is_timeout) {
 		r = SWITCH_STATUS_SUCCESS;
@@ -614,7 +616,7 @@ static void *SWITCH_THREAD_FUNC echo_video_thread(switch_thread_t *thread, void 
 }
 #endif
 
-SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, switch_input_args_t *args)
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *session, switch_input_args_t *args)
 {
 	switch_status_t status;
 	switch_frame_t *read_frame;
@@ -628,8 +630,10 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, swi
 #endif
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
+
+	arg_recursion_check_start(args);
 
  restart:
 
@@ -723,6 +727,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, swi
 	}
 #endif
 
+	return SWITCH_STATUS_SUCCESS;
 }
 
 typedef struct {
@@ -3411,6 +3416,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	play_and_detect_speech_state_t state = { 0, "" };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
+	arg_recursion_check_start(args);
+
 	if (result == NULL) {
 		goto done;
 	}
@@ -3471,6 +3478,8 @@ done:
 	if (!state.done) {
 		status = SWITCH_STATUS_FALSE;
 	}
+
+	arg_recursion_check_stop(args);
 
 	return status;;
 }

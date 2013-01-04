@@ -376,18 +376,18 @@ void lpc10_voicing(lpc10_encode_state_t *s,
         /*     -----    ----- */
         /*     0   0   0   0 */
         /*     0   0   0*  1    (If there is an onset there) */
-        /*     0   0   1*  0*    (Based on 2F and discriminant distance) */
+        /*     0   0   1*  0*   (Based on 2F and discriminant distance) */
         /*     0   0   1   1 */
         /*     0   1*  0   0    (Always) */
         /*     0   1*  0*  1    (Based on discriminant distance) */
-        /*     0*  1   1   0*    (Based on past, 2F, and discriminant distance) */
+        /*     0*  1   1   0*   (Based on past, 2F, and discriminant distance) */
         /*     0   1*  1   1    (If there is an onset there) */
         /*     1   0*  0   0    (If there is an onset there) */
         /*     1   0   0   1 */
         /*     1   0*  1*  0    (Based on discriminant distance) */
         /*     1   0*  1   1    (Always) */
         /*     1   1   0   0 */
-        /*     1   1   0*  1*    (Based on 2F and discriminant distance) */
+        /*     1   1   0*  1*   (Based on 2F and discriminant distance) */
         /*     1   1   1*  0    (If there is an onset there) */
         /*     1   1   1   1 */
 
@@ -433,7 +433,7 @@ void lpc10_voicing(lpc10_encode_state_t *s,
                 s->voibuf[1][1] = 1;
             break;
         case 11:
-            if (s->voice[1][9] < -s->voice[0][1])
+            if (s->voice[1][0] < -s->voice[0][1])
                 s->voibuf[2][0] = 0;
             else
                 s->voibuf[1][1] = 1;

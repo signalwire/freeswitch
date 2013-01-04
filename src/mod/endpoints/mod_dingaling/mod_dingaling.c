@@ -1871,16 +1871,16 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 	}
 
 	if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		goto out;
+		goto done;
 	}
 
 	if (!activate_rtp(tech_pvt)) {
-		goto out;
+		goto done;
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		if (!do_candidates(tech_pvt, 0)) {
-			goto out;
+			goto done;
 		}
 		if (switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT)) {
 			switch_channel_answer(channel);

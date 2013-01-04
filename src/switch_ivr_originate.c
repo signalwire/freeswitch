@@ -3073,6 +3073,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								}
 							}
 							write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2);
+write_frame.samples = (uint32_t) olen;
+
 						} else if (ringback.audio_buffer) {
 							if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
 																						  write_frame.data,

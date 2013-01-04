@@ -136,6 +136,10 @@ extern "C"
 {
 #endif
 
+SPAN_DECLARE(const char *) at_call_state_to_str(int state);
+
+SPAN_DECLARE(const char *) at_modem_control_to_str(int state);
+
 SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode);
 
 SPAN_DECLARE(void) at_put_response(at_state_t *s, const char *t);

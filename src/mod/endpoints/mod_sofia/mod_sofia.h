@@ -353,7 +353,6 @@ typedef enum {
 	TFLAG_PASS_ACK,
 	TFLAG_CRYPTO_RECOVER,
 	TFLAG_DROP_DTMF,
-	TFLAG_SIGDEAD,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;

@@ -79,6 +79,9 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app,
 	return status;
 }
 
+#define MAX_RECUR 100
+#define RECUR_SPACE 4
+#define MAX_RECUR_SPACE 100 * RECUR_SPACE
 
 #define check_tz() tzoff = switch_channel_get_variable(channel, "tod_tz_offset"); \
 	tzname = switch_channel_get_variable(channel, "timezone");			\
@@ -91,23 +94,69 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app,
 		break;															\
 	} while(tzoff)														
 		
-static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, switch_caller_extension_t **extension)
+static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, 
+					   switch_caller_extension_t **extension, const char *exten_name, int recur)
 {
 	switch_xml_t xcond, xaction, xexpression, xregex;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *exten_name = (char *) switch_xml_attr(xexten, "name");
 	int proceed = 0, save_proceed = 0;
 	char *expression_expanded = NULL, *field_expanded = NULL;
 	switch_regex_t *re = NULL, *save_re = NULL;
 	int offset = 0;
-	const char *tzoff = NULL, *tzname = NULL;
+	const char *tmp, *tzoff = NULL, *tzname = NULL, *req_nesta = NULL;
+	char nbuf[128] = "";
+	int req_nest = 1;
+	char space[MAX_RECUR_SPACE] = "";
+	const char *orig_exten_name = exten_name;
 
 	check_tz();
-
 
 	if (!exten_name) {
 		exten_name = "_anon_";
 	}
+
+	if (!orig_exten_name) {
+		orig_exten_name = "_anon_";
+	}
+
+
+	if (recur) {
+		int i, j = 0, k = 0;
+
+		if (recur > MAX_RECUR) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Recursion LIMIT!\n");
+			return 0;
+		}
+
+		switch_snprintf(nbuf, sizeof(nbuf), "%s_recur_%d", exten_name, recur);
+		exten_name = nbuf;
+		
+		space[j++] = '|';
+
+		for (i = 0; i < recur; i++) {
+			for (k = 0; k < RECUR_SPACE; k++) {
+				if (i == recur-1 && k == RECUR_SPACE-1) {
+					space[j++] = ' ';
+				} else {
+					space[j++] = '-';
+				}
+			}
+		}
+		
+		if ((req_nesta = switch_xml_attr(xexten, "require-nested"))) {
+			req_nest = switch_true(req_nesta);
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, 
+						  "%sDialplan: Processing recursive conditions level:%d [%s] require-nested=%s\n", space,
+						  recur, exten_name, req_nest ? "TRUE" : "FALSE");
+
+	} else {
+		if ((tmp = switch_xml_attr(xexten, "name"))) {
+			exten_name = tmp;
+		}
+	}
+
 
 	for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next) {
 		char *field = NULL;
@@ -123,15 +172,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		check_tz();
 		time_match = switch_xml_std_datetime_check(xcond, tzoff ? &offset : NULL, tzname);
 
-
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);
-
-		if (switch_xml_child(xcond, "condition")) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Nested conditions are not allowed!\n");
-			proceed = 1;
-			goto done;
-		}
 
 		field = (char *) switch_xml_attr(xcond, "field");
 
@@ -150,15 +192,25 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			}
 		}
 
+
+		if (switch_xml_child(xcond, "condition")) {
+			if (!(proceed = parse_exten(session, caller_profile, xcond, extension, orig_exten_name, recur + 1))) {
+				if (do_break_i == BREAK_NEVER) {
+					continue;
+				}
+				goto done;
+			}
+		}
+		
 		if (time_match == 1) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-							  "Dialplan: %s Date/Time Match (PASS) [%s] break=%s\n",
+							  "%sDialplan: %s Date/Time Match (PASS) [%s] break=%s\n", space,
 							  switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
 			anti_action = SWITCH_FALSE;
 			proceed = 1;
 		} else if (time_match == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-							  "Dialplan: %s Date/TimeMatch (FAIL) [%s] break=%s\n",
+							  "%sDialplan: %s Date/TimeMatch (FAIL) [%s] break=%s\n", space,
 							  switch_channel_get_name(channel), exten_name, do_break_a ? do_break_a : "on-false");
 		}
 		
@@ -178,12 +230,12 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				
 				if (time_match == 1) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-									  "Dialplan: %s Date/Time Match (PASS) [%s]\n",
+									  "%sDialplan: %s Date/Time Match (PASS) [%s]\n", space,
 									  switch_channel_get_name(channel), exten_name);
 					anti_action = SWITCH_FALSE;
 				} else if (time_match == 0) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-									  "Dialplan: %s Date/TimeMatch (FAIL) [%s]\n",
+									  "%sDialplan: %s Date/TimeMatch (FAIL) [%s]\n", space,
 									  switch_channel_get_name(channel), exten_name);
 				}
 
@@ -221,20 +273,21 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					
 					if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-										  "Dialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ match=%s\n",
+										  "%sDialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ match=%s\n", space,
 										  switch_channel_get_name(channel), exten_name, field, field_data, expression, all ? "all" : "any");
 						pass++;
 						if (!all && !xor) break;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-										  "Dialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ match=%s\n",
+										  "%sDialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ match=%s\n", space,
 										  switch_channel_get_name(channel), exten_name, field, field_data, expression, all ? "all" : "any");
 						fail++;
 						if (all && !xor) break;
 					}
 				} else if (time_match == -1) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-									  "Dialplan: %s Absolute Condition [%s] match=%s\n", switch_channel_get_name(channel), exten_name, all ? "all" : "any");
+									  "%sDialplan: %s Absolute Condition [%s] match=%s\n", space,
+									  switch_channel_get_name(channel), exten_name, all ? "all" : "any");
 					pass++;
 					proceed = 1;
 					if (!all && !xor) break;
@@ -314,17 +367,18 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 				if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-									  "Dialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ break=%s\n",
+									  "%sDialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ break=%s\n", space,
 									  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
 					anti_action = SWITCH_FALSE;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-									  "Dialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ break=%s\n",
+									  "%sDialplan: %s Regex (FAIL) [%s] %s(%s) =~ /%s/ break=%s\n", space,
 									  switch_channel_get_name(channel), exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
 				}
 			} else if (time_match == -1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-								  "Dialplan: %s Absolute Condition [%s]\n", switch_channel_get_name(channel), exten_name);
+								  "%sDialplan: %s Absolute Condition [%s]\n", space,
+								  switch_channel_get_name(channel), exten_name);
 				anti_action = SWITCH_FALSE;
 				proceed = 1;
 			}
@@ -373,7 +427,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 				for (;loop_count > 0; loop_count--) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-							"Dialplan: %s ANTI-Action %s(%s) %s\n", switch_channel_get_name(channel), application, data, xinline ? "INLINE" : "");
+									  "%sDialplan: %s ANTI-Action %s(%s) %s\n", space,
+									  switch_channel_get_name(channel), application, data, xinline ? "INLINE" : "");
 
 					if (xinline) {
 						exec_app(session, application, data);
@@ -433,7 +488,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				}
 				for (;loop_count > 0; loop_count--) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,
-							"Dialplan: %s Action %s(%s) %s\n", switch_channel_get_name(channel), application, app_data, xinline ? "INLINE" : "");
+									  "%sDialplan: %s Action %s(%s) %s\n", space,
+									  switch_channel_get_name(channel), application, app_data, xinline ? "INLINE" : "");
 
 					if (xinline) {
 						exec_app(session, application, app_data);
@@ -456,6 +512,9 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	switch_regex_safe_free(re);
 	switch_safe_free(field_expanded);
 	switch_safe_free(expression_expanded);
+
+	if (!req_nest) proceed = 1;
+
 	return proceed;
 }
 
@@ -551,7 +610,7 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 						  "Dialplan: %s parsing [%s->%s] continue=%s\n",
 						  switch_channel_get_name(channel), caller_profile->context, exten_name, cont ? cont : "false");
 
-		proceed = parse_exten(session, caller_profile, xexten, &extension);
+		proceed = parse_exten(session, caller_profile, xexten, &extension, exten_name, 0);
 
 		if (proceed && !switch_true(cont)) {
 			break;

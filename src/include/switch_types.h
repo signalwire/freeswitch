@@ -736,12 +736,17 @@ typedef enum {
 
 	 */
 
-	RTP_BUG_CHANGE_SSRC_ON_MARKER = (1 << 9)
+	RTP_BUG_CHANGE_SSRC_ON_MARKER = (1 << 9),
 
 	/*
 	  By default FS will change the SSRC when the marker is set and it detects a timestamp reset.
 	  If this setting is enabled it will NOT do this (old behaviour).
 	 */
+
+	RTP_BUG_FLUSH_JB_ON_DTMF = (1 << 10)
+	
+	/* FLUSH JITTERBUFFER When getting RFC2833 to reduce bleed through */
+
 
 } switch_rtp_bug_flag_t;
 
@@ -762,6 +767,11 @@ typedef struct {
 	unsigned ssrc:32;			/* synchronization source */
 } switch_rtp_hdr_t;
 
+typedef struct {
+	unsigned length:16;			/* length                 */
+	unsigned profile:16;		/* defined by profile     */
+} switch_rtp_hdr_ext_t;
+
 #else /*  BIG_ENDIAN */
 
 typedef struct {
@@ -775,6 +785,11 @@ typedef struct {
 	unsigned ts:32;				/* timestamp              */
 	unsigned ssrc:32;			/* synchronization source */
 } switch_rtp_hdr_t;
+
+typedef struct {
+	unsigned profile:16;		/* defined by profile     */
+	unsigned length:16;			/* length                 */
+} switch_rtp_hdr_ext_t;
 
 #endif
 
@@ -1972,6 +1987,19 @@ struct switch_ivr_dmachine_match {
 typedef struct switch_ivr_dmachine_match switch_ivr_dmachine_match_t;
 typedef switch_status_t (*switch_ivr_dmachine_callback_t) (switch_ivr_dmachine_match_t *match);
 
+#define MAX_ARG_RECURSION 25
+
+#define arg_recursion_check_start(_args) if (_args) {					\
+		if (_args->loops >= MAX_ARG_RECURSION) {						\
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,		\
+							  "RECURSION ERROR!  It's not the best idea to call things that collect input recursively from an input callback.\n"); \
+			return SWITCH_STATUS_GENERR;								\
+		} else {_args->loops++;}										\
+	}
+
+
+#define arg_recursion_check_stop(_args) if (_args) _args->loops--
+
 typedef struct {
 	switch_input_callback_function_t input_callback;
 	void *buf;
@@ -1979,6 +2007,7 @@ typedef struct {
 	switch_read_frame_callback_function_t read_frame_callback;
 	void *user_data;
 	switch_ivr_dmachine_t *dmachine;
+	int loops;
 } switch_input_args_t;
 
 

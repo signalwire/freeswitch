@@ -119,13 +119,21 @@
         <!-- Note, be sure to pass in the full path to the file or else!! -->
         <action function="play-file" data="$1"/>
         <action function="sleep" data="500"/>
-        <action function="play-file" data="ivr/ivr-accept_reject_voicemail.wav"/>
+        <action function="play-file" data="ivr/ivr-to_accept_press_one.wav"/>
+        <action function="sleep" data="500"/>
+        <action function="play-file" data="ivr/ivr-to_reject.wav"/>
+        <action function="sleep" data="50"/>
+        <action function="play-file" data="ivr/ivr-hang_up.wav"/>
         <action function="sleep" data="1500"/>
         <action function="play-file" data="ivr/ivr-call_from.wav"/>
         <action function="sleep" data="250"/>
         <action function="play-file" data="$1"/>
         <action function="sleep" data="500"/>
-        <action function="play-file" data="ivr/ivr-accept_reject_voicemail.wav"/>
+        <action function="play-file" data="ivr/ivr-to_accept_press_one.wav"/>
+        <action function="sleep" data="500"/>
+        <action function="play-file" data="ivr/ivr-to_reject.wav"/>
+        <action function="sleep" data="50"/>
+        <action function="play-file" data="ivr/ivr-hang_up.wav"/>
         <action function="sleep" data="1500"/>
       </match>
     </input>

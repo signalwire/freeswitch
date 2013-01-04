@@ -151,10 +151,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	
 	for(i = 0; i < 2; i++) {
 		if (session->dmachine[i] && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
-			if (switch_channel_try_dtmf_lock(session->channel) == SWITCH_STATUS_SUCCESS) {
-				switch_ivr_dmachine_ping(session->dmachine[i], NULL);
-				switch_channel_dtmf_unlock(session->channel);
-			}
+			switch_ivr_dmachine_ping(session->dmachine[i], NULL);
 		}
 	}
 	
@@ -354,12 +351,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 						goto done;
 					}
 
-					if (!switch_core_codec_ready(&session->bug_codec)) {
+					if (!switch_core_codec_ready(&session->bug_codec) && switch_core_codec_ready(read_frame->codec)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting BUG Codec %s:%d\n",
-							read_frame->codec->implementation->iananame, read_frame->codec->implementation->ianacode);
+										  read_frame->codec->implementation->iananame, read_frame->codec->implementation->ianacode);
 						switch_core_codec_copy(read_frame->codec, &session->bug_codec, NULL);
+						if (!switch_core_codec_ready(&session->bug_codec)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Error setting BUG codec %s!\n", 
+											  switch_core_session_get_name(session), read_frame->codec->implementation->iananame);
+						}
 					}
-					use_codec = &session->bug_codec;
+
+					if (switch_core_codec_ready(&session->bug_codec)) {
+						use_codec = &session->bug_codec;
+					}
 					switch_thread_rwlock_unlock(session->bug_rwlock);
 
 					switch_thread_rwlock_wrlock(session->bug_rwlock);
@@ -376,7 +380,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					memset(session->raw_read_frame.data, 255, session->raw_read_frame.datalen);
 					status = SWITCH_STATUS_SUCCESS;
 				} else {
-					switch_codec_t *codec = use_codec->implementation?use_codec:read_frame->codec;
+					switch_codec_t *codec = use_codec;
+
+					if (!switch_core_codec_ready(codec)) {
+						codec = read_frame->codec;
+					}
+
 					switch_thread_rwlock_rdlock(session->bug_rwlock);
 					codec->cur_frame = read_frame;
 					session->read_codec->cur_frame = read_frame;

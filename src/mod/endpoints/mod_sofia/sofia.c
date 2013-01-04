@@ -2481,6 +2481,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		for (via = vias; via; via = via->v_next) {
 			if (sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_PORT) && !strcmp(via->v_protocol, "SIP/2.0/UDP")) {
 				profile->sip_port = atoi(via->v_port);
+				if (!profile->extsipport) profile->extsipport = profile->sip_port;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found auto sip port %d for %s\n", profile->sip_port, profile->name);
 			}
 
@@ -3212,14 +3213,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->sip_port, params, str_rfc_5626);
+							profile->tls_sip_port : profile->extsipport, params, str_rfc_5626);
 
 				} else {
 					format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->sip_port, params);
+							profile->tls_sip_port : profile->extsipport, params);
 				}
 			} else {
 				if (rfc_5626) {
@@ -3227,14 +3228,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->sip_port, params, str_rfc_5626);
+							profile->tls_sip_port : profile->extsipport, params, str_rfc_5626);
 
 				} else {
 					format = strchr(sipip, ':') ? "<sip:gw+%s@[%s]:%d%s>" : "<sip:gw+%s@%s:%d%s>";
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->sip_port, params);
+							profile->tls_sip_port : profile->extsipport, params);
 
 				}
 			}
@@ -3301,14 +3302,14 @@ static void config_sofia_profile_urls(sofia_profile_t * profile)
 		profile->public_url = switch_core_sprintf(profile->pool,
 												  "sip:%s@%s%s%s:%d",
 												  profile->contact_user,
-												  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->sip_port);
+												  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->extsipport);
 	}
 
 	if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
 		char *ipv6 = strchr(profile->extsipip, ':');
 		profile->url = switch_core_sprintf(profile->pool,
 										   "sip:%s@%s%s%s:%d",
-										   profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->sip_port);
+										   profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->extsipport);
 		profile->bindurl = switch_core_sprintf(profile->pool, "%s;maddr=%s", profile->url, profile->sipip);
 	} else {
 		char *ipv6 = strchr(profile->sipip, ':');
@@ -3922,6 +3923,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_AUTO_ASSIGN_PORT);
 						} else {
 							profile->sip_port = (switch_port_t) atoi(val);
+							if (!profile->extsipport) profile->extsipport = profile->sip_port;
 						}
 					} else if (!strcasecmp(var, "vad")) {
 						if (!strcasecmp(val, "in")) {
@@ -4000,10 +4002,6 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							} else if (!strcasecmp(val, "auto-nat")) {
 								ip = NULL;
 							} else if (strcasecmp(val, "auto")) {
-								if (!profile->extsipport) {
-									profile->extsipport = profile->sip_port;
-								}
-
 								if (sofia_glue_ext_address_lookup(profile, NULL, &myip, &profile->extsipport, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
 									ip = myip;
 									sofia_clear_pflag(profile, PFLAG_AUTO_NAT);
@@ -4547,6 +4545,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 				if (!profile->sip_port && !sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_PORT)) {
 					profile->sip_port = (switch_port_t) atoi(SOFIA_DEFAULT_PORT);
+					if (!profile->extsipport) profile->extsipport = profile->sip_port;
 				}
 
 				if (!profile->dialplan) {
@@ -4667,10 +4666,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 
 					if (profile->sipip) {
-
-						if (!profile->extsipport) {
-							profile->extsipport = profile->sip_port;
-						}
+						if (!profile->extsipport) profile->extsipport = profile->sip_port;
 
 						launch_sofia_profile_thread(profile);
 						if (profile->odbc_dsn) {
@@ -7999,7 +7995,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			if (sip->sip_contact->m_url->url_port) {
 				port = atoi(sip->sip_contact->m_url->url_port);
 			} else {
-				port = sofia_glue_transport_has_tls(transport) ? profile->tls_sip_port : profile->sip_port;
+				port = sofia_glue_transport_has_tls(transport) ? profile->tls_sip_port : profile->extsipport;
 			}
 
 			ipv6 = strchr(host, ':');

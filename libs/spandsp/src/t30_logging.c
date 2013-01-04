@@ -240,6 +240,7 @@ SPAN_DECLARE(const char *) t30_completion_code_to_str(int result)
     case T30_ERR_CSA_UNACCEPTABLE:
         return "Called subscriber internet address not accepted";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -411,6 +412,7 @@ SPAN_DECLARE(const char *) t30_frametype(uint8_t x)
     case T4_RCP:
         return "RCP";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -436,6 +438,7 @@ static void octet_reserved_bit(logging_state_t *log,
         s[7 - bit_no + ((bit_no < 4)  ?  1  :  0)] = (uint8_t) (bit + '0');
         span_log(log, SPAN_LOG_FLOW, "  %s= Unexpected state for reserved bit: %d\n", s, bit);
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 

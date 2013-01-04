@@ -1567,15 +1567,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			de->session = session;
 		}
 
-		if (de->data->e_event == nua_i_cancel || de->data->e_event == nua_i_bye) {
-			sofia_set_flag(tech_pvt, TFLAG_SIGDEAD);
-		}
+		sofia_process_dispatch_event(&de);
 
-		if (!sofia_test_flag(tech_pvt, TFLAG_SIGDEAD) && (switch_channel_media_up(channel) || switch_channel_get_state(channel) > CS_ROUTING)) {
-			sofia_queue_message(de);
-		} else {
-			sofia_process_dispatch_event(&de);
-		}
 
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
 		goto end;

@@ -1,0 +1,290 @@
+Rules:
+ rules:
+  -
+   Glob: libs/ldns/*
+   Matches: NLnet\s*Labs,?\s*(20\d\d(|\s*-\s*20\d\d)|All\sright\sreserved)
+   Copyright: 2004-2010, NLnet Labs
+  -
+   Glob: libs/win32/ldns/ldns-lib/util.h
+   Matches: NLnet\s*Labs,?\s*(20\d\d(|\s*-\s*20\d\d)|All\sright\sreserved)
+   Copyright: 2004-2010, NLnet Labs
+  -
+   Glob: libs/miniupnpc/*
+   Matches: Thomas\sBERNARD
+   Copyright: Thomas Bernard
+  -
+   Glob: libs/miniupnpc/bsdqueue.h
+   Matches: The\sRegents\sof\sthe\sUniversity\sof\sCalifornia.\s+All\srights\sreserved.
+   Copyright: The Regents of the University of California.
+  -
+   Glob: libs/sofia-sip/libsofia-sip-ua/su/poll.c
+   Matches: Free\sSoftware\sFoundation,\sInc.
+   Copyright: Free Software Foundation, Inc.
+   Copyright: Nokia Corporation.
+  -
+   Glob: libs/sofia-sip/libsofia-sip-ua/su/strtoull.c
+   Copyright: Sun Microsystems, Inc.
+  -
+   Glob: libs/sofia-sip/libsofia-sip-ua/su/su_md5.c
+   Copyright: Nokia Corporation
+   License: LGPL-2.1+
+  -
+   Glob: libs/speex/include/speex/speex_types.h
+   Copyright: Xiph.Org Foundation
+  -
+   Glob: libs/speex/libspeex/lsp.c
+   Copyright: Jean-Marc Valin
+  -
+   Glob: libs/speex/libspeex/smallft.[ch]
+   Copyright: the XIPHOPHORUS Company
+  -
+   Glob: libs/speex/src/getopt1.c
+   Matches: Copyright\s\(C\)\s1987,88,89,90,91,92,93,94,96,97,98
+   Copyright: 1987-1998 Free Software Foundation, Inc.
+  -
+   Glob: libs/speex/src/getopt.c
+   Matches: Copyright\s\(C\)\s1987,\s88,\s89,\s90,\s91,\s92,\s93,\s94,\s95,\s96,\s97,\s98,\s99
+   Copyright: 1987-1999 Free Software Foundation, Inc.
+  -
+   Glob: libs/speex/src/getopt_win.h
+   Matches: Copyright\s\(C\)\s1989,90,91,92,93,94,96,97,98\sFree\sSoftware\sFoundation,\sInc.
+   Copyright: 1989-1998 Free Software Foundation, Inc.
+  -
+   Glob: libs/srtp/update.sh
+   Copyright: Ingate Systems AB
+  -
+   Glob: libs/libzrtp/third_party/bnlib/test/md5.c
+   Matches: This\scode\sis\sin\sthe\spublic\sdomain;\sdo\swith\sit\swhat\syou\swish.
+   Copyright: 1995 Abandoned Colin Plumb
+   License: public-domain
+  -
+   Glob: src/g711.c
+   Matches: Copyright\s\(C\)\s2006\sSteve\sUnderwood
+   Matches: \spublic\sdomain\sfor\sthe\sbenefit\sof\sall\smankind
+   Copyright: 2006 Abandoned Steve Underwood
+   License: public-domain
+  -
+   Glob: src/include/g711.h
+   Matches: Copyright\s\(C\)\s2001\sSteve\sUnderwood
+   Matches: \spublic\sdomain\sfor\sthe\sbenefit\sof\sall\smankind
+   Copyright: 2001 Abandoned Steve Underwood
+   License: public-domain
+  -
+   Glob: src/switch_mprintf.c
+   Matches: the\spublic\sdomain.
+   License: public-domain
+  -
+   Glob: src/switch_xml.c
+   Matches: without\slimitation\sthe\srights\sto\suse,\scopy,\smodify,\smerge,\spublish,
+   License: MPL-1.1 or BSD-like
+  -
+   Glob: src/include/switch_xml.h
+   Matches: without\slimitation\sthe\srights\sto\suse,\scopy,\smodify,\smerge,\spublish,
+   License: MPL-1.1 or BSD-like
+  -
+   Glob: src/include/switch_cpp.h
+   Matches: Author[:]\sYossi\sNeiman\s<freeswitch@cartissolutions.com>,\s\(C\)\s2007////\sCopyright[:]
+   Copyright: 2007 Yossi Neiman <freeswitch@cartissolutions.com>
+  -
+   Glob: libs/libzrtp/*
+   Matches: For\slicensing\sand\sother\slegal\sdetails,\ssee\sthe\sfile\szrtp_legal.c.
+   License: AGPL-3 or MPL-1.1
+  -
+   Glob: libs/libzrtp/third_party/bnlib/*
+   Matches: For\slicensing\sand\sother\slegal\sdetails,\ssee\sthe\sfile\slegal.c.
+   License: GPL-2 or GPL-3 or MPL-1.1
+  -
+   Glob: libs/libzrtp/src/zrtp_legal.c
+   Matches: As\sa\sspecial\sexception,\syou\smay\scombine\sthis\slibrary\swith\sthe\scode
+   Matches: License\sVersion\s1.1\s\(MPLv1.1\).
+   License: AGPL-3 or MPL-1.1
+  -
+   Glob: libs/libzrtp/third_party/bnlib/legal.c
+   Matches: As\sa\sspecial\sexception,\syou\smay\scombine\sthis\slibrary\swith\sthe\scode
+   Matches: License\sVersion\s1.1\s\(MPLv1.1\).
+   License: GPL-2 or GPL-3 or MPL-1.1
+  -
+   Glob: libs/libzrtp/projects/symbian/DelayRuner.h
+   Matches: Copyright\s+:\sCopyright\s\(c\)\s2010\sSoft\sIndustry
+   Copyright: 2010 Soft Industry
+  -
+   Glob: libs/sqlite/*
+   Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
+   Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
+   License: public-domain
+  -
+   Glob: libs/win32/sqlite/*.[ch]
+   Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
+   Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
+   License: public-domain
+  -
+   Glob: libs/sqlite/src/test_md5.c
+   Matches: written\sby\sColin\sPlumb\sin\s1993,\sno\scopyright\sis\sclaimed.
+   Matches: This\scode\sis\sin\sthe\spublic\sdomain;\sdo\swith\sit\swhat\syou\swish.
+   Copyright: 1993 Abandoned Colin Plumb
+   License: public-domain
+  -
+   Glob: libs/sqlite/src/printf.c
+   Matches: The\s\"printf\"\scode\sthat\sfollows\sdates\sfrom\sthe\s1980\'s.\s\sIt\sis\sin
+   Matches: the\spublic\sdomain.
+   License: public-domain
+  -
+   Glob: libs/sqlite/src/test_md5.c
+   Matches: This\scode\sis\sin\sthe\spublic\sdomain;\sdo\swith\sit\swhat\syou\swish.
+   License: public-domain
+  -
+   Glob: libs/libtpl-1.5/src/tpl.[ch]
+   Matches: Copyright\s\(c\)\s2005-2010,\sTroy\sD.\sHanson\s+http://tpl.sourceforge.net
+   Copyright: 2005-2010, Troy D. Hanson
+  -
+   Glob: libs/win32/sqlite/parse.c
+   Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
+   License: public-domain
+  -
+   Glob: libs/apr-util/crypto/apr_md5.c
+   Matches: Licensed\sunder\sthe\sApache\sLicense,\sVersion\s2.0
+   Matches: THE\sBEER-WARE\sLICENSE
+   License: RSA and Apache-2.0 and Beerware
+   Copyright: 1991-1992, RSA Data Security, Inc.
+   Copyright: 2000-2005 The Apache Software Foundation or its licensors
+   Copyright: phk@login.dknet.dk
+  -
+   Glob: libs/apr-util/*/apr_md[45].[ch]
+   Matches: Copyright\s\(C\)\s1991-2,\sRSA\sData\sSecurity,\sInc.
+   Copyright: 1991-1992, RSA Data Security, Inc.
+  -
+   Glob: libs/apr/file_io/unix/mktemp.c
+   Matches:  The\sASF\slicenses\sthis\sfile\sto\sYou\sunder\sthe\sApache\sLicense,\sVersion\s2.0
+   Matches:  Copyright\s\(c\)\s1987,\s1993
+   Matches:  The\sRegents\sof\sthe\sUniversity\sof\sCalifornia.\s+All\srights\sreserved.
+   Copyright: 1987, 1993 The Regents of the University of California
+   License: Apache-2.0 or BSD-4-clause
+  -
+   Glob: libs/apr/strings/apr_strings.c
+   Matches:  The\sASF\slicenses\sthis\sfile\sto\sYou\sunder\sthe\sApache\sLicense,\sVersion\s2.0
+   Matches:  Copyright\s\(c\)\s1987,\s1993
+   Matches:  The\sRegents\sof\sthe\sUniversity\sof\sCalifornia.\s+All\srights\sreserved.
+   Copyright: 1990, 1993 The Regents of the University of California
+   License: Apache-2.0 or BSD-4-clause
+  -
+   Glob: libs/apr/dso/aix/dso.c
+   Matches: Copyright\s\(c\)\s1992,1993,1995,1996,1997,1988
+   Matches: Jens-Uwe\sMager,\sHelios\sSoftware\sGmbH,\sHannover,\sGermany.
+   Copyright: 1992-1998 Jens-Uwe Mager, Helios Software GmbH, Hannover, Germany.
+  -
+   Glob: libs/apr/build/NWGNUtail.inc
+   Matches: NLM_COPYRIGHT\s=\sLicensed\sto\sthe\sApache\sSoftware\sFoundation\s\(ASF\)\sunder\sone\sor\smore
+   Copyright: The Apache Software Foundation or its licensors
+  -
+   Glob: libs/apr/include/apr_fnmatch.h
+   Matches: Copyright\s\(c\)\s1992,\s1993
+   Matches:  The\sRegents\sof\sthe\sUniversity\sof\sCalifornia.
+   Copyright: 1992, 1993 The Regents of the University of California.
+  -
+   Glob: libs/apr-util/ldap/apr_ldap_url.c
+   Matches: Copyright\s2000-2005\sThe\sApache\sSoftware\sFoundation\sor\sits\slicensors
+   Copyright: 2000-2005 The Apache Software Foundation or its licensors
+   Matches: Copyright\s1998-2002\sThe\sOpenLDAP\sFoundation
+   Copyright: 1998-2002 The OpenLDAP Foundation
+   Matches: Copyright\s\(c\)\s1992-1996\sRegents\sof\sthe\sUniversity\sof\sMichigan.
+   Copyright: 1992-1996 Regents of the University of Michigan.
+   Matches: http://www.OpenLDAP.org/license.html\sor\sin\sfile\sLICENSE\sin\sthe
+   License: Apache-2.0 and OpenLDAP and BSD-like
+   Justification: silly hack to shut up the 'by' problem
+  -
+   Glob: libs/js/*
+   Matches: Version:\sMPL\s1.1/GPL\s2.0/LGPL\s2.1
+   Matches: Portions\screated\sby\sthe\sInitial\sDeveloper\sare\sCopyright\s\(C\)\s(1998-|)2000
+   Matches: GNU\sGeneral\sPublic\sLicense\sVersion\s2\sor\slater
+   Matches: GNU\sLesser\sGeneral\sPublic\sLicense\sVersion\s2.1\sor\slater
+   Matches: the\sterms\sof\sany\sone\sof\sthe\sMPL,\sthe\sGPL\sor\sthe\sLGPL.
+   License: MPL-1.1 or GPL-2+ or LGPL-2.1+
+   Copyright: 1998-2000 Netscape Communications Corporation.
+  -
+   Glob: libs/js/*
+   Matches: Version:\sMPL\s1.1/GPL\s2.0/LGPL\s2.1
+   Matches: Portions\screated\sby\sthe\sInitial\sDeveloper\sare\sCopyright\s\(C\)\s(1998-|)2000
+   License: MPL-1.1 or GPL-2 or LGPL-2.1
+   Copyright: 1998-2000 Netscape Communications Corporation.
+  -
+   Glob: libs/js/*
+   Matches: the\sLicense\sat\shttp://www.mozilla.org/MPL/
+   Matches: GNU\sGeneral\sPublic\sLicense\sVersion\s2\sor\slater
+   License: MPL-1.1 or GPL-2+
+  -
+   Glob: libs/spandsp/tests/g726_tests.c
+   Matches: Copyright\s(C)\s2006\sSteve\sUnderwood
+   Matches: specification.\sThese\sare\scopyright\smaterial,\sand\sso\scannot\sbe\sdistributed\swith\sthis\stest\ssoftware.
+   Copyright: 2006 Steve Underwood
+  -
+   Glob: libs/spandsp/*/g722.[ch]
+   Matches: Copyright\s\(c\)\sCMU\s+1993
+   Copyright: 1993 CMU
+  -
+   Glob: libs/libwebsockets/win32port/zlib/inftrees.c
+   Matches: Copyright\s1995-2010\sMark\sAdler\s.;
+   Copyright: 1995-2010 Mark Adler
+  -
+   Glob: libs/libwebsockets/lib/sha-1.c
+   Matches: Copyright\s\(C\)\s1995,\s1996,\s1997,\sand\s1998\sWIDE\sProject.
+   Copyright: 1995-1998 WIDE Project.
+  -
+   Glob: libs/libsndfile/programs/common.h
+   Matches: Copyright\s\(C\)\s1999-2009\sErik\sde\sCastro\sLopo\s<erikd@mega-nerd.com>
+   Matches: const\schar\s\*\scopyright\s;
+   Copyright: 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+   Justification: prevent false-psitive copyright detection
+  -
+   Glob: libs/tiff-4.0.2/libtiff/tif_tile.c
+   Matches: Copyright\s(c)\s1991-1997\sSam\sLeffler
+   Matches: copyright\snotices\sand\sthis\spermission\snotice\sappear\sin
+   Copyright: 1991-1997 Sam Leffler
+  -
+   Glob: libs/tiff-4.0.2/*
+   Matches: Additions\s\(c\)\sRichard\sNolde\s2006-2010
+   Matches: copyright\snotices\sand\sthis\spermission\snotice\sappear\sin
+   Copyright: 2006-2010 Richard Nolde
+  -
+   Glob: libs/tiff-4.0.2/libtiff/tiffvers.h
+   Matches: 1988-1996\sSam\sLeffler..Copyright\s\(c\)\s1991-1996\sSilicon\sGraphics,\sInc.
+   Copyright: 1991-1996 Sam Leffler
+   Copyright: 1991-1996 Silicon Graphics, Inc
+  -
+   Glob: src/mod/endpoints/mod_khomp/*
+   Matches: The\scontents\sof\sthis\sfile\sare\ssubject\sto\sthe\sMozilla\sPublic\sLicense\sVersion\s1.1
+   Matches: Alternatively,\sthe\scontents\sof\sthis\sfile\smay\sbe\sused\sunder\sthe\sterms\sof\sthe
+   Matches: GNU\sLesser\sGeneral\sPublic\sLicense\s2\.1.\slicense\s\(the\s.LGPL.\sLicense\),\sin\swhich
+   Matches: version\s2\.1\sof\sthe\sLicense,\sor\s\(at\syour\soption\)\sany\slater\sversion.
+   License: MPL-1.1 or LGPL-2.1+
+  -
+   Glob: src/mod/endpoints/mod_khomp/commons/base/atomic.hpp
+   Matches: Original\scopyright\sfollows[:]
+   Matches: Copyright\s\(c\)\s1998\sDoug\sRabson
+   Copyright: 1998 Doug Rabson
+  -
+   Glob: libs/esl/getopt/getopt_long.c
+   Matches: This\scode\sis\sderived\sfrom\ssoftware\scontributed\sto\sThe\sNetBSD\sFoundation
+   License: BSD-2-clause
+  -
+   Glob: libs/curl/lib/md5.c
+   Matches: Copyright\s\(C\)\s1991-2,\sRSA\sData\sSecurity,\sInc.\sCreated\s1991.
+   Copyright: 1991-1992, RSA Data Security, Inc.
+  -
+   Glob: libs/silk/*
+   Matches: Copyright\s\(c\)\s2006-2011,\sSkype\sLimited.
+   Matches: THIS\sSOFTWARE\sIS\sPROVIDED\sBY\sTHE\sCOPYRIGHT\sHOLDERS\sAND
+   Copyright: 2006-2011, Skype Limited.
+  -
+   Glob: libs/openzap/src/ozmod/ozmod_wanpipe/wanpipe_tdm_api_iface.h
+   Matches: Copyright\s\(c\)\s2007\s-\s08,\sSangoma\sTechnologies
+   Copyright: 2007-2008, Sangoma Technologies
+  -
+   Glob: libs/openzap/src/testm3ua.c
+   Matches: Created\sby\sShane\sBurrell\son\s4/8/08.
+   Matches: Copyright\s2008\s__MyCompanyName__.
+   Copyright: 2008, Shane Burrell
+   Justification: I presume that __MyCompanyName__ is nonsense, which is why I'm crediting Shane Burrell
+  -
+   Glob: debian/*
+   Copyright: 2012 Travis Cross <tc@traviscross.com>
+   License: MPL-1.1 or GPL-2+

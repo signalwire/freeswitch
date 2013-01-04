@@ -585,9 +585,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "IVR menu '%s' no input detected\n", menu->name);
 			}
 			errs++;
-			if (status == SWITCH_STATUS_SUCCESS) {
-				status = switch_ivr_sleep(session, 1000, SWITCH_FALSE, NULL);
-			}
+
 			/* breaks are ok too */
 			if (SWITCH_STATUS_IS_BREAK(status)) {
 				status = SWITCH_STATUS_SUCCESS;

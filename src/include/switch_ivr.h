@@ -358,7 +358,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_generate_session(swi
   \brief - NEEDDESC -
   \param session the session to act on
 */
-SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, switch_input_args_t *args);
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *session, switch_input_args_t *args);
 
 /*!
   \brief Stop looking for TONES

@@ -1667,16 +1667,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, 
 								  "Thread pool: running:%d busy:%d popping:%d\n", session_manager.running, session_manager.busy, session_manager.popping);
 
-				if (session_manager.popping) {
-					int i = 0;
-
-					switch_mutex_lock(session_manager.mutex);
-					for (i = 0; i < session_manager.popping; i++) {
-						switch_queue_trypush(session_manager.thread_queue, NULL);
-					}
-					switch_mutex_unlock(session_manager.mutex);
-
-				}
+				switch_queue_interrupt_all(session_manager.thread_queue);
 
 				x--;
 
@@ -1690,7 +1681,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 	}
 
 	while(session_manager.running) {
-		switch_queue_trypush(session_manager.thread_queue, NULL);
+		switch_queue_interrupt_all(session_manager.thread_queue);
 		switch_yield(20000);
 	}
 
