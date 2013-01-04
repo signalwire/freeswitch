@@ -126,9 +126,16 @@ Sub GetWgetEXE(DestFolder)
 	End If	
 End Sub
 
+Function Strip(Str)
+	Set oRE = New Regexp 
+	oRE.Pattern = "[\W_]" 
+	oRE.Global = True 
+	Strip=oRE.Replace(Str, "") 
+End Function
+
 Sub UnCompress(Archive, DestFolder)
-	batname = "tmp" & CStr(Int(10000*Rnd)) & ".bat"
-	wscript.echo("Extracting: " & Archive)
+	batname = "tmp" & Strip(Archive) & CStr(Int(10000*Rnd)) & ".bat"
+	wscript.echo("Extracting: " & Archive & " - using: " & batname)
 	Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
 	MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Archive & quote & " -y -o" & quote & DestFolder & quote )
 	MyFile.Close
