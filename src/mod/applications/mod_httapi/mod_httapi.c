@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  * mod_httapi.c -- HT-TAPI Hypertext Telephony API
  *
@@ -1987,7 +1988,7 @@ static switch_status_t do_config(void)
 				} else if (!strcasecmp(var, "conference")) {
 					profile->perms.conference.enabled = switch_true(val);
 				} else if (!strcasecmp(var, "conference-set-profile")) {
-					profile->perms.conference.enabled = switch_true(val);
+					if (switch_true(val)) profile->perms.conference.enabled = SWITCH_TRUE;
 					profile->perms.conference.set_profile = switch_true(val);
 				}
 

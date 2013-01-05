@@ -55,7 +55,7 @@
 	    <application name="hangup"/>
 	  </application-list>
 	</permission>
-	<permission name="expand-vars-in-tag-body" value="false">
+	<permission name="expand-vars" value="false">
 	  <!-- default to "deny" or "allow" -->
 	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
 	  <!-- 
