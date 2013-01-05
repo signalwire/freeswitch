@@ -3251,13 +3251,12 @@ void switch_core_sqldb_stop(void)
 
 	switch_event_unbind_callback(core_event_handler);
 
-	switch_core_sqldb_stop_thread();
-
-
 	if (sql_manager.db_thread && sql_manager.db_thread_running) {
 		sql_manager.db_thread_running = -1;
 		switch_thread_join(&st, sql_manager.db_thread);
 	}
+
+	switch_core_sqldb_stop_thread();
 
 	switch_cache_db_flush_handles();
 	sql_close(0);
