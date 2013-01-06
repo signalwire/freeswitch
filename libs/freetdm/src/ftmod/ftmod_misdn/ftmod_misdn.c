@@ -924,7 +924,7 @@ static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct m
 		ftdm_log_chan(chan, FTDM_LOG_DEBUG, "mISDN port state:\n\tD-Chan proto:\t%hu\n\tD-Chan state:\t%s (%hu)\n\tD-Chan flags:\t%#"FTDM_XINT64_FMT"\n\t\t\t%-70s\n",
 			info->dch.ch.protocol,
 			misdn_hw_state_name(info->dch.ch.protocol, info->dch.state), info->dch.state,
-			info->dch.ch.Flags,
+			(uint64_t)info->dch.ch.Flags,
 			misdn_hw_print_flags(info->dch.ch.Flags, tmp, sizeof(tmp) - 1));
 
 		/* TODO: try to translate this to a usable set of alarm flags */
