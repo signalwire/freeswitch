@@ -2027,28 +2027,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							  switch_channel_get_name(channel), msg->string_arg);
 			sofia_glue_tech_set_local_sdp(tech_pvt, msg->string_arg, SWITCH_TRUE);
 
-			if (msg->numeric_arg) { // ACK
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY nomedia - sending ack\n");
-				nua_ack(tech_pvt->nh,
-						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-						SIPTAG_PAYLOAD_STR(msg->string_arg),
-						SIPTAG_CONTENT_TYPE_STR("application/sdp"),
-						TAG_END());
-				sofia_clear_flag(tech_pvt, TFLAG_3PCC_INVITE);
-				
-			} else {
-				if(zstr(tech_pvt->local_sdp_str)) {
-					sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
-				}
-				
-				sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
-				
-				if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-					switch_channel_set_flag(channel, CF_REQ_MEDIA);
-				}
-				sofia_glue_do_invite(session);
+			if(zstr(tech_pvt->local_sdp_str)) {
+				sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
 			}
+
+			sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
+
+			if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+				switch_channel_set_flag(channel, CF_REQ_MEDIA);
+			}
+			sofia_glue_do_invite(session);
 		}
 		break;
 

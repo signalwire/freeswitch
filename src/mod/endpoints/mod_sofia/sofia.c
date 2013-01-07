@@ -1133,8 +1133,6 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_i_ack:
 		{
 			if (channel && sip) {
-				char *r_sdp = NULL;
-
 				if (sip->sip_to && sip->sip_to->a_tag) {
 					switch_channel_set_variable(channel, "sip_to_tag", sip->sip_to->a_tag);
 				}
@@ -1156,35 +1154,6 @@ static void our_sofia_event_callback(nua_event_t event,
 				extract_header_vars(profile, sip, session, nh);
 				switch_core_recovery_track(session);
 				sofia_set_flag(tech_pvt, TFLAG_GOT_ACK);
-
-				if (sip->sip_payload && sip->sip_payload->pl_data && sip->sip_content_type && 
-					sip->sip_content_type->c_subtype && switch_stristr("sdp", sip->sip_content_type->c_subtype)) {
-					r_sdp = sip->sip_payload->pl_data;
-				}
-
-				if (!zstr(r_sdp) && (sofia_test_flag(tech_pvt, TFLAG_3PCC_INVITE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
-					switch_core_session_t *other_session;
-					sofia_set_flag(tech_pvt, TFLAG_SDP);
-					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-						switch_core_session_message_t *msg;
-						switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-						
-						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
-							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
-						}
-						
-						msg = switch_core_session_alloc(other_session, sizeof(*msg));
-						msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
-						msg->from = __FILE__;
-						msg->string_arg = switch_core_session_strdup(other_session, r_sdp);
-						msg->numeric_arg = 1; // send ack
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing SDP ACK to other leg.\n%s\n", r_sdp);
-						
-						switch_core_session_queue_message(other_session, msg);
-						
-						switch_core_session_rwunlock(other_session);
-					}
-				}
 
 				if (sofia_test_flag(tech_pvt, TFLAG_PASS_ACK)) {
 					switch_core_session_t *other_session;
@@ -5755,6 +5724,22 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 			}
 
+			if (r_sdp && sofia_test_flag(tech_pvt, TFLAG_3PCC_INVITE) && !sofia_test_flag(tech_pvt, TFLAG_SDP)) {
+				sofia_set_flag(tech_pvt, TFLAG_SDP);
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					other_channel = switch_core_session_get_channel(other_session);
+					//other_tech_pvt = switch_core_session_get_private(other_session);
+
+					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
+						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
+					}
+					switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
+					switch_core_session_rwunlock(other_session);
+				}
+				goto done;
+
+			}
+
 			if (send_ack) {
 				tech_send_ack(nh, tech_pvt);
 			} else {
@@ -6209,6 +6194,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
 						sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
 					} else {
+						switch_core_session_message_t *msg;
+
+						msg = switch_core_session_alloc(other_session, sizeof(*msg));
+						msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
+						msg->from = __FILE__;
+						msg->string_arg = switch_core_session_strdup(other_session, r_sdp);
+						switch_core_session_queue_message(other_session, msg);
 						switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
 					}
 
