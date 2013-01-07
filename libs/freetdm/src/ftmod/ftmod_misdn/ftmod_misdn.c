@@ -2269,14 +2269,23 @@ static ftdm_status_t handle_b_channel_event(ftdm_channel_t *chan)
 	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
 	char buf[MAX_DATA_MEM] = { 0 };
 	struct mISDNhead *mh = (void *)buf;
-	int retval;
+	int retval, retries = 5;
 
-	if ((retval = recvfrom(chan->sockfd, buf, sizeof(buf), 0, NULL, NULL)) <= 0) {
+	do {
+		/*
+		 * Retry reading multiple times if recvfrom() returns EAGAIN
+		 */
+		retval = recvfrom(chan->sockfd, buf, sizeof(buf), 0, NULL, NULL);
+		if (retval < 0 && errno != EAGAIN)
+			break;
+
+	} while (retval < 0 && retries-- > 0);
+
+	if (retval < 0) {
 		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN failed to receive message: %s\n",
 			strerror(errno));
 		return FTDM_FAIL;
 	}
-
 	if (retval < MISDN_HEADER_LEN) {
 		ftdm_log_chan(chan, FTDM_LOG_ERROR, "mISDN message too short, min.: %d, read: %d\n",
 			(int)MISDN_HEADER_LEN, retval);
