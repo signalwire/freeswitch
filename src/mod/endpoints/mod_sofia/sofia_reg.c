@@ -526,7 +526,11 @@ int sofia_reg_find_reg_with_positive_expires_callback(void *pArg, int argc, char
 	long int expires;
 	char *contact = NULL;
 
-	if (argv[0] && cbt->contact_str && !strcasecmp(argv[0], cbt->contact_str)) {
+	if (zstr(argv[0])) {
+		return 0;
+	}
+
+	if (cbt->contact_str && !strcasecmp(argv[0], cbt->contact_str)) {
 		expires = cbt->exptime;
 	} else {
 		expires = atol(argv[1]) - 60 - (long) cbt->time;
