@@ -1344,7 +1344,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	   it will have no effect. Make sure that if you want more reliable
 	   faxes, it is disabled.
 	 */
-	switch_channel_set_variable(channel, "jitterbuffer_msec", "0");
+	switch_channel_set_variable(channel, "jitterbuffer_msec", NULL);
 
 
 	/* We store the original channel codec before switching both
