@@ -5152,7 +5152,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 
-					if (status > 299) {
+					if (status == 491 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
+						nua_respond(other_tech_pvt->nh, SIP_491_REQUEST_PENDING, TAG_END());
+						switch_core_session_rwunlock(other_session);
+						goto end;
+					} else if (status > 299) {
 						switch_channel_set_private(channel, "t38_options", NULL);
 						switch_channel_set_private(other_channel, "t38_options", NULL);
 						sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
