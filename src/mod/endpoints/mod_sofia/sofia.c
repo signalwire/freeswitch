@@ -2837,7 +2837,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			const char *sipip, *format;
 			switch_uuid_t uuid;
 			uint32_t ping_freq = 0, extension_in_contact = 0, distinct_to = 0, rfc_5626 = 0;
-			int ping_max = 1, ping_min = -1;
+			int ping_max = 1, ping_min = 1;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
 				*username = NULL,
@@ -4706,10 +4706,14 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 				gateway->state = REG_STATE_UNREGED;
 			}
 
+			if (gateway->ping_count < 0) {
+				gateway->ping_count = 0;
+			}
+
 			if (gateway->ping_count < gateway->ping_max) {
 				gateway->ping_count++;
 
-				if (gateway->ping_count >= 0 && gateway->status != SOFIA_GATEWAY_UP) {
+				if (gateway->ping_count >= gateway->ping_min && gateway->status != SOFIA_GATEWAY_UP) {
 					gateway->status = SOFIA_GATEWAY_UP;
 					sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
 				}
@@ -4724,13 +4728,13 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 				gateway->state = REG_STATE_FAILED;
 			}
 
-			if (gateway->ping_count > gateway->ping_min) {
+			if (gateway->ping_count > 0) {
 				gateway->ping_count--;
+			}
 
-				if (gateway->ping_count <= 0 && gateway->status != SOFIA_GATEWAY_DOWN) {
-					gateway->status = SOFIA_GATEWAY_DOWN;
-					sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
-				}
+			if (gateway->ping_count < gateway->ping_min && gateway->status != SOFIA_GATEWAY_DOWN) {
+				gateway->status = SOFIA_GATEWAY_DOWN;
+				sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
