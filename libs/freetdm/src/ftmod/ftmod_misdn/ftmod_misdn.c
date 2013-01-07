@@ -2298,7 +2298,7 @@ static ftdm_status_t handle_b_channel_event(ftdm_channel_t *chan)
 		char *data  = buf    + MISDN_HEADER_LEN;
 
 		/* Discard incoming audio if not active */
-		if (!priv->active) {
+		if (priv->active) {
 			/* Convert audio data */
 			misdn_convert_audio_bits(data, datalen);
 
