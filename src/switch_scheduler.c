@@ -106,7 +106,7 @@ static int task_thread_loop(int done)
 	for (tp = globals.task_list; tp; tp = tp->next) {
 		if (done) {
 			tp->destroyed = 1;
-		} else {
+		} else if (!tp->destroyed) {
 			int64_t now = switch_epoch_time_now(NULL);
 			if (now >= tp->task.runtime && !tp->in_thread) {
 				int32_t diff = (int32_t) (now - tp->task.runtime);
