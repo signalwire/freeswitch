@@ -992,7 +992,7 @@ static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
 		if (rtp_session->ts <= rtp_session->last_write_ts && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 			m++;
 		}
-	} else if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+	} else if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 		rtp_session->ts = rtp_session->timer.samplecount;
 
 		if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
@@ -1025,7 +1025,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 		
 		switch_rtp_write_manual(rtp_session, (void *) data, 2, 0, rtp_session->cng_pt, ntohl(rtp_session->send_msg.header.ts), &frame_flags);
 		
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+		if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		}
 	}
@@ -4276,7 +4276,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	}
 
 	/* If the marker was set, and the timestamp seems to have started over - set a new SSRC, to indicate this is a new stream */
-	if (m && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND) && (rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER) && 
+	if (m && !switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND) && (rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER) && 
 		(rtp_session->last_write_ts == RTP_TS_RESET || (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->last_write_ts > 0))) {
 		switch_rtp_set_ssrc(rtp_session, (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL)));
 	}

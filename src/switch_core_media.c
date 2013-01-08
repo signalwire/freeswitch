@@ -140,7 +140,7 @@ struct switch_media_handle_s {
 	int payload_space;
 	char *origin;
 
-	switch_payload_t cng_pt;
+
 
 	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
 	int num_negotiated_codecs;
@@ -2119,7 +2119,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					cng_pt = (switch_payload_t) map->rm_pt;
 					if (a_engine->rtp_session) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", cng_pt);
-						switch_rtp_set_cng_pt(a_engine->rtp_session, smh->cng_pt);
+						switch_rtp_set_cng_pt(a_engine->rtp_session, smh->mparams->cng_pt);
 					}
 				}
 
@@ -2461,7 +2461,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		sdp_parser_free(parser);
 	}
 
-	smh->cng_pt = cng_pt;
+	smh->mparams->cng_pt = cng_pt;
 
 	return match;
 }
@@ -3082,8 +3082,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	}
 
 	if (switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG)) {
-		smh->cng_pt = 0;
-	} else if (smh->cng_pt) {
+		smh->mparams->cng_pt = 0;
+	} else if (smh->mparams->cng_pt) {
 		flags[SWITCH_RTP_FLAG_AUTO_CNG]++;
 	}
 
@@ -3423,7 +3423,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		if (switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) ||
 			((val = switch_channel_get_variable(session->channel, "supress_cng")) && switch_true(val)) ||
 			((val = switch_channel_get_variable(session->channel, "suppress_cng")) && switch_true(val))) {
-			smh->cng_pt = 0;
+			smh->mparams->cng_pt = 0;
 		}
 
 		if (((val = switch_channel_get_variable(session->channel, "rtp_digit_delay")))) {
@@ -3440,9 +3440,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			
 		}
 
-		if (smh->cng_pt && !switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", smh->cng_pt);
-			switch_rtp_set_cng_pt(a_engine->rtp_session, smh->cng_pt);
+		if (smh->mparams->cng_pt && !switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", smh->mparams->cng_pt);
+			switch_rtp_set_cng_pt(a_engine->rtp_session, smh->mparams->cng_pt);
 		}
 
 		switch_core_session_apply_crypto(session, SWITCH_MEDIA_TYPE_AUDIO, "rtp_secure_media_confirmed");
@@ -4018,7 +4018,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		((val = switch_channel_get_variable(session->channel, "supress_cng")) && switch_true(val)) ||
 		((val = switch_channel_get_variable(session->channel, "suppress_cng")) && switch_true(val))) {
 		use_cng = 0;
-		smh->cng_pt = 0;
+		smh->mparams->cng_pt = 0;
 	}
 
 	if (!smh->payload_space) {
@@ -4036,7 +4036,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					smh->payload_space++;
 				}
 				if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) &&
-					smh->cng_pt && use_cng  && smh->cng_pt == smh->payload_space) {
+					smh->mparams->cng_pt && use_cng  && smh->mparams->cng_pt == smh->payload_space) {
 					smh->payload_space++;
 				}
 				smh->ianacodes[i] = smh->payload_space++;
@@ -4136,8 +4136,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", smh->mparams->te);
 		}
 		
-		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->cng_pt && use_cng) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", smh->cng_pt);
+		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->mparams->cng_pt && use_cng) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", smh->mparams->cng_pt);
 		}
 		
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
@@ -4158,10 +4158,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			&& smh->mparams->te > 95) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
 		}
-		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->cng_pt && use_cng) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d CN/8000\n", smh->cng_pt);
+		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->mparams->cng_pt && use_cng) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d CN/8000\n", smh->mparams->cng_pt);
 			if (!a_engine->codec_params.rm_encoding) {
-				smh->cng_pt = 0;
+				smh->mparams->cng_pt = 0;
 			}
 		} else {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=silenceSupp:off - - - -\n");
@@ -4197,11 +4197,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		int cur_ptime = 0, this_ptime = 0, cng_type = 0;
 		const char *mult;
 
-		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->cng_pt && use_cng) {
-			cng_type = smh->cng_pt;
+		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->mparams->cng_pt && use_cng) {
+			cng_type = smh->mparams->cng_pt;
 
 			if (!a_engine->codec_params.rm_encoding) {
-				smh->cng_pt = 0;
+				smh->mparams->cng_pt = 0;
 			}
 		}
 		

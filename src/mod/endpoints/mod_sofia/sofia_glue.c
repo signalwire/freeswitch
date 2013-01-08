@@ -161,7 +161,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	tech_pvt->mparams.rtcp_audio_interval_msec = profile->rtcp_audio_interval_msec;
 	tech_pvt->mparams.rtcp_video_interval_msec = profile->rtcp_video_interval_msec;
 	tech_pvt->mparams.sdp_username = profile->sdp_username;
-
+	tech_pvt->mparams.cng_pt = tech_pvt->cng_pt;
 
 	switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
 	switch_media_handle_set_media_flags(tech_pvt->media_handle, tech_pvt->profile->media_flags);
