@@ -207,6 +207,7 @@ static int parse_debug(const char *in, uint32_t *flags)
 	return res;
 }
 
+#ifdef HAVE_LIBPRI_MAINT_SERVICE
 /**
  * \brief Parses a change status string to flags
  * \param in change status string to parse for
@@ -232,6 +233,8 @@ static int parse_change_status(const char *in)
 
 	return flags;
 }
+#endif
+
 
 static int print_debug(uint32_t flags, char *tmp, const int size)
 {
@@ -441,7 +444,9 @@ static const char *ftdm_libpri_usage =
 	"libpri kill <span>\n"
 	"libpri reset <span>\n"
 	"libpri restart <span> <channel/all>\n"
+#ifdef HAVE_LIBPRI_MAINT_SERVICE
 	"libpri maintenance <span> <channel/all> <in/maint/out>\n"
+#endif
 	"libpri debug <span> [all|none|flag,...flagN]\n"
 	"libpri msn <span>\n"
 	"\n"
@@ -650,6 +655,7 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				goto done;
 			}
 		}
+#ifdef HAVE_LIBPRI_MAINT_SERVICE
 		if (!strcasecmp(argv[0], "maintenance") && argc > 3) {
 			ftdm_span_t *span = NULL;
 			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
@@ -681,6 +687,7 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				goto done;
 			}
 		}
+#endif
 	} else {
 		/* zero args print usage */
 		stream->write_function(stream, ftdm_libpri_usage);
