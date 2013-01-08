@@ -978,22 +978,57 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	global_init = 1;
 }
 
+static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
+{
+	uint8_t m = 0;
+
+	if (rtp_session->rtp_bugs & RTP_BUG_SEND_LINEAR_TIMESTAMPS) {
+		rtp_session->ts += rtp_session->samples_per_interval;
+		if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
+			rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
+		}
+	} else if (timestamp) {
+		rtp_session->ts = (uint32_t) timestamp;
+		/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
+		if (rtp_session->ts <= rtp_session->last_write_ts && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
+			m++;
+		}
+	} else if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+		rtp_session->ts = rtp_session->timer.samplecount;
+
+		if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
+			rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
+		}
+	} else {
+		rtp_session->ts += rtp_session->samples_per_interval;
+	}
+
+	return m;
+}
+
+
 
 static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 {
 	int ret = 0;
 
 
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) && rtp_session->send_msg.header.ts &&
-			rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 50))) {
-			uint8_t data[10] = { 0 };
-			switch_frame_flag_t frame_flags = SFF_NONE;
-			data[0] = 65;
-			rtp_session->cn++;
-			switch_rtp_write_manual(rtp_session, (void *) data, 2, 0, rtp_session->cng_pt, ntohl(rtp_session->send_msg.header.ts), &frame_flags);
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) && rtp_session->send_msg.header.ts &&
+		rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 60))) {
+		uint8_t data[10] = { 0 };
+		switch_frame_flag_t frame_flags = SFF_NONE;
+		data[0] = 65;
+		rtp_session->cn++;
+
+		get_next_write_ts(rtp_session, 0);
+		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
+		
+		switch_rtp_write_manual(rtp_session, (void *) data, 2, 0, rtp_session->cng_pt, ntohl(rtp_session->send_msg.header.ts), &frame_flags);
+		
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		}
-
-
+	}
 
 	if (rtp_session->rtcp_sock_output &&
 		switch_test_flag(rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU) &&
@@ -4153,26 +4188,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		send_msg = &rtp_session->send_msg;
 		send_msg->header.pt = payload;
 
-		if (rtp_session->rtp_bugs & RTP_BUG_SEND_LINEAR_TIMESTAMPS) {
-			rtp_session->ts += rtp_session->samples_per_interval;
-			if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
-				rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
-			}
-		} else if (timestamp) {
-			rtp_session->ts = (uint32_t) timestamp;
-			/* Send marker bit if timestamp is lower/same as before (resetted/new timer) */
-			if (rtp_session->ts <= rtp_session->last_write_ts && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
-				m++;
-			}
-		} else if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-			rtp_session->ts = rtp_session->timer.samplecount;
-
-			if (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->ts > 0) {
-				rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
-			}
-		} else {
-			rtp_session->ts += rtp_session->samples_per_interval;
-		}
+		m = get_next_write_ts(rtp_session, timestamp);
 
 		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 
