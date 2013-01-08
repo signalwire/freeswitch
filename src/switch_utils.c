@@ -2656,7 +2656,7 @@ const short _switch_C_tolower_[1 + SWITCH_CTYPE_NUM_CHARS] = {
 
 const short *_switch_tolower_tab_ = _switch_C_tolower_;
 
-SWITCH_DECLARE(int) switch_tolower(int c)
+SWITCH_DECLARE(int) old_switch_tolower(int c)
 {
 	if ((unsigned int) c > 255)
 		return (c);
