@@ -2533,10 +2533,12 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		pri_facility_enable(isdn_data->spri.pri);
 	}
 #endif
+#ifdef HAVE_LIBPRI_MAINT_SERVICE
 	/* Support the different switch of service status */
 	if (isdn_data->service_message_support) {
 		pri_set_service_message_support(isdn_data->spri.pri, 1);
 	}
+#endif
 
 	/* Callbacks for libpri events */
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANY, on_anything);
