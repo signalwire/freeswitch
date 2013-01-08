@@ -4162,6 +4162,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	uint32_t this_ts = 0;
 	int ret;
 	switch_time_t now;
+	uint8_t m = 0;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return SWITCH_STATUS_FALSE;
@@ -4179,8 +4180,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			datalen -= rtp_header_len;
 		}
 	} else {
-		uint8_t m = 0;
-
 		if (*flags & SFF_RFC2833) {
 			payload = rtp_session->te;
 		}
@@ -4192,7 +4191,14 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 
+		memcpy(send_msg->body, data, datalen);
+		bytes = datalen + rtp_header_len;
+	}
 
+
+	if ((rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
+		m = 0;
+	} else {
 		if ((rtp_session->last_write_ts != RTP_TS_RESET && rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
 			|| rtp_session->ts == rtp_session->samples_per_interval) {
 			m++;
@@ -4202,7 +4208,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			(rtp_session->timer.samplecount - rtp_session->last_write_samplecount) > rtp_session->samples_per_interval * 10) {
 			m++;
 		}
-
+			
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) &&
 			((unsigned) ((switch_micro_time_now() - rtp_session->last_write_timestamp))) > (rtp_session->ms_per_packet * 10)) {
 			m++;
@@ -4217,20 +4223,15 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			m++;
 			rtp_session->need_mark = 0;
 		}
-
-		send_msg->header.m = (m && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) ? 1 : 0;
-
-		/* If the marker was set, and the timestamp seems to have started over - set a new SSRC, to indicate this is a new stream */
-		if (send_msg->header.m && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND) &&
-			(rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER) && (rtp_session->last_write_ts == RTP_TS_RESET ||
-			(rtp_session->ts <= rtp_session->last_write_ts && rtp_session->last_write_ts > 0))) {
-				switch_rtp_set_ssrc(rtp_session, (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL)));
-		}
-
-		memcpy(send_msg->body, data, datalen);
-		bytes = datalen + rtp_header_len;
 	}
 
+	/* If the marker was set, and the timestamp seems to have started over - set a new SSRC, to indicate this is a new stream */
+	if (m && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND) && (rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER) && 
+		(rtp_session->last_write_ts == RTP_TS_RESET || (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->last_write_ts > 0))) {
+		switch_rtp_set_ssrc(rtp_session, (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL)));
+	}
+	
+	send_msg->header.m = (m && !(rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) ? 1 : 0;
 	send_msg->header.ssrc = htonl(rtp_session->ssrc);
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->send_msg.header.pt == 97) {
