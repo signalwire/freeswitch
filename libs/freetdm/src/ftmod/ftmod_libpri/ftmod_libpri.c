@@ -2174,7 +2174,7 @@ static int on_restart_ack(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri
 /*
  * FACILITY Advice-On-Charge handler
  */
-#ifdef HAVE_LIBPRI_AOC
+#if defined(HAVE_LIBPRI_AOC) && defined(PRI_EVENT_FACILITY)
 static const char *aoc_billing_id(const int id)
 {
 	switch (id) {
@@ -2293,6 +2293,7 @@ static int handle_facility_aoc_e(const struct pri_subcmd_aoc_e *aoc_e)
 }
 #endif
 
+#ifdef PRI_EVENT_FACILITY
 /**
  * \brief Handler for libpri facility events
  * \param spri Pri wrapper structure (libpri, span, dchan)
@@ -2348,6 +2349,7 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 	ftdm_log(FTDM_LOG_DEBUG, "Caught Event on span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
+#endif
 
 /**
  * \brief Handler for libpri dchan up event
@@ -2557,7 +2559,9 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART, on_restart);
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART_ACK, on_restart_ack);
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_IO_FAIL, on_io_fail);
+#ifdef PRI_EVENT_FACILITY
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_FACILITY, on_facility);
+#endif
 
 	/* Callback invoked on each iteration of the lpwrap_run_pri() event loop */
 	isdn_data->spri.on_loop = check_flags;
