@@ -47,10 +47,10 @@ SWITCH_BEGIN_EXTERN_C
 */
 static inline uint32_t switch_toupper(uint32_t eax)
 {
-	uint32_t ebx = (0x7f7f7f7ful & eax) + 0x05050505ul;
-	ebx = (0x7f7f7f7ful & ebx) + 0x1a1a1a1aul;
-	ebx = ((ebx & ~eax) >> 2 ) & 0x20202020ul;
-	return eax - ebx;
+uint32_t ebx = (0x7f7f7f7ful & eax) + 0x05050505ul;
+ebx = (0x7f7f7f7ful & ebx) + 0x1a1a1a1aul;
+ ebx = ((ebx & ~eax) >> 2 ) & 0x20202020ul;
+ return eax - ebx;
 }
 
 /* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
@@ -64,7 +64,30 @@ static inline uint32_t switch_tolower(uint32_t eax)
 	return eax + ebx;
 }
 
+
 #ifdef FS_64BIT
+
+/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
+   http://www.azillionmonkeys.com/qed/asmexample.html
+*/
+static inline uint64_t switch_toupper64(uint64_t eax)
+{
+uint64_t ebx = (0x7f7f7f7f7f7f7f7full & eax) + 0x0505050505050505ull;
+ ebx = (0x7f7f7f7f7f7f7f7full & ebx) + 0x1a1a1a1a1a1a1a1aull;
+ ebx = ((ebx & ~eax) >> 2 ) & 0x2020202020202020ull;
+ return eax - ebx;
+}
+
+/* https://code.google.com/p/stringencoders/wiki/PerformanceAscii 
+   http://www.azillionmonkeys.com/qed/asmexample.html
+*/
+static inline uint64_t switch_tolower64(uint64_t eax)
+{
+	uint64_t ebx = (0x7f7f7f7f7f7f7f7full & eax) + 0x2525252525252525ull;
+	ebx = (0x7f7f7f7f7f7f7f7full & ebx) + 0x1a1a1a1a1a1a1a1aull;
+	ebx = ((ebx & ~eax) >> 2)  & 0x2020202020202020ull;
+	return eax + ebx;
+}
 
 static inline void switch_toupper_max(char *s)
 {
@@ -78,7 +101,7 @@ static inline void switch_toupper_max(char *s)
 
 	while (l > 8) {
 		b = p;
-		*b = (uint32_t) switch_toupper(*b);
+		*b = (uint64_t) switch_toupper64(*b);
 		b++;
 		p++;
 		l -= 8;
@@ -106,7 +129,7 @@ static inline void switch_tolower_max(char *s)
 
 	while (l > 8) {
 		b = p;
-		*b = (uint32_t) switch_tolower(*b);
+		*b = (uint64_t) switch_tolower64(*b);
 		b++;
 		p++;
 		l -= 8;
@@ -180,6 +203,8 @@ static inline void switch_tolower_max(char *s)
 	
 }
 #endif
+
+
 
 
 SWITCH_DECLARE(int) old_switch_toupper(int c);
