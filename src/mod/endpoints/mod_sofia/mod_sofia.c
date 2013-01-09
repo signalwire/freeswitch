@@ -5191,8 +5191,7 @@ static void general_event_handler(switch_event_t *event)
 					return;
 				}
 
-
-				if (to_uri && from_uri && ct && es && profile_name && (profile = sofia_glue_find_profile(profile_name))) {
+				if (to_uri && from_uri && ct && es) {
 					sofia_destination_t *dst = NULL;
 					nua_handle_t *nh;
 					char *route_uri = NULL;
