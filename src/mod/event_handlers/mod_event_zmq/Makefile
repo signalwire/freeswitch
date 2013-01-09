@@ -15,6 +15,8 @@ include $(BASE)/build/modmake.rules
 
 $(ZMQ_DIR):
 	$(GETLIB) $(ZMQ_BASEURL) $(ZMQ).tar.gz || $(GETLIB) $(ZMQ_BASEURL_ALT) $(ZMQ).tar.gz
+	sed -e 's:AM_CONFIG_HEADER:AC_CONFIG_HEADERS:' $(ZMQ_DIR)/configure.in > $(ZMQ_DIR)/configure.in.tmp && \
+		mv $(ZMQ_DIR)/configure.in.tmp $(ZMQ_DIR)/configure.in
 	cd $(ZMQ_DIR) && ./autogen.sh
 
 $(ZMQ_BUILDDIR)/Makefile: $(ZMQ_DIR)
