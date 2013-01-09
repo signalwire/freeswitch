@@ -4,7 +4,6 @@
 ' David A. Horner http://dave.thehorners.com
 '----------------------------------------------
 
-'On Error Resume Next
 ' **************
 ' Initialization
 ' **************
@@ -36,14 +35,11 @@ If UseWgetEXE Then
 	GetWgetEXE UtilsDir
 End If
 
-GetCompressionTools UtilsDir
-
-
 If objArgs.Count >=3 Then
 	Select Case objArgs(0)
-		Case "Get"		
+		Case "Get"
 			Wget objArgs(1), Showpath(objArgs(2))
-		Case "GetUnzip"		
+		Case "GetUnzip"
 			WgetUnCompress objArgs(1), Showpath(objArgs(2))
 		Case "GetUnzipSounds"
 			WgetSounds objArgs(1), objArgs(2), Showpath(objArgs(3)), objArgs(4)
@@ -96,26 +92,34 @@ Sub WgetUnCompress(URL, DestFolder)
 End Sub
 
 Sub GetCompressionTools(DestFolder)
-	Dim oExec
 	Dim tries
-
-	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
+	Dim max_tries
 	tries = 0
-	While Not FSO.FileExists(DestFolder & "7za.exe") And tries < 2
-		WScript.Sleep(Int(10000*Rnd)) 
-		If Not FSO.FileExists(DestFolder & "7za.tag") And Not FSO.FileExists(DestFolder & "7za.exe") Then 
-			Set MyFile = fso.CreateTextFile(DestFolder & "7za.tag", True)
+	max_tries = 10
+	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
+	If Not FSO.FileExists(DestFolder & "7za.exe") Then
+		On Error Resume Next
+		Set MyFile = FSO.CreateTextFile(DestFolder & "7za.tag", False)
+		If Err <> 0 Then Wscript.echo("Downloading 7za: " & DestFolder & "7za.tag - " & Err.Description) End If
+		On Error Goto 0
+		If Not IsEmpty(MyFile) Then
 			MyFile.WriteLine("This file marks a pending download for 7za.exe so we don't download it twice at the same time")
 			MyFile.Close
-				
-				Wget ToolsBase & "7za.exe", DestFolder
-			
-			FSO.DeleteFile DestFolder & "7za.tag" ,true 
-		Else
-			WScript.Sleep(5000)
-			tries = tries + 1
-		End If	
-	WEnd	
+			Wget ToolsBase & "7za.exe", DestFolder
+			FSO.DeleteFile DestFolder & "7za.tag", true
+			Wscript.echo("Downloaded 7za.exe")
+		End If
+		WScript.Sleep(500)
+	End If
+	Do While FSO.FileExists(DestFolder & "7za.tag") And tries < max_tries
+		Wscript.echo("Waiting for 7za.exe to be downloaded")
+		WScript.Sleep(1000)
+		tries = tries + 1
+	Loop
+	If tries = max_tries Then
+		Wscript.echo("ERROR: Download of 7za.exe takes too much time")
+		Wscript.quit 99
+	End If
 End Sub
 
 Sub GetWgetEXE(DestFolder)
@@ -127,13 +131,18 @@ Sub GetWgetEXE(DestFolder)
 End Sub
 
 Function Strip(Str)
-	Set oRE = New Regexp 
-	oRE.Pattern = "[\W_]" 
-	oRE.Global = True 
-	Strip=oRE.Replace(Str, "") 
+	Set oRE = New Regexp
+	oRE.Pattern = "[\W_]"
+	oRE.Global = True
+	Strip = Right(oRE.Replace(Str, ""), 20)
 End Function
 
 Sub UnCompress(Archive, DestFolder)
+	Dim Fn
+	Dim batname
+	
+	GetCompressionTools UtilsDir
+	
 	batname = "tmp" & Strip(Archive) & CStr(Int(10000*Rnd)) & ".bat"
 	wscript.echo("Extracting: " & Archive & " - using: " & batname)
 	Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
@@ -143,44 +152,38 @@ Sub UnCompress(Archive, DestFolder)
 	Do
 		WScript.Echo OExec.StdOut.ReadLine()
 	Loop While Not OExec.StdOut.atEndOfStream
-	wscript.echo("Ready extracting: " & Archive)	
+	wscript.echo("Ready extracting: " & Archive)
 	Fn = Left(Archive, Len(Archive)-3)
 	If FSO.FileExists(Fn) Then
-		WScript.Sleep(100)
-		wscript.echo("Processing: " & Fn & " - deleting " & batname)
-		FSO.DeleteFile UtilsDir & batname, True
-		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
+		Set MyFile = FSO.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Fn & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
 		Set oExec = WshShell.Exec(UtilsDir & batname)
 		Do
 			WScript.Echo OExec.StdOut.ReadLine()
 		Loop While Not OExec.StdOut.atEndOfStream
-		wscript.echo("Ready extracting: " & Fn)	
+		wscript.echo("Ready extracting: " & Fn)
 		WScript.Sleep(500)
 		wscript.echo("Deleting: " & Fn)
 		FSO.DeleteFile Fn,true
 	End If
-	Fn= Fn & tar
+	Fn = Fn & tar
 	If FSO.FileExists(Fn) Then
-		WScript.Sleep(100)
-		wscript.echo("Processing: " & Fn & " - deleting " & batname)
-		FSO.DeleteFile UtilsDir & batname, True
-		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
+		Set MyFile = FSO.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Fn & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
 		Set oExec = WshShell.Exec(UtilsDir & batname)
 		Do
 			WScript.Echo OExec.StdOut.ReadLine()
 		Loop While Not OExec.StdOut.atEndOfStream
-		wscript.echo("Ready extracting: " & Fn )	
+		wscript.echo("Ready extracting: " & Fn )
 		WScript.Sleep(500)
 		wscript.echo("Deleting: " & Fn)
 		FSO.DeleteFile Fn,true
 	End If
 
 	WScript.Sleep(500)
-	If FSO.FileExists(UtilsDir & batname)Then
+	If FSO.FileExists(UtilsDir & batname) Then
 		FSO.DeleteFile UtilsDir & batname, True
 	End If
 End Sub
@@ -192,8 +195,8 @@ Sub Wget(URL, DestFolder)
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
 
 	If UseWgetEXE Then
-		Wscript.echo("Downloading (wget): " & URL)
-		batname = "tmp" & CStr(Int(100000*Rnd)) & ".bat"
+		Wscript.echo("wget: " & URL)
+		batname = "tmp" & CStr(Int(10000*Rnd)) & ".bat"
 		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@cd " & quote & DestFolder & quote)
 		MyFile.WriteLine("@" & quote & UtilsDir & "wget.exe" & quote & " " & URL)
@@ -204,11 +207,11 @@ Sub Wget(URL, DestFolder)
 		Loop While Not OExec.StdOut.atEndOfStream
 
 	Else
-		Wscript.echo("Downloading (HTTP GET): " & URL)
+		Wscript.echo("XMLHTTP GET: " & URL)
 
 		xml.Open "GET", URL, False
 		xml.Send
-		
+
 		Const adTypeBinary = 1
 		Const adSaveCreateOverWrite = 2
 		Const adSaveCreateNotExist = 1
@@ -373,7 +376,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		'Get revision hash
 		strRevision = ExecAndGetResult(tmpFolder, VersionDir, "git rev-list -n1 --abbrev=10 --abbrev-commit HEAD")
 		strRevisionHuman = ExecAndGetResult(tmpFolder, VersionDir, "git rev-list -n1 --abbrev=7 --abbrev-commit HEAD")
-		
+
 		If strLastCommit <> "" And strLastCommitHuman <> "" And strRevision <> "" And strRevisionHuman <> "" Then
 			'Bild version string
 			strGitVer = "+git~" & strLastCommit & "~" & strRevision
@@ -416,3 +419,4 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	End If
 
 End Sub
+
