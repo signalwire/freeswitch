@@ -68,7 +68,9 @@
     <CustomBuild Include="cleancount">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading mpg123.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\libmpg123" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/mpg123-1.14.4.tar.bz2 "$(ProjectDir).."</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\libmpg123" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/mpg123-1.14.4.tar.bz2 "$(ProjectDir).."
+if not exist "$(ProjectDir)..\libmpg123" move "$(ProjectDir)..\mpg123-1.14.4" "$(ProjectDir)..\libmpg123"
+</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\libmpg123;%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading mpg123.</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\libmpg123" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/mpg123-1.14.4.tar.bz2 "$(ProjectDir).."
