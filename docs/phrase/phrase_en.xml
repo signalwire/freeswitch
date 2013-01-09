@@ -595,8 +595,8 @@
       <prompt phrase="Your caller I.D. information is..." filename="ivr-your_caller_id_information_is.wav"/>
       <prompt phrase="Call screening has been enabled." filename="ivr-call_screening_enabled.wav"/>
       <prompt phrase="Call screening has been disabled." filename="ivr-call_screening_disabled.wav"/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
+      <prompt phrase="Ain't nobody got time for that!" filename="ivr-aint_nobody_got_time_for_that.wav"/>
+      <prompt phrase="We would support the shit out of you if only you returned our phone calls and emails." filename="ivr-we_would_support.wav"/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
