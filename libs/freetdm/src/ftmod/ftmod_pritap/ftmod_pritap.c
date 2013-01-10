@@ -132,12 +132,12 @@ static int parse_debug(const char *in)
 		return 0;
 	}
 
-	if (strstr(in, "all")) {
-		return PRI_DEBUG_ALL;
+	if (!strcmp(in, "none")) {
+		return 0;
 	}
 
-	if (strstr(in, "none")) {
-		return 0;
+	if (!strcmp(in, "all")) {
+		return PRI_DEBUG_ALL;
 	}
 
 	if (strstr(in, "q921_all")) {
