@@ -575,7 +575,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		private_info->ready = 1;
 
-		if ((timer->interval == 10 || timer->interval == 30) && runtime.microseconds_per_tick > 10000) {
+		if (runtime.microseconds_per_tick > 10000  && (timer->interval % (int)(runtime.microseconds_per_tick / 1000)) != 0 && (timer->interval % 10) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Increasing global timer resolution to 10ms to handle interval %d\n", timer->interval);
 			runtime.microseconds_per_tick = 10000;
 		}
