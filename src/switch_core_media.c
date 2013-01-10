@@ -4354,7 +4354,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					"v=0\n"
 					"o=%s %010u %010u IN %s %s\n"
 					"s=%s\n"
-					"c=IN %s %s\n" "t=0 0\n"
+					"c=IN %s %s\n" 
+					"t=0 0\n"
 					"%s",
 					username, smh->owner_id, smh->session_id, family, ip, username, family, ip, srbuf);
 
@@ -4381,6 +4382,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 		
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
+
+		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "c=IN %s %s\n", family, ip);
+		}
 
 
 		if (smh->mparams->rtcp_audio_interval_msec) {
