@@ -101,13 +101,28 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(pritap_outgoing_call)
 
 static void s_pri_error(struct pri *pri, char *s)
 {
-	ftdm_log(FTDM_LOG_ERROR, "%s", s);
+	pritap_t *pritap = pri_get_userdata(pri);
+
+	if (pritap && pritap->dchan) {
+		ftdm_log_chan(pritap->dchan, FTDM_LOG_ERROR, "%s", s);
+	} else {
+		ftdm_log(FTDM_LOG_ERROR, "%s", s);
+	}
 }
 
 static void s_pri_message(struct pri *pri, char *s)
 {
-	ftdm_log(FTDM_LOG_DEBUG, "%s", s);
+	pritap_t *pritap = pri_get_userdata(pri);
+
+	if (pritap && pritap->dchan) {
+		ftdm_log_chan(pritap->dchan, FTDM_LOG_DEBUG, "%s", s);
+	} else {
+		ftdm_log(FTDM_LOG_DEBUG, "%s", s);
+	}
 }
+
+#define PRI_DEBUG_Q921_ALL (PRI_DEBUG_Q921_RAW | PRI_DEBUG_Q921_DUMP | PRI_DEBUG_Q921_STATE)
+#define PRI_DEBUG_Q931_ALL (PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE | PRI_DEBUG_Q931_ANOMALY)
 
 static int parse_debug(const char *in)
 {
@@ -115,6 +130,18 @@ static int parse_debug(const char *in)
 
 	if (!in) {
 		return 0;
+	}
+
+	if (strstr(in, "all")) {
+		return PRI_DEBUG_ALL;
+	}
+
+	if (strstr(in, "none")) {
+		return 0;
+	}
+
+	if (strstr(in, "q921_all")) {
+		flags |= PRI_DEBUG_Q921_ALL;
 	}
 
 	if (strstr(in, "q921_raw")) {
@@ -131,6 +158,10 @@ static int parse_debug(const char *in)
 
 	if (strstr(in, "config")) {
 		flags |= PRI_DEBUG_CONFIG;
+	}
+
+	if (strstr(in, "q931_all")) {
+		flags |= PRI_DEBUG_Q931_ALL;
 	}
 
 	if (strstr(in, "q931_dump")) {
@@ -151,14 +182,6 @@ static int parse_debug(const char *in)
 
 	if (strstr(in, "aoc")) {
 		flags |= PRI_DEBUG_AOC;
-	}
-
-	if (strstr(in, "all")) {
-		flags |= PRI_DEBUG_ALL;
-	}
-
-	if (strstr(in, "none")) {
-		flags = 0;
 	}
 
 	return flags;
@@ -400,16 +423,30 @@ static int pri_io_read(struct pri *pri, void *buf, int buflen)
 	res = (int)len;
 
 	memset(&((unsigned char*)buf)[res],0,2);
-
 	res += 2;
 
+	/* libpri passive q921 raw dump does not work for all frames */
+	if (pritap->debug & PRI_DEBUG_Q921_RAW) {
+		char hbuf[2048] = { 0 };
+
+		print_hex_bytes(buf, len, hbuf, sizeof(hbuf));
+		ftdm_log_chan(pritap->dchan, FTDM_LOG_DEBUG, "READ %"FTDM_SIZE_FMT"\n%s\n", len, hbuf);
+	}
 	return res;
 }
 
 static int pri_io_write(struct pri *pri, void *buf, int buflen)
 {
 	pritap_t *pritap = pri_get_userdata(pri);
-	ftdm_size_t len = buflen - 2; 
+	ftdm_size_t len = buflen - 2;
+
+	/* libpri passive q921 raw dump does not work for all frames */
+	if (pritap->debug & PRI_DEBUG_Q921_RAW) {
+		char hbuf[2048] = { 0 };
+
+		print_hex_bytes(buf, len, hbuf, sizeof(hbuf));
+		ftdm_log_chan(pritap->dchan, FTDM_LOG_DEBUG, "WRITE %"FTDM_SIZE_FMT"\n%s\n", len, hbuf);
+	}
 
 	if (ftdm_channel_write(pritap->dchan, buf, buflen, &len) != FTDM_SUCCESS) {
 		ftdm_log(FTDM_LOG_CRIT, "span %d D channel write failed! [%s]\n", pritap->span->span_id, pritap->dchan->last_error);
