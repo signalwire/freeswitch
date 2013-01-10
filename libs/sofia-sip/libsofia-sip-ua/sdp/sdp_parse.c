@@ -1329,8 +1329,8 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
 
   /* RTP format list */
   if (*r && sdp_media_has_rtp(m)) {
-    parse_payload(p, r, &m->m_rtpmaps);
-    return;
+	  parse_payload(p, r, &m->m_rtpmaps);
+	  return;
   }
 
   /* "normal" format list */
@@ -1602,8 +1602,9 @@ static void parse_media_attr(sdp_parser_t *p, char *r, sdp_media_t *m,
   }
 
   if (rtp && su_casematch(name, "rtpmap")) {
-    if ((n = parse_rtpmap(p, r, m)) == 0 || n < -1)
-      return;
+
+	  if ((n = parse_rtpmap(p, r, m)) == 0 || n < -1)
+		  return;
   }
   else if (rtp && su_casematch(name, "fmtp")) {
     if ((n = parse_fmtp(p, r, m)) == 0 || n < -1)

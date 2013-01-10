@@ -619,6 +619,8 @@ struct sofia_profile {
 	uint32_t reg_acl_count;
 	char *nat_acl[SOFIA_MAX_ACL];
 	uint32_t nat_acl_count;
+	char *cand_acl[SWITCH_MAX_CAND_ACL];
+	uint32_t cand_acl_count;
 	int server_rport_level;
 	int client_rport_level;
 	sofia_presence_type_t pres_type;

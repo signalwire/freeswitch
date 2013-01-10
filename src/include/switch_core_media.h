@@ -38,6 +38,8 @@
 
 SWITCH_BEGIN_EXTERN_C
 
+#define SWITCH_MAX_CAND_ACL 25
+
 typedef enum {
 	DTMF_2833,
 	DTMF_INFO,
@@ -242,6 +244,7 @@ SWITCH_DECLARE(void) switch_core_media_reset_autofix_timing(switch_core_session_
 SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t media);
 SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_add_ice_acl(switch_core_session_t *session, switch_media_type_t type, const char *acl_name);
 
 SWITCH_END_EXTERN_C
 #endif

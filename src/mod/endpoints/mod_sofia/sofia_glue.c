@@ -72,7 +72,7 @@ void sofia_glue_set_name(private_object_t *tech_pvt, const char *channame)
 void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame)
 {
 
-	unsigned int x;
+	unsigned int x, i;
 
 	switch_assert(session != NULL);
 	switch_assert(profile != NULL);
@@ -167,6 +167,10 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_media_handle_set_media_flags(tech_pvt->media_handle, tech_pvt->profile->media_flags);
 
 
+	for(i = 0; i < profile->cand_acl_count; i++) {
+		switch_core_media_add_ice_acl(session, SWITCH_MEDIA_TYPE_AUDIO, profile->cand_acl[i]);
+		switch_core_media_add_ice_acl(session, SWITCH_MEDIA_TYPE_VIDEO, profile->cand_acl[i]);
+	}
 
 
 	switch_core_session_set_private(session, tech_pvt);

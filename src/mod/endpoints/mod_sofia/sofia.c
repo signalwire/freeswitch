@@ -4359,6 +4359,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
+
+					} else if (!strcasecmp(var, "apply-candidate-acl")) {
+						if (profile->cand_acl_count < SWITCH_MAX_CAND_ACL) {
+							profile->cand_acl[profile->cand_acl_count++] = strdup(val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SWITCH_MAX_CAND_ACL);
+						}
 					} else if (!strcasecmp(var, "alias")) {
 						sip_alias_node_t *node;
 						if (zstr(val)) {
