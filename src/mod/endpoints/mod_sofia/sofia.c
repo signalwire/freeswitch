@@ -7746,6 +7746,21 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
+	if (!is_auth && sofia_test_pflag(profile, PFLAG_AUTH_CALLS) && sofia_test_pflag(profile, PFLAG_BLIND_AUTH)) {
+		char *user;
+
+		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
+			calling_myself++;
+		}
+
+		if (sip && sip->sip_to) {
+			user = switch_core_session_sprintf(session, "%s@%s", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
+			switch_ivr_set_user(session, user);
+		}
+
+		is_auth++;
+	}
+
 	if (!is_auth &&
 		(sofia_test_pflag(profile, PFLAG_AUTH_CALLS)
 		 || (!sofia_test_pflag(profile, PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization)))) {
