@@ -32,12 +32,19 @@
  */
 
 #include "mod_spandsp.h"
+#include "udptl.h"
 #include "mod_spandsp_modem.h"
 
 #if defined(MODEM_SUPPORT)
 #ifndef WIN32
 #include <poll.h>
 #endif
+
+#define LOCAL_FAX_MAX_DATAGRAM      400
+#define MAX_FEC_ENTRIES             4
+#define MAX_FEC_SPAN                4
+#define DEFAULT_FEC_ENTRIES         3
+#define DEFAULT_FEC_SPAN            3
 
 static struct {
 	int NEXT_ID;
@@ -70,6 +77,10 @@ static struct modem_state MODEM_STATE[] = {
 
 static modem_t *acquire_modem(int index);
 
+static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count)
+{
+	return 0;
+}
 
 static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, size_t len)
 {
@@ -216,7 +227,7 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 #ifdef WIN32
 	COMMTIMEOUTS timeouts = {0};
 #endif
-    logging_state_t *logging;
+	logging_state_t *logging;
 
 	memset(modem, 0, sizeof(*modem));
 
@@ -230,12 +241,12 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 
 #if USE_OPENPTY
 	if (openpty(&modem->master, &modem->slave, NULL, NULL, NULL)) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to initialize pty\n");
-        status = SWITCH_STATUS_FALSE;
-        goto end;	
-    } 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to initialize pty\n");
+		status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
 
-    modem->stty = ttyname(modem->slave);
+	modem->stty = ttyname(modem->slave);
 #else
 #ifdef WIN32
 	modem->slot = 4+globals.NEXT_ID++; /* need work here we start at COM4 for now*/
@@ -337,27 +348,32 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 	modem->threadAbort = CreateEvent(NULL, TRUE, FALSE, NULL);
 #endif
 	
-	if (!(modem->t31_state = t31_init(NULL, t31_at_tx_handler, modem, t31_call_control_handler, modem, NULL, NULL))) {
+	if (!(modem->t31_state = t31_init(NULL, t31_at_tx_handler, modem, t31_call_control_handler, modem, t38_tx_packet_handler, modem))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot initialize the T.31 modem\n");
 		modem_close(modem);
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
+	modem->t38_core = t31_get_t38_core_state(modem->t31_state);
 
 	if (spandsp_globals.modem_verbose) {
-        logging = t31_get_logging_state(modem->t31_state);
+		logging = t31_get_logging_state(modem->t31_state);
 		span_log_set_message_handler(logging, spanfax_log_message, NULL);
 		span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 
-        logging = v17_rx_get_logging_state(&modem->t31_state->audio.modems.fast_modems.v17_rx);
+		logging = v17_rx_get_logging_state(&modem->t31_state->audio.modems.fast_modems.v17_rx);
 		span_log_set_message_handler(logging, spanfax_log_message, NULL);
 		span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 
-        logging = v29_rx_get_logging_state(&modem->t31_state->audio.modems.fast_modems.v29_rx);
+		logging = v29_rx_get_logging_state(&modem->t31_state->audio.modems.fast_modems.v29_rx);
 		span_log_set_message_handler(logging, spanfax_log_message, NULL);
 		span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 
-        logging = v27ter_rx_get_logging_state(&modem->t31_state->audio.modems.fast_modems.v27ter_rx);
+		logging = v27ter_rx_get_logging_state(&modem->t31_state->audio.modems.fast_modems.v27ter_rx);
+		span_log_set_message_handler(logging, spanfax_log_message, NULL);
+		span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+
+		logging = t38_core_get_logging_state(modem->t38_core);
 		span_log_set_message_handler(logging, spanfax_log_message, NULL);
 		span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 	}
@@ -391,6 +407,7 @@ struct private_object {
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	switch_frame_t read_frame;
+	udptl_state_t udptl_state;
 	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_timer_t timer;
 	modem_t *modem;
@@ -426,8 +443,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 	int to_ticks = 60, ring_ticks = 10, rt = ring_ticks;
 	int rest = 500000;
-    at_state_t *at_state;
-	
+	at_state_t *at_state;
+
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
@@ -453,7 +470,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		ioctl(tech_pvt->modem->slave, TIOCMSET, &tioflags);
 #endif
 
-        at_state = t31_get_at_state(tech_pvt->modem->t31_state);
+		at_state = t31_get_at_state(tech_pvt->modem->t31_state);
 		at_reset_call_info(at_state);
 		at_set_call_info(at_state, "DATE", call_date);
 		at_set_call_info(at_state, "TIME", call_time);
@@ -466,7 +483,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 		modem_set_state(tech_pvt->modem, MODEM_STATE_RINGING);
 		t31_call_event(tech_pvt->modem->t31_state, AT_CALL_EVENT_ALERTING);
-		
+
 		while(to_ticks > 0 && switch_channel_up(channel) && modem_get_state(tech_pvt->modem) == MODEM_STATE_RINGING) {
 			if (--rt <= 0) {
 				t31_call_event(tech_pvt->modem->t31_state, AT_CALL_EVENT_ALERTING);
@@ -1034,8 +1051,8 @@ static void wake_modem_thread(modem_t *modem)
 static int control_handler(modem_t *modem, const char *num, int op)
 {
 	switch_core_session_t *session = NULL;
-    at_state_t *at_state;
-	
+	at_state_t *at_state;
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Control Handler op:%d state:[%s] %s\n", 
 					  op, modem_state2name(modem_get_state(modem)), modem->devlink);
 
@@ -1118,7 +1135,7 @@ static int control_handler(modem_t *modem, const char *num, int op)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1,
 							  "Modem %s [%s] - CTS %s\n", modem->devlink, modem_state2name(modem_get_state(modem)), (int) (intptr_t) num ? "XON" : "XOFF");
 
-            at_state = t31_get_at_state(modem->t31_state);
+			at_state = t31_get_at_state(modem->t31_state);
 			if (num) {
 				x[0] = 0x11;
 				t31_at_tx_handler(at_state, modem, x, 1);
