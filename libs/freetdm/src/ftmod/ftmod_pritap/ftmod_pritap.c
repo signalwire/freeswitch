@@ -45,6 +45,12 @@ typedef enum {
 	PRITAP_MASTER = (1 << 1),
 } pritap_flags_t;
 
+typedef enum {
+	PRITAP_MIX_BOTH = 0,
+	PRITAP_MIX_PEER,
+	PRITAP_MIX_SELF,
+} pritap_mix_mode_t;
+
 typedef struct {
 	void *callref;
 	ftdm_number_t callingnum;
@@ -66,7 +72,7 @@ typedef struct pritap {
 	int32_t flags;
 	struct pri *pri;
 	int debug;
-	uint8_t mixaudio;
+	pritap_mix_mode_t mixaudio;
 	ftdm_channel_t *dchan;
 	ftdm_span_t *span;
 	ftdm_span_t *peerspan;
@@ -976,9 +982,14 @@ static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, 
 		return FTDM_SUCCESS;
 	}
 
-	if (!pritap->mixaudio) {
-		/* No mixing requested */
+	if (pritap->mixaudio == PRITAP_MIX_SELF) {
 		return FTDM_SUCCESS;
+	}
+
+	if (pritap->mixaudio == PRITAP_MIX_PEER) {
+		/* start out by clearing the self audio to make sure we don't return audio we were
+		 * not supposed to in an error condition  */
+		memset(data, FTDM_SILENCE_VALUE(ftdmchan), size);
 	}
 
 	if (ftdmchan->native_codec != peerchan->native_codec) {
@@ -996,6 +1007,12 @@ static ftdm_status_t ftdm_pritap_sig_read(ftdm_channel_t *ftdmchan, void *data, 
 	if (sizeread != size) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "read from peer channel only %"FTDM_SIZE_FMT" bytes!\n", sizeread);
 		return FTDM_FAIL;
+	}
+
+	if (pritap->mixaudio == PRITAP_MIX_PEER) {
+		/* only the peer audio is requested */
+		memcpy(data, peerbuf, size);
+		return FTDM_SUCCESS;
 	}
 
 	codec_func = peerchan->native_codec == FTDM_CODEC_ULAW ? fio_ulaw2slin : peerchan->native_codec == FTDM_CODEC_ALAW ? fio_alaw2slin : NULL;
@@ -1053,7 +1070,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 	uint32_t i;
 	const char *var, *val;
 	const char *debug = NULL;
-	uint8_t mixaudio = 1;
+	pritap_mix_mode_t mixaudio = PRITAP_MIX_BOTH;
 	ftdm_channel_t *dchan = NULL;
 	pritap_t *pritap = NULL;
 	ftdm_span_t *peerspan = NULL;
@@ -1084,7 +1101,16 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_pritap_configure_span)
 		if (!strcasecmp(var, "debug")) {
 			debug = val;
 		} else if (!strcasecmp(var, "mixaudio")) {
-			mixaudio = ftdm_true(val);
+			if (ftdm_true(val) || !strcasecmp(val, "both")) {
+				ftdm_log(FTDM_LOG_DEBUG, "Setting mix audio mode to 'both' for span %s\n", span->name);
+				mixaudio = PRITAP_MIX_BOTH;
+			} else if (!strcasecmp(val, "peer")) {
+				ftdm_log(FTDM_LOG_DEBUG, "Setting mix audio mode to 'peer' for span %s\n", span->name);
+				mixaudio = PRITAP_MIX_PEER;
+			} else {
+				ftdm_log(FTDM_LOG_DEBUG, "Setting mix audio mode to 'self' for span %s\n", span->name);
+				mixaudio = PRITAP_MIX_SELF;
+			}
 		} else if (!strcasecmp(var, "interface")) {
 			if (!strcasecmp(val, "cpe")) {
 				iface = PRITAP_IFACE_CPE;
