@@ -184,8 +184,8 @@ enum
 
 static int restart_modem(t31_state_t *s, int new_modem);
 static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int ok);
-static void hdlc_accept_frame2(void *user_data, const uint8_t *msg, int len, int ok);
-static void hdlc_accept_frame3(void *user_data, const uint8_t *msg, int len, int ok);
+static void hdlc_accept_t38_frame(void *user_data, const uint8_t *msg, int len, int ok);
+static void hdlc_accept_non_ecm_frame(void *user_data, const uint8_t *msg, int len, int ok);
 static int silence_rx(void *user_data, const int16_t amp[], int len);
 static int cng_rx(void *user_data, const int16_t amp[], int len);
 static void non_ecm_put_bit(void *user_data, int bit);
@@ -501,7 +501,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             }
             else
             {
-                hdlc_accept_frame2(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
+                hdlc_accept_t38_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
             }
             /*endif*/
         }
@@ -527,7 +527,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             if (data_type == T38_DATA_V21)
                 hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
             else
-                hdlc_accept_frame2(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+                hdlc_accept_t38_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
             /*endif*/
         }
         /*endif*/
@@ -572,7 +572,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             }
             else
             {
-                hdlc_accept_frame2(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
+                hdlc_accept_t38_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
                 non_ecm_rx_status(s, SIG_STATUS_CARRIER_DOWN);
             }
             /*endif*/
@@ -603,7 +603,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             }
             else
             {
-                hdlc_accept_frame2(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+                hdlc_accept_t38_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
                 non_ecm_rx_status(s, SIG_STATUS_CARRIER_DOWN);
             }
             /*endif*/
@@ -1340,9 +1340,11 @@ static int t31_modem_control_handler(at_state_t *s, void *user_data, int op, con
     {
     case AT_MODEM_CONTROL_CALL:
         t->call_samples = 0;
+        t38_core_restart(&t->t38_fe.t38);
         break;
     case AT_MODEM_CONTROL_ANSWER:
         t->call_samples = 0;
+        t38_core_restart(&t->t38_fe.t38);
         break;
     case AT_MODEM_CONTROL_ONHOOK:
         if (t->non_ecm_tx.holding)
@@ -1511,7 +1513,7 @@ static int non_ecm_get_bit(void *user_data)
         if (s->non_ecm_tx.out_bytes != s->non_ecm_tx.in_bytes)
         {
             /* There is real data available to send */
-            s->audio.current_byte = s->non_ecm_tx.data[s->non_ecm_tx.out_bytes++];
+            s->audio.current_byte = s->non_ecm_tx.buf[s->non_ecm_tx.out_bytes++];
             if (s->non_ecm_tx.out_bytes > T31_TX_BUF_LEN - 1)
             {
                 s->non_ecm_tx.out_bytes = T31_TX_BUF_LEN - 1;
@@ -1569,7 +1571,7 @@ static int non_ecm_get(void *user_data, uint8_t buf[], int len)
         if (s->non_ecm_tx.out_bytes != s->non_ecm_tx.in_bytes)
         {
             /* There is real data available to send */
-            buf[i] = s->non_ecm_tx.data[s->non_ecm_tx.out_bytes++];
+            buf[i] = s->non_ecm_tx.buf[s->non_ecm_tx.out_bytes++];
             if (s->non_ecm_tx.out_bytes > T31_TX_BUF_LEN - 1)
             {
                 s->non_ecm_tx.out_bytes = T31_TX_BUF_LEN - 1;
@@ -1865,7 +1867,7 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
 }
 /*- End of function --------------------------------------------------------*/
 
-static void hdlc_accept_frame2(void *user_data, const uint8_t *msg, int len, int ok)
+static void hdlc_accept_t38_frame(void *user_data, const uint8_t *msg, int len, int ok)
 {
     t31_state_t *s;
     int i;
@@ -1880,7 +1882,8 @@ static void hdlc_accept_frame2(void *user_data, const uint8_t *msg, int len, int
     uint8_t buf2[2*len + 20];
 #endif
 
-    /* Accept an ECM image mode HDLC frame received as T.38 */
+    /* Accept an ECM image mode HDLC frame, received as T.38, and convert to an HDLC
+       bit stream to be fed to the FAX software. */
     if (len < 0)
         return;
     /*endif*/
@@ -1892,33 +1895,33 @@ static void hdlc_accept_frame2(void *user_data, const uint8_t *msg, int len, int
         crc ^= 0xFFFF;
     /*endif*/
     ptr = 0;
-    buf2[ptr++] = s->t38_fe.hdlc_tx_term.idle_octet;
-    buf2[ptr++] = s->t38_fe.hdlc_tx_term.idle_octet;
+    buf2[ptr++] = s->t38_fe.hdlc_tx_non_ecm.idle_octet;
+    buf2[ptr++] = s->t38_fe.hdlc_tx_non_ecm.idle_octet;
     for (pos = 0;  pos < len;  pos++)
     {
         byte_in_progress = msg[pos];
         i = bottom_bit(byte_in_progress | 0x100);
-        s->t38_fe.hdlc_tx_term.octets_in_progress <<= i;
+        s->t38_fe.hdlc_tx_non_ecm.octets_in_progress <<= i;
         byte_in_progress >>= i;
         for (  ;  i < 8;  i++)
         {
-            s->t38_fe.hdlc_tx_term.octets_in_progress = (s->t38_fe.hdlc_tx_term.octets_in_progress << 1) | (byte_in_progress & 0x01);
+            s->t38_fe.hdlc_tx_non_ecm.octets_in_progress = (s->t38_fe.hdlc_tx_non_ecm.octets_in_progress << 1) | (byte_in_progress & 0x01);
             byte_in_progress >>= 1;
-            if ((s->t38_fe.hdlc_tx_term.octets_in_progress & 0x1F) == 0x1F)
+            if ((s->t38_fe.hdlc_tx_non_ecm.octets_in_progress & 0x1F) == 0x1F)
             {
                 /* There are 5 ones - stuff */
-                s->t38_fe.hdlc_tx_term.octets_in_progress <<= 1;
-                s->t38_fe.hdlc_tx_term.num_bits++;
+                s->t38_fe.hdlc_tx_non_ecm.octets_in_progress <<= 1;
+                s->t38_fe.hdlc_tx_non_ecm.num_bits++;
             }
             /*endif*/
         }
         /*endfor*/
         /* An input byte will generate between 8 and 10 output bits */
-        buf2[ptr++] = (s->t38_fe.hdlc_tx_term.octets_in_progress >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
-        if (s->t38_fe.hdlc_tx_term.num_bits >= 8)
+        buf2[ptr++] = (s->t38_fe.hdlc_tx_non_ecm.octets_in_progress >> s->t38_fe.hdlc_tx_non_ecm.num_bits) & 0xFF;
+        if (s->t38_fe.hdlc_tx_non_ecm.num_bits >= 8)
         {
-            s->t38_fe.hdlc_tx_term.num_bits -= 8;
-            buf2[ptr++] = (s->t38_fe.hdlc_tx_term.octets_in_progress >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
+            s->t38_fe.hdlc_tx_non_ecm.num_bits -= 8;
+            buf2[ptr++] = (s->t38_fe.hdlc_tx_non_ecm.octets_in_progress >> s->t38_fe.hdlc_tx_non_ecm.num_bits) & 0xFF;
         }
         /*endif*/
     }
@@ -1929,27 +1932,27 @@ static void hdlc_accept_frame2(void *user_data, const uint8_t *msg, int len, int
         byte_in_progress = crc & 0xFF;
         crc >>= 8;
         i = bottom_bit(byte_in_progress | 0x100);
-        s->t38_fe.hdlc_tx_term.octets_in_progress <<= i;
+        s->t38_fe.hdlc_tx_non_ecm.octets_in_progress <<= i;
         byte_in_progress >>= i;
         for (  ;  i < 8;  i++)
         {
-            s->t38_fe.hdlc_tx_term.octets_in_progress = (s->t38_fe.hdlc_tx_term.octets_in_progress << 1) | (byte_in_progress & 0x01);
+            s->t38_fe.hdlc_tx_non_ecm.octets_in_progress = (s->t38_fe.hdlc_tx_non_ecm.octets_in_progress << 1) | (byte_in_progress & 0x01);
             byte_in_progress >>= 1;
-            if ((s->t38_fe.hdlc_tx_term.octets_in_progress & 0x1F) == 0x1F)
+            if ((s->t38_fe.hdlc_tx_non_ecm.octets_in_progress & 0x1F) == 0x1F)
             {
                 /* There are 5 ones - stuff */
-                s->t38_fe.hdlc_tx_term.octets_in_progress <<= 1;
-                s->t38_fe.hdlc_tx_term.num_bits++;
+                s->t38_fe.hdlc_tx_non_ecm.octets_in_progress <<= 1;
+                s->t38_fe.hdlc_tx_non_ecm.num_bits++;
             }
             /*endif*/
         }
         /*endfor*/
         /* An input byte will generate between 8 and 10 output bits */
-        buf2[ptr++] = (s->t38_fe.hdlc_tx_term.octets_in_progress >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
-        if (s->t38_fe.hdlc_tx_term.num_bits >= 8)
+        buf2[ptr++] = (s->t38_fe.hdlc_tx_non_ecm.octets_in_progress >> s->t38_fe.hdlc_tx_non_ecm.num_bits) & 0xFF;
+        if (s->t38_fe.hdlc_tx_non_ecm.num_bits >= 8)
         {
-            s->t38_fe.hdlc_tx_term.num_bits -= 8;
-            buf2[ptr++] = (s->t38_fe.hdlc_tx_term.octets_in_progress >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
+            s->t38_fe.hdlc_tx_non_ecm.num_bits -= 8;
+            buf2[ptr++] = (s->t38_fe.hdlc_tx_non_ecm.octets_in_progress >> s->t38_fe.hdlc_tx_non_ecm.num_bits) & 0xFF;
         }
         /*endif*/
     }
@@ -1958,21 +1961,21 @@ static void hdlc_accept_frame2(void *user_data, const uint8_t *msg, int len, int
     /* Finish off the current byte with some flag bits. If we are at the
        start of a byte we need a at least one whole byte of flag to ensure
        we cannot end up with back to back frames, and no flag octet at all */
-    txbyte = (uint8_t) ((s->t38_fe.hdlc_tx_term.octets_in_progress << (8 - s->t38_fe.hdlc_tx_term.num_bits)) | (0x7E >> s->t38_fe.hdlc_tx_term.num_bits));
+    txbyte = (uint8_t) ((s->t38_fe.hdlc_tx_non_ecm.octets_in_progress << (8 - s->t38_fe.hdlc_tx_non_ecm.num_bits)) | (0x7E >> s->t38_fe.hdlc_tx_non_ecm.num_bits));
     /* Create a rotated octet of flag for idling... */
-    s->t38_fe.hdlc_tx_term.idle_octet = (0x7E7E >> s->t38_fe.hdlc_tx_term.num_bits) & 0xFF;
+    s->t38_fe.hdlc_tx_non_ecm.idle_octet = (0x7E7E >> s->t38_fe.hdlc_tx_non_ecm.num_bits) & 0xFF;
     /* ...and the partial flag octet needed to start off the next message. */
-    s->t38_fe.hdlc_tx_term.octets_in_progress = s->t38_fe.hdlc_tx_term.idle_octet >> (8 - s->t38_fe.hdlc_tx_term.num_bits);
+    s->t38_fe.hdlc_tx_non_ecm.octets_in_progress = s->t38_fe.hdlc_tx_non_ecm.idle_octet >> (8 - s->t38_fe.hdlc_tx_non_ecm.num_bits);
     buf2[ptr++] = txbyte;
 
-    buf2[ptr++] = s->t38_fe.hdlc_tx_term.idle_octet;
-    buf2[ptr++] = s->t38_fe.hdlc_tx_term.idle_octet;
+    buf2[ptr++] = s->t38_fe.hdlc_tx_non_ecm.idle_octet;
+    buf2[ptr++] = s->t38_fe.hdlc_tx_non_ecm.idle_octet;
     bit_reverse(buf2, buf2, ptr);
     non_ecm_put(s, buf2, ptr);
 }
 /*- End of function --------------------------------------------------------*/
 
-static void hdlc_accept_frame3(void *user_data, const uint8_t *msg, int len, int ok)
+static void hdlc_accept_non_ecm_frame(void *user_data, const uint8_t *msg, int len, int ok)
 {
     t31_state_t *s;
 
@@ -2337,12 +2340,12 @@ static __inline__ void dle_unstuff_fake_hdlc(t31_state_t *s, const char *stuffed
             }
             else if (s->at_state.p.double_escape  &&  stuffed[i] == SUB)
             {
-                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_term, bit_reverse8(DLE));
-                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_term, bit_reverse8(DLE));
+                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_non_ecm, bit_reverse8(DLE));
+                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_non_ecm, bit_reverse8(DLE));
             }
             else
             {
-                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_term, bit_reverse8(stuffed[i]));
+                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_non_ecm, bit_reverse8(stuffed[i]));
             }
             /*endif*/
         }
@@ -2351,7 +2354,7 @@ static __inline__ void dle_unstuff_fake_hdlc(t31_state_t *s, const char *stuffed
             if (stuffed[i] == DLE)
                 s->dled = TRUE;
             else
-                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_term, bit_reverse8(stuffed[i]));
+                hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_non_ecm, bit_reverse8(stuffed[i]));
             /*endif*/
         }
         /*endif*/
@@ -2378,12 +2381,12 @@ static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
             /*endif*/
             if (s->at_state.p.double_escape  &&  stuffed[i] == SUB)
             {
-                s->non_ecm_tx.data[s->non_ecm_tx.in_bytes++] = DLE;
-                s->non_ecm_tx.data[s->non_ecm_tx.in_bytes++] = DLE;
+                s->non_ecm_tx.buf[s->non_ecm_tx.in_bytes++] = DLE;
+                s->non_ecm_tx.buf[s->non_ecm_tx.in_bytes++] = DLE;
             }
             else
             {
-                s->non_ecm_tx.data[s->non_ecm_tx.in_bytes++] = stuffed[i];
+                s->non_ecm_tx.buf[s->non_ecm_tx.in_bytes++] = stuffed[i];
             }
             /*endif*/
         }
@@ -2392,7 +2395,7 @@ static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
             if (stuffed[i] == DLE)
                 s->dled = TRUE;
             else
-                s->non_ecm_tx.data[s->non_ecm_tx.in_bytes++] = stuffed[i];
+                s->non_ecm_tx.buf[s->non_ecm_tx.in_bytes++] = stuffed[i];
             /*endif*/
         }
         /*endif*/
@@ -2703,7 +2706,7 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
         {
             /* Make room for new data in existing data buffer. */
             s->non_ecm_tx.in_bytes -= s->non_ecm_tx.out_bytes;
-            memmove(&s->non_ecm_tx.data[0], &s->non_ecm_tx.data[s->non_ecm_tx.out_bytes], s->non_ecm_tx.in_bytes);
+            memmove(&s->non_ecm_tx.buf[0], &s->non_ecm_tx.buf[s->non_ecm_tx.out_bytes], s->non_ecm_tx.in_bytes);
             s->non_ecm_tx.out_bytes = 0;
         }
         /*endif*/
@@ -2975,8 +2978,8 @@ static int t31_t38_fe_init(t31_state_t *t,
 
     t->hdlc_tx.ptr = 0;
 
-    hdlc_tx_init(&s->hdlc_tx_term, FALSE, 1, FALSE, hdlc_tx_underflow2, s);
-    hdlc_rx_init(&s->hdlc_rx_term, FALSE, TRUE, 2, hdlc_accept_frame3, t);
+    hdlc_tx_init(&s->hdlc_tx_non_ecm, FALSE, 1, FALSE, hdlc_tx_underflow2, s);
+    hdlc_rx_init(&s->hdlc_rx_non_ecm, FALSE, TRUE, 2, hdlc_accept_non_ecm_frame, t);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

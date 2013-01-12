@@ -116,11 +116,11 @@ typedef struct
     int octets_per_data_packet;
 
     /*! \brief An HDLC context used when sending HDLC messages to the terminal port
-               (ECM mode support). */
-    hdlc_tx_state_t hdlc_tx_term;
+               as if it were non-ECM data (ECM mode support). */
+    hdlc_tx_state_t hdlc_tx_non_ecm;
     /*! \brief An HDLC context used when receiving HDLC messages from the terminal port.
-               (ECM mode support). */
-    hdlc_rx_state_t hdlc_rx_term;
+               as if it were non-ECM data (ECM mode support). */
+    hdlc_rx_state_t hdlc_rx_non_ecm;
 
     struct
     {
@@ -196,7 +196,7 @@ struct t31_state_s
     struct
     {
         /*! \brief The transmit buffer. */
-        uint8_t data[T31_TX_BUF_LEN];
+        uint8_t buf[T31_TX_BUF_LEN];
         /*! \brief The number of bytes stored in the transmit buffer. */
         int in_bytes;
         /*! \brief The number of bytes sent from the transmit buffer. */
