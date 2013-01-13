@@ -241,12 +241,19 @@ typedef enum {
 	ENTRY_MOVE_PREV
 } entry_move_t;
 
+typedef enum {
+	SEARCH_BY_FIRST_NAME,
+	SEARCH_BY_LAST_NAME,
+	SEARCH_BY_FIRST_AND_LAST_NAME,
+	SEARCH_BY_FULL_NAME
+} search_by_t;
+
 struct search_params {
 	char digits[255];
 	char transfer_to[255];
 	char domain[255];
 	char profile[255];
-	int search_by_last_name;
+	search_by_t search_by;
 	int timeout;
 	int try_again;
 };
@@ -759,7 +766,7 @@ switch_status_t gather_name_digit(switch_core_session_t *session, dir_profile_t 
 
 		/* Gather the user Name */
 
-		switch_snprintf(macro, sizeof(macro), "%s:%c", (params->search_by_last_name ? "last_name" : "first_name"), *profile->switch_order_key);
+		switch_snprintf(macro, sizeof(macro), "%s:%c", (params->search_by == SEARCH_BY_LAST_NAME ? "last_name" : "first_name"), *profile->switch_order_key);
 		switch_ivr_phrase_macro(session, DIR_INTRO, macro, NULL, &args);
 
 		while (switch_channel_ready(channel)) {
@@ -768,10 +775,10 @@ switch_status_t gather_name_digit(switch_core_session_t *session, dir_profile_t 
 				break;
 			}
 			if (cbr.digit == *profile->switch_order_key) {
-				if (params->search_by_last_name) {
-					params->search_by_last_name = 0;
+				if (params->search_by == SEARCH_BY_LAST_NAME) {
+					params->search_by = SEARCH_BY_FIRST_NAME;
 				} else {
-					params->search_by_last_name = 1;
+					params->search_by = SEARCH_BY_LAST_NAME;
 				}
 				loop = 1;
 				break;
@@ -792,7 +799,7 @@ switch_status_t gather_name_digit(switch_core_session_t *session, dir_profile_t 
 switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *profile, search_params_t *params)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *sql = NULL;
+	char *sql = NULL, *sql_where = NULL;
 	char entry_count[80] = "";
 	callback_t cbt = { 0 };
 	int result_count;
@@ -802,10 +809,18 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 	cbt.buf = entry_count;
 	cbt.len = sizeof(entry_count);
 
-	sql =
-		switch_mprintf("select count(*) from directory_search where hostname = '%q' and uuid = '%q' and name_visible = 1 and %s like '%q%%'",
-					   globals.hostname, switch_core_session_get_uuid(session), (params->search_by_last_name ? "last_name_digit" : "first_name_digit"),
-					   params->digits);
+	if (params->search_by == SEARCH_BY_FIRST_AND_LAST_NAME) {
+		sql_where = switch_mprintf("hostname = '%q' and uuid = '%q' and name_visible = 1 and (%s like '%q%%' or %s like '%q%%'",
+				globals.hostname, switch_core_session_get_uuid(session), "last_name_digit", params->digits, "first_name_digit", params->digits);
+	} else if (params->search_by == SEARCH_BY_FULL_NAME) {
+		sql_where = switch_mprintf("hostname = '%q' and uuid = '%q' and name_visible = 1 and full_name_digit like '%%%q%%'",
+				globals.hostname, switch_core_session_get_uuid(session), "last_name_digit", params->digits, "first_name_digit", params->digits);
+	} else {
+		sql_where = switch_mprintf("hostname = '%q' and uuid = '%q' and name_visible = 1 and %s like '%q%%'",
+				globals.hostname, switch_core_session_get_uuid(session), (params->search_by == SEARCH_BY_LAST_NAME ? "last_name_digit" : "first_name_digit"), params->digits);
+	}
+
+	sql = switch_mprintf("select count(*) from directory_search where %s", sql_where);
 
 	directory_execute_sql_callback(globals.mutex, sql, sql2str_callback, &cbt);
 	switch_safe_free(sql);
@@ -816,11 +831,14 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 		switch_snprintf(macro, sizeof(macro), "%d", result_count);
 		switch_ivr_phrase_macro(session, DIR_RESULT_COUNT, macro, NULL, NULL);
 		params->try_again = 1;
-		return SWITCH_STATUS_BREAK;
+		status = SWITCH_STATUS_BREAK;
+		goto end;
 	} else if (profile->max_result != 0 && result_count > profile->max_result) {
 		switch_ivr_phrase_macro(session, DIR_RESULT_COUNT_TOO_LARGE, NULL, NULL, NULL);
 		params->try_again = 1;
-		return SWITCH_STATUS_BREAK;
+		status = SWITCH_STATUS_BREAK;
+		goto end;
+
 	} else {
 		switch_snprintf(macro, sizeof(macro), "%d", result_count);
 		switch_ivr_phrase_macro(session, DIR_RESULT_COUNT, macro, NULL, NULL);
@@ -829,10 +847,7 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 	memset(&listing_cbt, 0, sizeof(listing_cbt));
 	listing_cbt.params = params;
 
-	sql =
-		switch_mprintf
-		("select extension, full_name, last_name, first_name, name_visible, exten_visible from directory_search where hostname = '%q' and uuid = '%q' and name_visible = 1 and %s like '%q%%' order by last_name, first_name",
-		 globals.hostname, switch_core_session_get_uuid(session), (params->search_by_last_name ? "last_name_digit" : "first_name_digit"), params->digits);
+	sql = switch_mprintf("select extension, full_name, last_name, first_name, name_visible, exten_visible from directory_search where %s order by last_name, first_name", sql_where);
 
 	for (cur_entry = 0; cur_entry < result_count; cur_entry++) {
 		listing_cbt.index = 0;
@@ -873,6 +888,7 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 
   end:
 	switch_safe_free(sql);
+	switch_safe_free(sql_where);
 	return status;
 
 }
@@ -887,6 +903,7 @@ SWITCH_STANDARD_APP(directory_function)
 	const char *domain_name = NULL;
 	const char *context_name = NULL;
 	const char *dialplan_name = NULL;
+	const char *search_by = NULL;
 	dir_profile_t *profile = NULL;
 	int x = 0;
 	char *sql = NULL;
@@ -941,24 +958,20 @@ SWITCH_STANDARD_APP(directory_function)
 	populate_database(session, profile, domain_name);
 
 	memset(&s_param, 0, sizeof(s_param));
-	s_param.search_by_last_name = 1;
 	s_param.try_again = 1;
 	switch_copy_string(s_param.profile, profile_name, 255);
 	switch_copy_string(s_param.domain, domain_name, 255);
 
-	if (strcasecmp(profile->search_order, "last_name")) {
-		s_param.search_by_last_name = 0;
+	if (!(search_by = switch_channel_get_variable(channel, "directory_search_order"))) { 
+		search_by = profile->search_order;
 	}
- 	 
-	{
-		const char *var_search_order = switch_channel_get_variable(channel, "directory_search_order");
-		if (var_search_order) {
-			if (!strcasecmp(var_search_order, "first_name")) {
-				s_param.search_by_last_name = 0;
-			} else {
-				s_param.search_by_last_name = 1;
-			}
-		}
+
+	if (!strcasecmp(search_by, "first_name")) {
+		s_param.search_by = SEARCH_BY_FIRST_NAME;
+	} else if (!strcasecmp(search_by, "first_and_last_name")) {
+		s_param.search_by = SEARCH_BY_FIRST_AND_LAST_NAME;
+	} else {
+		s_param.search_by = SEARCH_BY_LAST_NAME;
 	}
 
 	attempts = profile->max_menu_attempt;
