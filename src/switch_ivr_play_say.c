@@ -1065,6 +1065,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int cur;
 	int done = 0;
 	int timeout_samples = 0;
+	switch_bool_t timeout_as_success = SWITCH_FALSE;
 	const char *var;
 	int more_data = 0;
 	char *playback_vars, *tmp;
@@ -1084,6 +1085,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 	}
 
+	if ((var = switch_channel_get_variable(channel, "playback_timeout_as_success"))) {
+		if (switch_true(var)) {
+			timeout_as_success = SWITCH_TRUE;
+		}
+	}
 	if ((play_delimiter_val = switch_channel_get_variable(channel, "playback_delimiter"))) {
 		play_delimiter = *play_delimiter_val;
 
@@ -1688,7 +1694,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (timeout_samples <= 0) {
 					timeout_samples = 0;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "timeout reached playing file\n");
-					status = SWITCH_STATUS_TIMEOUT;
+					if (timeout_as_success) {
+						status = SWITCH_STATUS_SUCCESS;
+					} else {
+						status = SWITCH_STATUS_TIMEOUT;
+					}
 					break;
 				}
 			}
