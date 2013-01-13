@@ -245,6 +245,7 @@ static char tiers_sql[] =
 "   position INTEGER NOT NULL DEFAULT 1\n" ");\n";
 
 static switch_xml_config_int_options_t config_int_0_86400 = { SWITCH_TRUE, 0, SWITCH_TRUE, 86400 };
+static switch_xml_config_int_options_t config_int_5_86400 = { SWITCH_TRUE, 5, SWITCH_TRUE, 86400 };
 
 /* TODO This is temporary until we either move it to the core, or use it differently in the module */
 switch_time_t local_epoch_time_now(switch_time_t *t)
@@ -547,7 +548,7 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time", SWITCH_CONFIG_INT, 0, &queue->max_wait_time, 0, &config_int_0_86400, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time-with-no-agent", SWITCH_CONFIG_INT, 0, &queue->max_wait_time_with_no_agent, 0, &config_int_0_86400, NULL, NULL);
-	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time-with-no-agent-time-reached", SWITCH_CONFIG_INT, 0, &queue->max_wait_time_with_no_agent_time_reached, 5, &config_int_0_86400, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "max-wait-time-with-no-agent-time-reached", SWITCH_CONFIG_INT, 0, &queue->max_wait_time_with_no_agent_time_reached, 5, &config_int_5_86400, NULL, NULL);
 
 	switch_assert(i < CC_QUEUE_CONFIGITEM_COUNT);
 
