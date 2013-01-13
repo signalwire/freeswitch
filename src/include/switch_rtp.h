@@ -40,6 +40,9 @@
 #define SWITCH_RTP_H
 
 SWITCH_BEGIN_EXTERN_C
+
+#include <switch_core_media.h>
+
 #define SWITCH_RTP_MAX_BUF_LEN 16384
 #define SWITCH_RTCP_MAX_BUF_LEN 16384
 #define SWITCH_RTP_MAX_BUF_LEN_WORDS 4094 /* (max / 4) - 2 */
@@ -216,8 +219,10 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session);
   \brief Acvite ICE on an RTP session
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, const char *password);
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, const char *password);
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, 
+														const char *password, switch_core_media_ice_type_t type, uint32_t priority);
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, 
+															 const char *password, switch_core_media_ice_type_t type, uint32_t priority);
 
 /*! 
   \brief Activate sending RTCP Sender Reports (SR's)

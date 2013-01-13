@@ -41,6 +41,12 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_MAX_CAND_ACL 25
 
 typedef enum {
+	ICE_GOOGLE_JINGLE = (1 << 0),
+	ICE_VANILLA = (1 << 1),
+	ICE_CONTROLLED = (1 << 2)
+} switch_core_media_ice_type_t;
+
+typedef enum {
 	DTMF_2833,
 	DTMF_INFO,
 	DTMF_NONE

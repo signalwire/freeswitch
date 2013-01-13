@@ -109,11 +109,68 @@ static switch_status_t do_config(switch_bool_t reload)
 
 	return SWITCH_STATUS_SUCCESS;
 }
+#include "switch_stun.h"
+
+#define _switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value + ntohs(attribute->length))) && ((void *)attribute < end) && ntohs(attribute->length) && ((void *)(attribute + ntohs(attribute->length)) < end))
+
+#define _switch_stun_attribute_padded_length(attribute) ((uint16_t)(ntohs(attribute->length) + (sizeof(uint32_t)-1)) & ~sizeof(uint32_t))
+
+//#define _switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  _switch_stun_attribute_padded_length(attribute))) && ((void *)attribute < end) && ((void *)(attribute +  _switch_stun_attribute_padded_length(attribute)) < end))
 
 SWITCH_STANDARD_API(skel_function)
 {
 	switch_event_t *event;
 	unsigned char frame_buffer[8192] = {0};
+	uint8_t buf[256] = { 0 };
+	switch_stun_packet_t *packet;
+	char user_name[] = "0000000000000000:1111111111111111";
+	//char user_name[] = "0000000000000000";
+	void *end_buf;
+	switch_stun_packet_attribute_t *attr;
+	int xlen = 0;
+
+	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+
+	printf("1len %d %d\n", ntohs(packet->header.length), xlen);
+
+	switch_stun_packet_attribute_add_username(packet, user_name, strlen(user_name));
+	printf("2len %d %d\n", ntohs(packet->header.length), xlen);
+
+	switch_stun_packet_attribute_add_controlled(packet);
+
+	//switch_stun_packet_attribute_add_password(packet, user_name, strlen(user_name));
+	//printf("3len %d %d\n", ntohs(packet->header.length), xlen);
+
+	//switch_stun_packet_attribute_add_use_candidate(packet);
+
+	switch_stun_packet_attribute_add_integrity(packet, "FUCK");
+	switch_stun_packet_attribute_add_fingerprint(packet);
+
+
+	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
+
+
+
+	switch_stun_packet_first_attribute(packet, attr);
+
+	xlen = sizeof(switch_stun_packet_header_t);
+
+	printf("len %d %d\n", ntohs(packet->header.length), xlen);
+
+	do {
+		printf("WTF %p %d %d:(%d)\n", (void *)attr, ntohs(attr->type), ntohs(attr->length), switch_stun_attribute_padded_length_hbo(attr));
+
+		if (!switch_stun_packet_next_attribute_hbo(attr, end_buf)) {
+			break;
+		}
+
+		xlen += 4+switch_stun_attribute_padded_length_hbo(attr);
+	} while (xlen <= ntohs(packet->header.length));
+
+
+
+
+	return SWITCH_STATUS_SUCCESS;
 
 	do_config(SWITCH_TRUE);
 

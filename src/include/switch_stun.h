@@ -81,6 +81,21 @@ typedef enum {
 	SWITCH_STUN_ATTR_DATA = 0x0013,	/* ByteString */
 	SWITCH_STUN_ATTR_OPTIONS = 0x8001,	/* UInt32 */
 	SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS = 0x0020,   /* Address */  
+
+	/* ice crap */
+
+	SWITCH_STUN_ATTR_PRIORITY           = 0x0024,
+	SWITCH_STUN_ATTR_USE_CAND           = 0x0025,
+	SWITCH_STUN_ATTR_PADDING            = 0x0026,
+	SWITCH_STUN_ATTR_RESP_PORT          = 0x0027,
+	SWITCH_STUN_ATTR_SOFTWARE           = 0x8022,
+	SWITCH_STUN_ATTR_ALT_SERVER         = 0x8023,
+	SWITCH_STUN_ATTR_FINGERPRINT        = 0x8028,
+	SWITCH_STUN_ATTR_CONTROLLED         = 0x8029,
+	SWITCH_STUN_ATTR_CONTROLLING        = 0x802a,
+	SWITCH_STUN_ATTR_RESP_ORIGIN        = 0x802b,
+	SWITCH_STUN_ATTR_OTHER_ADDR         = 0x802c
+
 } switch_stun_attribute_t;
 
 typedef enum {
@@ -190,7 +205,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_st
 */
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_packet_t *packet, char *username, uint16_t ulen);
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_password(switch_stun_packet_t *packet, char *password, uint16_t ulen);
-
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_software(switch_stun_packet_t *packet, char *software, uint16_t ulen);
 
 /*!
   \brief Add a binded address packet attribute
@@ -201,6 +216,15 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_password(switch_stun_pa
 */
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port);
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port);
+
+
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_integrity(switch_stun_packet_t *packet, const char *pass);
+SWITCH_DECLARE(uint32_t) switch_crc32_8bytes(const void* data, size_t length);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_fingerprint(switch_stun_packet_t *packet);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_use_candidate(switch_stun_packet_t *packet);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_controlling(switch_stun_packet_t *packet);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_controlled(switch_stun_packet_t *packet);
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_priority(switch_stun_packet_t *packet, uint32_t priority);
 
 /*!
   \brief Perform a stun lookup
@@ -221,7 +245,9 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
   \param attribute the attribute
   \return the padded size in bytes
 */
-#define switch_stun_attribute_padded_length(attribute) ((uint16_t)(attribute->length + (sizeof(uint32_t)-1)) & ~sizeof(uint32_t))
+#define switch_stun_attribute_padded_length(attribute) (int16_t)((attribute->length & 0x3) ? 0x4 + (attribute->length & ~0x3) : attribute->length)
+#define switch_stun_attribute_padded_length_hbo(attribute) (int16_t)((ntohs(attribute->length) & 0x3) ? 0x4 + (ntohs(attribute->length) & ~0x3) : ntohs(attribute->length))
+
 
 /*!
   \brief set a switch_stun_packet_attribute_t pointer to point at the first attribute in a packet
@@ -236,7 +262,9 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
   \param end pointer to the end of the buffer
   \return true or false depending on if there are any more attributes
 */
-#define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length(attribute))) && ((void *)attribute < end) && attribute->length && ((void *)(attribute +  switch_stun_attribute_padded_length(attribute)) < end))
+#define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length(attribute))) && ((void *)attribute < end) && attribute->type && ((void *)(attribute +  switch_stun_attribute_padded_length(attribute)) < end))
+
+#define switch_stun_packet_next_attribute_hbo(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length_hbo(attribute))) && ((void *)attribute < end) && attribute->type && ((void *)(attribute +  switch_stun_attribute_padded_length_hbo(attribute)) < end))
 
 /*!
   \brief Obtain the correct length in bytes of a stun packet

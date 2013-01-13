@@ -97,7 +97,7 @@ typedef struct ice_s {
 	char *foundation;
 	int component_id;
 	char *transport;
-	int priority;
+	uint32_t priority;
 	char *con_addr;
 	switch_port_t con_port;
 	char *cand_type;
@@ -774,7 +774,6 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec.crypto_type,
 										  engine->ssec.local_raw_key, SWITCH_RTP_KEY_LEN);
 			} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, crypto)) {
-
 				switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_80);
 				switch_core_media_build_crypto(session->media_handle, &engine->ssec, crypto_tag, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
 				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec.crypto_type,
@@ -3196,13 +3195,17 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 	}
 
 	if (!engine->ice_out.foundation) {
+		tmp[10] = '\0';
 		switch_stun_random_string(tmp, 10, "0123456789");
 		engine->ice_out.foundation = switch_core_session_strdup(session, tmp);
 	}
 
-	engine->ice_out.component_id = 1;
 	engine->ice_out.transport = "udp";
-	engine->ice_out.priority = 100;
+
+	if (!engine->ice_out.component_id) {
+		engine->ice_out.component_id = 1;
+		engine->ice_out.priority = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - engine->ice_out.component_id);
+	}
 
 	if (ip) {
 		engine->ice_out.con_addr = switch_core_session_strdup(session, ip);
@@ -3462,6 +3465,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		if ((ssrc = switch_channel_get_variable(session->channel, "rtp_use_ssrc"))) {
 			uint32_t ssrc_ul = (uint32_t) strtoul(ssrc, NULL, 10);
 			switch_rtp_set_ssrc(a_engine->rtp_session, ssrc_ul);
+			a_engine->ssrc = ssrc_ul;
 		}
 
 
@@ -3691,8 +3695,33 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			switch_rtp_activate_ice(a_engine->rtp_session, 
 									a_engine->ice_in.ufrag,
 									a_engine->ice_out.ufrag,
-									a_engine->ice_out.pwd);
-		}
+									a_engine->ice_in.pwd,
+#ifdef GOOGLE_ICE
+									ICE_GOOGLE_JINGLE,
+									0
+#else
+									ICE_VANILLA | ICE_CONTROLLED,
+									a_engine->ice_out.priority
+#endif
+									);
+
+		
+
+
+		switch_rtp_activate_rtcp_ice(a_engine->rtp_session, 
+									 a_engine->ice_in.ufrag,
+									 a_engine->ice_out.ufrag,
+									 a_engine->ice_in.pwd,
+#ifdef GOOGLE_ICE
+									 ICE_GOOGLE_JINGLE,
+									 0
+#else
+									 ICE_VANILLA | ICE_CONTROLLED,
+									 a_engine->ice_out.priority -1
+#endif
+									 );
+		
+	}
 
 
 
@@ -3854,6 +3883,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				if ((ssrc = switch_channel_get_variable(session->channel, "rtp_use_video_ssrc"))) {
 					uint32_t ssrc_ul = (uint32_t) strtoul(ssrc, NULL, 10);
 					switch_rtp_set_ssrc(v_engine->rtp_session, ssrc_ul);
+					v_engine->ssrc = ssrc_ul;
 				}
 
 
@@ -4383,27 +4413,56 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
 
-		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "c=IN %s %s\n", family, ip);
-		}
+		//		if (smh->mparams->rtcp_audio_interval_msec) {
+		//	switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
+		//}
 
-
-		if (smh->mparams->rtcp_audio_interval_msec) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
-		}
-
-		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:abc1234\n", a_engine->ssrc);
+		//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", a_engine->ssrc);
 
 		if (a_engine->ice_out.ready) {
+			char tmp1[11] = "";
+			char tmp2[11] = "";
+			uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
+			uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
+			uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
+			uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
+
+			
+
+			tmp1[10] = '\0';
+			tmp2[10] = '\0';
+			switch_stun_random_string(tmp1, 10, "0123456789");
+			switch_stun_random_string(tmp2, 10, "0123456789");
+
 			ice_out = &a_engine->ice_out;
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s %d %s %d %s %d typ host generation 0\n", 
-							ice_out->foundation, ice_out->component_id, ice_out->transport, ice_out->priority,
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n", 
+							tmp1, ice_out->transport, c1,
 							ice_out->con_addr, ice_out->con_port
 							);
 
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx generation 0\n", 
+							tmp2, ice_out->transport, c3,
+							ice_out->con_addr, ice_out->con_port
+							);
+
+#if 1
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
+							tmp1, ice_out->transport, c2,
+							ice_out->con_addr, ice_out->con_port + 1
+							);
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
+							tmp2, ice_out->transport, c4,
+							ice_out->con_addr, ice_out->con_port + 1
+							);
+#endif
+
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
-			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
+#ifdef GOOGLE_ICE
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
+#endif
 		}
 
 
@@ -4581,9 +4640,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
 
 
-			if (smh->mparams->rtcp_audio_interval_msec) {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port + 1, family, ip);
-			}
+			//			if (smh->mparams->rtcp_audio_interval_msec) {
+			//	switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port + 1, family, ip);
+			//}
 
 			if (v_engine->codec_params.rm_encoding) {
 				const char *of;
@@ -4591,14 +4650,16 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 				if (v_engine->ice_out.ready) {
 					ice_out = &v_engine->ice_out;
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s %d %s %d %s %d typ host generation 0\n", 
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s %d %s %u %s %d typ host generation 0\n", 
 									ice_out->foundation, ice_out->component_id, ice_out->transport, ice_out->priority,
 									ice_out->con_addr, ice_out->con_port
 									);
 					
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
+#ifdef GOOGLE_ICE
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
+#endif
 				}
 
 
