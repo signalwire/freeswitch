@@ -3,8 +3,8 @@ SUBDIRS = . src
 AUTOMAKE_OPTIONS = foreign
 NAME = freeswitch
 
-AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS)
-AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
+AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
+AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS) -Ilibs/sofia-sip/libsofia-sip-ua/sdp/sofia-sip -Ilibs/sofia-sip/libsofia-sip-ua/su
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
@@ -86,6 +86,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
+CORE_LIBS += libs/sofia-sip/libsofia-sip-ua/sdp/libsdp.la libs/sofia-sip/libsofia-sip-ua/su/libsu.la
 
 if ENABLE_SRTP
 CORE_CFLAGS += -DENABLE_SRTP
@@ -415,6 +416,14 @@ libs/libedit/src/.libs/libedit.a:
 
 libs/libzrtp/projects/gnu/build/libzrtp.a:
 	cd libs/libzrtp/projects/gnu && $(MAKE)
+
+libs/sofia-sip/Makefile:
+	cd libs/sofia-sip && sh ./configure.gnu --prefix=$(prefix)
+
+libs/sofia-sip/libsofia-sip-ua/sdp/libsdp.la libs/sofia-sip/libsofia-sip-ua/su/libsu.la: libs/sofia-sip/.update libs/sofia-sip/Makefile
+	@cd libs/sofia-sip && $(MAKE) noop
+	@cd libs/sofia-sip && $(MAKE) SOFIA_CFLAGS="$(SWITCH_AM_CFLAGS)"
+	@$(TOUCH_TARGET)
 
 libs/curl/Makefile:
 	cd libs/curl && sh ./configure.gnu --prefix=$(prefix)
