@@ -1602,7 +1602,6 @@ static void parse_media_attr(sdp_parser_t *p, char *r, sdp_media_t *m,
   }
 
   if (rtp && su_casematch(name, "rtpmap")) {
-
 	  if ((n = parse_rtpmap(p, r, m)) == 0 || n < -1)
 		  return;
   }
