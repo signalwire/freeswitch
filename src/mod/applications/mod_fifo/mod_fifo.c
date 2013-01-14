@@ -2711,6 +2711,11 @@ SWITCH_STANDARD_APP(fifo_function)
 					pop_array[x] = temp;
 				}
 			}
+		} else {
+			int x = 0;
+			for (x = 0; x < MAX_PRI; x++) {
+				pop_array[x] = x;
+			}
 		}
 
 		while (switch_channel_ready(channel)) {
