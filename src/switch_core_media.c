@@ -761,6 +761,8 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	if (!session->media_handle) return 0;
 	engine = &session->media_handle->engines[type];
 
+	if (type == SWITCH_MEDIA_TYPE_VIDEO) printf("XXXXXXXXXXXXXXXXXXXXXXXXX\n");
+
 	if (engine->ssec.remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
 		if (crypto && !strcmp(crypto, engine->ssec.remote_crypto_key)) {
@@ -2262,7 +2264,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					got_audio = 0;
 				}
 			}
-			printf("WTF ===M %d %d\n", m->m_proto, m->m_type);
+
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
 				uint32_t near_rate = 0;
@@ -2280,8 +2282,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					rm_encoding = "";
 				}
 				
-				printf("WTF === AUDIO MMMM! %s\n", rm_encoding);
-
 				if (!strcasecmp(rm_encoding, "telephone-event")) {
 					if (!best_te || map->rm_rate == a_engine->codec_params.rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
@@ -2529,13 +2529,15 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 
 				for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				printf("WTF %s == %s\n", attr->a_name, attr->a_value);
+
 					if (!strcasecmp(attr->a_name, "framerate") && attr->a_value) {
 						//framerate = atoi(attr->a_value);
 					}
 					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 						switch_channel_set_variable(session->channel, "sip_remote_video_rtcp_port", attr->a_value);
 
-					} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
+					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 						int crypto_tag;
 						
 						if (!(smh->mparams->ndlb & SM_NDLB_ALLOW_CRYPTO_IN_AVP) && 
@@ -2556,7 +2558,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					
 					}
 				}
-
+				
 				if (got_video_crypto && !got_video_avp) {
 					switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
 					switch_channel_set_variable(session->channel, "rtp_secure_media", "true");
@@ -3894,7 +3896,44 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					v_engine->ssrc = ssrc_ul;
 				}
 
+				if (v_engine->ice_in.cands[0].ready) {
+					
+					gen_ice(session, SWITCH_MEDIA_TYPE_VIDEO, "", 0);
+					
+					switch_rtp_activate_ice(v_engine->rtp_session, 
+											v_engine->ice_in.ufrag,
+											v_engine->ice_out.ufrag,
+											v_engine->ice_out.pwd,
+											v_engine->ice_in.pwd,
 
+#ifdef GOOGLE_ICE
+											ICE_GOOGLE_JINGLE,
+											0
+#else
+											ICE_VANILLA | ICE_CONTROLLED,
+											v_engine->ice_in.cands[0].priority
+#endif
+											);
+					
+		
+					if (v_engine->ice_in.cands[1].ready) {
+						
+						switch_rtp_activate_rtcp_ice(v_engine->rtp_session, 
+													 v_engine->ice_in.ufrag,
+													 v_engine->ice_out.ufrag,
+													 v_engine->ice_out.pwd,
+													 v_engine->ice_in.pwd,
+#ifdef GOOGLE_ICE
+													 ICE_GOOGLE_JINGLE,
+													 0
+#else
+													 ICE_VANILLA | ICE_CONTROLLED,
+													 v_engine->ice_in.cands[1].priority
+#endif
+													 );
+					}
+				}
+				
 
 				if ((val = switch_channel_get_variable(session->channel, "rtp_manual_video_rtp_bugs"))) {
 					switch_core_media_parse_rtp_bugs(&v_engine->rtp_bugs, val);
@@ -4670,11 +4709,52 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (v_engine->ice_out.cands[0].ready) {
+					char tmp1[11] = "";
+					char tmp2[11] = "";
+					uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
+					uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
+					uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
+					uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
+
+					tmp1[10] = '\0';
+					tmp2[10] = '\0';
+					switch_stun_random_string(tmp1, 10, "0123456789");
+					switch_stun_random_string(tmp2, 10, "0123456789");
+
 					ice_out = &v_engine->ice_out;
-					
-					// VID CANDS HERE
+
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
+
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n", 
+									tmp1, ice_out->cands[0].transport, c1,
+									ice_out->cands[0].con_addr, ice_out->cands[0].con_port
+									);
+
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx generation 0\n", 
+									tmp2, ice_out->cands[0].transport, c3,
+									ice_out->cands[0].con_addr, ice_out->cands[0].con_port
+									);
+
+
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
+									tmp1, ice_out->cands[0].transport, c2,
+									ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
+									);
+				
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
+									tmp2, ice_out->cands[0].transport, c4,
+									ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
+									);
+
+			
+				
+#ifdef GOOGLE_ICE
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
+#endif
 				}
 
+				
 
 				rate = v_engine->codec_params.rm_rate;
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
@@ -4752,7 +4832,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				
 			}
 
-			if (switch_channel_test_flag(session->channel, CF_SECURE)) {
+			if (switch_channel_test_flag(session->channel, CF_SECURE) && !zstr(local_video_crypto_key)) {
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", local_video_crypto_key);
 				//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
 			}			

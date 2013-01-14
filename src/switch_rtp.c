@@ -1888,7 +1888,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating Secure RTP RECV\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating %s Secure RTP RECV\n", 
+								  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "Video" : "Audio");
 				rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 1;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error allocating srtp [%d]\n", stat);
@@ -1908,7 +1909,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating Secure RTP SEND\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating %s Secure RTP SEND\n",
+								  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "Video" : "Audio");
 				rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 1;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error allocating SRTP [%d]\n", stat);
