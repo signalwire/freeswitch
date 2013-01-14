@@ -1664,7 +1664,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		*err = "Error activating database";
 		return SWITCH_STATUS_FALSE;
 	}
-
+	switch_core_media_init();
 	switch_scheduler_task_thread_start();
 
 	switch_nat_late_init();
@@ -2587,6 +2587,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	if (IP_LIST.pool) {
 		switch_core_destroy_memory_pool(&IP_LIST.pool);
 	}
+
+	switch_core_media_deinit();
 
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);

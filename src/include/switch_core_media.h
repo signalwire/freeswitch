@@ -33,7 +33,6 @@
 #define SWITCH_CORE_MEDIA_H
 
 
-#include <sdp.h>
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
@@ -190,10 +189,8 @@ SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *se
 
 SWITCH_DECLARE(const char *)switch_core_media_get_codec_string(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str);
-SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
 SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_extract_t38_options(switch_core_session_t *session, const char *r_sdp);
 SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash(switch_core_session_t *session);
-SWITCH_DECLARE(void) switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
 SWITCH_DECLARE(const char *) switch_core_media_get_zrtp_hash(switch_core_session_t *session, switch_media_type_t type, switch_bool_t local);
 SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session);
 SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session, int sendonly);
@@ -244,13 +241,15 @@ SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
 
 
-SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp);
 SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
 SWITCH_DECLARE(void) switch_core_media_reset_autofix_timing(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t media);
 SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_add_ice_acl(switch_core_session_t *session, switch_media_type_t type, const char *acl_name);
+
+SWITCH_DECLARE(void) switch_core_media_init(void);
+SWITCH_DECLARE(void) switch_core_media_deinit(void);
 
 SWITCH_END_EXTERN_C
 #endif

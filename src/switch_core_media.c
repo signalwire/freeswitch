@@ -38,7 +38,12 @@
 #include "private/switch_core_pvt.h"
 #include <switch_curl.h>
 #include <errno.h>
+#include <sdp.h>
+#include <sofia-sip/su.h>
 
+SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
+SWITCH_DECLARE(void) switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
+SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp);
 
 #define MAX_CODEC_CHECK_FRAMES 50//x:mod_sofia.h
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
@@ -6501,6 +6506,17 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 		}
 	}
 
+}
+
+
+SWITCH_DECLARE(void) switch_core_media_init(void)
+{
+	
+}
+
+SWITCH_DECLARE(void) switch_core_media_deinit(void)
+{
+	
 }
 
 
