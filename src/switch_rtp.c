@@ -55,7 +55,7 @@
 #define WRITE_DEC(rtp_session) switch_mutex_unlock(rtp_session->write_mutex); rtp_session->writing--
 
 
-#define RTP_DEFAULT_STUNCOUNT 100;
+#define RTP_DEFAULT_STUNCOUNT 25;
 #define rtp_header_len 12
 #define RTP_START_PORT 16384
 #define RTP_END_PORT 32768
@@ -350,6 +350,11 @@ typedef enum {
 } handle_rfc2833_result_t;
 
 static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session);
+
+
+#define rtp_type(rtp_session) rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio"
+
+
 
 static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_size_t bytes, int *do_cng)
 {
@@ -794,6 +799,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		ok = !strcmp(ice->user_ice, username);
 	}
 
+	//printf("ICE %s %d\n", rtp_type(rtp_session), ok);
+
 	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST) && ok) {
 		uint8_t stunbuf[512];
 		switch_stun_packet_t *rpacket;
@@ -891,7 +898,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	switch_event_t *fsevent = NULL;
 	const char *type;
 
-	type = rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio";
+	type = rtp_type(rtp_session)
 
 	switch (event) {
 	case ZRTP_EVENT_IS_SECURE:
@@ -2450,6 +2457,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 {
 	char ice_user[80];
 	char user_ice[80];
+	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 
 	if ((type & ICE_VANILLA)) {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s:%s", login, rlogin);
@@ -2458,6 +2466,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 		switch_snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Activating %s ICE: %s\n", rtp_type(rtp_session), ice_user);
+
 
 	rtp_session->ice.ice_user = switch_core_strdup(rtp_session->pool, ice_user);
 	rtp_session->ice.user_ice = switch_core_strdup(rtp_session->pool, user_ice);
@@ -3208,7 +3219,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 #endif
 			
 #ifdef ENABLE_SRTP
-			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->recv_msg.header.version == 2)) {
+			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->recv_msg.header.version == 2) {
+				//if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->recv_msg.header.version == 2)) {
 				int sbytes = (int) *bytes;
 				err_status_t stat = 0;
 
@@ -3235,7 +3247,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					if (++rtp_session->srtp_errs >= MAX_SRTP_ERRS) {
 						switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-										  "Error: SRTP unprotect failed with code %d%s\n", stat,
+										  "Error: SRTP %s unprotect failed with code %d%s\n", rtp_type(rtp_session), stat,
 										  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
 										  err_status_auth_fail ? " (auth check failed)" : "");
 						return SWITCH_STATUS_FALSE;
@@ -4544,11 +4556,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		send = 0;
 	}
 
+#if 0
 	if (rtp_session->ice.ice_user && !rtp_session->ice.ready) {
-		send = 0;
+		//send = 0;
 		//printf("skip no stun love\n");
 	}
-
+#endif
 
 	if (send) {
 		send_msg->header.seq = htons(++rtp_session->seq);
