@@ -55,7 +55,7 @@
 #define WRITE_DEC(rtp_session) switch_mutex_unlock(rtp_session->write_mutex); rtp_session->writing--
 
 
-
+#define RTP_DEFAULT_STUNCOUNT 100;
 #define rtp_header_len 12
 #define RTP_START_PORT 16384
 #define RTP_END_PORT 32768
@@ -164,6 +164,7 @@ typedef struct {
 	char *ice_user;
 	char *user_ice;
 	char *pass;
+	char *rpass;
 	uint32_t stuncount;
 	uint32_t funny_stun;
 	uint32_t default_stuncount;
@@ -677,7 +678,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 			switch_stun_packet_attribute_add_controlling(packet);
 		}
 
-		switch_stun_packet_attribute_add_integrity(packet, ice->pass);
+		switch_stun_packet_attribute_add_integrity(packet, ice->rpass);
 		switch_stun_packet_attribute_add_fingerprint(packet);
 
 
@@ -715,6 +716,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	char username[33] = { 0 };
 	unsigned char buf[512] = { 0 };
 	switch_size_t cpylen = len;
+	int xlen = 0;
+	int ok = 1;
 
 	if (!switch_rtp_ready(rtp_session) || zstr(ice->user_ice) || zstr(ice->ice_user)) {
 		return;
@@ -727,23 +730,19 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		goto end;
 	}
 
-
-	if (cpylen > 512) {
-		cpylen = 512;
+	if (cpylen > sizeof(buf)) {
+		cpylen = sizeof(buf);
 	}
 
 	
 	memcpy(buf, data, cpylen);
-	packet = switch_stun_packet_parse(buf, sizeof(buf));
+	packet = switch_stun_packet_parse(buf, cpylen);
 	if (!packet) {
 		switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
-		//int sbytes = (int) cpylen;
-		//int stat;
 
-		//if ((stat = srtp_unprotect(rtp_session->recv_ctx, buf, &sbytes)) || !(packet = switch_stun_packet_parse(buf, sizeof(buf)))) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received\n");
-			goto end;
-			//}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received\n");
+		goto end;
+
 	}
 
 #if 0
@@ -762,8 +761,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 	switch_stun_packet_first_attribute(packet, attr);
 
-
-
 	do {
 		switch (attr->type) {
 		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
@@ -778,27 +775,41 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				switch_stun_packet_attribute_get_username(attr, username, 32);
 			}
 			break;
+			
+		case SWITCH_STUN_ATTR_PRIORITY:
+			{
+				uint32_t *val = (uint32_t *) attr->value;
+				ok = *val == ice->priority;
+			}
+			break;
 		}
-	} while (switch_stun_packet_next_attribute(attr, end_buf));
 
-	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST)) {
-		//if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST) && !strcmp(ice->user_ice, username)) {
+		if (!switch_stun_packet_next_attribute(attr, end_buf)) {
+			break;
+		}
+		xlen += 4 + switch_stun_attribute_padded_length(attr);
+	} while (xlen <= packet->header.length);
+
+	if (ice->type == ICE_GOOGLE_JINGLE && ok) {
+		ok = !strcmp(ice->user_ice, username);
+	}
+
+	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST) && ok) {
 		uint8_t stunbuf[512];
 		switch_stun_packet_t *rpacket;
 		const char *remote_ip;
 		switch_size_t bytes;
 		char ipbuf[25];
-		//int rtcp = 0;
 		switch_sockaddr_t *from_addr = rtp_session->from_addr;
 		switch_socket_t *sock_output = rtp_session->sock_output;
 		
 		if (ice == &rtp_session->rtcp_ice) {
-			//rtcp = 1;
 			from_addr = rtp_session->rtcp_from_addr;
 			sock_output = rtp_session->rtcp_sock_output;
 
 		}
-		printf("STUN REQ\n");
+
+		rtp_session->ice.ready = 1;
 
 		memset(stunbuf, 0, sizeof(stunbuf));
 		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, stunbuf);
@@ -811,11 +822,18 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		switch_stun_packet_attribute_add_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
 
 		if ((ice->type & ICE_VANILLA)) {
+		
+
+			//if (!(ice->type && ICE_CONTROLLED)) {
+			//	switch_stun_packet_attribute_add_use_candidate(rpacket);
+			//	switch_stun_packet_attribute_add_priority(rpacket, ice->priority);
+			//}
+
 			switch_stun_packet_attribute_add_integrity(rpacket, ice->pass);
 			switch_stun_packet_attribute_add_fingerprint(rpacket);
 
 		}
-		rtp_session->ice.ready = 1;
+		
 
 		bytes = switch_stun_packet_length(rpacket);
 		switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
@@ -1074,7 +1092,7 @@ static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
 static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 {
 	int ret = 0;
-
+	int rtcp_ok = 1;
 
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_AUTO_CNG] && rtp_session->send_msg.header.ts &&
@@ -1094,7 +1112,11 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 		}
 	}
 
-	if (rtp_session->rtcp_sock_output &&
+	if (rtp_session->rtcp_ice.ice_user && !rtp_session->rtcp_ice.ready) {
+		rtcp_ok = 0;
+	}
+
+	if (rtp_session->rtcp_sock_output && rtcp_ok &&
 		rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] &&
 		rtp_session->rtcp_interval && (rtp_session->stats.read_count % rtp_session->rtcp_interval) == 0) {
 		struct switch_rtcp_senderinfo *sr = (struct switch_rtcp_senderinfo*) rtp_session->rtcp_send_msg.body;
@@ -2422,7 +2444,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_sessi
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, 
-														const char *password, switch_core_media_ice_type_t type, uint32_t priority)
+														const char *password, const char *rpassword, switch_core_media_ice_type_t type, uint32_t priority)
 {
 	char ice_user[80];
 	char user_ice[80];
@@ -2439,12 +2461,18 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	rtp_session->ice.user_ice = switch_core_strdup(rtp_session->pool, user_ice);
 	rtp_session->ice.type = type;
 	rtp_session->ice.priority = priority;
+	rtp_session->ice.pass = "";
+	rtp_session->ice.rpass = "";
 
 	if (password) {
 		rtp_session->ice.pass = switch_core_strdup(rtp_session->pool, password);
 	}
+
+	if (rpassword) {
+		rtp_session->ice.rpass = switch_core_strdup(rtp_session->pool, rpassword);
+	}
 	
-	rtp_session->ice.default_stuncount = 25;
+	rtp_session->ice.default_stuncount = RTP_DEFAULT_STUNCOUNT;
 	rtp_session->ice.stuncount = 0;
 
 	if (rtp_session->ice.ice_user) {
@@ -2458,7 +2486,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, 
-															 const char *password, switch_core_media_ice_type_t type, uint32_t priority)
+															 const char *password, const char *rpassword, switch_core_media_ice_type_t type, uint32_t priority)
 {
 	char ice_user[80];
 	char user_ice[80];
@@ -2475,11 +2503,18 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp_ice(switch_rtp_t *rtp_s
 	rtp_session->rtcp_ice.user_ice = switch_core_strdup(rtp_session->pool, user_ice);
 	rtp_session->rtcp_ice.type = type;
 	rtp_session->rtcp_ice.priority = priority;
+	rtp_session->rtcp_ice.pass = "";
+	rtp_session->rtcp_ice.rpass = "";
 
 	if (password) {
 		rtp_session->rtcp_ice.pass = switch_core_strdup(rtp_session->pool, password);
 	}
-	rtp_session->rtcp_ice.default_stuncount = 25;
+
+	if (rpassword) {
+		rtp_session->rtcp_ice.rpass = switch_core_strdup(rtp_session->pool, rpassword);
+	}
+
+	rtp_session->rtcp_ice.default_stuncount = RTP_DEFAULT_STUNCOUNT;
 	rtp_session->rtcp_ice.stuncount = 0;
 	
 	if (rtp_session->rtcp_ice.ice_user) {

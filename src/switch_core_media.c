@@ -90,10 +90,7 @@ typedef struct codec_params_s {
 
 } codec_params_t;
 
-typedef struct ice_s {
-	char *cand_acl[SWITCH_MAX_CAND_ACL];
-	int cand_acl_count;
-
+typedef struct icand_s {
 	char *foundation;
 	int component_id;
 	char *transport;
@@ -104,12 +101,18 @@ typedef struct ice_s {
 	char *raddr;
 	switch_port_t rport;
 	char *generation;
+	uint8_t ready;
+} icand_t;
 
+typedef struct ice_s {
+
+	icand_t cands[2];
+	
 	char *ufrag;
 	char *pwd;
 	char *options;
 
-	uint8_t ready;
+
 
 } ice_t;
 
@@ -144,6 +147,9 @@ typedef struct switch_rtp_engine_s {
 
 	codec_params_t codec_params;
 	uint32_t timestamp_send;
+
+	char *cand_acl[SWITCH_MAX_CAND_ACL];
+	int cand_acl_count;
 
 	ice_t ice_in;
 	ice_t ice_out;
@@ -1720,8 +1726,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_add_ice_acl(switch_core_sessio
 
 	engine = &smh->engines[type];
 
-	if (engine->ice_in.cand_acl_count < SWITCH_MAX_CAND_ACL) {
-		engine->ice_in.cand_acl[engine->ice_in.cand_acl_count++] = switch_core_session_strdup(session, acl_name);
+	if (engine->cand_acl_count < SWITCH_MAX_CAND_ACL) {
+		engine->cand_acl[engine->cand_acl_count++] = switch_core_session_strdup(session, acl_name);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1759,18 +1765,18 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 {
 	switch_rtp_engine_t *engine = &smh->engines[type];
 	sdp_attribute_t *attr;
+	int i = 0;
 
 	for (attr = m->m_attributes; attr; attr = attr->a_next) {
 		char *data;
 		char *fields[15];
-		int argc = 0, i = 0, j = 0;
+		int argc = 0, j = 0;
+		int cid = 0;
 
 		if (zstr(attr->a_name)) {
 			continue;
 		}
 
-		printf("ICE [%s] [%s]\n", attr->a_name, attr->a_value);
-				
 		if (!strcasecmp(attr->a_name, "ice-ufrag")) {
 			engine->ice_in.ufrag = switch_core_session_strdup(smh->session, attr->a_value);
 		} else if (!strcasecmp(attr->a_name, "ice-pwd")) {
@@ -1779,7 +1785,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			engine->ice_in.options = switch_core_session_strdup(smh->session, attr->a_value);
 		} else if (!strcasecmp(attr->a_name, "candidate")) {
 
-			if (!engine->ice_in.cand_acl_count) {
+			if (!engine->cand_acl_count) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "NO candidate ACL defined, skipping candidate check.\n");
 				return;
 			}
@@ -1798,62 +1804,63 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 				continue;
 			}
 
+			cid = atoi(fields[1]) - 1;
 
-			printf("BAH %d [%s]\n", argc, data);
 
-
-			//del me
 			for (i = 0; i < argc; i++) {
-				printf("CAND %d [%s]\n", i, fields[i]);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG1, "CAND %d [%s]\n", i, fields[i]);
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
-							  "Checking Candidate proto: %s type: %s addr: %s\n", fields[2], fields[7], fields[4]);
+							  "Checking Candidate cid: %d proto: %s type: %s addr: %s\n", cid+1, fields[2], fields[7], fields[4]);
 
 
+			if (cid < 2 && !engine->ice_in.cands[cid].ready) {
 			
-			for (i = 0; i < engine->ice_in.cand_acl_count; i++) {
-				if (switch_check_network_list_ip(fields[4], engine->ice_in.cand_acl[i])) {
+				for (i = 0; i < engine->cand_acl_count; i++) {
+					if (switch_check_network_list_ip(fields[4], engine->cand_acl[i])) {
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
-									  "Choose Candidate proto: %s type: %s addr: %s\n", fields[2], fields[7], fields[4]);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
+										  "Choose Candidate cid: %d proto: %s type: %s addr: %s\n", cid+1, fields[2], fields[7], fields[4]);
 
 					
-					engine->ice_in.foundation = switch_core_session_strdup(smh->session, fields[0]);
-					engine->ice_in.component_id = atoi(fields[1]);
-					engine->ice_in.transport = switch_core_session_strdup(smh->session, fields[2]);
-					engine->ice_in.priority = atoi(fields[3]);
-					engine->ice_in.con_addr = switch_core_session_strdup(smh->session, fields[4]);
-					engine->ice_in.con_port = atoi(fields[5]);
+						engine->ice_in.cands[cid].foundation = switch_core_session_strdup(smh->session, fields[0]);
+						engine->ice_in.cands[cid].component_id = atoi(fields[1]);
+						engine->ice_in.cands[cid].transport = switch_core_session_strdup(smh->session, fields[2]);
+						engine->ice_in.cands[cid].priority = atol(fields[3]);
+						engine->ice_in.cands[cid].con_addr = switch_core_session_strdup(smh->session, fields[4]);
+						engine->ice_in.cands[cid].con_port = atoi(fields[5]);
 
-					j = 6;
+						j = 6;
 
-					while(j < argc && fields[j+1]) {
-						if (!strcasecmp(fields[j], "typ")) {
-							engine->ice_in.cand_type = switch_core_session_strdup(smh->session, fields[j+1]);							
-						} else if (!strcasecmp(fields[j], "raddr")) {
-							engine->ice_in.raddr = switch_core_session_strdup(smh->session, fields[j+1]);
-						} else if (!strcasecmp(fields[j], "rport")) {
-							engine->ice_in.rport = atoi(fields[j+1]);
-						} else if (!strcasecmp(fields[j], "generation")) {
-							engine->ice_in.generation = switch_core_session_strdup(smh->session, fields[j+1]);
-						}
+						while(j < argc && fields[j+1]) {
+							if (!strcasecmp(fields[j], "typ")) {
+								engine->ice_in.cands[cid].cand_type = switch_core_session_strdup(smh->session, fields[j+1]);							
+							} else if (!strcasecmp(fields[j], "raddr")) {
+								engine->ice_in.cands[cid].raddr = switch_core_session_strdup(smh->session, fields[j+1]);
+							} else if (!strcasecmp(fields[j], "rport")) {
+								engine->ice_in.cands[cid].rport = atoi(fields[j+1]);
+							} else if (!strcasecmp(fields[j], "generation")) {
+								engine->ice_in.cands[cid].generation = switch_core_session_strdup(smh->session, fields[j+1]);
+							}
 						
-						j += 2;
-					} 
+							j += 2;
+						} 
 					
-					engine->ice_in.ready++;
+						engine->ice_in.cands[cid].ready++;
 
-					break;
+						break;
+					}
 				}
 			}
 		}
-
 	}
 
-	if (engine->ice_in.ready) {
-		if (zstr(engine->ice_in.ufrag) || zstr(engine->ice_in.pwd)) {
-			engine->ice_in.ready = 0;
+	for (i = 0; i < 2; i++) {
+		if (engine->ice_in.cands[i].ready) {
+			if (zstr(engine->ice_in.ufrag) || zstr(engine->ice_in.pwd)) {
+				engine->ice_in.cands[i].ready = 0;
+			}
 		}
 	}
 
@@ -3194,29 +3201,29 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 		engine->ice_out.pwd = switch_core_session_strdup(session, tmp);	
 	}
 
-	if (!engine->ice_out.foundation) {
+	if (!engine->ice_out.cands[0].foundation) {
 		tmp[10] = '\0';
 		switch_stun_random_string(tmp, 10, "0123456789");
-		engine->ice_out.foundation = switch_core_session_strdup(session, tmp);
+		engine->ice_out.cands[0].foundation = switch_core_session_strdup(session, tmp);
 	}
 
-	engine->ice_out.transport = "udp";
+	engine->ice_out.cands[0].transport = "udp";
 
-	if (!engine->ice_out.component_id) {
-		engine->ice_out.component_id = 1;
-		engine->ice_out.priority = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - engine->ice_out.component_id);
+	if (!engine->ice_out.cands[0].component_id) {
+		engine->ice_out.cands[0].component_id = 1;
+		engine->ice_out.cands[0].priority = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - engine->ice_out.cands[0].component_id);
 	}
 
 	if (ip) {
-		engine->ice_out.con_addr = switch_core_session_strdup(session, ip);
+		engine->ice_out.cands[0].con_addr = switch_core_session_strdup(session, ip);
 	}
 	if (port) {
-		engine->ice_out.con_port = port;
+		engine->ice_out.cands[0].con_port = port;
 	}
-	engine->ice_out.generation = "0";
+	engine->ice_out.cands[0].generation = "0";
 	//add rport stuff later
 	
-	engine->ice_out.ready = 1;
+	engine->ice_out.cands[0].ready = 1;
 
 
 }
@@ -3686,44 +3693,45 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		switch_rtp_set_ssrc(a_engine->rtp_session, a_engine->ssrc);
 
-		printf("xxxxxxWTF %d %d\n", a_engine->ice_out.ready , a_engine->ice_in.ready);
-
-		if (a_engine->ice_in.ready) {
+		if (a_engine->ice_in.cands[0].ready) {
 
 			gen_ice(session, SWITCH_MEDIA_TYPE_AUDIO, "", 0);
 
 			switch_rtp_activate_ice(a_engine->rtp_session, 
 									a_engine->ice_in.ufrag,
 									a_engine->ice_out.ufrag,
+									a_engine->ice_out.pwd,
 									a_engine->ice_in.pwd,
+
 #ifdef GOOGLE_ICE
 									ICE_GOOGLE_JINGLE,
 									0
 #else
 									ICE_VANILLA | ICE_CONTROLLED,
-									a_engine->ice_out.priority
+									a_engine->ice_in.cands[0].priority
 #endif
 									);
 
 		
+			if (a_engine->ice_in.cands[1].ready) {
 
-
-		switch_rtp_activate_rtcp_ice(a_engine->rtp_session, 
-									 a_engine->ice_in.ufrag,
-									 a_engine->ice_out.ufrag,
-									 a_engine->ice_in.pwd,
+				switch_rtp_activate_rtcp_ice(a_engine->rtp_session, 
+											 a_engine->ice_in.ufrag,
+											 a_engine->ice_out.ufrag,
+											 a_engine->ice_out.pwd,
+											 a_engine->ice_in.pwd,
 #ifdef GOOGLE_ICE
-									 ICE_GOOGLE_JINGLE,
-									 0
+											 ICE_GOOGLE_JINGLE,
+											 0
 #else
 									 ICE_VANILLA | ICE_CONTROLLED,
-									 a_engine->ice_out.priority -1
+											 a_engine->ice_in.cands[1].priority
 #endif
-									 );
+											 );
+			}
+		}
+
 		
-	}
-
-
 
 	video:
 		
@@ -4269,6 +4277,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
+	if (a_engine->ice_out.cands[0].ready) {
+		verbose_sdp = 1;
+	}
+
+
 	fmtp_out = a_engine->codec_params.fmtp_out;
 	username = smh->mparams->sdp_username;
 
@@ -4413,58 +4426,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
 
-		//		if (smh->mparams->rtcp_audio_interval_msec) {
-		//	switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
-		//}
-
-		//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", a_engine->ssrc);
-
-		if (a_engine->ice_out.ready) {
-			char tmp1[11] = "";
-			char tmp2[11] = "";
-			uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
-			uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
-			uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
-			uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
-
-			
-
-			tmp1[10] = '\0';
-			tmp2[10] = '\0';
-			switch_stun_random_string(tmp1, 10, "0123456789");
-			switch_stun_random_string(tmp2, 10, "0123456789");
-
-			ice_out = &a_engine->ice_out;
-
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n", 
-							tmp1, ice_out->transport, c1,
-							ice_out->con_addr, ice_out->con_port
-							);
-
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx generation 0\n", 
-							tmp2, ice_out->transport, c3,
-							ice_out->con_addr, ice_out->con_port
-							);
-
-#if 1
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
-							tmp1, ice_out->transport, c2,
-							ice_out->con_addr, ice_out->con_port + 1
-							);
-
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
-							tmp2, ice_out->transport, c4,
-							ice_out->con_addr, ice_out->con_port + 1
-							);
-#endif
-
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
-#ifdef GOOGLE_ICE
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
-#endif
-		}
-
 
 		rate = a_engine->codec_params.rm_rate;
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", a_engine->codec_params.agreed_pt, a_engine->codec_params.rm_encoding, rate);
@@ -4511,6 +4472,64 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=%s\n", sr);
 		}
 	
+
+
+
+		//		if (smh->mparams->rtcp_audio_interval_msec) {
+		//	switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
+		//}
+
+		//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", a_engine->ssrc);
+
+		if (a_engine->ice_out.cands[0].ready) {
+			char tmp1[11] = "";
+			char tmp2[11] = "";
+			uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
+			uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
+			uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
+			uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
+
+			tmp1[10] = '\0';
+			tmp2[10] = '\0';
+			switch_stun_random_string(tmp1, 10, "0123456789");
+			switch_stun_random_string(tmp2, 10, "0123456789");
+
+			ice_out = &a_engine->ice_out;
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n", 
+							tmp1, ice_out->cands[0].transport, c1,
+							ice_out->cands[0].con_addr, ice_out->cands[0].con_port
+							);
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx generation 0\n", 
+							tmp2, ice_out->cands[0].transport, c3,
+							ice_out->cands[0].con_addr, ice_out->cands[0].con_port
+							);
+
+
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
+								tmp1, ice_out->cands[0].transport, c2,
+								ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
+								);
+				
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
+								tmp2, ice_out->cands[0].transport, c4,
+								ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
+								);
+
+			
+				
+#ifdef GOOGLE_ICE
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
+#endif
+		}
+
+
+
+
 		if (!zstr(local_audio_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE)) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", local_audio_crypto_key);
 			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=encryption:optional\n");
@@ -4640,6 +4659,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
 
 
+
+
 			//			if (smh->mparams->rtcp_audio_interval_msec) {
 			//	switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port + 1, family, ip);
 			//}
@@ -4648,18 +4669,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				const char *of;
 
 
-				if (v_engine->ice_out.ready) {
+				if (v_engine->ice_out.cands[0].ready) {
 					ice_out = &v_engine->ice_out;
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s %d %s %u %s %d typ host generation 0\n", 
-									ice_out->foundation, ice_out->component_id, ice_out->transport, ice_out->priority,
-									ice_out->con_addr, ice_out->con_port
-									);
 					
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
-#ifdef GOOGLE_ICE
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
-#endif
+					// VID CANDS HERE
 				}
 
 
@@ -4744,8 +4757,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
 			}			
 
-
-
+			
 			if (local_sdp_video_zrtp_hash) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding video a=zrtp-hash:%s\n", local_sdp_video_zrtp_hash);
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=zrtp-hash:%s\n", local_sdp_video_zrtp_hash);

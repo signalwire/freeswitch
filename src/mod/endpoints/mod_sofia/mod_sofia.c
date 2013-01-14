@@ -817,13 +817,14 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		}
-
+		
 		if (tech_pvt->nh) {
 			if (tech_pvt->mparams.local_sdp_str) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local SDP %s:\n%s\n", switch_channel_get_name(channel),
 								  tech_pvt->mparams.local_sdp_str);
 			}
 		}
+
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_NAT) ||

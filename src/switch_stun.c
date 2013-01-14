@@ -120,6 +120,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 	switch_stun_packet_attribute_t *attr;
 	uint32_t bytes_left = len;
 	void *end_buf = buf + len;
+	int xlen = 0;
 
 	if (len < SWITCH_STUN_PACKET_MIN_LEN) {
 		return NULL;
@@ -128,7 +129,8 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 	packet = (switch_stun_packet_t *) buf;
 	packet->header.type = ntohs(packet->header.type);
 	packet->header.length = ntohs(packet->header.length);
-	bytes_left -= packet->header.length + 20;
+	bytes_left -= 20;
+
 
 	/*
 	 * Check packet type (RFC3489(bis?) values)
@@ -182,12 +184,13 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 		attr->type = ntohs(attr->type);
 		bytes_left -= 4;		/* attribute header consumed */
 
-		if (!attr->length || switch_stun_attribute_padded_length(attr) > bytes_left) {
+		if (switch_stun_attribute_padded_length(attr) > bytes_left) {
 			/*
 			 * Note we simply don't "break" here out of the loop anymore because
 			 * we don't want the upper layers to have to deal with attributes without a value
 			 * (or worse: invalid length)
 			 */
+			return NULL;
 		}
 
 		/*
@@ -202,6 +205,12 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 		case SWITCH_STUN_ATTR_REFLECTED_FROM:
 		case SWITCH_STUN_ATTR_ALTERNATE_SERVER:
 		case SWITCH_STUN_ATTR_DESTINATION_ADDRESS:
+		case SWITCH_STUN_ATTR_PRIORITY:
+			{
+				uint32_t *u = (uint32_t *)attr->value;
+				*u = ntohl(*u);
+			}
+			break;
 		case SWITCH_STUN_ATTR_SOURCE_ADDRESS2:
 			{
 				switch_stun_ip_t *ip;
@@ -279,16 +288,18 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 			break;
 
 		default:
-			/* Mandatory attribute range? => invalid */
-			//if (attr->type <= 0x7FFF) {
-			//	return NULL;
-			//}
 			break;
 		}
+
 		bytes_left -= switch_stun_attribute_padded_length(attr);	/* attribute value consumed, substract padded length */
+		xlen += 4 + switch_stun_attribute_padded_length(attr);
 
-	} while (bytes_left >= SWITCH_STUN_ATTRIBUTE_MIN_LEN && switch_stun_packet_next_attribute(attr, end_buf));
-
+		attr = (switch_stun_packet_attribute_t *) (attr->value + switch_stun_attribute_padded_length(attr));
+		if ((void *)attr > end_buf) {
+			break;
+		}
+	} while (xlen < packet->header.length);
+	
 	if ((uint32_t) (packet->header.length + 20) > (uint32_t) (len - bytes_left)) {
 		/*
 		 * the packet length is longer than the length of all attributes?
@@ -296,9 +307,10 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 		 */
 		packet->header.length = (uint16_t) ((len - bytes_left) - 20);
 	}
-
+	
 	return packet;
 }
+
 
 SWITCH_DECLARE(const char *) switch_stun_value_to_name(int32_t type, uint32_t value)
 {
@@ -460,15 +472,12 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(swit
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_priority(switch_stun_packet_t *packet, uint32_t priority)
 {
 	switch_stun_packet_attribute_t *attribute;
-	uint32_t *lame;
+
 	priority = htonl(priority);
 	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_PRIORITY);
 	attribute->length = htons(4);
 	memcpy(attribute->value, &priority, 4);
-
-	lame = (uint32_t *) attribute->value;
-	printf("FUCKER2 %u %u\n", *lame, priority);
 
 	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
 	return 1;
