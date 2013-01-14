@@ -7753,7 +7753,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			calling_myself++;
 		}
 
-		if (sip && sip->sip_to) {
+		if (sip && sip->sip_from) {
 			user = switch_core_session_sprintf(session, "%s@%s", sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host);
 			switch_ivr_set_user(session, user);
 		}
