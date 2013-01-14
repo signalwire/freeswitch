@@ -1831,7 +1831,7 @@ int sdp_media_uses_rtp(sdp_media_t const *m)
 {
   return m &&
     (m->m_proto == sdp_proto_rtp ||
-     m->m_proto == sdp_proto_srtp ||
+     m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp ||
      (m->m_proto == sdp_proto_x && m->m_proto_name &&
       su_casenmatch(m->m_proto_name, "RTP/", 4)));
 }
