@@ -3742,7 +3742,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 	video:
 		
-		switch_core_media_check_video_codecs(session);
+		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_core_media_check_video_codecs(session);
+		}
 
 		if (switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE) && v_engine->codec_params.rm_encoding && v_engine->codec_params.remote_sdp_port) {
 			/******************************************************************************************/
