@@ -422,8 +422,10 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		speak = 1;
 	} else if (!strcasecmp(tag_name, "pause")) {
 		const char *ms_ = switch_xml_attr(tag, "milliseconds");
-		pause = atoi(ms_);
-		if (pause < 0) pause = 1000;
+		if (!zstr(ms_)) {
+			pause = atoi(ms_);
+		}
+		if (pause <= 0) pause = 1000;
 	} else if (!strcasecmp(tag_name, "playback")) {
 		sp_engine = switch_xml_attr(tag, "asr-engine");
 		sp_grammar = switch_xml_attr(tag, "asr-grammar");
