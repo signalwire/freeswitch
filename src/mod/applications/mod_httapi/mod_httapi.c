@@ -396,6 +396,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 	const char *say_gender = NULL;
 	const char *sp_engine = NULL;
 	const char *sp_grammar = NULL;
+	const char *text = NULL;
 	char *free_string = NULL;
 
 	if (!strcasecmp(tag_name, "say")) {
@@ -403,8 +404,17 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		say_type = switch_xml_attr(tag, "type");
 		say_method = switch_xml_attr(tag, "method");
 		say_gender = switch_xml_attr(tag, "gender");
+		text = switch_xml_attr(tag, "text");
 		
-		if (zstr(say_lang) || zstr(say_type) || zstr(say_method) || zstr(body)) {
+		if (zstr(text)) {
+			if (!zstr(file)) {
+				text = file;
+			} else if (!zstr(body)) {
+				text = body;
+			}
+		}
+
+		if (zstr(say_lang) || zstr(say_type) || zstr(say_method) || zstr(text)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "speak: missing required attributes or text! (language) (type) (method) \n");
 			return SWITCH_STATUS_FALSE;
 		}
@@ -414,6 +424,15 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 	} else if (!strcasecmp(tag_name, "speak")) {
 		tts_engine = switch_xml_attr(tag, "engine");
 		tts_voice = switch_xml_attr(tag, "voice");
+		text = switch_xml_attr(tag, "text");
+
+		if (zstr(text)) {
+			if (!zstr(file)) {
+				text = file;
+			} else if (!zstr(body)) {
+				text = body;
+			}
+		}
 
 		if (zstr(tts_engine)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "speak: missing engine attribute!\n");
@@ -556,9 +575,9 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 
 	do {
 		if (speak) {
-			status = switch_ivr_speak_text(client->session, tts_engine, tts_voice, (char *)file, args);
+			status = switch_ivr_speak_text(client->session, tts_engine, tts_voice, (char *)text, args);
 		} else if (say) {
-			status = switch_ivr_say(client->session, body, say_lang, say_type, say_method, say_gender, args);
+			status = switch_ivr_say(client->session, (char *)text, say_lang, say_type, say_method, say_gender, args);
 		} else if (play) {
 			status = switch_ivr_play_file(client->session, NULL, file, args);
 		} else if (speech) {
