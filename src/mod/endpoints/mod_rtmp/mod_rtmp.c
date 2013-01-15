@@ -250,6 +250,7 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	switch_thread_rwlock_wrlock(tech_pvt->rtmp_session->rwlock);
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	//switch_thread_cond_signal(tech_pvt->cond);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
@@ -285,6 +286,8 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 		switch_ivr_unhold(session);
 	}
 #endif
+
+	switch_thread_rwlock_unlock(tech_pvt->rtmp_session->rwlock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
