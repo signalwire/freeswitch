@@ -142,7 +142,7 @@ typedef struct switch_rtp_engine_s {
 	uint32_t max_missed_packets;
 	uint32_t max_missed_hold_packets;
 	uint32_t ssrc;
-
+	switch_port_t remote_rtcp_port;
 	switch_rtp_bug_flag_t rtp_bugs;
 
 	/** ZRTP **/
@@ -2212,6 +2212,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 					switch_channel_set_variable(session->channel, "sip_remote_audio_rtcp_port", attr->a_value);
+					a_engine->remote_rtcp_port = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
@@ -2564,7 +2565,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 						switch_channel_set_variable(session->channel, "sip_remote_video_rtcp_port", attr->a_value);
-
+						v_engine->remote_rtcp_port = atoi(attr->a_value);
 					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 						int crypto_tag;
 						
@@ -2887,10 +2888,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 			switch_channel_set_flag(session->channel, CF_VIDEO);
 			if (switch_rtp_ready(v_engine->rtp_session)) {
 				const char *rport = NULL;
-				switch_port_t remote_rtcp_port = 0;
+				switch_port_t remote_rtcp_port = v_engine->remote_rtcp_port;
 
-				if ((rport = switch_channel_get_variable(session->channel, "sip_remote_video_rtcp_port"))) {
-					remote_rtcp_port = (switch_port_t)atoi(rport);
+				if (!remote_rtcp_port) {
+					if ((rport = switch_channel_get_variable(session->channel, "sip_remote_video_rtcp_port"))) {
+						remote_rtcp_port = (switch_port_t)atoi(rport);
+					}
 				}
 
 
@@ -3422,12 +3425,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 	if (a_engine->rtp_session && switch_channel_test_flag(session->channel, CF_REINVITE)) {
 		const char *rport = NULL;
-		switch_port_t remote_rtcp_port = 0;
-
-		
-
-		if ((rport = switch_channel_get_variable(session->channel, "sip_remote_audio_rtcp_port"))) {
-			remote_rtcp_port = (switch_port_t)atoi(rport);
+		switch_port_t remote_rtcp_port = a_engine->remote_rtcp_port;
+				
+		if (!remote_rtcp_port) {
+			if ((rport = switch_channel_get_variable(session->channel, "sip_remote_audio_rtcp_port"))) {
+				remote_rtcp_port = (switch_port_t)atoi(rport);
+			}
 		}
 
 		if (switch_rtp_set_remote_address(a_engine->rtp_session, a_engine->codec_params.remote_sdp_ip, a_engine->codec_params.remote_sdp_port,
@@ -3592,19 +3595,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		if ((val = switch_channel_get_variable(session->channel, "rtcp_audio_interval_msec")) || (val = smh->mparams->rtcp_audio_interval_msec)) {
 			const char *rport = switch_channel_get_variable(session->channel, "sip_remote_audio_rtcp_port");
-			switch_port_t remote_port = 0;
-			if (rport) {
-				remote_port = (switch_port_t)atoi(rport);
+			switch_port_t remote_rtcp_port = a_engine->remote_rtcp_port;
+
+			if (!remote_rtcp_port && rport) {
+				remote_rtcp_port = (switch_port_t)atoi(rport);
 			}
+
 			if (!strcasecmp(val, "passthru")) {
-				switch_rtp_activate_rtcp(a_engine->rtp_session, -1, remote_port);
+				switch_rtp_activate_rtcp(a_engine->rtp_session, -1, remote_rtcp_port);
 			} else {
 				int interval = atoi(val);
 				if (interval < 100 || interval > 5000) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 									  "Invalid rtcp interval spec [%d] must be between 100 and 5000\n", interval);
 				} else {
-					switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_port);
+					switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_rtcp_port);
 				}
 			}
 
@@ -3814,12 +3819,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 			if (v_engine->rtp_session && switch_channel_test_flag(session->channel, CF_REINVITE)) {
 				const char *rport = NULL;
-				switch_port_t remote_rtcp_port = 0;
+				switch_port_t remote_rtcp_port = v_engine->remote_rtcp_port;
 
 				switch_channel_clear_flag(session->channel, CF_REINVITE);
 
-				if ((rport = switch_channel_get_variable(session->channel, "sip_remote_video_rtcp_port"))) {
-					remote_rtcp_port = (switch_port_t)atoi(rport);
+				if (!remote_rtcp_port) {
+					if ((rport = switch_channel_get_variable(session->channel, "sip_remote_video_rtcp_port"))) {
+						remote_rtcp_port = (switch_port_t)atoi(rport);
+					}
 				}
 				
 				if (switch_rtp_set_remote_address
@@ -4557,9 +4564,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 
-		//		if (smh->mparams->rtcp_audio_interval_msec) {
-		//	switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
-		//}
+		if (smh->mparams->rtcp_audio_interval_msec) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
+		}
 
 		//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", a_engine->ssrc);
 
@@ -4743,9 +4750,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 
-			//			if (smh->mparams->rtcp_audio_interval_msec) {
-			//	switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port + 1, family, ip);
-			//}
+			if (smh->mparams->rtcp_audio_interval_msec) {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port + 1, family, ip);
+			}
 
 			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", v_engine->ssrc);
 
