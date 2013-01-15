@@ -172,6 +172,7 @@ typedef struct {
 	uint32_t priority;
 	uint8_t sending;
 	uint8_t ready;
+	uint8_t rready;
 } switch_rtp_ice_t;
 
 struct switch_rtp {
@@ -693,6 +694,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 
 	bytes = switch_stun_packet_length(packet);
 
+
 	switch_socket_sendto(sock_output, remote_addr, 0, (void *) packet, &bytes);
 						 
 	ice->stuncount = ice->default_stuncount;
@@ -756,10 +758,12 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		ice->sending = 0;
 	}
 
-	if (!ice->ready && packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
-		ice->ready = 1;
-	}
+
 #endif 
+
+	if (!ice->rready && packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
+		ice->rready = 1;
+	}
 
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
 
@@ -800,7 +804,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		ok = !strcmp(ice->user_ice, username);
 	}
 
-	//printf("ICE %s %d\n", rtp_type(rtp_session), ok);
+	//printf("ICE %s %s ok:%d %d %d\n", rtp_type(rtp_session), ice == &rtp_session->rtcp_ice ? "rtcp" : "rtp", ok, rtp_session->ice.ready, rtp_session->ice.rready);
 
 	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST) && ok) {
 		uint8_t stunbuf[512];
@@ -817,7 +821,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 		}
 
-		rtp_session->ice.ready = 1;
+		ice->ready = 1;
 
 		memset(stunbuf, 0, sizeof(stunbuf));
 		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, stunbuf);
@@ -1211,7 +1215,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
 			}
 			rtcp_bytes = sbytes;
-			printf("XXXXXXXXXXXXXXXXWTF PROTECT %ld bytes\n", rtcp_bytes);
+			//printf("XXXXXXXXXXXXXXXXWTF PROTECT %ld bytes\n", rtcp_bytes);
 
 		}
 #endif
@@ -4380,6 +4384,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	}
 
 
+
 	if ((rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 		m = 0;
 	} else {
@@ -4548,12 +4553,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		send = 0;
 	}
 
-#if 0
-	if (rtp_session->ice.ice_user && !rtp_session->ice.ready) {
-		//send = 0;
-		//printf("skip no stun love\n");
+
+	if (rtp_session->ice.ice_user && !(rtp_session->ice.rready)) {
+		send = 0;
+		//printf("skip no stun love %d/%d\n", rtp_session->ice.ready, rtp_session->ice.rready);
 	}
-#endif
+
 
 	if (send) {
 		send_msg->header.seq = htons(++rtp_session->seq);
