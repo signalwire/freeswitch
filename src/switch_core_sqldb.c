@@ -1413,6 +1413,19 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_m
 
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup)
 {
+#define EXEC_NOW
+#ifdef EXEC_NOW
+	switch_cache_db_handle_t *dbh;
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, qm->dsn) == SWITCH_STATUS_SUCCESS) {
+		switch_cache_db_execute_sql(dbh, (char *)sql, NULL);		
+		switch_cache_db_release_db_handle(&dbh);
+	}
+
+	if (!dup) free((char *)sql);
+
+#else
+
 	int size, x = 0, sanity = 0;
 	uint32_t written, want;
 
@@ -1456,6 +1469,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 	switch_mutex_lock(qm->mutex);
 	qm->confirm--;
 	switch_mutex_unlock(qm->mutex);
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1741,7 +1755,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 		i = 40;
 
-		while (--i > 0 && (lc = qm_ttl(qm)) < qm->max_trans / 4 && !qm->confirm) {
+		while (--i > 0 && (lc = qm_ttl(qm)) < 500) {
 			switch_yield(5000);
 		}
 
