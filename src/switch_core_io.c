@@ -151,9 +151,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	
 	for(i = 0; i < 2; i++) {
 		if (session->dmachine[i] && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
-			switch_mutex_lock(session->channel->dtmf_mutex);
+			switch_channel_dtmf_lock(session->channel);
 			switch_ivr_dmachine_ping(session->dmachine[i], NULL);
-			switch_mutex_unlock(session->channel->dtmf_mutex);
+			switch_channel_dtmf_lock(session->channel);
 		}
 	}
 	
