@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Brian West <brian@freeswitch.org>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  * mod_flite.c -- Flite Interface
  *
@@ -76,6 +77,11 @@ static switch_status_t flite_speech_open(switch_speech_handle_t *sh, const char 
 	flite_t *flite = switch_core_alloc(sh->memory_pool, sizeof(*flite));
 
 	sh->native_rate = 16000;
+
+	if (!voice_name) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "A voice is required. Valid voice names are awb, rms, slt or kal.\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!strcasecmp(voice_name, "awb")) {
 		flite->v = globals.awb;
