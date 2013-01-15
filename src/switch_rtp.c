@@ -1058,7 +1058,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 			if (rtp_session->send_time) {
 				when = rtp_session->send_time;
 			} else {
-				when = switch_time_now();
+				when = switch_micro_time_now();
 			}
 
 			sr->ntp_msw = htonl((u_long)(when / 1000000 + 2208988800UL));
@@ -4425,7 +4425,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 #endif
 
-		now = switch_time_now();
+		now = switch_micro_time_now();
 #ifdef RTP_DEBUG_WRITE_DELTA
 		{
 			int delta = (int) (now - rtp_session->send_time) / 1000;
