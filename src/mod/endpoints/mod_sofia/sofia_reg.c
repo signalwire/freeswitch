@@ -1662,6 +1662,9 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", username);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
+			if (update_registration) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "update-reg", "true");
+			}
 			switch_event_fire(&s_event);
 		}
 
