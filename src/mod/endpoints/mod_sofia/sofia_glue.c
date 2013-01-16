@@ -77,7 +77,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_assert(session != NULL);
 	switch_assert(profile != NULL);
 	switch_assert(tech_pvt != NULL);
-
+	
 	switch_core_session_add_stream(session, NULL);
 
 	switch_mutex_lock(tech_pvt->flag_mutex);

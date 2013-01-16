@@ -672,7 +672,6 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 
 	if ((ice->type & ICE_VANILLA)) {
 		char sw[128] = "";
-		//switch_stun_packet_attribute_add_use_candidate(packet);
 
 		switch_stun_packet_attribute_add_priority(packet, ice->priority);
 
@@ -683,12 +682,11 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 			switch_stun_packet_attribute_add_controlled(packet);
 		} else {
 			switch_stun_packet_attribute_add_controlling(packet);
+			switch_stun_packet_attribute_add_use_candidate(packet);
 		}
 
 		switch_stun_packet_attribute_add_integrity(packet, ice->rpass);
 		switch_stun_packet_attribute_add_fingerprint(packet);
-
-
 	}
 
 
@@ -804,7 +802,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		ok = !strcmp(ice->user_ice, username);
 	}
 
-	//printf("ICE %s %s ok:%d %d %d\n", rtp_type(rtp_session), ice == &rtp_session->rtcp_ice ? "rtcp" : "rtp", ok, rtp_session->ice.ready, rtp_session->ice.rready);
+	//printf("XXX ICE %s %s ok:%d %d %d\n", rtp_type(rtp_session), ice == &rtp_session->rtcp_ice ? "rtcp" : "rtp", ok, rtp_session->ice.ready, rtp_session->ice.rready);
 
 	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST) && ok) {
 		uint8_t stunbuf[512];
@@ -834,13 +832,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		switch_stun_packet_attribute_add_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
 
 		if ((ice->type & ICE_VANILLA)) {
-		
-
-			//if (!(ice->type && ICE_CONTROLLED)) {
-			//	switch_stun_packet_attribute_add_use_candidate(rpacket);
-			//	switch_stun_packet_attribute_add_priority(rpacket, ice->priority);
-			//}
-
 			switch_stun_packet_attribute_add_integrity(rpacket, ice->pass);
 			switch_stun_packet_attribute_add_fingerprint(rpacket);
 
@@ -1859,7 +1850,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		break;
 	case AES_CM_128_HMAC_SHA1_32:
 		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy->rtp);
-		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy->rtcp);
+		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy->rtcp);
+
 
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			switch_channel_set_variable(channel, "sip_has_crypto", "AES_CM_128_HMAC_SHA1_32");
@@ -1877,12 +1869,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		break;
 	}
 
-	policy->next = NULL;
 	policy->key = (uint8_t *) crypto_key->key;
+	policy->next = NULL;
+	
 
-
-	//policy->rtp.sec_serv = sec_serv_conf_and_auth;
-	//policy->rtcp.sec_serv = sec_serv_conf_and_auth;
+	policy->rtp.sec_serv = sec_serv_conf_and_auth;
+	policy->rtcp.sec_serv = sec_serv_conf_and_auth;
 
 	switch (direction) {
 	case SWITCH_RTP_CRYPTO_RECV:
@@ -3581,6 +3573,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 		}
 
+
+
 		if (poll_status == SWITCH_STATUS_SUCCESS) {
 			if (read_pretriggered) {
 				read_pretriggered = 0;
@@ -3738,6 +3732,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 
+
 		if (bytes && rtp_session->recv_msg.header.version == 2 && 
 			!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 			rtp_session->recv_msg.header.pt != 13 && 
@@ -3745,6 +3740,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
 			rtp_session->recv_msg.header.pt != rtp_session->rpayload && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
 			/* drop frames of incorrect payload number and return CNG frame instead */
+			
 			return_cng_frame();			
 		}
 
@@ -4015,7 +4011,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				return_cng_frame();
 			}
 		}
-		
+
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
 			if (!(io_flags & SWITCH_IO_FLAG_SINGLE_READ) && rtp_session->flags[SWITCH_RTP_FLAG_DATAWAIT]) {
 				goto do_continue;
@@ -4556,7 +4552,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 	if (rtp_session->ice.ice_user && !(rtp_session->ice.rready)) {
 		send = 0;
-		//printf("skip no stun love %d/%d\n", rtp_session->ice.ready, rtp_session->ice.rready);
+		//printf("XXX skip no stun love %d/%d\n", rtp_session->ice.ready, rtp_session->ice.rready);
 	}
 
 

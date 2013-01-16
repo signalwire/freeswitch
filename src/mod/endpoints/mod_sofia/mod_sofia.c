@@ -93,10 +93,6 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_OUTBOUND) || switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
-
-		switch_core_session_check_outgoing_crypto(session, SOFIA_SECURE_MEDIA_VARIABLE);
-
-
 		if (sofia_glue_do_invite(session) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			assert(switch_channel_get_state(channel) != CS_INIT);
@@ -1250,7 +1246,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 
 
-			if ((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) && 
+			if (((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) || 
+				 (var = switch_channel_get_variable(channel, "rtp_secure_media"))) && 
 				(switch_true(var) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_32) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_80))) {
 				switch_channel_set_flag(tech_pvt->channel, CF_SECURE);
 			}
@@ -4133,6 +4130,16 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (!tech_pvt->dest_to) {
 		tech_pvt->dest_to = tech_pvt->dest;
+	}
+
+	if ((hval = switch_event_get_header(var_event, "media_webrtc")) && switch_true(hval)) {
+		switch_channel_set_variable(nchannel, "rtp_secure_media", SWITCH_RTP_CRYPTO_KEY_80);
+	}
+
+	if ((hval = switch_event_get_header(var_event, SOFIA_SECURE_MEDIA_VARIABLE)) || 
+		(hval = switch_event_get_header(var_event, "rtp_secure_media"))) {
+
+		switch_channel_set_variable(nchannel, "rtp_secure_media", hval);
 	}
 
 	sofia_glue_attach_private(nsession, profile, tech_pvt, dest);
