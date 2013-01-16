@@ -490,7 +490,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 			}
 			say = 1;
 
-			body = free_string;
+			text = free_string;
 			switch_ivr_play_file(client->session, NULL, "voicemail/vm-person.wav", &nullargs);
 			
 		}
