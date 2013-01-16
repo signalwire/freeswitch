@@ -4631,6 +4631,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	if (switch_channel_test_flag(smh->session->channel, CF_ICE)) {
 		gen_ice(session, SWITCH_MEDIA_TYPE_AUDIO, ip, port);
+		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=msid-semantic: WMS %s\n", smh->msid);
 	}
 
 	if (a_engine->codec_params.rm_encoding) {
