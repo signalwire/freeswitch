@@ -641,10 +641,10 @@ typedef enum {
 	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE,
 	SWITCH_RTP_FLAG_VIDEO,
 	SWITCH_RTP_FLAG_ENABLE_RTCP,
-	/* don't add any below this one */
+	SWITCH_RTP_FLAG_RTCP_MUX,
 	SWITCH_RTP_FLAG_INVALID
-} switch_rtp_flag_enum_t;
-typedef uint32_t switch_rtp_flag_t;
+} switch_rtp_flag_t;
+
 
 typedef enum {
 	RTP_BUG_NONE = 0,			/* won't be using this one much ;) */
@@ -1336,7 +1336,8 @@ typedef enum {
 	SFF_DYNAMIC = (1 << 6),
 	SFF_ZRTP = (1 << 7),
 	SFF_UDPTL_PACKET = (1 << 8),
-	SFF_NOT_AUDIO = (1 << 9)
+	SFF_NOT_AUDIO = (1 << 9),
+	SFF_RTCP = (1 << 10)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 

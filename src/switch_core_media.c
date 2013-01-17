@@ -29,7 +29,7 @@
  *
  */
 
-
+#define RTCP_MUX
 #include <switch.h>
 #include <switch_ssl.h>
 #include <switch_stun.h>
@@ -118,8 +118,6 @@ typedef struct ice_s {
 	char *pwd;
 	char *options;
 
-	
-
 } ice_t;
 
 typedef struct switch_rtp_engine_s {
@@ -159,6 +157,8 @@ typedef struct switch_rtp_engine_s {
 
 	ice_t ice_in;
 	ice_t ice_out;
+
+	int8_t rtcp_mux;
 
 } switch_rtp_engine_t;
 
@@ -1799,7 +1799,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 {
 	switch_rtp_engine_t *engine = &smh->engines[type];
 	sdp_attribute_t *attr;
-	int i = 0;
+	int i = 0, got_rtcp_mux = 0;
 	char tmp[80] = "";
 
 	for (attr = m->m_attributes; attr; attr = attr->a_next) {
@@ -1818,11 +1818,17 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			engine->ice_in.pwd = switch_core_session_strdup(smh->session, attr->a_value);
 		} else if (!strcasecmp(attr->a_name, "ice-options")) {
 			engine->ice_in.options = switch_core_session_strdup(smh->session, attr->a_value);
+#ifdef RTCP_MUX
+		} else if (!strcasecmp(attr->a_name, "rtcp-mux")) {
+
+			engine->rtcp_mux = SWITCH_TRUE;
+			got_rtcp_mux++;
+#endif
 		} else if (!strcasecmp(attr->a_name, "candidate")) {
 
 			if (!engine->cand_acl_count) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "NO candidate ACL defined, skipping candidate check.\n");
-				return;
+				goto end;
 			}
 
 
@@ -1919,6 +1925,13 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 						  "setting remote rtcp %s addr to %s:%d based on candidate\n", type2str(type),
 						  engine->ice_in.cands[1].con_addr, engine->ice_in.cands[1].con_port);
 		engine->remote_rtcp_port = engine->ice_in.cands[1].con_port;
+	}
+
+
+ end:
+
+	if (!got_rtcp_mux) {
+		engine->rtcp_mux = -1;
 	}
 
 }
@@ -2117,8 +2130,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			got_webrtc++;
 			switch_channel_set_flag(session->channel, CF_WEBRTC);
 			switch_channel_set_flag(session->channel, CF_ICE);
-			smh->mparams->rtcp_audio_interval_msec = "2500";
-			smh->mparams->rtcp_video_interval_msec = "2500";
+			smh->mparams->rtcp_audio_interval_msec = "5000";
+			smh->mparams->rtcp_video_interval_msec = "5000";
 		}
 
 		if (m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp) {
@@ -3256,6 +3269,12 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 
 	engine = &smh->engines[type];
 
+#ifdef RTCP_MUX
+	if (!engine->rtcp_mux && type == SWITCH_MEDIA_TYPE_AUDIO) {
+		engine->rtcp_mux = SWITCH_TRUE;
+	}
+#endif
+
 	if (!smh->msid) {
 		switch_stun_random_string(tmp, 32, NULL);
 		tmp[32] = '\0';
@@ -3655,7 +3674,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			
 			if (!strcasecmp(val, "passthru")) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PASSTHRU PORT %d\n", remote_rtcp_port);
-				switch_rtp_activate_rtcp(a_engine->rtp_session, -1, remote_rtcp_port);
+				switch_rtp_activate_rtcp(a_engine->rtp_session, -1, remote_rtcp_port, a_engine->rtcp_mux > 0);
 			} else {
 				int interval = atoi(val);
 				if (interval < 100 || interval > 5000) {
@@ -3663,7 +3682,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 									  "Invalid rtcp interval spec [%d] must be between 100 and 5000\n", interval);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PORT %d\n", remote_rtcp_port);
-					switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_rtcp_port);
+					switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_rtcp_port, a_engine->rtcp_mux > 0);
 				}
 			}
 
@@ -4029,7 +4048,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					}
 					if (!strcasecmp(val, "passthru")) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP PASSTHRU PORT %d\n", remote_port);
-						switch_rtp_activate_rtcp(v_engine->rtp_session, -1, remote_port);
+						switch_rtp_activate_rtcp(v_engine->rtp_session, -1, remote_port, v_engine->rtcp_mux > 0);
 					} else {
 						int interval = atoi(val);
 						if (interval < 100 || interval > 5000) {
@@ -4037,7 +4056,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											  "Invalid rtcp interval spec [%d] must be between 100 and 5000\n", interval);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP PORT %d\n", remote_port);
-							switch_rtp_activate_rtcp(v_engine->rtp_session, interval, remote_port);
+							switch_rtp_activate_rtcp(v_engine->rtp_session, interval, remote_port, v_engine->rtcp_mux > 0);
 						}
 					}
 					
@@ -4258,7 +4277,11 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	}
 
 	if (smh->mparams->rtcp_audio_interval_msec) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
+		if (a_engine->rtcp_mux > 0) {
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp-mux\n");
+		} else {
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
+		}
 	}
 
 	//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", a_engine->ssrc);
@@ -4302,13 +4325,14 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
 						tmp1, ice_out->cands[0].transport, c2,
-						ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
+							ice_out->cands[0].con_addr, ice_out->cands[0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 						);
-				
+			
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
 						tmp2, ice_out->cands[0].transport, c4,
-						ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
+						ice_out->cands[0].con_addr, ice_out->cands[0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 						);
+		
 
 			
 				
@@ -4703,7 +4727,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 		if (smh->mparams->rtcp_audio_interval_msec) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
+			if (a_engine->rtcp_mux > 0) {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp-mux\n");
+			} else {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", port + 1, family, ip);
+			}
 		}
 
 		//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", a_engine->ssrc);
@@ -4743,16 +4771,17 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							);
 
 
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
-								tmp1, ice_out->cands[0].transport, c2,
-								ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
-								);
-				
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
-								tmp2, ice_out->cands[0].transport, c4,
-								ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
-								);
 
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
+							tmp1, ice_out->cands[0].transport, c2,
+							ice_out->cands[0].con_addr, ice_out->cands[0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
+							);
+				
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
+							tmp2, ice_out->cands[0].transport, c4,
+							ice_out->cands[0].con_addr, ice_out->cands[0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
+							);
+			
 			
 				
 #ifdef GOOGLE_ICE
@@ -4978,7 +5007,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 			if (smh->mparams->rtcp_audio_interval_msec) {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port + 1, family, ip);
+				if (v_engine->rtcp_mux > 0) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp-mux\n");
+				} else {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port + 1, family, ip);
+				}
 			}
 
 			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", v_engine->ssrc);
@@ -5019,13 +5052,14 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
 								tmp1, ice_out->cands[0].transport, c2,
-								ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
+								ice_out->cands[0].con_addr, ice_out->cands[0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
 								);
-				
+					
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
 								tmp2, ice_out->cands[0].transport, c4,
-								ice_out->cands[0].con_addr, ice_out->cands[0].con_port + 1
+								ice_out->cands[0].con_addr, ice_out->cands[0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
 								);
+					
 
 			
 				
