@@ -765,6 +765,14 @@ static switch_status_t parse_dial(const char *tag_name, client_t *client, switch
 
 		switch_core_session_execute_application(client->session, "bridge", str);
 	} else {
+		if (!zstr(cid_name)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Changing Caller-ID Name to: %s\n", cid_name);
+			switch_channel_set_variable(client->channel, "effective_caller_id_name", cid_name);
+		}
+		if (!zstr(cid_number)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Changing Caller-ID Number to: %s\n", cid_number);
+			switch_channel_set_variable(client->channel, "effective_caller_id_number", cid_number);
+		}
 		switch_ivr_session_transfer(client->session, body, dp, context);
 	}
 
