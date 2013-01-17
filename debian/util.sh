@@ -377,6 +377,8 @@ commands:
 
   build-all
 
+    [ This must be run as root! ]
+
     -a Specify architectures
     -b Bundle downloaded libraries in source package
     -c Specify distributions
@@ -395,6 +397,8 @@ commands:
     -z Set compression level
 
   build-debs <distro> <dsc-file> <architecture>
+
+    [ This must be run as root! ]
 
     -B Binary architecture-dependent build
     -b Binary-only build
