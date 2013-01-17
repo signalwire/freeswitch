@@ -312,7 +312,7 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts=""
   local archs="" distros="" orig="" par=false
-  while getopts 'a:bc:df:jmno:s:v:z:' o "$@"; do
+  while getopts 'a:bc:df:jm:no:s:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
