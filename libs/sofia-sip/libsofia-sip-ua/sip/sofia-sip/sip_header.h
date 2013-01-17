@@ -162,6 +162,10 @@ SOFIAPUBVAR char const sip_transport_tcp[];
 SOFIAPUBVAR char const sip_transport_sctp[];
 /** @internal TLS transport version string. */
 SOFIAPUBVAR char const sip_transport_tls[];
+/** @internal WS transport version string. */
+SOFIAPUBVAR char const sip_transport_ws[];
+/** @internal WSS transport version string. */
+SOFIAPUBVAR char const sip_transport_wss[];
 /** @internal SIP version string. */
 SOFIAPUBVAR char const sip_version_2_0[];
 

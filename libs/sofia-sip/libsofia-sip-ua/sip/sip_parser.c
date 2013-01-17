@@ -451,6 +451,8 @@ sip_method_t sip_method_code(char const *name)
 char const sip_transport_udp[] = "SIP/2.0/UDP";
 char const sip_transport_tcp[] = "SIP/2.0/TCP";
 char const sip_transport_sctp[] = "SIP/2.0/SCTP";
+char const sip_transport_ws[] = "SIP/2.0/WS";
+char const sip_transport_wss[] = "SIP/2.0/WSS";
 char const sip_transport_tls[] = "SIP/2.0/TLS";
 
 /** Decode transport */
@@ -470,6 +472,8 @@ issize_t sip_transport_d(char **ss, char const **ttransport)
       (!TRANSPORT_MATCH(sip_transport_udp) &&
        !TRANSPORT_MATCH(sip_transport_tcp) &&
        !TRANSPORT_MATCH(sip_transport_sctp) &&
+       !TRANSPORT_MATCH(sip_transport_ws) &&
+       !TRANSPORT_MATCH(sip_transport_wss) &&
        !TRANSPORT_MATCH(sip_transport_tls))) {
     /* Protocol name */
     transport = pn = s;
@@ -512,6 +516,10 @@ issize_t sip_transport_d(char **ss, char const **ttransport)
 	transport = sip_transport_tcp;
       else if (su_casematch(transport, sip_transport_sctp))
 	transport = sip_transport_sctp;
+      else if (su_casematch(transport, sip_transport_ws))
+	transport = sip_transport_ws;
+      else if (su_casematch(transport, sip_transport_wss))
+	transport = sip_transport_wss;
       else if (su_casematch(transport, sip_transport_tls))
 	transport = sip_transport_tls;
     }
@@ -529,10 +537,14 @@ isize_t sip_transport_xtra(char const *transport)
   if (transport == sip_transport_udp ||
       transport == sip_transport_tcp ||
       transport == sip_transport_sctp ||
+      transport == sip_transport_ws ||
+      transport == sip_transport_wss ||
       transport == sip_transport_tls ||
       su_casematch(transport, sip_transport_udp) ||
       su_casematch(transport, sip_transport_tcp) ||
       su_casematch(transport, sip_transport_sctp) ||
+      su_casematch(transport, sip_transport_ws) ||
+      su_casematch(transport, sip_transport_wss) ||
       su_casematch(transport, sip_transport_tls))
     return 0;
 
@@ -550,6 +562,10 @@ void sip_transport_dup(char **pp, char const **dd, char const *s)
     *dd = s;
   else if (s == sip_transport_tls)
     *dd = s;
+  else if (s == sip_transport_ws)
+    *dd = s;
+  else if (s == sip_transport_wss)
+    *dd = s;
   else if (su_casematch(s, sip_transport_udp))
     *dd = sip_transport_udp;
   else if (su_casematch(s, sip_transport_tcp))
@@ -558,6 +574,10 @@ void sip_transport_dup(char **pp, char const **dd, char const *s)
     *dd = sip_transport_sctp;
   else if (su_casematch(s, sip_transport_tls))
     *dd = sip_transport_tls;
+  else if (su_casematch(s, sip_transport_ws))
+    *dd = sip_transport_ws;
+  else if (su_casematch(s, sip_transport_wss))
+    *dd = sip_transport_wss;
   else
     MSG_STRING_DUP(*pp, *dd, s);
 }
