@@ -1667,6 +1667,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 		private_t *tech_pvt = NULL;
 		switch_channel_t *channel = NULL;
 		struct in_addr addr;
+		switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
 
 		tech_pvt = switch_core_session_get_private(session);
 		channel = switch_core_session_get_channel(session);
@@ -1700,7 +1701,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 				tech_pvt->agreed_pt,
 				tech_pvt->read_impl.samples_per_packet,
 				tech_pvt->codec_ms * 1000,
-				(switch_rtp_flag_t) 0, "soft", &err,
+				flags, "soft", &err,
 				switch_core_session_get_pool(session));
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG,
 				"AUDIO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",

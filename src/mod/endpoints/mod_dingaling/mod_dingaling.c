@@ -1131,7 +1131,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 	const char *err;
 	int ms = tech_pvt->transports[LDL_TPORT_RTP].ptime;
-	switch_rtp_flag_t flags;
+	switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
 	int locked = 0;
 	int r = 1;
 
@@ -1235,15 +1235,18 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 						  );
 	}
 
-	flags = SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTO_CNG;
-
+	flags[SWITCH_RTP_FLAG_DATAWAIT]++;
+	flags[SWITCH_RTP_FLAG_GOOGLEHACK]++;
+	flags[SWITCH_RTP_FLAG_AUTOADJ]++;
+	flags[SWITCH_RTP_FLAG_RAW_WRITE]++;
+	flags[SWITCH_RTP_FLAG_AUTO_CNG]++;
 
 	if (switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
-		flags |= SWITCH_RTP_FLAG_USE_TIMER;
+		flags[SWITCH_RTP_FLAG_USE_TIMER]++;
 	}
 
 	if (switch_true(switch_channel_get_variable(channel, "disable_rtp_auto_adjust"))) {
-		flags &= ~SWITCH_RTP_FLAG_AUTOADJ;
+		flags[SWITCH_RTP_FLAG_AUTOADJ] = 0;
 	}
 
 	if (!(tech_pvt->transports[LDL_TPORT_RTP].rtp_session = switch_rtp_new(tech_pvt->profile->ip,
@@ -1270,7 +1273,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 
 		if (tech_pvt->transports[LDL_TPORT_RTCP].remote_port) {
 			switch_rtp_activate_rtcp(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, MDL_RTCP_DUR, 
-									 tech_pvt->transports[LDL_TPORT_RTCP].remote_port);
+									 tech_pvt->transports[LDL_TPORT_RTCP].remote_port, SWITCH_FALSE);
 
 		}
 
@@ -1279,7 +1282,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 		switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 
 								tech_pvt->transports[LDL_TPORT_RTP].remote_user, 
 								tech_pvt->transports[LDL_TPORT_RTP].local_user,
-								tech_pvt->transports[LDL_TPORT_RTP].remote_pass);
+								tech_pvt->transports[LDL_TPORT_RTP].remote_pass, NULL, ICE_GOOGLE_JINGLE, 0);
 		
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			if (switch_rtp_enable_vad(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, tech_pvt->session, &tech_pvt->transports[LDL_TPORT_RTP].read_codec, SWITCH_VAD_FLAG_TALKING) != SWITCH_STATUS_SUCCESS) {
@@ -1297,7 +1300,7 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 			switch_rtp_activate_rtcp_ice(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 
 										 tech_pvt->transports[LDL_TPORT_RTCP].remote_user, 
 										 tech_pvt->transports[LDL_TPORT_RTCP].local_user,
-										 tech_pvt->transports[LDL_TPORT_RTCP].remote_pass);
+										 tech_pvt->transports[LDL_TPORT_RTCP].remote_pass, NULL, ICE_GOOGLE_JINGLE, 0);
 			
 		}
 
@@ -1320,7 +1323,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 	const char *err;
 	int ms = 0;
-	switch_rtp_flag_t flags;
+	switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
 	int r = 1, locked = 0;
 
 	
@@ -1423,12 +1426,14 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 						  );
 	}
 
-
-	flags = SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_VIDEO;
-
+	flags[SWITCH_RTP_FLAG_DATAWAIT]++;
+	flags[SWITCH_RTP_FLAG_GOOGLEHACK]++;
+	flags[SWITCH_RTP_FLAG_AUTOADJ]++;
+	flags[SWITCH_RTP_FLAG_RAW_WRITE]++;
+	flags[SWITCH_RTP_FLAG_VIDEO]++;
 
 	if (switch_true(switch_channel_get_variable(channel, "disable_rtp_auto_adjust"))) {
-		flags &= ~SWITCH_RTP_FLAG_AUTOADJ;
+		flags[SWITCH_RTP_FLAG_AUTOADJ] = 0;
 	}
 
 	if (!(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session = switch_rtp_new(tech_pvt->profile->ip,
@@ -1447,7 +1452,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 
 		if (tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_port) {
 			switch_rtp_activate_rtcp(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, MDL_RTCP_DUR, 
-									 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_port);
+									 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_port, SWITCH_FALSE);
 		}
 		try_secure(tech_pvt, LDL_TPORT_VIDEO_RTP);
 
@@ -1455,7 +1460,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 		switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
 								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_user, 
 								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_user,
-								NULL);//tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
+								NULL, NULL, ICE_GOOGLE_JINGLE, 0);//tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
 		switch_channel_set_flag(channel, CF_VIDEO);
 		switch_set_flag(tech_pvt, TFLAG_VIDEO_RTP_READY);
 		//switch_rtp_set_default_payload(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num);
@@ -1467,7 +1472,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 			switch_rtp_activate_rtcp_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
 										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_user, 
 										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].local_user,
-										 NULL);//tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_pass);
+										 NULL, NULL, ICE_GOOGLE_JINGLE, 0);//tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_pass);
 		}
 
 
