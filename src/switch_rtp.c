@@ -3134,7 +3134,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		if (rtp_session->recv_msg.header.pt != rtp_session->rpayload && (!rtp_session->recv_te || rtp_session->recv_msg.header.pt != rtp_session->recv_te) &&
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) &&
 			rtp_session->rtcp_recv_msg_p->header.version == 2 &&
-			rtp_session->rtcp_recv_msg_p->header.type > 199 && rtp_session->rtcp_recv_msg_p->header.type < 300) { //rtcp muxed
+			rtp_session->rtcp_recv_msg_p->header.type > 199 && rtp_session->rtcp_recv_msg_p->header.type < 205) { //rtcp muxed
 			*flags |= SFF_RTCP;
 			return SWITCH_STATUS_SUCCESS;
 		}
