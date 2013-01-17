@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -70,19 +70,19 @@ rdb_init(rdb_t *rdb) {
  */
 
 err_status_t
-rdb_check(const rdb_t *rdb, uint32_t index) {
+rdb_check(const rdb_t *rdb, uint32_t p_index) {
   
   /* if the index appears after (or at very end of) the window, its good */
-  if (index >= rdb->window_start + rdb_bits_in_bitmask)
+  if (p_index >= rdb->window_start + rdb_bits_in_bitmask)
     return err_status_ok;
   
   /* if the index appears before the window, its bad */
-  if (index < rdb->window_start)
-    return err_status_fail;
+  if (p_index < rdb->window_start)
+    return err_status_replay_old;
 
   /* otherwise, the index appears within the window, so check the bitmask */
-  if (v128_get_bit(&rdb->bitmask, (index - rdb->window_start)) == 1)
-    return err_status_fail;    
+  if (v128_get_bit(&rdb->bitmask, (p_index - rdb->window_start)) == 1)
+    return err_status_replay_fail;    
       
   /* otherwise, the index is okay */
   return err_status_ok;
@@ -98,15 +98,15 @@ rdb_check(const rdb_t *rdb, uint32_t index) {
  */
 
 err_status_t
-rdb_add_index(rdb_t *rdb, uint32_t index) {
+rdb_add_index(rdb_t *rdb, uint32_t p_index) {
   int delta;  
 
-  /* here we *assume* that index > rdb->window_start */
+  /* here we *assume* that p_index > rdb->window_start */
 
-  delta = (index - rdb->window_start);    
+  delta = (p_index - rdb->window_start);    
   if (delta < rdb_bits_in_bitmask) {
 
-    /* if the index is within the window, set the appropriate bit */
+    /* if the p_index is within the window, set the appropriate bit */
     v128_set_bit(&rdb->bitmask, delta);
 
   } else { 
@@ -115,7 +115,7 @@ rdb_add_index(rdb_t *rdb, uint32_t index) {
 
     /* shift the window forward by delta bits*/
     v128_left_shift(&rdb->bitmask, delta);
-    v128_set_bit(&rdb->bitmask, rdb_bits_in_bitmask-delta);
+    v128_set_bit(&rdb->bitmask, rdb_bits_in_bitmask-1);
     rdb->window_start += delta;
 
   }    

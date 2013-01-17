@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -62,6 +62,7 @@
 #  include <winsock2.h>
 # endif
 #endif
+
 
 /* if DATATYPES_USE_MACROS is defined, then little functions are macros */
 #define DATATYPES_USE_MACROS  
@@ -154,10 +155,10 @@ void
 v128_copy_octet_string(v128_t *x, const uint8_t s[16]);
 
 void
-v128_left_shift(v128_t *x, int index);
+v128_left_shift(v128_t *x, int shift_index);
 
 void
-v128_right_shift(v128_t *x, int index);
+v128_right_shift(v128_t *x, int shift_index);
 
 /*
  * the following macros define the data manipulation functions
@@ -313,7 +314,7 @@ v128_right_shift(v128_t *x, int index);
 
 
 #ifdef DATATYPES_USE_MACROS  /* little functions are really macros */
-
+   
 #define v128_set_to_zero(z)       _v128_set_to_zero(z)
 #define v128_copy(z, x)           _v128_copy(z, x)
 #define v128_xor(z, x, y)         _v128_xor(z, x, y)
@@ -392,22 +393,114 @@ octet_string_set_to_zero(uint8_t *s, int len);
 # define be64_to_cpu(x)	bswap_64((x))
 #else
 
+#if defined(__GNUC__) && defined(HAVE_X86)
+/* Fall back. */
+static inline uint32_t be32_to_cpu(uint32_t v) {
+   /* optimized for x86. */
+   asm("bswap %0" : "=r" (v) : "0" (v));
+   return v;
+}
+# else /* HAVE_X86 */
 #  ifdef HAVE_NETINET_IN_H
 #   include <netinet/in.h>
 #  elif defined HAVE_WINSOCK2_H
 #   include <winsock2.h>
 #  endif
 #  define be32_to_cpu(x)	ntohl((x))
+# endif /* HAVE_X86 */
 
+static inline uint64_t be64_to_cpu(uint64_t v) {
 # ifdef NO_64BIT_MATH
    /* use the make64 functions to do 64-bit math */
-#  define be64_to_cpu(v) (make64(htonl(low32(v)),htonl(high32(v))))
+   v = make64(htonl(low32(v)),htonl(high32(v)));
 # else
-#  define be64_to_cpu(v) ((ntohl((uint32_t)(v >> 32))) | (((uint64_t)ntohl((uint32_t)v)) << 32))
+   /* use the native 64-bit math */
+   v= (uint64_t)((be32_to_cpu((uint32_t)(v >> 32))) | (((uint64_t)be32_to_cpu((uint32_t)v)) << 32));
 # endif
+   return v;
+}
 
 #endif /* ! SRTP_KERNEL_LINUX */
 
 #endif /* WORDS_BIGENDIAN */
+
+/*
+ * functions manipulating bitvector_t 
+ *
+ * A bitvector_t consists of an array of words and an integer
+ * representing the number of significant bits stored in the array.
+ * The bits are packed as follows: the least significant bit is that
+ * of word[0], while the most significant bit is the nth most
+ * significant bit of word[m], where length = bits_per_word * m + n.
+ * 
+ */
+
+#define bits_per_word  32
+#define bytes_per_word 4
+
+typedef struct {
+  uint32_t length;   
+  uint32_t *word;
+} bitvector_t;
+
+
+#define _bitvector_get_bit(v, bit_index)				\
+(									\
+ ((((v)->word[((bit_index) >> 5)]) >> ((bit_index) & 31)) & 1)		\
+)
+
+
+#define _bitvector_set_bit(v, bit_index)				\
+(									\
+ (((v)->word[((bit_index) >> 5)] |= ((uint32_t)1 << ((bit_index) & 31)))) \
+)
+
+#define _bitvector_clear_bit(v, bit_index)				\
+(									\
+ (((v)->word[((bit_index) >> 5)] &= ~((uint32_t)1 << ((bit_index) & 31)))) \
+)
+
+#define _bitvector_get_length(v)					\
+(									\
+ ((v)->length)								\
+)
+
+#ifdef DATATYPES_USE_MACROS  /* little functions are really macros */
+
+#define bitvector_get_bit(v, bit_index) _bitvector_get_bit(v, bit_index)
+#define bitvector_set_bit(v, bit_index) _bitvector_set_bit(v, bit_index)
+#define bitvector_clear_bit(v, bit_index) _bitvector_clear_bit(v, bit_index)
+#define bitvector_get_length(v) _bitvector_get_length(v)
+
+#else
+
+int
+bitvector_get_bit(const bitvector_t *v, int bit_index);
+
+void
+bitvector_set_bit(bitvector_t *v, int bit_index);
+
+void
+bitvector_clear_bit(bitvector_t *v, int bit_index);
+
+unsigned long
+bitvector_get_length(const bitvector_t *v);
+
+#endif
+
+int
+bitvector_alloc(bitvector_t *v, unsigned long length);
+
+void
+bitvector_dealloc(bitvector_t *v);
+
+void
+bitvector_set_to_zero(bitvector_t *x);
+
+void
+bitvector_left_shift(bitvector_t *x, int index);
+
+char *
+bitvector_bit_string(bitvector_t *x, char* buf, int len);
 
 #endif /* _DATATYPES_H */

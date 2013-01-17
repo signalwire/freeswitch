@@ -8,7 +8,7 @@
  */
 
 
-#include "rtp.h"
+#include "rtp_priv.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -21,11 +21,11 @@
 #define PRINT_DEBUG    0    /* set to 1 to print out debugging data */
 #define VERBOSE_DEBUG  0    /* set to 1 to print out more data      */
 
-ssize_t
-rtp_sendto(rtp_sender_t *sender, const void* msg, int len) {
+int
+rtp_sendto(rtp_sender_t sender, const void* msg, int len) {
   int octets_sent;
   err_status_t stat;
-  int pkt_len = len + rtp_header_len;
+  int pkt_len = len + RTP_HEADER_LEN;
 
   /* marshal data */
   strncpy(sender->message.body, msg, len);
@@ -61,13 +61,18 @@ rtp_sendto(rtp_sender_t *sender, const void* msg, int len) {
   return octets_sent;
 }
 
-ssize_t
-rtp_recvfrom(rtp_receiver_t *receiver, void *msg, int *len) {
+int
+rtp_recvfrom(rtp_receiver_t receiver, void *msg, int *len) {
   int octets_recvd;
   err_status_t stat;
   
   octets_recvd = recvfrom(receiver->socket, (void *)&receiver->message,
 			 *len, 0, (struct sockaddr *) NULL, 0);
+
+  if (octets_recvd == -1) {
+    *len = 0;
+    return -1;
+  }
 
   /* verify rtp header */
   if (receiver->message.header.version != 2) {
@@ -99,10 +104,10 @@ rtp_recvfrom(rtp_receiver_t *receiver, void *msg, int *len) {
 }
 
 int
-rtp_sender_init(rtp_sender_t *sender, 
-		int socket, 
+rtp_sender_init(rtp_sender_t sender, 
+		int sock, 
 		struct sockaddr_in addr,
-		uint32_t ssrc) {
+		unsigned int ssrc) {
 
   /* set header values */
   sender->message.header.ssrc    = htonl(ssrc);
@@ -116,17 +121,17 @@ rtp_sender_init(rtp_sender_t *sender,
   sender->message.header.cc      = 0;
 
   /* set other stuff */
-  sender->socket = socket;
+  sender->socket = sock;
   sender->addr = addr;
 
   return 0;
 }
 
 int
-rtp_receiver_init(rtp_receiver_t *rcvr, 
-		  int socket, 
+rtp_receiver_init(rtp_receiver_t rcvr, 
+		  int sock, 
 		  struct sockaddr_in addr,
-		  uint32_t ssrc) {
+		  unsigned int ssrc) {
   
   /* set header values */
   rcvr->message.header.ssrc    = htonl(ssrc);
@@ -140,11 +145,48 @@ rtp_receiver_init(rtp_receiver_t *rcvr,
   rcvr->message.header.cc      = 0;
 
   /* set other stuff */
-  rcvr->socket = socket;
+  rcvr->socket = sock;
   rcvr->addr = addr;
 
   return 0;
 }
 
+int
+rtp_sender_init_srtp(rtp_sender_t sender, const srtp_policy_t *policy) {
+  return srtp_create(&sender->srtp_ctx, policy);
+}
 
+int
+rtp_sender_deinit_srtp(rtp_sender_t sender) {
+  return srtp_dealloc(sender->srtp_ctx);
+}
 
+int
+rtp_receiver_init_srtp(rtp_receiver_t sender, const srtp_policy_t *policy) {
+  return srtp_create(&sender->srtp_ctx, policy);
+}
+
+int
+rtp_receiver_deinit_srtp(rtp_receiver_t sender) {
+  return srtp_dealloc(sender->srtp_ctx);
+}
+
+rtp_sender_t 
+rtp_sender_alloc(void) {
+  return (rtp_sender_t)malloc(sizeof(rtp_sender_ctx_t));
+}
+
+void
+rtp_sender_dealloc(rtp_sender_t rtp_ctx) {
+  free(rtp_ctx);
+}
+
+rtp_receiver_t 
+rtp_receiver_alloc(void) {
+  return (rtp_receiver_t)malloc(sizeof(rtp_receiver_ctx_t));
+}
+
+void
+rtp_receiver_dealloc(rtp_receiver_t rtp_ctx) {
+  return free(rtp_ctx);
+}

@@ -5,10 +5,10 @@
 This document describes libSRTP, the Open Source Secure RTP library
 from Cisco Systems, Inc.  RTP is the Real-time Transport Protocol, an
 IETF standard for the transport of real-time data such as telephony,
-audio, and video, defined by RFC1889.  Secure RTP (SRTP) is an RTP
+audio, and video, defined by RFC 3550.  Secure RTP (SRTP) is an RTP
 profile for providing confidentiality to RTP data and authentication
-to the RTP header and payload.  SRTP is an IETF Proposed Standard, and
-is defined in RFC 3711, and was developed in the IETF Audio/Video
+to the RTP header and payload.  SRTP is an IETF Proposed Standard,
+defined in RFC 3711, and was developed in the IETF Audio/Video
 Transport (AVT) Working Group.  This library supports all of the
 mandatory features of SRTP, but not all of the optional features.  See
 the @ref Features section for more detailed information.
@@ -110,7 +110,7 @@ the minor release number, and \texttt{tgz} is the file
 extension\footnote{The extension \texttt{.tgz} is identical to
 \texttt{tar.gz}, and indicates a compressed tar file.}  You probably
 want to get the most recent release.  Unpack the distribution and
-extract the source files; the directory into which the soruce files
+extract the source files; the directory into which the source files
 will go is named \texttt{srtp}.
 
 libSRTP uses the GNU \texttt{autoconf} and \texttt{make}
@@ -135,7 +135,7 @@ The configure script accepts the following options:
 \end{description}
 \end{quote}
 
-By default, dynamic debbuging is enabled and stdout is used for
+By default, dynamic debugging is enabled and stdout is used for
 debugging.  You can use the configure options to have the debugging
 output sent to syslog or the system console.  Alternatively, you can
 define ERR\_REPORTING\_FILE in \texttt{include/conf.h} to be any other
@@ -181,7 +181,7 @@ using gdoi will be added later.
 The usage for rtpw is
 
 \texttt{rtpw [[-d $<$debug$>$]* [-k $<$key$>$ [-a][-e]] [-s | -r] dest\_ip
-dest\_port][-l]}
+dest\_port] | [-l]}
 
 Either the -s (sender) or -r (receiver) option must be chosen.  The
 values dest\_ip, dest\_port are the IP address and UDP port to which
@@ -189,7 +189,7 @@ the dictionary will be sent, respectively.  The options are:
 \begin{center}
 \begin{tabular}{ll}
   -s		& (S)RTP sender - causes app to send words \\
-  -r		& (S)RTP receive - causes app to receve words \\
+  -r		& (S)RTP receive - causes app to receive words \\
   -k $<$key$>$      & use SRTP master key $<$key$>$, where the 
 		key is a hexadecimal value (without the
                 leading "0x") \\
@@ -197,7 +197,7 @@ the dictionary will be sent, respectively.  The options are:
                 (requires use of -k option as well)\\
   -a            & message authentication 
                 (requires use of -k option as well) \\
-  -l            & list the avaliable debug modules \\
+  -l            & list the available debug modules \\
   -d $<$debug$>$    & turn on debugging for module $<$debug$>$ \\
 \end{tabular}
 \end{center}
@@ -359,7 +359,7 @@ length as its second argument.
    crypto_get_random(key, 30);          
 
    // allocate and initialize the SRTP session 
-   srtp_create(&session, policy);  
+   srtp_create(&session, &policy);  
    
    // main loop: get rtp packets, send srtp packets
    while (1) {

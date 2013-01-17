@@ -8,7 +8,7 @@
  */
 /*
  *	
- * Copyright(c) 2001-2005 Cisco Systems, Inc.
+ * Copyright(c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,6 @@ err_status_t
 hmac_alloc(auth_t **a, int key_len, int out_len) {
   extern auth_type_t hmac;
   uint8_t *pointer;
-  hmac_ctx_t *new_hmac_ctx;
 
   debug_print(mod_hmac, "allocating auth func with key length %d", key_len);
   debug_print(mod_hmac, "                          tag length %d", out_len);
@@ -74,7 +73,7 @@ hmac_alloc(auth_t **a, int key_len, int out_len) {
     return err_status_bad_param;
 
   /* allocate memory for auth and hmac_ctx_t structures */
-  pointer = crypto_alloc(sizeof(hmac_ctx_t) + sizeof(auth_t));
+  pointer = (uint8_t*)crypto_alloc(sizeof(hmac_ctx_t) + sizeof(auth_t));
   if (pointer == NULL)
     return err_status_alloc_fail;
 
@@ -85,7 +84,6 @@ hmac_alloc(auth_t **a, int key_len, int out_len) {
   (*a)->out_len = out_len;
   (*a)->key_len = key_len;
   (*a)->prefix_len = 0;
-  new_hmac_ctx = (hmac_ctx_t *)((*a)->state);
 
   /* increment global count of all hmac uses */
   hmac.ref_count++;
@@ -180,7 +178,7 @@ hmac_compute(hmac_ctx_t *state, const void *message,
     return err_status_bad_param;
   
   /* hash message, copy output into H */
-  hmac_update(state, message, msg_octets);
+  hmac_update(state, (const uint8_t*)message, msg_octets);
   sha1_final(&state->ctx, H);
 
   /*
@@ -264,6 +262,7 @@ hmac  = {
   (char *)               hmac_description,
   (int)                  0,  /* instance count */
   (auth_test_case_t *)  &hmac_test_case_0,
-  (debug_module_t *)    &mod_hmac
+  (debug_module_t *)    &mod_hmac,
+  (auth_type_id_t)       HMAC_SHA1
 };
 

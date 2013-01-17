@@ -41,21 +41,28 @@ dummy : all runtest
 
 # test applications 
 
-testapp = test/cipher_driver$(EXE) test/datatypes_driver$(EXE) \
-	  test/stat_driver$(EXE) test/sha1_driver$(EXE) \
-	  test/kernel_driver$(EXE) test/aes_calc$(EXE) test/rand_gen$(EXE) \
-	  test/env$(EXE)
+testapp = #test/cipher_driver$(EXE) test/datatypes_driver$(EXE) \
+	  #test/stat_driver$(EXE) test/sha1_driver$(EXE) \
+	  #test/kernel_driver$(EXE) test/aes_calc$(EXE) test/rand_gen$(EXE) \
+	  #test/env$(EXE)
 
-# data values used to test the aes_calc application
+# data values used to test the aes_calc application for AES-128
+k128=000102030405060708090a0b0c0d0e0f
+p128=00112233445566778899aabbccddeeff
+c128=69c4e0d86a7b0430d8cdb78070b4c55a
 
-k=000102030405060708090a0b0c0d0e0f
-p=00112233445566778899aabbccddeeff
-c=69c4e0d86a7b0430d8cdb78070b4c55a
+
+# data values used to test the aes_calc application for AES-256
+k256=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+p256=00112233445566778899aabbccddeeff
+c256=8ea2b7ca516745bfeafc49904b496089
+
 
 runtest: libcryptomodule.a $(testapp)
 	test/env$(EXE) # print out information on the build environment
 	@echo "running libcryptomodule test applications..."
-	test `test/aes_calc $k $p` = $c
+	test `test/aes_calc $(k128) $(p128)` = $(c128)
+	test `test/aes_calc $(k256) $(p256)` = $(c256)
 	test/cipher_driver$(EXE) -v >/dev/null
 	test/datatypes_driver$(EXE) -v >/dev/null
 	test/stat_driver$(EXE) >/dev/null

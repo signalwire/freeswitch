@@ -31,7 +31,7 @@ aes_cbc_encrypt(aes_cbc_ctx_t *c,
 
 err_status_t
 aes_cbc_context_init(aes_cbc_ctx_t *c, const uint8_t *key, 
-		     cipher_direction_t dir);
+		     int key_len, cipher_direction_t dir);
 
 err_status_t
 aes_cbc_set_iv(aes_cbc_ctx_t *c, void *iv);

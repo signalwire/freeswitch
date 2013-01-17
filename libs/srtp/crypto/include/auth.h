@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,8 @@
 
 #include "datatypes.h"          
 #include "err.h"                /* error codes    */
+#include "crypto.h"		/* for auth_type_id_t */
+#include "crypto_types.h"	/* for values of auth_type_id_t */
 
 typedef struct auth_type_t *auth_type_pointer;
 typedef struct auth_t      *auth_pointer_t;
@@ -129,6 +131,7 @@ typedef struct auth_type_t {
   int                  ref_count;
   auth_test_case_t    *test_data;
   debug_module_t      *debug;
+  auth_type_id_t       id;
 } auth_type_t;
 
 typedef struct auth_t {
@@ -147,6 +150,15 @@ typedef struct auth_t {
 
 err_status_t
 auth_type_self_test(const auth_type_t *at);
+
+/* 
+ * auth_type_test() tests an auth_type against external test cases
+ * provided in an array of values of key/message/tag that is known to
+ * be good
+ */
+
+err_status_t
+auth_type_test(const auth_type_t *at, const auth_test_case_t *test_data);
 
 /*
  * auth_type_get_ref_count(at) returns the reference count (the number

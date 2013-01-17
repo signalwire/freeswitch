@@ -10,7 +10,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -48,10 +48,6 @@
 #include "null_auth.h" 
 #include "alloc.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
-
 /* null_auth uses the auth debug module */
 
 extern debug_module_t mod_auth;
@@ -65,7 +61,7 @@ null_auth_alloc(auth_t **a, int key_len, int out_len) {
   debug_print(mod_auth, "                          tag length %d", out_len);
 
   /* allocate memory for auth and null_auth_ctx_t structures */
-  pointer = crypto_alloc(sizeof(null_auth_ctx_t) + sizeof(auth_t));
+  pointer = (uint8_t*)crypto_alloc(sizeof(null_auth_ctx_t) + sizeof(auth_t));
   if (pointer == NULL)
     return err_status_alloc_fail;
 
@@ -159,6 +155,8 @@ null_auth  = {
   (auth_start_func)      null_auth_start,
   (char *)               null_auth_description,
   (int)                  0,  /* instance count */
-  (auth_test_case_t *)   &null_auth_test_case_0
+  (auth_test_case_t *)   &null_auth_test_case_0,
+  (debug_module_t *)     NULL,
+  (auth_type_id_t)       NULL_AUTH
 };
 

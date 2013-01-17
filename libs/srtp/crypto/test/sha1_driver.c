@@ -113,17 +113,17 @@ sha1_test_case_validate(const hash_test_case_t *test_case) {
   if (0 == memcmp(test_case->hash, hash_value, 20)) {
 #if VERBOSE
     printf("PASSED: reference value: %s\n", 
-	   octet_string_hex_string((uint8_t *)test_case->hash, 20));
+	   octet_string_hex_string((const uint8_t *)test_case->hash, 20));
     printf("PASSED: computed value:  %s\n", 
-	   octet_string_hex_string((uint8_t *)hash_value, 20));   
+	   octet_string_hex_string((const uint8_t *)hash_value, 20));   
 #endif 
     return err_status_ok;
   }
 
   printf("reference value: %s\n", 
-	 octet_string_hex_string((uint8_t *)test_case->hash, 20));
+	 octet_string_hex_string((const uint8_t *)test_case->hash, 20));
   printf("computed value:  %s\n", 
-	 octet_string_hex_string((uint8_t *)hash_value, 20));
+	 octet_string_hex_string((const uint8_t *)hash_value, 20));
 
   return err_status_algo_fail;
   
@@ -136,7 +136,7 @@ struct hex_sha1_test_case_t {
 };
 
 err_status_t
-sha1_add_test_cases() {
+sha1_add_test_cases(void) {
   int i;
   err_status_t err;
 
@@ -485,6 +485,21 @@ sha1_add_test_cases() {
   return err_status_ok;
 }
 
+err_status_t
+sha1_dealloc_test_cases(void) {
+  hash_test_case_t *t, *next;
+
+  for (t = sha1_test_case_list; t != NULL; t = next) {
+    next = t->next_test_case;
+    free(t);
+  }
+
+  sha1_test_case_list = NULL;
+
+  return err_status_ok;
+}
+
+
 
 err_status_t
 sha1_validate(void) {
@@ -509,6 +524,8 @@ sha1_validate(void) {
     }
     test_case = test_case->next_test_case;
   }
+
+  sha1_dealloc_test_cases();
 
   return err_status_ok;
 }

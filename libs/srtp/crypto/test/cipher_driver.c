@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -120,10 +120,13 @@ int
 main(int argc, char *argv[]) {
   cipher_t *c = NULL;
   err_status_t status;
-  unsigned char test_key[20] = {
+  unsigned char test_key[48] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-    0x10, 0x11, 0x12, 0x13
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+    0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
   };
   int q;
   unsigned do_timing_test = 0;
@@ -169,8 +172,13 @@ main(int argc, char *argv[]) {
       cipher_driver_test_array_throughput(&aes_icm, 30, num_cipher); 
 
     for (num_cipher=1; num_cipher < max_num_cipher; num_cipher *=8)
+      cipher_driver_test_array_throughput(&aes_icm, 46, num_cipher); 
+
+    for (num_cipher=1; num_cipher < max_num_cipher; num_cipher *=8)
       cipher_driver_test_array_throughput(&aes_cbc, 16, num_cipher); 
  
+    for (num_cipher=1; num_cipher < max_num_cipher; num_cipher *=8)
+      cipher_driver_test_array_throughput(&aes_cbc, 32, num_cipher); 
   }
 
   if (do_validation) {
@@ -196,8 +204,29 @@ main(int argc, char *argv[]) {
   check_status(status);
   
 
-  /* run the throughput test on the aes_icm cipher */
+  /* run the throughput test on the aes_icm cipher (128-bit key) */
     status = cipher_type_alloc(&aes_icm, &c, 30);  
+    if (status) {
+      fprintf(stderr, "error: can't allocate cipher\n");
+      exit(status);
+    }
+
+    status = cipher_init(c, test_key, direction_encrypt);
+    check_status(status);
+
+    if (do_timing_test)
+      cipher_driver_test_throughput(c);
+    
+    if (do_validation) {
+      status = cipher_driver_test_buffering(c);
+      check_status(status);
+    }
+    
+    status = cipher_dealloc(c);
+    check_status(status);
+
+  /* repeat the tests with 256-bit keys */
+    status = cipher_type_alloc(&aes_icm, &c, 46);  
     if (status) {
       fprintf(stderr, "error: can't allocate cipher\n");
       exit(status);
@@ -225,9 +254,9 @@ cipher_driver_test_throughput(cipher_t *c) {
   int i;
   int min_enc_len = 32;     
   int max_enc_len = 2048;   /* should be a power of two */
-  int num_trials = 100000;  
+  int num_trials = 1000000;  
   
-  printf("timing %s throughput:\n", c->type->description);
+  printf("timing %s throughput, key length %d:\n", c->type->description, c->key_len);
   fflush(stdout);
   for (i=min_enc_len; i <= max_enc_len; i = i * 2)
     printf("msg len: %d\tgigabits per second: %f\n",
@@ -348,6 +377,9 @@ cipher_array_alloc_init(cipher_t ***ca, int num_ciphers,
   err_status_t status;
   uint8_t *key;
   cipher_t **cipher_array;
+  /* pad klen allocation, to handle aes_icm reading 16 bytes for the
+     14-byte salt */
+  int klen_pad = ((klen + 15) >> 4) << 4;
 
   /* allocate array of pointers to ciphers */
   cipher_array = (cipher_t **) malloc(sizeof(cipher_t *) * num_ciphers);
@@ -358,7 +390,7 @@ cipher_array_alloc_init(cipher_t ***ca, int num_ciphers,
   *ca = cipher_array;
 
   /* allocate key */
-  key = crypto_alloc(klen);
+  key = crypto_alloc(klen_pad);
   if (key == NULL) {
     free(cipher_array);
     return err_status_alloc_fail;
@@ -375,6 +407,8 @@ cipher_array_alloc_init(cipher_t ***ca, int num_ciphers,
     /* generate random key and initialize cipher */
     for (j=0; j < klen; j++)
       key[j] = (uint8_t) rand();
+    for (; j < klen_pad; j++)
+      key[j] = 0;
     status = cipher_init(*cipher_array, key, direction_encrypt);
     if (status)
       return status;
@@ -386,6 +420,8 @@ cipher_array_alloc_init(cipher_t ***ca, int num_ciphers,
     /* advance cipher array pointer */
     cipher_array++;
   }
+
+  crypto_free(key);
 
   return err_status_ok;
 }
@@ -423,24 +459,28 @@ cipher_array_bits_per_second(cipher_t *cipher_array[], int num_cipher,
   v128_t nonce;
   clock_t timer;
   unsigned char *enc_buf;
-  int cipher_index = 0;
+  int cipher_index = rand() % num_cipher;
 
-
-  enc_buf = crypto_alloc(octets_in_buffer);
+  /* Over-alloc, for NIST CBC padding */
+  enc_buf = crypto_alloc(octets_in_buffer+17);
   if (enc_buf == NULL)
     return 0;  /* indicate bad parameters by returning null */
+  memset(enc_buf, 0, octets_in_buffer);
   
   /* time repeated trials */
   v128_set_to_zero(&nonce);
   timer = clock();
   for(i=0; i < num_trials; i++, nonce.v32[3] = i) {
-
-    /* choose a cipher at random from the array*/
-    cipher_index = (*((uint32_t *)enc_buf)) % num_cipher;
+    /* length parameter to cipher_encrypt is in/out -- out is total, padded
+     * length -- so reset it each time. */
+    unsigned octets_to_encrypt = octets_in_buffer;
 
     /* encrypt buffer with cipher */
     cipher_set_iv(cipher_array[cipher_index], &nonce);
-    cipher_encrypt(cipher_array[cipher_index], enc_buf, &octets_in_buffer);
+    cipher_encrypt(cipher_array[cipher_index], enc_buf, &octets_to_encrypt);
+
+    /* choose a cipher at random from the array*/
+    cipher_index = (*((uint32_t *)enc_buf)) % num_cipher;
   }
   timer = clock() - timer;
 
@@ -451,7 +491,7 @@ cipher_array_bits_per_second(cipher_t *cipher_array[], int num_cipher,
     return 0;
   }
 
-  return CLOCKS_PER_SEC * num_trials * 8 * octets_in_buffer / timer;
+  return (uint64_t)CLOCKS_PER_SEC * num_trials * 8 * octets_in_buffer / timer;
 }
 
 void
@@ -459,10 +499,10 @@ cipher_array_test_throughput(cipher_t *ca[], int num_cipher) {
   int i;
   int min_enc_len = 16;     
   int max_enc_len = 2048;   /* should be a power of two */
-  int num_trials = 10000;
+  int num_trials = 1000000;
 
-  printf("timing %s throughput with array size %d:\n", 
-	 (ca[0])->type->description, num_cipher);
+  printf("timing %s throughput with key length %d, array size %d:\n", 
+	 (ca[0])->type->description, (ca[0])->key_len, num_cipher);
   fflush(stdout);
   for (i=min_enc_len; i <= max_enc_len; i = i * 4)
     printf("msg len: %d\tgigabits per second: %f\n", i,

@@ -10,7 +10,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -71,8 +71,8 @@ cipher_get_key_length(const cipher_t *c) {
 }
 
 /* 
- * cipher_type_self_test(ct) tests a cipher of type ct against test cases
- * provided in an array of values of key, salt, xtd_seq_num_t,
+ * cipher_type_test(ct, test_data) tests a cipher of type ct against
+ * test cases provided in a list test_data of values of key, salt, iv,
  * plaintext, and ciphertext that is known to be good
  */
 
@@ -81,8 +81,8 @@ cipher_get_key_length(const cipher_t *c) {
 #define MAX_KEY_LEN          64
 
 err_status_t
-cipher_type_self_test(const cipher_type_t *ct) {
-  const cipher_test_case_t *test_case = ct->test_data;
+cipher_type_test(const cipher_type_t *ct, const cipher_test_case_t *test_data) {
+  const cipher_test_case_t *test_case = test_data;
   cipher_t *c;
   err_status_t status;
   uint8_t buffer[SELF_TEST_BUF_OCTETS];
@@ -155,7 +155,7 @@ cipher_type_self_test(const cipher_type_t *ct) {
 				     test_case->ciphertext_length_octets));
 
     /* compare the resulting ciphertext with that in the test case */
-    if ((int)len != test_case->ciphertext_length_octets)
+    if (len != test_case->ciphertext_length_octets)
       return err_status_algo_fail;
     status = err_status_ok;
     for (i=0; i < test_case->ciphertext_length_octets; i++)
@@ -222,7 +222,7 @@ cipher_type_self_test(const cipher_type_t *ct) {
 				     test_case->plaintext_length_octets));
 
     /* compare the resulting plaintext with that in the test case */
-    if ((int)len != test_case->plaintext_length_octets)
+    if (len != test_case->plaintext_length_octets)
       return err_status_algo_fail;
     status = err_status_ok;
     for (i=0; i < test_case->plaintext_length_octets; i++)
@@ -260,7 +260,7 @@ cipher_type_self_test(const cipher_type_t *ct) {
   /* now run some random invertibility tests */
 
   /* allocate cipher, using paramaters from the first test case */
-  test_case = ct->test_data;
+  test_case = test_data;
   status = cipher_type_alloc(ct, &c, test_case->key_length_octets);
   if (status)
       return status;
@@ -344,7 +344,7 @@ cipher_type_self_test(const cipher_type_t *ct) {
 		octet_string_hex_string(buffer, length));    
 
     /* compare the resulting plaintext with the original one */
-    if ((int)length != plaintext_len)
+    if (length != plaintext_len)
       return err_status_algo_fail;
     status = err_status_ok;
     for (i=0; i < plaintext_len; i++)
@@ -360,9 +360,23 @@ cipher_type_self_test(const cipher_type_t *ct) {
         
   }
 
+  status = cipher_dealloc(c);
+  if (status)
+    return status;
+
   return err_status_ok;
 }
 
+
+/* 
+ * cipher_type_self_test(ct) performs cipher_type_test on ct's internal
+ * list of test data.
+ */
+
+err_status_t
+cipher_type_self_test(const cipher_type_t *ct) {
+  return cipher_type_test(ct, ct->test_data);
+}
 
 /*
  * cipher_bits_per_second(c, l, t) computes (an estimate of) the
@@ -383,7 +397,7 @@ cipher_bits_per_second(cipher_t *c, int octets_in_buffer, int num_trials) {
   unsigned char *enc_buf;
   unsigned int len = octets_in_buffer;
 
-  enc_buf = crypto_alloc(octets_in_buffer);
+  enc_buf = (unsigned char*) crypto_alloc(octets_in_buffer);
   if (enc_buf == NULL)
     return 0;  /* indicate bad parameters by returning null */
   

@@ -346,7 +346,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = intro.txt ../include/srtp.h ../crypto/include/crypto_types.h ../crypto/include/err.h ../crypto/include/crypto_kernel.h  crypto_kernel.txt 
+INPUT                  = intro.txt ../include/srtp.h ../crypto/include/crypto_types.h ../crypto/include/err.h ../crypto/include/crypto.h  crypto_kernel.txt 
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

@@ -144,10 +144,10 @@ fi
 
 AC_MSG_CHECKING(which random device to use)
 if test "$enable_kernel_linux" = "yes"; then
-   RNG_OBJS=rand_linux_kernel.c
+   RNG_OBJS=rand_linux_kernel.o
    AC_MSG_RESULT([Linux kernel builtin])
 else
-RNG_OBJS=rand_source.c
+RNG_OBJS=rand_source.o
    if test -n "$DEV_URANDOM"; then
       AC_DEFINE_UNQUOTED(DEV_URANDOM, "$DEV_URANDOM",[Path to random device])
       AC_MSG_RESULT([$DEV_URANDOM])
@@ -197,7 +197,7 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 dnl Checks for library functions.
-AC_CHECK_FUNCS(socket inet_aton usleep)
+AC_CHECK_FUNCS(socket inet_aton usleep sigaction)
 
 dnl Find socket function if not found yet.
 if test "x$ac_cv_func_socket" = "xno"; then
@@ -222,7 +222,7 @@ AC_C_BIGENDIAN
 
 dnl check host_cpu type, set defines appropriately
 case $host_cpu in
-     i*86 )
+     i*86 | x86_64 )
 	AC_DEFINE(CPU_CISC, 1,
 	   [Define if building for a CISC machine (e.g. Intel).])
         AC_DEFINE(HAVE_X86, 1,

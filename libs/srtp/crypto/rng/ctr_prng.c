@@ -8,7 +8,7 @@
  */
 /*
  *	
- * Copyright(c) 2001-2005 Cisco Systems, Inc.
+ * Copyright(c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@
 
 /* single, global prng structure */
 
-static ctr_prng_t ctr_prng;
+ctr_prng_t ctr_prng;
 
 err_status_t
 ctr_prng_init(rand_source_func_t random_source) {
@@ -66,7 +66,7 @@ ctr_prng_init(rand_source_func_t random_source) {
     return status;
 
   /* initialize aes ctr context with random key */
-  status = aes_icm_context_init(&ctr_prng.state, tmp_key);
+  status = aes_icm_context_init(&ctr_prng.state, tmp_key, 30);
   if (status) 
     return status;
 
@@ -92,7 +92,7 @@ ctr_prng_get_octet_string(void *dest, uint32_t len) {
   /*
    * write prng output 
    */
-  status = aes_icm_output(&ctr_prng.state, dest, len);
+  status = aes_icm_output(&ctr_prng.state, (uint8_t*)dest, len);
   if (status)
     return status;
   

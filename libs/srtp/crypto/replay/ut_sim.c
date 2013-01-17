@@ -10,7 +10,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -47,9 +47,6 @@
 
 #include "ut_sim.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
 
 int
 ut_compar(const void *a, const void *b) {

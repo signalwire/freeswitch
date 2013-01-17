@@ -1,4 +1,4 @@
-Secure RTP (SRTP) and UST Reference Implementations
+Secure RTP (SRTP) Reference Implementation
 David A. McGrew
 Cisco Systems, Inc.
 mcgrew@cisco.com
@@ -9,7 +9,9 @@ Transport Protocol (SRTP), the Universal Security Transform (UST), and
 a supporting cryptographic kernel.  These mechanisms are documented in
 the Internet Drafts in the doc/ subdirectory.  The SRTP API is
 documented in include/srtp.h, and the library is in libsrtp.a (after
-compilation).
+compilation).  An overview and reference manual is available in
+doc/libsrtp.pdf.  The PDF documentation is more up to date than this
+file.
 
 
 Installation:

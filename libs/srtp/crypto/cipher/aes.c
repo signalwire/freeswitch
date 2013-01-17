@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -1358,51 +1358,50 @@ static uint32_t U4[256] = {
 
 extern debug_module_t mod_aes_icm;
 
-void
-aes_expand_encryption_key(const v128_t *key, 
-			  aes_expanded_key_t expanded_key) {
+static void
+aes_128_expand_encryption_key(const uint8_t *key, 
+			      aes_expanded_key_t *expanded_key) {
   int i;
   gf2_8 rc;
 
   /* initialize round constant */
   rc = 1;
 
-  expanded_key[0].v32[0] = key->v32[0];
-  expanded_key[0].v32[1] = key->v32[1];
-  expanded_key[0].v32[2] = key->v32[2];
-  expanded_key[0].v32[3] = key->v32[3];
+  expanded_key->num_rounds = 10;
+
+  v128_copy_octet_string(&expanded_key->round[0], key);
 
 #if 0
   debug_print(mod_aes_icm, 
-	      "expanded key[0]:  %s", v128_hex_string(&expanded_key[0])); 
+	      "expanded key[0]:  %s", v128_hex_string(&expanded_key->round[0])); 
 #endif
 
   /* loop over round keys */
   for (i=1; i < 11; i++) {
 
     /* munge first word of round key */
-    expanded_key[i].v8[0] = aes_sbox[expanded_key[i-1].v8[13]] ^ rc;
-    expanded_key[i].v8[1] = aes_sbox[expanded_key[i-1].v8[14]];
-    expanded_key[i].v8[2] = aes_sbox[expanded_key[i-1].v8[15]];
-    expanded_key[i].v8[3] = aes_sbox[expanded_key[i-1].v8[12]];
+    expanded_key->round[i].v8[0] = aes_sbox[expanded_key->round[i-1].v8[13]] ^ rc;
+    expanded_key->round[i].v8[1] = aes_sbox[expanded_key->round[i-1].v8[14]];
+    expanded_key->round[i].v8[2] = aes_sbox[expanded_key->round[i-1].v8[15]];
+    expanded_key->round[i].v8[3] = aes_sbox[expanded_key->round[i-1].v8[12]];
 
-    expanded_key[i].v32[0] ^=  expanded_key[i-1].v32[0];
+    expanded_key->round[i].v32[0] ^=  expanded_key->round[i-1].v32[0];
 
     /* set remaining 32 bit words to the exor of the one previous with
      * the one four words previous */
 
-    expanded_key[i].v32[1] =
-      expanded_key[i].v32[0] ^ expanded_key[i-1].v32[1];
+    expanded_key->round[i].v32[1] =
+      expanded_key->round[i].v32[0] ^ expanded_key->round[i-1].v32[1];
 
-    expanded_key[i].v32[2] =
-      expanded_key[i].v32[1] ^ expanded_key[i-1].v32[2];
+    expanded_key->round[i].v32[2] =
+      expanded_key->round[i].v32[1] ^ expanded_key->round[i-1].v32[2];
 
-    expanded_key[i].v32[3] =
-      expanded_key[i].v32[2] ^ expanded_key[i-1].v32[3];
+    expanded_key->round[i].v32[3] =
+      expanded_key->round[i].v32[2] ^ expanded_key->round[i-1].v32[3];
 
 #if 0
 	debug_print2(mod_aes_icm, 
-				"expanded key[%d]:  %s", i,v128_hex_string(&expanded_key[i])); 
+				"expanded key[%d]:  %s", i,v128_hex_string(&expanded_key->round[i])); 
 #endif
 
     /* modify round constant */
@@ -1411,19 +1410,107 @@ aes_expand_encryption_key(const v128_t *key,
   }
 }
 
-void
-aes_expand_decryption_key(const v128_t *key, 
-			  aes_expanded_key_t expanded_key) {
+static void
+aes_256_expand_encryption_key(const unsigned char *key, 
+			      aes_expanded_key_t *expanded_key) {
   int i;
+  gf2_8 rc;
 
-  aes_expand_encryption_key(key, expanded_key);
+  /* initialize round constant */
+  rc = 1;
+
+  expanded_key->num_rounds = 14;
+
+  v128_copy_octet_string(&expanded_key->round[0], key);
+  v128_copy_octet_string(&expanded_key->round[1], key+16);
+
+#if 0
+  debug_print(mod_aes_icm, 
+	      "expanded key[0]:  %s", v128_hex_string(&expanded_key->round[0])); 
+  debug_print(mod_aes_icm, 
+	      "expanded key[1]:  %s", v128_hex_string(&expanded_key->round[1])); 
+#endif
+
+  /* loop over rest of round keys */
+  for (i=2; i < 15; i++) {
+
+    /* munge first word of round key */
+    if ((i & 1) == 0) {
+      expanded_key->round[i].v8[0] = aes_sbox[expanded_key->round[i-1].v8[13]] ^ rc;
+      expanded_key->round[i].v8[1] = aes_sbox[expanded_key->round[i-1].v8[14]];
+      expanded_key->round[i].v8[2] = aes_sbox[expanded_key->round[i-1].v8[15]];
+      expanded_key->round[i].v8[3] = aes_sbox[expanded_key->round[i-1].v8[12]];
+
+      /* modify round constant */
+      rc = gf2_8_shift(rc);
+    }
+    else {
+      expanded_key->round[i].v8[0] = aes_sbox[expanded_key->round[i-1].v8[12]];
+      expanded_key->round[i].v8[1] = aes_sbox[expanded_key->round[i-1].v8[13]];
+      expanded_key->round[i].v8[2] = aes_sbox[expanded_key->round[i-1].v8[14]];
+      expanded_key->round[i].v8[3] = aes_sbox[expanded_key->round[i-1].v8[15]];
+    }
+
+    expanded_key->round[i].v32[0] ^=  expanded_key->round[i-2].v32[0];
+
+    /* set remaining 32 bit words to the exor of the one previous with
+     * the one eight words previous */
+
+    expanded_key->round[i].v32[1] =
+      expanded_key->round[i].v32[0] ^ expanded_key->round[i-2].v32[1];
+
+    expanded_key->round[i].v32[2] =
+      expanded_key->round[i].v32[1] ^ expanded_key->round[i-2].v32[2];
+
+    expanded_key->round[i].v32[3] =
+      expanded_key->round[i].v32[2] ^ expanded_key->round[i-2].v32[3];
+
+#if 0
+    debug_print2(mod_aes_icm, 
+		 "expanded key[%d]:  %s", i,v128_hex_string(&expanded_key->round[i])); 
+#endif
+
+  }
+}
+
+err_status_t
+aes_expand_encryption_key(const uint8_t *key, 
+			  int key_len,
+			  aes_expanded_key_t *expanded_key) {
+  if (key_len == 16) {
+    aes_128_expand_encryption_key(key, expanded_key);
+    return err_status_ok;
+  }
+  else if (key_len == 24) {
+    /* AES-192 not yet supported */
+    return err_status_bad_param;
+  }
+  else if (key_len == 32) {
+    aes_256_expand_encryption_key(key, expanded_key);
+    return err_status_ok;
+  }
+  else
+    return err_status_bad_param;
+}
+
+err_status_t
+aes_expand_decryption_key(const uint8_t *key, 
+			  int key_len,
+			  aes_expanded_key_t *expanded_key) {
+  int i;
+  err_status_t status;
+  int num_rounds = expanded_key->num_rounds;
+
+  status = aes_expand_encryption_key(key, key_len, expanded_key);
+  if (status)
+    return status;
 
   /* invert the order of the round keys */
-  for (i=0; i < 5; i++) {
+  for (i=0; i < num_rounds/2; i++) {
     v128_t tmp;
-    v128_copy(&tmp, &expanded_key[10-i]);
-    v128_copy(&expanded_key[10-i], &expanded_key[i]);
-    v128_copy(&expanded_key[i], &tmp);
+    v128_copy(&tmp, &expanded_key->round[num_rounds-i]);
+    v128_copy(&expanded_key->round[num_rounds-i], &expanded_key->round[i]);
+    v128_copy(&expanded_key->round[i], &tmp);
   }
 
   /* 
@@ -1434,33 +1521,33 @@ aes_expand_decryption_key(const v128_t *key,
    * followed by the T4 table (which cancels out the use of the sbox
    * in the U-tables)
    */
-  for (i=1; i < 10; i++) {
+  for (i=1; i < num_rounds; i++) {
 #ifdef CPU_RISC
     uint32_t tmp;
 
-    tmp = expanded_key[i].v32[0];
-    expanded_key[i].v32[0] = 
+    tmp = expanded_key->round[i].v32[0];
+    expanded_key->round[i].v32[0] = 
       U0[T4[(tmp >> 24)       ] & 0xff] ^ 
       U1[T4[(tmp >> 16) & 0xff] & 0xff] ^ 
       U2[T4[(tmp >> 8)  & 0xff] & 0xff] ^ 
       U3[T4[(tmp)       & 0xff] & 0xff];
 
-    tmp = expanded_key[i].v32[1];
-    expanded_key[i].v32[1] = 
+    tmp = expanded_key->round[i].v32[1];
+    expanded_key->round[i].v32[1] = 
       U0[T4[(tmp >> 24)       ] & 0xff] ^ 
       U1[T4[(tmp >> 16) & 0xff] & 0xff] ^ 
       U2[T4[(tmp >> 8)  & 0xff] & 0xff] ^ 
       U3[T4[(tmp)       & 0xff] & 0xff];
 
-    tmp = expanded_key[i].v32[2];
-    expanded_key[i].v32[2] = 
+    tmp = expanded_key->round[i].v32[2];
+    expanded_key->round[i].v32[2] = 
       U0[T4[(tmp >> 24)       ] & 0xff] ^ 
       U1[T4[(tmp >> 16) & 0xff] & 0xff] ^ 
       U2[T4[(tmp >> 8)  & 0xff] & 0xff] ^ 
       U3[T4[(tmp)       & 0xff] & 0xff];
 
-    tmp = expanded_key[i].v32[3];
-    expanded_key[i].v32[3] = 
+    tmp = expanded_key->round[i].v32[3];
+    expanded_key->round[i].v32[3] = 
       U0[T4[(tmp >> 24)       ] & 0xff] ^ 
       U1[T4[(tmp >> 16) & 0xff] & 0xff] ^ 
       U2[T4[(tmp >> 8)  & 0xff] & 0xff] ^ 
@@ -1469,33 +1556,35 @@ aes_expand_decryption_key(const v128_t *key,
 
     uint32_t c0, c1, c2, c3;
 
-    c0 = U0[aes_sbox[expanded_key[i].v8[0]]] 
-       ^ U1[aes_sbox[expanded_key[i].v8[1]]] 
-       ^ U2[aes_sbox[expanded_key[i].v8[2]]] 
-       ^ U3[aes_sbox[expanded_key[i].v8[3]]];
+    c0 = U0[aes_sbox[expanded_key->round[i].v8[0]]] 
+       ^ U1[aes_sbox[expanded_key->round[i].v8[1]]] 
+       ^ U2[aes_sbox[expanded_key->round[i].v8[2]]] 
+       ^ U3[aes_sbox[expanded_key->round[i].v8[3]]];
 
-    c1 = U0[aes_sbox[expanded_key[i].v8[4]]] 
-       ^ U1[aes_sbox[expanded_key[i].v8[5]]] 
-       ^ U2[aes_sbox[expanded_key[i].v8[6]]] 
-       ^ U3[aes_sbox[expanded_key[i].v8[7]]];
+    c1 = U0[aes_sbox[expanded_key->round[i].v8[4]]] 
+       ^ U1[aes_sbox[expanded_key->round[i].v8[5]]] 
+       ^ U2[aes_sbox[expanded_key->round[i].v8[6]]] 
+       ^ U3[aes_sbox[expanded_key->round[i].v8[7]]];
 
-    c2 = U0[aes_sbox[expanded_key[i].v8[8]]] 
-       ^ U1[aes_sbox[expanded_key[i].v8[9]]] 
-       ^ U2[aes_sbox[expanded_key[i].v8[10]]] 
-       ^ U3[aes_sbox[expanded_key[i].v8[11]]];
+    c2 = U0[aes_sbox[expanded_key->round[i].v8[8]]] 
+       ^ U1[aes_sbox[expanded_key->round[i].v8[9]]] 
+       ^ U2[aes_sbox[expanded_key->round[i].v8[10]]] 
+       ^ U3[aes_sbox[expanded_key->round[i].v8[11]]];
 
-    c3 = U0[aes_sbox[expanded_key[i].v8[12]]] 
-       ^ U1[aes_sbox[expanded_key[i].v8[13]]] 
-       ^ U2[aes_sbox[expanded_key[i].v8[14]]] 
-       ^ U3[aes_sbox[expanded_key[i].v8[15]]];
+    c3 = U0[aes_sbox[expanded_key->round[i].v8[12]]] 
+       ^ U1[aes_sbox[expanded_key->round[i].v8[13]]] 
+       ^ U2[aes_sbox[expanded_key->round[i].v8[14]]] 
+       ^ U3[aes_sbox[expanded_key->round[i].v8[15]]];
 
-    expanded_key[i].v32[0] = c0;
-    expanded_key[i].v32[1] = c1;
-    expanded_key[i].v32[2] = c2;
-    expanded_key[i].v32[3] = c3;
+    expanded_key->round[i].v32[0] = c0;
+    expanded_key->round[i].v32[1] = c1;
+    expanded_key->round[i].v32[2] = c2;
+    expanded_key->round[i].v32[3] = c3;
 
 #endif     
   }
+
+  return err_status_ok;
 }
 
 #ifdef CPU_CISC
@@ -1910,42 +1999,67 @@ aes_inv_final_round(v128_t *state, const v128_t *round_key) {
 
 
 void
-aes_encrypt(v128_t *plaintext, const aes_expanded_key_t exp_key) {
+aes_encrypt(v128_t *plaintext, const aes_expanded_key_t *exp_key) {
 
   /* add in the subkey */
-  v128_xor_eq(plaintext, exp_key + 0);
+  v128_xor_eq(plaintext, &exp_key->round[0]);
 
-  /* now do nine rounds */
-  aes_round(plaintext, exp_key + 1);
-  aes_round(plaintext, exp_key + 2);
-  aes_round(plaintext, exp_key + 3);
-  aes_round(plaintext, exp_key + 4);
-  aes_round(plaintext, exp_key + 5);
-  aes_round(plaintext, exp_key + 6);
-  aes_round(plaintext, exp_key + 7);
-  aes_round(plaintext, exp_key + 8);  
-  aes_round(plaintext, exp_key + 9);
-  /* the last round is different */
-
- aes_final_round(plaintext, exp_key + 10);  
+  /* now do the rounds */
+  aes_round(plaintext, &exp_key->round[1]);
+  aes_round(plaintext, &exp_key->round[2]);
+  aes_round(plaintext, &exp_key->round[3]);
+  aes_round(plaintext, &exp_key->round[4]);
+  aes_round(plaintext, &exp_key->round[5]);
+  aes_round(plaintext, &exp_key->round[6]);
+  aes_round(plaintext, &exp_key->round[7]);
+  aes_round(plaintext, &exp_key->round[8]);  
+  aes_round(plaintext, &exp_key->round[9]);
+  if (exp_key->num_rounds == 10) {
+    aes_final_round(plaintext, &exp_key->round[10]);
+  }
+  else if (exp_key->num_rounds == 12) {
+    aes_round(plaintext, &exp_key->round[10]);  
+    aes_round(plaintext, &exp_key->round[11]);
+    aes_final_round(plaintext, &exp_key->round[12]);
+  }
+  else if (exp_key->num_rounds == 14) {
+    aes_round(plaintext, &exp_key->round[10]);  
+    aes_round(plaintext, &exp_key->round[11]);
+    aes_round(plaintext, &exp_key->round[12]);  
+    aes_round(plaintext, &exp_key->round[13]);
+    aes_final_round(plaintext, &exp_key->round[14]);  
+  }
 }
 
 void
-aes_decrypt(v128_t *plaintext, const aes_expanded_key_t exp_key) {
+aes_decrypt(v128_t *plaintext, const aes_expanded_key_t *exp_key) {
 
   /* add in the subkey */
-  v128_xor_eq(plaintext, exp_key + 0);
+  v128_xor_eq(plaintext, &exp_key->round[0]);
 
-  /* now do nine rounds */
-  aes_inv_round(plaintext, exp_key + 1);
-  aes_inv_round(plaintext, exp_key + 2);
-  aes_inv_round(plaintext, exp_key + 3);
-  aes_inv_round(plaintext, exp_key + 4);
-  aes_inv_round(plaintext, exp_key + 5);
-  aes_inv_round(plaintext, exp_key + 6);
-  aes_inv_round(plaintext, exp_key + 7);
-  aes_inv_round(plaintext, exp_key + 8);  
-  aes_inv_round(plaintext, exp_key + 9);
-  /* the last round is different */
-  aes_inv_final_round(plaintext, exp_key + 10);  
+  /* now do the rounds */
+  aes_inv_round(plaintext, &exp_key->round[1]);
+  aes_inv_round(plaintext, &exp_key->round[2]);
+  aes_inv_round(plaintext, &exp_key->round[3]);
+  aes_inv_round(plaintext, &exp_key->round[4]);
+  aes_inv_round(plaintext, &exp_key->round[5]);
+  aes_inv_round(plaintext, &exp_key->round[6]);
+  aes_inv_round(plaintext, &exp_key->round[7]);
+  aes_inv_round(plaintext, &exp_key->round[8]);  
+  aes_inv_round(plaintext, &exp_key->round[9]);
+  if (exp_key->num_rounds == 10) {
+    aes_inv_final_round(plaintext, &exp_key->round[10]);  
+  }
+  else if (exp_key->num_rounds == 12) {
+    aes_inv_round(plaintext, &exp_key->round[10]);  
+    aes_inv_round(plaintext, &exp_key->round[11]);
+    aes_inv_final_round(plaintext, &exp_key->round[12]);  
+  }
+  else if (exp_key->num_rounds == 14) {
+    aes_inv_round(plaintext, &exp_key->round[10]);  
+    aes_inv_round(plaintext, &exp_key->round[11]);
+    aes_inv_round(plaintext, &exp_key->round[12]);  
+    aes_inv_round(plaintext, &exp_key->round[13]);
+    aes_inv_final_round(plaintext, &exp_key->round[14]);  
+  }
 }

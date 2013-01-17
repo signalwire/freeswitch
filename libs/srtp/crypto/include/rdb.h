@@ -49,7 +49,7 @@ rdb_init(rdb_t *rdb);
  */
 
 err_status_t
-rdb_check(const rdb_t *rdb, uint32_t index);  
+rdb_check(const rdb_t *rdb, uint32_t rdb_index);  
 
 /*
  * rdb_add_index
@@ -61,7 +61,7 @@ rdb_check(const rdb_t *rdb, uint32_t index);
  */
 
 err_status_t
-rdb_add_index(rdb_t *rdb, uint32_t index);
+rdb_add_index(rdb_t *rdb, uint32_t rdb_index);
 
 /*
  * the functions rdb_increment() and rdb_get_value() are for use by 

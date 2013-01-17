@@ -8,7 +8,7 @@
  */
 /*
  *	
- * Copyright (c) 2001-2005 Cisco Systems, Inc.
+ * Copyright (c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,6 @@
  */
 
 #include "crypto_math.h"
-#include <stdlib.h>           /* malloc() used in bitvector_alloc */
 
 int 
 octet_weight[256] = {
@@ -173,7 +172,7 @@ v32_weight(v32_t a) {
   return wt;
 }
 
-inline unsigned char
+unsigned char
 v32_distance(v32_t x, v32_t y) {
   x.value ^= y.value;
   return v32_weight(x);
@@ -192,7 +191,7 @@ v32_dot_product(v32_t a, v32_t b) {
 
 #define MAX_STRING_LENGTH 1024
 
-static char bit_string[MAX_STRING_LENGTH];
+char bit_string[MAX_STRING_LENGTH];
 
 char *
 octet_bit_string(uint8_t x) {
@@ -524,13 +523,13 @@ A_times_x_plus_b(uint8_t A[8], uint8_t x, uint8_t b) {
   return b;
 }
 
-inline void
+void
 v16_copy_octet_string(v16_t *x, const uint8_t s[2]) {
   x->v8[0]  = s[0];
   x->v8[1]  = s[1];
 }
 
-inline void
+void
 v32_copy_octet_string(v32_t *x, const uint8_t s[4]) {
   x->v8[0]  = s[0];
   x->v8[1]  = s[1];
@@ -538,7 +537,7 @@ v32_copy_octet_string(v32_t *x, const uint8_t s[4]) {
   x->v8[3]  = s[3];
 }
 
-inline void
+void
 v64_copy_octet_string(v64_t *x, const uint8_t s[8]) {
   x->v8[0]  = s[0];
   x->v8[1]  = s[1];
@@ -632,7 +631,7 @@ v128_set_bit_to(v128_t *x, int i, int y){
 #endif /* DATATYPES_USE_MACROS */
 
 
-inline void
+static inline void
 v128_left_shift2(v128_t *x, int num_bits) {
   int i;
   int word_shift = num_bits >> 5;
@@ -771,165 +770,6 @@ octet_string_set_to_zero(uint8_t *s, int len) {
     *s = 0;
   } while (++s < end);
   
-}
-
-/* functions manipulating bit_vector_t */
-
-#define BITVECTOR_MAX_WORDS 5
-
-int
-bitvector_alloc(bitvector_t *v, unsigned long length) {
-  unsigned long l = (length + bytes_per_word - 1) / bytes_per_word;
-  int i;
-
-  /* allocate memory, then set parameters */
-  if (l > BITVECTOR_MAX_WORDS)
-    return -1;
-  else
-    l = BITVECTOR_MAX_WORDS;
-  v->word   = malloc(l);
-  if (v->word == NULL)
-    return -1;
-  v->length = length;
-
-  /* initialize bitvector to zero */
-  for (i=0; i < (length >> 5); i++) {
-    v->word = 0;
-  }
-
-  return 0;
-}
-
-void
-bitvector_set_bit(bitvector_t *v, int bit_index) {
-
-  v->word[(bit_index >> 5)] |= (1 << (bit_index & 31));
-  
-}
-
-int
-bitvector_get_bit(const bitvector_t *v, int bit_index) {
-
-  return ((v->word[(bit_index >> 5)]) >> (bit_index & 31)) & 1;
-  
-}
-
-#include <stdio.h>
-
-int
-bitvector_print_hex(const bitvector_t *v, FILE *stream) {
-  int i;
-  int m = v->length >> 5;
-  int n = v->length & 31;
-  char string[9];
-  uint32_t tmp;
-
-  /* if length isn't a multiple of four, we can't hex_print */
-  if (n & 3)
-    return -1;
-  
-  /* if the length is zero, do nothing */
-  if (v->length == 0)
-    return 0;
-
-  /*
-   * loop over words from most significant to least significant - 
-   */
-  
-  for (i=m; i > 0; i++) {
-    char *str = string + 7;
-    tmp = v->word[i];
-    
-    /* null terminate string */
-    string[8] = 0;   
-
-    /* loop over nibbles */
-    *str-- = nibble_to_hex_char(tmp & 0xf);  tmp >>= 4; 
-    *str-- = nibble_to_hex_char(tmp & 0xf);  tmp >>= 4; 
-    *str-- = nibble_to_hex_char(tmp & 0xf);  tmp >>= 4; 
-    *str-- = nibble_to_hex_char(tmp & 0xf);  tmp >>= 4; 
-    *str-- = nibble_to_hex_char(tmp & 0xf);  tmp >>= 4; 
-    *str-- = nibble_to_hex_char(tmp & 0xf);  tmp >>= 4; 
-    *str-- = nibble_to_hex_char(tmp & 0xf);  tmp >>= 4; 
-    *str-- = nibble_to_hex_char(tmp & 0xf);   
-
-    /* now print stream */
-    fprintf(stream, string);
-  }
-  
-  return 0;
-
-}
-
-
-int
-hex_string_length(char *s) {
-  int count = 0;
-  
-  /* ignore leading zeros */
-  while ((*s != 0) && *s == '0')
-    s++;
-
-  /* count remaining characters */
-  while (*s != 0) {
-    if (hex_char_to_nibble(*s++) == -1)
-      return -1;
-    count++;
-  }
-
-  return count;
-}
-
-int
-bitvector_set_from_hex(bitvector_t *v, char *string) {
-  int num_hex_chars, m, n, i, j;
-  uint32_t tmp;
-  
-  num_hex_chars = hex_string_length(string);
-  if (num_hex_chars == -1)
-    return -1;
-
-  /* set length */
-  v->length = num_hex_chars * 4;
-  /* 
-   * at this point, we should subtract away a bit if the high
-   * bit of the first character is zero, but we ignore that 
-   * for now and assume that we're four-bit aligned - DAM
-   */
-
-  
-  m = num_hex_chars / 8;   /* number of words                */
-  n = num_hex_chars % 8;   /* number of nibbles in last word */
-
-  /* if the length is greater than the bitvector, return an error */
-  if (m > BITVECTOR_MAX_WORDS)
-    return -1;
-
-  /* 
-   * loop over words from most significant - first word is a special
-   * case 
-   */
-  
-  if (n) {
-    tmp = 0;
-    for (i=0; i < n; i++) {
-      tmp = hex_char_to_nibble(*string++); 
-      tmp <<= 4;  
-    }
-    v->word[m] = tmp;
-  }
-
-  /* now loop over the rest of the words */
-  for (i=m-1; i >= 0; i--) {
-     tmp = 0;
-     for (j=0; j < 8; j++) {
-       tmp = hex_char_to_nibble(*string++); 
-       tmp <<= 4;  
-     }
-     v->word[i] = tmp;
-  }
-
-  return 0;
 }
 
 

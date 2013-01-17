@@ -8,7 +8,7 @@
  */
 /*
  *	
- * Copyright(c) 2001-2005 Cisco Systems, Inc.
+ * Copyright(c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,7 @@
 #include "err.h"
 #include "crypto_types.h"
 #include "key.h"
-
+#include "crypto.h"
 
 /*
  * crypto_kernel_state_t defines the possible states:
@@ -68,36 +68,6 @@ typedef enum {
   crypto_kernel_state_insecure,
   crypto_kernel_state_secure
 } crypto_kernel_state_t;
-
-
-/** 
- *  @brief A cipher_type_id_t is an identifier for a particular cipher
- *  type.
- *
- *  A cipher_type_id_t is an integer that represents a particular
- *  cipher type, e.g. the Advanced Encryption Standard (AES).  A
- *  NULL_CIPHER is avaliable; this cipher leaves the data unchanged,
- *  and can be selected to indicate that no encryption is to take
- *  place.
- * 
- *  @ingroup Ciphers
- */
-typedef uint32_t cipher_type_id_t; 
-
-/**
- *  @brief An auth_type_id_t is an identifier for a particular authentication
- *   function.
- *
- *  An auth_type_id_t is an integer that represents a particular
- *  authentication function type, e.g. HMAC-SHA1.  A NULL_AUTH is
- *  avaliable; this authentication function performs no computation,
- *  and can be selected to indicate that no authentication is to take
- *  place.
- *  
- *  @ingroup Authentication
- */
-typedef uint32_t auth_type_id_t;
-
 
 /* 
  * linked list of cipher types 
@@ -211,6 +181,28 @@ crypto_kernel_load_cipher_type(cipher_type_t *ct, cipher_type_id_t id);
 
 err_status_t
 crypto_kernel_load_auth_type(auth_type_t *ct, auth_type_id_t id);
+
+/*
+ * crypto_kernel_replace_cipher_type(ct, id)
+ * 
+ * replaces the crypto kernel's existing cipher for the cipher_type id
+ * with a new one passed in externally.  The new cipher must pass all the
+ * existing cipher_type's self tests as well as its own.
+ */
+err_status_t
+crypto_kernel_replace_cipher_type(cipher_type_t *ct, cipher_type_id_t id);
+
+
+/*
+ * crypto_kernel_replace_auth_type(ct, id)
+ * 
+ * replaces the crypto kernel's existing cipher for the auth_type id
+ * with a new one passed in externally.  The new auth type must pass all the
+ * existing auth_type's self tests as well as its own.
+ */
+err_status_t
+crypto_kernel_replace_auth_type(auth_type_t *ct, auth_type_id_t id);
+
 
 err_status_t
 crypto_kernel_load_debug_module(debug_module_t *new_dm);

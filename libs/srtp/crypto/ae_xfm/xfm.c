@@ -63,7 +63,7 @@ aes_128_cbc_hmac_sha1_96_func(void *key,
     /* perform encryption and authentication */
 
     /* set aes key */
-    status = aes_cbc_context_init(&aes_ctx, key, direction_encrypt);
+    status = aes_cbc_context_init(&aes_ctx, key, ENC_KEY_LEN, direction_encrypt);
     if (status) return status;
 
     /* set iv */
@@ -139,7 +139,7 @@ aes_128_cbc_hmac_sha1_96_inv(void *key,
     /* perform encryption and authentication */
 
     /* set aes key */
-    status = aes_cbc_context_init(&aes_ctx, key, direction_decrypt);
+    status = aes_cbc_context_init(&aes_ctx, key, ENC_KEY_LEN, direction_decrypt);
     if (status) return status;
 
     /* set iv */
@@ -227,7 +227,7 @@ aes_128_cbc_hmac_sha1_96_enc(void *key,
     /* perform encryption and authentication */
 
     /* set aes key */
-    status = aes_cbc_context_init(&aes_ctx, key, direction_encrypt);
+    status = aes_cbc_context_init(&aes_ctx, key, ENC_KEY_LEN, direction_encrypt);
     if (status) return status;
 
     /* set iv */
@@ -397,7 +397,7 @@ aes_128_cbc_hmac_sha1_96_dec(void *key,
     *opaque_len -= TAG_LEN;
 
     /* decrypt the confidential data */
-    status = aes_cbc_context_init(&aes_ctx, key, direction_decrypt);
+    status = aes_cbc_context_init(&aes_ctx, key, ENC_KEY_LEN, direction_decrypt);
     if (status) return status;
     status = aes_cbc_set_iv(&aes_ctx, iv);
     if (status) return status;
@@ -564,7 +564,7 @@ cryptoalg_find_by_id(int id) {
   case 1:
     return cryptoalg;
   default:
-    return 0;
+    break;
   }
   return 0;
 }

@@ -9,7 +9,7 @@
  */
 /*
  *	
- * Copyright (c) 2001-2005 Cisco Systems, Inc.
+ * Copyright (c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -95,7 +95,7 @@ octet_get_weight(uint8_t octet) {
 
 /* the value MAX_PRINT_STRING_LEN is defined in datatypes.h */
 
-static char bit_string[MAX_PRINT_STRING_LEN];
+char bit_string[MAX_PRINT_STRING_LEN];
 
 uint8_t
 nibble_to_hex_char(uint8_t nibble) {
@@ -106,7 +106,7 @@ nibble_to_hex_char(uint8_t nibble) {
 
 char *
 octet_string_hex_string(const void *s, int length) {
-  const uint8_t *str = s;
+  const uint8_t *str = (const uint8_t *)s;
   int i;
   
   /* double length, since one octet takes two hex characters */
@@ -124,7 +124,7 @@ octet_string_hex_string(const void *s, int length) {
   return bit_string;
 }
 
-inline int
+static inline int
 hex_char_to_nibble(uint8_t c) {
   switch(c) {
   case ('0'): return 0x0;
@@ -149,9 +149,10 @@ hex_char_to_nibble(uint8_t c) {
   case ('E'): return 0xe;
   case ('f'): return 0xf;
   case ('F'): return 0xf;
+  default: return -1;   /* this flags an error */
   }
-  /* this flags an error */
-  return -1;
+  /* NOTREACHED */
+  return -1;  /* this keeps compilers from complaining */
 }
 
 int
@@ -178,7 +179,7 @@ hex_string_to_octet_string(char *raw, char *hex, int len) {
     tmp = hex_char_to_nibble(hex[0]);
     if (tmp == -1)
       return hex_len;
-    x = (uint8_t)(tmp << 4);
+    x = (tmp << 4);
     hex_len++;
     tmp = hex_char_to_nibble(hex[1]);
     if (tmp == -1)
@@ -206,16 +207,16 @@ v128_hex_string(v128_t *x) {
 
 char *
 v128_bit_string(v128_t *x) {
-  int j, index;
+  int j, i;
   uint32_t mask;
   
-  for (j=index=0; j < 4; j++) {
+  for (j=i=0; j < 4; j++) {
     for (mask=0x80000000; mask > 0; mask >>= 1) {
       if (x->v32[j] & mask)
-	bit_string[index] = '1';
+	bit_string[i] = '1';
       else
-	bit_string[index] = '0';
-      ++index;
+	bit_string[i] = '0';
+      ++i;
     }
   }
   bit_string[128] = 0; /* null terminate string */
@@ -322,13 +323,13 @@ v128_set_bit_to(v128_t *x, int i, int y){
 #endif /* DATATYPES_USE_MACROS */
 
 void
-v128_right_shift(v128_t *x, int index) {
-  const int base_index = index >> 5;
-  const int bit_index = index & 31;
+v128_right_shift(v128_t *x, int shift) {
+  const int base_index = shift >> 5;
+  const int bit_index = shift & 31;
   int i, from;
   uint32_t b;
     
-  if (index > 127) {
+  if (shift > 127) {
     v128_set_to_zero(x);
     return;
   }
@@ -360,12 +361,12 @@ v128_right_shift(v128_t *x, int index) {
 }
 
 void
-v128_left_shift(v128_t *x, int index) {
+v128_left_shift(v128_t *x, int shift) {
   int i;
-  const int base_index = index >> 5;
-  const int bit_index = index & 31;
+  const int base_index = shift >> 5;
+  const int bit_index = shift & 31;
 
-  if (index > 127) {
+  if (shift > 127) {
     v128_set_to_zero(x);
     return;
   } 
@@ -383,6 +384,124 @@ v128_left_shift(v128_t *x, int index) {
   /* now wrap up the final portion */
   for (i = 4 - base_index; i < 4; i++) 
     x->v32[i] = 0;
+
+}
+
+/* functions manipulating bitvector_t */
+
+#ifndef DATATYPES_USE_MACROS /* little functions are not macros */
+
+int
+bitvector_get_bit(const bitvector_t *v, int bit_index)
+{
+  return _bitvector_get_bit(v, bit_index);
+}
+
+void
+bitvector_set_bit(bitvector_t *v, int bit_index)
+{
+  _bitvector_set_bit(v, bit_index);
+}
+
+void
+bitvector_clear_bit(bitvector_t *v, int bit_index)
+{
+  _bitvector_clear_bit(v, bit_index);
+}
+
+
+#endif /* DATATYPES_USE_MACROS */
+
+int
+bitvector_alloc(bitvector_t *v, unsigned long length) {
+  unsigned long l;
+
+  /* Round length up to a multiple of bits_per_word */
+  length = (length + bits_per_word - 1) & ~(unsigned long)((bits_per_word - 1));
+
+  l = length / bits_per_word * bytes_per_word;
+
+  /* allocate memory, then set parameters */
+  if (l == 0)
+    v->word = NULL;
+  else {
+    v->word = (uint32_t*)crypto_alloc(l);
+    if (v->word == NULL) {
+      v->word = NULL;
+      v->length = 0;
+      return -1;
+    }
+  }
+  v->length = length;
+
+  /* initialize bitvector to zero */
+  bitvector_set_to_zero(v);
+
+  return 0;
+}
+
+
+void
+bitvector_dealloc(bitvector_t *v) {
+  if (v->word != NULL)
+    crypto_free(v->word);
+  v->word = NULL;
+  v->length = 0;
+}
+
+void
+bitvector_set_to_zero(bitvector_t *x)
+{
+  /* C99 guarantees that memset(0) will set the value 0 for uint32_t */
+  memset(x->word, 0, x->length >> 3);
+}
+
+char *
+bitvector_bit_string(bitvector_t *x, char* buf, int len) {
+  int j, i;
+  uint32_t mask;
+  
+  for (j=i=0; j < (int)(x->length>>5) && i < len-1; j++) {
+    for (mask=0x80000000; mask > 0; mask >>= 1) {
+      if (x->word[j] & mask)
+	buf[i] = '1';
+      else
+	buf[i] = '0';
+      ++i;
+      if (i >= len-1)
+        break;
+    }
+  }
+  buf[i] = 0; /* null terminate string */
+
+  return buf;
+}
+
+void
+bitvector_left_shift(bitvector_t *x, int shift) {
+  int i;
+  const int base_index = shift >> 5;
+  const int bit_index = shift & 31;
+  const int word_length = x->length >> 5;
+
+  if (shift >= (int)x->length) {
+    bitvector_set_to_zero(x);
+    return;
+  } 
+  
+  if (bit_index == 0) {
+    for (i=0; i < word_length - base_index; i++)
+      x->word[i] = x->word[i+base_index];
+  } else {
+    for (i=0; i < word_length - base_index - 1; i++)
+      x->word[i] = (x->word[i+base_index] >> bit_index) ^
+	(x->word[i+base_index+1] << (32 - bit_index));
+    x->word[word_length - base_index-1] = x->word[word_length-1] >> bit_index;
+  }
+
+  /* now wrap up the final portion */
+  for (i = word_length - base_index; i < word_length; i++) 
+    x->word[i] = 0;
 
 }
 
@@ -563,6 +682,8 @@ base64_char_to_sextet(uint8_t c) {
     return 63;
   case '=':
     return 64;
+  default:
+    break;
  }
  return -1;
 }
@@ -583,7 +704,7 @@ base64_string_to_octet_string(char *raw, char *base64, int len) {
     tmp = base64_char_to_sextet(base64[0]);
     if (tmp == -1)
       return base64_len;
-    x = (uint8_t)(tmp << 6);
+    x = (tmp << 6);
     base64_len++;
     tmp = base64_char_to_sextet(base64[1]);
     if (tmp == -1)

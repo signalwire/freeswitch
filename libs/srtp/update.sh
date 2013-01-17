@@ -6,7 +6,7 @@
 
 a=`find . -name "*.[ch]"`
 for x in $a; do 
-    sed 's/(c) 2001-2004/(c) 2001-2005/' $x > $x.tmp; 
+    sed 's/(c) 2001-2005/(c) 2001-2006/' $x > $x.tmp; 
     mv $x.tmp $x; 
 done
 

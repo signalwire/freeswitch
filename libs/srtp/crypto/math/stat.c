@@ -28,7 +28,7 @@ stat_test_monobit(uint8_t *data) {
 
   ones_count = 0;
   while (data < data_end) {
-    ones_count = (uint16_t)(ones_count + octet_get_weight(*data));
+    ones_count += octet_get_weight(*data);
     data++;
   }
 
@@ -83,7 +83,7 @@ stat_test_runs(uint8_t *data) {
   uint16_t gaps[6] = { 0, 0, 0, 0, 0, 0 };
   uint16_t lo_value[6] = { 2315, 1114, 527, 240, 103, 103 };
   uint16_t hi_value[6] = { 2685, 1386, 723, 384, 209, 209 };
-  int16_t  state = 0;
+  int state = 0;
   uint16_t mask;
   int i;
   
@@ -208,7 +208,7 @@ stat_test_rand_source(rand_source_func_t get_rand_bytes) {
   uint16_t gaps[6] = { 0, 0, 0, 0, 0, 0 };
   uint16_t lo_value[6] = { 2315, 1114, 527, 240, 103, 103 };
   uint16_t hi_value[6] = { 2685, 1386, 723, 384, 209, 209 };
-  int16_t  state = 0;
+  int state = 0;
   uint16_t mask;
   
   /* counters for monobit, poker, and runs tests are initialized above */

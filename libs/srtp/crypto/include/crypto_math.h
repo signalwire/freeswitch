@@ -8,7 +8,7 @@
  */
 /*
  *	
- * Copyright (c) 2001-2005 Cisco Systems, Inc.
+ * Copyright (c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -232,40 +232,6 @@ octet_string_is_eq(uint8_t *a, uint8_t *b, int len);
 void
 octet_string_set_to_zero(uint8_t *s, int len);
 
-
-/*
- * functions manipulating bit_vector_t 
- *
- * A bitvector_t consists of an array of words and an integer
- * representing the number of significant bits stored in the array.
- * The bits are packed as follows: the least significant bit is that
- * of word[0], while the most significant bit is the nth most
- * significant bit of word[m], where length = bits_per_word * m + n.
- * 
- */
-
-#define bits_per_word  32
-#define bytes_per_word 4
-
-typedef struct {
-  uint32_t length;   
-  uint32_t *word;
-} bitvector_t;
-
-int
-bitvector_alloc(bitvector_t *v, unsigned long length);
-
-void
-bitvector_set_bit(bitvector_t *v, int bit_index);
-
-int
-bitvector_get_bit(const bitvector_t *v, int bit_index);
-
-int
-bitvector_print_hex(const bitvector_t *v, FILE *stream);
-
-int
-bitvector_set_from_hex(bitvector_t *v, char *string);
 
 #endif /* MATH_H */
 

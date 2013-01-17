@@ -10,7 +10,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -48,10 +48,6 @@
 #include "null_cipher.h"
 #include "alloc.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
-
 /* the null_cipher uses the cipher debug module  */
 
 extern debug_module_t mod_cipher;
@@ -65,7 +61,7 @@ null_cipher_alloc(cipher_t **c, int key_len) {
 	      "allocating cipher with key length %d", key_len);
 
   /* allocate memory a cipher of type null_cipher */
-  pointer = crypto_alloc(sizeof(null_cipher_ctx_t) + sizeof(cipher_t));
+  pointer = (uint8_t*)crypto_alloc(sizeof(null_cipher_ctx_t) + sizeof(cipher_t));
   if (pointer == NULL)
     return err_status_alloc_fail;
 
@@ -103,7 +99,7 @@ null_cipher_dealloc(cipher_t *c) {
 }
 
 err_status_t
-null_cipher_init(null_cipher_ctx_t *ctx, const uint8_t *key) {
+null_cipher_init(null_cipher_ctx_t *ctx, const uint8_t *key, int key_len) {
 
   debug_print(mod_cipher, "initializing null cipher", NULL);
 
@@ -151,6 +147,7 @@ cipher_type_t null_cipher = {
   (char *)                      null_cipher_description,
   (int)                         0,
   (cipher_test_case_t *)       &null_cipher_test_0,
-  (debug_module_t *)            NULL
+  (debug_module_t *)            NULL,
+  (cipher_type_id_t)            NULL_CIPHER
 };
 

@@ -19,13 +19,14 @@ typedef struct {
   v128_t   offset;                 /* initial offset value             */
   v128_t   keystream_buffer;       /* buffers bytes of keystream       */
   aes_expanded_key_t expanded_key; /* the cipher key                   */
-  unsigned int      bytes_in_buffer;        /* number of unused bytes in buffer */
+  int      bytes_in_buffer;        /* number of unused bytes in buffer */
 } aes_icm_ctx_t;
 
 
 err_status_t
 aes_icm_context_init(aes_icm_ctx_t *c,
-		     const unsigned char *key); 
+		     const unsigned char *key,
+		     int key_len); 
 
 err_status_t
 aes_icm_set_iv(aes_icm_ctx_t *c, void *iv);

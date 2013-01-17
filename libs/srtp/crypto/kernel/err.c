@@ -8,7 +8,7 @@
  */
 /*
  *	
- * Copyright(c) 2001-2005 Cisco Systems, Inc.
+ * Copyright(c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -41,10 +41,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
 
 #include "err.h"
 

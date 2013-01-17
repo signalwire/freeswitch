@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,14 @@
 #include "rdb.h"
 #include "ut_sim.h"
 
-void
+/*
+ * num_trials defines the number of trials that are used in the
+ * validation functions below
+ */
+
+unsigned num_trials = 1 << 16;
+
+err_status_t
 test_rdb_db(void);
 
 double
@@ -56,9 +63,14 @@ rdb_check_adds_per_second(void);
 
 int
 main (void) {
-
+  err_status_t err;
+  
   printf("testing anti-replay database (rdb_t)...\n");
-  test_rdb_db();
+  err = test_rdb_db();
+  if (err) {
+    printf("failed\n");
+    exit(1);
+  }
   printf("done\n");
 
   printf("rdb_check/rdb_adds per second: %e\n",
@@ -73,73 +85,138 @@ print_rdb(rdb_t *rdb) {
   printf("rdb: {%u, %s}\n", rdb->window_start, v128_bit_string(&rdb->bitmask));
 }
 
-void
+err_status_t
 rdb_check_add(rdb_t *rdb, uint32_t idx) {
 
   if (rdb_check(rdb, idx) != err_status_ok) {
     printf("rdb_check failed at index %u\n", idx);
-    return;
+    return err_status_fail;
   }
-  if (rdb_add_index(rdb, idx) != err_status_ok)
+  if (rdb_add_index(rdb, idx) != err_status_ok) {
     printf("rdb_add_index failed at index %u\n", idx);
+    return err_status_fail;
+  }
 
+  return err_status_ok;
 }
 
-void
+err_status_t
 rdb_check_expect_failure(rdb_t *rdb, uint32_t idx) {
-
-  if (rdb_check(rdb, idx) != err_status_fail)
+  err_status_t err;
+  
+  err = rdb_check(rdb, idx);
+  if ((err != err_status_replay_old) && (err != err_status_replay_fail)) {
     printf("rdb_check failed at index %u (false positive)\n", idx);
+    return err_status_fail;
+  }
+
+  return err_status_ok;
 }
 
-void
-rdb_check_unordered(rdb_t *rdb, uint32_t idx) {
+err_status_t
+rdb_check_add_unordered(rdb_t *rdb, uint32_t idx) {
   err_status_t rstat;
 
+ /* printf("index: %u\n", idx); */
   rstat = rdb_check(rdb, idx);
-  if ((rstat != err_status_ok) && (rstat != err_status_replay_old))
-    printf("rdb_check_unordered failed at index %u\n", idx);
+  if ((rstat != err_status_ok) && (rstat != err_status_replay_old)) {
+    printf("rdb_check_add_unordered failed at index %u\n", idx);
+    return rstat;
+  }
+  if (rstat == err_status_replay_old) {
+	return err_status_ok;
+  }
+  if (rdb_add_index(rdb, idx) != err_status_ok) {
+    printf("rdb_add_index failed at index %u\n", idx);
+    return err_status_fail;
+  }  
+
+  return err_status_ok;
 }
 
-
-
-#define MAX_IDX 160
-
-void
+err_status_t
 test_rdb_db() {
   rdb_t rdb;
   uint32_t idx, ircvd;
   ut_connection utc;
-  
+  err_status_t err;
+
   if (rdb_init(&rdb) != err_status_ok) {
     printf("rdb_init failed\n");
-    exit(1);
+    return err_status_init_fail;
   }
 
   /* test sequential insertion */
-  for (idx=0; idx < MAX_IDX; idx++) {
-    rdb_check_add(&rdb, idx);
+  for (idx=0; idx < num_trials; idx++) {
+    err = rdb_check_add(&rdb, idx);
+    if (err) 
+      return err;
   }
 
   /* test for false positives */
-  for (idx=0; idx < MAX_IDX; idx++) {
-    rdb_check_expect_failure(&rdb, idx);
+  for (idx=0; idx < num_trials; idx++) {
+    err = rdb_check_expect_failure(&rdb, idx);
+    if (err) 
+      return err;
   }
 
   /* re-initialize */
   if (rdb_init(&rdb) != err_status_ok) {
     printf("rdb_init failed\n");
-    exit(1);
+    return err_status_fail;
   }
 
   /* test non-sequential insertion */
   ut_init(&utc);
   
-  for (idx=0; idx < MAX_IDX; idx++) {
+  for (idx=0; idx < num_trials; idx++) {
     ircvd = ut_next_index(&utc);
-    rdb_check_unordered(&rdb, ircvd);
+    err = rdb_check_add_unordered(&rdb, ircvd);
+    if (err) 
+      return err;
+    err = rdb_check_expect_failure(&rdb, ircvd);
+    if (err) 
+      return err;
   }
-  
+
+  /* re-initialize */
+  if (rdb_init(&rdb) != err_status_ok) {
+    printf("rdb_init failed\n");
+    return err_status_fail;
+  }
+
+  /* test insertion with large gaps */
+  for (idx=0, ircvd=0; idx < num_trials; idx++, ircvd += (1 << (rand() % 10))) {
+    err = rdb_check_add(&rdb, ircvd);
+    if (err)
+      return err;
+    err = rdb_check_expect_failure(&rdb, ircvd);
+    if (err)
+      return err;
+  }
+
+  /* re-initialize */
+  if (rdb_init(&rdb) != err_status_ok) {
+    printf("rdb_init failed\n");
+    return err_status_fail;
+  }
+
+  /* test loss of first 513 packets */
+  for (idx=0; idx < num_trials; idx++) {
+    err = rdb_check_add(&rdb, idx + 513);
+    if (err) 
+      return err;
+  }
+
+  /* test for false positives */
+  for (idx=0; idx < num_trials + 513; idx++) {
+    err = rdb_check_expect_failure(&rdb, idx);
+    if (err) 
+      return err;
+  }
+
+
+  return err_status_ok;
 }
 
 #include <time.h>       /* for clock()  */
