@@ -109,7 +109,7 @@ static int oreka_tear_down_rtp(oreka_session_t *oreka, oreka_stream_type_t type)
 static int oreka_setup_rtp(oreka_session_t *oreka, oreka_stream_type_t type)
 {
 	switch_port_t rtp_port = 0;
-	switch_rtp_flag_t flags = 0;
+	switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
 	switch_rtp_t *rtp_stream = NULL;
 	switch_codec_implementation_t *codec_impl = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;

@@ -1947,7 +1947,7 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"======>FSH323_ExternalRTPChannel::Start() [%p]\n",this);
 
 	const char *err = NULL;
-	switch_rtp_flag_t flags;
+	switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
 	char * timer_name = NULL;
 	const char *var;
 
@@ -2145,15 +2145,16 @@ PBoolean FSH323_ExternalRTPChannel::Start()
 	}
 	
 	if ((!m_conn->m_startRTP)) {			
-		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT|SWITCH_RTP_FLAG_RAW_WRITE);
+		flags[SWITCH_RTP_FLAG_DATAWAIT]++;
+		flags[SWITCH_RTP_FLAG_RAW_WRITE]++;
 
 		if (mod_h323_globals.use_rtp_timer) {
-			flags |= SWITCH_RTP_FLAG_USE_TIMER;
+			flags[SWITCH_RTP_FLAG_USE_TIMER]++;
 			timer_name = mod_h323_globals.rtp_timer_name;
 		} else {
 			if ((var = switch_channel_get_variable(m_fsChannel, "timer_name"))) {
 				timer_name = (char *) var;
-				flags |= SWITCH_RTP_FLAG_USE_TIMER;
+				flags[SWITCH_RTP_FLAG_USE_TIMER]++;
 			}
 		}
 

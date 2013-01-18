@@ -65,7 +65,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_size_t bytes;
 	ls_control_packet_t control_packet;
 	switch_codec_t codec = { 0 };
-	uint32_t flags = 0;
+	switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
 	const char *err;
 	switch_rtp_t *rtp_session = NULL;
 	switch_port_t rtp_port;

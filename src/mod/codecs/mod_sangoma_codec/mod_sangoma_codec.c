@@ -251,7 +251,7 @@ static int sangoma_create_rtp(void *usr_priv, sngtc_codec_request_leg_t *codec_r
 	switch_memory_pool_t *sesspool = NULL;
 	switch_rtp_t *rtp_session = NULL;
 	char codec_ip[255];
-	switch_rtp_flag_t flags = 0;
+	switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
 	int iana = 0;
 	const char *err = NULL;
 	struct in_addr local_ip_addr = { 0 };
