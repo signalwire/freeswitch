@@ -94,6 +94,8 @@ End Sub
 Sub GetCompressionTools(DestFolder)
 	Dim tries
 	Dim max_tries
+	Dim MyFile
+
 	tries = 0
 	max_tries = 10
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
@@ -109,6 +111,7 @@ Sub GetCompressionTools(DestFolder)
 			FSO.DeleteFile DestFolder & "7za.tag", true
 			Wscript.echo("Downloaded 7za.exe")
 		End If
+		Set MyFile = Nothing
 		WScript.Sleep(500)
 	End If
 	Do While FSO.FileExists(DestFolder & "7za.tag") And tries < max_tries
@@ -137,33 +140,44 @@ Function Strip(Str)
 	Strip = Right(oRE.Replace(Str, ""), 20)
 End Function
 
+Sub ExecPrintOutput(Str)
+	Dim Process
+
+	Set Process = WshShell.Exec(Str)
+
+	Do
+		If Not Process.StdOut.atEndOfStream Then
+			WScript.Echo Process.StdOut.ReadLine()
+		End If
+	Loop Until (Process.Status <> 0) And (Process.StdOut.atEndOfStream)
+
+	Process.Terminate 
+	WScript.Sleep(500)
+End Sub
+
 Sub UnCompress(Archive, DestFolder)
 	Dim Fn
 	Dim batname
-	
+	Dim MyFile
+
 	GetCompressionTools UtilsDir
-	
+
 	batname = "tmp" & Strip(Archive) & CStr(Int(10000*Rnd)) & ".bat"
 	wscript.echo("Extracting: " & Archive & " - using: " & batname)
-	Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
+	Set MyFile = FSO.CreateTextFile(UtilsDir & batname, True)
 	MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Archive & quote & " -y -o" & quote & DestFolder & quote )
 	MyFile.Close
-	Set oExec = WshShell.Exec(UtilsDir & batname)
-	Do
-		WScript.Echo OExec.StdOut.ReadLine()
-	Loop While Not OExec.StdOut.atEndOfStream
+	Set MyFile = Nothing
+	ExecPrintOutput(UtilsDir & batname)
 	wscript.echo("Ready extracting: " & Archive)
 	Fn = Left(Archive, Len(Archive)-3)
 	If FSO.FileExists(Fn) Then
 		Set MyFile = FSO.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Fn & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
-		Set oExec = WshShell.Exec(UtilsDir & batname)
-		Do
-			WScript.Echo OExec.StdOut.ReadLine()
-		Loop While Not OExec.StdOut.atEndOfStream
+		Set MyFile = Nothing
+		ExecPrintOutput(UtilsDir & batname)
 		wscript.echo("Ready extracting: " & Fn)
-		WScript.Sleep(500)
 		wscript.echo("Deleting: " & Fn)
 		FSO.DeleteFile Fn,true
 	End If
@@ -172,12 +186,9 @@ Sub UnCompress(Archive, DestFolder)
 		Set MyFile = FSO.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Fn & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
-		Set oExec = WshShell.Exec(UtilsDir & batname)
-		Do
-			WScript.Echo OExec.StdOut.ReadLine()
-		Loop While Not OExec.StdOut.atEndOfStream
+		Set MyFile = Nothing
+		ExecPrintOutput(UtilsDir & batname)
 		wscript.echo("Ready extracting: " & Fn )
-		WScript.Sleep(500)
 		wscript.echo("Deleting: " & Fn)
 		FSO.DeleteFile Fn,true
 	End If
@@ -189,6 +200,8 @@ Sub UnCompress(Archive, DestFolder)
 End Sub
 
 Sub Wget(URL, DestFolder)
+	Dim MyFile
+
 	StartPos = InstrRev(URL, "/", -1, 1)
 	strlength = Len(URL)
 	filename=Right(URL,strlength-StartPos)
@@ -197,15 +210,12 @@ Sub Wget(URL, DestFolder)
 	If UseWgetEXE Then
 		Wscript.echo("wget: " & URL)
 		batname = "tmp" & CStr(Int(10000*Rnd)) & ".bat"
-		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
+		Set MyFile = FSO.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@cd " & quote & DestFolder & quote)
 		MyFile.WriteLine("@" & quote & UtilsDir & "wget.exe" & quote & " " & URL)
 		MyFile.Close
-		Set oExec = WshShell.Exec(UtilsDir & batname)
-		Do
-			WScript.Echo OExec.StdOut.ReadLine()
-		Loop While Not OExec.StdOut.atEndOfStream
-
+		Set MyFile = Nothing
+		ExecPrintOutput(UtilsDir & batname)
 	Else
 		Wscript.echo("XMLHTTP GET: " & URL)
 
@@ -226,6 +236,8 @@ Sub Wget(URL, DestFolder)
 End Sub
 
 Sub Slow_Wget(URL, DestFolder)
+	Dim MyFile
+
 	StartPos = InstrRev(URL, "/", -1, 1)
 	strlength = Len(URL)
 	filename=Right(URL,strlength-StartPos)
@@ -236,11 +248,12 @@ Sub Slow_Wget(URL, DestFolder)
 	xml.Send
 
 	const ForReading = 1 , ForWriting = 2 , ForAppending = 8
-	Set MyFile = fso.OpenTextFile(DestFolder & filename ,ForWriting, True)
+	Set MyFile = FSO.OpenTextFile(DestFolder & filename ,ForWriting, True)
 	For i = 1 to lenb(xml.responseBody)
 	MyFile.write Chr(Ascb(midb(xml.responseBody,i,1)))
 	Next
 	MyFile.Close()
+	Set MyFile = Nothing
 
 End Sub
 
@@ -292,29 +305,37 @@ Sub FindReplaceInFile(FileName, sFind, sReplace)
 End Sub
 
 Function ExecAndGetResult(tmpFolder, VersionDir, execStr)
+	Dim MyFile
+
 	Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpExec.Bat", True)
 	MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
 	MyFile.WriteLine("@" & execStr)
 	MyFile.Close
+	Set MyFile = Nothing
 
 	Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpExec.Bat" & quote)
 
 	ExecAndGetResult = Trim(OExec.StdOut.ReadLine())
 
 	Do
-	Loop While Not OExec.StdOut.atEndOfStream
+	Loop Until (oExec.Status <> 0) And (oExec.StdOut.atEndOfStream)
+
+	oExec.Terminate 
+	WScript.Sleep(500)
 
 	FSO.DeleteFile(tmpFolder & "tmpExec.Bat")
 
 End Function
 
 Function ExecAndGetExitCode(tmpFolder, VersionDir, execStr)
+	Dim MyFile
 
 	Set MyFile = FSO.CreateTextFile(tmpFolder & "tmpExec.Bat", True)
 	MyFile.WriteLine("@" & "cd " & quote & VersionDir & quote)
 	MyFile.WriteLine("@" & execStr)
 	MyFile.WriteLine("@exit %ERRORLEVEL%")
 	MyFile.Close
+	Set MyFile = Nothing
 
 	ExecAndGetExitCode = WshShell.Run("cmd /C " & quote & tmpFolder & "tmpExec.Bat" & quote, 0, True)
 
@@ -403,12 +424,16 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 			sLastVersion = sLastFile.ReadLine()
 		End If
 		sLastFile.Close
+		Set sLastFile = Nothing
 	End If
 
 	If VERSION & " " & strVerHuman <> sLastVersion Then
-		Set MyFile = fso.CreateTextFile(tmpFolder & "lastversion", True)
+		Dim MyFile
+
+		Set MyFile = FSO.CreateTextFile(tmpFolder & "lastversion", True)
 		MyFile.WriteLine(VERSION & " " & strVerHuman)
 		MyFile.Close
+		Set MyFile = Nothing
 
 		FSO.CopyFile includebase, includedest, true
 		FindReplaceInFile includedest, "@SWITCH_VERSION_REVISION@", VERSION

@@ -357,6 +357,7 @@ opal
 /libwebsockets/test-server/Makefile.in
 /mongo-cxx-driver-v*/
 /mpg123/
+/libmpg123/
 /openldap-*/
 /openssl-*/
 /openzap/build/compile

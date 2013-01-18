@@ -184,3 +184,6 @@ ipch/
 /w32/Setup/obj
 *dSYM*
 /libs/xmlrpc-c/lib/expat/xmltok/nametab.h
+
+/UpgradeLog.*
+/_UpgradeReport_Files/
