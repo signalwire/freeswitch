@@ -531,6 +531,7 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 	char *sql = NULL;
 	char *sqlvalues = NULL;
 	char *sqltmp = NULL;
+	int count = 0;
 
 	switch_xml_t xml_root = NULL, x_domain;
 	switch_xml_t ut;
@@ -633,13 +634,22 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 					switch_safe_free(fullNameDigit);
 					switch_safe_free(lastNameDigit);
 					switch_safe_free(firstNameDigit);
+					
+					if (++count >= 100) {
+						count = 0;
+						sql = switch_mprintf("BEGIN;%s;COMMIT;", sqlvalues);
+						directory_execute_sql(sql, globals.mutex);
+						switch_safe_free(sql);
+						switch_safe_free(sqlvalues);
+					}
 				}
 			}
 		}
 	}
-	sql = switch_mprintf("BEGIN;%s;COMMIT;", sqlvalues);
-	directory_execute_sql(sql, globals.mutex);
-
+	if (sqlvalues) {
+		sql = switch_mprintf("BEGIN;%s;COMMIT;", sqlvalues);
+		directory_execute_sql(sql, globals.mutex);
+	}
   end:
 	switch_safe_free(sql);
 	switch_safe_free(sqlvalues);
