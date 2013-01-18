@@ -810,7 +810,7 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 	cbt.len = sizeof(entry_count);
 
 	if (params->search_by == SEARCH_BY_FIRST_AND_LAST_NAME) {
-		sql_where = switch_mprintf("hostname = '%q' and uuid = '%q' and name_visible = 1 and (%s like '%q%%' or %s like '%q%%'",
+		sql_where = switch_mprintf("hostname = '%q' and uuid = '%q' and name_visible = 1 and (%s like '%q%%' or %s like '%q%%')",
 				globals.hostname, switch_core_session_get_uuid(session), "last_name_digit", params->digits, "first_name_digit", params->digits);
 	} else if (params->search_by == SEARCH_BY_FULL_NAME) {
 		sql_where = switch_mprintf("hostname = '%q' and uuid = '%q' and name_visible = 1 and full_name_digit like '%%%q%%'",
