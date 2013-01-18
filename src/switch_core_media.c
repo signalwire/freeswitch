@@ -635,7 +635,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 		type_str = SWITCH_RTP_CRYPTO_KEY_32;
 	}
 
-#define SAME_KEY
+//#define SAME_KEY
 #ifdef SAME_KEY
 	if (switch_channel_test_flag(channel, CF_WEBRTC) && type == SWITCH_MEDIA_TYPE_VIDEO) {
 		if (direction == SWITCH_RTP_CRYPTO_SEND) {
@@ -2258,7 +2258,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
 					maxptime = atoi(attr->a_value);
-				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
+				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value) && 
+						   (!switch_channel_test_flag(session->channel, CF_WEBRTC) || switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, attr->a_value))) {
 					int crypto_tag;
 
 					if (!(smh->mparams->ndlb & SM_NDLB_ALLOW_CRYPTO_IN_AVP) && 

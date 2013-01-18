@@ -1888,9 +1888,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	policy->key = (uint8_t *) crypto_key->key;
 	policy->next = NULL;
 	
+	policy->window_size = 1024;
+	policy->allow_repeat_tx = 1;
 
-	policy->rtp.sec_serv = sec_serv_conf_and_auth;
-	policy->rtcp.sec_serv = sec_serv_conf_and_auth;
+	//policy->rtp.sec_serv = sec_serv_conf_and_auth;
+	//policy->rtcp.sec_serv = sec_serv_conf_and_auth;
 
 	switch (direction) {
 	case SWITCH_RTP_CRYPTO_RECV:
@@ -1914,8 +1916,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		}
 		break;
 	case SWITCH_RTP_CRYPTO_SEND:
-		policy->ssrc.type = ssrc_specific;
-		policy->ssrc.value = rtp_session->ssrc;
+		policy->ssrc.type = ssrc_any_outbound;
+		//policy->ssrc.type = ssrc_specific;
+		//policy->ssrc.value = rtp_session->ssrc;
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_RESET] = 1;
