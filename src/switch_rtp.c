@@ -1217,7 +1217,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
 			}
 			rtcp_bytes = sbytes;
-			//printf("XXXXXXXXXXXXXXXXWTF PROTECT %ld bytes\n", rtcp_bytes);
+			//printf("XXXXXXXXXXXXXXXXWTF1 PROTECT RTCP %d bytes %d\n", sbytes, rtp_session->rtcp_interval);
 
 		}
 #endif
@@ -2462,7 +2462,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_sessi
 	} else {
 		
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "RTCP send rate is: %d and packet rate is: %d Remote Port: %d\n", 						  send_rate, rtp_session->ms_per_packet, rtp_session->remote_rtcp_port);
-		rtp_session->rtcp_interval = send_rate/(rtp_session->ms_per_packet/1000);
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+			rtp_session->rtcp_interval = send_rate / 20;
+		} else {
+			rtp_session->rtcp_interval = send_rate/(rtp_session->ms_per_packet/1000);
+		}
 	}
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
@@ -3780,7 +3785,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 											switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
 										}
 										rtcp_bytes = sbytes;
-
+										//printf("XXXXXXXXXXXXXXXXWTF2 PROTECT RTCP %d bytes\n", sbytes);
 										
 
 									}
@@ -4692,7 +4697,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 				
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP protection failed with code %d\n", stat);
 			}
-
+			//printf("XXXXXXXXXXXXXXXXWTF PROTECT RTP %d bytes\n", sbytes);
 			bytes = sbytes;
 		}
 #endif
@@ -5093,6 +5098,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP protection failed with code %d\n", stat);
 		}
 		bytes = sbytes;
+		//printf("XXXXXXXXXXXXXXXXWTF PROTECT RTP %d bytes\n", sbytes);
 	}
 #endif
 #ifdef ENABLE_ZRTP

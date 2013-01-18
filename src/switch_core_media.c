@@ -4529,8 +4529,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_true(switch_channel_get_variable(session->channel, "media_webrtc"))) {
 			switch_channel_set_flag(session->channel, CF_WEBRTC);
 			switch_channel_set_flag(session->channel, CF_ICE);
-			smh->mparams->rtcp_audio_interval_msec = "2500";
-			smh->mparams->rtcp_video_interval_msec = "2500";
+			smh->mparams->rtcp_audio_interval_msec = "5000";
+			smh->mparams->rtcp_video_interval_msec = "5000";
 		}
 	}
 
