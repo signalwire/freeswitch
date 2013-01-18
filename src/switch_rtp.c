@@ -726,6 +726,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	switch_size_t cpylen = len;
 	int xlen = 0;
 	int ok = 1;
+	uint32_t *pri = NULL;
 
 	if (!switch_rtp_ready(rtp_session) || zstr(ice->user_ice) || zstr(ice->ice_user)) {
 		return;
@@ -746,12 +747,12 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	memcpy(buf, data, cpylen);
 	packet = switch_stun_packet_parse(buf, cpylen);
 	if (!packet) {
-		
-
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received\n");
 		goto end;
 
 	}
+
+
 
 #if 0
 	if (ice->sending && (packet->header.type == SWITCH_STUN_BINDING_RESPONSE || packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE)) {
@@ -760,10 +761,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 
 #endif 
-
-	if (!ice->rready && packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
-		ice->rready = 1;
-	}
 
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
 
@@ -788,8 +785,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			
 		case SWITCH_STUN_ATTR_PRIORITY:
 			{
-				uint32_t *val = (uint32_t *) attr->value;
-				ok = *val == ice->priority;
+				pri = (uint32_t *) attr->value;
+				ok = *pri == ice->priority;
 			}
 			break;
 		}
@@ -804,48 +801,58 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		ok = !strcmp(ice->user_ice, username);
 	}
 
-	//printf("XXX ICE %s %s ok:%d %d %d\n", rtp_type(rtp_session), ice == &rtp_session->rtcp_ice ? "rtcp" : "rtp", ok, rtp_session->ice.ready, rtp_session->ice.rready);
 
-	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST) && ok) {
-		uint8_t stunbuf[512];
-		switch_stun_packet_t *rpacket;
-		const char *remote_ip;
-		switch_size_t bytes;
-		char ipbuf[25];
-		switch_sockaddr_t *from_addr = rtp_session->from_addr;
-		switch_socket_t *sock_output = rtp_session->sock_output;
-		
-		if (ice == &rtp_session->rtcp_ice) {
-			from_addr = rtp_session->rtcp_from_addr;
-			sock_output = rtp_session->rtcp_sock_output;
+	if (!ok && ice->type == ICE_VANILLA && ice == &rtp_session->ice && pri && *pri == rtp_session->rtcp_ice.priority) {
+		ice = &rtp_session->rtcp_ice;
+		ok = 1;
+	}
 
+	if (ok) {
+		if ((packet->header.type == SWITCH_STUN_BINDING_RESPONSE)) {
+			if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+				rtp_session->ice.rready = 1;
+				rtp_session->rtcp_ice.rready = 1;
+			} else {
+				ice->rready = 1;
+			}
+		} else if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST)) {
+			uint8_t stunbuf[512];
+			switch_stun_packet_t *rpacket;
+			const char *remote_ip;
+			switch_size_t bytes;
+			char ipbuf[25];
+			switch_sockaddr_t *from_addr = rtp_session->from_addr;
+			switch_socket_t *sock_output = rtp_session->sock_output;
+
+			if (ice == &rtp_session->rtcp_ice && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+				from_addr = rtp_session->rtcp_from_addr;
+				sock_output = rtp_session->rtcp_sock_output;
+			}
+
+			ice->ready = 1;
+
+			memset(stunbuf, 0, sizeof(stunbuf));
+			rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, stunbuf);
+
+			if (ice->type == ICE_GOOGLE_JINGLE) {
+				switch_stun_packet_attribute_add_username(rpacket, username, strlen(username));
+			}
+
+			remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), from_addr);
+			switch_stun_packet_attribute_add_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
+
+			if ((ice->type & ICE_VANILLA)) {
+				switch_stun_packet_attribute_add_integrity(rpacket, ice->pass);
+				switch_stun_packet_attribute_add_fingerprint(rpacket);
+
+			}
+
+			bytes = switch_stun_packet_length(rpacket);
+			switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
 		}
-
-		ice->ready = 1;
-
-		memset(stunbuf, 0, sizeof(stunbuf));
-		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, stunbuf);
-
-		if (ice->type == ICE_GOOGLE_JINGLE) {
-			switch_stun_packet_attribute_add_username(rpacket, username, strlen(username));
-		}
-
-		remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), from_addr);
-		switch_stun_packet_attribute_add_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
-
-		if ((ice->type & ICE_VANILLA)) {
-			switch_stun_packet_attribute_add_integrity(rpacket, ice->pass);
-			switch_stun_packet_attribute_add_fingerprint(rpacket);
-
-		}
-		
-
-		bytes = switch_stun_packet_length(rpacket);
-		switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
-
 	} else if (packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE) {
 		
-		
+
 		ice_out(rtp_session, ice);
 
 		if (rtp_session->session) {
@@ -860,6 +867,9 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		}
 
 	}
+
+
+
 
  end:
 
@@ -1130,7 +1140,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 		switch_size_t rtcp_bytes;
 		switch_byte_t *ptr = (switch_byte_t *)rtp_session->rtcp_send_msg.body;
 		switch_time_t when = 0;
-
+		
 		rtp_session->rtcp_send_msg.header.version = 2;
 		rtp_session->rtcp_send_msg.header.p = 0;
 		rtp_session->rtcp_send_msg.header.count = 1;
@@ -2461,8 +2471,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_sessi
 		}
 
 		rtp_session->rtcp_local_addr = rtp_session->local_addr;
+		rtp_session->rtcp_from_addr = rtp_session->from_addr;
 		rtp_session->rtcp_sock_input = rtp_session->sock_input;
-		rtp_session->rtcp_sock_output = rtp_session->rtcp_sock_output;
+		rtp_session->rtcp_sock_output = rtp_session->sock_output;
 
 		rtp_session->rtcp_recv_msg_p = (rtcp_msg_t *) &rtp_session->recv_msg;
 
@@ -3131,7 +3142,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 
 	if (status == SWITCH_STATUS_SUCCESS && *bytes && rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) { 
-		
 		if (rtp_session->recv_msg.header.pt != rtp_session->rpayload && (!rtp_session->recv_te || rtp_session->recv_msg.header.pt != rtp_session->recv_te) &&
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) &&
 			rtp_session->rtcp_recv_msg_p->header.version == 2 &&
@@ -3724,6 +3734,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			
 			if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX] && has_rtcp) {
 				if (rtp_session->rtcp_recv_msg_p->header.version == 2) { //rtcp muxed
+					rtp_session->rtcp_from_addr = rtp_session->from_addr;
 					rtcp_status = rtcp_poll_status = SWITCH_STATUS_SUCCESS;
 					rtcp_bytes = bytes;
 				}
