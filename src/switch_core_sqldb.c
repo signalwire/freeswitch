@@ -1514,10 +1514,16 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *n
 	}
 
 	if (pre_trans_execute) {
-		qm->pre_trans_execute = switch_core_strdup(qm->pool, qm->pre_trans_execute);
-		qm->post_trans_execute = switch_core_strdup(qm->pool, qm->post_trans_execute);
-		qm->inner_pre_trans_execute = switch_core_strdup(qm->pool, qm->inner_pre_trans_execute);
-		qm->inner_post_trans_execute = switch_core_strdup(qm->pool, qm->inner_post_trans_execute);
+		qm->pre_trans_execute = switch_core_strdup(qm->pool, pre_trans_execute);
+	}
+	if (post_trans_execute) {
+		qm->post_trans_execute = switch_core_strdup(qm->pool, post_trans_execute);
+	}
+	if (inner_pre_trans_execute) {
+		qm->inner_pre_trans_execute = switch_core_strdup(qm->pool, inner_pre_trans_execute);
+	}
+	if (inner_post_trans_execute) {
+		qm->inner_post_trans_execute = switch_core_strdup(qm->pool, inner_post_trans_execute);
 	}
 
 	*qmp = qm;
