@@ -415,15 +415,14 @@ then
 fi
 echo schedule_tests completed OK
 
-#./sig_tone_tests >$STDOUT_DEST 2>$STDERR_DEST
-#RETVAL=$?
-#if [ $RETVAL != 0 ]
-#then
-#    echo sig_tone_tests failed!
-#    exit $RETVAL
-#fi
-#echo sig_tone_tests completed OK
-echo sig_tone_tests not enabled
+./sig_tone_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo sig_tone_tests failed!
+    exit $RETVAL
+fi
+echo sig_tone_tests completed OK
 
 #./super_tone_rx_tests >$STDOUT_DEST 2>$STDERR_DEST
 #RETVAL=$?
@@ -445,15 +444,14 @@ echo super_tone_rx_tests not enabled
 #echo super_tone_tx_tests completed OK
 echo super_tone_tx_tests not enabled
 
-#./swept_tone_tests >$STDOUT_DEST 2>$STDERR_DEST
-#RETVAL=$?
-#if [ $RETVAL != 0 ]
-#then
-#    echo swept_tone_tests failed!
-#    exit $RETVAL
-#fi
-#echo swept_tone_tests completed OK
-echo swept_tone_tests not enabled
+./swept_tone_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo swept_tone_tests failed!
+    exit $RETVAL
+fi
+echo swept_tone_tests completed OK
 
 ./t31_tests -r >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?

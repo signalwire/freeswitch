@@ -179,11 +179,11 @@ static int test_misc_02(void)
         Preamble:       The TUT should be configured to automatically re-assume the initial automoding
                         state.
         Method:         The tester should set up a call to the TUT in V.21 mode and then drop the carrier.
-                        The tester will then transmit silence for 11 seconds followed by a 1300 Hz tone for
+                        The tester will then transmit silence for 11 seconds followed by a 1300Hz tone for
                         5 seconds (i.e. V.23).
         Pass criteria:  1) Ten seconds after dropping the carrier the TUT should return to state Monitor 1.
-                        2) After 2.7±0.3 seconds the TUT should select V.23 mode and send a 390 Hz tone.
-        Comments:       The TUT should indicate that carrier has been lost at some time after the 1650 Hz
+                        2) After 2.7±0.3 seconds the TUT should select V.23 mode and send a 390Hz tone.
+        Comments:       The TUT should indicate that carrier has been lost at some time after the 1650Hz
                         signal is lost.
      */
     printf("Test not yet implemented\n");
@@ -351,7 +351,7 @@ static int test_org_02(void)
 {
     /*
         III.5.4.2.2     ANS signal detection
-        Purpose:        To verify that TUT correctly detects the ANS (2100 Hz) signal during the
+        Purpose:        To verify that TUT correctly detects the ANS (2100Hz) signal during the
                         two-second interval (Toff) between transmission of CI sequences.
         Preamble:       Make a V.18 call from the TUT.
         Method:         The Test System waits for the TUT to stop transmitting a CI and responds with an
@@ -391,11 +391,11 @@ static int test_org_04(void)
         Purpose:        To check correct detection of V.18 modem.
         Preamble:       Tests ORG-02 and ORG-03 should be successfully completed prior to this test.
         Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
-                        3 TXP sequences using V.21 (2) and starts a 1 s timer. It will then transmit 1650 Hz
+                        3 TXP sequences using V.21 (2) and starts a 1 s timer. It will then transmit 1650Hz
                         for 5 seconds.
         Pass criteria:  1) TUT should initially respond with TXP.
                         2) TUT should stop sending TXP within 0.2 seconds of end of ANS.
-                        3) TUT should respond with 980 Hz carrier within 1 second of end of 3 TXP sequences.
+                        3) TUT should respond with 980Hz carrier within 1 second of end of 3 TXP sequences.
                         4) Data should be transmitted and received according to ITU-T T.140 to comply
                            with the V.18 operational requirements.
         Comments:       The TUT should indicate that V.18 mode has been selected.
@@ -408,15 +408,15 @@ static int test_org_04(void)
 static int test_org_05(void)
 {
     /*
-        III.5.4.2.5     ANS tone followed by 1650 Hz
+        III.5.4.2.5     ANS tone followed by 1650Hz
         Purpose:        To check correct detection of V.21 modem upper channel when preceded by answer
                         tone and to confirm discrimination between V.21 and V.18 modes.
         Preamble:       Tests ORG-02 and ORG-03 should be successfully completed prior to this test.
         Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
-                        1650 Hz and starts a 0.7 second timer.
+                        1650Hz and starts a 0.7 second timer.
         Pass criteria:  1) TUT should initially respond with TXP.
                         2) TUT should stop sending TXP within 0.2 seconds of end of ANS.
-                        3) TUT should respond with 980 Hz at 0.5(+0.2-0.0) seconds of start of 1650 Hz.
+                        3) TUT should respond with 980Hz at 0.5(+0.2-0.0) seconds of start of 1650Hz.
                         4) Data should be transmitted and received at 300 bit/s complying with Annex F.
         Comments:       Selection of ITU-T V.21 as opposed to ITU-T V.18 should be confirmed by
                         examination of TUT. If there is no visual indication, verify by use of ITU-T T.50 for
@@ -430,15 +430,15 @@ static int test_org_05(void)
 static int test_org_06(void)
 {
     /*
-        III.5.4.2.6     ANS tone followed by 1300 Hz
+        III.5.4.2.6     ANS tone followed by 1300Hz
         Purpose:        To check correct detection of V.23 modem upper channel when preceded by answer
                         tone.
         Preamble:       Tests ORG-02 and ORG-03 should be successfully completed prior to this test.
         Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
-                        1300 Hz and starts a 2.7 s timer.
+                        1300Hz and starts a 2.7 s timer.
         Pass criteria:  1) TUT should initially respond with TXP.
                         2) TUT should stop sending TXP within 0.2 seconds of end of ANS.
-                        3) TUT should respond with 390 Hz after 1.7(+0.2-0.0) seconds of start of 1300 Hz.
+                        3) TUT should respond with 390Hz after 1.7(+0.2-0.0) seconds of start of 1300Hz.
                         4) Data should be transmitted and received at 75 bit/s and 1200 bit/s respectively
                            by the TUT to comply with Annex E.
         Comments:       The TUT should indicate that V.23 mode has been selected.
@@ -472,12 +472,12 @@ static int test_org_07(void)
 static int test_org_08(void)
 {
     /*
-        III.5.4.2.8     Bell 103 (2225 Hz signal) detection
+        III.5.4.2.8     Bell 103 (2225Hz signal) detection
         Purpose:        To verify that the TUT correctly detects the Bell 103 upper channel signal during
                         the 2-second interval between transmission of CI sequences.
         Preamble:       N/A
-        Method:         The tester waits for a CI and then sends a 2225 Hz signal for 5 seconds.
-        Pass criteria:  1) The TUT should respond with a 1270 Hz tone in 0.5±0.1 seconds.
+        Method:         The tester waits for a CI and then sends a 2225Hz signal for 5 seconds.
+        Pass criteria:  1) The TUT should respond with a 1270Hz tone in 0.5±0.1 seconds.
                         2) Data should be transmitted and received at 300 bit/s to comply with Annex D.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
@@ -489,14 +489,14 @@ static int test_org_08(void)
 static int test_org_09(void)
 {
     /*
-        III.5.4.2.9     V.21 (1650 Hz signal) detection
+        III.5.4.2.9     V.21 (1650Hz signal) detection
         Purpose:        To verify that the TUT correctly detects the V.21 upper channel signal during the
                         2-second interval between transmission of CI sequences.
         Preamble:       N/A
-        Method:         The tester waits for a CI and then sends a 1650 Hz signal for 5 seconds.
-        Pass criteria:  1) The TUT should respond with a 980 Hz tone in 0.5±0.1 seconds.
+        Method:         The tester waits for a CI and then sends a 1650Hz signal for 5 seconds.
+        Pass criteria:  1) The TUT should respond with a 980Hz tone in 0.5±0.1 seconds.
                         2) Data should be transmitted and received at 300 bit/s to comply with Annex F.
-        Comments:
+        Comments:       The TUT should indicate that V.21 mode has been selected.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -506,16 +506,15 @@ static int test_org_09(void)
 static int test_org_10(void)
 {
     /*
-        III.5.4.2.10    The TUT should indicate that V.21 mode has been selected.
-                        V.23 (1300 Hz signal) detection
+        III.5.4.2.10    V.23 (1300Hz signal) detection
         Purpose:        To verify that the TUT correctly detects the V.23 upper channel signal during the
                         2-second interval between transmission of CI sequences.
         Preamble:       N/A
-        Method:         The tester waits for a CI and then sends a 1300 Hz signal for 5 seconds.
-        Pass criteria:  1) The TUT should respond with a 390 Hz tone in 1.7±0.1 seconds.
+        Method:         The tester waits for a CI and then sends a 1300Hz signal for 5 seconds.
+        Pass criteria:  1) The TUT should respond with a 390Hz tone in 1.7±0.1 seconds.
                         2) Data should be transmitted and received at 75 bit/s and 1200 bit/s respectively
                            by the TUT to comply with Annex E.
-        Comments:
+        Comments:       The TUT should indicate that V.23 mode has been selected.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -525,18 +524,18 @@ static int test_org_10(void)
 static int test_org_11(void)
 {
     /*
-        III.5.4.2.11    The TUT should indicate that V.23 mode has been selected.
-                        V.23 (390 Hz signal) detection
+        III.5.4.2.11    V.23 (390Hz signal) detection
         Purpose:        To confirm correct selection of V.23 reverse mode during sending of XCI.
         Preamble:       N/A
-        Method:         The tester should wait for the start of the XCI signal and then send 390 Hz to TUT
+        Method:         The tester should wait for the start of the XCI signal and then send 390Hz to TUT
                         for 5 seconds.
         Pass criteria:  1) The TUT should complete the XCI as normal.
-                        2) The TUT should then maintain the 1300 Hz tone while the 390 Hz test tone is
+                        2) The TUT should then maintain the 1300Hz tone while the 390Hz test tone is
                            present.
                         3) Data should be transmitted and received at 1200 bit/s and 75 bit/s respectively
                            by the TUT to comply with Annex E when connection is indicated.
-        Comments:
+        Comments:       The TUT should indicate that V.23 mode has been selected at least 3 seconds after
+                        the start of the 390Hz tone.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -546,16 +545,14 @@ static int test_org_11(void)
 static int test_org_12(void)
 {
     /*
-        III.5.4.2.12    The TUT should indicate that V.23 mode has been selected at least 3 seconds after
-                        the start of the 390 Hz tone.
-                        5 bit mode (Baudot) detection tests
+        III.5.4.2.12    5 bit mode (Baudot) detection tests
         Purpose:        To confirm detection of Baudot modulation at various bit rates that may be
                         encountered.
         Preamble:       N/A
         Method:         The tester transmits the 5-bit coded characters "0" to "9" followed by "abcdef" at
                         (a) 45.45, (b) 47.6, (c) 50 and (d) 100 bits per second. When TUT indicates a
-                        connection, type at least 5 characters back to the tester so that correct selection of bit
-                        rate can be confirmed.
+                        connection, type at least 5 characters back to the tester so that correct selection
+                        of bit rate can be confirmed.
         Pass criteria:  1) TUT should select Baudot mode and the appropriate bit rate.
                         2) The tester will analyse the bit rate of received characters, which should be at
                            either 45.45 or 50 bits per second as appropriate.
@@ -617,10 +614,10 @@ static int test_org_15(void)
 {
     /*
         III.5.4.2.15    Rate detection test
-        Purpose:        To verify the presence of 980/1180 Hz at a different signalling rate than 110 bit/s
+        Purpose:        To verify the presence of 980/1180Hz at a different signalling rate than 110 bit/s
                         returns the TUT modem to the "monitor A" state.
         Preamble:       N/A
-        Method:         The tester transmits 980/1180 Hz signals at 300 bit/s for 2 seconds.
+        Method:         The tester transmits 980/1180Hz signals at 300 bit/s for 2 seconds.
         Pass criteria:  The TUT should not select EDT or any other mode and should continue to transmit
                         the CI signal.
         Comments:       Echoes of the CI sequences may be detected at 300 bit/s.
@@ -633,14 +630,14 @@ static int test_org_15(void)
 static int test_org_16(void)
 {
     /*
-        III.5.4.2.16    980 Hz detection
+        III.5.4.2.16    980Hz detection
         Purpose:        To confirm correct selection of V.21 reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 980 Hz to TUT for 5 seconds.
-        Pass criteria:  1) TUT should respond with 1650 Hz tone after 1.5±0.1 seconds after start of
-                           980 Hz tone.
+        Method:         The tester sends 980Hz to TUT for 5 seconds.
+        Pass criteria:  1) TUT should respond with 1650Hz tone after 1.5±0.1 seconds after start of
+                           980Hz tone.
                         2) Data should be transmitted and received at 300 bit/s complying with Annex F.
-        Comments:
+        Comments:       The TUT should indicate that V.21 mode has been selected.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -650,13 +647,12 @@ static int test_org_16(void)
 static int test_org_17(void)
 {
     /*
-        III.5.4.2.17    The TUT should indicate that V.21 mode has been selected.
-                        Loss of signal after 980 Hz
-        Purpose:        To confirm that TUT returns to the Monitor 1 state if 980 Hz signal disappears.
+        III.5.4.2.17    Loss of signal after 980Hz
+        Purpose:        To confirm that TUT returns to the Monitor 1 state if 980Hz signal disappears.
         Preamble:       N/A
-        Method:         The tester sends 980 Hz to TUT for 1.2 seconds followed by silence for 5 seconds.
-        Pass criteria:  TUT should not respond to the 980 Hz tone and resume sending CI signals after a
-                        maximum of 2.4 seconds from the end of the 980 Hz tone.
+        Method:         The tester sends 980Hz to TUT for 1.2 seconds followed by silence for 5 seconds.
+        Pass criteria:  TUT should not respond to the 980Hz tone and resume sending CI signals after a
+                        maximum of 2.4 seconds from the end of the 980Hz tone.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -669,11 +665,11 @@ static int test_org_18(void)
         III.5.4.2.18    Tr timer
         Purpose:        To confirm that TUT returns to the Monitor 1 state if Timer Tr expires.
         Preamble:       N/A
-        Method:         The tester sends 980 Hz to TUT for 1.2 seconds followed by 1650 Hz for 5 seconds
+        Method:         The tester sends 980Hz to TUT for 1.2 seconds followed by 1650Hz for 5 seconds
                         with no pause.
-        Pass criteria:  TUT should respond with 980 Hz after 1.3±0.1 seconds of 1650 Hz.
-        Comments:       This implies timer Tr has expired 2 seconds after the start of the 980 Hz tone and
-                        then 1650 Hz has been detected for 0.5 seconds.
+        Pass criteria:  TUT should respond with 980Hz after 1.3±0.1 seconds of 1650Hz.
+        Comments:       This implies timer Tr has expired 2 seconds after the start of the 980Hz tone and
+                        then 1650Hz has been detected for 0.5 seconds.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -683,13 +679,13 @@ static int test_org_18(void)
 static int test_org_19(void)
 {
     /*
-        III.5.4.2.19    Bell 103 (1270 Hz signal) detection
+        III.5.4.2.19    Bell 103 (1270Hz signal) detection
         Purpose:        To confirm correct selection of Bell 103 reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 1270 Hz to TUT for 5 seconds.
-        Pass criteria:  1) TUT should respond with 2225 Hz tone after 0.7±0.1 s.
+        Method:         The tester sends 1270Hz to TUT for 5 seconds.
+        Pass criteria:  1) TUT should respond with 2225Hz tone after 0.7±0.1 s.
                         2) Data should be transmitted and received at 300 bit/s complying with Annex D.
-        Comments:
+        Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -699,8 +695,7 @@ static int test_org_19(void)
 static int test_org_20(void)
 {
     /*
-        III.5.4.2.20    The TUT should indicate that Bell 103 mode has been selected.
-                        Immunity to network tones
+        III.5.4.2.20    Immunity to network tones
         Purpose:        To ensure that the TUT does not interpret network tones as valid signals.
         Preamble:       N/A
         Method:         The tester will first send a dial tone to the TUT, this will be followed by a ringing
@@ -727,7 +722,7 @@ static int test_org_21(void)
         Purpose:        To ensure that the TUT does not interpret modem tones not supported by V.18 as
                         valid text telephone tones.
         Preamble:       N/A
-        Method:         The tester will respond with an ANS tone (2100 Hz) followed by simulated (a)
+        Method:         The tester will respond with an ANS tone (2100Hz) followed by simulated (a)
                         V.32 bis and (b) V.34 modem training sequences.
         Pass criteria:  The tones should either be ignored or reported back to the user. No textphone
                         modem should be selected.
@@ -746,7 +741,7 @@ static int test_org_22(void)
         Purpose:        To ensure that the TUT will not interpret a called fax machine as being a textphone.
         Preamble:       N/A
         Method:         The tester will respond as if it were a typical group 3 fax machine in automatic
-                        answer mode. It should send a CED tone (2100 Hz) plus Digital Identification
+                        answer mode. It should send a CED tone (2100Hz) plus Digital Identification
                         Signal (DIS) as defined in ITU-T T.30.
         Pass criteria:  The TUT should ignore the received tones.
         Comments:       Ideally the TUT should detect the presence of a fax machine and report it back to
@@ -779,7 +774,7 @@ static int test_org_24(void)
 {
     /*
         III.5.4.2.24    ANSam signal detection
-        Purpose:        To verify that TUT correctly detects the ANSam (2100 Hz modulated) signal during
+        Purpose:        To verify that TUT correctly detects the ANSam (2100Hz modulated) signal during
                         the two-second interval (Toff) between transmission of CI sequences.
         Preamble:       Make a V.18 call from the TUT.
         Method:         The Test System waits for the TUT to stop transmitting a CI and responds with an
@@ -836,7 +831,7 @@ static int test_ans_02(void)
                         monitor for ANS and measure duration.
         Pass criteria:  1) The TUT should respond after either the first or second CI with ANSam tone.
                         2) ANSam tone should remain for 3 seconds ±0.5 s followed by silence.
-        Comments:       The ANSam tone is a modulated 2100 Hz tone. It may have phase reversals. The
+        Comments:       The ANSam tone is a modulated 2100Hz tone. It may have phase reversals. The
                         XCI signal is tested in a separate test.
      */
     printf("Test not yet implemented\n");
@@ -856,7 +851,7 @@ static int test_ans_03(void)
                         transmitting the TXP signal in V.21 (1) mode.
         Pass criteria:  1) On reception of the TXP signal, the TUT should remain silent for 75±5 ms.
                         2) The TUT should then transmit 3 TXP sequences in V.21(2) mode.
-                        3) The 3 TXPs should be followed by continuous 1650 Hz.
+                        3) The 3 TXPs should be followed by continuous 1650Hz.
                         4) Correct transmission and reception of T.140 data should be verified after the
                            V.18 mode connection is completed.
         Comments:       The TUT should indicate V.18 mode.
@@ -885,13 +880,13 @@ static int test_ans_04(void)
 static int test_ans_05(void)
 {
     /*
-        III.5.4.3.5     ANS tone followed by 980 Hz
+        III.5.4.3.5     ANS tone followed by 980Hz
         Purpose:        To check correct detection of V.21 modem lower channel when preceded by answer
                         tone.
         Preamble:       N/A
         Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
-                        980 Hz and starts a 1 s timer.
-        Pass criteria:  TUT should respond with 1650 Hz within 400±100 ms of start of 980 Hz.
+                        980Hz and starts a 1 s timer.
+        Pass criteria:  TUT should respond with 1650Hz within 400±100 ms of start of 980Hz.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
     printf("Test not yet implemented\n");
@@ -902,13 +897,13 @@ static int test_ans_05(void)
 static int test_ans_06(void)
 {
     /*
-        III.5.4.3.6     ANS tone followed by 1300 Hz
+        III.5.4.3.6     ANS tone followed by 1300Hz
         Purpose:        To check correct detection of V.23 modem upper channel when preceded by answer
                         tone.
         Preamble:       N/A
         Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
-                        1300 Hz and starts a 2-s timer.
-        Pass criteria:  TUT should respond with 390 Hz after 1.7(+0.2-0.0) seconds of start of 1300 Hz.
+                        1300Hz and starts a 2-s timer.
+        Pass criteria:  TUT should respond with 390Hz after 1.7(+0.2-0.0) seconds of start of 1300Hz.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
     printf("Test not yet implemented\n");
@@ -919,13 +914,13 @@ static int test_ans_06(void)
 static int test_ans_07(void)
 {
     /*
-        III.5.4.3.7     ANS tone followed by 1650 Hz
+        III.5.4.3.7     ANS tone followed by 1650Hz
         Purpose:        To check correct detection of V.21 modem upper channel when preceded by answer
                         tone and to confirm discrimination between V.21 and V.18 modes.
         Preamble:       N/A
         Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
-                        1650 Hz and starts a 1-second timer.
-        Pass criteria:  TUT should respond with 980 Hz within 400±100 ms of start of 1650 Hz.
+                        1650Hz and starts a 1-second timer.
+        Pass criteria:  TUT should respond with 980Hz within 400±100 ms of start of 1650Hz.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
     printf("Test not yet implemented\n");
@@ -936,12 +931,12 @@ static int test_ans_07(void)
 static int test_ans_08(void)
 {
     /*
-        III.5.4.3.8     980 Hz followed by 1650 Hz
+        III.5.4.3.8     980Hz followed by 1650Hz
         Purpose:        To ensure the correct selection of V.21 modem channel when certain types of
                         Swedish textphones are encountered.
         Preamble:       N/A
         Method:         The tester will simulate a call from a Diatext2 textphone that alternates between
-                        980 Hz and 1650 Hz until a connection is made.
+                        980Hz and 1650Hz until a connection is made.
         Pass criteria:  The TUT should respond with the appropriate carrier depending on when it
                         connects.
         Comments:       The TUT should indicate a V.21 connection. The time for which each frequency is
@@ -955,15 +950,15 @@ static int test_ans_08(void)
 static int test_ans_09(void)
 {
     /*
-        III.5.4.3.9     980 Hz calling tone detection
-        Purpose:        To confirm correct detection of 980 Hz calling tones as defined in V.25.
+        III.5.4.3.9     980Hz calling tone detection
+        Purpose:        To confirm correct detection of 980Hz calling tones as defined in V.25.
         Preamble:       N/A
-        Method:         The tester will send bursts of 980 Hz signals (a) 400 ms, (b) 500 ms, (c) 700 ms and
+        Method:         The tester will send bursts of 980Hz signals (a) 400 ms, (b) 500 ms, (c) 700 ms and
                         (d) 800 ms followed by 1 second of silence.
         Pass criteria:  1) The TUT should not respond to bursts of 400 or 800 ms.
-                        2) The TUT should immediately begin probing after a burst of 980 Hz for 500 or
+                        2) The TUT should immediately begin probing after a burst of 980Hz for 500 or
                            700 ms followed by 1 second of silence.
-        Comments:
+        Comments:       The probe sent by the TUT will depend on the country setting.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -973,13 +968,12 @@ static int test_ans_09(void)
 static int test_ans_10(void)
 {
     /*
-        III.5.4.3.10    The probe sent by the TUT will depend on the country setting.
-                        V.21 detection by timer
+        III.5.4.3.10    V.21 detection by timer
         Purpose:        To confirm correct selection of V.21 calling modem when the received signal is not
-                        modulated, i.e. there is no 1180 Hz.
+                        modulated, i.e. there is no 1180Hz.
         Preamble:       N/A
-        Method:         The tester sends 980 Hz to TUT for 2 seconds.
-        Pass criteria:  The TUT should respond with a 1650 Hz tone in 1.5±0.1 seconds.
+        Method:         The tester sends 980Hz to TUT for 2 seconds.
+        Pass criteria:  The TUT should respond with a 1650Hz tone in 1.5±0.1 seconds.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
     printf("Test not yet implemented\n");
@@ -1020,7 +1014,7 @@ static int test_ans_12(void)
                         back to the tester. The same characters will then be transmitted back to the TUT.
         Pass criteria:  Ensure correct reception of characters by tester and TUT.
         Comments:       This situation is unlikely to occur in practice unless the DCE is sending a V.21
-                        (1650 Hz) probe. However, it is catered for in V.18. It is more likely that this is
+                        (1650Hz) probe. However, it is catered for in V.18. It is more likely that this is
                         where CI or TXP characters would be detected (see test ANS-02).
      */
     printf("Test not yet implemented\n");
@@ -1035,9 +1029,9 @@ static int test_ans_13(void)
         Purpose:        To ensure that the TUT returns to the Monitor A state on expiry of timer Tr
                         (2 seconds). Timer Tr is started when a modulated V.21 (1) signal is detected.
         Preamble:       N/A
-        Method:         The tester will transmit 980 Hz for 200 ms followed by alternating 980 Hz/1180 Hz
-                        at 110 bit/s for 100 ms followed by 980 Hz for 1 second.
-        Pass criteria:  The TUT should begin probing 4±0.5 seconds after the 980 Hz signal is removed.
+        Method:         The tester will transmit 980Hz for 200 ms followed by alternating 980Hz/1180Hz
+                        at 110 bit/s for 100 ms followed by 980Hz for 1 second.
+        Pass criteria:  The TUT should begin probing 4±0.5 seconds after the 980Hz signal is removed.
         Comments:       It is not possible to be precise on timings for this test since the definition of a
                         "modulated signal" as in 5.2.4.4 is not specified. Therefore it is not known exactly
                         when timer Tr will start. It is assumed that timer Ta is restarted on re-entering the
@@ -1053,10 +1047,10 @@ static int test_ans_14(void)
     /*
         III.5.4.3.14    Te timer
         Purpose:        To ensure that the TUT returns to the Monitor A on expiry of timer Te
-                        (2.7 seconds). Timer Te is started when a 980 Hz signal is detected.
+                        (2.7 seconds). Timer Te is started when a 980Hz signal is detected.
         Preamble:       N/A
-        Method:         The tester will transmit 980 Hz for 200 ms followed silence for 7 s.
-        Pass criteria:  The TUT should begin probing 5.5±0.5 seconds after the 980 Hz signal is removed.
+        Method:         The tester will transmit 980Hz for 200 ms followed silence for 7 s.
+        Pass criteria:  The TUT should begin probing 5.5±0.5 seconds after the 980Hz signal is removed.
         Comments:       It is assumed that timer Ta (3 seconds) is restarted on re-entering the Monitor A
                         state.
      */
@@ -1113,11 +1107,11 @@ static int test_ans_16(void)
 static int test_ans_17(void)
 {
     /*
-        III.5.4.3.17    Bell 103 (1270 Hz signal) detection
+        III.5.4.3.17    Bell 103 (1270Hz signal) detection
         Purpose:        To ensure correct detection and selection of Bell 103 modems.
         Preamble:       N/A
-        Method:         The tester sends 1270 Hz to TUT for 5 seconds.
-        Pass criteria:  TUT should respond with 2225 Hz tone after 0.7±0.1 s.
+        Method:         The tester sends 1270Hz to TUT for 5 seconds.
+        Pass criteria:  TUT should respond with 2225Hz tone after 0.7±0.1 s.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
     printf("Test not yet implemented\n");
@@ -1128,13 +1122,13 @@ static int test_ans_17(void)
 static int test_ans_18(void)
 {
     /*
-        III.5.4.3.18    Bell 103 (2225 Hz signal) detection
+        III.5.4.3.18    Bell 103 (2225Hz signal) detection
         Purpose:        To ensure correct detection and selection of Bell 103 modems in reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 2225 Hz to TUT for 5 seconds.
-        Pass criteria:  The TUT should respond with 1270 Hz after 1±0.2 seconds.
+        Method:         The tester sends 2225Hz to TUT for 5 seconds.
+        Pass criteria:  The TUT should respond with 1270Hz after 1±0.2 seconds.
         Comments:       The TUT should indicate that Bell 103 mode has been selected. Bell 103 modems
-                        use 2225 Hz as both answer tone and higher frequency of the upper channel.
+                        use 2225Hz as both answer tone and higher frequency of the upper channel.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -1144,11 +1138,11 @@ static int test_ans_18(void)
 static int test_ans_19(void)
 {
     /*
-        III.5.4.3.19    V.21 Reverse mode (1650 Hz) detection
+        III.5.4.3.19    V.21 Reverse mode (1650Hz) detection
         Purpose:        To ensure correct detection and selection of V.21 reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 1650 Hz to TUT for 5 seconds.
-        Pass criteria:  The TUT should respond with 980 Hz after 0.4±0.2 seconds.
+        Method:         The tester sends 1650Hz to TUT for 5 seconds.
+        Pass criteria:  The TUT should respond with 980Hz after 0.4±0.2 seconds.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
     printf("Test not yet implemented\n");
@@ -1159,15 +1153,15 @@ static int test_ans_19(void)
 static int test_ans_20(void)
 {
     /*
-        III.5.4.3.20    1300 Hz calling tone discrimination
-        Purpose:        To confirm correct detection of 1300 Hz calling tones as defined in ITU-T V.25.
+        III.5.4.3.20    1300Hz calling tone discrimination
+        Purpose:        To confirm correct detection of 1300Hz calling tones as defined in ITU-T V.25.
         Preamble:       N/A
-        Method:         The tester will send 1300 Hz bursts of (a) 400 ms, (b) 500 ms, (c) 700 ms and
+        Method:         The tester will send 1300Hz bursts of (a) 400 ms, (b) 500 ms, (c) 700 ms and
                         (d) 800 ms followed by 1 second of silence.
         Pass criteria:  1) The TUT should not respond to bursts of 400 or 800 ms.
-                        2) The TUT should immediately begin probing after a burst of 1300 Hz for 500 or
+                        2) The TUT should immediately begin probing after a burst of 1300Hz for 500 or
                            700 ms followed by 1 second of silence.
-        Comments:
+        Comments:       The probe sent by the TUT will depend on the country setting.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -1177,12 +1171,11 @@ static int test_ans_20(void)
 static int test_ans_21(void)
 {
     /*
-        III.5.4.3.21    The probe sent by the TUT will depend on the country setting.
-                        V.23 Reverse mode (1300 Hz) detection
+        III.5.4.3.21    V.23 Reverse mode (1300Hz) detection
         Purpose:        To ensure correct detection and selection of V.23 reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 1300 Hz only, with no XCI signals, to TUT for 5 seconds.
-                        Pass criteria: The TUT should respond with 390 Hz after 1.7±0.1 seconds.
+        Method:         The tester sends 1300Hz only, with no XCI signals, to TUT for 5 seconds.
+                        Pass criteria: The TUT should respond with 390Hz after 1.7±0.1 seconds.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
     printf("Test not yet implemented\n");
@@ -1193,7 +1186,7 @@ static int test_ans_21(void)
 static int test_ans_22(void)
 {
     /*
-        III.5.4.3.22    1300 Hz with XCI test
+        III.5.4.3.22    1300Hz with XCI test
         Purpose:        To ensure correct detection of the XCI signal and selection of V.18 mode.
         Preamble:       N/A
         Method:         The tester sends XCI signal as defined in 3.11. On reception of ANS it will become
@@ -1234,7 +1227,7 @@ static int test_ans_24(void)
                         by the TUT.
         Pass criteria:  The TUT should send the user defined probe message for Annexes A, B, and C
                         modes followed by a pause of Tm (default 3) seconds.
-        Comments:
+        Comments:       The carrierless modes are those described in Annexes A, B and C.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -1244,16 +1237,15 @@ static int test_ans_24(void)
 static int test_ans_25(void)
 {
     /*
-        III.5.4.3.25    The carrierless modes are those described in Annexes A, B and C.
-                        Interrupted carrierless mode probe
+        III.5.4.3.25    Interrupted carrierless mode probe
         Purpose:        To ensure that the TUT continues probing from the point of interruption a maximum
                         of 20 s after a failed connect attempt.
         Preamble:       The TUT should be configured for the UK country setting.
         Method:         The tester will call the TUT, wait for Ta to expire and then during the pause after
-                        the first Baudot probe it will send a 200 ms burst of 1270 Hz followed by silence
+                        the first Baudot probe it will send a 200 ms burst of 1270Hz followed by silence
                         for 30 s.
-        Pass criteria:  The TUT should transmit silence on detecting the 1270 Hz tone and then continue
-                        probing starting with the V.23 probe 20 seconds after the end of the 1270 Hz signal.
+        Pass criteria:  The TUT should transmit silence on detecting the 1270Hz tone and then continue
+                        probing starting with the V.23 probe 20 seconds after the end of the 1270Hz signal.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -1269,8 +1261,8 @@ static int test_ans_26(void)
         Preamble:       None.
         Method:         The tester will call the TUT, wait for Ta to expire and then monitor the probes sent
                         by the TUT.
-        Pass criteria:  The TUT should send the ANS tone (2100 Hz) for 1 second followed by silence for
-                        75±5 ms and then the 1650 Hz, 1300 Hz and 2225 Hz probes for time Tc.
+        Pass criteria:  The TUT should send the ANS tone (2100Hz) for 1 second followed by silence for
+                        75±5 ms and then the 1650Hz, 1300Hz and 2225Hz probes for time Tc.
         Comments:       The carrier modes are those described in Annexes D, E, and F.
      */
     printf("Test not yet implemented\n");
@@ -1281,17 +1273,19 @@ static int test_ans_26(void)
 static int test_ans_27(void)
 {
     /*
-        III.5.4.3.27    V.23 mode (390 Hz) detection
+        III.5.4.3.27    V.23 mode (390Hz) detection
         Purpose:        To confirm correct selection of V.23 mode.
         Preamble:       N/A
-        Method:         The tester waits until the 1300 Hz probe is detected from the TUT and then
-                        transmits 390 Hz for 11 seconds.
-        Pass criteria:  1) After 3 seconds of the 390 Hz signal the TUT should indicate that V.23 has
+        Method:         The tester waits until the 1300Hz probe is detected from the TUT and then
+                        transmits 390Hz for 11 seconds.
+        Pass criteria:  1) After 3 seconds of the 390Hz signal the TUT should indicate that V.23 has
                            been selected.
-                        2) The tester will confirm that the 1300 Hz carrier is maintained for at least
+                        2) The tester will confirm that the 1300Hz carrier is maintained for at least
                            4 seconds beyond the normal probe duration, i.e. Tc (= 6 s default) + 4 s =
                            10 seconds total.
-        Comments:
+        Comments:       All known V.23 devices need to receive 1300Hz tone before they will respond with
+                        390Hz. When the 1300Hz probe is not being transmitted, a 390Hz tone may be
+                        interpreted as a 400Hz network tone.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -1301,20 +1295,17 @@ static int test_ans_27(void)
 static int test_ans_28(void)
 {
     /*
-        III.5.4.3.28    All known V.23 devices need to receive 1300 Hz tone before they will respond with
-                        390 Hz. When the 1300 Hz probe is not being transmitted, a 390 Hz tone may be
-                        interpreted as a 400 Hz network tone.
-                        Interrupted carrier mode probe
+        III.5.4.3.28    Interrupted carrier mode probe
         Purpose:        To ensure that the TUT continues probing from the point of interruption a maximum
                         of 4 s after a failed connect attempt.
         Preamble:       The TUT should be configured for the UK country setting.
         Method:         The tester will call the TUT, wait for Ta to expire and then during the first V.21
-                        probe it will send a 200 ms burst of 1270 Hz followed by silence for 30 s.
-        Pass criteria:  The TUT should transmit silence on detecting the 1270 Hz tone and then continue
-                        probing with the Baudot stored message 4 seconds after the end of the 1270 Hz
+                        probe it will send a 200 ms burst of 1270Hz followed by silence for 30 s.
+        Pass criteria:  The TUT should transmit silence on detecting the 1270Hz tone and then continue
+                        probing with the Baudot stored message 4 seconds after the end of the 1270Hz
                         burst.
         Comments:       It is most likely that the TUT will return to probing time Ta (3 seconds) after the
-                        1270 Hz tone ceases. This condition needs further clarification.
+                        1270Hz tone ceases. This condition needs further clarification.
      */
     printf("Test not yet implemented\n");
     return 1;
@@ -1367,7 +1358,7 @@ static int test_ans_31(void)
         III.5.4.3.31    Immunity to fax calling tones
         Purpose:        To determine whether the TUT can discriminate fax calling tones.
         Preamble:       N/A
-        Method:         The tester will call the TUT and send the fax calling tone, CNG. This is an 1100 Hz
+        Method:         The tester will call the TUT and send the fax calling tone, CNG. This is an 1100Hz
                         tone with cadence of 0.5 seconds ON and 3 seconds OFF as defined in ITU-T T.30.
         Pass criteria:  The TUT should not respond to this signal and may report it as being a calling fax
                         machine.
@@ -1410,7 +1401,7 @@ static int test_ans_33(void)
         Pass criteria:  1) On reception of the CM signal, the TUT should transmit JM with textphone
                            and V.21.
                         2) The TUT should then transmit in V.21 (2) mode.
-                        3) The JM should be followed by continuous 1650 Hz.
+                        3) The JM should be followed by continuous 1650Hz.
                         4) Correct transmission and reception of T.140 data should be verified after the
                            V.18 mode connection is completed.
         Comments:       The TUT should indicate V.18 mode.
@@ -1446,16 +1437,16 @@ static int test_mon_21(void)
 static int test_mon_22(void)
 {
     /*
-        III.5.4.4.2     Automode monitor 1300 Hz calling tone discrimination
-        Purpose:        To confirm correct detection and reporting of 1300 Hz calling tones as defined in
+        III.5.4.4.2     Automode monitor 1300Hz calling tone discrimination
+        Purpose:        To confirm correct detection and reporting of 1300Hz calling tones as defined in
                         ITU-T V.25.
         Preamble:       N/A
-        Method:         The tester will send 1300 Hz bursts of (a) 400 ms, (b) 500 ms, (c) 700 ms and
+        Method:         The tester will send 1300Hz bursts of (a) 400 ms, (b) 500 ms, (c) 700 ms and
                         (d) 800 ms followed by 1 second of silence.
         Pass criteria:  1) The TUT should not respond to bursts of 400 or 800 ms.
                         2) The TUT should report detection of calling tones to the DTE after a burst of
-                           1300 Hz for 500 or 700 ms followed by 1 second of silence.
-        Comments:       In automode answer, the 1300 Hz calling causes the DCE to start probing. In
+                           1300Hz for 500 or 700 ms followed by 1 second of silence.
+        Comments:       In automode answer, the 1300Hz calling causes the DCE to start probing. In
                         monitor mode it should only report detection to the DTE.
      */
     printf("Test not yet implemented\n");
@@ -1466,16 +1457,16 @@ static int test_mon_22(void)
 static int test_mon_23(void)
 {
     /*
-        III.5.4.4.3     Automode monitor 980 Hz calling tone discrimination
-        Purpose:        To confirm correct detection and reporting of 980 Hz calling tones as defined in
+        III.5.4.4.3     Automode monitor 980Hz calling tone discrimination
+        Purpose:        To confirm correct detection and reporting of 980Hz calling tones as defined in
                         ITU-T V.25.
         Preamble:       N/A
-        Method:         The tester will send 980 Hz bursts of (a) 400 ms, (b) 500 ms, (c) 700 ms and
+        Method:         The tester will send 980Hz bursts of (a) 400 ms, (b) 500 ms, (c) 700 ms and
                         (d) 800 ms followed by 1 second of silence.
         Pass criteria:  1) The TUT should not respond to bursts of 400 or 800 ms.
                         2) The TUT should report detection of calling tones to the DTE after a burst of
-                           980 Hz for 500 or 700 ms followed by 1 second of silence.
-        Comments:       In automode answer, the 980 Hz calling causes the DCE to start probing. In monitor
+                           980Hz for 500 or 700 ms followed by 1 second of silence.
+        Comments:       In automode answer, the 980Hz calling causes the DCE to start probing. In monitor
                         mode it should only report detection to the DTE.
      */
     printf("Test not yet implemented\n");
@@ -1739,7 +1730,8 @@ static int test_x_10(void)
                            transmitted by the TUT.
                         3) The tester should confirm that there is remote echo from TUT.
                         4) The operator should confirm that there is local echo on the TUT.
-        Comments:
+        Comments:       This test is only applicable to Minitel Dialogue terminals. Prestel and Minitel
+                        Normal terminals cannot operate in this mode.
      */
     printf("Test not yet implemented\n");
     return 0;
@@ -1749,9 +1741,7 @@ static int test_x_10(void)
 static int test_x_11(void)
 {
     /*
-        III.5.4.5.11    This test is only applicable to Minitel Dialogue terminals. Prestel and Minitel
-                        Normal terminals cannot operate in this mode.
-                        V.21 character structure
+        III.5.4.5.11    V.21 character structure
         Purpose:        To verify that the TUT uses the character structure in the V.21 mode.
         Preamble:       Establish a call from the TUT to the tester in V.21 mode.
         Method:         The operator should transmit a string from the TUT that is long enough to cause the

@@ -291,7 +291,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         {
             /* FAX modem connection */
             at_set_at_rx_mode(s, AT_MODE_DELIVERY);
-            at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CED_TONE);
+            at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CED_TONE_TX);
         }
         break;
     case AT_CALL_EVENT_CONNECTED:
@@ -315,9 +315,9 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
                 /* FAX modem connection */
                 at_set_at_rx_mode(s, AT_MODE_DELIVERY);
                 if (s->silent_dial)
-                    at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_NOCNG_TONE);
+                    at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_NOCNG_TONE_TX);
                 else
-                    at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CNG_TONE);
+                    at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CNG_TONE_TX);
                 s->dte_is_waiting = TRUE;
             }
         }

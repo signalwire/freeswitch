@@ -312,67 +312,14 @@ static void hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v17_rx(&s->fast_modems.v17_rx, amp, len);
-    fsk_rx(&s->v21_rx, amp, len);
-    if (s->rx_trained)
-    {
-        /* The fast modem has trained, so we no longer need to run the slow
-           one in parallel. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.17 (%.2fdBm0)\n", v17_rx_signal_power(&s->fast_modems.v17_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &v17_rx, &s->fast_modems.v17_rx, NULL, NULL);
-    }
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v27ter_rx(&s->fast_modems.v27ter_rx, amp, len);
-    fsk_rx(&s->v21_rx, amp, len);
-    if (s->rx_trained)
-    {
-        /* The fast modem has trained, so we no longer need to run the slow
-           one in parallel. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.27ter (%.2fdBm0)\n", v27ter_rx_signal_power(&s->fast_modems.v27ter_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &v27ter_rx, &s->fast_modems.v27ter_rx, NULL, NULL);
-    }
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
-{
-    fax_modems_state_t *s;
-
-    s = (fax_modems_state_t *) user_data;
-    v29_rx(&s->fast_modems.v29_rx, amp, len);
-    fsk_rx(&s->v21_rx, amp, len);
-    if (s->rx_trained)
-    {
-        /* The fast modem has trained, so we no longer need to run the slow
-           one in parallel. */
-        span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.29 (%.2fdBm0)\n", v29_rx_signal_power(&s->fast_modems.v29_rx));
-        fax_modems_set_rx_handler(s, (span_rx_handler_t) &v29_rx, &s->fast_modems.v29_rx, NULL, NULL);
-    }
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
 int faxtester_rx(faxtester_state_t *s, int16_t *amp, int len)
 {
     int i;
 
     for (i = 0;  i < len;  i++)
         amp[i] = dc_restore(&s->modems.dc_restore, amp[i]);
-    s->modems.rx_handler(s->modems.rx_user_data, amp, len);
+    if (s->modems.rx_handler)
+        s->modems.rx_handler(s->modems.rx_user_data, amp, len);
     timer_update(s, len);
     if (s->wait_for_silence)
     {
@@ -432,7 +379,6 @@ void faxtester_set_rx_type(void *user_data, int type, int bit_rate, int short_tr
 {
     faxtester_state_t *s;
     fax_modems_state_t *t;
-    int tone;
 
     s = (faxtester_state_t *) user_data;
     t = &s->modems;
@@ -445,37 +391,31 @@ void faxtester_set_rx_type(void *user_data, int type, int bit_rate, int short_tr
     switch (type)
     {
     case T30_MODEM_CED:
+        fax_modems_start_slow_modem(t, FAX_MODEM_CED_TONE_RX);
+        s->tone_state = MODEM_CONNECT_TONES_NONE;
+        break;
     case T30_MODEM_CNG:
-        tone = (type == T30_MODEM_CED)  ?  MODEM_CONNECT_TONES_FAX_CED  :  MODEM_CONNECT_TONES_FAX_CNG;
-        modem_connect_tones_rx_init(&t->connect_rx,
-                                    tone,
-                                    tone_detected,
-                                    (void *) s);
-        fax_modems_set_rx_handler(t, (span_rx_handler_t) &modem_connect_tones_rx, &t->connect_rx, NULL, NULL);
+        fax_modems_start_slow_modem(t, FAX_MODEM_CNG_TONE_RX);
         s->tone_state = MODEM_CONNECT_TONES_NONE;
         break;
     case T30_MODEM_V21:
         if (s->flush_handler)
             s->flush_handler(s, s->flush_user_data, 3);
         fax_modems_start_slow_modem(t, FAX_MODEM_V21_RX);
-        fax_modems_set_rx_handler(t, (span_rx_handler_t) &fsk_rx, &t->v21_rx, NULL, NULL);
         break;
     case T30_MODEM_V27TER:
         fax_modems_start_fast_modem(t, FAX_MODEM_V27TER_RX, bit_rate, short_train, use_hdlc);
-        fax_modems_set_rx_handler(t, (span_rx_handler_t) &v27ter_v21_rx, t, NULL, NULL);
         break;
     case T30_MODEM_V29:
         fax_modems_start_fast_modem(t, FAX_MODEM_V29_RX, bit_rate, short_train, use_hdlc);
-        fax_modems_set_rx_handler(t, (span_rx_handler_t) &v29_v21_rx, t, NULL, NULL);
         break;
     case T30_MODEM_V17:
         fax_modems_start_fast_modem(t, FAX_MODEM_V17_RX, bit_rate, short_train, use_hdlc);
-        fax_modems_set_rx_handler(t, (span_rx_handler_t) &v17_v21_rx, t, NULL, NULL);
         break;
     case T30_MODEM_DONE:
         span_log(&s->logging, SPAN_LOG_FLOW, "FAX exchange complete\n");
     default:
-        fax_modems_set_rx_handler(t, (span_rx_handler_t) &span_dummy_rx, s, NULL, NULL);
+        fax_modems_set_rx_handler(t, (span_rx_handler_t) &span_dummy_rx, s, NULL, s);
         break;
     }
 }
@@ -513,25 +453,19 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
         break;
     case T30_MODEM_CED:
     case T30_MODEM_CNG:
-        if (type == T30_MODEM_CED)
-            tone = MODEM_CONNECT_TONES_FAX_CED;
-        else
-            tone = MODEM_CONNECT_TONES_FAX_CNG;
-        modem_connect_tones_tx_init(&t->connect_tx, tone);
-        fax_modems_set_tx_handler(t, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
+        tone = (type == T30_MODEM_CED)  ?  MODEM_CONNECT_TONES_FAX_CED  :  MODEM_CONNECT_TONES_FAX_CNG;
+        fax_modems_start_slow_modem(t, tone);
         s->transmit = TRUE;
         break;
     case T30_MODEM_V21:
         fax_modems_start_slow_modem(t, FAX_MODEM_V21_TX);
         fsk_tx_set_modem_status_handler(&t->v21_tx, modem_tx_status, (void *) s);
-        fax_modems_set_tx_handler(t, (span_tx_handler_t) &fsk_tx, &t->v21_tx);
         s->transmit = TRUE;
         break;
     case T30_MODEM_V27TER:
         fax_modems_set_get_bit(t, get_bit_func, get_bit_user_data);
         fax_modems_start_fast_modem(t, FAX_MODEM_V27TER_TX, bit_rate, short_train, use_hdlc);
         v27ter_tx_set_modem_status_handler(&t->fast_modems.v27ter_tx, modem_tx_status, (void *) s);
-        fax_modems_set_tx_handler(t, (span_tx_handler_t) &v27ter_tx, &t->fast_modems.v27ter_tx);
         /* For any fast modem, set 200ms of preamble flags */
         hdlc_tx_flags(&t->hdlc_tx, bit_rate/(8*5));
         s->transmit = TRUE;
@@ -540,7 +474,6 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
         fax_modems_set_get_bit(t, get_bit_func, get_bit_user_data);
         fax_modems_start_fast_modem(t, FAX_MODEM_V29_TX, bit_rate, short_train, use_hdlc);
         v29_tx_set_modem_status_handler(&t->fast_modems.v29_tx, modem_tx_status, (void *) s);
-        fax_modems_set_tx_handler(t, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
         /* For any fast modem, set 200ms of preamble flags */
         hdlc_tx_flags(&t->hdlc_tx, bit_rate/(8*5));
         s->transmit = TRUE;
@@ -549,7 +482,6 @@ void faxtester_set_tx_type(void *user_data, int type, int bit_rate, int short_tr
         fax_modems_set_get_bit(t, get_bit_func, get_bit_user_data);
         fax_modems_start_fast_modem(t, FAX_MODEM_V17_TX, bit_rate, short_train, use_hdlc);
         v17_tx_set_modem_status_handler(&t->fast_modems.v17_tx, modem_tx_status, (void *) s);
-        fax_modems_set_tx_handler(t, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
         /* For any fast modem, set 200ms of preamble flags */
         hdlc_tx_flags(&t->hdlc_tx, bit_rate/(8*5));
         s->transmit = TRUE;

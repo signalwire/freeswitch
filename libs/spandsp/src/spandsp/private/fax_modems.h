@@ -82,6 +82,11 @@ struct fax_modems_state_s
     /*! \brief */
     dc_restore_state_t dc_restore;
 
+    /*! \brief The callback function used to report detected tones. */
+    tone_report_func_t tone_callback;
+    /*! \brief A user specified opaque pointer passed to the tone_callback function. */
+    void *tone_callback_user_data;
+
     /*! \brief The fast modem type currently in use */
     int fast_modem;
 

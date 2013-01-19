@@ -187,7 +187,7 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
 static void hdlc_accept_t38_frame(void *user_data, const uint8_t *msg, int len, int ok);
 static void hdlc_accept_non_ecm_frame(void *user_data, const uint8_t *msg, int len, int ok);
 static int silence_rx(void *user_data, const int16_t amp[], int len);
-static int cng_rx(void *user_data, const int16_t amp[], int len);
+static int initial_timed_rx(void *user_data, const int16_t amp[], int len);
 static void non_ecm_put_bit(void *user_data, int bit);
 static void non_ecm_put(void *user_data, const uint8_t buf[], int len);
 static int non_ecm_get(void *user_data, uint8_t buf[], int len);
@@ -223,7 +223,7 @@ static int front_end_status(t31_state_t *s, int status)
             }
             /*endif*/
             break;
-        case FAX_MODEM_CED_TONE:
+        case FAX_MODEM_CED_TONE_TX:
             /* Go directly to V.21/HDLC transmit. */
             s->modem = FAX_MODEM_NONE;
             restart_modem(s, FAX_MODEM_V21_TX);
@@ -1599,7 +1599,6 @@ static int non_ecm_get(void *user_data, uint8_t buf[], int len)
                 s->non_ecm_tx.final = FALSE;
                 /* This will put the modem into its shutdown sequence. When
                    it has finally shut down, an OK response will be sent. */
-                //return SIG_STATUS_END_OF_DATA;
                 return i;
             }
             /*endif*/
@@ -1679,7 +1678,7 @@ static void hdlc_rx_status(void *user_data, int status)
         s->audio.modems.rx_trained = TRUE;
         break;
     case SIG_STATUS_CARRIER_UP:
-        if (s->modem == FAX_MODEM_CNG_TONE  ||  s->modem == FAX_MODEM_NOCNG_TONE  ||  s->modem == FAX_MODEM_V21_RX)
+        if (s->modem == FAX_MODEM_CNG_TONE_TX  ||  s->modem == FAX_MODEM_NOCNG_TONE_TX  ||  s->modem == FAX_MODEM_V21_RX)
         {
             s->at_state.rx_signal_present = TRUE;
             s->rx_frame_received = FALSE;
@@ -1718,7 +1717,7 @@ static void hdlc_rx_status(void *user_data, int status)
         s->audio.modems.rx_trained = FALSE;
         break;
     case SIG_STATUS_FRAMING_OK:
-        if (s->modem == FAX_MODEM_CNG_TONE  ||  s->modem == FAX_MODEM_NOCNG_TONE)
+        if (s->modem == FAX_MODEM_CNG_TONE_TX  ||  s->modem == FAX_MODEM_NOCNG_TONE_TX)
         {
             /* Once we get any valid HDLC the CNG tone stops, and we drop
                to the V.21 receive modem on its own. */
@@ -2028,7 +2027,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
     use_hdlc = FALSE;
     switch (s->modem)
     {
-    case FAX_MODEM_CNG_TONE:
+    case FAX_MODEM_CNG_TONE_TX:
         if (s->t38_mode)
         {
             s->t38_fe.next_tx_samples = s->t38_fe.samples;
@@ -2037,35 +2036,34 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         else
         {
-            modem_connect_tones_tx_init(&t->connect_tx, MODEM_CONNECT_TONES_FAX_CNG);
+            fax_modems_start_slow_modem(t, FAX_MODEM_CNG_TONE_TX);
             /* CNG is special, since we need to receive V.21 HDLC messages while sending the
                tone. Everything else in FAX processing sends only one way at a time. */
             /* Do V.21/HDLC receive in parallel. The other end may send its
                first message at any time. The CNG tone will continue until
                we get a valid preamble. */
             t31_v21_rx(s);
-            fax_modems_set_rx_handler(t, (span_rx_handler_t) &cng_rx, s, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, NULL);
-            fax_modems_set_tx_handler(t, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
+            fax_modems_set_rx_handler(t, (span_rx_handler_t) &initial_timed_rx, s, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, NULL);
             fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         }
         /*endif*/
         s->at_state.transmit = TRUE;
         break;
-    case FAX_MODEM_NOCNG_TONE:
+    case FAX_MODEM_NOCNG_TONE_TX:
         if (s->t38_mode)
         {
         }
         else
         {
             t31_v21_rx(s);
-            fax_modems_set_rx_handler(t, (span_rx_handler_t) &cng_rx, s, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, NULL);
+            fax_modems_set_rx_handler(t, (span_rx_handler_t) &initial_timed_rx, s, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, NULL);
             silence_gen_set(&t->silence_gen, 0);
             fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         }
         /*endif*/
         s->at_state.transmit = FALSE;
         break;
-    case FAX_MODEM_CED_TONE:
+    case FAX_MODEM_CED_TONE_TX:
         if (s->t38_mode)
         {
             s->t38_fe.next_tx_samples = s->t38_fe.samples;
@@ -2074,8 +2072,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         else
         {
-            modem_connect_tones_tx_init(&t->connect_tx, MODEM_CONNECT_TONES_FAX_CED);
-            fax_modems_set_tx_handler(t, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
+            fax_modems_start_slow_modem(t, FAX_MODEM_CED_TONE_TX);
             fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         }
         /*endif*/
@@ -2121,9 +2118,9 @@ static int restart_modem(t31_state_t *s, int new_modem)
     case FAX_MODEM_V29_RX:
         if (!s->t38_mode)
         {
-            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
             /* Allow for +FCERROR/+FRH:3 */
             t31_v21_rx(s);
+            fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
         }
         /*endif*/
         s->at_state.transmit = FALSE;
@@ -2743,7 +2740,7 @@ static int silence_rx(void *user_data, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int cng_rx(void *user_data, const int16_t amp[], int len)
+static int initial_timed_rx(void *user_data, const int16_t amp[], int len)
 {
     t31_state_t *s;
 
@@ -2755,12 +2752,9 @@ static int cng_rx(void *user_data, const int16_t amp[], int len)
         restart_modem(s, FAX_MODEM_SILENCE_TX);
         at_modem_control(&s->at_state, AT_MODEM_CONTROL_HANGUP, NULL);
         t31_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
+        return 0;
     }
-    else
-    {
-        fsk_rx(&s->audio.modems.v21_rx, amp, len);
-    }
-    /*endif*/
+    fsk_rx(&s->audio.modems.v21_rx, amp, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

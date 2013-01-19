@@ -867,7 +867,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
 
     if (s->data_transport_protocol == T38_TRANSPORT_TCP_TPKT)
     {
-        /* Fill in the TPKT header (se RFC1006) */
+        /* Fill in the TPKT header (see RFC1006) */
         /* Version */
         buf[0] = 3;
         /* Reserved */

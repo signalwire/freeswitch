@@ -321,16 +321,14 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         break;
     case T38_IND_CNG:
         t->tx_bit_rate = 0;
-        modem_connect_tones_tx_init(&t->connect_tx, MODEM_CONNECT_TONES_FAX_CNG);
+        fax_modems_start_slow_modem(t, FAX_MODEM_CNG_TONE_TX);
         silence_gen_set(&t->silence_gen, 0);
-        fax_modems_set_tx_handler(t, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_rx_active(t, TRUE);
         break;
     case T38_IND_CED:
         t->tx_bit_rate = 0;
-        modem_connect_tones_tx_init(&t->connect_tx, MODEM_CONNECT_TONES_FAX_CED);
-        fax_modems_set_tx_handler(t, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
+        fax_modems_start_slow_modem(t, FAX_MODEM_CED_TONE_TX);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         fax_modems_set_rx_active(t, TRUE);
         break;
