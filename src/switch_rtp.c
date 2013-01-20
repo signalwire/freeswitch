@@ -1131,6 +1131,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 		rtcp_ok = 0;
 	}
 
+
 	if (rtp_session->rtcp_sock_output && rtcp_ok &&
 		rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] &&
 		rtp_session->rtcp_interval && (rtp_session->stats.read_count % rtp_session->rtcp_interval) == 0) {
@@ -1140,7 +1141,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 		switch_size_t rtcp_bytes;
 		switch_byte_t *ptr = (switch_byte_t *)rtp_session->rtcp_send_msg.body;
 		switch_time_t when = 0;
-		
+
 		rtp_session->rtcp_send_msg.header.version = 2;
 		rtp_session->rtcp_send_msg.header.p = 0;
 		rtp_session->rtcp_send_msg.header.count = 1;
@@ -1213,11 +1214,12 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 			int stat = srtp_protect_rtcp(rtp_session->send_ctx, &rtp_session->rtcp_send_msg.header, &sbytes);
 			
 			if (stat) {
-				
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
+				goto end;
+			} else {
+				printf("XXXXXXXXXXXXXXXXWTF1 PROTECT RTCP %ld->%d bytes %d\n", rtcp_bytes, sbytes, rtp_session->rtcp_interval);
+				rtcp_bytes = sbytes;
 			}
-			rtcp_bytes = sbytes;
-			//printf("XXXXXXXXXXXXXXXXWTF1 PROTECT RTCP %d bytes %d\n", sbytes, rtp_session->rtcp_interval);
 
 		}
 #endif
@@ -2507,6 +2509,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	} else {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
+		rtp_session->ice.ready = rtp_session->ice.rready = 1;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Activating %s ICE: %s\n", rtp_type(rtp_session), ice_user);
@@ -2552,6 +2555,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp_ice(switch_rtp_t *rtp_s
 	} else {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
+		rtp_session->rtcp_ice.ready = rtp_session->rtcp_ice.rready = 1;
 	}
 
 	rtp_session->rtcp_ice.ice_user = switch_core_strdup(rtp_session->pool, ice_user);
@@ -3452,18 +3456,17 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 
 
 #ifdef ENABLE_SRTP
-	if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->rtcp_recv_msg_p->header.version == 2 && rtp_session->srtp_errs > 1) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->rtcp_recv_msg_p->header.version == 2) {
 		//if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->rtcp_recv_msg_p->header.version == 2)) {
 		int sbytes = (int) *bytes;
 		err_status_t stat = 0;
 		
 
 		if ((stat = srtp_unprotect_rtcp(rtp_session->recv_ctx, &rtp_session->rtcp_recv_msg_p->header, &sbytes))) {
-			if (++rtp_session->srtp_errs > 1) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Disable Secure RTP due to unprotect error.\n");
-			}
+			//++rtp_session->srtp_errs++;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "RTCP UNPROTECT ERR\n");
 		} else {
-			rtp_session->srtp_errs = 0;
+			//rtp_session->srtp_errs = 0;
 		}
 		
 		*bytes = sbytes;
