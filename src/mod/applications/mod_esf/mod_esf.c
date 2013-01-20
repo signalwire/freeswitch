@@ -201,7 +201,7 @@ SWITCH_STANDARD_APP(bcast_function)
 									 mcast_port,
 									 0,
 									 8000,
-									 20, (switch_rtp_flag_t) flags, "soft", &err, switch_core_session_get_pool(session));
+									 20, flags, "soft", &err, switch_core_session_get_pool(session));
 
 		if (!switch_rtp_ready(rtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error\n");
