@@ -29,6 +29,7 @@
  *
  */
 
+//#define GOOGLE_ICE
 #define RTCP_MUX
 #include <switch.h>
 #include <switch_ssl.h>
@@ -3654,7 +3655,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 									ICE_GOOGLE_JINGLE,
 									0
 #else
-									ICE_VANILLA | ICE_CONTROLLED,
+									switch_channel_direction(session->channel) == 
+									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : ICE_VANILLA | ICE_CONTROLLED,
 									a_engine->ice_in.cands[0].priority
 #endif
 									);
@@ -3700,7 +3702,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											 ICE_GOOGLE_JINGLE,
 											 0
 #else
-											 ICE_VANILLA | ICE_CONTROLLED,
+											 switch_channel_direction(session->channel) == 
+											 SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : ICE_VANILLA | ICE_CONTROLLED,
 											 a_engine->ice_in.cands[1].priority
 #endif
 											 );
@@ -4073,7 +4076,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 													 ICE_GOOGLE_JINGLE,
 													 0
 #else
-													 ICE_VANILLA | ICE_CONTROLLED,
+													 switch_channel_direction(session->channel) == 
+													 SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : ICE_VANILLA | ICE_CONTROLLED,
+													 
 													 v_engine->ice_in.cands[1].priority
 #endif
 													 );
