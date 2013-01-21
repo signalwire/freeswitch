@@ -20,8 +20,10 @@ libsrtp_la_SOURCES =    srtp/srtp.c srtp/ekt.c crypto/cipher/cipher.c crypto/cip
 			crypto/replay/rdb.c crypto/replay/rdbx.c crypto/replay/ut_sim.c
 libsrtp_la_LDFLAGS = 	-version-info 1:42:1
 
+EXTRA_DIST=
 if RNG_OBJS_LINUX
 libsrtp_la_SOURCES += crypto/rng/rand_linux_kernel.c
+EXTRA_DIST += crypto/rng/rand_source.c
 else
 libsrtp_la_SOURCES += crypto/rng/rand_source.c
 endif

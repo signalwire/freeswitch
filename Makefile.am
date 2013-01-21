@@ -496,7 +496,19 @@ libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
 	@cd libs/pcre && $(MAKE)
 	@$(TOUCH_TARGET)
 
-libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
+SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/srtp/ekt.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \
+		libs/srtp/crypto/cipher/aes.c libs/srtp/crypto/cipher/aes_icm.c \
+		libs/srtp/crypto/cipher/aes_cbc.c \
+		libs/srtp/crypto/hash/null_auth.c libs/srtp/crypto/hash/sha1.c \
+		libs/srtp/crypto/hash/hmac.c libs/srtp/crypto/hash/auth.c \
+		libs/srtp/crypto/math/datatypes.c libs/srtp/crypto/math/stat.c \
+		libs/srtp/crypto/kernel/crypto_kernel.c libs/srtp/crypto/kernel/alloc.c \
+		libs/srtp/crypto/kernel/key.c \
+		libs/srtp/crypto/rng/prng.c libs/srtp/crypto/rng/ctr_prng.c \
+		libs/srtp/crypto/kernel/err.c libs/srtp/crypto/rng/rand_source.c \
+		libs/srtp/crypto/replay/rdb.c libs/srtp/crypto/replay/rdbx.c libs/srtp/crypto/replay/ut_sim.c 
+
+libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update $(SRTP_SRC)
 	touch src/include/switch.h
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
@@ -580,7 +592,7 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-core: $(switch_builddir)/modules.conf
+core: $(switch_builddir)/modules.conf $(CORE_LIBS)
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
 distclean: clean
