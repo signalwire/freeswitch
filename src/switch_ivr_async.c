@@ -40,6 +40,7 @@
 struct switch_ivr_dmachine_binding {
 	char *digits;
 	int32_t key;
+	uint8_t rmatch;
 	switch_ivr_dmachine_callback_t callback;
 	switch_byte_t is_regex;
 	void *user_data;
@@ -319,13 +320,23 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 {
 	dm_match_t best = DM_MATCH_NONE;
 	switch_ivr_dmachine_binding_t *bp, *exact_bp = NULL, *partial_bp = NULL, *both_bp = NULL, *r_bp = NULL;
-	int pmatches = 0, ematches = 0;
+	int pmatches = 0, ematches = 0, rmatches = 0;
 	
 	if (!dmachine->cur_digit_len || !dmachine->realm) goto end;
 
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
+			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
+			
+			if (r_status == SWITCH_STATUS_SUCCESS) {
+				bp->rmatch++;
+			} else {
+				bp->rmatch = 0;
+			}
+
+			rmatches++;
 			pmatches++;
+
 		} else {
 			if (!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
 				pmatches++;
@@ -336,9 +347,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
-			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
-			
-			if (r_status == SWITCH_STATUS_SUCCESS) {
+			if (bp->rmatch) {
 				if (is_timeout || (bp == dmachine->realm->binding_list && !bp->next)) {
 					best = DM_MATCH_EXACT;
 					exact_bp = bp;
@@ -349,7 +358,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		} else {
 			int pmatch = !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits));
 
-			if (!exact_bp && pmatch && (pmatches == 1 || ematches == 1 || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
+			if (!exact_bp && pmatch && (((pmatches == 1 || ematches == 1) && !rmatches) || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
 				best = DM_MATCH_EXACT;
 				exact_bp = bp;
 				if (dmachine->cur_digit_len == dmachine->max_digit_len) break;
