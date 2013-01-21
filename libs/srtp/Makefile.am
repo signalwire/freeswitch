@@ -7,7 +7,7 @@ AM_LDFLAGS   = $(new_AM_LDFLAGS) -L.
 
 
 lib_LTLIBRARIES = libsrtp.la libcryptomath.la
-libsrtp_la_SOURCES =    srtp/srtp.c crypto/cipher/cipher.c crypto/cipher/null_cipher.c \
+libsrtp_la_SOURCES =    srtp/srtp.c srtp/ekt.c crypto/cipher/cipher.c crypto/cipher/null_cipher.c \
 			crypto/cipher/aes.c crypto/cipher/aes_icm.c \
 			crypto/cipher/aes_cbc.c \
 			crypto/hash/null_auth.c crypto/hash/sha1.c \
