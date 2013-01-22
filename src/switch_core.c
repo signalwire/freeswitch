@@ -1664,8 +1664,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_rtp_init(runtime.memory_pool);
 
 	runtime.running = 1;
-	runtime.initiated = switch_time_now();
-	runtime.mono_initiated = switch_mono_micro_time_now();
+	runtime.initiated = switch_mono_micro_time_now();
 	
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 
@@ -2102,7 +2101,7 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
 
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 {
-	return switch_mono_micro_time_now() - runtime.mono_initiated;
+	return switch_mono_micro_time_now() - runtime.initiated;
 }
 
 

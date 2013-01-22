@@ -180,6 +180,7 @@ static void do_sleep(switch_interval_time_t t)
 	clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
 
 #elif defined(DARWIN)
+	t -= OFFSET;
 	ts.tv_sec = t / APR_USEC_PER_SEC;
 	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
 	nanosleep(&ts, NULL);
@@ -447,7 +448,7 @@ SWITCH_DECLARE(switch_time_t) switch_time_ref(void)
 		return time_now(0);
 	} else {
 		/* Return monotonic time reference (when available) */
-		return time_now(-1);
+		return switch_mono_micro_time_now();
 	}
 }
 
@@ -461,13 +462,11 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 
 	if (SYSTEM_TIME) {
 		runtime.reference = time_now(0);
-		runtime.mono_reference = time_now(-1);
 		runtime.offset = 0;
 	} else {
-		runtime.offset = runtime.reference - time_now(-1); /* Get the offset between system time and the monotonic clock (when available) */
+		runtime.offset = runtime.reference - switch_mono_micro_time_now(); /* Get the offset between system time and the monotonic clock (when available) */
 		runtime.reference = time_now(runtime.offset);
 	}
-
 
 	if (runtime.reference - last_time > 1000000 || last_time == 0) {
 		if (SYSTEM_TIME) {
@@ -901,6 +900,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		while (((ts = time_now(runtime.offset)) + 100) < runtime.reference) {
 			if (ts < last) {
 				if (MONO) {
+					runtime.initiated = switch_mono_micro_time_now() - ((last - runtime.offset) - runtime.initiated);
+
 					if (time_sync == runtime.time_sync) { /* Only resync if not in the middle of switch_time_sync() already */
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
 						win32_init_timers(); /* Make sure to reinit timers on WIN32 */
@@ -918,8 +919,13 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				}
 
 				if (!MONO || time_sync == runtime.time_sync) {
+#if defined(HAVE_CLOCK_NANOSLEEP)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
 									  "If you see this message many times try setting the param enable-clock-nanosleep to true in switch.conf.xml or consider a nicer machine to run me on. I AM *FREE* afterall.\n");
+#else
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+									  "If you see this message many times consider a nicer machine to run me on. I AM *FREE* afterall.\n");
+#endif
 				}
 			} else {
 				rev_errs = 0;
@@ -955,6 +961,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 		if (ts > (runtime.reference + too_late)) {
 			if (MONO) {
+				runtime.initiated = switch_mono_micro_time_now() - (((runtime.reference - runtime.microseconds_per_tick) - runtime.offset) - runtime.initiated);
+
 				if (time_sync == runtime.time_sync) { /* Only resync if not in the middle of switch_time_sync() already */
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Virtual Migration Detected! Syncing Clock\n");
 					win32_init_timers(); /* Make sure to reinit timers on WIN32 */
@@ -962,7 +970,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 					time_sync = runtime.time_sync;
 				}
 			} else {
-				switch_time_t diff = ts - runtime.reference - runtime.microseconds_per_tick;
+				switch_time_t diff = ts - (runtime.reference - runtime.microseconds_per_tick);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Forward Clock Skew Detected!\n");
 				fwd_errs++;
 				runtime.reference = switch_time_now();
@@ -1296,7 +1304,7 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabled Windows monotonic clock, using timeGetTime()\n");
 		}
 
-		runtime.mono_initiated = switch_mono_micro_time_now(); /* Update mono_initiated, since now is the first time the real clock is enabled */
+		runtime.initiated = switch_mono_micro_time_now(); /* Update mono_initiated, since now is the first time the real clock is enabled */
 	}
 
 	/* No need to calibrate clock in Win32, we will only sleep ms anyway, it's just not accurate enough */
