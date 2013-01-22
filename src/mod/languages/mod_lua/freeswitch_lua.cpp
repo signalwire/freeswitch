@@ -335,9 +335,17 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 Dbh::Dbh(char *dsn, char *user, char *pass)
 {
 	dbh = NULL;
-
+	char *tmp = NULL;
+	
 	if (!zstr(user) || !zstr(pass)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "user and pass params have been removed.  Please specify the user and pass in the DSN.\n");
+		tmp = switch_mprintf("%s%s%s%s%s", dsn, 
+							 zstr(user) ? "" : ",uid=",
+							 zstr(user) ? "" : user,
+							 zstr(pass) ? "" : ",pwd=",
+							 zstr(pass) ? "" : pass
+							 );
+
+		dsn = tmp;
 	}
 
 	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) == SWITCH_STATUS_SUCCESS) {
@@ -345,6 +353,9 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Connection failed.  DBH NOT Connected.\n");
 	}
+
+	switch_safe_free(tmp);
+	
 }
 
 Dbh::~Dbh()
