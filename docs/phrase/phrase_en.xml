@@ -22,6 +22,17 @@
       <prompt phrase="Semicolon" filename="59.wav"/>
       <prompt phrase="Caret" filename="94.wav"/>
       <prompt phrase="Pipe" filename="124.wav"/>
+      <prompt phrase="Plus." filename="43.wav"/>
+      <prompt phrase="Open parenthesis." filename="40.wav"/>
+      <prompt phrase="Close parenthesis." filename="41.wav"/>
+      <prompt phrase="Open curly bracket." filename="123.wav"/>
+      <prompt phrase="Close curly bracket." filename="125.wav"/>
+      <prompt phrase="Open square bracket." filename="91.wav"/>
+      <prompt phrase="Close square bracket." filename="93.wav"/>
+      <prompt phrase="Comma." filename="44.wav"/>
+      <prompt phrase="Backtick." filename="96.wav"/>
+      <prompt phrase="Less than sign." filename="60.wav"/>
+      <prompt phrase="Greater than sign." filename="62.wav"/>
       <prompt phrase="A" filename="97.wav"/>
       <prompt phrase="B" filename="98.wav"/>
       <prompt phrase="C" filename="99.wav"/>
@@ -589,52 +600,32 @@
       <prompt phrase="...is not on the blacklist." filename="ivr-is_not_on_the_blacklist.wav"/>
       <prompt phrase="...is already on the blacklist." filename="ivr-is_already_on_the_blacklist.wav"/>
       <prompt phrase="For other options, press..." filename="ivr-for_other_options.wav"/>
-      <!-- The following phrases still need to be recorded -->
-      <prompt phrase="Thank you." filename="ivr-thank_you.wav"/>
-      <prompt phrase="Plus." filename="43.wav"/>
-      <prompt phrase="Open parenthesis." filename="40.wav"/>
-      <prompt phrase="Close parenthesis." filename="41.wav"/>
-      <prompt phrase="Open curly bracket." filename="123.wav"/>
-      <prompt phrase="Close curly bracket." filename="125.wav"/>
-      <prompt phrase="Open square bracket." filename="91.wav"/>
-      <prompt phrase="Close square bracket." filename="93.wav"/>
-      <prompt phrase="Comma." filename="44.wav"/>
-      <prompt phrase="Backtick." filename="96.wav"/>
-      <prompt phrase="Less than sign." filename="60.wav"/>
-      <prompt phrase="Greater than sign." filename="62.wav"/>
       <prompt phrase="Your caller I.D. information is..." filename="ivr-your_caller_id_information_is.wav"/>
       <prompt phrase="Call screening has been enabled." filename="ivr-call_screening_enabled.wav"/>
       <prompt phrase="Call screening has been disabled." filename="ivr-call_screening_disabled.wav"/>
       <prompt phrase="Ain't nobody got time for that!" filename="ivr-aint_nobody_got_time_for_that.wav"/>
       <prompt phrase="We would support the shit out of you if only you returned our phone calls and emails." filename="ivr-we_would_support.wav"/>
-      <prompt phrase="To learn more about CudaTel, press..." filename="misc-learn_more_about_cudatel.wav"/>
-      <prompt phrase="The CudaTel Communication Server from Barracuda Networks is an advanced IP PBX powered by FreeSWITCH and designed by the core FreeSWITCH development team." filename="misc-cudatel_communication_server_from_barracuda.wav"/>
-      <prompt phrase="CudaTel is the IP PBX designed by I.T. professionals, for I.T. professionals." filename="misc-cudatel_by_it.wav"/>
-      <prompt phrase="To speak to a knowledgeable CudaTel representative, call us at 734-887-3000." filename="misc-speak_to_cudatel_rep.wav"/>
-      <prompt phrase="You may also visit us at W W W dot C U D A T E L dot com to learn more about this amazing product." filename="misc-visit_cudatel_dot_com.wav"/>
-      <prompt phrase="FreeSWITCH Solutions offers the best FreeSWITCH consulting money can buy." filename="misc-fss_best_consulting.wav"/>
-      <prompt phrase="We have a network of FreeSWITCH experts that includes the core FreeSWITCH development team." filename="misc-fss_network_of_experts.wav"/>
-      <prompt phrase="Contact us at W-W-W dot freeswitchsolutions dot com to see how we can help you take your FreeSWITCH experience to the next level." filename="misc-fss_contact_us.wav"/>
-      <prompt phrase="It's totally soccer mom shit!" filename="misc-soccer_mom.wav"/>
       <prompt phrase="...suck." filename="ivr-suck.wav"/>
       <prompt phrase="...sucks." filename="ivr-sucks.wav"/>
       <prompt phrase="To redial your last call..." filename="ivr-to_redial_last_call.wav"/>
       <prompt phrase="To ensure that your service keeps working..." filename="ivr-ensure_service_keeps_working.wav"/>
       <prompt phrase="Please contact..." filename="ivr-please_contact.wav"/>
-      <prompt phrase="...the billing department..." filename="ivr-the_billing_department.wav"/> <!-- Avi -->
+      <prompt phrase="...the billing department..." filename="ivr-the_billing_department.wav"/>
       <prompt phrase="...by dialing..." filename="ivr-by_dialing.wav"/>
-      <prompt phrase="The credit card on file could not be charged." filename="ivr-credit_card_could_not_be_charged.wav"/> <!-- Avi -->
-      <prompt phrase="...units..." filename="ivr-units.wav"/> <!-- Avi -->
-      <prompt phrase="...per minute." filename="ivr-per_minute.wav"/> <!-- Avi -->
+      <prompt phrase="The credit card on file could not be charged." filename="ivr-credit_card_could_not_be_charged.wav"/>
+      <prompt phrase="...units..." filename="ivr-units.wav"/>
+      <prompt phrase="...per minute." filename="ivr-per_minute.wav"/>
       <prompt phrase="Your caller ID number is blocked." filename="ivr-your_caller_id_number_is_blocked.wav"/>
-      <prompt phrase="You must unblock your caller ID for PIN-less authorization to the calling card." filename="ivr-unblock_caller_id.wav"/> <!-- Avi -->
-      <prompt phrase="Alternatively, you can request or use a PIN code on your account." filename="ivr-request_or_use_pin.wav"/> <!-- Avi -->
+      <prompt phrase="You must unblock your caller ID for PIN-less authorization to the calling card." filename="ivr-unblock_caller_id.wav"/>
+      <prompt phrase="Alternatively, you can request or use a PIN code on your account." filename="ivr-request_or_use_pin.wav"/> 
       <prompt phrase="You have used..." filename="ivr-you_have_used.wav"/>
       <prompt phrase="...out of..." filename="ivr-out_of.wav"/>
-      <prompt phrase="Your next billing cycle begins on..." filename="ivr-next_billing_cycle.wav"/> <!-- Avi -->
+      <prompt phrase="Your next billing cycle begins on..." filename="ivr-next_billing_cycle.wav"/> 
       <prompt phrase="Nothing." filename="ivr-nothing.wav"/>
       <prompt phrase="To skip..." filename="ivr-to_skip.wav"/>
-      <prompt phrase="Sangoma." filename="misc-Sangoma.wav"/>
+      <!-- The following phrases still need to be recorded -->
+      <prompt phrase="Please hold while we conncet you to a live operator." filename="ivr_connect_live_operator.wav"/>
+      <prompt phrase="Please hold while we connect you to an actual human being." filename="ivr-connect_actual_human_being.wav"/>
       <prompt phrase="" filename=""/>
 
     </ivr>
@@ -667,6 +658,16 @@
       <prompt phrase="It is stable, highly scalable, and extensible." filename="misc-it_is_stable_scalable_extensible.wav"/>
       <prompt phrase="Best of all, it is free for anyone to download and use." filename="misc-free_to_download.wav"/>
       <prompt phrase="Visit www dot freeswitch dot org to learn more about our project and worldwide community." filename="misc-freeswitch_dot_org_more.wav"/>
+      <prompt phrase="Sangoma." filename="misc-Sangoma.wav"/>
+      <prompt phrase="To learn more about CudaTel, press..." filename="misc-learn_more_about_cudatel.wav"/>
+      <prompt phrase="The CudaTel Communication Server from Barracuda Networks is an advanced IP PBX powered by FreeSWITCH and designed by the core FreeSWITCH development team." filename="misc-cudatel_communication_server_from_barracuda.wav"/>
+      <prompt phrase="CudaTel is the IP PBX designed by I.T. professionals, for I.T. professionals." filename="misc-cudatel_by_it.wav"/>
+      <prompt phrase="To speak to a knowledgeable CudaTel representative, call us at 734-887-3000." filename="misc-speak_to_cudatel_rep.wav"/>
+      <prompt phrase="You may also visit us at W W W dot C U D A T E L dot com to learn more about this amazing product." filename="misc-visit_cudatel_dot_com.wav"/>
+      <prompt phrase="FreeSWITCH Solutions offers the best FreeSWITCH consulting money can buy." filename="misc-fss_best_consulting.wav"/>
+      <prompt phrase="We have a network of FreeSWITCH experts that includes the core FreeSWITCH development team." filename="misc-fss_network_of_experts.wav"/>
+      <prompt phrase="Contact us at W-W-W dot freeswitchsolutions dot com to see how we can help you take your FreeSWITCH experience to the next level." filename="misc-fss_contact_us.wav"/>
+      <prompt phrase="It's totally soccer mom shit!" filename="misc-soccer_mom.wav"/>
     </misc>
     <zrtp>
       <!-- base256 prompts for SAS -->
