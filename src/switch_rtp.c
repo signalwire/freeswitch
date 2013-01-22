@@ -1217,7 +1217,7 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
 				goto end;
 			} else {
-				printf("XXXXXXXXXXXXXXXXWTF1 PROTECT RTCP %ld->%d bytes %d\n", rtcp_bytes, sbytes, rtp_session->rtcp_interval);
+				//printf("XXXXXXXXXXXXXXXXWTF1 PROTECT RTCP %ld->%d bytes %d\n", rtcp_bytes, sbytes, rtp_session->rtcp_interval);
 				rtcp_bytes = sbytes;
 			}
 
