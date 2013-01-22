@@ -621,6 +621,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 		if (strlen(tech_pvt->skype_call_id)) {
 			DEBUGA_SKYPE("hanging up skype call: %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id);
+			if(strlen(tech_pvt->skype_voicemail_id)){
+				sprintf(msg_to_skype, "ALTER VOICEMAIL %s STOPRECORDING", tech_pvt->skype_voicemail_id);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				switch_sleep(MS_SKYPOPEN * 1000 * 3);//XXX FIXME ??
+			}
 			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->skype_call_id);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
 			sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
@@ -882,7 +887,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				//DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
 				goto read;
 			}
-			DEBUGA_SKYPE("READ BUFFER EMPTY, skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
+
+			if (!strlen(tech_pvt->skype_voicemail_id)) {
+				DEBUGA_SKYPE("READ BUFFER EMPTY, skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
+			}
 			memset(tech_pvt->read_frame.data, 255, BYTES_PER_FRAME);
 			tech_pvt->read_frame.datalen = BYTES_PER_FRAME;
 
@@ -1030,7 +1038,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
 	switch_mutex_unlock(tech_pvt->mutex_audio_cli);
-	if (no_space) {
+	if (no_space && !strlen(tech_pvt->skype_voicemail_id)) {
 		//switch_sleep(MS_SKYPOPEN * 1000);
 		DEBUGA_SKYPE("NO SPACE in WRITE BUFFER: there was no space for %d\n", SKYPOPEN_P_LOG, frame->datalen);
 	}
@@ -1797,7 +1805,7 @@ static switch_status_t load_config(int reload_type)
 						("Interface_id=%d is now STARTED, the Skype client to which we are connected gave us the correct CURRENTUSERHANDLE (%s)\n",
 						 SKYPOPEN_P_LOG, interface_id, globals.SKYPOPEN_INTERFACES[interface_id].skype_user);
 
-					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "PROTOCOL 7");
+					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "PROTOCOL 999");
 					switch_sleep(20000);
 					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "SET AUTOAWAY OFF");
 					switch_sleep(20000);

@@ -357,6 +357,7 @@ struct private_object {
 	char ring_value[256];
 
 	char message[4096];
+	char skype_voicemail_id[512];
 };
 
 typedef struct private_object private_t;

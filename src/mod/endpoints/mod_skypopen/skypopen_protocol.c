@@ -219,7 +219,7 @@ int skypopen_signaling_read(private_t *tech_pvt)
 					("If I don't connect immediately, please give the Skype client authorization to be connected by Skypopen (and to not ask you again)\n",
 					 SKYPOPEN_P_LOG);
 				skypopen_sleep(1000000);
-				skypopen_signaling_write(tech_pvt, "PROTOCOL 7");
+				skypopen_signaling_write(tech_pvt, "PROTOCOL 999");
 				skypopen_sleep(20000);
 				return 0;
 			}
@@ -539,6 +539,37 @@ int skypopen_signaling_read(private_t *tech_pvt)
 			}
 
 
+			if (!strcasecmp(message, "VOICEMAIL")) {
+				char msg_to_skype[1024];
+
+				skypopen_strncpy(obj, where, sizeof(obj) - 1);
+				where = strsep(stringp, " ");
+				skypopen_strncpy(id, where, sizeof(id) - 1);
+				where = strsep(stringp, " ");
+				skypopen_strncpy(prop, where, sizeof(prop) - 1);
+				where = strsep(stringp, " ");
+				skypopen_strncpy(value, where, sizeof(value) - 1);
+				where = strsep(stringp, " ");
+
+				//DEBUGA_SKYPE
+				//("Skype MSG: message: %s, obj: %s, id: %s, prop: %s, value: %s,where: %s!\n",
+				//SKYPOPEN_P_LOG, message, obj, id, prop, value, where ? where : "NULL");
+
+				if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "RECORDING") ) {
+					DEBUGA_SKYPE("VOICEMAIL %s INPUT\n", SKYPOPEN_P_LOG, id);
+					sprintf(msg_to_skype, "ALTER VOICEMAIL %s SET_INPUT PORT=\"%d\"", id, tech_pvt->tcp_cli_port);
+					skypopen_signaling_write(tech_pvt, msg_to_skype);
+				} else if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "PLAYING") ) {
+					DEBUGA_SKYPE("VOICEMAIL %s OUTPUT\n", SKYPOPEN_P_LOG, id);
+					sprintf(msg_to_skype, "ALTER VOICEMAIL %s SET_OUTPUT PORT=\"%d\"", id, tech_pvt->tcp_srv_port);
+					skypopen_signaling_write(tech_pvt, msg_to_skype);
+
+				} else if (!strcasecmp(prop, "TYPE") && !strcasecmp(value, "OUTGOING") ) {
+					DEBUGA_SKYPE("VOICEMAIL OUTGOING id is %s\n", SKYPOPEN_P_LOG, id);
+					sprintf(tech_pvt->skype_voicemail_id, "%s", id);
+				}
+			}
+
 			if (!strcasecmp(message, "CALL")) {
 				skypopen_strncpy(obj, where, sizeof(obj) - 1);
 				where = strsep(stringp, " ");
@@ -665,12 +696,6 @@ int skypopen_signaling_read(private_t *tech_pvt)
 										return CALLFLOW_INCOMING_HANGUP;
 									}
 								}
-								//skypopen_sleep(1000);
-								sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id, tech_pvt->tcp_cli_port);
-								skypopen_signaling_write(tech_pvt, msg_to_skype);
-								//skypopen_sleep(1000);
-								sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id, tech_pvt->tcp_srv_port);
-								skypopen_signaling_write(tech_pvt, msg_to_skype);
 							}
 							tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
 							if (skypopen_answered(tech_pvt) != SWITCH_STATUS_SUCCESS) {
@@ -986,15 +1011,15 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
 						   || tech_pvt->skype_callflow == CALLFLOW_STATUS_REMOTEHOLD || tech_pvt->skype_callflow == SKYPOPEN_STATE_UP)) {
 
-					//unsigned int fdselect;
+					unsigned int fdselect;
 					int rt = 1;
-					//fd_set fs;
-					//struct timeval to;
+					fd_set fs;
+					struct timeval to;
 					int nospace;
 
 					if (!(running && tech_pvt->running))
 						break;
-#if 0
+#if 1
 					fdselect = fd;
 					FD_ZERO(&fs);
 					FD_SET(fdselect, &fs);
@@ -1008,7 +1033,7 @@ void *skypopen_do_tcp_srv_thread_func(void *obj)
 						skypopen_sleep(20000);
 
 					}
-					//rt = select(fdselect + 1, &fs, NULL, NULL, &to);
+					rt = select(fdselect + 1, &fs, NULL, NULL, &to);
 					if (rt > 0) {
 
 						if (tech_pvt->skype_callflow != CALLFLOW_STATUS_REMOTEHOLD) {
@@ -1945,7 +1970,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 			return NULL;
 		}
 
-		snprintf(buf, 512, "PROTOCOL 7");
+		snprintf(buf, 512, "PROTOCOL 999");
 		if (!skypopen_send_message(tech_pvt, buf)) {
 			ERRORA("Sending message failed - probably Skype crashed. Please run/restart Skype manually and launch Skypopen again\n", SKYPOPEN_P_LOG);
 
