@@ -58,10 +58,10 @@
 
 			<menu name="std_main_menu">
 			<phrases>
-				<phrase name="msg_count" value="message_count@mtvoicemail" />
-				<phrase name="say_date" value="say_date_event@mtvoicemail" />
-				<phrase name="say_msg_number" value="say_message_number@mtvoicemail" />
-				<phrase name="menu_options" value="menu@mtvoicemail" />
+				<phrase name="msg_count" value="message_count@voicemail_ivr" />
+				<phrase name="say_date" value="say_date_event@voicemail_ivr" />
+				<phrase name="say_msg_number" value="say_message_number@voicemail_ivr" />
+				<phrase name="menu_options" value="menu@voicemail_ivr" />
 			</phrases>
 			<keys>
 				<key dtmf="1" action="new_msg:std_navigator" variable="VM-Key-Play-New-Messages" />
