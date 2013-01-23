@@ -339,12 +339,12 @@ Dbh::Dbh(char *dsn, char *user, char *pass)
 	
 	if (!zstr(user) || !zstr(pass)) {
 		tmp = switch_mprintf("%s%s%s%s%s", dsn, 
-							 zstr(user) ? "" : ",uid=",
+							 zstr(user) ? "" : ":",
 							 zstr(user) ? "" : user,
-							 zstr(pass) ? "" : ",pwd=",
+							 zstr(pass) ? "" : ":",
 							 zstr(pass) ? "" : pass
 							 );
-
+		
 		dsn = tmp;
 	}
 
