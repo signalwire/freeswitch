@@ -567,6 +567,34 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				} else if (!strcasecmp(prop, "TYPE") && !strcasecmp(value, "OUTGOING") ) {
 					DEBUGA_SKYPE("VOICEMAIL OUTGOING id is %s\n", SKYPOPEN_P_LOG, id);
 					sprintf(tech_pvt->skype_voicemail_id, "%s", id);
+				} else if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "PLAYED") ) {
+					switch_core_session_t *session = NULL;
+
+					session = switch_core_session_locate(tech_pvt->session_uuid_str);
+					if (session) {
+						char digit_str[2];
+						char *p = digit_str;
+						switch_channel_t *channel = switch_core_session_get_channel(session);
+
+						digit_str[0]='1';
+						digit_str[1]='\0';
+
+						if (channel) {
+
+							while (p && *p) {
+								switch_dtmf_t dtmf = { 0 };
+								dtmf.digit = *p;
+								dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
+								switch_channel_queue_dtmf(channel, &dtmf);
+								p++;
+							}
+						} else {
+							WARNINGA("NO CHANNEL ?\n", SKYPOPEN_P_LOG);
+						}
+					switch_core_session_rwunlock(session);
+					} else {
+						WARNINGA("NO SESSION ?\n", SKYPOPEN_P_LOG);
+					}
 				}
 			}
 
@@ -1893,6 +1921,7 @@ void *skypopen_do_skypeapi_thread_func(void *obj)
 					switch_channel_hangup(channel, SWITCH_CAUSE_CRASH);
 				} else {
 					WARNINGA("NO CHANNEL ?\n", SKYPOPEN_P_LOG);
+					switch_core_session_rwunlock(session);
 				}
 			}
 
