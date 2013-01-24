@@ -1109,7 +1109,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *agent = "unknown";
 	const char *pres_on_reg = NULL;
 	int send_pres = 0;
-	int is_tls = 0, is_tcp = 0;
+	int is_tls = 0, is_tcp = 0, is_ws = 0;
 	char expbuf[35] = "";
 	time_t reg_time = switch_epoch_time_now(NULL);
 	
@@ -1184,7 +1184,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			is_nat++;
 		}
 
-		if (sip->sip_contact->m_url->url_type == url_sips) {
+		if (switch_stristr("transport=ws", sip->sip_contact->m_url->url_params)) {
+			is_nat++;
+			is_ws += 1;
+		}
+
+		if (sip->sip_contact->m_url->url_type == url_sips && !switch_stristr("transport=ws", sip->sip_contact->m_url->url_params)) {
 			proto = "sips";
 			is_tls += 2;
 			is_nat++;
@@ -1202,6 +1207,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				reg_desc = "Registered(TLS-NAT)";
 			} else if (is_tcp) {
 				reg_desc = "Registered(TCP-NAT)";
+			} else if (is_ws) {
+				reg_desc = "Registered(WS-NAT)";
 			} else {
 				reg_desc = "Registered(UDP-NAT)";
 			}

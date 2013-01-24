@@ -247,6 +247,7 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t media);
 SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_add_ice_acl(switch_core_session_t *session, switch_media_type_t type, const char *acl_name);
+SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session);
 
 SWITCH_DECLARE(void) switch_core_media_init(void);
 SWITCH_DECLARE(void) switch_core_media_deinit(void);

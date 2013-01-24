@@ -1828,7 +1828,8 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		} else if (!strcasecmp(attr->a_name, "candidate")) {
 
 			if (!engine->cand_acl_count) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "NO candidate ACL defined, skipping candidate check.\n");
+				engine->cand_acl[engine->cand_acl_count++] = "wan.auto";
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "NO candidate ACL defined, Defaulting to wan.auto\n");
 				goto end;
 			}
 
@@ -1935,6 +1936,22 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		engine->rtcp_mux = -1;
 	}
 
+}
+
+SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
+{
+	switch_media_handle_t *smh;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	switch_channel_set_flag(session->channel, CF_WEBRTC);
+	switch_channel_set_flag(session->channel, CF_ICE);
+	smh->mparams->rtcp_audio_interval_msec = "5000";
+	smh->mparams->rtcp_video_interval_msec = "5000";
 }
 
 //?
@@ -2129,10 +2146,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 		if (m->m_proto == sdp_proto_extended_srtp) {
 			got_webrtc++;
-			switch_channel_set_flag(session->channel, CF_WEBRTC);
-			switch_channel_set_flag(session->channel, CF_ICE);
-			smh->mparams->rtcp_audio_interval_msec = "5000";
-			smh->mparams->rtcp_video_interval_msec = "5000";
+			switch_core_session_set_ice(session);
 		}
 
 		if (m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp) {
@@ -2397,7 +2411,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 				
 				if (zstr(map->rm_fmtp)) {
-					if (!strcasecmp(map->rm_encoding, "ilbc")) {
+					if (!strcasecmp(map->rm_encoding, "ilbc") || !strcasecmp(map->rm_encoding, "isac")) {
 						codec_ms = 30;
 						map_bit_rate = 13330;
 					}
@@ -2430,7 +2444,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
-					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate && strcasecmp(map->rm_encoding, "ilbc")) {
+					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate && strcasecmp(map->rm_encoding, "ilbc") && 
+						strcasecmp(map->rm_encoding, "isac")) {
 						/* if a bit rate is specified and doesn't match, this is not a codec match, except for ILBC */
 						match = 0;
 					}
@@ -4175,7 +4190,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		const switch_codec_implementation_t *imp = smh->codecs[i];
 		int this_ptime = (imp->microseconds_per_packet / 1000);
 
-		if (!strcasecmp(imp->iananame, "ilbc")) {
+		if (!strcasecmp(imp->iananame, "ilbc") || !strcasecmp(imp->iananame, "isac") ) {
 			this_ptime = 20;
 		}
 
@@ -4230,7 +4245,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			continue;
 		}
 
-		if (!strcasecmp(imp->iananame, "ilbc")) {
+		if (!strcasecmp(imp->iananame, "ilbc") || !strcasecmp(imp->iananame, "isac")) {
 			this_ptime = 20;
 		}
 
@@ -4841,10 +4856,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 		
 		mult = switch_channel_get_variable(session->channel, "sdp_m_per_ptime");
+
 		
-		if (mult && switch_false(mult)) {
+		if (switch_channel_test_flag(session->channel, CF_WEBRTC) || (mult && switch_false(mult))) {
 			char *bp = buf;
-			int both = 1;
+			int both = switch_channel_test_flag(session->channel, CF_WEBRTC) ? 0 : 1;
 
 			if ((!zstr(local_audio_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE))) {
 				generate_m(session, buf, SDPBUFLEN, port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
@@ -4872,7 +4888,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				
 				this_ptime = imp->microseconds_per_packet / 1000;
 				
-				if (!strcasecmp(imp->iananame, "ilbc")) {
+				if (!strcasecmp(imp->iananame, "ilbc") && !strcasecmp(imp->iananame, "isac")) {
 					this_ptime = 20;
 				}
 				
@@ -6319,7 +6335,7 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 	}
 				
 	if (zstr(map->rm_fmtp)) {
-		if (!strcasecmp(map->rm_encoding, "ilbc")) {
+		if (!strcasecmp(map->rm_encoding, "ilbc") || !strcasecmp(map->rm_encoding, "isac")) {
 			ptime = codec_ms = 30;
 			map_bit_rate = 13330;
 		}

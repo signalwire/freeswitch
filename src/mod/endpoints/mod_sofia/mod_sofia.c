@@ -4142,6 +4142,13 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		switch_channel_set_variable(nchannel, "rtp_secure_media", hval);
 	}
 
+	if (!zstr(tech_pvt->dest) && switch_stristr("transport=ws", tech_pvt->dest)) {
+		switch_channel_set_variable(nchannel, "rtp_secure_media", SWITCH_RTP_CRYPTO_KEY_80);
+		switch_channel_set_variable(nchannel, "media_webrtc", "true");
+		switch_core_session_set_ice(nsession);
+	}
+	
+
 	sofia_glue_attach_private(nsession, profile, tech_pvt, dest);
 
 	if (tech_pvt->local_url) {
