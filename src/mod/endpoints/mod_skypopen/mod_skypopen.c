@@ -450,6 +450,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+	memset(tech_pvt->skype_voicemail_id, '\0', sizeof(tech_pvt->skype_voicemail_id));
+	memset(tech_pvt->skype_voicemail_id_greeting, '\0', sizeof(tech_pvt->skype_voicemail_id_greeting));
 	switch_channel_set_variable(channel, "skype_user", tech_pvt->skype_user);
 	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_set_flag(tech_pvt, TFLAG_IO);
@@ -621,14 +623,25 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 		if (strlen(tech_pvt->skype_call_id)) {
 			DEBUGA_SKYPE("hanging up skype call: %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id);
+			if(strlen(tech_pvt->skype_voicemail_id_greeting)){
+				sprintf(msg_to_skype, "ALTER VOICEMAIL %s STOPPLAYBACK", tech_pvt->skype_voicemail_id_greeting);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				switch_sleep(MS_SKYPOPEN * 1000 * 100);//XXX FIXME 2000 millisecs, 2 seconds, so it will record at least 1 second
+			}
+
+			if(strlen(tech_pvt->skype_voicemail_id_greeting)){
+				sprintf(msg_to_skype, "ALTER VOICEMAIL %s DELETE", tech_pvt->skype_voicemail_id_greeting);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				switch_sleep(MS_SKYPOPEN * 1000 * 10);//XXX FIXME 200 millisecs
+			}
 			if(strlen(tech_pvt->skype_voicemail_id)){
 				sprintf(msg_to_skype, "ALTER VOICEMAIL %s STOPRECORDING", tech_pvt->skype_voicemail_id);
 				skypopen_signaling_write(tech_pvt, msg_to_skype);
-				switch_sleep(MS_SKYPOPEN * 1000 * 3);//XXX FIXME ??
+				switch_sleep(MS_SKYPOPEN * 1000 * 10);//XXX FIXME 200 millisecs
 			}
-			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->skype_call_id);
-			skypopen_signaling_write(tech_pvt, msg_to_skype);
 			sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
+			skypopen_signaling_write(tech_pvt, msg_to_skype);
+			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->skype_call_id);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
 		}
 		DEBUGA_SKYPE("%s CHANNEL HANGUP\n", SKYPOPEN_P_LOG, tech_pvt->name);

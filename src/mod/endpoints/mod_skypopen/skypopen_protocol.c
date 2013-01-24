@@ -245,6 +245,10 @@ int skypopen_signaling_read(private_t *tech_pvt)
 				} else if (!strncasecmp(message, "ERROR 99 CALL", 12)) {
 					DEBUGA_SKYPE("Skype got ERROR: |||%s|||, another call is active on this interface\n\n\n", SKYPOPEN_P_LOG, message);
 					tech_pvt->interface_state = SKYPOPEN_STATE_ERROR_DOUBLE_CALL;
+				} else if (!strncasecmp(message, "ERROR 531 VOICEMAIL", 18)) {
+					NOTICA("Skype got ERROR about VOICEMAIL, no problem: |||%s|||\n", SKYPOPEN_P_LOG, message);
+				} else if (!strncasecmp(message, "ERROR 529 VOICEMAIL", 18)) {
+					NOTICA("Skype got ERROR about VOICEMAIL, no problem: |||%s|||\n", SKYPOPEN_P_LOG, message);
 				} else if (!strncasecmp(message, "ERROR 592 ALTER CALL", 19)) {
 					NOTICA("Skype got ERROR about TRANSFERRING, no problem: |||%s|||\n", SKYPOPEN_P_LOG, message);
 				} else if (!strncasecmp(message, "ERROR 559 CALL", 13) | !strncasecmp(message, "ERROR 556 CALL", 13)) {
@@ -563,38 +567,15 @@ int skypopen_signaling_read(private_t *tech_pvt)
 					DEBUGA_SKYPE("VOICEMAIL %s OUTPUT\n", SKYPOPEN_P_LOG, id);
 					sprintf(msg_to_skype, "ALTER VOICEMAIL %s SET_OUTPUT PORT=\"%d\"", id, tech_pvt->tcp_srv_port);
 					skypopen_signaling_write(tech_pvt, msg_to_skype);
+					sprintf(tech_pvt->skype_voicemail_id_greeting, "%s", id);
 
 				} else if (!strcasecmp(prop, "TYPE") && !strcasecmp(value, "OUTGOING") ) {
 					DEBUGA_SKYPE("VOICEMAIL OUTGOING id is %s\n", SKYPOPEN_P_LOG, id);
 					sprintf(tech_pvt->skype_voicemail_id, "%s", id);
 				} else if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "PLAYED") ) {
-					switch_core_session_t *session = NULL;
+					switch_ivr_broadcast( tech_pvt->session_uuid_str, "gentones::%(500,0,800)",SMF_ECHO_ALEG|SMF_ECHO_BLEG);
+					memset(tech_pvt->skype_voicemail_id_greeting, '\0', sizeof(tech_pvt->skype_voicemail_id_greeting));
 
-					session = switch_core_session_locate(tech_pvt->session_uuid_str);
-					if (session) {
-						char digit_str[2];
-						char *p = digit_str;
-						switch_channel_t *channel = switch_core_session_get_channel(session);
-
-						digit_str[0]='1';
-						digit_str[1]='\0';
-
-						if (channel) {
-
-							while (p && *p) {
-								switch_dtmf_t dtmf = { 0 };
-								dtmf.digit = *p;
-								dtmf.duration = SWITCH_DEFAULT_DTMF_DURATION;
-								switch_channel_queue_dtmf(channel, &dtmf);
-								p++;
-							}
-						} else {
-							WARNINGA("NO CHANNEL ?\n", SKYPOPEN_P_LOG);
-						}
-					switch_core_session_rwunlock(session);
-					} else {
-						WARNINGA("NO SESSION ?\n", SKYPOPEN_P_LOG);
-					}
 				}
 			}
 
