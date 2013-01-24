@@ -234,6 +234,8 @@ struct nta_agent_s
   unsigned sa_tport_tcp : 1;	/**< Transports support TCP. */
   unsigned sa_tport_sctp : 1;	/**< Transports support SCTP. */
   unsigned sa_tport_tls : 1;	/**< Transports support TLS. */
+  unsigned sa_tport_ws : 1;	    /**< Transports support WS. */
+  unsigned sa_tport_wss : 1;	    /**< Transports support WSS. */
 
   unsigned sa_use_naptr : 1;	/**< Use NAPTR lookup */
   unsigned sa_use_srv : 1;	/**< Use SRV lookup */
@@ -2045,22 +2047,24 @@ struct sipdns_tport {
   char prefix[14];		/**< Prefix for SRV domains */
   char service[10];		/**< NAPTR service */
 }
-#define SIPDNS_TRANSPORTS (4)
+#define SIPDNS_TRANSPORTS (6)
 const sipdns_tports[SIPDNS_TRANSPORTS] = {
   { "udp",  "5060", "_sip._udp.",  "SIP+D2U"  },
   { "tcp",  "5060", "_sip._tcp.",  "SIP+D2T"  },
-  { "sctp", "5060", "_sip._sctp.", "SIP+D2S" },
-  { "tls",  "5061", "_sips._tcp.", "SIPS+D2T"  },
+  { "sctp", "5060", "_sip._sctp.", "SIP+D2S"  },
+  { "tls",  "5061", "_sips._tcp.", "SIPS+D2T" },
+  { "ws",   "80",   "_sips._ws.",  "SIP+D2W"  },
+  { "wss",  "443",  "_sips._wss.", "SIPS+D2W" },
 };
 
 static char const * const tports_sip[] =
   {
-    "udp", "tcp", "sctp", NULL
+	"udp", "tcp", "sctp", "ws", NULL
   };
 
 static char const * const tports_sips[] =
   {
-    "tls", NULL
+    "tls", "ws", NULL
   };
 
 static tport_stack_class_t nta_agent_class[1] =
@@ -2188,7 +2192,7 @@ int nta_agent_add_tport(nta_agent_t *self,
   if (url->url_params) {
     if (url_param(url->url_params, "transport", tp, sizeof(tp)) > 0) {
       if (strchr(tp, ',')) {
-	int i; char *t, *tps[9];
+		  int i; char *t, *tps[9] = {0};
 
 	/* Split tp into transports */
 	for (i = 0, t = tp; t && i < 8; i++) {
@@ -2311,6 +2315,8 @@ int agent_init_via(nta_agent_t *self, tport_t *primaries, int use_maddr)
   self->sa_tport_tcp = 0;
   self->sa_tport_sctp = 0;
   self->sa_tport_tls = 0;
+  self->sa_tport_ws = 0;
+  self->sa_tport_wss = 0;
 
   /* Set via fields for the tports */
   for (tp = primaries; tp; tp = tport_next(tp)) {
@@ -2343,6 +2349,10 @@ int agent_init_via(nta_agent_t *self, tport_t *primaries, int use_maddr)
       self->sa_tport_tcp = 1;
     else if (su_casematch(tpn->tpn_proto, "sctp"))
       self->sa_tport_sctp = 1;
+    else if (su_casematch(tpn->tpn_proto, "ws"))
+      self->sa_tport_ws = 1;
+    else if (su_casematch(tpn->tpn_proto, "wss"))
+      self->sa_tport_wss = 1;
 
     if (tport_has_tls(tp)) self->sa_tport_tls = 1;
 
@@ -2684,8 +2694,12 @@ nta_tpn_by_url(su_home_t *home,
 
   tpn->tpn_ident = NULL;
 
-  if (tpn->tpn_proto)
+  if (tpn->tpn_proto) {
+	  if (su_casematch(url->url_scheme, "sips") && su_casematch(tpn->tpn_proto, "ws")) {
+		  tpn->tpn_proto = "wss";
+	  }
     return 1;
+  }
 
   if (su_casematch(url->url_scheme, "sips"))
     tpn->tpn_proto = "tls";

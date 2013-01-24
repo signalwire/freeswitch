@@ -44,7 +44,7 @@ if HAVE_STUN
 USE_STUN_SRC = 		$(STUN_SRC)
 endif
 
-HTTP_SRC =		tport_type_connect.c
+HTTP_SRC =		tport_type_connect.c tport_type_ws.c ws.c
 if HAVE_NTH
 USE_HTTP_SRC = 		$(HTTP_SRC)
 endif

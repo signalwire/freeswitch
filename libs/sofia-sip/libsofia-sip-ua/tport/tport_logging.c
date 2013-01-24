@@ -382,6 +382,8 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
    if(strcmp(self->tp_name->tpn_proto, "tcp") == 0) hep_header.hp_p = IPPROTO_TCP;
    else if(strcmp(self->tp_name->tpn_proto, "tls") == 0) hep_header.hp_p = IPPROTO_IDP; /* FAKE*/
    else if(strcmp(self->tp_name->tpn_proto, "sctp") == 0) hep_header.hp_p = IPPROTO_SCTP;
+   else if(strcmp(self->tp_name->tpn_proto, "ws") == 0) hep_header.hp_p = IPPROTO_TCP;
+   else if(strcmp(self->tp_name->tpn_proto, "wss") == 0) hep_header.hp_p = IPPROTO_TCP;
    else hep_header.hp_p = IPPROTO_UDP; /* DEFAULT UDP */
 
    /* Check destination */         

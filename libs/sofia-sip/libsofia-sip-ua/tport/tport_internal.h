@@ -161,6 +161,7 @@ struct tport_s {
   unsigned            tp_trunc:1;
   unsigned            tp_is_connected:1; /**< Connection is established */
   unsigned            tp_verified:1;     /**< Certificate Chain was verified */
+  unsigned            tp_pre_framed:1;   /** Data is pre-framed **/
   unsigned:0;
 
   tport_t *tp_left, *tp_right, *tp_dad; /**< Links in tport tree */
@@ -527,6 +528,10 @@ void tport_recv_timeout_timer(tport_t *self, su_time_t now);
 int tport_next_keepalive(tport_t *self, su_time_t *, char const **);
 void tport_keepalive_timer(tport_t *self, su_time_t now);
 
+extern tport_vtable_t const tport_ws_vtable;
+extern tport_vtable_t const tport_ws_client_vtable;
+extern tport_vtable_t const tport_wss_vtable;
+extern tport_vtable_t const tport_wss_client_vtable;
 extern tport_vtable_t const tport_sctp_vtable;
 extern tport_vtable_t const tport_sctp_client_vtable;
 extern tport_vtable_t const tport_tls_vtable;
