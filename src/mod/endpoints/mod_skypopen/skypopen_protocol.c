@@ -573,7 +573,8 @@ int skypopen_signaling_read(private_t *tech_pvt)
 					DEBUGA_SKYPE("VOICEMAIL OUTGOING id is %s\n", SKYPOPEN_P_LOG, id);
 					sprintf(tech_pvt->skype_voicemail_id, "%s", id);
 				} else if (!strcasecmp(prop, "STATUS") && !strcasecmp(value, "PLAYED") ) {
-					switch_ivr_broadcast( tech_pvt->session_uuid_str, "gentones::%(500,0,800)",SMF_ECHO_ALEG|SMF_ECHO_BLEG);
+					//switch_ivr_broadcast( tech_pvt->session_uuid_str, "gentones::%(500,0,800)",SMF_ECHO_ALEG|SMF_ECHO_BLEG);
+					switch_ivr_broadcast( tech_pvt->session_uuid_str, "gentones::%(500,0,800)",SMF_ECHO_BLEG);
 					memset(tech_pvt->skype_voicemail_id_greeting, '\0', sizeof(tech_pvt->skype_voicemail_id_greeting));
 
 				}
