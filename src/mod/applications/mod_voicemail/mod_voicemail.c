@@ -3107,6 +3107,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 								switch_xml_t ux;
 
 								if (switch_xml_locate_user_in_domain(uname, x_domain, &ux, NULL) == SWITCH_STATUS_SUCCESS) {
+									switch_xml_merge_user(ux, x_domain, group);
 									switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 									status =
 										deliver_vm(profile, ux, domain, path, 0, read_flags, my_params, pool, cid_name, cid_num, forwarded_by,
@@ -3116,6 +3117,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 								continue;
 							}
 
+							switch_xml_merge_user(ut, x_domain, group);
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 							status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 												my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE, 
@@ -3139,6 +3141,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 								continue;
 							}
 
+							switch_xml_merge_user(ut, x_domain, group);
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 							status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 												my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE,
@@ -3153,6 +3156,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 			switch_xml_t x_group = NULL;
 
 			if ((status = switch_xml_locate_user_in_domain(user, x_domain, &ut, &x_group)) == SWITCH_STATUS_SUCCESS) {
+				switch_xml_merge_user(ut, x_domain, x_group);
 				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 				status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 									my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE,
