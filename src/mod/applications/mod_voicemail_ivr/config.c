@@ -86,7 +86,7 @@ void menu_init(vmivr_profile_t *profile, vmivr_menu_t *menu) {
 				if ((x_phrases = switch_xml_child(x_menu, "phrases"))) {
 					switch_event_import_xml(switch_xml_child(x_phrases, "phrase"), "name", "value", &menu->event_phrases);
 				}
-				if ((x_settings = switch_xml_child(x_profile, "settings"))) {
+				if ((x_settings = switch_xml_child(x_menu, "settings"))) {
 					switch_event_import_xml(switch_xml_child(x_settings, "param"), "name", "value", &menu->event_settings);
 				}
 
@@ -114,6 +114,7 @@ void menu_instance_init(vmivr_menu_t *menu) {
 void menu_instance_free(vmivr_menu_t *menu) {
 	if (menu->phrase_params) {
 		switch_event_destroy(&menu->phrase_params);
+		menu->phrase_params = NULL;
 	}
 	memset(&menu->ivre_d, 0, sizeof(menu->ivre_d));
 }
@@ -244,6 +245,8 @@ vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile
 						profile->api_msg_forward = switch_core_session_strdup(session, val);
 					else if (!strcasecmp(var, "pref_greeting_set") && !profile->api_pref_greeting_set)
 						profile->api_pref_greeting_set = switch_core_session_strdup(session, val);
+					else if (!strcasecmp(var, "pref_greeting_get") && !profile->api_pref_greeting_get)
+						profile->api_pref_greeting_get = switch_core_session_strdup(session, val);
 					else if (!strcasecmp(var, "pref_recname_set") && !profile->api_pref_recname_set)
 						profile->api_pref_recname_set = switch_core_session_strdup(session, val);
 					else if (!strcasecmp(var, "pref_password_set") && !profile->api_pref_password_set)
@@ -255,7 +258,7 @@ vmivr_profile_t *get_profile(switch_core_session_t *session, const char *profile
 					total_options++;
 				}
 			}
-			if (total_options - total_invalid_options != 12) {
+			if (total_options - total_invalid_options != 13) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing api definition for profile '%s'\n", profile_name);
 				profile = NULL;
 			}

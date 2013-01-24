@@ -70,6 +70,7 @@ struct vmivr_profile {
 	const char *api_msg_get;
 	const char *api_msg_forward;
 	const char *api_pref_greeting_set;
+	const char *api_pref_greeting_get;
 	const char *api_pref_recname_set;
 	const char *api_pref_password_set;
 
