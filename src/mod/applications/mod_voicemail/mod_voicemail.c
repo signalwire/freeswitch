@@ -4978,7 +4978,7 @@ done:
 #define VM_FSDB_PREF_GREETING_GET_USAGE "<format> <profile> <domain> <user> [slot]"
 SWITCH_STANDARD_API(vm_fsdb_pref_greeting_get_function)
 {
-	int slot = -1;
+	/* int slot = -1; not implemented yet */
 	char *sql = NULL;
 	char res[254] = "";
 
@@ -5003,8 +5003,10 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_get_function)
 		domain = argv[2];
 	if (argv[3])
 		id = argv[3];
-	if (argv[4])
+/*	if (argv[4])
 		slot = atoi(argv[4]);
+not implemented yet
+*/
 
 	if (!profile_name || !domain || !id) {
 		stream->write_function(stream, "-ERR Missing Arguments\n");
