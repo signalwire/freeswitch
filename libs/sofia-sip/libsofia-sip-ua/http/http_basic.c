@@ -1465,6 +1465,38 @@ msg_hclass_t http_upgrade_class[] =
 HTTP_HEADER_CLASS_LIST(upgrade, "Upgrade", list_critical);
 
 /* ====================================================================== */
+/**@HTTP_HEADER http_sec_websocket_key Sec-WebSocket-Key header. */
+
+#define http_sec_websocket_key_d msg_generic_d
+#define http_sec_websocket_key_e msg_generic_e
+msg_hclass_t http_sec_websocket_key_class[] =
+HTTP_HEADER_CLASS_G(sec_websocket_key, "Sec-WebSocket-Key", single);
+
+/* ====================================================================== */
+/**@HTTP_HEADER http_sec_websocket_protocol Sec-WebSocket-Protocol header. */
+
+#define http_sec_websocket_protocol_d msg_generic_d
+#define http_sec_websocket_protocol_e msg_generic_e
+msg_hclass_t http_sec_websocket_protocol_class[] =
+HTTP_HEADER_CLASS_G(sec_websocket_protocol, "Sec-WebSocket-Protocol", single);
+
+/* ====================================================================== */
+/**@HTTP_HEADER http_sec_websocket_version Sec-WebSocket-Version header. */
+
+#define http_sec_websocket_version_d msg_generic_d
+#define http_sec_websocket_version_e msg_generic_e
+msg_hclass_t http_sec_websocket_version_class[] =
+HTTP_HEADER_CLASS_G(sec_websocket_version, "Sec-WebSocket-Version", single);
+
+/* ====================================================================== */
+/**@HTTP_HEADER http_origin Origin header. */
+
+#define http_origin_d msg_generic_d
+#define http_origin_e msg_generic_e
+msg_hclass_t http_origin_class[] =
+HTTP_HEADER_CLASS_G(origin, "Origin", single);
+
+/* ====================================================================== */
 /**@HTTP_HEADER http_user_agent User-Agent header. */
 
 #define http_user_agent_d msg_generic_d

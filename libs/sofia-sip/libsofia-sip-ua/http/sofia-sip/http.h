@@ -158,6 +158,11 @@ typedef msg_auth_t                  http_www_authenticate_t;
 
 typedef msg_list_t                  http_proxy_connection_t;
 
+typedef msg_generic_t                  http_sec_websocket_key_t;
+typedef msg_generic_t                  http_origin_t;
+typedef msg_generic_t                  http_sec_websocket_protocol_t;
+typedef msg_generic_t                  http_sec_websocket_version_t;
+
 typedef struct http_set_cookie_s    http_set_cookie_t;
 typedef struct http_cookie_s        http_cookie_t;
 
@@ -381,6 +386,11 @@ struct http_s {
   http_proxy_connection_t   *http_proxy_connection;    /**< Proxy-Connection */
   http_set_cookie_t         *http_set_cookie;                /**< Set-Cookie */
   http_cookie_t             *http_cookie;                        /**< Cookie */
+
+  http_sec_websocket_key_t        *http_sec_websocket_key; /**< Sec-Websocket-Key */
+  http_origin_t                   *http_origin;  /**< Origin */
+  http_sec_websocket_protocol_t   *http_sec_websocket_protocol; /**< Sec-Websocket-Protocol */
+  http_sec_websocket_version_t    *http_sec_websocket_version; /**< Sec-Websocket-Version */
 
   http_mime_version_t       *http_mime_version;            /**< MIME-Version */
   http_content_encoding_t   *http_content_encoding;    /**< Content-Encoding */
