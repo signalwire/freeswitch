@@ -283,18 +283,21 @@ int ws_handshake(wsh_t *wsh)
 ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 {
 	ssize_t r;
+	int x = 0;
 
 	if (wsh->ssl) {
 		do {
 			r = SSL_read(wsh->ssl, data, bytes);
-		} while (r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_READ);
+			if (x++) {usleep(10000);
+		} while (r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_READ && x < 100);
 
 		return r;
 	}
 
 	do {
 		r = recv(wsh->sock, data, bytes, 0);
-	} while (r == -1 && (errno == EAGAIN || errno == EINTR));
+		if (x++) {usleep(10000);
+	} while (r == -1 && (errno == EAGAIN || errno == EINTR) && x < 100);
 
 	if (r<0) {
 		//printf("READ FAIL: %s\n", strerror(errno));

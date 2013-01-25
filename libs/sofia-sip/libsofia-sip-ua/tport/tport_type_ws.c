@@ -205,13 +205,19 @@ int tport_recv_stream_ws(tport_t *self)
   ws_opcode_t oc;
 
   if ( !wstp->ws_initialized ) {
-	  ws_init(ws, self->tp_socket, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL);
+	  if (ws_init(ws, self->tp_socket, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL) == -2) {
+		  return 2;
+	  }
 	  wstp->ws_initialized = 1;
 	  self->tp_pre_framed = 1;
 	  return 1;
   }
 
   N = ws_read_frame(ws, &oc, &data);
+
+  if (N == -2) {
+	  return 2;
+  }
 
   if (N == -1000) {
     if (self->tp_msg)
