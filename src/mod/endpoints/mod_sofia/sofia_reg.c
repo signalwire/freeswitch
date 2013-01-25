@@ -1124,8 +1124,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		uparams = NULL;
 	}
 	
-	printf("WTF b4 [%s]\n", uparams);
-
 
 	if (sip && sip->sip_via && (vproto = sip->sip_via->v_protocol)) {
 		if (!strcasecmp(vproto, "sip/2.0/ws")) {
@@ -1136,14 +1134,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			is_nat++;
 
 			if (uparams && (p = switch_stristr("transport=ws", uparams))) {
-				printf("WTF [%s]=[%c]...\n", p, p[12]);
-				
 				if (p[12] != 's') {
 					utmp = switch_string_replace(uparams, "transport=ws", "transport=wss");
-					//uparams = utmp;
 				}
 			}
-			printf("WTF af [%s][%s]\n", uparams, utmp);
 		}
 	}
 
