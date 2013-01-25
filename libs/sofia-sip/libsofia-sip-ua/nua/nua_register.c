@@ -1149,12 +1149,16 @@ int
 nua_stack_init_transport(nua_t *nua, tagi_t const *tags)
 {
   url_string_t const *contact1 = NULL, *contact2 = NULL;
+  url_string_t const *contact3 = NULL, *contact4 = NULL;
   char const *name1 = "sip", *name2 = "sip";
+  char const *name3 = "sip", *name4 = "sip";
   char const *certificate_dir = NULL;
 
   tl_gets(tags,
           NUTAG_URL_REF(contact1),
           NUTAG_SIPS_URL_REF(contact2),
+          NUTAG_WS_URL_REF(contact3),
+          NUTAG_WSS_URL_REF(contact4),
           NUTAG_CERTIFICATE_DIR_REF(certificate_dir),
           TAG_END());
 
@@ -1172,6 +1176,18 @@ nua_stack_init_transport(nua_t *nua, tagi_t const *tags)
        ? su_casenmatch(contact2->us_str, "sips:", 5)
        : contact2->us_url->url_type == url_sips))
     name2 = "sips";
+
+  if (contact3 &&
+      (url_is_string(contact3)
+       ? su_casenmatch(contact3->us_str, "sips:", 5)
+       : contact3->us_url->url_type == url_sips))
+    name3 = "sips";
+
+  if (contact4 &&
+      (url_is_string(contact4)
+       ? su_casenmatch(contact4->us_str, "sips:", 5)
+       : contact4->us_url->url_type == url_sips))
+    name4 = "sips";
 
   if (!contact1 /* && !contact2 */) {
     if (nta_agent_add_tport(nua->nua_nta, NULL,
@@ -1204,6 +1220,20 @@ nua_stack_init_transport(nua_t *nua, tagi_t const *tags)
     if (contact2 &&
 	nta_agent_add_tport(nua->nua_nta, contact2,
 			    TPTAG_IDENT(name2),
+			    TPTAG_CERTIFICATE(certificate_dir),
+			    TAG_NEXT(nua->nua_args)) < 0)
+      return -1;
+
+    if (contact3 &&
+	nta_agent_add_tport(nua->nua_nta, contact3,
+			    TPTAG_IDENT(name3),
+			    TPTAG_CERTIFICATE(certificate_dir),
+			    TAG_NEXT(nua->nua_args)) < 0)
+      return -1;
+
+    if (contact4 &&
+	nta_agent_add_tport(nua->nua_nta, contact4,
+			    TPTAG_IDENT(name4),
 			    TPTAG_CERTIFICATE(certificate_dir),
 			    TAG_NEXT(nua->nua_args)) < 0)
       return -1;

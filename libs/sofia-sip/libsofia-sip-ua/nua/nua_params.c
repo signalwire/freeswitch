@@ -1248,6 +1248,14 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
     else if (t->t_tag == nutag_sips_url) {
       url = (url_string_t *)t->t_value;
     }
+    /* NUTAG_WS_URL_REF(url) */
+    else if (t->t_tag == nutag_ws_url) {
+      url = (url_string_t *)t->t_value;
+    }
+    /* NUTAG_WSS_URL_REF(url) */
+    else if (t->t_tag == nutag_wss_url) {
+      url = (url_string_t *)t->t_value;
+    }
   }
 
   su_home_auto(tmphome, sizeof tmphome);
@@ -1314,6 +1322,8 @@ static int nua_handle_param_filter(tagi_t const *f, tagi_t const *t)
 
   if (t->t_tag == nutag_url ||
       t->t_tag == nutag_sips_url ||
+      t->t_tag == nutag_ws_url ||
+      t->t_tag == nutag_wss_url ||
       t->t_tag == nutag_identity)
     return 0;
 

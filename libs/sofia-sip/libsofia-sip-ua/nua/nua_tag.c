@@ -1621,6 +1621,55 @@ tag_typedef_t nutag_sips_url = URLTAG_TYPEDEF(sips_url);
  * Reference tag for NUTAG_SIPS_URL().
  */
 
+/**@def NUTAG_WS_URL(x)
+ *
+ * Local WS url.
+ *
+ * The application can specify an alternative local address for
+ * NUA user agent engine. Usually the alternative address is a
+ *  SIP URI (WS) used with websocket transport.
+ *
+ * @par Used with
+ *    nua_create()
+ *
+ * @par Parameter type
+ *    char const *
+ *
+ * @par Values
+ *
+ * Corresponding tag taking reference parameter is NUTAG_WS_URL_REF().
+ */
+tag_typedef_t nutag_ws_url = URLTAG_TYPEDEF(ws_url);
+
+/**@def NUTAG_WS_URL_REF(x)
+ * Reference tag for NUTAG_WS_URL().
+ */
+
+
+/**@def NUTAG_WSS_URL(x)
+ *
+ * Local WSS url.
+ *
+ * The application can specify an alternative local address for
+ * NUA user agent engine. Usually the alternative address is a
+ * secure SIP URI (WSS) used with secure websocket transport.
+ *
+ * @par Used with
+ *    nua_create()
+ *
+ * @par Parameter type
+ *    char const *
+ *
+ * @par Values
+ *
+ * Corresponding tag taking reference parameter is NUTAG_WSS_URL_REF().
+ */
+tag_typedef_t nutag_wss_url = URLTAG_TYPEDEF(wss_url);
+
+/**@def NUTAG_WSS_URL_REF(x)
+ * Reference tag for NUTAG_WSS_URL().
+ */
+
 
 /**@def NUTAG_CERTIFICATE_DIR(x)
  *

@@ -286,6 +286,16 @@ SOFIAPUBVAR tag_typedef_t nutag_sips_url;
 #define NUTAG_SIPS_URL_REF(x)   nutag_sips_url_ref, urltag_url_vr(&(x))
 SOFIAPUBVAR tag_typedef_t nutag_sips_url_ref;
 
+#define NUTAG_WS_URL(x)       nutag_ws_url, urltag_url_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_ws_url;
+#define NUTAG_WS_URL_REF(x)   nutag_ws_url_ref, urltag_url_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_ws_url_ref;
+
+#define NUTAG_WSS_URL(x)       nutag_wss_url, urltag_url_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_wss_url;
+#define NUTAG_WSS_URL_REF(x)   nutag_wss_url_ref, urltag_url_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_wss_url_ref;
+
 #define NUTAG_PROXY(x)          NTATAG_DEFAULT_PROXY(x)
 #define NUTAG_PROXY_REF(x)      NTATAG_DEFAULT_PROXY_REF(x)
 #define nutag_proxy             ntatag_default_proxy
