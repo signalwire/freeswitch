@@ -1346,11 +1346,13 @@ extern tport_vtable_t const tport_udp_vtable;
 extern tport_vtable_t const tport_tcp_vtable;
 extern tport_vtable_t const tport_tls_vtable;
 extern tport_vtable_t const tport_ws_vtable;
+extern tport_vtable_t const tport_wss_vtable;
 extern tport_vtable_t const tport_sctp_vtable;
 extern tport_vtable_t const tport_udp_client_vtable;
 extern tport_vtable_t const tport_tcp_client_vtable;
 extern tport_vtable_t const tport_sctp_client_vtable;
 extern tport_vtable_t const tport_ws_client_vtable;
+extern tport_vtable_t const tport_wss_client_vtable;
 extern tport_vtable_t const tport_tls_client_vtable;
 extern tport_vtable_t const tport_http_connect_vtable;
 extern tport_vtable_t const tport_threadpool_vtable;
@@ -1363,6 +1365,8 @@ tport_vtable_t const *tport_vtables[TPORT_NUMBER_OF_TYPES + 1] =
   &tport_http_connect_vtable,
   &tport_ws_client_vtable,
   &tport_ws_vtable,
+  &tport_wss_client_vtable,
+  &tport_wss_vtable,
 #endif
 #if HAVE_TLS
   &tport_tls_client_vtable,

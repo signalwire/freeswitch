@@ -263,6 +263,10 @@ int tls_verify_cb(int ok, X509_STORE_CTX *store)
   return ok;
 }
 
+void tls_init(void) {
+  ONCE_INIT(tls_init_once);
+}
+
 static
 int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 {

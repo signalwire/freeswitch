@@ -1109,10 +1109,21 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *agent = "unknown";
 	const char *pres_on_reg = NULL;
 	int send_pres = 0;
-	int is_tls = 0, is_tcp = 0, is_ws = 0;
+	int is_tls = 0, is_tcp = 0, is_ws = 0, is_wss = 0;
 	char expbuf[35] = "";
 	time_t reg_time = switch_epoch_time_now(NULL);
-	
+	const char *vproto = NULL;
+	const char *proto = "sip";
+
+	if (sip && sip->sip_via && (vproto = sip->sip_via->v_protocol)) {
+		if (!strcasecmp(vproto, "sip/2.0/ws")) {
+			is_ws = 1;
+			is_nat++;
+		} else if (!strcasecmp(vproto, "sip/2.0/wss")) {
+			is_wss = 1;
+			is_nat++;
+		}
+	}
 
 	if (v_event && *v_event) pres_on_reg = switch_event_get_header(*v_event, "send-presence-on-register");
 
@@ -1177,22 +1188,26 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		const char *contact_host = contact->m_url->url_host;
 		char *path_encoded = NULL;
 		int path_encoded_len = 0;
-		const char *proto = "sip";
+
 
 		if (switch_stristr("transport=tls", sip->sip_contact->m_url->url_params)) {
 			is_tls += 1;
 			is_nat++;
 		}
 
-		if (switch_stristr("transport=ws", sip->sip_contact->m_url->url_params)) {
+		if (!is_wss && !is_ws && switch_stristr("transport=ws", sip->sip_contact->m_url->url_params)) {
 			is_nat++;
 			is_ws += 1;
 		}
 
-		if (sip->sip_contact->m_url->url_type == url_sips && !switch_stristr("transport=ws", sip->sip_contact->m_url->url_params)) {
+		if (sip->sip_contact->m_url->url_type == url_sips) {
 			proto = "sips";
 			is_tls += 2;
 			is_nat++;
+		}
+
+		if (is_wss) {
+			proto = "sips";
 		}
 
 		if (switch_stristr("transport=tcp", sip->sip_contact->m_url->url_params)) {
@@ -1209,6 +1224,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				reg_desc = "Registered(TCP-NAT)";
 			} else if (is_ws) {
 				reg_desc = "Registered(WS-NAT)";
+			} else if (is_wss) {
+				reg_desc = "Registered(WSS-NAT)";
 			} else {
 				reg_desc = "Registered(UDP-NAT)";
 			}
@@ -1243,10 +1260,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		} else if (is_nat) {
 			char my_contact_str[1024];
 			if (sip->sip_contact->m_url->url_params) {
-				switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d;%s",
+				switch_snprintf(my_contact_str, sizeof(my_contact_str), "%s:%s@%s:%d;%s", proto,
 								contact->m_url->url_user, url_ip, network_port, sip->sip_contact->m_url->url_params);
 			} else {
-				switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d", contact->m_url->url_user, url_ip, network_port);
+				switch_snprintf(my_contact_str, sizeof(my_contact_str), "%s:%s@%s:%d", proto, contact->m_url->url_user, url_ip, network_port);
 			}
 
 			path_encoded_len = (int)(strlen(my_contact_str) * 3) + 1;
@@ -1388,7 +1405,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					size_t path_encoded_len;
 					char my_contact_str[1024];
 
-					switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d", contact->m_url->url_user, url_ip, network_port);
+					switch_snprintf(my_contact_str, sizeof(my_contact_str), "%s:%s@%s:%d", proto, contact->m_url->url_user, url_ip, network_port);
 					path_encoded_len = (strlen(my_contact_str) * 3) + 1;
 
 					if (!switch_stristr("fs_path=", contact_str)) {
@@ -1414,10 +1431,11 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") ||
 						!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
 						if (contact->m_url->url_params) {
-							switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s%s;fs_nat=yes>",
-											display, contact->m_url->url_user, url_ip, network_port, contact->m_url->url_params, received_data);
+							switch_snprintf(contact_str, sizeof(contact_str), "%s <%s:%s@%s:%d;%s%s;fs_nat=yes>",
+											display, proto, contact->m_url->url_user, url_ip, network_port, contact->m_url->url_params, received_data);
 						} else {
-							switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d%s;fs_nat=yes>", display, contact->m_url->url_user, url_ip,
+							switch_snprintf(contact_str, sizeof(contact_str), "%s <%s:%s@%s:%d%s;fs_nat=yes>", display, proto,
+											contact->m_url->url_user, url_ip,
 											network_port, received_data);
 						}
 						if (switch_stristr(v_contact_str, "transport=tls")) {
@@ -1623,7 +1641,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 
 		contact = sofia_glue_get_url_from_contact(contact_str, 1);
-		url = switch_mprintf("sofia/%q/sip:%q", profile->name, sofia_glue_strip_proto(contact));
+		url = switch_mprintf("sofia/%q/%s:%q", profile->name, proto, sofia_glue_strip_proto(contact));
 		
 		switch_core_add_registration(to_user, reg_host, call_id, url, (long) reg_time + (long) exptime + 60,
 									 network_ip, network_port_c, is_tls ? "tls" : is_tcp ? "tcp" : "udp", reg_meta);
@@ -1773,7 +1791,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					 (reg_count == 1 && sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER))) && debounce_ok) {
 					
 					if (switch_event_create(&s_mwi_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(s_mwi_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", mwi_user, mwi_host);
+						switch_event_add_header(s_mwi_event, SWITCH_STACK_BOTTOM, "Message-Account", "%s:%s@%s", proto, mwi_user, mwi_host);
 						switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
 						switch_event_add_header_string(s_mwi_event, SWITCH_STACK_BOTTOM, "VM-Call-ID", call_id);
 					}

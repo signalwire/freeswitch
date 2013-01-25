@@ -62,6 +62,14 @@ typedef struct tport_ws_s {
   unsigned:0;
 } tport_ws_t;
 
+typedef struct tport_ws_primary_s {
+  tport_primary_t wspri_pri[1];
+  SSL_CTX *ssl_ctx;
+  const SSL_METHOD *ssl_method;
+  unsigned ws_secure:1;
+  unsigned :0;
+} tport_ws_primary_t;
+
 int tport_recv_stream_ws(tport_t *self);
 ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
 			  msg_iovec_t iov[], size_t iovused);
@@ -82,6 +90,7 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
 
 int tport_ws_next_timer(tport_t *self, su_time_t *, char const **);
 void tport_ws_timer(tport_t *self, su_time_t);
+static void tport_ws_deinit_secondary(tport_t *self);
 
 SOFIA_END_DECLS
 

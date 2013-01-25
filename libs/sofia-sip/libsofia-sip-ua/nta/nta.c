@@ -2053,8 +2053,8 @@ const sipdns_tports[SIPDNS_TRANSPORTS] = {
   { "tcp",  "5060", "_sip._tcp.",  "SIP+D2T"  },
   { "sctp", "5060", "_sip._sctp.", "SIP+D2S"  },
   { "tls",  "5061", "_sips._tcp.", "SIPS+D2T" },
-  { "ws",   "80",   "_sips._ws.",  "SIP+D2W"  },
-  { "wss",  "443",  "_sips._wss.", "SIPS+D2W" },
+  { "ws",   "5066",   "_sips._ws.",  "SIP+D2W"  },
+  { "wss",  "5067",  "_sips._wss.", "SIPS+D2W" },
 };
 
 static char const * const tports_sip[] =
@@ -2064,7 +2064,7 @@ static char const * const tports_sip[] =
 
 static char const * const tports_sips[] =
   {
-    "tls", "ws", NULL
+	  "tls", "wss", "ws", NULL
   };
 
 static tport_stack_class_t nta_agent_class[1] =

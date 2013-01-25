@@ -1977,6 +1977,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	int total_codecs;
 	switch_rtp_engine_t *a_engine, *v_engine;
 	switch_media_handle_t *smh;
+	uint32_t near_rate = 0;
+	const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
+	int codec_ms = 0;
+
 
 	switch_assert(session);
 
@@ -2353,11 +2357,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
-				uint32_t near_rate = 0;
-				const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
 				const char *rm_encoding;
 				uint32_t map_bit_rate = 0;
-				int codec_ms = 0;
 				switch_codec_fmtp_t codec_fmtp = { 0 };
 				
 				if (x++ < skip) {
@@ -2411,9 +2412,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 				
 				if (zstr(map->rm_fmtp)) {
-					if (!strcasecmp(map->rm_encoding, "ilbc") || !strcasecmp(map->rm_encoding, "isac")) {
+					if (!strcasecmp(map->rm_encoding, "ilbc")) {
 						codec_ms = 30;
 						map_bit_rate = 13330;
+					} else if (!strcasecmp(map->rm_encoding, "isac")) {
+						codec_ms = 30;
+						map_bit_rate = 32000;
 					}
 				} else {
 					if ((switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) == SWITCH_STATUS_SUCCESS) {
@@ -2450,7 +2454,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						match = 0;
 					}
 
-					if (match && map->rm_rate && codec_rate && map->rm_rate != codec_rate && (!strcasecmp(map->rm_encoding, "pcma") || !strcasecmp(map->rm_encoding, "pcmu"))) {
+					if (match && map->rm_rate && codec_rate && map->rm_rate != codec_rate && (!strcasecmp(map->rm_encoding, "pcma") || 
+																							  !strcasecmp(map->rm_encoding, "pcmu"))) {
 						/* if the sampling rate is specified and doesn't match, this is not a codec match for G.711 */
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "sampling rates have to match for G.711\n");
 						match = 0;
@@ -2474,84 +2479,91 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				}
 
-				if (!match && near_match) {
-					const switch_codec_implementation_t *search[1];
-					char *prefs[1];
-					char tmp[80];
-					int num;
-
-					switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui", near_match->iananame, near_rate ? near_rate : near_match->samples_per_second,
-									codec_ms);
-
-					prefs[0] = tmp;
-					num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
-
-					if (num) {
-						mimp = search[0];
-					} else {
-						mimp = near_match;
-					}
-
-					if (!maxptime || mimp->microseconds_per_packet / 1000 <= maxptime) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Substituting codec %s@%ui@%uh\n",
-										  mimp->iananame, mimp->microseconds_per_packet / 1000, mimp->samples_per_second);
-						match = 1;
-					} else {
-						mimp = NULL;
-						match = 0;
-					}
-
-				}
-
+				
 				if (!match && greedy) {
 					skip++;
 					continue;
 				}
 
-				if (mimp) {
-					char tmp[50];
-					const char *mirror = switch_channel_get_variable(session->channel, "rtp_mirror_remote_audio_codec_payload");
-
-					a_engine->codec_params.rm_encoding = switch_core_session_strdup(session, (char *) map->rm_encoding);
-					a_engine->codec_params.iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
-					a_engine->codec_params.pt = (switch_payload_t) map->rm_pt;
-					a_engine->codec_params.rm_rate = mimp->samples_per_second;
-					a_engine->codec_params.codec_ms = mimp->microseconds_per_packet / 1000;
-					a_engine->codec_params.bitrate = mimp->bits_per_second;
-
-
-					a_engine->codec_params.remote_sdp_ip = switch_core_session_strdup(session, (char *) connection->c_address);
-					a_engine->codec_params.remote_sdp_port = (switch_port_t) m->m_port;
-					a_engine->codec_params.rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
-					
-					a_engine->codec_params.agreed_pt = (switch_payload_t) map->rm_pt;
-					smh->num_negotiated_codecs = 0;
-					smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;
-					switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->codec_params.remote_sdp_port);
-					switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, a_engine->codec_params.remote_sdp_ip);
-					switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
-					a_engine->codec_params.recv_pt = (switch_payload_t)map->rm_pt;
-					
-					if (!switch_true(mirror) && 
-						switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
-						(!switch_channel_test_flag(session->channel, CF_REINVITE) || switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE))) {
-						switch_core_media_get_offered_pt(session, mimp, &a_engine->codec_params.recv_pt);
-					}
-					
-					switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->codec_params.recv_pt);
-					switch_channel_set_variable(session->channel, "rtp_audio_recv_pt", tmp);
-					
-				}
-				
-				if (match) {
-					if (switch_core_media_set_codec(session, 1, smh->mparams->codec_flags) == SWITCH_STATUS_SUCCESS) {
-						got_audio = 1;
-						check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, m);
-					} else {
-						match = 0;
-					}
+				if (match && mimp) {
+					break;
 				}
 			}
+
+			if (!match && near_match) {
+				const switch_codec_implementation_t *search[1];
+				char *prefs[1];
+				char tmp[80];
+				int num;
+				
+				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui", near_match->iananame, near_rate ? near_rate : near_match->samples_per_second,
+								codec_ms);
+				
+				prefs[0] = tmp;
+				num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
+				
+				if (num) {
+					mimp = search[0];
+				} else {
+					mimp = near_match;
+				}
+				
+				if (!maxptime || mimp->microseconds_per_packet / 1000 <= maxptime) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Substituting codec %s@%ui@%uh\n",
+									  mimp->iananame, mimp->microseconds_per_packet / 1000, mimp->samples_per_second);
+					match = 1;
+				} else {
+					mimp = NULL;
+					match = 0;
+				}
+				
+			}
+
+			if (mimp) {
+				char tmp[50];
+				const char *mirror = switch_channel_get_variable(session->channel, "rtp_mirror_remote_audio_codec_payload");
+
+				a_engine->codec_params.rm_encoding = switch_core_session_strdup(session, (char *) map->rm_encoding);
+				a_engine->codec_params.iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
+				a_engine->codec_params.pt = (switch_payload_t) map->rm_pt;
+				a_engine->codec_params.rm_rate = mimp->samples_per_second;
+				a_engine->codec_params.codec_ms = mimp->microseconds_per_packet / 1000;
+				a_engine->codec_params.bitrate = mimp->bits_per_second;
+
+
+				a_engine->codec_params.remote_sdp_ip = switch_core_session_strdup(session, (char *) connection->c_address);
+				a_engine->codec_params.remote_sdp_port = (switch_port_t) m->m_port;
+				a_engine->codec_params.rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
+					
+				a_engine->codec_params.agreed_pt = (switch_payload_t) map->rm_pt;
+				smh->num_negotiated_codecs = 0;
+				smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;
+				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->codec_params.remote_sdp_port);
+				switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, a_engine->codec_params.remote_sdp_ip);
+				switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+				a_engine->codec_params.recv_pt = (switch_payload_t)map->rm_pt;
+					
+				if (!switch_true(mirror) && 
+					switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
+					(!switch_channel_test_flag(session->channel, CF_REINVITE) || switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE))) {
+					switch_core_media_get_offered_pt(session, mimp, &a_engine->codec_params.recv_pt);
+				}
+					
+				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->codec_params.recv_pt);
+				switch_channel_set_variable(session->channel, "rtp_audio_recv_pt", tmp);
+					
+			}
+				
+			if (match) {
+				if (switch_core_media_set_codec(session, 1, smh->mparams->codec_flags) == SWITCH_STATUS_SUCCESS) {
+					got_audio = 1;
+					check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, m);
+				} else {
+					match = 0;
+				}
+			}
+				
+
 
 			if (!best_te && (switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
@@ -6335,9 +6347,12 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 	}
 				
 	if (zstr(map->rm_fmtp)) {
-		if (!strcasecmp(map->rm_encoding, "ilbc") || !strcasecmp(map->rm_encoding, "isac")) {
+		if (!strcasecmp(map->rm_encoding, "ilbc")) {
 			ptime = codec_ms = 30;
 			map_bit_rate = 13330;
+		} else if (!strcasecmp(map->rm_encoding, "isac")) {
+			ptime = codec_ms = 30;
+			map_bit_rate = 32000;
 		}
 	} else {
 		if ((switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) == SWITCH_STATUS_SUCCESS) {

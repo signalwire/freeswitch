@@ -68,7 +68,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
 ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
 ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
 ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
-int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, int secure);
+int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx);
 ssize_t ws_close(wsh_t *wsh, int16_t reason);
 void init_ssl(void);
 void deinit_ssl(void);

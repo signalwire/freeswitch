@@ -36,6 +36,7 @@
 
 #include "tport_internal.h"
 #include "tport_ws.h"
+#include "tport_tls.h"
 
 #if HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
@@ -65,18 +66,27 @@ static char const __func__[] = "tport_type_ws";
 #include <sofia-sip/http.h>
 #include <sofia-sip/http_header.h>
 
+static int tport_ws_init_primary_secure(tport_primary_t *pri,
+				 tp_name_t tpn[1],
+				 su_addrinfo_t *ai,
+				 tagi_t const *tags,
+				 char const **return_culprit);
+
+static int tport_ws_setsndbuf(int socket, int atleast);
+static void tport_ws_deinit_primary(tport_primary_t *pri);
+
 tport_vtable_t const tport_ws_vtable =
 {
   /* vtp_name 		     */ "ws",
   /* vtp_public              */ tport_type_local,
-  /* vtp_pri_size            */ sizeof (tport_primary_t),
+  /* vtp_pri_size            */ sizeof (tport_ws_primary_t),
   /* vtp_init_primary        */ tport_ws_init_primary,
-  /* vtp_deinit_primary      */ NULL,
+  /* vtp_deinit_primary      */ tport_ws_deinit_primary,
   /* vtp_wakeup_pri          */ tport_accept,
   /* vtp_connect             */ NULL,
   /* vtp_secondary_size      */ sizeof (tport_ws_t),
   /* vtp_init_secondary      */ tport_ws_init_secondary,
-  /* vtp_deinit_secondary    */ NULL,
+  /* vtp_deinit_secondary    */ tport_ws_deinit_secondary,
   /* vtp_shutdown            */ NULL,
   /* vtp_set_events          */ NULL,
   /* vtp_wakeup              */ NULL,
@@ -94,9 +104,9 @@ tport_vtable_t const tport_ws_client_vtable =
 {
   /* vtp_name 		     */ "ws",
   /* vtp_public              */ tport_type_client,
-  /* vtp_pri_size            */ sizeof (tport_primary_t),
+  /* vtp_pri_size            */ sizeof (tport_ws_primary_t),
   /* vtp_init_primary        */ tport_ws_init_client,
-  /* vtp_deinit_primary      */ NULL,
+  /* vtp_deinit_primary      */ tport_ws_deinit_primary,
   /* vtp_wakeup_pri          */ NULL,
   /* vtp_connect             */ NULL,
   /* vtp_secondary_size      */ sizeof (tport_ws_t),
@@ -115,8 +125,64 @@ tport_vtable_t const tport_ws_client_vtable =
   /* vtp_secondary_timer     */ tport_ws_timer,
 };
 
-static int tport_ws_setsndbuf(int socket, int atleast);
+tport_vtable_t const tport_wss_vtable =
+{
+  /* vtp_name 		     */ "wss",
+  /* vtp_public              */ tport_type_local,
+  /* vtp_pri_size            */ sizeof (tport_ws_primary_t),
+  /* vtp_init_primary        */ tport_ws_init_primary_secure,
+  /* vtp_deinit_primary      */ tport_ws_deinit_primary,
+  /* vtp_wakeup_pri          */ tport_accept,
+  /* vtp_connect             */ NULL,
+  /* vtp_secondary_size      */ sizeof (tport_ws_t),
+  /* vtp_init_secondary      */ tport_ws_init_secondary,
+  /* vtp_deinit_secondary    */ tport_ws_deinit_secondary,
+  /* vtp_shutdown            */ NULL,
+  /* vtp_set_events          */ NULL,
+  /* vtp_wakeup              */ NULL,
+  /* vtp_recv                */ tport_recv_stream_ws,
+  /* vtp_send                */ tport_send_stream_ws,
+  /* vtp_deliver             */ NULL,
+  /* vtp_prepare             */ NULL,
+  /* vtp_keepalive           */ NULL,
+  /* vtp_stun_response       */ NULL,
+  /* vtp_next_secondary_timer*/ tport_ws_next_timer,
+  /* vtp_secondary_timer     */ tport_ws_timer,
+};
 
+tport_vtable_t const tport_wss_client_vtable =
+{
+  /* vtp_name 		     */ "wss",
+  /* vtp_public              */ tport_type_client,
+  /* vtp_pri_size            */ sizeof (tport_ws_primary_t),
+  /* vtp_init_primary        */ tport_ws_init_client,
+  /* vtp_deinit_primary      */ tport_ws_deinit_primary,
+  /* vtp_wakeup_pri          */ NULL,
+  /* vtp_connect             */ NULL,
+  /* vtp_secondary_size      */ sizeof (tport_ws_t),
+  /* vtp_init_secondary      */ tport_ws_init_secondary,
+  /* vtp_deinit_secondary    */ NULL,
+  /* vtp_shutdown            */ NULL,
+  /* vtp_set_events          */ NULL,
+  /* vtp_wakeup              */ NULL,
+  /* vtp_recv                */ tport_recv_stream_ws,
+  /* vtp_send                */ tport_send_stream_ws,
+  /* vtp_deliver             */ NULL,
+  /* vtp_prepare             */ NULL,
+  /* vtp_keepalive           */ NULL,
+  /* vtp_stun_response       */ NULL,
+  /* vtp_next_secondary_timer*/ tport_ws_next_timer,
+  /* vtp_secondary_timer     */ tport_ws_timer,
+};
+
+
+static void tport_ws_deinit_primary(tport_primary_t *pri)
+{
+  tport_ws_primary_t *wspri = (tport_ws_primary_t *)pri;
+  if ( wspri->ssl_ctx ) {
+	  SSL_CTX_free(wspri->ssl_ctx), wspri->ssl_ctx = NULL;
+  }
+}
 
 /** Receive from stream.
  *
@@ -134,11 +200,12 @@ int tport_recv_stream_ws(tport_t *self)
   msg_iovec_t iovec[msg_n_fragments] = {{ 0 }};
   tport_ws_t *wstp = (tport_ws_t *)self;
   wsh_t *ws = wstp->ws;
+  tport_ws_primary_t *wspri = (tport_ws_primary_t *)self->tp_pri;
   uint8_t *data;
   ws_opcode_t oc;
 
   if ( !wstp->ws_initialized ) {
-	  ws_init(ws, self->tp_socket, 65336, wstp->ws_secure);
+	  ws_init(ws, self->tp_socket, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL);
 	  wstp->ws_initialized = 1;
 	  self->tp_pre_framed = 1;
 	  return 1;
@@ -155,7 +222,7 @@ int tport_recv_stream_ws(tport_t *self)
 	  err = su_errno();
 	  SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, (void *)self,
 				  su_strerror(err), err));
-	  return -1;
+	  return 0;;
   }
 
   veclen = tport_recv_iovec(self, &self->tp_msg, iovec, N, 0);
@@ -271,6 +338,36 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
   return size;
 }
 
+static int tport_ws_init_primary_secure(tport_primary_t *pri,
+				 tp_name_t tpn[1],
+				 su_addrinfo_t *ai,
+				 tagi_t const *tags,
+				 char const **return_culprit)
+{
+  tport_ws_primary_t *wspri = (tport_ws_primary_t *)pri;
+  const char *cert = "/ssl.pem";
+  const char *key = "/ssl.pem";
+  init_ssl();
+
+  //  OpenSSL_add_all_algorithms();   /* load & register cryptos */                                                                                       
+  //  SSL_load_error_strings();     /* load all error messages */                                                                                         
+  wspri->ssl_method = SSLv23_server_method();   /* create server instance */
+  wspri->ssl_ctx = SSL_CTX_new(wspri->ssl_method);         /* create context */
+  wspri->ws_secure = 1;
+
+  if ( !wspri->ssl_ctx ) return -1;
+
+  /* set the local certificate from CertFile */
+  SSL_CTX_use_certificate_file(wspri->ssl_ctx, cert, SSL_FILETYPE_PEM);
+  /* set the private key from KeyFile */
+  SSL_CTX_use_PrivateKey_file(wspri->ssl_ctx, key, SSL_FILETYPE_PEM);
+  /* verify private key */
+  if ( !SSL_CTX_check_private_key(wspri->ssl_ctx) ) {
+	  return -1;
+  }
+
+  return tport_ws_init_primary(pri, tpn, ai, tags, return_culprit);
+}
 
 int tport_ws_init_primary(tport_primary_t *pri,
 			   tp_name_t tpn[1],
@@ -305,6 +402,8 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
 			     char const **return_reason)
 {
   int one = 1;
+  tport_ws_primary_t *wspri = (tport_ws_primary_t *)self->tp_pri;
+  tport_ws_t *wstp = (tport_ws_t *)self;
 
   self->tp_has_connection = 1;
 
@@ -314,7 +413,19 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
   if (!accepted)
     tport_ws_setsndbuf(socket, 64 * 1024);
 
+  if ( wspri->ws_secure ) wstp->ws_secure = 1;
+
   return 0;
+}
+
+static void tport_ws_deinit_secondary(tport_t *self)
+{
+	tport_ws_t *wstp = (tport_ws_t *)self;
+  
+	if (wstp->ws_initialized ) {
+		ws_close(wstp->ws, WS_NONE);
+		wstp->ws_initialized = 0;
+	}
 }
 
 static int tport_ws_setsndbuf(int socket, int atleast)

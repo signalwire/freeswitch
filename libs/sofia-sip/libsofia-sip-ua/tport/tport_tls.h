@@ -93,6 +93,7 @@ ssize_t tls_write(tls_t *tls, void *buf, size_t size);
 int tls_want_write(tls_t *tls, int events);
 
 int tls_events(tls_t const *tls, int flags);
+void tls_init(void);
 
 SOFIA_END_DECLS
 
