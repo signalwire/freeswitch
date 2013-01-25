@@ -2404,6 +2404,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									 SOATAG_AF(SOA_AF_IP6_ONLY)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
 									 NUTAG_SIPS_URL(profile->tls_bindurl)),
+							  TAG_IF(profile->ws_bindurl,
+									 NUTAG_WS_URL(profile->ws_bindurl)),
+							  TAG_IF(profile->wss_bindurl,
+									 NUTAG_WSS_URL(profile->wss_bindurl)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
 									 NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_passphrase,
@@ -3352,9 +3356,36 @@ static void config_sofia_profile_urls(sofia_profile_t * profile)
 	
 	if (profile->bind_params) {
 		char *bindurl = profile->bindurl;
+		if (!switch_stristr("transport=", profile->bind_params)) {
+			profile->bind_params = switch_core_sprintf(profile->pool, "%s;transport=udp,tcp", profile->bind_params);
+		}
 		profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
+	} else {
+		char *bindurl = profile->bindurl;
+		profile->bindurl = switch_core_sprintf(profile->pool, "%s;transport=udp,tcp", bindurl);		
 	}
-	
+
+
+	if ( profile->ws_port ) {
+		char *ip = !zstr(profile->ws_ip) ? profile->ws_ip : profile->sipip;
+		switch_port_t port = profile->ws_port;
+		char *ipv6 = strchr(ip, ':');
+		profile->ws_bindurl =
+			switch_core_sprintf(profile->pool,
+								"sip:%s@%s%s%s:%d;transport=ws",
+								profile->contact_user, ipv6 ? "[" : "", ip, ipv6 ? "]" : "", port);
+	}
+
+	if ( profile->wss_port ) {
+		char *ip = !zstr(profile->wss_ip) ? profile->wss_ip : profile->sipip;
+		switch_port_t port = profile->wss_port;
+		char *ipv6 = strchr(ip, ':');
+		profile->wss_bindurl =
+			switch_core_sprintf(profile->pool,
+								"sips:%s@%s%s%s:%d;transport=wss",
+								profile->contact_user, ipv6 ? "[" : "", ip, ipv6 ? "]" : "", port);
+	}
+
 	/*
 	 * handle TLS params #2
 	 */
@@ -4399,6 +4430,32 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							profile->dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds, using default of %d!\n",
 											  SWITCH_DEFAULT_DTMF_DURATION);
+						}
+
+					} else if (!strcasecmp(var, "ws-binding") && !zstr(val)) {
+						int tmp;
+						char *p;
+
+						profile->ws_ip = switch_core_strdup(profile->pool, val);
+						if ((p = strrchr(profile->ws_ip, ':'))) {
+							*p++ = '\0';
+
+							if (p && (tmp = atol(p)) && tmp > 0) {
+								profile->ws_port = (switch_port_t) tmp;
+							}
+						}
+
+					} else if (!strcasecmp(var, "wss-binding") && !zstr(val)) {
+						int tmp;
+						char *p;
+
+						profile->wss_ip = switch_core_strdup(profile->pool, val);
+						if ((p = strrchr(profile->wss_ip, ':'))) {
+							*p++ = '\0';
+
+							if (p && (tmp = atol(p)) && tmp > 0) {
+								profile->wss_port = (switch_port_t) tmp;
+							}
 						}
 
 						/*

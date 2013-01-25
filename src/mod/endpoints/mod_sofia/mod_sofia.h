@@ -534,6 +534,8 @@ struct sofia_profile {
 	char *url;
 	char *public_url;
 	char *bindurl;
+	char *ws_bindurl;
+	char *wss_bindurl;
 	char *tls_url;
 	char *tls_public_url;
 	char *tls_bindurl;
@@ -667,6 +669,10 @@ struct sofia_profile {
 	switch_queue_t *event_queue;
 	switch_thread_t *thread;		
 	switch_core_media_vflag_t vflags;
+	char *ws_ip;
+	switch_port_t ws_port;
+	char *wss_ip;
+	switch_port_t wss_port;
 };
 
 
