@@ -805,8 +805,10 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **session)
 		switch_hash_this(hi, &key, &keylen, &val);		
 		item = (rtmp_private_t *)val;
 		
-		channel = switch_core_session_get_channel(item->session);
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		if ( item->session ) {
+			channel = switch_core_session_get_channel(item->session);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		}
 	}
 	switch_thread_rwlock_unlock((*session)->session_rwlock);
 	
