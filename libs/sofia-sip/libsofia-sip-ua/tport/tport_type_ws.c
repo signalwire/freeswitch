@@ -347,6 +347,36 @@ static int tport_ws_init_primary_secure(tport_primary_t *pri,
   tport_ws_primary_t *wspri = (tport_ws_primary_t *)pri;
   const char *cert = "/ssl.pem";
   const char *key = "/ssl.pem";
+  char *homedir;
+  char *tbf = NULL;
+  su_home_t autohome[SU_HOME_AUTO_SIZE(1024)];
+  char const *path = NULL;
+  int ret = -1;
+
+  su_home_auto(autohome, sizeof autohome);
+
+  tl_gets(tags,
+	  TPTAG_CERTIFICATE_REF(path),
+	  TAG_END());
+
+  if (!path) {
+    homedir = getenv("HOME");
+    if (!homedir)
+      homedir = "";
+    path = tbf = su_sprintf(autohome, "%s/.sip/auth", homedir);
+  }
+
+  if (path) {
+    key  = su_sprintf(autohome, "%s/%s", path, "wss.key");
+	if (access(key, R_OK) != 0) key = NULL;
+	cert = su_sprintf(autohome, "%s/%s", path, "wss.crt");
+	if (access(cert, R_OK) != 0) cert = NULL;
+	if ( !key )  key  = su_sprintf(autohome, "%s/%s", path, "wss.pem");
+	if ( !cert ) cert = su_sprintf(autohome, "%s/%s", path, "wss.pem");
+	if (access(key, R_OK) != 0) key = NULL;
+	if (access(cert, R_OK) != 0) cert = NULL;
+  }
+
   init_ssl();
 
   //  OpenSSL_add_all_algorithms();   /* load & register cryptos */                                                                                       
@@ -355,7 +385,7 @@ static int tport_ws_init_primary_secure(tport_primary_t *pri,
   wspri->ssl_ctx = SSL_CTX_new(wspri->ssl_method);         /* create context */
   wspri->ws_secure = 1;
 
-  if ( !wspri->ssl_ctx ) return -1;
+  if ( !wspri->ssl_ctx ) goto done;
 
   /* set the local certificate from CertFile */
   SSL_CTX_use_certificate_file(wspri->ssl_ctx, cert, SSL_FILETYPE_PEM);
@@ -363,10 +393,14 @@ static int tport_ws_init_primary_secure(tport_primary_t *pri,
   SSL_CTX_use_PrivateKey_file(wspri->ssl_ctx, key, SSL_FILETYPE_PEM);
   /* verify private key */
   if ( !SSL_CTX_check_private_key(wspri->ssl_ctx) ) {
-	  return -1;
+	  goto done;
   }
 
-  return tport_ws_init_primary(pri, tpn, ai, tags, return_culprit);
+  ret = tport_ws_init_primary(pri, tpn, ai, tags, return_culprit);
+
+ done:
+  su_home_zap(autohome);
+  return ret;
 }
 
 int tport_ws_init_primary(tport_primary_t *pri,
