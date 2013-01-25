@@ -852,6 +852,7 @@ static switch_xml_t mod_xml_radius_directory_search(const char *section, const c
 switch_status_t mod_xml_radius_check_conditions(switch_channel_t *channel, switch_xml_t conditions) {
 	switch_xml_t condition, param;
 	char *channel_var = NULL;
+	const char *channel_val = NULL;
 	char *regex = NULL;
 	char *anti = NULL;
 	int all_matched = 1;
@@ -877,9 +878,16 @@ switch_status_t mod_xml_radius_check_conditions(switch_channel_t *channel, switc
 			
 			if ( channel_var == NULL || regex == NULL ) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Improperly constructed mod_radius condition: %s %s\n", channel_var, regex);
+				continue;
 			}
 			
-			result = ( switch_regex_match( switch_channel_get_variable(channel, channel_var), regex) != SWITCH_STATUS_SUCCESS);
+			if ( ( channel_val = switch_channel_get_variable(channel, channel_var) ) == NULL ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+								  "Improperly constructed mod_radius condition, no such channel variable: %s %s\n", channel_var, regex);
+				continue;
+			}
+
+			result = ( switch_regex_match( channel_val, regex) != SWITCH_STATUS_SUCCESS);
 			if (( anti == NULL && result ) || ( anti != NULL && !result ) ){
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Didn't match: %s == %s \n", switch_channel_get_variable(channel, channel_var), regex);
 				all_matched = 0;
