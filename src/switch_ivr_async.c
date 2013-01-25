@@ -40,6 +40,7 @@
 struct switch_ivr_dmachine_binding {
 	char *digits;
 	int32_t key;
+	uint8_t rmatch;
 	switch_ivr_dmachine_callback_t callback;
 	switch_byte_t is_regex;
 	void *user_data;
@@ -50,6 +51,8 @@ typedef struct switch_ivr_dmachine_binding switch_ivr_dmachine_binding_t;
 typedef struct {
 	switch_ivr_dmachine_binding_t *binding_list;
 	switch_ivr_dmachine_binding_t *tail;
+	char *name;
+	char *terminators;
 } dm_binding_head_t;
 
 struct switch_ivr_dmachine {
@@ -186,6 +189,21 @@ SWITCH_DECLARE(void) switch_ivr_dmachine_destroy(switch_ivr_dmachine_t **dmachin
 	}
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_set_terminators(switch_ivr_dmachine_t *dmachine, const char *terminators)
+{
+	if (!dmachine->realm) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No realm selected.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+
+	dmachine->realm->terminators = switch_core_strdup(dmachine->pool, terminators);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Digit parser %s: Setting terminators for realm '%s' to '%s'\n", 
+					  dmachine->name, dmachine->realm->name, terminators);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_set_realm(switch_ivr_dmachine_t *dmachine, const char *realm)
 {
 	dm_binding_head_t *headp = switch_core_hash_find(dmachine->binding_hash, realm);
@@ -197,7 +215,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_set_realm(switch_ivr_dmachin
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Digit parser %s: Error Setting realm to '%s'\n", dmachine->name, realm);
-
+	
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -247,6 +265,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_bind(switch_ivr_dmachine_t *
 
 	if (!(headp = switch_core_hash_find(dmachine->binding_hash, realm))) {
 		headp = switch_core_alloc(dmachine->pool, sizeof(*headp));
+		headp->name = switch_core_strdup(dmachine->pool, realm);
 		switch_core_hash_insert(dmachine->binding_hash, realm, headp);
 	}
 
@@ -319,13 +338,23 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 {
 	dm_match_t best = DM_MATCH_NONE;
 	switch_ivr_dmachine_binding_t *bp, *exact_bp = NULL, *partial_bp = NULL, *both_bp = NULL, *r_bp = NULL;
-	int pmatches = 0, ematches = 0;
+	int pmatches = 0, ematches = 0, rmatches = 0;
 	
 	if (!dmachine->cur_digit_len || !dmachine->realm) goto end;
 
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
+			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
+			
+			if (r_status == SWITCH_STATUS_SUCCESS) {
+				bp->rmatch++;
+			} else {
+				bp->rmatch = 0;
+			}
+
+			rmatches++;
 			pmatches++;
+
 		} else {
 			if (!strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits))) {
 				pmatches++;
@@ -334,11 +363,23 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		}
 	}
 
+	if (!zstr(dmachine->realm->terminators)) {
+		char *p = dmachine->realm->terminators;
+		char *q;
+
+		while(p && *p) {
+			if ((q=strrchr(dmachine->digits, *p))) {
+				*q = '\0';
+				is_timeout = 1;
+				break;
+			}
+			p++;
+		}
+	}
+
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
-			switch_status_t r_status = switch_regex_match(dmachine->digits, bp->digits);
-			
-			if (r_status == SWITCH_STATUS_SUCCESS) {
+			if (bp->rmatch) {
 				if (is_timeout || (bp == dmachine->realm->binding_list && !bp->next)) {
 					best = DM_MATCH_EXACT;
 					exact_bp = bp;
@@ -349,7 +390,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 		} else {
 			int pmatch = !strncmp(dmachine->digits, bp->digits, strlen(dmachine->digits));
 
-			if (!exact_bp && pmatch && (pmatches == 1 || ematches == 1 || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
+			if (!exact_bp && pmatch && (((pmatches == 1 || ematches == 1) && !rmatches) || is_timeout) && !strcmp(bp->digits, dmachine->digits)) {
 				best = DM_MATCH_EXACT;
 				exact_bp = bp;
 				if (dmachine->cur_digit_len == dmachine->max_digit_len) break;

@@ -194,6 +194,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 			field_expanded = field_expanded_alloc;
 		}
 
+		if (!pattern) {
+			pattern = ".*";
+		}
+
 		if (pattern) {
 			switch_regex_t *re = NULL;
 			int proceed = 0, ovector[100];

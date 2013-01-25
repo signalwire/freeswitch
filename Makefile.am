@@ -34,7 +34,6 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	   fi; \
 	 fi
 
-
 sounds: sounds-en-us-callie-8000
 sounds-install: sounds-en-us-callie-8000-install
 sounds-ru: sounds-ru-RU-elena-8000
@@ -72,6 +71,35 @@ cd-moh-install: uhd-moh-install sounds-music-48000-install
 all-recursive: libfreeswitch.la
 clean-recusive: clean_core
 install-recursive: install-libLTLIBRARIES install-binPROGRAMS
+$(RECURSIVE_TARGETS): freeswitch
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; \
+	if test -z "$$fail" ; then \
+	   cd $(top_builddir)/build && $(MAKE) $(AM_MAKEFLAGS) $$target || exit 1; \
+	else \
+	   exit 1; \
+	fi ;
 
 CORE_CFLAGS  = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`
 CORE_CFLAGS += `$(switch_builddir)/libs/apr-util/apu-1-config --includes`
@@ -86,7 +114,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-
 
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
-CORE_LIBS += libs/sofia-sip/libsofia-sip-ua/sdp/libsdp.la libs/sofia-sip/libsofia-sip-ua/su/libsu.la
+CORE_LIBS += libs/sofia-sip/libsofia-sip-ua/sdp/.libs/libsdp.a libs/sofia-sip/libsofia-sip-ua/su/.libs/libsu.a
 
 if ENABLE_SRTP
 CORE_CFLAGS += -DENABLE_SRTP
@@ -420,7 +448,7 @@ libs/libzrtp/projects/gnu/build/libzrtp.a:
 libs/sofia-sip/Makefile:
 	cd libs/sofia-sip && sh ./configure.gnu --prefix=$(prefix)
 
-libs/sofia-sip/libsofia-sip-ua/sdp/libsdp.la libs/sofia-sip/libsofia-sip-ua/su/libsu.la: libs/sofia-sip/.update libs/sofia-sip/Makefile
+libs/sofia-sip/libsofia-sip-ua/sdp/.libs/libsdp.a libs/sofia-sip/libsofia-sip-ua/su/.libs/libsu.a: libs/sofia-sip/.update libs/sofia-sip/Makefile
 	@cd libs/sofia-sip && $(MAKE) noop
 	@cd libs/sofia-sip && $(MAKE) SOFIA_CFLAGS="$(SWITCH_AM_CFLAGS)"
 	@$(TOUCH_TARGET)

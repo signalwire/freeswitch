@@ -214,8 +214,6 @@ typedef enum {
 
 struct switch_runtime {
 	switch_time_t initiated;
-	switch_time_t mono_initiated;
-	switch_time_t mono_reference;
 	switch_time_t reference;
 	int64_t offset;
 	switch_event_t *global_vars;

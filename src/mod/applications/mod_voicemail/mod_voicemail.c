@@ -3107,6 +3107,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 								switch_xml_t ux;
 
 								if (switch_xml_locate_user_in_domain(uname, x_domain, &ux, NULL) == SWITCH_STATUS_SUCCESS) {
+									switch_xml_merge_user(ux, x_domain, group);
 									switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 									status =
 										deliver_vm(profile, ux, domain, path, 0, read_flags, my_params, pool, cid_name, cid_num, forwarded_by,
@@ -3116,6 +3117,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 								continue;
 							}
 
+							switch_xml_merge_user(ut, x_domain, group);
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 							status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 												my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE, 
@@ -3139,6 +3141,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 								continue;
 							}
 
+							switch_xml_merge_user(ut, x_domain, group);
 							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 							status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 												my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE,
@@ -3153,6 +3156,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 			switch_xml_t x_group = NULL;
 
 			if ((status = switch_xml_locate_user_in_domain(user, x_domain, &ut, &x_group)) == SWITCH_STATUS_SUCCESS) {
+				switch_xml_merge_user(ut, x_domain, x_group);
 				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 				status = deliver_vm(profile, ut, domain, path, 0, read_flags, 
 									my_params, pool, cid_name, cid_num, forwarded_by, SWITCH_TRUE,
@@ -4975,6 +4979,80 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define VM_FSDB_PREF_GREETING_GET_USAGE "<format> <profile> <domain> <user> [slot]"
+SWITCH_STANDARD_API(vm_fsdb_pref_greeting_get_function)
+{
+	/* int slot = -1; not implemented yet */
+	char *sql = NULL;
+	char res[254] = "";
+
+	char *id = NULL, *domain = NULL, *profile_name = NULL;
+	vm_profile_t *profile = NULL;
+
+	char *argv[6] = { 0 };
+	char *mycmd = NULL;
+
+	switch_memory_pool_t *pool;
+
+	switch_core_new_memory_pool(&pool);
+
+	if (!zstr(cmd)) {
+		mycmd = switch_core_strdup(pool, cmd);
+		switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argv[1])
+		profile_name = argv[1];
+	if (argv[2])
+		domain = argv[2];
+	if (argv[3])
+		id = argv[3];
+/*	if (argv[4])
+		slot = atoi(argv[4]);
+not implemented yet
+*/
+
+	if (!profile_name || !domain || !id) {
+		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!(profile = get_profile(profile_name))) {
+		stream->write_function(stream, "-ERR Profile not found\n");
+		goto done;
+	}
+        sql = switch_mprintf("select greeting_path from voicemail_prefs WHERE domain = '%q' AND username = '%q'", domain, id);
+
+	vm_execute_sql2str(profile, profile->mutex, sql, res, sizeof(res));
+
+	switch_safe_free(sql);
+
+	profile_rwunlock(profile);
+
+	/* TODO If no slot requested, returned currently selected and figure out the slot number from the file name. 
+ 	 * IF slot provided, check if file exist, check if it currently selected */
+	if (zstr(res)) {
+		stream->write_function(stream, "-ERR No greeting found\n");	
+	} else {
+		switch_event_t *my_params = NULL;
+		char *ebuf = NULL;
+
+		switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_event_add_header(my_params, SWITCH_STACK_BOTTOM, "VM-Preference-Greeting-File-Path", "%s", res);
+		switch_event_add_header(my_params, SWITCH_STACK_BOTTOM, "VM-Preference-Greeting-Slot", "%s", "Not Implemented yet");
+		switch_event_add_header(my_params, SWITCH_STACK_BOTTOM, "VM-Preference-Greeting-Selected", "%s", "True");
+		switch_event_serialize_json(my_params, &ebuf);
+		switch_event_destroy(&my_params);
+
+		stream->write_function(stream, "%s", ebuf);
+		switch_safe_free(ebuf);
+
+	}
+done:
+        switch_core_destroy_memory_pool(&pool);
+        return SWITCH_STATUS_SUCCESS;
+}
+
 #define VM_FSDB_PREF_RECNAME_SET_USAGE "<profile> <domain> <user> <file-path>"
 SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 {
@@ -5961,6 +6039,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 
 	/* Preferences */
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_pref_greeting_set", "vm_fsdb_pref_greeting_set", vm_fsdb_pref_greeting_set_function, VM_FSDB_PREF_GREETING_SET_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_pref_greeting_get", "vm_fsdb_pref_greeting_get", vm_fsdb_pref_greeting_get_function, VM_FSDB_PREF_GREETING_GET_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_pref_recname_set", "vm_fsdb_pref_recname_set", vm_fsdb_pref_recname_set_function, VM_FSDB_PREF_RECNAME_SET_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_fsdb_pref_password_set", "vm_fsdb_pref_password_set", vm_fsdb_pref_password_set_function, VM_FSDB_PREF_PASSWORD_SET_USAGE);
 

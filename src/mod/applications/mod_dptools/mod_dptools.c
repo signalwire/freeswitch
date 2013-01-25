@@ -336,6 +336,7 @@ static void bind_to_session(switch_core_session_t *session,
 	struct action_binding *act;
 	switch_ivr_dmachine_t *dmachine;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *terminators = NULL;
 
 	if (!(dmachine = switch_core_session_get_dmachine(session, target))) {
 		uint32_t digit_timeout = 1500;
@@ -363,6 +364,10 @@ static void bind_to_session(switch_core_session_t *session,
 	act->target = bind_target;
 	act->session = session;
 	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
+
+	if ((terminators = switch_channel_get_variable(channel, "bda_terminators"))) {
+		switch_ivr_dmachine_set_terminators(dmachine, terminators);
+	}
 }
 
 #define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>[,<value>][,<dtmf target leg>][,<event target leg>]"

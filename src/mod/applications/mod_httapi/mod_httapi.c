@@ -374,6 +374,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 	const char *action = switch_xml_attr(tag, "action");
 	const char *digit_timeout_ = switch_xml_attr(tag, "digit-timeout");
 	const char *input_timeout_ = switch_xml_attr(tag, "input-timeout");
+	const char *terminators = switch_xml_attr(tag, "terminators");
 	const char *tts_engine = NULL;
 	const char *tts_voice = NULL;
 	char *loops_ = (char *) switch_xml_attr(tag, "loops");
@@ -559,6 +560,10 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		}
 		
 		switch_ivr_dmachine_set_realm(dmachine, realm);
+		if (!zstr(terminators)) {
+			switch_ivr_dmachine_set_terminators(dmachine, terminators);
+		}
+
 		myargs.dmachine = dmachine;
 		args = &myargs;
 	}
@@ -915,6 +920,7 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	const char *action = switch_xml_attr(tag, "action");
 	const char *sub_action = NULL;
 	const char *digit_timeout_ = switch_xml_attr(tag, "digit-timeout");
+	const char *terminators = switch_xml_attr(tag, "terminators");
 	char *loops_ = (char *) switch_xml_attr(tag, "loops");
 	int loops = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1032,6 +1038,10 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 		}
 		
 		switch_ivr_dmachine_set_realm(dmachine, realm);
+		if (!zstr(terminators)) {
+			switch_ivr_dmachine_set_terminators(dmachine, terminators);
+		}
+
 		myargs.dmachine = dmachine;
 		args = &myargs;
 	}

@@ -756,7 +756,7 @@ SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *ses
 SWITCH_DECLARE(switch_ivr_dmachine_t *) switch_core_session_get_dmachine(switch_core_session_t *session, switch_digit_action_target_t target);
 SWITCH_DECLARE(switch_digit_action_target_t) switch_ivr_dmachine_get_target(switch_ivr_dmachine_t *dmachine);
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_target(switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target);
-
+SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_set_terminators(switch_ivr_dmachine_t *dmachine, const char *terminators);
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_session_t *session, switch_slin_data_t *data);
 
 /*! 

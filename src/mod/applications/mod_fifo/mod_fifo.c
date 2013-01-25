@@ -2252,7 +2252,7 @@ static void fifo_caller_add(fifo_node_t *node, switch_core_session_t *session)
 						 switch_str_nil(switch_channel_get_variable(channel, "caller_id_number")),
 						 switch_epoch_time_now(NULL));
 
-	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 }
 
 static void fifo_caller_del(const char *uuid)
@@ -2265,7 +2265,7 @@ static void fifo_caller_del(const char *uuid)
 		sql = switch_mprintf("delete from fifo_callers");
 	}
 
-	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 }
 
@@ -4303,7 +4303,7 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 
 	sql = switch_mprintf("delete from fifo_outbound where fifo_name='%q' and uuid = '%q'", fifo_name, digest);
 	switch_assert(sql);
-	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 
 	switch_mutex_lock(globals.mutex);
@@ -4325,7 +4325,7 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 						 digest, fifo_name, originate_string, simo_count, 0, timeout, lag, 0, (long) expires, globals.hostname, taking_calls,
 						 (long)switch_epoch_time_now(NULL));
 	switch_assert(sql);
-	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 	free(name_dup);
 
     cbt.buf = outbound_count; 
@@ -4360,7 +4360,7 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 
 	sql = switch_mprintf("delete from fifo_outbound where fifo_name='%q' and uuid = '%q' and hostname='%q'", fifo_name, digest, globals.hostname);
 	switch_assert(sql);
-	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 	switch_mutex_lock(globals.mutex);
 	if (!(node = switch_core_hash_find(globals.fifo_hash, fifo_name))) {
