@@ -1112,6 +1112,11 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             hdlc_buf->contents = (data_type | FLAG_DATA);
             finalise_hdlc_frame(s, TRUE);
         }
+        else
+        {
+            /* Just restart using the current frame buffer */
+            hdlc_buf->contents = 0;
+        }
         /*endif*/
         xx->corrupt_current_frame[0] = FALSE;
         break;
@@ -1132,24 +1137,19 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (hdlc_buf->len > 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame type %s - CRC bad\n", t30_frametype(hdlc_buf->buf[2]));
-            /* Only bother with frames that have a bad CRC, if they also have some content. */
-            if (hdlc_buf->len > 0)
+            if (hdlc_buf->contents != (data_type | FLAG_DATA))
             {
-                if (hdlc_buf->contents != (data_type | FLAG_DATA))
-                {
-                    queue_missing_indicator(s, data_type);
-                    hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
-                }
-                /*endif*/
-                hdlc_buf->contents = (data_type | FLAG_DATA);
-                finalise_hdlc_frame(s, FALSE);
-            }
-            else
-            {
-                /* Just restart using the current frame buffer */
-                hdlc_buf->contents = 0;
+                queue_missing_indicator(s, data_type);
+                hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
             }
             /*endif*/
+            hdlc_buf->contents = (data_type | FLAG_DATA);
+            finalise_hdlc_frame(s, FALSE);
+        }
+        else
+        {
+            /* Just restart using the current frame buffer */
+            hdlc_buf->contents = 0;
         }
         /*endif*/
         xx->corrupt_current_frame[0] = FALSE;
@@ -1200,6 +1200,11 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             hdlc_buf->contents = (data_type | FLAG_DATA);
             finalise_hdlc_frame(s, TRUE);
         }
+        else
+        {
+            /* Just restart using the current frame buffer */
+            hdlc_buf->contents = 0;
+        }
         /*endif*/
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
@@ -1232,18 +1237,13 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                 hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
             }
             /*endif*/
-            /* Only bother with frames that have a bad CRC, if they also have some content. */
-            if (hdlc_buf->len > 0)
-            {
-                hdlc_buf->contents = (data_type | FLAG_DATA);
-                finalise_hdlc_frame(s, FALSE);
-            }
-            else
-            {
-                /* Just restart using the current frame buffer */
-                hdlc_buf->contents = 0;
-            }
-            /*endif*/
+            hdlc_buf->contents = (data_type | FLAG_DATA);
+            finalise_hdlc_frame(s, FALSE);
+        }
+        else
+        {
+            /* Just restart using the current frame buffer */
+            hdlc_buf->contents = 0;
         }
         /*endif*/
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
