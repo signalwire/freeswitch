@@ -318,6 +318,20 @@ static int fake_rx_indicator(t38_core_state_t *t, t38_terminal_state_t *s, int i
 }
 /*- End of function --------------------------------------------------------*/
 
+static void process_hdlc_data(t38_terminal_front_end_state_t *fe, const uint8_t *buf, int len)
+{
+    if (fe->hdlc_rx.len + len <= T38_MAX_HDLC_LEN)
+    {
+        bit_reverse(fe->hdlc_rx.buf + fe->hdlc_rx.len, buf, len);
+        fe->hdlc_rx.len += len;
+    }
+    else
+    {
+        fe->rx_data_missing = TRUE;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
 static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, int field_type, const uint8_t *buf, int len)
 {
     t38_terminal_state_t *s;
@@ -416,16 +430,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         /*endif*/
         if (len > 0)
         {
-            if (fe->hdlc_rx.len + len <= T38_MAX_HDLC_LEN)
-            {
-                bit_reverse(fe->hdlc_rx.buf + fe->hdlc_rx.len, buf, len);
-                fe->hdlc_rx.len += len;
-            }
-            else
-            {
-                fe->rx_data_missing = TRUE;
-            }
-            /*endif*/
+            process_hdlc_data(fe, buf, len);
         }
         /*endif*/
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
@@ -434,20 +439,21 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_OK!\n");
-            /* The sender has incorrectly included data in this message. It is unclear what we should do
-               with it, to maximise tolerance of buggy implementations. */
+            /* The sender has incorrectly included data in this message. Cisco implemented inserting
+               HDLC data here and Commetrex followed for compatibility reasons. We should, too. */
+            process_hdlc_data(fe, buf, len);
         }
         /*endif*/
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_OK messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+        if (fe->hdlc_rx.len > 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC OK (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
+            fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
         break;
@@ -455,20 +461,21 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_BAD!\n");
-            /* The sender has incorrectly included data in this message. We can safely ignore it, as the
-               bad FCS means we will throw away the whole message, anyway. */
+            /* The sender has incorrectly included data in this message. Cisco implemented inserting
+               HDLC data here and Commetrex followed for compatibility reasons. We should, too. */
+            process_hdlc_data(fe, buf, len);
         }
         /*endif*/
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_BAD messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+        if (fe->hdlc_rx.len > 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+            fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
         break;
@@ -476,22 +483,25 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_OK_SIG_END!\n");
-            /* The sender has incorrectly included data in this message. It is unclear what we should do
-               with it, to maximise tolerance of buggy implementations. */
+            /* The sender has incorrectly included data in this message. Cisco implemented inserting
+               HDLC data here and Commetrex followed for compatibility reasons. We should, too. */
+            process_hdlc_data(fe, buf, len);
         }
         /*endif*/
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_OK_SIG_END messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+        if (fe->hdlc_rx.len > 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC OK, sig end (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
-            hdlc_accept_frame(s, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
+            fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
+        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+            hdlc_accept_frame(s, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
+        /*endif*/
         /* Treat this like a no signal indicator has occurred, so if the no signal indicator is missing, we are still OK */
         fake_rx_indicator(t, s, T38_IND_NO_SIGNAL);
         break;
@@ -499,22 +509,25 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_BAD_SIG_END!\n");
-            /* The sender has incorrectly included data in this message. We can safely ignore it, as the
-               bad FCS means we will throw away the whole message, anyway. */
+            /* The sender has incorrectly included data in this message. Cisco implemented inserting
+               HDLC data here and Commetrex followed for compatibility reasons. We should, too. */
+            process_hdlc_data(fe, buf, len);
         }
         /*endif*/
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_BAD_SIG_END messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+        if (fe->hdlc_rx.len > 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad, sig end (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
-            hdlc_accept_frame(s, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
+            fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
+        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+            hdlc_accept_frame(s, NULL, SIG_STATUS_CARRIER_DOWN, TRUE);
+        /*endif*/
         /* Treat this like a no signal indicator has occurred, so if the no signal indicator is missing, we are still OK */
         fake_rx_indicator(t, s, T38_IND_NO_SIGNAL);
         break;
