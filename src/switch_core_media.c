@@ -39,7 +39,7 @@
 #include "private/switch_core_pvt.h"
 #include <switch_curl.h>
 #include <errno.h>
-#include <sdp.h>
+#include <sofia-sip/sdp.h>
 #include <sofia-sip/su.h>
 
 SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);

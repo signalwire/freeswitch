@@ -4,7 +4,7 @@ AUTOMAKE_OPTIONS = foreign
 NAME = freeswitch
 
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
-AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS) -Ilibs/sofia-sip/libsofia-sip-ua/sdp/sofia-sip -Ilibs/sofia-sip/libsofia-sip-ua/su
+AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS) -Ilibs/sofia-sip/libsofia-sip-ua/sdp -Ilibs/sofia-sip/libsofia-sip-ua/su
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
@@ -242,6 +242,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_core_port_allocator.c \
 	src/switch_core.c \
 	src/switch_core_media.c \
+	src/switch_sdp.c \
 	src/switch_scheduler.c \
 	src/switch_core_db.c \
 	src/switch_dso.c \
