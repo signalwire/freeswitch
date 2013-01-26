@@ -288,7 +288,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 	if (wsh->ssl) {
 		do {
 			r = SSL_read(wsh->ssl, data, bytes);
-			if (x++) {usleep(10000);
+			if (x++) usleep(10000);
 		} while (r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_READ && x < 100);
 
 		return r;
@@ -296,12 +296,12 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 
 	do {
 		r = recv(wsh->sock, data, bytes, 0);
-		if (x++) {usleep(10000);
+		if (x++) usleep(10000);
 	} while (r == -1 && (errno == EAGAIN || errno == EINTR) && x < 100);
 
-	if (r<0) {
+	//if (r<0) {
 		//printf("READ FAIL: %s\n", strerror(errno));
-	}
+	//}
 
 	return r;
 }
@@ -322,17 +322,21 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 		r = send(wsh->sock, data, bytes, 0);
 	} while (r == -1 && (errno == EAGAIN || errno == EINTR));
 
-	if (r<0) {
+	//if (r<0) {
 		//printf("wRITE FAIL: %s\n", strerror(errno));
-	}
+	//}
 
 	return r;
 }
 
-int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx)
+int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int close_sock)
 {
 	memset(wsh, 0, sizeof(*wsh));
 	wsh->sock = sock;
+
+	if (close_sock) {
+		wsh->close_sock = 1;
+	}
 
 	if (buflen > MAXLEN) {
 		buflen = MAXLEN;
@@ -396,12 +400,20 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason)
 		wsh->ssl = NULL;
 	}
 
-	//close(wsh->sock);
+	if (wsh->close_sock) {
+		close(wsh->sock);
+	}
+
 	wsh->sock = ws_sock_invalid;
 
 	if (wsh->buffer) {
 		free(wsh->buffer);
 		wsh->buffer = NULL;
+	}
+
+	if (wsh->wbuffer) {
+		free(wsh->wbuffer);
+		wsh->wbuffer = NULL;
 	}
 
 
@@ -558,6 +570,42 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 		}
 		break;
 	}
+}
+
+ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
+{
+
+	if (bytes + wsh->wdatalen > wsh->buflen) {
+		return -1;
+	}
+
+
+	if (!wsh->wbuffer) {
+		wsh->wbuffer = malloc(wsh->buflen);
+		assert(wsh->wbuffer);
+	}
+	
+
+	memcpy(wsh->wbuffer + wsh->wdatalen, data, bytes);
+	
+	wsh->wdatalen += bytes;
+
+	return bytes;
+}
+
+ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
+{
+	ssize_t r = 0;
+
+	if (!wsh->wdatalen) {
+		return -1;
+	}
+	
+	r = ws_write_frame(wsh, oc, wsh->wbuffer, wsh->wdatalen);
+	
+	wsh->wdatalen = 0;
+
+	return r;
 }
 
 

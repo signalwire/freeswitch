@@ -53,8 +53,10 @@ typedef enum {
 typedef struct wsh_s {
 	ws_socket_t sock;
 	char *buffer;
+	char *wbuffer;
 	size_t buflen;
 	ssize_t datalen;
+	ssize_t wdatalen;
 	char *payload;
 	ssize_t plen;
 	ssize_t rplen;
@@ -62,13 +64,19 @@ typedef struct wsh_s {
 	int handshake;
 	uint8_t down;
 	int secure;
+	unsigned close_sock:1;
+	unsigned :0;
 } wsh_t;
+
+ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
+ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes);
+
 
 ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
 ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
 ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
 ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
-int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx);
+int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int close_sock);
 ssize_t ws_close(wsh_t *wsh, int16_t reason);
 void init_ssl(void);
 void deinit_ssl(void);

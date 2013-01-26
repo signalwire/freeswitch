@@ -205,7 +205,7 @@ int tport_recv_stream_ws(tport_t *self)
   ws_opcode_t oc;
 
   if ( !wstp->ws_initialized ) {
-	  if (ws_init(ws, self->tp_socket, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL) == -2) {
+	  if (ws_init(ws, self->tp_socket, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) == -2) {
 		  return 2;
 	  }
 	  wstp->ws_initialized = 1;
@@ -266,12 +266,8 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
   ssize_t nerror;
   tport_ws_t *wstp = (tport_ws_t *)self;
   wsh_t *ws = wstp->ws;
-  char xbuf[65536] = "";
-  int blen = 0;
-
 
   enum { WSBUFSIZE = 2048 };
-
 
   for (i = 0; i < iovlen; i = j) {
     char *buf = wstp->wstp_buffer;
@@ -303,18 +299,9 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
 	} else {
       iov[j].siv_base = buf, iov[j].siv_len = m;
 	}
-	
-	//* hacked to push to buffer
-	if (blen + m < sizeof(xbuf)) {
-		memcpy(xbuf+blen, buf, m);
-		nerror = m;
-		blen += m;
-	} else {
-		nerror = -1;
-	}
-	//*/
-	//nerror = ws_write_frame(ws, WSOC_TEXT, buf, m);
 
+	nerror = ws_feed_buf(ws, buf, m);
+	
     SU_DEBUG_9(("tport_ws_writevec: vec %p %p %lu ("MOD_ZD")\n",
 		(void *)ws, (void *)iov[i].siv_base, (LU)iov[i].siv_len,
 		nerror));
@@ -335,11 +322,8 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
       break;
   }
 
-  //* hacked .... 
-  if (size) {
-	  size = ws_write_frame(ws, WSOC_TEXT, xbuf, blen);
-  }
-  //*/
+  ws_send_buf(ws, WSOC_TEXT);
+
 
   return size;
 }
