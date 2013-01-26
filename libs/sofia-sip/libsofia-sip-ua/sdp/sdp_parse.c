@@ -1803,7 +1803,7 @@ static int parse_ul(sdp_parser_t *p, char **r,
 }
 
 #if !HAVE_STRTOULL
-unsigned longlong strtoull(char const *string, char **return_end, int base);
+unsigned long long strtoull(char const *string, char **return_end, int base);
 #endif
 
 /*
@@ -1812,7 +1812,7 @@ unsigned longlong strtoull(char const *string, char **return_end, int base);
 static int parse_ull(sdp_parser_t *p, char **r,
 		     uint64_t *result, uint64_t max)
 {
-  unsigned longlong ull;
+  unsigned long long ull;
 
   char *s = *r;
 
