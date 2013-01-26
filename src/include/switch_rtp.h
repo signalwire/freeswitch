@@ -72,6 +72,40 @@ struct switch_rtp_crypto_key {
 };
 typedef struct switch_rtp_crypto_key switch_rtp_crypto_key_t;
 
+typedef enum {
+	IPR_RTP,
+	IPR_RTCP
+} ice_proto_t;
+
+
+
+typedef struct icand_s {
+	char *foundation;
+	int component_id;
+	char *transport;
+	uint32_t priority;
+	char *con_addr;
+	switch_port_t con_port;
+	char *cand_type;
+	char *raddr;
+	switch_port_t rport;
+	char *generation;
+	uint8_t ready;
+} icand_t;
+
+#define MAX_CAND 25
+typedef struct ice_s {
+
+	icand_t cands[2][MAX_CAND];
+	int cand_idx;
+	int chosen;
+	char *ufrag;
+	char *pwd;
+	char *options;
+
+} ice_t;
+
+
 
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session,
@@ -220,10 +254,8 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session);
   \return SWITCH_STATUS_SUCCESS
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, 
-														const char *password, const char *rpassword, switch_core_media_ice_type_t type, uint32_t priority);
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, 
-															 const char *password, const char *rpassword, 
-															 switch_core_media_ice_type_t type, uint32_t priority);
+														const char *password, const char *rpassword, ice_proto_t proto,
+														switch_core_media_ice_type_t type, ice_t *ice_params);
 
 /*! 
   \brief Activate sending RTCP Sender Reports (SR's)

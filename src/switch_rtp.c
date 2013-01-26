@@ -55,7 +55,6 @@
 #define WRITE_INC(rtp_session)  switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
 #define WRITE_DEC(rtp_session) switch_mutex_unlock(rtp_session->write_mutex); rtp_session->writing--
 
-
 #define RTP_DEFAULT_STUNCOUNT 25;
 #define rtp_header_len 12
 #define RTP_START_PORT 16384
@@ -170,7 +169,8 @@ typedef struct {
 	uint32_t funny_stun;
 	uint32_t default_stuncount;
 	switch_core_media_ice_type_t type;
-	uint32_t priority;
+	ice_t *ice_params;
+	ice_proto_t proto;
 	uint8_t sending;
 	uint8_t ready;
 	uint8_t rready;
@@ -675,7 +675,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 	if ((ice->type & ICE_VANILLA)) {
 		char sw[128] = "";
 
-		switch_stun_packet_attribute_add_priority(packet, ice->priority);
+		switch_stun_packet_attribute_add_priority(packet, ice->ice_params->cands[ice->ice_params->chosen][ice->proto].priority);
 
 		switch_snprintf(sw, sizeof(sw), "FreeSWITCH (%s)", SWITCH_VERSION_REVISION_HUMAN);
 		switch_stun_packet_attribute_add_software(packet, sw, strlen(sw));
@@ -758,8 +758,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	if (ice->sending && (packet->header.type == SWITCH_STUN_BINDING_RESPONSE || packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE)) {
 		ice->sending = 0;
 	}
-
-
 #endif 
 
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
@@ -786,7 +784,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		case SWITCH_STUN_ATTR_PRIORITY:
 			{
 				pri = (uint32_t *) attr->value;
-				ok = *pri == ice->priority;
+				ok = *pri == ice->ice_params->cands[ice->ice_params->chosen][ice->proto].priority;
 			}
 			break;
 		}
@@ -801,10 +799,76 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		ok = !strcmp(ice->user_ice, username);
 	}
 
+	if (ice->type == ICE_VANILLA) {
+		if (!ok && ice == &rtp_session->ice && pri && 
+			*pri == rtp_session->rtcp_ice.ice_params->cands[rtp_session->rtcp_ice.ice_params->chosen][1].priority) {
+			ice = &rtp_session->rtcp_ice;
+			ok = 1;
+		}
 
-	if (!ok && ice->type == ICE_VANILLA && ice == &rtp_session->ice && pri && *pri == rtp_session->rtcp_ice.priority) {
-		ice = &rtp_session->rtcp_ice;
-		ok = 1;
+
+		if (!ok) {
+			uint32_t elapsed = (unsigned int) ((switch_micro_time_now() - rtp_session->last_stun) / 1000);
+			switch_rtp_ice_t *icep[2] = { &rtp_session->ice, &rtp_session->rtcp_ice };
+
+			if (elapsed > 20000 && pri) {
+				int i, j;
+				uint32_t old;
+				const char *tx_host;
+				const char *old_host, *err = NULL;
+				char bufa[30], bufb[30];
+				char adj_port[6];
+				switch_channel_t *channel = NULL;
+				
+				if (rtp_session->session) {
+					channel = switch_core_session_get_channel(rtp_session->session);
+				}
+
+				//ice->ice_params->cands[ice->ice_params->chosen][ice->proto].priority;
+				for (j = 0; j < 2; j++) {
+					for (i = 0; i < icep[j]->ice_params->cand_idx; i++) {
+						if (icep[j]->ice_params->cands[i][icep[j]->proto].priority == *pri) {
+							if (j == IPR_RTP) {
+								icep[j]->ice_params->chosen = i;
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Change candidate index to %d\n", i);
+							}
+
+							ice = icep[j];
+							ok = 1;
+
+							if (j != IPR_RTP) {
+								break;
+							}
+
+							old = rtp_session->remote_port;
+							
+							tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
+							old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
+							
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
+											  "ICE Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host,
+											  switch_sockaddr_get_port(rtp_session->from_addr));
+							
+							if (channel) {
+								switch_channel_set_variable(channel, "remote_media_ip_reported", switch_channel_get_variable(channel, "remote_media_ip"));
+								switch_channel_set_variable(channel, "remote_media_ip", tx_host);
+								switch_snprintf(adj_port, sizeof(adj_port), "%u", switch_sockaddr_get_port(rtp_session->from_addr));
+								switch_channel_set_variable(channel, "remote_media_port_reported", switch_channel_get_variable(channel, "remote_media_port"));
+								switch_channel_set_variable(channel, "remote_media_port", adj_port);
+								switch_channel_set_variable(channel, "rtp_auto_adjust", "true");
+							}
+							rtp_session->auto_adj_used = 1;
+							
+							switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), 0, SWITCH_FALSE, &err);
+							switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+							
+						}
+					}
+				}
+			}
+		}
+
+
 	}
 
 	if (ok) {
@@ -2497,87 +2561,53 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_sessi
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, 
-														const char *password, const char *rpassword, switch_core_media_ice_type_t type, uint32_t priority)
+														const char *password, const char *rpassword, ice_proto_t proto, 
+														switch_core_media_ice_type_t type, ice_t *ice_params)
 {
 	char ice_user[80];
 	char user_ice[80];
-	
+	switch_rtp_ice_t *ice;
 
+	if (proto == IPR_RTP) {
+		ice = &rtp_session->ice;
+	} else {
+		ice = &rtp_session->rtcp_ice;
+	}
+
+	ice->proto = proto;
+	
 	if ((type & ICE_VANILLA)) {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s:%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s:%s", rlogin, login);
 	} else {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
-		rtp_session->ice.ready = rtp_session->ice.rready = 1;
+		ice->ready = ice->rready = 1;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Activating %s ICE: %s\n", rtp_type(rtp_session), ice_user);
 
 
-	rtp_session->ice.ice_user = switch_core_strdup(rtp_session->pool, ice_user);
-	rtp_session->ice.user_ice = switch_core_strdup(rtp_session->pool, user_ice);
-	rtp_session->ice.type = type;
-	rtp_session->ice.priority = priority;
-	rtp_session->ice.pass = "";
-	rtp_session->ice.rpass = "";
+	ice->ice_user = switch_core_strdup(rtp_session->pool, ice_user);
+	ice->user_ice = switch_core_strdup(rtp_session->pool, user_ice);
+	ice->type = type;
+	ice->ice_params = ice_params;
+	ice->pass = "";
+	ice->rpass = "";
 
 	if (password) {
-		rtp_session->ice.pass = switch_core_strdup(rtp_session->pool, password);
+		ice->pass = switch_core_strdup(rtp_session->pool, password);
 	}
 
 	if (rpassword) {
-		rtp_session->ice.rpass = switch_core_strdup(rtp_session->pool, rpassword);
+		ice->rpass = switch_core_strdup(rtp_session->pool, rpassword);
 	}
 	
-	rtp_session->ice.default_stuncount = RTP_DEFAULT_STUNCOUNT;
-	rtp_session->ice.stuncount = 0;
+	ice->default_stuncount = RTP_DEFAULT_STUNCOUNT;
+	ice->stuncount = 0;
 
-	if (rtp_session->ice.ice_user) {
+	if (ice->ice_user) {
 		if (ice_out(rtp_session, &rtp_session->ice) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
-		}
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp_ice(switch_rtp_t *rtp_session, char *login, char *rlogin, 
-															 const char *password, const char *rpassword, switch_core_media_ice_type_t type, uint32_t priority)
-{
-	char ice_user[80];
-	char user_ice[80];
-
-	if ((type & ICE_VANILLA)) {
-		switch_snprintf(ice_user, sizeof(ice_user), "%s:%s", login, rlogin);
-		switch_snprintf(user_ice, sizeof(user_ice), "%s:%s", rlogin, login);
-	} else {
-		switch_snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
-		switch_snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
-		rtp_session->rtcp_ice.ready = rtp_session->rtcp_ice.rready = 1;
-	}
-
-	rtp_session->rtcp_ice.ice_user = switch_core_strdup(rtp_session->pool, ice_user);
-	rtp_session->rtcp_ice.user_ice = switch_core_strdup(rtp_session->pool, user_ice);
-	rtp_session->rtcp_ice.type = type;
-	rtp_session->rtcp_ice.priority = priority;
-	rtp_session->rtcp_ice.pass = "";
-	rtp_session->rtcp_ice.rpass = "";
-
-	if (password) {
-		rtp_session->rtcp_ice.pass = switch_core_strdup(rtp_session->pool, password);
-	}
-
-	if (rpassword) {
-		rtp_session->rtcp_ice.rpass = switch_core_strdup(rtp_session->pool, rpassword);
-	}
-
-	rtp_session->rtcp_ice.default_stuncount = RTP_DEFAULT_STUNCOUNT;
-	rtp_session->rtcp_ice.stuncount = 0;
-	
-	if (rtp_session->rtcp_ice.ice_user) {
-		if (ice_out(rtp_session, &rtp_session->rtcp_ice) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 	}
