@@ -149,6 +149,9 @@ struct nta_agent_s
   nta_update_magic_t   *sa_update_magic;
   nta_update_tport_f   *sa_update_tport;
 
+  nta_error_magic_t   *sa_error_magic;
+  nta_error_tport_f   *sa_error_tport;
+
   su_time_t             sa_now;	 /**< Timestamp in microsecond resolution. */
   uint32_t              sa_next; /**< Timestamp for next agent_timer. */
   uint32_t              sa_millisec; /**< Timestamp in milliseconds. */
@@ -2720,6 +2723,10 @@ void agent_tp_error(nta_agent_t *agent,
 	  "nta_agent: tport: %s%s%s\n",
 	  remote ? remote : "", remote ? ": " : "",
 	  su_strerror(errcode));
+
+  if (agent->sa_error_tport) {
+    agent->sa_error_tport(agent->sa_error_magic, agent, tport);
+  }
 }
 
 /** Handle updated transport addresses */
@@ -11780,6 +11787,18 @@ int nta_agent_bind_tport_update(nta_agent_t *agent,
     return su_seterrno(EFAULT), -1;
   agent->sa_update_magic = magic;
   agent->sa_update_tport = callback;
+  return 0;
+}
+
+/** Bind transport error callback */
+int nta_agent_bind_tport_error(nta_agent_t *agent,
+				nta_error_magic_t *magic,
+				nta_error_tport_f *callback)
+{
+  if (!agent)
+    return su_seterrno(EFAULT), -1;
+  agent->sa_error_magic = magic;
+  agent->sa_error_tport = callback;
   return 0;
 }
 

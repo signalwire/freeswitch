@@ -54,6 +54,11 @@ typedef TPORT_T tport_t;
 #endif
 typedef NTA_UPDATE_MAGIC_T nta_update_magic_t;
 
+#ifndef NTA_ERROR_MAGIC_T
+#define NTA_ERROR_MAGIC_T void
+#endif
+typedef NTA_ERROR_MAGIC_T nta_error_magic_t;
+
 struct sigcomp_compartment;
 struct sigcomp_udvm;
 
@@ -77,10 +82,17 @@ SOFIAPUBFUN void nta_compartment_decref(struct sigcomp_compartment **);
 
 typedef void nta_update_tport_f(nta_update_magic_t *, nta_agent_t *);
 
+typedef void nta_error_tport_f(nta_error_magic_t *, nta_agent_t *, tport_t *);
+
 SOFIAPUBFUN
 int nta_agent_bind_tport_update(nta_agent_t *agent,
 				nta_update_magic_t *magic,
 				nta_update_tport_f *);
+
+SOFIAPUBFUN
+int nta_agent_bind_tport_error(nta_agent_t *agent,
+				nta_error_magic_t *magic,
+			    nta_error_tport_f *callback);
 
 SOFIA_END_DECLS
 
