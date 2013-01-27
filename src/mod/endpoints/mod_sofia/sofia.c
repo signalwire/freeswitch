@@ -1268,7 +1268,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_i_register:
 		//nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact), NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 		//nua_handle_destroy(nh);
-		sofia_reg_handle_sip_i_register(nua, profile, nh, sofia_private, sip, de, tags);
+		sofia_reg_handle_sip_i_register(nua, profile, nh, &sofia_private, sip, de, tags);
 		break;
 	case nua_i_state:
 		sofia_handle_sip_i_state(session, status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
@@ -1458,6 +1458,24 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_i_subscribe:
 		sofia_presence_handle_sip_i_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
 		break;
+	case nua_i_media_error:
+		{
+
+			if (sofia_private && sofia_private->call_id && sofia_private->network_ip && sofia_private->network_port) {
+				char *sql;
+
+				sql = switch_mprintf("delete from sip_registrations where call_id='%q' and network_ip='%q' and network_port='%q'",
+										   sofia_private->call_id, sofia_private->network_ip, sofia_private->network_port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "SOCKET DISCONNECT: %s %s:%s\n", 
+								  sofia_private->call_id, sofia_private->network_ip, sofia_private->network_port);
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+
+
+				sofia_reg_check_socket(profile, sofia_private->call_id, sofia_private->network_ip, sofia_private->network_port);
+			}
+			nua_handle_destroy(nh);
+		}
+		break;
 	case nua_r_authenticate:
 
 		if (status >= 500) {
@@ -1484,6 +1502,10 @@ static void our_sofia_event_callback(nua_event_t event,
 
 	if (tech_pvt && tech_pvt->want_event && event == tech_pvt->want_event) {
 		tech_pvt->want_event = 0;
+	}
+
+	if (sofia_private && sofia_private->call_id) {
+		check_destroy = 0;
 	}
 
 	switch (event) {
@@ -7837,7 +7859,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
 		} else {
-			if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, sizeof(key), &v_event, NULL)) {
+			if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, sizeof(key), &v_event, NULL, NULL)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}

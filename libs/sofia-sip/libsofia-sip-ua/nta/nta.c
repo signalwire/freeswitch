@@ -2286,7 +2286,6 @@ int agent_create_master_transport(nta_agent_t *self, tagi_t *tags)
 {
   self->sa_tports =
     tport_tcreate(self, nta_agent_class, self->sa_root,
-		  TPTAG_SDWN_ERROR(0),
 		  TPTAG_IDLE(1800000),
 		  TAG_NEXT(tags));
 
@@ -8338,6 +8337,14 @@ outgoing_tport_error(nta_agent_t *agent, nta_outgoing_t *orq,
       outgoing_send(orq, 0);	/* Send */
       return;
     }
+  }
+  else if (error == 0) {
+    /*
+     * Server closed connection. RFC3261:
+     * "there is no coupling between TCP connection state and SIP
+     * processing."
+     */
+    return;
   }
 
   if (outgoing_other_destinations(orq)) {

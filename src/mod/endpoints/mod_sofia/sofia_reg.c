@@ -636,14 +636,33 @@ int sofia_sla_dialog_del_callback(void *pArg, int argc, char **argv, char **colu
 	return 0;
 }
 
+void sofia_reg_check_socket(sofia_profile_t *profile, const char *call_id, const char *network_addr, const char *network_ip)
+{
+	char key[256] = "";
+	nua_handle_t *hnh;
+
+	switch_snprintf(key, sizeof(key), "%s%s%s", call_id, network_addr, network_ip);
+	switch_mutex_lock(profile->flag_mutex);
+	if ((hnh = switch_core_hash_find(profile->chat_hash, key))) {
+		switch_core_hash_delete(profile->chat_hash, key);
+		nua_handle_unref(hnh);
+	}
+	switch_mutex_unlock(profile->flag_mutex);
+}
+
+
+
 int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	switch_event_t *s_event;
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
 
-	if (argc > 12 && atoi(argv[12]) == 1) {
+	if (argc > 13 && atoi(argv[13]) == 1) {
 		sofia_reg_send_reboot(profile, argv[0], argv[1], argv[2], argv[3], argv[7], argv[11]);
 	}
+
+	sofia_reg_check_socket(profile, argv[0], argv[11], argv[12]);
+
 
 	if (argc >= 3) {
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
@@ -706,7 +725,7 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int
 	}
 
 	sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,expires"
-						 ",user_agent,server_user,server_host,profile_name,network_ip"
+						 ",user_agent,server_user,server_host,profile_name,network_ip,network_port"
 						 ",%d from sip_registrations where call_id='%q' %s", reboot, call_id, sqlextra);
 
 
@@ -728,11 +747,11 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 	if (now) {
 		sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,expires"
-						",user_agent,server_user,server_host,profile_name,network_ip"
+						",user_agent,server_user,server_host,profile_name,network_ip, network_port"
 						",%d from sip_registrations where expires > 0 and expires <= %ld", reboot, (long) now);
 	} else {
 		sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,expires"
-						",user_agent,server_user,server_host,profile_name,network_ip" ",%d from sip_registrations where expires > 0", reboot);
+						",user_agent,server_user,server_host,profile_name,network_ip, network_port" ",%d from sip_registrations where expires > 0", reboot);
 	}
 
 	sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_del_callback, profile);
@@ -872,7 +891,7 @@ void sofia_reg_check_sync(sofia_profile_t *profile)
 	char *sql;
 
 	sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,expires"
-					",user_agent,server_user,server_host,profile_name,network_ip" 
+					",user_agent,server_user,server_host,profile_name,network_ip,network_port" 
 					" from sip_registrations where expires > 0");
 
 
@@ -1065,7 +1084,7 @@ static int debounce_check(sofia_profile_t *profile, const char *user, const char
 
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
 								sofia_dispatch_event_t *de, sofia_regtype_t regtype, char *key,
-								  uint32_t keylen, switch_event_t **v_event, const char *is_nat)
+								  uint32_t keylen, switch_event_t **v_event, const char *is_nat, sofia_private_t **sofia_private_p)
 {
 	sip_to_t const *to = NULL;
 	sip_from_t const *from = NULL;
@@ -1117,6 +1136,11 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *uparams = NULL;
 	const char *p;
 	char *utmp = NULL;
+	sofia_private_t *sofia_private = NULL;
+
+	if (sofia_private_p) {
+		sofia_private = *sofia_private_p;
+	}
 
 	if (sip && sip->sip_contact->m_url->url_params) {
 		uparams = sip->sip_contact->m_url->url_params;
@@ -1606,6 +1630,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	multi_reg = (sofia_test_pflag(profile, PFLAG_MULTIREG)) ? 1 : 0;
 	multi_reg_contact = (sofia_test_pflag(profile, PFLAG_MULTIREG_CONTACT)) ? 1 : 0;
 
+
 	if (multi_reg && avoid_multi_reg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 						  "Disabling multiple registrations on a per-user basis for %s@%s\n", switch_str_nil(to_user), switch_str_nil(to_host));
@@ -1624,6 +1649,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			username = switch_event_get_header(auth_params, "sip_auth_username");
 			realm = switch_event_get_header(auth_params, "sip_auth_realm");
 		}
+
 		if (auth_res != AUTH_RENEWED || !multi_reg) {
 			if (multi_reg) {
 				if (multi_reg_contact) {
@@ -1635,7 +1661,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			} else {
 				sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, reg_host);
 			}
-			
+
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		} else {
 			char buf[32] = "";
@@ -1663,6 +1689,38 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		switch_safe_free(url);
 		switch_safe_free(contact);
+		
+
+		
+		if ((is_wss || is_ws || is_tcp || is_tls) && !sofia_private && call_id) {
+			char key[256] = "";
+			nua_handle_t *hnh;
+			switch_snprintf(key, sizeof(key), "%s%s%s", call_id, network_ip, network_port_c);
+
+			switch_mutex_lock(profile->flag_mutex);
+			hnh = switch_core_hash_find(profile->chat_hash, key);
+			switch_mutex_unlock(profile->flag_mutex);
+
+			if (!hnh) {
+				if (!(sofia_private = su_alloc(nh->nh_home, sizeof(*sofia_private)))) {
+					abort();
+				}
+
+				printf("SOFIA nh[%p] pvt[%p] call_id %s key %s\n", (void*) nh, (void *) sofia_private, call_id, key);
+			
+				memset(sofia_private, 0, sizeof(*sofia_private));
+				sofia_private->call_id = su_strdup(nh->nh_home, call_id);
+				sofia_private->network_ip = su_strdup(nh->nh_home, network_ip);
+				sofia_private->network_port = su_strdup(nh->nh_home, network_port_c);
+				sofia_private->key = su_strdup(nh->nh_home, key);
+				sofia_private->is_static++;
+				*sofia_private_p = sofia_private;
+				nua_handle_bind(nh, sofia_private);
+				nua_handle_ref(nh);
+				switch_core_hash_insert(profile->chat_hash, key, nh);
+			}
+		}
+		
 
 		if (!update_registration) {
 			sql = switch_mprintf("insert into sip_registrations "
@@ -1699,6 +1757,18 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
+
+		if (multi_reg) {
+			if (multi_reg_contact) {
+				sql = switch_mprintf("delete from sip_registrations where contact='%q' and expires!=%ld", contact_str, (long) reg_time + (long) exptime + 60);
+			} else {
+				sql = switch_mprintf("delete from sip_registrations where call_id='%q' and expires!=%ld", call_id, (long) reg_time + (long) exptime + 60);
+			}
+			
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+		}
+
+
 
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
@@ -1739,6 +1809,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 		}
 
+		sofia_reg_check_socket(profile, call_id, network_ip, network_port_c);
+
 		if (send && switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
@@ -1769,7 +1841,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			} else {
 				sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 			}
-
+	
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 			switch_safe_free(icontact);
@@ -1927,8 +1999,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 
 
-void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
-								sofia_dispatch_event_t *de,
+void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t **sofia_private_p, sip_t const *sip,
+									 sofia_dispatch_event_t *de,
 									 tagi_t tags[])
 {
 	char key[128] = "";
@@ -1937,6 +2009,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	sofia_regtype_t type = REG_REGISTER;
 	int network_port = 0;
 	char *is_nat = NULL;
+
 
 #if 0 /* This seems to cause undesirable effects so nevermind */
 	if (sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_host) {
@@ -2043,15 +2116,15 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		is_nat = NULL;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, de, type, key, sizeof(key), &v_event, is_nat);
+	sofia_reg_handle_register(nua, profile, nh, sip, de, type, key, sizeof(key), &v_event, is_nat, sofia_private_p);
 
 	if (v_event) {
 		switch_event_destroy(&v_event);
 	}
 
   end:
-
-	nua_handle_destroy(nh);
+	
+	if (!sofia_private_p || !*sofia_private_p) nua_handle_destroy(nh);
 
 }
 

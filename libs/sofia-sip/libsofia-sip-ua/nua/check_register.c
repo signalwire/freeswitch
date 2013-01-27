@@ -877,9 +877,171 @@ TCase *pingpong_tcase(int threading)
   return tc;
 }
 
+/* ---------------------------------------------------------------------- */
+
+static struct dialog *dialog = NULL;
+
+static void registrar_setup(void)
+{
+  struct event *event;
+  tagi_t const *t;
+  sip_contact_t *m;
+
+  dialog = su_home_new(sizeof *dialog); fail_if(!dialog);
+
+  nua = s2_nua_setup("register",
+		     NUTAG_APPL_METHOD("REGISTER"),
+		     NUTAG_ALLOW("REGISTER"),
+		     NUTAG_PROXY(SIP_NONE),
+		     TAG_END());
+
+  nua_get_params(nua, TAG_ANY(), TAG_END());
+  event = s2_wait_for_event(nua_r_get_params, 200);
+  fail_unless(event != NULL);
+
+  t = tl_find(event->data->e_tags, ntatag_contact);
+  fail_unless(t != NULL);
+  m = sip_contact_dup(dialog->home, (sip_contact_t *)t->t_value);
+  fail_unless(m != NULL);
+
+  s2sip->sut.contact = m;
+}
+
+static void registrar_thread_setup(void)
+{
+  s2_nua_thread = 1;
+  registrar_setup();
+}
+
+static void registrar_threadless_setup(void)
+{
+  s2_nua_thread = 1;
+  registrar_setup();
+}
+
+static void registrar_teardown(void)
+{
+  s2_teardown_started("registrar");
+  nua_shutdown(nua);
+  fail_unless_event(nua_r_shutdown, 200);
+  s2_nua_teardown();
+}
+
+static void add_registrar_fixtures(TCase *tc, int threading)
+{
+  void (*setup)(void);
+
+  if (threading)
+    setup = registrar_thread_setup;
+  else
+    setup = registrar_threadless_setup;
+
+  tcase_add_checked_fixture(tc, setup, registrar_teardown);
+}
+
+START_TEST(registrar_1_4_0)
+{
+  struct event *event;
+  nua_handle_t *nh;
+  struct message *response;
+
+  S2_CASE("1.4.0", "Registrar", "Test receiving a REGISTER");
+
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_REGISTER, NULL,
+			    SIPTAG_FROM_STR("<sip:tst@example.com>"),
+			    SIPTAG_TO_STR("<sip:tst@example.com>"),
+			    TAG_END()));
+
+  event = s2_wait_for_event(nua_i_register, 100);
+  fail_unless(event != NULL);
+  nh = event->nh; fail_if(!nh);
+
+  nua_respond(nh, 200, "Ok",
+	      NUTAG_WITH_SAVED(event->event),
+	      TAG_END());
+
+  response = s2_sip_wait_for_response(200, SIP_METHOD_REGISTER);
+  fail_if(!response);
+  s2_sip_free_message(response);
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+START_TEST(registrar_1_4_1)
+{
+  struct event *event;
+  nua_handle_t *nh;
+  struct message *response;
+
+  S2_CASE("1.4.1", "Registrar", "Test receiving a REGISTER via TCP");
+
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_REGISTER, s2sip->tcp.tport,
+			    SIPTAG_FROM_STR("<sip:tst@example.com>"),
+			    SIPTAG_TO_STR("<sip:tst@example.com>"),
+			    TAG_END()));
+
+  event = s2_wait_for_event(nua_i_register, 100);
+  fail_if(!event);
+  nh = event->nh; fail_if(!nh);
+
+  nua_respond(nh, 200, "Ok",
+	      NUTAG_WITH_SAVED(event->event),
+	      TAG_END());
+
+  response = s2_sip_wait_for_response(200, SIP_METHOD_REGISTER);
+  fail_if(!response);
+  tport_shutdown(response->tport, 2);
+  s2_sip_free_message(response);
+
+  event = s2_wait_for_event(nua_i_media_error, 0);
+  fail_if(!event);
+  nua_handle_destroy(nh);
+
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_REGISTER, s2sip->tcp.tport,
+			    SIPTAG_FROM_STR("<sip:tst@example.com>"),
+			    SIPTAG_TO_STR("<sip:tst@example.com>"),
+			    TAG_END()));
+
+  event = s2_wait_for_event(nua_i_register, 100);
+  fail_if(!event);
+  nh = event->nh; fail_if(!nh);
+
+  nua_respond(nh, 200, "Ok",
+	      NUTAG_WITH_SAVED(event->event),
+	      TAG_END());
+
+  response = s2_sip_wait_for_response(200, SIP_METHOD_REGISTER);
+  fail_if(!response);
+  nua_handle_destroy(nh);
+
+  s2_step();
+  s2_step();
+  s2_step();
+
+  tport_shutdown(response->tport, 2);
+  s2_sip_free_message(response);
+}
+END_TEST
+
+TCase *registrar_tcase(int threading)
+{
+  TCase *tc = tcase_create("1.4 - REGISTER server");
+
+  add_registrar_fixtures(tc, threading);
+
+  tcase_add_test(tc, registrar_1_4_0);
+  tcase_add_test(tc, registrar_1_4_1);
+
+  tcase_set_timeout(tc, 10);
+
+  return tc;
+}
+
 void check_register_cases(Suite *suite, int threading)
 {
   suite_add_tcase(suite, register_tcase(threading));
   suite_add_tcase(suite, pingpong_tcase(threading));
+  suite_add_tcase(suite, registrar_tcase(threading));
 }
 

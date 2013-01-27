@@ -166,6 +166,10 @@ struct sofia_private {
 	sofia_gateway_t *gateway;
 	char gateway_name[256];
 	char auth_gateway_name[256];
+	char *call_id;
+	char *network_ip;
+	char *network_port;
+	char *key;
 	int destroy_nh;
 	int destroy_me;
 	int is_call;
@@ -838,7 +842,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, sofia_dispatch_event_t *de, tagi_t tags[]);
 							   
 
-void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t **sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de,
 									 tagi_t tags[]);
 
@@ -919,8 +923,9 @@ void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp);
 switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status);
 void sofia_glue_do_xfer_invite(switch_core_session_t *session);
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
-								sofia_dispatch_event_t *de,
-								  sofia_regtype_t regtype, char *key, uint32_t keylen, switch_event_t **v_event, const char *is_nat);
+								  sofia_dispatch_event_t *de,
+								  sofia_regtype_t regtype, char *key, 
+								  uint32_t keylen, switch_event_t **v_event, const char *is_nat, sofia_private_t **sofia_private_p);
 extern switch_endpoint_interface_t *sofia_endpoint_interface;
 void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
 switch_status_t sofia_on_hangup(switch_core_session_t *session);
@@ -1098,6 +1103,7 @@ int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
 
 switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, char **ip, switch_port_t *port,
 											  const char *sourceip, switch_memory_pool_t *pool);
+void sofia_reg_check_socket(sofia_profile_t *profile, const char *call_id, const char *network_addr, const char *network_ip);
 
 /* For Emacs:
  * Local Variables:
