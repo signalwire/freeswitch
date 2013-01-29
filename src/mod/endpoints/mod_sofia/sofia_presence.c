@@ -399,6 +399,7 @@ void sofia_presence_cancel(void)
 	sofia_profile_t *profile;
 	struct presence_helper helper = { 0 };
 	switch_console_callback_match_t *matches;
+	switch_bool_t r;
 
 	if (!mod_sofia_globals.profile_hash) {
 		return;
@@ -407,19 +408,23 @@ void sofia_presence_cancel(void)
 	if (list_profiles_full(NULL, NULL, &matches, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		switch_console_callback_match_node_t *m;
 		
-		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-							 "full_via,expires,user_agent,accept,profile_name,network_ip"
-							 ",-1,'unavailable','unavailable' from sip_subscriptions where "
-							 "event='presence' and hostname='%q'",
-							 mod_sofia_globals.hostname);
-	
 
 		for (m = matches->head; m; m = m->next) {
 			if ((profile = sofia_glue_find_profile(m->val))) {
 				if (profile->pres_type == PRES_TYPE_FULL) {
 					helper.profile = profile;
 					helper.event = NULL;
-					if (sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper) != SWITCH_TRUE) {
+					
+					sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
+										 "full_via,expires,user_agent,accept,profile_name,network_ip"
+										 ",-1,'unavailable','unavailable' from sip_subscriptions where "
+										 "event='presence' and hostname='%q' and profile_name='%q'",
+										 mod_sofia_globals.hostname, profile->name);
+					
+					r = sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_sub_callback, &helper);
+					switch_safe_free(sql);
+
+					if (r != SWITCH_TRUE) {
 						sofia_glue_release_profile(profile);
 						continue;
 					}
@@ -427,8 +432,7 @@ void sofia_presence_cancel(void)
 				sofia_glue_release_profile(profile);
 			}
 		}
-
-		switch_safe_free(sql);
+		
 		switch_console_free_matches(&matches);
 
 	}
@@ -737,12 +741,11 @@ static void do_normal_probe(switch_event_t *event)
 		}
 
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_resub_callback, &h);
-		
+		switch_safe_free(sql);		
 
 		if (!h.rowcount) {
 			h.noreg++;
-			switch_safe_free(sql);
-
+			
 			/* find ones with presence_id defined that are not registred */
 			sql = switch_mprintf("select sip_from_user, sip_from_host, 'Registered', '', '', "
 								 "uuid, state, direction, "
@@ -765,7 +768,8 @@ static void do_normal_probe(switch_event_t *event)
 			}
 
 			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_resub_callback, &h);
-
+			switch_safe_free(sql);
+		
 			if (mod_sofia_globals.debug_presence > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END_PRESENCE_PROBE_SQL\n\n", profile->name);
 			}
@@ -784,7 +788,6 @@ static void do_normal_probe(switch_event_t *event)
 
 
 		sofia_glue_release_profile(profile);
-		switch_safe_free(sql);
 	}
 						 
 
@@ -981,15 +984,16 @@ static void send_conference_data(sofia_profile_t *profile, switch_event_t *event
 	}
 
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_presence_send_sql, &cb);
+	switch_safe_free(sql);
 
 	if (switch_true(final)) {
 		if (call_id) {
-                        sql = switch_mprintf("delete from sip_subscriptions where "
-                                                                 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q' "
+			sql = switch_mprintf("delete from sip_subscriptions where "
+								 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q' "
 								 "and call_id = '%q' ",
-                                                                 mod_sofia_globals.hostname, profile->name,
-                                                                 from_user, from_host, event_str, call_id);
-
+								 mod_sofia_globals.hostname, profile->name,
+								 from_user, from_host, event_str, call_id);
+			
 		} else {
 			sql = switch_mprintf("delete from sip_subscriptions where "
 								 "hostname='%q' and profile_name='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
@@ -999,7 +1003,7 @@ static void send_conference_data(sofia_profile_t *profile, switch_event_t *event
 
 		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 	}
-	switch_safe_free(sql);
+
 
 }
 

@@ -800,6 +800,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
  "profile_name='%s'", mod_sofia_globals.hostname, profile->name); 
 			
 			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_nat_callback, profile);
+			switch_safe_free(sql);
 		} else if (sofia_test_pflag(profile, PFLAG_NAT_OPTIONS_PING)) {
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
 							"expires,user_agent,server_user,server_host,profile_name"
@@ -808,6 +809,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
  "and profile_name='%s'", mod_sofia_globals.hostname, profile->name); 
 			
 			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_nat_callback, profile);
+			switch_safe_free(sql);
 		}
 	}
 
@@ -873,6 +875,8 @@ void sofia_reg_check_sync(sofia_profile_t *profile)
 
 
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_del_callback, profile);
+	switch_safe_free(sql);
+
 	sql = switch_mprintf("delete from sip_registrations where expires > 0 and hostname='%q'", mod_sofia_globals.hostname);
 	sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
@@ -913,6 +917,7 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_find_callback, &cbt);
 
+	switch_safe_free(sql);
 
 	if (cbt.matches) {
 		return val;
@@ -941,6 +946,8 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_multi(sofia_profile_t *p
 
 
 	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_reg_find_callback, &cbt);
+	
+	switch_safe_free(sql);
 
 	return cbt.list;
 }
