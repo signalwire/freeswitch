@@ -46,6 +46,7 @@ static void event_handler(switch_event_t *event)
 
 	if (switch_queue_trypush(E->events, dup) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot queue any more events.....\n");
+		switch_event_destroy(&dup);
 	}
 
 }
@@ -61,12 +62,17 @@ SWITCH_DECLARE_CONSTRUCTOR EventConsumer::EventConsumer(const char *event_name, 
 		bind(event_name, subclass_name);
 	}
 
+	ready = 1;
 }
 
 SWITCH_DECLARE(int) EventConsumer::bind(const char *event_name, const char *subclass_name)
 {
 	switch_event_types_t event_id = SWITCH_EVENT_CUSTOM;
 	switch_name_event(event_name, &event_id);
+
+	if (!ready) {
+		return 0;
+	}
 
 
 	if (zstr(subclass_name)) {
@@ -90,6 +96,10 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block, int timeout)
 	void *pop = NULL;
 	Event *ret = NULL;
 	switch_event_t *event;
+
+	if (!ready) {
+		return NULL;
+	}
 	
 	if (block) {
 		if (timeout > 0) {
@@ -108,19 +118,42 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block, int timeout)
 	return ret;
 }
 
-SWITCH_DECLARE_CONSTRUCTOR EventConsumer::~EventConsumer()
+SWITCH_DECLARE(void) EventConsumer::cleanup()
 {
+
 	uint32_t i;
+	void *pop;
+
+	if (!ready) {
+		return;
+	}	
+
+	ready = 0;
 
 	for (i = 0; i < node_index; i++) {
 		switch_event_unbind(&enodes[i]);
 	}
 
+	node_index = 0;
+
 	if (events) {
 		switch_queue_interrupt_all(events);
 	}
 
+	while(switch_queue_trypop(events, &pop) == SWITCH_STATUS_SUCCESS) {
+		switch_event_t *event = (switch_event_t *) pop;
+		switch_event_destroy(&event);
+	}
+
+
 	switch_core_destroy_memory_pool(&pool);
+
+}
+
+
+SWITCH_DECLARE_CONSTRUCTOR EventConsumer::~EventConsumer()
+{
+	cleanup();
 }
 
 SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
