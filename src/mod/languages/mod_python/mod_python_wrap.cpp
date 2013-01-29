@@ -5581,6 +5581,27 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_EventConsumer_cleanup(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:EventConsumer_cleanup",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_cleanup" "', argument " "1"" of type '" "EventConsumer *""'"); 
+  }
+  arg1 = reinterpret_cast< EventConsumer * >(argp1);
+  (arg1)->cleanup();
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *EventConsumer_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
@@ -9256,6 +9277,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_EventConsumer", _wrap_delete_EventConsumer, METH_VARARGS, NULL},
 	 { (char *)"EventConsumer_bind", _wrap_EventConsumer_bind, METH_VARARGS, NULL},
 	 { (char *)"EventConsumer_pop", _wrap_EventConsumer_pop, METH_VARARGS, NULL},
+	 { (char *)"EventConsumer_cleanup", _wrap_EventConsumer_cleanup, METH_VARARGS, NULL},
 	 { (char *)"EventConsumer_swigregister", EventConsumer_swigregister, METH_VARARGS, NULL},
 	 { (char *)"delete_CoreSession", _wrap_delete_CoreSession, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_session_set", _wrap_CoreSession_session_set, METH_VARARGS, NULL},

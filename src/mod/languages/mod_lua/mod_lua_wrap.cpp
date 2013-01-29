@@ -3845,6 +3845,30 @@ fail:
 }
 
 
+static int _wrap_EventConsumer_cleanup(lua_State* L) {
+  int SWIG_arg = -1;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  
+  SWIG_check_num_args("cleanup",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("cleanup",1,"EventConsumer *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_EventConsumer,0))){
+    SWIG_fail_ptr("EventConsumer_cleanup",1,SWIGTYPE_p_EventConsumer);
+  }
+  
+  (arg1)->cleanup();
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static void swig_delete_EventConsumer(void *obj) {
 EventConsumer *arg1 = (EventConsumer *) obj;
 delete arg1;
@@ -3852,6 +3876,7 @@ delete arg1;
 static swig_lua_method swig_EventConsumer_methods[] = {
     {"bind", _wrap_EventConsumer_bind}, 
     {"pop", _wrap_EventConsumer_pop}, 
+    {"cleanup", _wrap_EventConsumer_cleanup}, 
     {0,0}
 };
 static swig_lua_attribute swig_EventConsumer_attributes[] = {

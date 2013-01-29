@@ -4877,6 +4877,33 @@ XS(_wrap_EventConsumer_pop) {
 }
 
 
+XS(_wrap_EventConsumer_cleanup) {
+  {
+    EventConsumer *arg1 = (EventConsumer *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: EventConsumer_cleanup(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_EventConsumer, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_cleanup" "', argument " "1"" of type '" "EventConsumer *""'"); 
+    }
+    arg1 = reinterpret_cast< EventConsumer * >(argp1);
+    (arg1)->cleanup();
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_delete_CoreSession) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -9728,6 +9755,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::delete_EventConsumer", _wrap_delete_EventConsumer},
 {"freeswitchc::EventConsumer_bind", _wrap_EventConsumer_bind},
 {"freeswitchc::EventConsumer_pop", _wrap_EventConsumer_pop},
+{"freeswitchc::EventConsumer_cleanup", _wrap_EventConsumer_cleanup},
 {"freeswitchc::delete_CoreSession", _wrap_delete_CoreSession},
 {"freeswitchc::CoreSession_session_set", _wrap_CoreSession_session_set},
 {"freeswitchc::CoreSession_session_get", _wrap_CoreSession_session_get},

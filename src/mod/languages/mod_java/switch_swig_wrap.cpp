@@ -1687,6 +1687,17 @@ SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1p
 }
 
 
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1cleanup(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(EventConsumer **)&jarg1; 
+  (arg1)->cleanup();
+}
+
+
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1CoreSession(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   

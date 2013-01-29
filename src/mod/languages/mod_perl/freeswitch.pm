@@ -359,6 +359,7 @@ sub DESTROY {
 
 *bind = *freeswitchc::EventConsumer_bind;
 *pop = *freeswitchc::EventConsumer_pop;
+*cleanup = *freeswitchc::EventConsumer_cleanup;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);

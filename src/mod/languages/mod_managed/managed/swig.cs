@@ -723,6 +723,10 @@ public class EventConsumer : IDisposable {
     return ret;
   }
 
+  public void cleanup() {
+    freeswitchPINVOKE.EventConsumer_cleanup(swigCPtr);
+  }
+
 }
 
 }
@@ -1539,6 +1543,11 @@ public class freeswitch {
 
   public static void switch_ivr_dmachine_set_target(SWIGTYPE_p_switch_ivr_dmachine dmachine, switch_digit_action_target_t target) {
     freeswitchPINVOKE.switch_ivr_dmachine_set_target(SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine), (int)target);
+  }
+
+  public static switch_status_t switch_ivr_dmachine_set_terminators(SWIGTYPE_p_switch_ivr_dmachine dmachine, string terminators) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_dmachine_set_terminators(SWIGTYPE_p_switch_ivr_dmachine.getCPtr(dmachine), terminators);
+    return ret;
   }
 
   public static switch_status_t switch_core_session_set_codec_slin(SWIGTYPE_p_switch_core_session session, switch_slin_data data) {
@@ -3141,13 +3150,31 @@ public class freeswitch {
     return ret;
   }
 
-  public static int switch_toupper(int c) {
-    int ret = freeswitchPINVOKE.switch_toupper(c);
+  public static uint switch_toupper(uint eax) {
+    uint ret = freeswitchPINVOKE.switch_toupper(eax);
     return ret;
   }
 
-  public static int switch_tolower(int c) {
-    int ret = freeswitchPINVOKE.switch_tolower(c);
+  public static uint switch_tolower(uint eax) {
+    uint ret = freeswitchPINVOKE.switch_tolower(eax);
+    return ret;
+  }
+
+  public static void switch_toupper_max(string s) {
+    freeswitchPINVOKE.switch_toupper_max(s);
+  }
+
+  public static void switch_tolower_max(string s) {
+    freeswitchPINVOKE.switch_tolower_max(s);
+  }
+
+  public static int old_switch_toupper(int c) {
+    int ret = freeswitchPINVOKE.old_switch_toupper(c);
+    return ret;
+  }
+
+  public static int old_switch_tolower(int c) {
+    int ret = freeswitchPINVOKE.old_switch_tolower(c);
     return ret;
   }
 
@@ -4924,8 +4951,9 @@ public class freeswitch {
     return ret;
   }
 
-  public static void switch_ivr_session_echo(SWIGTYPE_p_switch_core_session session, switch_input_args_t args) {
-    freeswitchPINVOKE.switch_ivr_session_echo(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_input_args_t.getCPtr(args));
+  public static switch_status_t switch_ivr_session_echo(SWIGTYPE_p_switch_core_session session, switch_input_args_t args) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_session_echo(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_input_args_t.getCPtr(args));
+    return ret;
   }
 
   public static switch_status_t switch_ivr_stop_tone_detect_session(SWIGTYPE_p_switch_core_session session) {
@@ -6431,6 +6459,7 @@ public class freeswitch {
   public static readonly int SWITCH_MAX_MANAGEMENT_BUFFER_LEN = freeswitchPINVOKE.SWITCH_MAX_MANAGEMENT_BUFFER_LEN_get();
   public static readonly int SWITCH_RTP_CNG_PAYLOAD = freeswitchPINVOKE.SWITCH_RTP_CNG_PAYLOAD_get();
   public static readonly int DMACHINE_MAX_DIGIT_LEN = freeswitchPINVOKE.DMACHINE_MAX_DIGIT_LEN_get();
+  public static readonly int MAX_ARG_RECURSION = freeswitchPINVOKE.MAX_ARG_RECURSION_get();
   public static readonly int SWITCH_API_VERSION = freeswitchPINVOKE.SWITCH_API_VERSION_get();
   public static readonly int SWITCH_CORE_DB_OK = freeswitchPINVOKE.SWITCH_CORE_DB_OK_get();
   public static readonly int SWITCH_CORE_DB_ERROR = freeswitchPINVOKE.SWITCH_CORE_DB_ERROR_get();
@@ -6471,6 +6500,7 @@ public class freeswitch {
   public static readonly int SWITCH_RESAMPLE_QUALITY = freeswitchPINVOKE.SWITCH_RESAMPLE_QUALITY_get();
   public static readonly int SWITCH_RTP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_BUF_LEN_get();
   public static readonly int SWITCH_RTCP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTCP_MAX_BUF_LEN_get();
+  public static readonly int SWITCH_RTP_MAX_BUF_LEN_WORDS = freeswitchPINVOKE.SWITCH_RTP_MAX_BUF_LEN_WORDS_get();
   public static readonly int SWITCH_RTP_MAX_CRYPTO_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_CRYPTO_LEN_get();
   public static readonly int SWITCH_RTP_KEY_LEN = freeswitchPINVOKE.SWITCH_RTP_KEY_LEN_get();
   public static readonly string SWITCH_RTP_CRYPTO_KEY_32 = freeswitchPINVOKE.SWITCH_RTP_CRYPTO_KEY_32_get();
@@ -7570,6 +7600,24 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtp_hdr_t")]
   public static extern void delete_switch_rtp_hdr_t(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_hdr_ext_t_length_set")]
+  public static extern void switch_rtp_hdr_ext_t_length_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_hdr_ext_t_length_get")]
+  public static extern uint switch_rtp_hdr_ext_t_length_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_hdr_ext_t_profile_set")]
+  public static extern void switch_rtp_hdr_ext_t_profile_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_hdr_ext_t_profile_get")]
+  public static extern uint switch_rtp_hdr_ext_t_profile_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_rtp_hdr_ext_t")]
+  public static extern IntPtr new_switch_rtp_hdr_ext_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtp_hdr_ext_t")]
+  public static extern void delete_switch_rtp_hdr_ext_t(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtcp_hdr_t_version_set")]
   public static extern void switch_rtcp_hdr_t_version_set(HandleRef jarg1, uint jarg2);
 
@@ -7807,6 +7855,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_ivr_dmachine_match")]
   public static extern void delete_switch_ivr_dmachine_match(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_MAX_ARG_RECURSION_get")]
+  public static extern int MAX_ARG_RECURSION_get();
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_input_args_t_input_callback_set")]
   public static extern void switch_input_args_t_input_callback_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -7842,6 +7893,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_input_args_t_dmachine_get")]
   public static extern IntPtr switch_input_args_t_dmachine_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_input_args_t_loops_set")]
+  public static extern void switch_input_args_t_loops_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_input_args_t_loops_get")]
+  public static extern int switch_input_args_t_loops_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_input_args_t")]
   public static extern IntPtr new_switch_input_args_t();
@@ -8694,6 +8751,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_set_target")]
   public static extern void switch_ivr_dmachine_set_target(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_dmachine_set_terminators")]
+  public static extern int switch_ivr_dmachine_set_terminators(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_codec_slin")]
   public static extern int switch_core_session_set_codec_slin(HandleRef jarg1, HandleRef jarg2);
@@ -9890,10 +9950,22 @@ class freeswitchPINVOKE {
   public static extern int switch_console_execute(string jarg1, int jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_toupper")]
-  public static extern int switch_toupper(int jarg1);
+  public static extern uint switch_toupper(uint jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_tolower")]
-  public static extern int switch_tolower(int jarg1);
+  public static extern uint switch_tolower(uint jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_toupper_max")]
+  public static extern void switch_toupper_max(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_tolower_max")]
+  public static extern void switch_tolower_max(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_old_switch_toupper")]
+  public static extern int old_switch_toupper(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_old_switch_tolower")]
+  public static extern int old_switch_tolower(int jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_isalnum")]
   public static extern int switch_isalnum(int jarg1);
@@ -14003,7 +14075,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_stop_inband_dtmf_generate_session(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_session_echo")]
-  public static extern void switch_ivr_session_echo(HandleRef jarg1, HandleRef jarg2);
+  public static extern int switch_ivr_session_echo(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_stop_tone_detect_session")]
   public static extern int switch_ivr_stop_tone_detect_session(HandleRef jarg1);
@@ -14295,6 +14367,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTCP_MAX_BUF_LEN_get")]
   public static extern int SWITCH_RTCP_MAX_BUF_LEN_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_BUF_LEN_WORDS_get")]
+  public static extern int SWITCH_RTP_MAX_BUF_LEN_WORDS_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RTP_MAX_CRYPTO_LEN_get")]
   public static extern int SWITCH_RTP_MAX_CRYPTO_LEN_get();
@@ -15597,6 +15672,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_EventConsumer_pop")]
   public static extern IntPtr EventConsumer_pop(HandleRef jarg1, int jarg2, int jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_EventConsumer_cleanup")]
+  public static extern void EventConsumer_cleanup(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_CoreSession")]
   public static extern void delete_CoreSession(HandleRef jarg1);
@@ -28935,6 +29013,16 @@ public class switch_input_args_t : IDisposable {
     } 
   }
 
+  public int loops {
+    set {
+      freeswitchPINVOKE.switch_input_args_t_loops_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_input_args_t_loops_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public switch_input_args_t() : this(freeswitchPINVOKE.new_switch_input_args_t(), true) {
   }
 
@@ -31581,7 +31669,8 @@ public enum switch_rtp_bug_flag_t {
   RTP_BUG_IGNORE_DTMF_DURATION = (1 << 6),
   RTP_BUG_ACCEPT_ANY_PACKETS = (1 << 7),
   RTP_BUG_GEN_ONE_GEN_ALL = (1 << 8),
-  RTP_BUG_CHANGE_SSRC_ON_MARKER = (1 << 9)
+  RTP_BUG_CHANGE_SSRC_ON_MARKER = (1 << 9),
+  RTP_BUG_FLUSH_JB_ON_DTMF = (1 << 10)
 }
 
 }
@@ -31780,6 +31869,73 @@ public enum switch_rtp_flush_t {
   SWITCH_RTP_FLUSH_ONCE,
   SWITCH_RTP_FLUSH_STICK,
   SWITCH_RTP_FLUSH_UNSTICK
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_rtp_hdr_ext_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_rtp_hdr_ext_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_rtp_hdr_ext_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_rtp_hdr_ext_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_switch_rtp_hdr_ext_t(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public uint length {
+    set {
+      freeswitchPINVOKE.switch_rtp_hdr_ext_t_length_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtp_hdr_ext_t_length_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint profile {
+    set {
+      freeswitchPINVOKE.switch_rtp_hdr_ext_t_profile_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_rtp_hdr_ext_t_profile_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_rtp_hdr_ext_t() : this(freeswitchPINVOKE.new_switch_rtp_hdr_ext_t(), true) {
+  }
+
 }
 
 }

@@ -104,4 +104,8 @@ public class EventConsumer {
     return (cPtr == 0) ? null : new Event(cPtr, true);
   }
 
+  public void cleanup() {
+    freeswitchJNI.EventConsumer_cleanup(swigCPtr, this);
+  }
+
 }
