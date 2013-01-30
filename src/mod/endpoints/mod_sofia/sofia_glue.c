@@ -6802,7 +6802,8 @@ int sofia_glue_tech_simplify(private_object_t *tech_pvt)
 		goto end;
 	}
 
-	if ((uuid = switch_channel_get_partner_uuid(tech_pvt->channel)) && (other_session = switch_core_session_locate(uuid))) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_BRIDGED) && 
+		(uuid = switch_channel_get_partner_uuid(tech_pvt->channel)) && (other_session = switch_core_session_locate(uuid))) {
 
 		other_channel = switch_core_session_get_channel(other_session);
 
