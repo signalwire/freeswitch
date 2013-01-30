@@ -487,11 +487,14 @@ int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m,
     /* XXX - do fmtp comparison */
 
     if (rrm) {
+#if 0
       /* Use same payload type as remote */
       if (lrm->rm_pt != rrm->rm_pt) {
-	lrm->rm_predef = 0;
-	lrm->rm_pt = rrm->rm_pt;
+		  lrm->rm_predef = 0;
+		  lrm->rm_pt = rrm->rm_pt;
+
       }
+#endif
       common_codecs++;
     }
     else {
