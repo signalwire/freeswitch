@@ -77,6 +77,30 @@ typedef enum {
 	VM_MOVE_SAME
 } msg_move_t;
 
+typedef enum {
+	MWI_REASON_UNKNOWN = 0,
+	MWI_REASON_NEW = 1,
+	MWI_REASON_DELETE = 2,
+	MWI_REASON_SAVE = 3,
+	MWI_REASON_PURGE = 4,
+	MWI_REASON_READ = 5
+} mwi_reason_t;
+
+struct mwi_reason_table {
+	const char *name;
+	int state;
+};
+
+static struct mwi_reason_table MWI_REASON_CHART[] = {
+	{"UNKNOWN", MWI_REASON_UNKNOWN},
+	{"NEW", MWI_REASON_NEW},
+	{"DELETE", MWI_REASON_DELETE},
+	{"SAVE", MWI_REASON_SAVE},
+	{"PURGE", MWI_REASON_PURGE},
+	{"READ", MWI_REASON_READ},
+	{NULL, 0}
+};
+
 #define VM_PROFILE_CONFIGITEM_COUNT 100
 
 struct vm_profile {
@@ -158,6 +182,20 @@ struct vm_profile {
 };
 typedef struct vm_profile vm_profile_t;
 
+const char * mwi_reason2str(mwi_reason_t state)
+{
+	uint8_t x;
+	const char *str = "UNKNOWN";
+
+	for (x = 0; x < (sizeof(MWI_REASON_CHART) / sizeof(struct mwi_reason_table)) - 1; x++) {
+		if (MWI_REASON_CHART[x].state == state) {
+			str = MWI_REASON_CHART[x].name;
+			break;
+		}
+	}
+
+	return str;
+}
 
 switch_cache_db_handle_t *vm_get_db_handle(vm_profile_t *profile)
 {
@@ -1805,9 +1843,10 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 }
 
 
-static void update_mwi(vm_profile_t *profile, const char *id, const char *domain_name, const char *myfolder)
+static void update_mwi(vm_profile_t *profile, const char *id, const char *domain_name, const char *myfolder, mwi_reason_t reason)
 {
 	const char *yn = "no";
+	const char *update_reason = mwi_reason2str(reason); 
 	int total_new_messages = 0;
 	int total_saved_messages = 0;
 	int total_new_urgent_messages = 0;
@@ -1826,6 +1865,7 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 		yn = "yes";
 	}
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Update-Reason", update_reason);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "%s@%s", id, domain_name);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", total_new_messages, total_saved_messages,
 							total_new_urgent_messages, total_saved_urgent_messages);
@@ -2061,7 +2101,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				vm_execute_sql(profile, sql, profile->mutex);
 				vm_check_state = VM_CHECK_FOLDER_SUMMARY;
 
-				update_mwi(profile, myid, domain_name, myfolder);
+				update_mwi(profile, myid, domain_name, myfolder, MWI_REASON_PURGE);
 			}
 			break;
 		case VM_CHECK_CONFIG:
@@ -2745,7 +2785,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		vm_execute_sql(profile, usql, profile->mutex);
 		switch_safe_free(usql);
 
-		update_mwi(profile, myid, domain_name, myfolder);
+		update_mwi(profile, myid, domain_name, myfolder, MWI_REASON_NEW);
 	}
 
 	if (send_mail && !zstr(vm_email) && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
@@ -4097,7 +4137,7 @@ static void do_del(vm_profile_t *profile, char *user_in, char *domain, char *fil
 	vm_execute_sql(profile, sql, profile->mutex);
 	free(sql);
 
-	update_mwi(profile, user, domain, myfolder);
+	update_mwi(profile, user, domain, myfolder, MWI_REASON_DELETE);
 
 	if (ref) {
 		stream->write_function(stream, "Content-type: text/html\n\n<h2>Message Deleted</h2>\n" "<META http-equiv=\"refresh\" content=\"1;URL=%s\">", ref);
@@ -4485,7 +4525,7 @@ SWITCH_STANDARD_API(voicemail_delete_api_function)
 		vm_execute_sql(profile, sql, profile->mutex);
 		switch_safe_free(sql);
 		
-		update_mwi(profile, id, domain, "inbox");
+		update_mwi(profile, id, domain, "inbox", MWI_REASON_DELETE);
 	
 		stream->write_function(stream, "%s", "+OK\n");
 		profile_rwunlock(profile);
@@ -4567,7 +4607,7 @@ SWITCH_STANDARD_API(voicemail_read_api_function)
 		vm_execute_sql(profile, sql, profile->mutex);
 		switch_safe_free(sql);
 		
-		update_mwi(profile, id, domain, "inbox");
+		update_mwi(profile, id, domain, "inbox", MWI_REASON_READ);
 	
 		stream->write_function(stream, "%s", "+OK\n");
 
@@ -5315,7 +5355,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_purge_function)
 
 	sql = switch_mprintf("SELECT '%q', uuid, username, domain, file_path FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND flags = 'delete'", profile_name, id, domain);
 	vm_execute_sql_callback(profile, profile->mutex, sql, message_purge_callback, NULL);
-	update_mwi(profile, id, domain, "inbox"); /* TODO Make inbox value configurable */
+	update_mwi(profile, id, domain, "inbox", MWI_REASON_PURGE); /* TODO Make inbox value configurable */
 
 	profile_rwunlock(profile);
 
