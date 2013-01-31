@@ -71,7 +71,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading OPENSSL."
-					CommandLine="if not exist &quot;$(ProjectDir)..\openssl-1.0.0a&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://openssl.org/source/openssl-1.0.0a.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\openssl-1.0.0a&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/openssl-1.0.0a.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\OPENSSL"
 				/>
 			</FileConfiguration>
@@ -81,7 +81,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading OPENSSL."
-					CommandLine="if not exist &quot;$(ProjectDir)..\openssl-1.0.0a&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://openssl.org/source/openssl-1.0.0a.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\openssl-1.0.0a&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/downloads/libs/openssl-1.0.0a.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\OPENSSL"
 				/>
 			</FileConfiguration>
