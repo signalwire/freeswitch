@@ -329,7 +329,7 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 }
 
 /* At this time, billing never succeeds if you don't have a database. */
-static switch_status_t bill_event(double billamount, const char *billaccount, switch_channel_t *channel)
+static switch_bool_t bill_event(double billamount, const char *billaccount, switch_channel_t *channel)
 {
 	char *sql = NULL, *dsql = NULL;
 	switch_status_t status = SWITCH_FALSE;
@@ -785,7 +785,7 @@ static void nibblebill_adjust(switch_core_session_t *session, double amount)
 	}
 
 	/* Add or remove amount from adjusted billing here. Note, we bill the OPPOSITE */
-	if (bill_event(-amount, billaccount, channel) == SWITCH_STATUS_SUCCESS) {
+	if (bill_event(-amount, billaccount, channel) == SWITCH_TRUE) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Recorded adjustment to %s for $%f\n", billaccount, amount);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to record adjustment to %s for $%f\n", billaccount, amount);
