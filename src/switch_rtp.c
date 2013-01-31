@@ -957,11 +957,9 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 		zrtp_config.cb.event_cb.on_zrtp_protocol_event = (void (*)(zrtp_stream_t*,zrtp_protocol_event_t))zrtp_event_callback;
 		zrtp_config.cb.misc_cb.on_send_packet = zrtp_send_rtp_callback;
 		zrtp_config.cb.event_cb.on_zrtp_security_event = (void (*)(zrtp_stream_t*,zrtp_security_event_t))zrtp_event_callback;
-
 		zrtp_log_set_log_engine((zrtp_log_engine *) zrtp_logger);
 		zrtp_log_set_level(4);
 		if (zrtp_status_ok == zrtp_init(&zrtp_config, &zrtp_global)) {
-
 			memcpy(zid, zid_string, 12);
 			switch_scheduler_add_task(switch_epoch_time_now(NULL) + 900, zrtp_cache_save_callback, "zrtp_cache_save", "core", 0, NULL,
 									  SSHF_NONE | SSHF_NO_DEL);
@@ -970,7 +968,6 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 			zrtp_on = 0;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "ZRTP init failed!\n");
 		}
-
 	}
 #endif
 #ifdef ENABLE_SRTP
