@@ -8464,7 +8464,7 @@ outgoing_queue(outgoing_queue_t *queue,
 	       nta_outgoing_t *orq)
 {
   if (orq->orq_queue == queue) {
-    assert(queue->q_timeout == 0);
+	//assert(queue->q_timeout == 0);
     return;
   }
 
