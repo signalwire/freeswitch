@@ -247,6 +247,8 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 						switch_get_addr(ipbuf, sizeof(ipbuf), addr);
 						newsession->remote_address = switch_core_strdup(newsession->pool, ipbuf);
 						newsession->remote_port = switch_sockaddr_get_port(addr);
+						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(newsession->uuid), SWITCH_LOG_INFO, "Rtmp connection from %s:%i\n",
+										  newsession->remote_address, newsession->remote_port);
 					}
 				}
 			} else {

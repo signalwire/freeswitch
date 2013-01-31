@@ -857,7 +857,8 @@ switch_call_cause_t rtmp_session_create_call(rtmp_session_t *rsession, switch_co
 	if (!(*newsession = switch_core_session_request(rtmp_globals.rtmp_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL))) {
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
-
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "New FreeSWITCH session created: %s\n",
+					  switch_core_session_get_uuid(*newsession));
 
 	pool = switch_core_session_get_pool(*newsession);	
  	channel = switch_core_session_get_channel(*newsession);
