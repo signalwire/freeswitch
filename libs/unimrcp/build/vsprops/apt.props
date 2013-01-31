@@ -4,7 +4,7 @@
     <Import Project="apr.props" />
   </ImportGroup>
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <AptPropsImported>true</AptPropsImported>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -84,7 +84,6 @@ if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(Projec
 </Command>
     </PreBuildEvent>
     <ClCompile>
-      <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_FILEIO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
@@ -92,6 +91,7 @@ if not exist "$(ProjectDir)../../tiff-4.0.2/libtiff/tif_config.h" copy "$(Projec
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <CompileAs>CompileAsC</CompileAs>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
