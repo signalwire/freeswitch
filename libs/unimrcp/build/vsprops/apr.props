@@ -1,15 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(ProjectDir)..\..\build\vsprops\unibase.props" />
+    <Import Project="$(ProjectDir)..\..\build\vsprops\unibase.props" Condition=" '$(UnibasePropsImported)' == '' "/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
     <AprDir>$(LibRootDir)libs\apr</AprDir>
     <AprUtilDir>$(LibRootDir)libs\apr-util</AprUtilDir>
     <AprIconvDir>$(LibRootDir)libs\apr-iconv</AprIconvDir>
-  </PropertyGroup>
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

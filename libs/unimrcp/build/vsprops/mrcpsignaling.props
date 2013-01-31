@@ -2,11 +2,8 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="mpf.props" />
-    <Import Project="mrcp.props" />
+    <Import Project="mrcp.props" Condition=" '$(MrcpPropsImported)' == ''" />
   </ImportGroup>
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectRootDir)libs\mrcp-signaling\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
