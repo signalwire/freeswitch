@@ -25,6 +25,7 @@
  * 
  * Raymond Chandler <intralanman@gmail.com>
  * Rupa Schomaker <rupa@rupa.com>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  * mod_lcr.c -- Least Cost Routing Module
  *
@@ -116,6 +117,7 @@ struct profile_obj {
 	
 	switch_bool_t reorder_by_rate;
 	switch_bool_t quote_in_list;
+	switch_bool_t single_bridge;
 	switch_bool_t info_in_headers;
 	switch_bool_t enable_sip_redir;
 };
@@ -604,6 +606,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	lcr_route current = NULL;
 	callback_t *cbt = (callback_t *) pArg;
 	char *key = NULL;
+	char *key2 = NULL;
 	int i = 0;
 	int r = 0;
 	switch_bool_t lcr_skipped = SWITCH_TRUE; /* assume we'll throw it away, paranoid about leak */
@@ -671,14 +674,22 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 			lcr_skipped = SWITCH_FALSE;
 			r = 0; goto end;
 		}
-
 		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
+		if (cbt->profile->single_bridge) {
+			key2 = switch_core_sprintf(pool, "%s", additional->carrier_name);
+		}
 		additional->next = cbt->head;
 		cbt->head = additional;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding %s to head of list\n", additional->carrier_name);
 		if (switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 			r = -1; goto end;
+		}
+		if (cbt->profile->single_bridge) {
+			if (switch_core_hash_insert(cbt->dedup_hash, key2, additional) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
+				r = -1; goto end;
+			}
 		}
 		lcr_skipped = SWITCH_FALSE;
 		r = 0; goto end;
@@ -700,6 +711,16 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 			break;
 		}
 
+		if (cbt->profile->single_bridge) {
+			key2 = switch_core_sprintf(pool, "%s", additional->carrier_name);
+			if (switch_core_hash_find(cbt->dedup_hash, key2)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+								"Ignoring duplicate carrier gateway for single bridge. (%s)\n",
+								key2);
+				break;
+			}
+		}
+
 		if (!cbt->profile->reorder_by_rate) {
 			/* use db order */
 			if (current->next == NULL) {
@@ -709,6 +730,12 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 				if (switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 					r = -1; goto end;
+				}
+				if (cbt->profile->single_bridge) {
+					if (switch_core_hash_insert(cbt->dedup_hash, key2, additional) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
+						r = -1; goto end;
+					}
 				}
 				lcr_skipped = SWITCH_FALSE;
 				break;
@@ -732,6 +759,12 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 					r = -1; goto end;
 				}
+				if (cbt->profile->single_bridge) {
+					if (switch_core_hash_insert(cbt->dedup_hash, key2, additional) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
+						r = -1; goto end;
+					}
+				}
 				lcr_skipped = SWITCH_FALSE;
 				break;
 			} else if (current->next == NULL) {
@@ -742,6 +775,12 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 				if (switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
 					r = -1; goto end;
+				}
+				if (cbt->profile->single_bridge) {
+					if (switch_core_hash_insert(cbt->dedup_hash, key2, additional) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
+						r = -1; goto end;
+					}
 				}
 				lcr_skipped = SWITCH_FALSE;
 				break;
@@ -1030,6 +1069,7 @@ static switch_status_t lcr_load_config()
 			switch_stream_handle_t *thisorder = NULL;
 			char *reorder_by_rate = NULL;
 			char *quote_in_list = NULL;
+			char *single_bridge = NULL;
 			char *info_in_headers = NULL;
 			char *enable_sip_redir = NULL;
 			char *id_s = NULL;
@@ -1086,6 +1126,9 @@ static switch_status_t lcr_load_config()
 					info_in_headers = val;
 				} else if (!strcasecmp(var, "quote_in_list") && !zstr(val)) {
 					quote_in_list = val;
+				} else if (!strcasecmp(var, "single_bridge") && !zstr(val)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Single bridge mode set to %s.\n", val);
+					single_bridge = val;
 				} else if (!strcasecmp(var, "export_fields") && !zstr(val)) {
 					export_fields = val;
 				} else if (!strcasecmp(var, "limit_type") && !zstr(val)) {
@@ -1218,7 +1261,11 @@ static switch_status_t lcr_load_config()
 				if (!zstr(quote_in_list)) {
 					profile->quote_in_list = switch_true(quote_in_list);
 				}
-				
+
+				if (!zstr(single_bridge)) {
+					profile->single_bridge = switch_true(single_bridge);
+				}
+
 				if (!zstr(export_fields)) {
 					int argc2 = 0;
 					char *argv2[50] = { 0 };
@@ -1989,6 +2036,7 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 				stream->write_function(stream, " Reorder rate:\t%s\n", profile->reorder_by_rate ? "enabled" : "disabled");
 				stream->write_function(stream, " Info in headers:\t%s\n", profile->info_in_headers ? "enabled" : "disabled");
 				stream->write_function(stream, " Quote IN() List:\t%s\n", profile->quote_in_list ? "enabled" : "disabled");
+				stream->write_function(stream, " Single Bridge:\t%s\n", profile->single_bridge ? "enabled" : "disabled");
 				stream->write_function(stream, " Sip Redirection Mode:\t%s\n", profile->enable_sip_redir ? "enabled" : "disabled");
 				stream->write_function(stream, " Import fields:\t%s\n", profile->export_fields_str ? profile->export_fields_str : "(null)");
 				stream->write_function(stream, " Limit type:\t%s\n", profile->limit_type);
