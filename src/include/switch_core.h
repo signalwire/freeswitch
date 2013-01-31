@@ -2226,7 +2226,7 @@ SWITCH_DECLARE(void) switch_core_sqldb_resume(void);
   \}
 */
 
-typedef int (*switch_db_event_callback_func_t) (void *pArg, switch_event_t *event);
+typedef int (*switch_core_db_event_callback_func_t) (void *pArg, switch_event_t *event);
 
 #define CACHE_DB_LEN 256
 typedef enum {
@@ -2461,7 +2461,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *n
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_start(switch_sql_queue_manager_t *qm);
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm);
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback(switch_cache_db_handle_t *dbh,
-																		   const char *sql, switch_db_event_callback_func_t callback, void *pdata, char **err);
+																		   const char *sql, switch_core_db_event_callback_func_t callback, void *pdata, char **err);
 							
 SWITCH_DECLARE(pid_t) switch_fork(void);
 
