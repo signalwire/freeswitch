@@ -50,6 +50,10 @@
 #include <srtp_priv.h>
 #include <switch_version.h>
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/bio.h>
+
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
 #define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
 #define WRITE_INC(rtp_session)  switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
@@ -176,6 +180,38 @@ typedef struct {
 	uint8_t rready;
 } switch_rtp_ice_t;
 
+struct switch_rtp;
+
+typedef struct switch_dtls_s {
+	/* DTLS */
+	SSL_CTX *ssl_ctx;
+	SSL *ssl;
+	BIO *read_bio;
+	BIO *write_bio;
+	dtls_fingerprint_t *local_fp;
+	dtls_fingerprint_t *remote_fp;
+	dtls_state_t state;
+	dtls_type_t type;
+	switch_size_t bytes;
+	void *data;
+	switch_socket_t *sock_output;
+	switch_sockaddr_t *remote_addr;
+	char *rsa;
+	char *pvt;
+	struct switch_rtp *rtp_session;
+} switch_dtls_t;
+
+typedef int (*dtls_state_handler_t)(switch_rtp_t *, switch_dtls_t *);
+
+
+static int dtls_state_handshake(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
+static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
+static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
+static int dtls_state_dummy(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
+
+dtls_state_handler_t dtls_states[DS_INVALID] = {dtls_state_handshake, dtls_state_setup, dtls_state_ready, dtls_state_dummy};
+
+
 struct switch_rtp {
 	/* 
 	 * Two sockets are needed because we might be transcoding protocol families
@@ -207,6 +243,9 @@ struct switch_rtp {
 	srtp_policy_t recv_policy;
 	uint32_t srtp_errs;
 	uint32_t srctp_errs;
+
+	switch_dtls_t *dtls;
+	switch_dtls_t *rtcp_dtls;
 
 	uint16_t seq;
 	uint32_t ssrc;
@@ -1883,6 +1922,217 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	return status;
 }
 
+
+static const char *dtls_state_names_t[] = {"HANDSHAKE", "SETUP", "READY", "FAIL", "INVALID"};
+static const char *dtls_state_names(dtls_state_t s)
+{
+	if (s > DS_INVALID) {
+		s = DS_INVALID;
+	}
+
+	return dtls_state_names_t[s];
+}
+
+
+#define dtls_set_state(_dtls, _state) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Changing DTLS state from %s to %s\n", dtls_state_names(_dtls->state), dtls_state_names(_state)); _dtls->state = _state
+
+static int dtls_state_dummy(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
+{
+	/// duhhh
+
+	return -1;
+}
+
+static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
+{
+	dtls_set_state(dtls, DS_READY);
+	return 0;
+}
+
+static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
+{
+	printf("ready...\n");
+	return 0;
+}
+
+static int dtls_state_handshake(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
+{
+	int ret;
+	
+	if ((ret = SSL_do_handshake(dtls->ssl)) != 1){
+		switch((ret = SSL_get_error(dtls->ssl, ret))){
+		case SSL_ERROR_WANT_READ:
+		case SSL_ERROR_WANT_WRITE:
+		case SSL_ERROR_NONE:
+			break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Handshake failure %d\n", ret);
+			dtls_set_state(dtls, DS_FAIL);
+			return -1;
+		}
+	}
+
+	if (SSL_is_init_finished(dtls->ssl)) {
+		dtls_set_state(dtls, DS_SETUP);
+	}
+
+	return 0;
+}
+
+static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
+{
+	int r = 0, ret = 0, len;
+	void *data;
+	switch_size_t bytes;
+
+	//printf("WTF %s...\n", dtls_state_names(dtls->state));
+
+	if (dtls->bytes) {
+		printf("READ %ld\n", dtls->bytes);
+
+		if ((ret = BIO_write(dtls->read_bio, dtls->data, dtls->bytes)) != dtls->bytes) {
+			ret = SSL_get_error(dtls->ssl, ret);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "DTLS packet read err %d\n", ret);
+			dtls_set_state(dtls, DS_FAIL);
+			return -1;
+		}
+	}
+
+	if (SSL_read(dtls->ssl, dtls->data, dtls->bytes) == dtls->bytes) {
+		if (BIO_reset(dtls->read_bio));
+	}
+	r = dtls_states[dtls->state](rtp_session, dtls);
+
+
+	if ((len = BIO_get_mem_data(dtls->write_bio, &data)) && data) {
+		bytes = len;
+		printf("WRITE %ld\n", bytes);
+		if (switch_socket_sendto(dtls->sock_output, dtls->remote_addr, 0, data, &bytes ) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "DTLS packet not written\n");
+		} else {
+			if (BIO_reset(dtls->write_bio));
+		}
+	}
+	
+
+
+	
+	return r;
+}
+
+static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
+{
+	SSL *ssl = NULL;
+	switch_dtls_t *dtls;
+	X509 *cert;
+	int r = 0;
+
+	ssl = X509_STORE_CTX_get_app_data(ctx);
+	dtls = (switch_dtls_t *) SSL_get_app_data(ssl);
+
+	if (!(ssl && dtls)) {
+		return 0;
+	}
+
+	printf("OMFG?!!!!\n");
+
+	if ((cert = SSL_get_peer_certificate(dtls->ssl))) {
+		switch_core_cert_extract_fingerprint(cert, dtls->remote_fp);
+		
+		r = switch_core_cert_verify(dtls->remote_fp);
+
+		X509_free(cert);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(dtls->rtp_session->session), SWITCH_LOG_ERROR, "CERT ERR!\n");
+	}
+
+	return r;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type)
+{
+	switch_dtls_t *dtls;
+
+	if (!switch_rtp_ready(rtp_session)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (!((type & DTLS_TYPE_RTP) || (type & DTLS_TYPE_RTCP)) || !((type & DTLS_TYPE_CLIENT) || (type & DTLS_TYPE_SERVER))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "INVALID TYPE!\n");
+	}
+
+	if (!(dtls = rtp_session->dtls)) {
+		dtls = switch_core_alloc(rtp_session->pool, sizeof(*dtls));
+
+		
+		dtls->pvt = switch_core_sprintf(rtp_session->pool, "%s%s%s.key", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
+		dtls->rsa = switch_core_sprintf(rtp_session->pool, "%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
+		
+		dtls->ssl_ctx = SSL_CTX_new(DTLSv1_method());
+		switch_assert(dtls->ssl_ctx);
+
+		SSL_CTX_set_mode(dtls->ssl_ctx, SSL_MODE_AUTO_RETRY);
+		SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+		SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ALL");
+		
+		SSL_CTX_set_tlsext_use_srtp(dtls->ssl_ctx, "SRTP_AES128_CM_SHA1_80:SRTP_AES128_CM_SHA1_32");
+	
+		dtls->type = type;
+		dtls->read_bio = BIO_new(BIO_s_mem());
+		switch_assert(dtls->read_bio);
+
+		dtls->write_bio = BIO_new(BIO_s_mem());
+		switch_assert(dtls->write_bio);
+		
+		BIO_set_mem_eof_return(dtls->read_bio, -1);
+		BIO_set_mem_eof_return(dtls->write_bio, -1);
+
+		SSL_CTX_use_certificate_file(dtls->ssl_ctx, dtls->rsa, SSL_FILETYPE_PEM);
+		SSL_CTX_use_PrivateKey_file(dtls->ssl_ctx, dtls->pvt, SSL_FILETYPE_PEM);
+
+		dtls->ssl = SSL_new(dtls->ssl_ctx);
+
+		SSL_set_bio(dtls->ssl, dtls->read_bio, dtls->write_bio);
+		SSL_set_mode(dtls->ssl, SSL_MODE_AUTO_RETRY);
+		SSL_set_read_ahead(dtls->ssl, 1);
+		SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
+		SSL_set_app_data(dtls->ssl, dtls);
+
+		dtls->local_fp = local_fp;
+		dtls->remote_fp = remote_fp;
+		dtls->rtp_session = rtp_session;
+		
+		switch_core_cert_expand_fingerprint(remote_fp, remote_fp->str);
+
+		if ((type & DTLS_TYPE_RTP)) {
+			rtp_session->dtls = dtls;
+			dtls->sock_output = rtp_session->sock_output;
+			dtls->remote_addr = rtp_session->remote_addr;
+		}
+
+		if ((type & DTLS_TYPE_RTCP)) {
+			rtp_session->rtcp_dtls = dtls;
+			if (!(type & DTLS_TYPE_RTP)) {
+				dtls->sock_output = rtp_session->rtcp_sock_output;
+				dtls->remote_addr = rtp_session->rtcp_remote_addr;
+			}
+		}
+
+		if ((type & DTLS_TYPE_SERVER)) {
+			SSL_set_accept_state(dtls->ssl);
+		} else {
+			SSL_set_connect_state(dtls->ssl);
+		}
+
+		
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+	
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session,
 														  switch_rtp_crypto_direction_t direction,
 														  uint32_t index, switch_rtp_crypto_key_type_t type, unsigned char *key, switch_size_t keylen)
@@ -3183,13 +3433,31 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 
-	if (status == SWITCH_STATUS_SUCCESS && *bytes && rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) { 
-		if (rtp_session->recv_msg.header.pt != rtp_session->rpayload && (!rtp_session->recv_te || rtp_session->recv_msg.header.pt != rtp_session->recv_te) &&
-			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) &&
-			rtp_session->rtcp_recv_msg_p->header.version == 2 &&
-			rtp_session->rtcp_recv_msg_p->header.type > 199 && rtp_session->rtcp_recv_msg_p->header.type < 205) { //rtcp muxed
-			*flags |= SFF_RTCP;
-			return SWITCH_STATUS_SUCCESS;
+	if (rtp_session->dtls) {
+		char *b = (char *) &rtp_session->recv_msg;
+		
+		//printf("RECV %d %ld\n", *b, *bytes);
+		
+		if ((*b >= 20) && (*b <= 64)) {
+			rtp_session->dtls->bytes = *bytes;
+			rtp_session->dtls->data = (void *) &rtp_session->recv_msg;
+		} else {
+			rtp_session->dtls->bytes = 0;
+			rtp_session->dtls->data = NULL;
+		}
+		do_dtls(rtp_session, rtp_session->dtls);
+	}
+	
+	if (status == SWITCH_STATUS_SUCCESS && *bytes) { 
+		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) { 
+			if (rtp_session->recv_msg.header.pt != rtp_session->rpayload && (!rtp_session->recv_te || 
+																			 rtp_session->recv_msg.header.pt != rtp_session->recv_te) &&
+				(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) &&
+				rtp_session->rtcp_recv_msg_p->header.version == 2 &&
+				rtp_session->rtcp_recv_msg_p->header.type > 199 && rtp_session->rtcp_recv_msg_p->header.type < 205) { //rtcp muxed
+				*flags |= SFF_RTCP;
+				return SWITCH_STATUS_SUCCESS;
+			}
 		}
 	}
 
@@ -3470,7 +3738,7 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
+	
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -3483,6 +3751,24 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 		!= SWITCH_STATUS_SUCCESS) {
 		*bytes = 0;
 	}
+
+	
+	if (rtp_session->rtcp_dtls) {
+		char *b = (char *) &rtp_session->rtcp_recv_msg;
+		
+		//printf("RECV %d %ld\n", *b, *bytes);
+		
+		if ((*b >= 20) && (*b <= 64)) {
+			rtp_session->rtcp_dtls->bytes = *bytes;
+			rtp_session->rtcp_dtls->data = (void *) &rtp_session->rtcp_recv_msg;
+		} else {
+			rtp_session->rtcp_dtls->bytes = 0;
+			rtp_session->rtcp_dtls->data = NULL;
+		}
+
+		do_dtls(rtp_session, rtp_session->rtcp_dtls);
+	}
+
 
 
 #ifdef ENABLE_SRTP
@@ -4696,6 +4982,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		//printf("XXX skip no stun love %d/%d\n", rtp_session->ice.ready, rtp_session->ice.rready);
 	}
 
+	if (rtp_session->dtls && rtp_session->dtls->state != DS_READY) {
+		send = 0;
+	}
 
 	if (send) {
 		send_msg->header.seq = htons(++rtp_session->seq);

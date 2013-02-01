@@ -486,6 +486,7 @@ struct switch_directories {
 	char *recordings_dir;
 	char *sounds_dir;
 	char *lib_dir;
+	char *certs_dir;
 };
 
 typedef struct switch_directories switch_directories;
@@ -1297,6 +1298,7 @@ typedef enum {
 	CF_RTP_NOTIMER_DURING_BRIDGE,
 	CF_WEBRTC,
 	CF_ICE,
+	CF_DTLS,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX

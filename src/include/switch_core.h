@@ -40,6 +40,12 @@
 #define SWITCH_CORE_H
 
 #include <switch.h>
+#include <openssl/pem.h>
+#include <openssl/conf.h>
+#include <openssl/x509v3.h>
+#ifndef OPENSSL_NO_ENGINE
+#include <openssl/engine.h>
+#endif
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_MAX_CORE_THREAD_SESSION_OBJS 128
@@ -75,6 +81,37 @@ typedef struct switch_thread_data_s {
 	void *obj;
 	int alloc;
 } switch_thread_data_t;
+
+
+#define DTLS_SRTP_FNAME "dtls-srtp"
+#define MAX_FPLEN 64
+#define MAX_FPSTRLEN 192
+
+typedef struct dtls_fp_s { 
+	uint32_t len;
+	uint8_t data[MAX_FPLEN+1];
+	char *type;
+	char str[MAX_FPSTRLEN];
+} dtls_fingerprint_t;
+
+typedef enum {
+	DTLS_TYPE_CLIENT = (1 << 0),
+	DTLS_TYPE_SERVER = (1 << 1),
+	DTLS_TYPE_RTP = (1 << 2),
+	DTLS_TYPE_RTCP = (1 << 3)
+} dtls_type_t;
+
+typedef enum {
+	DS_HANDSHAKE,
+	DS_SETUP,
+	DS_READY,
+	DS_FAIL,
+	DS_INVALID,
+} dtls_state_t;
+
+
+
+
 
 
 #define MESSAGE_STAMP_FFL(_m) _m->_file = __FILE__; _m->_func = __SWITCH_FUNC__; _m->_line = __LINE__
@@ -2477,6 +2514,12 @@ SWITCH_DECLARE(void) switch_sql_queue_manger_execute_sql_event_callback(switch_s
 																		const char *sql, switch_core_db_event_callback_func_t callback, void *pdata);
 							
 SWITCH_DECLARE(pid_t) switch_fork(void);
+
+SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix);
+SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fingerprint_t *fp);
+SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, const char *str);
+SWITCH_DECLARE(int) switch_core_cert_extract_fingerprint(X509* x509, dtls_fingerprint_t *fp);
+SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);
 
 SWITCH_END_EXTERN_C
 #endif

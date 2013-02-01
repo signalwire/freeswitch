@@ -96,7 +96,7 @@ typedef struct icand_s {
 #define MAX_CAND 25
 typedef struct ice_s {
 
-	icand_t cands[2][MAX_CAND];
+	icand_t cands[MAX_CAND][2];
 	int cand_idx;
 	int chosen;
 	char *ufrag;
@@ -505,6 +505,9 @@ SWITCH_DECLARE(void) switch_rtp_intentional_bugs(switch_rtp_t *rtp_session, swit
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_session, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_byte_t) switch_rtp_check_auto_adj(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_set_interdigit_delay(switch_rtp_t *rtp_session, uint32_t delay);
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type);
+
 
 /*!
   \}

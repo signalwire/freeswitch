@@ -76,6 +76,11 @@ AC_ARG_WITH([grammardir],
 AC_SUBST(grammardir)
 AC_DEFINE_UNQUOTED([SWITCH_GRAMMAR_DIR],"${grammardir}",[where to put grammar files])
 
+AC_ARG_WITH([certsdir],
+	[AS_HELP_STRING([--with-certsdir=DIR], [Put certs files into this location (default: $prefix/certs)])], [certsdir="$withval"], [certsdir="$prefix/certs"])
+AC_SUBST(certsdir)
+AC_DEFINE_UNQUOTED([SWITCH_CERTS_DIR],"${certsdir}",[where to put certs files])
+
 AC_ARG_WITH([scriptdir],
 	[AS_HELP_STRING([--with-scriptdir=DIR], [Put script files into this location (default: $prefix/scripts)])], [scriptdir="$withval"], [scriptdir="$prefix/scripts"])
 AC_SUBST(scriptdir)

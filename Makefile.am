@@ -232,6 +232,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_core_memory.c \
 	src/switch_core_codec.c \
 	src/switch_core_file.c \
+	src/switch_core_cert.c \
 	src/switch_core_hash.c \
 	src/switch_core_sqldb.c \
 	src/switch_core_session.c \

@@ -137,6 +137,10 @@ typedef struct switch_rtp_engine_s {
 
 	int8_t rtcp_mux;
 
+	dtls_fingerprint_t local_dtls_fingerprint;
+	dtls_fingerprint_t remote_dtls_fingerprint;
+
+
 } switch_rtp_engine_t;
 
 
@@ -742,7 +746,7 @@ SWITCH_DECLARE(void) switch_core_session_apply_crypto(switch_core_session_t *ses
 	engine = &session->media_handle->engines[type];
 
 	
-	if (engine->ssec.remote_crypto_key && switch_channel_test_flag(session->channel, CF_SECURE)) {
+	if (engine->ssec.remote_crypto_key && switch_channel_test_flag(session->channel, CF_SECURE) && !switch_channel_test_flag(session->channel, CF_DTLS)) {
 		switch_core_media_add_crypto(&engine->ssec, engine->ssec.remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 
 		
@@ -801,7 +805,8 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 				switch_channel_set_variable(session->channel, "srtp_remote_audio_crypto_key", crypto);
 				engine->ssec.crypto_tag = crypto_tag;
 								
-				if (switch_rtp_ready(engine->rtp_session) && switch_channel_test_flag(session->channel, CF_SECURE)) {
+				if (switch_rtp_ready(engine->rtp_session) && switch_channel_test_flag(session->channel, CF_SECURE) && 
+					!switch_channel_test_flag(session->channel, CF_DTLS)) {
 					switch_core_media_add_crypto(&engine->ssec, engine->ssec.remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, engine->ssec.crypto_tag,
 											  engine->ssec.crypto_type, engine->ssec.remote_raw_key, SWITCH_RTP_KEY_LEN);
@@ -840,7 +845,7 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *var;
 
-	if (!switch_core_session_media_handle_ready(session) == SWITCH_STATUS_SUCCESS) {
+	if (!switch_core_session_media_handle_ready(session) == SWITCH_STATUS_SUCCESS || switch_channel_test_flag(channel, CF_DTLS)) {
 		return;
 	}
 	
@@ -1772,6 +1777,21 @@ SWITCH_DECLARE(void) switch_core_media_check_video_codecs(switch_core_session_t 
 }
 
 //?
+static void generate_local_fingerprint(switch_media_handle_t *smh, switch_media_type_t type)
+{
+	switch_rtp_engine_t *engine = &smh->engines[type];
+
+	engine->local_dtls_fingerprint.type = "sha-256";
+	switch_core_cert_gen_fingerprint(DTLS_SRTP_FNAME, &engine->local_dtls_fingerprint);
+
+	
+	//engine->local_dtls_fingerprint.data[];
+	
+	
+}
+
+
+//?
 static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_media_t *m)
 {
 	switch_rtp_engine_t *engine = &smh->engines[type];
@@ -1799,6 +1819,28 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			engine->ice_in.pwd = switch_core_session_strdup(smh->session, attr->a_value);
 		} else if (!strcasecmp(attr->a_name, "ice-options")) {
 			engine->ice_in.options = switch_core_session_strdup(smh->session, attr->a_value);
+		} else if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
+			//a=fingerprint:sha-256 B6:14:E2:59:58:C9:DD:44:50:91:D4:75:AE:23:9F:67:9F:8E:C2:B3:36:62:C7:9C:F4:25:1F:F3:EF:58:B1:BF
+
+			char *p;
+
+			engine->remote_dtls_fingerprint.type = switch_core_session_strdup(smh->session, attr->a_value);
+			
+			if ((p = strchr(engine->remote_dtls_fingerprint.type, ' '))) {
+				*p++ = '\0';
+				switch_set_string(engine->local_dtls_fingerprint.str, p);
+			}
+			
+			if (strcasecmp(engine->remote_dtls_fingerprint.type, "sha-256")) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Unsupported fingerprint type.\n");
+				engine->local_dtls_fingerprint.type = NULL;
+				engine->remote_dtls_fingerprint.type = NULL;
+			}
+			
+			generate_local_fingerprint(smh, type);
+
+			switch_channel_set_flag(smh->session->channel, CF_DTLS);
+
 #ifdef RTCP_MUX
 		} else if (!strcasecmp(attr->a_name, "rtcp-mux")) {
 
@@ -3652,6 +3694,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		}
 
 
+		if (!zstr(a_engine->local_dtls_fingerprint.str)) {
+			dtls_type_t dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_SERVER : DTLS_TYPE_CLIENT;
+
+			dtype |= DTLS_TYPE_RTP;
+			if (a_engine->rtcp_mux > 0) dtype |= DTLS_TYPE_RTCP;
+		
+			switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype);
+		}
+
+
 		if (a_engine->ice_in.cands[a_engine->ice_in.chosen][0].ready) {
 			
 			gen_ice(session, SWITCH_MEDIA_TYPE_AUDIO, NULL, 0);
@@ -4756,8 +4808,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 	
 
-
-
+		if (!zstr(a_engine->local_dtls_fingerprint.type)) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\n", a_engine->local_dtls_fingerprint.type, 
+							a_engine->local_dtls_fingerprint.str);
+		}
+		
 		if (smh->mparams->rtcp_audio_interval_msec) {
 			if (a_engine->rtcp_mux > 0) {
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp-mux\n");
@@ -4837,7 +4892,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 
-		if (!zstr(local_audio_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE)) {
+		if (!zstr(local_audio_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE) && !switch_channel_test_flag(session->channel, CF_DTLS)) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", local_audio_crypto_key);
 			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=encryption:optional\n");
 		}
@@ -5051,6 +5106,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 
 
+			if (!zstr(v_engine->local_dtls_fingerprint.type)) {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\n", v_engine->local_dtls_fingerprint.type, 
+								v_engine->local_dtls_fingerprint.str);
+			}
+
 
 			if (smh->mparams->rtcp_audio_interval_msec) {
 				if (v_engine->rtcp_mux > 0) {
@@ -5130,7 +5190,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				
 
 
-			if (switch_channel_test_flag(session->channel, CF_SECURE) && !zstr(local_video_crypto_key)) {
+			if (switch_channel_test_flag(session->channel, CF_SECURE) && !zstr(local_video_crypto_key) && 
+				!switch_channel_test_flag(session->channel, CF_DTLS)) {
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", local_video_crypto_key);
 				//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
 			}			
@@ -6807,7 +6868,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 SWITCH_DECLARE(void) switch_core_media_init(void)
 {
-	
+	switch_core_gen_certs(DTLS_SRTP_FNAME);	
 }
 
 SWITCH_DECLARE(void) switch_core_media_deinit(void)
