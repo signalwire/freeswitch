@@ -60,6 +60,7 @@ typedef enum {
 	NO_CRYPTO,
 	AES_CM_128_HMAC_SHA1_80,
 	AES_CM_128_HMAC_SHA1_32,
+	AES_CM_256_HMAC_SHA1_80,
 	AES_CM_128_NULL_AUTH
 } switch_rtp_crypto_key_type_t;
 

@@ -54,6 +54,8 @@
 #include <openssl/err.h>
 #include <openssl/bio.h>
 
+
+
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
 #define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
 #define WRITE_INC(rtp_session)  switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
@@ -198,6 +200,7 @@ typedef struct switch_dtls_s {
 	switch_sockaddr_t *remote_addr;
 	char *rsa;
 	char *pvt;
+	char *ca;
 	struct switch_rtp *rtp_session;
 } switch_dtls_t;
 
@@ -1320,7 +1323,6 @@ static int check_srtp_and_ice(switch_rtp_t *rtp_session)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
 				goto end;
 			} else {
-				//printf("XXXXXXXXXXXXXXXXWTF1 PROTECT RTCP %ld->%d bytes %d\n", rtcp_bytes, sbytes, rtp_session->rtcp_interval);
 				rtcp_bytes = sbytes;
 			}
 
@@ -1938,20 +1940,71 @@ static const char *dtls_state_names(dtls_state_t s)
 
 static int dtls_state_dummy(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 {
-	/// duhhh
-
 	return -1;
 }
 
+#define cr_keylen 16
+#define cr_saltlen 14
+#define cr_kslen 30
+
 static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 {
+	X509 *cert;
+	int r = 0;
+
+	if ((cert = SSL_get_peer_certificate(dtls->ssl))) {
+		switch_core_cert_extract_fingerprint(cert, dtls->remote_fp);
+		r = switch_core_cert_verify(dtls->remote_fp);
+		X509_free(cert);
+	}
+
+	if (!r) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fingerprint Verification Failed!.\n");
+		dtls_set_state(dtls, DS_FAIL);
+		return -1;
+	} else {
+		uint8_t raw_key_data[cr_kslen*2] = { 0 };
+		unsigned char *local_key, *remote_key, *local_salt, *remote_salt;
+		unsigned char local_key_buf[cr_kslen] = {0}, remote_key_buf[cr_kslen] = {0};
+		
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Fingerprint Verified.\n");
+
+		if (!SSL_export_keying_material(dtls->ssl, raw_key_data, sizeof(raw_key_data), "EXTRACTOR-dtls_srtp", 19, NULL, 0, 0)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Key material export failure\n");
+			dtls_set_state(dtls, DS_FAIL);
+			return -1;
+		}
+		
+		if ((dtls->type & DTLS_TYPE_CLIENT)) {
+			local_key = raw_key_data;
+			remote_key = local_key + cr_keylen;
+			local_salt = remote_key + cr_keylen;
+			remote_salt = local_salt + cr_saltlen;
+			
+		} else {
+			remote_key = raw_key_data;
+			local_key = remote_key + cr_keylen;
+			remote_salt = local_key + cr_keylen;
+			local_salt = remote_salt + cr_saltlen;
+		}
+
+		memcpy(local_key_buf, local_key, cr_keylen);
+		memcpy(local_key_buf + cr_keylen, local_salt, cr_saltlen);
+
+		memcpy(remote_key_buf, remote_key, cr_keylen);
+		memcpy(remote_key_buf + cr_keylen, remote_salt, cr_saltlen);
+		
+		switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_SEND, 0, AES_CM_128_HMAC_SHA1_80, local_key_buf, cr_kslen);
+		switch_rtp_add_crypto_key(rtp_session, SWITCH_RTP_CRYPTO_RECV, 0, AES_CM_128_HMAC_SHA1_80, remote_key_buf, cr_kslen);
+	}
+
 	dtls_set_state(dtls, DS_READY);
+
 	return 0;
 }
 
 static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 {
-	printf("ready...\n");
 	return 0;
 }
 
@@ -1985,11 +2038,7 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	void *data;
 	switch_size_t bytes;
 
-	//printf("WTF %s...\n", dtls_state_names(dtls->state));
-
 	if (dtls->bytes) {
-		printf("READ %ld\n", dtls->bytes);
-
 		if ((ret = BIO_write(dtls->read_bio, dtls->data, dtls->bytes)) != dtls->bytes) {
 			ret = SSL_get_error(dtls->ssl, ret);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "DTLS packet read err %d\n", ret);
@@ -2001,12 +2050,13 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	if (SSL_read(dtls->ssl, dtls->data, dtls->bytes) == dtls->bytes) {
 		if (BIO_reset(dtls->read_bio));
 	}
+
 	r = dtls_states[dtls->state](rtp_session, dtls);
 
 
 	if ((len = BIO_get_mem_data(dtls->write_bio, &data)) && data) {
 		bytes = len;
-		printf("WRITE %ld\n", bytes);
+
 		if (switch_socket_sendto(dtls->sock_output, dtls->remote_addr, 0, data, &bytes ) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "DTLS packet not written\n");
 		} else {
@@ -2014,12 +2064,10 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		}
 	}
 	
-
-
-	
 	return r;
 }
 
+#if VERIFY
 static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
 {
 	SSL *ssl = NULL;
@@ -2034,8 +2082,6 @@ static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
 		return 0;
 	}
 
-	printf("OMFG?!!!!\n");
-
 	if ((cert = SSL_get_peer_certificate(dtls->ssl))) {
 		switch_core_cert_extract_fingerprint(cert, dtls->remote_fp);
 		
@@ -2048,10 +2094,12 @@ static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
 
 	return r;
 }
+#endif
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type)
 {
 	switch_dtls_t *dtls;
+	int ret;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return SWITCH_STATUS_FALSE;
@@ -2067,15 +2115,20 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 		
 		dtls->pvt = switch_core_sprintf(rtp_session->pool, "%s%s%s.key", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
 		dtls->rsa = switch_core_sprintf(rtp_session->pool, "%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
+		//dtls->ca = switch_core_sprintf(rtp_session->pool, "%s%sca-bundle.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
 		
 		dtls->ssl_ctx = SSL_CTX_new(DTLSv1_method());
 		switch_assert(dtls->ssl_ctx);
 
 		SSL_CTX_set_mode(dtls->ssl_ctx, SSL_MODE_AUTO_RETRY);
-		SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+		//SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+		SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_NONE, NULL); 
 		SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ALL");
 		
-		SSL_CTX_set_tlsext_use_srtp(dtls->ssl_ctx, "SRTP_AES128_CM_SHA1_80:SRTP_AES128_CM_SHA1_32");
+
+		//SSL_CTX_set_tlsext_use_srtp(dtls->ssl_ctx, "SRTP_AES128_CM_SHA1_80:SRTP_AES128_CM_SHA1_32");
+		SSL_CTX_set_tlsext_use_srtp(dtls->ssl_ctx, "SRTP_AES128_CM_SHA1_80");
+
 	
 		dtls->type = type;
 		dtls->read_bio = BIO_new(BIO_s_mem());
@@ -2087,15 +2140,34 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 		BIO_set_mem_eof_return(dtls->read_bio, -1);
 		BIO_set_mem_eof_return(dtls->write_bio, -1);
 
-		SSL_CTX_use_certificate_file(dtls->ssl_ctx, dtls->rsa, SSL_FILETYPE_PEM);
-		SSL_CTX_use_PrivateKey_file(dtls->ssl_ctx, dtls->pvt, SSL_FILETYPE_PEM);
+		if ((ret=SSL_CTX_use_certificate_file(dtls->ssl_ctx, dtls->rsa, SSL_FILETYPE_PEM)) != 1) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "DTLS cert err [%d]\n", SSL_get_error(dtls->ssl, ret));
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if ((ret=SSL_CTX_use_PrivateKey_file(dtls->ssl_ctx, dtls->pvt, SSL_FILETYPE_PEM)) != 1) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "DTLS key err [%d]\n", SSL_get_error(dtls->ssl, ret));
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (SSL_CTX_check_private_key(dtls->ssl_ctx) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "DTLS check key failed\n");
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (!zstr(dtls->ca) && (ret=SSL_CTX_load_verify_locations(dtls->ssl_ctx, dtls->ca, NULL)) != 1) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "DTLS check chain cert failed [%d]\n", 
+							  SSL_get_error(dtls->ssl, ret));
+			return SWITCH_STATUS_FALSE;
+		}
 
 		dtls->ssl = SSL_new(dtls->ssl_ctx);
 
 		SSL_set_bio(dtls->ssl, dtls->read_bio, dtls->write_bio);
 		SSL_set_mode(dtls->ssl, SSL_MODE_AUTO_RETRY);
 		SSL_set_read_ahead(dtls->ssl, 1);
-		SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
+		//SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
+		SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
 		SSL_set_app_data(dtls->ssl, dtls);
 
 		dtls->local_fp = local_fp;
@@ -2189,6 +2261,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			switch_channel_set_variable(channel, "sip_has_crypto", "AES_CM_128_HMAC_SHA1_32");
 		}
 		break;
+
+	case AES_CM_256_HMAC_SHA1_80:
+		crypto_policy_set_aes_cm_256_hmac_sha1_80(&policy->rtp);
+		crypto_policy_set_aes_cm_256_hmac_sha1_80(&policy->rtcp);
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "sip_has_crypto", "AES_CM_256_HMAC_SHA1_80");
+		}
 	case AES_CM_128_NULL_AUTH:
 		crypto_policy_set_aes_cm_128_null_auth(&policy->rtp);
 		crypto_policy_set_aes_cm_128_null_auth(&policy->rtcp);
@@ -2395,9 +2474,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	rtp_session->payload = payload;
 	rtp_session->rpayload = payload;
-
-
-
 
 	switch_rtp_set_interval(rtp_session, ms_per_packet, samples_per_interval);
 	rtp_session->conf_samples_per_interval = samples_per_interval;
@@ -4104,8 +4180,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 											switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
 										}
 										rtcp_bytes = sbytes;
-										//printf("XXXXXXXXXXXXXXXXWTF2 PROTECT RTCP %d bytes\n", sbytes);
-										
 
 									}
 #endif
@@ -5019,7 +5093,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 				
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP protection failed with code %d\n", stat);
 			}
-			//printf("XXXXXXXXXXXXXXXXWTF PROTECT RTP %d bytes\n", sbytes);
+
 			bytes = sbytes;
 		}
 #endif
@@ -5420,7 +5494,6 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP protection failed with code %d\n", stat);
 		}
 		bytes = sbytes;
-		//printf("XXXXXXXXXXXXXXXXWTF PROTECT RTP %d bytes\n", sbytes);
 	}
 #endif
 #ifdef ENABLE_ZRTP

@@ -3695,7 +3695,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 
 		if (!zstr(a_engine->local_dtls_fingerprint.str)) {
-			dtls_type_t dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_SERVER : DTLS_TYPE_CLIENT;
+			dtls_type_t dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_CLIENT;
 
 			dtype |= DTLS_TYPE_RTP;
 			if (a_engine->rtcp_mux > 0) dtype |= DTLS_TYPE_RTCP;
