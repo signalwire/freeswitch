@@ -39,7 +39,7 @@
 switch_cache_db_handle_t *_sofia_glue_get_db_handle(sofia_profile_t *profile, const char *file, const char *func, int line);
 #define sofia_glue_get_db_handle(_p) _sofia_glue_get_db_handle(_p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
-void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
+void sofia_glue_set_udptl_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
 {
 	char buf[2048] = "";
 	char max_buf[128] = "";
@@ -110,7 +110,9 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 	switch_snprintf(buf, sizeof(buf),
 					"v=0\n"
 					"o=%s %010u %010u IN %s %s\n"
-					"s=%s\n" "c=IN %s %s\n" "t=0 0\n", username, tech_pvt->owner_id, tech_pvt->session_id, family, ip, username, family, ip);
+					"s=%s\n"
+					"c=IN %s %s\n"
+					"t=0 0\n", username, tech_pvt->owner_id, tech_pvt->session_id, family, ip, username, family, ip);
 
 	if (t38_options->T38FaxMaxBuffer) {
 		switch_snprintf(max_buf, sizeof(max_buf), "a=T38FaxMaxBuffer:%d\n", t38_options->T38FaxMaxBuffer);

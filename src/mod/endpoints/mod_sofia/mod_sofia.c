@@ -2063,7 +2063,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			start_udptl(tech_pvt, t38_options);
 
-			sofia_glue_set_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
+			sofia_glue_set_udptl_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
 
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
@@ -2095,7 +2095,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
 
 			if (t38_options) {
-				sofia_glue_set_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
+				sofia_glue_set_udptl_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
 
 				if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					switch_channel_set_flag(channel, CF_REQ_MEDIA);
@@ -2635,7 +2635,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							if (!strcasecmp(sdp, "t38")) {
 								switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
 								if (t38_options) {
-									sofia_glue_set_image_sdp(tech_pvt, t38_options, 0);
+									sofia_glue_set_udptl_image_sdp(tech_pvt, t38_options, 0);
 									if (switch_rtp_ready(tech_pvt->rtp_session)) {
 										sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 										switch_rtp_udptl_mode(tech_pvt->rtp_session);
