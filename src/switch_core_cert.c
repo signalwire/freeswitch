@@ -133,6 +133,10 @@ SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fi
 		BIO_free_all(bio);
 	}
 
+	if (x509) {
+		X509_free(x509);
+	}
+
 	free(rsa);
 	
 	return ret;

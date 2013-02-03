@@ -140,6 +140,13 @@ typedef struct switch_rtp_engine_s {
 	dtls_fingerprint_t local_dtls_fingerprint;
 	dtls_fingerprint_t remote_dtls_fingerprint;
 
+	char *remote_rtp_ice_addr;
+	switch_port_t remote_rtp_ice_port;
+
+	char *remote_rtcp_ice_addr;
+	switch_port_t remote_rtcp_ice_port;
+
+
 
 } switch_rtp_engine_t;
 
@@ -1793,15 +1800,11 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	switch_rtp_engine_t *engine = &smh->engines[type];
 	sdp_attribute_t *attr;
 	int i = 0, got_rtcp_mux = 0;
-	char tmp[80] = "";
 
-	engine->ice_in.chosen = 0;
+	engine->ice_in.chosen[0] = 0;
+	engine->ice_in.chosen[1] = 0;
 	engine->ice_in.cand_idx = 0;
 
-	for (attr = m->m_attributes; attr; attr = attr->a_next) {
-
-	}
-	
 
 	for (attr = m->m_attributes; attr; attr = attr->a_next) {
 		char *data;
@@ -1842,8 +1845,8 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 
 #ifdef RTCP_MUX
 		} else if (!strcasecmp(attr->a_name, "rtcp-mux")) {
-			engine->remote_rtcp_port = engine->codec_params.remote_sdp_port;
 			engine->rtcp_mux = SWITCH_TRUE;
+			engine->remote_rtcp_port = engine->codec_params.remote_sdp_port;
 			got_rtcp_mux++;
 #endif
 		} else if (!strcasecmp(attr->a_name, "candidate")) {
@@ -1876,23 +1879,23 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
-							  "Checking Candidate cid: %d proto: %s type: %s addr: %s\n", cid+1, fields[2], fields[7], fields[4]);
+							  "Checking Candidate cid: %d proto: %s type: %s addr: %s:%s\n", cid+1, fields[2], fields[7], fields[4], fields[5]);
 
 
 			engine->ice_in.cand_idx++;
 
 			for (i = 0; i < engine->cand_acl_count; i++) {
-				if (!engine->ice_in.chosen && switch_check_network_list_ip(fields[4], engine->cand_acl[i])) {
-					engine->ice_in.chosen = engine->ice_in.cand_idx;
+				if (!engine->ice_in.chosen[cid] && switch_check_network_list_ip(fields[4], engine->cand_acl[i])) {
+					engine->ice_in.chosen[cid] = engine->ice_in.cand_idx;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
-									  "Choose %s Candidate cid: %d proto: %s type: %s addr: %s\n", 
+									  "Choose %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
 									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-									  cid+1, fields[2], fields[7], fields[4]);
+									  cid+1, fields[2], fields[7], fields[4], fields[5]);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
-									  "Save %s Candidate cid: %d proto: %s type: %s addr: %s\n", 
+									  "Save %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n", 
 									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-									  cid+1, fields[2], fields[7], fields[4]);
+									  cid+1, fields[2], fields[7], fields[4], fields[5]);
 				}
 
 				engine->ice_in.cands[engine->ice_in.cand_idx][cid].foundation = switch_core_session_strdup(smh->session, fields[0]);
@@ -1918,8 +1921,8 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 					j += 2;
 				} 
 
-				if (engine->ice_in.chosen) {
-					engine->ice_in.cands[engine->ice_in.chosen][cid].ready++;
+				if (engine->ice_in.chosen[cid]) {
+					engine->ice_in.cands[engine->ice_in.chosen[cid]][cid].ready++;
 				}
 				
 				break;
@@ -1929,31 +1932,41 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	}
 
 	for (i = 0; i < 2; i++) {
-		if (engine->ice_in.cands[engine->ice_in.chosen][i].ready) {
+		if (engine->ice_in.cands[engine->ice_in.chosen[i]][i].ready) {
 			if (zstr(engine->ice_in.ufrag) || zstr(engine->ice_in.pwd)) {
-				engine->ice_in.cands[engine->ice_in.chosen][i].ready = 0;
+				engine->ice_in.cands[engine->ice_in.chosen[i]][i].ready = 0;
 			}
 		}
 	}
 
 
-	if (engine->ice_in.cands[engine->ice_in.chosen][0].con_addr && engine->ice_in.cands[engine->ice_in.chosen][0].con_port) {
-		engine->codec_params.remote_sdp_ip = switch_core_session_strdup(smh->session, (char *) engine->ice_in.cands[engine->ice_in.chosen][0].con_addr);
-		engine->codec_params.remote_sdp_port = (switch_port_t) engine->ice_in.cands[engine->ice_in.chosen][0].con_port;
+	if (engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr && engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port) {
+		char tmp[80] = "";
+		engine->codec_params.remote_sdp_ip = switch_core_session_strdup(smh->session, (char *) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
-						  "setting remote %s addr to %s:%d based on candidate\n", type2str(type),
-						  engine->ice_in.cands[engine->ice_in.chosen][0].con_addr, engine->ice_in.cands[engine->ice_in.chosen][0].con_port);
+						  "setting remote %s ice addr to %s:%d based on candidate\n", type2str(type),
+						  engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr, engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port);
 
+		engine->remote_rtp_ice_port = (switch_port_t) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port;
+		engine->remote_rtp_ice_addr = switch_core_session_strdup(smh->session, engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr);
+
+		engine->codec_params.remote_sdp_ip = switch_core_session_strdup(smh->session, (char *) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr);
+		engine->codec_params.remote_sdp_port = (switch_port_t) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port;
+
+																 
 		switch_snprintf(tmp, sizeof(tmp), "%d", engine->codec_params.remote_sdp_port);
 		switch_channel_set_variable(smh->session->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, engine->codec_params.remote_sdp_ip);
 		switch_channel_set_variable(smh->session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);					
 	}
 
-	if (engine->ice_in.cands[engine->ice_in.chosen][1].con_port) {
+	if (engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE,
 						  "setting remote rtcp %s addr to %s:%d based on candidate\n", type2str(type),
-						  engine->ice_in.cands[engine->ice_in.chosen][1].con_addr, engine->ice_in.cands[engine->ice_in.chosen][1].con_port);
-		engine->remote_rtcp_port = engine->ice_in.cands[engine->ice_in.chosen][1].con_port;
+						  engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port);
+		engine->remote_rtcp_ice_port = engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port;
+		engine->remote_rtcp_ice_addr = switch_core_session_strdup(smh->session, engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr);
+
+		engine->remote_rtcp_port = engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port;
 	}
 
 
@@ -3706,16 +3719,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 
 		if (!zstr(a_engine->local_dtls_fingerprint.str)) {
-			dtls_type_t dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
+			dtls_type_t xtype, dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 
-			dtype |= DTLS_TYPE_RTP;
-			if (a_engine->rtcp_mux > 0) dtype |= DTLS_TYPE_RTCP;
+			xtype = DTLS_TYPE_RTP;
+			if (a_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
 		
-			switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype);
+			switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
+
+			if (a_engine->rtcp_mux < 1) {
+				xtype = DTLS_TYPE_RTCP;
+				switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
+			}
+
 		}
 
 
-		if (a_engine->ice_in.cands[a_engine->ice_in.chosen][0].ready) {
+		if (a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].ready) {
 			
 			gen_ice(session, SWITCH_MEDIA_TYPE_AUDIO, NULL, 0);
 
@@ -3766,7 +3785,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			}
 
 
-			if (a_engine->ice_in.cands[a_engine->ice_in.chosen][1].ready && a_engine->rtcp_mux < 1) {
+			if (a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].ready) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP ICE\n");
 				
 				switch_rtp_activate_ice(a_engine->rtp_session, 
@@ -4096,16 +4115,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					switch_rtp_set_ssrc(v_engine->rtp_session, v_engine->ssrc);
 				}
 
-				if (!zstr(v_engine->local_dtls_fingerprint.str)) {
-					dtls_type_t dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
-					
-					dtype |= DTLS_TYPE_RTP;
-					if (v_engine->rtcp_mux > 0) dtype |= DTLS_TYPE_RTCP;
-					
-					switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype);
-				}
 
-				if (v_engine->ice_in.cands[v_engine->ice_in.chosen][0].ready) {
+				if (v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].ready) {
 					
 					gen_ice(session, SWITCH_MEDIA_TYPE_VIDEO, NULL, 0);
 					
@@ -4150,7 +4161,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					}
 					
 
-					if (v_engine->ice_in.cands[v_engine->ice_in.chosen][1].ready && v_engine->rtcp_mux < 1) {
+					if (!zstr(v_engine->local_dtls_fingerprint.str)) {
+						dtls_type_t xtype, 
+							dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
+						printf("FUCK FP XXXXX %d\n", v_engine->rtcp_mux);
+						xtype = DTLS_TYPE_RTP;
+						if (v_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
+					
+						switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
+
+						if (v_engine->rtcp_mux < 1) {
+							xtype = DTLS_TYPE_RTCP;
+							printf("FUCKER\n");
+							switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
+						}
+					}
+					
+
+					if (v_engine->ice_in.cands[v_engine->ice_in.chosen[1]][1].ready) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP ICE\n");
 						switch_rtp_activate_ice(v_engine->rtp_session, 
 												v_engine->ice_in.ufrag,

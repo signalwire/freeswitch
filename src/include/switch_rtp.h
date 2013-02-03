@@ -53,6 +53,8 @@ SWITCH_BEGIN_EXTERN_C
 	typedef enum {
 	SWITCH_RTP_CRYPTO_SEND,
 	SWITCH_RTP_CRYPTO_RECV,
+	SWITCH_RTP_CRYPTO_SEND_RTCP,
+	SWITCH_RTP_CRYPTO_RECV_RTCP,
 	SWITCH_RTP_CRYPTO_MAX
 } switch_rtp_crypto_direction_t;
 
@@ -99,7 +101,7 @@ typedef struct ice_s {
 
 	icand_t cands[MAX_CAND][2];
 	int cand_idx;
-	int chosen;
+	int chosen[2];
 	char *ufrag;
 	char *pwd;
 	char *options;

@@ -1706,8 +1706,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					abort();
 				}
 
-				printf("SOFIA nh[%p] pvt[%p] call_id %s key %s\n", (void*) nh, (void *) sofia_private, call_id, key);
-			
 				memset(sofia_private, 0, sizeof(*sofia_private));
 				sofia_private->call_id = su_strdup(nh->nh_home, call_id);
 				sofia_private->network_ip = su_strdup(nh->nh_home, network_ip);
