@@ -771,6 +771,7 @@ SWITCH_DECLARE(int) CoreSession::speak(char *text)
 
 SWITCH_DECLARE(void) CoreSession::set_tts_parms(char *tts_name_p, char *voice_name_p)
 {
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "set_tts_parms is deprecated. Use set_tts_params.\n");
 	this_check_void();
 	sanity_check_noreturn;
 	switch_safe_free(tts_name);
@@ -779,7 +780,15 @@ SWITCH_DECLARE(void) CoreSession::set_tts_parms(char *tts_name_p, char *voice_na
     voice_name = strdup(voice_name_p);
 }
 
-
+SWITCH_DECLARE(void) CoreSession::set_tts_params(char *tts_name_p, char *voice_name_p)
+{
+	this_check_void();
+	sanity_check_noreturn;
+	switch_safe_free(tts_name);
+	switch_safe_free(voice_name);
+    tts_name = strdup(tts_name_p);
+    voice_name = strdup(voice_name_p);
+}
 
 SWITCH_DECLARE(int) CoreSession::collectDigits(int abs_timeout) {
 	return collectDigits(0, abs_timeout);
