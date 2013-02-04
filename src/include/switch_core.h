@@ -40,12 +40,6 @@
 #define SWITCH_CORE_H
 
 #include <switch.h>
-#include <openssl/pem.h>
-#include <openssl/conf.h>
-#include <openssl/x509v3.h>
-#ifndef OPENSSL_NO_ENGINE
-#include <openssl/engine.h>
-#endif
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_MAX_CORE_THREAD_SESSION_OBJS 128
@@ -2518,7 +2512,6 @@ SWITCH_DECLARE(pid_t) switch_fork(void);
 SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix);
 SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fingerprint_t *fp);
 SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, const char *str);
-SWITCH_DECLARE(int) switch_core_cert_extract_fingerprint(X509* x509, dtls_fingerprint_t *fp);
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);
 
 SWITCH_END_EXTERN_C

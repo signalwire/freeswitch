@@ -1055,7 +1055,6 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 		goto ready;
 	}
 
-
 	if ((ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
 		if (!codec_string || (smh->media_flags[SCMF_DISABLE_TRANSCODING])) {
 			codec_string = ocodec;

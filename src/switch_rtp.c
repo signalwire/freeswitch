@@ -49,12 +49,7 @@
 #include <srtp.h>
 #include <srtp_priv.h>
 #include <switch_version.h>
-
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/bio.h>
-
-
+#include <switch_ssl.h>
 
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
 #define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
