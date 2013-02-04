@@ -5013,7 +5013,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				
 				this_ptime = imp->microseconds_per_packet / 1000;
 				
-				if (!strcasecmp(imp->iananame, "ilbc") && !strcasecmp(imp->iananame, "isac")) {
+				if (!strcasecmp(imp->iananame, "ilbc") || !strcasecmp(imp->iananame, "isac")) {
 					this_ptime = 20;
 				}
 				
