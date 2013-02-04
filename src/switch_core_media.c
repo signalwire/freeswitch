@@ -4163,7 +4163,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					if (!zstr(v_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls()) {
 						dtls_type_t xtype, 
 							dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
-						printf("FUCK FP XXXXX %d\n", v_engine->rtcp_mux);
 						xtype = DTLS_TYPE_RTP;
 						if (v_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
 					
@@ -4171,7 +4170,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 						if (v_engine->rtcp_mux < 1) {
 							xtype = DTLS_TYPE_RTCP;
-							printf("FUCKER\n");
 							switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
 						}
 					}
