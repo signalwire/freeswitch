@@ -1346,7 +1346,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			switch_core_media_start_udptl(tech_pvt->session, t38_options);
 
-			switch_core_media_set_image_sdp(tech_pvt->session, t38_options, msg->numeric_arg);
+			switch_core_media_set_udptl_image_sdp(tech_pvt->session, t38_options, msg->numeric_arg);
 
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
@@ -1378,7 +1378,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
 
 			if (t38_options) {
-				switch_core_media_set_image_sdp(tech_pvt->session, t38_options, msg->numeric_arg);
+				switch_core_media_set_udptl_image_sdp(tech_pvt->session, t38_options, msg->numeric_arg);
 
 				if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					switch_channel_set_flag(channel, CF_REQ_MEDIA);
@@ -1918,7 +1918,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							if (!strcasecmp(sdp, "t38")) {
 								switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
 								if (t38_options) {
-									switch_core_media_set_image_sdp(tech_pvt->session, t38_options, 0);
+									switch_core_media_set_udptl_image_sdp(tech_pvt->session, t38_options, 0);
 									if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 										switch_channel_clear_flag(tech_pvt->channel, CF_NOTIMER_DURING_BRIDGE);
 										switch_core_media_udptl_mode(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);

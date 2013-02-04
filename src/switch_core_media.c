@@ -5355,7 +5355,7 @@ SWITCH_DECLARE(void) switch_core_media_absorb_sdp(switch_core_session_t *session
 
 
 //?
-SWITCH_DECLARE(void) switch_core_media_set_image_sdp(switch_core_session_t *session, switch_t38_options_t *t38_options, int insist)
+SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t *session, switch_t38_options_t *t38_options, int insist)
 {
 	char buf[2048] = "";
 	char max_buf[128] = "";
