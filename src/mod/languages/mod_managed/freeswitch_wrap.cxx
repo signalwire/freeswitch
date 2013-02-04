@@ -12674,19 +12674,47 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_cache_db_execute_sql_event_callback(voi
   int jresult ;
   switch_cache_db_handle_t *arg1 = (switch_cache_db_handle_t *) 0 ;
   char *arg2 = (char *) 0 ;
-  switch_db_event_callback_func_t arg3 = (switch_db_event_callback_func_t) 0 ;
+  switch_core_db_event_callback_func_t arg3 = (switch_core_db_event_callback_func_t) 0 ;
   void *arg4 = (void *) 0 ;
   char **arg5 = (char **) 0 ;
   switch_status_t result;
   
   arg1 = (switch_cache_db_handle_t *)jarg1; 
   arg2 = (char *)jarg2; 
-  arg3 = (switch_db_event_callback_func_t)jarg3; 
+  arg3 = (switch_core_db_event_callback_func_t)jarg3; 
   arg4 = (void *)jarg4; 
   arg5 = (char **)jarg5; 
   result = (switch_status_t)switch_cache_db_execute_sql_event_callback(arg1,(char const *)arg2,arg3,arg4,arg5);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manger_execute_sql_callback(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
+  switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_core_db_callback_func_t arg3 = (switch_core_db_callback_func_t) 0 ;
+  void *arg4 = (void *) 0 ;
+  
+  arg1 = (switch_sql_queue_manager_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_core_db_callback_func_t)jarg3; 
+  arg4 = (void *)jarg4; 
+  switch_sql_queue_manger_execute_sql_callback(arg1,(char const *)arg2,arg3,arg4);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manger_execute_sql_event_callback(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
+  switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_core_db_event_callback_func_t arg3 = (switch_core_db_event_callback_func_t) 0 ;
+  void *arg4 = (void *) 0 ;
+  
+  arg1 = (switch_sql_queue_manager_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_core_db_event_callback_func_t)jarg3; 
+  arg4 = (void *)jarg4; 
+  switch_sql_queue_manger_execute_sql_event_callback(arg1,(char const *)arg2,arg3,arg4);
 }
 
 

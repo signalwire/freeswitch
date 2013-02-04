@@ -286,6 +286,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 
 		 SWITCH_DECLARE(int) speak(char *text);
 		 SWITCH_DECLARE(void) set_tts_parms(char *tts_name, char *voice_name);
+		 SWITCH_DECLARE(void) set_tts_params(char *tts_name, char *voice_name);
 
 	/**
 	 * For timeout milliseconds, call the dtmf function set previously
