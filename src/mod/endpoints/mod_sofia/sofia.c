@@ -4198,6 +4198,10 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_AUTH_CALLS);
 						}
+					} else if (!strcasecmp(var, "auth-messages")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
+						}
 					} else if (!strcasecmp(var, "extended-info-parsing")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);

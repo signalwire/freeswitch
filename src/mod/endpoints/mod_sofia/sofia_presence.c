@@ -4367,6 +4367,7 @@ void sofia_presence_handle_sip_i_message(int status,
 										 sofia_dispatch_event_t *de,
 										 tagi_t tags[])
 {
+
 	if (sip) {
 		sip_from_t const *from = sip->sip_from;
 		const char *from_user = NULL;
@@ -4384,6 +4385,47 @@ void sofia_presence_handle_sip_i_message(int status,
 
 		if (session) {
 			channel = switch_core_session_get_channel(session);
+		}
+
+		if (sofia_test_pflag(profile, PFLAG_AUTH_MESSAGES) && sip){
+			sip_authorization_t const *authorization = NULL;
+			auth_res_t auth_res = AUTH_FORBIDDEN;
+			char keybuf[128] = "";
+			char *key;
+			size_t keylen;
+			switch_event_t *v_event = NULL;
+
+			key = keybuf;
+			keylen = sizeof(keybuf);
+
+			if (sip->sip_authorization) {
+				authorization = sip->sip_authorization;
+			} else if (sip->sip_proxy_authorization) {
+				authorization = sip->sip_proxy_authorization;
+			}
+
+			if (authorization) {
+				char network_ip[80];
+				sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
+				auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
+												(char *) sip->sip_request->rq_method_name, key, keylen, network_ip, NULL, 0,
+												REG_INVITE, NULL, NULL, NULL);
+			} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, keylen, &v_event, NULL)) {
+				if (v_event) {
+					switch_event_destroy(&v_event);
+				}
+
+				goto end;
+			}
+
+			if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
+				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+				goto end;
+			}
+
+			if (channel) {
+				switch_channel_set_variable(channel, "sip_authorized", "true");
+			}
 		}
 
 		if ((us = sofia_glue_get_unknown_header(sip, "X-FS-Sending-Message")) && !strcmp(us, switch_core_get_uuid())) {

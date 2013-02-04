@@ -198,6 +198,7 @@ typedef enum {
 
 typedef enum {
 	PFLAG_AUTH_CALLS,
+	PFLAG_AUTH_MESSAGES,
 	PFLAG_BLIND_REG,
 	PFLAG_AUTH_ALL,
 	PFLAG_FULL_ID,
