@@ -35,6 +35,7 @@
 //#define DEBUG_MISSED_SEQ
 
 #include <switch.h>
+#include <switch_private.h>
 #include <switch_stun.h>
 #include <apr_network_io.h>
 #undef PACKAGE_NAME
