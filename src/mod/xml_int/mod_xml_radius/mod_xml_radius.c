@@ -768,6 +768,10 @@ switch_xml_t mod_xml_radius_auth_reg(switch_event_t *params) {
 	
 	switch_xml_set_attr_d(usr, "id", switch_event_get_header(params, "user"));
 		
+	var = switch_xml_add_child_d(vars, "variable", param_idx++);
+	switch_xml_set_attr_d(var, "name", "radius_auth_result");
+	switch_xml_set_attr_d(var, "value", "0");
+
 	service_vp = recv;
 	while (service_vp != NULL) {
 		rc_avpair_tostr(new_handle, service_vp, name, 512, value, 512);
