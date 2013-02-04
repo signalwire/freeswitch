@@ -511,6 +511,7 @@ SWITCH_DECLARE(void) switch_rtp_set_interdigit_delay(switch_rtp_t *rtp_session, 
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type);
 
+SWITCH_DECLARE(int) switch_rtp_has_dtls(void);
 
 /*!
   \}

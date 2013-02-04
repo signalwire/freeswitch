@@ -2111,10 +2111,22 @@ static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
 }
 #endif
 
+SWITCH_DECLARE(int) switch_rtp_has_dtls(void) {
+#ifdef HAVE_OPENSSL_DTLS_SRTP
+	return 1;
+#else
+	return 0;
+#endif
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type)
 {
 	switch_dtls_t *dtls;
 	int ret;
+
+#ifndef HAVE_OPENSSL_DTLS_SRTP
+	return SWITCH_STATUS_FALSE;
+#endif
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return SWITCH_STATUS_FALSE;
@@ -2152,10 +2164,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 	SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ALL");
 		
-
+#ifdef HAVE_OPENSSL_DTLS_SRTP
 	//SSL_CTX_set_tlsext_use_srtp(dtls->ssl_ctx, "SRTP_AES128_CM_SHA1_80:SRTP_AES128_CM_SHA1_32");
 	SSL_CTX_set_tlsext_use_srtp(dtls->ssl_ctx, "SRTP_AES128_CM_SHA1_80");
-
+#endif
 	
 	dtls->type = type;
 	dtls->read_bio = BIO_new(BIO_s_mem());
