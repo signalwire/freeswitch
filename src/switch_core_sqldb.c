@@ -341,6 +341,9 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 	if (!strncasecmp(dsn, "pgsql://", 8)) {
 		type = SCDB_TYPE_PGSQL;
 		connection_options.pgsql_options.dsn = (char *)(dsn + 8);
+	} else if (!strncasecmp(dsn, "sqlite://", 9)) {
+		type = SCDB_TYPE_CORE_DB;
+		connection_options.core_db_options.db_path = (char *)(dsn + 9);
 	} else if ((!(i = strncasecmp(dsn, "odbc://", 7))) || strchr(dsn, ':')) {
 		type = SCDB_TYPE_ODBC;
 
@@ -360,14 +363,8 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 				*p++ = '\0';
 				connection_options.odbc_options.pass = p;
 			}
-			
 		}
-
 	} else {
-		if (!strncasecmp(dsn, "sqlite://", 9)) {
-			dsn += 9;
-		}
-
 		type = SCDB_TYPE_CORE_DB;
 		connection_options.core_db_options.db_path = (char *)dsn;
 	}
@@ -377,7 +374,6 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 	if (status != SWITCH_STATUS_SUCCESS) *dbh = NULL;
 
 	return status;
-
 }
 
 
