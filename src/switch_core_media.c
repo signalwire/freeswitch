@@ -2307,9 +2307,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
 
-			for (attr = m->m_attributes; attr; attr = attr->a_next) {
-				if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
-					got_crypto = 1;
+			if (switch_rtp_has_dtls()) {
+				for (attr = m->m_attributes; attr; attr = attr->a_next) {
+					
+					if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
+						got_crypto = 1;
+					}
 				}
 			}
 
