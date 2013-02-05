@@ -1822,7 +1822,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		} else if (!strcasecmp(attr->a_name, "ice-options")) {
 			engine->ice_in.options = switch_core_session_strdup(smh->session, attr->a_value);
 			
-		} else if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
+		} else if (switch_rtp_has_dtls() && !strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
 			char *p;
 
 			engine->remote_dtls_fingerprint.type = switch_core_session_strdup(smh->session, attr->a_value);
@@ -4667,10 +4667,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			smh->mparams->rtcp_video_interval_msec = "5000";
 		}
 
-		if (switch_channel_test_flag(session->channel, CF_WEBRTC) || switch_true(switch_channel_get_variable(smh->session->channel, "rtp_use_dtls"))) {
-			switch_channel_set_flag(smh->session->channel, CF_DTLS);
-			switch_channel_set_flag(smh->session->channel, CF_SECURE);
-			generate_local_fingerprint(smh, SWITCH_MEDIA_TYPE_AUDIO);
+		if ( switch_rtp_has_dtls() ) {
+			if (switch_channel_test_flag(session->channel, CF_WEBRTC) ||
+				switch_true(switch_channel_get_variable(smh->session->channel, "rtp_use_dtls"))) {
+				switch_channel_set_flag(smh->session->channel, CF_DTLS);
+				switch_channel_set_flag(smh->session->channel, CF_SECURE);
+				generate_local_fingerprint(smh, SWITCH_MEDIA_TYPE_AUDIO);
+			}
 		}
 
 		switch_core_session_check_outgoing_crypto(session, "rtp_secure_media");
