@@ -1976,11 +1976,15 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "%s Fingerprint Verified.\n", rtp_type(rtp_session));
 
+#ifdef HAVE_OPENSSL_DTLS_SRTP
 		if (!SSL_export_keying_material(dtls->ssl, raw_key_data, sizeof(raw_key_data), "EXTRACTOR-dtls_srtp", 19, NULL, 0, 0)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s Key material export failure\n", rtp_type(rtp_session));
 			dtls_set_state(dtls, DS_FAIL);
 			return -1;
 		}
+#else
+		return -1;
+#endif
 		
 		if ((dtls->type & DTLS_TYPE_CLIENT)) {
 			local_key = raw_key_data;
