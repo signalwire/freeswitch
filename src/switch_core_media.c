@@ -2678,9 +2678,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 
-				for (attr = m->m_attributes; attr; attr = attr->a_next) {
-					if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
-						got_video_crypto = 1;
+				if (switch_rtp_has_dtls()) {
+					for (attr = m->m_attributes; attr; attr = attr->a_next) {
+						if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
+							got_video_crypto = 1;
+						}
 					}
 				}
 
