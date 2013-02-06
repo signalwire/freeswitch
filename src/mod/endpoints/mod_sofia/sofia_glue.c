@@ -386,6 +386,10 @@ sofia_transport_t sofia_glue_via2transport(const sip_via_t * via)
 			return SOFIA_TRANSPORT_TCP_TLS;
 		} else if (!strncasecmp(ptr, "sctp", 4)) {
 			return SOFIA_TRANSPORT_SCTP;
+		} else if (!strncasecmp(ptr, "wss", 3)) {
+			return SOFIA_TRANSPORT_WSS;
+		} else if (!strncasecmp(ptr, "ws", 2)) {
+			return SOFIA_TRANSPORT_WS;
 		}
 	}
 
@@ -403,6 +407,12 @@ const char *sofia_glue_transport2str(const sofia_transport_t tp)
 
 	case SOFIA_TRANSPORT_SCTP:
 		return "sctp";
+
+	case SOFIA_TRANSPORT_WS:
+		return "ws";
+
+	case SOFIA_TRANSPORT_WSS:
+		return "wss";
 
 	default:
 		return "udp";

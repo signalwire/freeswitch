@@ -7671,6 +7671,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
+	if (sip && sip->sip_via && sip->sip_via->v_protocol && switch_stristr("sip/2.0/ws", sip->sip_via->v_protocol)) {
+		is_nat = "websockets";
+	}
+
 	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION)) {
 		if (sip && sip->sip_via) {
 			const char *port = sip->sip_via->v_port;
@@ -7897,17 +7901,22 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
-	if (sip->sip_contact && sip->sip_contact->m_url) {
+	if (sip->sip_via || (sip->sip_contact && sip->sip_contact->m_url)) {
 		char tmp[35] = "";
 		const char *ipv6 = strchr(tech_pvt->mparams.remote_ip, ':');
 
-		transport = sofia_glue_url2transport(sip->sip_contact->m_url);
+		if (sip->sip_via) {
+			transport = sofia_glue_via2transport(sip->sip_via);
+		} else {
+			transport = sofia_glue_url2transport(sip->sip_contact->m_url);
+		}
+		
 
-		tech_pvt->record_route=
+		tech_pvt->record_route =
 			switch_core_session_sprintf(session,
-										"sip:%s@%s%s%s:%d;transport=%s",
-										sip->sip_contact->m_url->url_user,
-										ipv6 ? "[" : "", tech_pvt->mparams.remote_ip, ipv6 ? "]" : "", tech_pvt->mparams.remote_port, sofia_glue_transport2str(transport));
+										"sip:%s%s%s:%d;transport=%s",
+										ipv6 ? "[" : "", tech_pvt->mparams.remote_ip, ipv6 ? "]" : "", 
+										tech_pvt->mparams.remote_port, sofia_glue_transport2str(transport));
 
 		switch_channel_set_variable(channel, "sip_received_ip", tech_pvt->mparams.remote_ip);
 		snprintf(tmp, sizeof(tmp), "%d", tech_pvt->mparams.remote_port);
