@@ -3630,8 +3630,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 	
+
+
 	if (status == SWITCH_STATUS_SUCCESS && *bytes) { 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) { 
+			*flags &= ~SFF_RTCP;
 			if (rtp_session->recv_msg.header.pt != rtp_session->rpayload && (!rtp_session->recv_te || 
 																			 rtp_session->recv_msg.header.pt != rtp_session->recv_te) &&
 				(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) &&
