@@ -103,7 +103,6 @@ BV_DECLARE(int) bv32_encode(bv32_encode_state_t *cs,
     Float e;
     Float ee;
     Float ppt;
-    Float lth;
     int	pp;
     int cpp;
     int	i;
@@ -193,8 +192,8 @@ BV_DECLARE(int) bv32_encode(bv32_encode_state_t *cs,
             lg = (ee < TMinE)  ?  MinE  :  log(ee/SFRSZ)/log(2.0);
             bs.gidx[issf] = bv32_gainquan(gainq + issf, lg, cs->lgpm, cs->prevlg, cs->level);
 
-            /* Level Estimation */
-            lth = bv32_estlevel(cs->prevlg[0], &cs->level, &cs->lmax, &cs->lmin, &cs->lmean, &cs->x1);
+            /* Level estimation */
+            bv32_estlevel(cs->prevlg[0], &cs->level, &cs->lmax, &cs->lmin, &cs->lmean, &cs->x1);
 
             /* Scale the excitation codebook */
             for (i = 0;  i < (VDIM*CBSZ);  i++)

@@ -103,7 +103,6 @@ BV_DECLARE(int) bv16_encode(bv16_encode_state_t *cs,
     Float gainq;
     Float lg;
     Float ppt;
-    Float lth;
     Float dummy;
     int	pp;
     int cpp;
@@ -189,8 +188,15 @@ BV_DECLARE(int) bv16_encode(bv16_encode_state_t *cs,
 
         /* Level estimation */
         dummy = estl_alpha;
-        lth = estlevel(cs->prevlg[0], &cs->level, &cs->lmax, &cs->lmin,
-                       &cs->lmean, &cs->x1, LGPORDER + 1, Nfdm + 1, &dummy);
+        estlevel(cs->prevlg[0],
+                 &cs->level,
+                 &cs->lmax,
+                 &cs->lmin,
+                 &cs->lmean,
+                 &cs->x1,
+                 LGPORDER + 1,
+                 Nfdm + 1,
+                 &dummy);
 
         /* Scale the scalar quantizer codebook */
         for (i = 0;  i < (VDIM*CBSZ);  i++)
