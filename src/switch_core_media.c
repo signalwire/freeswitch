@@ -2404,19 +2404,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
-				int32_t i;
 				const char *rm_encoding;
-				uint32_t map_bit_rate = 0;
-				switch_codec_fmtp_t codec_fmtp = { 0 };
 				
-				if (x++ < skip) {
-					continue;
-				}
-
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
 				}
-				
+
+
 				if (!strcasecmp(rm_encoding, "telephone-event")) {
 					if (!best_te || map->rm_rate == a_engine->codec_params.rm_rate) {
 						best_te = (switch_payload_t) map->rm_pt;
@@ -2431,6 +2425,22 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				}
 
+			}
+
+			for (map = m->m_rtpmaps; map; map = map->rm_next) {
+				int32_t i;
+				const char *rm_encoding;
+				uint32_t map_bit_rate = 0;
+				switch_codec_fmtp_t codec_fmtp = { 0 };
+				printf("WTF %d %s\n", x, map->rm_encoding);
+				if (x++ < skip) {
+					continue;
+				}
+
+				if (!(rm_encoding = map->rm_encoding)) {
+					rm_encoding = "";
+				}
+				
 				if (match) {
 					continue;
 				}
@@ -3724,6 +3734,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		if (!zstr(a_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls()) {
 			dtls_type_t xtype, dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
+
 
 			xtype = DTLS_TYPE_RTP;
 			if (a_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
