@@ -441,8 +441,10 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	}
 
 	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 14)) < need) {
-		/* too small - protocol err */
-		return ws_close(wsh, WS_PROTO_ERR);
+		if ((wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) {
+			/* too small - protocol err */
+			return ws_close(wsh, WS_PROTO_ERR);
+		}
 	}
 
 	*oc = *wsh->buffer & 0xf;
