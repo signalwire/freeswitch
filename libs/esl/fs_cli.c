@@ -1501,6 +1501,14 @@ int main(int argc, char *argv[])
 	el_set(el, EL_BIND, "\033OQ", "f2-key", NULL);
 	el_set(el, EL_BIND, "\033OR", "f3-key", NULL);
 	el_set(el, EL_BIND, "\033OS", "f4-key", NULL);
+	el_set(el, EL_BIND, "\033OT", "f5-key", NULL);
+	el_set(el, EL_BIND, "\033OU", "f6-key", NULL);
+	el_set(el, EL_BIND, "\033OV", "f7-key", NULL);
+	el_set(el, EL_BIND, "\033OW", "f8-key", NULL);
+	el_set(el, EL_BIND, "\033OX", "f9-key", NULL);
+	el_set(el, EL_BIND, "\033OY", "f10-key", NULL);
+	el_set(el, EL_BIND, "\033OZ", "f11-key", NULL);
+	el_set(el, EL_BIND, "\033O[", "f12-key", NULL);
 
 	el_set(el, EL_BIND, "\033[11~", "f1-key", NULL);
 	el_set(el, EL_BIND, "\033[12~", "f2-key", NULL);
