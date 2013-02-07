@@ -193,6 +193,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 		 */
 		switch (attr->type) {
 		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:	/* Address, we only care about this one, but parse the others too */
+		case SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS:
 		case SWITCH_STUN_ATTR_RESPONSE_ADDRESS:
 		case SWITCH_STUN_ATTR_SOURCE_ADDRESS:
 		case SWITCH_STUN_ATTR_CHANGED_ADDRESS:
@@ -347,6 +348,28 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_s
 		p = ipstr + strlen(ipstr);
 	}
 	*port = ip->port;
+	return 1;
+}
+
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(switch_stun_packet_attribute_t *attribute, uint32_t cookie, char *ipstr, uint16_t *port)
+{
+	switch_stun_ip_t *ip;
+	uint8_t x, *i;
+	char *p = ipstr;
+
+	ip = (switch_stun_ip_t *) attribute->value;
+	ip->address ^= cookie;
+
+	i = (uint8_t *) & ip->address;
+	*ipstr = 0;
+	for (x = 0; x < 4; x++) {
+		sprintf(p, "%u%s", i[x], x == 3 ? "" : ".");
+		p = ipstr + strlen(ipstr);
+	}
+
+    ip->port ^= ntohl(cookie) >> 16;
+	*port = ip->port;
+
 	return 1;
 }
 
@@ -603,6 +626,11 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 					tmp->address ^= ntohl(0xabcdabcd);
 				}
 				switch_stun_packet_attribute_get_mapped_address(attr, rip, &rport);
+			}
+			break;
+		case SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS:
+			if (attr->type) {
+				switch_stun_packet_attribute_get_xor_mapped_address(attr, packet->header.cookie, rip, &rport);
 			}
 			break;
 		case SWITCH_STUN_ATTR_USERNAME:
