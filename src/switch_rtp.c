@@ -3616,7 +3616,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			rtp_session->dtls->bytes = 0;
 			rtp_session->dtls->data = NULL;
 			
-			if (0 && *b != 0 && *b != 1 && rtp_session->dtls->state != DS_READY) {
+			if (*b != 0 && *b != 1 && rtp_session->dtls->state != DS_READY) {
 				*bytes = 0;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Drop %s packet %ld bytes (dtls not ready!)\n", rtp_type(rtp_session), *bytes);
 			}
@@ -3855,6 +3855,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				rtp_session->stats.inbound.jb_packet_count++;
 			}
 			*bytes = jb_frame->dlen + rtp_header_len;
+			rtp_session->recv_msg.header.version = 2;
+			rtp_session->recv_msg.header.x = 0;
 			rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
 			rtp_session->recv_msg.header.pt = jb_frame->pt;
 			rtp_session->recv_msg.header.seq = htons(jb_frame->seq);
