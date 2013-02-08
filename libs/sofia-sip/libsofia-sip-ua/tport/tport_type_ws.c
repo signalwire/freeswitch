@@ -86,7 +86,7 @@ tport_vtable_t const tport_ws_vtable =
   /* vtp_connect             */ NULL,
   /* vtp_secondary_size      */ sizeof (tport_ws_t),
   /* vtp_init_secondary      */ tport_ws_init_secondary,
-  /* vtp_deinit_secondary    */ tport_ws_deinit_secondary,
+  /* tp_deinit_secondary    */ tport_ws_deinit_secondary,
   /* vtp_shutdown            */ NULL,
   /* vtp_set_events          */ NULL,
   /* vtp_wakeup              */ NULL,
@@ -180,7 +180,8 @@ static void tport_ws_deinit_primary(tport_primary_t *pri)
 {
   tport_ws_primary_t *wspri = (tport_ws_primary_t *)pri;
   if ( wspri->ssl_ctx ) {
-	  SSL_CTX_free(wspri->ssl_ctx), wspri->ssl_ctx = NULL;
+	  SSL_CTX_free(wspri->ssl_ctx);
+	  wspri->ssl_ctx = NULL;
   }
 }
 
@@ -373,6 +374,7 @@ static int tport_ws_init_primary_secure(tport_primary_t *pri,
   //  SSL_load_error_strings();     /* load all error messages */                                                                                         
   wspri->ssl_method = SSLv23_server_method();   /* create server instance */
   wspri->ssl_ctx = SSL_CTX_new(wspri->ssl_method);         /* create context */
+  SSL_CTX_sess_set_remove_cb(wspri->ssl_ctx, NULL);
   wspri->ws_secure = 1;
 
   if ( !wspri->ssl_ctx ) goto done;
