@@ -416,12 +416,12 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 		}
 
-		if (!ans_a && answer_limit && switch_epoch_time_now(NULL) > answer_limit) {
+		if (!switch_channel_test_flag(chan_a, CF_ANSWERED) && answer_limit && switch_epoch_time_now(NULL) > answer_limit) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Answer timeout hit on %s.\n", switch_channel_get_name(chan_a));
 			switch_channel_hangup(chan_a, SWITCH_CAUSE_ALLOTTED_TIMEOUT);
 		}
 
-		if (!ans_a) {
+		if (!switch_channel_test_flag(chan_a, CF_ANSWERED)) {
 			if (originator) {
 				if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 					switch_channel_pass_callee_id(chan_b, chan_a);
