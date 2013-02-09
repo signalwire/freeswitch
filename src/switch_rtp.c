@@ -1555,7 +1555,8 @@ static switch_status_t enable_remote_rtcp_socket(switch_rtp_t *rtp_session, cons
 			
 			host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_remote_addr);
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Setting RTCP remote addr to %s:%d\n", host, rtp_session->remote_rtcp_port);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, 
+							  "Setting RTCP remote addr to %s:%d\n", host, rtp_session->remote_rtcp_port);
 		}
 
 		if (!(rtp_session->rtcp_sock_input && rtp_session->rtcp_sock_output)) {
@@ -1915,7 +1916,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 		}
 	}
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {	
+
+	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {	
 		if (remote_rtcp_port) {
 			rtp_session->remote_rtcp_port = remote_rtcp_port;
 		} else {
@@ -2027,7 +2029,7 @@ static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 static int dtls_state_handshake(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 {
 	int ret;
-	
+
 	if ((ret = SSL_do_handshake(dtls->ssl)) != 1){
 		switch((ret = SSL_get_error(dtls->ssl, ret))){
 		case SSL_ERROR_WANT_READ:
@@ -2142,7 +2144,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, 
-					  "Activate %s DTLS %s\n", rtp_type(rtp_session), (type & DTLS_TYPE_SERVER) ? "server" : "cleint");
+					  "Activate %s DTLS %s\n", rtp_type(rtp_session), (type & DTLS_TYPE_SERVER) ? "server" : "client");
 
 	if (((type & DTLS_TYPE_RTP) && rtp_session->dtls) || ((type & DTLS_TYPE_RTCP) && rtp_session->rtcp_dtls)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "DTLS ALREADY INIT\n");
