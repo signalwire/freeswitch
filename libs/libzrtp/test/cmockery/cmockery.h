@@ -114,9 +114,6 @@ typedef unsigned long uintptr_t;
  * what's the right preprocessor symbol?
 typedef unsigned long long uintptr_t */
 
-/* ILP32 and LP64 platforms */
-typedef unsigned long uintptr_t;
-
 #endif /* _WIN32 */
 #endif /* _UINTPTR_T */
 

@@ -347,7 +347,7 @@ bootstrap_apr() {
 }
 
 bootstrap_libzrtp() {
-  (cd ${LIBDIR}/libzrtp/projects/gnu && ./bootstrap.sh)
+  (cd ${LIBDIR}/libzrtp && ./bootstrap.sh)
 }
 
 # Libs automake automation function

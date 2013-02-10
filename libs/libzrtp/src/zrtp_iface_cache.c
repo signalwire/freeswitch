@@ -56,7 +56,6 @@ static zrtp_status_t zrtp_cache_user_down();
 		return zrtp_status_bad_param; \
 	}
 
-/*----------------------------------------------------------------------------*/
 zrtp_status_t zrtp_def_cache_init(zrtp_global_t* a_zrtp)
 {
 	zrtp_status_t s = zrtp_status_ok;
@@ -83,7 +82,9 @@ void zrtp_def_cache_down()
 	if (inited) {
 		mlist_t *node = NULL, *tmp = NULL;				
 		
-		zrtp_cache_user_down();
+		/* If automatic cache flushing enabled we don't need to store it in a disk as it should be already in sync. */
+		if (!zrtp->cache_auto_store)
+			zrtp_cache_user_down();
 
 		mlist_for_each_safe(node, tmp, &cache_head) {
 			zrtp_sys_free(mlist_get_struct(zrtp_cache_elem_t, _mlist, node));
@@ -102,7 +103,7 @@ void zrtp_def_cache_down()
 	}
 }
 
-/*----------------------------------------------------------------------------*/
+
 zrtp_status_t zrtp_def_cache_set_verified( const zrtp_stringn_t* one_ZID,
 										   const zrtp_stringn_t* another_ZID,
 										   uint32_t verified)
@@ -117,9 +118,11 @@ zrtp_status_t zrtp_def_cache_set_verified( const zrtp_stringn_t* one_ZID,
 	new_elem = get_elem(id, 0);
 	if (new_elem) {
 		new_elem->verified = verified;
-	}       		
+	}
 	zrtp_mutex_unlock(def_cache_protector);
 	
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
+
 	return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
 
@@ -145,7 +148,6 @@ zrtp_status_t zrtp_def_cache_get_verified( const zrtp_stringn_t* one_ZID,
 }
 
 
-/*----------------------------------------------------------------------------*/
 static zrtp_status_t cache_put( const zrtp_stringn_t* one_ZID,
 								const zrtp_stringn_t* another_ZID,
 								zrtp_shared_secret_t *rss,
@@ -213,6 +215,8 @@ static zrtp_status_t cache_put( const zrtp_stringn_t* one_ZID,
 	} while (0);
 	zrtp_mutex_unlock(def_cache_protector);
 
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
+
     return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
 
@@ -229,7 +233,6 @@ zrtp_status_t zrtp_def_cache_put_mitm( const zrtp_stringn_t* one_ZID,
 }
 
 
-/*----------------------------------------------------------------------------*/
 static zrtp_status_t cache_get( const zrtp_stringn_t* one_ZID,
 								const zrtp_stringn_t* another_ZID,
 								zrtp_shared_secret_t *rss,
@@ -288,7 +291,6 @@ zrtp_status_t zrtp_def_cache_get_mitm( const zrtp_stringn_t* one_ZID,
 	return cache_get(one_ZID, another_ZID, rss, 0, 1);
 }
 
-/*-----------------------------------------------------------------------------*/
 zrtp_status_t zrtp_def_cache_set_presh_counter( const zrtp_stringn_t* one_zid,
 											    const zrtp_stringn_t* another_zid,
 											    uint32_t counter) 
@@ -308,6 +310,8 @@ zrtp_status_t zrtp_def_cache_set_presh_counter( const zrtp_stringn_t* one_zid,
 	}
 	zrtp_mutex_unlock(def_cache_protector);
 	
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
+
 	return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
 
@@ -331,7 +335,6 @@ zrtp_status_t zrtp_def_cache_get_presh_counter( const zrtp_stringn_t* one_zid,
 	return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
 
-/*-----------------------------------------------------------------------------*/
  void zrtp_cache_create_id( const zrtp_stringn_t* first_ZID,
 							 const zrtp_stringn_t* second_ZID,
 							 zrtp_cache_id_t id )
@@ -346,13 +349,12 @@ zrtp_status_t zrtp_def_cache_get_presh_counter( const zrtp_stringn_t* one_zid,
 	zrtp_memcpy((char*)id+sizeof(zrtp_zid_t), second_ZID->buffer, sizeof(zrtp_zid_t));
 }
 
-/*-----------------------------------------------------------------------------*/
 zrtp_cache_elem_t* zrtp_def_cache_get2(const zrtp_cache_id_t id, int is_mitm)
 {
 	return get_elem(id, is_mitm);
 }
 
-/*-----------------------------------------------------------------------------*/
+
 static zrtp_cache_elem_t* get_elem(const zrtp_cache_id_t id, uint8_t is_mitm)
 {
 	mlist_t* node = NULL;
@@ -367,7 +369,6 @@ static zrtp_cache_elem_t* get_elem(const zrtp_cache_id_t id, uint8_t is_mitm)
     return NULL;	
 }
 
-/*----------------------------------------------------------------------------*/
 static void cache_make_cross(zrtp_cache_elem_t* from, zrtp_cache_elem_t* to, uint8_t is_upload)
 {
 	if (!to) {
@@ -576,7 +577,7 @@ zrtp_status_t zrtp_cache_user_init()
 	return s;
 }
 
-/*---------------------------------------------------------------------------*/
+
 #define ZRTP_DOWN_CACHE_RETURN(s, f) \
 {\
 	if (zrtp_status_ok != s) { \
@@ -644,7 +645,7 @@ zrtp_status_t zrtp_cache_user_down()
 {
 	FILE* cache_file = 0;	
 	mlist_t *node = 0;
-	uint32_t count = 0;
+	uint32_t count = 0, dirty_count=0;
 	uint32_t pos = 0;
 
 	ZRTP_LOG(3,(_ZTU_,"\tStoring ZRTP cache to <%s>...\n", zrtp->def_cache_path.buffer));
@@ -686,7 +687,7 @@ zrtp_status_t zrtp_cache_user_down()
 	 */
 	pos = ftell(cache_file);
 	
-	count = 0;
+	count = 0; dirty_count = 0;
 	fwrite(&count, sizeof(count), 1, cache_file);
 	
 	mlist_for_each(node, &mitmcache_head) {
@@ -694,6 +695,7 @@ zrtp_status_t zrtp_cache_user_down()
 		/* Store dirty values only. */
 		if (g_needs_rewriting || elem->_is_dirty) {
 //			printf("zrtp_cache_user_down: Store MiTM elem index=%u, not modified.\n", elem->_index);
+			dirty_count++;
 			if (zrtp_status_ok != flush_elem_(elem, cache_file, 1)) {
 				ZRTP_DOWN_CACHE_RETURN(zrtp_status_write_fail, cache_file);
 			}
@@ -709,7 +711,8 @@ zrtp_status_t zrtp_cache_user_down()
 		ZRTP_DOWN_CACHE_RETURN(zrtp_status_write_fail, cache_file);
 	}
 
-	ZRTP_LOG(3,(_ZTU_,"\t%u MiTM cache entries have been stored successfully.\n",zrtp_ntoh32(count)));
+	if (dirty_count > 0)
+		ZRTP_LOG(3,(_ZTU_,"\t%u out of %u MiTM cache entries have been flushed successfully.\n", dirty_count, zrtp_ntoh32(count)));
 	
 	/*
 	 * Store regular secrets. Format: <secrets count>, <secrets' data>
@@ -722,7 +725,7 @@ zrtp_status_t zrtp_cache_user_down()
 	
 	fseek(cache_file, pos, SEEK_SET);
 	
-	count = 0;
+	count = 0; dirty_count=0;
 	fwrite(&count, sizeof(count), 1, cache_file);
 	
 	mlist_for_each(node, &cache_head) {
@@ -731,6 +734,7 @@ zrtp_status_t zrtp_cache_user_down()
 		/* Store dirty values only. */
 		if (g_needs_rewriting || elem->_is_dirty) {
 //			printf("zrtp_cache_user_down: Store RS elem index=%u, not modified.\n", elem->_index);
+			dirty_count++;
 			if (zrtp_status_ok != flush_elem_(elem, cache_file, 0)) {
 				ZRTP_DOWN_CACHE_RETURN(zrtp_status_write_fail, cache_file);
 			}
@@ -746,7 +750,9 @@ zrtp_status_t zrtp_cache_user_down()
 	if (fwrite(&count, sizeof(count), 1, cache_file) != 1) {
 		ZRTP_DOWN_CACHE_RETURN(zrtp_status_write_fail, cache_file);
 	}
-	ZRTP_LOG(3,(_ZTU_,"\t%u regular cache entries have been stored successfully.\n", zrtp_ntoh32(count)));
+
+	if (dirty_count > 0)
+		ZRTP_LOG(3,(_ZTU_,"\t%u out of %u regular cache entries have been flushed successfully.\n", dirty_count, zrtp_ntoh32(count)));
 	
 	g_needs_rewriting = 0;
 
@@ -790,6 +796,8 @@ static zrtp_status_t put_name( const zrtp_stringn_t* one_ZID,
 	} while (0);
 	zrtp_mutex_unlock(def_cache_protector);
 	
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
+
 	return s;
 }
 
@@ -879,6 +887,8 @@ zrtp_status_t zrtp_def_cache_reset_since( const zrtp_stringn_t* one_zid,
 	}
 	zrtp_mutex_unlock(def_cache_protector);
 	
+	if (zrtp->cache_auto_store) zrtp_def_cache_store(zrtp);
+
 	return (new_elem) ? zrtp_status_ok : zrtp_status_fail;
 }
 
@@ -941,13 +951,10 @@ void zrtp_def_cache_foreach( zrtp_global_t *global,
 /*----------------------------------------------------------------------------*/
 zrtp_status_t zrtp_def_cache_store(zrtp_global_t *zrtp)
 {
-	ZRTP_LOG(3,(_ZTU_,"Storing ZRTP Cache...\n"));
-
 	zrtp_mutex_lock(def_cache_protector);
 	zrtp_cache_user_down();
 	zrtp_mutex_unlock(def_cache_protector);
 	
-	ZRTP_LOG(3,(_ZTU_,"Storing ZRTP Cache - DONE.\n"));
 	return zrtp_status_ok;
 }
 

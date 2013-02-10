@@ -5,8 +5,6 @@
 # 
 # Viktor Krikun <v.krikun at zfoneproject.com> 
 
-libzrtp BETA
-
 Created by Phil Zimmermann.
 
 Developers:
@@ -27,8 +25,6 @@ Thanks to:
 	L. Amber Wilcox-O'Hearn
 	Ariel Boston
 	Donovan Preston
-
-Software development services provided by Soft_industry http://www.soft-industry.com/en.
 
 Portions of this software are available under open source licenses from other authors.
 Notably, Brian Gladman's AES implementation, and David McGrew's libSRTP package.

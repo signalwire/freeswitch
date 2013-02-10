@@ -1181,7 +1181,7 @@ AC_CONFIG_SUBDIRS([libs/libg722_1])
 AC_CONFIG_SUBDIRS([libs/silk])
 AC_CONFIG_SUBDIRS([libs/libcodec2])
 if test "x${enable_zrtp}" = "xyes"; then
-   AC_CONFIG_SUBDIRS([libs/libzrtp/projects/gnu])
+   AC_CONFIG_SUBDIRS([libs/libzrtp])
 fi
 AC_CONFIG_SUBDIRS([libs/libwebsockets])
 

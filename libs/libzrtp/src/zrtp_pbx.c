@@ -25,7 +25,8 @@ static void _send_and_resend_sasrelay(zrtp_stream_t *stream, zrtp_retry_task_t* 
 		ZRTP_LOG(1,(_ZTU_,"WARNING! SASRELAY Max retransmissions count reached. ID=%u\n", stream->id));
 		_zrtp_machine_enter_initiatingerror(stream, zrtp_error_timeout, 0);
 	} else if (task->_is_enabled) {
-		zrtp_status_t s = _zrtp_packet_send_message(stream, ZRTP_SASRELAY, &stream->messages.sasrelay);		
+
+		zrtp_status_t s = _zrtp_packet_send_message(stream, ZRTP_SASRELAY, &stream->messages.sasrelay);
 		task->timeout = _zrtp_get_timeout((uint32_t)task->timeout, ZRTP_SASRELAY);
 		if (zrtp_status_ok == s) {
 			task->_retrys++;
@@ -87,13 +88,15 @@ static zrtp_status_t _create_sasrelay( zrtp_stream_t *stream,
 
 		s = session->blockcipher->encrypt( session->blockcipher,
 										    cipher_ctx,
-										    (uint8_t*)&sasrelay->pad,
+										    (uint8_t*)sasrelay->pad,
 										    encrypted_body_size );
 	} while(0);
 	if (cipher_ctx) {
 		session->blockcipher->stop(session->blockcipher, cipher_ctx);
 	}
-	
+
+
+
 	if (zrtp_status_ok != s) {
 		ZRTP_LOG(1,(_ZTU_,"\tERROR! Failed to encrypt SASRELAY Message status=%d. ID=%u\n", s, stream->id));
 		return s;
@@ -130,10 +133,10 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 	char zerosashash[32];
 	unsigned sas_scheme_did_change = 0;
 	unsigned sas_hash_did_change = 0;
-	
+
 	/* (padding + sig_len + flags) + SAS scheme and SAS hash */
 	const uint8_t encrypted_body_size = (2 + 1 + 1) + 4 + 32;
-	
+
 	zrtp_memset(zerosashash, 0, sizeof(zerosashash));
 
 	/* Check if the remote endpoint is assigned to relay the SAS values */
@@ -141,7 +144,7 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 		ZRTP_LOG(2,(_ZTU_, ZRTP_RELAYED_SAS_FROM_NONMITM_STR));
 		return zrtp_status_fail;
 	}
-	
+
 	/* Check the HMAC */
 	s = session->hash->hmac_c( session->hash,
 								stream->cc.peer_hmackey.buffer,
@@ -177,15 +180,15 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 			break;
 		}
 
-		s = session->blockcipher->encrypt( session->blockcipher,
+		s = session->blockcipher->decrypt( session->blockcipher,
 										    cipher_ctx,
-										    (uint8_t*)&sasrelay->pad,
+										    (uint8_t*)sasrelay->pad,
 										    encrypted_body_size);
 	} while(0);
 	if (cipher_ctx) {
 		session->blockcipher->stop(session->blockcipher, cipher_ctx);
 	}
-	
+
 	if (zrtp_status_ok != s) {
 		ZRTP_LOG(1,(_ZTU_,"\tERROR! Failed to decrypt Confirm. status=%d ID=%u\n", s, stream->id));
 		return s;
@@ -215,7 +218,7 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 	if (-1 == zrtp_profile_find(&session->profile, ZRTP_CC_SAS, rendering_id)) {
 		ZRTP_LOG(1,(_ZTU_,"\tERROR! PBX Confirm packet with transferred SAS have unknown or"
 					" unsupported rendering scheme %.4s.ID=%u\n", sasrelay->sas_scheme, stream->id));
-		
+
 		_zrtp_machine_enter_initiatingerror(stream, zrtp_error_invalid_packet, 1);
 		return zrtp_status_fail;
 	}
@@ -229,7 +232,7 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 	}
 
 	if (session->secrets.matches & ZRTP_BIT_PBX) {
-		if ( ( ((uint32_t) *sasrelay->sas_scheme) != (uint32_t)0x0L ) &&
+		if ( (((uint32_t) *sasrelay->sas_scheme) != (uint32_t)0x0L) &&
 			 (0 != zrtp_memcmp(sasrelay->sashash, zerosashash, sizeof(sasrelay->sashash))) )
 		{
 			char buff[256];
@@ -237,10 +240,10 @@ zrtp_status_t _zrtp_machine_process_sasrelay(zrtp_stream_t *stream, zrtp_rtp_inf
 			/* First 32 bits if sashash includes sasvalue */
 			zrtp_memcpy(session->sasbin.buffer, sasrelay->sashash, session->sasbin.length);
 			stream->mitm_mode = ZRTP_MITM_MODE_RECONFIRM_CLIENT;
-	
+
 			sas_hash_did_change = 1;
 			ZRTP_LOG(3,(_ZTU_,"\tSasRelay: SAS value was updated to bin=%s.\n",
-							hex2str(buff, sizeof(buff), session->sasbin.buffer, session->sasbin.length)));
+							hex2str(session->sasbin.buffer, session->sasbin.length, buff, sizeof(buff))));
 		}
 	} else if (0 != zrtp_memcmp(sasrelay->sashash, zerosashash, sizeof(sasrelay->sashash))) {
 		ZRTP_LOG(1,(_ZTU_,"\tWARNING! SAS Value was received from NOT Trusted MiTM. ID=%u\n", stream->id));
@@ -318,15 +321,15 @@ zrtp_status_t zrtp_stream_registration_start(zrtp_stream_t* stream, uint32_t ssr
 	if (!stream) {
 		return zrtp_status_bad_param;
 	}
-	
+
 	ZRTP_LOG(3,(_ZTU_,"START REGISTRATION STREAM ID=%u mode=%s state=%s.\n",
 				stream->id, zrtp_log_mode2str(stream->mode), zrtp_log_state2str(stream->state)));
-				
+
 	if (NULL == stream->zrtp->cb.cache_cb.on_get_mitm) {
 		ZRTP_LOG(2,(_ZTU_,"WARNING: Can't use MiTM Functions with no ZRTP Cache.\n"));
 		return zrtp_status_notavailable;
 	}
-	
+
 	stream->mitm_mode = ZRTP_MITM_MODE_REG_SERVER;
 	return zrtp_stream_start(stream, ssrc);
 }
@@ -336,15 +339,15 @@ zrtp_status_t zrtp_stream_registration_secure(zrtp_stream_t* stream)
 	if (!stream) {
 		return zrtp_status_bad_param;
 	}
-	
+
 	ZRTP_LOG(3,(_ZTU_,"SECURE REGISTRATION STREAM ID=%u mode=%s state=%s.\n",
 				stream->id, zrtp_log_mode2str(stream->mode), zrtp_log_state2str(stream->state)));
-	
+
 	if (NULL == stream->zrtp->cb.cache_cb.on_get_mitm) {
 		ZRTP_LOG(2,(_ZTU_,"WARNING: Can't use MiTM Functions with no ZRTP Cache.\n"));
 		return zrtp_status_notavailable;
 	}
-	
+
 	stream->mitm_mode = ZRTP_MITM_MODE_REG_SERVER;
 	return zrtp_stream_secure(stream);
 }
@@ -354,22 +357,22 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream)
 {
 	zrtp_session_t *session = stream->session;
 	zrtp_status_t s = zrtp_status_bad_param;
-	
+
 	if (!stream) {
 		return zrtp_status_bad_param;
 	}
-	
+
 	ZRTP_LOG(3,(_ZTU_,"MARKING this call as REGISTRATION ID=%u\n", stream->id));
-	
+
 	if (NULL == stream->zrtp->cb.cache_cb.on_get_mitm) {
 		ZRTP_LOG(2,(_ZTU_,"WARNING: Can't use MiTM Functions with no ZRTP Cache.\n"));
 		return zrtp_status_notavailable;
 	}
-	
+
 	if (!stream->protocol) {
 		return zrtp_status_bad_param;
 	}
-	
+
 	/* Passive Client endpoint should NOT generate PBX Secret. */
 	if ((stream->mitm_mode == ZRTP_MITM_MODE_REG_CLIENT) &&
 		(ZRTP_LICENSE_MODE_PASSIVE == stream->zrtp->lic_mode)) {
@@ -387,7 +390,7 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream)
 		zrtp_string32_t kdf_context = ZSTR_INIT_EMPTY(kdf_context);
 		static const zrtp_string32_t trusted_mitm_key_label = ZSTR_INIT_WITH_CONST_CSTRING(ZRTP_TRUSTMITMKEY_STR);
 		zrtp_string16_t *zidi, *zidr;
-		
+
 		if (stream->protocol->type == ZRTP_STATEMACHINE_INITIATOR) {
 			zidi = &session->zid;
 			zidr = &session->peer_zid;
@@ -395,29 +398,29 @@ zrtp_status_t zrtp_register_with_trusted_mitm(zrtp_stream_t* stream)
 			zidi = &session->peer_zid;
 			zidr = &session->zid;
 		}
-				
+
 		zrtp_zstrcat(ZSTR_GV(kdf_context), ZSTR_GVP(zidi));
 		zrtp_zstrcat(ZSTR_GV(kdf_context), ZSTR_GVP(zidr));
-		
+
 		_zrtp_kdf( stream,
 				   ZSTR_GV(session->zrtpsess),
 				   ZSTR_GV(trusted_mitm_key_label),
 				   ZSTR_GV(kdf_context),
 				   ZRTP_HASH_SIZE,
 				   ZSTR_GV(session->secrets.pbxs->value));
-		
+
 		session->secrets.pbxs->_cachedflag = 1;
 		session->secrets.pbxs->lastused_at = (uint32_t)(zrtp_time_now()/1000);
 		session->secrets.cached |= ZRTP_BIT_PBX;
 		session->secrets.matches |= ZRTP_BIT_PBX;
 
 		s = zrtp_status_ok;
-		if (session->zrtp->cb.cache_cb.on_put_mitm) {		
-			s = session->zrtp->cb.cache_cb.on_put_mitm( ZSTR_GV(session->zid),								  
+		if (session->zrtp->cb.cache_cb.on_put_mitm) {
+			s = session->zrtp->cb.cache_cb.on_put_mitm( ZSTR_GV(session->zid),
 														ZSTR_GV(session->peer_zid),
 														session->secrets.pbxs);
 		}
-		
+
 		ZRTP_LOG(3,(_ZTU_,"Makring this call as REGISTRATION - DONE\n"));
 	}
 
@@ -430,46 +433,46 @@ zrtp_status_t zrtp_link_mitm_calls(zrtp_stream_t *stream1, zrtp_stream_t *stream
 	if (!stream1 || !stream2) {
 		return zrtp_status_bad_param;
 	}
-	
-	ZRTP_LOG(3,(_ZTU_,"Link to MiTM call together stream1=%u stream2=%u.\n", stream1->id, stream2->id));		
-	
+
+	ZRTP_LOG(3,(_ZTU_,"Link to MiTM call together stream1=%u stream2=%u.\n", stream1->id, stream2->id));
+
 	/* This APi is for MiTM endpoints only. */
 	if (stream1->zrtp->is_mitm) {
 		return zrtp_status_bad_param;
 	}
-	
+
 	stream1->linked_mitm = stream2;
 	stream2->linked_mitm = stream1;
-	
+
 	{
 		zrtp_stream_t *passive = NULL;
 		zrtp_stream_t *unlimited = NULL;
-	
+
 		/* Check if we have at least one Unlimited endpoint. */
 		if (stream1->peer_super_flag)
 			unlimited = stream1;
 		else if (stream2->peer_super_flag)
 			unlimited = stream2;
-	
+
 		/* Check if the peer stream is Passive */
 		if (unlimited) {
 			passive = (stream1 == unlimited) ? stream2 : stream1;
 			if (!passive->peer_passive)
 				passive = NULL;
 		}
-		
+
 		/* Ok, we haver Unlimited and Passive at two ends, let's make an exception and switch Passive to Secure. */
 		if (unlimited && passive) {
 			if (passive->state == ZRTP_STATE_CLEAR) {
 				ZRTP_LOG(2,(_ZTU_,"INFO: zrtp_link_mitm_calls() stream with id=%u is Unlimited and"
 							" Peer stream with id=%u is Passive in CLEAR state, switch the passive one to SECURE.\n"));
-				
-				/* @note: don't use zrtp_secure_stream() wrapper as it checks for Active/Passive stuff. */				
+
+				/* @note: don't use zrtp_secure_stream() wrapper as it checks for Active/Passive stuff. */
 				_zrtp_machine_start_initiating_secure(passive);
 			}
-		}		
+		}
 	}
-	
+
 	return zrtp_status_ok;
 }
 
@@ -483,16 +486,16 @@ zrtp_status_t zrtp_update_remote_options( zrtp_stream_t* stream,
 	zrtp_retry_task_t* task = &stream->messages.sasrelay_task;
 	zrtp_status_t s = zrtp_status_ok;
 	char buff[256];
-	
+
 	if (!stream) {
 		return zrtp_status_bad_param;
 	}
-	
+
 	ZRTP_LOG(3,(_ZTU_,"UPDATE REMOTE SAS OPTIONS mode. ID=%u\n", stream->id));
 	ZRTP_LOG(3,(_ZTU_,"transf_sas=%s scheme=%d.\n", transf_sas_value ?
 				hex2str((const char*)transf_sas_value->buffer, transf_sas_value->length, (char*)buff, sizeof(buff)) : "NULL",
 				transf_sas_scheme));
-				
+
 	if (NULL == stream->zrtp->cb.cache_cb.on_get_mitm) {
 		ZRTP_LOG(2,(_ZTU_,"WARNING: Can't use MiTM Functions with no ZRTP Cache.\n"));
 		return zrtp_status_notavailable;
@@ -507,7 +510,7 @@ zrtp_status_t zrtp_update_remote_options( zrtp_stream_t* stream,
 	if (transf_sas_value && !(stream->session->secrets.matches & ZRTP_BIT_PBX)) {
 		return zrtp_status_bad_param;
 	}
-	
+
 	/* Don't allow to transfer the SAS if the library wasn't initialized as MiTM endpoint */
 	if (!stream->zrtp->is_mitm) {
 		ZRTP_LOG(3,(_ZTU_,"\tERROR! The endpoint can't transfer SAS values to other endpoints"
@@ -551,7 +554,7 @@ zrtp_status_t zrtp_resolve_mitm_call( zrtp_stream_t* stream1,
 	zrtp_stream_t* non_enrolled = NULL;
 	zrtp_sas_id_t mitm_sas_scheme = ZRTP_COMP_UNKN;
 	zrtp_status_t s = zrtp_status_ok;
-	
+
 	if (!stream1 || !stream2) {
 		return zrtp_status_bad_param;
 	}
@@ -562,7 +565,7 @@ zrtp_status_t zrtp_resolve_mitm_call( zrtp_stream_t* stream1,
 		ZRTP_LOG(2,(_ZTU_,"WARNING: Can't use MiTM Functions with no ZRTP Cache.\n"));
 		return zrtp_status_notavailable;
 	}
-	
+
 	/*
      * Both sides must be in the Secure state and at least one should be
      * enrolled.
@@ -667,7 +670,7 @@ uint8_t zrtp_is_user_enrolled(zrtp_stream_t* stream)
 	if (!stream) {
 		return zrtp_status_bad_param;
 	}
-	
+
 	return ( (stream->session->secrets.cached & ZRTP_BIT_PBX) &&
 		     (stream->session->secrets.matches & ZRTP_BIT_PBX) );
 }
@@ -677,7 +680,7 @@ zrtp_stream_t* zrtp_choose_one_enrolled(zrtp_stream_t* stream1, zrtp_stream_t* s
 	if (!stream1 || !stream2) {
 		return NULL;
 	}
-	
+
 	if (zrtp_memcmp( stream1->session->zid.buffer,
 					 stream2->session->zid.buffer,
 					 stream1->session->zid.length) > 0) {

@@ -1,3 +1,8 @@
 # -*- mode:conf -*-
+/*.a
+/*.o
 /Makefile
+/autom4te.cache/*
 /bnconfig.h
+/config.*
+/configure

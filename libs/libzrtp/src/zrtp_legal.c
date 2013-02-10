@@ -46,14 +46,6 @@
  * derivative work of the FreeSWITCH code in the same work, the terms
  * of the AGPLv3 apply.
  *
- * You might have received some files with this library that are not
- * covered by this license grant.  These files have a header
- * identifying the copyright holder as Philip R. Zimmermann and a
- * clear statement that the file is not freely available, such as,
- * "This is NOT licensed under the GPL or any other open source
- * license."  This document grants you no right to distribute or use
- * these files.
- *
  * I, Phil Zimmermann, would like to make the following non-binding
  * request of any contributors to this library: please make your
  * changes available for me to sublicense.  I support myself in part

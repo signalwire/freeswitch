@@ -34,6 +34,8 @@ void zrtp_config_defaults(zrtp_config_t* config)
 	ZSTR_SET_EMPTY(config->def_cache_path);
 	zrtp_zstrncpyc(ZSTR_GV(config->def_cache_path), "./zrtp_def_cache_path.dat", 25);
 
+	config->cache_auto_store = 1; /* cache auto flushing should be enabled by default */
+
 #if (defined(ZRTP_USE_BUILTIN_CACHE) && (ZRTP_USE_BUILTIN_CACHE == 1))
 	config->cb.cache_cb.on_init					= zrtp_def_cache_init;
 	config->cb.cache_cb.on_down					= zrtp_def_cache_down;
@@ -81,6 +83,7 @@ zrtp_status_t zrtp_init(zrtp_config_t* config, zrtp_global_t** zrtp)
 	ZSTR_SET_EMPTY(new_zrtp->def_cache_path);
 	zrtp_zstrcpy(ZSTR_GV(new_zrtp->def_cache_path), ZSTR_GV(config->def_cache_path));
 	zrtp_memcpy(&new_zrtp->cb, &config->cb, sizeof(zrtp_callback_t));
+	new_zrtp->cache_auto_store = config->cache_auto_store;
         
 	ZSTR_SET_EMPTY(new_zrtp->client_id);
 	zrtp_memset(new_zrtp->client_id.buffer, ' ', sizeof(zrtp_client_id_t));
@@ -434,8 +437,6 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 	ZSTR_SET_EMPTY(new_stream->cc.peer_hmackey);
 	ZSTR_SET_EMPTY(new_stream->cc.zrtp_key);
 	ZSTR_SET_EMPTY(new_stream->cc.peer_zrtp_key);
-	
-	ZSTR_SET_EMPTY(new_stream->messages.signaling_hash);
 
 	new_stream->dh_cc.initialized_with	= ZRTP_COMP_UNKN;
 	bnBegin(&new_stream->dh_cc.peer_pv);
@@ -461,8 +462,9 @@ zrtp_status_t zrtp_stream_attach(zrtp_session_t *session, zrtp_stream_t** stream
 	 * Then insert these directly into the message structures.
      */
 
-	zrtp_memset(&new_stream->messages, 0, sizeof(new_stream->messages));	
+	zrtp_memset(&new_stream->messages, 0, sizeof(new_stream->messages));
 	ZSTR_SET_EMPTY(new_stream->messages.h0);
+	ZSTR_SET_EMPTY(new_stream->messages.signaling_hash);
 
 	/* Generate Random nonce, compute H1 and store in the DH packet */
 	new_stream->messages.h0.length = (uint16_t)zrtp_randstr( new_stream->zrtp,
@@ -592,11 +594,11 @@ zrtp_status_t zrtp_signaling_hash_get( zrtp_stream_t* stream,
 	zrtp_string32_t hash_str = ZSTR_INIT_EMPTY(hash_str);
 	zrtp_hash_t *hash = NULL;
 
-	if (!stream) {
+	if (!stream || !hash_buff) {
 		return zrtp_status_bad_param;
 	}
 
-	if (ZRTP_MESSAGE_HASH_SIZE*2+1 > hash_buff_length) {
+	if (ZRTP_SIGN_ZRTP_HASH_LENGTH > hash_buff_length) {
 		return zrtp_status_buffer_size;
 	}
 
@@ -619,11 +621,11 @@ zrtp_status_t zrtp_signaling_hash_set( zrtp_stream_t* ctx,
 									   const char *hash_buff,
 									   uint32_t hash_buff_length)
 {
-	if (!ctx) {
+	if (!ctx || !hash_buff) {
 		return zrtp_status_bad_param;
 	}
 
-	if (ZRTP_MESSAGE_HASH_SIZE*2 < hash_buff_length) {
+	if (ZRTP_SIGN_ZRTP_HASH_LENGTH > hash_buff_length) {
 		return zrtp_status_buffer_size;
 	}
 
@@ -631,17 +633,14 @@ zrtp_status_t zrtp_signaling_hash_set( zrtp_stream_t* ctx,
 		return zrtp_status_wrong_state;
 	}
 	
-	str2hex( hash_buff,
-		     hash_buff_length,
-			 ctx->messages.signaling_hash.buffer,
-			 ctx->messages.signaling_hash.max_length);
+	str2hex(hash_buff,
+			ZRTP_SIGN_ZRTP_HASH_LENGTH,
+			ctx->messages.signaling_hash.buffer,
+			ctx->messages.signaling_hash.max_length);
 	ctx->messages.signaling_hash.length = ZRTP_MESSAGE_HASH_SIZE;
 	
-	{
-	char buff[64];
-	ZRTP_LOG(3, (_ZTU_,"SIGNALLING HAS was ADDED for the comparision. ID=%u\n", ctx->id));
-	ZRTP_LOG(3, (_ZTU_,"Hash=%s.\n", hex2str(hash_buff, hash_buff_length, buff, sizeof(buff))));
-	}
+	ZRTP_LOG(3, (_ZTU_,"SIGNALLING HAS was ADDED for the comparison. ID=%u\n", ctx->id));
+	ZRTP_LOG(3, (_ZTU_,"Hash=%.*s.\n", ZRTP_SIGN_ZRTP_HASH_LENGTH, hash_buff));
 
 	return zrtp_status_ok;
 }
@@ -803,7 +802,6 @@ void zrtp_profile_defaults(zrtp_profile_t* profile, zrtp_global_t* zrtp)
 	profile->auth_tag_lens[0]	= ZRTP_ATL_HS32;
 	profile->hash_schemes[0]	= ZRTP_HASH_SHA256;
 
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
 	if (zrtp && (ZRTP_LICENSE_MODE_PASSIVE == zrtp->lic_mode)) {
 		profile->pk_schemes[0]		= ZRTP_PKTYPE_DH2048;
 		profile->pk_schemes[1]		= ZRTP_PKTYPE_EC256P;
@@ -814,16 +812,6 @@ void zrtp_profile_defaults(zrtp_profile_t* profile, zrtp_global_t* zrtp)
 		profile->pk_schemes[2]		= ZRTP_PKTYPE_DH2048;
 	}
 	profile->pk_schemes[3]		= ZRTP_PKTYPE_MULT;
-#else
-	if (zrtp && (ZRTP_LICENSE_MODE_PASSIVE == zrtp->lic_mode)) {
-		profile->pk_schemes[0]	= ZRTP_PKTYPE_DH2048;
-		profile->pk_schemes[1]	= ZRTP_PKTYPE_DH3072;
-	} else {
-		profile->pk_schemes[0]	= ZRTP_PKTYPE_DH3072;
-		profile->pk_schemes[1]	= ZRTP_PKTYPE_DH2048;
-	}
-	profile->pk_schemes[2]		= ZRTP_PKTYPE_MULT;
-#endif	
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1093,6 +1081,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_HASH_SHA384: return ZRTP_S384;
 		default: return "Unkn";
 		}
+		break;
 	    
 	case ZRTP_CC_SAS:
 		switch (id)
@@ -1101,6 +1090,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_SAS_BASE256:  return ZRTP_B256;
 		default: return "Unkn";
 		}
+		break;
 
 	case ZRTP_CC_CIPHER:
 		switch (id)
@@ -1109,6 +1099,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_CIPHER_AES256: return ZRTP_AES3;
 		default: return "Unkn";
 		}
+		break;
 
 	case ZRTP_CC_PKT:
 		switch (id)
@@ -1122,6 +1113,7 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_PKTYPE_EC521P: return ZRTP_EC521P;
 		default: return "Unkn";
 		}
+		break;
 
 	case ZRTP_CC_ATL:
 		switch (id)
@@ -1129,7 +1121,8 @@ char* zrtp_comp_id2type(zrtp_crypto_comp_t type, uint8_t id)
 		case ZRTP_ATL_HS32: return ZRTP_HS32;
 		case ZRTP_ATL_HS80: return ZRTP_HS80;
 		default: return "Unkn";
-		}		
+		}
+		break;
 
 	default:
 		return "Unkn";

@@ -1,2 +1,22 @@
 # -*- mode:conf -*-
+/*.a
+/*.dat
+/*.o
+/.cproject
+/.deps
+/.project
+/.stamp-doc
+/Makefile
+/Makefile.in
+/_configs.sed
+/aclocal.m4
+/autom4te.cache/*
+/cache_test
+/config.*
+/config/*
+/configure
+/doc/Doxyfile
+/doc/out
 /include/zrtp_config_unix.h
+!/build/Makefile.am
+!/build/test/Makefile.am

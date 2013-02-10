@@ -100,7 +100,7 @@ int zrtp_sleep(unsigned int msec)
 int zrtp_thread_create(zrtp_thread_routine_t start_routine, void *arg)
 {
 	pthread_t thread;
-	return pthread_create(&thread, NULL, start_routine, NULL);
+	return pthread_create(&thread, NULL, start_routine, arg);
 }
 #endif
 

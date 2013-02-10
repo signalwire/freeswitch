@@ -159,11 +159,11 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bgaes
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bnlib
 CORE_CFLAGS += -isystem $(switch_srcdir)/libs/libzrtp/include
 ZRTP_LDFLAGS = -L$(switch_srcdir)/libs/libzrtp/third_party/bnlib
-ZRTP_LDFLAGS += -L$(switch_srcdir)/libs/libzrtp/projects/gnu/build
+ZRTP_LDFLAGS += -L$(switch_srcdir)/libs/libzrtp
 ZRTP_LIBS = -lbn -lzrtp
 libfreeswitch_la_LDFLAGS += $(ZRTP_LDFLAGS)
 libfreeswitch_la_LIBADD += $(ZRTP_LIBS)
-CORE_LIBS += libs/libzrtp/projects/gnu/build/libzrtp.a
+CORE_LIBS += libs/libzrtp/libzrtp.a
 LIBS += libs/libzrtp/third_party/bnlib/libbn.a
 endif
 
@@ -441,8 +441,8 @@ src/include/switch_version.h: src/include/switch_version.h.in Makefile build/pri
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
 
-libs/libzrtp/projects/gnu/build/libzrtp.a:
-	cd libs/libzrtp/projects/gnu && $(MAKE)
+libs/libzrtp/libzrtp.a:
+	cd libs/libzrtp && $(MAKE)
 
 libs/sofia-sip/Makefile:
 	cd libs/sofia-sip && sh ./configure.gnu --prefix=$(prefix)

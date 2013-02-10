@@ -35,9 +35,7 @@
 #include "zrtp_legal.h"
 #include "zrtp_version.h"
 #include "zrtp_iface_cache.h"
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
 #include "zrtp_ec.h"
-#endif
 
 
 
@@ -81,6 +79,9 @@
  * \brief libzrtp general identifier used to debug connections management.
  * \ingroup zrtp_main_init 
  */
+
+/** Length of "zrtp-hash-value", RFC 6189 sec 8. @sa zrtp_signaling_hash_get(); */
+#define ZRTP_SIGN_ZRTP_HASH_LENGTH	(ZRTP_MESSAGE_HASH_SIZE*2)
 
 /**
  * \brief Enumeration for ZRTP Licensing modes
@@ -161,13 +162,24 @@ typedef struct zrtp_config_t
 
 	/** @brief Path to zrtp cache file (set if you use built-in realization) */
 	zrtp_string256_t		def_cache_path;
+
+	/**
+	 * @brief Flush the cache automatically
+	 * Set to 1 if you want libzrtp to flush the cache to the persistent storage
+	 * right after it is modified. If cache_auto_store is 0, libzrtp will flush
+	 * the cache on going down only and the app is responsible for storing the
+	 * cache in unexpected situations. Enabled by default.
+	 *
+	 * @sa zrtp_def_cache_store()
+	 */
+	unsigned				cache_auto_store;
 } zrtp_config_t;
 
 /**
  * \brief zrtp stream information structure
  * \ingroup zrtp_main_management
  * 
- * libzrtp, since v0.80 takes data incapsulating approach and hides all private date inside 
+ * libzrtp, since v0.80 takes data encapsulating approach and hides all private data inside
  * zrtp_stream_t structure. Developers shouldn't access them directly. \ref zrtp_stream_get() should 
  * be used instead to fill zrtp_stream_info_t structure. zrtp_stream_info_t contains all needed 
  * information in safe and easy to use form.
@@ -787,7 +799,7 @@ zrtp_status_t  zrtp_process_srtcp( zrtp_stream_t *stream,
  * 
  * \param stream - stream for operating with;
  * \param hash_buff - signaling hash buffer. Function accepts string, not a binary value!;
- * \param hash_buff_length - signaling hash length in bytes (must be 64 bytes);
+ * \param hash_buff_length - signaling hash length in bytes, must be ZRTP_SIGN_ZRTP_HASH_LENGTH bytes;
  * \return:
  *  - zrtp_status_ok if the operation finished successfully
  *  - one of the errors otherwise
@@ -808,8 +820,8 @@ zrtp_status_t zrtp_signaling_hash_set( zrtp_stream_t* stream,
  *
  * \param stream - stream for operating with
  * \param hash_buff - buffer for storing signaling hash. Function returns already parsed hex string.
- *      String is null-terminated.
- * \param hash_buff_length - buffer length in bytes (not shorter than 65 bytes)
+ *      String is null-terminated. Buffer must be at least ZRTP_SIGN_ZRTP_HASH_LENGTH bytes length.
+ * \param hash_buff_length - buffer length in bytes, non less  than ZRTP_SIGN_ZRTP_HASH_LENGTH bytes.
  * \return:
  *  - zrtp_status_ok if the operation finished successfully
  *  - one of the errors otherwise
@@ -817,9 +829,9 @@ zrtp_status_t zrtp_signaling_hash_set( zrtp_stream_t* stream,
  *  - ZRTP RFC. sec 8;
  *  - zrtp_signaling_hash_set()
  */
-zrtp_status_t zrtp_signaling_hash_get( zrtp_stream_t* stream,
-									   char* hash_buff,
-									   uint32_t hash_buff_length);
+zrtp_status_t zrtp_signaling_hash_get(zrtp_stream_t* stream,
+									  char* hash_buff,
+									  uint32_t hash_buff_length);
 
 /**
  * \brief Changing the value of the secret's verification flag
@@ -944,6 +956,8 @@ int zrtp_entropy_add(zrtp_global_t* zrtp, const unsigned char *buffer, uint32_t 
  * \sa \ref rng
  */
 int zrtp_randstr(zrtp_global_t* zrtp, unsigned char *buffer, uint32_t length);
+
+int zrtp_randstr2(unsigned char *buffer, uint32_t length);
 
 /* \} */
 

@@ -122,10 +122,6 @@
 #	endif
 #endif
 
-#ifndef ZRTP_ENABLE_EC
-#define ZRTP_ENABLE_EC				0
-#endif
-
 #ifndef ZRTP_DEBUG_WITH_PJSIP
 #define ZRTP_DEBUG_WITH_PJSIP		0
 #endif
