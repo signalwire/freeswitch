@@ -2630,10 +2630,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 	cJSON *cdr = cJSON_CreateObject();
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile;
-	cJSON *variables, *j_main_cp, *j_caller_profile, *j_caller_extension, *j_times,
-		*j_application, *j_callflow, *j_inner_extension, *j_apps, *j_o, *j_channel_data;
+	cJSON *variables, *j_main_cp, *j_caller_profile, *j_caller_extension, *j_caller_extension_apps, *j_times,
+		*j_application, *j_callflow, *j_inner_extension, *j_app_log, *j_apps, *j_o, *j_o_profiles, *j_channel_data;
 	switch_app_log_t *app_log;
 	char tmp[512], *f;
+
+	cJSON_AddItemToObject(cdr, "core-uuid", cJSON_CreateString(switch_core_get_uuid()));
 	
 	j_channel_data = cJSON_CreateObject();
 
@@ -2664,9 +2666,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 	if ((app_log = switch_core_session_get_app_log(session))) {
 		switch_app_log_t *ap;
 
-		j_apps = cJSON_CreateObject();
+		j_app_log = cJSON_CreateObject();
+		j_apps = cJSON_CreateArray();
 
-		cJSON_AddItemToObject(cdr, "app_log", j_apps);
+		cJSON_AddItemToObject(cdr, "app_log", j_app_log);
+		cJSON_AddItemToObject(j_app_log, "applications", j_apps);
 
 		for (ap = app_log; ap; ap = ap->next) {
 			j_application = cJSON_CreateObject();
@@ -2674,7 +2678,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 			cJSON_AddItemToObject(j_application, "app_name", cJSON_CreateString(ap->app));
 			cJSON_AddItemToObject(j_application, "app_data", cJSON_CreateString(ap->arg));
 
-			cJSON_AddItemToObject(j_apps, "application", j_application);
+			cJSON_AddItemToArray(j_apps, j_application);
 		}
 	}
 
@@ -2699,11 +2703,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 			switch_caller_application_t *ap;
 
 			j_caller_extension = cJSON_CreateObject();
+			j_caller_extension_apps = cJSON_CreateArray();
 
 			cJSON_AddItemToObject(j_callflow, "extension", j_caller_extension);
 
 			cJSON_AddItemToObject(j_caller_extension, "name", cJSON_CreateString(caller_profile->caller_extension->extension_name));
 			cJSON_AddItemToObject(j_caller_extension, "number", cJSON_CreateString(caller_profile->caller_extension->extension_number));
+			cJSON_AddItemToObject(j_caller_extension, "applications", j_caller_extension_apps);
 
 			if (caller_profile->caller_extension->current_application) {
 				cJSON_AddItemToObject(j_caller_extension, "current_app", cJSON_CreateString(caller_profile->caller_extension->current_application->application_name));
@@ -2712,7 +2718,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 			for (ap = caller_profile->caller_extension->applications; ap; ap = ap->next) {
 				j_application = cJSON_CreateObject();
 
-				cJSON_AddItemToObject(j_caller_extension, "application", j_application);
+				cJSON_AddItemToArray(j_caller_extension_apps, j_application);
 
 				if (ap == caller_profile->caller_extension->current_application) {
 					cJSON_AddItemToObject(j_application, "last_executed", cJSON_CreateString("true"));
@@ -2723,17 +2729,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 
 			if (caller_profile->caller_extension->children) {
 				switch_caller_profile_t *cp = NULL;
+				j_inner_extension = cJSON_CreateArray();
+				cJSON_AddItemToObject(j_caller_extension, "sub_extensions", j_inner_extension);
 				for (cp = caller_profile->caller_extension->children; cp; cp = cp->next) {
 
 					if (!cp->caller_extension) {
 						continue;
 					}
 
-					j_inner_extension = cJSON_CreateObject();
-					cJSON_AddItemToObject(j_caller_extension, "sub_extensions", j_inner_extension);
-
 					j_caller_extension = cJSON_CreateObject();
-					cJSON_AddItemToObject(j_inner_extension, "extension", j_caller_extension);
+					cJSON_AddItemToArray(j_inner_extension, j_caller_extension);
 
 					cJSON_AddItemToObject(j_caller_extension, "name", cJSON_CreateString(cp->caller_extension->extension_name));
 					cJSON_AddItemToObject(j_caller_extension, "number", cJSON_CreateString(cp->caller_extension->extension_number));
@@ -2744,9 +2749,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 						cJSON_AddItemToObject(j_caller_extension, "current_app", cJSON_CreateString(cp->caller_extension->current_application->application_name));
 					}
 
+					j_caller_extension_apps = cJSON_CreateArray();
+					cJSON_AddItemToObject(j_caller_extension, "applications", j_caller_extension_apps);
 					for (ap = cp->caller_extension->applications; ap; ap = ap->next) {
 						j_application = cJSON_CreateObject();
-						cJSON_AddItemToObject(j_caller_extension, "application", j_application);
+						cJSON_AddItemToArray(j_caller_extension_apps, j_application);
 
 						if (ap == cp->caller_extension->current_application) {
 							cJSON_AddItemToObject(j_application, "last_executed", cJSON_CreateString("true"));
@@ -2769,9 +2776,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 			j_o = cJSON_CreateObject();
 			cJSON_AddItemToObject(j_main_cp, "originator", j_o);
 
+			j_o_profiles = cJSON_CreateArray();
+			cJSON_AddItemToObject(j_o, "originator_caller_profiles", j_o_profiles);
+
 			for (cp = caller_profile->originator_caller_profile; cp; cp = cp->next) {
 				j_caller_profile = cJSON_CreateObject();
-				cJSON_AddItemToObject(j_o, "originator_caller_profile", j_caller_profile);
+				cJSON_AddItemToArray(j_o_profiles, j_caller_profile);
 
 				switch_ivr_set_json_profile_data(j_caller_profile, cp);
 			}
@@ -2783,9 +2793,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 			j_o = cJSON_CreateObject();
 			cJSON_AddItemToObject(j_main_cp, "originatee", j_o);
 
+			j_o_profiles = cJSON_CreateArray();
+			cJSON_AddItemToObject(j_o, "originatee_caller_profiles", j_o_profiles);
+
 			for (cp = caller_profile->originatee_caller_profile; cp; cp = cp->next) {
 				j_caller_profile = cJSON_CreateObject();
-				cJSON_AddItemToObject(j_o, "originatee_caller_profile", j_caller_profile);
+				cJSON_AddItemToArray(j_o_profiles, j_caller_profile);
+
 				switch_ivr_set_json_profile_data(j_caller_profile, cp);
 			}
 		}
