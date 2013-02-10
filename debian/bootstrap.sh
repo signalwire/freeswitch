@@ -4,6 +4,7 @@
 
 mod_dir="../src/mod"
 conf_dir="../conf"
+lang_dir="../conf/vanilla/lang"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="."
 supported_distros="squeeze wheezy sid"
@@ -158,6 +159,16 @@ map_confs () {
   done
 }
 
+map_langs () {
+  local fs="$1"
+  for x in $lang_dir/*; do
+    test ! -d $x && continue
+    lang=${x##*/} lang_dir=$x
+    for f in $fs; do $f; done
+    unset lang lang_dir
+  done
+}
+
 print_source_control () {
 cat <<EOF
 Source: freeswitch
@@ -223,6 +234,7 @@ Recommends:
  freeswitch-doc (= \${binary:Version}),
  freeswitch-mod-commands (= \${binary:Version}),
  freeswitch-init (= \${binary:Version}),
+ freeswitch-lang (= \${binary:Version}),
  freeswitch-music (= \${binary:Version}),
  freeswitch-sounds (= \${binary:Version})
 Suggests:
@@ -254,6 +266,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-say-en (= \${binary:Version})
 Recommends:
  freeswitch-init (= \${binary:Version}),
+ freeswitch-lang (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
  freeswitch-music (= \${binary:Version}),
  freeswitch-sounds (= \${binary:Version})
@@ -309,6 +322,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-say-en (= \${binary:Version}),
 Recommends:
  freeswitch-init (= \${binary:Version}),
+ freeswitch-lang (= \${binary:Version}),
  freeswitch-music (= \${binary:Version}),
  freeswitch-sounds (= \${binary:Version}),
  freeswitch-conf-vanilla (= \${binary:Version}),
@@ -325,6 +339,7 @@ Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
  freeswitch-init (= \${binary:Version}),
+ freeswitch-lang (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
  freeswitch-music (= \${binary:Version}),
  freeswitch-sounds (= \${binary:Version}),
@@ -407,6 +422,7 @@ Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
  freeswitch-init (= \${binary:Version}),
+ freeswitch-lang (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
  freeswitch-music (= \${binary:Version}),
  freeswitch-sounds (= \${binary:Version}),
@@ -619,6 +635,18 @@ Description: FreeSWITCH systemd configuration
 
 ## misc
 
+## languages
+
+Package: freeswitch-lang
+Architecture: all
+Depends: \${misc:Depends},
+ freeswitch-lang-en (= \${binary:Version})
+Description: Language files for FreeSWITCH
+ $(debian_wrap "${fs_description}")
+ .
+ This is a metapackage which depends on the default language packages
+ for FreeSWITCH.
+
 ## sounds
 
 Package: freeswitch-music
@@ -764,6 +792,40 @@ conf/${conf} /usr/share/freeswitch/conf
 EOF
 }
 
+print_lang_overrides () {
+  print_common_overrides "$1"
+}
+
+print_lang_control () {
+  local lang_name="$(echo ${lang} | tr '[:lower:]' '[:upper:]')"
+  case "${lang}" in
+    de) lang_name="German" ;;
+    en) lang_name="English" ;;
+    es) lang_name="Spanish" ;;
+    fr) lang_name="French" ;;
+    he) lang_name="Hebrew" ;;
+    pt) lang_name="Portuguese" ;;
+    ru) lang_name="Russian" ;;
+  esac
+  cat <<EOF
+Package: freeswitch-lang-${lang//_/-}
+Architecture: all
+Depends: \${misc:Depends}
+Recommends: freeswitch-sounds-en-${lang} (= \${binary:Version})
+Description: ${lang_name} language files for FreeSWITCH
+ $(debian_wrap "${fs_description}")
+ .
+ $(debian_wrap "This package includes the ${lang_name} language files for FreeSWITCH.")
+
+EOF
+}
+
+print_lang_install () {
+  cat <<EOF
+conf/vanilla/lang/${lang} /usr/share/freeswitch/lang
+EOF
+}
+
 print_edit_warning () {
   echo "#### Do not edit!  This file is auto-generated from debian/bootstrap.sh."; echo
 }
@@ -804,6 +866,17 @@ genconf () {
   test -f $f.tmpl && cat $f.tmpl >> $f
   local f=$p.lintian-overrides
   (print_edit_warning; print_conf_overrides "$p") > $f
+  test -f $f.tmpl && cat $f.tmpl >> $f
+}
+
+genlang () {
+  print_lang_control >> control
+  local p=freeswitch-lang-${lang//_/-}
+  local f=$p.install
+  (print_edit_warning; print_lang_install) > $f
+  test -f $f.tmpl && cat $f.tmpl >> $f
+  local f=$p.lintian-overrides
+  (print_edit_warning; print_lang_overrides "$p") > $f
   test -f $f.tmpl && cat $f.tmpl >> $f
 }
 
@@ -979,6 +1052,9 @@ echo "Generating debian/..." >&2
 echo "Generating debian/ (conf)..." >&2
 (echo "### conf"; echo) >> control
 map_confs 'genconf'
+echo "Generating debian/ (lang)..." >&2
+(echo "### lang"; echo) >> control
+map_langs 'genlang'
 echo "Generating debian/ (modules)..." >&2
 (echo "### modules"; echo) >> control
 print_edit_warning > modules_.conf
