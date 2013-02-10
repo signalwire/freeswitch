@@ -178,19 +178,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		if (switch_core_codec_init(&codec,
 								   "L16",
 								   NULL,
-								   imp.samples_per_second,
+								   imp.actual_samples_per_second,
 								   imp.microseconds_per_packet / 1000,
 								   imp.number_of_channels,
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n",
-							  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
+							  imp.actual_samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
 
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %u channels %dms\n",
-						  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
+						  imp.actual_samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
 
 		write_frame.codec = &codec;
 		switch_zmalloc(abuf, SWITCH_RECOMMENDED_BUFFER_SIZE);
