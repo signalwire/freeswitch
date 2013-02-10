@@ -1,12 +1,8 @@
 /*
- * zrtp_crypto_ecdh.c - Elliptic Curve Diffie Hellman functions for ZRTP.
- * NSA Suite B Elliptic Curves from NIST SP 800-56A and FIPS 186-3.
- *
- * Copyright (c) 2006-2009 Philip R. Zimmermann. All rights reserved.
- * This is NOT licensed under the GPL or any other open source license.
- * For licensing terms or other information,
- * contact:  Philip Zimmermann <prz@mit.edu>.
- * For more contact information, see http://philzimmermann.com
+ * libZRTP SDK library, implements the ZRTP secure VoIP protocol.
+ * Copyright (c) 2006-2009 Philip R. Zimmermann.  All rights reserved.
+ * Contact: http://philzimmermann.com
+ * For licensing and other legal details, see the file zrtp_legal.c.
  */
 
 #include "zrtp.h"
