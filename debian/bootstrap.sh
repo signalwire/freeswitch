@@ -36,12 +36,8 @@ avoid_mods=(
   xml_int/mod_xml_radius
 )
 avoid_mods_sid=(
-  endpoints/mod_portaudio
-  formats/mod_portaudio_stream
 )
 avoid_mods_wheezy=(
-  endpoints/mod_portaudio
-  formats/mod_portaudio_stream
 )
 avoid_mods_squeeze=(
   formats/mod_vlc
