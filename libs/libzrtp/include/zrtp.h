@@ -35,9 +35,7 @@
 #include "zrtp_legal.h"
 #include "zrtp_version.h"
 #include "zrtp_iface_cache.h"
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
 #include "zrtp_ec.h"
-#endif
 
 
 

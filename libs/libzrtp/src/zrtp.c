@@ -802,7 +802,6 @@ void zrtp_profile_defaults(zrtp_profile_t* profile, zrtp_global_t* zrtp)
 	profile->auth_tag_lens[0]	= ZRTP_ATL_HS32;
 	profile->hash_schemes[0]	= ZRTP_HASH_SHA256;
 
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
 	if (zrtp && (ZRTP_LICENSE_MODE_PASSIVE == zrtp->lic_mode)) {
 		profile->pk_schemes[0]		= ZRTP_PKTYPE_DH2048;
 		profile->pk_schemes[1]		= ZRTP_PKTYPE_EC256P;
@@ -813,16 +812,6 @@ void zrtp_profile_defaults(zrtp_profile_t* profile, zrtp_global_t* zrtp)
 		profile->pk_schemes[2]		= ZRTP_PKTYPE_DH2048;
 	}
 	profile->pk_schemes[3]		= ZRTP_PKTYPE_MULT;
-#else
-	if (zrtp && (ZRTP_LICENSE_MODE_PASSIVE == zrtp->lic_mode)) {
-		profile->pk_schemes[0]	= ZRTP_PKTYPE_DH2048;
-		profile->pk_schemes[1]	= ZRTP_PKTYPE_DH3072;
-	} else {
-		profile->pk_schemes[0]	= ZRTP_PKTYPE_DH3072;
-		profile->pk_schemes[1]	= ZRTP_PKTYPE_DH2048;
-	}
-	profile->pk_schemes[2]		= ZRTP_PKTYPE_MULT;
-#endif	
 }
 
 /*----------------------------------------------------------------------------*/

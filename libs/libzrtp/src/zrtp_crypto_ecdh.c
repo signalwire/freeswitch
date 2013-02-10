@@ -8,8 +8,6 @@
 #include "zrtp.h"
 
 
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
-
 #define _ZTU_ "zrtp ecdh"
 
 static unsigned get_pbits(zrtp_pk_scheme_t *self)
@@ -559,5 +557,3 @@ zrtp_status_t zrtp_defaults_ec_pkt(zrtp_global_t* zrtp)
 
     return zrtp_status_ok;
 }
-
-#endif /*ZRTP_ENABLE_EC*/

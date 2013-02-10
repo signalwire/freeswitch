@@ -49,10 +49,6 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
 
-# Apply configure options
-AC_ARG_ENABLE(enterprise, [  --enable-enterprise enable building of enterprise components).], enable_enterprise=$enableval,enable_enterprise="no")
-AM_CONDITIONAL(ZRTP_BUILD_ENTERPRISE, [test "x$enable_enterprise" = "xyes"])
-
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([linux/version.h endian.h])
@@ -84,13 +80,6 @@ AC_CHECK_LIB([pthread], [main], [LIBS="-lpthread $LIBS"], [echo "  Couldn't find
 AC_DEFINE(PRAGMA_PACK_PUSH,[#pragma pack(push, 1)],[Define pragma pack(push) for your platform])
 AC_DEFINE(PRAGMA_PACK_POP,[#pragma pack(pop)],[Define pragma pack(pop) for your platform])
 AC_DEFINE(INLINE,[static inline],[Define inline construction for your platform])
-
-if test "x$enable_enterprise" = "xyes" ; then
-	AC_DEFINE(ENABLE_EC,1,Enterprise)
-	CFLAGS="$CFLAGS -DZRTP_ENABLE_EC=1"
-fi
-
-AC_SUBST(ENABLE_EC)
 
 #
 # Documentation

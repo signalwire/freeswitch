@@ -214,9 +214,7 @@ static zrtp_status_t zrtp_dh_self_test(zrtp_pk_scheme_t *self)
 }
 
 /*----------------------------------------------------------------------------*/
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
 extern zrtp_status_t zrtp_defaults_ec_pkt(zrtp_global_t* zrtp);
-#endif
 
 zrtp_status_t zrtp_defaults_pkt(zrtp_global_t* zrtp)
 {
@@ -329,11 +327,7 @@ zrtp_status_t zrtp_defaults_pkt(zrtp_global_t* zrtp)
 	presh->base.id				= ZRTP_PKTYPE_PRESH;
 	zrtp_comp_register(ZRTP_CC_PKT, presh,  zrtp);	
     
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
 		return zrtp_defaults_ec_pkt(zrtp);
-#else
-		return zrtp_status_ok;
-#endif
 }
 
 /*----------------------------------------------------------------------------*/

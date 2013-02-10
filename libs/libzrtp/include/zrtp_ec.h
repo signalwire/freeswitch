@@ -14,8 +14,6 @@
 #include "zrtp_types.h"
 #include "zrtp_error.h"
 
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
-
 #define ZRTP_MAXECBITS	521
 #define ZRTP_MAXECWORDS	((ZRTP_MAXECBITS+7)/8)
 
@@ -79,7 +77,5 @@ int bnSquareMod_ (struct BigNum *rslt, struct BigNum *n1, struct BigNum *mod);
 #if defined(__cplusplus)
 }
 #endif
-
-#endif /*ZRTP_ENABLE_EC*/
 
 #endif /* __ZRTP_CRYPTO_EC_H__ */

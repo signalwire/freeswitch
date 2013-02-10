@@ -7,8 +7,6 @@
 
 #include "zrtp.h"
 
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
-
 /* Size of extra random data to approximate a uniform distribution mod n */
 #define UNIFORMBYTES	8
 
@@ -461,5 +459,3 @@ zrtp_status_t zrtp_ec_init_params( struct zrtp_ec_params *params, uint32_t bits 
 	
 	return zrtp_status_ok;
 }
-
-#endif /*ZRTP_ENABLE_EC*/
