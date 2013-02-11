@@ -2432,7 +2432,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				const char *rm_encoding;
 				uint32_t map_bit_rate = 0;
 				switch_codec_fmtp_t codec_fmtp = { 0 };
-				printf("WTF %d %s\n", x, map->rm_encoding);
+
 				if (x++ < skip) {
 					continue;
 				}
