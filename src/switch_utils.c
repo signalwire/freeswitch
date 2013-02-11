@@ -64,6 +64,17 @@ SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst)
 }
 #endif
 
+SWITCH_DECLARE(char *) switch_print_host(switch_sockaddr_t *addr, char *buf, switch_size_t len)
+{
+	switch_port_t port;
+
+	switch_get_addr(buf, len, addr);
+	port = switch_sockaddr_get_port(addr);
+
+	snprintf(buf + strlen(buf), len - strlen(buf), ":%d", port);
+	return buf;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switch_size_t size)
 {
 	switch_frame_t *new_frame;

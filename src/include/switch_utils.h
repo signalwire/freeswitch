@@ -228,6 +228,9 @@ typedef union{
 
 SWITCH_DECLARE(switch_bool_t) switch_testv6_subnet(ip_t _ip, ip_t _net, ip_t _mask);
 
+
+SWITCH_DECLARE(char *) switch_print_host(switch_sockaddr_t *addr, char *buf, switch_size_t len);
+
 #define switch_goto_status(_status, _label) status = _status; goto _label
 #define switch_goto_int(_n, _i, _label) _n = _i; goto _label
 #define switch_samples_per_packet(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
