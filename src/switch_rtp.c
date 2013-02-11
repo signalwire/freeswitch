@@ -167,6 +167,7 @@ typedef struct {
 	char *user_ice;
 	char *pass;
 	char *rpass;
+	switch_sockaddr_t *addr;
 	uint32_t stuncount;
 	uint32_t funny_stun;
 	uint32_t default_stuncount;
@@ -671,13 +672,13 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 	unsigned int elapsed;
 	switch_size_t bytes;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_sockaddr_t *remote_addr = rtp_session->remote_addr;
+	//switch_sockaddr_t *remote_addr = rtp_session->remote_addr;
 	switch_socket_t *sock_output = rtp_session->sock_output;
 
 
 	if (ice == &rtp_session->rtcp_ice) {
 		sock_output = rtp_session->rtcp_sock_output;		
-		remote_addr = rtp_session->rtcp_remote_addr;
+		//remote_addr = rtp_session->rtcp_remote_addr;
 	}
 	
 
@@ -742,7 +743,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 	bytes = switch_stun_packet_length(packet);
 
 
-	switch_socket_sendto(sock_output, remote_addr, 0, (void *) packet, &bytes);
+	switch_socket_sendto(sock_output, ice->addr, 0, (void *) packet, &bytes);
 						 
 	ice->stuncount = ice->default_stuncount;
 	ice->sending = 3;
@@ -853,17 +854,19 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			ok = 1;
 		}
 
-
 		if (!ok) {
 			uint32_t elapsed = (unsigned int) ((switch_micro_time_now() - rtp_session->last_stun) / 1000);
 			switch_rtp_ice_t *icep[2] = { &rtp_session->ice, &rtp_session->rtcp_ice };
+			switch_port_t port = 0;
+			char *host = NULL;
 
 			if (elapsed > 20000 && pri) {
 				int i, j;
 				uint32_t old;
-				const char *tx_host;
+				//const char *tx_host;
 				const char *old_host, *err = NULL;
-				char bufa[30], bufb[30];
+				//char bufa[30];
+				char bufb[30];
 				char adj_port[6];
 				switch_channel_t *channel = NULL;
 				
@@ -889,24 +892,39 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 							old = rtp_session->remote_port;
 							
-							tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
+							//tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
 							old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
 							
+							host = ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_addr;
+							port = ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_port;
+
+							if (!host || !port) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error setting remote host!\n");
+								return;								
+							}
+							
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
-											  "ICE Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host,
-											  switch_sockaddr_get_port(rtp_session->from_addr));
+											  "ICE Auto Changing port from %s:%u to %s:%u\n", old_host, old, host, port);
+
 							
 							if (channel) {
 								switch_channel_set_variable(channel, "remote_media_ip_reported", switch_channel_get_variable(channel, "remote_media_ip"));
-								switch_channel_set_variable(channel, "remote_media_ip", tx_host);
-								switch_snprintf(adj_port, sizeof(adj_port), "%u", switch_sockaddr_get_port(rtp_session->from_addr));
+								switch_channel_set_variable(channel, "remote_media_ip", host);
+								switch_snprintf(adj_port, sizeof(adj_port), "%u", port);
 								switch_channel_set_variable(channel, "remote_media_port_reported", switch_channel_get_variable(channel, "remote_media_port"));
 								switch_channel_set_variable(channel, "remote_media_port", adj_port);
-								switch_channel_set_variable(channel, "rtp_auto_adjust", "true");
+								switch_channel_set_variable(channel, "rtp_auto_candidate_adjust", "true");
 							}
 							rtp_session->auto_adj_used = 1;
+
 							
-							switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), 0, SWITCH_FALSE, &err);
+							switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
+							if (switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || 
+								!ice->addr) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error setting remote host!\n");
+								return;
+							}
+							
 							switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 							
 						}
@@ -959,6 +977,37 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			}
 
 			bytes = switch_stun_packet_length(rpacket);
+
+			if (!switch_cmp_addr(from_addr, ice->addr)) {
+				const char *host;
+				switch_port_t port;
+				char buf[80] = "";
+				const char *err = "";
+
+				host = switch_get_addr(buf, len, from_addr);
+				port = switch_sockaddr_get_port(from_addr);
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
+								  "Auto Changing stun/rtp/dtls port to %s:%u\n", host, port);
+
+				ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_addr = switch_core_strdup(rtp_session->pool, host);
+				ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_port = port;
+
+				switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+				switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
+				
+				if (rtp_session->dtls) {
+					if (ice == &rtp_session->ice) {
+						switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+					}
+				
+					if (ice == &rtp_session->rtcp_ice && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX] && rtp_session->rtcp_dtls) {
+						switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+					}
+				}
+				
+			}
+
 			switch_socket_sendto(sock_output, from_addr, 0, (void *) rpacket, &bytes);
 		}
 	} else if (packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE) {
@@ -2946,6 +2995,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	char ice_user[80];
 	char user_ice[80];
 	switch_rtp_ice_t *ice;
+	char *host = NULL;
+	switch_port_t port = 0;
 
 	if (proto == IPR_RTP) {
 		ice = &rtp_session->ice;
@@ -2964,9 +3015,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 		ice->ready = ice->rready = 1;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Activating %s ICE: %s\n", rtp_type(rtp_session), ice_user);
-
-
 	ice->ice_user = switch_core_strdup(rtp_session->pool, ice_user);
 	ice->user_ice = switch_core_strdup(rtp_session->pool, user_ice);
 	ice->type = type;
@@ -2984,6 +3032,18 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	
 	ice->default_stuncount = RTP_DEFAULT_STUNCOUNT;
 	ice->stuncount = 0;
+
+	host = ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_addr;
+	port = ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_port;
+
+	if (!host || !port || switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !ice->addr) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error setting remote host!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Activating %s ICE: %s %s:%d\n", 
+					  rtp_type(rtp_session), ice_user, host, port);
+
 
 	if (ice->ice_user) {
 		if (ice_out(rtp_session, &rtp_session->ice) != SWITCH_STATUS_SUCCESS) {
@@ -3598,6 +3658,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	stfu_frame_t *jb_frame;
 	uint32_t ts;
+	char *b = NULL;
 
 	switch_assert(bytes);
  more:
@@ -3605,24 +3666,41 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 
-	if (rtp_session->dtls) {
-		char *b = (char *) &rtp_session->recv_msg;
-		
-		//printf("RECV %d %ld\n", *b, *bytes);
-
-		
-		if ((*b >= 20) && (*b <= 64)) {
-			rtp_session->dtls->bytes = *bytes;
-			rtp_session->dtls->data = (void *) &rtp_session->recv_msg;
-		} else {
-			rtp_session->dtls->bytes = 0;
-			rtp_session->dtls->data = NULL;
-			
-			if (*b != 0 && *b != 1 && rtp_session->dtls->state != DS_READY) {
-				*bytes = 0;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Drop %s packet %ld bytes (dtls not ready!)\n", rtp_type(rtp_session), *bytes);
+	if (*bytes) {
+		b = (char *) &rtp_session->recv_msg;
+		if (*b == 0 || *b == 1) {
+			if (rtp_session->ice.ice_user) {
+				handle_ice(rtp_session, &rtp_session->ice, (void *) &rtp_session->recv_msg, *bytes);
+			} else if (rtp_session->remote_stun_addr) {
+				handle_stun_ping_reply(rtp_session, (void *) &rtp_session->recv_msg, *bytes);
 			}
+			*bytes = 0;
+		}
+	}
 
+	if (rtp_session->dtls) {
+		rtp_session->dtls->bytes = 0;
+
+		if (*bytes) {
+			char *b = (char *) &rtp_session->recv_msg;
+		
+			//printf("RECV %d %ld\n", *b, *bytes);
+			
+		
+			if ((*b >= 20) && (*b <= 64)) {
+				rtp_session->dtls->bytes = *bytes;
+				rtp_session->dtls->data = (void *) &rtp_session->recv_msg;
+			} else {
+				rtp_session->dtls->bytes = 0;
+				rtp_session->dtls->data = NULL;
+				
+				if (*b != 0 && *b != 1 && rtp_session->dtls->state != DS_READY) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, 
+									  "Drop %s packet %ld bytes (dtls not ready!) b=%u\n", rtp_type(rtp_session), *bytes, *b);
+					*bytes = 0;
+				}
+				
+			}
 		}
 
 		do_dtls(rtp_session, rtp_session->dtls);
