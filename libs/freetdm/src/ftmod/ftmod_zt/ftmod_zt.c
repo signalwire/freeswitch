@@ -1311,37 +1311,52 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 static FIO_READ_FUNCTION(zt_read)
 {
 	ftdm_ssize_t r = 0;
+	int read_errno = 0;
 	int errs = 0;
 
 	while (errs++ < 30) {
-		if ((r = read(ftdmchan->sockfd, data, *datalen)) > 0) {
+		r = read(ftdmchan->sockfd, data, *datalen);
+		if (r > 0) {
+			/* successful read, bail out now ... */
 			break;
 		}
-		else if (r == 0) {
+
+		/* Timeout ... retry after a bit */
+		if (r == 0) {
 			ftdm_sleep(10);
 			if (errs) errs--;
+			continue;
 		}
-		else {
-			if (errno == EAGAIN || errno == EINTR)
-				continue;
-			if (errno == ELAST) {
-				zt_event_t zt_event_id = 0;
-				if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
-					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event after ELAST on read: %s\n", strerror(errno));
-					r = -1;
-					break;
-				}
 
-				if (handle_dtmf_event(ftdmchan, zt_event_id)) {
-					/* we should enqueue this event somewhere so it can be retrieved by the user, for now, dropping it to see what it is! */
-					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dropping event %d to be able to read data\n", zt_event_id);
-				}
-				continue;
+		/* This gotta be an error, save errno in case we do printf(), ioctl() or other operations which may reset it */
+		read_errno = errno;
+		if (read_errno == EAGAIN || read_errno == EINTR) {
+			/* Reasonable to retry under those errors */
+			continue;
+		}
+
+		/* When ELAST is returned, it means DAHDI has an out of band event ready and we won't be able to read anything until
+		 * we retrieve the event using an ioctl(), so we try to retrieve it here ... */
+		if (read_errno == ELAST) {
+			zt_event_t zt_event_id = 0;
+			if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event after ELAST on read: %s\n", strerror(errno));
+				r = -1;
+				break;
 			}
 
-			ftdm_log(FTDM_LOG_ERROR, "read failed: %s\n", strerror(errno));
+			if (handle_dtmf_event(ftdmchan, zt_event_id)) {
+				/* we should enqueue this event somewhere so it can be retrieved by the user, for now, dropping it to see what it is! */
+				ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Event %d is not dmtf related. Skipping one media read cycle\n", zt_event_id);
+			}
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Skipping one IO read cycle due to events pending in the driver queue\n");
+			break;
 		}
+
+		/* Read error, keep going unless to many errors force us to abort ...*/
+		ftdm_log(FTDM_LOG_ERROR, "IO read failed: %s\n", strerror(read_errno));
 	}
+
 	if (r > 0) {
 		*datalen = r;
 		if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921) {
@@ -1349,7 +1364,7 @@ static FIO_READ_FUNCTION(zt_read)
 		}
 		return FTDM_SUCCESS;
 	}
-	else if (errno == ELAST) {
+	else if (read_errno == ELAST) {
 		return FTDM_SUCCESS;
 	}
 	return r == 0 ? FTDM_TIMEOUT : FTDM_FAIL;
