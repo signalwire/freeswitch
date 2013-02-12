@@ -209,6 +209,8 @@
     <ClCompile Include="..\..\src\zrtp_crc.c" />
     <ClCompile Include="..\..\src\zrtp_crypto_aes.c" />
     <ClCompile Include="..\..\src\zrtp_crypto_atl.c" />
+    <ClCompile Include="..\..\src\zrtp_crypto_ec.c" />
+    <ClCompile Include="..\..\src\zrtp_crypto_ecdh.c" />
     <ClCompile Include="..\..\src\zrtp_crypto_hash.c" />
     <ClCompile Include="..\..\src\zrtp_crypto_pk.c" />
     <ClCompile Include="..\..\src\zrtp_crypto_sas.c" />
