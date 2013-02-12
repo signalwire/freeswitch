@@ -1853,7 +1853,6 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			if (!engine->cand_acl_count) {
 				engine->cand_acl[engine->cand_acl_count++] = "wan.auto";
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "NO candidate ACL defined, Defaulting to wan.auto\n");
-				goto end;
 			}
 
 
@@ -1968,8 +1967,6 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		engine->remote_rtcp_port = engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port;
 	}
 
-
- end:
 
 	if (!got_rtcp_mux) {
 		engine->rtcp_mux = -1;
