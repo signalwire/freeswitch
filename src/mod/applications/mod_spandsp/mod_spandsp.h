@@ -74,6 +74,7 @@ struct spandsp_globals {
 	int modem_verbose;
 	char *modem_context;
 	char *modem_dialplan;
+	char *modem_directory;
 	switch_hash_t *tones;
 	int tonedebug;
 };

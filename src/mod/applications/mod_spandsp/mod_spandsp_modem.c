@@ -299,7 +299,8 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 
 #ifndef WIN32
 	modem->slot = globals.NEXT_ID++;
-	snprintf(modem->devlink, sizeof(modem->devlink), "/dev/FS%d", modem->slot);
+    
+	snprintf(modem->devlink, sizeof(modem->devlink), "%s/FS%d", spandsp_globals.modem_directory, modem->slot);
 	
 	unlink(modem->devlink);
 

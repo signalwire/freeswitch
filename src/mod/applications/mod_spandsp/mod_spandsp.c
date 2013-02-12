@@ -492,6 +492,7 @@ switch_status_t load_configuration(switch_bool_t reload)
 
 	spandsp_globals.modem_dialplan = "XML";
 	spandsp_globals.modem_context = "default";
+	spandsp_globals.modem_directory = "/dev";
 	spandsp_globals.modem_count = 0;
 
 
@@ -532,6 +533,8 @@ switch_status_t load_configuration(switch_bool_t reload)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%d] for total-modems\n", tmp);
 					}
+				} else if (!strcmp(name, "directory")) {
+					spandsp_globals.modem_directory = switch_core_strdup(spandsp_globals.config_pool, value);
 				} else if (!strcmp(name, "dialplan")) {
 					spandsp_globals.modem_dialplan = switch_core_strdup(spandsp_globals.config_pool, value);
 				} else if (!strcmp(name, "context")) {
