@@ -65,7 +65,8 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		int err;
 
 		context->encoder_object = opus_encoder_create(codec->implementation->actual_samples_per_second, 
-													  codec->implementation->number_of_channels, OPUS_APPLICATION_VOIP, &err);
+													  codec->implementation->number_of_channels,
+													  OPUS_APPLICATION_VOIP, &err);
 
        if (err != OPUS_OK) {
 		   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create encoder: %s\n", opus_strerror(err));
@@ -143,7 +144,7 @@ static switch_status_t switch_opus_encode(switch_codec_t *codec,
 	if (len > 1275) len = 1275;
 
 	bytes = opus_encode(context->encoder_object, (void *) decoded_data, decoded_data_len / 2, (unsigned char *) encoded_data, len);
-	
+
 	if (bytes > 0) {
 		*encoded_data_len = (uint32_t) bytes;
 		return SWITCH_STATUS_SUCCESS;
@@ -205,7 +206,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 samples,	/* number of samples per frame */
 											 bytes,	/* number of bytes per frame decompressed */
 											 0,	/* number of bytes per frame compressed */
-											 1,	/* number of channels represented */
+											 1,/* number of channels represented */
 											 1,	/* number of frames per network packet */
 											 switch_opus_init,	/* function to initialize a codec handle using this implementation */
 											 switch_opus_encode,	/* function to encode raw data into encoded data */

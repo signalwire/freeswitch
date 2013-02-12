@@ -93,7 +93,8 @@ typedef struct codec_params_s {
 	switch_port_t adv_sdp_port;
 	char *proxy_sdp_ip;
 	switch_port_t proxy_sdp_port;
-
+	int channels;
+	int adv_channels;
 
 } codec_params_t;
 
@@ -181,6 +182,15 @@ struct switch_media_handle_s {
 	char *cname;
 
 };
+
+static int get_channels(const switch_codec_implementation_t *imp)
+{
+	if (!strcasecmp(imp->iananame, "opus")) {
+		return 2; /* IKR???*/
+	}
+
+	return imp->number_of_channels;
+}
 
 static void _switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session, switch_media_type_t type)
 {
@@ -1641,7 +1651,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 											a_engine->codec_params.rm_fmtp,
 											a_engine->codec_params.rm_rate,
 											a_engine->codec_params.codec_ms,
-											1,
+											a_engine->codec_params.channels,
 											a_engine->codec_params.bitrate,
 											SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | codec_flags,
 											NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -1658,7 +1668,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 											a_engine->codec_params.rm_fmtp,
 											a_engine->codec_params.rm_rate,
 											a_engine->codec_params.codec_ms,
-											1,
+											a_engine->codec_params.channels,
 											a_engine->codec_params.bitrate,
 											SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | codec_flags,
 											NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -2584,12 +2594,23 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				a_engine->codec_params.rm_rate = mimp->samples_per_second;
 				a_engine->codec_params.codec_ms = mimp->microseconds_per_packet / 1000;
 				a_engine->codec_params.bitrate = mimp->bits_per_second;
+				a_engine->codec_params.channels = map->rm_params ? atoi(map->rm_params) : 1;
 
+				if (!strcasecmp((char *) map->rm_encoding, "opus")) {
+					a_engine->codec_params.adv_channels = 2; /* IKR ???*/
+					if (!zstr((char *) map->rm_fmtp) && switch_stristr("stereo=1", (char *) map->rm_fmtp)) {
+						a_engine->codec_params.channels = 2;
+					} else {
+						a_engine->codec_params.channels = 1;
+					}
+				} else {
+					a_engine->codec_params.adv_channels = a_engine->codec_params.channels;
+				}
 
 				a_engine->codec_params.remote_sdp_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 				a_engine->codec_params.remote_sdp_port = (switch_port_t) m->m_port;
 				a_engine->codec_params.rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
-					
+				
 				a_engine->codec_params.agreed_pt = (switch_payload_t) map->rm_pt;
 				smh->num_negotiated_codecs = 0;
 				smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;
@@ -4396,7 +4417,14 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		}
 		
 		if (smh->ianacodes[i] > 95 || verbose_sdp) {
-			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d\n", smh->ianacodes[i], imp->iananame, rate);
+			int channels = get_channels(imp);
+
+			if (channels > 1) {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", smh->ianacodes[i], imp->iananame, rate, channels);
+								
+			} else {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d\n", smh->ianacodes[i], imp->iananame, rate);
+			}
 		}
 
 		if (fmtp) {
@@ -4849,7 +4877,14 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 		rate = a_engine->codec_params.rm_rate;
-		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", a_engine->codec_params.agreed_pt, a_engine->codec_params.rm_encoding, rate);
+		if (a_engine->codec_params.adv_channels > 1) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", 
+							a_engine->codec_params.agreed_pt, a_engine->codec_params.rm_encoding, rate, a_engine->codec_params.adv_channels);
+		} else {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", 
+							a_engine->codec_params.agreed_pt, a_engine->codec_params.rm_encoding, rate);
+		}
+
 		if (fmtp_out) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\n", a_engine->codec_params.agreed_pt, fmtp_out);
 		}
@@ -5164,6 +5199,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					const switch_codec_implementation_t *imp = smh->codecs[i];
 					char *fmtp = NULL;
 					uint32_t ianacode = smh->ianacodes[i];
+					int channels;
 
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 						continue;
@@ -5180,9 +5216,15 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						rate = imp->samples_per_second;
 					}
 					
-					
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", ianacode, imp->iananame,
-									imp->samples_per_second);
+					channels = get_channels(imp);
+
+					if (channels > 1) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", ianacode, imp->iananame,
+										imp->samples_per_second, channels);
+					} else {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", ianacode, imp->iananame,
+										imp->samples_per_second);
+					}
 					
 					if (!zstr(ov_fmtp)) {
 						fmtp = (char *) ov_fmtp;
