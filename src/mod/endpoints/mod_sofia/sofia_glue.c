@@ -7090,7 +7090,21 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		np->is_nat = NULL;
 	}
 
-	if (np->is_nat && np->fs_path) {
+	if (sip->sip_record_route && sip->sip_record_route->r_url) {
+		char *full_contact = sip_header_as_string(nh->nh_home, (void *) contact);
+		char *route = sofia_glue_strip_uri(sip_header_as_string(nh->nh_home, (void *) sip->sip_record_route));
+		char *full_contact_dup;
+		char *route_encoded;
+		int route_encoded_len;
+		full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
+		route_encoded_len = (int)(strlen(route) * 3) + 1;
+		switch_zmalloc(route_encoded, route_encoded_len);
+		switch_url_encode(route, route_encoded, route_encoded_len);
+		contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, route_encoded);
+		free(full_contact_dup);
+		free(route_encoded);
+	}
+	else if (np->is_nat && np->fs_path) {
 		char *full_contact = sip_header_as_string(nh->nh_home, (void *) contact);
 		char *full_contact_dup;
 		char *path_encoded;
