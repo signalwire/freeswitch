@@ -43,7 +43,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json] [get|head|post [url_encoded_data]]";
+static char *SYNTAX = "curl url [headers|json|content-type <mime-type>] [get|head|post [post_data]]";
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -99,13 +99,12 @@ static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, const char *method, const char *data)
+static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, const char *method, const char *data, const char *content_type)
 {
-
 	switch_CURL *curl_handle = NULL;
 	long httpRes = 0;
-
 	http_data_t *http_data = NULL;
+	switch_curl_slist_t *headers = NULL;
 
 	http_data = switch_core_alloc(pool, sizeof(http_data_t));
 	memset(http_data, 0, sizeof(http_data_t));
@@ -118,35 +117,42 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 		method = "get";
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "method: %s, url: %s\n", method, url);
-	curl_handle = curl_easy_init();
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "method: %s, url: %s, content-type: %s\n", method, url, content_type);
+	curl_handle = switch_curl_easy_init();
 
 	if (!strncasecmp(url, "https", 5)) {
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 	if (!strcasecmp(method, "head")) {
-		curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
 	} else if (!strcasecmp(method, "post")) {
-		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
-		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, (void *) data);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Post data: %s\n", data);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, (void *) data);
+		if (content_type) {
+			char *ct = switch_mprintf("Content-Type: %s", content_type);
+			headers = switch_curl_slist_append(headers, ct);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+			switch_safe_free(ct);
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Post data: %s\n", data);
 	} else {
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	}
-	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 15);
-	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) http_data);
-	curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, header_callback);
-	curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, (void *) http_data);
-	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-curl/1.0");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 15);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) http_data);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, header_callback);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, (void *) http_data);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-curl/1.0");
 
-	curl_easy_perform(curl_handle);
-	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-	curl_easy_cleanup(curl_handle);
+	switch_curl_easy_perform(curl_handle);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+	switch_curl_easy_cleanup(curl_handle);
+	switch_curl_slist_free_all(headers);
 
 	if (http_data->stream.data && !zstr((char *) http_data->stream.data) && strcmp(" ", http_data->stream.data)) {
 
@@ -237,13 +243,13 @@ SWITCH_STANDARD_APP(curl_app_function)
 	char *url = NULL;
 	char *method = NULL;
 	char *postdata = NULL;
+	char *content_type = NULL;
 	switch_bool_t do_headers = SWITCH_FALSE;
 	switch_bool_t do_json = SWITCH_FALSE;
 	http_data_t *http_data = NULL;
 	switch_curl_slist_t *slist = NULL;
 	switch_stream_handle_t stream = { 0 };
 	int i = 0;
-
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
@@ -276,11 +282,15 @@ SWITCH_STANDARD_APP(curl_app_function)
 				} else {
 					postdata = "";
 				}
+			} else if (!strcasecmp("content-type", argv[i])) {
+				if (++i < argc) {
+					content_type = switch_core_strdup(pool, argv[i]);
+				}
 			}
 		}
 	}
 
-	http_data = do_lookup_url(pool, url, method, postdata);
+	http_data = do_lookup_url(pool, url, method, postdata, content_type);
 	if (do_json) {
 		switch_channel_set_variable(channel, "curl_response_data", print_json(pool, http_data));
 	} else {
@@ -324,6 +334,7 @@ SWITCH_STANDARD_API(curl_function)
 	char *url = NULL;
 	char *method = NULL;
 	char *postdata = NULL;
+	char *content_type = NULL;
 	switch_bool_t do_headers = SWITCH_FALSE;
 	switch_bool_t do_json = SWITCH_FALSE;
 	switch_curl_slist_t *slist = NULL;
@@ -361,14 +372,17 @@ SWITCH_STANDARD_API(curl_function)
 				method = "post";
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
-					switch_url_decode(postdata);
 				} else {
 					postdata = "";
+				}
+			} else if (!strcasecmp("content-type", argv[i])) {
+				if (++i < argc) {
+					content_type = switch_core_strdup(pool, argv[i]);
 				}
 			}
 		}
 
-		http_data = do_lookup_url(pool, url, method, postdata);
+		http_data = do_lookup_url(pool, url, method, postdata, content_type);
 		if (do_json) {
 			stream->write_function(stream, "%s", print_json(pool, http_data));
 		} else {
