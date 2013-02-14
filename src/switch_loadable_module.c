@@ -316,6 +316,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 		for (ptr = new_module->module_interface->file_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load file interface from %s due to no interface name.\n", key);
+			} else if (!ptr->extens) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load file interface from %s due to no file extensions.\n", key);
 			} else {
 				int i;
 				for (i = 0; ptr->extens[i]; i++) {
