@@ -372,6 +372,7 @@ SWITCH_STANDARD_API(curl_function)
 				method = "post";
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
+					switch_url_decode(postdata);
 				} else {
 					postdata = "";
 				}
