@@ -2029,34 +2029,40 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 #endif
 
 	running = 1;
-	load_config(FULL_RELOAD);
 
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	skypopen_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	skypopen_endpoint_interface->interface_name = "skypopen";
-	skypopen_endpoint_interface->io_routines = &skypopen_io_routines;
-	skypopen_endpoint_interface->state_handler = &skypopen_state_handlers;
+	if (load_config(FULL_RELOAD) == SWITCH_STATUS_SUCCESS) {
 
-	if (running) {
+		*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+		skypopen_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+		skypopen_endpoint_interface->interface_name = "skypopen";
+		skypopen_endpoint_interface->io_routines = &skypopen_io_routines;
+		skypopen_endpoint_interface->state_handler = &skypopen_state_handlers;
 
-		SWITCH_ADD_API(commands_api_interface, "sk", "Skypopen console commands", sk_function, SK_SYNTAX);
-		SWITCH_ADD_API(commands_api_interface, "skypopen", "Skypopen interface commands", skypopen_function, SKYPOPEN_SYNTAX);
-		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function,
-					   SKYPOPEN_CHAT_SYNTAX);
-		SWITCH_ADD_CHAT(chat_interface, SKYPE_CHAT_PROTO, chat_send);
+		if (running) {
 
-		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
-			return SWITCH_STATUS_FALSE;
+			SWITCH_ADD_API(commands_api_interface, "sk", "Skypopen console commands", sk_function, SK_SYNTAX);
+			SWITCH_ADD_API(commands_api_interface, "skypopen", "Skypopen interface commands", skypopen_function, SKYPOPEN_SYNTAX);
+			SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function,
+					SKYPOPEN_CHAT_SYNTAX);
+			SWITCH_ADD_CHAT(chat_interface, SKYPE_CHAT_PROTO, chat_send);
+
+			if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+				return SWITCH_STATUS_FALSE;
+			}
+
+			if (switch_event_reserve_subclass(MY_EVENT_INCOMING_RAW) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+				return SWITCH_STATUS_FALSE;
+			}
+
+			/* indicate that the module should continue to be loaded */
+			return SWITCH_STATUS_SUCCESS;
 		}
-
-		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_RAW) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
-			return SWITCH_STATUS_FALSE;
-		}
-
-		/* indicate that the module should continue to be loaded */
-		return SWITCH_STATUS_SUCCESS;
+	} else {
+		running = 0;
+		switch_sleep(1000000); //1 full second
+		return SWITCH_STATUS_FALSE;
 	}
 	return SWITCH_STATUS_FALSE;
 }
