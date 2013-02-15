@@ -624,8 +624,10 @@
       <prompt phrase="Nothing." filename="ivr-nothing.wav"/>
       <prompt phrase="To skip..." filename="ivr-to_skip.wav"/>
       <!-- The following phrases still need to be recorded -->
-      <prompt phrase="Please hold while we conncet you to a live operator." filename="ivr_connect_live_operator.wav"/>
+      <prompt phrase="Please hold while we connect you to a live operator." filename="ivr_connect_live_operator.wav"/>
       <prompt phrase="Please hold while we connect you to an actual human being." filename="ivr-connect_actual_human_being.wav"/>
+      <prompt phrase="The system is going down for maintenance." filename="ivr-system_down_for_maintenance.wav"/>
+      <prompt phrase="The system will be back up in approximately..." filename="ivr-system_back_up_in_approximately.wav"/>
       <prompt phrase="" filename=""/>
 
     </ivr>
