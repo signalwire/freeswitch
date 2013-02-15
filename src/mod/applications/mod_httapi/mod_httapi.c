@@ -1607,6 +1607,8 @@ static switch_status_t httapi_sync(client_t *client)
 	if (client->profile->cookie_file) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, client->profile->cookie_file);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, client->profile->cookie_file);
+	} else {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIE, "");
 	}
 
 	if (client->profile->bind_local) {

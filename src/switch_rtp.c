@@ -384,7 +384,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "DTMF payload offset by 4 bytes.\n");
 		}
 
-		if (!(packet[0] || packet[1] || packet[2] || packet[3])) {
+		if (!(packet[0] || packet[1] || packet[2] || packet[3]) && rtp_session->dtmf_data.in_digit_ts) {
 			switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed DTMF payload check.\n");
 			rtp_session->dtmf_data.last_digit = 0;
