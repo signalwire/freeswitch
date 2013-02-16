@@ -1804,7 +1804,7 @@ static void generate_local_fingerprint(switch_media_handle_t *smh, switch_media_
 
 
 //?
-static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_media_t *m)
+static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_session_t *sdp, sdp_media_t *m)
 {
 	switch_rtp_engine_t *engine = &smh->engines[type];
 	sdp_attribute_t *attr;
@@ -1814,8 +1814,13 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	engine->ice_in.chosen[1] = 0;
 	engine->ice_in.cand_idx = 0;
 
+	if (m) {
+		attr = m->m_attributes;
+	} else {
+		attr = sdp->sdp_attributes;
+	}
 
-	for (attr = m->m_attributes; attr; attr = attr->a_next) {
+	for (; attr; attr = attr->a_next) {
 		char *data;
 		char *fields[15];
 		int argc = 0, j = 0;
@@ -2187,6 +2192,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	switch_core_media_find_zrtp_hash(session, sdp);
 	switch_core_media_pass_zrtp_hash(session);
 
+	check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, NULL);
+
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
 		switch_core_session_t *other_session;
@@ -2197,6 +2204,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		if (m->m_proto == sdp_proto_extended_srtp) {
 			got_webrtc++;
 			switch_core_session_set_ice(session);
+		}
+
+		if (m->m_proto_name && !strcasecmp(m->m_proto_name, "UDP/TLS/RTP/SAVPF")) {
+			switch_channel_set_flag(session->channel, CF_WEBRTC_MOZ);
 		}
 
 		if (m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp) {
@@ -2633,7 +2644,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			if (match) {
 				if (switch_core_media_set_codec(session, 1, smh->mparams->codec_flags) == SWITCH_STATUS_SUCCESS) {
 					got_audio = 1;
-					check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, m);
+					check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, m);
 				} else {
 					match = 0;
 				}
@@ -2810,8 +2821,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						switch_channel_set_variable(session->channel, "sip_video_recv_pt", tmp);
 						if (!match && vmatch) match = 1;
 
-						check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, m);
-
+						check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m);
+						check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL);
 						break;
 					} else {
 						vmatch = 0;
@@ -3753,23 +3764,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		}
 
 
-		if (!zstr(a_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls()) {
-			dtls_type_t xtype, dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
-
-
-			xtype = DTLS_TYPE_RTP;
-			if (a_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
 		
-			switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
-
-			if (a_engine->rtcp_mux < 1) {
-				xtype = DTLS_TYPE_RTCP;
-				switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
-			}
-
-		}
-
-
 		if (a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].ready) {
 			
 			gen_ice(session, SWITCH_MEDIA_TYPE_AUDIO, NULL, 0);
@@ -3842,6 +3837,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			}
 
 		}
+
+		if (!zstr(a_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls()) {
+			dtls_type_t xtype, dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
+
+
+			xtype = DTLS_TYPE_RTP;
+			if (a_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
+		
+			switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
+
+			if (a_engine->rtcp_mux < 1) {
+				xtype = DTLS_TYPE_RTCP;
+				switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
+			}
+
+		}
+
+
 
 		if ((val = switch_channel_get_variable(session->channel, "jitterbuffer_msec")) || (val = smh->mparams->jb_msec)) {
 			int jb_msec = atoi(val);
@@ -4179,7 +4192,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				if ((val = switch_channel_get_variable(session->channel, "rtcp_video_interval_msec")) || (val = smh->mparams->rtcp_video_interval_msec)) {
 					const char *rport = switch_channel_get_variable(session->channel, "sip_remote_video_rtcp_port");
-					switch_port_t remote_port = 0;
+					switch_port_t remote_port = v_engine->remote_rtcp_port;
 					if (rport) {
 						remote_port = (switch_port_t)atoi(rport);
 					}
@@ -4194,21 +4207,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP PORT %d\n", remote_port);
 							switch_rtp_activate_rtcp(v_engine->rtp_session, interval, remote_port, v_engine->rtcp_mux > 0);
-						}
-					}
-					
-
-					if (!zstr(v_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls()) {
-						dtls_type_t xtype, 
-							dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
-						xtype = DTLS_TYPE_RTP;
-						if (v_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
-					
-						switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
-
-						if (v_engine->rtcp_mux < 1) {
-							xtype = DTLS_TYPE_RTCP;
-							switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
 						}
 					}
 					
@@ -4236,7 +4234,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				
 				}
 					
-				
+
+				if (!zstr(v_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls()) {
+					dtls_type_t xtype, 
+						dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
+					xtype = DTLS_TYPE_RTP;
+					if (v_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
+					
+					switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
+					
+					if (v_engine->rtcp_mux < 1) {
+						xtype = DTLS_TYPE_RTCP;
+						switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
+					}
+				}
 					
 					
 				if ((val = switch_channel_get_variable(session->channel, "rtp_manual_video_rtp_bugs"))) {
@@ -4293,6 +4304,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 }
 
+static const char *get_media_profile_name(switch_core_session_t *session, int secure)
+{
+	switch_assert(session);
+
+	if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		if (switch_channel_test_flag(session->channel, CF_WEBRTC_MOZ)) {
+			return "UDP/TLS/RTP/SAVPF";
+		} else {
+			return "RTP/SAVPF";
+		}
+	}
+
+	if ((!secure && switch_channel_test_flag(session->channel, CF_SECURE)) || secure) {
+		return "RTP/SAVP";
+	}
+
+	return "RTP/AVP";
+	
+}
+
 //?
 static void generate_m(switch_core_session_t *session, char *buf, size_t buflen, 
 					   switch_port_t port, const char *family, const char *ip,
@@ -4315,9 +4346,10 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 
-	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP%s", 
-					port, secure ? "S" : "", switch_channel_test_flag(session->channel, CF_WEBRTC) ? "F" : "");
-				
+	//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP%s", 
+	//port, secure ? "S" : "", switch_channel_test_flag(session->channel, CF_WEBRTC) ? "F" : "");
+
+	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d %s", port, get_media_profile_name(session, secure));
 	
 
 	for (i = 0; i < smh->mparams->num_codecs; i++) {
@@ -4477,8 +4509,10 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=ssrc:%u mslabel:%s\n", a_engine->ssrc, smh->msid);
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=ssrc:%u label:%sa0\n", a_engine->ssrc, smh->msid);
 
+
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
+
 
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n", 
 						tmp1, ice_out->cands[0][0].transport, c1,
@@ -4850,18 +4884,28 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					"%s",
 					username, smh->owner_id, smh->session_id, family, ip, username, family, ip, srbuf);
 
+
 	if (switch_channel_test_flag(smh->session->channel, CF_ICE)) {
 		gen_ice(session, SWITCH_MEDIA_TYPE_AUDIO, ip, port);
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=msid-semantic: WMS %s\n", smh->msid);
 	}
 
+
 	if (a_engine->codec_params.rm_encoding) {
+		/*
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio %d RTP/%sAVP%s", 
 						port, ((!zstr(local_audio_crypto_key) || switch_channel_test_flag(session->channel, CF_DTLS)) && 
 							   switch_channel_test_flag(session->channel, CF_SECURE)) ? "S" : "",
 						switch_channel_test_flag(session->channel, CF_WEBRTC) ? "F" : "");
+		*/
 
-
+		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio %d %s", port, 
+						get_media_profile_name(session, 
+											   ((!zstr(local_audio_crypto_key) || switch_channel_test_flag(session->channel, CF_DTLS)) &&
+												switch_channel_test_flag(session->channel, CF_SECURE))
+											   ));
+		
+		
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", a_engine->codec_params.pt);
 
 		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
@@ -4960,14 +5004,16 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			ice_out = &a_engine->ice_out;
 			
-
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\n", a_engine->ssrc, smh->cname);
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u msid:%s a0\n", a_engine->ssrc, smh->msid);
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u mslabel:%s\n", a_engine->ssrc, smh->msid);
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u label:%sa0\n", a_engine->ssrc, smh->msid);
+			
+
 
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
+
 
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n", 
 							tmp1, ice_out->cands[0][0].transport, c1,
@@ -5122,12 +5168,19 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			if (switch_channel_test_flag(smh->session->channel, CF_ICE)) {
 				gen_ice(session, SWITCH_MEDIA_TYPE_VIDEO, ip, v_port);
 			}
-
+			/*
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video %d RTP/%sAVP%s", 
 							v_port, ((!zstr(local_video_crypto_key) || switch_channel_test_flag(session->channel, CF_DTLS)) 
 									 && switch_channel_test_flag(session->channel, CF_SECURE)) ? "S" : "",
 							switch_channel_test_flag(session->channel, CF_WEBRTC) ? "F" : "");
+			*/
 
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video %d %s", 
+							v_port, get_media_profile_name(session,
+														   (!zstr(local_video_crypto_key) || switch_channel_test_flag(session->channel, CF_DTLS))
+														   && switch_channel_test_flag(session->channel, CF_SECURE)));
+							
+			
 
 			/*****************************/
 			if (v_engine->codec_params.rm_encoding) {
@@ -5283,13 +5336,17 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 				ice_out = &v_engine->ice_out;
 
+
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\n", v_engine->ssrc, smh->cname);
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u msid:%s v0\n", v_engine->ssrc, smh->msid);
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u mslabel:%s\n", v_engine->ssrc, smh->msid);
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u label:%sv0\n", v_engine->ssrc, smh->msid);
+				
 
+				
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
+
 
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n", 
 								tmp1, ice_out->cands[0][0].transport, c1,

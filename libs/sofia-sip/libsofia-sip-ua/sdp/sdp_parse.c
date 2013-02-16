@@ -1387,7 +1387,9 @@ void sdp_media_transport(sdp_media_t *m, char const *s)
   else if (su_casematch(s, "RTP/SAVP"))
     m->m_proto = sdp_proto_srtp, m->m_proto_name = "RTP/SAVP";
   else if (su_casematch(s, "RTP/SAVPF"))
-    m->m_proto = sdp_proto_extended_srtp, m->m_proto_name = "RTP/SAVPF";
+	  m->m_proto = sdp_proto_extended_srtp, m->m_proto_name = "RTP/SAVPF";
+  else if (su_casematch(s, "UDP/TLS/RTP/SAVPF"))
+    m->m_proto = sdp_proto_extended_srtp, m->m_proto_name = "UDP/TLS/RTP/SAVPF";
   else if (su_casematch(s, "udptl"))
     /* Lower case - be compatible with people living by T.38 examples */
     m->m_proto = sdp_proto_udptl, m->m_proto_name = "udptl";

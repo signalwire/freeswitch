@@ -1,6 +1,8 @@
 #ifndef _WS_H
 #define _WS_H
 
+//#define WSS_STANDALONE 1
+
 #define MAXLEN 0x10000
 #define WEBSOCKET_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 #define B64BUFFLEN 1024

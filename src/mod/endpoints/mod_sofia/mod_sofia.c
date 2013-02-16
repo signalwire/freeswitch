@@ -663,6 +663,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	if (switch_channel_test_flag(channel, CF_CONFERENCE)) {
 		tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;isfocus", tech_pvt->reply_contact);
 	}
+
 	//switch_core_media_set_local_sdp
 	if(sofia_test_flag(tech_pvt, TFLAG_3PCC_INVITE)) {
 		// SNARK: complete hack to get final ack sent when a 3pcc invite has been passed from the other leg in bypass_media mode.
@@ -688,7 +689,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_ANS) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-		return SWITCH_STATUS_SUCCESS;
+		printf("BALLZ %d\n", __LINE__);return SWITCH_STATUS_SUCCESS;
 	}
 
 
@@ -702,7 +703,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 			switch_core_media_patch_sdp(tech_pvt->session);
 			if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-				return SWITCH_STATUS_FALSE;
+				printf("BALLZ %d\n", __LINE__);return SWITCH_STATUS_FALSE;
 			}
 		}
 	} else {
@@ -721,7 +722,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					switch_core_media_patch_sdp(tech_pvt->session);
 					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-						return SWITCH_STATUS_FALSE;
+						printf("BALLZ %d\n", __LINE__);return SWITCH_STATUS_FALSE;
 					}
 				}
 			}
@@ -776,7 +777,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Done waiting for ACK\n");
-			return SWITCH_STATUS_SUCCESS;
+			printf("BALLZ %d\n", __LINE__);return SWITCH_STATUS_SUCCESS;
 		}
 
 		if ((is_proxy && !b_sdp) || sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) ||
@@ -799,14 +800,14 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 					//switch_mutex_lock(tech_pvt->sofia_mutex);
 					//nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 					//switch_mutex_unlock(tech_pvt->sofia_mutex);
-					return SWITCH_STATUS_FALSE;
+					printf("BALLZ %d\n", __LINE__);return SWITCH_STATUS_FALSE;
 				}
 			}
 		}
 
 		if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			return status;
+			printf("BALLZ %d\n", __LINE__);return status;
 		}
 
 		switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 0);

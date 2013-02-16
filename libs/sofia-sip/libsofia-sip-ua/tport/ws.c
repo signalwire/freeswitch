@@ -3,11 +3,17 @@
 #define SHA1_HASH_SIZE 20
 struct globals_s globals;
 
-#ifndef PTHREAD
+#ifndef WSS_STANDALONE
+
 void init_ssl(void) 
 {
 	SSL_library_init();
 }
+void deinit_ssl(void) 
+{
+	return;
+}
+
 #else
 static unsigned long pthreads_thread_id(void);
 static void pthreads_locking_callback(int mode, int type, const char *file, int line);
@@ -68,23 +74,24 @@ static unsigned long pthreads_thread_id(void)
 
 void init_ssl(void) {
 	SSL_library_init();
-	//	OpenSSL_add_all_algorithms();   /* load & register cryptos */
-	//	SSL_load_error_strings();     /* load all error messages */
-	//globals.ssl_method = SSLv23_server_method();   /* create server instance */
-	//globals.ssl_ctx = SSL_CTX_new(globals.ssl_method);         /* create context */
-	//assert(globals.ssl_ctx);
 
+
+	OpenSSL_add_all_algorithms();   /* load & register cryptos */
+	SSL_load_error_strings();     /* load all error messages */
+	globals.ssl_method = TLSv1_server_method();   /* create server instance */
+	globals.ssl_ctx = SSL_CTX_new(globals.ssl_method);         /* create context */
+	assert(globals.ssl_ctx);
+	
 	/* set the local certificate from CertFile */
-	//SSL_CTX_use_certificate_file(globals.ssl_ctx, globals.cert, SSL_FILETYPE_PEM);
+	SSL_CTX_use_certificate_file(globals.ssl_ctx, globals.cert, SSL_FILETYPE_PEM);
 	/* set the private key from KeyFile */
-	//SSL_CTX_use_PrivateKey_file(globals.ssl_ctx, globals.key, SSL_FILETYPE_PEM);
+	SSL_CTX_use_PrivateKey_file(globals.ssl_ctx, globals.key, SSL_FILETYPE_PEM);
 	/* verify private key */
-	//if ( !SSL_CTX_check_private_key(globals.ssl_ctx) ) {
-	//	abort();
-	//}
+	if ( !SSL_CTX_check_private_key(globals.ssl_ctx) ) {
+		abort();
+    }
 
 	thread_setup();
-
 }
 
 
@@ -215,7 +222,7 @@ int ws_handshake(wsh_t *wsh)
 	if (wsh->sock == ws_sock_invalid) {
 		return -3;
 	}
-	
+
 	while((bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen)) > 0) {
 		wsh->datalen += bytes;
 		if (strstr(wsh->buffer, "\r\n\r\n") || strstr(wsh->buffer, "\n\n")) {
@@ -272,7 +279,7 @@ int ws_handshake(wsh_t *wsh)
 	//printf("ERR:\n%s\n", respond);
 
 
-	send(wsh->sock, respond, strlen(respond), 0);
+	ws_raw_write(wsh, respond, strlen(respond));
 
 	ws_close(wsh, WS_NONE);
 
@@ -300,7 +307,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 	} while (r == -1 && (errno == EAGAIN || errno == EINTR) && x < 100);
 
 	//if (r<0) {
-		//printf("READ FAIL: %s\n", strerror(errno));
+	//	printf("READ FAIL: %s\n", strerror(errno));
 	//}
 
 	return r;
@@ -334,6 +341,10 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 	memset(wsh, 0, sizeof(*wsh));
 	wsh->sock = sock;
 
+	if (!ssl_ctx) {
+		ssl_ctx = globals.ssl_ctx;
+	}
+
 	if (close_sock) {
 		wsh->close_sock = 1;
 	}
@@ -352,13 +363,16 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 
 	if (wsh->secure) {
 		int code;
+
 		wsh->ssl = SSL_new(ssl_ctx);
+		assert(wsh->ssl);
+
 		SSL_set_fd(wsh->ssl, wsh->sock);
 
 		do {
 			code = SSL_accept(wsh->ssl);
 		} while (code == -1 && SSL_get_error(wsh->ssl, code) == SSL_ERROR_WANT_READ);
-		
+
 	}
 
 	while (!wsh->down && !wsh->handshake) {

@@ -177,6 +177,7 @@ typedef struct {
 	uint8_t sending;
 	uint8_t ready;
 	uint8_t rready;
+	int missed_count;
 } switch_rtp_ice_t;
 
 struct switch_rtp;
@@ -678,11 +679,8 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 
 	if (ice == &rtp_session->rtcp_ice) {
 		sock_output = rtp_session->rtcp_sock_output;		
-		//remote_addr = rtp_session->rtcp_remote_addr;
 	}
 	
-
-
 
 	switch_assert(rtp_session != NULL);
 	switch_assert(ice->ice_user != NULL);
@@ -775,6 +773,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	int xlen = 0;
 	int ok = 1;
 	uint32_t *pri = NULL;
+	int is_rtcp = ice == &rtp_session->rtcp_ice;
 
 	if (!switch_rtp_ready(rtp_session) || zstr(ice->user_ice) || zstr(ice->ice_user)) {
 		return;
@@ -799,8 +798,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		goto end;
 
 	}
-
-
 
 #if 0
 	if (ice->sending && (packet->header.type == SWITCH_STUN_BINDING_RESPONSE || packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE)) {
@@ -847,19 +844,23 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		ok = !strcmp(ice->user_ice, username);
 	}
 
-	if (ice->type == ICE_VANILLA) {
+	if ((ice->type & ICE_VANILLA)) {
 		if (!ok && ice == &rtp_session->ice && pri && 
 			*pri == rtp_session->rtcp_ice.ice_params->cands[rtp_session->rtcp_ice.ice_params->chosen[1]][1].priority) {
 			ice = &rtp_session->rtcp_ice;
 			ok = 1;
 		}
 
-		if (!ok) {
+		if (ok) {
+			ice->missed_count = 0;
+		} else {
 			uint32_t elapsed = (unsigned int) ((switch_micro_time_now() - rtp_session->last_stun) / 1000);
 			switch_rtp_ice_t *icep[2] = { &rtp_session->ice, &rtp_session->rtcp_ice };
 			switch_port_t port = 0;
 			char *host = NULL;
 
+			ice->missed_count++;
+			
 			if (elapsed > 20000 && pri) {
 				int i, j;
 				uint32_t old;
@@ -936,7 +937,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 	}
 
-	if (ok) {
+	if (ok || ice->missed_count > 1) {
 		if ((packet->header.type == SWITCH_STUN_BINDING_RESPONSE)) {
 			if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 				rtp_session->ice.rready = 1;
@@ -953,7 +954,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			switch_sockaddr_t *from_addr = rtp_session->from_addr;
 			switch_socket_t *sock_output = rtp_session->sock_output;
 
-			if (ice == &rtp_session->rtcp_ice && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+			if (is_rtcp && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 				from_addr = rtp_session->rtcp_from_addr;
 				sock_output = rtp_session->rtcp_sock_output;
 			}
@@ -968,7 +969,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			}
 
 			remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), from_addr);
-			switch_stun_packet_attribute_add_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
+			switch_stun_packet_attribute_add_xor_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
 
 			if ((ice->type & ICE_VANILLA)) {
 				switch_stun_packet_attribute_add_integrity(rpacket, ice->pass);
@@ -988,7 +989,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				port = switch_sockaddr_get_port(from_addr);
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
-								  "Auto Changing stun/rtp/dtls port to %s:%u\n", host, port);
+								  "Auto Changing stun/%s/dtls port to %s:%u\n", is_rtcp ? "rtcp" : "rtp", host, port);
 
 				ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_addr = switch_core_strdup(rtp_session->pool, host);
 				ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_port = port;
@@ -1001,8 +1002,15 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 						switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
 					}
 				
-					if (ice == &rtp_session->rtcp_ice && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX] && rtp_session->rtcp_dtls) {
-						switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+					if (is_rtcp && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
+
+						switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+						if (rtp_session->rtcp_dtls) {
+							//switch_sockaddr_info_get(&rtp_session->rtcp_dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
+							rtp_session->rtcp_dtls->remote_addr = rtp_session->rtcp_remote_addr;
+							rtp_session->rtcp_dtls->sock_output = rtp_session->rtcp_sock_output;
+						}
+						
 					}
 				}
 				
@@ -2179,6 +2187,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 {
 	switch_dtls_t *dtls;
 	int ret;
+	const char *kind = "";
 
 #ifndef HAVE_OPENSSL_DTLS_SRTP
 	return SWITCH_STATUS_FALSE;
@@ -2192,8 +2201,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "INVALID TYPE!\n");
 	}
 
+	if ((type & DTLS_TYPE_RTP) && (type & DTLS_TYPE_RTCP)) {
+		kind = "RTP/RTCP";
+	} else if ((type & DTLS_TYPE_RTP)) {
+		kind = "RTP";
+	} else {
+		kind = "RTCP";
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, 
-					  "Activate %s DTLS %s\n", rtp_type(rtp_session), (type & DTLS_TYPE_SERVER) ? "server" : "client");
+					  "Activate %s %s DTLS %s\n", kind, rtp_type(rtp_session), (type & DTLS_TYPE_SERVER) ? "server" : "client");
 
 	if (((type & DTLS_TYPE_RTP) && rtp_session->dtls) || ((type & DTLS_TYPE_RTCP) && rtp_session->rtcp_dtls)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "DTLS ALREADY INIT\n");
@@ -2395,7 +2412,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	case SWITCH_RTP_CRYPTO_RECV:
 		policy->ssrc.type = ssrc_any_inbound;
 
-		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && idx == 0) {
+		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && idx == 0 && rtp_session->recv_ctx[idx]) {
 			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_RESET] = 1;
 		} else {
 			if ((stat = srtp_create(&rtp_session->recv_ctx[idx], policy))) {
@@ -2403,8 +2420,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Activating %s Secure RTP RECV\n", 
-								  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "Video" : "Audio");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Activating %s Secure %s RECV\n", 
+								  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "Video" : "Audio", idx ? "RTCP" : "RTP");
 				rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 1;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error allocating srtp [%d]\n", stat);
@@ -2417,7 +2434,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		//policy->ssrc.type = ssrc_specific;
 		//policy->ssrc.value = rtp_session->ssrc;
 
-		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] && idx == 0) {
+		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] && idx == 0 && rtp_session->send_ctx[idx]) {
 			rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_RESET] = 1;
 		} else {
 			if ((stat = srtp_create(&rtp_session->send_ctx[idx], policy))) {
@@ -2425,8 +2442,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Activating %s Secure RTP SEND\n",
-								  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "Video" : "Audio");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Activating %s Secure %s SEND\n",
+								  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "Video" : "Audio", idx ? "RTCP" : "RTP");
 				rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 1;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error allocating SRTP [%d]\n", stat);
@@ -3041,8 +3058,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Activating %s ICE: %s %s:%d\n", 
-					  rtp_type(rtp_session), ice_user, host, port);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Activating %s %s ICE: %s %s:%d\n", 
+					  proto == IPR_RTP ? "RTP" : "RTCP", rtp_type(rtp_session), ice_user, host, port);
 
 
 	if (ice->ice_user) {
@@ -3679,6 +3696,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	}
 
 	if (rtp_session->dtls) {
+		
+		if (rtp_session->rtcp_dtls && rtp_session->rtcp_dtls != rtp_session->dtls) {
+			rtp_session->rtcp_dtls->bytes = 0;
+			rtp_session->rtcp_dtls->data = NULL;
+			do_dtls(rtp_session, rtp_session->rtcp_dtls);
+		}
+
 		rtp_session->dtls->bytes = 0;
 
 		if (*bytes) {
@@ -4002,10 +4026,12 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 }
 
 
+
+
 static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
+
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -4019,21 +4045,30 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 		*bytes = 0;
 	}
 
-	
 	if (rtp_session->rtcp_dtls) {
 		char *b = (char *) &rtp_session->rtcp_recv_msg;
 		
 		//printf("RECV2 %d %ld\n", *b, *bytes);
-		
-		if ((*b >= 20) && (*b <= 64)) {
+
+
+		if (*b == 0 || *b == 1) {
+			if (rtp_session->rtcp_ice.ice_user) {
+				handle_ice(rtp_session, &rtp_session->rtcp_ice, (void *) &rtp_session->rtcp_recv_msg, *bytes);
+			}
+			*bytes = 0;
+		}
+
+
+		if (*bytes && (*b >= 20) && (*b <= 64)) {
 			rtp_session->rtcp_dtls->bytes = *bytes;
 			rtp_session->rtcp_dtls->data = (void *) &rtp_session->rtcp_recv_msg;
 		} else {
 			rtp_session->rtcp_dtls->bytes = 0;
 			rtp_session->rtcp_dtls->data = NULL;
 		}
-
+		
 		do_dtls(rtp_session, rtp_session->rtcp_dtls);
+		
 
 		if (rtp_session->rtcp_dtls->bytes) {
 			*bytes = 0;
@@ -4327,7 +4362,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 
 
-		if (bytes && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
+		if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 			rtcp_poll_status = SWITCH_STATUS_FALSE;
 			
 			if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX] && has_rtcp) {
