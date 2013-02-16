@@ -415,7 +415,7 @@ SWITCH_STANDARD_APP(play_mp4_function)
 		}
 		*/
 
-		switch_channel_set_variable(channel, "sip_force_video_fmtp", vc.videoTrack().fmtp.c_str());
+		switch_channel_set_variable(channel, "rtp_force_video_fmtp", vc.videoTrack().fmtp.c_str());
 		switch_channel_answer(channel);
 
 		if ((read_vid_codec = switch_core_session_get_video_read_codec(session))) {

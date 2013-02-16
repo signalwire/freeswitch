@@ -337,7 +337,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		goto end;
 	}
 
-	switch_channel_set_variable(channel, "sip_force_video_fmtp", h.video_fmtp);
+	switch_channel_set_variable(channel, "rtp_force_video_fmtp", h.video_fmtp);
 	switch_channel_answer(channel);
 
 	if ((read_vid_codec = switch_core_session_get_video_read_codec(session))) {

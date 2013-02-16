@@ -1415,9 +1415,9 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 	if (!total) goto end;
 
-	if ((codec = switch_event_get_header(pop, "variable_sip_use_codec_name"))) {
-		const char *rate = switch_event_get_header(pop, "variable_sip_use_codec_rate");
-		const char *ptime = switch_event_get_header(pop, "variable_sip_use_codec_ptime");
+	if ((codec = switch_event_get_header(pop, "variable_rtp_use_codec_name"))) {
+		const char *rate = switch_event_get_header(pop, "variable_rtp_use_codec_rate");
+		const char *ptime = switch_event_get_header(pop, "variable_rtp_use_codec_ptime");
 		char nstr[256] = "";
 
 		if (strcasecmp(codec, "PCMU") && strcasecmp(codec, "PCMA")) {

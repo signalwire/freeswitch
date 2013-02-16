@@ -1829,14 +1829,14 @@ int sofia_recover_callback(switch_core_session_t *session)
 	tech_pvt->mparams.remote_port = atoi(switch_str_nil(switch_channel_get_variable(channel, "sip_network_port")));
 	tech_pvt->caller_profile = switch_channel_get_caller_profile(channel);
 
-	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "sip_2833_send_payload"))) {
+	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "rtp_2833_send_payload"))) {
 		int te = atoi(tmp);
 		if (te > 64) {
 			tech_pvt->te = te;
 		} 
 	}
 
-	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "sip_2833_recv_payload"))) {
+	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "rtp_2833_recv_payload"))) {
 		int te = atoi(tmp);
 		if (te > 64) {
 			tech_pvt->recv_te = te;
@@ -1884,7 +1884,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO, "srtp_remote_audio_crypto_key");
 	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_VIDEO, "srtp_remote_video_crypto_key");
 
-	if ((tmp = switch_channel_get_variable(channel, "sip_local_sdp_str"))) {
+	if ((tmp = switch_channel_get_variable(channel, "rtp_local_sdp_str"))) {
 		tech_pvt->mparams.local_sdp_str = switch_core_session_strdup(session, tmp);
 	}
 
