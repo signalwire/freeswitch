@@ -995,13 +995,17 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].con_port = port;
 
 				switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
-				switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
-				
+
+				if (!is_rtcp) {
+					switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
+				}
+
 				if (rtp_session->dtls) {
-					if (ice == &rtp_session->ice) {
+
+					if (!is_rtcp) {
 						switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
 					}
-				
+					
 					if (is_rtcp && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 
 						switch_sockaddr_info_get(&rtp_session->rtcp_remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
@@ -3062,6 +3066,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 					  proto == IPR_RTP ? "RTP" : "RTCP", rtp_type(rtp_session), ice_user, host, port);
 
 
+	rtp_session->rtp_bugs |= RTP_BUG_ACCEPT_ANY_PACKETS;
+
 	if (ice->ice_user) {
 		if (ice_out(rtp_session, &rtp_session->ice) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
@@ -3685,6 +3691,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	if (*bytes) {
 		b = (char *) &rtp_session->recv_msg;
+
 		if (*b == 0 || *b == 1) {
 			if (rtp_session->ice.ice_user) {
 				handle_ice(rtp_session, &rtp_session->ice, (void *) &rtp_session->recv_msg, *bytes);
@@ -3733,9 +3740,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			*bytes = 0;
 		}
 	}
+
 	
-
-
 	if (status == SWITCH_STATUS_SUCCESS && *bytes) { 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) { 
 			*flags &= ~SFF_RTCP;
@@ -3820,7 +3826,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		*bytes = 0;
 		return SWITCH_STATUS_SUCCESS;
 	}
-
 
 	if (*bytes) {
 		rtp_session->stats.inbound.raw_bytes += *bytes;
@@ -3918,7 +3923,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 
 	rtp_session->last_read_ts = ts;
-	
 	
 	if (rtp_session->flags[SWITCH_RTP_FLAG_BYTESWAP] && rtp_session->recv_msg.header.pt == rtp_session->rpayload) {
 		switch_swap_linear((int16_t *)RTP_BODY(rtp_session), (int) *bytes - rtp_header_len);
@@ -4360,8 +4364,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	rtcp:
 
-
-
 		if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 			rtcp_poll_status = SWITCH_STATUS_FALSE;
 			
@@ -4469,7 +4471,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
 			rtp_session->recv_msg.header.pt != rtp_session->rpayload && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
 			/* drop frames of incorrect payload number and return CNG frame instead */
-			
 			return_cng_frame();			
 		}
 
@@ -4509,7 +4510,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 		}
 
-
 		if (bytes && bytes < 5) {
 			continue;
 		}
@@ -4522,7 +4522,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
 			rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
-
 
 		if (bytes && rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
 			
