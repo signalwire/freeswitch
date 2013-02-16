@@ -1282,7 +1282,9 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 		switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 
 								tech_pvt->transports[LDL_TPORT_RTP].remote_user, 
 								tech_pvt->transports[LDL_TPORT_RTP].local_user,
-								tech_pvt->transports[LDL_TPORT_RTP].remote_pass, NULL, ICE_GOOGLE_JINGLE, 0);
+								tech_pvt->transports[LDL_TPORT_RTP].remote_pass, NULL, 
+								IPR_RTP,
+								ICE_GOOGLE_JINGLE, 0);
 		
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			if (switch_rtp_enable_vad(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, tech_pvt->session, &tech_pvt->transports[LDL_TPORT_RTP].read_codec, SWITCH_VAD_FLAG_TALKING) != SWITCH_STATUS_SUCCESS) {
@@ -1297,10 +1299,12 @@ static int activate_audio_rtp(struct private_object *tech_pvt)
 		switch_rtp_set_telephony_event(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 101);
 		
 		if (tech_pvt->transports[LDL_TPORT_RTCP].remote_port) {
-			switch_rtp_activate_rtcp_ice(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 
-										 tech_pvt->transports[LDL_TPORT_RTCP].remote_user, 
-										 tech_pvt->transports[LDL_TPORT_RTCP].local_user,
-										 tech_pvt->transports[LDL_TPORT_RTCP].remote_pass, NULL, ICE_GOOGLE_JINGLE, 0);
+			switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_RTP].rtp_session, 
+									tech_pvt->transports[LDL_TPORT_RTCP].remote_user, 
+									tech_pvt->transports[LDL_TPORT_RTCP].local_user,
+									tech_pvt->transports[LDL_TPORT_RTCP].remote_pass, 
+									NULL, IPR_RTCP,
+									ICE_GOOGLE_JINGLE, 0);
 			
 		}
 
@@ -1460,7 +1464,7 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 		switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
 								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_user, 
 								tech_pvt->transports[LDL_TPORT_VIDEO_RTP].local_user,
-								NULL, NULL, ICE_GOOGLE_JINGLE, 0);//tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
+								NULL, NULL, IPR_RTP, ICE_GOOGLE_JINGLE, 0);//tech_pvt->transports[LDL_TPORT_VIDEO_RTP].remote_pass);
 		switch_channel_set_flag(channel, CF_VIDEO);
 		switch_set_flag(tech_pvt, TFLAG_VIDEO_RTP_READY);
 		//switch_rtp_set_default_payload(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_num);
@@ -1469,10 +1473,10 @@ static int activate_video_rtp(struct private_object *tech_pvt)
 
 		if (tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_port) {
 			
-			switch_rtp_activate_rtcp_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
-										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_user, 
-										 tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].local_user,
-										 NULL, NULL, ICE_GOOGLE_JINGLE, 0);//tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_pass);
+			switch_rtp_activate_ice(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, 
+									tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_user, 
+									tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].local_user,
+									NULL, NULL, IPR_RTCP, ICE_GOOGLE_JINGLE, 0);//tech_pvt->transports[LDL_TPORT_VIDEO_RTCP].remote_pass);
 		}
 
 
