@@ -209,7 +209,8 @@ library_include_HEADERS = \
 	libs/libtpl-1.5/src/tpl.h \
 	src/include/switch_limit.h \
 	src/include/switch_odbc.h \
-	src/include/switch_pgsql.h
+	src/include/switch_pgsql.h \
+	src/include/switch_dispatcher.h
 
 nodist_libfreeswitch_la_SOURCES = \
 	src/include/switch_frame.h \
@@ -266,6 +267,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_odbc.c \
 	src/switch_pgsql.c \
 	src/switch_limit.c \
+	src/switch_dispatcher.c \
 	src/g711.c \
 	src/switch_pcm.c \
 	src/switch_profile.c \
