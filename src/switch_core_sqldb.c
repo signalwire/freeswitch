@@ -1392,10 +1392,15 @@ SWITCH_DECLARE(int) switch_sql_queue_manager_size(switch_sql_queue_manager_t *qm
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	int i;
 
 	if (qm->thread_running) {
 		qm->thread_running = 0;
-		switch_queue_push(qm->sql_queue[0], NULL);
+
+		for(i = 0; i < qm->numq; i++) {
+			switch_queue_push(qm->sql_queue[i], NULL);
+			switch_queue_interrupt_all(qm->sql_queue[i]);
+		}
 		qm_wake(qm);
 		status = SWITCH_STATUS_SUCCESS;
 	}

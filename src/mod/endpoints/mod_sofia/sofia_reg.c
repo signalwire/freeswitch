@@ -921,6 +921,10 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 
 	switch_safe_free(sql);
 
+	if (cbt.list) {
+		switch_console_free_matches(&cbt.list);
+	}
+
 	if (cbt.matches) {
 		return val;
 	} else {
@@ -1049,6 +1053,7 @@ static int debounce_check(sofia_profile_t *profile, const char *user, const char
 	} else {
 		last = switch_core_alloc(profile->pool, sizeof(*last));
 		*last = now;
+
 		switch_core_hash_insert(profile->mwi_debounce_hash, key, last);
 		r = 1;
 	}
@@ -1651,8 +1656,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 			sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 		}
-
-
 
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);

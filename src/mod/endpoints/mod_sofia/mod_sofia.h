@@ -391,6 +391,7 @@ struct mod_sofia_globals {
 	char *capture_server;	
 	int rewrite_multicasted_fs_path;
 	int presence_flush;
+	switch_thread_t *presence_thread;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -698,6 +699,7 @@ struct sofia_profile {
 	sofia_paid_type_t paid_type;
 	uint32_t rtp_digit_delay;
 	switch_queue_t *event_queue;
+	switch_thread_t *thread;		
 };
 
 struct private_object {

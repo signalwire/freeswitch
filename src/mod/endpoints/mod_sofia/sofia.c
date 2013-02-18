@@ -2660,14 +2660,14 @@ void sofia_profile_destroy(sofia_profile_t *profile)
 
 void launch_sofia_profile_thread(sofia_profile_t *profile)
 {
-	switch_thread_t *thread;
+	//switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
 	switch_threadattr_create(&thd_attr, profile->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
-	switch_thread_create(&thread, thd_attr, sofia_profile_thread_run, profile, profile->pool);
+	switch_thread_create(&profile->thread, thd_attr, sofia_profile_thread_run, profile, profile->pool);
 }
 
 static void logger(void *logarg, char const *fmt, va_list ap)
@@ -3415,7 +3415,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 	}
 
 	mod_sofia_globals.auto_restart = SWITCH_TRUE;
-	mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = SWITCH_FALSE; /* handle backwards compatilibity - by default use new behavior */
+	mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = SWITCH_TRUE; /* handle backwards compatilibity - by default use new behavior */
 	mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
 
 	if ((settings = switch_xml_child(cfg, "global_settings"))) {

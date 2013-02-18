@@ -5886,7 +5886,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 {
 	int sanity = 0;
 	int i;
-
+	switch_status_t st;
 
 	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");
@@ -5903,6 +5903,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	switch_event_unbind_callback(event_handler);
 
 	switch_queue_push(mod_sofia_globals.presence_queue, NULL);
+	switch_queue_interrupt_all(mod_sofia_globals.presence_queue);
 
 	while (mod_sofia_globals.threads) {
 		switch_cond_next();
@@ -5914,14 +5915,17 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 
 	for (i = 0; mod_sofia_globals.msg_queue_thread[i]; i++) {
 		switch_queue_push(mod_sofia_globals.msg_queue, NULL);
+		switch_queue_interrupt_all(mod_sofia_globals.msg_queue);
 	}
 
 
 	for (i = 0; mod_sofia_globals.msg_queue_thread[i]; i++) {
-		switch_status_t st;
 		switch_thread_join(&st, mod_sofia_globals.msg_queue_thread[i]);
 	}
 
+	if (mod_sofia_globals.presence_thread) {
+		switch_thread_join(&st, mod_sofia_globals.presence_thread);
+	}
 
 	//switch_yield(1000000);
 	su_deinit();

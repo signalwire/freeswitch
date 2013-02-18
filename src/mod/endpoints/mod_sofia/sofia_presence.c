@@ -376,11 +376,13 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		switch_safe_free(dup_dest);
 		switch_safe_free(remote_host);
 	}		
-	
-	switch_console_free_matches(&list);
 
   end:
-	
+
+	if (list) {
+		switch_console_free_matches(&list);
+	}
+
 	switch_safe_free(contact);
 	switch_safe_free(route_uri);
 	switch_safe_free(ffrom);
@@ -1625,7 +1627,7 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 
 void sofia_presence_event_thread_start(void)
 {
-	switch_thread_t *thread;
+	//switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	int done = 0;
 
@@ -1642,10 +1644,10 @@ void sofia_presence_event_thread_start(void)
 	}
 
 	switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
-	switch_threadattr_detach_set(thd_attr, 1);
+	//switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_IMPORTANT);
-	switch_thread_create(&thread, thd_attr, sofia_presence_event_thread_run, NULL, mod_sofia_globals.pool);
+	switch_thread_create(&mod_sofia_globals.presence_thread, thd_attr, sofia_presence_event_thread_run, NULL, mod_sofia_globals.pool);
 }
 
 

@@ -597,11 +597,17 @@ void switch_core_memory_stop(void)
 {
 #ifndef INSTANTLY_DESTROY_POOLS
 	switch_status_t st;
+	void *pop = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping memory pool queue.\n");
 
 	memory_manager.pool_thread_running = 0;
 	switch_thread_join(&st, pool_thread_p);
+	
+	
+	while (switch_queue_trypop(memory_manager.pool_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		apr_pool_destroy(pop);
+	}
 #endif
 }
 
