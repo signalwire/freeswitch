@@ -143,7 +143,6 @@
 #include "switch_pgsql.h"
 #include "switch_json.h"
 #include "switch_limit.h"
-#include "switch_dispatcher.h"
 #include <libteletone.h>
 
 
