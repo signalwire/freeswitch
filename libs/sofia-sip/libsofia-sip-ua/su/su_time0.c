@@ -78,11 +78,18 @@ uint64_t (*_su_nanotime)(uint64_t *);
  */
 void su_time(su_time_t *tv)
 {
-#if HAVE_GETTIMEOFDAY
-  if (tv) {
-    gettimeofday((struct timeval *)tv, NULL);
-    tv->tv_sec += NTP_EPOCH;
-  }
+	su_time_t ltv = {0,0};
+#if HAVE_CLOCK_GETTIME
+	struct timespec ctv = {0};
+	if (clock_gettime(CLOCK_REALTIME, &ctv) == 0) {
+		ltv.tv_sec = ctv.tv_sec + NTP_EPOCH;
+		ltv.tv_usec = ctv.tv_nsec / 1000;
+    }
+#elif HAVE_GETTIMEOFDAY
+
+    gettimeofday((struct timeval *)&ltv, NULL);
+    ltv.tv_sec += NTP_EPOCH;
+
 #elif HAVE_FILETIME
   union {
     FILETIME       ft[1];
@@ -91,8 +98,8 @@ void su_time(su_time_t *tv)
 
   GetSystemTimeAsFileTime(date.ft);
 
-  tv->tv_usec = (unsigned long) ((date.ull->QuadPart % E7) / 10);
-  tv->tv_sec = (unsigned long) ((date.ull->QuadPart / E7) -
+  ltv.tv_usec = (unsigned long) ((date.ull->QuadPart % E7) / 10);
+  ltv.tv_sec = (unsigned long) ((date.ull->QuadPart / E7) -
     /* 1900-Jan-01 - 1601-Jan-01: 299 years, 72 leap years */
     (299 * 365 + 72) * 24 * 60 * (uint64_t)60);
 #else
@@ -100,7 +107,9 @@ void su_time(su_time_t *tv)
 #endif
 
   if (_su_time)
-    _su_time(tv);
+    _su_time(&ltv);
+
+  if (tv) *tv = ltv;
 }
 
 /** Get current time as nanoseconds since epoch.
@@ -121,7 +130,7 @@ su_nanotime_t su_nanotime(su_nanotime_t *return_time)
 
 #if HAVE_CLOCK_GETTIME
   {
-    struct timespec tv;
+    struct timespec tv = {0,0};
 
     if (clock_gettime(CLOCK_REALTIME, &tv) == 0) {
       now = ((su_nanotime_t)tv.tv_sec + NTP_EPOCH) * E9 + tv.tv_nsec;
@@ -149,7 +158,7 @@ su_nanotime_t su_nanotime(su_nanotime_t *return_time)
   }
 #elif HAVE_GETTIMEOFDAY
   {
-    struct timeval tv;
+    struct timeval tv = {0,0};
 
     gettimeofday(&tv, NULL);
 
@@ -181,7 +190,7 @@ su_nanotime_t su_monotime(su_nanotime_t *return_time)
 {
 #if HAVE_CLOCK_GETTIME && CLOCK_MONOTONIC
   {
-    struct timespec tv;
+    struct timespec tv = {0,0};
 
     if (clock_gettime(CLOCK_MONOTONIC, &tv) == 0) {
       su_nanotime_t now = (su_nanotime_t)tv.tv_sec * E9 + tv.tv_nsec;
@@ -194,7 +203,7 @@ su_nanotime_t su_monotime(su_nanotime_t *return_time)
 
 #if HAVE_NANOUPTIME
   {
-    struct timespec tv;
+    struct timespec tv = {0,0};
 
     nanouptime(&tv);
     now = (su_nanotime_t)tv.tv_sec * E9 + tv.tv_nsec;
@@ -204,7 +213,7 @@ su_nanotime_t su_monotime(su_nanotime_t *return_time)
   }
 #elif HAVE_MICROUPTIME
   {
-    struct timeval tv;
+    struct timeval tv = {0,0};
 
     microuptime(&tv);
     now = (su_nanotime_t)tv.tv_sec * E9 + tv.tv_usec * 1000;
