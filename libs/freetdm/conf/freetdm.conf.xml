@@ -500,6 +500,18 @@ with the signaling protocols that you can run on top of your I/O interfaces.
 				<param name="cid-name-transmit-method" value="default"/>
 			-->
 			<!-- 
+				Send CONNECT ACK
+				Whether to send a Connect Ack 
+
+				Possible values:
+				yes - send connect ack
+				no - do not send connect ack
+				default (will transmit Connect Ack based on variant + signaling)
+			
+				<param name="send-connect-ack" value="yes"/>
+			-->
+
+			<!-- 
 				Q.931 Timers in seconds
 				
 				Override default Q.931 values
