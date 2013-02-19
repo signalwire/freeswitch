@@ -2002,6 +2002,7 @@ SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
 		return;
 	}
 
+	switch_channel_set_flag(session->channel, CF_VERBOSE_SDP);
 	switch_channel_set_flag(session->channel, CF_WEBRTC);
 	switch_channel_set_flag(session->channel, CF_ICE);
 	smh->mparams->rtcp_audio_interval_msec = "5000";
@@ -4330,7 +4331,7 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 //?
 static void generate_m(switch_core_session_t *session, char *buf, size_t buflen, 
 					   switch_port_t port, const char *family, const char *ip,
-					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map, int verbose_sdp, int secure)
+					   int cur_ptime, const char *append_audio, const char *sr, int use_cng, int cng_type, switch_event_t *map, int secure)
 {
 	int i = 0;
 	int rate;
@@ -4451,7 +4452,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			}
 		}
 		
-		if (smh->ianacodes[i] > 95 || verbose_sdp) {
+		if (smh->ianacodes[i] > 95 || switch_channel_test_flag(session->channel, CF_VERBOSE_SDP)) {
 			int channels = get_channels(imp);
 
 			if (channels > 1) {
@@ -4717,7 +4718,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	const char *fmtp_out_var = switch_channel_get_variable(session->channel, "rtp_force_audio_fmtp");
 	switch_event_t *map = NULL, *ptmap = NULL;
 	const char *b_sdp = NULL;
-	int verbose_sdp = 0;
 	const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
 	const char *local_sdp_audio_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_TRUE);
 	const char *local_sdp_video_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_TRUE);
@@ -4733,10 +4733,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
-
-	if (a_engine->ice_out.cands[0][0].ready) {
-		verbose_sdp = 1;
-	}
 
 
 	if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
@@ -4810,7 +4806,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	}
 
 	if ((val = switch_channel_get_variable(session->channel, "verbose_sdp")) && switch_true(val)) {
-		verbose_sdp = 1;
+		switch_channel_set_flag(session->channel, CF_VERBOSE_SDP);
 	}
 
 	if (!force && !ip && zstr(sr)
@@ -5092,7 +5088,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			if ((!zstr(local_audio_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE)) || 
 				switch_channel_test_flag(session->channel, CF_DTLS)) {
-				generate_m(session, buf, SDPBUFLEN, port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
+				generate_m(session, buf, SDPBUFLEN, port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, 1);
 				bp = (buf + strlen(buf));
 
 				/* asterisk can't handle AVP and SAVP in sep streams, way to blow off the spec....*/
@@ -5103,7 +5099,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 
 			if (both) {
-				generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 0);
+				generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, 0);
 			}
 
 		} else {
@@ -5129,7 +5125,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					
 					if ((!zstr(local_audio_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE)) || 
 						switch_channel_test_flag(session->channel, CF_DTLS)) {
-						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 1);
+						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, 1);
 						bp = (buf + strlen(buf));
 
 						/* asterisk can't handle AVP and SAVP in sep streams, way to blow off the spec....*/
@@ -5143,7 +5139,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					}
 
 					if (both) {
-						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, verbose_sdp, 0);
+						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, 0);
 					}
 				}
 				
