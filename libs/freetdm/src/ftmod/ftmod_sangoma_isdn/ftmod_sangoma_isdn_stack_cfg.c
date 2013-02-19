@@ -712,14 +712,12 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 #endif /* ISDN_SRV */
 
 	if (signal_data->switchtype == SNGISDN_SWITCH_QSIG) {
-		cfg.t.cfg.s.inDLSAP.ackOpt = TRUE;
 		cfg.t.cfg.s.inDLSAP.intType = SYM_USER;
 		cfg.t.cfg.s.inDLSAP.clrGlr = TRUE;			/* in case of glare, clear local call */
 		cfg.t.cfg.s.inDLSAP.statEnqOpt = FALSE;
 		cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
 	} else {
 		if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
-			cfg.t.cfg.s.inDLSAP.ackOpt = TRUE;
 			cfg.t.cfg.s.inDLSAP.intType = NETWORK;
 			cfg.t.cfg.s.inDLSAP.clrGlr = FALSE;			/* in case of glare, do not clear local call */
 			cfg.t.cfg.s.inDLSAP.statEnqOpt = TRUE;
@@ -730,12 +728,21 @@ ftdm_status_t sngisdn_stack_cfg_q931_dlsap(ftdm_span_t *span)
 				cfg.t.cfg.s.inDLSAP.rstOpt = TRUE;
 			}
 		} else {
-			cfg.t.cfg.s.inDLSAP.ackOpt = FALSE;
 			cfg.t.cfg.s.inDLSAP.intType = USER;
 			cfg.t.cfg.s.inDLSAP.clrGlr = TRUE;			/* in case of glare, clear local call */
 			cfg.t.cfg.s.inDLSAP.statEnqOpt = FALSE;
 			cfg.t.cfg.s.inDLSAP.rstOpt = FALSE;
 		}
+	}
+
+	if (signal_data->switchtype == SNGISDN_SWITCH_QSIG ||
+	    signal_data->switchtype == SNGISDN_SWITCH_5ESS) {
+
+		cfg.t.cfg.s.inDLSAP.ackOpt = TRUE;
+	} else if (signal_data->signalling == SNGISDN_SIGNALING_NET) {
+		cfg.t.cfg.s.inDLSAP.ackOpt = TRUE;
+	} else {
+		cfg.t.cfg.s.inDLSAP.ackOpt = FALSE;
 	}
 
 	if (signal_data->send_connect_ack != SNGISDN_OPT_DEFAULT) {
