@@ -38956,6 +38956,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_SetTtsParameters(void * jarg1, ch
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_set_tts_params(void * jarg1, char * jarg2, char * jarg3) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  (arg1)->set_tts_params(arg2,arg3);
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_CollectDigits__SWIG_0(void * jarg1, int jarg2) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;

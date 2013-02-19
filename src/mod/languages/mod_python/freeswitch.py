@@ -290,6 +290,7 @@ class CoreSession(_object):
     def setDTMFCallback(*args): return _freeswitch.CoreSession_setDTMFCallback(*args)
     def speak(*args): return _freeswitch.CoreSession_speak(*args)
     def set_tts_parms(*args): return _freeswitch.CoreSession_set_tts_parms(*args)
+    def set_tts_params(*args): return _freeswitch.CoreSession_set_tts_params(*args)
     def collectDigits(*args): return _freeswitch.CoreSession_collectDigits(*args)
     def getDigits(*args): return _freeswitch.CoreSession_getDigits(*args)
     def transfer(*args): return _freeswitch.CoreSession_transfer(*args)

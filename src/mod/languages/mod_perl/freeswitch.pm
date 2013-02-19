@@ -431,6 +431,7 @@ sub DESTROY {
 *setDTMFCallback = *freeswitchc::CoreSession_setDTMFCallback;
 *speak = *freeswitchc::CoreSession_speak;
 *set_tts_parms = *freeswitchc::CoreSession_set_tts_parms;
+*set_tts_params = *freeswitchc::CoreSession_set_tts_params;
 *collectDigits = *freeswitchc::CoreSession_collectDigits;
 *getDigits = *freeswitchc::CoreSession_getDigits;
 *transfer = *freeswitchc::CoreSession_transfer;
