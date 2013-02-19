@@ -194,7 +194,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		fh->pre_buffer_data = switch_core_alloc(fh->memory_pool, fh->pre_buffer_datalen * fh->channels);
 	}
 
-	if (fh->channels > 1 && (flags & SWITCH_FILE_FLAG_READ)) {
+	if (fh->channels > 1 && (flags & SWITCH_FILE_FLAG_READ) && !(fh->flags & SWITCH_FILE_NOMUX)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File has %d channels, muxing to mono will occur.\n", fh->channels);
 	}
 
@@ -253,7 +253,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 					switch_set_flag(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
 					fh->samples_in += rlen;
-					if (fh->channels > 1) {
+					if (fh->channels > 1 && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
 						switch_mux_channels((int16_t *) fh->pre_buffer_data, rlen, fh->channels);
 					}
 					switch_buffer_write(fh->pre_buffer, fh->pre_buffer_data, asis ? rlen : rlen * 2);
@@ -280,7 +280,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 
 		fh->samples_in += *len;
 
-		if (fh->channels > 1) {
+		if (fh->channels > 1 && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
 			switch_mux_channels((int16_t *) data, *len, fh->channels);
 		}
 

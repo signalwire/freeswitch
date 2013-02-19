@@ -2756,6 +2756,7 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 	handle->speed = context->fh.speed;
 	handle->interval = context->fh.interval;
 	handle->channels = context->fh.channels;
+	handle->flags |= SWITCH_FILE_NOMUX;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
 		switch_set_flag(handle, SWITCH_FILE_NATIVE);
