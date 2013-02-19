@@ -2140,6 +2140,9 @@ SWITCH_DECLARE(void) switch_core_set_signal_handlers(void)
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif
+#ifdef SIGALRM
+	signal(SIGALRM, SIG_IGN);
+#endif
 #ifdef SIGQUIT
 	signal(SIGQUIT, SIG_IGN);
 #endif
