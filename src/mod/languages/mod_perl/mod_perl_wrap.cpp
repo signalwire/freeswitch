@@ -6526,6 +6526,55 @@ XS(_wrap_CoreSession_set_tts_parms) {
 }
 
 
+XS(_wrap_CoreSession_set_tts_params) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: CoreSession_set_tts_params(self,tts_name,voice_name);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_set_tts_params" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_set_tts_params" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_set_tts_params" "', argument " "3"" of type '" "char *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    (arg1)->set_tts_params(arg2,arg3);
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_CoreSession_collectDigits__SWIG_0) {
   {
     CoreSession *arg1 = (CoreSession *) 0 ;
@@ -9797,6 +9846,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_setDTMFCallback", _wrap_CoreSession_setDTMFCallback},
 {"freeswitchc::CoreSession_speak", _wrap_CoreSession_speak},
 {"freeswitchc::CoreSession_set_tts_parms", _wrap_CoreSession_set_tts_parms},
+{"freeswitchc::CoreSession_set_tts_params", _wrap_CoreSession_set_tts_params},
 {"freeswitchc::CoreSession_collectDigits", _wrap_CoreSession_collectDigits},
 {"freeswitchc::CoreSession_getDigits", _wrap_CoreSession_getDigits},
 {"freeswitchc::CoreSession_transfer", _wrap_CoreSession_transfer},

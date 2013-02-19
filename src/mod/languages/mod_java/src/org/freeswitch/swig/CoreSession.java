@@ -197,6 +197,10 @@ public class CoreSession {
     freeswitchJNI.CoreSession_set_tts_parms(swigCPtr, this, tts_name, voice_name);
   }
 
+  public void set_tts_params(String tts_name, String voice_name) {
+    freeswitchJNI.CoreSession_set_tts_params(swigCPtr, this, tts_name, voice_name);
+  }
+
   public int collectDigits(int abs_timeout) {
     return freeswitchJNI.CoreSession_collectDigits__SWIG_0(swigCPtr, this, abs_timeout);
   }

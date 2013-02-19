@@ -370,6 +370,10 @@ public class CoreSession : IDisposable {
     freeswitchPINVOKE.CoreSession_SetTtsParameters(swigCPtr, tts_name, voice_name);
   }
 
+  public void set_tts_params(string tts_name, string voice_name) {
+    freeswitchPINVOKE.CoreSession_set_tts_params(swigCPtr, tts_name, voice_name);
+  }
+
   public int CollectDigits(int abs_timeout) {
     int ret = freeswitchPINVOKE.CoreSession_CollectDigits__SWIG_0(swigCPtr, abs_timeout);
     return ret;
@@ -15807,6 +15811,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_SetTtsParameters")]
   public static extern void CoreSession_SetTtsParameters(HandleRef jarg1, string jarg2, string jarg3);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_set_tts_params")]
+  public static extern void CoreSession_set_tts_params(HandleRef jarg1, string jarg2, string jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_CollectDigits__SWIG_0")]
   public static extern int CoreSession_CollectDigits__SWIG_0(HandleRef jarg1, int jarg2);
 
@@ -27871,7 +27878,8 @@ namespace FreeSWITCH.Native {
   SWITCH_FILE_DONE = (1 << 13),
   SWITCH_FILE_BUFFER_DONE = (1 << 14),
   SWITCH_FILE_WRITE_APPEND = (1 << 15),
-  SWITCH_FILE_WRITE_OVER = (1 << 16)
+  SWITCH_FILE_WRITE_OVER = (1 << 16),
+  SWITCH_FILE_NOMUX = (1 << 17)
 }
 
 }
