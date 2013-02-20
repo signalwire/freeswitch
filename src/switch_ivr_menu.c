@@ -157,6 +157,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 		menu->exit_sound = switch_core_strdup(menu->pool, exit_sound);
 	}
 
+	if (!zstr(confirm_key)) {
+		menu->confirm_key = switch_core_strdup(menu->pool, confirm_key);
+	}
+
 	if (!zstr(confirm_macro)) {
 		menu->confirm_macro = switch_core_strdup(menu->pool, confirm_macro);
 	}
