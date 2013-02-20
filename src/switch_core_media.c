@@ -1946,6 +1946,58 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		}
 		
 	}
+	
+	/* still no candidates, so start searching for some based on sane deduction */
+
+	/* look for candidates on the same network */
+	if (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]) {
+		for (i = 0; i <= engine->ice_in.cand_idx && (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]); i++) {
+			if (!engine->ice_in.chosen[0] && engine->ice_in.cands[i][0].component_id == 1 && 
+				!engine->ice_in.cands[i][0].rport && switch_check_network_list_ip(engine->ice_in.cands[i][0].con_addr, "localnet.auto")) {
+				engine->ice_in.chosen[0] = i;
+				engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, "No RTP candidate found; defaulting to the first local one.\n");
+			}
+			if (!engine->ice_in.chosen[1] && engine->ice_in.cands[i][1].component_id == 2 && 
+				!engine->ice_in.cands[i][1].rport && switch_check_network_list_ip(engine->ice_in.cands[i][1].con_addr, "localnet.auto")) {
+				engine->ice_in.chosen[1] = i;
+				engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session),SWITCH_LOG_NOTICE, "No RTCP candidate found; defaulting to the first local one.\n");
+			}
+		}
+	}
+
+	/* look for candidates with srflx */
+	if (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]) {
+		for (i = 0; i <= engine->ice_in.cand_idx && (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]); i++) {
+			if (!engine->ice_in.chosen[0] && engine->ice_in.cands[i][0].component_id == 1 && engine->ice_in.cands[i][0].rport) {
+				engine->ice_in.chosen[0] = i;
+				engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, "No RTP candidate found; defaulting to the first srflx one.\n");
+			}
+			if (!engine->ice_in.chosen[1] && engine->ice_in.cands[i][1].component_id == 2 && engine->ice_in.cands[i][1].rport) {
+				engine->ice_in.chosen[1] = i;
+				engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session),SWITCH_LOG_NOTICE, "No RTCP candidate found; defaulting to the first srflx one.\n");
+			}
+		}
+	}
+
+	/* look for any candidates and hope for auto-adjust */
+	if (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]) {
+		for (i = 0; i <= engine->ice_in.cand_idx && (!engine->ice_in.chosen[0] || !engine->ice_in.chosen[1]); i++) {
+			if (!engine->ice_in.chosen[0] && engine->ice_in.cands[i][0].component_id == 1) {
+				engine->ice_in.chosen[0] = i;
+				engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, "No RTP candidate found; defaulting to the first one.\n");
+			}
+			if (!engine->ice_in.chosen[1] && engine->ice_in.cands[i][1].component_id == 2) {
+				engine->ice_in.chosen[1] = i;
+				engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, "No RTCP candidate found; defaulting to the first one.\n");
+			}
+		}
+	}
 
 	for (i = 0; i < 2; i++) {
 		if (engine->ice_in.cands[engine->ice_in.chosen[i]][i].ready) {

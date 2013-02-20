@@ -845,7 +845,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	}
 
 	if ((ice->type & ICE_VANILLA)) {
-		if (!ok && ice == &rtp_session->ice && pri && 
+		if (!ok && ice == &rtp_session->ice && rtp_session->rtcp_ice.ice_params && pri && 
 			*pri == rtp_session->rtcp_ice.ice_params->cands[rtp_session->rtcp_ice.ice_params->chosen[1]][1].priority) {
 			ice = &rtp_session->rtcp_ice;
 			ok = 1;
@@ -937,7 +937,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 	}
 
-	if (ok || ice->missed_count > 1) {
+	if (ok || (ice->missed_count > 3 && !ice->rready)) {
 		if ((packet->header.type == SWITCH_STUN_BINDING_RESPONSE)) {
 			if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 				rtp_session->ice.rready = 1;
@@ -996,13 +996,13 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 				switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
 
-				if (!is_rtcp) {
+				if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 					switch_rtp_set_remote_address(rtp_session, host, port, 0, SWITCH_FALSE, &err);
 				}
 
 				if (rtp_session->dtls) {
 
-					if (!is_rtcp) {
+					if (!is_rtcp || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 						switch_sockaddr_info_get(&rtp_session->dtls->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
 					}
 					

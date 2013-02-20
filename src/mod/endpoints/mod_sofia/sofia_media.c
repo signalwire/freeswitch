@@ -77,20 +77,20 @@ switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r
 	switch_assert(r_sdp != NULL);
 
 	if (zstr(r_sdp)) {
-		printf("BALLZ %d\n", __LINE__);return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if ((match = sofia_media_negotiate_sdp(tech_pvt->session, r_sdp))) {
 		if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
-			printf("BALLZ %d\n", __LINE__);return SWITCH_STATUS_FALSE;
+			return SWITCH_STATUS_FALSE;
 		}
 		if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-			printf("BALLZ %d\n", __LINE__);return SWITCH_STATUS_FALSE;
+			return SWITCH_STATUS_FALSE;
 		}
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
 		sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 		switch_channel_mark_pre_answered(tech_pvt->channel);
-		printf("BALLZ %d\n", __LINE__);return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 
