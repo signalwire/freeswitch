@@ -1001,38 +1001,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_release_file_handle(switch_core_sessi
 #define FILE_BLOCKSIZE 1024 * 8
 #define FILE_BUFSIZE 1024 * 64
 
-static void add_playback_vars_to_event(switch_core_session_t *session, switch_event_t *event, char *vars)
-{
-	char *tmp;
-
-	if (!session || !event || !vars)
-		return;
-
-	if ((tmp = switch_core_session_strdup(session, vars))) {
-		char *argv[128] = { 0 };
-		int argc, i;
-
-		if (!(argc = switch_separate_string(tmp, ',', argv, (sizeof(argv) / sizeof(argv[0])))))
-			return;
-
-		for (i = 0; i < argc; i++) {
-			char *var, *val;
-
-			if ((var = strchr(argv[i], '='))) {
-				*var = '\0';
-				val = var+1;
-				var = argv[i];
-
-				if (var && *var && val && *val) {
-					if ((var = switch_core_session_sprintf(session, "playback_variable_%s", var))) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
-					}
-				}
-			}
-		}
-	}
-}
-
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, const char *file, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1072,7 +1040,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_bool_t timeout_as_success = SWITCH_FALSE;
 	const char *var;
 	int more_data = 0;
-	char *playback_vars, *tmp;
 	switch_event_t *event;
 	uint32_t test_native = 0, last_native = 0;
 
@@ -1241,20 +1208,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 		}
 
-		/* Try to parse extra parameters for this playback (parameters within {} at the end of the filename */
-		playback_vars = NULL;
-		if ((tmp = strchr(file, '{'))) {
-			char *tfile, *e;
-			
-			if ((tfile = switch_core_session_strdup(session, tmp))) {
-				if ((e = switch_find_end_paren(tfile, '{', '}')) && *(e + 1) == '\0') {
-					*tmp = '\0';
-					*e = '\0';
-					playback_vars = tfile+1;
-				}
-			}
-		}
-
 		if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
 			int maybe = atoi(prebuf);
 			if (maybe > 0) {
@@ -1408,7 +1361,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "tone_stream");
 			}
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Path", file);
-			add_playback_vars_to_event(session, event, playback_vars); 
+			if (fh->params) {
+				switch_event_merge(event, fh->params);
+			}
 			switch_event_fire(&event);
 		}
 
@@ -1744,7 +1699,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			} else {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-Status", "done");
 			}
-			add_playback_vars_to_event(session, event, playback_vars); 
+			if (fh->params) {
+				switch_event_merge(event, fh->params);
+			}
 			switch_event_fire(&event);
 		}
 

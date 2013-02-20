@@ -4498,6 +4498,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	handle->seekable = context->fh.seekable;
 	handle->speed = context->fh.speed;
 	handle->interval = context->fh.interval;
+	handle->max_samples = 0;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
 		switch_set_flag(handle, SWITCH_FILE_NATIVE);

@@ -47,13 +47,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	char *rhs = NULL;
 	const char *spool_path = NULL;
 	int is_stream = 0;
-	char *fp = NULL, *params = NULL;
+	char *fp = NULL;
+	switch_event_t *params = NULL;
 	int to = 0;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	fh->samples_in = 0;
 
 	if (!fh->samplerate) {
 		if (!(fh->samplerate = rate)) {
@@ -78,25 +81,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
 	}
 
-	if (strchr(file_path, ';')) {
+	if (*file_path == '{') {
 		char *timeout;
-
+		char *new_fp;
 		fp = switch_core_strdup(fh->memory_pool, file_path);
-		file_path = fp;
 
-		if ((params = strchr(fp, ';'))) {
-			*params++ = '\0';
-
-			if ((timeout = switch_find_parameter(params, "timeout", fh->memory_pool))) {
+		if (switch_event_create_brackets(fp, '{', '}', ',', &fh->params, &new_fp, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+			if ((timeout = switch_event_get_header(fh->params, "timeout"))) {
 				if ((to = atoi(timeout)) < 1) {
 					to = 0;
 				}
 			}
-
+		} else {
+			new_fp = fp;
 		}
+
+		file_path = new_fp;
 	}
 
-	
 	if (switch_directory_exists(file_path, fh->memory_pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] is a directory not a file.\n", file_path);
 		status = SWITCH_STATUS_GENERR;
@@ -179,6 +181,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 	file_path = fh->spool_path ? fh->spool_path : fh->file_path;
 
+	if (params) {
+		fh->params = params;
+	}
 
 	if ((status = fh->file_interface->file_open(fh, file_path)) != SWITCH_STATUS_SUCCESS) {
 		if (fh->spool_path) {
@@ -231,6 +236,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 	switch_clear_flag(fh, SWITCH_FILE_OPEN);
 
+	if (fh->params) {
+		switch_event_destroy(&fh->params);
+	}
+
+	fh->samples_in = 0;
+	fh->max_samples = 0;
+	
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&fh->memory_pool);
 	}
@@ -584,6 +596,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	if (fh->params) {
+		switch_event_destroy(&fh->params);
+	}
+
+	fh->samples_in = 0;
+	fh->max_samples = 0;
 
 	if (fh->buffer) {
 		switch_buffer_destroy(&fh->buffer);
