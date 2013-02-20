@@ -252,7 +252,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 
   top:
 
-	if (fh->max_samples > 0 && fh->samples_in >= fh->max_samples) {
+	if (fh->max_samples > 0 && fh->samples_in >= (switch_size_t)fh->max_samples) {
 		*len = 0;
 		return SWITCH_STATUS_FALSE;
 	}
