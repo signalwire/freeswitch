@@ -64,6 +64,7 @@ typedef struct {
 	char output_text_color[12];
 } cli_profile_t;
 
+static int is_color = 1;
 static int warn_stop = 0;
 static int connected = 0;
 static int allow_ctl_c = 0;
@@ -598,7 +599,8 @@ static const char *usage_str =
 	"  -R, --reconnect                 Reconnect if disconnected\n"
 	"  -d, --debug=level               Debug Level (0 - 7)\n"
 	"  -b, --batchmode                 Batch mode\n"
-	"  -t, --timeout                   Timeout for API commands (in miliseconds)\n\n";
+	"  -t, --timeout                   Timeout for API commands (in miliseconds)\n"
+	"  -n, --no-color                  Disable color\n\n";
 
 static int usage(char *name){
 	printf(usage_str, name);
@@ -966,7 +968,7 @@ static const char *banner =
 
 static const char *inf = "Type /help <enter> to see a list of commands\n\n\n";
 
-static void print_banner(FILE *stream)
+static void print_banner(FILE *stream, int color)
 {
 	int x;
 	const char *use = NULL;
@@ -978,22 +980,36 @@ static void print_banner(FILE *stream)
 
 #ifdef WIN32
 	/* Print banner in yellow with blue background */
-	SetConsoleTextAttribute(hStdout, ESL_SEQ_FYELLOW | BACKGROUND_BLUE);
+	if (color) {
+		SetConsoleTextAttribute(hStdout, ESL_SEQ_FYELLOW | BACKGROUND_BLUE);
+	}
 	WriteFile(hStdout, banner, (DWORD) strlen(banner), NULL, NULL);
 	WriteFile(hStdout, use, (DWORD) strlen(use), NULL, NULL);
-	SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+	if (color) {
+		SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+	}
 
 	/* Print the rest info in default colors */
 	fprintf(stream, "\n%s\n", inf);
 #else
-	fprintf(stream,
-			"%s%s%s%s%s%s\n%s\n", 
-			ESL_SEQ_DEFAULT_COLOR,
-			ESL_SEQ_FYELLOW, ESL_SEQ_BBLUE,
-			banner,
-			use, ESL_SEQ_DEFAULT_COLOR, inf);
 
-	fprintf(stream, "%s", output_text_color);
+	if (color) {
+		fprintf(stream, "%s%s%s", ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FYELLOW, ESL_SEQ_BBLUE);
+	}
+
+	fprintf(stream, "%s%s", banner, use);
+
+
+	if (color) {
+		fprintf(stream, "%s", ESL_SEQ_DEFAULT_COLOR);
+	}
+
+	fprintf(stream, "\n%s\n", inf);
+
+
+	if (color) {
+		fprintf(stream, "%s", output_text_color);
+	}
 #endif
 
 	if (x < 160) {
@@ -1238,6 +1254,7 @@ int main(int argc, char *argv[])
 	int opt;
 	static struct option options[] = {
 		{"help", 0, 0, 'h'},
+		{"no-color", 0, 0, 'n'},
 		{"host", 1, 0, 'H'},
 		{"port", 1, 0, 'P'},
 		{"user", 1, 0, 'u'},
@@ -1269,13 +1286,17 @@ int main(int argc, char *argv[])
 	int argv_quiet = 0;
 	int argv_batch = 0;
 	int loops = 2, reconnect = 0, timeout = 0;
-
+	char *ccheck;
 
 #ifdef WIN32
 	feature_level = 0;
 #else
 	feature_level = 1;
 #endif
+
+	if ((ccheck = getenv("FS_CLI_COLOR"))) {
+		is_color = esl_true(ccheck);
+	}
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
@@ -1299,7 +1320,7 @@ int main(int argc, char *argv[])
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:t:qrRhib?", options, &option_index);
+		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:t:qrRhib?n", options, &option_index);
 		if (opt == -1) break;
 		switch (opt) {
 			case 'H':
@@ -1314,6 +1335,9 @@ int main(int argc, char *argv[])
 					printf("ERROR: Port must be in range 1 - 65535\n");
 					argv_error = 1;
 				}
+				break;
+			case 'n':
+				is_color = 0;
 				break;
 			case 'u':
 				esl_set_string(temp_user, optarg);
@@ -1359,7 +1383,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'h':
 			case '?':
-				print_banner(stdout);
+				print_banner(stdout, is_color);
 				usage(argv[0]);
 				return 0;
 			default:
@@ -1553,7 +1577,7 @@ int main(int argc, char *argv[])
 	if (global_profile->batch_mode) {
 		setvbuf(stdout, (char*)NULL, _IONBF, 0);
 	}
-	print_banner(stdout);
+	print_banner(stdout, is_color);
 	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
 	output_printf("%s\n", handle.last_sr_reply);
 	while (running > 0) {
