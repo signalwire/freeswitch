@@ -47,6 +47,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	char *rhs = NULL;
 	const char *spool_path = NULL;
 	int is_stream = 0;
+	char *fp = NULL, *params = NULL;
+	int to = 0;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
@@ -76,6 +78,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
 	}
 
+	if (strchr(file_path, ';')) {
+		char *timeout;
+
+		fp = switch_core_strdup(fh->memory_pool, file_path);
+		file_path = fp;
+
+		if ((params = strchr(fp, ';'))) {
+			*params++ = '\0';
+
+			if ((timeout = switch_find_parameter(params, "timeout", fh->memory_pool))) {
+				if ((to = atoi(timeout)) < 1) {
+					to = 0;
+				}
+			}
+
+		}
+	}
+
+	
 	if (switch_directory_exists(file_path, fh->memory_pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] is a directory not a file.\n", file_path);
 		status = SWITCH_STATUS_GENERR;
@@ -175,6 +196,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_goto_status(status, fail);
 	}
 
+	if (to) {
+		fh->max_samples = (fh->samplerate / 1000) * to;
+	}
+
+
 	if ((flags & SWITCH_FILE_FLAG_READ)) {
 		fh->native_rate = fh->samplerate;
 	} else {
@@ -225,6 +251,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	}
 
   top:
+
+	if (fh->max_samples > 0 && fh->samples_in >= fh->max_samples) {
+		*len = 0;
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (fh->buffer && switch_buffer_inuse(fh->buffer) >= *len * 2) {
 		*len = switch_buffer_read(fh->buffer, data, orig_len * 2) / 2;

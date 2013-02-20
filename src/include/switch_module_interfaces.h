@@ -351,6 +351,7 @@ struct switch_file_handle {
 	char *file_path;
 	char *spool_path;
 	const char *prefix;
+	int max_samples;
 };
 
 /*! \brief Abstract interface to an asr module */
