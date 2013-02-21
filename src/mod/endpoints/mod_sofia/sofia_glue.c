@@ -3109,6 +3109,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		switch_rtp_set_default_payload(tech_pvt->rtp_session, tech_pvt->pt);
+		switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->agreed_pt);
 	}
 
  end:
