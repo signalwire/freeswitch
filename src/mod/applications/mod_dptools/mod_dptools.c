@@ -609,6 +609,24 @@ SWITCH_STANDARD_APP(dtmf_unblock_function)
 	switch_ivr_unblock_dtmf_session(session);
 }
 
+SWITCH_STANDARD_APP(media_reset_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *name = switch_channel_get_name(channel);
+
+	if (switch_channel_media_ready(channel)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s This function does not work once media has been established.\n", name);
+		return;
+	}
+
+	switch_channel_clear_flag(channel, CF_PROXY_MODE);
+	switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
+	switch_channel_set_variable(channel, "bypass_media", NULL);
+	switch_channel_set_variable(channel, "proxy_media", NULL);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%sReset MEDIA flags.\n", name);
+}
+
 SWITCH_STANDARD_APP(dtmf_block_function)
 {
 	switch_ivr_block_dtmf_session(session);
@@ -5615,6 +5633,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   sched_heartbeat_function, SCHED_HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "enable_heartbeat", "Enable Media Heartbeat", "Enable Media Heartbeat",
 				   heartbeat_function, HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "media_reset", "Reset all bypass/proxy media flags", "Reset all bypass/proxy media flags", media_reset_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mkdir", "Create a directory", "Create a directory", mkdir_function, MKDIR_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "rename", "Rename file", "Rename file", rename_function, RENAME_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "soft_hold", "Put a bridged channel on hold", "Put a bridged channel on hold", soft_hold_function, SOFT_HOLD_SYNTAX,
