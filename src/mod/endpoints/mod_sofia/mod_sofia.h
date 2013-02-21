@@ -392,6 +392,7 @@ struct mod_sofia_globals {
 	int rewrite_multicasted_fs_path;
 	int presence_flush;
 	switch_thread_t *presence_thread;
+	uint32_t max_reg_threads;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 

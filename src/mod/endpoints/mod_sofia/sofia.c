@@ -1506,10 +1506,16 @@ static void our_sofia_event_callback(nua_event_t event,
 	}
 }
 
+static uint32_t DE_THREAD_CNT = 0;
+
 void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void *obj)
 {
 	sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) obj;
 	switch_memory_pool_t *pool = NULL;
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	DE_THREAD_CNT++;
+	switch_mutex_unlock(mod_sofia_globals.mutex); 
 
 	if (de) {
 		pool = de->pool;
@@ -1520,6 +1526,10 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	DE_THREAD_CNT--;
+	switch_mutex_unlock(mod_sofia_globals.mutex); 
 
 	return NULL;
 }
@@ -1660,7 +1670,8 @@ void sofia_queue_message(sofia_dispatch_event_t *de)
 	}
 
 
-	if (de->profile && sofia_test_pflag(de->profile, PFLAG_THREAD_PER_REG) && de->data->e_event == nua_i_register) {
+	if (de->profile && sofia_test_pflag(de->profile, PFLAG_THREAD_PER_REG) && 
+		de->data->e_event == nua_i_register && DE_THREAD_CNT < mod_sofia_globals.max_reg_threads) {
 		sofia_process_dispatch_event_in_thread(&de);
 		return;
 	}
@@ -3430,6 +3441,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				mod_sofia_globals.debug_presence = atoi(val);
 			} else if (!strcasecmp(var, "debug-sla")) {
 				mod_sofia_globals.debug_sla = atoi(val);
+			} else if (!strcasecmp(var, "max-reg-threads") && val) {
+				int x = atoi(val);
+
+				if (x > 0) {
+					mod_sofia_globals.max_reg_threads = x;
+				}
+				
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
 			} else if (!strcasecmp(var, "reg-deny-binding-fetch-and-no-lookup")) {          /* backwards compatibility */
@@ -3831,7 +3849,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 						}
-					} else if (!strcasecmp(var, "inbound-reg-in-new-thread")) {
+					} else if (!strcasecmp(var, "inbound-reg-in-new-thread") && val) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_THREAD_PER_REG);
 						} else {
