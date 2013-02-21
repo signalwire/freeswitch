@@ -1805,6 +1805,11 @@ static void generate_local_fingerprint(switch_media_handle_t *smh, switch_media_
 	}
 }
 
+//?
+static int dtls_ok(switch_core_session_t *session)
+{
+	return switch_channel_test_flag(session->channel, CF_DTLS_OK);
+}
 
 //?
 static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_session_t *sdp, sdp_media_t *m)
@@ -1812,10 +1817,20 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	switch_rtp_engine_t *engine = &smh->engines[type];
 	sdp_attribute_t *attr;
 	int i = 0, got_rtcp_mux = 0;
+	const char *tmp;
 
 	engine->ice_in.chosen[0] = 0;
 	engine->ice_in.chosen[1] = 0;
 	engine->ice_in.cand_idx = 0;
+
+
+	if (!(tmp = switch_channel_get_variable(smh->session->channel, "webrtc_enable_dtls")) || switch_true(tmp)) {
+		switch_channel_set_flag(smh->session->channel, CF_DTLS_OK);
+	}
+
+	if (!(tmp = switch_channel_get_variable(smh->session->channel, "enable_dtls")) || switch_true(tmp)) {
+		switch_channel_set_flag(smh->session->channel, CF_DTLS_OK);
+	}
 
 	if (m) {
 		attr = m->m_attributes;
@@ -1840,7 +1855,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		} else if (!strcasecmp(attr->a_name, "ice-options")) {
 			engine->ice_in.options = switch_core_session_strdup(smh->session, attr->a_value);
 			
-		} else if (switch_rtp_has_dtls() && !strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
+		} else if (switch_rtp_has_dtls() && dtls_ok(smh->session) && !strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
 			char *p;
 
 			engine->remote_dtls_fingerprint.type = switch_core_session_strdup(smh->session, attr->a_value);
@@ -2047,11 +2062,16 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
 {
 	switch_media_handle_t *smh;
+	const char *tmp;
 
 	switch_assert(session);
 
 	if (!(smh = session->media_handle)) {
 		return;
+	}
+
+	if (!(tmp = switch_channel_get_variable(session->channel, "webrtc_enable_dtls")) || switch_true(tmp)) {
+		switch_channel_set_flag(session->channel, CF_DTLS_OK);
 	}
 
 	switch_channel_set_flag(session->channel, CF_VERBOSE_SDP);
@@ -2381,7 +2401,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
 
-			if (switch_rtp_has_dtls()) {
+			if (switch_rtp_has_dtls() && dtls_ok(session)) {
 				for (attr = m->m_attributes; attr; attr = attr->a_next) {
 					
 					if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
@@ -2773,7 +2793,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 
-				if (switch_rtp_has_dtls()) {
+				if (switch_rtp_has_dtls() && dtls_ok(session)) {
 					for (attr = m->m_attributes; attr; attr = attr->a_next) {
 						if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
 							got_video_crypto = 1;
@@ -3894,7 +3914,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		}
 
-		if (!zstr(a_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls()) {
+		if (!zstr(a_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(smh->session)) {
 			dtls_type_t xtype, dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 
 
@@ -4291,7 +4311,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				}
 					
 
-				if (!zstr(v_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls()) {
+				if (!zstr(v_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(smh->session)) {
 					dtls_type_t xtype, 
 						dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 					xtype = DTLS_TYPE_RTP;
@@ -4773,6 +4793,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
 	const char *local_sdp_audio_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_TRUE);
 	const char *local_sdp_video_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_TRUE);
+	const char *tmp;
 	switch_rtp_engine_t *a_engine, *v_engine;
 	switch_media_handle_t *smh;
 	ice_t *ice_out;
@@ -4786,6 +4807,15 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
+	if (!(tmp = switch_channel_get_variable(smh->session->channel, "enable_dtls")) || switch_true(tmp)) {
+		switch_channel_set_flag(session->channel, CF_DTLS_OK);
+	}
+
+	if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		if (!(tmp = switch_channel_get_variable(session->channel, "webrtc_enable_dtls")) || switch_true(tmp)) {
+			switch_channel_set_flag(session->channel, CF_DTLS_OK);
+		}
+	}
 
 	if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 
@@ -4797,7 +4827,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			smh->mparams->rtcp_video_interval_msec = "5000";
 		}
 
-		if ( switch_rtp_has_dtls() ) {
+		if ( switch_rtp_has_dtls() && dtls_ok(session)) {
 			if (switch_channel_test_flag(session->channel, CF_WEBRTC) ||
 				switch_true(switch_channel_get_variable(smh->session->channel, "rtp_use_dtls"))) {
 				switch_channel_set_flag(smh->session->channel, CF_DTLS);
