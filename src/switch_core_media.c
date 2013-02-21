@@ -1735,6 +1735,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 
 	if (switch_rtp_ready(a_engine->rtp_session)) {
 		switch_rtp_set_default_payload(a_engine->rtp_session, a_engine->codec_params.pt);
+		switch_rtp_set_recv_pt(a_engine->rtp_session, a_engine->read_codec.agreed_pt);
 	}
 
  end:
@@ -2104,7 +2105,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
-
 
 	codec_array = smh->codecs;
 	total_codecs = smh->mparams->num_codecs;
@@ -6290,7 +6290,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_MEDIA_RENEG:
 		{
 			switch_core_session_t *nsession;
-			
+
 			if (msg->string_arg) {
 				switch_channel_set_variable(session->channel, "absolute_codec_string", NULL);
 				if (*msg->string_arg == '=') {
@@ -6311,6 +6311,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				switch_core_media_check_video_codecs(session);
 				switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 1);
 			}
+
+			switch_media_handle_set_media_flag(smh, SCMF_RENEG_ON_REINVITE);
 			
 			if (msg->numeric_arg && switch_core_session_get_partner(session, &nsession) == SWITCH_STATUS_SUCCESS) {
 				msg->numeric_arg = 0;
