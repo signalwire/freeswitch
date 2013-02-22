@@ -927,7 +927,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_
 
 	switch_assert(session != NULL);
 
-	if (session->message_queue && switch_queue_size(session->message_queue)) {
+	if (session->message_queue) {
 		if ((status = (switch_status_t) switch_queue_trypop(session->message_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			*message = (switch_core_session_message_t *) pop;
 			if ((*message)->delivery_time && (*message)->delivery_time > switch_epoch_time_now(NULL)) {
@@ -968,7 +968,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_signal_data(switch_cor
 	switch_assert(session != NULL);
 
 	if (session->signal_data_queue) {
-		if (switch_queue_trypush(session->signal_data_queue, signal_data) == SWITCH_STATUS_SUCCESS) {
+		if (switch_queue_push(session->signal_data_queue, signal_data) == SWITCH_STATUS_SUCCESS) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
 
@@ -988,7 +988,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_signal_data(switch_c
 
 	switch_assert(session != NULL);
 
-	if (session->signal_data_queue && switch_queue_size(session->signal_data_queue)) {
+	if (session->signal_data_queue) {
 		if ((status = (switch_status_t) switch_queue_trypop(session->signal_data_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			*signal_data = pop;
 		}
@@ -1257,14 +1257,33 @@ SWITCH_DECLARE(switch_mutex_t *) switch_core_session_get_mutex(switch_core_sessi
 SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(switch_core_session_t *session)
 {
 	switch_status_t status;
+	int tries = 0;
 
-	/* If trylock fails the signal is already awake so we needn't bother */
+	/* If trylock fails the signal is already awake so we needn't bother ..... or do we????*/
+
+ top:
 
 	status = switch_mutex_trylock(session->mutex);
-
+	
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(session->cond);
 		switch_mutex_unlock(session->mutex);
+	} else {
+		if (switch_channel_state_thread_trylock(session->channel) == SWITCH_STATUS_SUCCESS) {
+			/* We've beat them for sure, as soon as we release this lock, they will be checking their queue on the next line. */
+			switch_channel_state_thread_unlock(session->channel);
+		} else {
+			/* What luck!  The channel has already started going to sleep *after* we checked if we need to wake it up.
+			   It will miss any messages in its queue because they were inserted after *it* checked its queue.  (catch-22)
+			   So, it's not asleep yet, but it's too late for us to be sure they know we want them to stay awake and check its queue again.
+			   Now *we* need to sleep instead but just for 1ms so we can circle back and try again.
+			   This is so rare (yet possible) to happen that we can be fairly certian it will not happen 2x in a row but we'll try 10x just in case.
+			 */
+			if (++tries < 10) {
+				switch_cond_next();
+				goto top;
+			}
+		}
 	}
 
 	return status;

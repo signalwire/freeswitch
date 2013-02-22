@@ -2288,6 +2288,13 @@ SWITCH_DECLARE(void) switch_channel_state_thread_lock(switch_channel_t *channel)
 	switch_mutex_lock(channel->thread_mutex);
 }
 
+
+SWITCH_DECLARE(switch_status_t) switch_channel_state_thread_trylock(switch_channel_t *channel)
+{
+	return switch_mutex_trylock(channel->thread_mutex);
+}
+
+
 SWITCH_DECLARE(void) switch_channel_state_thread_unlock(switch_channel_t *channel)
 {
 	switch_mutex_unlock(channel->thread_mutex);

@@ -851,10 +851,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_
 		x++;
 	}
 
-	if (x) {
-		switch_ivr_sleep(session, 0, SWITCH_TRUE, NULL);
-	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -649,6 +649,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid(switch_channel_t *c
 SWITCH_DECLARE(switch_hold_record_t *) switch_channel_get_hold_record(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_state_thread_lock(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_state_thread_unlock(switch_channel_t *channel);
+SWITCH_DECLARE(switch_status_t) switch_channel_state_thread_trylock(switch_channel_t *channel);
 
 SWITCH_END_EXTERN_C
 #endif
