@@ -839,10 +839,8 @@ SWITCH_DECLARE(int32_t) set_auto_priority(void)
 
 	if (!runtime.cpu_count) runtime.cpu_count = 1;
 
-	/* If we have more than 1 cpu, we should use realtime priority so we can have priority threads */
-	if (runtime.cpu_count > 1) {
-		return set_realtime_priority();
-	}
+	return set_realtime_priority();
+
 
 	return 0;
 }
