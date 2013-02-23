@@ -1998,13 +1998,15 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 	if (state <= CS_DESTROY) {
 		switch_event_t *event;
 
-		if (state < CS_HANGUP) {
-			if (state == CS_ROUTING) {
-				switch_channel_set_callstate(channel, CCS_RINGING);
-			} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-				switch_channel_set_callstate(channel, CCS_ACTIVE);
-			} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
-				switch_channel_set_callstate(channel, CCS_EARLY);
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+			if (state < CS_HANGUP) {
+				if (state == CS_ROUTING) {
+					switch_channel_set_callstate(channel, CCS_RINGING);
+				} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+					switch_channel_set_callstate(channel, CCS_ACTIVE);
+				} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+					switch_channel_set_callstate(channel, CCS_EARLY);
+				}
 			}
 		}
 
@@ -3038,6 +3040,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 	if (!switch_channel_test_flag(channel, CF_RING_READY) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
 		switch_channel_set_flag_value(channel, CF_RING_READY, rv);
+		switch_channel_set_callstate(channel, CCS_RINGING);
+
 		if (channel->caller_profile && channel->caller_profile->times) {
 			switch_mutex_lock(channel->profile_mutex);
 			channel->caller_profile->times->progress = switch_micro_time_now();
