@@ -842,7 +842,7 @@ SWITCH_DECLARE(int32_t) set_auto_priority(void)
 	return set_realtime_priority();
 
 
-	return 0;
+	// ERROR: code not reachable on Windows Visual Studio Express 2008 return 0;
 }
 
 SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
