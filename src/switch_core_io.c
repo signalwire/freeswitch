@@ -221,7 +221,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			status = SWITCH_STATUS_FALSE;
 			goto even_more_done;			
 		}
-
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {
@@ -247,6 +246,49 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
+
+	if (session->bugs && !((*frame)->flags & SFF_NOT_AUDIO) && !((*frame)->flags & SFF_CNG)) {
+		switch_media_bug_t *bp;
+		switch_bool_t ok = SWITCH_TRUE;
+		int prune = 0;
+		
+		switch_thread_rwlock_rdlock(session->bug_rwlock);
+
+		for (bp = session->bugs; bp; bp = bp->next) {
+			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				continue;
+			}
+			
+			if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+				continue;
+			}
+			if (switch_test_flag(bp, SMBF_PRUNE)) {
+				prune++;
+				continue;
+			}
+			
+			if (bp->ready) {
+				if (switch_test_flag(bp, SMBF_TAP_NATIVE_READ)) {
+					if (bp->callback) {
+						bp->native_read_frame = *frame;
+						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_TAP_NATIVE_READ);
+						bp->native_read_frame = NULL;
+					}
+				}
+			}
+			
+			if ((bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL)) || ok == SWITCH_FALSE) {
+				switch_set_flag(bp, SMBF_PRUNE);
+				prune++;
+			}
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+
+		if (prune) {
+			switch_core_media_bug_prune(session);
+		}
+	}
+
 	codec_impl = *(*frame)->codec->implementation;
 
 	if (session->read_codec->implementation->impl_id != codec_impl.impl_id) {
@@ -255,11 +297,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	
 	if (codec_impl.actual_samples_per_second != session->read_impl.actual_samples_per_second) {
 		do_resample = 1;
-	}
-
-	if (session->bugs && !need_codec) {
-		do_bugs = 1;
-		need_codec = 1;
 	}
 
 	if (switch_test_flag(*frame, SFF_CNG)) {
@@ -769,6 +806,50 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 	switch_io_event_hook_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
+
+	if (session->bugs && !(frame->flags & SFF_NOT_AUDIO)) {
+		switch_media_bug_t *bp;
+		switch_bool_t ok = SWITCH_TRUE;
+		int prune = 0;
+
+		switch_thread_rwlock_rdlock(session->bug_rwlock);
+
+		for (bp = session->bugs; bp; bp = bp->next) {
+			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				continue;
+			}
+			
+			if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+				continue;
+			}
+			if (switch_test_flag(bp, SMBF_PRUNE)) {
+				prune++;
+				continue;
+			}
+			
+			if (bp->ready) {
+				if (switch_test_flag(bp, SMBF_TAP_NATIVE_WRITE)) {
+					if (bp->callback) {
+						bp->native_write_frame = frame;
+						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_TAP_NATIVE_WRITE);
+						bp->native_write_frame = NULL;
+					}
+				}
+			}
+			
+			if ((bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL)) || ok == SWITCH_FALSE) {
+				switch_set_flag(bp, SMBF_PRUNE);
+				prune++;
+			}
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+
+		if (prune) {
+			switch_core_media_bug_prune(session);
+		}
+	}
+
+
 	if (session->endpoint_interface->io_routines->write_frame) {
 
 		if ((status = session->endpoint_interface->io_routines->write_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
@@ -869,11 +950,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (session->write_codec && !frame->codec) {
-		need_codec = TRUE;
-	}
-
-	if (session->bugs && !need_codec) {
-		do_bugs = TRUE;
 		need_codec = TRUE;
 	}
 

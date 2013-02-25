@@ -203,6 +203,11 @@ SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(_In_ switch_media_bug
 */
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_write_replace_frame(_In_ switch_media_bug_t *bug);
 
+
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_native_read_frame(switch_media_bug_t *bug);
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_native_write_frame(switch_media_bug_t *bug);
+
+
 /*!
   \brief Set a return replace frame
   \param bug the bug to set the frame on

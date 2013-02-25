@@ -184,6 +184,8 @@ struct switch_media_bug {
 	switch_frame_t *read_replace_frame_out;
 	switch_frame_t *write_replace_frame_in;
 	switch_frame_t *write_replace_frame_out;
+	switch_frame_t *native_read_frame;
+	switch_frame_t *native_write_frame;
 	switch_media_bug_callback_t callback;
 	switch_mutex_t *read_mutex;
 	switch_mutex_t *write_mutex;

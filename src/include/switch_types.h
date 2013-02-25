@@ -443,6 +443,8 @@ typedef enum {
 	SWITCH_ABC_TYPE_WRITE_REPLACE,
 	SWITCH_ABC_TYPE_READ_REPLACE,
 	SWITCH_ABC_TYPE_READ_PING,
+	SWITCH_ABC_TYPE_TAP_NATIVE_READ,
+	SWITCH_ABC_TYPE_TAP_NATIVE_WRITE,
 	SWITCH_ABC_TYPE_CLOSE
 } switch_abc_type_t;
 
@@ -1498,7 +1500,9 @@ typedef enum {
 	SMBF_PRUNE = (1 << 8),
 	SMBF_NO_PAUSE = (1 << 9),
 	SMBF_STEREO_SWAP = (1 << 10),
-	SMBF_LOCK = (1 << 11)
+	SMBF_LOCK = (1 << 11),
+	SMBF_TAP_NATIVE_READ = (1 << 12),
+	SMBF_TAP_NATIVE_WRITE = (1 << 13)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 

@@ -1078,6 +1078,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 struct record_helper {
 	char *file;
 	switch_file_handle_t *fh;
+	switch_file_handle_t in_fh;
+	switch_file_handle_t out_fh;
+	int native;
 	uint32_t packet_len;
 	int min_sec;
 	switch_bool_t hangup_on_error;
@@ -1089,7 +1092,8 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct record_helper *rh = (struct record_helper *) user_data;
 	switch_event_t *event;
-
+	switch_frame_t *nframe;
+	switch_size_t len;
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
@@ -1099,6 +1103,22 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_event_fire(&event);
 		}
 
+		break;
+	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
+		{
+			nframe = switch_core_media_bug_get_native_read_frame(bug);
+			len = nframe->datalen;
+			printf("WRITE IN %d\n", nframe->datalen);
+			switch_core_file_write(&rh->in_fh, nframe->data, &len);
+		}
+		break;
+	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
+		{
+			nframe = switch_core_media_bug_get_native_write_frame(bug);
+			printf("WRITE OUT %d\n", nframe->datalen);
+			len = nframe->datalen;
+			switch_core_file_write(&rh->out_fh, nframe->data, &len);
+		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		{
@@ -1110,7 +1130,10 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Stop recording file %s\n", rh->file);
 			switch_channel_set_private(channel, rh->file, NULL);
 
-			if (rh->fh) {
+			if (rh->native) {
+				switch_core_file_close(&rh->in_fh);
+				switch_core_file_close(&rh->out_fh);
+			} else if (rh->fh) {
 				switch_size_t len;
 				uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 				switch_frame_t frame = { 0 };
@@ -1150,7 +1173,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				char *cmd = switch_core_session_strdup(session, var);
 				char *data, *expanded = NULL;
 				switch_stream_handle_t stream = { 0 };
-
+				
 				SWITCH_STANDARD_STREAM(stream);
 
 				if ((data = strchr(cmd, ':'))) {
@@ -1196,8 +1219,6 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					return SWITCH_FALSE;
 				}
 			}
-
-				
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
@@ -1739,6 +1760,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	int file_flags = SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
 	char *file_path = NULL;
+	char *ext;
+	char *in_file = NULL, *out_file = NULL;
 	
 	if ((p = switch_channel_get_variable(channel, "RECORD_HANGUP_ON_ERROR"))) {
 		hangup_on_error = switch_true(p);
@@ -1889,7 +1912,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	if (file_path && !strstr(file_path, SWITCH_URL_SEPARATOR)) {
 		char *p;
 		char *path = switch_core_session_strdup(session, file_path);
-
+		
 		if ((p = strrchr(path, *SWITCH_PATH_SEPARATOR))) {
 			*p = '\0';
 			if (switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -1902,49 +1925,96 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 			path = NULL;
 		}
 	}
+	
+	rh = switch_core_session_alloc(session, sizeof(*rh));
 
-	if (switch_core_file_open(fh, file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", file);
-		if (hangup_on_error) {
-			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+	if ((ext = strrchr(file, '.'))) {
+		ext++;
+		if (switch_core_file_open(fh, file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", file);
+			if (hangup_on_error) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+			}
+			return SWITCH_STATUS_GENERR;
 		}
-		return SWITCH_STATUS_GENERR;
+	} else {
+		int tflags = 0;
+
+		ext = read_impl.iananame;
+
+		in_file = switch_core_session_sprintf(session, "%s-in.%s", file, ext);
+		out_file = switch_core_session_sprintf(session, "%s-out.%s", file, ext);
+
+
+		if (switch_core_file_open(&rh->in_fh, in_file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", in_file);
+			if (hangup_on_error) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+			}
+			return SWITCH_STATUS_GENERR;
+		}
+
+		if (switch_core_file_open(&rh->out_fh, out_file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error opening %s\n", out_file);
+			switch_core_file_close(&rh->in_fh);
+			if (hangup_on_error) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+			}
+			return SWITCH_STATUS_GENERR;
+		}
+
+		rh->native = 1;
+		fh = NULL;
+
+		if ((flags & SMBF_WRITE_STREAM)) {
+			tflags |= SMBF_TAP_NATIVE_WRITE;
+		}
+
+		if ((flags & SMBF_READ_STREAM)) {
+			tflags |= SMBF_TAP_NATIVE_READ;
+		}
+
+		flags = tflags;
 	}
+
+
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
 		vval = (const char *) switch_core_session_strdup(session, p);
-		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_TITLE, vval);
+		if (fh) switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_TITLE, vval);
 		switch_channel_set_variable(channel, "RECORD_TITLE", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_COPYRIGHT"))) {
 		vval = (const char *) switch_core_session_strdup(session, p);
-		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, vval);
+		if (fh) switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, vval);
 		switch_channel_set_variable(channel, "RECORD_COPYRIGHT", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_SOFTWARE"))) {
 		vval = (const char *) switch_core_session_strdup(session, p);
-		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, vval);
+		if (fh) switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, vval);
 		switch_channel_set_variable(channel, "RECORD_SOFTWARE", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_ARTIST"))) {
 		vval = (const char *) switch_core_session_strdup(session, p);
-		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, vval);
+		if (fh) switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, vval);
 		switch_channel_set_variable(channel, "RECORD_ARTIST", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_COMMENT"))) {
 		vval = (const char *) switch_core_session_strdup(session, p);
-		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, vval);
+		if (fh) switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, vval);
 		switch_channel_set_variable(channel, "RECORD_COMMENT", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_DATE"))) {
 		vval = (const char *) switch_core_session_strdup(session, p);
-		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_DATE, vval);
+		if (fh) switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_DATE, vval);
 		switch_channel_set_variable(channel, "RECORD_DATE", NULL);
 	}
 
@@ -1952,7 +2022,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		to = switch_epoch_time_now(NULL) + limit;
 	}
 
-	rh = switch_core_session_alloc(session, sizeof(*rh));
 	rh->fh = fh;
 	rh->file = switch_core_session_strdup(session, file);
 	rh->packet_len = read_impl.decoded_bytes_per_packet;
