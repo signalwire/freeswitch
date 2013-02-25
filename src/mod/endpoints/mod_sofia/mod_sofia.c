@@ -3053,7 +3053,7 @@ static uint32_t sofia_profile_reg_count(sofia_profile_t *profile)
 	cb.buf = reg_count;
 	cb.len = sizeof(reg_count);
 	sql = switch_mprintf("select count(*) from sip_registrations where profile_name = '%q'", profile->name);
-	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+	sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sql2str_callback, &cb);
 	free(sql);
 	return strtoul(reg_count, NULL, 10);
 }
@@ -3290,7 +3290,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				if (sql) {
 					stream->write_function(stream, "\nRegistrations:\n%s\n", line);
 
-					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback, &cb);
+					sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, show_reg_callback, &cb);
 					switch_safe_free(sql);
 
 					stream->write_function(stream, "Total items returned: %d\n", cb.row_process);
@@ -3572,7 +3572,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				if (sql) {
 					stream->write_function(stream, "  <registrations>\n");
 
-					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
+					sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, show_reg_callback_xml, &cb);
 					switch_safe_free(sql);
 
 					stream->write_function(stream, "  </registrations>\n");
@@ -4045,7 +4045,7 @@ SWITCH_STANDARD_API(sofia_count_reg_function)
 									 user, domain, domain);
 			}
 			switch_assert(sql);
-			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sql2str_callback, &cb);
 			switch_safe_free(sql);
 			if (!zstr(reg_count)) {
 				stream->write_function(stream, "%s", reg_count);
@@ -4135,7 +4135,7 @@ SWITCH_STANDARD_API(sofia_username_of_function)
 
 			switch_assert(sql);
 
-			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sql2str_callback, &cb);
 			switch_safe_free(sql);
 			if (!zstr(username)) {
 				stream->write_function(stream, "%s", username);
@@ -4188,7 +4188,7 @@ static void select_from_profile(sofia_profile_t *profile,
 	}
 
 	switch_assert(sql);
-	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, contact_callback, &cb);
+	sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, contact_callback, &cb);
 	switch_safe_free(sql);
 }
 

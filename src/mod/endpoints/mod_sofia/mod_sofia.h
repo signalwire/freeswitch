@@ -625,6 +625,7 @@ struct sofia_profile {
 	switch_payload_t cng_pt;
 	uint32_t codec_flags;
 	switch_mutex_t *ireg_mutex;
+	switch_mutex_t *dbh_mutex;
 	switch_mutex_t *gateway_mutex;
 	sofia_gateway_t *gateways;
 	//su_home_t *home;
