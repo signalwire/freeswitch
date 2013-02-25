@@ -985,7 +985,7 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
     t->pages_transferred = s->current_page - s->start_page;
     t->pages_in_file = s->tiff.pages_in_file;
     t->x_resolution = s->metadata.x_resolution;
-    t->y_resolution = s->metadata.y_resolution;
+    t->y_resolution = s->metadata.y_resolution/s->row_squashing_ratio;
     t->encoding = s->line_encoding;
     switch (s->line_encoding)
     {

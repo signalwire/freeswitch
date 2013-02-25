@@ -203,8 +203,12 @@ ImageLayer(34732)                                                   LONG
 #define TIFFTAG_T82OPTIONS              435
 #define TIFFTAG_STRIPROWCOUNTS          559
 #define TIFFTAG_IMAGELAYER              34732
+#endif
 
+#if !defined(COMPRESSION_T85)
 #define     COMPRESSION_T85             9
+#endif
+#if !defined(COMPRESSION_T43)
 #define     COMPRESSION_T43             10
 #endif
 
