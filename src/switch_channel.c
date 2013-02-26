@@ -389,7 +389,7 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
 	return has;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, switch_dtmf_t *dtmf)
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, const switch_dtmf_t *dtmf)
 {
 	switch_status_t status;
 	void *pop;
@@ -398,12 +398,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 
 	switch_assert(dtmf);
 
-	if (sensitive) {
-		switch_set_flag(dtmf, DTMF_FLAG_SENSITIVE);
-	}
-
 	switch_mutex_lock(channel->dtmf_mutex);
 	new_dtmf = *dtmf;
+
+	if (sensitive) {
+		switch_set_flag((&new_dtmf), DTMF_FLAG_SENSITIVE);
+	}
 
 	if ((status = switch_core_session_recv_dtmf(channel->session, dtmf) != SWITCH_STATUS_SUCCESS)) {
 		goto done;
