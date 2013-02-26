@@ -2430,7 +2430,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									 NUTAG_WS_URL(profile->ws_bindurl)),
 							  TAG_IF(profile->wss_bindurl,
 									 NUTAG_WSS_URL(profile->wss_bindurl)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+							  TAG_IF(profile->tls_cert_dir,
 									 NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_passphrase,
 									TPTAG_TLS_PASSPHRASE(profile->tls_passphrase)),
@@ -4671,7 +4671,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 				config_sofia_profile_urls(profile);
 
-				if (sofia_test_pflag(profile, PFLAG_TLS) && !profile->tls_cert_dir) {
+				if (!profile->tls_cert_dir) {
 					profile->tls_cert_dir = switch_core_sprintf(profile->pool, "%s/ssl", SWITCH_GLOBAL_dirs.conf_dir);
 				}
 
