@@ -1614,7 +1614,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 
 	if (!a_engine->codec_params.iananame) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No audio codec available\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No audio codec available\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
@@ -2094,6 +2094,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	switch_media_handle_t *smh;
 	uint32_t near_rate = 0;
 	const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
+	sdp_rtpmap_t *mmap = NULL;
 	int codec_ms = 0;
 	const char *tmp;
 
@@ -2614,11 +2615,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
 								near_rate = map->rm_rate;
 								near_match = imp;
+								mmap = map;
 								match = 0;
 								continue;
 							}
 						}
 						mimp = imp;
+						mmap = map;
 						break;
 					}
 				}
@@ -2648,36 +2651,39 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				
 				if (num) {
 					mimp = search[0];
+					mmap = map;
 				} else {
 					mimp = near_match;
+					mmap = map;
 				}
 				
 				if (!maxptime || mimp->microseconds_per_packet / 1000 <= maxptime) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Substituting codec %s@%ui@%uh\n",
 									  mimp->iananame, mimp->microseconds_per_packet / 1000, mimp->samples_per_second);
+					mmap = map;
 					match = 1;
 				} else {
 					mimp = NULL;
+					mmap = NULL;
 					match = 0;
 				}
-				
 			}
 
-			if (mimp) {
+			if (mimp && mmap) {
 				char tmp[50];
 				const char *mirror = switch_channel_get_variable(session->channel, "rtp_mirror_remote_audio_codec_payload");
 
-				a_engine->codec_params.rm_encoding = switch_core_session_strdup(session, (char *) map->rm_encoding);
+				a_engine->codec_params.rm_encoding = switch_core_session_strdup(session, (char *) mmap->rm_encoding);
 				a_engine->codec_params.iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
-				a_engine->codec_params.pt = (switch_payload_t) map->rm_pt;
+				a_engine->codec_params.pt = (switch_payload_t) mmap->rm_pt;
 				a_engine->codec_params.rm_rate = mimp->samples_per_second;
 				a_engine->codec_params.codec_ms = mimp->microseconds_per_packet / 1000;
 				a_engine->codec_params.bitrate = mimp->bits_per_second;
-				a_engine->codec_params.channels = map->rm_params ? atoi(map->rm_params) : 1;
+				a_engine->codec_params.channels = mmap->rm_params ? atoi(mmap->rm_params) : 1;
 
-				if (!strcasecmp((char *) map->rm_encoding, "opus")) {
+				if (!strcasecmp((char *) mmap->rm_encoding, "opus")) {
 					a_engine->codec_params.adv_channels = 2; /* IKR ???*/
-					if (!zstr((char *) map->rm_fmtp) && switch_stristr("stereo=1", (char *) map->rm_fmtp)) {
+					if (!zstr((char *) mmap->rm_fmtp) && switch_stristr("stereo=1", (char *) mmap->rm_fmtp)) {
 						a_engine->codec_params.channels = 2;
 					} else {
 						a_engine->codec_params.channels = 1;
@@ -2688,15 +2694,15 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				a_engine->codec_params.remote_sdp_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 				a_engine->codec_params.remote_sdp_port = (switch_port_t) m->m_port;
-				a_engine->codec_params.rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
+				a_engine->codec_params.rm_fmtp = switch_core_session_strdup(session, (char *) mmap->rm_fmtp);
 				
-				a_engine->codec_params.agreed_pt = (switch_payload_t) map->rm_pt;
+				a_engine->codec_params.agreed_pt = (switch_payload_t) mmap->rm_pt;
 				smh->num_negotiated_codecs = 0;
 				smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;
 				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->codec_params.remote_sdp_port);
 				switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, a_engine->codec_params.remote_sdp_ip);
 				switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
-				a_engine->codec_params.recv_pt = (switch_payload_t)map->rm_pt;
+				a_engine->codec_params.recv_pt = (switch_payload_t)mmap->rm_pt;
 					
 				if (!switch_true(mirror) && 
 					switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
@@ -2718,9 +2724,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 				
-
-
-			if (!best_te && (switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))) {
+			if (!best_te && (switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
+							 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
 								  "No 2833 in SDP. Liberal DTMF mode adding %d as telephone-event.\n", smh->mparams->te);
 				best_te = smh->mparams->te;
