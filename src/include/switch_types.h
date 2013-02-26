@@ -1480,7 +1480,8 @@ SMBF_WRITE_STREAM - Include the Write Stream
 SMBF_WRITE_REPLACE - Replace the Write Stream
 SMBF_READ_REPLACE - Replace the Read Stream
 SMBF_STEREO - Record in stereo
-SMBF_ANSWER_RECORD_REQ - Don't record until the channel is answered
+SMBF_ANSWER_REQ - Don't record until the channel is answered
+SMBF_BRIDGE_REQ - Don't record until the channel is bridged
 SMBF_THREAD_LOCK - Only let the same thread who created the bug remove it.
 SMBF_PRUNE - 
 SMBF_NO_PAUSE - 
@@ -1496,13 +1497,14 @@ typedef enum {
 	SMBF_READ_PING = (1 << 4),
 	SMBF_STEREO = (1 << 5),
 	SMBF_ANSWER_REQ = (1 << 6),
-	SMBF_THREAD_LOCK = (1 << 7),
-	SMBF_PRUNE = (1 << 8),
-	SMBF_NO_PAUSE = (1 << 9),
-	SMBF_STEREO_SWAP = (1 << 10),
-	SMBF_LOCK = (1 << 11),
-	SMBF_TAP_NATIVE_READ = (1 << 12),
-	SMBF_TAP_NATIVE_WRITE = (1 << 13)
+	SMBF_BRIDGE_REQ = (1 << 7),
+	SMBF_THREAD_LOCK = (1 << 8),
+	SMBF_PRUNE = (1 << 9),
+	SMBF_NO_PAUSE = (1 << 10),
+	SMBF_STEREO_SWAP = (1 << 11),
+	SMBF_LOCK = (1 << 12),
+	SMBF_TAP_NATIVE_READ = (1 << 13),
+	SMBF_TAP_NATIVE_WRITE = (1 << 14)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 

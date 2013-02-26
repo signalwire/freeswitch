@@ -1845,6 +1845,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		flags |= SMBF_ANSWER_REQ;
 	}
 
+	if ((p = switch_channel_get_variable(channel, "RECORD_BRIDGE_REQ")) && switch_true(p)) {
+		flags |= SMBF_BRIDGE_REQ;
+	}
+
 	if ((p = switch_channel_get_variable(channel, "RECORD_APPEND")) && switch_true(p)) {
 		file_flags |= SWITCH_FILE_WRITE_APPEND;
 	}

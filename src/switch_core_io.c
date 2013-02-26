@@ -551,6 +551,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
 					continue;
 				}
+
+				if (!switch_channel_test_flag(session->channel, CF_BRIDGED) && switch_core_media_bug_test_flag(bp, SMBF_BRIDGE_REQ)) {
+					continue;
+				}
+
 				if (switch_test_flag(bp, SMBF_PRUNE)) {
 					prune++;
 					continue;
@@ -595,6 +600,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
 					continue;
 				}
+
+				if (!switch_channel_test_flag(session->channel, CF_BRIDGED) && switch_core_media_bug_test_flag(bp, SMBF_BRIDGE_REQ)) {
+					continue;
+				}
+
 				if (switch_test_flag(bp, SMBF_PRUNE)) {
 					prune++;
 					continue;
@@ -754,6 +764,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				}
 
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+					continue;
+				}
+
+				if (!switch_channel_test_flag(session->channel, CF_BRIDGED) && switch_core_media_bug_test_flag(bp, SMBF_BRIDGE_REQ)) {
 					continue;
 				}
 
