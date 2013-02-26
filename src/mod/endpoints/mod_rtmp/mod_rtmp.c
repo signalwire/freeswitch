@@ -87,9 +87,9 @@ static void rtmp_set_channel_variables(switch_core_session_t *session)
 	switch_channel_set_variable_printf(channel, "rtmp_remote_port", "%d", rsession->remote_port);
 }
 
-switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rtmp_session, switch_core_session_t *session)
+switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rsession, switch_core_session_t *session)
 {
-	switch_assert(rtmp_session && session && tech_pvt);
+	switch_assert(rsession && session && tech_pvt);
 	
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
@@ -103,7 +103,7 @@ switch_status_t rtmp_tech_init(rtmp_private_t *tech_pvt, rtmp_session_t *rtmp_se
 	switch_core_timer_init(&tech_pvt->timer, "soft", 20, (16000 / (1000 / 20)), switch_core_session_get_pool(session));
 	
 	tech_pvt->session = session;
-	tech_pvt->rtmp_session = rtmp_session;
+	tech_pvt->rtmp_session = rsession;
 	tech_pvt->channel = switch_core_session_get_channel(session);
 
 	/* Initialize read & write codecs */
