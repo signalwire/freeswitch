@@ -23,6 +23,7 @@
  * Contributor(s):
  * 
  * Mathieu Rene <mrene@avgs.ca>
+ * William King <william.king@quentustech.com>
  *
  * rtmp_tcp.c -- RTMP TCP I/O module
  *
