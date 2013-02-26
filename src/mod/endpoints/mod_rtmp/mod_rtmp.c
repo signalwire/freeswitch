@@ -782,25 +782,25 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t rtmp_session_destroy(rtmp_session_t **session) 
+switch_status_t rtmp_session_destroy(rtmp_session_t **rsession) 
 {
 	switch_hash_index_t *hi;
 	switch_event_t *event;
 	
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_DISCONNECT) == SWITCH_STATUS_SUCCESS) {
-		rtmp_event_fill(*session, event);
+		rtmp_event_fill(*rsession, event);
 		switch_event_fire(&event);
 	}
 	
-	switch_core_hash_delete_wrlock(rtmp_globals.session_hash, (*session)->uuid, rtmp_globals.session_rwlock);
-	switch_core_hash_delete_wrlock((*session)->profile->session_hash, (*session)->uuid, (*session)->profile->session_rwlock);
-	rtmp_clear_registration(*session, NULL, NULL);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "RTMP session ended [%s]\n", (*session)->uuid);
+	switch_core_hash_delete_wrlock(rtmp_globals.session_hash, (*rsession)->uuid, rtmp_globals.session_rwlock);
+	switch_core_hash_delete_wrlock((*rsession)->profile->session_hash, (*rsession)->uuid, (*rsession)->profile->session_rwlock);
+	rtmp_clear_registration(*rsession, NULL, NULL);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "RTMP session ended [%s]\n", (*rsession)->uuid);
 	
-	(*session)->state = RS_DESTROY;
+	(*rsession)->state = RS_DESTROY;
 
-	switch_thread_rwlock_rdlock((*session)->session_rwlock);
-	for (hi = switch_hash_first(NULL, (*session)->session_hash); hi; hi = switch_hash_next(hi)) {
+	switch_thread_rwlock_rdlock((*rsession)->session_rwlock);
+	for (hi = switch_hash_first(NULL, (*rsession)->session_hash); hi; hi = switch_hash_next(hi)) {
 		void *val;	
 		const void *key;
 		switch_ssize_t keylen;
@@ -814,34 +814,34 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **session)
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		}
 	}
-	switch_thread_rwlock_unlock((*session)->session_rwlock);
+	switch_thread_rwlock_unlock((*rsession)->session_rwlock);
 	
 	
-	while ((*session)->active_sessions > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Still have %d sessions, waiting\n", (*session)->active_sessions);
+	while ((*rsession)->active_sessions > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Still have %d sessions, waiting\n", (*rsession)->active_sessions);
 		switch_yield(500000);
 	}
 	
 	
-	switch_thread_rwlock_wrlock((*session)->rwlock);
-	switch_thread_rwlock_unlock((*session)->rwlock);
+	switch_thread_rwlock_wrlock((*rsession)->rwlock);
+	switch_thread_rwlock_unlock((*rsession)->rwlock);
 	
-	(*session)->profile->io->close(*session);
+	(*rsession)->profile->io->close(*rsession);
 	
 #ifdef RTMP_DEBUG_IO
-	fclose((*session)->io_debug_in);
-	fclose((*session)->io_debug_out);
+	fclose((*rsession)->io_debug_in);
+	fclose((*rsession)->io_debug_out);
 #endif	
 	
-	switch_mutex_lock((*session)->profile->mutex);
-	(*session)->profile->clients--;
-	switch_mutex_unlock((*session)->profile->mutex);
+	switch_mutex_lock((*rsession)->profile->mutex);
+	(*rsession)->profile->clients--;
+	switch_mutex_unlock((*rsession)->profile->mutex);
 	
-	switch_core_hash_destroy(&(*session)->session_hash);
+	switch_core_hash_destroy(&(*rsession)->session_hash);
 	
-	switch_core_destroy_memory_pool(&(*session)->pool);
+	switch_core_destroy_memory_pool(&(*rsession)->pool);
 	
-	*session = NULL;
+	*rsession = NULL;
 	
 	return SWITCH_STATUS_SUCCESS;
 }
