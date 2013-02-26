@@ -24,6 +24,7 @@
  * 
  * Mathieu Rene <mrene@avgs.ca>
  * Joao Mesquita <jmesquita@freeswitch.org>
+ * William King <william.king@quentustech.com>
  *
  * rtmp.c -- RTMP Protocol Handler
  *

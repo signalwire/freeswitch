@@ -24,6 +24,7 @@
  * 
  * Mathieu Rene <mrene@avgs.ca>
  * Anthony Minessale II <anthm@freeswitch.org>
+ * William King <william.king@quentustech.com>
  *
  * mod_rtmp.c -- RTMP Endpoint Module
  *
