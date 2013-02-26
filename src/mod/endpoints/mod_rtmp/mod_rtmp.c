@@ -260,9 +260,18 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 	rsession = tech_pvt->rtmp_session;
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+
+	if ( rsession == NULL ) {
+		/*
+		 * If the FS channel is calling hangup, but the rsession is already destroyed, then there is nothing that can be done,
+		 * wihtout segfaulting. If there are any actions that need to be done even if the rsession is already destroyed, then move them
+		 * above here, or after the done target.
+		 */
+		goto done;
+	}
 
 	switch_thread_rwlock_wrlock(rsession->rwlock);
-	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	//switch_thread_cond_signal(tech_pvt->cond);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
@@ -300,6 +309,7 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 
 	switch_thread_rwlock_unlock(rsession->rwlock);
 
+ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -817,12 +827,19 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 		switch_ssize_t keylen;
 		rtmp_private_t *tech_pvt;
 		switch_channel_t *channel;
+		switch_core_session_t *session;
 		switch_hash_this(hi, &key, &keylen, &val);		
 		tech_pvt = (rtmp_private_t *)val;
 		
-		if ( item->session ) {
-			channel = switch_core_session_get_channel(item->session);
+		/* At this point we don't know if the session still exists, so request a fresh pointer to it from the core. */
+		if ( (session = switch_core_session_locate((char *)key)) != NULL ) {
+			channel = switch_core_session_get_channel(session);
+			tech_pvt = switch_core_session_get_private(session);
+			if ( tech_pvt && tech_pvt->rtmp_session ) {
+				tech_pvt->rtmp_session = NULL;
+			}
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			switch_core_session_rwunlock(session);
 		}
 	}
 	switch_thread_rwlock_unlock((*rsession)->session_rwlock);
