@@ -210,6 +210,8 @@ static switch_bool_t vmd_callback(switch_media_bug_t *bug, void *user_data, swit
 	case SWITCH_ABC_TYPE_CLOSE:
 	case SWITCH_ABC_TYPE_READ:
 	case SWITCH_ABC_TYPE_WRITE:
+	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
+	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
 		break;
 
 	case SWITCH_ABC_TYPE_READ_REPLACE:

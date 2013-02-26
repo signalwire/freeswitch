@@ -187,13 +187,11 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
         break;
 
     case SWITCH_ABC_TYPE_READ_PING:
-        break;
     case SWITCH_ABC_TYPE_CLOSE:
-		
-        break;
     case SWITCH_ABC_TYPE_READ:
-        break;
     case SWITCH_ABC_TYPE_WRITE:
+    case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
+    case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
         break;
 
     case SWITCH_ABC_TYPE_READ_REPLACE:
