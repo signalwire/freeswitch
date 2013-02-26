@@ -4685,10 +4685,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		 * Handle params, strip them off the destination and add them to the
 		 * invite contact.
 		 *
-		 * TODO:
-		 *  - Add parameters back to destination url?
 		 */
-		if ((params = strchr(dest, ';'))) {
+
+		if ((params = strchr(dest, '+'))) {
+			*params = ';';
+			params = NULL;
+		} else if ((params = strchr(dest, ';'))) {
 			char *tp_param;
 
 			*params++ = '\0';
