@@ -117,7 +117,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 		method = "get";
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "method: %s, url: %s, content-type: %s\n", method, url, content_type);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "method: %s, url: %s, content-type: %s\n", method, url, content_type);
 	curl_handle = switch_curl_easy_init();
 
 	if (!strncasecmp(url, "https", 5)) {
@@ -135,7 +135,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 			switch_safe_free(ct);
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Post data: %s\n", data);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Post data: %s\n", data);
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	}
