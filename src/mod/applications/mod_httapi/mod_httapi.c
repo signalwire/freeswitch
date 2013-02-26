@@ -166,6 +166,7 @@ struct http_file_context {
 	int samples;
 	switch_file_handle_t fh;
 	char *cache_file;
+	char *cache_file_base;
 	char *meta_file;
 	char *lock_file;
 	char *metadata;
@@ -2308,6 +2309,7 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 		}
 	}
 
+	context->cache_file_base = switch_core_sprintf(context->pool, "%s%s%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
 	context->cache_file = switch_core_sprintf(context->pool, "%s%s%s.%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest, ext);
 	context->meta_file = switch_core_sprintf(context->pool, "%s.meta", context->cache_file);
 	context->lock_file = switch_core_sprintf(context->pool, "%s.lock", context->cache_file);
@@ -2573,6 +2575,9 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	lock_file(context, SWITCH_TRUE);
 
 	if (!context->url_params || !switch_true(switch_event_get_header(context->url_params, "nohead"))) {
+		const char *ct = NULL;
+		const char *newext = NULL;
+
 		if ((status = fetch_cache_data(context, url, &headers, NULL)) != SWITCH_STATUS_SUCCESS) {
 			if (status == SWITCH_STATUS_NOTFOUND) {
 				unreachable = 2;
@@ -2584,6 +2589,21 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 			}
 		}
 		
+		if ((!context->url_params || !switch_event_get_header(context->url_params, "ext")) 
+			&& headers && (ct = switch_event_get_header(headers, "content-type"))) {
+			if (!strcasecmp(ct, "audio/mpeg")) {
+				newext = "mp3";
+			} else if (!strcasecmp(ct, "audio/wav")) {
+				newext = "wav";
+			}
+		}
+
+
+		if (newext) {
+			context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file, newext);
+		}
+
+
 		if (switch_file_exists(context->cache_file, context->pool) != SWITCH_STATUS_SUCCESS && unreachable) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File at url [%s] is unreachable!\n", url);
 			goto end;
