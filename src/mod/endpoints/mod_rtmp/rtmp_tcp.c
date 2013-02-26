@@ -70,7 +70,7 @@ static void rtmp_tcp_alter_pollfd(rtmp_session_t *rsession, switch_bool_t pollou
 	if (pollout) {
 		io_pvt->pollfd->reqevents |=  SWITCH_POLLOUT;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Pollout: %s\n", 
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Pollout: %s\n", 
 		pollout ? "true" : "false");
 	
 	switch_pollset_add(io->pollset, io_pvt->pollfd);
@@ -153,7 +153,7 @@ static switch_status_t rtmp_tcp_write(rtmp_session_t *rsession, const unsigned c
 		}
 		
 		/* We didnt send it all... add it to the sendq*/		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%"SWITCH_SIZE_T_FMT" bytes added to sendq.\n", (orig_len - *len));
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "%"SWITCH_SIZE_T_FMT" bytes added to sendq.\n", (orig_len - *len));
 		
 		switch_buffer_write(io_pvt->sendq, (buf + *len), orig_len - *len);
 
@@ -217,7 +217,7 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 						return NULL;
 					}
 				} else {
-					rtmp_session_t *newsession;
+					rtmp_session_t *rsession;
 					
 					if (switch_socket_opt_set(newsocket, SWITCH_SO_NONBLOCK, TRUE)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't set socket as non-blocking\n");
@@ -227,7 +227,7 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Couldn't disable Nagle.\n");
 					}
 					
-					if (rtmp_session_request(io->base.profile, &newsession) != SWITCH_STATUS_SUCCESS) {
+					if (rtmp_session_request(io->base.profile, &rsession) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTMP session request failed\n");
 						switch_socket_close(newsocket);
 					} else {
@@ -235,20 +235,20 @@ void *SWITCH_THREAD_FUNC rtmp_io_tcp_thread(switch_thread_t *thread, void *obj)
 						char ipbuf[200];
 						
 						/* Create out private data and attach it to the rtmp session structure */
-						rtmp_tcp_io_private_t *pvt = switch_core_alloc(newsession->pool, sizeof(*pvt));
-						newsession->io_private = pvt;
+						rtmp_tcp_io_private_t *pvt = switch_core_alloc(rsession->pool, sizeof(*pvt));
+						rsession->io_private = pvt;
 						pvt->socket = newsocket;
-						switch_socket_create_pollfd(&pvt->pollfd, newsocket, SWITCH_POLLIN | SWITCH_POLLERR, newsession, newsession->pool);
+						switch_socket_create_pollfd(&pvt->pollfd, newsocket, SWITCH_POLLIN | SWITCH_POLLERR, rsession, rsession->pool);
 						switch_pollset_add(io->pollset, pvt->pollfd);
 						switch_buffer_create_dynamic(&pvt->sendq, 512, 1024, 0);
 						
 						/* Get the remote address/port info */
 						switch_socket_addr_get(&addr, SWITCH_TRUE, newsocket);
 						switch_get_addr(ipbuf, sizeof(ipbuf), addr);
-						newsession->remote_address = switch_core_strdup(newsession->pool, ipbuf);
-						newsession->remote_port = switch_sockaddr_get_port(addr);
-						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(newsession->uuid), SWITCH_LOG_INFO, "Rtmp connection from %s:%i\n",
-										  newsession->remote_address, newsession->remote_port);
+						rsession->remote_address = switch_core_strdup(rsession->pool, ipbuf);
+						rsession->remote_port = switch_sockaddr_get_port(addr);
+						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Rtmp connection from %s:%i\n",
+										  rsession->remote_address, rsession->remote_port);
 					}
 				}
 			} else {

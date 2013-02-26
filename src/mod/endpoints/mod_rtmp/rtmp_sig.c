@@ -118,7 +118,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_connect)
 		amf0_null_new(),
 		amf0_str(rsession->uuid), NULL);
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sent connect reply\n");
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Sent connect reply\n");
 	
 	return SWITCH_STATUS_SUCCESS;	
 }
@@ -133,7 +133,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_createStream)
 		amf0_number_new(rsession->next_streamid),
 		NULL);
 		
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Replied to createStream (%u)\n", rsession->next_streamid);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Replied to createStream (%u)\n", rsession->next_streamid);
 	
 	rsession->next_streamid++;
 	
@@ -156,7 +156,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_receiveaudio)
 			switch_clear_flag(rsession, SFLAG_AUDIO);
 		}
 
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%sending audio\n", enabled ? "S" : "Not s");
+        switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "%sending audio\n", enabled ? "S" : "Not s");
 
         return SWITCH_STATUS_SUCCESS;
 }
@@ -174,7 +174,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_receivevideo)
 			switch_clear_flag(rsession, SFLAG_VIDEO);
 		}
 
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%sending video\n", enabled ? "S" : "Not s");
+        switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "%sending video\n", enabled ? "S" : "Not s");
 
         return SWITCH_STATUS_SUCCESS;
 }
@@ -185,7 +185,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_play)
 	amf0_data *obj = amf0_object_new();
 	amf0_data *object = amf0_object_new();
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got play for %s on stream %d\n", switch_str_nil(amf0_get_string(argv[1])),
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Got play for %s on stream %d\n", switch_str_nil(amf0_get_string(argv[1])),
 		state->stream_id);
 
 	/* Set outgoing chunk size to 1024 bytes */
@@ -271,7 +271,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_publish)
 		NULL);
 		
 		
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got publish on stream %u.\n", state->stream_id);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_INFO, "Got publish on stream %u.\n", state->stream_id);
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -783,7 +783,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_sendevent)
 		uuid = amf0_get_string(argv[1]);
 		obj = argv[2];
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad argument for sendevent");
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Bad argument for sendevent");
 		return SWITCH_STATUS_FALSE;
 	}
 	
