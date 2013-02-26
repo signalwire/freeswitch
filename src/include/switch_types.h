@@ -138,6 +138,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE "proto_specific_hangup_cause"
 #define SWITCH_TRANSFER_HISTORY_VARIABLE "transfer_history"
 #define SWITCH_TRANSFER_SOURCE_VARIABLE "transfer_source"
+#define SWITCH_SENSITIVE_DTMF_VARIABLE "sensitive_dtmf"
 
 #define SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE "execute_on_answer"
 #define SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE "execute_on_pre_answer"
@@ -246,7 +247,8 @@ typedef enum {
 
 
 typedef enum {
-	DTMF_FLAG_SKIP_PROCESS = (1 << 0)
+	DTMF_FLAG_SKIP_PROCESS = (1 << 0),
+	DTMF_FLAG_SENSITIVE = (1 << 1)
 } dtmf_flag_t;
 
 typedef struct {

@@ -389,13 +389,18 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
 	return has;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, const switch_dtmf_t *dtmf)
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, switch_dtmf_t *dtmf)
 {
 	switch_status_t status;
 	void *pop;
 	switch_dtmf_t new_dtmf = { 0 };
+	switch_bool_t sensitive = switch_true(switch_channel_get_variable_dup(channel, SWITCH_SENSITIVE_DTMF_VARIABLE, SWITCH_FALSE, -1));
 
 	switch_assert(dtmf);
+
+	if (sensitive) {
+		switch_set_flag(dtmf, DTMF_FLAG_SENSITIVE);
+	}
 
 	switch_mutex_lock(channel->dtmf_mutex);
 	new_dtmf = *dtmf;
@@ -407,18 +412,19 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 	if (is_dtmf(new_dtmf.digit)) {
 		switch_dtmf_t *dt;
 		int x = 0;
-		char str[2] = "";
 
-		str[0] = new_dtmf.digit;
+		if (!sensitive) {
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "RECV DTMF %c:%d\n", new_dtmf.digit, new_dtmf.duration);
+		}
 
 		if (new_dtmf.digit != 'w' && new_dtmf.digit != 'W') {
 			if (new_dtmf.duration > switch_core_max_dtmf_duration(0)) {
-				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s EXCESSIVE DTMF DIGIT [%s] LEN [%d]\n",
-								  switch_channel_get_name(channel), str, new_dtmf.duration);
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s EXCESSIVE DTMF DIGIT LEN [%d]\n",
+								  switch_channel_get_name(channel), new_dtmf.duration);
 				new_dtmf.duration = switch_core_max_dtmf_duration(0);
 			} else if (new_dtmf.duration < switch_core_min_dtmf_duration(0)) {
-				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "%s SHORT DTMF DIGIT [%s] LEN [%d]\n",
-								  switch_channel_get_name(channel), str, new_dtmf.duration);
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "%s SHORT DTMF DIGIT LEN [%d]\n",
+								  switch_channel_get_name(channel), new_dtmf.duration);
 				new_dtmf.duration = switch_core_min_dtmf_duration(0);
 			} 
 		}
@@ -519,14 +525,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 	void *pop;
 	switch_dtmf_t *dt;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	int sensitive = 0;
 
 	switch_mutex_lock(channel->dtmf_mutex);
 
 	if (switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		dt = (switch_dtmf_t *) pop;
 		*dtmf = *dt;
+		sensitive = switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE);
 
-		if (switch_queue_trypush(channel->dtmf_log_queue, dt) != SWITCH_STATUS_SUCCESS) {
+		if (!sensitive && switch_queue_trypush(channel->dtmf_log_queue, dt) != SWITCH_STATUS_SUCCESS) {
 			free(dt);
 		}
 
@@ -534,11 +542,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 
 		if (dtmf->duration > switch_core_max_dtmf_duration(0)) {
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
-							  switch_channel_get_name(channel), dtmf->digit, dtmf->duration);
+							  switch_channel_get_name(channel), sensitive ? 'S' : dtmf->digit, dtmf->duration);
 			dtmf->duration = switch_core_max_dtmf_duration(0);
 		} else if (dtmf->duration < switch_core_min_dtmf_duration(0)) {
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s SHORT DTMF DIGIT [%c] LEN [%d]\n",
-							  switch_channel_get_name(channel), dtmf->digit, dtmf->duration);
+							  switch_channel_get_name(channel), sensitive ? 'S' : dtmf->digit, dtmf->duration);
 			dtmf->duration = switch_core_min_dtmf_duration(0);
 		} else if (!dtmf->duration) {
 			dtmf->duration = switch_core_default_dtmf_duration(0);
@@ -548,7 +556,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 	}
 	switch_mutex_unlock(channel->dtmf_mutex);
 
-	if (status == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
+	if (!sensitive && status == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Duration", "%u", dtmf->duration);

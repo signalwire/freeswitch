@@ -1477,6 +1477,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {	
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch_assert(dtmf);
 
 	new_dtmf = *dtmf;
@@ -1518,6 +1522,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 
 	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {	
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	switch_assert(dtmf);

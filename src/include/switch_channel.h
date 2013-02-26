@@ -552,7 +552,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dtmf_unlock(switch_channel_t *cha
   \param dtmf digit
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(_In_ switch_channel_t *channel, _In_ const switch_dtmf_t *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(_In_ switch_channel_t *channel, _In_ switch_dtmf_t *dtmf);
 SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf_string(_In_ switch_channel_t *channel, _In_ const char *dtmf_string);
 
 /*!
