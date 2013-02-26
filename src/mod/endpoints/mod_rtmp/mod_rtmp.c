@@ -146,9 +146,12 @@ switch_status_t rtmp_on_init(switch_core_session_t *session)
 {
 	switch_channel_t *channel;
 	rtmp_private_t *tech_pvt = NULL;
+	rtmp_session_t *rsession = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+
+	rsession = tech_pvt->rtmp_session;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -166,13 +169,13 @@ switch_status_t rtmp_on_init(switch_core_session_t *session)
 	switch_channel_set_state(channel, CS_ROUTING);
 
 	
-	switch_mutex_lock(tech_pvt->rtmp_session->profile->mutex);
-	tech_pvt->rtmp_session->profile->calls++;
-	switch_mutex_unlock(tech_pvt->rtmp_session->profile->mutex);
+	switch_mutex_lock(rsession->profile->mutex);
+	rsession->profile->calls++;
+	switch_mutex_unlock(rsession->profile->mutex);
 
-	switch_mutex_lock(tech_pvt->rtmp_session->count_mutex);
-	tech_pvt->rtmp_session->active_sessions++;
-	switch_mutex_unlock(tech_pvt->rtmp_session->count_mutex);
+	switch_mutex_lock(rsession->count_mutex);
+	rsession->active_sessions++;
+	switch_mutex_unlock(rsession->count_mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -223,6 +226,7 @@ switch_status_t rtmp_on_destroy(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 
 	if (tech_pvt) {
+		rtmp_session_t *rsession = tech_pvt->rtmp_session;
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 		}
@@ -234,8 +238,8 @@ switch_status_t rtmp_on_destroy(switch_core_session_t *session)
 		switch_buffer_destroy(&tech_pvt->readbuf);
 		switch_core_timer_destroy(&tech_pvt->timer);
 
-		if (tech_pvt->rtmp_session->state != RS_DESTROY) {
-			rtmp_session_destroy(&tech_pvt->rtmp_session);
+		if (rsession->state != RS_DESTROY) {
+			rtmp_session_destroy(&rsession);
 		}
 	}
 
@@ -247,42 +251,44 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	rtmp_private_t *tech_pvt = NULL;
+	rtmp_session_t *rsession = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+	rsession = tech_pvt->rtmp_session;
 
-	switch_thread_rwlock_wrlock(tech_pvt->rtmp_session->rwlock);
+	switch_thread_rwlock_wrlock(rsession->rwlock);
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	//switch_thread_cond_signal(tech_pvt->cond);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
-	if (tech_pvt->rtmp_session->tech_pvt == tech_pvt) {
+	if (rsession->tech_pvt == tech_pvt) {
 		rtmp_private_t *other_tech_pvt = NULL;
 		const char *s;
 		if ((s = switch_channel_get_variable(channel, RTMP_ATTACH_ON_HANGUP_VARIABLE)) && !zstr(s)) {
-			other_tech_pvt = rtmp_locate_private(tech_pvt->rtmp_session, s);	
+			other_tech_pvt = rtmp_locate_private(rsession, s);
 		}
-		rtmp_attach_private(tech_pvt->rtmp_session, other_tech_pvt);
+		rtmp_attach_private(rsession, other_tech_pvt);
 	}
 
 	rtmp_notify_call_state(session);
 	rtmp_send_onhangup(session);
 	
-	switch_core_hash_delete_wrlock(tech_pvt->rtmp_session->session_hash, switch_core_session_get_uuid(session), tech_pvt->rtmp_session->session_rwlock);
+	switch_core_hash_delete_wrlock(rsession->session_hash, switch_core_session_get_uuid(session), rsession->session_rwlock);
 	
-	switch_mutex_lock(tech_pvt->rtmp_session->profile->mutex);
-	tech_pvt->rtmp_session->profile->calls--;
-	if (tech_pvt->rtmp_session->profile->calls < 0) {
-		tech_pvt->rtmp_session->profile->calls = 0;
+	switch_mutex_lock(rsession->profile->mutex);
+	rsession->profile->calls--;
+	if (rsession->profile->calls < 0) {
+		rsession->profile->calls = 0;
 	}
-	switch_mutex_unlock(tech_pvt->rtmp_session->profile->mutex);
+	switch_mutex_unlock(rsession->profile->mutex);
 
-        switch_mutex_lock(tech_pvt->rtmp_session->count_mutex);
-        tech_pvt->rtmp_session->active_sessions--;
-        switch_mutex_unlock(tech_pvt->rtmp_session->count_mutex);
+        switch_mutex_lock(rsession->count_mutex);
+        rsession->active_sessions--;
+        switch_mutex_unlock(rsession->count_mutex);
 
 #ifndef RTMP_DONT_HOLD
 	if (switch_channel_test_flag(channel, CF_HOLD)) {
@@ -291,7 +297,7 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	}
 #endif
 
-	switch_thread_rwlock_unlock(tech_pvt->rtmp_session->rwlock);
+	switch_thread_rwlock_unlock(rsession->rwlock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -349,6 +355,7 @@ switch_status_t rtmp_read_frame(switch_core_session_t *session, switch_frame_t *
 {
 	switch_channel_t *channel = NULL;
 	rtmp_private_t *tech_pvt = NULL;
+	rtmp_session_t *rsession = NULL;
 	//switch_time_t started = switch_time_now();
 	//unsigned int elapsed;
 	switch_byte_t *data;
@@ -359,8 +366,9 @@ switch_status_t rtmp_read_frame(switch_core_session_t *session, switch_frame_t *
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+	rsession = tech_pvt->rtmp_session;
 	
-	if (tech_pvt->rtmp_session->state >= RS_DESTROY) {
+	if (rsession->state >= RS_DESTROY) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
@@ -434,6 +442,7 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 {
 	switch_channel_t *channel = NULL;
 	rtmp_private_t *tech_pvt = NULL;
+	rtmp_session_t *rsession = NULL;
 	//switch_frame_t *pframe;
 	unsigned char buf[AMF_MAX_SIZE];
 	switch_time_t ts;
@@ -443,23 +452,23 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
+	rsession = tech_pvt->rtmp_session;
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TFLAG_IO not set\n");
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	if (switch_test_flag(tech_pvt, TFLAG_DETACHED) || !switch_test_flag(tech_pvt->rtmp_session, SFLAG_AUDIO)) {
+	if (switch_test_flag(tech_pvt, TFLAG_DETACHED) || !switch_test_flag(rsession, SFLAG_AUDIO)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
-	if (!tech_pvt->rtmp_session || !tech_pvt->audio_codec || !tech_pvt->write_channel) {
+	if (!rsession || !tech_pvt->audio_codec || !tech_pvt->write_channel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing mandatory value\n");
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	if (tech_pvt->rtmp_session->state >= RS_DESTROY) {
+	if (rsession->state >= RS_DESTROY) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -484,7 +493,7 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 		ts = (switch_micro_time_now() / 1000) - tech_pvt->stream_start_ts;
 	}
 
-	rtmp_send_message(tech_pvt->rtmp_session, RTMP_DEFAULT_STREAM_AUDIO, ts, RTMP_TYPE_AUDIO, tech_pvt->rtmp_session->media_streamid, buf, frame->datalen + 1, 0);
+	rtmp_send_message(rsession, RTMP_DEFAULT_STREAM_AUDIO, ts, RTMP_TYPE_AUDIO, rsession->media_streamid, buf, frame->datalen + 1, 0);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -669,12 +678,13 @@ fail:
 switch_status_t rtmp_receive_event(switch_core_session_t *session, switch_event_t *event)
 {
 	rtmp_private_t *tech_pvt = switch_core_session_get_private(session);
+	rtmp_session_t *rsession = tech_pvt->rtmp_session;
 	switch_assert(tech_pvt != NULL);
 
 	/* Deliver the event as a custom message to the target rtmp session */
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Session", switch_core_session_get_uuid(session));
 	
-	rtmp_send_event(tech_pvt->rtmp_session, event);
+	rtmp_send_event(rsession, event);
 
 	return SWITCH_STATUS_SUCCESS;
 }

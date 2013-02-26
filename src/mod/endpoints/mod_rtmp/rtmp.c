@@ -395,8 +395,9 @@ void rtmp_session_send_onattach(rtmp_session_t *rsession)
 void rtmp_send_display_update(switch_core_session_t *session)
 {
 	rtmp_private_t *tech_pvt = switch_core_session_get_private(session);
+	rtmp_session_t *rsession = tech_pvt->rtmp_session;
 
-	rtmp_send_invoke_free(tech_pvt->rtmp_session, 3, 0, 0,
+	rtmp_send_invoke_free(rsession, 3, 0, 0,
 		amf0_str("displayUpdate"),
 		amf0_number_new(0),
 		amf0_null_new(),
@@ -408,6 +409,7 @@ void rtmp_send_display_update(switch_core_session_t *session)
 void rtmp_send_incoming_call(switch_core_session_t *session, switch_event_t *var_event)
 {
 	rtmp_private_t *tech_pvt = switch_core_session_get_private(session);
+	rtmp_session_t *rsession = tech_pvt->rtmp_session;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
 	switch_event_t *event = NULL;
@@ -424,7 +426,7 @@ void rtmp_send_incoming_call(switch_core_session_t *session, switch_event_t *var
 		switch_event_destroy(&event);
 	}
 	
-	rtmp_send_invoke_free(tech_pvt->rtmp_session, 3, 0, 0,
+	rtmp_send_invoke_free(rsession, 3, 0, 0,
 		amf0_str("incomingCall"),
 		amf0_number_new(0),
 		amf0_null_new(),
@@ -438,9 +440,10 @@ void rtmp_send_incoming_call(switch_core_session_t *session, switch_event_t *var
 void rtmp_send_onhangup(switch_core_session_t *session)
 {
 	rtmp_private_t *tech_pvt = switch_core_session_get_private(session);
+	rtmp_session_t *rsession = tech_pvt->rtmp_session;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	
-	rtmp_send_invoke_free(tech_pvt->rtmp_session, 3, 0, 0,
+	rtmp_send_invoke_free(rsession, 3, 0, 0,
 		amf0_str("onHangup"),
 		amf0_number_new(0),
 		amf0_null_new(),
@@ -475,8 +478,9 @@ void rtmp_notify_call_state(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *state = switch_channel_callstate2str(switch_channel_get_callstate(channel));
 	rtmp_private_t *tech_pvt = switch_core_session_get_private(session);
-	
-	rtmp_send_invoke_free(tech_pvt->rtmp_session, 3, 0, 0,
+	rtmp_session_t *rsession = tech_pvt->rtmp_session;
+
+	rtmp_send_invoke_free(rsession, 3, 0, 0,
 		amf0_str("callState"),
 		amf0_number_new(0),
 		amf0_null_new(),
