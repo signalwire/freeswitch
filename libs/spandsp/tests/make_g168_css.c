@@ -48,10 +48,6 @@
 #include <fftw.h>
 #endif
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 #include "spandsp/g168models.h"
 
@@ -139,7 +135,7 @@ int main(int argc, char *argv[])
     double scale;
     SNDFILE *filehandle;
     SF_INFO info;
-    awgn_state_t noise_source;
+    awgn_state_t *noise_source;
 
     memset(&info, 0, sizeof(info));
     info.frames = 0;
@@ -317,9 +313,9 @@ int main(int argc, char *argv[])
     ms = rms(voiced_sound, voiced_length);
     printf("Voiced level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));
 
-    awgn_init_dbm0(&noise_source, 7162534, rms_to_dbm0(ms));
+    noise_source = awgn_init_dbm0(NULL, 7162534, rms_to_dbm0(ms));
     for (i = 0;  i < 8192;  i++)
-        noise_sound[i] = awgn(&noise_source);
+        noise_sound[i] = awgn(noise_source);
     pk = peak(noise_sound, 8192);
     ms = rms(noise_sound, 8192);
     printf("Unfiltered noise level = %.2fdB, crest factor = %.2fdB\n", rms_to_dbm0(ms), rms_to_db(pk/ms));

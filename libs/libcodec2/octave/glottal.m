@@ -11,13 +11,17 @@ kexc = [ 8,  -16,   26, -48,  86, -162, 294, -502, 718, -728, 184 672, -610, -67
 kexc = shift(kexc,sh);
 kexc = [kexc(1:sh) zeros(1,512-25) kexc(sh+1:25)];
 figure(1)
+clf
 plot(kexc)
 figure(2)
 G = fft(kexc);
+subplot(211)
 plot((1:256)*(4000/256),unwrap(angle(G(1:256))))
+subplot(212)
+plot(20*log10(abs(G)))
 
 f=fopen("glottal.c","wt");
-fprintf(f,"float glottal[]={\n");
+fprintf(f,"const float glottal[]={\n");
 for m=1:255
   fprintf(f,"  %f,\n",angle(G(m)));
 endfor

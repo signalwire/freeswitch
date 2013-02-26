@@ -43,9 +43,6 @@ display of modem status is maintained.
 \section v29_tests_page_sec_2 How is it used?
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
-#define WITH_SPANDSP_INTERNALS
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -66,9 +63,7 @@ display of modem status is maintained.
 #include <fenv.h>
 #endif
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -432,7 +427,7 @@ int main(int argc, char *argv[])
         span_log_set_tag(logging, "V.29-tx");
         v29_tx_power(tx, signal_level);
         v29_tx_set_modem_status_handler(tx, v29_tx_status, (void *) tx);
-#if defined(WITH_SPANDSP_INTERNALS)
+#if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)
         /* Move the carrier off a bit */
         tx->carrier_phase_rate = dds_phase_ratef(1710.0f);
         tx->carrier_phase = 0;
@@ -455,7 +450,7 @@ int main(int argc, char *argv[])
     v29_rx_signal_cutoff(rx, -45.5f);
     v29_rx_set_modem_status_handler(rx, v29_rx_status, (void *) rx);
     v29_rx_set_qam_report_handler(rx, qam_report, (void *) rx);
-#if defined(WITH_SPANDSP_INTERNALS)
+#if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)
     /* Rotate the starting phase */
     rx->carrier_phase = 0x80000000;
 #endif
@@ -520,7 +515,7 @@ int main(int argc, char *argv[])
                 v29_tx_restart(tx, test_bps, tep);
                 v29_tx_power(tx, signal_level);
                 v29_rx_restart(rx, test_bps, FALSE);
-#if defined(WITH_SPANDSP_INTERNALS)
+#if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)
                 rx->eq_put_step = rand()%(48*10/3);
 #endif
                 bert_init(&bert, bits_per_test, BERT_PATTERN_ITU_O152_11, test_bps, 20);

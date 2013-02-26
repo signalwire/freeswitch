@@ -1,0 +1,68 @@
+--- /home/david/asterisk-1.8.9.0-orig/include/asterisk/frame.h	2011-12-23 05:08:46.000000000 +1030
++++ /home/david/asterisk-1.8.9.0-codec2/include/asterisk/frame.h	2012-03-27 13:16:55.623452431 +1030
+@@ -299,6 +299,7 @@
+ #define AST_FORMAT_G719	      (1ULL << 32)
+ /*! SpeeX Wideband (16kHz) Free Compression */
+ #define AST_FORMAT_SPEEX16    (1ULL << 33)
++#define AST_FORMAT_CODEC2    (1ULL << 34)
+ /*! Raw mu-law data (G.711) */
+ #define AST_FORMAT_TESTLAW    (1ULL << 47)
+ /*! Reserved bit - do not use */
+--- /home/david/asterisk-1.8.9.0-orig/main/frame.c	2010-06-18 02:53:43.000000000 +0930
++++ /home/david/asterisk-1.8.9.0-codec2/main/frame.c	2012-03-28 15:16:16.975581316 +1030
+@@ -102,6 +102,7 @@
+ 	{ AST_FORMAT_ADPCM, "adpcm" , 8000, "ADPCM", 40, 10, 300, 10, 20 },                                    /*!< codec_adpcm.c */
+ 	{ AST_FORMAT_SLINEAR, "slin", 8000, "16 bit Signed Linear PCM", 160, 10, 70, 10, 20, AST_SMOOTHER_FLAG_BE }, /*!< Signed linear */
+ 	{ AST_FORMAT_LPC10, "lpc10", 8000, "LPC10", 7, 20, 20, 20, 20 },                                       /*!< codec_lpc10.c */ 
++	{ AST_FORMAT_CODEC2, "codec2", 8000, "Codec 2", 7, 20, 20, 20, 20 },                                       /*!< codec_codec2.c */ 
+ 	{ AST_FORMAT_G729A, "g729", 8000, "G.729A", 10, 10, 230, 10, 20, AST_SMOOTHER_FLAG_G729 },             /*!< Binary commercial distribution */
+ 	{ AST_FORMAT_SPEEX, "speex", 8000, "SpeeX", 10, 10, 60, 10, 20 },                                      /*!< codec_speex.c */
+ 	{ AST_FORMAT_SPEEX16, "speex16", 16000, "SpeeX 16khz", 10, 10, 60, 10, 20 },                          /*!< codec_speex.c */
+@@ -1475,6 +1476,9 @@
+ 		samples = 22 * 8;
+ 		samples += (((char *)(f->data.ptr))[7] & 0x1) * 8;
+ 		break;
++	case AST_FORMAT_CODEC2:
++		samples = 160 * (f->datalen / 7);
++		break;
+ 	case AST_FORMAT_ULAW:
+ 	case AST_FORMAT_ALAW:
+ 	case AST_FORMAT_TESTLAW:
+@@ -1519,6 +1523,9 @@
+ 	case AST_FORMAT_GSM:
+ 		len = (samples / 160) * 33;
+ 		break;
++	case AST_FORMAT_CODEC2:
++		len = (samples / 160) * 7;
++		break;
+ 	case AST_FORMAT_G729A:
+ 		len = samples / 8;
+ 		break;
+--- /home/david/asterisk-1.8.9.0-orig/main/channel.c	2011-12-17 10:21:13.000000000 +1030
++++ /home/david/asterisk-1.8.9.0-codec2/main/channel.c	2012-03-28 15:05:22.395293391 +1030
+@@ -1075,6 +1075,7 @@
+ 		/*! Ick, LPC10 sounds terrible, but at least we have code for it, if you're tacky enough
+ 		    to use it */
+ 		AST_FORMAT_LPC10,
++		AST_FORMAT_CODEC2,
+ 		/*! G.729a is faster than 723 and slightly less expensive */
+ 		AST_FORMAT_G729A,
+ 		/*! Down to G.723.1 which is proprietary but at least designed for voice */
+--- /home/david/asterisk-1.8.9.0-orig/main/rtp_engine.c	2011-12-30 01:43:03.000000000 +1030
++++ /home/david/asterisk-1.8.9.0-codec2/main/rtp_engine.c	2012-03-28 16:42:02.880872891 +1030
+@@ -101,6 +101,7 @@
+ 	{{1, AST_FORMAT_SLINEAR}, "audio", "L16", 8000},
+ 	{{1, AST_FORMAT_SLINEAR16}, "audio", "L16", 16000},
+ 	{{1, AST_FORMAT_LPC10}, "audio", "LPC", 8000},
++	{{1, AST_FORMAT_CODEC2}, "audio", "CODEC2", 8000},
+ 	{{1, AST_FORMAT_G729A}, "audio", "G729", 8000},
+ 	{{1, AST_FORMAT_G729A}, "audio", "G729A", 8000},
+ 	{{1, AST_FORMAT_G729A}, "audio", "G.729", 8000},
+@@ -178,6 +179,7 @@
+ 	[117] = {1, AST_FORMAT_SPEEX16},
+ 	[118] = {1, AST_FORMAT_SLINEAR16}, /* 16 Khz signed linear */
+ 	[121] = {0, AST_RTP_CISCO_DTMF},   /* Must be type 121 */
++	[121] = {1, AST_FORMAT_CODEC2},
+ };
+ 
+ int ast_rtp_engine_register2(struct ast_rtp_engine *engine, struct ast_module *module)

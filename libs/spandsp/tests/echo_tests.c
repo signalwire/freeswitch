@@ -57,10 +57,6 @@ all the tests in G.168 are fully implemented at this time.
 #define GEN_CONST
 #include <math.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 #include "spandsp/g168models.h"
 #include "spandsp-sim.h"

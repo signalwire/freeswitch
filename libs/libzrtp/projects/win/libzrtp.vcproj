@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../include;../../third_party/bnlib;../../third_party/bgaes;../../test/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_CONFIG_H=1;ZRTP_ENABLE_EC=0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_CONFIG_H=1;ZRTP_ENABLE_EC=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -109,7 +109,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="../../include;../../third_party/bnlib;../../third_party/bgaes"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_CONFIG_H=1;ZRTP_ENABLE_EC=0"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_CONFIG_H=1;ZRTP_ENABLE_EC=1"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
 				StructMemberAlignment="0"
@@ -181,6 +181,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\include\zrtp_ec.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\include\zrtp_engine.h"
 				>
 			</File>
@@ -244,6 +248,10 @@
 				RelativePath="..\..\include\zrtp_utils.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\include\zrtp_version.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="src"
@@ -262,6 +270,14 @@
 			</File>
 			<File
 				RelativePath="..\..\src\zrtp_crypto_atl.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\zrtp_crypto_ec.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\zrtp_crypto_ecdh.c"
 				>
 			</File>
 			<File

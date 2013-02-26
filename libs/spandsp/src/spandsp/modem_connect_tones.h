@@ -141,7 +141,16 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *
 SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
                                                 const int16_t amp[],
                                                 int len);
-                             
+
+/*! Fake processing of a missing block of received modem connect tone samples
+    (e.g due to packet loss).
+    \brief Fake processing of a missing block of received modem connect tone samples.
+    \param s The context.
+    \param len The number of samples to fake.
+    \return The number of samples unprocessed.
+*/
+SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx_fillin(modem_connect_tones_rx_state_t *s, int len);
+
 /*! \brief Test if a modem_connect tone has been detected.
     \param s The context.
     \return TRUE if tone is detected, else FALSE.

@@ -42,9 +42,7 @@ module, used for T.38 gateways.
 #include <assert.h>
 #include <errno.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 

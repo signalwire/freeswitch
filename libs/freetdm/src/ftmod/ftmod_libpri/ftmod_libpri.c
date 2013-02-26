@@ -207,6 +207,7 @@ static int parse_debug(const char *in, uint32_t *flags)
 	return res;
 }
 
+#ifdef HAVE_LIBPRI_MAINT_SERVICE
 /**
  * \brief Parses a change status string to flags
  * \param in change status string to parse for
@@ -232,6 +233,8 @@ static int parse_change_status(const char *in)
 
 	return flags;
 }
+#endif
+
 
 static int print_debug(uint32_t flags, char *tmp, const int size)
 {
@@ -441,7 +444,9 @@ static const char *ftdm_libpri_usage =
 	"libpri kill <span>\n"
 	"libpri reset <span>\n"
 	"libpri restart <span> <channel/all>\n"
+#ifdef HAVE_LIBPRI_MAINT_SERVICE
 	"libpri maintenance <span> <channel/all> <in/maint/out>\n"
+#endif
 	"libpri debug <span> [all|none|flag,...flagN]\n"
 	"libpri msn <span>\n"
 	"\n"
@@ -650,6 +655,7 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				goto done;
 			}
 		}
+#ifdef HAVE_LIBPRI_MAINT_SERVICE
 		if (!strcasecmp(argv[0], "maintenance") && argc > 3) {
 			ftdm_span_t *span = NULL;
 			if (ftdm_span_find_by_name(argv[1], &span) == FTDM_SUCCESS) {
@@ -681,6 +687,7 @@ static FIO_API_FUNCTION(ftdm_libpri_api)
 				goto done;
 			}
 		}
+#endif
 	} else {
 		/* zero args print usage */
 		stream->write_function(stream, ftdm_libpri_usage);
@@ -2167,7 +2174,7 @@ static int on_restart_ack(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri
 /*
  * FACILITY Advice-On-Charge handler
  */
-#ifdef HAVE_LIBPRI_AOC
+#if defined(HAVE_LIBPRI_AOC) && defined(PRI_EVENT_FACILITY)
 static const char *aoc_billing_id(const int id)
 {
 	switch (id) {
@@ -2286,6 +2293,7 @@ static int handle_facility_aoc_e(const struct pri_subcmd_aoc_e *aoc_e)
 }
 #endif
 
+#ifdef PRI_EVENT_FACILITY
 /**
  * \brief Handler for libpri facility events
  * \param spri Pri wrapper structure (libpri, span, dchan)
@@ -2341,6 +2349,7 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 	ftdm_log(FTDM_LOG_DEBUG, "Caught Event on span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
+#endif
 
 /**
  * \brief Handler for libpri dchan up event
@@ -2526,10 +2535,12 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 		pri_facility_enable(isdn_data->spri.pri);
 	}
 #endif
+#ifdef HAVE_LIBPRI_MAINT_SERVICE
 	/* Support the different switch of service status */
 	if (isdn_data->service_message_support) {
 		pri_set_service_message_support(isdn_data->spri.pri, 1);
 	}
+#endif
 
 	/* Callbacks for libpri events */
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANY, on_anything);
@@ -2548,7 +2559,9 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART, on_restart);
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART_ACK, on_restart_ack);
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_IO_FAIL, on_io_fail);
+#ifdef PRI_EVENT_FACILITY
 	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_FACILITY, on_facility);
+#endif
 
 	/* Callback invoked on each iteration of the lpwrap_run_pri() event loop */
 	isdn_data->spri.on_loop = check_flags;

@@ -247,7 +247,7 @@ static __inline__ int16_t saturated_add16(int16_t a, int16_t b)
     int16_t z;
 
     __asm__ __volatile__(
-        " qsub16 %[z],%[a],%[b];\n"
+        " qadd16 %[z],%[a],%[b];\n"
         : [z] "=r" (z)
         : [a] "r" (a), [b] "r" (b)
     );

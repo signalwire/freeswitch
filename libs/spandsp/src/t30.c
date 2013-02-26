@@ -1179,9 +1179,9 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     if ((s->supported_modems & T30_SUPPORT_V17))
         s->local_dis_dtc_frame[4] |= (DISBIT6 | DISBIT4 | DISBIT3);
     if ((s->supported_resolutions & T30_SUPPORT_FINE_RESOLUTION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 15);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE);
     if ((s->supported_compressions & T30_SUPPORT_T4_2D_COMPRESSION))
-        set_ctrl_bit(s->local_dis_dtc_frame, 16);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE);
     /* 215mm wide is always supported */
     if ((s->supported_image_sizes & T30_SUPPORT_303MM_WIDTH))
         set_ctrl_bit(s->local_dis_dtc_frame, 18);
@@ -2002,6 +2002,11 @@ static int start_sending_document(t30_state_t *s)
     if (s->use_own_tz)
         t4_tx_set_header_tz(&s->t4.tx, &s->tz);
 
+    if (tx_start_page(s))
+        return -1;
+    s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
+    s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);
+    s->image_width = t4_tx_get_image_width(&s->t4.tx);
     /* The minimum scan time to be used can't be evaluated until we know the Y resolution, and
        must be evaluated before the minimum scan row bits can be evaluated. */
     if ((min_row_bits = set_min_scan_time_code(s)) < 0)
@@ -2012,11 +2017,6 @@ static int start_sending_document(t30_state_t *s)
     span_log(&s->logging, SPAN_LOG_FLOW, "Minimum bits per row will be %d\n", min_row_bits);
     t4_tx_set_min_bits_per_row(&s->t4.tx, min_row_bits);
 
-    if (tx_start_page(s))
-        return -1;
-    s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
-    s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);
-    s->image_width = t4_tx_get_image_width(&s->t4.tx);
     if (s->error_correcting_mode)
     {
         if (get_partial_ecm_page(s) == 0)

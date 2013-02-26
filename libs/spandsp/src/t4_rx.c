@@ -711,6 +711,12 @@ SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) t4_rx_get_logging_state(t4_rx_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int output_encoding)
 {
     int allocated;

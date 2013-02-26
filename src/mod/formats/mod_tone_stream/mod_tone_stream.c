@@ -136,10 +136,11 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 	switch_buffer_create_dynamic(&audio_buffer, 1024, 1024, 0);
 	switch_assert(audio_buffer);
 
-	if ((tmp = strstr(tonespec, ";loops="))) {
-		*tmp = '\0';
-		loops = atoi(tmp + 7);
-		switch_buffer_set_loops(audio_buffer, loops);
+	if (handle->params) {
+		if ((tmp = switch_event_get_header(handle->params, "loops"))) {
+			loops = atoi(tmp);
+			switch_buffer_set_loops(audio_buffer, loops);		
+		}
 	}
 
 	if (!handle->samplerate) {

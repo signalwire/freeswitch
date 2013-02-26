@@ -52,14 +52,10 @@ EXTRA_DIST = autogen.sh \
 if COND_DOC
     MAYBE_DOC=doc
 endif
-if COND_TESTDATA
-    MAYBE_TESTDATA=test-data
-endif
 if COND_TESTS
-    MAYBE_TESTDATA=test-data
-    MAYBE_TESTS=spandsp-sim tests
+    MAYBE_TESTS=spandsp-sim test-data tests
 endif
-SUBDIRS = src $(MAYBE_DOC) $(MAYBE_TESTDATA) $(MAYBE_TESTS)
+SUBDIRS = src $(MAYBE_DOC) $(MAYBE_TESTS)
 
 DIST_SUBDIRS = src doc test-data spandsp-sim tests
 

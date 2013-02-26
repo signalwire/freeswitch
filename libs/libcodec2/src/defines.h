@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------*\
 
   FILE........: defines.h                                                     
-  AUTHOR......: David Rowe                                                          
+  AUTHOR......: David Rowe 
   DATE CREATED: 23/4/93                                                       
                                                                              
   Defines and structures used throughout the codec.			     
@@ -22,8 +22,7 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __DEFINES__
@@ -48,7 +47,7 @@
 #define FFT_ENC    512		/* size of FFT used for encoder         */
 #define FFT_DEC    512	    	/* size of FFT used in decoder          */
 #define TW         40		/* Trapezoidal synthesis window overlap */
-#define V_THRESH   4.0          /* voicing threshold in dB              */
+#define V_THRESH   6.0          /* voicing threshold in dB              */
 #define LPC_MAX    20		/* maximum LPC order                    */
 #define LPC_ORD    10		/* phase modelling LPC order            */
 
@@ -64,21 +63,32 @@
                                                                              
 \*---------------------------------------------------------------------------*/
 
-/* Complex number */
-
-typedef struct {
-  float real;
-  float imag;
-} COMP;
-
 /* Structure to hold model parameters for one frame */
 
 typedef struct {
   float Wo;		/* fundamental frequency estimate in radians  */
   int   L;		/* number of harmonics                        */
-  float A[MAX_AMP];	/* amplitiude of each harmonic                */
-  float phi[MAX_AMP];	/* phase of each harmonic                     */
+  float A[MAX_AMP+1];	/* amplitiude of each harmonic                */
+  float phi[MAX_AMP+1];	/* phase of each harmonic                     */
   int   voiced;	        /* non-zero if this frame is voiced           */
 } MODEL;
+
+/* describes each codebook  */
+
+struct lsp_codebook {
+    int			k;        /* dimension of vector	*/
+    int			log2m;    /* number of bits in m	*/
+    int			m;        /* elements in codebook	*/
+    const float	*	cb;	  /* The elements		*/
+};
+
+extern const struct lsp_codebook lsp_cb[];
+extern const struct lsp_codebook lsp_cbd[];
+extern const struct lsp_codebook lsp_cbvq[];
+extern const struct lsp_codebook lsp_cbjnd[];
+extern const struct lsp_codebook lsp_cbdt[];
+extern const struct lsp_codebook lsp_cbjvm[];
+extern const struct lsp_codebook lsp_cbvqanssi[];
+extern const struct lsp_codebook ge_cb[];
 
 #endif

@@ -359,6 +359,7 @@ sub DESTROY {
 
 *bind = *freeswitchc::EventConsumer_bind;
 *pop = *freeswitchc::EventConsumer_pop;
+*cleanup = *freeswitchc::EventConsumer_cleanup;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);
@@ -430,6 +431,7 @@ sub DESTROY {
 *setDTMFCallback = *freeswitchc::CoreSession_setDTMFCallback;
 *speak = *freeswitchc::CoreSession_speak;
 *set_tts_parms = *freeswitchc::CoreSession_set_tts_parms;
+*set_tts_params = *freeswitchc::CoreSession_set_tts_params;
 *collectDigits = *freeswitchc::CoreSession_collectDigits;
 *getDigits = *freeswitchc::CoreSession_getDigits;
 *transfer = *freeswitchc::CoreSession_transfer;

@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>flite</ProjectName>
+    <ProjectGuid>{0AD1177E-1FD8-4643-9391-431467A11084}</ProjectGuid>
+    <RootNamespace>flite-1.5.4</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\w32\extlib.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\flite-1.5.4\include;..\..\flite-1.5.4\lang\usenglish;..\..\flite-1.5.4\lang\cmulex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DisableSpecificWarnings>4100;4057;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\flite-1.5.4\include;..\..\flite-1.5.4\lang\usenglish;..\..\flite-1.5.4\lang\cmulex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DisableSpecificWarnings>4100;4057;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\..\flite-1.5.4\include;..\..\flite-1.5.4\lang\usenglish;..\..\flite-1.5.4\lang\cmulex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DisableSpecificWarnings>4100;4057;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\..\flite-1.5.4\include;..\..\flite-1.5.4\lang\usenglish;..\..\flite-1.5.4\lang\cmulex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CST_AUDIO_NONE=1;NO_UNION_INITIALIZATION=1;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <DisableSpecificWarnings>4100;4057;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmulex\cmu_lex.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmulex\cmu_lex_data.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmulex\cmu_lex_entries.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmulex\cmu_lts_model.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmulex\cmu_lts_rules.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmulex\cmu_postlex.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_cart.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_clunits.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_lex_entry.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_lpc.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_time_awb\cmu_time_awb_mcep.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_durmodel.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_f0_trees.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_phonestate.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_single_mcep_trees.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_single_params.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_accent.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_accent_params.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_phrase.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16_diphone.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16_lpc.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16_res.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal16\cmu_us_kal16_residx.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_diphone.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_lpc.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_res.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_residx.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_kal\cmu_us_kal_ressize.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_durmodel.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_f0_trees.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_phonestate.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_single_mcep_trees.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_single_params.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_accent.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_accent_params.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_phrase.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_voice.cpp" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_durmodel.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_f0_trees.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_phonestate.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_single_mcep_trees.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_single_params.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_accent.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_accent_params.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_phrase.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\usenglish.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_aswd.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_durz_cart.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_dur_stats.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_expand.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_f0lr.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_f0_model.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_ffeatures.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_gpos.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_int_accent_cart.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_int_tone_cart.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_nums_cart.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_phoneset.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_phrasing_cart.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_pos_cart.c" />
+    <ClCompile Include="..\..\flite-1.5.4\lang\usenglish\us_text.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\audio\audio.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\audio\au_command.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\audio\au_none.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\audio\au_streaming.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\cg\cst_cg.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\cg\cst_cg_dump_voice.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\cg\cst_cg_load_voice.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\cg\cst_cg_map.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\cg\cst_mlpg.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\cg\cst_mlsa.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\cg\cst_spamf0.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\cg\cst_vc.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\hrg\cst_ffeature.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\hrg\cst_item.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\hrg\cst_relation.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\hrg\cst_rel_io.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\hrg\cst_utterance.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\lexicon\cst_lexicon.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\lexicon\cst_lts.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\lexicon\cst_lts_rewrites.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\regex\cst_regex.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\regex\regexp.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\regex\regsub.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\cst_lpcres.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\cst_track.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\cst_track_io.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\cst_wave.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\cst_wave_io.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\cst_wave_utils.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\g721.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\g723_24.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\g723_40.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\g72x.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\speech\rateconv.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\stats\cst_cart.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\stats\cst_ss.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\stats\cst_viterbi.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\synth\cst_ffeatures.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\synth\cst_phoneset.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\synth\cst_ssml.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\synth\cst_synth.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\synth\cst_utt_utils.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\synth\cst_voice.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\synth\flite.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_alloc.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_args.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_endian.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_error.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_features.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_file_stdio.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_mmap_win32.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_socket.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_string.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_tokenstream.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_url.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_val.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_val_const.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_val_user.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\utils\cst_wchar.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\wavesynth\cst_clunits.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\wavesynth\cst_diphone.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\wavesynth\cst_reflpc.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\wavesynth\cst_sigpr.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\wavesynth\cst_sts.c" />
+    <ClCompile Include="..\..\flite-1.5.4\src\wavesynth\cst_units.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_alloc.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_args.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_audio.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_cart.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_cg.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_clunits.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_diphone.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_endian.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_error.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_features.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_ffeatures.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_file.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_hrg.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_item.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_lexicon.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_lts.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_lts_rewrites.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_math.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_phoneset.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_regex.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_relation.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_sigpr.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_socket.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_ss.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_string.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_sts.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_synth.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_tokenstream.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_track.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_units.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_utterance.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_utt_utils.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_val.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_val_const.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_val_defs.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_viterbi.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_voice.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_wave.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\cst_wchar.h" />
+    <ClInclude Include="..\..\flite-1.5.4\include\flite.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmulex\cmu_lex.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmulex\cmu_lts_model.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_time_awb\voxdefs.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_durmodel.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_f0_trees.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_cg_single_mcep_trees.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_accent.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_awb\cmu_us_awb_spamf0_phrase.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_awb\voxdefs.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_kal16\voxdefs.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_kal\voxdefs.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_durmodel.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_f0_trees.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_cg_single_mcep_trees.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_accent.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_rms\cmu_us_rms_spamf0_phrase.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_rms\stdafx.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_rms\voxdefs.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_durmodel.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_f0_trees.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_cg_single_mcep_trees.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_accent.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_slt\cmu_us_slt_spamf0_phrase.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\cmu_us_slt\voxdefs.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\usenglish.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_durz_cart.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_f0.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_ffeatures.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_int_accent_cart.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_int_tone_cart.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_nums_cart.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_phrasing_cart.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_pos_cart.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_regexes.h" />
+    <ClInclude Include="..\..\flite-1.5.4\lang\usenglish\us_text.h" />
+    <ClInclude Include="..\..\flite-1.5.4\src\cg\cst_cg_map.h" />
+    <ClInclude Include="..\..\flite-1.5.4\src\cg\cst_spamf0.h" />
+    <ClInclude Include="..\..\flite-1.5.4\src\regex\cst_regex_defs.h" />
+    <ClInclude Include="..\..\flite-1.5.4\src\speech\g72x.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download FLITE.2012.vcxproj">
+      <Project>{d5d2bf72-29fe-4982-a9fa-82fdd086db1b}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -563,103 +563,142 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	char base_dir[1024] = SWITCH_PREFIX_DIR;
 #endif
 
-	if (!SWITCH_GLOBAL_dirs.base_dir && (SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(BUFSIZE))) {
-		switch_snprintf(SWITCH_GLOBAL_dirs.base_dir, BUFSIZE, "%s", base_dir);
-	}
+	/* Order of precedence for, eg, rundir:
+	 *   -run
+	 *   -base
+	 *   --with-rundir
+	 *   --prefix
+	 */
 
 	if (!SWITCH_GLOBAL_dirs.mod_dir && (SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.mod_dir, BUFSIZE, "%s%smod", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_MOD_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.mod_dir, BUFSIZE, "%s", SWITCH_MOD_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.mod_dir, BUFSIZE, "%s", SWITCH_MOD_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.mod_dir, BUFSIZE, "%s%smod", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.mod_dir, BUFSIZE, "%s%smod", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.lib_dir && (SWITCH_GLOBAL_dirs.lib_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.lib_dir, BUFSIZE, "%s%slib", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_LIB_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.lib_dir, BUFSIZE, "%s", SWITCH_LIB_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.lib_dir, BUFSIZE, "%s", SWITCH_LIB_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.lib_dir, BUFSIZE, "%s%slib", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.lib_dir, BUFSIZE, "%s%slib", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.conf_dir && (SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%s%sconf", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_CONF_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%s", SWITCH_CONF_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%s", SWITCH_CONF_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%s%sconf", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%s%sconf", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.log_dir && (SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.log_dir, BUFSIZE, "%s%slog", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_LOG_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.log_dir, BUFSIZE, "%s", SWITCH_LOG_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.log_dir, BUFSIZE, "%s", SWITCH_LOG_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.log_dir, BUFSIZE, "%s%slog", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.log_dir, BUFSIZE, "%s%slog", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.run_dir && (SWITCH_GLOBAL_dirs.run_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.run_dir, BUFSIZE, "%s%srun", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_RUN_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.run_dir, BUFSIZE, "%s", SWITCH_RUN_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.run_dir, BUFSIZE, "%s", SWITCH_RUN_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.run_dir, BUFSIZE, "%s%srun", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.run_dir, BUFSIZE, "%s%srun", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.recordings_dir && (SWITCH_GLOBAL_dirs.recordings_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.recordings_dir, BUFSIZE, "%s%srecordings", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_RECORDINGS_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.recordings_dir, BUFSIZE, "%s", SWITCH_RECORDINGS_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.recordings_dir, BUFSIZE, "%s", SWITCH_RECORDINGS_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.recordings_dir, BUFSIZE, "%s%srecordings", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.recordings_dir, BUFSIZE, "%s%srecordings", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.sounds_dir && (SWITCH_GLOBAL_dirs.sounds_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.sounds_dir, BUFSIZE, "%s%ssounds", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_SOUNDS_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.sounds_dir, BUFSIZE, "%s", SWITCH_SOUNDS_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.sounds_dir, BUFSIZE, "%s", SWITCH_SOUNDS_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.sounds_dir, BUFSIZE, "%s%ssounds", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.sounds_dir, BUFSIZE, "%s%ssounds", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.storage_dir && (SWITCH_GLOBAL_dirs.storage_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.storage_dir, BUFSIZE, "%s%sstorage", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_STORAGE_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.storage_dir, BUFSIZE, "%s", SWITCH_STORAGE_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.storage_dir, BUFSIZE, "%s", SWITCH_STORAGE_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.storage_dir, BUFSIZE, "%s%sstorage", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.storage_dir, BUFSIZE, "%s%sstorage", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.db_dir && (SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%s%sdb", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_DB_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%s", SWITCH_DB_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%s", SWITCH_DB_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%s%sdb", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%s%sdb", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.script_dir && (SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.script_dir, BUFSIZE, "%s%sscripts", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_SCRIPT_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.script_dir, BUFSIZE, "%s", SWITCH_SCRIPT_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.script_dir, BUFSIZE, "%s", SWITCH_SCRIPT_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.script_dir, BUFSIZE, "%s%sscripts", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.script_dir, BUFSIZE, "%s%sscripts", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.htdocs_dir && (SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s%shtdocs", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_HTDOCS_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s", SWITCH_HTDOCS_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s", SWITCH_HTDOCS_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s%shtdocs", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s%shtdocs", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
 	if (!SWITCH_GLOBAL_dirs.grammar_dir && (SWITCH_GLOBAL_dirs.grammar_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.grammar_dir, BUFSIZE, "%s%sgrammar", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
 #ifdef SWITCH_GRAMMAR_DIR
-		switch_snprintf(SWITCH_GLOBAL_dirs.grammar_dir, BUFSIZE, "%s", SWITCH_GRAMMAR_DIR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.grammar_dir, BUFSIZE, "%s", SWITCH_GRAMMAR_DIR);
 #else
-		switch_snprintf(SWITCH_GLOBAL_dirs.grammar_dir, BUFSIZE, "%s%sgrammar", base_dir, SWITCH_PATH_SEPARATOR);
+			switch_snprintf(SWITCH_GLOBAL_dirs.grammar_dir, BUFSIZE, "%s%sgrammar", base_dir, SWITCH_PATH_SEPARATOR);
 #endif
 	}
 
@@ -678,6 +717,11 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 		switch_snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", "/tmp");
 #endif
 #endif
+	}
+
+	/* Do this last because it being empty is part of the above logic */
+	if (!SWITCH_GLOBAL_dirs.base_dir && (SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(BUFSIZE))) {
+		switch_snprintf(SWITCH_GLOBAL_dirs.base_dir, BUFSIZE, "%s", base_dir);
 	}
 
 	switch_assert(SWITCH_GLOBAL_dirs.base_dir);
@@ -795,12 +839,10 @@ SWITCH_DECLARE(int32_t) set_auto_priority(void)
 
 	if (!runtime.cpu_count) runtime.cpu_count = 1;
 
-	/* If we have more than 1 cpu, we should use realtime priority so we can have priority threads */
-	if (runtime.cpu_count > 1) {
-		return set_realtime_priority();
-	}
+	return set_realtime_priority();
 
-	return 0;
+
+	// ERROR: code not reachable on Windows Visual Studio Express 2008 return 0;
 }
 
 SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
@@ -1173,6 +1215,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	tmp_name = "wan.auto";
 	switch_network_list_create(&rfc_list, tmp_name, SWITCH_TRUE, IP_LIST.pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (allow)\n", tmp_name);
+	switch_network_list_add_cidr(rfc_list, "0.0.0.0/8", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "10.0.0.0/8", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_FALSE);
@@ -1619,8 +1662,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_rtp_init(runtime.memory_pool);
 
 	runtime.running = 1;
-	runtime.initiated = switch_time_now();
-	runtime.mono_initiated = switch_mono_micro_time_now();
+	runtime.initiated = switch_mono_micro_time_now();
 	
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 
@@ -1685,6 +1727,7 @@ static void switch_load_core_config(const char *file)
 	switch_xml_t xml = NULL, cfg = NULL;
 
 	switch_core_hash_insert(runtime.ptimes, "ilbc", &d_30);
+	switch_core_hash_insert(runtime.ptimes, "isac", &d_30);
 	switch_core_hash_insert(runtime.ptimes, "G723", &d_30);
 
 	if ((xml = switch_xml_open_cfg(file, &cfg, NULL))) {
@@ -2056,7 +2099,7 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
 
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 {
-	return switch_mono_micro_time_now() - runtime.mono_initiated;
+	return switch_mono_micro_time_now() - runtime.initiated;
 }
 
 
@@ -2094,6 +2137,9 @@ SWITCH_DECLARE(void) switch_core_set_signal_handlers(void)
 #endif
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
+#endif
+#ifdef SIGALRM
+	signal(SIGALRM, SIG_IGN);
 #endif
 #ifdef SIGQUIT
 	signal(SIGQUIT, SIG_IGN);

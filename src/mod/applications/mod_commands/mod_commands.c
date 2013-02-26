@@ -1530,6 +1530,9 @@ SWITCH_STANDARD_API(eval_function)
 		free(expanded);
 	}
 
+	switch_event_destroy(&event);
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3668,7 +3671,7 @@ SWITCH_STANDARD_API(session_record_function)
 
 	if (!(rsession = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-ERR Cannot locate session!\n");
-		return SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 
 	if (!strcasecmp(action, "start")) {
@@ -3731,7 +3734,7 @@ SWITCH_STANDARD_API(session_displace_function)
 
 	if (!(rsession = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-ERR Cannot locate session!\n");
-		return SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 
 	if (!strcasecmp(action, "start")) {

@@ -1,0 +1,109 @@
+README for codec2/asterisk
+Asterisk Codec 2 support
+
+Test Configuration
+------------------
+
+Codec 2 is used to trunk calls between two Asterisk boxes:
+
+    A - SIP phone - Asterisk A - Codec2 - Asterisk B - SIP Phone - B
+
+The two SIP phones are configured for mulaw.
+
+Building
+---------
+
+Asterisk must be patched so that the core understand Codec 2 frames.
+
+1/ First install Codec 2:
+
+    david@cool:~$ svn co https://freetel.svn.sourceforge.net/svnroot/freetel/codec2-dev codec2-dev
+    david@cool:~/codec2-dev$ cd codec2-dev
+    david@cool:~/codec2-dev$ ./configure && make && sudo make install
+    david@bear:~/codec2-dev$ sudo ldconfig -v
+    david@cool:~/codec2-dev$ cd ~
+
+2/ Then build Asterisk with Codec 2 support:
+
+    david@cool:~$ tar xvzf asterisk-1.8.9.0.tar.gz
+    david@cool:~/asterisk-1.8.9.0$ patch -p4 < ~/codec2-dev/asterisk/asterisk-codec2.patch
+    david@cool:~/asterisk-1.8.9.0$ cp ~/codec2-dev/asterisk/codec_codec2.c .
+    david@cool:~/asterisk-1.8.9.0$ cp ~/codec2-dev/asterisk/ex_codec2.h ./codecs
+    david@cool:~/asterisk-1.8.9.0$ ./configure && make ASTLDFLAGS=-lcodec2
+    david@cool:~/asterisk-1.8.9.0$ sudo make install
+    david@cool:~/asterisk-1.8.9.0$ sudo make samples
+
+3/ Add this to the end of sip.conf on Asterisk A:
+
+    [6013]
+    type=friend
+    context=default
+    host=dynamic
+    user=6013
+    secret=6013
+    canreinvite=no
+    callerid=6013
+    disallow=all
+    allow=ulaw
+
+    [potato]
+    type=peer
+    username=potato
+    fromuser=potato
+    secret=password
+    context=default
+    disallow=all
+    dtmfmode=rfc2833
+    callerid=server
+    canreinvite=no
+    host=cool
+    allow=codec2
+
+3/ Add this to the end of sip.conf on Asterisk B:
+
+    [6014]
+    type=friend
+    context=default
+    host=dynamic
+    user=6014
+    secret=6014
+    canreinvite=no
+    callerid=6014
+    disallow=all
+    allow=ulaw
+
+    [potato]
+    type=peer
+    username=potato
+    fromuser=potato
+    secret=password
+    context=default
+    disallow=all
+    dtmfmode=rfc2833
+    callerid=server
+    canreinvite=no
+    host=bear
+    allow=codec2
+
+4/ Here is the [default] section of extensions.conf on Asterisk B:
+
+    [default]
+
+    exten => 6013,1,Dial(SIP/potato/6013)
+    ;
+    ; By default we include the demo.  In a production system, you
+    ; probably don't want to have the demo there.
+    ;
+    ;include => demo
+
+5/ After booting see if the codec2_codec2.so module is loaded with "core show translate"
+
+6/ To make a test call dial 6013 on the SIP phone connected to Asterisk B
+
+7/ If codec_codec2.so won't load and you see "can't find codec2_create" try:
+
+    david@cool:~/asterisk-1.8.9.0$ touch codecs/codec_codec2.c
+    david@cool:~/asterisk-1.8.9.0$ make ASTLDFLAGS=-lcodec2
+    david@cool:~/asterisk-1.8.9.0$ sudo cp codecs/codec_codec2.so /usr/lib/asterisk/modules
+    david@cool:~/asterisk-1.8.9.0$ sudo asterisk -vvvcn
+

@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProductVersion>3.5</ProductVersion>
+    <ProjectGuid>{47213370-b933-487d-9f45-bca26d7e2b6f}</ProjectGuid>
+    <SchemaVersion>2.0</SchemaVersion>
+    <OutputName>FreeSWITCH</OutputName>
+    <OutputType>Package</OutputType>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\debug\sounds;FreeSWITCHBaseDir=$(SolutionDir)$(Platform)\$(Configuration);</DefineConstants>
+    <WixVariables>
+    </WixVariables>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\x86\release\</OutputPath>
+    <IntermediateOutputPath>obj\X86\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\Win32\release\sounds;FreeSWITCHBaseDir=$(SolutionDir)$(Platform)\$(Configuration);</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <IntermediateOutputPath>obj\X64\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\debug\sounds;FreeSWITCHBaseDir=$(SolutionDir)$(Platform)\$(Configuration);</DefineConstants>
+    <WixVariables>
+    </WixVariables>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <IntermediateOutputPath>obj\X64\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;FreeSWITCHConfFilesDir=$(ProjectDir)..\..\conf\vanilla;FreeSWITCHSoundFilesDir=$(ProjectDir)..\..\x64\release\sounds;FreeSWITCHBaseDir=$(SolutionDir)$(Platform)\$(Configuration);</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Fragments\FreeSWITCHConfFiles.wxs" />
+    <Compile Include="Fragments\FreeSWITCHSoundFiles8.wxs" />
+    <Compile Include="Fragments\FreeSWITCHBaseFiles.wxs" />
+    <Compile Include="FreeSWITCHConsole.wxs" />
+    <Compile Include="Product.2012.wxs" />
+  </ItemGroup>
+  <ItemGroup>
+    <WixExtension Include="WixUIExtension">
+      <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
+      <Name>WixUIExtension</Name>
+    </WixExtension>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Fragments" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Console\FreeSwitchConsole.2012.vcxproj">
+      <Name>FreeSwitchConsole</Name>
+      <Project>{1af3a893-f7be-43dd-b697-8ab2397c0d67}</Project>
+      <Private>True</Private>
+      <DoNotHarvest>True</DoNotHarvest>
+      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
+      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="filter.xslt" />
+  </ItemGroup>
+  <Import Project="$(WixTargetsPath)" />
+  <PropertyGroup>
+    <PreBuildEvent>"$(WixToolPath)\heat.exe" dir "$(ProjectDir)..\..\conf\vanilla" -cg FreeSWITCHConfFiles -gg -scom -sreg -sfrag -srd -dr CONFLOCATION -var var.FreeSWITCHConfFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
+"$(WixToolPath)\heat.exe" dir "$(SolutionDir)$(Platform)\$(Configuration)\sounds" -cg FreeSWITCHSoundFiles8 -gg -scom -sreg -sfrag -srd -dr SOUNDLOCATION -var var.FreeSWITCHSoundFilesDir -out "$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"
+"$(WixToolPath)\heat.exe" dir "$(SolutionDir)$(Platform)\$(Configuration)" -t $(ProjectDir)filter.xslt -cg FreeSWITCHBaseFiles -gg -scom -sreg -sfrag -srd -dr INSTALLLOCATION -var var.FreeSWITCHBaseDir -out "$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"</PreBuildEvent>
+  </PropertyGroup>
+  <!--
+	To modify your build process, add your task inside one of the targets below and uncomment it.
+	Other similar extension points exist, see Wix.targets.
+	<Target Name="BeforeBuild">
+	</Target>
+	<Target Name="AfterBuild">
+	</Target>
+	-->
+</Project>

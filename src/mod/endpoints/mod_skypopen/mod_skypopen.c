@@ -450,6 +450,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+	memset(tech_pvt->skype_voicemail_id, '\0', sizeof(tech_pvt->skype_voicemail_id));
+	memset(tech_pvt->skype_voicemail_id_greeting, '\0', sizeof(tech_pvt->skype_voicemail_id_greeting));
 	switch_channel_set_variable(channel, "skype_user", tech_pvt->skype_user);
 	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_set_flag(tech_pvt, TFLAG_IO);
@@ -621,9 +623,25 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 		if (strlen(tech_pvt->skype_call_id)) {
 			DEBUGA_SKYPE("hanging up skype call: %s\n", SKYPOPEN_P_LOG, tech_pvt->skype_call_id);
-			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->skype_call_id);
-			skypopen_signaling_write(tech_pvt, msg_to_skype);
+			if(strlen(tech_pvt->skype_voicemail_id_greeting)){
+				sprintf(msg_to_skype, "ALTER VOICEMAIL %s STOPPLAYBACK", tech_pvt->skype_voicemail_id_greeting);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				switch_sleep(MS_SKYPOPEN * 1000 * 100);//XXX FIXME 2000 millisecs, 2 seconds, so it will record at least 1 second
+			}
+
+			if(strlen(tech_pvt->skype_voicemail_id_greeting)){
+				sprintf(msg_to_skype, "ALTER VOICEMAIL %s DELETE", tech_pvt->skype_voicemail_id_greeting);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				switch_sleep(MS_SKYPOPEN * 1000 * 10);//XXX FIXME 200 millisecs
+			}
+			if(strlen(tech_pvt->skype_voicemail_id)){
+				sprintf(msg_to_skype, "ALTER VOICEMAIL %s STOPRECORDING", tech_pvt->skype_voicemail_id);
+				skypopen_signaling_write(tech_pvt, msg_to_skype);
+				switch_sleep(MS_SKYPOPEN * 1000 * 10);//XXX FIXME 200 millisecs
+			}
 			sprintf(msg_to_skype, "ALTER CALL %s HANGUP", tech_pvt->skype_call_id);
+			skypopen_signaling_write(tech_pvt, msg_to_skype);
+			sprintf(msg_to_skype, "ALTER CALL %s END HANGUP", tech_pvt->skype_call_id);
 			skypopen_signaling_write(tech_pvt, msg_to_skype);
 		}
 		DEBUGA_SKYPE("%s CHANNEL HANGUP\n", SKYPOPEN_P_LOG, tech_pvt->name);
@@ -882,7 +900,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				//DEBUGA_SKYPE("skypopen_audio_read going back to read\n", SKYPOPEN_P_LOG);
 				goto read;
 			}
-			DEBUGA_SKYPE("READ BUFFER EMPTY, skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
+
+			if (!strlen(tech_pvt->skype_voicemail_id)) {
+				DEBUGA_SKYPE("READ BUFFER EMPTY, skypopen_audio_read Silence\n", SKYPOPEN_P_LOG);
+			}
 			memset(tech_pvt->read_frame.data, 255, BYTES_PER_FRAME);
 			tech_pvt->read_frame.datalen = BYTES_PER_FRAME;
 
@@ -1030,7 +1051,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 	switch_buffer_write(tech_pvt->write_buffer, frame->data, frame->datalen);
 	switch_mutex_unlock(tech_pvt->mutex_audio_cli);
-	if (no_space) {
+	if (no_space && !strlen(tech_pvt->skype_voicemail_id)) {
 		//switch_sleep(MS_SKYPOPEN * 1000);
 		DEBUGA_SKYPE("NO SPACE in WRITE BUFFER: there was no space for %d\n", SKYPOPEN_P_LOG, frame->datalen);
 	}
@@ -1797,7 +1818,7 @@ static switch_status_t load_config(int reload_type)
 						("Interface_id=%d is now STARTED, the Skype client to which we are connected gave us the correct CURRENTUSERHANDLE (%s)\n",
 						 SKYPOPEN_P_LOG, interface_id, globals.SKYPOPEN_INTERFACES[interface_id].skype_user);
 
-					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "PROTOCOL 7");
+					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "PROTOCOL 999");
 					switch_sleep(20000);
 					skypopen_signaling_write(&globals.SKYPOPEN_INTERFACES[interface_id], "SET AUTOAWAY OFF");
 					switch_sleep(20000);
@@ -2008,34 +2029,40 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypopen_load)
 #endif
 
 	running = 1;
-	load_config(FULL_RELOAD);
 
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	skypopen_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	skypopen_endpoint_interface->interface_name = "skypopen";
-	skypopen_endpoint_interface->io_routines = &skypopen_io_routines;
-	skypopen_endpoint_interface->state_handler = &skypopen_state_handlers;
+	if (load_config(FULL_RELOAD) == SWITCH_STATUS_SUCCESS) {
 
-	if (running) {
+		*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+		skypopen_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+		skypopen_endpoint_interface->interface_name = "skypopen";
+		skypopen_endpoint_interface->io_routines = &skypopen_io_routines;
+		skypopen_endpoint_interface->state_handler = &skypopen_state_handlers;
 
-		SWITCH_ADD_API(commands_api_interface, "sk", "Skypopen console commands", sk_function, SK_SYNTAX);
-		SWITCH_ADD_API(commands_api_interface, "skypopen", "Skypopen interface commands", skypopen_function, SKYPOPEN_SYNTAX);
-		SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function,
-					   SKYPOPEN_CHAT_SYNTAX);
-		SWITCH_ADD_CHAT(chat_interface, SKYPE_CHAT_PROTO, chat_send);
+		if (running) {
 
-		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
-			return SWITCH_STATUS_FALSE;
+			SWITCH_ADD_API(commands_api_interface, "sk", "Skypopen console commands", sk_function, SK_SYNTAX);
+			SWITCH_ADD_API(commands_api_interface, "skypopen", "Skypopen interface commands", skypopen_function, SKYPOPEN_SYNTAX);
+			SWITCH_ADD_API(commands_api_interface, "skypopen_chat", "Skypopen_chat interface remote_skypename TEXT", skypopen_chat_function,
+					SKYPOPEN_CHAT_SYNTAX);
+			SWITCH_ADD_CHAT(chat_interface, SKYPE_CHAT_PROTO, chat_send);
+
+			if (switch_event_reserve_subclass(MY_EVENT_INCOMING_CHATMESSAGE) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+				return SWITCH_STATUS_FALSE;
+			}
+
+			if (switch_event_reserve_subclass(MY_EVENT_INCOMING_RAW) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
+				return SWITCH_STATUS_FALSE;
+			}
+
+			/* indicate that the module should continue to be loaded */
+			return SWITCH_STATUS_SUCCESS;
 		}
-
-		if (switch_event_reserve_subclass(MY_EVENT_INCOMING_RAW) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
-			return SWITCH_STATUS_FALSE;
-		}
-
-		/* indicate that the module should continue to be loaded */
-		return SWITCH_STATUS_SUCCESS;
+	} else {
+		running = 0;
+		switch_sleep(1000000); //1 full second
+		return SWITCH_STATUS_FALSE;
 	}
 	return SWITCH_STATUS_FALSE;
 }

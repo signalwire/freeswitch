@@ -2789,6 +2789,13 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		rv = switch_socket_opt_set(listen_list.sock, SWITCH_SO_REUSEADDR, 1);
 		if (rv)
 			goto sock_fail;
+#ifdef WIN32
+		/* Enable dual-stack listening on Windows (if the listening address is IPv6), it's default on Linux */
+		if (switch_sockaddr_get_family(sa) == AF_INET6) {
+			rv = switch_socket_opt_set(listen_list.sock, 16384, 0);
+			if (rv) goto sock_fail;
+		}
+#endif
 		rv = switch_socket_bind(listen_list.sock, sa);
 		if (rv)
 			goto sock_fail;

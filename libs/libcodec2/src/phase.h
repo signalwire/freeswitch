@@ -22,13 +22,18 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __PHASE__
 #define __PHASE__
 
-void phase_synth_zero_order(MODEL *model, float aks[], float *ex_phase);
+#include "kiss_fft.h"
+
+void phase_synth_zero_order(kiss_fft_cfg fft_dec_cfg, 
+			    MODEL *model, 
+			    float aks[], 
+                            float *ex_phase, 
+			    int order);
 
 #endif

@@ -11,8 +11,8 @@
       </input>
     </macro>
 
-    <macro name="plurial_msg">
-      <input pattern="^[01]:(.*):(.*)$" break_on_match="true">
+    <macro name="plural_msg">
+      <input pattern="^[1]:(.*):(.*)$" break_on_match="true">
         <match>
           <action function="play-file" data="$1"/>
         </match>
@@ -89,7 +89,7 @@
           <action function="play-file" data="voicemail/vm-you_have.wav"/>
           <action function="say" data="${VM-Total-New-Urgent-Messages}" method="pronounced" type="items"/>
           <action function="play-file" data="voicemail/vm-urgent-new.wav"/>
-          <action function="phrase" phrase="plurial_msg@voicemail_ivr" data="${VM-Total-New-Urgent-Messages}:voicemail/vm-message.wav:voicemail/vm-messages.wav"/>
+          <action function="phrase" phrase="plural_msg@voicemail_ivr" data="${VM-Total-New-Urgent-Messages}:voicemail/vm-message.wav:voicemail/vm-messages.wav"/>
         </nomatch>
       </input>
       <input field="${VM-Total-New-Messages}" pattern="^(\d+)$">
@@ -97,7 +97,7 @@
           <action function="play-file" data="voicemail/vm-you_have.wav"/>
           <action function="say" data="${VM-Total-New-Messages}" method="pronounced" type="items"/>
           <action function="play-file" data="voicemail/vm-new.wav"/>
-          <action function="phrase" phrase="plurial_msg@voicemail_ivr" data="${VM-Total-New-Messages}:voicemail/vm-message.wav:voicemail/vm-messages.wav"/>
+          <action function="phrase" phrase="plural_msg@voicemail_ivr" data="${VM-Total-New-Messages}:voicemail/vm-message.wav:voicemail/vm-messages.wav"/>
         </match>
       </input>
       <input field="${VM-Total-Saved-Messages}" pattern="^(0)$">
@@ -105,16 +105,24 @@
           <action function="play-file" data="currency/and.wav"/>
           <action function="say" data="${VM-Total-Saved-Messages}" method="pronounced" type="items"/>
           <action function="play-file" data="voicemail/vm-saved.wav"/>
-          <action function="phrase" phrase="plurial_msg@voicemail_ivr" data="${VM-Total-Saved-Messages}:voicemail/vm-message.wav:voicemail/vm-messages.wav"/>
+          <action function="phrase" phrase="plural_msg@voicemail_ivr" data="${VM-Total-Saved-Messages}:voicemail/vm-message.wav:voicemail/vm-messages.wav"/>
         </nomatch>
       </input>
     </macro>
 
     <macro name="menu">
-      <input>
-        <match>
+      <input field="${VM-Total-New-Messages}" pattern="^(0)$">
+        <nomatch>
           <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Play-New-Messages}:voicemail/vm-listen_new.wav"/>
+	</nomatch>
+      </input>
+      <input field="${VM-Total-Saved-Messages}" pattern="^(0)$">
+	<nomatch>
           <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Play-Saved-Messages}:voicemail/vm-listen_saved.wav"/>
+	</nomatch>
+      </input>
+      <input>
+	<match>
           <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Config-Menu}:voicemail/vm-advanced.wav"/>
           <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Terminator}:voicemail/vm-to_exit.wav"/>
         </match>
@@ -264,6 +272,7 @@
     <macro name="greeting_selected">
       <input pattern="^(\d+)$">
         <match>
+	  <action function="play-file" data="${VM-Preference-Greeting-File-Path}"/>
           <action function="play-file" data="voicemail/vm-greeting.wav"/>
           <action function="say" data="$1" method="pronounced" type="items"/>
           <action function="play-file" data="voicemail/vm-selected.wav"/>

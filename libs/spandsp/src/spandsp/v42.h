@@ -70,6 +70,12 @@ SPAN_DECLARE(int) v42_tx_bit(void *user_data);
 
 SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, modem_status_func_t callback, void *user_data);
 
+/*! Get the logging context associated with a V.42 context.
+    \brief Get the logging context associated with a V.42 context.
+    \param s The V.42 context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) v42_get_logging_state(v42_state_t *s);
+
 /*! Initialise a V.42 context.
     \param s The V.42 context.
     \param calling_party TRUE if caller mode, else answerer mode.

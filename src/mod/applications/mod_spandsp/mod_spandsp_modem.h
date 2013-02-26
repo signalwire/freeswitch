@@ -120,6 +120,7 @@ typedef enum {
 
 struct modem {
 	t31_state_t *t31_state;
+	t38_core_state_t *t38_core;
 	char digits[512];
 	modem_flags flags;
 #ifndef WIN32

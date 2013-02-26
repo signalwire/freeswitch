@@ -35,8 +35,7 @@
 #  GNU General Public License for more details.
 # 
 #  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#  along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 files=0
 items="Q-Quit\n"
@@ -52,19 +51,30 @@ do
   shift
 done
 
-readchar=1
 echo -n -e "\r" $items"- "
-while [ $readchar -ne 0 ]
-do
+while true ; do
   echo -n -e "\r -"
-  stty cbreak         # or stty raw
-  readchar=`dd if=/dev/tty bs=1 count=1 2>/dev/null`
+  stty cbreak         # or stty raw. Stty uses file descriptor 0, not /dev/tty.
+  readchar=`dd bs=1 count=1 2>/dev/null`
   stty -cbreak
-  if [ $readchar == 'q' ] ; then
-    readchar=0
-  fi
-  if [ $readchar -ne 0 ] ; then
-    play -r 8000 -s -2 ${file[$readchar]} $dsp 2> /dev/null
+  if [ -n "$readchar" ] ; then
+    if [ x$readchar == 'xq' -o x$readchar == 'xQ' ] ; then
+      echo
+      exit 0
+    fi
+    if [ -z ${file[$readchar]} ] ; then
+        echo -n -e "\nUnknown input\n" $items"- "
+        continue
+    fi
+    if ( play --version ) >/dev/null 2>&1; then
+      play -r 8000 -s -2 ${file[$readchar]} $dsp 2> /dev/null
+    elif ( aplay --version ) > /dev/null 2>&1; then
+      aplay -r 8000 -f S16_LE ${file[$readchar]} 2> /dev/null
+    elif ( ossplay -f? ) > /dev/null 2>&1; then
+      ossplay -s8000 -fS16_LE ${file[$readchar]} 2> /dev/null
+    else
+      echo "could not find play, aplay or ossplay program"
+    fi
   fi
 done
 echo

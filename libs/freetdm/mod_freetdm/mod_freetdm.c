@@ -489,6 +489,10 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->write_codec.implementation) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
+
+		switch_core_session_unset_read_codec(session);
+		switch_core_session_unset_write_codec(session);
+
 	}
 
 	return SWITCH_STATUS_SUCCESS;

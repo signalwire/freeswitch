@@ -127,6 +127,7 @@ static switch_status_t set_xml_cdr_log_dirs()
 			if ((path = switch_safe_strdup(globals.base_log_dir))) {
 				switch_thread_rwlock_wrlock(globals.log_path_lock);
 				switch_safe_free(globals.log_dir);
+				switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, globals.pool);
 				globals.log_dir = path;
 				switch_thread_rwlock_unlock(globals.log_path_lock);
 			} else {
@@ -165,6 +166,7 @@ static switch_status_t set_xml_cdr_log_dirs()
 			if ((path = switch_safe_strdup(globals.base_err_log_dir))) {
 				switch_thread_rwlock_wrlock(globals.log_path_lock);
 				switch_safe_free(globals.err_log_dir);
+				switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, globals.pool);
 				globals.err_log_dir = path;
 				switch_thread_rwlock_unlock(globals.log_path_lock);
 			} else {

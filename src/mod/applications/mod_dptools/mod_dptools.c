@@ -336,6 +336,7 @@ static void bind_to_session(switch_core_session_t *session,
 	struct action_binding *act;
 	switch_ivr_dmachine_t *dmachine;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *terminators = NULL;
 
 	if (!(dmachine = switch_core_session_get_dmachine(session, target))) {
 		uint32_t digit_timeout = 1500;
@@ -363,6 +364,10 @@ static void bind_to_session(switch_core_session_t *session,
 	act->target = bind_target;
 	act->session = session;
 	switch_ivr_dmachine_bind(dmachine, act->realm, act->input, 0, digit_action_callback, act);
+
+	if ((terminators = switch_channel_get_variable(channel, "bda_terminators"))) {
+		switch_ivr_dmachine_set_terminators(dmachine, terminators);
+	}
 }
 
 #define BIND_DIGIT_ACTION_USAGE "<realm>,<digits|~regex>,<string>[,<value>][,<dtmf target leg>][,<event target leg>]"
@@ -602,6 +607,24 @@ SWITCH_STANDARD_APP(soft_hold_function)
 SWITCH_STANDARD_APP(dtmf_unblock_function)
 {
 	switch_ivr_unblock_dtmf_session(session);
+}
+
+SWITCH_STANDARD_APP(media_reset_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *name = switch_channel_get_name(channel);
+
+	if (switch_channel_media_ready(channel)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s This function does not work once media has been established.\n", name);
+		return;
+	}
+
+	switch_channel_clear_flag(channel, CF_PROXY_MODE);
+	switch_channel_clear_flag(channel, CF_PROXY_MEDIA);
+	switch_channel_set_variable(channel, "bypass_media", NULL);
+	switch_channel_set_variable(channel, "proxy_media", NULL);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%sReset MEDIA flags.\n", name);
 }
 
 SWITCH_STANDARD_APP(dtmf_block_function)
@@ -2002,6 +2025,9 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 
 			if (!(terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE))) {
 				terminators = "*";
+			}
+			if (!strcasecmp(terminators, "any")) {
+				terminators = "1234567890*#";
 			}
 			if (!strcasecmp(terminators, "none")) {
 				terminators = NULL;
@@ -4490,6 +4516,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	handle->seekable = context->fh.seekable;
 	handle->speed = context->fh.speed;
 	handle->interval = context->fh.interval;
+	handle->max_samples = 0;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
 		switch_set_flag(handle, SWITCH_FILE_NATIVE);
@@ -5606,6 +5633,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   sched_heartbeat_function, SCHED_HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "enable_heartbeat", "Enable Media Heartbeat", "Enable Media Heartbeat",
 				   heartbeat_function, HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "media_reset", "Reset all bypass/proxy media flags", "Reset all bypass/proxy media flags", media_reset_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mkdir", "Create a directory", "Create a directory", mkdir_function, MKDIR_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "rename", "Rename file", "Rename file", rename_function, RENAME_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "soft_hold", "Put a bridged channel on hold", "Put a bridged channel on hold", soft_hold_function, SOFT_HOLD_SYNTAX,

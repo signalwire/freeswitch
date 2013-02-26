@@ -234,6 +234,7 @@ create_dsc () {
         -e '/\.stamp-build:/{:l2 n; /make/{s/$/ -j/; :l3 n; b l3}; b l2};' ;;
     esac
     git add debian/rules
+    git rm -rf --ignore-unmatch libs/libg722_1 libs/ilbc
     dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
     git add debian/changelog && git commit -m "nightly v$orig_ver"
     dpkg-source -i.* -Zxz -z9 -b .
@@ -311,7 +312,7 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts=""
   local archs="" distros="" orig="" par=false
-  while getopts 'a:bc:df:jmno:s:v:z:' o "$@"; do
+  while getopts 'a:bc:df:jm:no:s:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -376,6 +377,8 @@ commands:
 
   build-all
 
+    [ This must be run as root! ]
+
     -a Specify architectures
     -b Bundle downloaded libraries in source package
     -c Specify distributions
@@ -394,6 +397,8 @@ commands:
     -z Set compression level
 
   build-debs <distro> <dsc-file> <architecture>
+
+    [ This must be run as root! ]
 
     -B Binary architecture-dependent build
     -b Binary-only build

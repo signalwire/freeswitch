@@ -52,7 +52,7 @@
 				ExecutionBucket="7"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../third_party/bnlib;../../include;../../include/enterprise;../../third_party/bgaes;../../test/include"
-				PreprocessorDefinitions="_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;DEBUG;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;ZRTP_ENABLE_EC=0"
+				PreprocessorDefinitions="_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;DEBUG;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;ZRTP_ENABLE_EC=1"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				StructMemberAlignment="0"
@@ -136,7 +136,7 @@
 				ExecutionBucket="7"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../third_party/bnlib;../../include;../../include/enterprise;../../third_party/bgaes;../../test/include"
-				PreprocessorDefinitions="_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;DEBUG;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;ZRTP_ENABLE_EC=0"
+				PreprocessorDefinitions="_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;DEBUG;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;ZRTP_ENABLE_EC=1"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				BufferSecurityCheck="false"
@@ -219,7 +219,7 @@
 				ExecutionBucket="7"
 				Optimization="2"
 				AdditionalIncludeDirectories="../../third_party/bnlib;../../include;../../include/enterprise;../../third_party/bgaes;../../test/include"
-				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;ZRTP_ENABLE_EC=0"
+				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;ZRTP_ENABLE_EC=1"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="0"
@@ -300,7 +300,7 @@
 				ExecutionBucket="7"
 				Optimization="2"
 				AdditionalIncludeDirectories="../../third_party/bnlib;../../include;../../include/enterprise;../../third_party/bgaes;../../test/include"
-				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;ZRTP_ENABLE_EC=0"
+				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;_LIB;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;ZRTP_ENABLE_EC=1"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="0"
@@ -380,6 +380,10 @@
 			</File>
 			<File
 				RelativePath="..\..\include\zrtp_crypto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\zrtp_ec.h"
 				>
 			</File>
 			<File
@@ -463,6 +467,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\zrtp_crypto_ec.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\zrtp_crypto_ecdh.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\zrtp_crypto_ecdsa.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\zrtp_crypto_hash.c"
 				>
 			</File>
@@ -480,6 +496,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\zrtp_engine.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\zrtp_engine_driven.c"
 				>
 			</File>
 			<File

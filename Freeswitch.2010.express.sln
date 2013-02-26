@@ -168,7 +168,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "8khz", "libs\win32\Sound_Fi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "16khz", "libs\win32\Sound_Files\16khz.2010.vcxproj", "{7EB71250-F002-4ED8-92CA-CA218114537A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 32khzsound", "libs\win32\Dowload 32khz Sounds.2010.vcxproj", "{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 32khzsound", "libs\win32\Download 32khz Sounds.2010.vcxproj", "{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "32khz", "libs\win32\Sound_Files\32khz.2010.vcxproj", "{464AAB78-5489-4916-BE51-BF8D61822311}"
 EndProject
@@ -245,7 +245,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spy", "src\mod\applicat
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_skypopen", "src\mod\endpoints\mod_skypopen\mod_skypopen.2010.vcxproj", "{C6E78A4C-DB1E-47F4-9B63-4DC27D86343F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 32khz music", "libs\win32\Dowload 32khz music.2010.vcxproj", "{1F0A8A77-E661-418F-BB92-82172AE43803}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 32khz music", "libs\win32\Download 32khz music.2010.vcxproj", "{1F0A8A77-E661-418F-BB92-82172AE43803}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 8khz music", "libs\win32\Download 8khz music.2010.vcxproj", "{4F5C9D55-98EF-4256-8311-32D7BD360406}"
 EndProject

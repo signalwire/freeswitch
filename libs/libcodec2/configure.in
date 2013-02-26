@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT(libcodec2, 1.0, david@rowetel.com)
-AM_INIT_AUTOMAKE(libcodec2,1.0)
+AC_INIT(codec2, 0.2, david@rowetel.com)
+AM_INIT_AUTOMAKE(codec2,0.2)
 
 # Checks for programs.
 AC_PROG_CC

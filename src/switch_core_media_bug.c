@@ -103,6 +103,16 @@ SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_read_replace_frame(sw
 	return bug->read_replace_frame_in;
 }
 
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_native_read_frame(switch_media_bug_t *bug)
+{
+	return bug->native_read_frame;
+}
+
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_native_write_frame(switch_media_bug_t *bug)
+{
+	return bug->native_write_frame;
+}
+
 SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(switch_media_bug_t *bug, switch_frame_t *frame)
 {
 	bug->read_replace_frame_out = frame;

@@ -90,10 +90,6 @@ cancellor.
 #define GEN_CONST
 #endif
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 #include "spandsp/g168models.h"
 #include "spandsp-sim.h"

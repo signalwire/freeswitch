@@ -403,6 +403,15 @@ SWITCH_STANDARD_APP(play_fsv_function)
 			switch_rtp_hdr_t *hdr = vid_frame.packet;
 			bytes &= ~VID_BIT;
 
+			/*
+			 * Frame is larger than available buffer space. This error is non-recoverable due to the
+			 * structure of the .fsv format (no frame header signature to re-sync).
+			 */
+			if (bytes > ((int) vid_frame.buflen + 12)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Corrupt .fsv video frame header is overflowing read buffer, aborting!\n");
+				break;
+			}
+
 			if ((vid_frame.packetlen = read(fd, vid_frame.packet, bytes)) != (uint32_t) bytes) {
 				break;
 			}
@@ -425,10 +434,15 @@ SWITCH_STANDARD_APP(play_fsv_function)
 			}
 			last = ts;
 		} else {
+			/*
+			 * Frame is larger than available buffer space. This error is non-recoverable due to the
+			 * structure of the .fsv format (no frame header signature to re-sync).
+			 */
 			if (bytes > (int) write_frame.buflen) {
-				bytes = write_frame.buflen;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Corrupt .fsv audio frame header is overflowing read buffer, aborting!\n");
+				break;
 			}
-		    
+
 			if ((write_frame.datalen = read(fd, write_frame.data, bytes)) <= 0) {
 				break;
 			}

@@ -103,6 +103,7 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     super_tone_rx_tests \
                     super_tone_tx_tests \
                     swept_tone_tests \
+                    t31_pseudo_terminal_tests \
                     t31_tests \
                     t35_tests \
                     t38_core_tests \
@@ -296,6 +297,9 @@ super_tone_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR
 
 swept_tone_tests_SOURCES = swept_tone_tests.c
 swept_tone_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+t31_pseudo_terminal_tests_SOURCES = t31_pseudo_terminal_tests.c fax_utils.c pseudo_terminals.c
+t31_pseudo_terminal_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim -lspandsp -lutil
 
 t31_tests_SOURCES = t31_tests.c fax_utils.c media_monitor.cpp
 t31_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp

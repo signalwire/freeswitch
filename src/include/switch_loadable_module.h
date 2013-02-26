@@ -465,7 +465,7 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 {
 
 	if (decoded_bytes_per_packet > SWITCH_RECOMMENDED_BUFFER_SIZE) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Rejected codec name: %s rate: %u ptime: %u not enough buffer space %d > %d\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Rejected codec name: %s rate: %u ptime: %d not enough buffer space %u > %d\n",
 						  iananame, actual_samples_per_second, microseconds_per_packet / 1000, decoded_bytes_per_packet, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	} else if (codec_type == SWITCH_CODEC_TYPE_VIDEO || switch_check_interval(actual_samples_per_second, microseconds_per_packet / 1000)) {
 		switch_codec_implementation_t *impl = (switch_codec_implementation_t *) switch_core_alloc(pool, sizeof(*impl));
@@ -491,7 +491,7 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 		impl->impl_id = switch_core_codec_next_id();
 		codec_interface->implementations = impl;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Rejected codec name: %s rate: %u ptime: %u\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Rejected codec name: %s rate: %u ptime: %d\n",
 						  iananame, actual_samples_per_second, microseconds_per_packet / 1000);
 	}
 }

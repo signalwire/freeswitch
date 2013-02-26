@@ -46,10 +46,6 @@ of this file should exactly match the original file.
 #include <ctype.h>
 #include <assert.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 
 #define COMPRESSED_FILE_NAME        "v42bis_tests.v42bis"
@@ -79,8 +75,8 @@ static void data_handler(void *user_data, const uint8_t *buf, int len)
 int main(int argc, char *argv[])
 {
     int len;
-    v42bis_state_t state_a;
-    v42bis_state_t state_b;
+    v42bis_state_t *state_a;
+    v42bis_state_t *state_b;
     uint8_t buf[1024];
     int in_fd;
     int v42bis_fd;
@@ -153,10 +149,10 @@ int main(int argc, char *argv[])
         }
 
         time(&now);
-        v42bis_init(&state_a, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, NULL, 512);
-        span_log_set_level(&state_a.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-        span_log_set_tag(&state_a.logging, "V.42bis");
-        //v42bis_compression_control(&state_a, V42BIS_COMPRESSION_MODE_ALWAYS);
+        state_a = v42bis_init(NULL, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, NULL, 512);
+        span_log_set_level(v42bis_get_logging_state(state_a), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(v42bis_get_logging_state(state_a), "V.42bis");
+        //v42bis_compression_control(state_a, V42BIS_COMPRESSION_MODE_ALWAYS);
         in_octets_to_date = 0;
         out_octets_to_date = 0;
         while ((len = read(in_fd, buf, 1024)) > 0)
@@ -166,24 +162,24 @@ int main(int argc, char *argv[])
             {
                 while ((len - seg) >= stutter_time)
                 {
-                    if (v42bis_compress(&state_a, buf + seg, stutter_time))
+                    if (v42bis_compress(state_a, buf + seg, stutter_time))
                     {
                         fprintf(stderr, "Bad return code from compression\n");
                         exit(2);
                     }
-                    v42bis_compress_flush(&state_a);
+                    v42bis_compress_flush(state_a);
                     seg += stutter_time;
                     stutter_time = rand() & 0x3FF;
                 }
             }
-            if (v42bis_compress(&state_a, buf + seg, len - seg))
+            if (v42bis_compress(state_a, buf + seg, len - seg))
             {
                 fprintf(stderr, "Bad return code from compression\n");
                 exit(2);
             }
             in_octets_to_date += len;
         }
-        v42bis_compress_flush(&state_a);
+        v42bis_compress_flush(state_a);
         printf("%d bytes compressed to %d bytes in %lds\n", in_octets_to_date, out_octets_to_date, time(NULL) - now);
         close(in_fd);
         close(v42bis_fd);
@@ -204,21 +200,21 @@ int main(int argc, char *argv[])
         }
     
         time(&now);
-        v42bis_init(&state_b, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, (void *) (intptr_t) out_fd, 512);
-        span_log_set_level(&state_b.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-        span_log_set_tag(&state_b.logging, "V.42bis");
+        state_b = v42bis_init(NULL, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, (void *) (intptr_t) out_fd, 512);
+        span_log_set_level(v42bis_get_logging_state(state_b), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(v42bis_get_logging_state(state_b), "V.42bis");
         in_octets_to_date = 0;
         out_octets_to_date = 0;
         while ((len = read(v42bis_fd, buf, 1024)) > 0)
         {
-            if (v42bis_decompress(&state_b, buf, len))
+            if (v42bis_decompress(state_b, buf, len))
             {
                 fprintf(stderr, "Bad return code from decompression\n");
                 exit(2);
             }
             in_octets_to_date += len;
         }
-        v42bis_decompress_flush(&state_b);
+        v42bis_decompress_flush(state_b);
         printf("%d bytes decompressed to %d bytes in %lds\n", in_octets_to_date, out_octets_to_date, time(NULL) - now);
         close(v42bis_fd);
         close(out_fd);

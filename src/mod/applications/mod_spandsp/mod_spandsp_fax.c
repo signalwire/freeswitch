@@ -1344,7 +1344,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	   it will have no effect. Make sure that if you want more reliable
 	   faxes, it is disabled.
 	 */
-	switch_channel_set_variable(channel, "jitterbuffer_msec", "0");
+	switch_channel_set_variable(channel, "jitterbuffer_msec", NULL);
 
 
 	/* We store the original channel codec before switching both
@@ -2108,7 +2108,16 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 
 				if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
 					switch_event_t *dup;
+					switch_core_session_t *session = NULL;
+					switch_channel_t *channel = NULL;
+
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Fax-Tone", "true");
+
+					session = switch_core_media_bug_get_session(bug);
+					if (session) {
+					    channel = switch_core_session_get_channel(session);
+					    if (channel) switch_channel_event_set_data(channel, event);
+					}
 				
 					if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
 						switch_event_fire(&dup);

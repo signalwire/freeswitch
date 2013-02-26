@@ -768,6 +768,10 @@ switch_xml_t mod_xml_radius_auth_reg(switch_event_t *params) {
 	
 	switch_xml_set_attr_d(usr, "id", switch_event_get_header(params, "user"));
 		
+	var = switch_xml_add_child_d(vars, "variable", param_idx++);
+	switch_xml_set_attr_d(var, "name", "radius_auth_result");
+	switch_xml_set_attr_d(var, "value", "0");
+
 	service_vp = recv;
 	while (service_vp != NULL) {
 		rc_avpair_tostr(new_handle, service_vp, name, 512, value, 512);
@@ -852,6 +856,7 @@ static switch_xml_t mod_xml_radius_directory_search(const char *section, const c
 switch_status_t mod_xml_radius_check_conditions(switch_channel_t *channel, switch_xml_t conditions) {
 	switch_xml_t condition, param;
 	char *channel_var = NULL;
+	const char *channel_val = NULL;
 	char *regex = NULL;
 	char *anti = NULL;
 	int all_matched = 1;
@@ -877,9 +882,16 @@ switch_status_t mod_xml_radius_check_conditions(switch_channel_t *channel, switc
 			
 			if ( channel_var == NULL || regex == NULL ) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Improperly constructed mod_radius condition: %s %s\n", channel_var, regex);
+				continue;
 			}
 			
-			result = ( switch_regex_match( switch_channel_get_variable(channel, channel_var), regex) != SWITCH_STATUS_SUCCESS);
+			if ( ( channel_val = switch_channel_get_variable(channel, channel_var) ) == NULL ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+								  "Improperly constructed mod_radius condition, no such channel variable: %s %s\n", channel_var, regex);
+				continue;
+			}
+
+			result = ( switch_regex_match( channel_val, regex) != SWITCH_STATUS_SUCCESS);
 			if (( anti == NULL && result ) || ( anti != NULL && !result ) ){
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Didn't match: %s == %s \n", switch_channel_get_variable(channel, channel_var), regex);
 				all_matched = 0;

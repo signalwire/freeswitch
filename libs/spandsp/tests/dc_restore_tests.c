@@ -36,15 +36,11 @@
 #include <memory.h>
 #include <time.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
     
 int main (int argc, char *argv[])
 {
-    awgn_state_t noise_source;
+    awgn_state_t *noise_source;
     dc_restore_state_t dc_state;
     int i;
     int idum = 1234567;
@@ -55,11 +51,11 @@ int main (int argc, char *argv[])
     int dc_offset;
 
     dc_offset = 5000;
-    awgn_init_dbm0(&noise_source, idum, -10.0);
+    noise_source = awgn_init_dbm0(NULL, idum, -10.0);
     dc_restore_init(&dc_state);
     for (i = 0;  i < 100000;  i++)
     {
-        dirty = awgn(&noise_source) + dc_offset;
+        dirty = awgn(noise_source) + dc_offset;
         dc_restore(&dc_state, dirty);
         if ((i % 1000) == 0)
         {
@@ -74,7 +70,7 @@ int main (int argc, char *argv[])
     max = -99999;
     for (i = 0;  i < 100000;  i++)
     {
-        dirty = awgn(&noise_source) + dc_offset;
+        dirty = awgn(noise_source) + dc_offset;
         dc_restore(&dc_state, dirty);
         estimate = dc_restore_estimate(&dc_state);
         if (estimate < min)

@@ -413,6 +413,12 @@ SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) adsi_rx_get_logging_state(adsi_rx_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s,
                                              int standard,
                                              put_msg_func_t put_msg,
@@ -639,6 +645,12 @@ SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, in
     s->bit_pos = 0;
     s->bit_no = 0;
     return len;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(logging_state_t *) adsi_tx_get_logging_state(adsi_tx_state_t *s)
+{
+    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -806,6 +806,12 @@ SPAN_DECLARE(int) t4_t6_decode_get_compressed_image_size(t4_t6_decode_state_t *s
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) t4_t6_decode_get_logging_state(t4_t6_decode_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t4_t6_decode_restart(t4_t6_decode_state_t *s, int image_width)
 {
     int bytes_per_row;

@@ -693,6 +693,12 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx_fillin(modem_connect_tones_rx_state_t *s, int len)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s)
 {
     int x;

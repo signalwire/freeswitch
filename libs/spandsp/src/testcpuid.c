@@ -62,7 +62,7 @@ static __inline__ int flag_is_changeable_p(uint32_t flag)
     uint32_t f1;
     uint32_t f2;
 
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         " pushfl\n"
         " pushfl\n"
         " popl %0\n"
@@ -94,7 +94,7 @@ int has_MMX(void)
     if (!have_cpuid_p())
         return 0;
     /*endif*/
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         " push  %%ebx;\n"
 	" mov	$1,%%eax;\n"
 	" cpuid;\n"
@@ -118,7 +118,7 @@ int has_SIMD(void)
     if (!have_cpuid_p())
         return 0;
     /*endif*/
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         " push  %%ebx;\n"
 	" mov	$1,%%eax;\n"
 	" cpuid;\n"
@@ -142,7 +142,7 @@ int has_SIMD2(void)
     if (!have_cpuid_p())
         return 0;
     /*endif*/
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         " push  %%ebx;\n"
 	" mov	$1,%%eax;\n"
 	" cpuid;\n"
@@ -166,7 +166,7 @@ int has_3DNow(void)
     if (!have_cpuid_p())
         return 0;
     /*endif*/
-    __asm__ __volatile__ (
+    __asm__ __volatile__(
         " push  %%ebx;\n"
 	" mov	$0x80000000,%%eax;\n"
 	" cpuid;\n"

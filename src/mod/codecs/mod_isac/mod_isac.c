@@ -62,35 +62,41 @@ static switch_status_t switch_isac_init(switch_codec_t *codec, switch_codec_flag
 	
 	if (err < 0) return SWITCH_STATUS_FALSE;
 
-	WebRtcIsac_SetEncSampRate(context->ISAC_main_inst, codec->implementation->actual_samples_per_second / 1000);
-	WebRtcIsac_SetDecSampRate(context->ISAC_main_inst, codec->implementation->actual_samples_per_second / 1000);
 
 	if (encoding) {
 		if (WebRtcIsac_EncoderInit(context->ISAC_main_inst, 0) < 0) {
 			return SWITCH_STATUS_FALSE;
 		}
+		WebRtcIsac_SetEncSampRate(context->ISAC_main_inst, codec->implementation->actual_samples_per_second / 1000);
 	}
 
 	if (decoding) {
 		if (WebRtcIsac_DecoderInit(context->ISAC_main_inst) < 0) {
 			return SWITCH_STATUS_FALSE;
 		}
+		WebRtcIsac_SetDecSampRate(context->ISAC_main_inst, codec->implementation->actual_samples_per_second / 1000);
 	}
 
 	if (codec->implementation->actual_samples_per_second == 16000) {
-		if (WebRtcIsac_ControlBwe(context->ISAC_main_inst, 0, codec->implementation->microseconds_per_packet / 1000, 0) < 0) {
+		if (WebRtcIsac_ControlBwe(context->ISAC_main_inst, 32000, codec->implementation->microseconds_per_packet / 1000, 1) < 0) {
 			return SWITCH_STATUS_FALSE;
 		}
+
+		if (WebRtcIsac_SetMaxPayloadSize(context->ISAC_main_inst, 400) < 0) {
+			return SWITCH_STATUS_FALSE;
+		}
+
 	} else {
-		if (WebRtcIsac_Control(context->ISAC_main_inst, codec->implementation->actual_samples_per_second / 1000, 
-							   codec->implementation->microseconds_per_packet / 1000) < 0) {
+		if (WebRtcIsac_Control(context->ISAC_main_inst, 32000, codec->implementation->microseconds_per_packet / 1000) < 0) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (WebRtcIsac_SetMaxPayloadSize(context->ISAC_main_inst, 600) < 0) {
 			return SWITCH_STATUS_FALSE;
 		}
 	}
 	
-	if (WebRtcIsac_SetMaxPayloadSize(context->ISAC_main_inst, SWITCH_RECOMMENDED_BUFFER_SIZE) < 0) {
-		return SWITCH_STATUS_FALSE;
-	}
+
 	
 	if (WebRtcIsac_SetMaxRate(context->ISAC_main_inst, codec->implementation->bits_per_second) < 0) {
 		return SWITCH_STATUS_FALSE;
@@ -181,7 +187,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_isac_codec_load)
 										 SWITCH_CODEC_TYPE_AUDIO,
 										 99,	
 										 "isac",
-										 NULL,	
+										 "ibitrate=32000;maxbitrate=53400",	
 										 16000,	
 										 16000,	
 										 53400,	
@@ -202,7 +208,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_isac_codec_load)
 										 SWITCH_CODEC_TYPE_AUDIO,
 										 99,	
 										 "isac",
-										 NULL,	
+										 "ibitrate=32000;maxbitrate=53400",	
 										 16000,	
 										 16000,	
 										 53400,	
@@ -224,13 +230,33 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_isac_codec_load)
 										 SWITCH_CODEC_TYPE_AUDIO,
 										 99,	
 										 "isac",
-										 NULL,	
+										 "ibitrate=32000;maxbitrate=160000",	
 										 32000,	
 										 32000,	
 										 160000,	
 										 30000,	
 										 960,	
 										 1920,	
+										 0,	
+										 1,	
+										 6,	
+										 switch_isac_init,	
+										 switch_isac_encode,
+										 switch_isac_decode,
+										 switch_isac_destroy);
+
+
+	switch_core_codec_add_implementation(pool, codec_interface,	
+										 SWITCH_CODEC_TYPE_AUDIO,
+										 99,	
+										 "isac",
+										 "ibitrate=32000;maxbitrate=160000",	
+										 32000,	
+										 32000,	
+										 160000,	
+										 60000,	
+										 1920,	
+										 3840,	
 										 0,	
 										 1,	
 										 6,	

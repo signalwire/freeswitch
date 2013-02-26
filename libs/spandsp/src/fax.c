@@ -323,12 +323,8 @@ static void fax_set_tx_type(void *user_data, int type, int bit_rate, int short_t
         break;
     case T30_MODEM_CED:
     case T30_MODEM_CNG:
-        if (type == T30_MODEM_CED)
-            tone = MODEM_CONNECT_TONES_FAX_CED;
-        else
-            tone = MODEM_CONNECT_TONES_FAX_CNG;
-        modem_connect_tones_tx_init(&t->connect_tx, tone);
-        fax_modems_set_tx_handler(t, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
+        tone = (type == T30_MODEM_CED)  ?  FAX_MODEM_CED_TONE_TX  :  FAX_MODEM_CNG_TONE_TX;
+        fax_modems_start_slow_modem(t, tone);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         t->transmit = TRUE;
         break;

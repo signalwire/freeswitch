@@ -906,10 +906,12 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 							rtmp_handle_invoke(rsession, rsession->amfnumber);
 							break;
 						case RTMP_TYPE_AUDIO: /* Audio data */
+							switch_thread_rwlock_wrlock(rsession->rwlock);
 							if (rsession->tech_pvt) {
 								uint16_t len = state->origlen;
 								
 								if (!rsession->tech_pvt->readbuf) {
+									switch_thread_rwlock_unlock(rsession->rwlock);
 									return SWITCH_STATUS_FALSE;
 								}
 
@@ -936,6 +938,8 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 								}
 								switch_mutex_unlock(rsession->tech_pvt->readbuf_mutex);
 							}
+							switch_thread_rwlock_unlock(rsession->rwlock);
+
 							break;
 						case RTMP_TYPE_VIDEO: /* Video data */
 						case RTMP_TYPE_METADATA: /* Metadata */

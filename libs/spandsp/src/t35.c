@@ -871,8 +871,6 @@ static const nsf_data_t *find_vendor(const uint8_t *msg, int len)
     const nsf_data_t *p;
     int real_country_code;
 
-    if (msg[0] < 0  ||  msg[0] > 0xFF)
-        return NULL;
     if (msg[0] == 0xFF)
     {
         /* The extension code gives us the country. */

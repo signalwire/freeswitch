@@ -2027,28 +2027,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							  switch_channel_get_name(channel), msg->string_arg);
 			sofia_glue_tech_set_local_sdp(tech_pvt, msg->string_arg, SWITCH_TRUE);
 
-			if (msg->numeric_arg) { // ACK
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY nomedia - sending ack\n");
-				nua_ack(tech_pvt->nh,
-						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-						SIPTAG_PAYLOAD_STR(msg->string_arg),
-						SIPTAG_CONTENT_TYPE_STR("application/sdp"),
-						TAG_END());
-				sofia_clear_flag(tech_pvt, TFLAG_3PCC_INVITE);
-				
-			} else {
-				if(zstr(tech_pvt->local_sdp_str)) {
-					sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
-				}
-				
-				sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
-				
-				if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-					switch_channel_set_flag(channel, CF_REQ_MEDIA);
-				}
-				sofia_glue_do_invite(session);
+			if(zstr(tech_pvt->local_sdp_str)) {
+				sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
 			}
+
+			sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
+
+			if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+				switch_channel_set_flag(channel, CF_REQ_MEDIA);
+			}
+			sofia_glue_do_invite(session);
 		}
 		break;
 
@@ -2075,7 +2063,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			start_udptl(tech_pvt, t38_options);
 
-			sofia_glue_set_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
+			sofia_glue_set_udptl_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
 
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
@@ -2107,7 +2095,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
 
 			if (t38_options) {
-				sofia_glue_set_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
+				sofia_glue_set_udptl_image_sdp(tech_pvt, t38_options, msg->numeric_arg);
 
 				if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					switch_channel_set_flag(channel, CF_REQ_MEDIA);
@@ -2563,6 +2551,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_DEFLECT:
 		{
+			char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
 			char ref_to[1024] = "";
 			const char *var;
 
@@ -2572,7 +2561,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			} else {
 				switch_set_string(ref_to, msg->string_arg);
 			}
-			nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url), TAG_END());
+			nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url),
+						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+						TAG_END());
 			switch_mutex_unlock(tech_pvt->sofia_mutex);
 			sofia_wait_for_reply(tech_pvt, 9999, 10);
 			switch_mutex_lock(tech_pvt->sofia_mutex);
@@ -2644,7 +2635,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							if (!strcasecmp(sdp, "t38")) {
 								switch_t38_options_t *t38_options = switch_channel_get_private(tech_pvt->channel, "t38_options");
 								if (t38_options) {
-									sofia_glue_set_image_sdp(tech_pvt, t38_options, 0);
+									sofia_glue_set_udptl_image_sdp(tech_pvt, t38_options, 0);
 									if (switch_rtp_ready(tech_pvt->rtp_session)) {
 										sofia_clear_flag(tech_pvt, TFLAG_NOTIMER_DURING_BRIDGE);
 										switch_rtp_udptl_mode(tech_pvt->rtp_session);
@@ -3062,7 +3053,7 @@ static uint32_t sofia_profile_reg_count(sofia_profile_t *profile)
 	cb.buf = reg_count;
 	cb.len = sizeof(reg_count);
 	sql = switch_mprintf("select count(*) from sip_registrations where profile_name = '%q'", profile->name);
-	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+	sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sql2str_callback, &cb);
 	free(sql);
 	return strtoul(reg_count, NULL, 10);
 }
@@ -3299,7 +3290,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				if (sql) {
 					stream->write_function(stream, "\nRegistrations:\n%s\n", line);
 
-					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback, &cb);
+					sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, show_reg_callback, &cb);
 					switch_safe_free(sql);
 
 					stream->write_function(stream, "Total items returned: %d\n", cb.row_process);
@@ -3581,7 +3572,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				if (sql) {
 					stream->write_function(stream, "  <registrations>\n");
 
-					sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
+					sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, show_reg_callback_xml, &cb);
 					switch_safe_free(sql);
 
 					stream->write_function(stream, "  </registrations>\n");
@@ -4054,7 +4045,7 @@ SWITCH_STANDARD_API(sofia_count_reg_function)
 									 user, domain, domain);
 			}
 			switch_assert(sql);
-			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sql2str_callback, &cb);
 			switch_safe_free(sql);
 			if (!zstr(reg_count)) {
 				stream->write_function(stream, "%s", reg_count);
@@ -4144,7 +4135,7 @@ SWITCH_STANDARD_API(sofia_username_of_function)
 
 			switch_assert(sql);
 
-			sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sql2str_callback, &cb);
+			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sql2str_callback, &cb);
 			switch_safe_free(sql);
 			if (!zstr(username)) {
 				stream->write_function(stream, "%s", username);
@@ -4197,7 +4188,7 @@ static void select_from_profile(sofia_profile_t *profile,
 	}
 
 	switch_assert(sql);
-	sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, contact_callback, &cb);
+	sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, contact_callback, &cb);
 	switch_safe_free(sql);
 }
 
@@ -5200,8 +5191,7 @@ static void general_event_handler(switch_event_t *event)
 					return;
 				}
 
-
-				if (to_uri && from_uri && ct && es && profile_name && (profile = sofia_glue_find_profile(profile_name))) {
+				if (to_uri && from_uri && ct && es) {
 					sofia_destination_t *dst = NULL;
 					nua_handle_t *nh;
 					char *route_uri = NULL;
@@ -5896,7 +5886,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 {
 	int sanity = 0;
 	int i;
-
+	switch_status_t st;
 
 	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");
@@ -5913,6 +5903,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	switch_event_unbind_callback(event_handler);
 
 	switch_queue_push(mod_sofia_globals.presence_queue, NULL);
+	switch_queue_interrupt_all(mod_sofia_globals.presence_queue);
 
 	while (mod_sofia_globals.threads) {
 		switch_cond_next();
@@ -5924,14 +5915,17 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 
 	for (i = 0; mod_sofia_globals.msg_queue_thread[i]; i++) {
 		switch_queue_push(mod_sofia_globals.msg_queue, NULL);
+		switch_queue_interrupt_all(mod_sofia_globals.msg_queue);
 	}
 
 
 	for (i = 0; mod_sofia_globals.msg_queue_thread[i]; i++) {
-		switch_status_t st;
 		switch_thread_join(&st, mod_sofia_globals.msg_queue_thread[i]);
 	}
 
+	if (mod_sofia_globals.presence_thread) {
+		switch_thread_join(&st, mod_sofia_globals.presence_thread);
+	}
 
 	//switch_yield(1000000);
 	su_deinit();

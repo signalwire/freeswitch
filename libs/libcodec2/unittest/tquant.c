@@ -22,8 +22,7 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.  
 */
 
 #include <assert.h>
@@ -123,8 +122,8 @@ int test_lsp(int lsp_number, int levels, float max_error_hz) {
 
     for(i=0; i<levels; i++) {
 	indexes_in[lsp_number] = i;
-	decode_lsps(lsp, indexes_in, LPC_ORD);
-	encode_lsps(indexes_out, lsp,LPC_ORD);
+	decode_lsps_scalar(lsp, indexes_in, LPC_ORD);
+	encode_lsps_scalar(indexes_out, lsp,LPC_ORD);
 	if (indexes_in[lsp_number] != indexes_out[lsp_number]) {
 	    printf("freq: %f index_in: %d index_out: %d\n", 
 		   lsp[lsp_number]+1, indexes_in[lsp_number],
@@ -136,18 +135,18 @@ int test_lsp(int lsp_number, int levels, float max_error_hz) {
     for(i=0; i<LPC_ORD; i++)
 	indexes[i] = 0;
     indexes[lsp_number] = 0;
-    decode_lsps(lsp, indexes, LPC_ORD);
+    decode_lsps_scalar(lsp, indexes, LPC_ORD);
     lowf = lsp[lsp_number];
     indexes[lsp_number] = levels - 1;
-    decode_lsps(lsp, indexes, LPC_ORD);
+    decode_lsps_scalar(lsp, indexes, LPC_ORD);
     highf = lsp[lsp_number];
     sprintf(s,"lsp%d_err.txt", lsp_number+1);
     flsp = fopen(s, "wt");
 
     for(f=lowf; f<highf; f +=(highf-lowf)/1000.0) {
 	lsp[lsp_number] = f;
-	encode_lsps(indexes, lsp, LPC_ORD);
-	decode_lsps(lsp, indexes, LPC_ORD);
+	encode_lsps_scalar(indexes, lsp, LPC_ORD);
+	decode_lsps_scalar(lsp, indexes, LPC_ORD);
 	error = f - lsp[lsp_number];
 	fprintf(flsp, "%f\n", error);
 	if (fabs(error) > max_error_rads) {

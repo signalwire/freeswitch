@@ -29,7 +29,7 @@
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Norman Brandinger
- * Raymond Chandler <intralanman@gmail.com>
+ * Raymond Chandler <intralanman@freeswitch.org>
  * Nathan Patrick <npatrick at corp.sonic.net>
  * Joseph Sullivan <jossulli@amazon.com>
  *
@@ -1133,8 +1133,6 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_i_ack:
 		{
 			if (channel && sip) {
-				char *r_sdp = NULL;
-
 				if (sip->sip_to && sip->sip_to->a_tag) {
 					switch_channel_set_variable(channel, "sip_to_tag", sip->sip_to->a_tag);
 				}
@@ -1156,35 +1154,6 @@ static void our_sofia_event_callback(nua_event_t event,
 				extract_header_vars(profile, sip, session, nh);
 				switch_core_recovery_track(session);
 				sofia_set_flag(tech_pvt, TFLAG_GOT_ACK);
-
-				if (sip->sip_payload && sip->sip_payload->pl_data && sip->sip_content_type && 
-					sip->sip_content_type->c_subtype && switch_stristr("sdp", sip->sip_content_type->c_subtype)) {
-					r_sdp = sip->sip_payload->pl_data;
-				}
-
-				if (!zstr(r_sdp) && (sofia_test_flag(tech_pvt, TFLAG_3PCC_INVITE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
-					switch_core_session_t *other_session;
-					sofia_set_flag(tech_pvt, TFLAG_SDP);
-					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-						switch_core_session_message_t *msg;
-						switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-						
-						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
-							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
-						}
-						
-						msg = switch_core_session_alloc(other_session, sizeof(*msg));
-						msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
-						msg->from = __FILE__;
-						msg->string_arg = switch_core_session_strdup(other_session, r_sdp);
-						msg->numeric_arg = 1; // send ack
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing SDP ACK to other leg.\n%s\n", r_sdp);
-						
-						switch_core_session_queue_message(other_session, msg);
-						
-						switch_core_session_rwunlock(other_session);
-					}
-				}
 
 				if (sofia_test_flag(tech_pvt, TFLAG_PASS_ACK)) {
 					switch_core_session_t *other_session;
@@ -1537,10 +1506,16 @@ static void our_sofia_event_callback(nua_event_t event,
 	}
 }
 
+static uint32_t DE_THREAD_CNT = 0;
+
 void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void *obj)
 {
 	sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) obj;
 	switch_memory_pool_t *pool = NULL;
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	DE_THREAD_CNT++;
+	switch_mutex_unlock(mod_sofia_globals.mutex); 
 
 	if (de) {
 		pool = de->pool;
@@ -1551,6 +1526,10 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	DE_THREAD_CNT--;
+	switch_mutex_unlock(mod_sofia_globals.mutex); 
 
 	return NULL;
 }
@@ -1691,7 +1670,8 @@ void sofia_queue_message(sofia_dispatch_event_t *de)
 	}
 
 
-	if (de->profile && sofia_test_pflag(de->profile, PFLAG_THREAD_PER_REG) && de->data->e_event == nua_i_register) {
+	if (de->profile && sofia_test_pflag(de->profile, PFLAG_THREAD_PER_REG) && 
+		de->data->e_event == nua_i_register && DE_THREAD_CNT < mod_sofia_globals.max_reg_threads) {
 		sofia_process_dispatch_event_in_thread(&de);
 		return;
 	}
@@ -2519,6 +2499,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activated db for %s\n", profile->name);
 
 	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+	switch_mutex_init(&profile->dbh_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_queue_create(&profile->event_queue, SOFIA_QUEUE_SIZE, profile->pool);
 
@@ -2691,14 +2672,14 @@ void sofia_profile_destroy(sofia_profile_t *profile)
 
 void launch_sofia_profile_thread(sofia_profile_t *profile)
 {
-	switch_thread_t *thread;
+	//switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
 	switch_threadattr_create(&thd_attr, profile->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
-	switch_thread_create(&thread, thd_attr, sofia_profile_thread_run, profile, profile->pool);
+	switch_thread_create(&profile->thread, thd_attr, sofia_profile_thread_run, profile, profile->pool);
 }
 
 static void logger(void *logarg, char const *fmt, va_list ap)
@@ -2868,7 +2849,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			const char *sipip, *format;
 			switch_uuid_t uuid;
 			uint32_t ping_freq = 0, extension_in_contact = 0, distinct_to = 0, rfc_5626 = 0;
-			int ping_max = 1, ping_min = -1;
+			int ping_max = 1, ping_min = 1;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
 				*username = NULL,
@@ -3446,7 +3427,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 	}
 
 	mod_sofia_globals.auto_restart = SWITCH_TRUE;
-	mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = SWITCH_FALSE; /* handle backwards compatilibity - by default use new behavior */
+	mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = SWITCH_TRUE; /* handle backwards compatilibity - by default use new behavior */
 	mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
 
 	if ((settings = switch_xml_child(cfg, "global_settings"))) {
@@ -3461,6 +3442,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				mod_sofia_globals.debug_presence = atoi(val);
 			} else if (!strcasecmp(var, "debug-sla")) {
 				mod_sofia_globals.debug_sla = atoi(val);
+			} else if (!strcasecmp(var, "max-reg-threads") && val) {
+				int x = atoi(val);
+
+				if (x > 0) {
+					mod_sofia_globals.max_reg_threads = x;
+				}
+				
 			} else if (!strcasecmp(var, "auto-restart")) {
 				mod_sofia_globals.auto_restart = switch_true(val);
 			} else if (!strcasecmp(var, "reg-deny-binding-fetch-and-no-lookup")) {          /* backwards compatibility */
@@ -3862,7 +3850,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 						}
-					} else if (!strcasecmp(var, "inbound-reg-in-new-thread")) {
+					} else if (!strcasecmp(var, "inbound-reg-in-new-thread") && val) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_THREAD_PER_REG);
 						} else {
@@ -4078,8 +4066,6 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "pnp-provision-url")) {
 						profile->pnp_prov_url = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "pnp-notify-profile")) {
-						profile->pnp_notify_profile = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (!strcasecmp(val, "passive")) {
 							profile->pres_type = PRES_TYPE_PASSIVE;
@@ -4230,6 +4216,10 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "auth-calls")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_AUTH_CALLS);
+						}
+					} else if (!strcasecmp(var, "auth-messages")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
 						}
 					} else if (!strcasecmp(var, "extended-info-parsing")) {
 						if (switch_true(val)) {
@@ -4737,10 +4727,14 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 				gateway->state = REG_STATE_UNREGED;
 			}
 
+			if (gateway->ping_count < 0) {
+				gateway->ping_count = 0;
+			}
+
 			if (gateway->ping_count < gateway->ping_max) {
 				gateway->ping_count++;
 
-				if (gateway->ping_count >= 0 && gateway->status != SOFIA_GATEWAY_UP) {
+				if (gateway->ping_count >= gateway->ping_min && gateway->status != SOFIA_GATEWAY_UP) {
 					gateway->status = SOFIA_GATEWAY_UP;
 					sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
 				}
@@ -4755,13 +4749,13 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 				gateway->state = REG_STATE_FAILED;
 			}
 
-			if (gateway->ping_count > gateway->ping_min) {
+			if (gateway->ping_count > 0) {
 				gateway->ping_count--;
+			}
 
-				if (gateway->ping_count <= 0 && gateway->status != SOFIA_GATEWAY_DOWN) {
-					gateway->status = SOFIA_GATEWAY_DOWN;
-					sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
-				}
+			if (gateway->ping_count < gateway->ping_min && gateway->status != SOFIA_GATEWAY_DOWN) {
+				gateway->status = SOFIA_GATEWAY_DOWN;
+				sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
@@ -4879,7 +4873,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						switch_mprintf("select 'appearance-index=1' from sip_subscriptions where expires > -1 and hostname='%q' and event='call-info' and "
 									   "sub_to_user='%q' and sub_to_host='%q'", mod_sofia_globals.hostname, sip->sip_to->a_url->url_user,
 									   sip->sip_from->a_url->url_host);
-					sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
+					sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, buf, sizeof(buf));
 
 					if (mod_sofia_globals.debug_sla > 1) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "QUERY SQL %s [%s]\n", sql, buf);
@@ -5183,7 +5177,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 
-					if (status > 299) {
+					if (status == 491 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
+						nua_respond(other_tech_pvt->nh, SIP_491_REQUEST_PENDING, TAG_END());
+						switch_core_session_rwunlock(other_session);
+						goto end;
+					} else if (status > 299) {
 						switch_channel_set_private(channel, "t38_options", NULL);
 						switch_channel_set_private(other_channel, "t38_options", NULL);
 						sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
@@ -5755,6 +5753,22 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 			}
 
+			if (r_sdp && sofia_test_flag(tech_pvt, TFLAG_3PCC_INVITE) && !sofia_test_flag(tech_pvt, TFLAG_SDP)) {
+				sofia_set_flag(tech_pvt, TFLAG_SDP);
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					other_channel = switch_core_session_get_channel(other_session);
+					//other_tech_pvt = switch_core_session_get_private(other_session);
+
+					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
+						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
+					}
+					switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
+					switch_core_session_rwunlock(other_session);
+				}
+				goto done;
+
+			}
+
 			if (send_ack) {
 				tech_send_ack(nh, tech_pvt);
 			} else {
@@ -6209,6 +6223,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
 						sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
 					} else {
+						switch_core_session_message_t *msg;
+
+						msg = switch_core_session_alloc(other_session, sizeof(*msg));
+						msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
+						msg->from = __FILE__;
+						msg->string_arg = switch_core_session_strdup(other_session, r_sdp);
+						switch_core_session_queue_message(other_session, msg);
 						switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
 					}
 
@@ -6740,6 +6761,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								switch_core_event_hook_add_state_change(a_session, xfer_hanguphook);
 								switch_channel_set_variable(a_channel, "att_xfer_kill_uuid", switch_core_session_get_uuid(b_session));
 								switch_channel_set_variable(a_channel, "att_xfer_destination_number", prof->destination_number);
+								switch_channel_set_variable(a_channel, "att_xfer_callee_id_name", prof->callee_id_name);
+								switch_channel_set_variable(a_channel, "att_xfer_callee_id_number", prof->callee_id_number);
 
 								if (profile->media_options & MEDIA_OPT_BYPASS_AFTER_ATT_XFER) {
 									switch_channel_set_flag(a_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
@@ -7746,6 +7769,21 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
+	if (!is_auth && sofia_test_pflag(profile, PFLAG_AUTH_CALLS) && sofia_test_pflag(profile, PFLAG_BLIND_AUTH)) {
+		char *user;
+
+		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
+			calling_myself++;
+		}
+
+		if (sip && sip->sip_from) {
+			user = switch_core_session_sprintf(session, "%s@%s", sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host);
+			switch_ivr_set_user(session, user);
+		}
+
+		is_auth++;
+	}
+
 	if (!is_auth &&
 		(sofia_test_pflag(profile, PFLAG_AUTH_CALLS)
 		 || (!sofia_test_pflag(profile, PFLAG_BLIND_AUTH) && (sip->sip_proxy_authorization || sip->sip_authorization)))) {
@@ -8204,7 +8242,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				switch_mprintf("select 'appearance-index=1' from sip_subscriptions where expires > -1 and hostname='%q' and event='call-info' and "
 							   "sub_to_user='%q' and sub_to_host='%q'", mod_sofia_globals.hostname, sip->sip_to->a_url->url_user,
 							   sip->sip_from->a_url->url_host);
-			sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, buf, sizeof(buf));
+			sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, buf, sizeof(buf));
 			
 			if (mod_sofia_globals.debug_sla > 1) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "QUERY SQL %s [%s]\n", sql, buf);
@@ -8341,7 +8379,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				 "and call_id is not null",
 				 switch_str_nil(p), user, host, user, host);
 
-			if ((str = sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, cid, sizeof(cid)))) {
+			if ((str = sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, cid, sizeof(cid)))) {
 				bnh = nua_handle_by_call_id(nua, str);
 			}
 
@@ -8532,7 +8570,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				switch_channel_set_variable(channel, "push_channel_name", "true");
 			} else if (!strcasecmp(un->un_name, "X-FS-Support")) {
 				tech_pvt->x_freeswitch_support_remote = switch_core_session_strdup(session, un->un_value);
-			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2)) {
+			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2) || !strcasecmp(un->un_name, "User-to-User")) {
 				if (!zstr(un->un_value)) {
 					char new_name[512] = "";
 					int reps = 0;

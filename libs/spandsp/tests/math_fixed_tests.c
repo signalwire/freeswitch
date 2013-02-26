@@ -40,10 +40,6 @@
 #include <time.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 
 static void fixed_reciprocal16_tests(void)

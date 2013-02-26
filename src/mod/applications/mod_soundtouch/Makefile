@@ -16,6 +16,8 @@ $(SNDT_BUILD)/Makefile: $(SNDT_SRC)
 	mkdir -p $(SNDT_BUILD)/config/m4
 	rm -rf $(SNDT_BUILD)/config/m4/*
 	rm -rf $(SNDT_SRC)/config/m4/*
+	sed -e 's:AM_CONFIG_HEADER:AC_CONFIG_HEADERS:' $(SNDT_SRC)/configure.ac > $(SNDT_SRC)/configure.ac.tmp && \
+		mv $(SNDT_SRC)/configure.ac.tmp $(SNDT_SRC)/configure.ac
 	cd $(SNDT_SRC) && AUTOMAKE="automake --add-missing --foreign --copy" autoreconf -fisv 
 	cd ${SNDT_BUILD} && $(DEFAULT_VARS) $(SNDT_SRC)/configure $(DEFAULT_ARGS) --enable-integer-samples --srcdir=$(SNDT_SRC)
 	${TOUCH_TARGET}

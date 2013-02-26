@@ -1000,45 +1000,46 @@ static switch_status_t loopback_bowout_on_execute_state_handler(switch_core_sess
 
 		tech_pvt = switch_core_session_get_private(session);
 
-		switch_core_session_read_lock(tech_pvt->other_session);
-		b_channel = switch_core_session_get_channel(tech_pvt->other_session);
+		if (switch_core_session_read_lock(tech_pvt->other_session) == SWITCH_STATUS_SUCCESS) {
+			b_channel = switch_core_session_get_channel(tech_pvt->other_session);
 
-		/* Wait for b_channel to be fully bridged */
-		switch_channel_wait_for_flag(b_channel, CF_BRIDGED, SWITCH_TRUE, 5000, NULL);
+			/* Wait for b_channel to be fully bridged */
+			switch_channel_wait_for_flag(b_channel, CF_BRIDGED, SWITCH_TRUE, 5000, NULL);
 
-		uuid = switch_channel_get_partner_uuid(b_channel);
+			uuid = switch_channel_get_partner_uuid(b_channel);
 
-		if (uuid && (other_session = switch_core_session_locate(uuid))) {
-			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-			switch_caller_profile_t *cp, *clone;
+			if (uuid && (other_session = switch_core_session_locate(uuid))) {
+				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+				switch_caller_profile_t *cp, *clone;
 
-			switch_channel_wait_for_state(other_channel, NULL, CS_EXCHANGE_MEDIA);
+				switch_channel_wait_for_state(other_channel, NULL, CS_EXCHANGE_MEDIA);
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->other_session), SWITCH_LOG_INFO, "Replacing loopback channel: %s with real channel: %s\n",
-							  switch_channel_get_name(b_channel), switch_channel_get_name(other_channel));
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->other_session), SWITCH_LOG_INFO, "Replacing loopback channel: %s with real channel: %s\n",
+								  switch_channel_get_name(b_channel), switch_channel_get_name(other_channel));
 
-			if ((cp = switch_channel_get_caller_profile(channel))) {
-				clone = switch_caller_profile_clone(other_session, cp);
-				clone->originator_caller_profile = NULL;
-				clone->originatee_caller_profile = NULL;
-				switch_channel_set_caller_profile(other_channel, clone);
+				if ((cp = switch_channel_get_caller_profile(channel))) {
+					clone = switch_caller_profile_clone(other_session, cp);
+					clone->originator_caller_profile = NULL;
+					clone->originatee_caller_profile = NULL;
+					switch_channel_set_caller_profile(other_channel, clone);
+				}
+
+				switch_channel_caller_extension_masquerade(channel, other_channel, 0);
+				switch_channel_set_state(other_channel, CS_RESET);
+				switch_channel_wait_for_state(other_channel, NULL, CS_RESET);
+				switch_channel_set_variable(channel, "process_cdr", "false");
+				switch_channel_set_variable(b_channel, "process_cdr", "false");
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_channel_set_state(other_channel, CS_EXECUTE);
+				switch_core_session_rwunlock(other_session);
 			}
 
-			switch_channel_caller_extension_masquerade(channel, other_channel, 0);
-			switch_channel_set_state(other_channel, CS_RESET);
-			switch_channel_wait_for_state(other_channel, NULL, CS_RESET);
-			switch_channel_set_variable(channel, "process_cdr", "false");
-			switch_channel_set_variable(b_channel, "process_cdr", "false");
-			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			switch_channel_set_state(other_channel, CS_EXECUTE);
-			switch_core_session_rwunlock(other_session);
+			switch_core_session_rwunlock(tech_pvt->other_session);
 		}
-
-		switch_core_session_rwunlock(tech_pvt->other_session);
-
+		
 		switch_core_event_hook_remove_state_change(session, loopback_bowout_on_execute_state_handler);
-
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

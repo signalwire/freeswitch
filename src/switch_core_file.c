@@ -47,11 +47,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	char *rhs = NULL;
 	const char *spool_path = NULL;
 	int is_stream = 0;
+	char *fp = NULL;
+	switch_event_t *params = NULL;
+	int to = 0;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	fh->samples_in = 0;
 
 	if (!fh->samplerate) {
 		if (!(fh->samplerate = rate)) {
@@ -76,8 +81,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
 	}
 
+	if (*file_path == '{') {
+		char *timeout;
+		char *new_fp;
+		fp = switch_core_strdup(fh->memory_pool, file_path);
+
+		if (switch_event_create_brackets(fp, '{', '}', ',', &fh->params, &new_fp, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+			if ((timeout = switch_event_get_header(fh->params, "timeout"))) {
+				if ((to = atoi(timeout)) < 1) {
+					to = 0;
+				}
+			}
+		} else {
+			new_fp = fp;
+		}
+
+		file_path = new_fp;
+	}
+
 	if (switch_directory_exists(file_path, fh->memory_pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File [%s] is a directory not a file.\n", file_path);
+		status = SWITCH_STATUS_GENERR;
 		goto fail;
 	}
 
@@ -157,6 +181,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 	file_path = fh->spool_path ? fh->spool_path : fh->file_path;
 
+	if (params) {
+		fh->params = params;
+	}
 
 	if ((status = fh->file_interface->file_open(fh, file_path)) != SWITCH_STATUS_SUCCESS) {
 		if (fh->spool_path) {
@@ -173,6 +200,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		UNPROTECT_INTERFACE(fh->file_interface);
 		switch_goto_status(status, fail);
 	}
+
+	if (to) {
+		fh->max_samples = (fh->samplerate / 1000) * to;
+	}
+
 
 	if ((flags & SWITCH_FILE_FLAG_READ)) {
 		fh->native_rate = fh->samplerate;
@@ -193,7 +225,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		fh->pre_buffer_data = switch_core_alloc(fh->memory_pool, fh->pre_buffer_datalen * fh->channels);
 	}
 
-	if (fh->channels > 1 && (flags & SWITCH_FILE_FLAG_READ)) {
+	if (fh->channels > 1 && (flags & SWITCH_FILE_FLAG_READ) && !(fh->flags & SWITCH_FILE_NOMUX)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File has %d channels, muxing to mono will occur.\n", fh->channels);
 	}
 
@@ -204,6 +236,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 
 	switch_clear_flag(fh, SWITCH_FILE_OPEN);
 
+	if (fh->params) {
+		switch_event_destroy(&fh->params);
+	}
+
+	fh->samples_in = 0;
+	fh->max_samples = 0;
+	
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&fh->memory_pool);
 	}
@@ -224,6 +263,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	}
 
   top:
+
+	if (fh->max_samples > 0 && fh->samples_in >= (switch_size_t)fh->max_samples) {
+		*len = 0;
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (fh->buffer && switch_buffer_inuse(fh->buffer) >= *len * 2) {
 		*len = switch_buffer_read(fh->buffer, data, orig_len * 2) / 2;
@@ -252,7 +296,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 					switch_set_flag(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
 					fh->samples_in += rlen;
-					if (fh->channels > 1) {
+					if (fh->channels > 1 && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
 						switch_mux_channels((int16_t *) fh->pre_buffer_data, rlen, fh->channels);
 					}
 					switch_buffer_write(fh->pre_buffer, fh->pre_buffer_data, asis ? rlen : rlen * 2);
@@ -279,7 +323,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 
 		fh->samples_in += *len;
 
-		if (fh->channels > 1) {
+		if (fh->channels > 1 && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
 			switch_mux_channels((int16_t *) data, *len, fh->channels);
 		}
 
@@ -552,6 +596,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	if (fh->params) {
+		switch_event_destroy(&fh->params);
+	}
+
+	fh->samples_in = 0;
+	fh->max_samples = 0;
 
 	if (fh->buffer) {
 		switch_buffer_destroy(&fh->buffer);

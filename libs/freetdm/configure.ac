@@ -283,6 +283,19 @@ then
 		 AC_MSG_NOTICE([You will need libpri-1.4.12_beta1 or newer for AOC event support])]
 	)
 
+
+	AC_MSG_CHECKING([whether libpri has pri_maintenance_service()])
+	AC_LINK_IFELSE(
+		[AC_LANG_PROGRAM(
+			[extern int pri_maintenance_service(void);],
+			[pri_maintenance_service();]
+		)],
+		[AC_DEFINE([HAVE_LIBPRI_MAINT_SERVICE], [1], [libpri has pri_maintenance_service()])
+		 AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([no])
+		 AC_MSG_NOTICE([You will need libpri-1.4.11 or newer for the ftdm libpri maintenance set of commands])]
+	)
+
 	# libpri is available, set variables for Makefile(.am)
 	AC_SUBST([LIBPRI_LIBS], [-lpri])
 	AC_SUBST([LIBPRI_LDFLAGS])

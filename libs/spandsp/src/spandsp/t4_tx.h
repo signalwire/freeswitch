@@ -203,8 +203,12 @@ ImageLayer(34732)                                                   LONG
 #define TIFFTAG_T82OPTIONS              435
 #define TIFFTAG_STRIPROWCOUNTS          559
 #define TIFFTAG_IMAGELAYER              34732
+#endif
 
+#if !defined(COMPRESSION_T85)
 #define     COMPRESSION_T85             9
+#endif
+#if !defined(COMPRESSION_T43)
 #define     COMPRESSION_T43             10
 #endif
 
@@ -216,6 +220,12 @@ extern "C" {
 /*! \brief Configure libtiff so it recognises the extended tag set for TIFF-FX. */
 SPAN_DECLARE(void) TIFF_FX_init(void);
 #endif
+
+/*! Get the logging context associated with a T.4 transmit context.
+    \brief Get the logging context associated with a T.4 transmit context.
+    \param s The T.4 transmit context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t4_tx_get_logging_state(t4_tx_state_t *s);
 
 /*! \brief Prepare for transmission of a document.
     \param s The T.4 context.

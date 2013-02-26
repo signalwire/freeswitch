@@ -39,9 +39,9 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(PlatformName)\OPENSSL\$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(PlatformName)\OPENSSL\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <BuildLog>
@@ -51,12 +51,12 @@
   <ItemGroup>
     <CustomBuild Include="OPENSSL\cleancount">
       <FileType>Document</FileType>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading OPENSSL.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\openssl-1.0.0a" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://openssl.org/source/openssl-1.0.0a.tar.gz "$(ProjectDir).."
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading OPENSSL</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\openssl-1.0.0a" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/openssl-1.0.0a.tar.gz "$(ProjectDir).."
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\OPENSSL;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading OPENSSL.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\openssl-1.0.0a" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://openssl.org/source/openssl-1.0.0a.tar.gz "$(ProjectDir).."
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading OPENSSL</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\openssl-1.0.0a" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/openssl-1.0.0a.tar.gz "$(ProjectDir).."
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\OPENSSL;%(Outputs)</Outputs>
     </CustomBuild>

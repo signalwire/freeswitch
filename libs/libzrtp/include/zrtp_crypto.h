@@ -15,10 +15,7 @@
 #include "zrtp_error.h"
 #include "zrtp_engine.h"
 #include "zrtp_config_user.h"
-
-#if (defined(ZRTP_ENABLE_EC) && (ZRTP_ENABLE_EC == 1))
 #include "zrtp_ec.h"
-#endif
 
 
 

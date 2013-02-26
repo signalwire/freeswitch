@@ -22,8 +22,7 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #define N 80		/* frame size */
@@ -41,6 +40,7 @@
 #include "dump.h"
 #include "sine.h"
 #include "nlp.h"
+#include "kiss_fft.h"
 
 int   frames;
 
@@ -81,19 +81,22 @@ char *argv[];
     FILE *fin,*fout;
     short buf[N];
     float Sn[M];	        /* float input speech samples */
+    kiss_fft_cfg  fft_fwd_cfg;
     COMP  Sw[FFT_ENC];	        /* DFT of Sn[] */
     float w[M];	                /* time domain hamming window */
     COMP  W[FFT_ENC];	        /* DFT of w[] */
     float pitch;
     int   i; 
-    int   dump;
     float prev_Wo;
     void  *nlp_states;
+#ifdef DUMP
+    int   dump;
+#endif
 
     if (argc < 3) {
 	printf("\nusage: tnlp InputRawSpeechFile OutputPitchTextFile "
 	       "[--dump DumpFile]\n");
-        exit(0);
+        exit(1);
     }
 
     /* Input file */
@@ -110,12 +113,18 @@ char *argv[];
       exit(1);
     }
 
+#ifdef DUMP
     dump = switch_present("--dump",argc,argv);
     if (dump) 
       dump_on(argv[dump+1]);
+#else
+/// TODO
+/// #warning "Compile with -DDUMP if you expect to dump anything."
+#endif
 
     nlp_states = nlp_create();
-    make_analysis_window(w,W);
+    fft_fwd_cfg = kiss_fft_alloc(FFT_ENC, 0, NULL, NULL);
+    make_analysis_window(fft_fwd_cfg, w, W);
 
     frames = 0;
     prev_Wo = 0;
@@ -128,10 +137,12 @@ char *argv[];
         Sn[i] = Sn[i+N];
       for(i=0; i<N; i++)
         Sn[i+M-N] = buf[i];
-      dft_speech(Sw, Sn, w);
+      dft_speech(fft_fwd_cfg, Sw, Sn, w);
+#ifdef DUMP
       dump_Sn(Sn); dump_Sw(Sw); 
+#endif
 
-      nlp(nlp_states,Sn,N,M,PITCH_MIN,PITCH_MAX,&pitch,Sw,&prev_Wo);
+      nlp(nlp_states,Sn,N,M,PITCH_MIN,PITCH_MAX,&pitch,Sw,W, &prev_Wo);
       prev_Wo = TWO_PI/pitch;
 
       fprintf(fout,"%f\n",pitch);
@@ -139,7 +150,9 @@ char *argv[];
 
     fclose(fin);
     fclose(fout);
+#ifdef DUMP
     if (dump) dump_off();
+#endif
     nlp_destroy(nlp_states);
 
     return 0;

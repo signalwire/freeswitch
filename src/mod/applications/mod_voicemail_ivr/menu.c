@@ -73,6 +73,7 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	vmivr_menu_t menu = { "std_main_menu" };
 	int retry;
+	switch_bool_t action_on_new_message_occured = SWITCH_FALSE;
 
 	/* Initialize Menu Configs */
 	menu_init(profile, &menu);
@@ -84,6 +85,8 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 
 	for (retry = menu.ivr_maximum_attempts; switch_channel_ready(channel) && retry > 0; retry--) {
 		char *cmd = NULL;
+		const char *action = NULL;
+		const char *action_on_new_message = switch_event_get_header(menu.event_settings, "Action-On-New-Message");
 
 		menu_instance_init(&menu);
 
@@ -93,17 +96,26 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 
 		cmd = switch_core_session_sprintf(session, "json %s %s %s %s", profile->api_profile, profile->domain, profile->id, profile->folder_name);
 		jsonapi2event(session, menu.phrase_params, profile->api_msg_count, cmd);
-		//initial_count_played = SWITCH_TRUE;
+
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "msg_count"), NULL, menu.phrase_params, NULL, 0);
 
-		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
+		if (atoi(switch_event_get_header(menu.phrase_params, "VM-Total-New-Messages")) > 0 && menu.ivre_d.result == RES_WAITFORMORE && !action_on_new_message_occured && action_on_new_message) {
+			menu.ivre_d.result = RES_FOUND;
+			action = action_on_new_message;
+			action_on_new_message_occured = SWITCH_TRUE;
+			
+		} else {
+			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
+		}
 
 		if (menu.ivre_d.result == RES_TIMEOUT) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "timeout"), NULL, NULL, NULL, 0);
 		} else if (menu.ivre_d.result == RES_INVALID) {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid"), NULL, NULL, NULL, 0);
 		} else if (menu.ivre_d.result == RES_FOUND) {  /* Matching DTMF Key Pressed */
-			const char *action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
+			if (!action) {
+				action = switch_event_get_header(menu.event_keys_dtmf, menu.ivre_d.dtmf_stored);
+			}
 
 			/* Reset the try count */
 			retry = menu.ivr_maximum_attempts;
@@ -577,7 +589,19 @@ void vmivr_menu_select_greeting_slot(switch_core_session_t *session, vmivr_profi
 		char * cmd = switch_core_session_sprintf(session, "%s %s %s %d", profile->api_profile, profile->domain, profile->id, gnum);
 		if (vmivr_api_execute(session, profile->api_pref_greeting_set, cmd) == SWITCH_STATUS_SUCCESS) {
 			char *str_num = switch_core_session_sprintf(session, "%d", gnum);
-			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "selected_slot"), str_num, NULL, NULL, 0);
+			char *cmd = switch_core_session_sprintf(session, "json %s %s %s %d %s", profile->api_profile, profile->domain, profile->id);
+			switch_event_t *phrases = jsonapi2event(session, NULL, profile->api_pref_greeting_get, cmd);
+
+			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "selected_slot"), str_num, phrases, NULL, 0);
+
+			if (switch_true(switch_event_get_header(phrases, "VM-Message-Private-Local-Copy"))) {
+				const char *file_path = switch_event_get_header(phrases, "VM-Preference-Greeting-File-Path");
+				if (file_path && unlink(file_path) != 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete temp file [%s]\n", file_path);
+				}
+			}
+
+			switch_event_destroy(&phrases);
 		} else {
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "invalid_slot"), NULL, NULL, NULL, 0);
 		}

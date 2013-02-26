@@ -1386,6 +1386,8 @@ void sdp_media_transport(sdp_media_t *m, char const *s)
     m->m_proto = sdp_proto_rtp, m->m_proto_name = "RTP/AVP";
   else if (su_casematch(s, "RTP/SAVP"))
     m->m_proto = sdp_proto_srtp, m->m_proto_name = "RTP/SAVP";
+  else if (su_casematch(s, "RTP/SAVPF"))
+    m->m_proto = sdp_proto_extended_srtp, m->m_proto_name = "RTP/SAVPF";
   else if (su_casematch(s, "udptl"))
     /* Lower case - be compatible with people living by T.38 examples */
     m->m_proto = sdp_proto_udptl, m->m_proto_name = "udptl";
@@ -1406,7 +1408,7 @@ void sdp_media_transport(sdp_media_t *m, char const *s)
 /** Check if media uses RTP as its transport protocol.  */
 int sdp_media_has_rtp(sdp_media_t const *m)
 {
-  return m && (m->m_proto == sdp_proto_rtp || m->m_proto == sdp_proto_srtp);
+	return m && (m->m_proto == sdp_proto_rtp || m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp);
 }
 
 #define RTPMAP(pt, encoding, rate, params) \

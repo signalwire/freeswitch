@@ -11,7 +11,32 @@
  */
 
 /*!
-\page changelog libzrtp ChangeLog
+\page changelog ChangeLog
+
+****************************************************************************************************
+\section v120 libzrtp v1.20 build XXX (ZRTP RFC 6189, protocol 1.1)
+****************************************************************************************************
+
+<b>This release is focused</b> on better ZRTP cache management. 
+
+***\subsection v120_changes API changes and Upgrade Instructions:
+  *- Starting from v120 libzrtp uses global ZID for all outgoing connections. Local ZID should be
+    specified in zrtp_global_t#zid and provided to zrtp_init(). App doesn't need to pass local ZID 
+    each time it creates new session via zrtp_session_init().    
+  *- Added zrtp_randstr2() which allow to generate random string before libzrtp being initialized.
+    Can be handy to generate initial ZID. In normal circumstances, use zrtp_randstr() whenever possible.
+  *- ZRTP cache API was completely redesigned. Look at zrtp_cache.h for more details.
+  
+
+***\subsection v120_feature New features and improvements.
+  *- new better cache management API.
+
+***\subsection v120_bugs Bug fixes
+  *- fixed bug when ZRTP forces enrolled endpoints to re-render SAS when sashash is empty.
+  *- other minor bug fixes and improvements
+  *- fixed bug when zrtp_signaling_hash_set() silently not accepted imported zrtp-hash-value with 
+     "buffer too small" debug output.
+
 
 ****************************************************************************************************
 \section v091 DEVELOPERS BUILD Release Notes - libzrtp - Version 0.91 build XXX (ZRTP ID v16x, protocol 1.X)
@@ -194,4 +219,5 @@ Minor improvements. Zfone and libZRTP projects moved to public bug-tracking and 
     
     *- [LZRTP-132] <b>Replace HMAC with KDF function call.</b>\n
 	Since ZRTP draft 12b defines ZRTP KDF to be in compliance with the recommendations in NIST SP 800-108. KDF function implemented as _zrtp_kdf() in zrtp_utils_proto.c. All KDF operations were replaced with from hmac to kdf function.	
+
 */

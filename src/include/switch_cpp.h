@@ -178,6 +178,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
      class EventConsumer {
 	 protected:
 		 switch_memory_pool_t *pool;
+		 int ready;
 	 public:
 		 switch_queue_t *events;
 		 switch_event_types_t e_event_id;
@@ -191,6 +192,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE_CONSTRUCTOR ~ EventConsumer();
 		 SWITCH_DECLARE(int) bind(const char *event_name, const char *subclass_name = "");
 		 SWITCH_DECLARE(Event *) pop(int block = 0, int timeout = 0);
+		 SWITCH_DECLARE(void) cleanup();
 	 };
 
 #ifdef SWIG
@@ -284,6 +286,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 
 		 SWITCH_DECLARE(int) speak(char *text);
 		 SWITCH_DECLARE(void) set_tts_parms(char *tts_name, char *voice_name);
+		 SWITCH_DECLARE(void) set_tts_params(char *tts_name, char *voice_name);
 
 	/**
 	 * For timeout milliseconds, call the dtmf function set previously

@@ -593,7 +593,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "16khz", "libs\win32\Sound_F
 		{87A1FE3D-F410-4C8E-9591-8C625985BC70} = {87A1FE3D-F410-4C8E-9591-8C625985BC70}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 32khzsound", "libs\win32\Dowload 32khz Sounds.2008.vcproj", "{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 32khzsound", "libs\win32\Download 32khz Sounds.2008.vcproj", "{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "32khz", "libs\win32\Sound_Files\32khz.2008.vcproj", "{464AAB78-5489-4916-BE51-BF8D61822311}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -763,7 +763,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_skypopen", "src\mod\end
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 32khz music", "libs\win32\Dowload 32khz music.2008.vcproj", "{1F0A8A77-E661-418F-BB92-82172AE43803}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 32khz music", "libs\win32\Download 32khz music.2008.vcproj", "{1F0A8A77-E661-418F-BB92-82172AE43803}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download 8khz music", "libs\win32\Download 8khz music.2008.vcproj", "{4F5C9D55-98EF-4256-8311-32D7BD360406}"
 EndProject
@@ -974,6 +974,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmlrpc", "libs\win32\xmlrpc-c\xmlrpc.2008.vcproj", "{510BDAA8-C04D-47DB-8482-E6AF380D3E07}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmltok", "libs\win32\xmlrpc-c\xmltok.2008.vcproj", "{3CF7C0E0-07C2-473A-A1E4-2274AEEC1268}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2390F054-A7F1-4CB9-ACB0-F46EC6E77B5B} = {2390F054-A7F1-4CB9-ACB0-F46EC6E77B5B}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

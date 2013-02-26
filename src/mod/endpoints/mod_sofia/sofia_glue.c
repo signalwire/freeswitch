@@ -39,7 +39,7 @@
 switch_cache_db_handle_t *_sofia_glue_get_db_handle(sofia_profile_t *profile, const char *file, const char *func, int line);
 #define sofia_glue_get_db_handle(_p) _sofia_glue_get_db_handle(_p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
-void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
+void sofia_glue_set_udptl_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
 {
 	char buf[2048] = "";
 	char max_buf[128] = "";
@@ -110,7 +110,9 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 	switch_snprintf(buf, sizeof(buf),
 					"v=0\n"
 					"o=%s %010u %010u IN %s %s\n"
-					"s=%s\n" "c=IN %s %s\n" "t=0 0\n", username, tech_pvt->owner_id, tech_pvt->session_id, family, ip, username, family, ip);
+					"s=%s\n"
+					"c=IN %s %s\n"
+					"t=0 0\n", username, tech_pvt->owner_id, tech_pvt->session_id, family, ip, username, family, ip);
 
 	if (t38_options->T38FaxMaxBuffer) {
 		switch_snprintf(max_buf, sizeof(max_buf), "a=T38FaxMaxBuffer:%d\n", t38_options->T38FaxMaxBuffer);
@@ -3107,6 +3109,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		switch_rtp_set_default_payload(tech_pvt->rtp_session, tech_pvt->pt);
+		switch_rtp_set_recv_pt(tech_pvt->rtp_session, tech_pvt->agreed_pt);
 	}
 
  end:
@@ -6290,6 +6293,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		
 	switch_cache_db_handle_t *dbh = sofia_glue_get_db_handle(profile);
 	char *test2;
+	char *err;
 
 	if (!dbh) {
 		return 0;
@@ -6307,14 +6311,20 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	
 	test2 = switch_mprintf("%s;%s", test_sql, test_sql);
 			
-	if (switch_cache_db_execute_sql(dbh, test2, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "GREAT SCOTT!!! Cannot execute batched statements!\n"
-						  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n");
-		
-		switch_cache_db_release_db_handle(&dbh);
-		free(test2);
-		free(test_sql);
-		return 0;
+	if (switch_cache_db_execute_sql(dbh, test2, &err) != SWITCH_STATUS_SUCCESS) {
+
+		if (switch_stristr("read-only", err)) {
+			free(err);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "GREAT SCOTT!!! Cannot execute batched statements! [%s]\n"
+							  "If you are using mysql, make sure you are using MYODBC 3.51.18 or higher and enable FLAG_MULTI_STATEMENTS\n", err);
+			
+			switch_cache_db_release_db_handle(&dbh);
+			free(test2);
+			free(test_sql);
+			free(err);
+			return 0;
+		}
 	}
 
 	free(test2);
@@ -6389,7 +6399,9 @@ void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bo
 	switch_assert(sqlp && *sqlp);
 	sql = *sqlp;	
 
+	switch_mutex_lock(profile->ireg_mutex);
 	switch_sql_queue_manager_push_confirm(profile->qm, sql, 0, !sql_already_dynamic);
+	switch_mutex_unlock(profile->ireg_mutex);
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;
@@ -6433,13 +6445,14 @@ void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, 
 {
 	switch_cache_db_handle_t *dbh = NULL;
 
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+
 	if (!(dbh = sofia_glue_get_db_handle(profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		return;
-	}
-
-	if (mutex) {
-		switch_mutex_lock(mutex);
 	}
 
 	switch_cache_db_persistant_execute_trans_full(dbh, sql, 1,
@@ -6461,13 +6474,13 @@ void sofia_glue_actually_execute_sql(sofia_profile_t *profile, char *sql, switch
 	switch_cache_db_handle_t *dbh = NULL;
 	char *err = NULL;
 
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
 	if (!(dbh = sofia_glue_get_db_handle(profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		return;
-	}
-
-	if (mutex) {
-		switch_mutex_lock(mutex);
 	}
 
 	switch_cache_db_execute_sql(dbh, sql, &err);
@@ -6491,13 +6504,13 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 	char *errmsg = NULL;
 	switch_cache_db_handle_t *dbh = NULL;
 
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
 	if (!(dbh = sofia_glue_get_db_handle(profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		return ret;
-	}
-
-	if (mutex) {
-		switch_mutex_lock(mutex);
 	}
 
 	switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, &errmsg);
@@ -6525,13 +6538,13 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 	char *err = NULL;
 	switch_cache_db_handle_t *dbh = NULL;
 
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
 	if (!(dbh = sofia_glue_get_db_handle(profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
 		return NULL;
-	}
-
-	if (mutex) {
-		switch_mutex_lock(mutex);
 	}
 
 	ret = switch_cache_db_execute_sql2str(dbh, sql, resbuf, len, &err);
@@ -6800,7 +6813,8 @@ int sofia_glue_tech_simplify(private_object_t *tech_pvt)
 		goto end;
 	}
 
-	if ((uuid = switch_channel_get_partner_uuid(tech_pvt->channel)) && (other_session = switch_core_session_locate(uuid))) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_BRIDGED) && 
+		(uuid = switch_channel_get_partner_uuid(tech_pvt->channel)) && (other_session = switch_core_session_locate(uuid))) {
 
 		other_channel = switch_core_session_get_channel(other_session);
 
@@ -7078,7 +7092,21 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 		np->is_nat = NULL;
 	}
 
-	if (np->is_nat && np->fs_path) {
+	if (sip->sip_record_route && sip->sip_record_route->r_url) {
+		char *full_contact = sip_header_as_string(nh->nh_home, (void *) contact);
+		char *route = sofia_glue_strip_uri(sip_header_as_string(nh->nh_home, (void *) sip->sip_record_route));
+		char *full_contact_dup;
+		char *route_encoded;
+		int route_encoded_len;
+		full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
+		route_encoded_len = (int)(strlen(route) * 3) + 1;
+		switch_zmalloc(route_encoded, route_encoded_len);
+		switch_url_encode(route, route_encoded, route_encoded_len);
+		contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, route_encoded);
+		free(full_contact_dup);
+		free(route_encoded);
+	}
+	else if (np->is_nat && np->fs_path) {
 		char *full_contact = sip_header_as_string(nh->nh_home, (void *) contact);
 		char *full_contact_dup;
 		char *path_encoded;

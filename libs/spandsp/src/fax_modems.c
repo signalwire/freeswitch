@@ -261,11 +261,32 @@ SPAN_DECLARE(void) fax_modems_start_slow_modem(fax_modems_state_t *s, int which)
     {
     case FAX_MODEM_V21_RX:
         fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &s->hdlc_rx);
+        fax_modems_set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
         fsk_rx_signal_cutoff(&s->v21_rx, -39.09f);
         s->rx_frame_received = FALSE;
         break;
+    case FAX_MODEM_CED_TONE_RX:
+        modem_connect_tones_rx_init(&s->connect_rx, MODEM_CONNECT_TONES_FAX_CED, s->tone_callback, s->tone_callback_user_data);
+        fax_modems_set_rx_handler(s, (span_rx_handler_t) &modem_connect_tones_rx, &s->connect_rx, (span_rx_fillin_handler_t) &modem_connect_tones_rx_fillin, &s->connect_rx);
+        break;
+    case FAX_MODEM_CNG_TONE_RX:
+        modem_connect_tones_rx_init(&s->connect_rx, MODEM_CONNECT_TONES_FAX_CNG, s->tone_callback, s->tone_callback_user_data);
+        fax_modems_set_rx_handler(s, (span_rx_handler_t) &modem_connect_tones_rx, &s->connect_rx, (span_rx_fillin_handler_t) &modem_connect_tones_rx_fillin, &s->connect_rx);
+        break;
     case FAX_MODEM_V21_TX:
         fsk_tx_init(&s->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &s->hdlc_tx);
+        fax_modems_set_tx_handler(s, (span_tx_handler_t) &fsk_tx, &s->v21_tx);
+        fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+        break;
+    case FAX_MODEM_CED_TONE_TX:
+        modem_connect_tones_tx_init(&s->connect_tx, MODEM_CONNECT_TONES_FAX_CED);
+        fax_modems_set_tx_handler(s, (span_tx_handler_t) &modem_connect_tones_tx, &s->connect_tx);
+        fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+        break;
+    case FAX_MODEM_CNG_TONE_TX:
+        modem_connect_tones_tx_init(&s->connect_tx, MODEM_CONNECT_TONES_FAX_CNG);
+        fax_modems_set_tx_handler(s, (span_tx_handler_t) &modem_connect_tones_tx, &s->connect_tx);
+        fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
         break;
     }
 }
@@ -490,12 +511,14 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
     s->use_tep = use_tep;
 
     modem_connect_tones_tx_init(&s->connect_tx, MODEM_CONNECT_TONES_FAX_CNG);
+    s->tone_callback = tone_callback;
+    s->tone_callback_user_data = user_data;
     if (tone_callback)
     {
         modem_connect_tones_rx_init(&s->connect_rx,
                                     MODEM_CONNECT_TONES_FAX_CNG,
-                                    tone_callback,
-                                    user_data);
+                                    s->tone_callback,
+                                    s->tone_callback_user_data);
     }
     /*endif*/
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);

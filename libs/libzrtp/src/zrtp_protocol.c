@@ -1086,7 +1086,7 @@ zrtp_status_t _zrtp_machine_enter_secure(zrtp_stream_t* stream)
 		session->zrtp->cb.event_cb.on_zrtp_protocol_event(stream, ZRTP_EVENT_IS_SECURE_DONE);
 	}	
 
-	/* We have computed all subkeys from S0 and don't need it anylonger. */
+	/* We have computed all subkeys from S0 and don't need it any longer. */
 	zrtp_wipe_zstring(ZSTR_GV(cc->s0));
 
 	/* Clear DH crypto context */

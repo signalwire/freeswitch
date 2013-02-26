@@ -941,6 +941,8 @@ SAC_OPENSSL
 if test x$HAVE_OPENSSL = x1; then
 	openssl_CFLAGS="$openssl_CFLAGS -DHAVE_OPENSSL";
 	APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_OPENSSL)
+	AC_CHECK_LIB(ssl, SSL_CTX_set_tlsext_use_srtp, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS_SRTP, 1, HAVE_OPENSSL_DTLS_SRTP))
+	AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS))
 fi
 
 AX_CHECK_JAVA
@@ -1105,6 +1107,7 @@ AC_CONFIG_FILES([Makefile
 		libs/xmlrpc-c/config.mk
 		libs/xmlrpc-c/srcdir.mk
 		libs/xmlrpc-c/stamp-h
+		libs/sipcc/Makefile
 		scripts/gentls_cert])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
@@ -1178,7 +1181,7 @@ AC_CONFIG_SUBDIRS([libs/libg722_1])
 AC_CONFIG_SUBDIRS([libs/silk])
 AC_CONFIG_SUBDIRS([libs/libcodec2])
 if test "x${enable_zrtp}" = "xyes"; then
-   AC_CONFIG_SUBDIRS([libs/libzrtp/projects/gnu])
+   AC_CONFIG_SUBDIRS([libs/libzrtp])
 fi
 AC_CONFIG_SUBDIRS([libs/libwebsockets])
 

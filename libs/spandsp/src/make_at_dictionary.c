@@ -38,9 +38,9 @@
 const char *wordlist[] =
 {
     " ",        /* Dummy to absorb spaces in commands */
-    "&C",       /* V.250 6.2.8 - Circuit 109 (received line signal detector), behaviour */ 
-    "&D",       /* V.250 6.2.9 - Circuit 108 (data terminal ready) behaviour */ 
-    "&F",       /* V.250 6.1.2 - Set to factory-defined configuration */ 
+    "&C",       /* V.250 6.2.8 - Circuit 109 (received line signal detector), behaviour */
+    "&D",       /* V.250 6.2.9 - Circuit 108 (data terminal ready) behaviour */
+    "&F",       /* V.250 6.1.2 - Set to factory-defined configuration */
     "+A8A",     /* V.251 6.3 - V.8 calling tone indication */
     "+A8C",     /* V.251 6.2 - V.8 answer signal indication */
     "+A8E",     /* V.251 5.1 - V.8 and V.8bis operation controls */
@@ -49,7 +49,7 @@ const char *wordlist[] =
     "+A8M",     /* V.251 5.2 - Send V.8 menu signals */
     "+A8R",     /* V.251 6.6 - V.8bis signal and message reporting */
     "+A8T",     /* V.251 5.3 - Send V.8bis signal and/or message(s) */
-    "+ASTO",    /* V.250 6.3.15 - Store telephone number */ 
+    "+ASTO",    /* V.250 6.3.15 - Store telephone number */
     "+CAAP",    /* 3GPP TS 27.007 7.25 - Automatic answer for eMLPP Service */
     "+CACM",    /* 3GPP TS 27.007 8.25 - Accumulated call meter */
     "+CACSP",   /* 3GPP TS 27.007 11.1.7 - Voice Group or Voice Broadcast Call State Attribute Presentation */
@@ -217,33 +217,33 @@ const char *wordlist[] =
     "+CVHU",    /* 3GPP TS 27.007 6.20 - Voice Hangup Control */
     "+CVIB",    /* 3GPP TS 27.007 8.22 - Vibrator mode */
     "+CXT",     /* IS-99 5.6 - Cellular extension */
-    "+DR",      /* V.250 6.6.2 - Data compression reporting */ 
-    "+DS",      /* V.250 6.6.1 - Data compression */ 
+    "+DR",      /* V.250 6.6.2 - Data compression reporting */
+    "+DS",      /* V.250 6.6.1 - Data compression */
     "+DS44",    /* V.250 6.6.2 - V.44 data compression */
-    "+EB",      /* V.250 6.5.2 - Break handling in error control operation */ 
-    "+EFCS",    /* V.250 6.5.4 - 32-bit frame check sequence */ 
-    "+EFRAM",   /* V.250 6.5.8 - Frame length */ 
-    "+ER",      /* V.250 6.5.5 - Error control reporting */ 
-    "+ES",      /* V.250 6.5.1 - Error control selection */ 
-    "+ESA",     /* V.80 8.2 - Synchronous access mode configuration */ 
-    "+ESR",     /* V.250 6.5.3 - Selective repeat */ 
-    "+ETBM",    /* V.250 6.5.6 - Call termination buffer management */ 
-    "+EWIND",   /* V.250 6.5.7 - Window size */ 
+    "+EB",      /* V.250 6.5.2 - Break handling in error control operation */
+    "+EFCS",    /* V.250 6.5.4 - 32-bit frame check sequence */
+    "+EFRAM",   /* V.250 6.5.8 - Frame length */
+    "+ER",      /* V.250 6.5.5 - Error control reporting */
+    "+ES",      /* V.250 6.5.1 - Error control selection */
+    "+ESA",     /* V.80 8.2 - Synchronous access mode configuration */
+    "+ESR",     /* V.250 6.5.3 - Selective repeat */
+    "+ETBM",    /* V.250 6.5.6 - Call termination buffer management */
+    "+EWIND",   /* V.250 6.5.7 - Window size */
     "+F34",     /* T.31 B.6.1 - Initial V.34 rate controls for FAX */
     "+FAA",     /* T.32 8.5.2.5 - Adaptive Answer parameter */
     "+FAP",     /* T.32 8.5.1.12 - Addressing and polling capabilities parameter */
-    "+FAR",     /* T.31 8.5.1 - Adaptive reception control */ 
+    "+FAR",     /* T.31 8.5.1 - Adaptive reception control */
     "+FBO",     /* T.32 8.5.3.4 - Phase C data bit order */
     "+FBS",     /* T.32 8.5.3.2 - Buffer Size, read only parameter */
     "+FBU",     /* T.32 8.5.1.10 - HDLC Frame Reporting parameter */
     "+FCC",     /* T.32 8.5.1.1 - DCE capabilities parameters */
-    "+FCL",     /* T.31 8.5.2 - Carrier loss timeout */ 
-    "+FCLASS",  /* T.31 8.2 - Capabilities identification and control */ 
+    "+FCL",     /* T.31 8.5.2 - Carrier loss timeout */
+    "+FCLASS",  /* T.31 8.2 - Capabilities identification and control */
     "+FCQ",     /* T.32 8.5.2.3 -  Copy quality checking parameter */
     "+FCR",     /* T.32 8.5.1.9 - Capability to receive parameter */
     "+FCS",     /* T.32 8.5.1.3 - Current Session Results parameters */
     "+FCT",     /* T.32 8.5.2.6 - DTE phase C timeout parameter */
-    "+FDD",     /* T.31 8.5.3 - Double escape character replacement */ 
+    "+FDD",     /* T.31 8.5.3 - Double escape character replacement */
     "+FDR",     /* T.32 8.3.4 - Data reception command */
     "+FDT",     /* T.32 8.3.3 - Data transmission command */
     "+FEA",     /* T.32 8.5.3.5 - Phase C received EOL alignment parameter */
@@ -253,14 +253,14 @@ const char *wordlist[] =
     "+FIE",     /* T.32 8.5.2.1 - Procedure interrupt enable parameter */
     "+FIP",     /* T.32 8.3.6 - Initialize facsimile parameters */
     "+FIS",     /* T.32 8.5.1.2 -  Current session parameters */
-    "+FIT",     /* T.31 8.5.4 - DTE inactivity timeout */ 
+    "+FIT",     /* T.31 8.5.4 - DTE inactivity timeout */
     "+FKS",     /* T.32 8.3.5 - Session termination command */
     "+FLI",     /* T.32 8.5.1.5 - Local ID string parameter, TSI or CSI */
-    "+FLO",     /* T.31 says to implement something similar to +IFC */ 
+    "+FLO",     /* T.31 says to implement something similar to +IFC */
     "+FLP",     /* T.32 8.5.1.7 - Indicate document to poll parameter */
-    "+FMI",     /* T.31 says to duplicate +GMI */ 
-    "+FMM",     /* T.31 says to duplicate +GMM */ 
-    "+FMR",     /* T.31 says to duplicate +GMR */ 
+    "+FMI",     /* T.31 says to duplicate +GMI */
+    "+FMM",     /* T.31 says to duplicate +GMM */
+    "+FMR",     /* T.31 says to duplicate +GMR */
     "+FMS",     /* T.32 8.5.2.9 - Minimum phase C speed parameter */
     "+FND",     /* T.32 8.5.2.10 - Non-Standard Message Data Indication parameter */
     "+FNR",     /* T.32 8.5.1.11 - Negotiation message reporting control parameters */
@@ -268,44 +268,44 @@ const char *wordlist[] =
     "+FPA",     /* T.32 8.5.1.13 - Selective polling address parameter */
     "+FPI",     /* T.32 8.5.1.5 - Local Polling ID String parameter */
     "+FPP",     /* T.32 8.5.3 - Facsimile packet protocol */
-    "+FPR",     /* T.31 says to implement something similar to +IPR */ 
+    "+FPR",     /* T.31 says to implement something similar to +IPR */
     "+FPS",     /* T.32 8.5.2.2 - Page Status parameter */
     "+FPW",     /* T.32 8.5.1.13 - PassWord parameter (Sending or Polling) */
-    "+FRH",     /* T.31 8.3.6 - HDLC receive */ 
-    "+FRM",     /* T.31 8.3.4 - Facsimile receive */ 
+    "+FRH",     /* T.31 8.3.6 - HDLC receive */
+    "+FRM",     /* T.31 8.3.4 - Facsimile receive */
     "+FRQ",     /* T.32 8.5.2.4 - Receive Quality Thresholds parameters */
-    "+FRS",     /* T.31 8.3.2 - Receive silence */ 
+    "+FRS",     /* T.31 8.3.2 - Receive silence */
     "+FRY",     /* T.32 8.5.2.8 - ECM Retry Value parameter */
     "+FSA",     /* T.32 8.5.1.13 - Subaddress parameter */
     "+FSP",     /* T.32 8.5.1.8 - Request to poll parameter */
-    "+FTH",     /* T.31 8.3.5 - HDLC transmit */ 
-    "+FTM",     /* T.31 8.3.3 - Facsimile transmit */ 
-    "+FTS",     /* T.31 8.3.1 - Transmit silence */ 
-    "+GCAP",    /* V.250 6.1.9 - Request complete capabilities list */ 
-    "+GCI",     /* V.250 6.1.10 - Country of installation, */ 
-    "+GMI",     /* V.250 6.1.4 - Request manufacturer identification */ 
-    "+GMM",     /* V.250 6.1.5 - Request model identification */ 
-    "+GMR",     /* V.250 6.1.6 - Request revision identification */ 
-    "+GOI",     /* V.250 6.1.8 - Request global object identification */ 
-    "+GSN",     /* V.250 6.1.7 - Request product serial number identification */ 
+    "+FTH",     /* T.31 8.3.5 - HDLC transmit */
+    "+FTM",     /* T.31 8.3.3 - Facsimile transmit */
+    "+FTS",     /* T.31 8.3.1 - Transmit silence */
+    "+GCAP",    /* V.250 6.1.9 - Request complete capabilities list */
+    "+GCI",     /* V.250 6.1.10 - Country of installation, */
+    "+GMI",     /* V.250 6.1.4 - Request manufacturer identification */
+    "+GMM",     /* V.250 6.1.5 - Request model identification */
+    "+GMR",     /* V.250 6.1.6 - Request revision identification */
+    "+GOI",     /* V.250 6.1.8 - Request global object identification */
+    "+GSN",     /* V.250 6.1.7 - Request product serial number identification */
     "+IBC",     /* V.80 7.9 - Control of in-band control */
     "+IBM",     /* V.80 7.10 - In-band MARK idle reporting control */
-    "+ICF",     /* V.250 6.2.11 - DTE-DCE character framing */ 
-    "+ICLOK",   /* V.250 6.2.14 - Select sync transmit clock source */ 
-    "+IDSR",    /* V.250 6.2.16 - Select data set ready option */ 
-    "+IFC",     /* V.250 6.2.12 - DTE-DCE local flow control */ 
-    "+ILRR",    /* V.250 6.2.13 - DTE-DCE local rate reporting */ 
-    "+ILSD",    /* V.250 6.2.15 - Select long space disconnect option */ 
-    "+IPR",     /* V.250 6.2.10 - Fixed DTE rate */ 
-    "+IRTS",    /* V.250 6.2.17 - Select synchronous mode RTS option */ 
+    "+ICF",     /* V.250 6.2.11 - DTE-DCE character framing */
+    "+ICLOK",   /* V.250 6.2.14 - Select sync transmit clock source */
+    "+IDSR",    /* V.250 6.2.16 - Select data set ready option */
+    "+IFC",     /* V.250 6.2.12 - DTE-DCE local flow control */
+    "+ILRR",    /* V.250 6.2.13 - DTE-DCE local rate reporting */
+    "+ILSD",    /* V.250 6.2.15 - Select long space disconnect option */
+    "+IPR",     /* V.250 6.2.10 - Fixed DTE rate */
+    "+IRTS",    /* V.250 6.2.17 - Select synchronous mode RTS option */
     "+ITF",     /* V.80 8.4 - Transmit flow control thresholds */
-    "+MA",      /* V.250 6.4.2 - Modulation automode control */ 
-    "+MR",      /* V.250 6.4.3 - Modulation reporting control */ 
-    "+MS",      /* V.250 6.4.1 - Modulation selection */ 
-    "+MSC",     /* V.250 6.4.8 - Seamless rate change enable */ 
-    "+MV18AM",  /* V.250 6.4.6 - V.18 answering message editing */ 
-    "+MV18P",   /* V.250 6.4.7 - Order of probes */ 
-    "+MV18R",   /* V.250 6.4.5 - V.18 reporting control */ 
+    "+MA",      /* V.250 6.4.2 - Modulation automode control */
+    "+MR",      /* V.250 6.4.3 - Modulation reporting control */
+    "+MS",      /* V.250 6.4.1 - Modulation selection */
+    "+MSC",     /* V.250 6.4.8 - Seamless rate change enable */
+    "+MV18AM",  /* V.250 6.4.6 - V.18 answering message editing */
+    "+MV18P",   /* V.250 6.4.7 - Order of probes */
+    "+MV18R",   /* V.250 6.4.5 - V.18 reporting control */
     "+MV18S",   /* V.250 6.4.4 - V.18 selection */
     "+PCW",     /* V.250 6.8.1 - Call waiting enable (V.92 DCE) */
     "+PIG",     /* V.250 6.8.5 - PCM upstream ignore */
@@ -332,24 +332,24 @@ const char *wordlist[] =
     "+SVR",     /* V.252 5.5 - Video receive channel indication */
     "+SVRR",    /* V.252 3.10 - Video indication reporting */
     "+SVT",     /* V.252 5.6 - Video transmit channel indication */
-    "+TADR",    /* V.250 6.7.2.9 - Local V.54 address */ 
-    "+TAL",     /* V.250 6.7.2.15 - Local analogue loop */ 
-    "+TALS",    /* V.250 6.7.2.6 - Analogue loop status */ 
-    "+TDLS",    /* V.250 6.7.2.7 - Local digital loop status */ 
-    "+TE140",   /* V.250 6.7.2.1 - Enable ckt 140 */ 
-    "+TE141",   /* V.250 6.7.2.2 - Enable ckt 141 */ 
-    "+TEPAL",   /* V.250 6.7.2.5 - Enable front panel analogue loop */ 
-    "+TEPDL",   /* V.250 6.7.2.4 - Enable front panel RDL */ 
-    "+TERDL",   /* V.250 6.7.2.3 - Enable RDL from remote */ 
-    "+TLDL",    /* V.250 6.7.2.13 - Local digital loop */ 
+    "+TADR",    /* V.250 6.7.2.9 - Local V.54 address */
+    "+TAL",     /* V.250 6.7.2.15 - Local analogue loop */
+    "+TALS",    /* V.250 6.7.2.6 - Analogue loop status */
+    "+TDLS",    /* V.250 6.7.2.7 - Local digital loop status */
+    "+TE140",   /* V.250 6.7.2.1 - Enable ckt 140 */
+    "+TE141",   /* V.250 6.7.2.2 - Enable ckt 141 */
+    "+TEPAL",   /* V.250 6.7.2.5 - Enable front panel analogue loop */
+    "+TEPDL",   /* V.250 6.7.2.4 - Enable front panel RDL */
+    "+TERDL",   /* V.250 6.7.2.3 - Enable RDL from remote */
+    "+TLDL",    /* V.250 6.7.2.13 - Local digital loop */
     "+TMO",     /* V.250 6.9 - V.59 command */
-    "+TMODE",   /* V.250 6.7.2.10 - Set V.54 mode */ 
-    "+TNUM",    /* V.250 6.7.2.12 - Errored bit and block counts */ 
-    "+TRDL",    /* V.250 6.7.2.14 - Request remote digital loop */ 
-    "+TRDLS",   /* V.250 6.7.2.8 - Remote digital loop status */ 
-    "+TRES",    /* V.250 6.7.2.17 - Self test result */ 
-    "+TSELF",   /* V.250 6.7.2.16 - Self test */ 
-    "+TTER",    /* V.250 6.7.2.11 - Test error rate */ 
+    "+TMODE",   /* V.250 6.7.2.10 - Set V.54 mode */
+    "+TNUM",    /* V.250 6.7.2.12 - Errored bit and block counts */
+    "+TRDL",    /* V.250 6.7.2.14 - Request remote digital loop */
+    "+TRDLS",   /* V.250 6.7.2.8 - Remote digital loop status */
+    "+TRES",    /* V.250 6.7.2.17 - Self test result */
+    "+TSELF",   /* V.250 6.7.2.16 - Self test */
+    "+TTER",    /* V.250 6.7.2.11 - Test error rate */
     "+VAC",     /* V.252 4.1 - Set audio code */
     "+VACR",    /* V.252 6.1 - Audio code report */
     "+VBT",     /* 3GPP TS 27.007 C.2.2 - Buffer threshold setting */
@@ -382,10 +382,10 @@ const char *wordlist[] =
     "+VSID",    /* Extension - Set the originating number */
     "+VSM",     /* V.253 10.2.8 - Compression method selection */
     "+VSP",     /* V.253 10.5.1 - Voice speakerphone state */
-    "+VTA",     /* V.253 10.5.4 - Train acoustic echo-canceller */ 
+    "+VTA",     /* V.253 10.5.4 - Train acoustic echo-canceller */
     "+VTD",     /* V.253 10.2.9 - Beep tone duration timer */
     "+VTER",    /* V.252 6.4 - Simple telephony event report */
-    "+VTH",     /* V.253 10.5.5 - Train line echo-canceller */ 
+    "+VTH",     /* V.253 10.5.5 - Train line echo-canceller */
     "+VTR",     /* V.253 10.1.4 - Voice duplex state */
     "+VTS",     /* V.253 10.1.5 - DTMF and tone generation in voice */
     "+VTX",     /* V.253 10.1.6 - Transmit data state */
@@ -417,27 +417,27 @@ const char *wordlist[] =
     "+WS58",    /* TIA-678 B.3.1.8 Idle time-out value */
     "+WSTL",    /* TIA-678 C.5.2 Call session time limit */
     ";",        /* Dummy to absorb semi-colon delimiters in commands */
-    "A",        /* V.250 6.3.5 - Answer */ 
-    "D",        /* V.250 6.3.1 - Dial */ 
-    "E",        /* V.250 6.2.4 - Command echo */ 
-    "H",        /* V.250 6.3.6 - Hook control */ 
-    "I",        /* V.250 6.1.3 - Request identification information */ 
-    "L",        /* V.250 6.3.13 - Monitor speaker loudness */ 
-    "M",        /* V.250 6.3.14 - Monitor speaker mode */ 
-    "O",        /* V.250 6.3.7 - Return to online data state */ 
-    "P",        /* V.250 6.3.3 - Select pulse dialling (command) */ 
-    "Q",        /* V.250 6.2.5 - Result code suppression */ 
-    "S0",       /* V.250 6.3.8 - Automatic answer */ 
-    "S10",      /* V.250 6.3.12 - Automatic disconnect delay */ 
-    "S3",       /* V.250 6.2.1 - Command line termination character */ 
-    "S4",       /* V.250 6.2.2 - Response formatting character */ 
-    "S5",       /* V.250 6.2.3 - Command line editing character */ 
-    "S6",       /* V.250 6.3.9 - Pause before blind dialling */ 
-    "S7",       /* V.250 6.3.10 - Connection completion timeout */ 
-    "S8",       /* V.250 6.3.11 - Comma dial modifier time */ 
-    "T",        /* V.250 6.3.2 - Select tone dialling (command) */ 
-    "V",        /* V.250 6.2.6 - DCE response format */ 
-    "X",        /* V.250 6.2.7 - Result code selection and call progress monitoring control */ 
+    "A",        /* V.250 6.3.5 - Answer */
+    "D",        /* V.250 6.3.1 - Dial */
+    "E",        /* V.250 6.2.4 - Command echo */
+    "H",        /* V.250 6.3.6 - Hook control */
+    "I",        /* V.250 6.1.3 - Request identification information */
+    "L",        /* V.250 6.3.13 - Monitor speaker loudness */
+    "M",        /* V.250 6.3.14 - Monitor speaker mode */
+    "O",        /* V.250 6.3.7 - Return to online data state */
+    "P",        /* V.250 6.3.3 - Select pulse dialling (command) */
+    "Q",        /* V.250 6.2.5 - Result code suppression */
+    "S0",       /* V.250 6.3.8 - Automatic answer */
+    "S10",      /* V.250 6.3.12 - Automatic disconnect delay */
+    "S3",       /* V.250 6.2.1 - Command line termination character */
+    "S4",       /* V.250 6.2.2 - Response formatting character */
+    "S5",       /* V.250 6.2.3 - Command line editing character */
+    "S6",       /* V.250 6.3.9 - Pause before blind dialling */
+    "S7",       /* V.250 6.3.10 - Connection completion timeout */
+    "S8",       /* V.250 6.3.11 - Comma dial modifier time */
+    "T",        /* V.250 6.3.2 - Select tone dialling (command) */
+    "V",        /* V.250 6.2.6 - DCE response format */
+    "X",        /* V.250 6.2.7 - Result code selection and call progress monitoring control */
     "Z",        /* V.250 6.1.1 - Reset to default configuration */
     NULL
 };

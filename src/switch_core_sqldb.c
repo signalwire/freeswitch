@@ -341,6 +341,9 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 	if (!strncasecmp(dsn, "pgsql://", 8)) {
 		type = SCDB_TYPE_PGSQL;
 		connection_options.pgsql_options.dsn = (char *)(dsn + 8);
+	} else if (!strncasecmp(dsn, "sqlite://", 9)) {
+		type = SCDB_TYPE_CORE_DB;
+		connection_options.core_db_options.db_path = (char *)(dsn + 9);
 	} else if ((!(i = strncasecmp(dsn, "odbc://", 7))) || strchr(dsn, ':')) {
 		type = SCDB_TYPE_ODBC;
 
@@ -360,14 +363,8 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 				*p++ = '\0';
 				connection_options.odbc_options.pass = p;
 			}
-			
 		}
-
 	} else {
-		if (!strncasecmp(dsn, "sqlite://", 9)) {
-			dsn += 9;
-		}
-
 		type = SCDB_TYPE_CORE_DB;
 		connection_options.core_db_options.db_path = (char *)dsn;
 	}
@@ -377,7 +374,6 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 	if (status != SWITCH_STATUS_SUCCESS) *dbh = NULL;
 
 	return status;
-
 }
 
 
@@ -501,7 +497,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 		}
 
 		if (!db && !odbc_dbh && !pgsql_dbh) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure to connect to %s %s!\n", (db ? "SQLITE" : (odbc_dbh ? "ODBC" : "PGSQL")), (db ? connection_options->core_db_options.db_path : (odbc_dbh ? connection_options->odbc_options.dsn : connection_options->pgsql_options.dsn)));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure to connect to %s %s!\n", switch_cache_db_type_name(type), db_name);
 			goto end;
 		}
 
@@ -1017,7 +1013,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 }
 
 struct helper {
-	switch_db_event_callback_func_t callback;
+	switch_core_db_event_callback_func_t callback;
 	void *pdata;
 };
 
@@ -1037,7 +1033,7 @@ static int helper_callback(void *pArg, int argc, char **argv, char **columnNames
 }
 
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback(switch_cache_db_handle_t *dbh,
-																	 const char *sql, switch_db_event_callback_func_t callback, void *pdata, char **err)
+																	 const char *sql, switch_core_db_event_callback_func_t callback, void *pdata, char **err)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
@@ -1287,6 +1283,99 @@ static uint32_t qm_ttl(switch_sql_queue_manager_t *qm)
 	return ttl;
 }
 
+struct db_job {
+	switch_sql_queue_manager_t *qm;
+	char *sql;
+	switch_core_db_callback_func_t callback;
+	switch_core_db_event_callback_func_t event_callback;
+	void *pdata;
+	int event;
+	switch_memory_pool_t *pool;
+};
+
+static void *SWITCH_THREAD_FUNC sql_in_thread (switch_thread_t *thread, void *obj)
+{
+	struct db_job *job = (struct db_job *) obj;
+	switch_memory_pool_t *pool = job->pool;
+	char *err = NULL;
+	switch_cache_db_handle_t *dbh;
+
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, job->qm->dsn) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot connect DSN %s\n", job->qm->dsn);
+		return NULL;
+	}
+
+	if (job->callback) {
+		switch_cache_db_execute_sql_callback(dbh, job->sql, job->callback, job->pdata, &err);
+	} else if (job->event_callback) {
+		switch_cache_db_execute_sql_event_callback(dbh, job->sql, job->event_callback, job->pdata, &err);
+	}
+
+	if (err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", job->sql, err);
+		free(err);
+	}
+	
+	switch_cache_db_release_db_handle(&dbh);
+	
+	if (pool) {
+		switch_core_destroy_memory_pool(&pool);
+	}
+
+	return NULL;
+}
+
+static switch_thread_data_t *new_job(switch_sql_queue_manager_t *qm, const char *sql, 
+									 switch_core_db_callback_func_t callback, switch_core_db_event_callback_func_t event_callback, void *pdata)
+{
+	switch_memory_pool_t *pool;
+	switch_thread_data_t *td;
+	struct db_job *job;
+	switch_core_new_memory_pool(&pool);
+
+	td = switch_core_alloc(pool, sizeof(*td));
+	job = switch_core_alloc(pool, sizeof(*job));
+
+	td->func = sql_in_thread;
+	td->obj = job;
+
+	job->sql = switch_core_strdup(pool, sql);
+	job->qm = qm;
+
+	if (callback) {
+		job->callback = callback;
+	} else if (event_callback) {
+		job->event_callback = event_callback;
+	}
+
+	job->pdata = pdata;
+	job->pool = pool;
+
+	return td;
+}
+
+
+SWITCH_DECLARE(void) switch_sql_queue_manger_execute_sql_callback(switch_sql_queue_manager_t *qm, 
+																   const char *sql, switch_core_db_callback_func_t callback, void *pdata)
+{
+	
+	switch_thread_data_t *td;
+	if ((td = new_job(qm, sql, callback, NULL, pdata))) {
+		switch_thread_pool_launch_thread(&td);
+	}
+}
+
+SWITCH_DECLARE(void) switch_sql_queue_manger_execute_sql_event_callback(switch_sql_queue_manager_t *qm, 
+																		const char *sql, switch_core_db_event_callback_func_t callback, void *pdata)
+{
+	
+	switch_thread_data_t *td;
+	if ((td = new_job(qm, sql, NULL, callback, pdata))) {
+		switch_thread_pool_launch_thread(&td);
+	}
+}
+
 SWITCH_DECLARE(int) switch_sql_queue_manager_size(switch_sql_queue_manager_t *qm, uint32_t index)
 {
 	int size = 0;
@@ -1303,10 +1392,15 @@ SWITCH_DECLARE(int) switch_sql_queue_manager_size(switch_sql_queue_manager_t *qm
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	uint32_t i;
 
 	if (qm->thread_running) {
 		qm->thread_running = 0;
-		switch_queue_push(qm->sql_queue[0], NULL);
+
+		for(i = 0; i < qm->numq; i++) {
+			switch_queue_push(qm->sql_queue[i], NULL);
+			switch_queue_interrupt_all(qm->sql_queue[i]);
+		}
 		qm_wake(qm);
 		status = SWITCH_STATUS_SUCCESS;
 	}
@@ -1413,6 +1507,19 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_m
 
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup)
 {
+#define EXEC_NOW
+#ifdef EXEC_NOW
+	switch_cache_db_handle_t *dbh;
+
+	if (switch_cache_db_get_db_handle_dsn(&dbh, qm->dsn) == SWITCH_STATUS_SUCCESS) {
+		switch_cache_db_execute_sql(dbh, (char *)sql, NULL);		
+		switch_cache_db_release_db_handle(&dbh);
+	}
+
+	if (!dup) free((char *)sql);
+
+#else
+
 	int size, x = 0, sanity = 0;
 	uint32_t written, want;
 
@@ -1456,6 +1563,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 	switch_mutex_lock(qm->mutex);
 	qm->confirm--;
 	switch_mutex_unlock(qm->mutex);
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1500,10 +1608,16 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *n
 	}
 
 	if (pre_trans_execute) {
-		qm->pre_trans_execute = switch_core_strdup(qm->pool, qm->pre_trans_execute);
-		qm->post_trans_execute = switch_core_strdup(qm->pool, qm->post_trans_execute);
-		qm->inner_pre_trans_execute = switch_core_strdup(qm->pool, qm->inner_pre_trans_execute);
-		qm->inner_post_trans_execute = switch_core_strdup(qm->pool, qm->inner_post_trans_execute);
+		qm->pre_trans_execute = switch_core_strdup(qm->pool, pre_trans_execute);
+	}
+	if (post_trans_execute) {
+		qm->post_trans_execute = switch_core_strdup(qm->pool, post_trans_execute);
+	}
+	if (inner_pre_trans_execute) {
+		qm->inner_pre_trans_execute = switch_core_strdup(qm->pool, inner_pre_trans_execute);
+	}
+	if (inner_post_trans_execute) {
+		qm->inner_post_trans_execute = switch_core_strdup(qm->pool, inner_post_trans_execute);
 	}
 
 	*qmp = qm;
@@ -1741,7 +1855,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 		i = 40;
 
-		while (--i > 0 && (lc = qm_ttl(qm)) < qm->max_trans / 4 && !qm->confirm) {
+		while (--i > 0 && (lc = qm_ttl(qm)) < 500) {
 			switch_yield(5000);
 		}
 
@@ -3127,10 +3241,10 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index channels1 on channels(hostname)", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index calls1 on calls(hostname)", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index chidx1 on channels (hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index uuindex on channels (uuid)", NULL);
+	switch_cache_db_execute_sql(sql_manager.dbh, "create index uuindex on channels (uuid, hostname)", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index uuindex2 on channels (call_uuid)", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index callsidx1 on calls (hostname)", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "create index eruuindex on calls (caller_uuid)", NULL);
+	switch_cache_db_execute_sql(sql_manager.dbh, "create index eruuindex on calls (caller_uuid, hostname)", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index eeuuindex on calls (callee_uuid)", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index eeuuindex2 on calls (call_uuid)", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index regindex1 on registrations (reg_user,realm,hostname)", NULL);
@@ -3251,13 +3365,12 @@ void switch_core_sqldb_stop(void)
 
 	switch_event_unbind_callback(core_event_handler);
 
-	switch_core_sqldb_stop_thread();
-
-
 	if (sql_manager.db_thread && sql_manager.db_thread_running) {
 		sql_manager.db_thread_running = -1;
 		switch_thread_join(&st, sql_manager.db_thread);
 	}
+
+	switch_core_sqldb_stop_thread();
 
 	switch_cache_db_flush_handles();
 	sql_close(0);

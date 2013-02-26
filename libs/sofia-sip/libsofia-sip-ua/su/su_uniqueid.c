@@ -196,8 +196,10 @@ void
 sofia_su_uniqueid_destructor(void)
 {
 #if HAVE_DEV_URANDOM
-  if (urandom)
-    fclose(urandom);
+	if (urandom) {
+		fclose(urandom);
+		urandom=NULL;
+	}
 #endif	/* HAVE_DEV_URANDOM */
 
 #if SU_HAVE_PTHREADS

@@ -7,7 +7,9 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <PropertyGroup>
+    <UnibasePropsImported>true</UnibasePropsImported>
+  </PropertyGroup><ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>

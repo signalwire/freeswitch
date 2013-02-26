@@ -2,14 +2,14 @@
                                                                            
   FILE........: lpc.c                                                              
   AUTHOR......: David Rowe                                                      
-  DATE CREATED: 30/9/90                                                   
+  DATE CREATED: 30 Sep 1990 (!)                                                 
                                                                           
   Linear Prediction functions written in C.                                
                                                                           
 \*---------------------------------------------------------------------------*/
 
 /*
-  Copyright (C) 2009 David Rowe
+  Copyright (C) 2009-2012 David Rowe
 
   All rights reserved.
 
@@ -22,17 +22,73 @@
   License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 #define LPC_MAX_N 512		/* maximum no. of samples in frame */
 #define PI 3.141592654		/* mathematical constant */
 
+#define ALPHA 1.0
+#define BETA  0.94
+
 #include <assert.h>
 #include <math.h>
 #include "defines.h"
 #include "lpc.h"
+
+/*---------------------------------------------------------------------------*\
+                                                                         
+  pre_emp()                                                        
+                                                                         
+  Pre-emphasise (high pass filter with zero close to 0 Hz) a frame of
+  speech samples.  Helps reduce dynamic range of LPC spectrum, giving
+  greater weight and hensea better match to low energy formants.  
+
+  Should be balanced by de-emphasis of the output speech.
+                                                                           
+\*---------------------------------------------------------------------------*/
+
+void pre_emp(
+  float  Sn_pre[], /* output frame of speech samples                     */
+  float  Sn[],	   /* input frame of speech samples                      */
+  float *mem,      /* Sn[-1]single sample memory                         */
+  int   Nsam	   /* number of speech samples to use                    */
+)
+{
+    int   i;
+
+    for(i=0; i<Nsam; i++) {
+	Sn_pre[i] = Sn[i] - ALPHA * mem[0];
+	mem[0] = Sn[i];
+    }
+
+}
+
+
+/*---------------------------------------------------------------------------*\
+                                                                         
+  de_emp()                                                        
+                                                                         
+  De-emphasis filter (low pass filter with polse close to 0 Hz).
+                                                                           
+\*---------------------------------------------------------------------------*/
+
+void de_emp(
+  float  Sn_de[],  /* output frame of speech samples                     */
+  float  Sn[],	   /* input frame of speech samples                      */
+  float *mem,      /* Sn[-1]single sample memory                         */
+  int    Nsam	   /* number of speech samples to use                    */
+)
+{
+    int   i;
+
+    for(i=0; i<Nsam; i++) {
+	Sn_de[i] = Sn[i] + BETA * mem[0];
+	mem[0] = Sn_de[i];
+    }
+
+}
+
 
 /*---------------------------------------------------------------------------*\
                                                                          

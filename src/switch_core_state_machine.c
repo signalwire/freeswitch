@@ -524,7 +524,16 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					switch_channel_state_thread_lock(session->channel);
 					switch_channel_set_flag(session->channel, CF_THREAD_SLEEPING);
 					if (switch_channel_get_state(session->channel) == switch_channel_get_running_state(session->channel)) {
+						switch_ivr_parse_all_events(session);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s session thread sleep state: %s!\n", 
+										  switch_channel_get_name(session->channel),
+										  switch_channel_state_name(switch_channel_get_running_state(session->channel)));
 						switch_thread_cond_wait(session->cond, session->mutex);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s session thread wake state: %s!\n", 
+										  switch_channel_get_name(session->channel),
+										  switch_channel_state_name(switch_channel_get_running_state(session->channel)));
+
+
 					}
 					switch_channel_clear_flag(session->channel, CF_THREAD_SLEEPING);
 					switch_channel_state_thread_unlock(session->channel);

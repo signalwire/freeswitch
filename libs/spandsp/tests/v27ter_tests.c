@@ -43,9 +43,6 @@ display of modem status is maintained.
 \section v27ter_tests_page_sec_2 How is it used?
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
-#define WITH_SPANDSP_INTERNALS
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -66,9 +63,7 @@ display of modem status is maintained.
 #include <fenv.h>
 #endif
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -459,7 +454,7 @@ int main(int argc, char *argv[])
         v27ter_tx_power(tx, signal_level);
         v27ter_tx_set_modem_status_handler(tx, v27ter_tx_status, (void *) tx);
         /* Move the carrier off a bit */
-#if defined(WITH_SPANDSP_INTERNALS)
+#if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)
         tx->carrier_phase_rate = dds_phase_ratef(1810.0f);
 #endif
         bert_init(&bert, bits_per_test, BERT_PATTERN_ITU_O152_11, test_bps, 20);

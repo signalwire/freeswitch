@@ -2305,23 +2305,22 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 		}
 
-		/* Will drop the caller if no agent was found for more than X seconds */
-		if (queue->max_wait_time_with_no_agent > 0 &&
-				(queue->last_agent_exist >= m->t_member_called || queue->max_wait_time_with_no_agent_time_reached == 0) &&
-				queue->last_agent_exist_check - queue->last_agent_exist > queue->max_wait_time_with_no_agent) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait of %d sec. with no agent\n", m->member_cid_name, m->member_cid_number, m->queue_name, queue->max_wait_time_with_no_agent);
-			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
-			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
-		}
+		if (queue->max_wait_time_with_no_agent > 0 && queue->last_agent_exist_check > queue->last_agent_exist) {
+			if (queue->last_agent_exist_check - queue->last_agent_exist >= queue->max_wait_time_with_no_agent) {
+				if (queue->max_wait_time_with_no_agent_time_reached > 0) {
+					if (queue->last_agent_exist_check - m->t_member_called >= queue->max_wait_time_with_no_agent + queue->max_wait_time_with_no_agent_time_reached) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait of %d sec. with no agent plus join grace period of %d sec.\n", m->member_cid_name, m->member_cid_number, m->queue_name, queue->max_wait_time_with_no_agent, queue->max_wait_time_with_no_agent_time_reached);
+						m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
+						switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 
-		/* Will drop the NEW caller if no agent was found for more than X seconds once they join */
-		if (queue->max_wait_time_with_no_agent_time_reached > 0 &&
-				queue->last_agent_exist < m->t_member_called &&
-				queue->last_agent_exist_check - queue->last_agent_exist > queue->max_wait_time_with_no_agent &&
-				queue->last_agent_exist_check - m->t_member_called >= queue->max_wait_time_with_no_agent_time_reached) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait of %d sec. with no agent plus join grace period of %d sec.\n", m->member_cid_name, m->member_cid_number, m->queue_name, queue->max_wait_time_with_no_agent, queue->max_wait_time_with_no_agent_time_reached);
-			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
-			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait of %d sec. with no agent\n", m->member_cid_name, m->member_cid_number, m->queue_name, queue->max_wait_time_with_no_agent);
+					m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
+					switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
+
+				} 
+			}
 		}
 
 		/* TODO Go thought the list of phrases */

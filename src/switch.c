@@ -491,21 +491,21 @@ int main(int argc, char *argv[])
 
 			hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 			if (!hSCManager) {
-				fprintf(stderr, "Could not open service manager (%d).\n", GetLastError());
+				fprintf(stderr, "Could not open service manager (%u).\n", GetLastError());
 				exit(EXIT_FAILURE);
 			}
 
 			hService = CreateService(hSCManager, service_name, service_name, GENERIC_READ | GENERIC_EXECUTE | SERVICE_CHANGE_CONFIG, SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE,
 						 servicePath, NULL, NULL, NULL, NULL, /* Service start name */ NULL);
 			if (!hService) {
-				fprintf(stderr, "Error creating freeswitch service (%d).\n", GetLastError());
+				fprintf(stderr, "Error creating freeswitch service (%u).\n", GetLastError());
 				CloseServiceHandle(hSCManager);
 				exit(EXIT_FAILURE);
 			}
 
 			/* Set desc, and don't care if it succeeds */
 			if (!ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION, &desc)) {
-				fprintf(stderr, "FreeSWITCH installed, but could not set the service description (%d).\n", GetLastError());
+				fprintf(stderr, "FreeSWITCH installed, but could not set the service description (%u).\n", GetLastError());
 			}
 
 			CloseServiceHandle(hService);
@@ -528,13 +528,13 @@ int main(int argc, char *argv[])
 			/* Do the uninstallation */
 			hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 			if (!hSCManager) {
-				fprintf(stderr, "Could not open service manager (%d).\n", GetLastError());
+				fprintf(stderr, "Could not open service manager (%u).\n", GetLastError());
 				exit(EXIT_FAILURE);
 			}
 
 			hService = OpenService(hSCManager, service_name, DELETE);
 			if (!hService) {
-				fprintf(stderr, "Error opening service (%d).\n", GetLastError());
+				fprintf(stderr, "Error opening service (%u).\n", GetLastError());
 				CloseServiceHandle(hSCManager);
 				exit(EXIT_FAILURE);
 			}
@@ -542,7 +542,7 @@ int main(int argc, char *argv[])
 			/* remove the service! */
 			deleted = DeleteService(hService);
 			if (!deleted) {
-				fprintf(stderr, "Error deleting service (%d).\n", GetLastError());
+				fprintf(stderr, "Error deleting service (%u).\n", GetLastError());
 			}
 
 			CloseServiceHandle(hService);

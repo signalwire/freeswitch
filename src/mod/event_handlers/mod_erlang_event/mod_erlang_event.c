@@ -330,11 +330,12 @@ static void destroy_session_elem(session_elem_t *session_element)
 	switch_thread_rwlock_wrlock(session_element->rwlock);
 	switch_thread_rwlock_unlock(session_element->rwlock);
 
-	if ((session = switch_core_session_locate(session_element->uuid_str))) {
+	if ((session = switch_core_session_force_locate(session_element->uuid_str))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
 		switch_channel_set_private(channel, "_erlang_session_", NULL);
 		switch_channel_clear_flag(channel, CF_CONTROLLED);
+		switch_core_session_soft_unlock(session);
 		switch_core_session_rwunlock(session);
 	}
 	switch_core_destroy_memory_pool(&session_element->pool);
@@ -795,21 +796,8 @@ static void handle_exit(listener_t *listener, erlang_pid * pid)
 	remove_binding(NULL, pid);	/* TODO - why don't we pass the listener as the first argument? */
 
 	if ((s = find_session_elem_by_pid(listener, pid))) {
-		switch_core_session_t *session = NULL;
-
-		if ((session = switch_core_session_locate(s->uuid_str))) {
-			switch_channel_t *channel = switch_core_session_get_channel(session);
-
-			if (switch_channel_get_state(channel) < CS_HANGUP) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Outbound session exited unexpectedly %s!\n", s->uuid_str);
-			}
-
-			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			switch_core_session_rwunlock(session);
-		}
-
+		switch_set_flag_locked(s, LFLAG_SESSION_COMPLETE);
 		switch_thread_rwlock_unlock(s->rwlock);
-
 	}
 
 	if (listener->log_process.type == ERLANG_PID && !ei_compare_pids(&listener->log_process.pid, pid)) {
@@ -1295,9 +1283,6 @@ static switch_status_t state_handler(switch_core_session_t *session)
 			 * we can throw this away */
 			switch_set_flag_locked(session_element, LFLAG_SESSION_COMPLETE);
 		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to update channel state for %s to %s\n", switch_core_session_get_uuid(session),
-						  switch_channel_state_name(state));
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1307,7 +1292,7 @@ session_elem_t *session_elem_create(listener_t *listener, switch_core_session_t 
 {
 	/* create a session list element */
 	switch_memory_pool_t *session_elem_pool;
-	session_elem_t *session_element;	/* = malloc(sizeof(*session_element)); */
+	session_elem_t *session_element;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int x;
 
@@ -1339,6 +1324,7 @@ session_elem_t *session_elem_create(listener_t *listener, switch_core_session_t 
 	session_element->event_list[SWITCH_EVENT_ALL] = 1; /* defaults to everything */
 
 	switch_channel_set_private(channel, "_erlang_session_", session_element);
+	switch_core_session_soft_lock(session, 5);
 
 	switch_core_event_hook_add_state_change(session, state_handler);
 
@@ -1399,7 +1385,8 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	/* attach the session to the listener */
 	add_session_elem_to_listener(listener, session_element);
 
-
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Added session to listener\n");
+	
 	if (!strcmp(function, "!")) {
 		/* send a message to request a pid */
 		ei_x_buff rbuf;
@@ -1421,14 +1408,20 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rpc call: %s:%s(Ref)\n", module, function);
 		/* should lock with mutex? */
+		switch_mutex_lock(listener->sock_mutex);
 		ei_pid_from_rpc(listener->ec, listener->sockfd, &ref, module, function);
+		switch_mutex_unlock(listener->sock_mutex);
 		/*
 		   char *argv[1];
 		   ei_spawn(listener->ec, listener->sockfd, &ref, module, function, 0, argv);
 		 */
 	}
 
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Waiting for reply %s %s\n", hash, session_element->uuid_str);
+	switch_mutex_lock(p->mutex);
 	switch_thread_cond_timedwait(p->ready_or_found, p->mutex, 5000000);
+	switch_mutex_unlock(p->mutex);
 	if (!p->pid) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -1534,16 +1527,23 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Using existing listener for session\n");
+
 	}
 
 	if (listener) {
 
-		if (module && function) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating new spawned session for listener\n");
-			session_element = attach_call_to_spawned_process(listener, module, function, session);
+		if ((session_element = find_session_elem_by_uuid(listener, switch_core_session_get_uuid(session)))) {
+			switch_thread_rwlock_unlock(session_element->rwlock);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Session already exists\n");
+
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating new registered session for listener\n");
-			session_element = attach_call_to_registered_process(listener, reg_name, session);
+			if (module && function) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating new spawned session for listener\n");
+				session_element = attach_call_to_spawned_process(listener, module, function, session);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating new registered session for listener\n");
+				session_element = attach_call_to_registered_process(listener, reg_name, session);
+			}
 		}
 
 		switch_thread_rwlock_unlock(listener->rwlock);
@@ -1552,8 +1552,6 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 			switch_ivr_park(session, NULL);
 		}
 
-	} else {
-		switch_thread_rwlock_unlock(globals.listener_rwlock);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "exit erlang_outbound_function\n");

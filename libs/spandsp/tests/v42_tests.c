@@ -41,14 +41,14 @@ then exchanged between them.
 #include <string.h>
 #include <assert.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 
-v42_state_t caller;
-v42_state_t answerer;
+v42_state_t callerx;
+v42_state_t answererx;
+v42_state_t *caller;
+v42_state_t *answerer;
 int variable_length;
 
 int rx_next[3] = {0};
@@ -80,7 +80,7 @@ static int v42_get_frames(void *user_data, uint8_t msg[], int len)
         return 0;
     }
     s = (v42_state_t *) user_data;
-    x = (s == &caller)  ?  1  :  2;
+    x = (s == caller)  ?  1  :  2;
     if (variable_length)
     {
         j = make_mask32(len);
@@ -112,7 +112,7 @@ static void v42_put_frames(void *user_data, const uint8_t msg[], int len)
         return;
     }
     s = (v42_state_t *) user_data;
-    x = (s == &caller)  ?  1  :  2;
+    x = (s == caller)  ?  1  :  2;
     for (i = 0;  i < len;  i++)
     {
         if (msg[i] != (rx_next[x] & 0xFF))
@@ -124,7 +124,7 @@ static void v42_put_frames(void *user_data, const uint8_t msg[], int len)
     }
     printf("%p: Got frame len %d\n", user_data, len);
     printf("%p: %d Far end busy status %d\n", user_data, count, v42_get_far_busy_status(s));
-    if (s == &caller)
+    if (s == caller)
     {
         if (++count == 5)
         {
@@ -135,7 +135,7 @@ static void v42_put_frames(void *user_data, const uint8_t msg[], int len)
     else
     {
         if (xxx  &&  ++count == 45)
-            v42_set_local_busy_status(&caller, FALSE);
+            v42_set_local_busy_status(caller, FALSE);
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -169,28 +169,28 @@ int main(int argc, char *argv[])
         }
     }
 
-    v42_init(&caller, TRUE, TRUE, v42_get_frames, v42_put_frames, (void *) &caller);
-    v42_init(&answerer, FALSE, TRUE, v42_get_frames, v42_put_frames, (void *) &answerer);
-    v42_set_status_callback(&caller, v42_status, (void *) &caller);
-    v42_set_status_callback(&answerer, v42_status, (void *) &answerer);
-    v42_restart(&caller);
-    v42_restart(&answerer);
+    caller = v42_init(&callerx, TRUE, TRUE, v42_get_frames, v42_put_frames, (void *) &callerx);
+    answerer = v42_init(&answererx, FALSE, TRUE, v42_get_frames, v42_put_frames, (void *) &answererx);
+    v42_set_status_callback(caller, v42_status, (void *) caller);
+    v42_set_status_callback(answerer, v42_status, (void *) answerer);
+    v42_restart(caller);
+    v42_restart(answerer);
 
-    span_log_set_level(&caller.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_DEBUG);
-    span_log_set_tag(&caller.logging, "caller");
-    span_log_set_level(&answerer.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_DEBUG);
-    span_log_set_tag(&answerer.logging, "answerer");
+    span_log_set_level(v42_get_logging_state(caller), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_DEBUG);
+    span_log_set_tag(v42_get_logging_state(caller), "caller");
+    span_log_set_level(v42_get_logging_state(answerer), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_DEBUG);
+    span_log_set_tag(v42_get_logging_state(answerer), "answerer");
 
     for (i = 0;  i < 1000000;  i++)
     {
-        bit = v42_tx_bit(&caller);
+        bit = v42_tx_bit(caller);
         if (insert_caller_bit_errors  &&  i%insert_caller_bit_errors == 0)
             bit ^= 1;
-        v42_rx_bit(&answerer, bit);
-        bit = v42_tx_bit(&answerer);
+        v42_rx_bit(answerer, bit);
+        bit = v42_tx_bit(answerer);
         if (insert_answerer_bit_errors  &&  i%insert_answerer_bit_errors == 0)
             bit ^= 1;
-        v42_rx_bit(&caller, bit);
+        v42_rx_bit(caller, bit);
     }
     return 0;
 }
