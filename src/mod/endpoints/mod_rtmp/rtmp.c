@@ -939,7 +939,6 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 								switch_mutex_unlock(rsession->tech_pvt->readbuf_mutex);
 							}
 							switch_thread_rwlock_unlock(rsession->rwlock);
-
 							break;
 						case RTMP_TYPE_VIDEO: /* Video data */
 						case RTMP_TYPE_METADATA: /* Metadata */
