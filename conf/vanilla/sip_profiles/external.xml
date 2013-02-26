@@ -78,7 +78,7 @@
     <!-- Port to listen on for TLS requests. (5081 will be used if unspecified) -->
     <param name="tls-sip-port" value="$${external_tls_port}"/>
     <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
-    <param name="tls-cert-dir" value="$${external_ssl_dir}"/>
+    <!--<param name="tls-cert-dir" value=""/>-->
     <!-- Optionally set the passphrase password used by openSSL to encrypt/decrypt TLS private key files -->
     <param name="tls-passphrase" value=""/>
     <!-- Verify the date on TLS certificates -->

@@ -222,9 +222,13 @@ static int tport_tls_init_master(tport_primary_t *pri,
     ti.configured = path != tbf;
     ti.randFile = su_sprintf(autohome, "%s/%s", path, "tls_seed.dat");
     ti.key = su_sprintf(autohome, "%s/%s", path, "agent.pem");
+	if (access(ti.key, R_OK) != 0) ti.key = NULL;
+    if (!ti.key) ti.key = su_sprintf(autohome, "%s/%s", path, "tls.pem");
     ti.passphrase = su_strdup(autohome, passphrase);
     ti.cert = ti.key;
     ti.CAfile = su_sprintf(autohome, "%s/%s", path, "cafile.pem");
+	if (access(ti.CAfile, R_OK) != 0) ti.CAfile = NULL;
+    if (!ti.CAfile) ti.CAfile = su_sprintf(autohome, "%s/%s", path, "tls.pem");
     ti.version = tls_version;
     ti.timeout = tls_timeout;
     ti.CApath = su_strdup(autohome, path);

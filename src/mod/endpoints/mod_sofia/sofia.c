@@ -3643,6 +3643,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
 					profile->server_rport_level = 1;
 					profile->client_rport_level = 1;
+					profile->tls_cert_dir = SWITCH_GLOBAL_dirs.certs_dir;
 					sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 					profile->auto_restart = 1;
 					sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
@@ -4503,13 +4504,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							profile->tls_sip_port = (switch_port_t) atoi(val);
 						}
-					} else if (!strcasecmp(var, "tls-cert-dir")) {
+					} else if (!strcasecmp(var, "tls-cert-dir") && !zstr(val)) {
 						profile->tls_cert_dir = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "tls-passphrase")) {
+					} else if (!strcasecmp(var, "tls-passphrase") && !zstr(val)) {
 						profile->tls_passphrase = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "tls-verify-in-subjects")) {
+					} else if (!strcasecmp(var, "tls-verify-in-subjects") && !zstr(val)) {
 						profile->tls_verify_in_subjects_str = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "tls-version")) {
+					} else if (!strcasecmp(var, "tls-version") && !zstr(val)) {
 
 						if (!strcasecmp(val, "tlsv1")) {
 							profile->tls_version = 1;
@@ -4671,10 +4672,33 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 				config_sofia_profile_urls(profile);
 
-				if (!profile->tls_cert_dir) {
-					profile->tls_cert_dir = switch_core_sprintf(profile->pool, "%s/ssl", SWITCH_GLOBAL_dirs.conf_dir);
+				if (profile->tls_cert_dir) {
+					if (profile->wss_ip) {
+						char *key, *cert;
+						key  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.key");
+						if (switch_file_exists(key, profile->pool) != SWITCH_STATUS_SUCCESS) key = NULL;
+						cert = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.crt");
+						if (switch_file_exists(cert, profile->pool) != SWITCH_STATUS_SUCCESS) cert = NULL;
+						if ( !key || !cert) {
+							key  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+							if ( switch_file_exists(key, profile->pool) != SWITCH_STATUS_SUCCESS ) {
+								switch_core_gen_certs(key);
+							}
+						}
+					}
+					if (sofia_test_pflag(profile, PFLAG_TLS)) {
+						char *key = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "agent.pem");
+						char *ca  =  switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "cafile.pem");;
+						if (switch_file_exists(key, profile->pool) != SWITCH_STATUS_SUCCESS) key = NULL;
+						if (switch_file_exists(ca, profile->pool) != SWITCH_STATUS_SUCCESS) ca = NULL;
+						if ( !key || !ca ) {
+							key  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "tls.pem");
+							if ( switch_file_exists(key, profile->pool) != SWITCH_STATUS_SUCCESS ) {
+								switch_core_gen_certs(key);
+							}
+						}
+					}
 				}
-
 			}
 
 			if (profile) {

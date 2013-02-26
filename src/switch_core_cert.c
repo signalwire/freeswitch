@@ -214,12 +214,31 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 	EVP_PKEY *pkey = NULL;
 	char *rsa = NULL, *pvt = NULL;
 	FILE *fp;
+	char *pem = NULL;
 
-	pvt = switch_mprintf("%s%s%s.key", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
-	rsa = switch_mprintf("%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
+	if (switch_stristr(".pem", prefix)) {
 
-	if (switch_file_exists(pvt, NULL) == SWITCH_STATUS_SUCCESS || switch_file_exists(rsa, NULL) == SWITCH_STATUS_SUCCESS) {
-		goto end;
+		if (switch_is_file_path(prefix)) {
+			pem = strdup(prefix);
+		} else {
+			pem = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
+		}
+
+		if (switch_file_exists(pem, NULL) == SWITCH_STATUS_SUCCESS) {
+			goto end;
+		}
+	} else {
+		if (switch_is_file_path(prefix)) {
+			pvt = switch_mprintf("%s.key", prefix);
+			rsa = switch_mprintf("%s.crt", prefix);
+		} else {
+			pvt = switch_mprintf("%s%s%s.key", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
+			rsa = switch_mprintf("%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
+		}
+
+		if (switch_file_exists(pvt, NULL) == SWITCH_STATUS_SUCCESS || switch_file_exists(rsa, NULL) == SWITCH_STATUS_SUCCESS) {
+			goto end;
+		}
 	}
 
 	CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ON);
@@ -231,18 +250,26 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 	//RSA_print_fp(stdout, pkey->pkey.rsa, 0);
 	//X509_print_fp(stdout, x509);
 
+	if (pem) {
+		if ((fp = fopen(pem, "w"))) {
+			PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, NULL, NULL);
+			PEM_write_X509(fp, x509);
+			fclose(fp);
+		}
 
-	if ((fp = fopen(pvt, "w"))) {
-		PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, NULL, NULL);
-	}
+	} else {
+		if ((fp = fopen(pvt, "w"))) {
+			PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, NULL, NULL);
+		}
 
-	fclose(fp);
+		fclose(fp);
 		
-	if ((fp = fopen(rsa, "w"))) {
-		PEM_write_X509(fp, x509);
-	}
+		if ((fp = fopen(rsa, "w"))) {
+			PEM_write_X509(fp, x509);
+		}
 
-	fclose(fp);
+		fclose(fp);
+	}
 
 	X509_free(x509);
 	EVP_PKEY_free(pkey);
@@ -260,6 +287,7 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 
 	switch_safe_free(pvt);
 	switch_safe_free(rsa);
+	switch_safe_free(pem);
 
 	return(0);
 }
