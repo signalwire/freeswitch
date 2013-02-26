@@ -176,6 +176,7 @@ switch_status_t rtmp_on_init(switch_core_session_t *session)
 	switch_mutex_lock(rsession->count_mutex);
 	rsession->active_sessions++;
 	switch_mutex_unlock(rsession->count_mutex);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -286,9 +287,9 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	}
 	switch_mutex_unlock(rsession->profile->mutex);
 
-        switch_mutex_lock(rsession->count_mutex);
-        rsession->active_sessions--;
-        switch_mutex_unlock(rsession->count_mutex);
+	switch_mutex_lock(rsession->count_mutex);
+	rsession->active_sessions--;
+	switch_mutex_unlock(rsession->count_mutex);
 
 #ifndef RTMP_DONT_HOLD
 	if (switch_channel_test_flag(channel, CF_HOLD)) {
@@ -759,7 +760,7 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 	switch_mutex_init(&((*newsession)->count_mutex), SWITCH_MUTEX_NESTED, pool);
 	switch_thread_rwlock_create(&((*newsession)->rwlock), pool);
 	switch_thread_rwlock_create(&((*newsession)->account_rwlock), pool);
-	
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New RTMP session [%s]\n", (*newsession)->uuid);
 	switch_core_hash_insert_wrlock(rtmp_globals.session_hash, (*newsession)->uuid, *newsession, rtmp_globals.session_rwlock);
 	switch_core_hash_insert_wrlock(profile->session_hash, (*newsession)->uuid, *newsession, profile->session_rwlock);
@@ -814,10 +815,10 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 		void *val;	
 		const void *key;
 		switch_ssize_t keylen;
-		rtmp_private_t *item;
+		rtmp_private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_hash_this(hi, &key, &keylen, &val);		
-		item = (rtmp_private_t *)val;
+		tech_pvt = (rtmp_private_t *)val;
 		
 		if ( item->session ) {
 			channel = switch_core_session_get_channel(item->session);
@@ -826,12 +827,10 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 	}
 	switch_thread_rwlock_unlock((*rsession)->session_rwlock);
 	
-	
 	while ((*rsession)->active_sessions > 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Still have %d sessions, waiting\n", (*rsession)->active_sessions);
 		switch_yield(500000);
 	}
-	
 	
 	switch_thread_rwlock_wrlock((*rsession)->rwlock);
 	switch_thread_rwlock_unlock((*rsession)->rwlock);
