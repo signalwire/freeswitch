@@ -4993,6 +4993,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 		rate = a_engine->codec_params.rm_rate;
+
 		if (a_engine->codec_params.adv_channels > 1) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", 
 							a_engine->codec_params.agreed_pt, a_engine->codec_params.rm_encoding, rate, a_engine->codec_params.adv_channels);
@@ -5726,7 +5727,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		return;
 	}
 
-	if (zstr(a_engine->codec_params.local_sdp_ip) || !a_engine->codec_params.local_sdp_port) {
+	if (zstr(a_engine->codec_params.local_sdp_ip) || !a_engine->codec_params.local_sdp_port || switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
 		if (switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_AUDIO, 1) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s I/O Error\n",
 							  switch_channel_get_name(session->channel));
@@ -6919,37 +6920,42 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_sessi
 
 
 //?
-SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session, switch_core_session_t *o_session)
 {
 	switch_rtp_engine_t *a_engine, *v_engine;
 	switch_media_handle_t *smh;
+	const char *r_sdp = NULL;
 
 	switch_assert(session);
+
+	if (!switch_channel_test_flag(o_session->channel, CF_PROXY_MEDIA)) {
+		return;
+	}
 
 	if (!(smh = session->media_handle)) {
 		return;
 	}
+
+	r_sdp = switch_channel_get_variable(o_session->channel, SWITCH_R_SDP_VARIABLE);
 	
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
+	switch_channel_set_flag(session->channel, CF_PROXY_MEDIA);
+	
 	a_engine->codec_params.iananame = switch_core_session_strdup(session, "PROXY");
 	a_engine->codec_params.rm_rate = 8000;
+
 	a_engine->codec_params.codec_ms = 20;
 	
-	if (switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
-		const char *r_sdp = switch_channel_get_variable(session->channel, SWITCH_R_SDP_VARIABLE);
-		
-		if (switch_stristr("m=video", r_sdp)) {
-			switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
-			v_engine->codec_params.rm_encoding = "PROXY-VID";
-			v_engine->codec_params.rm_rate = 90000;
-			v_engine->codec_params.codec_ms = 0;
-			switch_channel_set_flag(session->channel, CF_VIDEO);
-			switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
-		}
+	if (switch_stristr("m=video", r_sdp)) {
+		switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
+		v_engine->codec_params.rm_encoding = "PROXY-VID";
+		v_engine->codec_params.rm_rate = 90000;
+		v_engine->codec_params.codec_ms = 0;
+		switch_channel_set_flag(session->channel, CF_VIDEO);
+		switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
 	}
-
 }
 
 //?

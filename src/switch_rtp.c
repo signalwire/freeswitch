@@ -2462,7 +2462,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	}
 
 	if (switch_event_create(&fsevent, SWITCH_EVENT_CALL_SECURE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(fsevent, SWITCH_STACK_BOTTOM, "secure_type", "srtp:%s", switch_channel_get_variable(channel, "sip_has_crypto"));
+		if (rtp_session->dtls) {
+			switch_event_add_header(fsevent, SWITCH_STACK_BOTTOM, "secure_type", "srtp:dtls:AES_CM_128_HMAC_SHA1_80");
+		} else {
+			switch_event_add_header(fsevent, SWITCH_STACK_BOTTOM, "secure_type", "srtp:%s", switch_channel_get_variable(channel, "sip_has_crypto"));
+		}
 		switch_event_add_header_string(fsevent, SWITCH_STACK_BOTTOM, "caller-unique-id", switch_channel_get_uuid(channel));
 		switch_event_fire(&fsevent);
 	}

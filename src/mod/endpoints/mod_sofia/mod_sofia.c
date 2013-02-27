@@ -4320,7 +4320,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			}
 		}
 
-		switch_core_media_check_outgoing_proxy(session);
+		switch_core_media_check_outgoing_proxy(nsession, session);
 
 	}
 
