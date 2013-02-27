@@ -4540,7 +4540,13 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 	if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 		 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) && smh->mparams->te > 95) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
+
+		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\n", smh->mparams->te);
+		} else {
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
+		}
+
 	}
 
 	if (!zstr(a_engine->local_dtls_fingerprint.type)) {
@@ -5014,7 +5020,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
 			 switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))
 			&& smh->mparams->te > 95) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
+			if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\n", smh->mparams->te);
+			} else {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
+			}
 		}
 		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->mparams->cng_pt && use_cng) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d CN/8000\n", smh->mparams->cng_pt);
