@@ -1273,6 +1273,11 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals->session), SWITCH_LOG_DEBUG, "Play Ringback File [%s]\n", ringback_data);
 
+			if (switch_test_flag((&ringback->fhb), SWITCH_FILE_OPEN)) {
+				switch_core_file_close(&ringback->fhb);
+			}
+
+
 			ringback->fhb.channels = read_codec->implementation->number_of_channels;
 			ringback->fhb.samplerate = read_codec->implementation->actual_samples_per_second;
 			if (switch_core_file_open(&ringback->fhb,
@@ -1690,12 +1695,13 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	int32_t sample;
 	switch_core_session_t *session;
 	switch_codec_t *read_codec, read_codecs[MAX_PEERS] = { {0} };
-	int i, x, ready = 0, answered = 0;
+	int i, x, ready = 0, answered = 0, ring_ready = 0;
 	int16_t *data;
 	uint32_t datalen = 0;
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
 
+	
 	for (i = 0; i < MAX_PEERS && (session = state->originate_status[i].peer_session); i++) {
 		originate_status[i].peer_session = session;
 		switch_core_session_read_lock(session);
@@ -1712,6 +1718,12 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 			if (switch_channel_media_ready(channel)) {
 				ready++;
 
+				if (switch_channel_test_flag(channel, CF_RING_READY)) {
+					ring_ready = 1;
+					state->oglobals->bridge_early_media = -1;
+					state->oglobals->ignore_early_media = 1;
+				}
+				
 				if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 					answered++;
 				}
@@ -1766,7 +1778,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 			switch_mutex_unlock(state->mutex);
 		}
 
-		if (!ready || answered) {
+		if (!ready || answered || ring_ready) {
 			break;
 		}
 	}
@@ -1780,7 +1792,9 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		switch_core_session_rwunlock(session);
 	}
 
-	state->oglobals->early_ok = 1;
+	if (!ring_ready) {
+		state->oglobals->early_ok = 1;
+	}
 
 	return NULL;
 }
@@ -3084,7 +3098,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								}
 							}
 							write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2);
-write_frame.samples = (uint32_t) olen;
+							write_frame.samples = (uint32_t) olen;
 
 						} else if (ringback.audio_buffer) {
 							if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
