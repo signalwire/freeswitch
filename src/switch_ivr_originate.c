@@ -2048,6 +2048,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_event_header_t *hi;
 		const char *cdr_total_var;
 		const char *cdr_var;
+		const char *json_cdr_var;
 
 		if ((cdr_var = switch_channel_get_variable(caller_channel, "failed_xml_cdr_prefix"))) {
 			char buf[128] = "";
@@ -2060,6 +2061,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 		}
 
+		if ((json_cdr_var = switch_channel_get_variable(caller_channel, "failed_json_cdr_prefix"))) {
+			char buf[128] = "";
+			switch_snprintf(buf, sizeof(buf), "%s_total", json_cdr_var);
+			if ((cdr_total_var = switch_channel_get_variable(caller_channel, buf))) {
+				int tmp = atoi(cdr_total_var);
+				if (tmp > 0) {
+					cdr_total = tmp;
+				}
+			}
+		}
 
 		/* Copy all the missing applicable channel variables from A-leg into the event */
 		if ((hi = switch_channel_variable_first(caller_channel))) {
@@ -3438,12 +3449,21 @@ write_frame.samples = (uint32_t) olen;
 
 			} else {
 				const char *cdr_var = NULL;
+				const char *json_cdr_var = NULL;
+
 				switch_xml_t cdr = NULL;
+				cJSON *json_cdr = NULL;
+
+				char *json_text;
 				char *xml_text;
 				char buf[128] = "", buf2[128] = "";
 
 				if (caller_channel) {
 					cdr_var = switch_channel_get_variable(caller_channel, "failed_xml_cdr_prefix");
+				}
+
+				if (caller_channel) {
+					json_cdr_var = switch_channel_get_variable(caller_channel, "failed_json_cdr_prefix");
 				}
 
 				if (peer_channel) {
@@ -3487,6 +3507,37 @@ write_frame.samples = (uint32_t) olen;
 
 					}
 					switch_snprintf(buf, sizeof(buf), "%s_total", cdr_var);
+					switch_snprintf(buf2, sizeof(buf2), "%d", cdr_total ? cdr_total : 0);
+					switch_channel_set_variable(caller_channel, buf, buf2);
+				}
+
+				if (json_cdr_var) {
+					for (i = 0; i < and_argc; i++) {
+						switch_channel_t *channel;
+
+						if (!originate_status[i].peer_session) {
+							continue;
+						}
+
+						channel = switch_core_session_get_channel(originate_status[i].peer_session);
+
+						switch_channel_wait_for_state_timeout(channel, CS_REPORTING, 5000);
+
+						if (!switch_channel_test_flag(channel, CF_TIMESTAMP_SET)) {
+							switch_channel_set_timestamps(channel);
+						}
+
+						if (switch_ivr_generate_json_cdr(originate_status[i].peer_session, &json_cdr, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+							json_text = cJSON_PrintUnformatted(json_cdr);
+							switch_snprintf(buf, sizeof(buf), "%s_%d", json_cdr_var, ++cdr_total);
+							switch_channel_set_variable(caller_channel, buf, json_text);
+							// switch_safe_free(json_text);
+							cJSON_Delete(json_cdr);
+							json_cdr = NULL;
+						}
+
+					}
+					switch_snprintf(buf, sizeof(buf), "%s_total", json_cdr_var);
 					switch_snprintf(buf2, sizeof(buf2), "%d", cdr_total ? cdr_total : 0);
 					switch_channel_set_variable(caller_channel, buf, buf2);
 				}
