@@ -33,7 +33,12 @@
 #include <switch.h>
 #include <switch_curl.h>
 #include <json.h>
+#ifdef  _MSC_VER
+#include <WinSock2.h>
+#else
 #include <sys/socket.h>
+#endif
+
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_curl_shutdown);
@@ -287,6 +292,7 @@ static size_t http_sendfile_response_callback(void *ptr, size_t size, size_t nme
 // This function and do_lookup_url functions could possibly be merged together.  Or at least have do_lookup_url call this up as part of the initialization routine as it is a subset of the operations.
 static void http_sendfile_initialize_curl(http_sendfile_data_t *http_data)
 {
+	uint8_t count;
 	http_data->curl_handle = curl_easy_init();
 	
 	if (!strncasecmp(http_data->url, "https", 5))
@@ -329,7 +335,7 @@ static void http_sendfile_initialize_curl(http_sendfile_data_t *http_data)
 		
 		argc = switch_separate_string(temp_extrapost, '&', argv, (sizeof(argv) / sizeof(argv[0])));
 		
-		for(uint8_t count = 0; count < argc; count++)
+		for(count = 0; count < argc; count++)
 		{
 			char *argv2[4] = { 0 };
 			uint32_t argc2 = switch_separate_string(argv[count], '=', argv2, (sizeof(argv2) / sizeof(argv2[0])));
