@@ -1447,11 +1447,12 @@ void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port)
 }
 
 char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const sofia_transport_t transport, switch_bool_t uri_only,
-									  const char *params)
+									  const char *params, const char *invite_tel_params)
 {
 	char *stripped = switch_core_session_strdup(session, uri);
 	char *new_uri = NULL;
 	char *p;
+
 
 	stripped = sofia_glue_get_url_from_contact(stripped, 0);
 
@@ -1496,6 +1497,18 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 		}
 	}
 
+
+
+	if (!zstr(invite_tel_params)) {
+		char *lhs, *rhs = strchr(new_uri, '@');
+
+		if (!zstr(rhs)) {
+			*rhs++ = '\0';
+			lhs = new_uri;
+			new_uri = switch_core_session_sprintf(session, "%s;%s@%s", lhs, invite_tel_params, rhs);
+		}
+	}
+	
 	return new_uri;
 }
 
@@ -2191,6 +2204,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *screen = "no";
 		const char *invite_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_params");
 		const char *invite_to_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_to_params");
+		const char *invite_tel_params = switch_channel_get_variable(switch_core_session_get_channel(session), "sip_invite_tel_params");
 		const char *invite_to_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_to_uri");
 		const char *invite_from_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_from_uri");
 		const char *invite_contact_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_contact_params");
@@ -2199,6 +2213,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *from_display = switch_channel_get_variable(tech_pvt->channel, "sip_from_display");
 		const char *invite_req_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_req_uri");
 		const char *invite_domain = switch_channel_get_variable(tech_pvt->channel, "sip_invite_domain");
+		
 		const char *use_name, *use_number;
 
 		if (zstr(tech_pvt->dest)) {
@@ -2335,10 +2350,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 		}
 
-		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE, invite_params);
-		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params);
-		from_str = sofia_overcome_sip_uri_weakness(session, invite_from_uri ? invite_from_uri : use_from_str, 0, SWITCH_TRUE, invite_from_params);
-		to_str = sofia_overcome_sip_uri_weakness(session, invite_to_uri ? invite_to_uri : tech_pvt->dest_to, 0, SWITCH_FALSE, invite_to_params);
+		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE, invite_params, invite_tel_params);
+		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params, NULL);
+		from_str = sofia_overcome_sip_uri_weakness(session, invite_from_uri ? invite_from_uri : use_from_str, 0, SWITCH_TRUE, invite_from_params, NULL);
+		to_str = sofia_overcome_sip_uri_weakness(session, invite_to_uri ? invite_to_uri : tech_pvt->dest_to, 0, SWITCH_FALSE, invite_to_params, NULL);
 
 		switch_channel_set_variable(channel, "sip_outgoing_contact_uri", invite_contact);
 
@@ -2603,7 +2618,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		dst = sofia_glue_get_destination(tech_pvt->dest);
 
 		if (dst->route_uri) {
-			route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, dst->route_uri, tech_pvt->transport, SWITCH_TRUE, NULL);
+			route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, dst->route_uri, tech_pvt->transport, SWITCH_TRUE, NULL, NULL);
 		}
 
 		if (dst->route) {

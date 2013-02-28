@@ -2513,7 +2513,7 @@ static switch_status_t write_meta_file(http_file_context_t *context, const char 
 		}
 
 		switch_snprintf(write_data, sizeof(write_data), 
-						"%" SWITCH_TIME_T_FMT ":%s",
+						"%" TIME_T_FMT ":%s",
 						switch_epoch_time_now(NULL) + ttl,
 						data);
 		

@@ -299,6 +299,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		do_resample = 1;
 	}
 
+	if (session->bugs && !need_codec) {
+		do_bugs = 1;
+		need_codec = 1;
+	}
+
 	if (switch_test_flag(*frame, SFF_CNG)) {
 		if (!session->bugs && !session->plc) {
 			/* Check if other session has bugs */
@@ -964,6 +969,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (session->write_codec && !frame->codec) {
+		need_codec = TRUE;
+	}
+
+	if (session->bugs && !need_codec) {
+		do_bugs = TRUE;
 		need_codec = TRUE;
 	}
 
