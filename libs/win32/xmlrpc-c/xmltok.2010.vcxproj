@@ -193,6 +193,11 @@
     <ClInclude Include="..\..\xmlrpc-c\lib\expat\xmltok\xmltok.h" />
     <ClInclude Include="..\lib\expat\xmltok\nametab.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="gennmtab.2010.vcxproj">
+      <Project>{bed7539c-0099-4a14-ad5d-30828f15a171}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
