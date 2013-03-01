@@ -919,11 +919,19 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 	 static inline switch_bool_t switch_is_file_path(const char *file)
 {
 	const char *e;
-	int r;
+	int r, x;
 
-	if (*file == '[' && *(file + 1) == *SWITCH_PATH_SEPARATOR) {
-		if ((e = switch_find_end_paren(file, '[', ']'))) {
-			file = e + 1;
+	for (x = 0; x < 2; x++) {
+		if (*file == '[' && *(file + 1) == *SWITCH_PATH_SEPARATOR) {
+			if ((e = switch_find_end_paren(file, '[', ']'))) {
+				file = e + 1;
+			}
+		} else if (*file == '{') {
+			if ((e = switch_find_end_paren(file, '{', '}'))) {
+				file = e + 1;
+			}
+		} else {
+			break;
 		}
 	}
 #ifdef WIN32

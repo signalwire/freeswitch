@@ -234,6 +234,11 @@
     <ClCompile Include="..\..\xmlrpc-c\src\xmlrpc_string.c" />
     <ClCompile Include="..\..\xmlrpc-c\src\xmlrpc_struct.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="xmlparse.2010.vcxproj">
+      <Project>{0d108721-eae8-4baf-8102-d8960ec93647}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -1597,6 +1597,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 {
 	switch_socket_t *sock;
 
+	if (!switch_rtp_ready(rtp_session)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+		ping_socket(rtp_session);
+	}
+
 	READ_INC(rtp_session);
 	WRITE_INC(rtp_session);
 

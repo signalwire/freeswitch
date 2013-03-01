@@ -1120,6 +1120,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_TRANSFER_SOURCE_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_SENSITIVE_DTMF_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("sensitive_dtmf");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -7103,6 +7113,30 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_media_bug_get_write_replace_fra
 }
 
 
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_media_bug_get_native_read_frame(void * jarg1) {
+  void * jresult ;
+  switch_media_bug_t *arg1 = (switch_media_bug_t *) 0 ;
+  switch_frame_t *result = 0 ;
+  
+  arg1 = (switch_media_bug_t *)jarg1; 
+  result = (switch_frame_t *)switch_core_media_bug_get_native_read_frame(arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_media_bug_get_native_write_frame(void * jarg1) {
+  void * jresult ;
+  switch_media_bug_t *arg1 = (switch_media_bug_t *) 0 ;
+  switch_frame_t *result = 0 ;
+  
+  arg1 = (switch_media_bug_t *)jarg1; 
+  result = (switch_frame_t *)switch_core_media_bug_get_native_write_frame(arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_media_bug_set_write_replace_frame(void * jarg1, void * jarg2) {
   switch_media_bug_t *arg1 = (switch_media_bug_t *) 0 ;
   switch_frame_t *arg2 = (switch_frame_t *) 0 ;
@@ -12341,6 +12375,34 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_cache_db_execute_sql_event_callback(voi
   result = (switch_status_t)switch_cache_db_execute_sql_event_callback(arg1,(char const *)arg2,arg3,arg4,arg5);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manger_execute_sql_callback(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
+  switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_core_db_callback_func_t arg3 = (switch_core_db_callback_func_t) 0 ;
+  void *arg4 = (void *) 0 ;
+  
+  arg1 = (switch_sql_queue_manager_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_core_db_callback_func_t)jarg3; 
+  arg4 = (void *)jarg4; 
+  switch_sql_queue_manger_execute_sql_callback(arg1,(char const *)arg2,arg3,arg4);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manger_execute_sql_event_callback(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
+  switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_core_db_event_callback_func_t arg3 = (switch_core_db_event_callback_func_t) 0 ;
+  void *arg4 = (void *) 0 ;
+  
+  arg1 = (switch_sql_queue_manager_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_core_db_event_callback_func_t)jarg3; 
+  arg4 = (void *)jarg4; 
+  switch_sql_queue_manger_execute_sql_event_callback(arg1,(char const *)arg2,arg3,arg4);
 }
 
 
@@ -20270,6 +20332,50 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_file_handle_prefix_get(void * jarg1)
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_max_samples_set(void * jarg1, int jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  int arg2 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->max_samples = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_file_handle_max_samples_get(void * jarg1) {
+  int jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  int result;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (int) ((arg1)->max_samples);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle__params_set(void * jarg1, void * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_event_t *arg2 = (switch_event_t *) 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (switch_event_t *)jarg2; 
+  if (arg1) (arg1)->params = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle__params_get(void * jarg1) {
+  void * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_event_t *result = 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (switch_event_t *) ((arg1)->params);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_file_handle() {
   void * jresult ;
   switch_file_handle *result = 0 ;
@@ -27313,6 +27419,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_state_thread_unlock(void * jar
   
   arg1 = (switch_channel_t *)jarg1; 
   switch_channel_state_thread_unlock(arg1);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_state_thread_trylock(void * jarg1) {
+  int jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (switch_status_t)switch_channel_state_thread_trylock(arg1);
+  jresult = result; 
+  return jresult;
 }
 
 
@@ -38051,6 +38169,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_SetTtsParameters(void * jarg1, ch
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   (arg1)->set_tts_parms(arg2,arg3);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_set_tts_params(void * jarg1, char * jarg2, char * jarg3) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  (arg1)->set_tts_params(arg2,arg3);
 }
 
 

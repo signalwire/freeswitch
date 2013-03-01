@@ -342,9 +342,15 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 static profile_t *locate_profile(const char *profile_name)
 {
 	profile_t *profile = NULL;
-	
+
 	if (zstr(profile_name)) {
-		profile = globals.default_profile;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "profile_name is empty\n");
+		if (globals.default_profile) {
+			profile = globals.default_profile;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "using default_profile\n");
+		} else if ((profile = switch_core_hash_find(globals.profile_hash, "default"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no default set, using profile named \"default\"\n");
+		}
 	} else if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
 	}
@@ -1367,17 +1373,30 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 	const char *intralata = NULL;
 	switch_core_session_t *mysession = NULL, *locked_session = NULL;
 	switch_channel_t *channel = NULL;
-	
-	dest = strdup(outbound_profile->destination_number);
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Entering lcr endpoint for %s\n", dest);
-	
-	if (!dest) {
-		goto done;
-	}
+	int argc;
+	char *argv[32] = { 0 };
+	char *mydata = NULL;
 	
 	switch_core_new_memory_pool(&pool);
 	routes.pool = pool;
+
+	if (!outbound_profile->destination_number) {
+		goto done;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Entering lcr endpoint for %s\n", outbound_profile->destination_number);
+
+	mydata = switch_core_strdup(pool, outbound_profile->destination_number);
+
+	if ((argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		if (argc > 1) {
+			lcr_profile = switch_core_strdup(pool, argv[0]);
+			dest        = switch_core_strdup(pool, argv[1]);
+		}
+	}
+
+	if (!dest) {
+		dest = outbound_profile->destination_number;
+	}
 
 	if (var_event && (skip = switch_event_get_header(var_event, "lcr_recurse_variables")) && switch_false(skip)) {
 		if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE)) || (var = switch_event_get_header(var_event, "leg_timeout"))) {
@@ -1516,7 +1535,6 @@ static switch_call_cause_t lcr_outgoing_channel(switch_core_session_t *session,
 	}
 	lcr_destroy(routes.head);
 	switch_core_destroy_memory_pool(&pool);
-	switch_safe_free(dest);
 
 	if (cause == SWITCH_CAUSE_NONE) {
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;

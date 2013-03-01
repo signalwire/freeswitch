@@ -2700,6 +2700,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *from_id = NULL, *from_name = NULL;
 		const char *to_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_to_user"));
 		const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
+		const char *disable_early = switch_str_nil(switch_event_get_header(helper->event, "variable_presence_disable_early"));
 		char *clean_to_user = NULL;
 		char *clean_from_user = NULL;
 		int force_status = 0;
@@ -2844,7 +2845,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			}
 
 
-			if (sofia_test_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY) && 
+			if ((sofia_test_pflag(profile, PFLAG_PRESENCE_DISABLE_EARLY) || switch_true(disable_early)) && 
 				(!zstr(call_info_state) && (!strcasecmp(call_info_state, "alterting") || !strcasecmp(call_info_state, "progressing")))) {
 				goto end;
 			}

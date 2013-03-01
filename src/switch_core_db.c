@@ -233,9 +233,11 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename
 		if (cb_arg.ok && (1 == cb_arg.rows)) {
 			break;
 		} else if (0 == i) {
+			char *cpath = switch_mprintf("%s.%ld.cdb", path, (long) switch_epoch_time_now(NULL));
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLite integrity_check failed for [%s]. Deleting file and retrying\n", path);
 			switch_core_db_close(db);
-			remove(path);
+			rename(path, cpath);
+			free(cpath);
 			continue;
 
 		} else {

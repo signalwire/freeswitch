@@ -2037,7 +2037,7 @@ static void core_event_handler(switch_event_t *event)
 		break;
 	case SWITCH_EVENT_CHANNEL_ANSWER:
 	case SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA:
-
+	case SWITCH_EVENT_CODEC:
 		new_sql() =
 			switch_mprintf
 			("update channels set read_codec='%q',read_rate='%q',read_bit_rate='%q',write_codec='%q',write_rate='%q',write_bit_rate='%q' where uuid='%q'",
@@ -3280,6 +3280,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		switch_event_bind("core_db", SWITCH_EVENT_MODULE_UNLOAD, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_CALL_SECURE, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 		switch_event_bind("core_db", SWITCH_EVENT_NAT, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
+		switch_event_bind("core_db", SWITCH_EVENT_CODEC, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL);
 #endif	
 
 		switch_threadattr_create(&thd_attr, sql_manager.memory_pool);

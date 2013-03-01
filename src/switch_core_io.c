@@ -299,6 +299,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		do_resample = 1;
 	}
 
+	if (session->bugs && !need_codec) {
+		do_bugs = 1;
+		need_codec = 1;
+	}
+
 	if (switch_test_flag(*frame, SFF_CNG)) {
 		if (!session->bugs && !session->plc) {
 			/* Check if other session has bugs */
@@ -551,6 +556,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
 					continue;
 				}
+
+				if (!switch_channel_test_flag(session->channel, CF_BRIDGED) && switch_core_media_bug_test_flag(bp, SMBF_BRIDGE_REQ)) {
+					continue;
+				}
+
 				if (switch_test_flag(bp, SMBF_PRUNE)) {
 					prune++;
 					continue;
@@ -595,6 +605,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
 					continue;
 				}
+
+				if (!switch_channel_test_flag(session->channel, CF_BRIDGED) && switch_core_media_bug_test_flag(bp, SMBF_BRIDGE_REQ)) {
+					continue;
+				}
+
 				if (switch_test_flag(bp, SMBF_PRUNE)) {
 					prune++;
 					continue;
@@ -754,6 +769,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				}
 
 				if (!switch_channel_test_flag(session->channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bp, SMBF_ANSWER_REQ)) {
+					continue;
+				}
+
+				if (!switch_channel_test_flag(session->channel, CF_BRIDGED) && switch_core_media_bug_test_flag(bp, SMBF_BRIDGE_REQ)) {
 					continue;
 				}
 
@@ -950,6 +969,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (session->write_codec && !frame->codec) {
+		need_codec = TRUE;
+	}
+
+	if (session->bugs && !need_codec) {
+		do_bugs = TRUE;
 		need_codec = TRUE;
 	}
 
@@ -1463,6 +1487,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {	
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch_assert(dtmf);
 
 	new_dtmf = *dtmf;
@@ -1504,6 +1532,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 
 	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {	
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	switch_assert(dtmf);

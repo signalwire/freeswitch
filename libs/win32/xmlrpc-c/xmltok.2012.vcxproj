@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -196,6 +196,11 @@
     <ClInclude Include="..\..\xmlrpc-c\lib\expat\xmltok\xmlrole.h" />
     <ClInclude Include="..\..\xmlrpc-c\lib\expat\xmltok\xmltok.h" />
     <ClInclude Include="..\lib\expat\xmltok\nametab.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="gennmtab.2012.vcxproj">
+      <Project>{bed7539c-0099-4a14-ad5d-30828f15a171}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

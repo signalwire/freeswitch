@@ -1185,20 +1185,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (!strstr(file, SWITCH_URL_SEPARATOR)) {
 			if (!switch_is_file_path(file)) {
-				char *tfile = NULL;
+				char *tfile = NULL, *tfile2 = NULL;
 				char *e;
+				int x;
 
-				if (*file == '[') {
-					tfile = switch_core_session_strdup(session, file);
-					if ((e = switch_find_end_paren(tfile, '[', ']'))) {
-						*e = '\0';
-						file = e + 1;
+				for (x = 0; x < 2; x++) {
+					if (*file == '[') {
+						tfile = switch_core_session_strdup(session, file);
+						if ((e = switch_find_end_paren(tfile, '[', ']'))) {
+							*e = '\0';
+							file = e + 1;
+						} else {
+							tfile = NULL;
+						}
+					} else if (*file == '{') {
+						tfile2 = switch_core_session_strdup(session, file);
+						if ((e = switch_find_end_paren(tfile2, '{', '}'))) {
+							*e = '\0';
+							file = e + 1;
+						} else {
+							tfile2 = NULL;
+						}
 					} else {
-						tfile = NULL;
+						break;
 					}
 				}
 
-				file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+				file = switch_core_session_sprintf(session, "%s%s%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", switch_str_nil(tfile2), tfile2 ? "}" : "", prefix, SWITCH_PATH_SEPARATOR, file);
 			}
 			if ((ext = strrchr(file, '.'))) {
 				ext++;
@@ -2040,7 +2053,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 					if (zstr(digits_regex)) {
 						return SWITCH_STATUS_SUCCESS;
 					}
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Test Regex [%s][%s]\n", digit_buffer, digits_regex);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "Test Regex [%s][%s]\n", digit_buffer, digits_regex);
 					if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
 						return SWITCH_STATUS_SUCCESS;
 					} else {

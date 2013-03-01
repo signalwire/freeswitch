@@ -1108,14 +1108,12 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		{
 			nframe = switch_core_media_bug_get_native_read_frame(bug);
 			len = nframe->datalen;
-			printf("WRITE IN %d\n", nframe->datalen);
 			switch_core_file_write(&rh->in_fh, nframe->data, &len);
 		}
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
 		{
 			nframe = switch_core_media_bug_get_native_write_frame(bug);
-			printf("WRITE OUT %d\n", nframe->datalen);
 			len = nframe->datalen;
 			switch_core_file_write(&rh->out_fh, nframe->data, &len);
 		}
@@ -1843,6 +1841,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_ANSWER_REQ")) && switch_true(p)) {
 		flags |= SMBF_ANSWER_REQ;
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_BRIDGE_REQ")) && switch_true(p)) {
+		flags |= SMBF_BRIDGE_REQ;
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_APPEND")) && switch_true(p)) {
