@@ -1229,7 +1229,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 			} else {
 				switch_core_session_get_read_impl(oglobals->session, &peer_read_impl);
 			}
-
+			
 			if (switch_core_codec_init(write_codec,
 									   "L16",
 									   NULL,
@@ -1694,13 +1694,17 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	int16_t mux_data[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
 	int32_t sample;
 	switch_core_session_t *session;
-	switch_codec_t *read_codec, read_codecs[MAX_PEERS] = { {0} };
+	switch_codec_t read_codecs[MAX_PEERS] = { {0} };
 	int i, x, ready = 0, answered = 0, ring_ready = 0;
 	int16_t *data;
 	uint32_t datalen = 0;
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
+	switch_codec_implementation_t read_impl = { 0 };
 
+	if (state->oglobals->session) {
+		switch_core_session_get_read_impl(state->oglobals->session, &read_impl);
+	}
 	
 	for (i = 0; i < MAX_PEERS && (session = state->originate_status[i].peer_session); i++) {
 		originate_status[i].peer_session = session;
@@ -1730,19 +1734,17 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 
 				if (!state->ringback->asis) {
 					if (!switch_core_codec_ready((&read_codecs[i]))) {
-						read_codec = switch_core_session_get_read_codec(session);
-
 						if (switch_core_codec_init(&read_codecs[i],
 												   "L16",
 												   NULL,
-												   read_codec->implementation->actual_samples_per_second,
-												   read_codec->implementation->microseconds_per_packet / 1000,
+												   read_impl.actual_samples_per_second,
+												   read_impl.microseconds_per_packet / 1000,
 												   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 												   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error!\n");
-						} else {
-							switch_core_session_set_read_codec(session, &read_codecs[i]);
 						}
+						switch_core_session_set_read_codec(session, NULL);
+						switch_core_session_set_read_codec(session, &read_codecs[i]);
 					}
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 					if (SWITCH_READ_ACCEPTABLE(status)) {
@@ -1786,6 +1788,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 
 	for (i = 0; i < MAX_PEERS && (session = originate_status[i].peer_session); i++) {
 		if (switch_core_codec_ready((&read_codecs[i]))) {
+			switch_core_session_set_read_codec(session, NULL);
 			switch_core_codec_destroy(&read_codecs[i]);
 		}
 		switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
