@@ -91,6 +91,8 @@ void init_ssl(void) {
 		abort();
     }
 
+	SSL_CTX_set_cipher_list(globals.ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
+
 	thread_setup();
 }
 
