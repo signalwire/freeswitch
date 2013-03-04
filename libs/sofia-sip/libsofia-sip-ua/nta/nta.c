@@ -7858,7 +7858,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
     else
       branch = su_sprintf(home, "branch=%s", branch);
   }
-  else if (orq->orq_user_via && sip->sip_via->v_branch)
+  else if (orq->orq_user_via && sip->sip_via->v_branch && orq->orq_method != sip_method_invite )
     branch = su_sprintf(home, "branch=%s", sip->sip_via->v_branch);
   else if (stateless)
     branch = stateless_branch(agent, msg, sip, orq->orq_tpn);
