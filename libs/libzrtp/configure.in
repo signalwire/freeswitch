@@ -89,9 +89,11 @@ if test -z "$DOXYGEN";
    then AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
 fi
 
-AM_CONDITIONAL([HAVE_DOXYGEN], 
-[test -n "$DOXYGEN"])AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([doc/Doxyfile])])
+if test -n "$DOXYGEN"; then
+  AM_CONDITIONAL([HAVE_DOXYGEN], [true])
+  AC_CONFIG_FILES([doc/Doxyfile])
+fi
 
 #
-# Genearte Makefiles
+# Generate Makefiles
 AC_OUTPUT([Makefile])
