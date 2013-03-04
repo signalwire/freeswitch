@@ -93,5 +93,5 @@ AM_CONDITIONAL([HAVE_DOXYGEN],
 [test -n "$DOXYGEN"])AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([doc/Doxyfile])])
 
 #
-# Genearte Makefiles
+# Generate Makefiles
 AC_OUTPUT([Makefile])
