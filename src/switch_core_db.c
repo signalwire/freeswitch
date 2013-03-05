@@ -45,20 +45,6 @@ static void db_pick_path(const char *dbname, char *buf, switch_size_t size)
 	}
 }
 
-struct integrity_check_cb_arg {
-	int rows;
-	int ok;
-};
-
-/* pragma integrity_check returns a single row with the value "ok" if no errors are found */
-static int integrity_check_cb(void *pArg, int argc, char **argv, char **columnNames)
-{
-	struct integrity_check_cb_arg *cb_arg = (struct integrity_check_cb_arg *)pArg;
-	cb_arg->rows++;
-	cb_arg->ok = (0 == strcasecmp(argv[0], "ok"));
-	return 0;
-}
-
 SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t **ppDb)
 {
 	return sqlite3_open(filename, ppDb);
