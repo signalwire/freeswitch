@@ -197,43 +197,14 @@ SWITCH_DECLARE(int) switch_core_db_load_extension(switch_core_db_t *db, const ch
 
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename)
 {
-	switch_core_db_t *db = NULL;
+	switch_core_db_t *db;
 	char path[1024];
 	int db_ret;
-	struct integrity_check_cb_arg cb_arg;
-	int i;
-
 
 	db_pick_path(filename, path, sizeof(path));
-
-	for (i = 0; i < 2; i++) {
-		if ((db_ret = switch_core_db_open(path, &db)) != SQLITE_OK) {
-			goto end;
-		}
-
-		memset(&cb_arg, 0, sizeof(cb_arg));
-		if ((db_ret = switch_core_db_exec(db, "PRAGMA integrity_check;", integrity_check_cb, &cb_arg, NULL) != SQLITE_OK)) {
-			goto end;
-		}
-
-		if (cb_arg.ok && (1 == cb_arg.rows)) {
-			break;
-		} else if (0 == i) {
-			char *cpath = switch_mprintf("%s.%ld.cdb", path, (long) switch_epoch_time_now(NULL));
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLite integrity_check failed for [%s]. Deleting file and retrying\n", path);
-			switch_core_db_close(db);
-			rename(path, cpath);
-			free(cpath);
-			continue;
-
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLite integrity_check failed second time for [%s]\n", path);
-			switch_core_db_close(db);
-			db = NULL;
-			goto end;
-		}
+	if ((db_ret = switch_core_db_open(path, &db)) != SQLITE_OK) {
+		goto end;
 	}
-
 	if ((db_ret = switch_core_db_exec(db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL) != SQLITE_OK)) {
 		goto end;
 	}
