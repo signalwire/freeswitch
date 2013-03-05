@@ -64,12 +64,16 @@ int main(int argc, char *argv[])
 	int rate = 8000;
 	switch_file_handle_t fh_input = { 0 }, fh_output = { 0 };
 	switch_codec_t codec = { 0 };
+	switch_codec_t raw_codec = { 0 };
 	char buf[2048];
 	switch_size_t len = sizeof(buf)/2;
 	switch_memory_pool_t *pool = NULL;
 	int bitrate = 0;
 	int blocksize;
-	
+	int in_asis = 0;
+	int out_asis = 0;
+	int out_flags = SWITCH_FILE_FLAG_WRITE;
+
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
 			switch(argv[i][1]) {
@@ -142,6 +146,11 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Cannot init mod_native_file [%s]\n", err);
 		goto end;
 	}
+
+	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_spandsp", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Cannot init mod_spandsp [%s]\n", err);
+		goto end;
+	}
 	
 	switch_core_new_memory_pool(&pool);
 	if (verbose) {
@@ -156,22 +165,53 @@ int main(int argc, char *argv[])
 	if (verbose) {
 		fprintf(stderr, "Opening file %s\n", output);
 	}
-	if (switch_core_file_open(&fh_output, output, channels, rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_NATIVE, NULL) != SWITCH_STATUS_SUCCESS) {
+
+	if (switch_stristr(".wav", output)) {
+		out_asis = 0;
+		out_flags |= SWITCH_FILE_DATA_SHORT;
+	} else {
+		out_asis = 1;
+		out_flags |= SWITCH_FILE_NATIVE;
+	}
+
+
+	if (switch_core_file_open(&fh_output, output, channels, rate, out_flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Couldn't open %s\n", output);
 		goto end;	
 	}
-
-	if (switch_test_flag(&fh_input, SWITCH_FILE_NATIVE)) {
-		fprintf(stderr, "Input as native file is not implemented\n");
-		goto end;
-	}
 	
-	if (switch_core_codec_init_with_bitrate(&codec, format, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", format, rate, ptime);
-		goto end;
+	if (switch_test_flag(&fh_input, SWITCH_FILE_NATIVE)) {
+		in_asis = 1;
 	}
 
-	blocksize = len = (rate*ptime)/1000;
+	if (out_asis) {
+		if (switch_core_codec_init_with_bitrate(&codec, format, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
+			fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", format, rate, ptime);
+			goto end;
+		}
+	} else {
+		char *p;
+
+		if ((p = strchr(input, '.'))) {
+			p++;
+		}
+		if (!p || switch_core_codec_init_with_bitrate(&codec, p, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
+			fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", p, rate, ptime);
+			goto end;
+		}
+		
+		if (switch_core_codec_init_with_bitrate(&raw_codec, "L16", fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", "L16", rate, ptime);
+		goto end;
+		}
+	}
+
+	if (in_asis) {
+		blocksize = len = codec.implementation->encoded_bytes_per_packet;
+	} else {
+		blocksize = len = (rate*ptime)/1000;
+	}
+
 	switch_assert(sizeof(buf) >= len * 2);
 
 	if (verbose) {
@@ -183,13 +223,34 @@ int main(int argc, char *argv[])
 		uint32_t encoded_len = sizeof(buf);
 		uint32_t encoded_rate = rate;
 		unsigned int flags = 0;
-		
-		if (switch_core_codec_encode(&codec, NULL, buf, len*2, rate, encode_buf, &encoded_len, &encoded_rate, &flags) != SWITCH_STATUS_SUCCESS) {
-			fprintf(stderr, "Codec encoder error\n");
-			goto end;
+
+		if (out_asis) {
+			if (switch_core_codec_encode(&codec, NULL, buf, len*2, rate, encode_buf, &encoded_len, &encoded_rate, &flags) != SWITCH_STATUS_SUCCESS) {
+				fprintf(stderr, "Codec encoder error\n");
+				goto end;
+			}
+			
+			len = encoded_len;
+		} else {
+			if (!in_asis) {
+				encoded_len = len;
+			} else if (in_asis) {
+				
+				switch_core_codec_decode(&codec,
+										 &raw_codec,
+										 buf,
+										 len,
+										 rate,
+										 encode_buf,
+										 &encoded_len,
+										 &encoded_rate,
+										 &flags);
+				encoded_len /= 2;
+				printf("WTF %ld %d %d\n", len, encoded_rate, encoded_len);
+				len = encoded_len;
+			}
 		}
-		
-		len = encoded_len;
+
 
 		if (switch_core_file_write(&fh_output, encode_buf, &len) != SWITCH_STATUS_SUCCESS) {
 			fprintf(stderr, "Write error\n");
@@ -206,9 +267,12 @@ int main(int argc, char *argv[])
 	r = 0;
 
 end:
-	
+
+
 	switch_core_codec_destroy(&codec);
-	
+	switch_core_codec_destroy(&raw_codec);
+
+
 	if (fh_input.file_interface) {
 		switch_core_file_close(&fh_input);		
 	}
@@ -220,7 +284,9 @@ end:
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
-	switch_core_destroy();
+
+	//switch_core_destroy();
+
 	return r;
 usage:
 	printf("Usage: %s [options] input output\n\n", argv[0]);
