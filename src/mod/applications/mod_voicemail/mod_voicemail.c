@@ -3271,14 +3271,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_channel_set_variable(channel, "skip_greeting", NULL);
 	switch_channel_set_variable(channel, "skip_instructions", NULL);
 
-	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
-		caller_id_name = caller_profile->caller_id_name;
-	}
-
-	if (!(caller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
-		caller_id_number = caller_profile->caller_id_number;
-	}
-
 	memset(&cbt, 0, sizeof(cbt));
 
 	if (id) {
@@ -3504,6 +3496,14 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	cc.fh = &fh;
 	cc.noexit = 1;
 	args.buf = &cc;
+
+	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
+		caller_id_name = caller_profile->caller_id_name;
+	}
+
+	if (!(caller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
+		caller_id_number = caller_profile->caller_id_number;
+	}
 
 	switch_channel_set_variable_printf(channel, "RECORD_ARTIST", "%s (%s)", caller_id_name, caller_id_number);
 
