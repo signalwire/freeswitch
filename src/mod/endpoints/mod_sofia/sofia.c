@@ -1758,18 +1758,18 @@ void sofia_event_callback(nua_event_t event,
 	case nua_i_info:
 	
 		if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
-			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
 			goto end;
 		}
 		
 
 		if (switch_queue_size(mod_sofia_globals.msg_queue) > critical) {
-			nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
 			goto end;
 		}
 		
 		if (sofia_test_pflag(profile, PFLAG_STANDBY)) {
-			nua_respond(nh, 503, "System Paused", TAG_END());
+			nua_respond(nh, 503, "System Paused", NUTAG_WITH_THIS(nua), TAG_END());
 			goto end;
 		}
 		break;

@@ -303,6 +303,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
       meth = SSLv23_method();
 
     tls->ctx = SSL_CTX_new((SSL_METHOD*)meth);
+	SSL_CTX_sess_set_remove_cb(tls->ctx, NULL);
   }
 
   if (tls->ctx == NULL) {
@@ -399,14 +400,14 @@ void tls_free(tls_t *tls)
   if (!tls)
     return;
 
-  if (tls->con != NULL)
-    SSL_shutdown(tls->con);
+  if (tls->con != NULL) {
+	SSL_shutdown(tls->con);
+	SSL_free(tls->con), tls->con = NULL;
+  }
 
-  if (tls->ctx != NULL && tls->type != tls_slave)
+  if (tls->ctx != NULL && tls->type != tls_slave) {
     SSL_CTX_free(tls->ctx);
-
-  if (tls->bio_con != NULL)
-    BIO_free(tls->bio_con);
+  }
 
   su_home_unref(tls->home);
 }
@@ -475,7 +476,6 @@ tls_t *tls_init_secondary(tls_t *master, int sock, int accept)
 
   if (tls) {
     tls->ctx = master->ctx;
-    tls->type = master->type;
     tls->accept = accept ? 1 : 0;
     tls->verify_outgoing = master->verify_outgoing;
     tls->verify_incoming = master->verify_incoming;

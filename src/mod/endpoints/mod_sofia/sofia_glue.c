@@ -6467,7 +6467,8 @@ void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, 
 
 	if (!(dbh = sofia_glue_get_db_handle(profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
-		return;
+
+		goto end;
 	}
 
 	switch_cache_db_persistant_execute_trans_full(dbh, sql, 1,
@@ -6478,6 +6479,8 @@ void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, 
 												  );
 
 	switch_cache_db_release_db_handle(&dbh);
+
+ end:
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);
@@ -6495,6 +6498,11 @@ void sofia_glue_actually_execute_sql(sofia_profile_t *profile, char *sql, switch
 
 	if (!(dbh = sofia_glue_get_db_handle(profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+
+		if (mutex) {
+			switch_mutex_unlock(mutex);
+		}
+
 		return;
 	}
 
@@ -6525,6 +6533,11 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 
 	if (!(dbh = sofia_glue_get_db_handle(profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+
+		if (mutex) {
+			switch_mutex_unlock(mutex);
+		}
+
 		return ret;
 	}
 
@@ -6559,6 +6572,11 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 
 	if (!(dbh = sofia_glue_get_db_handle(profile))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB\n");
+
+		if (mutex) {
+			switch_mutex_unlock(mutex);
+		}
+		
 		return NULL;
 	}
 
