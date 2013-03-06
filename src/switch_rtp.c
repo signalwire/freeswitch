@@ -1880,7 +1880,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+	if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
 		ping_socket(rtp_session);
 	}
 
