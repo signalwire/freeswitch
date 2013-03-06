@@ -228,7 +228,6 @@ switch_status_t rtmp_on_destroy(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 
 	if (tech_pvt) {
-		rtmp_session_t *rsession = tech_pvt->rtmp_session;
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 		}
@@ -240,8 +239,11 @@ switch_status_t rtmp_on_destroy(switch_core_session_t *session)
 		switch_buffer_destroy(&tech_pvt->readbuf);
 		switch_core_timer_destroy(&tech_pvt->timer);
 
-		if (rsession->state != RS_DESTROY) {
-			rtmp_session_destroy(&rsession);
+		if (tech_pvt->rtmp_session) {
+			rtmp_session_t *rsession = tech_pvt->rtmp_session;
+			if (rsession->state != RS_DESTROY) {
+				rtmp_session_destroy(&rsession);
+			} 
 		}
 	}
 
@@ -845,10 +847,10 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 	}
 	switch_thread_rwlock_unlock((*rsession)->session_rwlock);
 	
-	while ((*rsession)->active_sessions > 0) {
+	/*	while ((*rsession)->active_sessions > 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Still have %d sessions, waiting\n", (*rsession)->active_sessions);
 		switch_yield(500000);
-	}
+		}*/
 	
 	switch_thread_rwlock_wrlock((*rsession)->rwlock);
 	switch_thread_rwlock_unlock((*rsession)->rwlock);
