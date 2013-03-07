@@ -6414,9 +6414,9 @@ void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bo
 	switch_assert(sqlp && *sqlp);
 	sql = *sqlp;	
 
-	switch_mutex_lock(profile->ireg_mutex);
+	switch_mutex_lock(profile->dbh_mutex);
 	switch_sql_queue_manager_push_confirm(profile->qm, sql, 0, !sql_already_dynamic);
-	switch_mutex_unlock(profile->ireg_mutex);
+	switch_mutex_unlock(profile->dbh_mutex);
 
 	if (sql_already_dynamic) {
 		*sqlp = NULL;

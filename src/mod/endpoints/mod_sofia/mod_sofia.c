@@ -5262,9 +5262,9 @@ static void general_event_handler(switch_event_t *event)
 				}
 
 
-				switch_mutex_lock(profile->ireg_mutex);
+				switch_mutex_lock(profile->dbh_mutex);
 				sofia_glue_execute_sql_callback(profile, NULL, sql, notify_callback, profile);
-				switch_mutex_unlock(profile->ireg_mutex);
+				switch_mutex_unlock(profile->dbh_mutex);
 				sofia_glue_release_profile(profile);
 
 				free(sql);
