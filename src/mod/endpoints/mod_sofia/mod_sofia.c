@@ -722,6 +722,9 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)),
 			TAG_END());
 		sofia_clear_flag(tech_pvt, TFLAG_3PCC_INVITE); // all done
+		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
+		sofia_set_flag_locked(tech_pvt, TFLAG_SDP);
+		switch_channel_mark_answered(channel);     // ... and remember to actually answer the call!
 		return SWITCH_STATUS_SUCCESS;
 	}
 
