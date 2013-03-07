@@ -246,7 +246,6 @@ int main(int argc, char *argv[])
 										 &encoded_rate,
 										 &flags);
 				encoded_len /= 2;
-				printf("WTF %ld %d %d\n", len, encoded_rate, encoded_len);
 				len = encoded_len;
 			}
 		}
