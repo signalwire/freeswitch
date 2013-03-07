@@ -434,6 +434,7 @@ struct conference_member {
 	switch_ivr_dmachine_t *dmachine;
 	conference_cdr_node_t *cdr_node;
 	char *kicked_sound;
+	switch_queue_t *dtmf_queue;
 };
 
 /* Record Node */
@@ -1394,6 +1395,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	member->energy_level = conference->energy_level;
 	member->score_iir = 0;
 	member->verbose_events = conference->verbose_events;
+	switch_queue_create(&member->dtmf_queue, 100, member->pool);
 	conference->members = member;
 	switch_set_flag_locked(member, MFLAG_INTREE);
 	switch_mutex_unlock(conference->member_mutex);
@@ -3124,9 +3126,18 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 		} else if (member->dmachine) {
 			switch_ivr_dmachine_ping(member->dmachine, NULL);
 		}
-
-
-
+		
+		if (switch_queue_size(member->dtmf_queue)) {
+			switch_dtmf_t *dt;
+			void *pop;
+			
+			if (switch_queue_trypop(member->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+				dt = (switch_dtmf_t *) pop;
+				switch_core_session_send_dtmf(member->session, dt);
+				free(dt);
+			}
+		}
+				
 		if (switch_test_flag(read_frame, SFF_CNG)) {
 			if (member->conference->agc_level) {
 				member->nt_tally++;
@@ -3351,6 +3362,16 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 		switch_mutex_unlock(member->read_mutex);
 
+	}
+
+	if (switch_queue_size(member->dtmf_queue)) {
+		switch_dtmf_t *dt;
+		void *pop;
+
+		while (switch_queue_trypop(member->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			dt = (switch_dtmf_t *) pop;
+			free(dt);
+		}
 	}
 
 
@@ -4105,11 +4126,13 @@ static void conference_send_all_dtmf(conference_member_t *member, conference_obj
 		if (imember->session) {
 			const char *p;
 			for (p = dtmf; p && *p; p++) {
-				switch_dtmf_t digit = { *p, SWITCH_DEFAULT_DTMF_DURATION };
-				lock_member(imember);
+				switch_dtmf_t *dt, digit = { *p, SWITCH_DEFAULT_DTMF_DURATION };
+				
+				switch_zmalloc(dt, sizeof(*dt));
+				*dt = digit;
+				printf("QQQQ %c\n", dt->digit);
+				switch_queue_push(member->dtmf_queue, dt);
 				switch_core_session_kill_channel(imember->session, SWITCH_SIG_BREAK);
-				switch_core_session_send_dtmf(imember->session, &digit);
-				unlock_member(imember);
 			}
 		}
 	}
@@ -4882,12 +4905,19 @@ static switch_status_t conf_api_sub_dtmf(conference_member_t *member, switch_str
 	if (zstr(dtmf)) {
 		stream->write_function(stream, "Invalid input!\n");
 		return SWITCH_STATUS_GENERR;
-	}
+	} else {
+		char *p;
 
-	lock_member(member);
-	switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
-	switch_core_session_send_dtmf_string(member->session, (char *) data);
-	unlock_member(member);
+		for(p = dtmf; p && *p; p++) {
+			switch_dtmf_t *dt, digit = { *p, SWITCH_DEFAULT_DTMF_DURATION };
+		
+			switch_zmalloc(dt, sizeof(*dt));
+			*dt = digit;
+		
+			switch_queue_push(member->dtmf_queue, dt);
+			switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
+		}
+	}
 
 	if (stream != NULL) {
 		stream->write_function(stream, "OK sent %s to %u\n", (char *) data, member->id);
