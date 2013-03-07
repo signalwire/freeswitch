@@ -3806,12 +3806,12 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 #endif
 
 		if (ftdm_strlen_zero(globals.dtmfdebug_directory)) {
-			snprintf(dfile, sizeof(dfile), "dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
+			snprintf(dfile, sizeof(dfile), "dtmf-s%dc%d-20%d-%d-%d-%d%d%d.%s", 
 					ftdmchan->span_id, ftdmchan->chan_id, 
 					currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
 					currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
 		} else {
-			snprintf(dfile, sizeof(dfile), "%s/dtmf-s%dc%d-20%d-%d-%d-%d:%d:%d.%s", 
+			snprintf(dfile, sizeof(dfile), "%s/dtmf-s%dc%d-20%d-%d-%d-%d%d%d.%s", 
 					globals.dtmfdebug_directory,
 					ftdmchan->span_id, ftdmchan->chan_id, 
 					currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
