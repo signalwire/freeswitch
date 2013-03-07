@@ -4072,7 +4072,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		nua_respond(nh, 481, "INVALID SUBSCRIPTION", TAG_END());
 	}
 
-	nua_handle_destroy(nh);
+	if (!sofia_private || !sofia_private->is_call) {
+		nua_handle_destroy(nh);
+	}
 	
 }
 
