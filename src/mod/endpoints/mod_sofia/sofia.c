@@ -5177,7 +5177,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 
-					if (status == 491 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)) {
+					if (status == 491 && (sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)||switch_channel_test_flag(channel, CF_PROXY_MODE))) {
 						nua_respond(other_tech_pvt->nh, SIP_491_REQUEST_PENDING, TAG_END());
 						switch_core_session_rwunlock(other_session);
 						goto end;
