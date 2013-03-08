@@ -4130,7 +4130,6 @@ static void conference_send_all_dtmf(conference_member_t *member, conference_obj
 				
 				switch_zmalloc(dt, sizeof(*dt));
 				*dt = digit;
-				printf("QQQQ %c\n", dt->digit);
 				switch_queue_push(member->dtmf_queue, dt);
 				switch_core_session_kill_channel(imember->session, SWITCH_SIG_BREAK);
 			}
