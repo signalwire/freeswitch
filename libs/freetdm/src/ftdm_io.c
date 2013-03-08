@@ -5116,6 +5116,7 @@ static ftdm_status_t load_config(void)
 	sprintf(chan_config.group_name, "__default");
 
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to open configuration file %s\n", cfg_name);
 		return FTDM_FAIL;
 	}
 

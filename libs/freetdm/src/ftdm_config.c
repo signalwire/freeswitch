@@ -77,7 +77,7 @@ int ftdm_config_open_file(ftdm_config_t *cfg, const char *file_path)
 
 	memset(cfg, 0, sizeof(*cfg));
 	cfg->lockto = -1;
-	ftdm_log(FTDM_LOG_DEBUG, "Configuration file is %s.\n", path);
+	ftdm_log(FTDM_LOG_DEBUG, "Configuration file is %s\n", path);
 	f = fopen(path, "r");
 
 	if (!f) {
