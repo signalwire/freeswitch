@@ -43,9 +43,11 @@ struct async_tx_state_s
     get_byte_func_t get_byte;
     /*! \brief An opaque pointer passed when calling get_byte. */
     void *user_data;
+    /*! \brief The minimum number of stop bits to send before character transmission begins. */
+    int presend_bits;
 
     /*! \brief A current, partially transmitted, character. */
-    unsigned int byte_in_progress;
+    int32_t byte_in_progress;
     /*! \brief The current bit position within a partially transmitted character. */
     int bitpos;
     /*! \brief Parity bit. */
@@ -73,7 +75,7 @@ struct async_rx_state_s
     void *user_data;
 
     /*! \brief A current, partially complete, character. */
-    unsigned int byte_in_progress;
+    int32_t byte_in_progress;
     /*! \brief The current bit position within a partially complete character. */
     int bitpos;
     /*! \brief Parity bit. */

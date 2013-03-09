@@ -373,19 +373,19 @@ static void start_tx(adsi_tx_state_t *s)
     switch (s->standard)
     {
     case ADSI_STANDARD_CLASS:
-        fsk_tx_init(&(s->fsktx), &preset_fsk_specs[FSK_BELL202], adsi_tx_get_bit, s);
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_BELL202], adsi_tx_get_bit, s);
         break;
     case ADSI_STANDARD_CLIP:
     case ADSI_STANDARD_ACLIP:
     case ADSI_STANDARD_JCLIP:
-        fsk_tx_init(&(s->fsktx), &preset_fsk_specs[FSK_V23CH1], adsi_tx_get_bit, s);
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_V23CH1], adsi_tx_get_bit, s);
         break;
     case ADSI_STANDARD_CLIP_DTMF:
-        dtmf_tx_init(&(s->dtmftx));
+        dtmf_tx_init(&s->dtmftx, NULL, NULL);
         break;
     case ADSI_STANDARD_TDD:
-        fsk_tx_init(&(s->fsktx), &preset_fsk_specs[FSK_WEITBRECHT], async_tx_get_bit, &(s->asynctx));
-        async_tx_init(&(s->asynctx), 5, ASYNC_PARITY_NONE, 2, FALSE, adsi_tdd_get_async_byte, s);
+        fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_WEITBRECHT], async_tx_get_bit, &s->asynctx);
+        async_tx_init(&s->asynctx, 5, ASYNC_PARITY_NONE, 2, FALSE, adsi_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_shift = 2;
         break;
@@ -403,10 +403,10 @@ SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t amp[], int len)
         s->in_progress -= len;
         if (s->in_progress <= 0)
             s->msg_len = 0;
-        dtmf_rx(&(s->dtmfrx), amp, len);
+        dtmf_rx(&s->dtmfrx, amp, len);
         break;
     default:
-        fsk_rx(&(s->fskrx), amp, len);
+        fsk_rx(&s->fskrx, amp, len);
         break;
     }
     return 0;
@@ -435,20 +435,20 @@ SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s,
     switch (standard)
     {
     case ADSI_STANDARD_CLASS:
-        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_BELL202], FSK_FRAME_MODE_ASYNC, adsi_rx_put_bit, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_BELL202], FSK_FRAME_MODE_ASYNC, adsi_rx_put_bit, s);
         break;
     case ADSI_STANDARD_CLIP:
     case ADSI_STANDARD_ACLIP:
     case ADSI_STANDARD_JCLIP:
-        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_V23CH1], FSK_FRAME_MODE_ASYNC, adsi_rx_put_bit, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_V23CH1], FSK_FRAME_MODE_ASYNC, adsi_rx_put_bit, s);
         break;
     case ADSI_STANDARD_CLIP_DTMF:
-        dtmf_rx_init(&(s->dtmfrx), adsi_rx_dtmf, s);
+        dtmf_rx_init(&s->dtmfrx, adsi_rx_dtmf, s);
         break;
     case ADSI_STANDARD_TDD:
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
            ride over the fraction. */
-        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_WEITBRECHT], FSK_FRAME_MODE_5N1_FRAMES, adsi_tdd_put_async_byte, s);
+        fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_WEITBRECHT], FSK_FRAME_MODE_5N1_FRAMES, adsi_tdd_put_async_byte, s);
         break;
     }
     s->standard = standard;
@@ -475,19 +475,19 @@ SPAN_DECLARE(int) adsi_tx(adsi_tx_state_t *s, int16_t amp[], int max_len)
     int len;
     int lenx;
 
-    len = tone_gen(&(s->alert_tone_gen), amp, max_len);
+    len = tone_gen(&s->alert_tone_gen, amp, max_len);
     if (s->tx_signal_on)
     {
         switch (s->standard)
         {
         case ADSI_STANDARD_CLIP_DTMF:
             if (len < max_len)
-                len += dtmf_tx(&(s->dtmftx), amp, max_len - len);
+                len += dtmf_tx(&s->dtmftx, amp, max_len - len);
             break;
         default:
             if (len < max_len)
             {
-                if ((lenx = fsk_tx(&(s->fsktx), amp + len, max_len - len)) <= 0)
+                if ((lenx = fsk_tx(&s->fsktx, amp + len, max_len - len)) <= 0)
                     s->tx_signal_on = FALSE;
                 len += lenx;
             }
@@ -500,7 +500,7 @@ SPAN_DECLARE(int) adsi_tx(adsi_tx_state_t *s, int16_t amp[], int max_len)
 
 SPAN_DECLARE(void) adsi_tx_send_alert_tone(adsi_tx_state_t *s)
 {
-    tone_gen_init(&(s->alert_tone_gen), &(s->alert_tone_desc));
+    tone_gen_init(&s->alert_tone_gen, &s->alert_tone_desc);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -583,7 +583,7 @@ SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, in
     case ADSI_STANDARD_CLIP_DTMF:
         if (len >= 128)
             return -1;
-        len -= (int) dtmf_tx_put(&(s->dtmftx), (char *) msg, len);
+        len -= (int) dtmf_tx_put(&s->dtmftx, (char *) msg, len);
         break;
     case ADSI_STANDARD_JCLIP:
         if (len > 128 - 9)
@@ -662,7 +662,7 @@ SPAN_DECLARE(adsi_tx_state_t *) adsi_tx_init(adsi_tx_state_t *s, int standard)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
-    tone_gen_descriptor_init(&(s->alert_tone_desc),
+    tone_gen_descriptor_init(&s->alert_tone_desc,
                              2130,
                              -13,
                              2750,

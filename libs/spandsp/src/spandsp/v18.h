@@ -140,8 +140,18 @@ SPAN_DECLARE_NONSTD(int) v18_tx(v18_state_t *s, int16_t amp[], int max_len);
     \param s The V.18 context.
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
+    \return The number of unprocessed samples.
 */
 SPAN_DECLARE_NONSTD(int) v18_rx(v18_state_t *s, const int16_t amp[], int len);
+
+/*! Fake processing of a missing block of received V.18 audio samples.
+    (e.g due to packet loss).
+    \brief Fake processing of a missing block of received V.18 audio samples.
+    \param s The V.18 context.
+    \param len The number of samples to fake.
+    \return The number of unprocessed samples.
+*/
+SPAN_DECLARE_NONSTD(int) v18_rx_fillin(v18_state_t *s, int len);
 
 /*! \brief Put a string to a V.18 context's input buffer.
     \param s The V.18 context.

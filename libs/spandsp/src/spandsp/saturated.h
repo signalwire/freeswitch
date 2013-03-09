@@ -363,16 +363,24 @@ static __inline__ int32_t saturated_sub32(int32_t a, int32_t b)
 
 static __inline__ int16_t saturated_mul16(int16_t a, int16_t b)
 {
-    if (a == INT16_MIN  &&  b == INT16_MIN)
+    int32_t product;
+
+    product = (int32_t) a*b;
+    if (product == 0x40000000)
         return INT16_MAX;
     /*endif*/
-    return (int16_t) (((int32_t) a*(int32_t) b) >> 15);
+    return product >> 15;
 }
 /*- End of function --------------------------------------------------------*/
 
 static __inline__ int32_t saturated_mul16_32(int16_t a, int16_t b)
 {
-    return ((int32_t) a*(int32_t) b) << 1;
+    int32_t product;
+
+    product = (int32_t) a*b;
+    if (product == 0x40000000)
+        return INT32_MAX;
+    return product << 1;
 }
 /*- End of function --------------------------------------------------------*/
 

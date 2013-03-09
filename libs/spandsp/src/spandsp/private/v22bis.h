@@ -138,7 +138,7 @@ struct v22bis_state_s
         int constellation_state;
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-        /*! \brief The scaling factor accessed by the AGC algorithm. */
+        /*! \brief The scaling factor assessed by the AGC algorithm. */
         int16_t agc_scaling;
         /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
         int16_t rrc_filter[V22BIS_RX_FILTER_STEPS];
@@ -158,7 +158,7 @@ struct v22bis_state_s
         /*! \brief The integral part of the carrier tracking filter. */
         int32_t carrier_track_i;
 #else
-        /*! \brief The scaling factor accessed by the AGC algorithm. */
+        /*! \brief The scaling factor assessed by the AGC algorithm. */
         float agc_scaling;
         /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
         float rrc_filter[V22BIS_RX_FILTER_STEPS];

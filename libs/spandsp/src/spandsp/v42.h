@@ -100,12 +100,12 @@ SPAN_DECLARE(void) v42_restart(v42_state_t *s);
 /*! Release a V.42 context.
     \param s The V.42 context.
     \return 0 if OK */
-SPAN_DECLARE(void) v42_release(v42_state_t *s);
+SPAN_DECLARE(int) v42_release(v42_state_t *s);
 
 /*! Free a V.42 context.
     \param s The V.42 context.
     \return 0 if OK */
-SPAN_DECLARE(void) v42_free(v42_state_t *s);
+SPAN_DECLARE(int) v42_free(v42_state_t *s);
 
 #if defined(__cplusplus)
 }

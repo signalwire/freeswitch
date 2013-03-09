@@ -74,6 +74,7 @@ repertoire of 16 DTMF dual tones.
 #define MAX_DTMF_DIGITS 128
 
 typedef void (*digits_rx_callback_t)(void *user_data, const char *digits, int len);
+typedef void (*digits_tx_callback_t)(void *user_data);
 
 /*!
     DTMF generator state descriptor. This defines the state of a single
@@ -122,8 +123,13 @@ SPAN_DECLARE(void) dtmf_tx_set_timing(dtmf_tx_state_t *s, int on_time, int off_t
 
 /*! \brief Initialise a DTMF tone generator context.
     \param s The DTMF generator context.
+    \param callback An optional callback routine, used to get more digits.
+    \param user_data An opaque pointer which is associated with the context,
+           and supplied in callbacks.
     \return A pointer to the DTMF generator context. */
-SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s);
+SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s,
+                                             digits_tx_callback_t callback,
+                                             void *user_data);
 
 /*! \brief Release a DTMF tone generator context.
     \param s The DTMF tone generator context.

@@ -1554,16 +1554,18 @@ SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *ss,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v42_release(v42_state_t *s)
+SPAN_DECLARE(int) v42_release(v42_state_t *s)
 {
     reset_lapm(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v42_free(v42_state_t *s)
+SPAN_DECLARE(int) v42_free(v42_state_t *s)
 {
     v42_release(s);
     free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

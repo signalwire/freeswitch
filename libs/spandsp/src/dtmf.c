@@ -508,21 +508,31 @@ SPAN_DECLARE(int) dtmf_tx(dtmf_tx_state_t *s, int16_t amp[], int max_samples)
     if (s->tones.current_section >= 0)
     {
         /* Deal with the fragment left over from last time */
-        len = tone_gen(&(s->tones), amp, max_samples);
+        len = tone_gen(&s->tones, amp, max_samples);
     }
-    while (len < max_samples  &&  (digit = queue_read_byte(&s->queue.queue)) >= 0)
+
+    while (len < max_samples)
     {
         /* Step to the next digit */
+        if ((digit = queue_read_byte(&s->queue.queue)) < 0)
+        {
+            /* See if we can get some more digits */
+            if (s->callback == NULL)
+                break;
+            s->callback(s->callback_data);
+            if ((digit = queue_read_byte(&s->queue.queue)) < 0)
+                break;
+        }
         if (digit == 0)
             continue;
         if ((cp = strchr(dtmf_positions, digit)) == NULL)
             continue;
-        tone_gen_init(&(s->tones), &dtmf_digit_tones[cp - dtmf_positions]);
+        tone_gen_init(&s->tones, &dtmf_digit_tones[cp - dtmf_positions]);
         s->tones.tone[0].gain = s->low_level;
         s->tones.tone[1].gain = s->high_level;
         s->tones.duration[0] = s->on_time;
         s->tones.duration[1] = s->off_time;
-        len += tone_gen(&(s->tones), amp + len, max_samples - len);
+        len += tone_gen(&s->tones, amp + len, max_samples - len);
     }
     return len;
 }
@@ -562,7 +572,9 @@ SPAN_DECLARE(void) dtmf_tx_set_timing(dtmf_tx_state_t *s, int on_time, int off_t
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s)
+SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s,
+                                             digits_tx_callback_t callback,
+                                             void *user_data)
 {
     if (s == NULL)
     {
@@ -572,7 +584,9 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s)
     memset(s, 0, sizeof(*s));
     if (!dtmf_tx_inited)
         dtmf_tx_initialise();
-    tone_gen_init(&(s->tones), &dtmf_digit_tones[0]);
+    s->callback = callback;
+    s->callback_data = user_data;
+    tone_gen_init(&s->tones, &dtmf_digit_tones[0]);
     dtmf_tx_set_level(s, DEFAULT_DTMF_TX_LEVEL, 0);
     dtmf_tx_set_timing(s, -1, -1);
     queue_init(&s->queue.queue, MAX_DTMF_DIGITS, QUEUE_READ_ATOMIC | QUEUE_WRITE_ATOMIC);

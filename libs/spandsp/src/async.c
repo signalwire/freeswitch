@@ -35,6 +35,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
 
 #include "spandsp/private/async.h"
@@ -75,52 +76,10 @@ SPAN_DECLARE(const char *) signal_status_to_str(int status)
         return "Link disconnected";
     case SIG_STATUS_LINK_ERROR:
         return "Link error";
+    case SIG_STATUS_LINK_IDLE:
+        return "Link idle";
     }
     return "???";
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
-                                               int data_bits,
-                                               int parity,
-                                               int stop_bits,
-                                               int use_v14,
-                                               put_byte_func_t put_byte,
-                                               void *user_data)
-{
-    if (s == NULL)
-    {
-        if ((s = (async_rx_state_t *) malloc(sizeof(*s))) == NULL)
-            return NULL;
-    }
-    s->data_bits = data_bits;
-    s->parity = parity;
-    s->stop_bits = stop_bits;
-    s->use_v14 = use_v14;
-
-    s->put_byte = put_byte;
-    s->user_data = user_data;
-
-    s->byte_in_progress = 0;
-    s->bitpos = 0;
-    s->parity_bit = 0;
-
-    s->parity_errors = 0;
-    s->framing_errors = 0;
-    return s;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s)
-{
-    free(s);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -205,45 +164,44 @@ SPAN_DECLARE_NONSTD(void) async_rx_put_bit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
+SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
                                                int data_bits,
                                                int parity,
                                                int stop_bits,
                                                int use_v14,
-                                               get_byte_func_t get_byte,
+                                               put_byte_func_t put_byte,
                                                void *user_data)
 {
     if (s == NULL)
     {
-        if ((s = (async_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (async_rx_state_t *) malloc(sizeof(*s))) == NULL)
             return NULL;
     }
-    /* We have a use_v14 parameter for completeness, but right now V.14 only
-       applies to the receive side. We are unlikely to have an application where
-       flow control does not exist, so V.14 stuffing is not needed. */
     s->data_bits = data_bits;
     s->parity = parity;
     s->stop_bits = stop_bits;
-    if (parity != ASYNC_PARITY_NONE)
-        s->stop_bits++;
-        
-    s->get_byte = get_byte;
+    s->use_v14 = use_v14;
+
+    s->put_byte = put_byte;
     s->user_data = user_data;
 
     s->byte_in_progress = 0;
     s->bitpos = 0;
     s->parity_bit = 0;
+
+    s->parity_errors = 0;
+    s->framing_errors = 0;
     return s;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) async_tx_release(async_tx_state_t *s)
+SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s)
 {
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) async_tx_free(async_tx_state_t *s)
+SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s)
 {
     free(s);
     return 0;
@@ -293,6 +251,58 @@ SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data)
             s->bitpos = 0;
     }
     return bit;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) async_tx_presend_bits(async_tx_state_t *s, int bits)
+{
+    s->presend_bits = bits;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
+                                               int data_bits,
+                                               int parity,
+                                               int stop_bits,
+                                               int use_v14,
+                                               get_byte_func_t get_byte,
+                                               void *user_data)
+{
+    if (s == NULL)
+    {
+        if ((s = (async_tx_state_t *) malloc(sizeof(*s))) == NULL)
+            return NULL;
+    }
+    /* We have a use_v14 parameter for completeness, but right now V.14 only
+       applies to the receive side. We are unlikely to have an application where
+       flow control does not exist, so V.14 stuffing is not needed. */
+    s->data_bits = data_bits;
+    s->parity = parity;
+    s->stop_bits = stop_bits;
+    if (parity != ASYNC_PARITY_NONE)
+        s->stop_bits++;
+        
+    s->get_byte = get_byte;
+    s->user_data = user_data;
+
+    s->byte_in_progress = 0;
+    s->bitpos = 0;
+    s->parity_bit = 0;
+    s->presend_bits = 0;
+    return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_tx_release(async_tx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_tx_free(async_tx_state_t *s)
+{
+    free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

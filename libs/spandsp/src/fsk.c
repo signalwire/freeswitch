@@ -117,7 +117,7 @@ const fsk_spec_t preset_fsk_specs[] =
          4545
     },
     {
-        "Weitbrecht 50",    /* Used for Internatioal TDD (Telecoms Device for the Deaf) */
+        "Weitbrecht 50",    /* Used for international TDD (Telecoms Device for the Deaf) */
         1600 + 200,
         1600 - 200,
         -14,

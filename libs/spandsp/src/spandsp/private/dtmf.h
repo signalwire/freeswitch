@@ -32,6 +32,10 @@
 */
 struct dtmf_tx_state_s
 {
+    /*! Optional callback funcion to get more digits. */
+    digits_tx_callback_t callback;
+    /*! An opaque pointer passed to the callback function. */
+    void *callback_data;
     tone_gen_state_t tones;
     float low_level;
     float high_level;
