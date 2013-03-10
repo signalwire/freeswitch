@@ -6313,12 +6313,21 @@ SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t)
     t->pages_tx = s->tx_page_number;
     t->pages_rx = s->rx_page_number;
     t->pages_in_file = stats.pages_in_file;
-    t->width = stats.width;
-    t->length = stats.length;
     t->bad_rows = stats.bad_rows;
     t->longest_bad_row_run = stats.longest_bad_row_run;
+
+    t->image_type = stats.image_type;
+    t->image_x_resolution = stats.image_x_resolution;
+    t->image_y_resolution = stats.image_y_resolution;
+    t->image_width = stats.image_width;
+    t->image_length = stats.image_length;
+
+    t->type = stats.type;
     t->x_resolution = stats.x_resolution;
     t->y_resolution = stats.y_resolution;
+    t->width = stats.width;
+    t->length = stats.length;
+
     t->encoding = stats.encoding;
     t->image_size = stats.line_image_size;
     t->current_status = s->current_status;

@@ -83,14 +83,17 @@ struct faxtester_state_s
     int image_len;
     int image_ptr;
     int image_bit_ptr;
-    
+
     int ecm_frame_size;
     int corrupt_crc;
-    
+
     int final_delayed;
 
     fax_modems_state_t modems;
-    
+
+    /*! \brief CED or CNG detector */
+    modem_connect_tones_rx_state_t connect_rx;
+
     /*! If TRUE, transmission is in progress */
     int transmit;
 

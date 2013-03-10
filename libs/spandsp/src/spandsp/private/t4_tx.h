@@ -57,9 +57,15 @@ typedef struct
     /*! \brief Row counter for playing out the rows of the image. */
     int row;
 
-    /*! \brief Image length of the image in the file. This is used when the
-               image is resized or dithered flat. */
+    /*! \brief Width of the image in the file. */
+    int image_width;
+    /*! \brief Length of the image in the file. */
     int image_length;
+    /*! \brief Column-to-column (X) resolution in pixels per metre of the image in the file. */
+    int image_x_resolution;
+    /*! \brief Row-to-row (Y) resolution in pixels per metre of the image in the file. */
+    int image_y_resolution;
+
     /*! \brief Row counter used when the image is resized or dithered flat. */
     int raw_row;
 } t4_tx_tiff_state_t;
@@ -72,9 +78,9 @@ typedef struct
 */
 typedef struct
 {
-    /*! \brief Column-to-column (X) resolution in pixels per metre. */
+    /*! \brief Column-to-column (X) resolution in pixels per metre on the wire. */
     int x_resolution;
-    /*! \brief Row-to-row (Y) resolution in pixels per metre. */
+    /*! \brief Row-to-row (Y) resolution in pixels per metre on the wire. */
     int y_resolution;
 } t4_tx_metadata_t;
 

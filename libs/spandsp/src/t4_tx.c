@@ -289,10 +289,11 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
 #endif
     parm32 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm32);
+    t->image_width =
     s->image_width = parm32;
     parm32 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGELENGTH, &parm32);
-    s->tiff.image_length =
+    t->image_length =
     s->image_length = parm32;
     x_resolution = 0.0f;
     TIFFGetField(t->tiff_file, TIFFTAG_XRESOLUTION, &x_resolution);
@@ -322,6 +323,10 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
             break;
         }
     }
+    if (res_unit == RESUNIT_INCH)
+        t->image_x_resolution = x_resolution*100.0f/CM_PER_INCH;
+    else
+        t->image_x_resolution = x_resolution*100.0f;
 
     s->metadata.y_resolution = T4_Y_RESOLUTION_STANDARD;
     for (i = 0;  y_res_table[i].code > 0;  i++)
@@ -332,6 +337,11 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
             break;
         }
     }
+    if (res_unit == RESUNIT_INCH)
+        t->image_y_resolution = y_resolution*100.0f/CM_PER_INCH;
+    else
+        t->image_y_resolution = y_resolution*100.0f;
+
     t4_tx_set_image_width(s, s->image_width);
     t4_tx_set_image_length(s, s->image_length);
     t4_tx_set_max_2d_rows_per_1d_row(s, -s->metadata.y_resolution);
@@ -421,7 +431,7 @@ static int test_tiff_directory_info(t4_tx_state_t *s)
     if (t->image_type != T4_IMAGE_TYPE_BILEVEL)
         return -1;
 #endif
-    if (s->tiff.image_type != image_type)
+    if (t->image_type != image_type)
         return 1;
 
     parm32 = 0;
@@ -984,6 +994,13 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
     memset(t, 0, sizeof(*t));
     t->pages_transferred = s->current_page - s->start_page;
     t->pages_in_file = s->tiff.pages_in_file;
+
+    t->image_type = s->tiff.image_type;
+    t->image_width = s->tiff.image_width;
+    t->image_length = s->tiff.image_length;
+    t->image_x_resolution = s->tiff.image_x_resolution;
+    t->image_y_resolution = s->tiff.image_y_resolution;
+
     t->x_resolution = s->metadata.x_resolution;
     t->y_resolution = s->metadata.y_resolution/s->row_squashing_ratio;
     t->encoding = s->line_encoding;
@@ -992,26 +1009,30 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
     case T4_COMPRESSION_ITU_T4_1D:
     case T4_COMPRESSION_ITU_T4_2D:
     case T4_COMPRESSION_ITU_T6:
+        t->type = T4_IMAGE_TYPE_BILEVEL;
         t->width = t4_t6_encode_get_image_width(&s->encoder.t4_t6);
-        t->length = t4_t6_encode_get_image_length(&s->encoder.t4_t6);
+        t->length = t4_t6_encode_get_image_length(&s->encoder.t4_t6)/s->row_squashing_ratio;
         t->line_image_size = t4_t6_encode_get_compressed_image_size(&s->encoder.t4_t6)/8;
         break;
     case T4_COMPRESSION_ITU_T42:
+        t->type = 0;
         t->width = t42_encode_get_image_width(&s->encoder.t42);
-        t->length = t42_encode_get_image_length(&s->encoder.t42);
+        t->length = t42_encode_get_image_length(&s->encoder.t42)/s->row_squashing_ratio;
         t->line_image_size = t42_encode_get_compressed_image_size(&s->encoder.t42)/8;
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_ITU_T43:
+        t->type = 0;
         t->width = t43_encode_get_image_width(&s->encoder.t43);
-        t->length = t43_encode_get_image_length(&s->encoder.t43);
+        t->length = t43_encode_get_image_length(&s->encoder.t43)/s->row_squashing_ratio;
         t->line_image_size = t43_encode_get_compressed_image_size(&s->encoder.t43)/8;
         break;
 #endif
     case T4_COMPRESSION_ITU_T85:
     case T4_COMPRESSION_ITU_T85_L0:
+        t->type = T4_IMAGE_TYPE_BILEVEL;
         t->width = t85_encode_get_image_width(&s->encoder.t85);
-        t->length = t85_encode_get_image_length(&s->encoder.t85);
+        t->length = t85_encode_get_image_length(&s->encoder.t85)/s->row_squashing_ratio;
         t->line_image_size = t85_encode_get_compressed_image_size(&s->encoder.t85)/8;
         break;
     }

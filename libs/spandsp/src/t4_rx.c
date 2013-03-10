@@ -114,6 +114,27 @@ SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(const char *) t4_image_type_to_str(int type)
+{
+    switch (type)
+    {
+    case T4_IMAGE_TYPE_BILEVEL:
+        return "bi-level";
+    case T4_IMAGE_TYPE_COLOUR_BILEVEL:
+        return "bi-level colour";
+    case T4_IMAGE_TYPE_GRAY_8BIT:
+        return "8-bit gray scale";
+    case T4_IMAGE_TYPE_GRAY_12BIT:
+        return "12-bit gray scale";
+    case T4_IMAGE_TYPE_COLOUR_8BIT:
+        return "8-bit colour";
+    case T4_IMAGE_TYPE_COLOUR_12BIT:
+        return "12-bit colour";
+    }
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
 static int set_tiff_directory_info(t4_rx_state_t *s)
 {
     time_t now;
@@ -573,6 +594,8 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
     memset(t, 0, sizeof(*t));
     t->pages_transferred = s->current_page;
     t->pages_in_file = s->tiff.pages_in_file;
+    t->image_x_resolution = s->metadata.x_resolution;
+    t->image_y_resolution = s->metadata.y_resolution;
     t->x_resolution = s->metadata.x_resolution;
     t->y_resolution = s->metadata.y_resolution;
     t->encoding = s->line_encoding;
@@ -581,28 +604,44 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
     case T4_COMPRESSION_ITU_T4_1D:
     case T4_COMPRESSION_ITU_T4_2D:
     case T4_COMPRESSION_ITU_T6:
+        t->type = T4_IMAGE_TYPE_BILEVEL;
         t->width = t4_t6_decode_get_image_width(&s->decoder.t4_t6);
         t->length = t4_t6_decode_get_image_length(&s->decoder.t4_t6);
+        t->image_type = t->type;
+        t->image_width = t->width;
+        t->image_length = t->length;
         t->line_image_size = t4_t6_decode_get_compressed_image_size(&s->decoder.t4_t6)/8;
         t->bad_rows = s->decoder.t4_t6.bad_rows;
         t->longest_bad_row_run = s->decoder.t4_t6.longest_bad_row_run;
         break;
     case T4_COMPRESSION_ITU_T42:
+        t->type = 0;
         t->width = t42_decode_get_image_width(&s->decoder.t42);
         t->length = t42_decode_get_image_length(&s->decoder.t42);
+        t->image_type = t->type;
+        t->image_width = t->width;
+        t->image_length = t->length;
         t->line_image_size = t42_decode_get_compressed_image_size(&s->decoder.t42)/8;
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_ITU_T43:
+        t->type = 0;
         t->width = t43_decode_get_image_width(&s->decoder.t43);
         t->length = t43_decode_get_image_length(&s->decoder.t43);
+        t->image_type = t->type;
+        t->image_width = t->width;
+        t->image_length = t->length;
         t->line_image_size = t43_decode_get_compressed_image_size(&s->decoder.t43)/8;
         break;
 #endif
     case T4_COMPRESSION_ITU_T85:
     case T4_COMPRESSION_ITU_T85_L0:
+        t->type = T4_IMAGE_TYPE_BILEVEL;
         t->width = t85_decode_get_image_width(&s->decoder.t85);
         t->length = t85_decode_get_image_length(&s->decoder.t85);
+        t->image_type = t->type;
+        t->image_width = t->width;
+        t->image_length = t->length;
         t->line_image_size = t85_decode_get_compressed_image_size(&s->decoder.t85)/8;
         break;
     }

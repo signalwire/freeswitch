@@ -232,18 +232,30 @@ typedef struct
     int pages_transferred;
     /*! \brief The number of pages in the file (<0 if unknown). */
     int pages_in_file;
-    /*! \brief The number of horizontal pixels in the most recent page. */
-    int width;
-    /*! \brief The number of vertical pixels in the most recent page. */
-    int length;
     /*! \brief The number of bad pixel rows in the most recent page. */
     int bad_rows;
     /*! \brief The largest number of bad pixel rows in a block in the most recent page. */
     int longest_bad_row_run;
-    /*! \brief The horizontal resolution of the page in pixels per metre */
+    /*! \brief The type of image in the file page */
+    int image_type;
+    /*! \brief The horizontal resolution of the file page in pixels per metre */
+    int image_x_resolution;
+    /*! \brief The vertical resolution of the file page in pixels per metre */
+    int image_y_resolution;
+    /*! \brief The number of horizontal pixels in the file page. */
+    int image_width;
+    /*! \brief The number of vertical pixels in the file page. */
+    int image_length;
+    /*! \brief The type of image in the exchanged page */
+    int type;
+    /*! \brief The horizontal resolution of the exchanged page in pixels per metre */
     int x_resolution;
-    /*! \brief The vertical resolution of the page in pixels per metre */
+    /*! \brief The vertical resolution of the exchanged page in pixels per metre */
     int y_resolution;
+    /*! \brief The number of horizontal pixels in the exchanged page. */
+    int width;
+    /*! \brief The number of vertical pixels in the exchanged page. */
+    int length;
     /*! \brief The type of compression used between the FAX machines */
     int encoding;
     /*! \brief The size of the image on the line, in bytes */
@@ -368,6 +380,12 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
     \param encoding The encoding type.
     \return A pointer to the string. */
 SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding);
+
+/*! Get the short text name of an image format. 
+    \brief Get the short text name of an image format.
+    \param encoding The image format.
+    \return A pointer to the string. */
+SPAN_DECLARE(const char *) t4_image_type_to_str(int type);
 
 #if defined(__cplusplus)
 }

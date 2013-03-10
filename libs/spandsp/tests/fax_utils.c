@@ -105,8 +105,9 @@ void fax_log_page_transfer_statistics(t30_state_t *s, const char *tag)
     printf("%s:   Bad ECM frames %d\n", tag, t.error_correcting_mode_retries);
     printf("%s:   Compression type %s (%d)\n", tag, t4_encoding_to_str(t.encoding), t.encoding);
     printf("%s:   Compressed image size %d bytes\n", tag, t.image_size);
-    printf("%s:   Image size %d pels x %d pels\n", tag, t.width, t.length);
-    printf("%s:   Image resolution %d pels/m x %d pels/m\n", tag, t.x_resolution, t.y_resolution);
+    printf("%s:   Image type %s (%s in the file)\n", tag, t4_image_type_to_str(t.type), t4_image_type_to_str(t.image_type));
+    printf("%s:   Image size %d pels x %d pels (%d pels x %d pels in the file)\n", tag, t.width, t.length, t.image_width, t.image_length);
+    printf("%s:   Image resolution %d pels/m x %d pels/m (%d pels/m x %d pels/m in the file)\n", tag, t.x_resolution, t.y_resolution, t.image_x_resolution, t.image_y_resolution);
 #if defined(SPANDSP_EXPOSE_INTERNAL_STRUCTURES)
     printf("%s:   Bits per row - min %d, max %d\n", tag, s->t4.tx.encoder.t4_t6.min_row_bits, s->t4.tx.encoder.t4_t6.max_row_bits);
 #endif

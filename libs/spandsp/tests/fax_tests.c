@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
     decode_file_name = NULL;
     code_to_look_up = -1;
     t38_transport = T38_TRANSPORT_UDPTL;
-    while ((opt = getopt(argc, argv, "c:d:D:efFgH:i:Ilm:M:n:p:s:tT:u:v:z:")) != -1)
+    while ((opt = getopt(argc, argv, "c:d:D:efFgH:i:Ilm:M:n:p:s:S:tT:u:v:z:")) != -1)
     {
         switch (opt)
         {
@@ -865,7 +865,7 @@ int main(int argc, char *argv[])
                                            T30_SUPPORT_T4_1D_COMPRESSION
                                          | T30_SUPPORT_T4_2D_COMPRESSION
                                          | T30_SUPPORT_T6_COMPRESSION
-                                         | T30_SUPPORT_T81_COMPRESSION
+                                         //| T30_SUPPORT_T81_COMPRESSION
                                          | T30_SUPPORT_T85_COMPRESSION
                                          | T30_SUPPORT_T85_L0_COMPRESSION);
         }

@@ -218,6 +218,8 @@ struct t30_state_s
 
     /*! \brief TRUE if a local T.30 interrupt is pending. */
     int local_interrupt_pending;
+    /*! \brief The image coding to be used on the line for non-bilevel images. */
+    int multilevel_line_encoding;
     /*! \brief The image coding being used on the line. */
     int line_encoding;
     /*! \brief The image coding being used for output files. */

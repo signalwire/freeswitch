@@ -369,7 +369,7 @@ static __inline__ int16_t saturated_mul16(int16_t a, int16_t b)
     if (product == 0x40000000)
         return INT16_MAX;
     /*endif*/
-    return (int16_t)(product >> 15);
+    return (int16_t) (product >> 15);
 }
 /*- End of function --------------------------------------------------------*/
 

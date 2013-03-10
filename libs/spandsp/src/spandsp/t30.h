@@ -531,13 +531,25 @@ typedef struct
     int pages_rx;
     /*! \brief The number of pages in the file (<0 if not known). */
     int pages_in_file;
-    /*! \brief The horizontal column-to-column resolution of the most recent page, in pixels per metre */
+    /*! \brief The type of image of the most recent file page */
+    int image_type;
+    /*! \brief The horizontal column-to-column resolution of the most recent file page, in pixels per metre */
+    int image_x_resolution;
+    /*! \brief The vertical row-to-row resolution of the most recent file page, in pixels per metre */
+    int image_y_resolution;
+    /*! \brief The number of horizontal pixels in the most recent file page. */
+    int image_width;
+    /*! \brief The number of vertical pixels in the most recent file page. */
+    int image_length;
+    /*! \brief The type of image of the most recent exchanged page */
+    int type;
+    /*! \brief The horizontal column-to-column resolution of the most recent exchanged page, in pixels per metre */
     int x_resolution;
-    /*! \brief The vertical row-to-row resolution of the most recent page, in pixels per metre */
+    /*! \brief The vertical row-to-row resolution of the most recent exchanged page, in pixels per metre */
     int y_resolution;
-    /*! \brief The number of horizontal pixels in the most recent page. */
+    /*! \brief The number of horizontal pixels in the most recent exchanged page. */
     int width;
-    /*! \brief The number of vertical pixels in the most recent page. */
+    /*! \brief The number of vertical pixels in the most recent exchanged page. */
     int length;
     /*! \brief The size of the image, in bytes */
     int image_size;
