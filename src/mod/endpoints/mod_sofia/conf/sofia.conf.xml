@@ -342,6 +342,9 @@
 
         <!-- <param name="delete-subs-on-register" value="false"/> -->
 
+        <!-- launch a new thread to process each new inbound register when using heavier backends -->
+        <!-- <param name="inbound-reg-in-new-thread" value="true"/> -->
+
         <!-- enable rtcp on every channel also can be done per leg basis with
              rtcp_audio_interval_msec variable set to passthru to pass it across
              a call -->
