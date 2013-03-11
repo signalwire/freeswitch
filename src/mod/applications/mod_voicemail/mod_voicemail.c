@@ -674,6 +674,7 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 						   &profile->db_password_override, SWITCH_FALSE, NULL, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "allow-empty-password-auth", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
 						   &profile->allow_empty_password_auth, SWITCH_TRUE, NULL, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "auto-playback-recordings", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &profile->auto_playback_recordings, SWITCH_FALSE, NULL, NULL, NULL); 
 
 	switch_assert(i < VM_PROFILE_CONFIGITEM_COUNT);
 
