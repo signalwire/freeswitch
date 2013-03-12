@@ -262,7 +262,12 @@ static void counter_increment(void)
 void spanfax_log_message(void *user_data, int level, const char *msg)
 {
 	int fs_log_level;
-
+    switch_core_session_t *session;
+    pvt_t *pvt;
+    
+	pvt = (pvt_t *) user_data;
+	session = pvt->session;
+    
 	switch (level) {
 	case SPAN_LOG_NONE:
 		return;
@@ -283,7 +288,7 @@ void spanfax_log_message(void *user_data, int level, const char *msg)
 	}
 
 	if (!zstr(msg)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, fs_log_level, "%s", msg);
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), fs_log_level, "%s", msg);
 	}
 }
 
@@ -724,8 +729,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 		fax_set_transmit_on_idle(fax, TRUE);
 
-		span_log_set_message_handler(fax_get_logging_state(fax), spanfax_log_message, NULL);
-		span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, NULL);
+		span_log_set_message_handler(fax_get_logging_state(fax), spanfax_log_message, pvt);
+		span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, pvt);
 
 		if (pvt->verbose) {
 			span_log_set_level(fax_get_logging_state(fax), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -780,8 +785,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 				}
 			}
 
-			span_log_set_message_handler(t38_terminal_get_logging_state(t38), spanfax_log_message, NULL);
-			span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, NULL);
+			span_log_set_message_handler(t38_terminal_get_logging_state(t38), spanfax_log_message, pvt);
+			span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, pvt);
 
 			if (pvt->verbose) {
 				span_log_set_level(t38_terminal_get_logging_state(t38), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -835,8 +840,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		}
 
 
-		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), spanfax_log_message, NULL);
-		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), spanfax_log_message, NULL);
+		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), spanfax_log_message, pvt);
+		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), spanfax_log_message, pvt);
 
 		if (pvt->verbose) {
 			span_log_set_level(t38_gateway_get_logging_state(pvt->t38_gateway_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
