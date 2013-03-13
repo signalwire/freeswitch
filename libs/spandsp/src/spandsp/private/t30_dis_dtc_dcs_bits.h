@@ -221,16 +221,16 @@
 /* In a DIS/DTC frame, setting bit 97 to "0" indicates that the called terminal does not have the
    capability to accept 300 pels/25.4 mm x 300 lines/25.4 mm or 400 pels/25.4 mm x 400 lines/25.4 mm
    resolutions for colour/gray-scale images or T.44 Mixed Raster Content (MRC) mask layer.
-   
+
    Setting bit 97 to "1" indicates that the called terminal does have the capability to accept
    300 pels/25.4 mm x 300 lines/25.4 mm or 400 pels/25.4 mm x 400 lines/25.4 mm resolutions for
    colour/gray-scale images and MRC mask layer. Bit 97 is valid only when bits 68 and 42 or 43
    (300 pels/25.4 mm x 300 lines/25.4 mm or 400 pels/25.4 mm x 400 lines/25.4 mm) are set to "1".
-   
+
    In a DCS frame, setting bit 97 to "0" indicates that the calling terminal does not use
    300 pels/25.4 mm x 300 lines/25.4 mm or 400 pels/25.4 mm x 400 lines/25.4 mm resolutions
    for colour/gray-scale images and mask layer.
-   
+
    Setting bit 97 to "1" indicates that the calling terminal uses 300 pels/25.4 mm x 300 lines/25.4 mm
    or 400 pels/25.4 mm x 400 lines/25.4 mm resolutions for colour/gray-scale images and MRC mask layer.
    Bit 97 is valid only when bits 68 and 42 or 43 (300 pels/25.4 mm x 300 lines/25.4 mm and

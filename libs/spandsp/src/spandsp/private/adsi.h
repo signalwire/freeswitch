@@ -71,7 +71,7 @@ struct adsi_tx_state_s
     int stop_bits;
     /*! */
     int baudot_shift;
-    
+
     /*! */
     logging_state_t logging;
 };
@@ -106,7 +106,7 @@ struct adsi_rx_state_s
     int msg_len;
     /*! */
     int baudot_shift;
-    
+
     /*! A count of the framing errors. */
     int framing_errors;
 

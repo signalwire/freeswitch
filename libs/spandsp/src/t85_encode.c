@@ -206,7 +206,7 @@ static void generate_bih(t85_encode_state_t *s, uint8_t *buf)
     buf[19] = s->options;
 }
 /*- End of function --------------------------------------------------------*/
-    
+
 SPAN_DECLARE(void) t85_encode_set_options(t85_encode_state_t *s,
                                           uint32_t l0,
                                           int mx,
@@ -713,7 +713,7 @@ SPAN_DECLARE(t85_encode_state_t *) t85_encode_init(t85_encode_state_t *s,
     s->current_bit_plane = 0;
 
     t85_encode_restart(s, image_width, image_length);
-    
+
     return s;
 }
 /*- End of function --------------------------------------------------------*/

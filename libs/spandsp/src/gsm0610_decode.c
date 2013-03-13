@@ -105,7 +105,7 @@ SPAN_DECLARE(int) gsm0610_unpack_none(gsm0610_frame_t *s, const uint8_t c[])
     int i;
     int j;
     int k;
-    
+
     i = 0;
     for (j = 0;  j < 8;  j++)
         s->LARc[j] = c[i++];

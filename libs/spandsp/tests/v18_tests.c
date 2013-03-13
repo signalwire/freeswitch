@@ -1639,7 +1639,7 @@ static int test_x_06(void)
         msg[i] = i + 1;
     msg[127] = '\0';
     printf("%s\n", msg);
-    
+
     v18_encode_dtmf(NULL, dtmf, msg);
     printf("%s\n", dtmf);
 
@@ -1780,7 +1780,7 @@ static int test_x_12(void)
 static void put_v18_msg(void *user_data, const uint8_t *msg, int len)
 {
     char buf[1024];
-    
+
     memcpy(buf, msg, len);
     buf[len] = '\0';
     printf("Received (%d bytes) '%s'\n", len, buf);

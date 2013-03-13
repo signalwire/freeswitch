@@ -112,7 +112,7 @@ static void make_tx_filter(int coeff_sets,
         for (i = 0;  i < total_coeffs;  i++)
             coeffs[i] *= scaling;
     }
-    
+
     /* Churn out the data as a C source code header file, which can be directly included by the
        modem code. */
     printf("#define TX_PULSESHAPER%s_GAIN        %ff\n", tag, gain);

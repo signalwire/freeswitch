@@ -87,7 +87,7 @@ endpoint_t endpoint[2];
 static void reporter(void *user_data, int reason, bert_results_t *results)
 {
     endpoint_t *s;
-    
+
     s = (endpoint_t *) user_data;
     switch (reason)
     {
@@ -100,7 +100,7 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
         memcpy(&s->latest_results, results, sizeof(s->latest_results));
         break;
     default:
-        fprintf(stderr, 
+        fprintf(stderr,
                 "V.22bis rx %p BERT report %s\n",
                 user_data,
                 bert_event_to_str(reason));
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
     int rbs_pattern;
     int guard_tone_option;
     int opt;
-    
+
     channel_codec = MUNGE_CODEC_NONE;
     rbs_pattern = 0;
     test_bps = 2400;
@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
         bert_set_report(&endpoint[i].bert_rx, 10000, reporter, &endpoint[i]);
     }
 
-    
+
 #if defined(ENABLE_GUI)
     if (use_gui)
     {
@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
         }
 
 #if 1
-        both_ways_line_model(model, 
+        both_ways_line_model(model,
                              model_amp[0],
                              amp[0],
                              model_amp[1],

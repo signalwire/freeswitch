@@ -126,7 +126,7 @@ static int rx_data_handler(t38_core_state_t *s, void *user_data, int data_type, 
 static int tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t *buf, int len, int count)
 {
     t38_core_state_t *t;
-    
+
     t = (t38_core_state_t *) user_data;
     span_log(t38_core_get_logging_state(s), SPAN_LOG_FLOW, "Send seq %d, len %d, count %d\n", s->tx_seq_no, len, count);
     if (t38_core_rx_ifp_packet(t, buf, len, seq_no) < 0)
@@ -151,7 +151,7 @@ static int encode_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
     t38_data_field_t field[MAX_FIELDS];
     int i;
     int j;
-    
+
     ok_indicator_packets = 0;
     bad_indicator_packets = 0;
     ok_data_packets = 0;
@@ -296,7 +296,7 @@ static int encode_then_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
     int len;
     int i;
     int j;
-    
+
     ok_indicator_packets = 0;
     bad_indicator_packets = 0;
     ok_data_packets = 0;

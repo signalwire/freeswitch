@@ -74,7 +74,7 @@ generated according to the specification.
 
 The T.30 spec. specifies a number of time-outs. For example, after dialing a number,
 a calling fax system should listen for a response for 35 seconds before giving up.
-These time-out periods are as follows: 
+These time-out periods are as follows:
 
     - T1 - 35+-5s: the maximum time for which two fax system will attempt to identify each other
     - T2 - 6+-1s:  a time-out used to start the sequence for changing transmit parameters
@@ -86,7 +86,7 @@ ignored, sometimes with good reason. For example, after placing a call, the
 calling fax system is supposed to wait for 35 seconds before giving up. If the
 answering unit does not answer on the first ring or if a voice answering machine
 is connected to the line, or if there are many delays through the network,
-the delay before answer can be much longer than 35 seconds. 
+the delay before answer can be much longer than 35 seconds.
 
 Fax units that support error correction mode (ECM) can respond to a post-image
 handshake message with a receiver not ready (RNR) message. The calling unit then
@@ -95,7 +95,7 @@ answering unit is still busy (printing for example), it will repeat the RNR
 message. According to the T.30 standard, this sequence (RR/RNR RR/RNR) can be
 repeated for up to the end of T5 (60+-5s). However, many fax systems
 ignore the time-out and will continue the sequence indefinitely, unless the user
-manually overrides. 
+manually overrides.
 
 All the time-outs are subject to alteration, and sometimes misuse. Good T.30
 implementations must do the right thing, and tolerate others doing the wrong thing.
@@ -109,7 +109,7 @@ violate this requirement, especially for the silent period between DCS and TCF.
 This may be stretched to well over 100ms. If this period is too long, it can interfere with
 handshake signal error recovery, should a packet be corrupted on the line. Systems
 should ensure they stay within the prescribed T.30 limits, and be tolerant of others
-being out of spec.. 
+being out of spec..
 
 \subsection t30_page_sec_2d Other timing variations
 
@@ -118,7 +118,7 @@ variations in the duration of pauses between unacknowledged handshake message
 repetitions, and also in the pauses between the receipt of a handshake command and
 the start of a response to that command. In order to reduce the total
 transmission time, many fax systems start sending a response message before the
-end of the command has been received. 
+end of the command has been received.
 
 \subsection t30_page_sec_2e Other deviations from the T.30 standard
 
@@ -284,11 +284,11 @@ enum
     T30_ERR_BADTAG,             /*! Incorrect values for TIFF/F tags */
     T30_ERR_BADTIFFHDR,         /*! Bad TIFF/F header - incorrect values in fields */
     T30_ERR_NOMEM,              /*! Cannot allocate memory for more pages */
-    
+
     /* General problems */
     T30_ERR_RETRYDCN,           /*! Disconnected after permitted retries */
     T30_ERR_CALLDROPPED,        /*! The call dropped prematurely */
-    
+
     /* Feature negotiation issues */
     T30_ERR_NOPOLL,             /*! Poll not accepted */
     T30_ERR_IDENT_UNACCEPTABLE, /*! Far end's ident is not acceptable */

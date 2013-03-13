@@ -45,7 +45,7 @@ struct t30_state_s
 
     /*! \brief TRUE if behaving as the calling party */
     int calling_party;
-    
+
     /*! \brief Internet aware FAX mode bit mask. */
     int iaf;
     /*! \brief A bit mask of the currently supported modem types. */
@@ -212,7 +212,7 @@ struct t30_state_s
 
     /*! \brief TRUE once the far end FAX entity has been detected. */
     int far_end_detected;
-    
+
     /*! \brief TRUE once the end of procedure condition has been detected. */
     int end_of_procedure_detected;
 
@@ -250,7 +250,7 @@ struct t30_state_s
     int16_t ecm_len[256];
     /*! \brief A bit map of the OK ECM frames, constructed as a PPR frame. */
     uint8_t ecm_frame_map[3 + 32];
-    
+
     /*! \brief The current page number for receiving, in ECM or non-ECM mode. This is reset at the start of a call. */
     int rx_page_number;
     /*! \brief The current page number for sending, in ECM or non-ECM mode. This is reset at the start of a call. */

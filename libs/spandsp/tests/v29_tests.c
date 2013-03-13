@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
     int rbs_pattern;
     int opt;
     logging_state_t *logging;
-    
+
     channel_codec = MUNGE_CODEC_NONE;
     rbs_pattern = 0;
     test_bps = 9600;
@@ -551,7 +551,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Final result %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, bert_results.total_bits, bert_results.bad_bits, bert_results.resyncs);
         fprintf(stderr, "Last report  %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, latest_results.total_bits, latest_results.bad_bits, latest_results.resyncs);
         one_way_line_model_release(line_model);
-        
+
         if (signal_level > -43)
         {
             printf("Tests failed.\n");

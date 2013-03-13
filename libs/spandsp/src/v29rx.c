@@ -342,7 +342,7 @@ static __inline__ void track_carrier(v29_rx_state_t *s, const complexf_t *z, con
        got us in the right ballpark. Now we need to fine tune fairly quickly,
        to get the receovered carrier more precisely on target. Then we need to
        fine tune in a more damped way to keep us on target. The goal is to have
-       things running really well by the time the training is complete. 
+       things running really well by the time the training is complete.
        We assume the frequency of the oscillators at the two ends drift only
        very slowly. The PSTN has rather limited doppler problems. :-) Any
        remaining FDM in the network should also drift slowly. */
@@ -860,7 +860,7 @@ static __inline__ int signal_detect(v29_rx_state_t *s, int16_t amp)
         }
     }
     else
-    { 
+    {
         s->low_samples = 0;
         if (diff > s->high_sample)
             s->high_sample = diff;

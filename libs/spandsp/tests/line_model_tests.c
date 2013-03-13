@@ -115,13 +115,13 @@ static void test_one_way_model(int line_model_no, int speech_test)
     int i;
     int j;
     awgn_state_t noise1;
-    
+
     if ((model = one_way_line_model_init(line_model_no, -50, channel_codec, rbs_pattern)) == NULL)
     {
         fprintf(stderr, "    Failed to create line model\n");
         exit(2);
     }
-    
+
     awgn_init_dbm0(&noise1, 1234567, -10.0f);
 
     if (speech_test)
@@ -157,7 +157,7 @@ static void test_one_way_model(int line_model_no, int speech_test)
         }
         for (j = 0;  j < samples;  j++)
         {
-            one_way_line_model(model, 
+            one_way_line_model(model,
                                &output1[j],
                                &input1[j],
                                1);
@@ -204,7 +204,7 @@ static void test_both_ways_model(int line_model_no, int speech_test)
     int j;
     awgn_state_t noise1;
     awgn_state_t noise2;
-    
+
     if ((model = both_ways_line_model_init(line_model_no,
                                            -50,
                                            -15.0f,
@@ -219,7 +219,7 @@ static void test_both_ways_model(int line_model_no, int speech_test)
         fprintf(stderr, "    Failed to create line model\n");
         exit(2);
     }
-    
+
     awgn_init_dbm0(&noise1, 1234567, -10.0f);
     awgn_init_dbm0(&noise2, 1234567, -10.0f);
 
@@ -268,7 +268,7 @@ static void test_both_ways_model(int line_model_no, int speech_test)
         }
         for (j = 0;  j < samples;  j++)
         {
-            both_ways_line_model(model, 
+            both_ways_line_model(model,
                                  &output1[j],
                                  &input1[j],
                                  &output2[j],
@@ -339,7 +339,7 @@ static void test_line_filter(int line_model_no)
             if (++p == 129)
                 p = 0;
             ptr = p;
-    
+
             /* Apply the filter */
             out = 0.0f;
             for (j = 0;  j < 129;  j++)

@@ -647,10 +647,10 @@ SPAN_DECLARE(bell_mf_rx_state_t *) bell_mf_rx_init(bell_mf_rx_state_t *s,
     s->digits_callback = callback;
     s->digits_callback_data = user_data;
 
-    s->hits[0] = 
+    s->hits[0] =
     s->hits[1] =
     s->hits[2] =
-    s->hits[3] = 
+    s->hits[3] =
     s->hits[4] = 0;
 
     for (i = 0;  i < 6;  i++)
@@ -730,7 +730,7 @@ SPAN_DECLARE(int) r2_mf_rx(r2_mf_rx_state_t *s, const int16_t amp[], int samples
             best = 1;
             second_best = 0;
         }
-        
+
         for (i = 2;  i < 6;  i++)
         {
             energy[i] = goertzel_result(&s->out[i]);

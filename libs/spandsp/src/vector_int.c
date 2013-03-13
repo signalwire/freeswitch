@@ -314,15 +314,15 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq (%%rsi),%%mm2;\n"
 
         " movq %%mm2,%%mm3;\n"
-        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */
         " movq %%mm3,%%mm4;\n"
         " pand %%mm2,%%mm3;\n"     /* mm3 is mm2 masked to new max's */
         " pandn %%mm0,%%mm4;\n"    /* mm4 is mm0 masked to its max's */
         " por %%mm3,%%mm4;\n"
         " movq %%mm4,%%mm0;\n"     /* Now mm0 is updated max's */
-        
+
         " movq %%mm1,%%mm3;\n"
-        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
         " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
         " por %%mm3,%%mm2;\n"
@@ -338,7 +338,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm0,%%mm2;\n"
         " psrlq $32,%%mm2;\n"
         " movq %%mm2,%%mm3;\n"
-        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new max's */
         " pandn %%mm0,%%mm3;\n"    /* mm3 is mm0 masked to its max's */
         " por %%mm3,%%mm2;\n"
@@ -347,7 +347,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm1,%%mm2;\n"
         " psrlq $32,%%mm2;\n"
         " movq %%mm1,%%mm3;\n"
-        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
         " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
         " por %%mm3,%%mm2;\n"
@@ -362,7 +362,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movd (%%rsi),%%mm2;\n"
 
         " movq %%mm2,%%mm3;\n"
-        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */
         " movq %%mm3,%%mm4;\n"
         " pand %%mm2,%%mm3;\n"     /* mm3 is mm2 masked to new max's */
         " pandn %%mm0,%%mm4;\n"    /* mm4 is mm0 masked to its max's */
@@ -370,7 +370,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm4,%%mm0;\n"     /* now mm0 is updated max's */
 
         " movq %%mm1,%%mm3;\n"
-        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
         " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
         " por %%mm3,%%mm2;\n"
@@ -384,7 +384,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm0,%%mm2;\n"
         " psrlq $16,%%mm2;\n"
         " movq %%mm2,%%mm3;\n"
-        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new max's */
         " pandn %%mm0,%%mm3;\n"    /* mm3 is mm0 masked to its max's */
         " por %%mm3,%%mm2;\n"
@@ -393,12 +393,12 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm1,%%mm2;\n"
         " psrlq $16,%%mm2;\n"
         " movq %%mm1,%%mm3;\n"
-        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
         " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
         " por %%mm3,%%mm2;\n"
         " movd %%mm2,%%eax;\n"     /* ax is min so far */
-        
+
         " addq $2,%%rdx;\n"        /* now dx = top-2 */
         " cmpq %%rdx,%%rsi;\n"
         " ja 6f;\n"
@@ -467,15 +467,15 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq (%%esi),%%mm2;\n"
 
         " movq %%mm2,%%mm3;\n"
-        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */
         " movq %%mm3,%%mm4;\n"
         " pand %%mm2,%%mm3;\n"     /* mm3 is mm2 masked to new max's */
         " pandn %%mm0,%%mm4;\n"    /* mm4 is mm0 masked to its max's */
         " por %%mm3,%%mm4;\n"
         " movq %%mm4,%%mm0;\n"     /* Now mm0 is updated max's */
-        
+
         " movq %%mm1,%%mm3;\n"
-        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
         " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
         " por %%mm3,%%mm2;\n"
@@ -491,7 +491,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm0,%%mm2;\n"
         " psrlq $32,%%mm2;\n"
         " movq %%mm2,%%mm3;\n"
-        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new max's */
         " pandn %%mm0,%%mm3;\n"    /* mm3 is mm0 masked to its max's */
         " por %%mm3,%%mm2;\n"
@@ -500,7 +500,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm1,%%mm2;\n"
         " psrlq $32,%%mm2;\n"
         " movq %%mm1,%%mm3;\n"
-        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
         " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
         " por %%mm3,%%mm2;\n"
@@ -515,7 +515,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movd (%%esi),%%mm2;\n"
 
         " movq %%mm2,%%mm3;\n"
-        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */
         " movq %%mm3,%%mm4;\n"
         " pand %%mm2,%%mm3;\n"     /* mm3 is mm2 masked to new max's */
         " pandn %%mm0,%%mm4;\n"    /* mm4 is mm0 masked to its max's */
@@ -523,7 +523,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm4,%%mm0;\n"     /* now mm0 is updated max's */
 
         " movq %%mm1,%%mm3;\n"
-        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
         " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
         " por %%mm3,%%mm2;\n"
@@ -537,7 +537,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm0,%%mm2;\n"
         " psrlq $16,%%mm2;\n"
         " movq %%mm2,%%mm3;\n"
-        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new max's */
         " pandn %%mm0,%%mm3;\n"    /* mm3 is mm0 masked to its max's */
         " por %%mm3,%%mm2;\n"
@@ -546,12 +546,12 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " movq %%mm1,%%mm2;\n"
         " psrlq $16,%%mm2;\n"
         " movq %%mm1,%%mm3;\n"
-        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */
         " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
         " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
         " por %%mm3,%%mm2;\n"
         " movd %%mm2,%%eax;\n"     /* ax is min so far */
-        
+
         " addl $2,%%edx;\n"        /* now dx = top-2 */
         " cmpl %%edx,%%esi;\n"
         " ja 6f;\n"
@@ -597,7 +597,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
     int16_t max;
     int16_t temp;
     int32_t z;
-    
+
     max = INT16_MIN;
     min = INT16_MAX;
     for (i = 0;  i < n;  i++)

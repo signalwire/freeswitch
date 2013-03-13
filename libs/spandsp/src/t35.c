@@ -32,23 +32,23 @@
  * Copyright (c) 1994-1996 Silicon Graphics, Inc.
  * HylaFAX is a trademark of Silicon Graphics
  *
- * Permission to use, copy, modify, distribute, and sell this software and 
+ * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
  * that (i) the above copyright notices and this permission notice appear in
  * all copies of the software and related documentation, and (ii) the names of
  * Sam Leffler and Silicon Graphics may not be used in any advertising or
  * publicity relating to the software without the specific, prior written
  * permission of Sam Leffler and Silicon Graphics.
- * 
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
- * 
+ *
+ * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * IN NO EVENT SHALL SAM LEFFLER OR SILICON GRAPHICS BE LIABLE FOR
  * ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
  * OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
- * WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF 
- * LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 
+ * WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+ * LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
  */
 
@@ -108,7 +108,7 @@ static const model_data_t Canon[] =
     {5, "\x80\x00\x8A\x49\x10", "Laser Class 9000 Series"},
     {5, "\x80\x00\x8A\x48\x00", "Laser Class 2060"},
     {0, NULL, NULL}
-};  
+};
 
 static const model_data_t Brother[] =
 {
@@ -215,13 +215,13 @@ static const model_data_t JetFax[] =
     {0, NULL, NULL}
 };
 
-static const model_data_t PitneyBowes[] = 
+static const model_data_t PitneyBowes[] =
 {
     {6, "\x79\x91\xB1\xB8\x7A\xD8", "9550"},
     {0, NULL, NULL}
 };
 
-static const model_data_t Dialogic[] = 
+static const model_data_t Dialogic[] =
 {
     {8, "\x56\x8B\x06\x55\x00\x15\x00\x00", "VFX/40ESC"},
     {0, NULL, NULL}
@@ -247,7 +247,7 @@ static const model_data_t Muratec48[] =
  * identified by a single manufacturer byte.
  *
  * T.30 5.3.6.2.7 (2003) states that the NSF FIF is transmitted
- * in MSB2LSB order.  Revisions of T.30 prior to 2003 did not 
+ * in MSB2LSB order.  Revisions of T.30 prior to 2003 did not
  * contain explicit specification as to the transmit bit order.
  * (Although it did otherwise state that all HDLC frame data should
  * be in MSB order except as noted.)  Because CSI, TSI, and other
@@ -259,7 +259,7 @@ static const model_data_t Muratec48[] =
  *
  * Thus, country code x61 (Korea) turns into x86 (Papua New Guinea),
  * code xB5 (USA) turns into xAD (Tunisia), code x26 (China) turns
- * into x64 (Lebanon), code x04 (Germany) turns into x20 (Canada), 
+ * into x64 (Lebanon), code x04 (Germany) turns into x20 (Canada),
  * and code x3D (France) turns into xBC (Vietnam).
  *
  * For the most part it should be safe to identify a manufacturer
@@ -800,7 +800,7 @@ SPAN_DECLARE(int) t35_real_country_code(int country_code, int country_code_exten
     }
     /* We need to apply realism over accuracy, though it blocks out some countries.
        It is very rare to find a machine from any country but the following:
-    
+
             Japan 0x00 (no confusion)
             Germany 0x04 (0x20) (Canada/Germany confusion)
             China 0x26 (0x64) (China/Lebanon confusion)
@@ -860,7 +860,7 @@ SPAN_DECLARE(const char *) t35_country_code_to_str(int country_code, int country
         /* Right now there are no extension codes defined by the ITU */
         return NULL;
     }
-    
+
     return t35_country_codes[country_code].name;
 }
 /*- End of function --------------------------------------------------------*/

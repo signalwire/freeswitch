@@ -37,7 +37,7 @@
 static void vec_copyf_dumb(float z[], const float x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
 }
@@ -97,7 +97,7 @@ static int test_vec_copyf(void)
 static void vec_negatef_dumb(float z[], const float x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = -x[i];
 }
@@ -157,7 +157,7 @@ static int test_vec_negatef(void)
 static void vec_zerof_dumb(float z[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = 0.0f;
 }
@@ -215,7 +215,7 @@ static int test_vec_zerof(void)
 static void vec_setf_dumb(float z[], float x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x;
 }

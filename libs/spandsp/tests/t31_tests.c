@@ -312,7 +312,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
     char tag[20];
-    
+
     i = (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase E", i);
     printf("Phase E handler on channel %c\n", i);
@@ -508,7 +508,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
     SNDFILE *in_handle;
 
     /* Test the T.31 modem against the full FAX machine in spandsp */
-    
+
     /* Set up the test environment */
     t38_version = 1;
     without_pacing = FALSE;
@@ -668,7 +668,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
     {
         if (countdown)
         {
-            /* Deal with call setup, through the AT interface. */ 
+            /* Deal with call setup, through the AT interface. */
             if (answered)
             {
                 countdown = 0;

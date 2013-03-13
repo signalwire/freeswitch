@@ -80,7 +80,7 @@ struct at_state_s
     int rx_window;
     /*! Value set by +EWIND */
     int tx_window;
-    
+
     int v8bis_signal;
     int v8bis_1st_message;
     int v8bis_2nd_message;

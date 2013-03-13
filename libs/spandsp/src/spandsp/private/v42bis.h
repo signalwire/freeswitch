@@ -92,14 +92,14 @@ typedef struct
     /*! \brief Compression performance metric */
     uint16_t compression_performance;
 
-    /*! \brief Outgoing bit buffer (compression), or incoming bit buffer (decompression) */ 
+    /*! \brief Outgoing bit buffer (compression), or incoming bit buffer (decompression) */
     uint32_t bit_buffer;
-    /*! \brief Outgoing bit count (compression), or incoming bit count (decompression) */ 
+    /*! \brief Outgoing bit count (compression), or incoming bit count (decompression) */
     int bit_count;
 
     /*! \brief The output composition buffer */
     uint8_t output_buf[V42BIS_MAX_OUTPUT_LENGTH];
-    /*! \brief The length of the contents of the output composition buffer */    
+    /*! \brief The length of the contents of the output composition buffer */
     int output_octet_count;
 
     /*! \brief The current value of the escape code */

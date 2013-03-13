@@ -219,7 +219,7 @@ SPAN_DECLARE_NONSTD(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len)
     int len;
 #if defined(LOG_FAX_AUDIO)
     int required_len;
-    
+
     required_len = max_len;
 #endif
     len = 0;
@@ -236,7 +236,7 @@ SPAN_DECLARE_NONSTD(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len)
                 {
                     /* Pad to the requested length with silence */
                     memset(amp + len, 0, (max_len - len)*sizeof(int16_t));
-                    len = max_len;        
+                    len = max_len;
                 }
                 break;
             }
@@ -248,7 +248,7 @@ SPAN_DECLARE_NONSTD(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len)
         {
             /* Pad to the requested length with silence */
             memset(amp, 0, max_len*sizeof(int16_t));
-            len = max_len;        
+            len = max_len;
         }
     }
 #if defined(LOG_FAX_AUDIO)

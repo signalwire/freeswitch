@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
     }
     bitstream_flush(s, &w);
     printf("%d bits written\n", total_bits);
-    
+
     for (cc = buffer;  cc < w;  cc++)
         printf("%02X ", *cc);
     printf("\n");

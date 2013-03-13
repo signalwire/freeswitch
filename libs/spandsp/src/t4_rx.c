@@ -174,12 +174,10 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     case COMPRESSION_CCITT_T4:
         TIFFSetField(t->tiff_file, TIFFTAG_T4OPTIONS, output_t4_options);
         TIFFSetField(t->tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);
-        TIFFSetField(t->tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
         break;
     case COMPRESSION_CCITT_T6:
         TIFFSetField(t->tiff_file, TIFFTAG_T6OPTIONS, 0);
         TIFFSetField(t->tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);
-        TIFFSetField(t->tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
         break;
     case COMPRESSION_T85:
         TIFFSetField(t->tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);

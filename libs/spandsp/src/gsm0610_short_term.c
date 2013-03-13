@@ -97,7 +97,7 @@ static void decode_log_area_ratios(int16_t LARc[8], int16_t *LARpp)
    analysis and synthesis filters operate with four different sets of
    coefficients, derived from the previous set of decoded LARs(LARpp(j - 1))
    and the actual set of decoded LARs (LARpp(j))
-  
+
    (Initial value: LARpp(j - 1)[1..8] = 0.)
 */
 

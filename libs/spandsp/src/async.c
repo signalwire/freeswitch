@@ -212,7 +212,7 @@ SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data)
 {
     async_tx_state_t *s;
     int bit;
-    
+
     s = (async_tx_state_t *) user_data;
     if (s->bitpos == 0)
     {
@@ -281,7 +281,7 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
     s->stop_bits = stop_bits;
     if (parity != ASYNC_PARITY_NONE)
         s->stop_bits++;
-        
+
     s->get_byte = get_byte;
     s->user_data = user_data;
 

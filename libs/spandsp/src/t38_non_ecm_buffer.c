@@ -153,12 +153,12 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, cons
        An EOL 11 zeros followed by a one in a T.4 1D image or 11 zeros followed by a one followed
        by a one or a zero in a T.4 2D image. An RTC consists of 6 EOLs in succession, with no
        pixel data between them.
-    
+
        We can stuff with ones until we get the first EOL into our buffer, then we can stuff with
        zeros in front of each EOL at any point up the the RTC. We should not pad between the EOLs
        which make up the RTC. Most FAX machines don't care about this, but a few will not recognise
        the RTC if here is padding between the EOLs.
-    
+
        We need to buffer whole rows before we output their beginning, so there is no possibility
        of underflow mid-row. */
 

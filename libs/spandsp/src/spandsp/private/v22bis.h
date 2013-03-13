@@ -128,7 +128,7 @@ struct v22bis_state_s
                    routine. */
         void *qam_user_data;
 
-        /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */    
+        /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */
         power_meter_t rx_power;
         /*! \brief The power meter level at which carrier on is declared. */
         int32_t carrier_on_power;
@@ -192,7 +192,7 @@ struct v22bis_state_s
         int total_baud_timing_correction;
         /*! \brief The current fractional phase of the baud timing. */
         int baud_phase;
-    
+
         int sixteen_way_decisions;
 
         int pattern_repeats;

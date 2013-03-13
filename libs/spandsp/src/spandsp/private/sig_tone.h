@@ -218,7 +218,7 @@ struct sig_tone_rx_state_s
     int flat_mode_timeout;
     /*! \brief ??? */
     int notch_insertion_timeout;
-    
+
     /*! \brief ??? */
     int signalling_state;
     /*! \brief ??? */

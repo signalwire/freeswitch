@@ -114,7 +114,7 @@ void media_monitor_rx(int seq_no, double departure_time, double arrival_time)
     }
 
     s->received_delays = new Ca_Line(2000, s->received_delays_plot, 0, 0, FL_BLUE, CA_NO_POINT);
-    
+
     if (s->sent_re)
         delete s->sent_re;
 
@@ -126,7 +126,7 @@ void media_monitor_rx(int seq_no, double departure_time, double arrival_time)
             s->sent_re_plot[2*(i%500) + 1] = 0.0;
     }
     s->sent_re_plot[2*(seq_no%500) + 1] = fdiff;
-    
+
     if (fdiff > s->sent_re_plot_max)
     {
         s->sent_re_plot_max = fdiff;
@@ -157,7 +157,7 @@ int start_media_monitor(void)
     float y;
     int i;
     int len;
-    
+
     len = 128;
 
     s->w = new Fl_Double_Window(465, 400, "IP streaming media monitor");
@@ -255,7 +255,7 @@ int start_media_monitor(void)
     s->received_delays_plot_max = 0.0;
     s->min_diff = 2000;
     s->max_diff = 0;
-    
+
     s->received_delays = NULL;
     s->highest_seq_no_seen = -1;
 
@@ -278,7 +278,7 @@ int start_media_monitor(void)
 }
 /*- End of function --------------------------------------------------------*/
 
-void media_monitor_wait_to_end(void) 
+void media_monitor_wait_to_end(void)
 {
     fd_set rfds;
     int res;
@@ -299,7 +299,7 @@ void media_monitor_wait_to_end(void)
 }
 /*- End of function --------------------------------------------------------*/
 
-void media_monitor_update_display(void) 
+void media_monitor_update_display(void)
 {
     Fl::check();
     Fl::check();

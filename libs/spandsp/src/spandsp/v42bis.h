@@ -85,7 +85,7 @@ SPAN_DECLARE(int) v42bis_compress_flush(v42bis_state_t *s);
     \param len The length of the data buffer.
     \return 0 */
 SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *s, const uint8_t buf[], int len);
-    
+
 /*! Flush out any data remaining in the decompression buffer.
     \param s The V.42bis context.
     \return 0 */

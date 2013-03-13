@@ -128,7 +128,7 @@ struct t4_tx_state_s
                in no header line. */
     const char *header_info;
     /*! \brief The local ident string. This is used with header_info to form a
-               page header line. */ 
+               page header line. */
     const char *local_ident;
     /*! \brief The page number of current page. The first page is zero. If FAX page
                headers are used, the page number in the header will be one more than

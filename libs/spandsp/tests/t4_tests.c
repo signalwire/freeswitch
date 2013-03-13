@@ -288,10 +288,10 @@ int main(int argc, char *argv[])
 #if defined(SPANDSP_SUPPORT_T42x)
         T4_COMPRESSION_ITU_T42,
         T4_COMPRESSION_ITU_SYCC_T42,
-#endif 
+#endif
 #if defined(SPANDSP_SUPPORT_T43x)
         T4_COMPRESSION_ITU_T43,
-#endif          
+#endif
         T4_COMPRESSION_ITU_T85,
         T4_COMPRESSION_ITU_T85_L0,
         //T4_COMPRESSION_ITU_T45,

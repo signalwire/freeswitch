@@ -227,7 +227,7 @@ SPAN_DECLARE(uint16_t) fixed_atan2(int16_t y, int16_t x)
         return ((y & 0x8000) | 0x4000);
     abs_x = abs(x);
     abs_y = abs(y);
-    
+
     if (abs_y < abs_x)
     {
         recip = fixed_reciprocal16(abs_x, &shift);

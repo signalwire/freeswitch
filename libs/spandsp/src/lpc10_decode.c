@@ -113,8 +113,9 @@ static void bsynz(lpc10_decode_state_t *s,
 {
     static const int32_t kexc[25] =
     {
-          8,  -16,   26, -48,  86, -162, 294, -502, 718, -728, 184, 
-        672, -610, -672, 184, 728,  718, 502,  294, 162,   86,  48, 26, 16, 8
+          8,  -16,   26, -48,  86, -162, 294, -502, 718, -728, 184,
+        672, -610, -672, 184, 728,  718, 502,  294, 162,   86,  48,
+         26,   16,    8
     };
     int32_t i;
     int32_t j;
@@ -217,11 +218,11 @@ static void bsynz(lpc10_decode_state_t *s,
 
 /* Synthesize a single pitch epoch */
 static int pitsyn(lpc10_decode_state_t *s,
-                  int voice[], 
+                  int voice[],
                   int32_t *pitch,
                   float *rms,
                   float *rc,
-                  int32_t ivuv[], 
+                  int32_t ivuv[],
                   int32_t ipiti[],
                   float *rmsi,
                   float *rci,
@@ -917,7 +918,7 @@ static void decode(lpc10_decode_state_t *s,
             /* If bit 2 of ICORF is set then smooth RMS and RC's, */
             if ((icorf & bit[1]) != 0)
             {
-                if ((float) abs(s->drms[1] - s->drms[0]) >= corth[ixcor + 3] 
+                if ((float) abs(s->drms[1] - s->drms[0]) >= corth[ixcor + 3]
                     &&
                     (float) abs(s->drms[1] - s->drms[2]) >= corth[ixcor + 3])
                 {
@@ -936,7 +937,7 @@ static void decode(lpc10_decode_state_t *s,
             /* If bit 3 of ICORF is set then smooth pitch */
             if ((icorf & bit[2]) != 0)
             {
-                if ((float) abs(s->dpit[1] - s->dpit[0]) >= corth[ixcor - 1] 
+                if ((float) abs(s->dpit[1] - s->dpit[0]) >= corth[ixcor - 1]
                     &&
                     (float) abs(s->dpit[1] - s->dpit[2]) >= corth[ixcor - 1])
                 {
@@ -1070,7 +1071,7 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
         s->dei[i] = 0.0f;
     for (i = 0;  i < 3;  i++)
         s->deo[i] = 0.0f;
-    
+
     return s;
 }
 /*- End of function --------------------------------------------------------*/

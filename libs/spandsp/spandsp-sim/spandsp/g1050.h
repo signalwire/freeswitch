@@ -188,7 +188,7 @@ typedef struct
 
     /*! 3 seconds of predicted delays for the link */
     double delays[3*G1050_TICKS_PER_SEC];
-    
+
     /*! A count of packets lost on the link. */
     uint32_t lost_packets;
     /*! An extra debug count of packets lost on the link. */

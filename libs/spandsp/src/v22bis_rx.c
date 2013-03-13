@@ -110,7 +110,7 @@ The basic method used by the V.22bis receiver is:
 
         Tune the local carrier, based on the angular mismatch between the actual signal and
         the decision.
-        
+
         Tune the equalizer, based on the mismatch between the actual signal and the decision.
 
         Descramble and output the bits represented by the decision.
@@ -800,7 +800,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
     for (i = 0;  i < len;  i++)
     {
         /* Complex bandpass filter the signal, using a pair of FIRs, and RRC coeffs shifted
-           to centre at 1200Hz or 2400Hz. The filters support 12 fractional phase shifts, to 
+           to centre at 1200Hz or 2400Hz. The filters support 12 fractional phase shifts, to
            permit signal extraction very close to the middle of a symbol. */
         s->rx.rrc_filter[s->rx.rrc_filter_step] = amp[i];
         if (++s->rx.rrc_filter_step >= V22BIS_RX_FILTER_STEPS)

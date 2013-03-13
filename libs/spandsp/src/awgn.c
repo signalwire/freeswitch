@@ -29,14 +29,14 @@
    paper somewhere. I can't track down where I got the original from,
    so that due recognition can be given. The original had no explicit
    copyright notice, and I hope nobody objects to its use here.
-   
+
    Having a reasonable Gaussian noise generator is pretty important for
    telephony testing (in fact, pretty much any DSP testing), and this
    one seems to have served me OK. Since the generation of Gaussian
    noise is only for test purposes, and not a core system component,
    I don't intend to worry excessively about copyright issues, unless
    someone worries me.
-        
+
    The non-core nature of this code also explains why it is unlikely
    to ever be optimised. */
 

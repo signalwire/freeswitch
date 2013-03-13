@@ -54,7 +54,7 @@ struct t38_core_state_s
                Method 2: Transfer of TCF is required for use with UDP (UDPTL or RTP).
                Method 2 is not recommended for use with TCP. */
     int data_rate_management_method;
-    
+
     /*! \brief The emitting gateway may indicate a preference for either UDP/UDPTL, or
                UDP/RTP, or TCP for transport of T.38 IFP Packets. The receiving device
                selects the transport protocol. */
@@ -81,7 +81,7 @@ struct t38_core_state_s
     int max_buffer_size;
 
     /*! \brief This option indicates the maximum size of a UDPTL packet or the
-               maximum size of the payload within an RTP packet that can be accepted 
+               maximum size of the payload within an RTP packet that can be accepted
                by the remote device. */
     int max_datagram_size;
 
@@ -102,7 +102,7 @@ struct t38_core_state_s
                over TCP they are not relevent. */
     int check_sequence_numbers;
 
-    /*! \brief The number of times each packet type will be sent (low byte). The 
+    /*! \brief The number of times each packet type will be sent (low byte). The
                depth of redundancy (2nd byte). Higher numbers may increase reliability
                for UDP transmission. Zero is valid for the indicator packet category,
                to suppress all indicator packets (typicaly for TCP transmission). */

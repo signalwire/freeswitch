@@ -34,7 +34,7 @@ The V.17 receiver implements the receive side of a V.17 modem. This can operate
 at data rates of 14400, 12000, 9600 and 7200 bits/second. The audio input is a stream
 of 16 bit samples, at 8000 samples/second. The transmit and receive side of V.17
 modems operate independantly. V.17 is mostly used for FAX transmission over PSTN
-lines, where it provides the standard 14400 bits/second rate. 
+lines, where it provides the standard 14400 bits/second rate.
 
 \section v17rx_page_sec_2 How does it work?
 V.17 uses QAM modulation, at 2400 baud, and trellis coding. Constellations with
@@ -93,7 +93,7 @@ into line. From this point on, a heavily damped integrate and dump approach,
 based on the angular difference between each received constellation position and
 its expected position, is sufficient to track the carrier, and maintain phase
 alignment. A fast rough approximator for the arc-tangent function is adequate
-for the estimation of the angular error. 
+for the estimation of the angular error.
 
 The next phase of the training sequence is a scrambled sequence of two
 particular symbols. We train the T/2 adaptive equalizer using this sequence. The
@@ -102,7 +102,7 @@ converges to the proper generalised solution. At the end of this sequence, the
 equalizer should be sufficiently well adapted that is can correctly resolve the
 full QAM constellation. However, the equalizer continues to adapt throughout
 operation of the modem, fine tuning on the more complex data patterns of the
-full QAM constellation. 
+full QAM constellation.
 
 In the last phase of the training sequence, the modem enters normal data
 operation, with a short defined period of all ones as data. As in most high

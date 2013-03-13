@@ -35,7 +35,7 @@ at data rates of 9600, 7200 and 4800 bits/s. The audio input is a stream of 16
 bit samples, at 8000 samples/second. The transmit and receive side of V.29
 modems operate independantly. V.29 is mostly used for FAX transmission, where it
 provides the standard 9600 and 7200 bits/s rates (the 4800 bits/s mode is not
-used for FAX). 
+used for FAX).
 
 \section v29rx_page_sec_2 How does it work?
 V.29 operates at 2400 baud for all three bit rates. It uses 16-QAM modulation for
@@ -92,7 +92,7 @@ into line. From this point on, a heavily damped integrate and dump approach,
 based on the angular difference between each received constellation position and
 its expected position, is sufficient to track the carrier, and maintain phase
 alignment. A fast rough approximator for the arc-tangent function is adequate
-for the estimation of the angular error. 
+for the estimation of the angular error.
 
 The next phase of the training sequence is a scrambled sequence of two
 particular symbols. We train the T/2 adaptive equalizer using this sequence. The
@@ -101,7 +101,7 @@ converges to the proper generalised solution. At the end of this sequence, the
 equalizer should be sufficiently well adapted that is can correctly resolve the
 full QAM constellation. However, the equalizer continues to adapt throughout
 operation of the modem, fine tuning on the more complex data patterns of the
-full QAM constellation. 
+full QAM constellation.
 
 In the last phase of the training sequence, the modem enters normal data
 operation, with a short defined period of all ones as data. As in most high
@@ -115,7 +115,7 @@ application, and the receive modem is up and running. Unfortunately, some
 transmit side of some real V.29 modems fail to initialise their scrambler before
 sending the ones. This means the first 23 received bits (the length of the
 scrambler register) cannot be trusted for the test. The receive modem,
-therefore, only tests that bits starting at bit 24 are really ones. 
+therefore, only tests that bits starting at bit 24 are really ones.
 */
 
 #if defined(SPANDSP_USE_FIXED_POINT)

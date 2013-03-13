@@ -59,15 +59,15 @@
 /* The number of left shifts needed to normalize the 32 bit
    variable x for positive values on the interval
    with minimum of
-   minimum of 1073741824  (01000000000000000000000000000000) and 
+   minimum of 1073741824  (01000000000000000000000000000000) and
    maximum of 2147483647  (01111111111111111111111111111111)
    and for negative values on the interval with
    minimum of -2147483648 (-10000000000000000000000000000000) and
    maximum of -1073741824 ( -1000000000000000000000000000000).
-  
+
    In order to normalize the result, the following
    operation must be done: norm_var1 = x << gsm0610_norm(x);
-  
+
    (That's 'ffs', only from the left, not the right..)
 */
 
@@ -89,7 +89,7 @@ int16_t gsm0610_norm(int32_t x)
 
 /*
    (From p. 46, end of section 4.2.5)
-  
+
    NOTE: The following lines gives [sic] one correct implementation
          of the div(num, denum) arithmetic operation.  Compute div
          which is the integer division of num by denom: with
@@ -188,7 +188,7 @@ static void gsm0610_vec_vsraw(const int16_t *p, int n, int bits)
         " addq $2,%%rdx;\n"                        /* now edx = top-2 */
         " cmpq %%rdx,%%rsi;\n"
         " ja 2f;\n"
-        
+
         " movzwl (%%rsi),%%eax;\n"
         " movd %%eax,%%mm0;\n"
         " paddsw %%mm2,%%mm0;\n"
@@ -251,7 +251,7 @@ static void gsm0610_vec_vsraw(const int16_t *p, int n, int bits)
         " addl $2,%%edx;\n"                        /* now edx = top-2 */
         " cmpl %%edx,%%esi;\n"
         " ja 2f;\n"
-        
+
         " movzwl (%%esi),%%eax;\n"
         " movd %%eax,%%mm0;\n"
         " paddsw %%mm2,%%mm0;\n"
@@ -283,7 +283,7 @@ static void autocorrelation(int16_t amp[GSM0610_FRAME_LEN], int32_t L_ACF[9])
     int16_t *sp;
     int16_t sl;
 #endif
-    
+
     /* The goal is to compute the array L_ACF[k].  The signal s[i] must
        be scaled in order to avoid an overflow situation. */
 
@@ -411,7 +411,7 @@ static void autocorrelation(int16_t amp[GSM0610_FRAME_LEN], int32_t L_ACF[9])
     /* Rescaling of the array s[0..159] */
     if (scalauto > 0)
     {
-        assert(scalauto <= 4); 
+        assert(scalauto <= 4);
         for (k = 0;  k < GSM0610_FRAME_LEN;  k++)
             amp[k] <<= scalauto;
         /*endfor*/
@@ -480,7 +480,7 @@ static void reflection_coefficients(int32_t L_ACF[9], int16_t r[8])
         /*endif*/
         assert(*r != INT16_MIN);
         if (n == 8)
-            return; 
+            return;
         /*endif*/
 
         /* Schur recursion */
@@ -508,7 +508,7 @@ static void transform_to_log_area_ratios(int16_t r[8])
     int i;
 
     /* The following scaling for r[..] and LAR[..] has been used:
-      
+
        r[..]   = integer (real_r[..]*32768.); -1 <= real_r < 1.
        LAR[..] = integer (real_LAR[..] * 16384);
        with -1.625 <= real_LAR <= 1.625
@@ -551,7 +551,7 @@ static void quantization_and_coding(int16_t LAR[8])
 
     /* This procedure needs four tables; the following equations
        give the optimum scaling for the constants:
-        
+
        A[0..7] = integer(real_A[0..7] * 1024)
        B[0..7] = integer(real_B[0..7] *  512)
        MAC[0..7] = maximum of the LARc[0..7]

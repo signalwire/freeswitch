@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
+
 #if !defined(_SPANDSP_PRIVATE_V8_H_)
 #define _SPANDSP_PRIVATE_V8_H_
 
@@ -62,7 +62,7 @@ struct v8_state_s
     int preamble_type;
     uint8_t rx_data[64];
     int rx_data_ptr;
-    
+
     /*! \brief a reference copy of the last CM or JM message, used when
                testing for matches. */
     uint8_t cm_jm_data[64];

@@ -151,7 +151,7 @@ c)  On detection of scrambled binary 1 in the high channel at 1200 bit/s for 270
 
 d)  765 +-10 ms after circuit 109 has been turned ON, circuit 106 shall be conditioned to respond
     to circuit 105 and the modem shall be ready to transmit data at 1200 bit/s.
- 
+
 6.3.1.2.2   Answering modem
 
 a)  On connection to line the answering modem shall be conditioned to transmit signals in the high
@@ -289,7 +289,7 @@ static __inline__ int scramble(v22bis_state_t *s, int bit)
     }
     out_bit = (bit ^ (s->tx.scramble_reg >> 13) ^ (s->tx.scramble_reg >> 16)) & 1;
     s->tx.scramble_reg = (s->tx.scramble_reg << 1) | out_bit;
-    
+
     if (out_bit == 1)
         s->tx.scrambler_pattern_count++;
     else

@@ -695,7 +695,7 @@ static uint8_t g726_16_encoder(g726_state_t *s, int16_t amp)
     int16_t dqsez;
     int16_t dq;
     int16_t i;
-    
+
     sezi = predictor_zero(s);
     sei = sezi + predictor_pole(s);
     se = sei >> 1;
@@ -711,7 +711,7 @@ static uint8_t g726_16_encoder(g726_state_t *s, int16_t amp)
 
     /* Pole prediction difference */
     dqsez = sr + (sezi >> 1) - se;
-    
+
     update(s, y, g726_16_witab[i], g726_16_fitab[i], dq, sr, dqsez);
     return (uint8_t) i;
 }
@@ -773,7 +773,7 @@ static uint8_t g726_24_encoder(g726_state_t *s, int16_t amp)
     int16_t dq;
     int16_t i;
     int y;
-    
+
     sezi = predictor_zero(s);
     sei = sezi + predictor_pole(s);
     se = sei >> 1;
@@ -789,7 +789,7 @@ static uint8_t g726_24_encoder(g726_state_t *s, int16_t amp)
 
     /* Pole prediction difference */
     dqsez = sr + (sezi >> 1) - se;
-    
+
     update(s, y, g726_24_witab[i], g726_24_fitab[i], dq, sr, dqsez);
     return (uint8_t) i;
 }
@@ -851,7 +851,7 @@ static uint8_t g726_32_encoder(g726_state_t *s, int16_t amp)
     int16_t dq;
     int16_t i;
     int y;
-    
+
     sezi = predictor_zero(s);
     sei = sezi + predictor_pole(s);
     se = sei >> 1;
@@ -930,7 +930,7 @@ static uint8_t g726_40_encoder(g726_state_t *s, int16_t amp)
     int16_t dq;
     int16_t i;
     int y;
-    
+
     sezi = predictor_zero(s);
     sei = sezi + predictor_pole(s);
     se = sei >> 1;
@@ -970,7 +970,7 @@ static int16_t g726_40_decoder(g726_state_t *s, uint8_t code)
     code &= 0x1F;
     sezi = predictor_zero(s);
     sei = sezi + predictor_pole(s);
-        
+
     y = step_size(s);
     dq = reconstruct(code & 0x10, g726_40_dqlntab[code], y);
 

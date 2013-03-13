@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
+
 /*! \file */
 
 #if !defined(_SPANDSP_PRIVATE_MODEM_CONNECT_TONES_H_)

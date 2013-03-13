@@ -78,7 +78,7 @@ static void remove_dc_bias(float speech[], int len, float sigout[])
 
 static void eval_amdf(float speech[],
                       int32_t lpita,
-                      const int32_t tau[], 
+                      const int32_t tau[],
                       int32_t ltau,
                       int32_t maxlag,
                       float amdf[],
@@ -111,7 +111,7 @@ static void eval_amdf(float speech[],
 
 static void eval_highres_amdf(float speech[],
                               int32_t lpita,
-                              const int32_t tau[], 
+                              const int32_t tau[],
                               int32_t ltau,
                               float amdf[],
                               int32_t *minptr,
@@ -547,11 +547,10 @@ void lpc10_analyse(lpc10_encode_state_t *s, float speech[], int32_t voice[], int
 {
     static const int32_t tau[60] =
     {
-        20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 
-        35, 36, 37, 38, 39, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58,
-        60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 84, 88, 92, 96,
-        100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
-        148, 152, 156
+         20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,
+         35,  36,  37,  38,  39,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,
+         60,  62,  64,  66,  68,  70,  72,  74,  76,  78,  80,  84,  88,  92,  96,
+        100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156
     };
     static const int32_t buflim[4] =
     {

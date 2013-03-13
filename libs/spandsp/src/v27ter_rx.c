@@ -135,7 +135,7 @@ SPAN_DECLARE(float) v27ter_rx_carrier_frequency(v27ter_rx_state_t *s)
 SPAN_DECLARE(float) v27ter_rx_symbol_timing_correction(v27ter_rx_state_t *s)
 {
     int steps_per_symbol;
-    
+
     steps_per_symbol = (s->bit_rate == 4800)  ?  RX_PULSESHAPER_4800_COEFF_SETS*5  :  RX_PULSESHAPER_2400_COEFF_SETS*20/3;
     return (float) s->total_baud_timing_correction/(float) steps_per_symbol;
 }
@@ -538,7 +538,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
     s->eq_buf[s->eq_step] = *sample;
     if (++s->eq_step >= V27TER_EQUALIZER_LEN)
         s->eq_step = 0;
-        
+
     /* On alternate insertions we have a whole baud, and must process it. */
     if ((s->baud_half ^= 1))
         return;
@@ -773,7 +773,7 @@ static __inline__ int signal_detect(v27ter_rx_state_t *s, int16_t amp)
         }
     }
     else
-    { 
+    {
         s->low_samples = 0;
         if (diff > s->high_sample)
             s->high_sample = diff;

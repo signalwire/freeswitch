@@ -780,7 +780,7 @@ static void g1050_core_init(g1050_core_state_t *s, g1050_core_model_t *parms, in
     /* How far into the first CLEAN interval we are. This is like the route flap initialzation. */
     s->link_failure_counter = s->link_failure_interval_ticks - 99 - floor(s->link_failure_interval_ticks*q1050_rand());
     s->link_recovery_counter = s->link_failure_duration_ticks;
-    
+
     s->base_delay = parms->base_regional_delay;
     s->max_jitter = parms->max_jitter;
     s->prob_packet_loss = parms->prob_packet_loss/100.0;
@@ -1053,7 +1053,7 @@ static int g1050_core_delay(g1050_core_state_t *s,
 static void g1050_simulate_chunk(g1050_state_t *s)
 {
     int i;
-    
+
     s->base_time += 1.0;
 
     memcpy(&s->segment[0].delays[0], &s->segment[0].delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->segment[0].delays[0]));
@@ -1116,7 +1116,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
     mo = &g1050_standard_models[model];
 
     memset(s, 0, sizeof(*s));
-    
+
     s->packet_rate = packet_rate;
     s->packet_size = packet_size;
 
@@ -1190,7 +1190,7 @@ SPAN_DECLARE(void) g1050_dump_parms(int model, int speed_pattern)
 {
     g1050_channel_speeds_t *sp;
     g1050_model_t *mo;
-    
+
     sp = &g1050_speed_patterns[speed_pattern - 1];
     mo = &g1050_standard_models[model];
 
@@ -1245,8 +1245,8 @@ SPAN_DECLARE(int) g1050_put(g1050_state_t *s, const uint8_t buf[], int len, int 
         }
         if (e)
         {
-            element->next = e->next; 
-            element->prev = e; 
+            element->next = e->next;
+            element->prev = e;
             e->next = element;
         }
         else

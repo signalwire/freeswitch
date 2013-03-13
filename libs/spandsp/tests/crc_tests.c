@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     printf("CRC module tests\n");
 
     /* TODO: This doesn't check every function in the module */
-    
+
     /* Try a few random messages through the CRC logic. */
     printf("Testing the CRC-16 routines\n");
     for (i = 0;  i < 100;  i++)
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
         }
     }
     printf("Test passed.\n\n");
-    
+
     printf("Testing the CRC-16 byte by byte and bit by bit routines\n");
     for (i = 0;  i < 100;  i++)
     {
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         }
     }
     printf("Test passed.\n\n");
-    
+
     printf("Testing the CRC-32 routines\n");
     for (i = 0;  i < 100;  i++)
     {

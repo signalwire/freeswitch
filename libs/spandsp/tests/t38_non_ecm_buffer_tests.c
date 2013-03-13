@@ -645,7 +645,7 @@ int main(int argc, char *argv[])
         }
     }
     printf("    Initial ones from an empty TCF buffer OK\n");
-    
+
     /* Now send some initial ones, and see that we continue to get all ones
        as the stuffing. */
     memset(buf, 0xFF, 500);

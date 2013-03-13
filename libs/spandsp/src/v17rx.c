@@ -1228,7 +1228,7 @@ static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
         }
     }
     else
-    { 
+    {
         s->low_samples = 0;
         if (diff > s->high_sample)
             s->high_sample = diff;
@@ -1560,7 +1560,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
     s->baud_phase = 0.0f;
 #endif
     s->baud_half = 0;
-    
+
     s->total_baud_timing_correction = 0;
 
     return 0;

@@ -31,7 +31,7 @@
 /*! \page mfc_r2_tone_generation_page MFC/R2 tone generation
 \section mfc_r2_tone_generation_page_sec_1 What does it do?
 The MFC/R2 tone generation module provides for the generation of the
-repertoire of 15 dual tones needs for the digital MFC/R2 signalling protocol. 
+repertoire of 15 dual tones needs for the digital MFC/R2 signalling protocol.
 
 \section mfc_r2_tone_generation_page_sec_2 How does it work?
 */
@@ -39,7 +39,7 @@ repertoire of 15 dual tones needs for the digital MFC/R2 signalling protocol.
 /*! \page bell_mf_tone_generation_page Bell MF tone generation
 \section bell_mf_tone_generation_page_sec_1 What does it do?
 The Bell MF tone generation module provides for the generation of the
-repertoire of 15 dual tones needs for various Bell MF signalling protocols. 
+repertoire of 15 dual tones needs for various Bell MF signalling protocols.
 
 \section bell_mf_tone_generation_page_sec_2 How does it work?
 Basic Bell MF tone generation specs:
@@ -53,7 +53,7 @@ Basic Bell MF tone generation specs:
 
 \section mfc_r2_tone_rx_page_sec_1 What does it do?
 The MFC/R2 tone receiver module provides for the detection of the
-repertoire of 15 dual tones needs for the digital MFC/R2 signalling protocol. 
+repertoire of 15 dual tones needs for the digital MFC/R2 signalling protocol.
 It is compliant with ITU-T Q.441D.
 
 \section mfc_r2_tone_rx_page_sec_2 How does it work?
@@ -79,7 +79,7 @@ Basic MFC/R2 tone detection specs:
 
 \section bell_mf_tone_rx_page_sec_1 What does it do?
 The Bell MF tone receiver module provides for the detection of the
-repertoire of 15 dual tones needs for various Bell MF signalling protocols. 
+repertoire of 15 dual tones needs for various Bell MF signalling protocols.
 It is compliant with ITU-T Q.320, ITU-T Q.322, ITU-T Q.323B.
 
 \section bell_mf_tone_rx_page_sec_2 How does it work?
@@ -132,7 +132,7 @@ extern "C"
     \param s The Bell MF generator context.
     \param amp The buffer for the generated signal.
     \param max_samples The required number of generated samples.
-    \return The number of samples actually generated. This may be less than 
+    \return The number of samples actually generated. This may be less than
             max_samples if the input buffer empties. */
 SPAN_DECLARE(int) bell_mf_tx(bell_mf_tx_state_t *s, int16_t amp[], int max_samples);
 

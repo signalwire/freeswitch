@@ -53,18 +53,18 @@
 
 /*
     4.2.0 .. 4.2.3  PREPROCESSING SECTION
-    
+
     After A-law to linear conversion (or directly from the
     A to D converter) the following scaling is assumed for
     input to the RPE-LTP algorithm:
-  
+
     in:  0.1.....................12
          S.v.v.v.v.v.v.v.v.v.v.v.v.*.*.*
-  
+
     Where S is the sign bit, v a valid bit, and * a "don't care" bit.
     The original signal is called sop[..]
-  
-    out:   0.1................... 12 
+
+    out:   0.1................... 12
          S.S.v.v.v.v.v.v.v.v.v.v.v.v.0.0
 */
 

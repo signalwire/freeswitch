@@ -1111,7 +1111,7 @@ static int send_csa_frame(t30_state_t *s)
 static int send_pps_frame(t30_state_t *s)
 {
     uint8_t frame[7];
-    
+
     frame[0] = ADDRESS_FIELD;
     frame[1] = CONTROL_FIELD_FINAL_FRAME;
     frame[2] = (uint8_t) (T30_PPS | s->dis_received);
@@ -1238,7 +1238,7 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE);
     if ((s->supported_resolutions & (T30_SUPPORT_400_400_RESOLUTION | T30_SUPPORT_R16_RESOLUTION)))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE);
-    /* Metric */ 
+    /* Metric */
     set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED);
     /* Superfine minimum scan line time pattern follows fine */
     if ((s->supported_t30_features & T30_SUPPORT_SELECTIVE_POLLING))
@@ -2510,7 +2510,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     }
     /* Start document reception */
     span_log(&s->logging,
-             SPAN_LOG_FLOW, 
+             SPAN_LOG_FLOW,
              "Get document at %dbps, modem %d\n",
              fallback_sequence[s->current_fallback].bit_rate,
              fallback_sequence[s->current_fallback].modem_type);
@@ -2692,7 +2692,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
                         s->ecm_len[frame_no] = -1;
                     }
                 }
-            }            
+            }
             if (s->ecm_len[frame_no] < 0)
             {
                 s->ecm_frame_map[i + 3] |= (1 << j);
@@ -2794,7 +2794,7 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
         span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for PPR bits - %d\n", (len - 3)*8);
         /* This frame didn't get corrupted in transit, because its CRC is OK. It was sent bad
            and there is little possibility that causing a retransmission will help. It is best
-           to just give up. */ 
+           to just give up. */
         t30_set_status(s, T30_ERR_TX_ECMPHD);
         disconnect(s);
         return;
@@ -3509,7 +3509,7 @@ static void process_state_f_doc_and_post_doc_ecm(t30_state_t *s, const uint8_t *
 {
     uint8_t fcf;
     uint8_t fcf2;
-    
+
     /* This actually handles 2 states - _DOC_ECM and _POST_DOC_ECM - as they are very similar */
     fcf = msg[2] & 0xFE;
     switch (fcf)
@@ -5150,7 +5150,7 @@ static void timer_t4b_start(t30_state_t *s)
 static void timer_t2_t4_stop(t30_state_t *s)
 {
     const char *tag;
-    
+
     switch (s->timer_t2_t4_is)
     {
     case TIMER_IS_IDLE:
@@ -5433,7 +5433,7 @@ static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int le
 static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt, int len)
 {
     uint8_t *t;
-    
+
     if ((t = malloc(len - 1)) == NULL)
         return 0;
     memcpy(t, pkt + 1, len - 1);
@@ -5889,7 +5889,7 @@ SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, i
 SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
 {
     t30_state_t *s;
-    
+
     s = (t30_state_t *) user_data;
 
     switch (status)

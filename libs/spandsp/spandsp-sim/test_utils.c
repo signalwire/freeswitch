@@ -272,7 +272,7 @@ SPAN_DECLARE(void) ifft(complex_t data[], int len)
 SPAN_DECLARE(codec_munge_state_t *) codec_munge_init(int codec, int info)
 {
     codec_munge_state_t *s;
-    
+
     if ((s = (codec_munge_state_t *) malloc(sizeof(*s))))
     {
         switch (codec)
@@ -362,7 +362,7 @@ SPAN_DECLARE(void) codec_munge(codec_munge_state_t *s, int16_t amp[], int len)
 static void sf_close_at_exit(void)
 {
     int i;
-    
+
     for (i = 0;  i < SF_MAX_HANDLE;  i++)
     {
         if (sf_close_at_exit_list[i])
@@ -377,7 +377,7 @@ static void sf_close_at_exit(void)
 static int sf_record_handle(SNDFILE *handle)
 {
     int i;
-    
+
     for (i = 0;  i < SF_MAX_HANDLE;  i++)
     {
         if (sf_close_at_exit_list[i] == NULL)
@@ -448,7 +448,7 @@ SPAN_DECLARE(int) sf_close_telephony(SNDFILE *handle)
 {
     int res;
     int i;
-    
+
     if ((res = sf_close(handle)) == 0)
     {
         for (i = 0;  i < SF_MAX_HANDLE;  i++)

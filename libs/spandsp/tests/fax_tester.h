@@ -106,7 +106,7 @@ struct faxtester_state_s
     int current_tx_type;
 
     int wait_for_silence;
-    
+
     int tone_state;
     int64_t tone_on_time;
 

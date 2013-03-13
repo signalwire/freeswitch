@@ -64,11 +64,11 @@ int main(int argc, char *argv[])
 
         /* sRGB to Linear RGB */
         r = (r > 0.04045f)  ?  powf((r + 0.055f)/1.055f, 2.4f)  :  r/12.92f;
-        
+
         printf((i < 255)  ?  "    %f,\n"  :  "    %f\n", r);
     }
     printf("};\n");
-    
+
     printf("static const uint8_t linear_to_srgb[4096] =\n");
     printf("{\n");
     for (i = 0;  i < 4096;  i++)

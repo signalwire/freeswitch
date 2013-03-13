@@ -259,7 +259,7 @@ static int extra_bits_in_stuffed_frame(const uint8_t buf[], int len)
     int stuffed;
     int i;
     int j;
-    
+
     bitstream = 0;
     ones = 0;
     stuffed = 0;
@@ -307,7 +307,7 @@ static int extra_bits_in_stuffed_frame(const uint8_t buf[], int len)
 static int process_rx_missing(t38_core_state_t *t, void *user_data, int rx_seq_no, int expected_seq_no)
 {
     t31_state_t *s;
-    
+
     s = (t31_state_t *) user_data;
     s->t38_fe.rx_data_missing = TRUE;
     return 0;
@@ -649,7 +649,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             /* WORKAROUND: At least some Mediatrix boxes have a bug, where they can send this message at the
                            end of non-ECM data. We need to tolerate this. We use the generic receive complete
                            indication, rather than the specific HDLC carrier down. */
-            /* This message is expected under 2 circumstances. One is as an alternative to T38_FIELD_HDLC_FCS_OK_SIG_END - 
+            /* This message is expected under 2 circumstances. One is as an alternative to T38_FIELD_HDLC_FCS_OK_SIG_END -
                i.e. they send T38_FIELD_HDLC_FCS_OK, and then T38_FIELD_HDLC_SIG_END when the carrier actually drops.
                The other is because the HDLC signal drops unexpectedly - i.e. not just after a final frame. */
             fe->hdlc_rx.len = 0;
@@ -1354,7 +1354,7 @@ SPAN_DECLARE(int) t31_t38_send_timeout(t31_state_t *s, int samples)
 static int t31_modem_control_handler(at_state_t *s, void *user_data, int op, const char *num)
 {
     t31_state_t *t;
-    
+
     t = (t31_state_t *) user_data;
     switch (op)
     {
@@ -2800,7 +2800,7 @@ SPAN_DECLARE_NONSTD(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
             s->audio.silence_heard = 0;
         }
         else
-        {        
+        {
             if (s->audio.silence_heard <= ms_to_samples(255*10))
                 s->audio.silence_heard++;
             /*endif*/
@@ -2893,7 +2893,7 @@ SPAN_DECLARE_NONSTD(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
     {
         /* Pad to the requested length with silence */
         memset(amp + len, 0, (max_len - len)*sizeof(int16_t));
-        len = max_len;        
+        len = max_len;
     }
     /*endif*/
     return len;
@@ -2970,7 +2970,7 @@ static int t31_t38_fe_init(t31_state_t *t,
                            void *tx_packet_user_data)
 {
     t31_t38_front_end_state_t *s;
-    
+
     s = &t->t38_fe;
 
     t38_core_init(&s->t38,

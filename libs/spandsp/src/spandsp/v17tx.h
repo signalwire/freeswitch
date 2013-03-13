@@ -34,7 +34,7 @@ The V.17 transmitter implements the transmit side of a V.17 modem. This can
 operate at data rates of 14400, 12000, 9600 and 7200 bits/second. The audio
 output is a stream of 16 bit samples, at 8000 samples/second. The transmit and
 receive side of V.17 modems operate independantly. V.17 is mostly used for FAX
-transmission, where it provides the standard 14400 bits/second rate. 
+transmission, where it provides the standard 14400 bits/second rate.
 
 \section v17tx_page_sec_2 How does it work?
 V.17 uses QAM modulation and trellis coding. The data to be transmitted is
@@ -53,7 +53,7 @@ The standard method of producing a QAM modulated signal is to use a sampling
 rate which is a multiple of the baud rate. The raw signal is then a series of
 complex pulses, each an integer number of samples long. These can be shaped,
 using a suitable complex filter, and multiplied by a complex carrier signal
-to produce the final QAM signal for transmission. 
+to produce the final QAM signal for transmission.
 
 The pulse shaping filter is only vaguely defined by the V.17 spec. Some of the
 other ITU modem specs. fully define the filter, typically specifying a root
@@ -76,7 +76,7 @@ The carrier is generated using the DDS method. Using two second order resonators
 started in quadrature, might be more efficient, as it would have less impact on
 the processor cache than a table lookup approach. However, the DDS approach
 suits the receiver better, so the same signal generator is also used for the
-transmitter. 
+transmitter.
 */
 
 /*!

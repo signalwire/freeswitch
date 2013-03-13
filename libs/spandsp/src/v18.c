@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
+
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
@@ -72,7 +72,7 @@
 /*
     Ways in which a V.18 call may start
     -----------------------------------
-    
+
     Originate:
         ANS
             Silence for 0.5s then send TXP
@@ -643,7 +643,7 @@ static int v18_tdd_get_async_byte(void *user_data)
 {
     v18_state_t *s;
     int ch;
-    
+
     s = (v18_state_t *) user_data;
     if ((ch = queue_read_byte(&s->queue.queue)) >= 0)
         return ch;
@@ -666,7 +666,7 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
 {
     v18_state_t *s;
     uint8_t octet;
-    
+
     s = (v18_state_t *) user_data;
     if (byte < 0)
     {

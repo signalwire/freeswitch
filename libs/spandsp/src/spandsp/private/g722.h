@@ -98,7 +98,7 @@ struct g722_decode_state_s
     int ptr;
 
     g722_band_t band[2];
-    
+
     uint32_t in_buffer;
     int in_bits;
     uint32_t out_buffer;

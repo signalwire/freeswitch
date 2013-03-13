@@ -44,7 +44,7 @@ struct lpc10_encode_state_s
     float z12;
     /*! \brief ??? */
     float z22;
-    
+
     /* State used by function lpc10_analyse */
     /*! \brief ??? */
     float inbuf[LPC10_SAMPLES_PER_FRAME*3];

@@ -65,7 +65,7 @@ static playout_frame_t *queue_get(playout_state_t *s, timestamp_t sender_stamp)
             s->last_frame = NULL;
         }
         return frame;
-    } 
+    }
 
     return NULL;
 }
@@ -86,7 +86,7 @@ SPAN_DECLARE(timestamp_t) playout_current_length(playout_state_t *s)
 SPAN_DECLARE(playout_frame_t *) playout_get_unconditional(playout_state_t *s)
 {
     playout_frame_t *frame;
-    
+
     if ((frame = queue_get(s, 0x7FFFFFFF)))
     {
         /* Put it on the free list */
@@ -127,7 +127,7 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
         s->state_late += ((((frame->receiver_stamp > s->latest_expected)  ?  0x10000000  :  0) - s->state_late) >> 8);
         s->state_just_in_time += ((((frame->receiver_stamp > s->latest_expected - frame->sender_len)  ?  0x10000000  :  0) - s->state_just_in_time) >> 8);
         s->latest_expected += frame->sender_len;
-        
+
         if (s->state_late > s->dropable_threshold)
         {
             if (s->since_last_step < 10)
@@ -169,7 +169,7 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
                 s->state_just_in_time = s->dropable_threshold;
                 s->state_late = 0;
                 s->since_last_step = 0;
-    
+
                 s->last_speech_sender_stamp += s->last_speech_sender_len;
             }
         }
@@ -181,12 +181,12 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
     {
         /* Rewind last_speech_sender_stamp, since this isn't speech */
         s->last_speech_sender_stamp -= s->last_speech_sender_len;
-            
+
         *frameout = *frame;
         /* Put it on the free list */
         frame->later = s->free_frames;
         s->free_frames = frame;
-        
+
         s->frames_out++;
         return PLAYOUT_OK;
     }
@@ -271,7 +271,7 @@ SPAN_DECLARE(int) playout_put(playout_state_t *s, void *data, int type, timestam
 
         /* Find where it should go in the queue */
         p = s->last_frame;
-        while (sender_stamp < p->sender_stamp  &&  p->earlier) 
+        while (sender_stamp < p->sender_stamp  &&  p->earlier)
             p = p->earlier;
 
         if (p->earlier)
@@ -323,7 +323,7 @@ SPAN_DECLARE(void) playout_restart(playout_state_t *s, int min_length, int max_l
     s->start = TRUE;
     s->since_last_step = 0x7FFFFFFF;
     /* Start with the minimum buffer length allowed, and work from there */
-    s->actual_buffer_length = 
+    s->actual_buffer_length =
     s->target_buffer_length = (s->max_length - s->min_length)/2;
 }
 /*- End of function --------------------------------------------------------*/
@@ -344,7 +344,7 @@ SPAN_DECLARE(int) playout_release(playout_state_t *s)
 {
     playout_frame_t *frame;
     playout_frame_t *next;
-    
+
     /* Free all the frames in the queue. In most cases these should have been
        removed already, so their associated data could be freed. */
     for (frame = s->first_frame;  frame;  frame = next)
@@ -367,7 +367,7 @@ SPAN_DECLARE(int) playout_free(playout_state_t *s)
     if (s)
     {
         playout_release(s);
-        /* Finally, free ourselves! */ 
+        /* Finally, free ourselves! */
         free(s);
     }
     return 0;

@@ -99,7 +99,7 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
     int i;
     int status;
     const char *u;
-    
+
     i = (intptr_t) user_data;
     status = T30_ERR_OK;
     if ((u = t30_get_rx_ident(s)))
@@ -256,10 +256,10 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
     char tag[20];
-    
+
     i = (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase E", i);
-    printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));    
+    printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));
     fax_log_final_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
@@ -289,7 +289,7 @@ static void t30_real_time_frame_handler(t30_state_t *s,
 static int document_handler(t30_state_t *s, void *user_data, int event)
 {
     int i;
-    
+
     i = (intptr_t) user_data;
     fprintf(stderr, "%d: Document handler on channel %d - event %d\n", i, i, event);
     if (next_tx_file[0])
@@ -498,7 +498,7 @@ static int string_to_msg(uint8_t msg[], uint8_t mask[], const char buf[])
 static void string_test2(const uint8_t msg[], int len)
 {
     int i;
-    
+
     if (len > 0)
     {
         for (i = 0;  i < len - 1;  i++)
@@ -514,7 +514,7 @@ static void string_test3(const char buf[])
     uint8_t mask[1000];
     int len;
     int i;
-    
+
     len = string_to_msg(msg, mask, buf);
     printf("Len = %d: ", len);
     string_test2(msg, abs(len));
@@ -671,7 +671,7 @@ static int next_step(faxtester_state_t *s)
     s->cur = s->cur->next;
 
     span_log(&s->logging,
-             SPAN_LOG_FLOW, 
+             SPAN_LOG_FLOW,
              "Dir - %s, type - %s, modem - %s, value - %s, timeout - %s, tag - %s\n",
              (dir)  ?  (const char *) dir  :  "",
              (type)  ?  (const char *) type  :  "",
@@ -1111,7 +1111,7 @@ static void exchange(faxtester_state_t *s)
         span_log_bump_samples(logging, len);
 
         span_log_bump_samples(&s->logging, len);
-                
+
         len = faxtester_tx(s, amp, SAMPLES_PER_CHUNK);
         if (fax_rx(fax, amp, len))
             break;
@@ -1207,7 +1207,7 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     xmlNodePtr cur;
     xmlValidCtxt valid;
 
-    ns = NULL;    
+    ns = NULL;
     xmlKeepBlanksDefault(0);
     xmlCleanupParser();
     if ((doc = xmlParseFile(test_file)) == NULL)

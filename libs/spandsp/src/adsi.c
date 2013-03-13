@@ -88,7 +88,7 @@ static int adsi_tx_get_bit(void *user_data)
 {
     int bit;
     adsi_tx_state_t *s;
-    
+
     s = (adsi_tx_state_t *) user_data;
     /* This is similar to the async. handling code in fsk.c, but a few special
        things are needed in the preamble, and postamble of an ADSI message. */
@@ -162,7 +162,7 @@ static int adsi_tx_get_bit(void *user_data)
 static int adsi_tdd_get_async_byte(void *user_data)
 {
     adsi_tx_state_t *s;
-    
+
     s = (adsi_tx_state_t *) user_data;
     if (s->byte_no < s->msg_len)
         return s->msg[s->byte_no++];
@@ -241,7 +241,7 @@ static void adsi_rx_put_bit(void *user_data, int bit)
                 {
                     if (s->msg_len == 0)
                     {
-                        /* A message should start DLE SOH, but let's just check 
+                        /* A message should start DLE SOH, but let's just check
                            we are starting with a DLE for now */
                         if (s->in_progress == (0x80 | DLE))
                             s->msg[s->msg_len++] = (uint8_t) s->in_progress;
@@ -302,7 +302,7 @@ static void adsi_tdd_put_async_byte(void *user_data, int byte)
 {
     adsi_rx_state_t *s;
     uint8_t octet;
-    
+
     s = (adsi_rx_state_t *) user_data;
     //printf("Rx bit %x\n", bit);
     if (byte < 0)
@@ -604,7 +604,7 @@ SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, in
         i += len - 2;
         s->msg[i++] = DLE;
         s->msg[i++] = ETX;
-        
+
         /* Set the parity bits */
         for (j = 0;  j < i;  j++)
         {
@@ -639,7 +639,7 @@ SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, in
         s->msg[len] = (uint8_t) ((-sum) & 0xFF);
         s->msg_len = len + 1;
         break;
-    }    
+    }
     /* Prepare the bit sequencing */
     s->byte_no = 0;
     s->bit_pos = 0;

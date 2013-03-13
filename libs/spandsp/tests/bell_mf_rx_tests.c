@@ -168,7 +168,7 @@ static void codec_munge(int16_t amp[], int len)
 {
     int i;
     uint8_t alaw;
-    
+
     for (i = 0;  i < len;  i++)
     {
         alaw = linear_to_alaw (amp[i]);
@@ -288,11 +288,11 @@ int main(int argc, char *argv[])
             RRB% = (N+ + N-)/10
        Receiver Center Frequency Offset (RCFO) is calculated as follows:
             RCFO% = X + (N+ - N-)/20
-            
+
        Note that this test doesn't test what it says it is testing at all,
        and the results are quite inaccurate, if not a downright lie! However,
        it follows the Mitel procedure, so how can it be bad? :)
-       
+
        The spec calls for +-1.5% +-10Hz of bandwidth.
     */
     printf ("Test 3: Recognition bandwidth and channel centre frequency check\n");
@@ -411,11 +411,11 @@ int main(int argc, char *argv[])
     printf("    Passed\n");
 
     /* Test 5: Dynamic range
-       This test sends all possible digits, with gradually increasing 
+       This test sends all possible digits, with gradually increasing
        amplitude. We determine the span over which we achieve reliable
        detection. The spec says we should detect between -14dBm and 0dBm,
        but the tones clip above -3dBm, so this cannot really work. */
-       
+
     printf("Test 5: Dynamic range\n");
     for (nplus = nminus = -1000, i = -50;  i <= 3;  i++)
     {
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
     printf("    Passed\n");
 
     /* Test 6: Guard time
-       This test sends all possible digits, with a gradually reducing 
+       This test sends all possible digits, with a gradually reducing
        duration. The spec defines a narrow range of tone duration
        times we can expect, so as long as we detect reliably at the
        specified minimum we should be OK. However, the spec also says

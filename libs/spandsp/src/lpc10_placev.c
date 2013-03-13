@@ -56,7 +56,7 @@ void lpc10_placea(int32_t *ipitch,
                   int32_t af,
                   int32_t vwin[3][2],
                   int32_t awin[3][2],
-                  int32_t ewin[3][2], 
+                  int32_t ewin[3][2],
                   int32_t lframe,
                   int32_t maxwin)
 {
@@ -69,7 +69,7 @@ void lpc10_placea(int32_t *ipitch,
     int32_t hrange;
     int ephase;
     int32_t lrange;
-    
+
     lrange = (af - 2)*lframe + 1;
     hrange = af*lframe;
 
@@ -181,7 +181,7 @@ void lpc10_placea(int32_t *ipitch,
 
 void lpc10_placev(int32_t *osbuf,
                   int32_t *osptr,
-                  int32_t oslen, 
+                  int32_t oslen,
                   int32_t *obound,
                   int32_t vwin[3][2],
                   int32_t af,

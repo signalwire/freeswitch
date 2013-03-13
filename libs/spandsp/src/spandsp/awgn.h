@@ -29,14 +29,14 @@
    paper somewhere. I can't track down where I got the original from,
    so that due recognition can be given. The original had no explicit
    copyright notice, and I hope nobody objects to its use here.
-   
+
    Having a reasonable Gaussian noise generator is pretty important for
    telephony testing (in fact, pretty much any DSP testing), and this
    one seems to have served me OK. Since the generation of Gaussian
    noise is only for test purposes, and not a core system component,
    I don't intend to worry excessively about copyright issues, unless
    someone worries me.
-        
+
    The non-core nature of this code also explains why it is unlikely
    to ever be optimised. */
 
@@ -47,20 +47,20 @@
 
 \section awgn_page_sec_1 What does it do?
 Adding noise is not the most useful thing in most DSP applications, but it is
-awfully useful for test suites. 
+awfully useful for test suites.
 
 \section awgn_page_sec_2 How does it work?
 
 This code is based on some demonstration code in a research paper somewhere. I
 can't track down where I got the original from, so that due recognition can be
 given. The original had no explicit copyright notice, and I hope nobody objects
-to its use here. 
+to its use here.
 
 Having a reasonable Gaussian noise generator is pretty important for telephony
 testing (in fact, pretty much any DSP testing), and this one seems to have
 served me OK. Since the generation of Gaussian noise is only for test purposes,
 and not a core system component, I don't intend to worry excessively about
-copyright issues, unless someone worries me. 
+copyright issues, unless someone worries me.
 
 The non-core nature of this code also explains why it is unlikely to ever be
 optimised.
