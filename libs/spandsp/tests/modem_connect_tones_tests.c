@@ -130,7 +130,7 @@ static int preamble_get_bit(void *user_data)
 {
     static int bit_no = 0;
     int bit;
-    
+
     /* Generate a section of HDLC flag octet preamble. Then generate some random
        bits, which should not look like preamble. */
     if (++preamble_count < 255)

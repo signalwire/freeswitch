@@ -210,7 +210,7 @@ static void set_pixel_range(uint8_t buf[], int row, int start, int end)
 static void clear_pixel_range(uint8_t buf[], int row, int start, int end)
 {
     int i;
-    
+
     for (i = start;  i <= end;  i++)
         clear_pixel(buf, row, i);
 }
@@ -602,11 +602,11 @@ int main(int argc, char *argv[])
         TIFFSetField(tiff_file, TIFFTAG_XRESOLUTION, floorf(x_resolution*2.54f + 0.5f));
         TIFFSetField(tiff_file, TIFFTAG_YRESOLUTION, floorf(y_resolution*2.54f + 0.5f));
         TIFFSetField(tiff_file, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
-    
+
         TIFFSetField(tiff_file, TIFFTAG_SOFTWARE, "spandsp");
         if (gethostname(buf, sizeof(buf)) == 0)
             TIFFSetField(tiff_file, TIFFTAG_HOSTCOMPUTER, buf);
-    
+
         TIFFSetField(tiff_file, TIFFTAG_IMAGEDESCRIPTION, "Blank test image");
         TIFFSetField(tiff_file, TIFFTAG_MAKE, "soft-switch.org");
         TIFFSetField(tiff_file, TIFFTAG_MODEL, "test data");

@@ -42,7 +42,7 @@ extern "C" {
 SPAN_DECLARE(int) t4_t6_encode_image_complete(t4_t6_encode_state_t *s);
 
 /*! \brief Get the next bit of the current image. The image will
-           be padded for the current minimum scan line time. 
+           be padded for the current minimum scan line time.
     \param s The T.4/T.6 context.
     \return The next bit (i.e. 0 or 1). SIG_STATUS_END_OF_DATA for no more data. */
 SPAN_DECLARE(int) t4_t6_encode_get_bit(t4_t6_encode_state_t *s);
@@ -52,7 +52,7 @@ SPAN_DECLARE(int) t4_t6_encode_get_bit(t4_t6_encode_state_t *s);
     \param s The T.4/T.6 context.
     \param buf The buffer into which the chunk is to written.
     \param max_len The maximum length of the chunk.
-    \return The actual length of the chunk. If this is less than max_len it 
+    \return The actual length of the chunk. If this is less than max_len it
             indicates that the end of the document has been reached. */
 SPAN_DECLARE(int) t4_t6_encode_get(t4_t6_encode_state_t *s, uint8_t buf[], int max_len);
 

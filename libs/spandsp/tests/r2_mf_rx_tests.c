@@ -149,7 +149,7 @@ static void my_mf_gen_init(float low_fudge,
 {
     const mf_digit_tones_t *tone;
     int i;
-    
+
     for (i = 0;  i < 15;  i++)
     {
         if (fwd)
@@ -190,7 +190,7 @@ static void codec_munge(int16_t amp[], int len)
 {
     int i;
     uint8_t alaw;
-    
+
     for (i = 0;  i < len;  i++)
     {
         alaw = linear_to_alaw (amp[i]);
@@ -245,15 +245,15 @@ static int test_a_tone_set(int fwd)
     /* Test 1: Mitel's test 1 isn't really a test. Its a calibration step,
        which has no meaning here. */
 
-    printf ("Test 1: Calibration\n");
-    printf ("    Passed\n");
+    printf("Test 1: Calibration\n");
+    printf("    Passed\n");
 
     /* Test 2: Decode check
        This is a sanity check, that all digits are reliably detected
        under ideal conditions.  Each possible digit is repeated 10 times,
        with 68ms bursts. The level of each tone is about 6dB down from clip */
 
-    printf ("Test 2: Decode check\n");
+    printf("Test 2: Decode check\n");
     my_mf_gen_init(0.0, -3, 0.0, -3, 68, fwd);
     s = r2_mf_tone_codes;
     while (*s)
@@ -267,14 +267,14 @@ static int test_a_tone_set(int fwd)
             actual = r2_mf_rx_get(mf_state);
             if (actual != digit)
             {
-                printf ("    Sent     '%c'\n", digit);
-                printf ("    Received 0x%X\n", actual);
-                printf ("    Failed\n");
-                exit (2);
+                printf("    Sent     '%c'\n", digit);
+                printf("    Received 0x%X\n", actual);
+                printf("    Failed\n");
+                exit(2);
             }
         }
     }
-    printf ("    Passed\n");
+    printf("    Passed\n");
 
     /* Test 3: Recognition bandwidth and channel centre frequency check.
        Use all digits. Each digit types requires four tests to complete
@@ -297,14 +297,14 @@ static int test_a_tone_set(int fwd)
             RRB% = (N+ + N-)/10
        Receiver Center Frequency Offset (RCFO) is calculated as follows:
             RCFO% = X + (N+ - N-)/20
-            
+
        Note that this test doesn't test what it says it is testing at all,
        and the results are quite inaccurate, if not a downright lie! However,
        it follows the Mitel procedure, so how can it be bad? :)
-       
+
        The spec calls for +-4 +-10Hz (ie +-14Hz) of bandwidth. */
 
-    printf ("Test 3: Recognition bandwidth and channel centre frequency check\n");
+    printf("Test 3: Recognition bandwidth and channel centre frequency check\n");
     s = r2_mf_tone_codes;
     j = 0;
     while (*s)
@@ -330,17 +330,17 @@ static int test_a_tone_set(int fwd)
         }
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
-        printf ("    %c (low)  rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
-                digit,
-                rrb,
-                rcfo,
-                (float) nminus/10.0,
-                (float) nplus/10.0);
+        printf("    %c (low)  rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
+               digit,
+               rrb,
+               rcfo,
+               (float) nminus/10.0,
+               (float) nplus/10.0);
 
         if (rrb < rcfo + (2.0*100.0*14.0/r2_mf_fwd_tones[j].f1)  ||  rrb >= 15.0 + rcfo)
         {
-            printf ("    Failed\n");
-            exit (2);
+            printf("    Failed\n");
+            exit(2);
         }
 
         for (nplus = 0, i = 1;  i <= 60;  i++)
@@ -363,27 +363,27 @@ static int test_a_tone_set(int fwd)
         }
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
-        printf ("    %c (high) rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
-                digit,
-                rrb,
-                rcfo,
-                (float) nminus/10.0,
-                (float) nplus/10.0);
+        printf("    %c (high) rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
+               digit,
+               rrb,
+               rcfo,
+               (float) nminus/10.0,
+               (float) nplus/10.0);
         if (rrb < rcfo + (2.0*100.0*14.0/r2_mf_fwd_tones[j].f2)  ||  rrb >= 15.0 + rcfo)
         {
-            printf ("    Failed\n");
-            exit (2);
+            printf("    Failed\n");
+            exit(2);
         }
         j++;
     }
-    printf ("    Passed\n");
+    printf("    Passed\n");
 
     /* Test 4: Acceptable amplitude ratio (twist).
        Twist all digits in both directions, and check the maximum twist
        we can accept. The way this is done is styled after the Mitel DTMF
        test, and has good and bad points. */
 
-    printf ("Test 4: Acceptable amplitude ratio (twist)\n");
+    printf("Test 4: Acceptable amplitude ratio (twist)\n");
     s = r2_mf_tone_codes;
     while (*s)
     {
@@ -398,11 +398,11 @@ static int test_a_tone_set(int fwd)
             if (r2_mf_rx_get(mf_state) == digit)
                 nplus++;
         }
-        printf ("    %c normal twist  = %.2fdB\n", digit, (float) nplus/10.0);
+        printf("    %c normal twist  = %.2fdB\n", digit, (float) nplus/10.0);
         if (nplus < 70)
         {
-            printf ("    Failed\n");
-            exit (2);
+            printf("    Failed\n");
+            exit(2);
         }
         for (nminus = 0, i = -50;  i >= -250;  i--)
         {
@@ -414,21 +414,21 @@ static int test_a_tone_set(int fwd)
             if (r2_mf_rx_get(mf_state) == digit)
                 nminus++;
         }
-        printf ("    %c reverse twist = %.2fdB\n", digit, (float) nminus/10.0);
+        printf("    %c reverse twist = %.2fdB\n", digit, (float) nminus/10.0);
         if (nminus < 70)
         {
-            printf ("    Failed\n");
-            exit (2);
+            printf("    Failed\n");
+            exit(2);
         }
     }
-    printf ("    Passed\n");
+    printf("    Passed\n");
 
     /* Test 5: Dynamic range
-       This test sends all possible digits, with gradually increasing 
+       This test sends all possible digits, with gradually increasing
        amplitude. We determine the span over which we achieve reliable
        detection. */
-       
-    printf ("Test 5: Dynamic range\n");
+
+    printf("Test 5: Dynamic range\n");
     for (nplus = nminus = -1000, i = -50;  i <= 3;  i++)
     {
         s = r2_mf_tone_codes;
@@ -458,19 +458,19 @@ static int test_a_tone_set(int fwd)
                 nminus = i;
         }
     }
-    printf ("    Dynamic range = %ddB to %ddB\n", nplus, nminus - 1);
+    printf("    Dynamic range = %ddB to %ddB\n", nplus, nminus - 1);
     if (nplus > -35  ||  nminus <= -5)
     {
         printf("    Failed\n");
         exit(2);
     }
-    printf ("    Passed\n");
+    printf("    Passed\n");
 
     /* Test 6: Guard time
-       This test sends all possible digits, with a gradually reducing 
+       This test sends all possible digits, with a gradually reducing
        duration. */
 
-    printf ("Test 6: Guard time\n");
+    printf("Test 6: Guard time\n");
     for (i = 30;  i < 62;  i++)
     {
         s = r2_mf_tone_codes;
@@ -493,19 +493,19 @@ static int test_a_tone_set(int fwd)
         if (j == 500)
             break;
     }
-    printf ("    Guard time = %dms\n", i);
+    printf("    Guard time = %dms\n", i);
     if (i > 61)
     {
         printf("    Failed\n");
         exit(2);
     }
-    printf ("    Passed\n");
+    printf("    Passed\n");
 
     /* Test 7: Acceptable signal to noise ratio
        We send all possible digits at -6dBm from clip, mixed with AWGN.
        We gradually reduce the noise until we get clean detection. */
 
-    printf ("Test 7: Acceptable signal to noise ratio\n");
+    printf("Test 7: Acceptable signal to noise ratio\n");
     my_mf_gen_init(0.0, -3, 0.0, -3, 68, fwd);
     for (i = -3;  i > -50;  i--)
     {
@@ -563,7 +563,7 @@ static int test_a_tone_set(int fwd)
     if (!callback_ok)
     {
         printf("    Failed\n");
-     	exit (2);
+        exit(2);
     }
     printf("    Passed\n");
 
@@ -571,7 +571,7 @@ static int test_a_tone_set(int fwd)
        meaningless for R2 MF. However the decoder's tolerance of
        out of band noise is significant. */
     /* TODO: add a OOB tolerance test. */
-    
+
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -587,7 +587,7 @@ int main(int argc, char *argv[])
     printf("R2 backward tones\n");
     test_a_tone_set(FALSE);
     duration = time(NULL) - now;
-    printf ("Tests passed in %lds\n", duration);
+    printf("Tests passed in %lds\n", duration);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

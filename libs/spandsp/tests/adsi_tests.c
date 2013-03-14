@@ -233,7 +233,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
     int field_len;
     int message_type;
     uint8_t body[256];
-    
+
     printf("Good message received (%d bytes)\n", len);
     good_message_received = TRUE;
     for (i = 0;  i < len;  i++)
@@ -784,7 +784,7 @@ int main(int argc, char *argv[])
         }
     }
     outhandle = NULL;
-    
+
     tdd_character_set_tests();
 
     if (decode_test_file)

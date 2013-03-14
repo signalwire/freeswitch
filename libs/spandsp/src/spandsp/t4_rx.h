@@ -261,7 +261,7 @@ typedef struct
     /*! \brief The size of the image on the line, in bytes */
     int line_image_size;
 } t4_stats_t;
-    
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -369,19 +369,19 @@ SPAN_DECLARE(void) t4_rx_set_vendor(t4_rx_state_t *s, const char *vendor);
     \param model The model string, or NULL. */
 SPAN_DECLARE(void) t4_rx_set_model(t4_rx_state_t *s, const char *model);
 
-/*! Get the current image transfer statistics. 
+/*! Get the current image transfer statistics.
     \brief Get the current transfer statistics.
     \param s The T.4 context.
     \param t A pointer to a statistics structure. */
 SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t);
 
-/*! Get the short text name of an encoding format. 
+/*! Get the short text name of an encoding format.
     \brief Get the short text name of an encoding format.
     \param encoding The encoding type.
     \return A pointer to the string. */
 SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding);
 
-/*! Get the short text name of an image format. 
+/*! Get the short text name of an image format.
     \brief Get the short text name of an image format.
     \param encoding The image format.
     \return A pointer to the string. */

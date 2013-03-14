@@ -31,7 +31,7 @@
 
 #define GSM0610_FRAME_LEN               160
 
-#define	GSM0610_MAGIC                   0xD
+#define GSM0610_MAGIC                   0xD
 
 #include "spandsp/private/gsm0610.h"
 

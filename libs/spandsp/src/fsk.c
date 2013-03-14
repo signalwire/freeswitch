@@ -144,7 +144,7 @@ SPAN_DECLARE(int) fsk_tx_restart(fsk_tx_state_t *s, const fsk_spec_t *spec)
     s->phase_acc = 0;
     s->baud_frac = 0;
     s->current_phase_rate = s->phase_rates[1];
-    
+
     s->shutdown = FALSE;
     return 0;
 }
@@ -273,7 +273,7 @@ SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s, const fsk_spec_t *spec, int 
 
     /* Detect by correlating against the tones we want, over a period
        of one baud. The correlation must be quadrature. */
-    
+
     /* First we need the quadrature tone generators to correlate
        against. */
     s->phase_rate[0] = dds_phase_rate((float) spec->freq_zero);
@@ -303,7 +303,7 @@ SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s, const fsk_spec_t *spec, int 
     s->frame_state = 0;
     s->frame_bits = 0;
     s->last_bit = 0;
-    
+
     /* Initialise a power detector, so sense when a signal is present. */
     power_meter_init(&(s->power), 4);
     s->signal_present = 0;

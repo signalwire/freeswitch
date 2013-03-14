@@ -273,16 +273,17 @@ extern "C"
 
     __inline float rintf(float flt)
     {
-    	_asm
-    	{	fld flt
-    		frndint
-    	}
+        _asm
+        {
+            fld flt
+            frndint
+        }
     }
 
     __inline double rint(double dbl)
     {
-        _asm 
-    	{
+        _asm
+        {
             fld dbl
             frndint
         }
@@ -318,12 +319,12 @@ extern "C"
 
     __inline long int lrint(double x)
     {
-		return (long int)_mm_cvtsd_si64x( _mm_loadu_pd ((const double*)&x) );
+        return (long int)_mm_cvtsd_si64x( _mm_loadu_pd ((const double*)&x) );
     }
 
     __inline long int lrintf(float x)
     {
-		return _mm_cvt_ss2si( _mm_load_ss((const float*)&x) );
+        return _mm_cvt_ss2si( _mm_load_ss((const float*)&x) );
     }
 
     __inline long int lfastrint(double x)

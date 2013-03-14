@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
         ||
         saturated_mul16_32(32767, 32767) != 2147352578
         ||
-        saturated_mul16_32(-32768, -32768) != -2147483648)
+        saturated_mul16_32(-32768, -32768) != INT32_MAX)
     {
         printf("Test failed.\n");
         exit(2);

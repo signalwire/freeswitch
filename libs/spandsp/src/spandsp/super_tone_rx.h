@@ -43,7 +43,7 @@ If tones are close in frequency a single Goertzel set to the centre of the
 frequency range will be used. This optimises the efficiency of the detector. The
 Goertzel filters are applied without applying any special window functional
 (i.e. they use a rectangular window), so they have a sinc like response.
-However, for most tone patterns their rejection qualities are adequate. 
+However, for most tone patterns their rejection qualities are adequate.
 
 The detector aims to meet the need of the standard call progress tones, to
 ITU-T E.180/Q.35 (busy, dial, ringback, reorder). Also, the extended tones,

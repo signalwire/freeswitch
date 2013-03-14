@@ -240,7 +240,7 @@ static int end_to_end_tests(void)
         samples = ademco_contactid_receiver_tx(receiver, amp, SAMPLES_PER_CHUNK);
         for (j = samples;  j < SAMPLES_PER_CHUNK;  j++)
             amp[j] = 0;
-        
+
         /* We add AWGN and codec impairments to the signal, to stress the tone detector. */
         codec_munge(munge, amp, SAMPLES_PER_CHUNK);
         for (j = 0;  j < SAMPLES_PER_CHUNK;  j++)

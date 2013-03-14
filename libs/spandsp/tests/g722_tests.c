@@ -136,7 +136,7 @@ static const char *decode_test_files[] =
     TESTDATA_DIR "T3L3.RC2",
     TESTDATA_DIR "T3L3.RC3",
     TESTDATA_DIR "T3H3.RC0",
-    
+
     NULL
 };
 
@@ -197,13 +197,13 @@ static int get_test_vector(const char *file, uint16_t buf[], int max_len)
     int octets;
     int i;
     FILE *infile;
-    
+
     if ((infile = fopen(file, "r")) == NULL)
     {
         fprintf(stderr, "    Failed to open '%s'\n", file);
         exit(2);
     }
-    octets = 0;  
+    octets = 0;
     while ((i = get_vector(infile, buf + octets)) > 0)
         octets += i;
     fclose(infile);
@@ -232,7 +232,7 @@ static void itu_compliance_tests(void)
     for (file = 0;  encode_test_files[file];  file += 2)
     {
         printf("Testing %s -> %s\n", encode_test_files[file], encode_test_files[file + 1]);
-    
+
         /* Get the input data */
         len_data = get_test_vector(encode_test_files[file], (uint16_t *) itu_data, MAX_TEST_VECTOR_LEN);
 
@@ -322,7 +322,7 @@ static void itu_compliance_tests(void)
             len = j - i;
             for (k = 0;  k < len;  k++)
                 compressed[k] = itu_data[k + i] >> ((mode == 3)  ?  10  :  (mode == 2)  ?  9  :  8);
-        
+
             dec_state = g722_decode_init(NULL, (mode == 3)  ?  48000  :  (mode == 2)  ?  56000  :  64000, 0);
             dec_state->itu_test_mode = TRUE;
             len2 = g722_decode(dec_state, decompressed, compressed, len);

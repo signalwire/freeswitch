@@ -2,7 +2,7 @@
  * SpanDSP - a series of DSP components for telephony
  *
  * oki_adpcm.h - Conversion routines between linear 16 bit PCM data and
- *		         OKI (Dialogic) ADPCM format.
+ *               OKI (Dialogic) ADPCM format.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *

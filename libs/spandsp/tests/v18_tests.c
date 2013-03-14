@@ -50,10 +50,19 @@
 
 int log_audio = FALSE;
 SNDFILE *outhandle = NULL;
+char result[1024];
+int unexpected_echo = FALSE;
 
 char *decode_test_file = NULL;
 
 int good_message_received;
+
+both_ways_line_model_state_t *model;
+int rbs_pattern = 0;
+float noise_level = -70.0f;
+int line_model_no = 0;
+int channel_codec = MUNGE_CODEC_NONE;
+v18_state_t *v18[2];
 
 const char *qbf_tx = "The quick Brown Fox Jumps Over The Lazy dog 0123456789!@#$%^&*()'";
 const char *qbf_rx = "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789!X$$/'+.()'";
@@ -79,43 +88,61 @@ static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 
 static void basic_tests(int mode)
 {
-    int16_t amp[SAMPLES_PER_CHUNK];
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
     int outframes;
-    int len;
+    int samples;
     int push;
     int i;
-    v18_state_t *v18_a;
-    v18_state_t *v18_b;
-    logging_state_t *logging;
+    int j;
 
     printf("Testing %s\n", v18_mode_to_str(mode));
-    v18_a = v18_init(NULL, TRUE, mode, put_text_msg, NULL);
-    logging = v18_get_logging_state(v18_a);
+    v18[0] = v18_init(NULL, TRUE, mode, put_text_msg, NULL);
+    logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18_b = v18_init(NULL, FALSE, mode, put_text_msg, NULL);
-    logging = v18_get_logging_state(v18_b);
+    v18[1] = v18_init(NULL, FALSE, mode, put_text_msg, NULL);
+    logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
 
     /* Fake an OK condition for the first message test */
     good_message_received = TRUE;
     push = 0;
-    if (v18_put(v18_a, qbf_tx, -1) != strlen(qbf_tx))
+    if (v18_put(v18[0], qbf_tx, -1) != strlen(qbf_tx))
     {
         printf("V.18 put failed\n");
         exit(2);
     }
-    for (i = 0;  i < 100000;  i++)
+
+    for (i = 0;  i < 10000;  i++)
     {
         if (push == 0)
         {
-            if ((len = v18_tx(v18_a, amp, SAMPLES_PER_CHUNK)) == 0)
+            if ((samples = v18_tx(v18[0], amp[0], SAMPLES_PER_CHUNK)) == 0)
                 push = 10;
         }
         else
         {
-            len = 0;
+            samples = 0;
             /* Push a little silence through, to flush things out */
             if (--push == 0)
             {
@@ -125,36 +152,71 @@ static void basic_tests(int mode)
                     exit(2);
                 }
                 good_message_received = FALSE;
-                if (v18_put(v18_a, qbf_tx, -1) != strlen(qbf_tx))
+                if (v18_put(v18[0], qbf_tx, -1) != strlen(qbf_tx))
                 {
                     printf("V.18 put failed\n");
                     exit(2);
                 }
             }
         }
-        if (len < SAMPLES_PER_CHUNK)
+        if (samples < SAMPLES_PER_CHUNK)
         {
-            memset(&amp[len], 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - len));
-            len = SAMPLES_PER_CHUNK;
+            vec_zeroi16(&amp[0][samples], SAMPLES_PER_CHUNK - samples);
+            samples = SAMPLES_PER_CHUNK;
+        }
+        if ((samples = v18_tx(v18[1], amp[1], SAMPLES_PER_CHUNK)) == 0)
+            push = 10;
+        if (samples < SAMPLES_PER_CHUNK)
+        {
+            vec_zeroi16(&amp[1][samples], SAMPLES_PER_CHUNK - samples);
+            samples = SAMPLES_PER_CHUNK;
         }
         if (log_audio)
         {
-            outframes = sf_writef_short(outhandle, amp, len);
-            if (outframes != len)
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
             {
                 fprintf(stderr, "    Error writing audio file\n");
                 exit(2);
             }
         }
-        v18_rx(v18_b, amp, len);
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
     }
-    v18_free(v18_a);
-    v18_free(v18_b);
+    v18_free(v18[0]);
+    v18_free(v18[1]);
 }
 /*- End of function --------------------------------------------------------*/
 
 static int test_misc_01(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.1.1     No disconnection test
         Purpose:        To verify that the DCE does not initiate a disconnection.
@@ -165,6 +227,73 @@ static int test_misc_01(void)
                         TUT should continue to probe until the test is terminated.
         Comments:       This feature should also be verified by observation during the automoding tests.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -172,6 +301,17 @@ static int test_misc_01(void)
 
 static int test_misc_02(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.1.2     Automatic resumption of automoding
         Purpose:        To ensure that the DCE can be configured to automatically re-assume the automode
@@ -182,10 +322,77 @@ static int test_misc_02(void)
                         The tester will then transmit silence for 11 seconds followed by a 1300Hz tone for
                         5 seconds (i.e. V.23).
         Pass criteria:  1) Ten seconds after dropping the carrier the TUT should return to state Monitor 1.
-                        2) After 2.7±0.3 seconds the TUT should select V.23 mode and send a 390Hz tone.
+                        2) After 2.7+-0.3 seconds the TUT should select V.23 mode and send a 390Hz tone.
         Comments:       The TUT should indicate that carrier has been lost at some time after the 1650Hz
                         signal is lost.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -193,6 +400,17 @@ static int test_misc_02(void)
 
 static int test_misc_03(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.1.3     Retention of selected mode on loss of signal
         Purpose:        To ensure that the DCE stays in the selected transmission mode if it is not
@@ -207,6 +425,73 @@ static int test_misc_03(void)
         Comments:       The TUT should indicate that carrier has been lost at some time after the carrier
                         signal is removed and not disconnect.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -214,6 +499,17 @@ static int test_misc_03(void)
 
 static int test_misc_04(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.1.4     Detection of BUSY tone
         Purpose:        To ensure that the DCE provides the call progress indication "BUSY" in presence of
@@ -227,6 +523,73 @@ static int test_misc_04(void)
                         automatically hang up when busy tone is detected. PABX busy tones may differ in
                         frequency and cadence from national parameters.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -234,6 +597,17 @@ static int test_misc_04(void)
 
 static int test_misc_05(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.1.5     Detection of RINGING
         Purpose:        To ensure that the DCE provides the call progress indication "RINGING" in
@@ -244,6 +618,73 @@ static int test_misc_05(void)
         Pass criteria:  The RINGING condition should be visually indicated by the TUT.
         Comments:       This test should be repeated across a range of valid timings and ring voltages.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -251,6 +692,17 @@ static int test_misc_05(void)
 
 static int test_misc_06(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.1.6     "LOSS OF CARRIER" indication
         Purpose:        To ensure that the DCE provides the call progress indication "LOSS OF CARRIER"
@@ -264,6 +716,73 @@ static int test_misc_06(void)
                         mode. There may be other cases, e.g. where the V.18 DCE is used in a gateway,
                         when automatic disconnection is required.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -271,6 +790,17 @@ static int test_misc_06(void)
 
 static int test_misc_07(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.1.7     Call progress indication
         Purpose:        To ensure that the DCE provides the call progress indication "CONNECT(x)" upon
@@ -282,6 +812,73 @@ static int test_misc_07(void)
                         However, this may possibly not be indicated by the DTE.
         Comments:       The possible modes are: V.21, V.23, Baudot 45, Baudot 50, EDT, Bell 103, DTMF.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -289,6 +886,17 @@ static int test_misc_07(void)
 
 static int test_misc_08(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.1.8     Circuit 135 Test
         Purpose:        To ensure that the DCE implements circuit 135 or an equivalent way of indicating
@@ -301,6 +909,73 @@ static int test_misc_08(void)
         Comment:        The response times and signal level thresholds of Circuit 135 are not specified in
                         ITU-T V.18 or V.24 and therefore the pattern indicated may vary.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -308,6 +983,17 @@ static int test_misc_08(void)
 
 static int test_misc_09(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.1.9     Connection procedures
         Purpose:        To ensure that the TUT implements the call connect procedure described in
@@ -317,6 +1003,73 @@ static int test_misc_09(void)
         Pass criteria:  TBD
         Comment:        TBD
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -324,6 +1077,17 @@ static int test_misc_09(void)
 
 static int test_org_01(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.1     CI and XCI signal coding and cadence
         Purpose:        To verify that TUT correctly emits the CI and XCI signals with the ON/OFF
@@ -342,6 +1106,73 @@ static int test_org_01(void)
                         8) The whole sequence should be repeated until the call is cleared.
                         9) When V.18 to V.18, the XCI must not force V.23 or Minitel mode.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -349,6 +1180,17 @@ static int test_org_01(void)
 
 static int test_org_02(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.2     ANS signal detection
         Purpose:        To verify that TUT correctly detects the ANS (2100Hz) signal during the
@@ -362,6 +1204,73 @@ static int test_org_02(void)
                         2) The TUT should reply with transmission of TXP as defined in 5.1.2.
                         3) Verify that TXP sequence has correct bit pattern.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -369,6 +1278,17 @@ static int test_org_02(void)
 
 static int test_org_03(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.3     End of ANS signal detection
         Purpose:        The TUT should stop sending TXP at the end of the current sequence when the ANS
@@ -379,6 +1299,73 @@ static int test_org_03(void)
         Pass criteria:  The TUT should stop sending TXP at the end of the current sequence when ANS
                         tone ceases.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -386,6 +1373,17 @@ static int test_org_03(void)
 
 static int test_org_04(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.4     ANS tone followed by TXP
         Purpose:        To check correct detection of V.18 modem.
@@ -400,6 +1398,73 @@ static int test_org_04(void)
                            with the V.18 operational requirements.
         Comments:       The TUT should indicate that V.18 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -407,6 +1472,17 @@ static int test_org_04(void)
 
 static int test_org_05(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.5     ANS tone followed by 1650Hz
         Purpose:        To check correct detection of V.21 modem upper channel when preceded by answer
@@ -422,6 +1498,73 @@ static int test_org_05(void)
                         examination of TUT. If there is no visual indication, verify by use of ITU-T T.50 for
                         ITU-T V.21 as opposed to UTF-8 coded ISO 10646 character set for ITU-T V.18.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -429,6 +1572,17 @@ static int test_org_05(void)
 
 static int test_org_06(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.6     ANS tone followed by 1300Hz
         Purpose:        To check correct detection of V.23 modem upper channel when preceded by answer
@@ -443,6 +1597,73 @@ static int test_org_06(void)
                            by the TUT to comply with Annex E.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -450,6 +1671,17 @@ static int test_org_06(void)
 
 static int test_org_07(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.7     ANS tone followed by no tone
         Purpose:        To confirm that TUT does not lock up under this condition.
@@ -464,6 +1696,73 @@ static int test_org_07(void)
                         literally. It may however, occur when connected to certain Swedish textphones if the
                         handset is lifted just after the start of an automatically answered incoming call.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -471,16 +1770,94 @@ static int test_org_07(void)
 
 static int test_org_08(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.8     Bell 103 (2225Hz signal) detection
         Purpose:        To verify that the TUT correctly detects the Bell 103 upper channel signal during
                         the 2-second interval between transmission of CI sequences.
         Preamble:       N/A
         Method:         The tester waits for a CI and then sends a 2225Hz signal for 5 seconds.
-        Pass criteria:  1) The TUT should respond with a 1270Hz tone in 0.5±0.1 seconds.
+        Pass criteria:  1) The TUT should respond with a 1270Hz tone in 0.5+-0.1 seconds.
                         2) Data should be transmitted and received at 300 bit/s to comply with Annex D.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -488,16 +1865,94 @@ static int test_org_08(void)
 
 static int test_org_09(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.9     V.21 (1650Hz signal) detection
         Purpose:        To verify that the TUT correctly detects the V.21 upper channel signal during the
                         2-second interval between transmission of CI sequences.
         Preamble:       N/A
         Method:         The tester waits for a CI and then sends a 1650Hz signal for 5 seconds.
-        Pass criteria:  1) The TUT should respond with a 980Hz tone in 0.5±0.1 seconds.
+        Pass criteria:  1) The TUT should respond with a 980Hz tone in 0.5+-0.1 seconds.
                         2) Data should be transmitted and received at 300 bit/s to comply with Annex F.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -505,17 +1960,95 @@ static int test_org_09(void)
 
 static int test_org_10(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.10    V.23 (1300Hz signal) detection
         Purpose:        To verify that the TUT correctly detects the V.23 upper channel signal during the
                         2-second interval between transmission of CI sequences.
         Preamble:       N/A
         Method:         The tester waits for a CI and then sends a 1300Hz signal for 5 seconds.
-        Pass criteria:  1) The TUT should respond with a 390Hz tone in 1.7±0.1 seconds.
+        Pass criteria:  1) The TUT should respond with a 390Hz tone in 1.7+-0.1 seconds.
                         2) Data should be transmitted and received at 75 bit/s and 1200 bit/s respectively
                            by the TUT to comply with Annex E.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -523,6 +2056,17 @@ static int test_org_10(void)
 
 static int test_org_11(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.11    V.23 (390Hz signal) detection
         Purpose:        To confirm correct selection of V.23 reverse mode during sending of XCI.
@@ -537,6 +2081,73 @@ static int test_org_11(void)
         Comments:       The TUT should indicate that V.23 mode has been selected at least 3 seconds after
                         the start of the 390Hz tone.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -544,6 +2155,17 @@ static int test_org_11(void)
 
 static int test_org_12(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.12    5 bit mode (Baudot) detection tests
         Purpose:        To confirm detection of Baudot modulation at various bit rates that may be
@@ -563,6 +2185,73 @@ static int test_org_12(void)
                         automode answer state. The TUT may then select either 45.45 or 50 bit/s for the
                         transmission.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -570,6 +2259,17 @@ static int test_org_12(void)
 
 static int test_org_13(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.13    DTMF signal detection
         Purpose:        To verify whether the TUT correctly recognizes DTMF signals during the 2-second
@@ -583,6 +2283,73 @@ static int test_org_13(void)
                         TUT should comply with ITU-T Q.24 for the Danish Administration while
                         receiving for best possible performance.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -590,6 +2357,17 @@ static int test_org_13(void)
 
 static int test_org_14(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.14    EDT rate detection
         Purpose:        To confirm detection of EDT modems by detecting the transmission rate of received
@@ -605,6 +2383,73 @@ static int test_org_14(void)
                         the number lost should be minimal. The data bits and parity are specified in
                         Annex C.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -612,6 +2457,17 @@ static int test_org_14(void)
 
 static int test_org_15(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.15    Rate detection test
         Purpose:        To verify the presence of 980/1180Hz at a different signalling rate than 110 bit/s
@@ -622,6 +2478,73 @@ static int test_org_15(void)
                         the CI signal.
         Comments:       Echoes of the CI sequences may be detected at 300 bit/s.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -629,16 +2552,94 @@ static int test_org_15(void)
 
 static int test_org_16(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.16    980Hz detection
         Purpose:        To confirm correct selection of V.21 reverse mode.
         Preamble:       N/A
         Method:         The tester sends 980Hz to TUT for 5 seconds.
-        Pass criteria:  1) TUT should respond with 1650Hz tone after 1.5±0.1 seconds after start of
+        Pass criteria:  1) TUT should respond with 1650Hz tone after 1.5+-0.1 seconds after start of
                            980Hz tone.
                         2) Data should be transmitted and received at 300 bit/s complying with Annex F.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -646,6 +2647,17 @@ static int test_org_16(void)
 
 static int test_org_17(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.17    Loss of signal after 980Hz
         Purpose:        To confirm that TUT returns to the Monitor 1 state if 980Hz signal disappears.
@@ -654,6 +2666,73 @@ static int test_org_17(void)
         Pass criteria:  TUT should not respond to the 980Hz tone and resume sending CI signals after a
                         maximum of 2.4 seconds from the end of the 980Hz tone.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -661,16 +2740,94 @@ static int test_org_17(void)
 
 static int test_org_18(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.18    Tr timer
         Purpose:        To confirm that TUT returns to the Monitor 1 state if Timer Tr expires.
         Preamble:       N/A
         Method:         The tester sends 980Hz to TUT for 1.2 seconds followed by 1650Hz for 5 seconds
                         with no pause.
-        Pass criteria:  TUT should respond with 980Hz after 1.3±0.1 seconds of 1650Hz.
+        Pass criteria:  TUT should respond with 980Hz after 1.3+-0.1 seconds of 1650Hz.
         Comments:       This implies timer Tr has expired 2 seconds after the start of the 980Hz tone and
                         then 1650Hz has been detected for 0.5 seconds.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -678,15 +2835,93 @@ static int test_org_18(void)
 
 static int test_org_19(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.19    Bell 103 (1270Hz signal) detection
         Purpose:        To confirm correct selection of Bell 103 reverse mode.
         Preamble:       N/A
         Method:         The tester sends 1270Hz to TUT for 5 seconds.
-        Pass criteria:  1) TUT should respond with 2225Hz tone after 0.7±0.1 s.
+        Pass criteria:  1) TUT should respond with 2225Hz tone after 0.7+-0.1 s.
                         2) Data should be transmitted and received at 300 bit/s complying with Annex D.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -694,6 +2929,17 @@ static int test_org_19(void)
 
 static int test_org_20(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.20    Immunity to network tones
         Purpose:        To ensure that the TUT does not interpret network tones as valid signals.
@@ -710,6 +2956,73 @@ static int test_org_20(void)
                         presence and cadence of the tones for instance by a flashing light. The TUT may
                         disconnect on reception of tones indicating a failed call attempt.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -717,6 +3030,17 @@ static int test_org_20(void)
 
 static int test_org_21(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.21    Immunity to non-textphone modems
         Purpose:        To ensure that the TUT does not interpret modem tones not supported by V.18 as
@@ -729,6 +3053,73 @@ static int test_org_21(void)
         Comments:       Some high speed modems may fall back to a compatibility mode, e.g. V.21 or V.23
                         that should be correctly detected by the TUT.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -736,6 +3127,17 @@ static int test_org_21(void)
 
 static int test_org_22(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.22    Immunity to fax tones
         Purpose:        To ensure that the TUT will not interpret a called fax machine as being a textphone.
@@ -747,6 +3149,73 @@ static int test_org_22(void)
         Comments:       Ideally the TUT should detect the presence of a fax machine and report it back to
                         the user.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -754,6 +3223,17 @@ static int test_org_22(void)
 
 static int test_org_23(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.23    Immunity to voice
         Purpose:        To ensure that the TUT does not misinterpret speech as a valid textphone signal.
@@ -765,6 +3245,73 @@ static int test_org_23(void)
         Comments:       Ideally the TUT should report the presence of speech back to the user, e.g. via
                         circuit 135.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -772,6 +3319,17 @@ static int test_org_23(void)
 
 static int test_org_24(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.24    ANSam signal detection
         Purpose:        To verify that TUT correctly detects the ANSam (2100Hz modulated) signal during
@@ -785,6 +3343,73 @@ static int test_org_24(void)
                         2) The TUT should reply with transmission of CM as defined in 5.2.13.
                         3) Verify that CM sequence has correct bit pattern.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -792,6 +3417,17 @@ static int test_org_24(void)
 
 static int test_org_25(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.2.25    V.8 calling procedure
         Purpose:        To verify that TUT correctly performs a V.8 call negotiation.
@@ -800,6 +3436,73 @@ static int test_org_25(void)
         Method:         The Test System waits for the TUT to start transmitting V.21 carrier (1).
         Pass criteria:  The TUT should connect by sending V.21 carrier (1).
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -807,6 +3510,17 @@ static int test_org_25(void)
 
 static int test_ans_01(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.1     Ta timer
         Purpose:        To ensure that on connecting the call, the DCE starts timer Ta (3 seconds) and on
@@ -816,6 +3530,73 @@ static int test_ans_01(void)
                         answers the call. It will then monitor for any signal.
         Pass criteria:  The TUT should start probing 3 seconds after answering the call.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -823,6 +3604,17 @@ static int test_ans_01(void)
 
 static int test_ans_02(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.2     CI signal detection
         Purpose:        To confirm the correct detection and response to the V.18 CI signal.
@@ -830,10 +3622,77 @@ static int test_ans_02(void)
         Method:         The tester will transmit 2 sequences of 4 CI patterns separated by 2 seconds. It will
                         monitor for ANS and measure duration.
         Pass criteria:  1) The TUT should respond after either the first or second CI with ANSam tone.
-                        2) ANSam tone should remain for 3 seconds ±0.5 s followed by silence.
+                        2) ANSam tone should remain for 3 seconds +-0.5 s followed by silence.
         Comments:       The ANSam tone is a modulated 2100Hz tone. It may have phase reversals. The
                         XCI signal is tested in a separate test.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -841,6 +3700,17 @@ static int test_ans_02(void)
 
 static int test_ans_03(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.3     Early termination of ANSam tone
         Purpose:        To confirm that the TUT will respond correctly to TXP signals, i.e. by stopping
@@ -849,13 +3719,80 @@ static int test_ans_03(void)
         Method:         The tester will transmit 2 sequences of 4 CI patterns separated by 2 seconds. On
                         reception of the ANSam tone the tester will wait 0.5 seconds and then begin
                         transmitting the TXP signal in V.21 (1) mode.
-        Pass criteria:  1) On reception of the TXP signal, the TUT should remain silent for 75±5 ms.
+        Pass criteria:  1) On reception of the TXP signal, the TUT should remain silent for 75+-5 ms.
                         2) The TUT should then transmit 3 TXP sequences in V.21(2) mode.
                         3) The 3 TXPs should be followed by continuous 1650Hz.
                         4) Correct transmission and reception of T.140 data should be verified after the
                            V.18 mode connection is completed.
         Comments:       The TUT should indicate V.18 mode.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -863,6 +3800,17 @@ static int test_ans_03(void)
 
 static int test_ans_04(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.4     Tt timer
         Purpose:        To ensure that after detection of ANSam the TUT will return to Monitor A after
@@ -872,6 +3820,73 @@ static int test_ans_04(void)
         Pass criteria:  The TUT should start probing 3 seconds after ANSam disappears.
         Comments:       It is assumed that timer Ta is restarted on return to Monitor A.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -879,6 +3894,17 @@ static int test_ans_04(void)
 
 static int test_ans_05(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.5     ANS tone followed by 980Hz
         Purpose:        To check correct detection of V.21 modem lower channel when preceded by answer
@@ -886,9 +3912,76 @@ static int test_ans_05(void)
         Preamble:       N/A
         Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
                         980Hz and starts a 1 s timer.
-        Pass criteria:  TUT should respond with 1650Hz within 400±100 ms of start of 980Hz.
+        Pass criteria:  TUT should respond with 1650Hz within 400+-100 ms of start of 980Hz.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -896,6 +3989,17 @@ static int test_ans_05(void)
 
 static int test_ans_06(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.6     ANS tone followed by 1300Hz
         Purpose:        To check correct detection of V.23 modem upper channel when preceded by answer
@@ -906,6 +4010,73 @@ static int test_ans_06(void)
         Pass criteria:  TUT should respond with 390Hz after 1.7(+0.2-0.0) seconds of start of 1300Hz.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -913,6 +4084,17 @@ static int test_ans_06(void)
 
 static int test_ans_07(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.7     ANS tone followed by 1650Hz
         Purpose:        To check correct detection of V.21 modem upper channel when preceded by answer
@@ -920,9 +4102,76 @@ static int test_ans_07(void)
         Preamble:       N/A
         Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
                         1650Hz and starts a 1-second timer.
-        Pass criteria:  TUT should respond with 980Hz within 400±100 ms of start of 1650Hz.
+        Pass criteria:  TUT should respond with 980Hz within 400+-100 ms of start of 1650Hz.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -930,6 +4179,17 @@ static int test_ans_07(void)
 
 static int test_ans_08(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.8     980Hz followed by 1650Hz
         Purpose:        To ensure the correct selection of V.21 modem channel when certain types of
@@ -942,6 +4202,73 @@ static int test_ans_08(void)
         Comments:       The TUT should indicate a V.21 connection. The time for which each frequency is
                         transmitted is random and varies between 0.64 and 2.56 seconds.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -949,6 +4276,17 @@ static int test_ans_08(void)
 
 static int test_ans_09(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.9     980Hz calling tone detection
         Purpose:        To confirm correct detection of 980Hz calling tones as defined in V.25.
@@ -960,6 +4298,73 @@ static int test_ans_09(void)
                            700 ms followed by 1 second of silence.
         Comments:       The probe sent by the TUT will depend on the country setting.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -967,15 +4372,93 @@ static int test_ans_09(void)
 
 static int test_ans_10(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.10    V.21 detection by timer
         Purpose:        To confirm correct selection of V.21 calling modem when the received signal is not
                         modulated, i.e. there is no 1180Hz.
         Preamble:       N/A
         Method:         The tester sends 980Hz to TUT for 2 seconds.
-        Pass criteria:  The TUT should respond with a 1650Hz tone in 1.5±0.1 seconds.
+        Pass criteria:  The TUT should respond with a 1650Hz tone in 1.5+-0.1 seconds.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -983,6 +4466,17 @@ static int test_ans_10(void)
 
 static int test_ans_11(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.11    EDT detection by rate
         Purpose:        To confirm detection of EDT modems by detecting the transmission rate of received
@@ -996,6 +4490,73 @@ static int test_ans_11(void)
                         be lost during the detection process. However, the number lost should be minimal.
                         The data bits and parity are specified in Annex C.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1003,6 +4564,17 @@ static int test_ans_11(void)
 
 static int test_ans_12(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.12    V.21 Detection by rate
         Purpose:        To confirm detection of V.21 modem low channel by detecting the transmission rate
@@ -1017,6 +4589,73 @@ static int test_ans_12(void)
                         (1650Hz) probe. However, it is catered for in V.18. It is more likely that this is
                         where CI or TXP characters would be detected (see test ANS-02).
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1024,6 +4663,17 @@ static int test_ans_12(void)
 
 static int test_ans_13(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.13    Tr timer
         Purpose:        To ensure that the TUT returns to the Monitor A state on expiry of timer Tr
@@ -1031,12 +4681,79 @@ static int test_ans_13(void)
         Preamble:       N/A
         Method:         The tester will transmit 980Hz for 200 ms followed by alternating 980Hz/1180Hz
                         at 110 bit/s for 100 ms followed by 980Hz for 1 second.
-        Pass criteria:  The TUT should begin probing 4±0.5 seconds after the 980Hz signal is removed.
+        Pass criteria:  The TUT should begin probing 4+-0.5 seconds after the 980Hz signal is removed.
         Comments:       It is not possible to be precise on timings for this test since the definition of a
                         "modulated signal" as in 5.2.4.4 is not specified. Therefore it is not known exactly
                         when timer Tr will start. It is assumed that timer Ta is restarted on re-entering the
                         Monitor A state.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1044,16 +4761,94 @@ static int test_ans_13(void)
 
 static int test_ans_14(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.14    Te timer
         Purpose:        To ensure that the TUT returns to the Monitor A on expiry of timer Te
                         (2.7 seconds). Timer Te is started when a 980Hz signal is detected.
         Preamble:       N/A
         Method:         The tester will transmit 980Hz for 200 ms followed silence for 7 s.
-        Pass criteria:  The TUT should begin probing 5.5±0.5 seconds after the 980Hz signal is removed.
+        Pass criteria:  The TUT should begin probing 5.5+-0.5 seconds after the 980Hz signal is removed.
         Comments:       It is assumed that timer Ta (3 seconds) is restarted on re-entering the Monitor A
                         state.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1061,6 +4856,17 @@ static int test_ans_14(void)
 
 static int test_ans_15(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.15 5  Bit mode (Baudot) detection tests
         Purpose:        To confirm detection of Baudot modulation at various bit rates that may be
@@ -1081,6 +4887,73 @@ static int test_ans_15(void)
                         automode answer state. The TUT may then select either 45.45 or 50 bit/s for the
                         transmission.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1088,6 +4961,17 @@ static int test_ans_15(void)
 
 static int test_ans_16(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.16    DTMF signal detection
         Purpose:        To verify whether the TUT correctly recognizes DTMF signals.
@@ -1099,6 +4983,73 @@ static int test_ans_16(void)
         Comments:       The TUT should indicate that it has selected DTMF mode. The DTMF capabilities
                         of the TUT should comply with ITU-T Q.24 for the Danish Administration.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1106,14 +5057,92 @@ static int test_ans_16(void)
 
 static int test_ans_17(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.17    Bell 103 (1270Hz signal) detection
         Purpose:        To ensure correct detection and selection of Bell 103 modems.
         Preamble:       N/A
         Method:         The tester sends 1270Hz to TUT for 5 seconds.
-        Pass criteria:  TUT should respond with 2225Hz tone after 0.7±0.1 s.
+        Pass criteria:  TUT should respond with 2225Hz tone after 0.7+-0.1 s.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1121,15 +5150,93 @@ static int test_ans_17(void)
 
 static int test_ans_18(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.18    Bell 103 (2225Hz signal) detection
         Purpose:        To ensure correct detection and selection of Bell 103 modems in reverse mode.
         Preamble:       N/A
         Method:         The tester sends 2225Hz to TUT for 5 seconds.
-        Pass criteria:  The TUT should respond with 1270Hz after 1±0.2 seconds.
+        Pass criteria:  The TUT should respond with 1270Hz after 1+-0.2 seconds.
         Comments:       The TUT should indicate that Bell 103 mode has been selected. Bell 103 modems
                         use 2225Hz as both answer tone and higher frequency of the upper channel.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1137,14 +5244,92 @@ static int test_ans_18(void)
 
 static int test_ans_19(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.19    V.21 Reverse mode (1650Hz) detection
         Purpose:        To ensure correct detection and selection of V.21 reverse mode.
         Preamble:       N/A
         Method:         The tester sends 1650Hz to TUT for 5 seconds.
-        Pass criteria:  The TUT should respond with 980Hz after 0.4±0.2 seconds.
+        Pass criteria:  The TUT should respond with 980Hz after 0.4+-0.2 seconds.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1152,6 +5337,17 @@ static int test_ans_19(void)
 
 static int test_ans_20(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.20    1300Hz calling tone discrimination
         Purpose:        To confirm correct detection of 1300Hz calling tones as defined in ITU-T V.25.
@@ -1163,6 +5359,73 @@ static int test_ans_20(void)
                            700 ms followed by 1 second of silence.
         Comments:       The probe sent by the TUT will depend on the country setting.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1170,14 +5433,92 @@ static int test_ans_20(void)
 
 static int test_ans_21(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.21    V.23 Reverse mode (1300Hz) detection
         Purpose:        To ensure correct detection and selection of V.23 reverse mode.
         Preamble:       N/A
         Method:         The tester sends 1300Hz only, with no XCI signals, to TUT for 5 seconds.
-                        Pass criteria: The TUT should respond with 390Hz after 1.7±0.1 seconds.
+                        Pass criteria: The TUT should respond with 390Hz after 1.7+-0.1 seconds.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1185,6 +5526,17 @@ static int test_ans_21(void)
 
 static int test_ans_22(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.22    1300Hz with XCI test
         Purpose:        To ensure correct detection of the XCI signal and selection of V.18 mode.
@@ -1193,6 +5545,73 @@ static int test_ans_22(void)
                         silent for 500 ms then transmit the TXP signal in V.21 (1) mode.
         Pass criteria:  The TUT should respond with TXP using V.21 (2) and select V.18 mode.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1200,6 +5619,17 @@ static int test_ans_22(void)
 
 static int test_ans_23(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.23    Stimulate mode country settings
         Purpose:        To ensure that the TUT steps through the probes in the specified order for the
@@ -1211,6 +5641,73 @@ static int test_ans_23(void)
         Pass criteria:  The TUT should use the orders described in Appendix I.
         Comments:       The order of the probes is not mandatory.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1218,6 +5715,17 @@ static int test_ans_23(void)
 
 static int test_ans_24(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.24    Stimulate carrierless mode probe message
         Purpose:        To ensure that the TUT sends the correct probe message for each of the carrierless
@@ -1229,6 +5737,73 @@ static int test_ans_24(void)
                         modes followed by a pause of Tm (default 3) seconds.
         Comments:       The carrierless modes are those described in Annexes A, B and C.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1236,6 +5811,17 @@ static int test_ans_24(void)
 
 static int test_ans_25(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.25    Interrupted carrierless mode probe
         Purpose:        To ensure that the TUT continues probing from the point of interruption a maximum
@@ -1247,6 +5833,73 @@ static int test_ans_25(void)
         Pass criteria:  The TUT should transmit silence on detecting the 1270Hz tone and then continue
                         probing starting with the V.23 probe 20 seconds after the end of the 1270Hz signal.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1254,6 +5907,17 @@ static int test_ans_25(void)
 
 static int test_ans_26(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.26    Stimulate carrier mode probe time
         Purpose:        To ensure that the TUT sends each carrier mode for time Tc (default 6 seconds)
@@ -1262,9 +5926,76 @@ static int test_ans_26(void)
         Method:         The tester will call the TUT, wait for Ta to expire and then monitor the probes sent
                         by the TUT.
         Pass criteria:  The TUT should send the ANS tone (2100Hz) for 1 second followed by silence for
-                        75±5 ms and then the 1650Hz, 1300Hz and 2225Hz probes for time Tc.
+                        75+-5 ms and then the 1650Hz, 1300Hz and 2225Hz probes for time Tc.
         Comments:       The carrier modes are those described in Annexes D, E, and F.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1272,6 +6003,17 @@ static int test_ans_26(void)
 
 static int test_ans_27(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.27    V.23 mode (390Hz) detection
         Purpose:        To confirm correct selection of V.23 mode.
@@ -1287,6 +6029,73 @@ static int test_ans_27(void)
                         390Hz. When the 1300Hz probe is not being transmitted, a 390Hz tone may be
                         interpreted as a 400Hz network tone.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1294,6 +6103,17 @@ static int test_ans_27(void)
 
 static int test_ans_28(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.28    Interrupted carrier mode probe
         Purpose:        To ensure that the TUT continues probing from the point of interruption a maximum
@@ -1307,6 +6127,73 @@ static int test_ans_28(void)
         Comments:       It is most likely that the TUT will return to probing time Ta (3 seconds) after the
                         1270Hz tone ceases. This condition needs further clarification.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1314,6 +6201,17 @@ static int test_ans_28(void)
 
 static int test_ans_29(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.29    Stimulate mode response during probe
         Purpose:        To ensure that the TUT is able to detect an incoming signal while transmitting a
@@ -1326,6 +6224,73 @@ static int test_ans_29(void)
         Comments:       The TUT may not respond to any signals while a carrierless mode probe is being
                         sent since these modes are half duplex.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1333,6 +6298,17 @@ static int test_ans_29(void)
 
 static int test_ans_30(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.30    Immunity to network tones
         Purpose:        To ensure that the TUT does not interpret network tones as valid signals.
@@ -1347,6 +6323,73 @@ static int test_ans_30(void)
                         tones may be ignored. Some devices may only provide a visual indication of the
                         presence and cadence of the tones for instance by a flashing light.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1354,6 +6397,17 @@ static int test_ans_30(void)
 
 static int test_ans_31(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.31    Immunity to fax calling tones
         Purpose:        To determine whether the TUT can discriminate fax calling tones.
@@ -1365,6 +6419,73 @@ static int test_ans_31(void)
         Comments:       This is an optional test as detection of the fax calling tone is not required by
                         ITU-T V.18.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1372,6 +6493,17 @@ static int test_ans_31(void)
 
 static int test_ans_32(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.32    Immunity to voice
         Purpose:        To ensure that the TUT does not misinterpret speech as a valid textphone signal.
@@ -1383,6 +6515,73 @@ static int test_ans_32(void)
         Comments:       Ideally the TUT should report the presence of speech back to the user. This is an
                         optional test.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1390,6 +6589,17 @@ static int test_ans_32(void)
 
 static int test_ans_33(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.3.33    CM detection and V.8 answering
         Purpose:        To confirm that the TUT will respond correctly to CM signals and connect
@@ -1406,6 +6616,73 @@ static int test_ans_33(void)
                            V.18 mode connection is completed.
         Comments:       The TUT should indicate V.18 mode.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1420,6 +6697,17 @@ static int test_mon_01(void)
 
 static int test_mon_21(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.4.1     Automode monitor Ta timer test
         Purpose:        To ensure that on entering monitor mode, timer Ta (3 seconds) is not active and that
@@ -1429,6 +6717,73 @@ static int test_mon_21(void)
                         for 1 minute.
         Pass criteria:  The TUT should not start probing.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1436,6 +6791,17 @@ static int test_mon_21(void)
 
 static int test_mon_22(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.4.2     Automode monitor 1300Hz calling tone discrimination
         Purpose:        To confirm correct detection and reporting of 1300Hz calling tones as defined in
@@ -1449,6 +6815,73 @@ static int test_mon_22(void)
         Comments:       In automode answer, the 1300Hz calling causes the DCE to start probing. In
                         monitor mode it should only report detection to the DTE.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1456,6 +6889,17 @@ static int test_mon_22(void)
 
 static int test_mon_23(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.4.3     Automode monitor 980Hz calling tone discrimination
         Purpose:        To confirm correct detection and reporting of 980Hz calling tones as defined in
@@ -1469,13 +6913,101 @@ static int test_mon_23(void)
         Comments:       In automode answer, the 980Hz calling causes the DCE to start probing. In monitor
                         mode it should only report detection to the DTE.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_01_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+printf("1-1 %d '%s'\n", len, msg);
+    if (user_data == NULL)
+        strcat(result, (const char *) msg);
+    else
+        v18_put(v18[1], "abcdefghij", 10);
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_01(void)
 {
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+    const char *ref;
+
     /*
         III.5.4.5.1     Baudot carrier timing and receiver disabling
         Purpose:        To verify that the TUT sends unmodulated carrier for 150 ms before a new character
@@ -1490,13 +7022,96 @@ static int test_x_01(void)
                         3) The tester will confirm that 1 start bit and at least 1.5 stop bits are used.
         Comments:       The carrier should be maintained during the 300 ms after a character.
      */
-    printf("Test not yet implemented\n");
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, x_01_put_text_msg, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, x_01_put_text_msg, (void *) (intptr_t) 1);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    v18_put(v18[0], "z", 1);
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
+    ref = "cdefghij";
+    printf("Result:\n%s\n", result);
+    printf("Reference result:\n%s\n", ref);
+    if (unexpected_echo  ||  strcmp(result, ref) != 0)
+        return -1;
     return 1;
 }
 /*- End of function --------------------------------------------------------*/
 
 static int test_x_02(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.5.2     Baudot bit rate confirmation
         Purpose:        To verify that the TUT uses the correct bit rates in the Baudot mode.
@@ -1506,6 +7121,73 @@ static int test_x_02(void)
                         transmit the string "abcdef" at each rate.
         Pass criteria:  The tester will measure the bit timings and confirm the rates.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
@@ -1513,6 +7195,17 @@ static int test_x_02(void)
 
 static int test_x_03(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.5.3     Baudot probe bit rate confirmation
         Purpose:        To verify that the TUT uses the correct bit rates in the Baudot mode probe during
@@ -1525,21 +7218,104 @@ static int test_x_03(void)
         Comments:       The probe message must be long enough for the tester to establish the bit rate. "GA"
                         may not be sufficient.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 1;
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_04_put_echo_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+    printf("Unexpected ECHO received (%d) '%s'\n", len, msg);
+    unexpected_echo = TRUE;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void x_04_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+printf("1-1 %d '%s'\n", len, msg);
+    strcat(result, (const char *) msg);
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_04(void)
 {
-    char result[1024];
-    char *t;
-    int ch;
-    int xx;
-    int yy;
-    int i;
-    v18_state_t *v18_state;
+    char msg[1024];
+    v18_state_t *v18[2];
     logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int i;
+    int j;
 
     /*
         III.5.4.5.4     5 Bit to T.50 character conversion
@@ -1560,43 +7336,109 @@ static int test_x_04(void)
                         assumed that the character conversion is the same for Baudot at 50 bit/s and any
                         other supported speed.
      */
-    v18_state = v18_init(NULL, TRUE, V18_MODE_5BIT_45, NULL, NULL);
-    logging = v18_get_logging_state(v18_state);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, x_04_put_echo_text_msg, NULL);
+    logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "");
-    printf("Original:\n");
-    t = result;
-    for (i = 0;  i < 127;  i++)
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, x_04_put_text_msg, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
     {
-        ch = i;
-        printf("%c", ch);
-        xx = v18_encode_baudot(v18_state, ch);
-        if (xx)
-        {
-            if ((xx & 0x3E0))
-            {
-                yy = v18_decode_baudot(v18_state, (xx >> 5) & 0x1F);
-                if (yy)
-                    *t++ = yy;
-            }
-            yy = v18_decode_baudot(v18_state, xx & 0x1F);
-            if (yy)
-                *t++ = yy;
-        }
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
     }
-    printf("\n");
-    *t = '\0';
-    v18_free(v18_state);
+
+    result[0] = '\0';
+    unexpected_echo = FALSE;
+    for (i = 0;  i < 127;  i++)
+        msg[i] = i + 1;
+    msg[127] = '\0';
+    v18_put(v18[0], msg, 127);
+
+    for (i = 0;  i < 1000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK);
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Result:\n%s\n", result);
     printf("Reference result:\n%s\n", full_baudot_rx);
-    if (strcmp(result, full_baudot_rx) != 0)
+    if (unexpected_echo  ||  strcmp(result, full_baudot_rx) != 0)
         return -1;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_05_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+    if (user_data == NULL)
+        strcat(result, (const char *) msg);
+    else
+        v18_put(v18[1], "behknqtwz", 9);
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_05(void)
 {
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+    const char *ref;
+
     /*
         III.5.4.5.5     DTMF receiver disabling
         Purpose:        To verify that the TUT disables its DTMF receiver for 300 ms when a character is
@@ -1608,8 +7450,88 @@ static int test_x_05(void)
                         display will show when its receiver is re-enabled.
         Pass criteria:  The receiver should be re-enabled after 300 ms.
      */
-    printf("Test not yet implemented\n");
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, x_05_put_text_msg, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, x_05_put_text_msg, (void *) (intptr_t) 1);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    result[0] = '\0';
+    v18_put(v18[0], "e", 1);
+
+    for (i = 0;  i < 1000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
+    ref = "knqtwz";
+    printf("Result:\n%s\n", result);
+    printf("Reference result:\n%s\n", ref);
+    if (strcmp(result, ref) != 0)
+        return -1;
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void x_06_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+    strcat(result, (const char *) msg);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1617,9 +7539,17 @@ static int test_x_06(void)
 {
     char msg[128];
     char dtmf[1024];
-    char result[1024];
     const char *ref;
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
     int i;
+    int j;
 
     /*
         III.5.4.5.6     DTMF character conversion
@@ -1635,15 +7565,80 @@ static int test_x_06(void)
                         receiving character from the TUT. It is assumed that the echo delay in the test
                         system is negligible.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, x_06_put_text_msg, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    result[0] = '\0';
     for (i = 0;  i < 127;  i++)
         msg[i] = i + 1;
     msg[127] = '\0';
-    printf("%s\n", msg);
+    printf("Original:\n%s\n", msg);
 
     v18_encode_dtmf(NULL, dtmf, msg);
-    printf("%s\n", dtmf);
-
+    printf("DTMF:\n%s\n", dtmf);
     v18_decode_dtmf(NULL, result, dtmf);
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
 
     ref = "\b \n\n\n?\n\n\n  %+().+,-.0123456789:;(=)"
           "?XABCDEFGHIJKLMNOPQRSTUVWXYZ\xC6\xD8\xC5"
@@ -1651,6 +7646,8 @@ static int test_x_06(void)
 
     printf("Result:\n%s\n", result);
     printf("Reference result:\n%s\n", ref);
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     if (strcmp(result, ref) != 0)
         return -1;
     return 0;
@@ -1659,6 +7656,17 @@ static int test_x_06(void)
 
 static int test_x_07(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.5.7     EDT carrier timing and receiver disabling
         Purpose:        To verify that the TUT sends unmodulated carrier for 300 ms before a character and
@@ -1673,6 +7681,73 @@ static int test_x_07(void)
                         3) The tester will confirm that 1 start bit and at least 1.5 stop bits are used.
         Comments:       The carrier should be maintained during the 300 ms after a character.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 0;
 }
@@ -1680,6 +7755,17 @@ static int test_x_07(void)
 
 static int test_x_08(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.5.8     EDT bit rate and character structure
         Purpose:        To verify that the TUT uses the correct bit rate and character structure in the EDT
@@ -1690,6 +7776,73 @@ static int test_x_08(void)
                         2) The tester should confirm that 1 start bit, 7 data bits, 1 even parity bit and 2 stop
                            bits are used.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 0;
 }
@@ -1697,6 +7850,17 @@ static int test_x_08(void)
 
 static int test_x_09(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.5.9     V.23 calling mode character format
         Purpose:        To verify that the TUT uses the correct character format in the V.23 calling mode.
@@ -1710,6 +7874,73 @@ static int test_x_09(void)
                            that there are no duplicate characters on the TUT display.
                         3) The received string should be correctly displayed despite the incorrect parity.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 0;
 }
@@ -1717,6 +7948,17 @@ static int test_x_09(void)
 
 static int test_x_10(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.5.10    V.23 answer mode character format
         Purpose:        To verify that the TUT uses the correct character format in the V.23 answer mode.
@@ -1733,6 +7975,73 @@ static int test_x_10(void)
         Comments:       This test is only applicable to Minitel Dialogue terminals. Prestel and Minitel
                         Normal terminals cannot operate in this mode.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 0;
 }
@@ -1740,6 +8049,17 @@ static int test_x_10(void)
 
 static int test_x_11(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.5.11    V.21 character structure
         Purpose:        To verify that the TUT uses the character structure in the V.21 mode.
@@ -1754,6 +8074,73 @@ static int test_x_11(void)
                         4) The last five characters on the TUT display should be "12345" (no "6")
                            correctly displayed despite the incorrect parity.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 0;
 }
@@ -1761,6 +8148,17 @@ static int test_x_11(void)
 
 static int test_x_12(void)
 {
+    v18_state_t *v18[2];
+    logging_state_t *logging;
+    int16_t amp[2][SAMPLES_PER_CHUNK];
+    int16_t model_amp[2][SAMPLES_PER_CHUNK];
+    int16_t out_amp[2*SAMPLES_PER_CHUNK];
+    int outframes;
+    int samples;
+    int push;
+    int i;
+    int j;
+
     /*
         III.5.4.5.12    V.18 mode
         Purpose:        To verify that the TUT uses the protocol defined in ITU-T T.140.
@@ -1772,6 +8170,73 @@ static int test_x_12(void)
         Pass criteria:  The tester should confirm UTF8 encoded UNICODE characters are used with the
                         controls specified in ITU-T T.140.
      */
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[0]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    logging = v18_get_logging_state(v18[1]);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "B");
+
+    if ((model = both_ways_line_model_init(line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           line_model_no,
+                                           (float) noise_level,
+                                           -15.0f,
+                                           -15.0f,
+                                           channel_codec,
+                                           rbs_pattern)) == NULL)
+    {
+        fprintf(stderr, "    Failed to create line model\n");
+        exit(2);
+    }
+
+    for (i = 0;  i < 10000;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            if ((samples = v18_tx(v18[j], amp[j], SAMPLES_PER_CHUNK)) == 0)
+                push = 10;
+            if (samples < SAMPLES_PER_CHUNK)
+            {
+                vec_zeroi16(&amp[j][samples], SAMPLES_PER_CHUNK - samples);
+                samples = SAMPLES_PER_CHUNK;
+            }
+        }
+        if (log_audio)
+        {
+            for (j = 0;  j < samples;  j++)
+            {
+                out_amp[2*j + 0] = amp[0][j];
+                out_amp[2*j + 1] = amp[1][j];
+            }
+            outframes = sf_writef_short(outhandle, out_amp, samples);
+            if (outframes != samples)
+            {
+                fprintf(stderr, "    Error writing audio file\n");
+                exit(2);
+            }
+        }
+#if 1
+        both_ways_line_model(model,
+                             model_amp[0],
+                             amp[0],
+                             model_amp[1],
+                             amp[1],
+                             samples);
+#else
+        vec_copyi16(model_amp[0], amp[0], samples);
+        vec_copyi16(model_amp[1], amp[1], samples);
+#endif
+        v18_rx(v18[0], model_amp[1], samples);
+        v18_rx(v18[1], model_amp[0], samples);
+    }
+
+    v18_free(v18[0]);
+    v18_free(v18[1]);
     printf("Test not yet implemented\n");
     return 0;
 }
@@ -1829,7 +8294,7 @@ const struct
 } test_list[] =
 {
     {"III.3.2.1 Operational requirements tests", NULL},
-    {"MISC-01         4 (1)       No Disconnection Test", test_misc_01},
+    {"MISC-01         4 (1)       No disconnection test", test_misc_01},
     {"MISC-02         4 (2)       Automatic resumption of automoding", test_misc_02},
     {"MISC-03         4 (2)       Retention of selected mode on loss of signal", test_misc_03},
     {"MISC-04         4 (4)       Detection of BUSY tone", test_misc_04},
@@ -1837,81 +8302,81 @@ const struct
     {"MISC-06         4 (4)       LOSS OF CARRIER indication", test_misc_06},
     {"MISC-07         4 (4)       Call progress indication", test_misc_07},
     {"MISC-08         4 (5)       Circuit 135 test", test_misc_08},
-    {"MISC-09         4 (6)       Connection Procedures", test_misc_09},
+    {"MISC-09         4 (6)       Connection procedures", test_misc_09},
 
     {"III.3.2.2 Automode originate tests", NULL},
-    {"ORG-01          5.1.1       CI & XCI Signal coding and cadence", test_org_01},
-    {"ORG-02          5.1.3       ANS Signal Detection", test_org_02},
+    {"ORG-01          5.1.1       CI & XCI signal coding and cadence", test_org_01},
+    {"ORG-02          5.1.3       ANS signal detection", test_org_02},
     {"ORG-03          5.2.3.1     End of ANS signal detection", test_org_03},
     {"ORG-04          5.1.3.2     ANS tone followed by TXP", test_org_04},
     {"ORG-05          5.1.3.3     ANS tone followed by 1650Hz", test_org_05},
     {"ORG-06          5.1.3.4     ANS tone followed by 1300Hz", test_org_06},
     {"ORG-07          5.1.3       ANS tone followed by no tone", test_org_07},
-    {"ORG-08          5.1.4       Bell 103 (2225Hz Signal) Detection", test_org_08},
-    {"ORG-09          5.1.5       V.21 (1650Hz Signal) Detection", test_org_09},
-    {"ORG-10          5.1.6       V.23 (1300Hz Signal) Detection", test_org_10},
-    {"ORG-11          5.1.7       V.23 (390Hz Signal) Detection", test_org_11},
-    {"ORG-12a to d    5.1.8       5 Bit Mode (Baudot) Detection Tests", test_org_12},
+    {"ORG-08          5.1.4       Bell 103 (2225Hz signal) detection", test_org_08},
+    {"ORG-09          5.1.5       V.21 (1650Hz signal) detection", test_org_09},
+    {"ORG-10          5.1.6       V.23 (1300Hz signal) detection", test_org_10},
+    {"ORG-11          5.1.7       V.23 (390Hz signal) detection", test_org_11},
+    {"ORG-12a to d    5.1.8       5 Bit Mode (baudot) detection Tests", test_org_12},
     {"ORG-13          5.1.9       DTMF signal detection", test_org_13},
-    {"ORG-14          5.1.10      EDT Rate Detection", test_org_14},
-    {"ORG-15          5.1.10.1    Rate Detection Test", test_org_15},
-    {"ORG-16          5.1.10.2    980Hz Detection", test_org_16},
+    {"ORG-14          5.1.10      EDT rate detection", test_org_14},
+    {"ORG-15          5.1.10.1    Rate detection test", test_org_15},
+    {"ORG-16          5.1.10.2    980Hz detection", test_org_16},
     {"ORG-17          5.1.10.3    Loss of signal after 980Hz", test_org_17},
     {"ORG-18          5.1.10.3    Tr Timer", test_org_18},
-    {"ORG-19          5.1.11      Bell 103 (1270Hz Signal) Detection", test_org_19},
-    {"ORG-20                      Immunity to Network Tones", test_org_20},
+    {"ORG-19          5.1.11      Bell 103 (1270Hz signal) detection", test_org_19},
+    {"ORG-20                      Immunity to network tones", test_org_20},
     {"ORG-21a to b                Immunity to other non-textphone modems", test_org_21},
-    {"ORG-22                      Immunity to Fax Tones", test_org_22},
-    {"ORG-23                      Immunity to Voice", test_org_23},
+    {"ORG-22                      Immunity to Fax tones", test_org_22},
+    {"ORG-23                      Immunity to voice", test_org_23},
     {"ORG-24          5.1.2       ANSam detection", test_org_24},
     {"ORG-25          6.1         V.8 originate call", test_org_25},
 
     {"III.3.2.3 Automode answer tests", NULL},
     {"ANS-01          5.2.1       Ta timer", test_ans_01},
-    {"ANS-02          5.2.2       CI Signal Detection", test_ans_02},
-    {"ANS-03          5.2.2.1     Early Termination of ANS tone", test_ans_03},
+    {"ANS-02          5.2.2       CI signal detection", test_ans_02},
+    {"ANS-03          5.2.2.1     Early termination of ANS tone", test_ans_03},
     {"ANS-04          5.2.2.2     Tt Timer", test_ans_04},
     {"ANS-05          5.2.3.2     ANS tone followed by 980Hz", test_ans_05},
     {"ANS-06          5.2.3.2     ANS tone followed by 1300Hz", test_ans_06},
     {"ANS-07          5.2.3.3     ANS tone followed by 1650Hz", test_ans_07},
     {"ANS-08          5.2.4.1     980Hz followed by 1650Hz", test_ans_08},
     {"ANS-09a to d    5.2.4.2     980Hz calling tone detection", test_ans_09},
-    {"ANS-10          5.2.4.3     V.21 Detection by Timer", test_ans_10},
-    {"ANS-11          5.2.4.4.1   EDT Detection by Rate", test_ans_11},
-    {"ANS-12          5.2.4.4.2   V.21 Detection by Rate", test_ans_12},
+    {"ANS-10          5.2.4.3     V.21 detection by timer", test_ans_10},
+    {"ANS-11          5.2.4.4.1   EDT detection by rate", test_ans_11},
+    {"ANS-12          5.2.4.4.2   V.21 detection by rate", test_ans_12},
     {"ANS-13          5.2.4.4.3   Tr Timer", test_ans_13},
     {"ANS-14          5.2.4.5     Te Timer", test_ans_14},
-    {"ANS-15a to d    5.2.5       5 Bit Mode (Baudot) Detection Tests", test_ans_15},
-    {"ANS-16          5.2.6       DTMF Signal Detection", test_ans_16},
+    {"ANS-15a to d    5.2.5       5 bit mode (Baudot) detection tests", test_ans_15},
+    {"ANS-16          5.2.6       DTMF signal detection", test_ans_16},
     {"ANS-17          5.2.7       Bell 103 (1270Hz signal) detection", test_ans_17},
     {"ANS-18          5.2.8       Bell 103 (2225Hz signal) detection", test_ans_18},
-    {"ANS-19          5.2.9       V.21 Reverse Mode (1650Hz) Detection", test_ans_19},
-    {"ANS-20a to d    5.2.10      1300Hz Calling Tone Discrimination", test_ans_20},
-    {"ANS-21          5.2.11      V.23 Reverse Mode (1300Hz) Detection", test_ans_21},
+    {"ANS-19          5.2.9       V.21 reverse mode (1650Hz) detection", test_ans_19},
+    {"ANS-20a to d    5.2.10      1300Hz calling tone discrimination", test_ans_20},
+    {"ANS-21          5.2.11      V.23 reverse mode (1300Hz) detection", test_ans_21},
     {"ANS-22                      1300Hz with XCI Test", test_ans_22},
-    {"ANS-23          5.2.12      Stimulate Mode Country Settings", test_ans_23},
-    {"ANS-24          5.2.12.1    Stimulate Carrierless Mode Probe Message", test_ans_24},
-    {"ANS-25          5.2.12.1.1  Interrupted Carrierless Mode Probe", test_ans_25},
-    {"ANS-26          5.2.12.2    Stimulate Carrier Mode Probe Time", test_ans_26},
-    {"ANS-27          5.2.12.2.1  V.23 Mode (390Hz) Detection", test_ans_27},
-    {"ANS-28          5.2.12.2.2  Interrupted Carrier Mode Probe", test_ans_28},
-    {"ANS-29          5.2.12.2.2  Stimulate Mode Response During Probe", test_ans_29},
-    {"ANS-30                      Immunity to Network Tones", test_ans_30},
-    {"ANS-31                      Immunity to Fax Calling Tones", test_ans_31},
-    {"ANS-32                      Immunity to Voice", test_ans_32},
-    {"ANS-33          5.2.2.1     V.8 CM detection and V.8 Answering", test_ans_33},
+    {"ANS-23          5.2.12      Stimulate mode country settings", test_ans_23},
+    {"ANS-24          5.2.12.1    Stimulate carrierless mode probe message", test_ans_24},
+    {"ANS-25          5.2.12.1.1  Interrupted carrierless mode probe", test_ans_25},
+    {"ANS-26          5.2.12.2    Stimulate carrier mode probe time", test_ans_26},
+    {"ANS-27          5.2.12.2.1  V.23 mode (390Hz) detection", test_ans_27},
+    {"ANS-28          5.2.12.2.2  Interrupted carrier mode probe", test_ans_28},
+    {"ANS-29          5.2.12.2.2  Stimulate mode response during probe", test_ans_29},
+    {"ANS-30                      Immunity to network tones", test_ans_30},
+    {"ANS-31                      Immunity to Fax calling tones", test_ans_31},
+    {"ANS-32                      Immunity to voice", test_ans_32},
+    {"ANS-33          5.2.2.1     V.8 CM detection and V.8 answering", test_ans_33},
 
     {"III.3.2.4 Automode monitor tests", NULL},
     {"MON-01 to -20   5.3         Repeat all answer mode tests excluding tests ANS-01, ANS-20 and ANS-23 to ANS-29", test_mon_01},
-    {"MON-21          5.3         Automode Monitor Ta timer", test_mon_21},
-    {"MON-22a to d    5.3         Automode Monitor 1300Hz Calling Tone Discrimination", test_mon_22},
-    {"MON-23a to d    5.3         Automode Monitor 980Hz Calling Tone Discrimination", test_mon_23},
+    {"MON-21          5.3         Automode monitor Ta timer", test_mon_21},
+    {"MON-22a to d    5.3         Automode monitor 1300Hz calling tone discrimination", test_mon_22},
+    {"MON-23a to d    5.3         Automode monitor 980Hz calling tone discrimination", test_mon_23},
 
     {"III.3.2.5 ITU-T V.18 annexes tests", NULL},
     {"X-01            A.1         Baudot carrier timing and receiver disabling", test_x_01},
     {"X-02            A.2         Baudot bit rate confirmation", test_x_02},
     {"X-03            A.3         Baudot probe bit rate confirmation", test_x_03},
-    {"X-04            A.4         5 Bit to T.50 Character Conversion", test_x_04},
+    {"X-04            A.4         5 Bit to T.50 character conversion", test_x_04},
     {"X-05            B.1         DTMF receiver disabling", test_x_05},
     {"X-06            B.2         DTMF character conversion", test_x_06},
     {"X-07            C.1         EDT carrier timing and receiver disabling", test_x_07},
@@ -1967,7 +8432,7 @@ int main(int argc, char *argv[])
     outhandle = NULL;
     if (log_audio)
     {
-        if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 1)) == NULL)
+        if ((outhandle = sf_open_telephony_write(OUTPUT_FILE_NAME, 2)) == NULL)
         {
             fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME);
             exit(2);

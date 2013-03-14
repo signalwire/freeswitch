@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
+
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
@@ -129,7 +129,7 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
             limit = sample + (DTMF_SAMPLES_PER_BLOCK - s->current_sample);
         else
             limit = samples;
-        /* The following unrolled loop takes only 35% (rough estimate) of the 
+        /* The following unrolled loop takes only 35% (rough estimate) of the
            time of a rolled loop on the machine on which it was developed */
         for (j = sample;  j < limit;  j++)
         {

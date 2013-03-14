@@ -29,7 +29,7 @@
 \section fsk_page_sec_1 What does it do?
 Most of the oldest telephony modems use incoherent FSK modulation. This module can
 be used to implement both the transmit and receive sides of a number of these
-modems. There are integrated definitions for: 
+modems. There are integrated definitions for:
 
  - V.21
  - V.23
@@ -38,7 +38,7 @@ modems. There are integrated definitions for:
  - Weitbrecht (Used for TDD - Telecoms Device for the Deaf)
 
 The audio output or input is a stream of 16 bit samples, at 8000 samples/second.
-The transmit and receive sides can be used independantly. 
+The transmit and receive sides can be used independantly.
 
 \section fsk_page_sec_2 The transmitter
 
@@ -48,7 +48,7 @@ switched, producing a clean spectrum. The symbols are not generally an integer
 number of samples long. However, the symbol time for the fastest data rate
 generally used (1200bps) is more than 7 samples long. The jitter resulting from
 switching at the nearest sample is, therefore, acceptable. No interpolation is
-used. 
+used.
 
 \section fsk_page_sec_3 The receiver
 
@@ -60,7 +60,7 @@ one that matches the frequency being transmitted during the correlation
 interval. Because the transmission is totally asynchronous, the demodulation
 process must run sample by sample to find the symbol transitions. The
 correlation is performed on a sliding window basis, so the computational load of
-demodulating sample by sample is not great. 
+demodulating sample by sample is not great.
 
 Two modes of symbol synchronisation are provided:
 
@@ -159,7 +159,7 @@ SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
                                            void *user_data);
 
 SPAN_DECLARE(int) fsk_tx_restart(fsk_tx_state_t *s, const fsk_spec_t *spec);
-    
+
 SPAN_DECLARE(int) fsk_tx_release(fsk_tx_state_t *s);
 
 SPAN_DECLARE(int) fsk_tx_free(fsk_tx_state_t *s);

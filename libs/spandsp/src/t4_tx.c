@@ -133,7 +133,7 @@ static void TIFFFXDefaultDirectory(TIFF *tif)
 
     /* Since we may have overriddden another directory method, we call it now to
        allow it to set up the rest of its own methods. */
-    if (_ParentExtender) 
+    if (_ParentExtender)
         (*_ParentExtender)(tif);
 }
 /*- End of function --------------------------------------------------------*/
@@ -141,11 +141,11 @@ static void TIFFFXDefaultDirectory(TIFF *tif)
 SPAN_DECLARE(void) TIFF_FX_init(void)
 {
     static int first_time = TRUE;
-    
+
     if (!first_time)
         return;
     first_time = FALSE;
-    
+
     /* Grab the inherited method and install */
     _ParentExtender = TIFFSetTagExtender(TIFFFXDefaultDirectory);
 }
@@ -175,7 +175,7 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
     map_z = NULL;
     if (!TIFFGetField(s->tiff.tiff_file, TIFFTAG_COLORMAP, &map_L, &map_a, &map_b, &map_z))
         return -1;
-    
+
     /* TODO: This only allows for 8 bit deep maps */
     if ((s->colour_map = realloc(s->colour_map, 3*256)) == NULL)
         return -1;

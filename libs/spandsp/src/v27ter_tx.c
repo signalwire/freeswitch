@@ -171,7 +171,7 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
 
     if (s->in_training)
     {
-       	/* Send the training sequence */
+        /* Send the training sequence */
         if (++s->training_step <= V27TER_TRAINING_SEG_5)
         {
             if (s->training_step <= V27TER_TRAINING_SEG_4)

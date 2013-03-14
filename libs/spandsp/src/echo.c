@@ -50,13 +50,13 @@
 /* The FIR taps must be adapted as 32 bit values, to get the necessary finesse
    in the adaption process. However, they are applied as 16 bit values (bits 30-15
    of the 32 bit values) in the FIR. For the working 16 bit values, we need 4 sets.
-   
+
    3 of the 16 bit sets are used on a rotating basis. Normally the canceller steps
    round these 3 sets at regular intervals. Any time we detect double talk, we can go
    back to the set from two steps ago with reasonable assurance it is a well adapted
    set. We cannot just go back one step, as we may have rotated the sets just before
    double talk or tone was detected, and that set may already be somewhat corrupted.
-   
+
    When narrowband energy is detected we need to continue adapting to it, to echo
    cancel it. However, the adaption will almost certainly be going astray. Broadband
    (or even complex sequences of narrowband) energy will normally lead to a well
@@ -129,7 +129,7 @@ static int narrowband_detect(echo_can_state_t *ec)
     int score;
     int len = 32;
     int alen = 9;
-    
+
     k = ec->curr_pos;
     for (i = 0;  i < len;  i++)
     {
@@ -292,7 +292,7 @@ SPAN_DECLARE(int) echo_can_release(echo_can_state_t *ec)
 SPAN_DECLARE(int) echo_can_free(echo_can_state_t *ec)
 {
     int i;
-    
+
     fir16_free(&ec->fir_state);
     free(ec->fir_taps32);
     for (i = 0;  i < 4;  i++)
@@ -361,7 +361,7 @@ static __inline__ int16_t echo_can_hpf(int32_t coeff[2], int16_t amp)
 {
     int32_t z;
 
-    /* 
+    /*
        Filter DC, 3dB point is 160Hz (I think), note 32 bit precision required
        otherwise values do not track down to 0. Zero at DC, Pole at (1-Beta)
        only real axis.  Some chip sets (like Si labs) don't need
@@ -371,7 +371,7 @@ static __inline__ int16_t echo_can_hpf(int32_t coeff[2], int16_t amp)
        Note: removes some low frequency from the signal, this reduces
        the speech quality when listening to samples through headphones
        but may not be obvious through a telephone handset.
-                                                                    
+
        Note that the 3dB frequency in radians is approx Beta, e.g. for
        Beta = 2^(-3) = 0.125, 3dB freq is 0.125 rads = 159Hz.
 

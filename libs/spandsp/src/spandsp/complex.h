@@ -381,7 +381,7 @@ static __inline__ complexf_t complex_divf(const complexf_t *x, const complexf_t 
 {
     complexf_t z;
     float f;
-    
+
     f = y->re*y->re + y->im*y->im;
     z.re = ( x->re*y->re + x->im*y->im)/f;
     z.im = (-x->re*y->im + x->im*y->re)/f;
@@ -393,7 +393,7 @@ static __inline__ complex_t complex_div(const complex_t *x, const complex_t *y)
 {
     complex_t z;
     double f;
-    
+
     f = y->re*y->re + y->im*y->im;
     z.re = ( x->re*y->re + x->im*y->im)/f;
     z.im = (-x->re*y->im + x->im*y->re)/f;
@@ -406,7 +406,7 @@ static __inline__ complexl_t complex_divl(const complexl_t *x, const complexl_t 
 {
     complexl_t z;
     long double f;
-    
+
     f = y->re*y->re + y->im*y->im;
     z.re = ( x->re*y->re + x->im*y->im)/f;
     z.im = (-x->re*y->im + x->im*y->re)/f;

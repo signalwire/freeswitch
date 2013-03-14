@@ -373,7 +373,6 @@ int main(int argc, char *argv[])
         bert_set_report(&endpoint[i].bert_rx, 10000, reporter, &endpoint[i]);
     }
 
-
 #if defined(ENABLE_GUI)
     if (use_gui)
     {

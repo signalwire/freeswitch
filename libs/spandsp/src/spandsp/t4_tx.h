@@ -277,7 +277,7 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s);
     \param s The T.4 context.
     \param buf The buffer into which the chunk is to written.
     \param max_len The maximum length of the chunk.
-    \return The actual length of the chunk. If this is less than max_len it 
+    \return The actual length of the chunk. If this is less than max_len it
             indicates that the end of the document has been reached. */
 SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len);
 
@@ -383,7 +383,7 @@ SPAN_DECLARE(int) t4_tx_get_pages_in_file(t4_tx_state_t *s);
     \return The page number, or -1 if there is an error. */
 SPAN_DECLARE(int) t4_tx_get_current_page_in_file(t4_tx_state_t *s);
 
-/*! Get the current image transfer statistics. 
+/*! Get the current image transfer statistics.
     \brief Get the current transfer statistics.
     \param s The T.4 context.
     \param t A pointer to a statistics structure. */

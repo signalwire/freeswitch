@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
+
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
@@ -271,7 +271,7 @@ SPAN_DECLARE(void) v8_log_supported_modulations(v8_state_t *s, int modulation_sc
 {
     const char *comma;
     int i;
-    
+
     comma = "";
     span_log(&s->logging, SPAN_LOG_FLOW, "");
     for (i = 0;  i < 32;  i++)
@@ -562,7 +562,7 @@ static void put_bit(void *user_data, int bit)
         s->bit_cnt = 0;
         s->rx_data_ptr = 0;
     }
-    
+
     if (s->preamble_type != V8_SYNC_UNKNOWN)
     {
         /* Parse octets with 1 bit start, 1 bit stop */
@@ -654,13 +654,13 @@ static void send_cm_jm(v8_state_t *s)
     int val;
     unsigned int offered_modulations;
     int bytes;
-    
+
     /* Send a CM, or a JM as appropriate */
     v8_put_preamble(s);
     v8_put_byte(s, V8_CM_JM_SYNC_OCTET);
     /* Data call */
     v8_put_byte(s, (s->result.call_function << 5) | V8_CALL_FUNCTION_TAG);
-    
+
     /* Supported modulations */
     offered_modulations = s->result.modulations;
     bytes = 0;
@@ -949,14 +949,14 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
         if (s->got_cm_jm)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "CM recognised\n");
-            
+
             s->result.status = V8_STATUS_V8_OFFERED;
             report_event(s);
-            
+
             /* Stop sending ANSam or ANSam/ and send JM instead */
             fsk_tx_init(&s->v21tx, &preset_fsk_specs[FSK_V21CH2], get_bit, s);
             /* Set the timeout for JM */
-            s->negotiation_timer = ms_to_samples(5000); 
+            s->negotiation_timer = ms_to_samples(5000);
             s->state = V8_JM_ON;
             send_cm_jm(s);
             s->modem_connect_tone_tx_on = ms_to_samples(75);
@@ -1101,7 +1101,7 @@ SPAN_DECLARE(int) v8_release(v8_state_t *s)
 SPAN_DECLARE(int) v8_free(v8_state_t *s)
 {
     int ret;
-    
+
     ret = queue_free(s->tx_queue);
     free(s);
     return ret;

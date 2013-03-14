@@ -300,7 +300,7 @@ static const nsf_data_t vendor_00[] =
     {"\x00\x41", 2, "Swasaki Communication", FALSE, NULL},
     {"\x00\x45", 2, "Muratec", FALSE, Muratec45},
     {"\x00\x46", 2, "Pheonix", FALSE, NULL},
-    {"\x00\x48", 2, "Muratec", FALSE, Muratec48},	        /* Not registered */
+    {"\x00\x48", 2, "Muratec", FALSE, Muratec48},           /* Not registered */
     {"\x00\x49", 2, "Japan Electric", FALSE, NULL},
     {"\x00\x4D", 2, "Okura Electric", FALSE, NULL},
     {"\x00\x51", 2, "Sanyo", FALSE, Sanyo},
@@ -502,7 +502,7 @@ static const nsf_data_t vendor_b5[] =
     {"\x00\x6E", 2, "Microsoft", FALSE, NULL},
     {"\x00\x72", 2, "Speaking Devices", FALSE, NULL},
     {"\x00\x74", 2, "Compaq", FALSE, NULL},
-    {"\x00\x76", 2, "Microsoft", FALSE, NULL},		/* uses LSB for country but MSB for manufacturer */
+    {"\x00\x76", 2, "Microsoft", FALSE, NULL},      /* uses LSB for country but MSB for manufacturer */
     {"\x00\x78", 2, "Cylink", FALSE, NULL},
     {"\x00\x7A", 2, "Pitney Bowes", FALSE, NULL},
     {"\x00\x7C", 2, "Digiboard", FALSE, NULL},

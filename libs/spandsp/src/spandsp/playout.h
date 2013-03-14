@@ -51,7 +51,7 @@ enum
 
 /* Frame types */
 #define PLAYOUT_TYPE_CONTROL    0
-#define PLAYOUT_TYPE_SILENCE	1
+#define PLAYOUT_TYPE_SILENCE    1
 #define PLAYOUT_TYPE_SPEECH     2
 
 typedef int timestamp_t;

@@ -136,7 +136,7 @@ struct t85_decode_state_s
     /*! The number of bit planes expected, according to the header. Always 1 for true T.85 */
     uint8_t bit_planes;
     uint8_t current_bit_plane;
-    
+
     /*! The width of the full image, in pixels */
     uint32_t xd;
     /*! The height of the full image, in pixels */

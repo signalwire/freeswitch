@@ -37,42 +37,42 @@ extern "C"
 #if !defined(HAVE_SINF)
 static __inline__ float sinf(float x)
 {
-	return (float) sin((double) x);
+    return (float) sin((double) x);
 }
 #endif
 
 #if !defined(HAVE_COSF)
 static __inline__ float cosf(float x)
 {
-	return (float) cos((double) x);
+    return (float) cos((double) x);
 }
 #endif
 
 #if !defined(HAVE_TANF)
 static __inline__ float tanf(float x)
 {
-	return (float) tan((double) x);
+    return (float) tan((double) x);
 }
 #endif
 
 #if !defined(HAVE_ASINF)
 static __inline__ float asinf(float x)
 {
-	return (float) asin((double) x);
+    return (float) asin((double) x);
 }
 #endif
 
 #if !defined(HAVE_ACOSF)
 static __inline__ float acosf(float x)
 {
-	return (float) acos((double) x);
+    return (float) acos((double) x);
 }
 #endif
 
 #if !defined(HAVE_ATANF)
 static __inline__ float atanf(float x)
 {
-	return (float) atan((double) x);
+    return (float) atan((double) x);
 }
 
 #endif
@@ -80,7 +80,7 @@ static __inline__ float atanf(float x)
 #if !defined(HAVE_ATAN2F)
 static __inline__ float atan2f(float y, float x)
 {
-	return (float) atan2((double) y, (double) x);
+    return (float) atan2((double) y, (double) x);
 }
 
 #endif
@@ -88,14 +88,14 @@ static __inline__ float atan2f(float y, float x)
 #if !defined(HAVE_CEILF)
 static __inline__ float ceilf(float x)
 {
-	return (float) ceil((double) x);
+    return (float) ceil((double) x);
 }
 #endif
 
 #if !defined(HAVE_FLOORF)
 static __inline__ float floorf(float x)
 {
-	return (float) floor((double) x);
+    return (float) floor((double) x);
 }
 
 #endif
@@ -117,7 +117,7 @@ static __inline__ float expf(float x)
 #if !defined(HAVE_LOGF)
 static __inline__ float logf(float x)
 {
-	return (float) logf((double) x);
+    return (float) logf((double) x);
 }
 #endif
 

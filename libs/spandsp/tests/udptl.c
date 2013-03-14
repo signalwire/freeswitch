@@ -7,7 +7,7 @@
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2005 Steve Underwood
+ * Copyright (C) 2005, 2009, 2012 Steve Underwood
  *
  * All rights reserved.
  *
@@ -381,6 +381,8 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
     int len;
     int limit;
     int high_tide;
+    int len_before_entries;
+    int previous_len;
 
     /* UDPTL cannot cope with zero length messages, and our buffering for redundancy limits their
        maximum length. */
@@ -425,16 +427,28 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
             entries = s->error_correction_entries;
         else
             entries = s->tx_seq_no;
+        len_before_entries = len;
         /* The number of entries will always be small, so it is pointless allowing
            for the fragmented case here. */
         if (encode_length(buf, &len, entries) < 0)
             return -1;
         /* Encode the elements */
-        for (i = 0;  i < entries;  i++)
+        for (m = 0;  m < entries;  m++)
         {
-            j = (entry - i - 1) & UDPTL_BUF_MASK;
+            previous_len = len;
+            j = (entry - m - 1) & UDPTL_BUF_MASK;
             if (encode_open_type(buf, &len, s->tx[j].buf, s->tx[j].buf_len) < 0)
                 return -1;
+
+            /* If we have exceeded the far end's max datagram size, don't include this last chunk,
+               and stop trying to add more. */
+            if (len > s->far_max_datagram_size)
+            {
+                len = previous_len;
+                if (encode_length(buf, &len_before_entries, m) < 0)
+                    return -1;
+                break;
+            }
         }
         break;
     case UDPTL_ERROR_CORRECTION_FEC:
@@ -455,9 +469,11 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
         buf[len++] = span;
         /* The number of entries is defined as a length, but will only ever be a small
            value. Treat it as such. */
+        len_before_entries = len;
         buf[len++] = entries;
         for (m = 0;  m < entries;  m++)
         {
+            previous_len = len;
             /* Make an XOR'ed entry the maximum length */
             limit = (entry + m) & UDPTL_BUF_MASK;
             high_tide = 0;
@@ -479,6 +495,15 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
             }
             if (encode_open_type(buf, &len, fec, high_tide) < 0)
                 return -1;
+
+            /* If we have exceeded the far end's max datagram size, don't include this last chunk,
+               and stop trying to add more. */
+            if (len > s->far_max_datagram_size)
+            {
+                len = previous_len;
+                buf[len_before_entries] = (uint8_t) m;
+                break;
+            }
         }
         break;
     }

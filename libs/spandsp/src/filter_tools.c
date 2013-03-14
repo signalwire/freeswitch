@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
+
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -55,7 +55,7 @@
 #define TRUE (!FALSE)
 #endif
 
-#define MAXPZ	    8192
+#define MAXPZ       8192
 #define SEQ_LEN     8192
 #define MAX_FFT_LEN SEQ_LEN
 
@@ -139,7 +139,7 @@ void compute_raised_cosine_filter(double coeffs[],
     int i;
     int j;
     int h;
-    
+
     f1 = (1.0 - beta)*alpha;
     f2 = (1.0 + beta)*alpha;
     tau = 0.5/alpha;
@@ -162,10 +162,10 @@ void compute_raised_cosine_filter(double coeffs[],
     if (sinc_compensate)
     {
         for (i = 1;  i <= SEQ_LEN/2;  i++)
-	    {
+        {
             x = 3.1415926535*(double) i/(double) SEQ_LEN;
-	        vec[i].re *= (x/sin(x));
-	    }
+            vec[i].re *= (x/sin(x));
+        }
     }
     for (i = 0;  i <= SEQ_LEN/2;  i++)
         vec[i].re *= tau;
@@ -228,7 +228,7 @@ void truncate_coeffs(double coeffs[], int len, int bits, int hilbert)
 
     fac = pow(2.0, (double) (bits - 1.0));
     h = (len - 1)/2;
-    max = (hilbert)  ?  coeffs[h - 1]  :  coeffs[h];	/* Max coeff */
+    max = (hilbert)  ?  coeffs[h - 1]  :  coeffs[h];    /* Max coeff */
     scale = (fac - 1.0)/(fac*max);
     for (i = 0;  i < len;  i++)
     {

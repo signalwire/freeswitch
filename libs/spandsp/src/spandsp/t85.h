@@ -74,7 +74,7 @@ SPAN_DECLARE(int) t85_encode_image_complete(t85_encode_state_t *s);
     \param s The T.85 context.
     \param buf The buffer into which the chunk is to written.
     \param max_len The maximum length of the chunk.
-    \return The actual length of the chunk. If this is less than max_len it 
+    \return The actual length of the chunk. If this is less than max_len it
             indicates that the end of the document has been reached. */
 SPAN_DECLARE(int) t85_encode_get(t85_encode_state_t *s, uint8_t buf[], size_t max_len);
 
@@ -113,7 +113,7 @@ SPAN_DECLARE(t85_encode_state_t *) t85_encode_init(t85_encode_state_t *s,
 SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s,
                                      uint32_t image_width,
                                      uint32_t image_length);
-    
+
 SPAN_DECLARE(int) t85_encode_release(t85_encode_state_t *s);
 
 SPAN_DECLARE(int) t85_encode_free(t85_encode_state_t *s);

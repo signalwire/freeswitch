@@ -2,7 +2,7 @@
  * SpanDSP - a series of DSP components for telephony
  *
  * g168models.h - line models for echo cancellation tests against the G.168
- *  	          spec.
+ *                spec.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *

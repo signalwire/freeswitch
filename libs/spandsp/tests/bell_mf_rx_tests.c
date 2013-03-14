@@ -236,14 +236,14 @@ int main(int argc, char *argv[])
 
     /* Test 1: Mitel's test 1 isn't really a test. Its a calibration step,
        which has no meaning here. */
-    printf ("Test 1: Calibration\n");
-    printf ("    Passed\n");
+    printf("Test 1: Calibration\n");
+    printf("    Passed\n");
 
     /* Test 2: Decode check
        This is a sanity check, that all digits are reliably detected
        under ideal conditions.  Each possible digit is repeated 10 times,
        with 68ms bursts. The level of each tone is about 6dB down from clip */
-    printf ("Test 2: Decode check\n");
+    printf("Test 2: Decode check\n");
     my_mf_gen_init(0.0, -3, 0.0, -3, 68, 68);
     s = ALL_POSSIBLE_DIGITS;
     digit[1] = '\0';
@@ -258,14 +258,14 @@ int main(int argc, char *argv[])
             actual = bell_mf_rx_get(mf_state, buf, 128);
             if (actual != 1  ||  buf[0] != digit[0])
             {
-                printf ("    Sent     '%s'\n", digit);
-                printf ("    Received '%s' [%d]\n", buf, actual);
-                printf ("    Failed\n");
-                exit (2);
+                printf("    Sent     '%s'\n", digit);
+                printf("    Received '%s' [%d]\n", buf, actual);
+                printf("    Failed\n");
+                exit(2);
             }
         }
     }
-    printf ("    Passed\n");
+    printf("    Passed\n");
 
     /* Test 3: Recognition bandwidth and channel centre frequency check.
        Use all digits. Each digit types requires four tests to complete
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 
        The spec calls for +-1.5% +-10Hz of bandwidth.
     */
-    printf ("Test 3: Recognition bandwidth and channel centre frequency check\n");
+    printf("Test 3: Recognition bandwidth and channel centre frequency check\n");
     s = ALL_POSSIBLE_DIGITS;
     digit[1] = '\0';
     j = 0;
@@ -320,17 +320,17 @@ int main(int argc, char *argv[])
         }
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
-        printf ("    %c (low)  rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
-                digit[0],
-                rrb,
-                rcfo,
-                (float) nminus/10.0,
-                (float) nplus/10.0);
+        printf("    %c (low)  rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
+               digit[0],
+               rrb,
+               rcfo,
+               (float) nminus/10.0,
+               (float) nplus/10.0);
 
         if (rrb < 3.0 + rcfo + (2.0*100.0*10.0/bell_mf_tones[j].f1)  ||  rrb >= 15.0 + rcfo)
         {
-            printf ("    Failed\n");
-            exit (2);
+            printf("    Failed\n");
+            exit(2);
         }
 
         for (nplus = 0, i = 1;  i <= 60;  i++)
@@ -351,27 +351,27 @@ int main(int argc, char *argv[])
         }
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
-        printf ("    %c (high) rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
-                digit[0],
-                rrb,
-                rcfo,
-                (float) nminus/10.0,
-                (float) nplus/10.0);
+        printf("    %c (high) rrb = %5.2f%%, rcfo = %5.2f%%, max -ve = %5.2f, max +ve = %5.2f\n",
+               digit[0],
+               rrb,
+               rcfo,
+               (float) nminus/10.0,
+               (float) nplus/10.0);
         if (rrb < 3.0 + rcfo + (2.0*100.0*10.0/bell_mf_tones[j].f2)  ||  rrb >= 15.0 + rcfo)
         {
-            printf ("    Failed\n");
-            exit (2);
+            printf("    Failed\n");
+            exit(2);
         }
         j++;
     }
-    printf ("    Passed\n");
+    printf("    Passed\n");
 
     /* Test 4: Acceptable amplitude ratio (twist).
        Twist all digits in both directions, and check the maximum twist
        we can accept. The way this is done is styled after the Mitel DTMF
        test, and has good and bad points. */
 
-    printf ("Test 4: Acceptable amplitude ratio (twist)\n");
+    printf("Test 4: Acceptable amplitude ratio (twist)\n");
     s = ALL_POSSIBLE_DIGITS;
     digit[1] = '\0';
     while (*s)
@@ -538,12 +538,12 @@ int main(int argc, char *argv[])
     if (!callback_ok)
     {
         printf("    Failed\n");
-     	exit (2);
+        exit(2);
     }
     printf("    Passed\n");
 
     duration = time (NULL) - now;
-    printf ("Tests passed in %ds\n", duration);
+    printf("Tests passed in %ds\n", duration);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

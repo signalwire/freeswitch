@@ -58,7 +58,7 @@
 #define IN_FILE_NAME    "super_tone.wav"
 
 #define MITEL_DIR       "../test-data/mitel/"
-#define BELLCORE_DIR	"../test-data/bellcore/"
+#define BELLCORE_DIR    "../test-data/bellcore/"
 
 const char *bellcore_files[] =
 {
@@ -270,7 +270,7 @@ static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file
     xmlValidCtxt valid;
 #endif
     xmlChar *x;
-    
+
     ns = NULL;
     xmlKeepBlanksDefault(0);
     xmlCleanupParser();
@@ -334,7 +334,7 @@ static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file
 static void super_tone_rx_fill_descriptor(super_tone_rx_descriptor_t *desc)
 {
     int tone_id;
-    
+
     tone_id = super_tone_rx_add_tone(desc);
     super_tone_rx_add_element(desc, tone_id, 400, 0, 700, 0);
     tone_names[tone_id] = "XXX";
@@ -390,12 +390,12 @@ static int talk_off_tests(super_tone_rx_state_t *super)
                 x = super_tone_rx(super, amp + sample, frames - sample);
                 sample += x;
             }
-    	}
+        }
         if (sf_close_telephony(inhandle))
-    	{
-    	    printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
+        {
+            printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);
-    	}
+        }
     }
     return 0;
 }

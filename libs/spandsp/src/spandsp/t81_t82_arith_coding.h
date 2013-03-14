@@ -63,7 +63,6 @@ SPAN_DECLARE(void) t81_t82_arith_encode(t81_t82_arith_encode_state_t *s, int cx,
 
 SPAN_DECLARE(void) t81_t82_arith_encode_flush(t81_t82_arith_encode_state_t *s);
 
-    
 SPAN_DECLARE(t81_t82_arith_decode_state_t *) t81_t82_arith_decode_init(t81_t82_arith_decode_state_t *s);
 
 SPAN_DECLARE(int) t81_t82_arith_decode_restart(t81_t82_arith_decode_state_t *s, int reuse_st);

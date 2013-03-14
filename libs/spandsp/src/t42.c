@@ -422,7 +422,7 @@ SPAN_DECLARE(void) srgb_to_lab(lab_params_t *s, uint8_t lab[], const uint8_t srg
         x /= s->x_n;
         y /= s->y_n;
         z /= s->z_n;
-    
+
         /* XYZ to Lab */
         xx = (x <= 0.008856f)  ?  (7.787f*x + 0.1379f)  :  cbrtf(x);
         yy = (y <= 0.008856f)  ?  (7.787f*y + 0.1379f)  :  cbrtf(y);
@@ -456,7 +456,7 @@ SPAN_DECLARE(void) lab_to_srgb(lab_params_t *s, uint8_t srgb[], const uint8_t la
         itu_to_lab(s, &l, lab);
 
         /* Lab to XYZ */
-        ll = (1.0f/116.0f)*(l.L + 16.0f); 
+        ll = (1.0f/116.0f)*(l.L + 16.0f);
         y = ll;
         y = (y <= 0.2068f)  ?  (0.1284f*(y - 0.1379f))  :  y*y*y;
         x = ll + (1.0f/500.0f)*l.a;
@@ -668,7 +668,7 @@ SPAN_DECLARE(int) t42_itulab_to_jpeg(logging_state_t *logging, lab_params_t *s, 
         free(*dst);
         fclose(out);
         return FALSE;
-    }    
+    }
     fclose(out);
 #endif
 
@@ -1054,7 +1054,7 @@ SPAN_DECLARE(int) t42_itulab_to_itulab(logging_state_t *logging, tdata_t *dst, t
         free(*dst);
         fclose(out);
         return FALSE;
-    }        
+    }
     fclose(out);
 #endif
 
@@ -1105,6 +1105,7 @@ SPAN_DECLARE(int) t42_itulab_to_srgb(logging_state_t *logging, lab_params_t *s, 
             span_log(logging, SPAN_LOG_FLOW, "%s\n", escape.error_message);
         else
             span_log(logging, SPAN_LOG_FLOW, "Unspecified libjpeg error.\n");
+printf("Error %s.\n", escape.error_message);
         if (scan_line_out)
             free(scan_line_out);
         fclose(in);
@@ -1134,14 +1135,17 @@ SPAN_DECLARE(int) t42_itulab_to_srgb(logging_state_t *logging, lab_params_t *s, 
     if (!is_itu_fax(logging, s, decompressor.marker_list))
     {
         span_log(logging, SPAN_LOG_FLOW, "Is not an ITU FAX.\n");
-        return FALSE;
+printf("Is not an ITU FAX 1.\n");
+        //return FALSE;
     }
     /* Copy size, resolution, etc */
     *width = decompressor.image_width;
     *height = decompressor.image_height;
+printf("Is %d x %d\n", decompressor.image_width, decompressor.image_height);
 
     jpeg_start_decompress(&decompressor);
 
+printf("Is %d x %d x %d.\n", decompressor.output_width, decompressor.output_height, decompressor.num_components);
     if ((scan_line_in = (JSAMPROW) malloc(decompressor.output_width*decompressor.num_components)) == NULL)
         return FALSE;
 
@@ -1151,6 +1155,7 @@ SPAN_DECLARE(int) t42_itulab_to_srgb(logging_state_t *logging, lab_params_t *s, 
         jpeg_read_scanlines(&decompressor, &scan_line_in, 1);
         lab_to_srgb(s, scan_line_out, scan_line_in, decompressor.output_width);
     }
+printf("Next %d\n", decompressor.output_scanline);
 
     free(scan_line_in);
     jpeg_finish_decompress(&decompressor);
@@ -1159,6 +1164,7 @@ SPAN_DECLARE(int) t42_itulab_to_srgb(logging_state_t *logging, lab_params_t *s, 
 
     *dstlen = pos;
 
+printf("Next2 %d\n", decompressor.output_scanline);
     return TRUE;
 }
 /*- End of function --------------------------------------------------------*/

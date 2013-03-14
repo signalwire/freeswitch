@@ -51,13 +51,13 @@ extern "C"
 SPAN_DECLARE(void) srgb_to_lab(lab_params_t *s, uint8_t lab[], const uint8_t srgb[], int pixels);
 
 SPAN_DECLARE(void) lab_to_srgb(lab_params_t *s, uint8_t srgb[], const uint8_t lab[], int pixels);
-    
+
 SPAN_DECLARE(void) set_lab_illuminant(lab_params_t *s, float new_xn, float new_yn, float new_zn);
 
 SPAN_DECLARE(void) set_lab_gamut(lab_params_t *s, int L_min, int L_max, int a_min, int a_max, int b_min, int b_max, int ab_are_signed);
 
 SPAN_DECLARE(void) set_lab_gamut2(lab_params_t *s, int L_P, int L_Q, int a_P, int a_Q, int b_P, int b_Q);
-    
+
 SPAN_DECLARE(int) t42_itulab_to_itulab(logging_state_t *logging, tdata_t *dst, tsize_t *dstlen, tdata_t src, tsize_t srclen, uint32_t width, uint32_t height);
 
 SPAN_DECLARE(int) t42_itulab_to_jpeg(logging_state_t *logging, lab_params_t *s, tdata_t *dst, tsize_t *dstlen, tdata_t src, tsize_t srclen);

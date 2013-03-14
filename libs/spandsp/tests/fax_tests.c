@@ -343,7 +343,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     int i;
     t30_stats_t t;
     char tag[20];
-    
+
     i = (int) (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase E", i + 'A');
     printf("%c: Phase E handler - (%d) %s\n", i + 'A', result, t30_completion_code_to_str(result));
@@ -363,7 +363,7 @@ static void real_time_frame_handler(t30_state_t *s,
                                     int len)
 {
     int i;
-    
+
     i = (intptr_t) user_data;
     printf("%c: Real time frame handler - %s, %s, length = %d\n",
            i + 'A',
@@ -376,7 +376,7 @@ static void real_time_frame_handler(t30_state_t *s,
 static int document_handler(t30_state_t *s, void *user_data, int event)
 {
     int i;
-    
+
     i = (intptr_t) user_data;
     printf("%c: Document handler - event %d\n", i + 'A', event);
     return FALSE;
@@ -400,7 +400,7 @@ static void real_time_gateway_frame_handler(t38_gateway_state_t *s,
                                             int len)
 {
     int i;
-    
+
     i = (intptr_t) user_data;
     printf("%c: Real time gateway frame handler - %s, %s, length = %d\n",
            i + 'A',
@@ -674,7 +674,7 @@ int main(int argc, char *argv[])
         }
     }
     memset(silence, 0, sizeof(silence));
- 
+
     srand48(0x1234567);
     /* Set up the nodes */
     input_wave_handle = NULL;
@@ -858,6 +858,7 @@ int main(int argc, char *argv[])
                                     | T30_SUPPORT_300_600_RESOLUTION
                                     | T30_SUPPORT_400_800_RESOLUTION
                                     | T30_SUPPORT_600_1200_RESOLUTION);
+        //t30_set_rx_encoding(t30_state[i], T4_COMPRESSION_ITU_T85);
         t30_set_ecm_capability(t30_state[i], use_ecm);
         if (use_ecm)
         {
@@ -1096,7 +1097,7 @@ int main(int argc, char *argv[])
             exit(2);
         }
     }
-    
+
     /* Check how many pages should have been transferred */
     expected_pages = get_tiff_total_pages(input_tiff_file_name);
     if (end_page >= 0  &&  expected_pages > end_page + 1)

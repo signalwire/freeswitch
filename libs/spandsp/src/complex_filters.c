@@ -101,7 +101,7 @@ SPAN_DECLARE(void) cfilter_delete(cfilter_t *cfi)
 SPAN_DECLARE(complexf_t) cfilter_step(cfilter_t *cfi, const complexf_t *z)
 {
     complexf_t cc;
-    
+
     cc.re = filter_step(cfi->ref, z->re);
     cc.im = filter_step(cfi->imf, z->im);
     return cc;

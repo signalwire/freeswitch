@@ -102,7 +102,7 @@ static void hdlc_underflow_handler(void *user_data)
     uint8_t buf[400];
 
     s = (faxtester_state_t *) user_data;
-    
+
     if (s->image_buffer)
     {
         /* We are sending an ECM image */
@@ -172,7 +172,7 @@ static void tone_detected(void *user_data, int tone, int level, int delay)
                  SPAN_LOG_FLOW,
                  "Tone was on for %fs\n",
                  (float) (s->timer - s->tone_on_time)/SAMPLE_RATE + 0.55);
-    }    
+    }
     s->tone_state = tone;
     if (tone == MODEM_CONNECT_TONES_NONE)
         front_end_step_complete(s);
@@ -336,7 +336,7 @@ int faxtester_rx(faxtester_state_t *s, int16_t *amp, int len)
 int faxtester_tx(faxtester_state_t *s, int16_t *amp, int max_len)
 {
     int len;
-    
+
     len = 0;
     if (s->transmit)
     {
@@ -350,7 +350,7 @@ int faxtester_tx(faxtester_state_t *s, int16_t *amp, int max_len)
                 {
                     /* Pad to the requested length with silence */
                     memset(amp + len, 0, (max_len - len)*sizeof(int16_t));
-                    len = max_len;        
+                    len = max_len;
                 }
                 break;
             }
@@ -362,7 +362,7 @@ int faxtester_tx(faxtester_state_t *s, int16_t *amp, int max_len)
         {
             /* Pad to the requested length with silence */
             memset(amp, 0, max_len*sizeof(int16_t));
-            len = max_len;        
+            len = max_len;
         }
     }
     return len;

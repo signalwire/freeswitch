@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
         /* Now send it out for graphing. */
         printf("%6d %.7f %.7f\n", i - 32768, x, p);
     }
-    
+
     printf("Tests passed.\n");
     return 0;
 }

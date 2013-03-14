@@ -2,8 +2,8 @@
  * SpanDSP - a series of DSP components for telephony
  *
  * echo.h - An echo cancellor, suitable for electrical and acoustic
- *	        cancellation. This code does not currently comply with
- *	        any relevant standards (e.g. G.164/5/7/8).
+ *          cancellation. This code does not currently comply with
+ *          any relevant standards (e.g. G.164/5/7/8).
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -43,7 +43,7 @@ the duration of that impulse response. The signal transmitted to the telephone l
 is passed through the FIR filter. Once the FIR is properly adapted, the resulting
 output is an estimate of the echo signal received from the line. This is subtracted
 from the received signal. The result is an estimate of the signal which originated
-at the far end of the line, free from echos of our own transmitted signal. 
+at the far end of the line, free from echos of our own transmitted signal.
 
 The least mean squares (LMS) algorithm is attributed to Widrow and Hoff, and was
 introduced in 1960. It is the commonest form of filter adaption used in things
@@ -67,7 +67,7 @@ complexity filter is adequate for this, so pre-whitening adds little to the
 compute requirements of the echo canceller.
 
 An FIR filter adapted using pre-whitened NLMS performs well, provided certain
-conditions are met: 
+conditions are met:
 
     - The transmitted signal has poor self-correlation.
     - There is no signal being generated within the environment being cancelled.
@@ -95,7 +95,7 @@ adaption is only performed when we are transmitting a significant signal level,
 and the environment is not, things will be OK. Clearly, it is easy to tell when
 we are sending a significant signal. Telling, if the environment is generating a
 significant signal, and doing it with sufficient speed that the adaption will
-not have diverged too much more we stop it, is a little harder. 
+not have diverged too much more we stop it, is a little harder.
 
 The key problem in detecting when the environment is sourcing significant energy
 is that we must do this very quickly. Given a reasonably long sample of the
@@ -103,13 +103,13 @@ received signal, there are a number of strategies which may be used to assess
 whether that signal contains a strong far end component. However, by the time
 that assessment is complete the far end signal will have already caused major
 mis-convergence in the adaption process. An assessment algorithm is needed which
-produces a fairly accurate result from a very short burst of far end energy. 
+produces a fairly accurate result from a very short burst of far end energy.
 
 \section echo_can_page_sec_3 How do I use it?
 The echo cancellor processes both the transmit and receive streams sample by
 sample. The processing function is not declared inline. Unfortunately,
 cancellation requires many operations per sample, so the call overhead is only a
-minor burden. 
+minor burden.
 */
 
 #include "fir.h"

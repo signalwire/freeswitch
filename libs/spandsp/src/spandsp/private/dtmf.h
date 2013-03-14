@@ -1,7 +1,7 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * private/dtmf.h - DTMF tone generation and detection 
+ * private/dtmf.h - DTMF tone generation and detection
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *

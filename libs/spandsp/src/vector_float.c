@@ -52,7 +52,7 @@ SPAN_DECLARE(void) vec_copyf(float z[], const float x[], int n)
 {
     int i;
     __m128 n1;
- 
+
     if ((i = n & ~3))
     {
         for (i -= 4;  i >= 0;  i -= 4)
@@ -76,7 +76,7 @@ SPAN_DECLARE(void) vec_copyf(float z[], const float x[], int n)
 SPAN_DECLARE(void) vec_copyf(float z[], const float x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
 }
@@ -86,7 +86,7 @@ SPAN_DECLARE(void) vec_copyf(float z[], const float x[], int n)
 SPAN_DECLARE(void) vec_copy(double z[], const double x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
 }
@@ -96,7 +96,7 @@ SPAN_DECLARE(void) vec_copy(double z[], const double x[], int n)
 SPAN_DECLARE(void) vec_copyl(long double z[], const long double x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
 }
@@ -111,7 +111,7 @@ SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
     static const float *fmask = (float *) &mask;
     __m128 n1;
     __m128 n2;
- 
+
     if ((i = n & ~3))
     {
         n2 = _mm_set1_ps(*fmask);
@@ -137,7 +137,7 @@ SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
 SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = -x[i];
 }
@@ -147,7 +147,7 @@ SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
 SPAN_DECLARE(void) vec_negate(double z[], const double x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = -x[i];
 }
@@ -157,7 +157,7 @@ SPAN_DECLARE(void) vec_negate(double z[], const double x[], int n)
 SPAN_DECLARE(void) vec_negatel(long double z[], const long double x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = -x[i];
 }
@@ -169,7 +169,7 @@ SPAN_DECLARE(void) vec_zerof(float z[], int n)
 {
     int i;
     __m128 n1;
- 
+
     if ((i = n & ~3))
     {
         n1 = _mm_setzero_ps();
@@ -191,7 +191,7 @@ SPAN_DECLARE(void) vec_zerof(float z[], int n)
 SPAN_DECLARE(void) vec_zerof(float z[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = 0.0f;
 }
@@ -201,7 +201,7 @@ SPAN_DECLARE(void) vec_zerof(float z[], int n)
 SPAN_DECLARE(void) vec_zero(double z[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = 0.0;
 }
@@ -211,7 +211,7 @@ SPAN_DECLARE(void) vec_zero(double z[], int n)
 SPAN_DECLARE(void) vec_zerol(long double z[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = 0.0L;
 }
@@ -223,7 +223,7 @@ SPAN_DECLARE(void) vec_setf(float z[], float x, int n)
 {
     int i;
     __m128 n1;
- 
+
     if ((i = n & ~3))
     {
         n1 = _mm_set1_ps(x);
@@ -245,7 +245,7 @@ SPAN_DECLARE(void) vec_setf(float z[], float x, int n)
 SPAN_DECLARE(void) vec_setf(float z[], float x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x;
 }
@@ -255,7 +255,7 @@ SPAN_DECLARE(void) vec_setf(float z[], float x, int n)
 SPAN_DECLARE(void) vec_set(double z[], double x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x;
 }
@@ -265,7 +265,7 @@ SPAN_DECLARE(void) vec_set(double z[], double x, int n)
 SPAN_DECLARE(void) vec_setl(long double z[], long double x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x;
 }
@@ -278,7 +278,7 @@ SPAN_DECLARE(void) vec_addf(float z[], const float x[], const float y[], int n)
     int i;
     __m128 n1;
     __m128 n2;
- 
+
     if ((i = n & ~3))
     {
         for (i -= 4;  i >= 0;  i -= 4)
@@ -339,7 +339,7 @@ SPAN_DECLARE(void) vec_scaledxy_addf(float z[], const float x[], float x_scale, 
     __m128 n2;
     __m128 n3;
     __m128 n4;
- 
+
     if ((i = n & ~3))
     {
         n3 = _mm_set1_ps(x_scale);
@@ -403,7 +403,7 @@ SPAN_DECLARE(void) vec_scaledy_addf(float z[], const float x[], const float y[],
     __m128 n1;
     __m128 n2;
     __m128 n3;
- 
+
     if ((i = n & ~3))
     {
         n3 = _mm_set1_ps(y_scale);
@@ -464,7 +464,7 @@ SPAN_DECLARE(void) vec_subf(float z[], const float x[], const float y[], int n)
     int i;
     __m128 n1;
     __m128 n2;
- 
+
     if ((i = n & ~3))
     {
         for (i -= 4;  i >= 0;  i -= 4)
@@ -552,7 +552,7 @@ SPAN_DECLARE(void) vec_scalar_mulf(float z[], const float x[], float y, int n)
     int i;
     __m128 n1;
     __m128 n2;
- 
+
     if ((i = n & ~3))
     {
         n2 = _mm_set1_ps(y);
@@ -600,7 +600,7 @@ SPAN_DECLARE(void) vec_scalar_addf(float z[], const float x[], float y, int n)
     int i;
     __m128 n1;
     __m128 n2;
- 
+
     if ((i = n & ~3))
     {
         n2 = _mm_set1_ps(y);
@@ -659,7 +659,7 @@ SPAN_DECLARE(void) vec_scalar_subf(float z[], const float x[], float y, int n)
     int i;
     __m128 n1;
     __m128 n2;
- 
+
     if ((i = n & ~3))
     {
         n2 = _mm_set1_ps(y);
@@ -719,7 +719,7 @@ SPAN_DECLARE(void) vec_mulf(float z[], const float x[], const float y[], int n)
     __m128 n1;
     __m128 n2;
     __m128 n3;
- 
+
     if ((i = n & ~3))
     {
         for (i -= 4;  i >= 0;  i -= 4)
@@ -781,7 +781,7 @@ SPAN_DECLARE(float) vec_dot_prodf(const float x[], const float y[], int n)
     __m128 n2;
     __m128 n3;
     __m128 n4;
- 
+
     z = 0.0f;
     if ((i = n & ~3))
     {
@@ -869,7 +869,7 @@ SPAN_DECLARE(void) vec_lmsf(const float x[], float y[], int n, float error)
     __m128 n2;
     __m128 n3;
     __m128 n4;
- 
+
     if ((i = n & ~3))
     {
         n3 = _mm_set1_ps(error);

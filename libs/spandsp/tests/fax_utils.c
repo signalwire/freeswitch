@@ -41,7 +41,7 @@
 void fax_log_tx_parameters(t30_state_t *s, const char *tag)
 {
     const char *u;
-    
+
     if ((u = t30_get_tx_ident(s)))
         printf("%s: Local ident '%s'\n", tag, u);
     if ((u = t30_get_tx_sub_address(s)))

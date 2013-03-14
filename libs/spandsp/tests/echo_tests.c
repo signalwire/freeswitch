@@ -112,7 +112,7 @@ typedef struct
     fir_float_state_t *fir;
     float history[35*8];
     int pos;
-    float factor; 
+    float factor;
     float power;
     float peak;
 } level_measurement_device_t;
@@ -361,7 +361,7 @@ static void print_results(void)
 {
     if (!quiet)
         printf("test  model  ERL   time     Max Rin  Max Rout Max Sgen Max Sin  Max Sout\n");
-    printf("%-4s  %-1d      %-5.1f%6.2fs%9.2f%9.2f%9.2f%9.2f%9.2f\n", 
+    printf("%-4s  %-1d      %-5.1f%6.2fs%9.2f%9.2f%9.2f%9.2f%9.2f\n",
            test_name,
            chan_model.model_no,
            20.0f*log10f(-chan_model.erl + 1.0e-10f),
@@ -404,7 +404,7 @@ static int channel_model_create(channel_model_state_t *chan, int model, float er
         sizeof(line_model_d8_coeffs)/sizeof(line_model_d8_coeffs[0]),
         sizeof(line_model_d9_coeffs)/sizeof(line_model_d9_coeffs[0])
     };
-    static const float ki[] = 
+    static const float ki[] =
     {
         3.05e-5f,
         LINE_MODEL_D2_GAIN,
@@ -488,13 +488,13 @@ static void write_log_files(int16_t rout, int16_t sin)
     fprintf(fdump,
             " %d %d %d %d %d %d %d %d %d %d\n",
             ctx->clean_nlp,
-            ctx->Ltx, 
+            ctx->Ltx,
             ctx->Lrx,
-            ctx->Lclean, 
+            ctx->Lclean,
             (ctx->nonupdate_dwell > 0),
             ctx->adapt,
             ctx->Lclean_bg,
-            ctx->Pstates, 
+            ctx->Pstates,
             ctx->Lbgn_upper,
             ctx->Lbgn);
 #endif
@@ -616,7 +616,7 @@ static void run_test(echo_can_state_t *ctx, int16_t (*tx_source)(void), int16_t 
 
 static void print_test_title(const char *title)
 {
-    if (quiet == FALSE) 
+    if (quiet == FALSE)
         printf(title);
 }
 /*- End of function --------------------------------------------------------*/
@@ -653,7 +653,7 @@ static int perform_test_sanity(void)
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION | ECHO_CAN_USE_NLP | ECHO_CAN_USE_CNG);
     run_test(ctx, local_css_signal, silence, 5000);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
-    
+
     for (i = 0;  i < SAMPLE_RATE*10;  i++)
     {
         tx = local_css_signal();
@@ -715,7 +715,7 @@ static int perform_test_sanity(void)
         //result_sound[result_cur++] = (ctx->narrowband_score)*5; //  ?  SAMPLE_RATE  :  -SAMPLE_RATE;
         //result_sound[result_cur++] = ctx->tap_rotate_counter*10;
         ////result_sound[result_cur++] = ctx->vad;
-        
+
         put_residue(clean - far_tx);
         if (result_cur >= RESULT_CHANNELS*SAMPLE_RATE)
         {
@@ -812,7 +812,7 @@ static int perform_test_2b(void)
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
     signal_restart(&local_css, 0.0f);
-    
+
     /* Test 2B (a) - Convergence test with NLP disabled */
 
     /* Converge the canceller */
@@ -863,17 +863,17 @@ static int perform_test_2ca(void)
     print_test_title("Performing test 2C(a) - Convergence with background noise present\n");
     ctx = echo_can_init(TEST_EC_TAPS, 0);
     awgn_init_dbm0(&far_noise_source, 7162534, -50.0f);
-    
+
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
-    
+
     /* Converge a canceller */
     signal_restart(&local_css, 0.0f);
     run_test(ctx, silence, silence, 200);
-    
+
     awgn_init_dbm0(&far_noise_source, 7162534, -40.0f);
     run_test(ctx, local_css_signal, far_hoth_noise_signal, 5000);
-    
+
     /* Now freeze adaption, and measure the echo. */
     echo_can_adaption_mode(ctx, 0);
     level_measurements_reset_peaks();
@@ -901,18 +901,18 @@ static int perform_test_3a(void)
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
-    
+
     run_test(ctx, silence, silence, 200);
     signal_restart(&local_css, 0.0f);
     signal_restart(&far_css, -20.0f);
 
     /* Apply double talk, with a weak far end signal */
     run_test(ctx, local_css_signal, far_css_signal, 5000);
-    
+
     /* Now freeze adaption. */
     echo_can_adaption_mode(ctx, 0);
     run_test(ctx, local_css_signal, silence, 500);
-    
+
     /* Now measure the echo */
     level_measurements_reset_peaks();
     run_test(ctx, local_css_signal, silence, 5000);
@@ -943,20 +943,20 @@ static int perform_test_3ba(void)
     run_test(ctx, silence, silence, 200);
     signal_restart(&local_css, 0.0f);
     signal_restart(&far_css, 0.0f);
-    
+
     /* Converge the canceller */
     run_test(ctx, local_css_signal, silence, 5000);
-    
+
     /* Apply double talk */
     run_test(ctx, local_css_signal, far_css_signal, 5000);
-    
+
     /* Now freeze adaption. */
     echo_can_adaption_mode(ctx, 0);
     run_test(ctx, local_css_signal, far_css_signal, 1000);
-    
+
     /* Turn off the double talk. */
     run_test(ctx, local_css_signal, silence, 500);
-    
+
     /* Now measure the echo */
     level_measurements_reset_peaks();
     run_test(ctx, local_css_signal, silence, 5000);
@@ -983,20 +983,20 @@ static int perform_test_3bb(void)
     run_test(ctx, silence, silence, 200);
     signal_restart(&local_css, 0.0f);
     signal_restart(&far_css, -15.0f);
-    
+
     /* Converge the canceller */
     run_test(ctx, local_css_signal, silence, 5000);
-    
+
     /* Apply double talk */
     run_test(ctx, local_css_signal, far_css_signal, 5000);
-    
+
     /* Now freeze adaption. */
     echo_can_adaption_mode(ctx, 0);
     run_test(ctx, local_css_signal, silence, 1000);
-    
+
     /* Turn off the double talk. */
     run_test(ctx, local_css_signal, silence, 500);
-    
+
     /* Now measure the echo */
     level_measurements_reset_peaks();
     run_test(ctx, local_css_signal, silence, 5000);
@@ -1082,7 +1082,7 @@ static int perform_test_4(void)
 static int perform_test_5(void)
 {
     echo_can_state_t *ctx;
-    
+
     /* Test 5 - Infinite return loss convergence test */
     print_test_title("Performing test 5 - Infinite return loss convergence test\n");
     ctx = echo_can_init(TEST_EC_TAPS, 0);
@@ -1261,8 +1261,8 @@ static int perform_test_9(void)
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx,
-                           ECHO_CAN_USE_ADAPTION 
-                         | ECHO_CAN_USE_NLP 
+                           ECHO_CAN_USE_ADAPTION
+                         | ECHO_CAN_USE_NLP
                          | ECHO_CAN_USE_CNG);
 
     /* Test 9 part 1 - matching */
@@ -1492,7 +1492,7 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
     if (two_channel_file)
     {
         txfile = sf_open_telephony_read(argv[0], 1);
-        rxfile = sf_open_telephony_read(argv[1], 1);      
+        rxfile = sf_open_telephony_read(argv[1], 1);
         ecfile = sf_open_telephony_write(argv[2], 1);
     }
     else
@@ -1524,7 +1524,7 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
                 exit(2);
             }
             if ((nrx = sf_readf_short(rxfile, &sin, 1)) < 0)
-            {           
+            {
                 fprintf(stderr, "    Error reading rx sound file\n");
                 exit(2);
             }

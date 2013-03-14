@@ -139,7 +139,7 @@ static void print_frame(const char *io, const uint8_t *fr, int frlen)
     const char *country;
     const char *vendor;
     const char *model;
-    
+
     fprintf(stderr, "%s %s:", io, t30_frametype(fr[2]));
     for (i = 2;  i < frlen;  i++)
         fprintf(stderr, " %02x", fr[i]);
@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to init\n");
         exit(0);
     }
-        
+
     for (;;)
     {
         len = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK);

@@ -62,7 +62,7 @@ void lpc10_voicing(lpc10_encode_state_t *st,
                    int32_t half,
                    float *minamd,
                    float *maxamd,
-	               int32_t *mintau,
+                   int32_t *mintau,
                    float *ivrc,
                    int32_t *obound);
 

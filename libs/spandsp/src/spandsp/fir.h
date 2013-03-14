@@ -197,7 +197,7 @@ static __inline__ int16_t fir16(fir16_state_t *fir, int16_t sample)
         y += fir->coeffs[i]*fir->history[i + offset2];
 #endif
     if (fir->curr_pos <= 0)
-    	fir->curr_pos = fir->taps;
+        fir->curr_pos = fir->taps;
     fir->curr_pos--;
     return (int16_t) (y >> 15);
 }
@@ -212,7 +212,7 @@ static __inline__ const int16_t *fir32_create(fir32_state_t *fir,
     fir->coeffs = coeffs;
     fir->history = (int16_t *) malloc(taps*sizeof(int16_t));
     if (fir->history)
-    	memset(fir->history, '\0', taps*sizeof(int16_t));
+        memset(fir->history, '\0', taps*sizeof(int16_t));
     return fir->history;
 }
 /*- End of function --------------------------------------------------------*/
@@ -245,7 +245,7 @@ static __inline__ int16_t fir32(fir32_state_t *fir, int16_t sample)
     for (  ;  i >= 0;  i--)
         y += fir->coeffs[i]*fir->history[i + offset2];
     if (fir->curr_pos <= 0)
-    	fir->curr_pos = fir->taps;
+        fir->curr_pos = fir->taps;
     fir->curr_pos--;
     return (int16_t) (y >> 15);
 }
@@ -253,7 +253,7 @@ static __inline__ int16_t fir32(fir32_state_t *fir, int16_t sample)
 
 static __inline__ const float *fir_float_create(fir_float_state_t *fir,
                                                 const float *coeffs,
-    	    	    	                        int taps)
+                                                int taps)
 {
     fir->taps = taps;
     fir->curr_pos = taps - 1;
@@ -264,7 +264,7 @@ static __inline__ const float *fir_float_create(fir_float_state_t *fir,
     return fir->history;
 }
 /*- End of function --------------------------------------------------------*/
-    
+
 static __inline__ void fir_float_free(fir_float_state_t *fir)
 {
     free(fir->history);
@@ -288,7 +288,7 @@ static __inline__ int16_t fir_float(fir_float_state_t *fir, int16_t sample)
     for (  ;  i >= 0;  i--)
         y += fir->coeffs[i]*fir->history[i + offset2];
     if (fir->curr_pos <= 0)
-    	fir->curr_pos = fir->taps;
+        fir->curr_pos = fir->taps;
     fir->curr_pos--;
     return  (int16_t) y;
 }

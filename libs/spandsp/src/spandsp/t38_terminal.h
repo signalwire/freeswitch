@@ -45,7 +45,7 @@ enum
     /*! This option enables the regular repeat transmission of indicator signals,
         during periods when no FAX signal transmission occurs. */
     T38_TERMINAL_OPTION_REGULAR_INDICATORS = 0x02,
-    /*! This option enables the regular repeat transmission of indicator signals for the 
+    /*! This option enables the regular repeat transmission of indicator signals for the
         first 2s, during periods when no FAX signal transmission occurs. */
     T38_TERMINAL_OPTION_2S_REPEATING_INDICATORS = 0x04,
     /*! This option suppresses the transmission of indicators. This is usually used with
