@@ -524,6 +524,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 			device_name, device_instance, &listener);
 	if(listener) {
 		switch_channel_t *channel = switch_core_session_get_channel(helper->tech_pvt->session);
+		switch_channel_t *remchannel = switch_core_session_get_channel(helper->remote_session);
 		helper->lines_count++;
 		switch_channel_set_variable(channel, "effective_callee_id_number", value);
 		switch_channel_set_variable(channel, "effective_callee_id_name", caller_name);
@@ -554,7 +555,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
 		send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
-		switch_channel_mark_ring_ready(channel);
+		switch_channel_ring_ready(remchannel);
 	}
 	return 0;
 }
