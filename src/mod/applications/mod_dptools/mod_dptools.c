@@ -4508,6 +4508,12 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 		goto top;
 	}
 
+	if (handle->dbuflen) {
+		free(handle->dbuf);
+		handle->dbuflen = 0;
+		handle->dbuf = NULL;
+	}
+
 	handle->samples = context->fh.samples;
 	//handle->samplerate = context->fh.samplerate;
 	//handle->channels = context->fh.channels;
@@ -4564,6 +4570,7 @@ static switch_status_t file_string_file_open(switch_file_handle_t *handle, const
 	context->index = -1;
 
 	handle->private_info = context;
+	handle->pre_buffer_datalen = 0;
 
 	return next_file(handle);
 }
