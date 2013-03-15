@@ -104,7 +104,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 {
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
+	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0, tap_only = 0;
 	switch_codec_implementation_t codec_impl;
 	unsigned int flag = 0;
 	int i;
@@ -251,6 +251,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_media_bug_t *bp;
 		switch_bool_t ok = SWITCH_TRUE;
 		int prune = 0;
+
+		tap_only = 1;
 		
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
 
@@ -268,6 +270,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 			
 			if (bp->ready) {
+				if (!switch_test_flag(bp, SMBF_TAP_NATIVE_READ) && !switch_test_flag(bp, SMBF_TAP_NATIVE_WRITE)) {
+					tap_only = 0;
+				}
+
 				if (switch_test_flag(bp, SMBF_TAP_NATIVE_READ)) {
 					if (bp->callback) {
 						bp->native_read_frame = *frame;
@@ -328,6 +334,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	} else if (switch_test_flag(*frame, SFF_NOT_AUDIO)) {
 		do_resample = 0;
 		do_bugs = 0;
+		need_codec = 0;
+	}
+
+	if (tap_only) {
 		need_codec = 0;
 	}
 
