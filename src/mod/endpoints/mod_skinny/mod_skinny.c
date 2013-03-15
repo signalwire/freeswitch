@@ -2112,6 +2112,7 @@ static void skinny_message_waiting_event_handler(switch_event_t *event)
 	switch_assert(dup_account != NULL);
 	switch_split_user_domain(dup_account, &user, &host);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MWI Event received for account %s with messages waiting %s\n", account, yn);
 
 	if ((pname = switch_event_get_header(event, "skinny-profile"))) {
 		if (!(profile = skinny_find_profile(pname))) {

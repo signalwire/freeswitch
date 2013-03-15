@@ -1855,6 +1855,8 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 	switch_event_t *event;
 	switch_event_t *message_event;
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Update MWI: Processing for %s@%s in %s\n", id, domain_name, myfolder);
+
 	message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages, &total_new_urgent_messages,
 				  &total_saved_urgent_messages);
 
@@ -1876,6 +1878,10 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 
 	switch_event_fire(&event);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Update MWI: Messages Waiting %s\n", yn);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Update MWI: Update Reason %s\n", update_reason);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Update MWI: Message Account %s@%s\n", id, domain_name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Update MWI: Voice Message %d/%d\n", total_new_messages, total_saved_messages);
 
 	switch_event_create_subclass(&message_event, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
 	switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Action", "mwi-update");
