@@ -2289,7 +2289,7 @@ SWITCH_STANDARD_APP(httapi_function)
 
 static char *load_cache_data(http_file_context_t *context, const char *url)
 {
-	char *ext = NULL;
+	char *ext = NULL, *dext = NULL, *p;
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 	char meta_buffer[1024] = "";
 	int fd;
@@ -2307,6 +2307,14 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 		} else {
 			ext = "wav";
 		}
+	}
+	
+	if (ext && (p = strchr(ext, '?'))) {
+		dext = strdup(ext);
+		if ((p = strchr(dext, '?'))) {
+			*p = '\0';
+			ext = dext;
+		} else free(dext);
 	}
 
 	context->cache_file_base = switch_core_sprintf(context->pool, "%s%s%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
@@ -2328,6 +2336,8 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 		}
 		close(fd);
 	}
+
+	switch_safe_free(dext);
 
 	return context->cache_file;
 }
@@ -2600,6 +2610,12 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 
 
 		if (newext) {
+			char *p;
+
+			if ((p = strrchr(context->cache_file, '.'))) {
+				*p = '\0';
+			}
+			
 			context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file, newext);
 		}
 
