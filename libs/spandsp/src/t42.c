@@ -1361,12 +1361,6 @@ SPAN_DECLARE(int) t42_decode_get_compressed_image_size(t42_decode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t42_decode_new_plane(t42_decode_state_t *s)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE(logging_state_t *) t42_decode_get_logging_state(t42_decode_state_t *s)
 {
     return &s->logging;

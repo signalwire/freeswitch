@@ -529,13 +529,13 @@ SPAN_DECLARE(int) t85_encode_set_image_width(t85_encode_state_t *s, uint32_t ima
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t85_encode_set_image_length(t85_encode_state_t *s, uint32_t length)
+SPAN_DECLARE(int) t85_encode_set_image_length(t85_encode_state_t *s, uint32_t image_length)
 {
     /* We must have variable length enabled.
        We do not allow the length to be changed multiple times.
        We only allow an image to be shrunk, and not stretched.
        We do not allow the length to become zero. */
-    if (!(s->options & T85_VLENGTH)  ||  s->newlen == NEWLEN_HANDLED  ||  length >= s->yd  ||  length < 1)
+    if (!(s->options & T85_VLENGTH)  ||  s->newlen == NEWLEN_HANDLED  ||  image_length >= s->yd  ||  image_length < 1)
     {
         /* Invalid parameter */
         return -1;
@@ -544,12 +544,12 @@ SPAN_DECLARE(int) t85_encode_set_image_length(t85_encode_state_t *s, uint32_t le
     {
         /* TODO: If we are already beyond the new length, we scale back the new length silently.
                  Is there any downside to this? */
-        if (length < s->y)
-            length = s->y;
-        if (s->yd != length)
+        if (image_length < s->y)
+            image_length = s->y;
+        if (s->yd != image_length)
             s->newlen = NEWLEN_PENDING;
     }
-    s->yd = length;
+    s->yd = image_length;
     if (s->y == s->yd)
     {
         /* We are already at the end of the image, so finish it off. */

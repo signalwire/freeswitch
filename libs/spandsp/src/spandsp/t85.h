@@ -93,31 +93,6 @@ SPAN_DECLARE(int) t85_encode_set_row_read_handler(t85_encode_state_t *s,
     \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) t85_encode_get_logging_state(t85_encode_state_t *s);
 
-/*! \brief Prepare to encode an image in T.85 format.
-    \param s The T.85 context.
-    \param image_width Image width, in pixels.
-    \param image_length Image length, in pixels.
-    \param handler A callback routine to handle encoded image rows.
-    \param user_data An opaque pointer passed to handler.
-    \return A pointer to the context, or NULL if there was a problem. */
-SPAN_DECLARE(t85_encode_state_t *) t85_encode_init(t85_encode_state_t *s,
-                                                   uint32_t image_width,
-                                                   uint32_t image_length,
-                                                   t4_row_read_handler_t handler,
-                                                   void *user_data);
-
-/*! \brief Restart a T.85 encode context.
-    \param s The T.85 context.
-    \param image width The image width, in pixels.
-    \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s,
-                                     uint32_t image_width,
-                                     uint32_t image_length);
-
-SPAN_DECLARE(int) t85_encode_release(t85_encode_state_t *s);
-
-SPAN_DECLARE(int) t85_encode_free(t85_encode_state_t *s);
-
 /*! \brief Set the T.85 options
     \param s The T.85 context.
     \brief l0 ???
@@ -138,7 +113,7 @@ SPAN_DECLARE(void) t85_encode_comment(t85_encode_state_t *s,
 
 /*! \brief Set the image width.
     \param s The T.85 context.
-    \param width The width of the image.
+    \param image_width The width of the image.
     \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t85_encode_set_image_width(t85_encode_state_t *s, uint32_t image_width);
 
@@ -147,9 +122,9 @@ SPAN_DECLARE(int) t85_encode_set_image_width(t85_encode_state_t *s, uint32_t ima
            will be silently adjusted to the current length. Therefore, adjust the length to 1
            will make the currently encoded length the final length.
     \param s The T.85 context.
-    \param length The new image length, in pixels.
+    \param image_length The new image length, in pixels.
     \return 0 if OK, or -1 if the request was not valid. */
-SPAN_DECLARE(int) t85_encode_set_image_length(t85_encode_state_t *s, uint32_t length);
+SPAN_DECLARE(int) t85_encode_set_image_length(t85_encode_state_t *s, uint32_t image_length);
 
 /*! \brief Get the width of the image.
     \param s The T.85 context.
@@ -170,28 +145,43 @@ SPAN_DECLARE(int) t85_encode_get_compressed_image_size(t85_encode_state_t *s);
     \param s The T.85 context. */
 SPAN_DECLARE(void) t85_encode_abort(t85_encode_state_t *s);
 
+/*! \brief Restart a T.85 encode context.
+    \param s The T.85 context.
+    \param image_width The image width, in pixels.
+    \param image_length The image length, in pixels.
+    \return 0 for success, otherwise -1. */
+SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s,
+                                     uint32_t image_width,
+                                     uint32_t image_length);
+
+/*! \brief Prepare to encode an image in T.85 format.
+    \param s The T.85 context.
+    \param image_width The image width, in pixels.
+    \param image_length The image length, in pixels.
+    \param handler A callback routine to handle encoded image rows.
+    \param user_data An opaque pointer passed to handler.
+    \return A pointer to the context, or NULL if there was a problem. */
+SPAN_DECLARE(t85_encode_state_t *) t85_encode_init(t85_encode_state_t *s,
+                                                   uint32_t image_width,
+                                                   uint32_t image_length,
+                                                   t4_row_read_handler_t handler,
+                                                   void *user_data);
+
+/*! \brief Release a T.85 encode context.
+    \param s The T.85 encode context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) t85_encode_release(t85_encode_state_t *s);
+
+/*! \brief Free a T.85 encode context.
+    \param s The T.85 encode context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) t85_encode_free(t85_encode_state_t *s);
+
 /*! Get the logging context associated with a T.85 decode context.
     \brief Get the logging context associated with a T.85 decode context.
     \param s The T.85 decode context.
     \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) t85_decode_get_logging_state(t85_decode_state_t *s);
-
-/*! \brief Prepare to decode an image in T.85 format.
-    \param s The T.85 context.
-    \param handler A callback routine to handle decoded image rows.
-    \param user_data An opaque pointer passed to handler.
-    \return A pointer to the context, or NULL if there was a problem. */
-SPAN_DECLARE(t85_decode_state_t *) t85_decode_init(t85_decode_state_t *s,
-                                                   t4_row_write_handler_t handler,
-                                                   void *user_data);
-
-SPAN_DECLARE(int) t85_decode_new_plane(t85_decode_state_t *s);
-
-SPAN_DECLARE(int) t85_decode_restart(t85_decode_state_t *s);
-
-SPAN_DECLARE(int) t85_decode_release(t85_decode_state_t *s);
-
-SPAN_DECLARE(int) t85_decode_free(t85_decode_state_t *s);
 
 /*! \brief Get the width of the image.
     \param s The T.85 context.
@@ -207,6 +197,8 @@ SPAN_DECLARE(uint32_t) t85_decode_get_image_length(t85_decode_state_t *s);
     \param s The T.85 context.
     \return The size of the compressed image, in bits. */
 SPAN_DECLARE(int) t85_decode_get_compressed_image_size(t85_decode_state_t *s);
+
+SPAN_DECLARE(int) t85_decode_new_plane(t85_decode_state_t *s);
 
 /*! \brief Set the row handler routine.
     \param s The T.85 context.
@@ -262,6 +254,27 @@ SPAN_DECLARE(void) t85_decode_rx_status(t85_decode_state_t *s, int status);
     \param len The length of the data to be decoded.
     \return 0 for OK. */
 SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], size_t len);
+
+SPAN_DECLARE(int) t85_decode_restart(t85_decode_state_t *s);
+
+/*! \brief Prepare to decode an image in T.85 format.
+    \param s The T.85 context.
+    \param handler A callback routine to handle decoded image rows.
+    \param user_data An opaque pointer passed to handler.
+    \return A pointer to the context, or NULL if there was a problem. */
+SPAN_DECLARE(t85_decode_state_t *) t85_decode_init(t85_decode_state_t *s,
+                                                   t4_row_write_handler_t handler,
+                                                   void *user_data);
+
+/*! \brief Release a T.85 decode context.
+    \param s The T.85 decode context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) t85_decode_release(t85_decode_state_t *s);
+
+/*! \brief Free a T.85 decode context.
+    \param s The T.85 decode context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) t85_decode_free(t85_decode_state_t *s);
 
 #if defined(__cplusplus)
 }
