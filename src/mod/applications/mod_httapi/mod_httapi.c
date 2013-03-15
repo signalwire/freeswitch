@@ -2601,9 +2601,10 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 		
 		if ((!context->url_params || !switch_event_get_header(context->url_params, "ext")) 
 			&& headers && (ct = switch_event_get_header(headers, "content-type"))) {
-			if (!strcasecmp(ct, "audio/mpeg")) {
+			if (switch_strcasecmp_any(ct, "audio/mpeg", "audio/x-mpeg", "audio/mp3", "audio/x-mp3", "audio/mpeg3", 
+									   "audio/x-mpeg3", "audio/mpg", "audio/x-mpg", "audio/x-mpegaudio")) {
 				newext = "mp3";
-			} else if (!strcasecmp(ct, "audio/wav")) {
+			} else if (switch_strcasecmp_any(ct, "audio/wav", "audio/x-wave", "audio/wav")) {
 				newext = "wav";
 			}
 		}
