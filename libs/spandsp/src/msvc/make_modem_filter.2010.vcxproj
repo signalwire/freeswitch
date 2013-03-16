@@ -53,31 +53,31 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>"$(TargetPath)" -m V.17 -i -r &gt;"$(ProjectDir)..\v17_v32bis_rx_fixed_rrc.h"
+      <Command>"$(TargetPath)" -m V.17 -r &gt;"$(ProjectDir)..\v17_v32bis_rx_rrc.h"
 "$(TargetPath)" -m V.17 -r &gt;"$(ProjectDir)..\v17_v32bis_rx_floating_rrc.h"
 
-"$(TargetPath)" -m V.17 -i -t &gt;"$(ProjectDir)..\v17_v32bis_tx_fixed_rrc.h"
+"$(TargetPath)" -m V.17 -t &gt;"$(ProjectDir)..\v17_v32bis_tx_rrc.h"
 "$(TargetPath)" -m V.17 -t &gt;"$(ProjectDir)..\v17_v32bis_tx_floating_rrc.h"
 
-"$(TargetPath)" -m V.22bis1200 -i -r &gt;"$(ProjectDir)..\v22bis_rx_1200_fixed_rrc.h"
-"$(TargetPath)" -m V.22bis2400 -i -r &gt;"$(ProjectDir)..\v22bis_rx_2400_fixed_rrc.h"
+"$(TargetPath)" -m V.22bis1200 -r &gt;"$(ProjectDir)..\v22bis_rx_1200_rrc.h"
+"$(TargetPath)" -m V.22bis2400 -r &gt;"$(ProjectDir)..\v22bis_rx_2400_rrc.h"
 "$(TargetPath)" -m V.22bis1200 -r &gt;"$(ProjectDir)..\v22bis_rx_1200_floating_rrc.h"
 "$(TargetPath)" -m V.22bis2400 -r &gt;"$(ProjectDir)..\v22bis_rx_2400_floating_rrc.h"
-"$(TargetPath)" -m V.22bis -i -t &gt;"$(ProjectDir)..\v22bis_tx_fixed_rrc.h"
+"$(TargetPath)" -m V.22bis -t &gt;"$(ProjectDir)..\v22bis_tx_rrc.h"
 "$(TargetPath)" -m V.22bis -t &gt;"$(ProjectDir)..\v22bis_tx_floating_rrc.h"
 
-"$(TargetPath)" -m V.27ter2400 -i -r &gt;"$(ProjectDir)..\v27ter_rx_2400_fixed_rrc.h"
-"$(TargetPath)" -m V.27ter4800 -i -r &gt;"$(ProjectDir)..\v27ter_rx_4800_fixed_rrc.h"
+"$(TargetPath)" -m V.27ter2400 -r &gt;"$(ProjectDir)..\v27ter_rx_2400_rrc.h"
+"$(TargetPath)" -m V.27ter4800 -r &gt;"$(ProjectDir)..\v27ter_rx_4800_rrc.h"
 "$(TargetPath)" -m V.27ter2400 -r &gt;"$(ProjectDir)..\v27ter_rx_2400_floating_rrc.h"
 "$(TargetPath)" -m V.27ter4800 -r &gt;"$(ProjectDir)..\v27ter_rx_4800_floating_rrc.h"
-"$(TargetPath)" -m V.27ter2400 -i -t &gt;"$(ProjectDir)..\v27ter_tx_2400_fixed_rrc.h"
-"$(TargetPath)" -m V.27ter4800 -i -t &gt;"$(ProjectDir)..\v27ter_tx_4800_fixed_rrc.h"
+"$(TargetPath)" -m V.27ter2400 -t &gt;"$(ProjectDir)..\v27ter_tx_2400_rrc.h"
+"$(TargetPath)" -m V.27ter4800 -t &gt;"$(ProjectDir)..\v27ter_tx_4800_rrc.h"
 "$(TargetPath)" -m V.27ter2400 -t &gt;"$(ProjectDir)..\v27ter_tx_2400_floating_rrc.h"
 "$(TargetPath)" -m V.27ter4800 -t &gt;"$(ProjectDir)..\v27ter_tx_4800_floating_rrc.h"
 
-"$(TargetPath)" -m V.29 -i -r &gt;"$(ProjectDir)..\v29rx_fixed_rrc.h"
+"$(TargetPath)" -m V.29 -r &gt;"$(ProjectDir)..\v29rx_rrc.h"
 "$(TargetPath)" -m V.29 -r &gt;"$(ProjectDir)..\v29rx_floating_rrc.h"
-"$(TargetPath)" -m V.29 -i -t &gt;"$(ProjectDir)..\v29tx_fixed_rrc.h"
+"$(TargetPath)" -m V.29 -t &gt;"$(ProjectDir)..\v29tx_rrc.h"
 "$(TargetPath)" -m V.29 -t &gt;"$(ProjectDir)..\v29tx_floating_rrc.h"
 </Command>
     </PostBuildEvent>
