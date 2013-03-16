@@ -58,12 +58,17 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v29tx.h"
 
-#include "v29tx_constellation_maps.h"
 #if defined(SPANDSP_USE_FIXED_POINT)
-#include "v29tx_fixed_rrc.h"
+#define FP_SCALE(x)                     ((int16_t) x)
 #else
-#include "v29tx_floating_rrc.h"
+#define FP_SCALE(x)                     (x)
 #endif
+
+#define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
+
+#include "v29tx_constellation_maps.h"
+
+#include "v29tx_rrc.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ        1700.0f

@@ -64,11 +64,11 @@
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define FP_SCALE    FP_Q_6_10
-#include "v22bis_tx_fixed_rrc.h"
 #else
 #define FP_SCALE(x) (x)
-#include "v22bis_tx_floating_rrc.h"
 #endif
+
+#include "v22bis_tx_rrc.h"
 
 /* Quoting from the V.22bis spec.
 

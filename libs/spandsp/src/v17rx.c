@@ -69,11 +69,14 @@
 #define FP_SCALE(x)                     FP_Q_6_10(x)
 #define FP_FACTOR                       1024
 #define FP_SHIFT_FACTOR                 12
-#include "v17_v32bis_rx_fixed_rrc.h"
 #else
 #define FP_SCALE(x)                     (x)
-#include "v17_v32bis_rx_floating_rrc.h"
 #endif
+
+#include "v17_v32bis_rx_rrc.h"
+
+#define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
+
 #include "v17_v32bis_tx_constellation_maps.h"
 #include "v17_v32bis_rx_constellation_maps.h"
 

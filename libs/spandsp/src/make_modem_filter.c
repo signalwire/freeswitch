@@ -66,7 +66,6 @@ static void make_tx_filter(int coeff_sets,
                            double carrier,
                            double baud_rate,
                            double excess_bandwidth,
-                           int fixed_point,
                            const char *tag)
 {
     int i;
@@ -75,8 +74,9 @@ static void make_tx_filter(int coeff_sets,
     int total_coeffs;
     double alpha;
     double beta;
-    double gain;
-    double scaling;
+    double floating_gain;
+    double fixed_gain;
+    double fixed_scaling;
     double peak;
     double coeffs[MAX_COEFF_SETS*MAX_COEFFS_PER_FILTER + 1];
 
@@ -87,63 +87,63 @@ static void make_tx_filter(int coeff_sets,
     compute_raised_cosine_filter(coeffs, total_coeffs, TRUE, FALSE, alpha, beta);
 
     /* Find the DC gain of the filter, and adjust the filter to unity gain. */
-    gain = 0.0;
+    floating_gain = 0.0;
     for (i = coeff_sets/2;  i < total_coeffs;  i += coeff_sets)
-        gain += coeffs[i];
+        floating_gain += coeffs[i];
     /* Normalise the gain to 1.0 */
     for (i = 0;  i < total_coeffs;  i++)
-        coeffs[i] /= gain;
-    gain = 1.0;
+        coeffs[i] /= floating_gain;
+    floating_gain = 1.0;
+    fixed_gain = 1.0;
 
-    if (fixed_point)
+    peak = -1.0;
+    for (i = 0;  i < total_coeffs;  i++)
     {
-        peak = -1.0;
-        for (i = 0;  i < total_coeffs;  i++)
-        {
-            if (fabs(coeffs[i]) > peak)
-                peak = fabs(coeffs[i]);
-        }
-        scaling = 32767.0;
-        if (peak >= 1.0)
-        {
-            scaling /= peak;
-            gain = 1.0/peak;
-        }
-        for (i = 0;  i < total_coeffs;  i++)
-            coeffs[i] *= scaling;
+        if (fabs(coeffs[i]) > peak)
+            peak = fabs(coeffs[i]);
+    }
+    fixed_scaling = 32767.0f;
+    if (peak >= 1.0)
+    {
+        fixed_scaling /= peak;
+        fixed_gain = 1.0/peak;
     }
 
     /* Churn out the data as a C source code header file, which can be directly included by the
        modem code. */
-    printf("#define TX_PULSESHAPER%s_GAIN        %ff\n", tag, gain);
+    printf("#if defined(SPANDSP_USE_FIXED_POINT)\n");
+    printf("#define TX_PULSESHAPER%s_SCALE(x)    ((int16_t) (%f*x + ((x >= 0.0)  ?  0.5  :  -0.5)))\n", tag, fixed_scaling);
+    printf("#define TX_PULSESHAPER%s_GAIN        %ff\n", tag, fixed_gain);
+    printf("#else\n");
+    printf("#define TX_PULSESHAPER%s_SCALE(x)    (x)\n", tag);
+    printf("#define TX_PULSESHAPER%s_GAIN        %ff\n", tag, floating_gain);
+    printf("#endif\n");
     printf("#define TX_PULSESHAPER%s_COEFF_SETS  %d\n", tag, coeff_sets);
-    printf("static const %s tx_pulseshaper%s[TX_PULSESHAPER%s_COEFF_SETS][%d] =\n",
-           (fixed_point)  ?  "int16_t"  :  "float",
+    printf("\n");
+    printf("#if defined(SPANDSP_USE_FIXED_POINT)\n");
+    printf("static const int16_t tx_pulseshaper%s[TX_PULSESHAPER%s_COEFF_SETS][%d] =\n",
            tag,
            tag,
            coeffs_per_filter);
+    printf("#else\n");
+    printf("static const float tx_pulseshaper%s[TX_PULSESHAPER%s_COEFF_SETS][%d] =\n",
+           tag,
+           tag,
+           coeffs_per_filter);
+    printf("#endif\n");
     printf("{\n");
     for (j = 0;  j < coeff_sets;  j++)
     {
         x = j;
         printf("    {\n");
-        if (fixed_point)
-            printf("        %8d,     /* Filter %d */\n", (int) coeffs[x], j);
-        else
-            printf("        %15.10ff,     /* Filter %d */\n", coeffs[x], j);
+        printf("        TX_PULSESHAPER%s_SCALE(%15.10ff),     /* Filter %d */\n", tag, coeffs[x], j);
         for (i = 1;  i < coeffs_per_filter - 1;  i++)
         {
             x = i*coeff_sets + j;
-            if (fixed_point)
-                printf("        %8d,\n", (int) coeffs[x]);
-            else
-                printf("        %15.10ff,\n", coeffs[x]);
+            printf("        TX_PULSESHAPER%s_SCALE(%15.10ff),\n", tag, coeffs[x]);
         }
         x = i*coeff_sets + j;
-        if (fixed_point)
-            printf("        %8d\n", (int) coeffs[x]);
-        else
-            printf("        %15.10ff\n", coeffs[x]);
+        printf("        TX_PULSESHAPER%s_SCALE(%15.10ff)\n", tag, coeffs[x]);
         if (j < coeff_sets - 1)
             printf("    },\n");
         else
@@ -158,7 +158,6 @@ static void make_rx_filter(int coeff_sets,
                            double carrier,
                            double baud_rate,
                            double excess_bandwidth,
-                           int fixed_point,
                            const char *tag)
 {
     int i;
@@ -169,14 +168,12 @@ static void make_rx_filter(int coeff_sets,
     int total_coeffs;
     double alpha;
     double beta;
-    double gain;
+    double floating_gain;
+    double fixed_gain;
+    double fixed_scaling;
     double peak;
     double coeffs[MAX_COEFF_SETS*MAX_COEFFS_PER_FILTER + 1];
-#if 0
-    complex_t co[MAX_COEFFS_PER_FILTER];
-#else
     double cox[MAX_COEFFS_PER_FILTER];
-#endif
 
     total_coeffs = coeff_sets*coeffs_per_filter + 1;
     alpha = baud_rate/(2.0*(double) (coeff_sets*SAMPLE_RATE));
@@ -186,84 +183,54 @@ static void make_rx_filter(int coeff_sets,
     compute_raised_cosine_filter(coeffs, total_coeffs, TRUE, FALSE, alpha, beta);
 
     /* Find the DC gain of the filter, and adjust the filter to unity gain. */
-    gain = 0.0;
+    floating_gain = 0.0;
     for (i = coeff_sets/2;  i < total_coeffs;  i += coeff_sets)
-        gain += coeffs[i];
+        floating_gain += coeffs[i];
     /* Normalise the gain to 1.0 */
     for (i = 0;  i < total_coeffs;  i++)
-        coeffs[i] /= gain;
-    gain = 1.0;
+        coeffs[i] /= floating_gain;
+    floating_gain = 1.0;
+    fixed_gain = 1.0;
 
-    if (fixed_point)
+    peak = -1.0;
+    for (i = 0;  i < total_coeffs;  i++)
     {
-        peak = -1.0;
-        for (i = 0;  i < total_coeffs;  i++)
-        {
-            if (fabs(coeffs[i]) > peak)
-                peak = fabs(coeffs[i]);
-        }
-        gain = 32767.0;
-        if (peak >= 1.0)
-            gain /= peak;
-        for (i = 0;  i < total_coeffs;  i++)
-            coeffs[i] *= gain;
+        if (fabs(coeffs[i]) > peak)
+            peak = fabs(coeffs[i]);
+    }
+    fixed_scaling = 32767.0f;
+    if (peak >= 1.0)
+    {
+        fixed_scaling /= peak;
+        fixed_gain = 1.0/peak;
     }
 
     /* Churn out the data as a C source code header file, which can be directly included by the
        modem code. */
-    printf("#define RX_PULSESHAPER%s_GAIN        %ff\n", tag, gain);
+    printf("#if defined(SPANDSP_USE_FIXED_POINT)\n");
+    printf("#define RX_PULSESHAPER%s_SCALE(x)    ((int16_t) (%f*x + ((x >= 0.0)  ?  0.5  :  -0.5)))\n", tag, fixed_scaling);
+    printf("#define RX_PULSESHAPER%s_GAIN        %ff\n", tag, fixed_gain);
+    printf("#else\n");
+    printf("#define RX_PULSESHAPER%s_SCALE(x)    (x)\n", tag);
+    printf("#define RX_PULSESHAPER%s_GAIN        %ff\n", tag, floating_gain);
+    printf("#endif\n");
     printf("#define RX_PULSESHAPER%s_COEFF_SETS  %d\n", tag, coeff_sets);
-#if 0
-    printf("static const %s rx_pulseshaper%s[RX_PULSESHAPER%s_COEFF_SETS][%d] =\n",
-           (fixed_point)  ?  "complexi16_t"  :  "complexf_t",
-           tag,
-           tag,
-           coeffs_per_filter);
-    printf("{\n");
-    for (j = 0;  j < coeff_sets;  j++)
-    {
-        /* Complex modulate the filter, to make it a complex pulse shaping bandpass filter
-           centred at the nominal carrier frequency. Use the same phase for all the coefficient
-           sets. This means the modem can step the carrier in whole samples, and not worry about
-           the fractional sample shift caused by selecting amongst the various coefficient sets. */
-        for (i = 0;  i < coeffs_per_filter;  i++)
-        {
-            m = i - (coeffs_per_filter >> 1);
-            x = i*coeff_sets + j;
-            co[i].re = coeffs[x]*cos(carrier*m);
-            co[i].im = coeffs[x]*sin(carrier*m);
-        }
-        printf("    {\n");
-        if (fixed_point)
-            printf("        {%8d, %8d},     /* Filter %d */\n", (int) co[i].re, (int) co[i].im, j);
-        else
-            printf("        {%15.10ff, %15.10ff},     /* Filter %d */\n", co[0].re, co[0].im, j);
-        for (i = 1;  i < coeffs_per_filter - 1;  i++)
-        {
-            if (fixed_point)
-                printf("        {%8d, %8d},\n", (int) co[i].re, (int) co[i].im);
-            else
-                printf("        {%15.10ff, %15.10ff},\n", co[i].re, co[i].im);
-        }
-        if (fixed_point)
-            printf("        {%8d, %8d}\n", (int) co[i].re, (int) co[i].im);
-        else
-            printf("        {%15.10ff, %15.10ff}\n", co[i].re, co[i].im);
-        if (j < coeff_sets - 1)
-            printf("    },\n");
-        else
-            printf("    }\n");
-    }
-    printf("};\n");
-#else
     for (k = 0;  k < 2;  k++)
     {
-        printf("static const %s rx_pulseshaper%s_%s[RX_PULSESHAPER%s_COEFF_SETS][%d] =\n",
-               (fixed_point)  ?  "int16_t"  :  "float",
+        printf("\n");
+        printf("#if defined(SPANDSP_USE_FIXED_POINT)\n");
+        printf("static const int16_t rx_pulseshaper%s_%s[RX_PULSESHAPER%s_COEFF_SETS][%d] =\n",
                tag,
                (k == 0)  ?  "re"  :  "im",
                tag,
                coeffs_per_filter);
+        printf("#else\n");
+        printf("static const float rx_pulseshaper%s_%s[RX_PULSESHAPER%s_COEFF_SETS][%d] =\n",
+               tag,
+               (k == 0)  ?  "re"  :  "im",
+               tag,
+               coeffs_per_filter);
+        printf("#endif\n");
         printf("{\n");
         for (j = 0;  j < coeff_sets;  j++)
         {
@@ -281,21 +248,10 @@ static void make_rx_filter(int coeff_sets,
                     cox[i] = coeffs[x]*sin(carrier*m);
             }
             printf("    {\n");
-            if (fixed_point)
-                printf("        %8d,     /* Filter %d */\n", (int) cox[0], j);
-            else
-                printf("        %15.10ff,     /* Filter %d */\n", cox[0], j);
+            printf("        RX_PULSESHAPER%s_SCALE(%15.10ff),     /* Filter %d */\n", tag, cox[0], j);
             for (i = 1;  i < coeffs_per_filter - 1;  i++)
-            {
-                if (fixed_point)
-                    printf("        %8d,\n", (int) cox[i]);
-                else
-                    printf("        %15.10ff,\n", cox[i]);
-            }
-            if (fixed_point)
-                printf("        %8d\n", (int) cox[i]);
-            else
-                printf("        %15.10ff\n", cox[i]);
+                    printf("        RX_PULSESHAPER%s_SCALE(%15.10ff),\n", tag, cox[i]);
+            printf("        RX_PULSESHAPER%s_SCALE(%15.10ff)\n", tag, cox[i]);
             if (j < coeff_sets - 1)
                 printf("    },\n");
             else
@@ -303,13 +259,12 @@ static void make_rx_filter(int coeff_sets,
         }
         printf("};\n");
     }
-#endif
 }
 /*- End of function --------------------------------------------------------*/
 
 static void usage(void)
 {
-    fprintf(stderr, "Usage: make_modem_rx_filter -m <V.17 | V.22bis | V.22bis1200 | V.22bis2400 | V.27ter2400 | V.27ter4800 | V.29> [-i] [-r] [-t]\n");
+    fprintf(stderr, "Usage: make_modem_rx_filter -m <V.17 | V.22bis | V.22bis1200 | V.22bis2400 | V.27ter2400 | V.27ter4800 | V.29> [-r] [-t]\n");
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -321,7 +276,6 @@ int main(int argc, char **argv)
     int tx_coeffs_per_filter;
     int opt;
     int transmit_modem;
-    int fixed_point;
     double carrier;
     double baud_rate;
     double rx_excess_bandwidth;
@@ -330,16 +284,12 @@ int main(int argc, char **argv)
     const char *tx_tag;
     const char *modem;
 
-    fixed_point = FALSE;
     transmit_modem = FALSE;
     modem = "";
-    while ((opt = getopt(argc, argv, "im:rt")) != -1)
+    while ((opt = getopt(argc, argv, "m:rt")) != -1)
     {
         switch (opt)
         {
-        case 'i':
-            fixed_point = TRUE;
-            break;
         case 'm':
             modem = optarg;
             break;
@@ -607,7 +557,6 @@ int main(int argc, char **argv)
                        carrier,
                        baud_rate,
                        tx_excess_bandwidth,
-                       fixed_point,
                        tx_tag);
     }
     else
@@ -617,7 +566,6 @@ int main(int argc, char **argv)
                        carrier,
                        baud_rate,
                        rx_excess_bandwidth,
-                       fixed_point,
                        rx_tag);
     }
     return 0;

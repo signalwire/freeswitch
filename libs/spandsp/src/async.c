@@ -212,42 +212,46 @@ SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data)
 {
     async_tx_state_t *s;
     int bit;
+    int parity_bit;
 
     s = (async_tx_state_t *) user_data;
     if (s->bitpos == 0)
     {
+        if (s->presend_bits > 0)
+        {
+            s->presend_bits--;
+            return 1;
+        }
         if ((s->byte_in_progress = s->get_byte(s->user_data)) < 0)
         {
-            /* No more data */
-            bit = SIG_STATUS_END_OF_DATA;
+            if (s->byte_in_progress != SIG_STATUS_LINK_IDLE)
+                return s->byte_in_progress;
+            /* Idle for a bit time. If the get byte call configured a presend
+               time we might idle for longer. */
+            return 1;
+        }
+        s->byte_in_progress &= (0xFFFF >> (16 - s->data_bits));
+        if (s->parity != ASYNC_PARITY_NONE)
+        {
+            parity_bit = parity8(s->byte_in_progress);
+            if (s->parity == ASYNC_PARITY_ODD)
+                parity_bit ^= 1;
+            s->byte_in_progress |= (parity_bit << s->data_bits);
+            s->byte_in_progress |= (0xFFFF << (s->data_bits + 1));
         }
         else
         {
-            /* Start bit */
-            bit = 0;
-            s->parity_bit = 0;
-            s->bitpos++;
+            s->byte_in_progress |= (0xFFFF << s->data_bits);
         }
-    }
-    else if (s->bitpos <= s->data_bits)
-    {
-        bit = s->byte_in_progress & 1;
-        s->byte_in_progress >>= 1;
-        s->parity_bit ^= bit;
-        s->bitpos++;
-    }
-    else if (s->parity  &&  s->bitpos == s->data_bits + 1)
-    {
-        if (s->parity == ASYNC_PARITY_ODD)
-            s->parity_bit ^= 1;
-        bit = s->parity_bit;
+        /* Start bit */
+        bit = 0;
         s->bitpos++;
     }
     else
     {
-        /* Stop bit(s) */
-        bit = 1;
-        if (++s->bitpos > s->data_bits + s->stop_bits)
+        bit = s->byte_in_progress & 1;
+        s->byte_in_progress >>= 1;
+        if (++s->bitpos > s->total_bits)
             s->bitpos = 0;
     }
     return bit;
@@ -278,16 +282,15 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
        flow control does not exist, so V.14 stuffing is not needed. */
     s->data_bits = data_bits;
     s->parity = parity;
-    s->stop_bits = stop_bits;
+    s->total_bits = data_bits + stop_bits;
     if (parity != ASYNC_PARITY_NONE)
-        s->stop_bits++;
+        s->total_bits++;
 
     s->get_byte = get_byte;
     s->user_data = user_data;
 
     s->byte_in_progress = 0;
     s->bitpos = 0;
-    s->parity_bit = 0;
     s->presend_bits = 0;
     return s;
 }

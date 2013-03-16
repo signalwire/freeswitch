@@ -60,13 +60,12 @@
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define FP_SCALE                        FP_Q_6_10
-#include "v27ter_tx_4800_fixed_rrc.h"
-#include "v27ter_tx_2400_fixed_rrc.h"
 #else
 #define FP_SCALE(x)                     (x)
-#include "v27ter_tx_4800_floating_rrc.h"
-#include "v27ter_tx_2400_floating_rrc.h"
 #endif
+
+#include "v27ter_tx_4800_rrc.h"
+#include "v27ter_tx_2400_rrc.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1800.0f

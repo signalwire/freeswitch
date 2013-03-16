@@ -75,13 +75,12 @@
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define FP_SHIFT_FACTOR                 10
 #define FP_SCALE                        FP_Q_6_10
-#include "v22bis_rx_1200_fixed_rrc.h"
-#include "v22bis_rx_2400_fixed_rrc.h"
 #else
 #define FP_SCALE(x)                     (x)
-#include "v22bis_rx_1200_floating_rrc.h"
-#include "v22bis_rx_2400_floating_rrc.h"
 #endif
+
+#include "v22bis_rx_1200_rrc.h"
+#include "v22bis_rx_2400_rrc.h"
 
 #define ms_to_symbols(t)                (((t)*600)/1000)
 

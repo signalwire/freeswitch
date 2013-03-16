@@ -39,6 +39,8 @@ struct async_tx_state_s
     int parity;
     /*! \brief The number of stop bits per character. */
     int stop_bits;
+    /*! \brief Total number of bits per character, including the parity and stop bits. */
+    int total_bits;
     /*! \brief A pointer to the callback routine used to get characters to be transmitted. */
     get_byte_func_t get_byte;
     /*! \brief An opaque pointer passed when calling get_byte. */

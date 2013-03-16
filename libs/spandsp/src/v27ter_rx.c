@@ -68,13 +68,12 @@
 #define FP_SCALE                        FP_Q_6_10
 #define FP_FACTOR                       4096
 #define FP_SHIFT_FACTOR                 12
-#include "v27ter_rx_4800_fixed_rrc.h"
-#include "v27ter_rx_2400_fixed_rrc.h"
 #else
 #define FP_SCALE(x)                     (x)
-#include "v27ter_rx_4800_floating_rrc.h"
-#include "v27ter_rx_2400_floating_rrc.h"
 #endif
+
+#include "v27ter_rx_4800_rrc.h"
+#include "v27ter_rx_2400_rrc.h"
 
 /* V.27ter is a DPSK modem, but this code treats it like QAM. It nails down the
    signal to a static constellation, even though dealing with differences is all
@@ -273,6 +272,34 @@ static void tune_equalizer(v27ter_rx_state_t *s, const complexf_t *z, const comp
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINT)
+static __inline__ void track_carrier(v27ter_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
+#else
+static __inline__ void track_carrier(v27ter_rx_state_t *s, const complexf_t *z, const complexf_t *target)
+#endif
+{
+#if defined(SPANDSP_USE_FIXED_POINT)
+    int32_t error;
+#else
+    float error;
+#endif
+
+    /* For small errors the imaginary part of the difference between the actual and the target
+       positions is proportional to the phase error, for any particular target. However, the
+       different amplitudes of the various target positions scale things. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+    error = ((int32_t) z->im*target->re - (int32_t) z->re*target->im) >> 10;
+    s->carrier_phase_rate += ((s->carrier_track_i*error) >> FP_SHIFT_FACTOR);
+    s->carrier_phase += ((s->carrier_track_p*error) >> FP_SHIFT_FACTOR);
+#else
+    error = z->im*target->re - z->re*target->im;
+    s->carrier_phase_rate += (int32_t) (s->carrier_track_i*error);
+    s->carrier_phase += (int32_t) (s->carrier_track_p*error);
+    //span_log(&s->logging, SPAN_LOG_FLOW, "Im = %15.5f   f = %15.5f\n", error, dds_frequencyf(s->carrier_phase_rate));
+#endif
+}
+/*- End of function --------------------------------------------------------*/
+
+#if defined(SPANDSP_USE_FIXED_POINT)
 static __inline__ int find_quadrant(const complexi16_t *z)
 #else
 static __inline__ int find_quadrant(const complexf_t *z)
@@ -337,38 +364,11 @@ static __inline__ int find_octant(complexf_t *z)
 }
 /*- End of function --------------------------------------------------------*/
 
-#if defined(SPANDSP_USE_FIXED_POINT)
-static __inline__ void track_carrier(v27ter_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
-#else
-static __inline__ void track_carrier(v27ter_rx_state_t *s, const complexf_t *z, const complexf_t *target)
-#endif
-{
-#if defined(SPANDSP_USE_FIXED_POINT)
-    int32_t error;
-#else
-    float error;
-#endif
-
-    /* For small errors the imaginary part of the difference between the actual and the target
-       positions is proportional to the phase error, for any particular target. However, the
-       different amplitudes of the various target positions scale things. */
-#if defined(SPANDSP_USE_FIXED_POINT)
-    error = ((int32_t) z->im*target->re - (int32_t) z->re*target->im) >> 10;
-    s->carrier_phase_rate += ((s->carrier_track_i*error) >> FP_SHIFT_FACTOR);
-    s->carrier_phase += ((s->carrier_track_p*error) >> FP_SHIFT_FACTOR);
-#else
-    error = z->im*target->re - z->re*target->im;
-    s->carrier_phase_rate += (int32_t) (s->carrier_track_i*error);
-    s->carrier_phase += (int32_t) (s->carrier_track_p*error);
-    //span_log(&s->logging, SPAN_LOG_FLOW, "Im = %15.5f   f = %15.5f\n", error, dds_frequencyf(s->carrier_phase_rate));
-#endif
-}
-/*- End of function --------------------------------------------------------*/
-
 static __inline__ int descramble(v27ter_rx_state_t *s, int in_bit)
 {
     int out_bit;
 
+    in_bit &= 1;
     out_bit = (in_bit ^ (s->scramble_reg >> 5) ^ (s->scramble_reg >> 6)) & 1;
     if (s->scrambler_pattern_count >= 33)
     {

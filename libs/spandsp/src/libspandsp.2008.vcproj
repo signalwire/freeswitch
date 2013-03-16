@@ -343,6 +343,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="ademco_contactid.c"
+				>
+			</File>
+			<File
 				RelativePath="adsi.c"
 				>
 			</File>
@@ -702,16 +706,13 @@
 		<Filter
 			Name="Header Files"
 			>
-			<File
-				RelativePath=".\spandsp\private\image_translate.h"
-				>
-			</File>
-			<File
-				RelativePath=".\spandsp\image_translate.h"
-				>
 			</File>
 			<File
 				RelativePath="spandsp.h"
+				>
+			</File>
+			<File
+				RelativePath="spandsp/ademco_contactid.h"
 				>
 			</File>
 			<File
@@ -843,6 +844,10 @@
 				>
 			</File>
 			<File
+				RelativePath="spandsp/image_translate.h"
+				>
+			</File>
+			<File
 				RelativePath="spandsp/logging.h"
 				>
 			</File>
@@ -876,6 +881,10 @@
 			</File>
 			<File
 				RelativePath="spandsp/power_meter.h"
+				>
+			</File>
+			<File
+				RelativePath="spandsp/private/ademco_contactid.h"
 				>
 			</File>
 			<File
@@ -948,6 +957,10 @@
 			</File>
 			<File
 				RelativePath="spandsp/private/ima_adpcm.h"
+				>
+			</File>
+			<File
+				RelativePath="spandsp/private/image_translate.h"
 				>
 			</File>
 			<File

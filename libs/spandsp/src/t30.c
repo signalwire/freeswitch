@@ -1538,7 +1538,7 @@ static int build_dcs(t30_state_t *s)
         ||
         ((s->image_width == T4_WIDTH_1200_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4 0x%x 0x%x\n", s->image_width, s->x_resolution);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4\n");
         /* No width related bits need to be set. */
     }
     else if (((s->image_width == T4_WIDTH_R8_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_R8))

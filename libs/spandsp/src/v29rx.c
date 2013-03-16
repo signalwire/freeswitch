@@ -67,13 +67,15 @@
 #define FP_SCALE                        FP_Q_4_12
 #define FP_FACTOR                       4096
 #define FP_SHIFT_FACTOR                 12
-#include "v29tx_constellation_maps.h"
-#include "v29rx_fixed_rrc.h"
 #else
 #define FP_SCALE(x)                     (x)
-#include "v29tx_constellation_maps.h"
-#include "v29rx_floating_rrc.h"
 #endif
+
+#include "v29rx_rrc.h"
+
+#define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
+
+#include "v29tx_constellation_maps.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1700.0f
@@ -104,6 +106,7 @@ enum
 
 static const uint8_t space_map_9600[20][20] =
 {
+    /*                               Middle V Middle */
     {13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12, 11, 11, 11, 11, 11, 11},
     {13, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 11, 11, 11, 11, 11, 11, 11},
     {13, 13, 13, 13, 13, 13, 13,  4,  4,  4,  4,  4,  4, 11, 11, 11, 11, 11, 11, 11},
@@ -113,8 +116,8 @@ static const uint8_t space_map_9600[20][20] =
     {14, 13, 13, 13, 13, 13,  5,  5,  5,  5,  3,  3,  3,  3, 11, 11, 11, 11, 11, 10},
     {14, 14,  6,  6,  6,  5,  5,  5,  5,  5,  3,  3,  3,  3,  3,  2,  2,  2, 10, 10},
     {14, 14,  6,  6,  6,  6,  5,  5,  5,  5,  3,  3,  3,  3,  2,  2,  2,  2, 10, 10},
-    {14, 14,  6,  6,  6,  6,  5,  5,  5,  5,  3,  3,  3,  3,  2,  2,  2,  2, 10, 10},
-    {14, 14,  6,  6,  6,  6,  7,  7,  7,  7,  1,  1,  1,  1,  2,  2,  2,  2, 10, 10},
+    {14, 14,  6,  6,  6,  6,  5,  5,  5,  5,  3,  3,  3,  3,  2,  2,  2,  2, 10, 10}, /* << Middle */
+    {14, 14,  6,  6,  6,  6,  7,  7,  7,  7,  1,  1,  1,  1,  2,  2,  2,  2, 10, 10}, /* << Middle */
     {14, 14,  6,  6,  6,  6,  7,  7,  7,  7,  1,  1,  1,  1,  2,  2,  2,  2, 10, 10},
     {14, 14,  6,  6,  6,  7,  7,  7,  7,  7,  1,  1,  1,  1,  1,  2,  2,  2, 10, 10},
     {14, 15, 15, 15, 15, 15,  7,  7,  7,  7,  1,  1,  1,  1,  9,  9,  9,  9,  9, 10},
@@ -124,6 +127,7 @@ static const uint8_t space_map_9600[20][20] =
     {15, 15, 15, 15, 15, 15, 15,  0,  0,  0,  0,  0,  0,  9,  9,  9,  9,  9,  9,  9},
     {15, 15, 15, 15, 15, 15, 15,  8,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,  9,  9},
     {15, 15, 15, 15, 15, 15,  8,  8,  8,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,  9}
+    /*                               Middle ^ Middle */
 };
 
 /* Coefficients for the band edge symbol timing synchroniser (alpha = 0.99) */

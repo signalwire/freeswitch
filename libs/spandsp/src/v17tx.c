@@ -63,44 +63,42 @@
 #include "spandsp/private/v17tx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_SCALE(x)     ((int16_t) x)
+#define FP_SCALE(x)                     ((int16_t) x)
 #else
-#define FP_SCALE(x)     (x)
+#define FP_SCALE(x)                     (x)
 #endif
+
+#define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
 
 #include "v17_v32bis_tx_constellation_maps.h"
-#if defined(SPANDSP_USE_FIXED_POINT)
-#include "v17_v32bis_tx_fixed_rrc.h"
-#else
-#include "v17_v32bis_tx_floating_rrc.h"
-#endif
+#include "v17_v32bis_tx_rrc.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
-#define CARRIER_NOMINAL_FREQ        1800.0f
+#define CARRIER_NOMINAL_FREQ            1800.0f
 
 /* Segments of the training sequence */
 /*! The start of the optional TEP, that may preceed the actual training, in symbols */
-#define V17_TRAINING_SEG_TEP_A      0
+#define V17_TRAINING_SEG_TEP_A          0
 /*! The mid point of the optional TEP, that may preceed the actual training, in symbols */
-#define V17_TRAINING_SEG_TEP_B      (V17_TRAINING_SEG_TEP_A + 480)
+#define V17_TRAINING_SEG_TEP_B          (V17_TRAINING_SEG_TEP_A + 480)
 /*! The start of training segment 1, in symbols */
-#define V17_TRAINING_SEG_1          (V17_TRAINING_SEG_TEP_B + 48)
+#define V17_TRAINING_SEG_1              (V17_TRAINING_SEG_TEP_B + 48)
 /*! The start of training segment 2, in symbols */
-#define V17_TRAINING_SEG_2          (V17_TRAINING_SEG_1 + 256)
+#define V17_TRAINING_SEG_2              (V17_TRAINING_SEG_1 + 256)
 /*! The start of training segment 3, in symbols */
-#define V17_TRAINING_SEG_3          (V17_TRAINING_SEG_2 + 2976)
+#define V17_TRAINING_SEG_3              (V17_TRAINING_SEG_2 + 2976)
 /*! The start of training segment 4, in symbols */
-#define V17_TRAINING_SEG_4          (V17_TRAINING_SEG_3 + 64)
+#define V17_TRAINING_SEG_4              (V17_TRAINING_SEG_3 + 64)
 /*! The start of training segment 4 in short training mode, in symbols */
-#define V17_TRAINING_SHORT_SEG_4    (V17_TRAINING_SEG_2 + 38)
+#define V17_TRAINING_SHORT_SEG_4        (V17_TRAINING_SEG_2 + 38)
 /*! The end of the training, in symbols */
-#define V17_TRAINING_END            (V17_TRAINING_SEG_4 + 48)
-#define V17_TRAINING_SHUTDOWN_A     (V17_TRAINING_END + 32)
+#define V17_TRAINING_END                (V17_TRAINING_SEG_4 + 48)
+#define V17_TRAINING_SHUTDOWN_A         (V17_TRAINING_END + 32)
 /*! The end of the shutdown sequence, in symbols */
-#define V17_TRAINING_SHUTDOWN_END   (V17_TRAINING_SHUTDOWN_A + 48)
+#define V17_TRAINING_SHUTDOWN_END       (V17_TRAINING_SHUTDOWN_A + 48)
 
 /*! The 16 bit pattern used in the bridge section of the training sequence */
-#define V17_BRIDGE_WORD             0x8880
+#define V17_BRIDGE_WORD                 0x8880
 
 static __inline__ int scramble(v17_tx_state_t *s, int in_bit)
 {
