@@ -84,6 +84,7 @@ AC_DEFINE(INLINE,[static inline],[Define inline construction for your platform])
 #
 # Documentation
 #
+AM_CONDITIONAL([HAVE_DOXYGEN], [false])
 AC_CHECK_PROGS([DOXYGEN], [doxygen])
 if test -z "$DOXYGEN"; then
   AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
