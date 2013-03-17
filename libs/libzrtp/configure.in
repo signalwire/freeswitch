@@ -24,7 +24,6 @@ case $target_os in
   ;;
   *freebsd2* | *freebsd* | *netbsd* | *openbsd* | *osf[12]*)
   echo "------- START libzrtp configuration for BSD platform ------------"
-  AC_DEFINE(PLATFORM,ZP_BSD,BSD platform)
   ;;
   hpux* | irix* | linuxaout* | linux* | osf* | solaris2* | sunos4*)
   echo "------- START libzrtp configuration for Linux platform ------------"
