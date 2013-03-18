@@ -2694,12 +2694,23 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 {
 	http_file_context_t *context;
 	char *parsed = NULL, *pdup = NULL;
+	const char *pa = NULL;
+	int is_https = 0;
 	switch_status_t status;
+
+	if (!strncmp(path, "http://", 7)) {
+		pa = path + 7;
+	} else if (!strncmp(path, "https://", 8)) {
+		pa = path + 8;
+		is_https = 1;
+	} else {
+		pa = path;
+	}
 
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
 
-	pdup = switch_core_strdup(context->pool, path);
+	pdup = switch_core_strdup(context->pool, pa);
 
 	switch_event_create_brackets(pdup, '(', ')', ',', &context->url_params, &parsed, SWITCH_FALSE);
 
@@ -2710,12 +2721,15 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 		if ((var = switch_event_get_header(context->url_params, "cache")) && !switch_true(var)) {
 			context->expires = 1;
 		}
-
 	}
 
-	if (parsed) path = parsed;
+	if (parsed) pa = parsed;
 
-	context->dest_url = switch_core_sprintf(context->pool, "http://%s", path);
+	if (is_https) {
+		context->dest_url = switch_core_sprintf(context->pool, "https://%s", pa);
+	} else {
+		context->dest_url = switch_core_sprintf(context->pool, "http://%s", pa);
+	}
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		char *ext;
