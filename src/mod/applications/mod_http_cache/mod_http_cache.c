@@ -168,6 +168,8 @@ struct url_cache {
 	int ssl_verifypeer;
 	/** Verify that hostname matches certificate */
 	int ssl_verifyhost;
+	/** True if http/https file formats should be loaded */
+	int enable_file_formats;
 };
 static url_cache_t gcache;
 
@@ -234,7 +236,7 @@ static switch_status_t http_put(url_cache_t *cache, switch_core_session_t *sessi
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	
+
 	curl_handle = switch_curl_easy_init();
 	if (!curl_handle) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_curl_easy_init() failure\n");
@@ -254,7 +256,7 @@ static switch_status_t http_put(url_cache_t *cache, switch_core_session_t *sessi
 	if (!cache->ssl_verifypeer) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 	} else {
-		/* this is the file with all the trusted certificate authorities */ 
+		/* this is the file with all the trusted certificate authorities */
 		if (!zstr(cache->ssl_cacert)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
 		}
@@ -273,7 +275,7 @@ static switch_status_t http_put(url_cache_t *cache, switch_core_session_t *sessi
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received HTTP error %ld trying to save %s to %s\n", httpRes, filename, url);
 		status = SWITCH_STATUS_GENERR;
 	}
-	
+
 done:
 	if (file_to_put) {
 		fclose(file_to_put);
@@ -311,7 +313,7 @@ static size_t get_file_callback(void *ptr, size_t size, size_t nmemb, void *get)
 		get_data->url->size += bytes_written;
 		result = bytes_written;
 	}
-	
+
 	return result;
 }
 /**
@@ -340,7 +342,7 @@ static char *trim(char *str)
 	if (zstr(str)) {
 		return str;
 	}
-	
+
 	/* strip whitespace from end */
 	for (i = len - 1; i >= 0; i--) {
 		if (!isspace(str[i])) {
@@ -423,7 +425,7 @@ static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *ge
 	switch_zmalloc(header, realsize + 1);
 	strncpy(header, (char *)ptr, realsize);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s", header);
-	
+
 	/* check which header this is and process it */
 	if (!strncasecmp(CACHE_CONTROL_HEADER, header, CACHE_CONTROL_HEADER_LEN)) {
 		process_cache_control_header(url, header + CACHE_CONTROL_HEADER_LEN);
@@ -603,7 +605,7 @@ static switch_status_t url_cache_add(url_cache_t *cache, switch_core_session_t *
  * great, but is better than least recently used and is simple to implement.
  *
  * @param cache the cache
- * @param session the (optional) session 
+ * @param session the (optional) session
  * @return SWITCH_STATUS_SUCCESS if successful
  */
 static switch_status_t url_cache_replace(url_cache_t *cache, switch_core_session_t *session)
@@ -611,7 +613,7 @@ static switch_status_t url_cache_replace(url_cache_t *cache, switch_core_session
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int i = 0;
 	simple_queue_t *queue = &cache->queue;
-	
+
 	if (queue->size < queue->max_size || queue->size == 0) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -674,7 +676,7 @@ static void url_cache_remove(url_cache_t *cache, switch_core_session_t *session,
 	if (url == to_remove) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Removing %s(%s) from cache index %d\n", url->url, url->filename, queue->pos);
 		queue->data[queue->pos] = NULL;
-		queue->size--; 
+		queue->size--;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "URL entry, %s, not in cache queue!!!\n", url->url);
 	}
@@ -703,7 +705,7 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url)
 	if (zstr(url)) {
 		return NULL;
 	}
-	
+
 	switch_zmalloc(u, sizeof(cached_url_t));
 
 	/* filename is constructed from UUID and is stored in cache dir (first 2 characters of UUID) */
@@ -715,7 +717,7 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url)
 
 	/* create sub-directory if it doesn't exist */
 	switch_dir_make_recursive(dirname, SWITCH_DEFAULT_DIR_PERMS, cache->pool);
-	
+
 	/* find extension on the end of URL */
 	for (ext = &url[strlen(url) - 1]; ext != url; ext--) {
 		if (*ext == '/' || *ext == '\\') {
@@ -775,7 +777,7 @@ static switch_status_t http_get(url_cache_t *cache, cached_url_t *url, switch_co
 	/* set up HTTP GET */
 	get_data.fd = 0;
 	get_data.url = url;
-	
+
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache\n", get_data.url->filename);
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
@@ -786,11 +788,11 @@ static switch_status_t http_get(url_cache_t *cache, cached_url_t *url, switch_co
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");	
+		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
 		if (!cache->ssl_verifypeer) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
 		} else {
-			/* this is the file with all the trusted certificate authorities */ 
+			/* this is the file with all the trusted certificate authorities */
 			if (!zstr(cache->ssl_cacert)) {
 				switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, cache->ssl_cacert);
 			}
@@ -820,7 +822,7 @@ static switch_status_t http_get(url_cache_t *cache, cached_url_t *url, switch_co
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received HTTP error %ld trying to fetch %s\n", httpRes, url->url);
 		return SWITCH_STATUS_GENERR;
 	}
-	
+
 	return status;
 }
 
@@ -910,7 +912,7 @@ SWITCH_STANDARD_API(http_cache_get)
 	filename = url_cache_get(&gcache, session, cmd, 1, pool);
 	if (filename) {
 		stream->write_function(stream, "%s", filename);
-		
+
 	} else {
 		stream->write_function(stream, "-ERR\n");
 		status = SWITCH_STATUS_FALSE;
@@ -1082,6 +1084,7 @@ static switch_status_t do_config(url_cache_t *cache)
 	cache->ssl_cacert = SWITCH_PREFIX_DIR "/conf/cacert.pem";
 	cache->ssl_verifyhost = 1;
 	cache->ssl_verifypeer = 1;
+	cache->enable_file_formats = 0;
 
 	/* get params */
 	settings = switch_xml_child(cfg, "settings");
@@ -1089,7 +1092,12 @@ static switch_status_t do_config(url_cache_t *cache)
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-			if (!strcasecmp(var, "max-urls")) {
+			if (!strcasecmp(var, "enable-file-formats")) {
+				cache->enable_file_formats = switch_true(val);
+				if (cache->enable_file_formats) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabling http:// and https:// formats.  This is unstable if mod_httapi is also loaded\n");
+				}
+			} else if (!strcasecmp(var, "max-urls")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting max-urls to %s\n", val);
 				max_urls = atoi(val);
 			} else if (!strcasecmp(var, "location")) {
@@ -1123,7 +1131,7 @@ static switch_status_t do_config(url_cache_t *cache)
 	if (max_urls <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-urls must be > 0\n");
 		status = SWITCH_STATUS_TERM;
-		goto done; 
+		goto done;
 	}
 	if (zstr(cache->location)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "location must not be empty\n");
@@ -1155,6 +1163,114 @@ done:
 }
 
 /**
+ * HTTP file playback state
+ */
+struct http_context {
+	switch_file_handle_t fh;
+};
+
+/**
+ * Open URL
+ * @param handle
+ * @param prefix URL prefix
+ * @param path the URL
+ * @return SWITCH_STATUS_SUCCESS if opened
+ */
+static switch_status_t file_open(switch_file_handle_t *handle, const char *prefix, const char *path)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	struct http_context *context = switch_core_alloc(handle->memory_pool, sizeof(*context));
+	const char *url = switch_core_sprintf(handle->memory_pool, "%s%s", prefix, path);
+	const char *local_path;
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		/* WRITE not supported */
+		return SWITCH_STATUS_FALSE;
+	}
+
+	local_path = url_cache_get(&gcache, NULL, url, 1, handle->memory_pool);
+	if (!local_path) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if ((status = switch_core_file_open(&context->fh,
+			local_path,
+			handle->channels,
+			handle->samplerate,
+			SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open HTTP cache file: %s, %s\n", local_path, url);
+		return status;
+	}
+
+	handle->private_info = context;
+	handle->samples = context->fh.samples;
+	handle->format = context->fh.format;
+	handle->sections = context->fh.sections;
+	handle->seekable = context->fh.seekable;
+	handle->speed = context->fh.speed;
+	handle->interval = context->fh.interval;
+	handle->channels = context->fh.channels;
+	handle->flags |= SWITCH_FILE_NOMUX;
+
+	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {
+		switch_set_flag(handle, SWITCH_FILE_NATIVE);
+	} else {
+		switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+	}
+
+	return status;
+}
+
+/**
+ * Open HTTP URL
+ * @param handle
+ * @param path the URL
+ * @return SWITCH_STATUS_SUCCESS if opened
+ */
+static switch_status_t http_file_open(switch_file_handle_t *handle, const char *path)
+{
+	return file_open(handle, "http://", path);
+}
+
+/**
+ * Open HTTPS URL
+ * @param handle
+ * @param path the URL
+ * @return SWITCH_STATUS_SUCCESS if opened
+ */
+static switch_status_t https_file_open(switch_file_handle_t *handle, const char *path)
+{
+	return file_open(handle, "https://", path);
+}
+
+/**
+ * Read from HTTP file
+ * @param handle
+ * @param data
+ * @param len
+ * @return
+ */
+static switch_status_t http_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	struct http_context *context = (struct http_context *)handle->private_info;
+	return switch_core_file_read(&context->fh, data, len);
+}
+
+/**
+ * Close HTTP file
+ * @param handle
+ * @return SWITCH_STATUS_SUCCESS
+ */
+static switch_status_t http_file_close(switch_file_handle_t *handle)
+{
+	struct http_context *context = (struct http_context *)handle->private_info;
+	return switch_core_file_close(&context->fh);
+}
+
+static char *http_supported_formats[] = { "http", NULL };
+static char *https_supported_formats[] = { "https", NULL };
+
+/**
  * Called when FreeSWITCH loads the module
  */
 SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
@@ -1169,12 +1285,28 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	SWITCH_ADD_API(api, "http_put", "HTTP PUT", http_cache_put, HTTP_PUT_SYNTAX);
 	SWITCH_ADD_API(api, "http_clear_cache", "Clear the cache", http_cache_clear, HTTP_CACHE_CLEAR_SYNTAX);
 	SWITCH_ADD_API(api, "http_prefetch", "Prefetch document in a background thread.  Use http_get to get the prefetched document", http_cache_prefetch, HTTP_PREFETCH_SYNTAX);
-	
+
 	memset(&gcache, 0, sizeof(url_cache_t));
 	gcache.pool = pool;
 
 	if (do_config(&gcache) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
+	}
+
+	if (gcache.enable_file_formats) {
+		switch_file_interface_t *file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+		file_interface->interface_name = modname;
+		file_interface->extens = http_supported_formats;
+		file_interface->file_open = http_file_open;
+		file_interface->file_close = http_file_close;
+		file_interface->file_read = http_file_read;
+
+		file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+		file_interface->interface_name = modname;
+		file_interface->extens = https_supported_formats;
+		file_interface->file_open = https_file_open;
+		file_interface->file_close = http_file_close;
+		file_interface->file_read = http_file_read;
 	}
 
 	switch_core_hash_init(&gcache.map, gcache.pool);
