@@ -2690,12 +2690,11 @@ static switch_status_t http_file_file_seek(switch_file_handle_t *handle, unsigne
 	return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
 }
 
-static switch_status_t http_file_file_open(switch_file_handle_t *handle, const char *path)
+static switch_status_t file_open(switch_file_handle_t *handle, const char *path, int is_https)
 {
 	http_file_context_t *context;
 	char *parsed = NULL, *pdup = NULL;
 	const char *pa = NULL;
-	int is_https = 0;
 	switch_status_t status;
 
 	if (!strncmp(path, "http://", 7)) {
@@ -2818,6 +2817,14 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t http_file_file_open(switch_file_handle_t *handle, const char *path) {
+	return file_open(handle, path, 0);
+}
+
+static switch_status_t https_file_file_open(switch_file_handle_t *handle, const char *path) {
+	return file_open(handle, path, 1);
+}
+
 static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 {
 	http_file_context_t *context = handle->private_info;
@@ -2904,6 +2911,7 @@ static switch_status_t http_file_file_read(switch_file_handle_t *handle, void *d
 /* Registration */
 
 static char *http_file_supported_formats[SWITCH_MAX_CODECS] = { 0 };
+static char *https_file_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 
 /* /HTTP FILE INTERFACE */
@@ -2912,7 +2920,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 {
 	switch_api_interface_t *httapi_api_interface;
 	switch_application_interface_t *app_interface;
-	switch_file_interface_t *file_interface;
+	switch_file_interface_t *http_file_interface;
+	switch_file_interface_t *https_file_interface;
 	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -2927,14 +2936,25 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 
 	http_file_supported_formats[0] = "http";
 
-	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
-	file_interface->interface_name = modname;
-	file_interface->extens = http_file_supported_formats;
-	file_interface->file_open = http_file_file_open;
-	file_interface->file_close = http_file_file_close;
-	file_interface->file_read = http_file_file_read;
-	file_interface->file_write = http_file_write;
-	file_interface->file_seek = http_file_file_seek;
+	http_file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	http_file_interface->interface_name = modname;
+	http_file_interface->extens = http_file_supported_formats;
+	http_file_interface->file_open = http_file_file_open;
+	http_file_interface->file_close = http_file_file_close;
+	http_file_interface->file_read = http_file_file_read;
+	http_file_interface->file_write = http_file_write;
+	http_file_interface->file_seek = http_file_file_seek;
+
+	https_file_supported_formats[0] = "https";
+
+	https_file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	https_file_interface->interface_name = modname;
+	https_file_interface->extens = https_file_supported_formats;
+	https_file_interface->file_open = https_file_file_open;
+	https_file_interface->file_close = http_file_file_close;
+	https_file_interface->file_read = http_file_file_read;
+	https_file_interface->file_write = http_file_write;
+	https_file_interface->file_seek = http_file_file_seek;
 	
 	switch_snprintf(globals.cache_path, sizeof(globals.cache_path), "%s%shttp_file_cache", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR);
 	switch_dir_make_recursive(globals.cache_path, SWITCH_DEFAULT_DIR_PERMS, pool);
