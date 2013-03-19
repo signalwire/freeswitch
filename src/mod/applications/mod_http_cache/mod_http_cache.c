@@ -1172,15 +1172,13 @@ struct http_context {
 /**
  * Open URL
  * @param handle
- * @param prefix URL prefix
  * @param path the URL
  * @return SWITCH_STATUS_SUCCESS if opened
  */
-static switch_status_t file_open(switch_file_handle_t *handle, const char *prefix, const char *path)
+static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const char *path)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	struct http_context *context = switch_core_alloc(handle->memory_pool, sizeof(*context));
-	const char *url = switch_core_sprintf(handle->memory_pool, "%s%s", prefix, path);
 	const char *local_path;
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
@@ -1188,7 +1186,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *prefi
 		return SWITCH_STATUS_FALSE;
 	}
 
-	local_path = url_cache_get(&gcache, NULL, url, 1, handle->memory_pool);
+	local_path = url_cache_get(&gcache, NULL, path, 1, handle->memory_pool);
 	if (!local_path) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1198,7 +1196,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *prefi
 			handle->channels,
 			handle->samplerate,
 			SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open HTTP cache file: %s, %s\n", local_path, url);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open HTTP cache file: %s, %s\n", local_path, path);
 		return status;
 	}
 
@@ -1229,7 +1227,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *prefi
  */
 static switch_status_t http_file_open(switch_file_handle_t *handle, const char *path)
 {
-	return file_open(handle, "http://", path);
+	return http_cache_file_open(handle, switch_core_sprintf(handle->memory_pool, "http://%s", path));
 }
 
 /**
@@ -1240,7 +1238,7 @@ static switch_status_t http_file_open(switch_file_handle_t *handle, const char *
  */
 static switch_status_t https_file_open(switch_file_handle_t *handle, const char *path)
 {
-	return file_open(handle, "https://", path);
+	return http_cache_file_open(handle, switch_core_sprintf(handle->memory_pool, "https://%s", path));
 }
 
 /**
@@ -1269,6 +1267,7 @@ static switch_status_t http_file_close(switch_file_handle_t *handle)
 
 static char *http_supported_formats[] = { "http", NULL };
 static char *https_supported_formats[] = { "https", NULL };
+static char *http_cache_supported_formats[] = { "http_cache", NULL };
 
 /**
  * Called when FreeSWITCH loads the module
@@ -1277,6 +1276,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 {
 	switch_api_interface_t *api;
 	int i;
+	switch_file_interface_t *file_interface;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -1293,8 +1293,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 		return SWITCH_STATUS_TERM;
 	}
 
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = http_cache_supported_formats;
+	file_interface->file_open = http_cache_file_open;
+	file_interface->file_close = http_file_close;
+	file_interface->file_read = http_file_read;
+
 	if (gcache.enable_file_formats) {
-		switch_file_interface_t *file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+		file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 		file_interface->interface_name = modname;
 		file_interface->extens = http_supported_formats;
 		file_interface->file_open = http_file_open;
