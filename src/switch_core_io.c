@@ -339,6 +339,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	if (tap_only) {
 		need_codec = 0;
+		do_resample = 0;
+		do_bugs = 0;
 	}
 
 
