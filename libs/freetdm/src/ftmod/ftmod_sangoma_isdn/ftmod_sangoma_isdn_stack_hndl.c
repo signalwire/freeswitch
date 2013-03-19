@@ -210,7 +210,9 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 			}
 			break;
 		case FTDM_CHANNEL_STATE_TERMINATING:
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "Processing SETUP in TERMINATING state, saving SETUP info for later processing\n");
+		case FTDM_CHANNEL_STATE_HANGUP:
+		case FTDM_CHANNEL_STATE_HANGUP_COMPLETE:
+			ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Processing SETUP in %s state, saving SETUP info for later processing\n", ftdm_channel_state2str(ftdmchan->state));
 			ftdm_assert(!sngisdn_test_flag(sngisdn_info, FLAG_GLARE), "Trying to save GLARE info, but we already had a glare\n");
 			
 			sngisdn_set_flag(sngisdn_info, FLAG_GLARE);
