@@ -405,6 +405,7 @@ Description: mod_opal
 Module: endpoints/mod_portaudio
 Description: mod_portaudio
  Adds mod_portaudio.
+Build-Depends: libasound2-dev
 
 Module: endpoints/mod_reference
 Description: mod_reference
