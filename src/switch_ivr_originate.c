@@ -2372,7 +2372,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			or_argc = 1;
 		}
 
-		for (r = 0; r < or_argc; r++) {
+		for (r = 0; r < or_argc && (!cancel_cause || *cancel_cause == 0); r++) {
 			char *p, *end = NULL;
 			int q = 0, alt = 0;
 
