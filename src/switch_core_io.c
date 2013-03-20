@@ -271,6 +271,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			
 			if (bp->ready) {
 				if (!switch_test_flag(bp, SMBF_TAP_NATIVE_READ) && !switch_test_flag(bp, SMBF_TAP_NATIVE_WRITE)) {
+					printf("FUCKER\n\n\n");
 					tap_only = 0;
 				}
 
@@ -341,6 +342,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		need_codec = 0;
 		do_resample = 0;
 		do_bugs = 0;
+		goto done;
 	}
 
 
@@ -657,7 +659,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 		}
 
-		if (do_bugs) {
+		if (do_bugs || tap_only) {
 			goto done;
 		}
 
@@ -985,8 +987,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (session->bugs && !need_codec) {
-		do_bugs = TRUE;
-		need_codec = TRUE;
+		switch_media_bug_t *bp;
+		int tap_only = 1;
+
+		switch_thread_rwlock_rdlock(session->bug_rwlock);
+		for (bp = session->bugs; bp; bp = bp->next) {
+			if (bp->ready) {
+				if (!switch_test_flag(bp, SMBF_TAP_NATIVE_READ) && !switch_test_flag(bp, SMBF_TAP_NATIVE_WRITE)) {
+					tap_only = 0;
+					break;
+				}
+			}
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+
+		if (!tap_only) {
+			do_bugs = TRUE;
+			need_codec = TRUE;
+		}
 	}
 
 	if (frame->codec->implementation->actual_samples_per_second != session->write_impl.actual_samples_per_second) {
