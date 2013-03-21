@@ -977,8 +977,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	char *ext;
 	const char *prefix;
 	displace_helper_t *dh;
+	const char *p;
+	switch_bool_t hangup_on_error = SWITCH_FALSE;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
+
+    if ((p = switch_channel_get_variable(channel, "DISPLACE_HANGUP_ON_ERROR"))) {
+        hangup_on_error = switch_true(p);
+    }
 
 	if (zstr(file)) {
 		return SWITCH_STATUS_FALSE;
@@ -1039,8 +1045,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 							  file,
 							  read_impl.number_of_channels,
 							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+		if (hangup_on_error) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+		}
 		return SWITCH_STATUS_GENERR;
 	}
 
