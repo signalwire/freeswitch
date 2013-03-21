@@ -3635,6 +3635,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 	switch_channel_t *channel = switch_core_session_get_channel(sth->session);
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	switch_status_t status;
+	switch_event_t *event;
 
 	switch_thread_cond_create(&sth->cond, sth->pool);
 	switch_mutex_init(&sth->mutex, SWITCH_MUTEX_NESTED, sth->pool);
@@ -3658,7 +3659,6 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 		}
 
 		if (switch_core_asr_check_results(sth->ah, &flags) == SWITCH_STATUS_SUCCESS) {
-			switch_event_t *event;
 
 			status = switch_core_asr_get_results(sth->ah, &xmlstr, &flags);
 
@@ -3739,6 +3739,25 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 		}
 	}
   done:
+
+	if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "closed");
+		if (switch_test_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS)) {
+			switch_event_t *dup;
+
+			if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(channel, dup);
+				switch_event_fire(&dup);
+			}
+
+		}
+
+		if (switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Event queue failed!\n");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+			switch_event_fire(&event);
+		}
+	}
 
 	switch_mutex_unlock(sth->mutex);
 	switch_core_session_rwunlock(sth->session);
