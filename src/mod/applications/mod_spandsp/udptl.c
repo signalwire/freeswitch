@@ -195,7 +195,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 	s->rx[x].fec_len[0] = 0;
 	s->rx[x].fec_span = 0;
 	s->rx[x].fec_entries = 0;
-	if ((buf[ptr++] & 0x80) q== 0) {
+	if ((buf[ptr++] & 0x80) == 0) {
 		/* Secondary packet mode for error recovery */
 		/* We might have the packet we want, but we need to check through
 		   the redundant stuff, and verify the integrity of the UDPTL.
