@@ -2968,6 +2968,10 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		ftdm_buffer_zero(ftdmchan->gen_dtmf_buffer);
 	}
 
+	if (ftdmchan->dtmf_buffer) {
+		ftdm_buffer_zero(ftdmchan->dtmf_buffer);
+	}
+
 	if (ftdmchan->digit_buffer) {
 		ftdm_buffer_zero(ftdmchan->digit_buffer);
 	}
