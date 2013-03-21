@@ -597,7 +597,9 @@ static void send_disconnect(listener_t *listener, const char *message)
 	} else {
 		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
 	}
-	
+
+	if (!listener->sock) return;
+
 	len = strlen(disco_buf);
 	switch_socket_send(listener->sock, disco_buf, &len);
 	if (len > 0) {
