@@ -427,8 +427,8 @@
       <Project>{dee932ab-5911-4700-9eeb-8c7090a0a330}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="msvc\make_math_fixed_tables.2012.vcxproj">
-      <Project>{2386b892-35f5-46cf-a0f0-10394d2fbf9b}</Project>
+    <ProjectReference Include="msvc\make_math_fixed_tables.2010.vcxproj">
+      <Project>{9d04a840-ce18-4ff5-a6d3-0a2bb92ff2e6}</Project>
     </ProjectReference>
     <ProjectReference Include="msvc\make_modem_filter.2010.vcxproj">
       <Project>{329a6fa0-0fcc-4435-a950-e670aefa9838}</Project>

@@ -7,8 +7,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>make_at_dictionary</ProjectName>
-    <ProjectGuid>{DEE932AB-5911-4700-9EEB-8C7090A0A330}</ProjectGuid>
+    <ProjectName>make_math_fixed_tables</ProjectName>
+    <ProjectGuid>{9D04A840-CE18-4FF5-A6D3-0A2BB92FF2E6}</ProjectGuid>
     <RootNamespace>make_math_fixed_tables</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
