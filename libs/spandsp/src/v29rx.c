@@ -64,17 +64,25 @@
 #include "spandsp/private/v29rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_SCALE                        FP_Q_4_12
+#define FP_SCALE(x)                     FP_Q_4_12(x)
 #define FP_FACTOR                       4096
 #define FP_SHIFT_FACTOR                 12
 #else
 #define FP_SCALE(x)                     (x)
 #endif
 
-#include "v29rx_rrc.h"
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define FP_SYNC_SCALE(x)                FP_Q_6_10(x)
+#define FP_SYNC_SCALE_32(x)             FP_Q_6_10_32(x)
+#define FP_SYNC_SHIFT_FACTOR            10
+#else
+#define FP_SYNC_SCALE(x)                (x)
+#define FP_SYNC_SCALE_32(x)             (x)
+#endif
 
 #define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
 
+#include "v29rx_rrc.h"
 #include "v29tx_constellation_maps.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
@@ -91,6 +99,23 @@
 #define V29_TRAINING_SEG_3_LEN          384
 /*! The length of training segment 4, in symbols */
 #define V29_TRAINING_SEG_4_LEN          48
+
+/* Coefficients for the band edge symbol timing synchroniser (alpha = 0.99) */
+/* low_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ - BAUD_RATE/2.0f)/SAMPLE_RATE; */
+/* high_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ + BAUD_RATE/2.0f)/SAMPLE_RATE; */
+#define SIN_LOW_BAND_EDGE               0.382683432f
+#define COS_LOW_BAND_EDGE               0.923879533f
+#define SIN_HIGH_BAND_EDGE              0.760405966f
+#define COS_HIGH_BAND_EDGE             -0.649448048f
+#define ALPHA                           0.99f
+
+#define SYNC_LOW_BAND_EDGE_COEFF_0      FP_SYNC_SCALE(2.0f*ALPHA*COS_LOW_BAND_EDGE)
+#define SYNC_LOW_BAND_EDGE_COEFF_1      FP_SYNC_SCALE(-ALPHA*ALPHA)
+#define SYNC_LOW_BAND_EDGE_COEFF_2      FP_SYNC_SCALE(-ALPHA*SIN_LOW_BAND_EDGE)
+#define SYNC_HIGH_BAND_EDGE_COEFF_0     FP_SYNC_SCALE(2.0f*ALPHA*COS_HIGH_BAND_EDGE)
+#define SYNC_HIGH_BAND_EDGE_COEFF_1     FP_SYNC_SCALE(-ALPHA*ALPHA)
+#define SYNC_HIGH_BAND_EDGE_COEFF_2     FP_SYNC_SCALE(-ALPHA*SIN_HIGH_BAND_EDGE)
+#define SYNC_MIXED_EDGES_COEFF_3        FP_SYNC_SCALE(-ALPHA*ALPHA*(SIN_HIGH_BAND_EDGE*COS_LOW_BAND_EDGE - SIN_LOW_BAND_EDGE*COS_HIGH_BAND_EDGE))
 
 enum
 {
@@ -129,33 +154,6 @@ static const uint8_t space_map_9600[20][20] =
     {15, 15, 15, 15, 15, 15,  8,  8,  8,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,  9}
     /*                               Middle ^ Middle */
 };
-
-/* Coefficients for the band edge symbol timing synchroniser (alpha = 0.99) */
-/* low_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ - BAUD_RATE/2.0f)/SAMPLE_RATE; */
-/* high_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ + BAUD_RATE/2.0f)/SAMPLE_RATE; */
-#define SIN_LOW_BAND_EDGE               0.382683432f
-#define COS_LOW_BAND_EDGE               0.923879533f
-#define SIN_HIGH_BAND_EDGE              0.760405966f
-#define COS_HIGH_BAND_EDGE             -0.649448048f
-#define ALPHA                           0.99f
-
-#if defined(SPANDSP_USE_FIXED_POINT)
-#define SYNC_LOW_BAND_EDGE_COEFF_0      FP_Q_6_10(2.0f*ALPHA*COS_LOW_BAND_EDGE)
-#define SYNC_LOW_BAND_EDGE_COEFF_1      FP_Q_6_10(-ALPHA*ALPHA)
-#define SYNC_LOW_BAND_EDGE_COEFF_2      FP_Q_6_10(-ALPHA*SIN_LOW_BAND_EDGE)
-#define SYNC_HIGH_BAND_EDGE_COEFF_0     FP_Q_6_10(2.0f*ALPHA*COS_HIGH_BAND_EDGE)
-#define SYNC_HIGH_BAND_EDGE_COEFF_1     FP_Q_6_10(-ALPHA*ALPHA)
-#define SYNC_HIGH_BAND_EDGE_COEFF_2     FP_Q_6_10(-ALPHA*SIN_HIGH_BAND_EDGE)
-#define SYNC_MIXED_EDGES_COEFF_3        FP_Q_6_10(-ALPHA*ALPHA*(SIN_HIGH_BAND_EDGE*COS_LOW_BAND_EDGE - SIN_LOW_BAND_EDGE*COS_HIGH_BAND_EDGE))
-#else
-#define SYNC_LOW_BAND_EDGE_COEFF_0      (2.0f*ALPHA*COS_LOW_BAND_EDGE)
-#define SYNC_LOW_BAND_EDGE_COEFF_1      (-ALPHA*ALPHA)
-#define SYNC_LOW_BAND_EDGE_COEFF_2      (-ALPHA*SIN_LOW_BAND_EDGE)
-#define SYNC_HIGH_BAND_EDGE_COEFF_0     (2.0f*ALPHA*COS_HIGH_BAND_EDGE)
-#define SYNC_HIGH_BAND_EDGE_COEFF_1     (-ALPHA*ALPHA)
-#define SYNC_HIGH_BAND_EDGE_COEFF_2     (-ALPHA*SIN_HIGH_BAND_EDGE)
-#define SYNC_MIXED_EDGES_COEFF_3        (-ALPHA*ALPHA*(SIN_HIGH_BAND_EDGE*COS_LOW_BAND_EDGE - SIN_LOW_BAND_EDGE*COS_HIGH_BAND_EDGE))
-#endif
 
 SPAN_DECLARE(float) v29_rx_carrier_frequency(v29_rx_state_t *s)
 {
@@ -234,14 +232,14 @@ static void equalizer_reset(v29_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    static const complexi16_t x = {FP_SCALE(3.0f), FP_SCALE(0.0f)};
+    static const complexi16_t x = {FP_CONSTELLATION_SCALE(3.0f), FP_CONSTELLATION_SCALE(0.0f)};
 
     cvec_zeroi16(s->eq_coeff, V29_EQUALIZER_LEN);
     s->eq_coeff[V29_EQUALIZER_PRE_LEN] = x;
     cvec_zeroi16(s->eq_buf, V29_EQUALIZER_LEN);
     s->eq_delta = 32768.0f*EQUALIZER_DELTA/V29_EQUALIZER_LEN;
 #else
-    static const complexf_t x = {3.0f, 0.0f};
+    static const complexf_t x = {FP_CONSTELLATION_SCALE(3.0f), FP_CONSTELLATION_SCALE(0.0f)};
 
     cvec_zerof(s->eq_coeff, V29_EQUALIZER_LEN);
     s->eq_coeff[V29_EQUALIZER_PRE_LEN] = x;
@@ -262,8 +260,8 @@ static __inline__ complexi16_t equalizer_get(v29_rx_state_t *s)
 
     /* Get the next equalized value. */
     zz = cvec_circular_dot_prodi16(s->eq_buf, s->eq_coeff, V29_EQUALIZER_LEN, s->eq_step);
-    z.re = zz.re >> FP_SHIFT_FACTOR;
-    z.im = zz.im >> FP_SHIFT_FACTOR;
+    z.re = zz.re >> FP_CONSTELLATION_SHIFT_FACTOR;
+    z.im = zz.im >> FP_CONSTELLATION_SHIFT_FACTOR;
     return z;
 }
 #else
@@ -300,36 +298,6 @@ static void tune_equalizer(v29_rx_state_t *s, const complexf_t *z, const complex
 #endif
 /*- End of function --------------------------------------------------------*/
 
-static int scrambled_training_bit(v29_rx_state_t *s)
-{
-    int bit;
-
-    /* Segment 3 of the training sequence - the scrambled CDCD part. */
-    /* Apply the 1 + x^-6 + x^-7 scrambler */
-    bit = s->training_scramble_reg & 1;
-    s->training_scramble_reg >>= 1;
-    if (bit ^ (s->training_scramble_reg & 1))
-        s->training_scramble_reg |= 0x40;
-    return bit;
-}
-/*- End of function --------------------------------------------------------*/
-
-#if defined(SPANDSP_USE_FIXED_POINT)
-static __inline__ int find_quadrant(const complexi16_t *z)
-#else
-static __inline__ int find_quadrant(const complexf_t *z)
-#endif
-{
-    int b1;
-    int b2;
-
-    /* Split the space along the two diagonals. */
-    b1 = (z->im > z->re);
-    b2 = (z->im < -z->re);
-    return (b2 << 1) | (b1 ^ b2);
-}
-/*- End of function --------------------------------------------------------*/
-
 #if defined(SPANDSP_USE_FIXED_POINT)
 static __inline__ void track_carrier(v29_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
 #else
@@ -355,22 +323,61 @@ static __inline__ void track_carrier(v29_rx_state_t *s, const complexf_t *z, con
        different amplitudes of the various target positions scale things. This isn't all bad,
        as the angular error for the larger amplitude constellation points is probably
        a more reliable indicator, and we are weighting it as such. */
-#if defined(SPANDSP_USE_FIXED_POINT)
-    error = (((int32_t) z->im*target->re) >> FP_SHIFT_FACTOR) - (((int32_t) z->re*target->im) >> FP_SHIFT_FACTOR);
-#else
-    error = z->im*target->re - z->re*target->im;
-#endif
     /* Use a proportional-integral approach to tracking the carrier. The PI
        parameters are coarser at first, until we get precisely on target. Then,
        the filter will be damped more to keep us on target. */
 #if defined(SPANDSP_USE_FIXED_POINT)
+    error = (((int32_t) z->im*target->re) >> FP_SHIFT_FACTOR) - (((int32_t) z->re*target->im) >> FP_SHIFT_FACTOR);
     s->carrier_phase_rate += ((s->carrier_track_i*error) >> FP_SHIFT_FACTOR);
     s->carrier_phase += ((s->carrier_track_p*error) >> FP_SHIFT_FACTOR);
 #else
+    error = z->im*target->re - z->re*target->im;
     s->carrier_phase_rate += (int32_t) (s->carrier_track_i*error);
     s->carrier_phase += (int32_t) (s->carrier_track_p*error);
-    //span_log(&s->logging, SPAN_LOG_FLOW, "Im = %15.5f   f = %15.5f\n", error, dds_frequencyf(s->carrier_phase_rate));
 #endif
+}
+/*- End of function --------------------------------------------------------*/
+
+#if defined(SPANDSP_USE_FIXED_POINT)
+static __inline__ int find_quadrant(const complexi16_t *z)
+#else
+static __inline__ int find_quadrant(const complexf_t *z)
+#endif
+{
+    int b1;
+    int b2;
+
+    /* Split the space along the two diagonals. */
+    b1 = (z->im > z->re);
+    b2 = (z->im < -z->re);
+    return (b2 << 1) | (b1 ^ b2);
+}
+/*- End of function --------------------------------------------------------*/
+
+static int scrambled_training_bit(v29_rx_state_t *s)
+{
+    int bit;
+
+    /* Segment 3 of the training sequence - the scrambled CDCD part. */
+    /* Apply the 1 + x^-6 + x^-7 scrambler */
+    bit = s->training_scramble_reg & 1;
+    s->training_scramble_reg >>= 1;
+    if (bit ^ (s->training_scramble_reg & 1))
+        s->training_scramble_reg |= 0x40;
+    return bit;
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ int descramble(v29_rx_state_t *s, int in_bit)
+{
+    int out_bit;
+
+    /* Descramble the bit */
+    in_bit &= 1;
+    out_bit = (in_bit ^ (s->scramble_reg >> (18 - 1)) ^ (s->scramble_reg >> (23 - 1))) & 1;
+    s->scramble_reg = (s->scramble_reg << 1) | in_bit;
+
+    return out_bit;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -378,14 +385,9 @@ static __inline__ void put_bit(v29_rx_state_t *s, int bit)
 {
     int out_bit;
 
-    bit &= 1;
-
-    /* Descramble the bit */
-    out_bit = (bit ^ (s->scramble_reg >> (18 - 1)) ^ (s->scramble_reg >> (23 - 1))) & 1;
-    s->scramble_reg = (s->scramble_reg << 1) | bit;
-
     /* We need to strip the last part of the training - the test period of all 1s -
        before we let data go to the application. */
+    out_bit = descramble(s, bit);
     if (s->training_stage == TRAINING_STAGE_NORMAL_OPERATION)
     {
         s->put_bit(s->put_bit_user_data, out_bit);
@@ -431,11 +433,11 @@ static void decode_baud(v29_rx_state_t *s, complexf_t *z)
     {
         /* 9600 and 7200 are quite similar. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-        re = (z->re + 5*FP_FACTOR) >> (FP_SHIFT_FACTOR - 1);
-        im = (z->im + 5*FP_FACTOR) >> (FP_SHIFT_FACTOR - 1);
+        re = (z->re + FP_CONSTELLATION_SCALE(5.0f)) >> (FP_CONSTELLATION_SHIFT_FACTOR - 1);
+        im = (z->im + FP_CONSTELLATION_SCALE(5.0f)) >> (FP_CONSTELLATION_SHIFT_FACTOR - 1);
 #else
-        re = (int) ((z->re + 5.0f)*2.0f);
-        im = (int) ((z->im + 5.0f)*2.0f);
+        re = (int) ((z->re + FP_CONSTELLATION_SCALE(5.0f))*2.0f);
+        im = (int) ((z->im + FP_CONSTELLATION_SCALE(5.0f))*2.0f);
 #endif
         if (re > 19)
             re = 19;
@@ -499,9 +501,9 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
 #if defined(SPANDSP_USE_FIXED_POINT)
     /* TODO: The scalings used here need more thorough evaluation, to see if overflows are possible. */
     /* Cross correlate */
-    v = (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[0] >> 4)) >> 15)*SYNC_LOW_BAND_EDGE_COEFF_2
-      - (((s->symbol_sync_low[0] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_HIGH_BAND_EDGE_COEFF_2
-      + (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_MIXED_EDGES_COEFF_3;
+    v = (((s->symbol_sync_low[1] >> (FP_SYNC_SHIFT_FACTOR/2))*(s->symbol_sync_high[0] >> (FP_SYNC_SHIFT_FACTOR/2))) >> 14)*SYNC_LOW_BAND_EDGE_COEFF_2
+      - (((s->symbol_sync_low[0] >> (FP_SYNC_SHIFT_FACTOR/2))*(s->symbol_sync_high[1] >> (FP_SYNC_SHIFT_FACTOR/2))) >> 14)*SYNC_HIGH_BAND_EDGE_COEFF_2
+      + (((s->symbol_sync_low[1] >> (FP_SYNC_SHIFT_FACTOR/2))*(s->symbol_sync_high[1] >> (FP_SYNC_SHIFT_FACTOR/2))) >> 14)*SYNC_MIXED_EDGES_COEFF_3;
     /* Filter away any DC component */
     p = v - s->symbol_sync_dc_filter[1];
     s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
@@ -509,15 +511,6 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
     v = labs(s->baud_phase);
-    if (v > 30*FP_FACTOR)
-    {
-        i = (v > 1000*FP_FACTOR)  ?  5  :  1;
-        if (s->baud_phase < 0)
-            i = -i;
-        //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
-        s->eq_put_step += i;
-        s->total_baud_timing_correction += i;
-    }
 #else
     /* Cross correlate */
     v = s->symbol_sync_low[1]*s->symbol_sync_high[0]*SYNC_LOW_BAND_EDGE_COEFF_2
@@ -530,16 +523,16 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
     v = fabsf(s->baud_phase);
-    if (v > 30.0f)
+#endif
+    if (v > FP_SYNC_SCALE_32(30.0f))
     {
-        i = (v > 1000.0f)  ?  5  :  1;
-        if (s->baud_phase < 0.0f)
+        i = (v > FP_SYNC_SCALE_32(1000.0f))  ?  5  :  1;
+        if (s->baud_phase < FP_SYNC_SCALE_32(0.0f))
             i = -i;
         //printf("v = %10.5f %5d - %f %f %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
     }
-#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -560,13 +553,13 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
     complexi16_t z;
     complexi16_t z16;
     const complexi16_t *target;
-    static const complexi16_t zero = {0, 0};
+    static const complexi16_t zero = {FP_CONSTELLATION_SCALE(0.0f), FP_CONSTELLATION_SCALE(0.0f)};
 #else
     float p;
     complexf_t z;
     complexf_t zz;
     const complexf_t *target;
-    static const complexf_t zero = {0.0f, 0.0f};
+    static const complexf_t zero = {FP_CONSTELLATION_SCALE(0.0f), FP_CONSTELLATION_SCALE(0.0f)};
 #endif
     int bit;
     int i;
@@ -606,13 +599,15 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             s->training_stage = TRAINING_STAGE_LOG_PHASE;
             vec_zeroi32(s->diff_angles, 16);
             s->last_angles[0] = arctan2(z.im, z.re);
+            if (s->agc_scaling_save == FP_SCALE(0.0f))
+            {
 #if defined(SPANDSP_USE_FIXED_POINT)
-            if (s->agc_scaling_save == 0)
-                s->agc_scaling_save = s->agc_scaling;
+                span_log(&s->logging, SPAN_LOG_FLOW, "Locking AGC at %d\n", s->agc_scaling);
 #else
-            if (s->agc_scaling_save == 0.0f)
-                s->agc_scaling_save = s->agc_scaling;
+                span_log(&s->logging, SPAN_LOG_FLOW, "Locking AGC at %f\n", s->agc_scaling);
 #endif
+                s->agc_scaling_save = s->agc_scaling;
+            }
         }
         break;
     case TRAINING_STAGE_LOG_PHASE:
@@ -655,11 +650,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
                 /* Park this modem */
-#if defined(SPANDSP_USE_FIXED_POINT)
-                s->agc_scaling_save = 0;
-#else
-                s->agc_scaling_save = 0.0f;
-#endif
+                s->agc_scaling_save = FP_SCALE(0.0f);
                 s->training_stage = TRAINING_STAGE_PARKED;
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
                 break;
@@ -695,11 +686,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
                of a real training sequence. */
             span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
             /* Park this modem */
-#if defined(SPANDSP_USE_FIXED_POINT)
-            s->agc_scaling_save = 0;
-#else
-            s->agc_scaling_save = 0.0f;
-#endif
+            s->agc_scaling_save = FP_SCALE(0.0f);
             s->training_stage = TRAINING_STAGE_PARKED;
             report_status_change(s, SIG_STATUS_TRAINING_FAILED);
         }
@@ -715,12 +702,11 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         if (++s->training_count >= V29_TRAINING_SEG_3_LEN - 48)
         {
             s->training_stage = TRAINING_STAGE_TRAIN_ON_CDCD_AND_TEST;
+            s->training_error = FP_CONSTELLATION_SCALE(0.0f);
 #if defined(SPANDSP_USE_FIXED_POINT)
-            s->training_error = 0;
             s->carrier_track_i = 200;
             s->carrier_track_p = 1000000;
 #else
-            s->training_error = 0.0f;
             s->carrier_track_i = 200.0f;
             s->carrier_track_p = 1000000.0f;
 #endif
@@ -746,15 +732,12 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         {
 #if defined(SPANDSP_USE_FIXED_POINT)
             span_log(&s->logging, SPAN_LOG_FLOW, "Constellation mismatch %d\n", s->training_error);
-            if (s->training_error < 48*2*FP_FACTOR*FP_FACTOR)
-            {
-                s->training_error = 0;
 #else
             span_log(&s->logging, SPAN_LOG_FLOW, "Constellation mismatch %f\n", s->training_error);
-            if (s->training_error < 48.0f*2.0f)
-            {
-                s->training_error = 0.0f;
 #endif
+            if (s->training_error < FP_CONSTELLATION_SCALE(48.0f)*FP_CONSTELLATION_SCALE(2.0f))
+            {
+                s->training_error = FP_CONSTELLATION_SCALE(0.0f);
                 s->training_count = 0;
                 s->constellation_state = 0;
                 s->training_stage = TRAINING_STAGE_TEST_ONES;
@@ -763,11 +746,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (convergence failed)\n");
                 /* Park this modem */
-#if defined(SPANDSP_USE_FIXED_POINT)
-                s->agc_scaling_save = 0;
-#else
-                s->agc_scaling_save = 0.0f;
-#endif
+                s->agc_scaling_save = FP_SCALE(0.0f);
                 s->training_stage = TRAINING_STAGE_PARKED;
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
@@ -789,11 +768,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
 #endif
         if (++s->training_count >= V29_TRAINING_SEG_4_LEN)
         {
-#if defined(SPANDSP_USE_FIXED_POINT)
-            if (s->training_error < 48*FP_FACTOR*FP_FACTOR)
-#else
-            if (s->training_error < 48.0f)
-#endif
+            if (s->training_error < FP_CONSTELLATION_SCALE(48.0f)*FP_CONSTELLATION_SCALE(1.0f))
             {
                 /* We are up and running */
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -815,11 +790,10 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
                 /* Training has failed. Park this modem */
 #if defined(SPANDSP_USE_FIXED_POINT)
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (constellation mismatch %d)\n", s->training_error);
-                s->agc_scaling_save = 0;
 #else
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (constellation mismatch %f)\n", s->training_error);
-                s->agc_scaling_save = 0.0f;
 #endif
+                s->agc_scaling_save = FP_SCALE(0.0f);
                 s->training_stage = TRAINING_STAGE_PARKED;
                 report_status_change(s, SIG_STATUS_TRAINING_FAILED);
             }
@@ -888,8 +862,8 @@ static __inline__ int signal_detect(v29_rx_state_t *s, int16_t amp)
                 return 0;
             }
 #if defined(IAXMODEM_STUFF)
-            /* Carrier has dropped, but the put_bit is
-               pending the signal_present delay. */
+            /* Carrier has dropped, but the put_bit is pending the
+               signal_present delay. */
             s->carrier_drop_pending = TRUE;
 #endif
         }
@@ -949,27 +923,33 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
 #if defined(SPANDSP_USE_FIXED_POINT)
         v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_re[step], V29_RX_FILTER_STEPS, s->rrc_filter_step) >> 15;
         sample.re = (v*s->agc_scaling) >> 10;
-#else
-        v = vec_circular_dot_prodf(s->rrc_filter, rx_pulseshaper_re[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
-        sample.re = v*s->agc_scaling;
-#endif
         /* Symbol timing synchronisation band edge filters */
-#if defined(SPANDSP_USE_FIXED_POINT)
         /* Low Nyquist band edge filter */
-        v = ((s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0) >> 10) + ((s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1) >> 10) + sample.re;
+        v = ((s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0) >> FP_SYNC_SHIFT_FACTOR)
+          + ((s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1) >> FP_SYNC_SHIFT_FACTOR)
+          + sample.re;
         s->symbol_sync_low[1] = s->symbol_sync_low[0];
         s->symbol_sync_low[0] = v;
         /* High Nyquist band edge filter */
-        v = ((s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0) >> 10) + ((s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1) >> 10) + sample.re;
+        v = ((s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0) >> FP_SYNC_SHIFT_FACTOR)
+          + ((s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1) >> FP_SYNC_SHIFT_FACTOR)
+          + sample.re;
         s->symbol_sync_high[1] = s->symbol_sync_high[0];
         s->symbol_sync_high[0] = v;
 #else
+        v = vec_circular_dot_prodf(s->rrc_filter, rx_pulseshaper_re[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
+        sample.re = v*s->agc_scaling;
+        /* Symbol timing synchronisation band edge filters */
         /* Low Nyquist band edge filter */
-        v = s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0 + s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1 + sample.re;
+        v = s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0
+          + s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1
+          + sample.re;
         s->symbol_sync_low[1] = s->symbol_sync_low[0];
         s->symbol_sync_low[0] = v;
         /* High Nyquist band edge filter */
-        v = s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0 + s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1 + sample.re;
+        v = s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0
+          + s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1
+          + sample.re;
         s->symbol_sync_high[1] = s->symbol_sync_high[0];
         s->symbol_sync_high[0] = v;
 #endif
@@ -978,18 +958,18 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
         if (s->eq_put_step <= 0)
         {
             /* Only AGC until we have locked down the setting. */
+            if (s->agc_scaling_save == FP_SCALE(0.0f))
+            {
 #if defined(SPANDSP_USE_FIXED_POINT)
-            if (s->agc_scaling_save == 0)
-                s->agc_scaling = saturate16(((int32_t) (1024.0f*FP_FACTOR*1.25f))/fixed_sqrt32(power));
+                s->agc_scaling = saturate16(((int32_t) (FP_SCALE(1.25f)*1024.0f))/fixed_sqrt32(power));
 #else
-            if (s->agc_scaling_save == 0.0f)
-                s->agc_scaling = (1.0f/RX_PULSESHAPER_GAIN)*1.25f/sqrtf(power);
+                s->agc_scaling = (FP_SCALE(1.25f)/RX_PULSESHAPER_GAIN)/fixed_sqrt32(power);
 #endif
+            }
             /* Pulse shape while still at the carrier frequency, using a quadrature
                pair of filters. This results in a properly bandpass filtered complex
                signal, which can be brought directly to baseband by complex mixing.
                No further filtering, to remove mixer harmonics, is needed. */
-            s->eq_put_step += RX_PULSESHAPER_COEFF_SETS*10/(3*2);
 #if defined(SPANDSP_USE_FIXED_POINT)
             v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_im[step], V29_RX_FILTER_STEPS, s->rrc_filter_step) >> 15;
             sample.im = (v*s->agc_scaling) >> 10;
@@ -1003,6 +983,7 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
             zz.re = sample.re*z.re - sample.im*z.im;
             zz.im = -sample.re*z.im - sample.im*z.re;
 #endif
+            s->eq_put_step += RX_PULSESHAPER_COEFF_SETS*10/(3*2);
             process_half_baud(s, &zz);
         }
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -1118,12 +1099,11 @@ SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
     {
         s->carrier_phase_rate = DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ);
         equalizer_reset(s);
+        s->agc_scaling_save = FP_SCALE(0.0f);
 #if defined(SPANDSP_USE_FIXED_POINT)
-        s->agc_scaling_save = 0;
-        s->agc_scaling = (float) (1024.0f*FP_FACTOR)*1.25f/735.0f;
+        s->agc_scaling = (float) (FP_SCALE(1.25f)*1024.0f)/735.0f;
 #else
-        s->agc_scaling_save = 0.0f;
-        s->agc_scaling = (1.0f/RX_PULSESHAPER_GAIN)*1.25f/735.0f;
+        s->agc_scaling = (FP_SCALE(1.25f)/RX_PULSESHAPER_GAIN)/735.0f;
 #endif
     }
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -1137,23 +1117,13 @@ SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
     s->eq_skip = 0;
 
     /* Initialise the working data for symbol timing synchronisation */
-#if defined(SPANDSP_USE_FIXED_POINT)
     for (i = 0;  i < 2;  i++)
     {
-        s->symbol_sync_low[i] = 0;
-        s->symbol_sync_high[i] = 0;
-        s->symbol_sync_dc_filter[i] = 0;
+        s->symbol_sync_low[i] = FP_SCALE(0.0f);
+        s->symbol_sync_high[i] = FP_SCALE(0.0f);
+        s->symbol_sync_dc_filter[i] = FP_SCALE(0.0f);
     }
-    s->baud_phase = 0;
-#else
-    for (i = 0;  i < 2;  i++)
-    {
-        s->symbol_sync_low[i] = 0.0f;
-        s->symbol_sync_high[i] = 0.0f;
-        s->symbol_sync_dc_filter[i] = 0.0f;
-    }
-    s->baud_phase = 0.0f;
-#endif
+    s->baud_phase = FP_SCALE(0.0f);
     s->baud_half = 0;
 
     s->total_baud_timing_correction = 0;

@@ -65,12 +65,14 @@
 #include "spandsp/private/v27ter_rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_SCALE                        FP_Q_6_10
+#define FP_SCALE(x)                     FP_Q_6_10(x)
 #define FP_FACTOR                       4096
 #define FP_SHIFT_FACTOR                 12
 #else
 #define FP_SCALE(x)                     (x)
 #endif
+
+#define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
 
 #include "v27ter_rx_4800_rrc.h"
 #include "v27ter_rx_2400_rrc.h"
@@ -115,14 +117,14 @@ static const complexi16_t v27ter_constellation[8] =
 static const complexf_t v27ter_constellation[8] =
 #endif
 {
-    {FP_SCALE( 1.414f), FP_SCALE( 0.0f)},           /*   0deg */
-    {FP_SCALE( 1.0f),   FP_SCALE( 1.0f)},           /*  45deg */
-    {FP_SCALE( 0.0f),   FP_SCALE( 1.414f)},         /*  90deg */
-    {FP_SCALE(-1.0f),   FP_SCALE( 1.0f)},           /* 135deg */
-    {FP_SCALE(-1.414f), FP_SCALE( 0.0f)},           /* 180deg */
-    {FP_SCALE(-1.0f),   FP_SCALE(-1.0f)},           /* 225deg */
-    {FP_SCALE( 0.0f),   FP_SCALE(-1.414f)},         /* 270deg */
-    {FP_SCALE( 1.0f),   FP_SCALE(-1.0f)}            /* 315deg */
+    {FP_CONSTELLATION_SCALE( 1.414f), FP_CONSTELLATION_SCALE( 0.0f)},       /*   0deg */
+    {FP_CONSTELLATION_SCALE( 1.0f),   FP_CONSTELLATION_SCALE( 1.0f)},       /*  45deg */
+    {FP_CONSTELLATION_SCALE( 0.0f),   FP_CONSTELLATION_SCALE( 1.414f)},     /*  90deg */
+    {FP_CONSTELLATION_SCALE(-1.0f),   FP_CONSTELLATION_SCALE( 1.0f)},       /* 135deg */
+    {FP_CONSTELLATION_SCALE(-1.414f), FP_CONSTELLATION_SCALE( 0.0f)},       /* 180deg */
+    {FP_CONSTELLATION_SCALE(-1.0f),   FP_CONSTELLATION_SCALE(-1.0f)},       /* 225deg */
+    {FP_CONSTELLATION_SCALE( 0.0f),   FP_CONSTELLATION_SCALE(-1.414f)},     /* 270deg */
+    {FP_CONSTELLATION_SCALE( 1.0f),   FP_CONSTELLATION_SCALE(-1.0f)}        /* 315deg */
 };
 
 SPAN_DECLARE(float) v27ter_rx_carrier_frequency(v27ter_rx_state_t *s)
@@ -205,14 +207,14 @@ static void equalizer_reset(v27ter_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    static const complexi16_t x = {FP_SCALE(1.414f), FP_SCALE(0.0f)};
+    static const complexi16_t x = {FP_CONSTELLATION_SCALE(1.414f), FP_CONSTELLATION_SCALE(0.0f)};
 
     cvec_zeroi16(s->eq_coeff, V27TER_EQUALIZER_LEN);
     s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = x;
     cvec_zeroi16(s->eq_buf, V27TER_EQUALIZER_LEN);
     s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
 #else
-    static const complexf_t x = {1.414f, 0.0f};
+    static const complexf_t x = {FP_CONSTELLATION_SCALE(1.414f), FP_CONSTELLATION_SCALE(0.0f)};
 
     cvec_zerof(s->eq_coeff, V27TER_EQUALIZER_LEN);
     s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = x;
@@ -336,21 +338,15 @@ static __inline__ int find_octant(complexf_t *z)
 #if defined(SPANDSP_USE_FIXED_POINT)
     abs_re = abs(z->re);
     abs_im = abs(z->im);
-    if (abs_im*1000 > abs_re*414  &&  abs_im*1000 < abs_re*2414)
 #else
     abs_re = fabsf(z->re);
     abs_im = fabsf(z->im);
-    if (abs_im > abs_re*0.4142136f  &&  abs_im < abs_re*2.4142136f)
 #endif
+    if (abs_im*FP_SCALE(1.0f) > abs_re*FP_SCALE(0.4142136f)  &&  abs_im*FP_SCALE(1.0f) < abs_re*FP_SCALE(2.4142136f))
     {
         /* Split the space along the two axes. */
-#if defined(SPANDSP_USE_FIXED_POINT)
-        b1 = (z->re < 0);
-        b2 = (z->im < 0);
-#else
-        b1 = (z->re < 0.0f);
-        b2 = (z->im < 0.0f);
-#endif
+        b1 = (z->re < FP_SCALE(0.0f));
+        b2 = (z->im < FP_SCALE(0.0f));
         bits = (b2 << 2) | ((b1 ^ b2) << 1) | 1;
     }
     else
@@ -402,10 +398,7 @@ static __inline__ void put_bit(v27ter_rx_state_t *s, int bit)
 {
     int out_bit;
 
-    bit &= 1;
-
     out_bit = descramble(s, bit);
-
     /* We need to strip the last part of the training before we let data
        go to the application. */
     if (s->training_stage == TRAINING_STAGE_NORMAL_OPERATION)
@@ -519,13 +512,13 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
     complexi16_t z;
     complexi16_t z16;
     const complexi16_t *target;
-    static const complexi16_t zero = {0, 0};
+    static const complexi16_t zero = {FP_SCALE(0.0f), FP_SCALE(0.0f)};
 #else
     float p;
     complexf_t z;
     complexf_t zz;
     const complexf_t *target;
-    static const complexf_t zero = {0.0f, 0.0f};
+    static const complexf_t zero = {FP_SCALE(0.0f), FP_SCALE(0.0f)};
 #endif
     int i;
     int j;
@@ -697,17 +690,13 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
         {
             /* At 4800bps the symbols are 1.08238 (Euclidian) apart.
                At 2400bps the symbols are 2.0 (Euclidian) apart. */
-#if defined(SPANDSP_USE_FIXED_POINT)
-            if ((s->bit_rate == 4800  &&  s->training_error < V27TER_TRAINING_SEG_6_LEN*FP_FACTOR*FP_FACTOR/4)
+            if ((s->bit_rate == 4800  &&  s->training_error < FP_CONSTELLATION_SCALE(V27TER_TRAINING_SEG_6_LEN)*FP_CONSTELLATION_SCALE(0.25f))
                 ||
-                (s->bit_rate == 2400  &&  s->training_error < V27TER_TRAINING_SEG_6_LEN*FP_FACTOR*FP_FACTOR/2))
+                (s->bit_rate == 2400  &&  s->training_error < FP_CONSTELLATION_SCALE(V27TER_TRAINING_SEG_6_LEN)*FP_CONSTELLATION_SCALE(0.5f)))
             {
+#if defined(SPANDSP_USE_FIXED_POINT)
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded at %dbps (constellation mismatch %d)\n", s->bit_rate, s->training_error);
 #else
-            if ((s->bit_rate == 4800  &&  s->training_error < V27TER_TRAINING_SEG_6_LEN*0.25f)
-                ||
-                (s->bit_rate == 2400  &&  s->training_error < V27TER_TRAINING_SEG_6_LEN*0.5f))
-            {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded at %dbps (constellation mismatch %f)\n", s->bit_rate, s->training_error);
 #endif
                 /* We are up and running */
@@ -858,9 +847,9 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 {
                     /* Only AGC during the initial training */
 #if defined(SPANDSP_USE_FIXED_POINT)
-                    s->agc_scaling = saturate16(((int32_t) (1024.0f*FP_FACTOR*1.414f))/fixed_sqrt32(power));
+                    s->agc_scaling = saturate16(((int32_t) (FP_SCALE(1.414f)*1024.0f))/fixed_sqrt32(power));
 #else
-                    s->agc_scaling = (1.0f/RX_PULSESHAPER_4800_GAIN)*1.414f/sqrtf(power);
+                    s->agc_scaling = (FP_SCALE(1.414f)/RX_PULSESHAPER_4800_GAIN)/fixed_sqrt32(power);
 #endif
                 }
                 /* Pulse shape while still at the carrier frequency, using a quadrature
@@ -870,7 +859,6 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 step = -s->eq_put_step;
                 if (step > RX_PULSESHAPER_4800_COEFF_SETS - 1)
                     step = RX_PULSESHAPER_4800_COEFF_SETS - 1;
-                s->eq_put_step += RX_PULSESHAPER_4800_COEFF_SETS*5/2;
 #if defined(SPANDSP_USE_FIXED_POINT)
                 v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_4800_re[step], V27TER_RX_FILTER_STEPS, s->rrc_filter_step) >> 15;
                 sample.re = (v*s->agc_scaling) >> 10;
@@ -888,6 +876,7 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 zz.re = sample.re*z.re - sample.im*z.im;
                 zz.im = -sample.re*z.im - sample.im*z.re;
 #endif
+                s->eq_put_step += RX_PULSESHAPER_4800_COEFF_SETS*5/2;
                 process_half_baud(s, &zz);
             }
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -920,9 +909,9 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 {
                     /* Only AGC during the initial training */
 #if defined(SPANDSP_USE_FIXED_POINT)
-                    s->agc_scaling = saturate16(((int32_t) (1024.0f*FP_FACTOR*1.414f))/fixed_sqrt32(power));
+                    s->agc_scaling = saturate16(((int32_t) (FP_SCALE(1.414f)*1024.0f))/fixed_sqrt32(power));
 #else
-                    s->agc_scaling = (1.0f/RX_PULSESHAPER_2400_GAIN)*1.414f/sqrtf(power);
+                    s->agc_scaling = (FP_SCALE(1.414f)/RX_PULSESHAPER_2400_GAIN)/fixed_sqrt32(power);
 #endif
                 }
                 /* Pulse shape while still at the carrier frequency, using a quadrature
@@ -932,7 +921,6 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 step = -s->eq_put_step;
                 if (step > RX_PULSESHAPER_2400_COEFF_SETS - 1)
                     step = RX_PULSESHAPER_2400_COEFF_SETS - 1;
-                s->eq_put_step += RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2);
 #if defined(SPANDSP_USE_FIXED_POINT)
                 v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_2400_re[step], V27TER_RX_FILTER_STEPS, s->rrc_filter_step) >> 15;
                 sample.re = (v*s->agc_scaling) >> 10;
@@ -950,6 +938,7 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 zz.re = sample.re*z.re - sample.im*z.im;
                 zz.im = -sample.re*z.im - sample.im*z.re;
 #endif
+                s->eq_put_step += RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2);
                 process_half_baud(s, &zz);
             }
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -1027,11 +1016,10 @@ SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_
 
 #if defined(SPANDSP_USE_FIXED_POINT)
     vec_zeroi16(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
-    s->training_error = 0;
 #else
     vec_zerof(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
-    s->training_error = 0.0f;
 #endif
+    s->training_error = FP_CONSTELLATION_SCALE(0.0f);
     s->rrc_filter_step = 0;
 
     s->scramble_reg = 0x3C;
@@ -1068,9 +1056,9 @@ SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_
     {
         s->carrier_phase_rate = DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ);
 #if defined(SPANDSP_USE_FIXED_POINT)
-        s->agc_scaling = (float) (1024.0f*FP_FACTOR)*1.414f/283.0f;
+        s->agc_scaling = (float) FP_SCALE(1.414f)*1024.0f/283.0f;
 #else
-        s->agc_scaling = (1.0f/RX_PULSESHAPER_4800_GAIN)*1.414f/283.0f;
+        s->agc_scaling = (FP_SCALE(1.414f)/RX_PULSESHAPER_4800_GAIN)/283.0f;
 #endif
         equalizer_reset(s);
     }

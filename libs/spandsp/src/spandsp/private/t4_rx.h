@@ -105,6 +105,8 @@ struct t4_rx_state_s
 
     /*! \brief The width of the current page, in pixels. */
     uint32_t image_width;
+    /*! \brief The length of the current page, in pixels. */
+    uint32_t image_length;
 
     union
     {
