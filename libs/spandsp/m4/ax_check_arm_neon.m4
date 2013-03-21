@@ -1,7 +1,7 @@
 # @synopsis AX_CHECK_ARM_NEON
 #
 # Does the machine support the ARM NEON instruction set?
-# @version 1.0    Dec 31 2012
+# @version 1.01   Feb 11 2013
 # @author Steve Underwood
 #
 # Permission to use, copy, modify, distribute, and sell this file for any 

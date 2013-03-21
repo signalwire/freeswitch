@@ -363,24 +363,80 @@ static __inline__ int32_t saturated_sub32(int32_t a, int32_t b)
 
 static __inline__ int16_t saturated_mul16(int16_t a, int16_t b)
 {
-    int32_t product;
+    int32_t z;
 
-    product = (int32_t) a*b;
-    if (product == 0x40000000)
+#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    __asm__ __volatile__(
+        " smulbb %[z],%[a],%[b];\n"
+        " qadd %[z],%[z],%[z];\n"
+        : [z] "=r" (z)
+        : [a] "r" (a), [b] "r" (b)
+    );
+    return (int16_t) (z >> 16);
+#else
+    z = (int32_t) a*b;
+    if (z == 0x40000000)
         return INT16_MAX;
     /*endif*/
-    return (int16_t) (product >> 15);
+    return (int16_t) (z >> 15);
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
 static __inline__ int32_t saturated_mul16_32(int16_t a, int16_t b)
 {
+    int32_t z;
+
+#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    __asm__ __volatile__(
+        " smulbb %[z],%[a],%[b];\n"
+        " qadd %[z],%[z],%[z];\n"
+        : [z] "=r" (z)
+        : [a] "r" (a), [b] "r" (b)
+    );
+    return z;
+#else
+    z = (int32_t) a*b;
+    if (z == 0x40000000)
+        return INT32_MAX;
+    return z << 1;
+#endif
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ int32_t saturated_mac16_32(int32_t z, int16_t a, int16_t b)
+{
+#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int32_t product;
 
-    product = (int32_t) a*b;
-    if (product == 0x40000000)
-        return INT32_MAX;
-    return product << 1;
+    __asm__ __volatile__(
+        " smulbb %[p],%[a],%[b];\n"
+        " qdadd %[z],%[z],%[p];\n"
+        : [z] "=r" (z)
+        : "[z]" (z), [a] "r" (a), [b] "r" (b), [p] "r"(product)
+    );
+    return z;
+#else
+    return saturated_add32(z, saturated_mul16_32(a, b));
+#endif
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ int32_t saturated_msu16_32(int32_t z, int16_t a, int16_t b)
+{
+#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    int32_t product;
+
+    __asm__ __volatile__(
+        " smulbb %[p],%[a],%[b];\n"
+        " qdsub %[z],%[z],%[p];\n"
+        : [z] "=r" (z)
+        : "[z]" (z), [a] "r" (a), [b] "r" (b), [p] "r" (product)
+    );
+    return z;
+#else
+    return saturated_sub32(z, saturated_mul16_32(a, b));
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -197,17 +197,17 @@ int main(int argc, char *argv[])
         exit(2);
     }
     printf("Testing 16 bit add\n");
-    if (saturated_add16(10000, 10000) != 20000
-        ||
-        saturated_add16(10000, -10000) != 0
-        ||
-        saturated_add16(-10000, 10000) != 0
-        ||
-        saturated_add16(-10000, -10000) != -20000
-        ||
-        saturated_add16(-30000, -30000) != INT16_MIN
-        ||
-        saturated_add16(30000, 30000) != INT16_MAX)
+    if (saturated_add16(10000, 10000) != 20000)
+	printf("aaa1 %d\n", saturated_add16(10000, 10000));
+        if (saturated_add16(10000, -10000) != 0)
+        printf("aaa2 %d\n", saturated_add16(10000, -10000));
+        if (saturated_add16(-10000, 10000) != 0)
+        printf("aaa3 %d\n", saturated_add16(-10000, 10000));
+        if (saturated_add16(-10000, -10000) != -20000)
+        printf("aaa4 %d\n", saturated_add16(-10000, -10000));
+        if (saturated_add16(-30000, -30000) != INT16_MIN)
+        printf("aaa5 %d\n", saturated_add16(-30000, -30000));
+        if (saturated_add16(30000, 30000) != INT16_MAX)
     {
         printf("Test failed.\n");
         exit(2);
@@ -288,6 +288,38 @@ int main(int argc, char *argv[])
         saturated_mul16_32(32767, 32767) != 2147352578
         ||
         saturated_mul16_32(-32768, -32768) != INT32_MAX)
+    {
+        printf("Test failed.\n");
+        exit(2);
+    }
+    printf("Testing 32 + 16 x 16 => 32 bit MAC\n");
+    if (saturated_mac16_32(123, 100, 100) != 123 + 20000
+        ||
+        saturated_mac16_32(123, -100, 100) != 123 - 20000
+        ||
+        saturated_mac16_32(123, 32767, -32768) != 123 - 2147418112
+        ||
+        saturated_mac16_32(123, -32768, 32767) != 123 - 2147418112
+        ||
+        saturated_mac16_32(123, 32767, 32767) != 123 + 2147352578
+        ||
+        saturated_mac16_32(123, -32768, -32768) != INT32_MAX)
+    {
+        printf("Test failed.\n");
+        exit(2);
+    }
+    printf("Testing 32 - 16 x 16 => 32 bit MSU\n");
+    if (saturated_msu16_32(123, 100, 100) != 123 - 20000
+        ||
+        saturated_msu16_32(123, -100, 100) != 123 + 20000
+        ||
+        saturated_msu16_32(123, 32767, -32768) != 123 + 2147418112
+        ||
+        saturated_msu16_32(123, -32768, 32767) != 123 + 2147418112
+        ||
+        saturated_msu16_32(123, 32767, 32767) != 123 - 2147352578
+        ||
+        saturated_msu16_32(123, -32768, -32768) != 123 - INT32_MAX)
     {
         printf("Test failed.\n");
         exit(2);

@@ -66,9 +66,8 @@
 
 #define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
 
-#include "v29tx_constellation_maps.h"
-
 #include "v29tx_rrc.h"
+#include "v29tx_constellation_maps.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ        1700.0f
