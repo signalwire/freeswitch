@@ -194,6 +194,7 @@
     <ClCompile Include="lpc10_encode.c" />
     <ClCompile Include="lpc10_placev.c" />
     <ClCompile Include="lpc10_voicing.c" />
+    <ClCompile Include="math_fixed.c" />
     <ClCompile Include="modem_echo.c" />
     <ClCompile Include="modem_connect_tones.c" />
     <ClCompile Include="noise.c" />
@@ -425,6 +426,9 @@
     <ProjectReference Include="msvc\make_at_dictionary.2010.vcxproj">
       <Project>{dee932ab-5911-4700-9eeb-8c7090a0a330}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="msvc\make_math_fixed_tables.2012.vcxproj">
+      <Project>{2386b892-35f5-46cf-a0f0-10394d2fbf9b}</Project>
     </ProjectReference>
     <ProjectReference Include="msvc\make_modem_filter.2010.vcxproj">
       <Project>{329a6fa0-0fcc-4435-a950-e670aefa9838}</Project>
