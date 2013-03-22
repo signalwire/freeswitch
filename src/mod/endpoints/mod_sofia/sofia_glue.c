@@ -1541,7 +1541,11 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 	}
 
 	if ((p = (char *) switch_stristr("m=image ", sdp_str))) {
-		port_ptr = p + 8;
+		char *tmp = p + 8;
+
+		if (tmp && atoi(tmp)) {
+			port_ptr = tmp;
+		}
 	}
 
 	if ((p = (char *) switch_stristr("m=video ", sdp_str))) {
