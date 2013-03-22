@@ -269,6 +269,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			
 			if (bp->ready) {
 				if (switch_test_flag(bp, SMBF_TAP_NATIVE_READ)) {
+					if ((*frame)->codec && (*frame)->codec->implementation && 
+						(*frame)->codec->implementation->encoded_bytes_per_packet && 
+						(*frame)->datalen != (*frame)->codec->implementation->encoded_bytes_per_packet) {
+						switch_set_flag((*frame), SFF_CNG);
+						break;
+					}
 					if (bp->callback) {
 						bp->native_read_frame = *frame;
 						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_TAP_NATIVE_READ);
@@ -308,7 +314,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		do_resample = 0;
 		do_bugs = 0;
 		
-		if (session->bugs && switch_test_flag(*frame, SFF_CNG)) {
+		if (session->bugs && switch_test_flag((*frame), SFF_CNG)) {
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
 				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
@@ -328,11 +334,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 						if (bp->callback) {
 							switch_frame_t tmp_frame = {0};
 							unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
-
+							unsigned char g729_filler[] = {
+								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+								229, 127, 79, 96, 207, 82, 216, 110, 245, 81
+							};
+							
 							tmp_frame.codec = (*frame)->codec;
 							tmp_frame.datalen = (*frame)->codec->implementation->encoded_bytes_per_packet;
 							tmp_frame.samples = (*frame)->codec->implementation->samples_per_packet;
 							tmp_frame.data = data;
+
+							if ((*frame)->codec->implementation->ianacode == 18 || switch_stristr("g729", (*frame)->codec->implementation->iananame)) {
+								memcpy(tmp_frame.data, g729_filler, tmp_frame.datalen);
+							}
 
 							bp->native_read_frame = &tmp_frame;
 							ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_TAP_NATIVE_READ);
@@ -923,6 +949,12 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 
 
 	if (session->endpoint_interface->io_routines->write_frame) {
+		int i;
+		unsigned char *x = (unsigned char *) frame->data;
+		for (i = 0; i < frame->datalen; i++) {
+			printf("[%d] ", x[i]);
+		}
+		printf("\n");
 
 		if ((status = session->endpoint_interface->io_routines->write_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.write_frame; ptr; ptr = ptr->next) {
