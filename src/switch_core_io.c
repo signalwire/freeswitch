@@ -949,13 +949,6 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 
 
 	if (session->endpoint_interface->io_routines->write_frame) {
-		int i;
-		unsigned char *x = (unsigned char *) frame->data;
-		for (i = 0; i < frame->datalen; i++) {
-			printf("[%d] ", x[i]);
-		}
-		printf("\n");
-
 		if ((status = session->endpoint_interface->io_routines->write_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.write_frame; ptr; ptr = ptr->next) {
 				if ((status = ptr->write_frame(session, frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
