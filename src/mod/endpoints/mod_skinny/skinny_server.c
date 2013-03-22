@@ -1214,7 +1214,7 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 	switch(request->data.stimulus.instance_type) {
 		case SKINNY_BUTTON_LAST_NUMBER_REDIAL:
 			skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, "redial", '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_redial, '\0', 0);
 			break;
 		case SKINNY_BUTTON_SPEED_DIAL:
 			skinny_speed_dial_get(listener, request->data.stimulus.instance, &button_speed_dial);
@@ -1239,7 +1239,7 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 			break;
 		case SKINNY_BUTTON_VOICEMAIL:
 			skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, "vmain", '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_voicemail, '\0', 0);
 			break;
 
 		case SKINNY_BUTTON_LINE:
@@ -1791,7 +1791,7 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	switch(request->data.soft_key_event.event) {
 		case SOFTKEY_REDIAL:
 			status = skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, "redial", '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_redial, '\0', 0);
 			break;
 		case SOFTKEY_NEWCALL:
 			status = skinny_create_incoming_session(listener, &line_instance, &session);

@@ -131,7 +131,9 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "CALLS-OUT         \t%d\n", profile->ob_calls);
 	stream->write_function(stream, "FAILED-CALLS-OUT  \t%d\n", profile->ob_failed_calls);
 	/* listener */
-	stream->write_function(stream, "Listener-Threads \t%d\n", profile->listener_threads);
+	stream->write_function(stream, "Listener-Threads  \t%d\n", profile->listener_threads);
+	stream->write_function(stream, "Ext-Voicemail     \t%s\n", profile->ext_voicemail);
+	stream->write_function(stream, "Ext-Redial        \t%s\n", profile->ext_redial);
 	stream->write_function(stream, "%s\n", line);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1727,6 +1729,14 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		profile->debug = atoi(val);
 	} else if (!strcasecmp(var, "auto-restart")) {
 		profile->auto_restart = switch_true(val);
+	} else if (!strcasecmp(var, "ext-voicemail")) {
+		if (!profile->ext_voicemail || strcmp(val, profile->ext_voicemail)) {
+			profile->ext_voicemail = switch_core_strdup(profile->pool, val);
+		}
+	} else if (!strcasecmp(var, "ext-redial")) {
+		if (!profile->ext_redial || strcmp(val, profile->ext_redial)) {
+			profile->ext_redial = switch_core_strdup(profile->pool, val);
+		}
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1809,6 +1819,14 @@ static switch_status_t load_skinny_config(void)
 
 				if (!profile->patterns_context) {
 					skinny_profile_set(profile, "patterns-context","skinny-patterns");
+				}
+
+				if (!profile->ext_voicemail) {
+					skinny_profile_set(profile, "ext-voicemail", "vmain");
+				}
+
+				if (!profile->ext_redial) {
+					skinny_profile_set(profile, "ext-redial", "redial");
 				}
 
 				if (profile->port == 0) {

@@ -231,6 +231,8 @@ static switch_status_t skinny_api_list_settings(const char *line, const char *cu
 	switch_console_push_match(&my_matches, "odbc-dsn");
 	switch_console_push_match(&my_matches, "debug");
 	switch_console_push_match(&my_matches, "auto-restart");
+	switch_console_push_match(&my_matches, "ext-voicemail");
+	switch_console_push_match(&my_matches, "ext-redial");
 
 	if (my_matches) {
 		*matches = my_matches;

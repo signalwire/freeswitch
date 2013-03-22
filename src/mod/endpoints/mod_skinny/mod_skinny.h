@@ -84,6 +84,9 @@ struct skinny_profile {
 	int auto_restart;
 	switch_hash_t *soft_key_set_sets_hash;
 	switch_hash_t *device_type_params_hash;
+	/* extensions */
+	char *ext_voicemail;
+	char *ext_redial;
 	/* db */
 	char *dbname;
 	char *odbc_dsn;
