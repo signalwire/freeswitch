@@ -982,9 +982,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
 
-    if ((p = switch_channel_get_variable(channel, "DISPLACE_HANGUP_ON_ERROR"))) {
-        hangup_on_error = switch_true(p);
-    }
+	if ((p = switch_channel_get_variable(channel, "DISPLACE_HANGUP_ON_ERROR"))) {
+		hangup_on_error = switch_true(p);
+	}
 
 	if (zstr(file)) {
 		return SWITCH_STATUS_FALSE;
