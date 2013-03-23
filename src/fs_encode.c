@@ -137,6 +137,11 @@ int main(int argc, char *argv[])
 		}
 	}
 	
+	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_spandsp", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Cannot init mod_spandsp [%s]\n", err);
+		goto end;
+	}
+	
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_sndfile", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot init mod_sndfile [%s]\n", err);
 		goto end;
@@ -147,11 +152,6 @@ int main(int argc, char *argv[])
 		goto end;
 	}
 
-	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) "mod_spandsp", SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot init mod_spandsp [%s]\n", err);
-		goto end;
-	}
-	
 	switch_core_new_memory_pool(&pool);
 	if (verbose) {
 		fprintf(stderr, "Opening file %s\n", input);

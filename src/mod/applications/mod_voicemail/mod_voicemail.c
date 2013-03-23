@@ -3869,37 +3869,31 @@ static void actual_message_query_handler(switch_event_t *event)
 		char *id, *domain;
 
 		dup = strdup(account);
-		id = dup;
 
-		if (!strncasecmp(account, "sip:", 4)) {
-			id += 4;
-		}
+		switch_split_user_domain(dup, &id, &domain);
 
-		if (!id) {
+		if (!id || !domain) {
 			free(dup);
 			return;
 		}
 
-		if ((domain = strchr(id, '@'))) {
-			*domain++ = '\0';
-			profile = NULL;
+		profile = NULL;
 
-			if (globals.message_query_exact_match) {
-				if ((profile = (vm_profile_t *) switch_core_hash_find(globals.profile_hash, domain))) {
-					parse_profile();
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-									  "Cound not find a profile for domain: [%s] Returning 0 messages\nWhen message-query-exact-match is enabled you must have a dedicated vm profile per distinct domain name you wish to use.\n", domain);
-				}
+		if (globals.message_query_exact_match) {
+			if ((profile = (vm_profile_t *) switch_core_hash_find(globals.profile_hash, domain))) {
+				parse_profile();
 			} else {
-				for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-					switch_hash_this(hi, NULL, NULL, &val);
-					profile = (vm_profile_t *) val;
-					parse_profile();
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+								  "Cound not find a profile for domain: [%s] Returning 0 messages\nWhen message-query-exact-match is enabled you must have a dedicated vm profile per distinct domain name you wish to use.\n", domain);
+			}
+		} else {
+			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, NULL, NULL, &val);
+				profile = (vm_profile_t *) val;
+				parse_profile();
 
-					if (new_event) {
-						break;
-					}
+				if (new_event) {
+					break;
 				}
 			}
 		}
