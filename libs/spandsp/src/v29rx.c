@@ -81,6 +81,9 @@
 #endif
 
 #define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
+#if defined(SPANDSP_USE_FIXED_POINT)
+#define FP_CONSTELLATION_SHIFT_FACTOR   FP_SHIFT_FACTOR
+#endif
 
 #include "v29rx_rrc.h"
 #include "v29tx_constellation_maps.h"
