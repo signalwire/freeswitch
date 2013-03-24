@@ -59,7 +59,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	}
 	if (co->function) {
 		char *ret;
-		argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(co->cx, (char *) ptr));
+		argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyN(co->cx, (char *) ptr, realsize));
 		if (co->user_data) {
 			argv[argc++] = OBJECT_TO_JSVAL(co->user_data);
 		}
