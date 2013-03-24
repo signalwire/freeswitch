@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<!--
+/*
+ * The FreeSWITCH Portal Project
+ * Copyright (C) 2013-2013, Seven Du <dujinfang@gmail.com>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is The FreeSWITCH Portal Project Software/Application
+ *
+ * The Initial Developer of the Original Code is
+ * Seven Du <dujinfang@gmail.com>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *
+ * Seven Du <dujinfang@gmail.com>
+ *
+ *
+ * index.html -- The FreeSWITCH Portal Project
+ *
+ */
+-->
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Bootstrap, from Twitter</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+	<!-- Le styles -->
+	<link href="assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+	<style>
+	body {
+		padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+	}
+	</style>
+	<link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+
+	<!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+	<!--[if lt IE 9]>
+	<script src="assets/js/html5shiv.js"></script>
+	<![endif]-->
+
+	<!-- Fav and touch icons -->
+	<link rel="apple-touch-icon-precomposed" sizes="144x144" href="assets/ico/apple-touch-icon-144-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" sizes="114x114" href="assets/ico/apple-touch-icon-114-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" sizes="72x72" href="assets/ico/apple-touch-icon-72-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" href="assets/ico/apple-touch-icon-57-precomposed.png">
+	<link rel="shortcut icon" href="assets/ico/favicon.png">
+</head>
+
+<body>
+
+	<div class="navbar navbar-inverse navbar-fixed-top">
+		<div class="navbar-inner">
+			<div class="container">
+				<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a class="brand" href="#">FreeSWITCH Portal</a>
+				<div class="pull-right" id='ws-status' style="padding-top:5px"></div>
+				<div class="nav-collapse collapse">
+					<ul class="nav">
+						<li class="active"><a href="#">Home</a></li>
+						<li><a id="menu-users" href="#users">Users</a></li>
+						<li><a id="menu-calls" href="#calls">Calls</a></li>
+						<li><a id="menu-channels" href="#channels">Channels</a></li>
+						<li><a href="#show">Show</a></li>
+						<li><a href="#about">About</a></li>
+					</ul>
+				</div><!--/.nav-collapse -->
+			</div>
+		</div>
+	</div>
+
+	<div class="container" id="container">
+		<div id="calls" style="display:none"></div>
+		<div id="channels" style="display:none"></div>
+	</div> <!-- /container -->
+
+	<div id="aa"></div>
+	<script type="text/x-handlebars" data-template-name="index">
+		<h1>Welcome to FreeSWITCH Portal</h1>
+		Welcome
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="showApplications">
+		<h1>Applications</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Name</th>
+				<th>Description</th>
+				<th>Syntax</th>
+				<th>iKey</th>
+			</tr>
+			{{#each App.applicationsController.content}}
+			<tr>
+				<td>{{ name }}</td>
+				<td>{{ description }}</td>
+				<td>{{ syntax }}</td>
+				<td>{{ ikey }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="showEndpoints">
+		<h1>Endpoints</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Type</th>
+				<th>Name</th>
+				<th>iKey</th>
+			</tr>
+			{{#each App.showEndpointsController.content}}
+			<tr>
+				<td>{{ type }}</td>
+				<td>{{ name }}</td>
+				<td>{{ ikey }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="showCodecs">
+		<h1>Codecs</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Type</th>
+				<th>Name</th>
+				<th>iKey</th>
+			</tr>
+			{{#each App.showCodecsController.content}}
+			<tr>
+				<td>{{ type }}</td>
+				<td>{{ name }}</td>
+				<td>{{ ikey }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="showFiles">
+		Unimplemented
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="showAPIs">
+		Unimplemented
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="show">
+		<h1>Show</h1>
+		{{#linkTo "showApplications"}} Applications {{/linkTo}} |
+		{{#linkTo "showEndpoints"}} Endpoints {{/linkTo}} |
+		{{#linkTo "showCodecs"}} Codecs {{/linkTo}} |
+		{{#linkTo "showFiles"}} Files {{/linkTo}} |
+		{{#linkTo "showAPIs"}} APIs {{/linkTo}}
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="about">
+		<h1>About FreeSWITCH Portal</h1>
+		<p>
+			The FreeSWITCH Portal Project is Created by <a href="http://www.dujinfang.com">Seven Du</a>.
+			Available with MPL1.1 licence - Same as FreeSWITCH.
+		</p>
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="users">
+		<h1>Users</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>ID</th>
+				<th>Context</th>
+				<th>Domain</th>
+				<th>Group</th>
+				<th>Contact</th>
+				<th>Callgroup</th>
+				<th>Caller ID Name</th>
+				<th>Caller ID Number</th>
+			</tr>
+			{{#each App.usersController.content}}
+			<tr>
+				<td>{{ id }}</td>
+				<td>{{ context }}</td>
+				<td>{{ domain }}</td>
+				<td>{{ group }}</td>
+				<td>{{ contact }}</td>
+				<td>{{ callgroup }}</td>
+				<td>{{ cid_name }}</td>
+				<td>{{ cid_number }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="calls">
+	<div class="pull-right">
+		<label><input type="checkbox" id="auto_update_calls" value="1" onclick="auto_update_calls();">Auto Update</label>
+	</div>
+
+	<h1>Calls</h1>
+
+	<div>
+		<table class="table">
+		<tr>
+			<th>Call UUID</th>
+			<th>CID</th>
+			<th>Dest</th>
+			<th>Call State</th>
+			<th>Direction / Created</th>
+		</tr>
+		{{#each App.callsController.content}}
+		<tr>
+			<td>{{uuid}} <br>{{ b_uuid }}</td>
+			<td>{{ cid_num }}<br>{{ b_cid_num }}</td>
+			<td>{{ dest }}<br>{{ b_dest }}</td>
+			<td>{{ callstate }}<br>{{ b_callstate }}</td>
+			<td>{{ direction }} / {{ b_direction }}<br>
+			<a href='#' {{action "dump" uuid target="App.callsController"}}>{{created}}</a>
+			<!--<a href='#' {{action "raw" uuid target="App.callsController"}}>Raw</a>-->
+			</td>
+		</tr>
+		{{/each}}
+		</table>
+	</div>
+
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="channels">
+
+	<h1>Channels</h1>
+
+	<div>
+
+		<table class="table">
+		<tr>
+			<th>Call UUID</th>
+			<th>CID</th>
+			<th>Dest</th>
+			<th>Call State</th>
+			<th>Direction / Created</th>
+		</tr>
+		{{#each App.channelsController.content}}
+		<tr>
+			<td>{{uuid}}</td>
+			<td>{{ cid_num }}</td>
+			<td>{{ dest }}<br></td>
+			<td>{{ callstate }}</td>
+			<td>{{ direction }}<br>
+			<a href='#' {{action "dump" uuid target="App.channelsController"}}>{{created}}</a>
+			</td>
+		</tr>
+		{{/each}}
+		</table>
+
+	</div>
+
+	</script>
+<!-- Le javascript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="assets/js/jquery-1.9.1.min.js"></script>
+<script src="assets/js/handlebars.js"></script>
+<script src="assets/js/ember-1.0.0-rc.1.js"></script>
+<script src="assets/js/ember-data.js"></script>
+<script src="assets/js/fsportal.js"></script>
+<!--
+<script src="assets/js/bootstrap-transition.js"></script>
+<script src="assets/js/bootstrap-alert.js"></script>
+<script src="assets/js/bootstrap-modal.js"></script>
+<script src="assets/js/bootstrap-dropdown.js"></script>
+<script src="assets/js/bootstrap-scrollspy.js"></script>
+<script src="assets/js/bootstrap-tab.js"></script>
+<script src="assets/js/bootstrap-tooltip.js"></script>
+<script src="assets/js/bootstrap-popover.js"></script>
+<script src="assets/js/bootstrap-button.js"></script>
+<script src="assets/js/bootstrap-collapse.js"></script>
+<script src="assets/js/bootstrap-carousel.js"></script>
+<script src="assets/js/bootstrap-typeahead.js"></script>
+-->
+<script type="text/javascript">
+
+	function auto_update_calls() {
+		var x = $('#auto_update_calls')[0];
+		if (typeof x != "undefined" && x.checked) {
+			console.log("tick")
+			App.callsController.load();
+			setTimeout(auto_update_calls, 2000);
+		}
+	}
+
+	// $("#menu-channels").click(function(e){
+	// 	e.preventDefault();
+	// 	App.channelsController.load();
+	// 	$('#calls').hide();
+	// 	$('#channels').show();
+	// });
+
+	// $("#menu-calls").click(function(e){
+	// 	e.preventDefault();
+	// 	App.callsController.load();
+	// 	$('#channels').hide();
+	// 	$('#calls').show();
+	// });
+
+	// var callsView = Ember.View.create({
+	// templateName: 'calls',
+	// name: "callsView"
+	// });
+
+	// // $('#container').html('');
+	// callsView.appendTo('#calls');
+
+	// var channelsView = Ember.View.create({
+	// 	templateName: 'channels',
+	// 	name: "channelsView"
+	// });
+	// channelsView.appendTo('#channels');
+
+	function dump_call(uuid) {
+		obj = App.callsController.content.findProperty("uuid", uuid);
+		console.log(obj);
+	}
+
+	</script>
+
+	<script type="text/javascript">
+
+	var socket = new WebSocket("ws://localhost:8086/socket", "websocket");
+
+	try {
+		socket.onopen = function() {
+			$('#ws-status').html('Socket Connected').css("color", "green");
+			// socket.send("event json all");
+			socket.send("event json CHANNEL_CREATE");
+			socket.send("event json CHANNEL_HANGUP_COMPLETE");
+			socket.send("event json CHANNEL_CALLSTATE");
+		}
+
+		socket.onmessage =function(msg) {
+			// console.log(msg.data);
+			var data = JSON.parse(msg.data);
+			console.log(data["Event-Name"]);
+
+			eventCallback(data);
+		}
+
+		socket.onclose = function(){
+			$('#ws-status').html('Socket Disconnected!').css("color", "red");
+			console.log("socket disconnected, fallback to event_sink");
+			// setInterval("App.channelsController.checkEvent()", 2000);
+			setInterval("App.channelsController.checkXMLEvent()", 2000);
+		}
+	} catch(exception) {
+		alert('Error' + exception);
+	}
+
+	</script>
+</body>
+</html>
