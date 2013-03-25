@@ -415,14 +415,15 @@ SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param,
   \param expr a string expression
   \return true or false 
 */
-static inline int switch_true(const char *expr) 
+static inline int switch_true(const char *expr)
 {
-	return ((expr && ( !strcasecmp(expr, "yes") ||	
-					   !strcasecmp(expr, "on") ||	
-					   !strcasecmp(expr, "true") ||	
-					   !strcasecmp(expr, "enabled") ||	
-					   !strcasecmp(expr, "active") ||	
-					   !strcasecmp(expr, "allow") ||					
+	return ((expr && ( !strcasecmp(expr, "yes") ||
+					   !strcasecmp(expr, "on") ||
+					   !strcasecmp(expr, "true") ||
+					   !strcasecmp(expr, "t") ||
+					   !strcasecmp(expr, "enabled") ||
+					   !strcasecmp(expr, "active") ||
+					   !strcasecmp(expr, "allow") ||
 					   (switch_is_number(expr) && atoi(expr)))) ? SWITCH_TRUE : SWITCH_FALSE);
 }
 
@@ -430,6 +431,7 @@ static inline int switch_true(const char *expr)
 ((( !strcasecmp(expr, "yes") ||\
 !strcasecmp(expr, "on") ||\
 !strcasecmp(expr, "true") ||\
+!strcasecmp(expr, "t") ||\
 !strcasecmp(expr, "enabled") ||\
 !strcasecmp(expr, "active") ||\
 !strcasecmp(expr, "allow") ||\
@@ -445,6 +447,7 @@ static inline int switch_false(const char *expr)
 	return ((expr && ( !strcasecmp(expr, "no") ||
 					   !strcasecmp(expr, "off") ||
 					   !strcasecmp(expr, "false") ||
+					   !strcasecmp(expr, "f") ||
 					   !strcasecmp(expr, "disabled") ||
 					   !strcasecmp(expr, "inactive") ||
 					   !strcasecmp(expr, "disallow") ||
