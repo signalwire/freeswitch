@@ -3902,7 +3902,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				}
 
 				nua_notify(nh,
-						   SIPTAG_TO(sip->sip_to),
+						   SIPTAG_FROM(sip->sip_to),
+						   SIPTAG_TO(sip->sip_from),
 						   SIPTAG_EXPIRES_STR(exp_delta_str),
 						   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
 						   SIPTAG_EVENT_STR("line-seize"), TAG_IF(full_call_info, SIPTAG_CALL_INFO_STR(full_call_info)), TAG_END());
