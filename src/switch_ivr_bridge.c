@@ -170,7 +170,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_core_session_t *session_a, *session_b;
 	uint32_t read_frame_count = 0;
 	const char *app_name = NULL, *app_arg = NULL;
-	const char *hook_var = NULL;
 	int inner_bridge = 0;
 	switch_codec_t silence_codec = { 0 };
 	switch_frame_t silence_frame = { 0 };
@@ -361,6 +360,12 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 		if (read_frame_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
 			
+			switch_channel_execute_on(chan_a, SWITCH_CHANNEL_EXECUTE_ON_PRE_BRIDGE_VARIABLE);
+
+			if (!inner_bridge) {
+				switch_channel_api_on(chan_a, SWITCH_API_BRIDGE_START_VARIABLE);
+			}
+			
 			if (exec_app) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s Bridge execute app %s(%s)\n", 
 								  switch_channel_get_name(chan_a), exec_app, exec_data);
@@ -536,21 +541,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_core_codec_destroy(&silence_codec);
 	}
 
-	if (!inner_bridge) {
-		hook_var = switch_channel_get_variable(chan_a, SWITCH_API_BRIDGE_END_VARIABLE);
-	}
+	switch_channel_execute_on(chan_a, SWITCH_CHANNEL_EXECUTE_ON_POST_BRIDGE_VARIABLE);
 
-	if (!zstr(hook_var)) {
-		switch_stream_handle_t stream = { 0 };
-		char *cmd = switch_core_session_strdup(session_a, hook_var);
-		char *arg = NULL;
-		if ((arg = strchr(cmd, ' '))) {
-			*arg++ = '\0';
-		}
-		SWITCH_STANDARD_STREAM(stream);
-		switch_api_execute(cmd, arg, NULL, &stream);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "\nPost-Bridge Command %s(%s):\n%s\n", cmd, arg, switch_str_nil((char *) stream.data));
-		switch_safe_free(stream.data);
+	if (!inner_bridge) {
+		switch_channel_api_on(chan_a, SWITCH_API_BRIDGE_END_VARIABLE);
 	}
 
 	if (!inner_bridge && switch_channel_up_nosig(chan_a)) {

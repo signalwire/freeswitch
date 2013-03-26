@@ -149,6 +149,9 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CHANNEL_EXECUTE_ON_POST_ORIGINATE_VARIABLE "execute_on_post_originate"
 #define SWITCH_CHANNEL_EXECUTE_ON_PRE_ORIGINATE_VARIABLE "execute_on_pre_originate"
 
+#define SWITCH_CHANNEL_EXECUTE_ON_PRE_BRIDGE_VARIABLE "execute_on_pre_bridge"
+#define SWITCH_CHANNEL_EXECUTE_ON_POST_BRIDGE_VARIABLE "execute_on_post_bridge"
+
 #define SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE "api_on_answer"
 #define SWITCH_CHANNEL_API_ON_PRE_ANSWER_VARIABLE "api_on_pre_answer"
 #define SWITCH_CHANNEL_API_ON_MEDIA_VARIABLE "api_on_media"
@@ -162,6 +165,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_HOLDING_UUID_VARIABLE "holding_uuid"
 #define SWITCH_SOFT_HOLDING_UUID_VARIABLE "soft_holding_uuid"
 #define SWITCH_API_BRIDGE_END_VARIABLE "api_after_bridge"
+#define SWITCH_API_BRIDGE_START_VARIABLE "api_before_bridge"
 #define SWITCH_API_HANGUP_HOOK_VARIABLE "api_hangup_hook"
 #define SWITCH_API_REPORTING_HOOK_VARIABLE "api_reporting_hook"
 #define SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE "session_in_hangup_hook"
