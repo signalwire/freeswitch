@@ -116,13 +116,13 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_event_header_t *hi;
 	switch_caller_profile_t *caller_profile;
+	switch_hold_record_t *hold_record;
 	switch_app_log_t *app_log;
 	bson cdr;
 	int is_b;
-	int callflow_idx = 0;
-	switch_hold_record_t *hold_record = switch_channel_get_hold_record(channel), *hr;
-	char *tmp;
+	int bson_idx, callflow_idx;
 	char idx_buffer[4];
+	char *tmp;
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
@@ -173,30 +173,31 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	/* App log */
 	if ((app_log = switch_core_session_get_app_log(session))) {
-		int idx = 0;
 		switch_app_log_t *ap;
 
 		bson_append_start_array(&cdr, "app_log");
 
-		for (ap = app_log; ap; ap = ap->next) {
-			switch_snprintf(idx_buffer, sizeof(idx_buffer), "%d", idx);
+		for (ap = app_log, bson_idx = 0; ap; ap = ap->next, bson_idx++) {
+			switch_snprintf(idx_buffer, sizeof(idx_buffer), "%d", bson_idx);
 			bson_append_start_object(&cdr, idx_buffer);
 			bson_append_string(&cdr, "app_name", ap->app);
 			bson_append_string(&cdr, "app_data", switch_str_nil(ap->arg));
 			bson_append_long(&cdr, "app_stamp", ap->stamp);
 			bson_append_finish_object(&cdr);		/* application */
-			idx++;
 		}
 
-		bson_append_finish_array(&cdr);			/* app_log */
+		bson_append_finish_array(&cdr);				/* app_log */
 	}
 
+
 	/* Hold */
-	if (hold_record) {
-		int idx = 0;
+	if ((hold_record = switch_channel_get_hold_record(channel))) {
+		switch_hold_record_t *hr;
+
 		bson_append_start_array(&cdr, "hold_record");
-		for (hr = hold_record; hr ; hr = hr->next) {
-			switch_snprintf(idx_buffer, sizeof(idx_buffer), "%d", idx);
+
+		for (hr = hold_record, bson_idx = 0; hr; hr = hr->next, bson_idx++) {
+			switch_snprintf(idx_buffer, sizeof(idx_buffer), "%d", bson_idx);
 			bson_append_start_object(&cdr, idx_buffer);
 			bson_append_long(&cdr, "on", hr->on);
 			bson_append_long(&cdr, "off", hr->off);
@@ -204,9 +205,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				bson_append_string(&cdr, "bridged_to", hr->uuid);
 			}
 			bson_append_finish_object(&cdr);
-			idx++;
 		}
-		bson_append_finish_array(&cdr);
+
+		bson_append_finish_array(&cdr);				/* hold_record */
 	}
 
 
@@ -215,7 +216,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	/* Start callflow array */
 	bson_append_start_array(&cdr, "callflow");
-	
+	callflow_idx = 0;
+
 	while (caller_profile) {
 		snprintf(idx_buffer, sizeof(idx_buffer), "%d", callflow_idx);
 		bson_append_start_object(&cdr, idx_buffer);
@@ -291,49 +293,43 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		set_bson_profile_data(&cdr, caller_profile);
 
 		if (caller_profile->origination_caller_profile) {
-			int idx = 0;
 			switch_caller_profile_t *cp = NULL;
 
 			/* Start origination array */
 			bson_append_start_array(&cdr, "origination");
-			for (cp = caller_profile->origination_caller_profile; cp; cp = cp->next) {
-				snprintf(idx_buffer, sizeof(idx_buffer), "%d", idx);
+			for (cp = caller_profile->origination_caller_profile, bson_idx = 0; cp; cp = cp->next, bson_idx++) {
+				snprintf(idx_buffer, sizeof(idx_buffer), "%d", bson_idx);
 				bson_append_start_object(&cdr, idx_buffer);
 				set_bson_profile_data(&cdr, cp);
 				bson_append_finish_object(&cdr);
-				idx++;
 			}
 			bson_append_finish_object(&cdr);			/* origination */
 		}
 
 		if (caller_profile->originator_caller_profile) {
-			int idx = 0;
 			switch_caller_profile_t *cp = NULL;
 
 			/* Start originator array */
 			bson_append_start_array(&cdr, "originator");
-			for (cp = caller_profile->originator_caller_profile; cp; cp = cp->next) {
-				snprintf(idx_buffer, sizeof(idx_buffer), "%d", idx);
+			for (cp = caller_profile->originator_caller_profile, bson_idx = 0; cp; cp = cp->next, bson_idx++) {
+				snprintf(idx_buffer, sizeof(idx_buffer), "%d", bson_idx);
 				bson_append_start_object(&cdr, idx_buffer);
 				set_bson_profile_data(&cdr, cp);
 				bson_append_finish_object(&cdr);
-				idx++;
 			}
 			bson_append_finish_object(&cdr);			/* originator */
 		}
 
 		if (caller_profile->originatee_caller_profile) {
-			int idx = 0;
 			switch_caller_profile_t *cp = NULL;
 
 			/* Start originatee array */
 			bson_append_start_array(&cdr, "originatee");
-			for (cp = caller_profile->originatee_caller_profile; cp; cp = cp->next) {
-				snprintf(idx_buffer, sizeof(idx_buffer), "%d", idx);
+			for (cp = caller_profile->originatee_caller_profile, bson_idx = 0; cp; cp = cp->next, bson_idx++) {
+				snprintf(idx_buffer, sizeof(idx_buffer), "%d", bson_idx);
 				bson_append_start_object(&cdr, idx_buffer);
 				set_bson_profile_data(&cdr, cp);
 				bson_append_finish_object(&cdr);
-				idx++;
 			}
 			bson_append_finish_object(&cdr);			/* originatee */
 		}
@@ -361,7 +357,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 		bson_append_finish_object(&cdr);				/* callflow */
 		caller_profile = caller_profile->next;
-		callflow_idx++;	/* increment callflow_idx */
+		callflow_idx++;
 	}
 
 	bson_append_finish_array(&cdr);
