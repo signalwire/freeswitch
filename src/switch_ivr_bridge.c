@@ -253,7 +253,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_codec_implementation_t read_impl = { 0 };
 		switch_core_session_get_read_impl(session_a, &read_impl);
 
-		if (!switch_channel_media_ready(chan_a)) {
+		if (!switch_channel_media_up(chan_a)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_ERROR, "Channel has no media!\n");
 			goto end_of_bridge_loop;
 		}
