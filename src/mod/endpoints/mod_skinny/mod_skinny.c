@@ -1934,19 +1934,13 @@ static switch_status_t load_skinny_config(void)
 				
 				
 				if ((dbh = skinny_get_db_handle(profile))) {
-					switch_cache_db_test_reactive(dbh, "SELECT headset FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
-					switch_cache_db_test_reactive(dbh, "SELECT * FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
-					switch_cache_db_test_reactive(dbh, "SELECT * FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
-					switch_cache_db_test_reactive(dbh, "SELECT * FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
+					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
+					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
+					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
+					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
 					switch_cache_db_release_db_handle(&dbh);
 				}
 					
-
-				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_devices", NULL, NULL);
-				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_lines", NULL, NULL);
-				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
-				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_active_lines", NULL, NULL);
-
 				skinny_profile_respawn(profile, 0);
 
 				/* Register profile */
