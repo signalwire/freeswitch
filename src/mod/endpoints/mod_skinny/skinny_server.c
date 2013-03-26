@@ -1508,11 +1508,10 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 
 	/* Add buttons */
 	if ((sql = switch_mprintf(
-					"SELECT device_name, device_instance, position, MIN(type, %d) AS type "
+					"SELECT device_name, device_instance, position, type "
 					"FROM skinny_buttons "
 					"WHERE device_name='%s' AND device_instance=%d "
 					"ORDER BY position",
-					SKINNY_BUTTON_UNDEFINED,
 					listener->device_name, listener->device_instance
 				 ))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, skinny_handle_button_template_request_callback, &helper);
