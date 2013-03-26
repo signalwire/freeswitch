@@ -525,6 +525,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 	if(listener) {
 		switch_channel_t *channel = switch_core_session_get_channel(helper->tech_pvt->session);
 		switch_channel_t *remchannel = switch_core_session_get_channel(helper->remote_session);
+		switch_channel_set_state(channel, CS_ROUTING);
 		helper->lines_count++;
 		switch_channel_set_variable(channel, "effective_callee_id_number", value);
 		switch_channel_set_variable(channel, "effective_callee_id_name", caller_name);
