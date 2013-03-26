@@ -90,8 +90,6 @@ struct skinny_profile {
 	/* db */
 	char *dbname;
 	char *odbc_dsn;
-	char *odbc_user;
-	char *odbc_pass;
 	switch_odbc_handle_t *master_odbc;
 	switch_mutex_t *sql_mutex;	
 	/* stats */

@@ -1715,12 +1715,6 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		if (!zstr(val)) {
 			if (switch_odbc_available()) {
 				profile->odbc_dsn = switch_core_strdup(profile->pool, val);
-				if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-					*profile->odbc_user++ = '\0';
-					if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-						*profile->odbc_pass++ = '\0';
-					}
-				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 			}
