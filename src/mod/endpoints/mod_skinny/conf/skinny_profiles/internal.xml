@@ -12,6 +12,8 @@
     <param name="odbc-dsn" value=""/>
     <param name="debug" value="4"/>
     <param name="auto-restart" value="true"/>
+    <param name="ext-voicemail" value="vmain"/>
+    <param name="ext-redial" value="redial"/>
   </settings>
   <soft-key-set-sets>
     <soft-key-set-set name="default">
