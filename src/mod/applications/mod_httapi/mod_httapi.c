@@ -2418,11 +2418,10 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	curl_handle = switch_curl_easy_init();
 
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
 
-	if (!strncasecmp(url, "https", 5)) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
-	}
+	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 
 	client.max_bytes = HTTAPI_MAX_FILE_BYTES;
 
