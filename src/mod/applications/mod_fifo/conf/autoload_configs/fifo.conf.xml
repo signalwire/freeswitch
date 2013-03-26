@@ -1,6 +1,7 @@
 <configuration name="fifo.conf" description="FIFO Configuration">
   <settings>
     <param name="delete-all-outbound-member-on-startup" value="false"/>
+    <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
   </settings>
   <fifos>
     <fifo name="cool_fifo@$${domain}" importance="0">
