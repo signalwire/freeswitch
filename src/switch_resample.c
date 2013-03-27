@@ -191,7 +191,7 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 	assert(divisor);
 
 	if (divisor == (uint32_t)-1) {
-		memset(data, 0, sizeof(*data));
+		memset(data, 0, samples * 2);
 		return;
 	}
 
