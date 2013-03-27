@@ -3108,8 +3108,9 @@ SWITCH_STANDARD_APP(fifo_function)
 				fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
 
 
-				switch_core_media_bug_pause(session);
-				switch_core_media_bug_pause(other_session);
+				if (switch_channel_ready(channel)) {
+					switch_core_media_bug_pause(session);
+				}
 
 				if (record_template) {
 					switch_ivr_stop_record_session(session, expanded);
