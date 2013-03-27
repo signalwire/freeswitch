@@ -1181,15 +1181,18 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		if (switch_stristr("transport=tls", sip->sip_contact->m_url->url_params)) {
 			is_tls += 1;
+			is_nat++;
 		}
 
 		if (sip->sip_contact->m_url->url_type == url_sips) {
 			proto = "sips";
 			is_tls += 2;
+			is_nat++;
 		}
 
 		if (switch_stristr("transport=tcp", sip->sip_contact->m_url->url_params)) {
 			is_tcp = 1;
+			is_nat++;
 		}
 
 		display = contact->m_display;
