@@ -381,6 +381,29 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 }
 
 
+SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall(void)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_core_session_t *session;
+	switch_console_callback_match_t *my_matches = NULL;
+
+	switch_mutex_lock(runtime.session_hash_mutex);
+	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		if (val) {
+			session = (switch_core_session_t *) val;
+			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
+				switch_console_push_match(&my_matches, session->uuid_str);
+				switch_core_session_rwunlock(session);
+			}
+		}
+	}
+	switch_mutex_unlock(runtime.session_hash_mutex);
+
+	return my_matches;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(const char *uuid_str, switch_core_session_message_t *message)
 {
 	switch_core_session_t *session = NULL;

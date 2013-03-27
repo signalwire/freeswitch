@@ -848,7 +848,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(_In_ const 
 																	 switch_call_cause_t cause, switch_hup_type_t type);
 SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_matching_var(const char *var_name, const char *var_val);
 #define switch_core_session_hupall_matching_var(_vn, _vv, _c) switch_core_session_hupall_matching_var_ans(_vn, _vv, _c, SHT_UNANSWERED | SHT_ANSWERED)
-
+SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall(void);
 /*! 
   \brief Hangup all sessions that belong to an endpoint
   \param endpoint_interface The endpoint interface 
