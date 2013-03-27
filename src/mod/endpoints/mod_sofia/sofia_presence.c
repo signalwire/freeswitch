@@ -4259,6 +4259,12 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 			if ((tuple = switch_xml_child(xml, "tuple")) && (status = switch_xml_child(tuple, "status"))
 				&& (basic = switch_xml_child(status, "basic"))) {
 				open_closed = basic->txt;
+
+				if ((note = switch_xml_child(tuple, "note"))) {
+					rpid = note_txt = note->txt;
+				} else if ((note = switch_xml_child(tuple, "dm:note"))) {
+					rpid = note_txt = note->txt;
+				}
 			}
 
 			if ((person = switch_xml_child(xml, "dm:person"))) {
