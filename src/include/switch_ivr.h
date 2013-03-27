@@ -592,6 +592,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(const char *uuid, const char *message, switch_bool_t moh);
 
 /*!
+  \brief Toggles channel hold state of session
+  \param uuid the uuid of the session to hold
+  \param message optional message
+  \param moh play music-on-hold
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold_toggle_uuid(const char *uuid, const char *message, switch_bool_t moh);
+
+/*!
   \brief Signal the session with a protocol specific unhold message.
   \param uuid the uuid of the session to hold
   \return SWITCH_STATUS_SUCCESS if all is well
