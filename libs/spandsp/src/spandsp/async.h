@@ -86,7 +86,9 @@ enum
     /*! \brief The link protocol (e.g. V.42) has disconnected. */
     SIG_STATUS_LINK_DISCONNECTED = -15,
     /*! \brief An error has occurred in the link protocol (e.g. V.42). */
-    SIG_STATUS_LINK_ERROR = -16
+    SIG_STATUS_LINK_ERROR = -16,
+    /*! \brief Keep the link in an idle state, as there is nothing to send. */
+    SIG_STATUS_LINK_IDLE = -17
 };
 
 /*! Message put function for data pumps */
@@ -145,33 +147,16 @@ extern "C"
     \return A pointer to the description. */
 SPAN_DECLARE(const char *) signal_status_to_str(int status);
 
-/*! Initialise an asynchronous data transmit context.
-    \brief Initialise an asynchronous data transmit context.
-    \param s The transmitter context.
-    \param data_bits The number of data bit.
-    \param parity_bits The type of parity.
-    \param stop_bits The number of stop bits.
-    \param use_v14 TRUE if V.14 rate adaption processing should be used.
-    \param get_byte The callback routine used to get the data to be transmitted.
-    \param user_data An opaque pointer.
-    \return A pointer to the initialised context, or NULL if there was a problem. */
-SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
-                                               int data_bits,
-                                               int parity_bits,
-                                               int stop_bits,
-                                               int use_v14,
-                                               get_byte_func_t get_byte,
-                                               void *user_data);
-
-SPAN_DECLARE(int) async_tx_release(async_tx_state_t *s);
-
-SPAN_DECLARE(int) async_tx_free(async_tx_state_t *s);
-
-/*! Get the next bit of a transmitted serial bit stream.
-    \brief Get the next bit of a transmitted serial bit stream.
-    \param user_data An opaque point which must point to a transmitter context.
-    \return the next bit, or PUTBIT_END_OF_DATA to indicate the data stream has ended. */
-SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data);
+/*! Accept a bit from a received serial bit stream
+    \brief Accept a bit from a received serial bit stream
+    \param user_data An opaque point which must point to a receiver context.
+    \param bit The new bit. Some special values are supported for this field.
+        - SIG_STATUS_CARRIER_UP
+        - SIG_STATUS_CARRIER_DOWN
+        - SIG_STATUS_TRAINING_SUCCEEDED
+        - SIG_STATUS_TRAINING_FAILED
+        - SIG_STATUS_END_OF_DATA */
+SPAN_DECLARE_NONSTD(void) async_rx_put_bit(void *user_data, int bit);
 
 /*! Initialise an asynchronous data receiver context.
     \brief Initialise an asynchronous data receiver context.
@@ -195,16 +180,39 @@ SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s);
 
 SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s);
 
-/*! Accept a bit from a received serial bit stream
-    \brief Accept a bit from a received serial bit stream
-    \param user_data An opaque point which must point to a receiver context.
-    \param bit The new bit. Some special values are supported for this field.
-        - SIG_STATUS_CARRIER_UP
-        - SIG_STATUS_CARRIER_DOWN
-        - SIG_STATUS_TRAINING_SUCCEEDED
-        - SIG_STATUS_TRAINING_FAILED
-        - SIG_STATUS_END_OF_DATA */
-SPAN_DECLARE_NONSTD(void) async_rx_put_bit(void *user_data, int bit);
+/*! Set a minimum number of bit times of stop bit state before character transmission commences.
+    \brief Set a minimum number of bit times of stop bit state before character transmission commences.
+    \param user_data An opaque point which must point to a transmitter context.
+    \param the number of bits. */
+SPAN_DECLARE(void) async_tx_presend_bits(async_tx_state_t *s, int bits);
+
+/*! Get the next bit of a transmitted serial bit stream.
+    \brief Get the next bit of a transmitted serial bit stream.
+    \param user_data An opaque point which must point to a transmitter context.
+    \return the next bit, or PUTBIT_END_OF_DATA to indicate the data stream has ended. */
+SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data);
+
+/*! Initialise an asynchronous data transmit context.
+    \brief Initialise an asynchronous data transmit context.
+    \param s The transmitter context.
+    \param data_bits The number of data bit.
+    \param parity_bits The type of parity.
+    \param stop_bits The number of stop bits.
+    \param use_v14 TRUE if V.14 rate adaption processing should be used.
+    \param get_byte The callback routine used to get the data to be transmitted.
+    \param user_data An opaque pointer.
+    \return A pointer to the initialised context, or NULL if there was a problem. */
+SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
+                                               int data_bits,
+                                               int parity_bits,
+                                               int stop_bits,
+                                               int use_v14,
+                                               get_byte_func_t get_byte,
+                                               void *user_data);
+
+SPAN_DECLARE(int) async_tx_release(async_tx_state_t *s);
+
+SPAN_DECLARE(int) async_tx_free(async_tx_state_t *s);
 
 #if defined(__cplusplus)
 }

@@ -88,7 +88,7 @@ static void weighting_filter(int16_t x[40],
         "1:\n"
         " movq (%%rcx,%%rsi,2),%%mm0;\n"
         " pmaddwd %%mm1,%%mm0;\n"
- 
+
         " movq 8(%%rcx,%%rsi,2),%%mm4;\n"
         " pmaddwd %%mm2,%%mm4;\n"
         " paddd %%mm4,%%mm0;\n"
@@ -103,7 +103,7 @@ static void weighting_filter(int16_t x[40],
 
         " paddd %%mm5,%%mm0;\n"             /* Add for roundoff */
         " psrad $13,%%mm0;\n"
-        " packssdw %%mm0,%%mm0;\n"        
+        " packssdw %%mm0,%%mm0;\n"
         " movd %%mm0,%%eax;\n"              /* eax has result */
         " movw %%ax,(%%rdi,%%rsi,2);\n"
         " incq %%rsi;\n"
@@ -143,7 +143,7 @@ static void weighting_filter(int16_t x[40],
         "1:\n"
         " movq (%%ecx,%%esi,2),%%mm0;\n"
         " pmaddwd %%mm1,%%mm0;\n"
- 
+
         " movq 8(%%ecx,%%esi,2),%%mm4;\n"
         " pmaddwd %%mm2,%%mm4;\n"
         " paddd %%mm4,%%mm0;\n"
@@ -158,7 +158,7 @@ static void weighting_filter(int16_t x[40],
 
         " paddd %%mm5,%%mm0;\n"             /* Add for roundoff */
         " psrad $13,%%mm0;\n"
-        " packssdw %%mm0,%%mm0;\n"        
+        " packssdw %%mm0,%%mm0;\n"
         " movd %%mm0,%%eax;\n"              /* eax has result */
         " movw %%ax,(%%edi,%%esi,2);\n"
         " incl %%esi;\n"
@@ -175,8 +175,8 @@ static void weighting_filter(int16_t x[40],
 
     /* The coefficients of the weighting filter are stored in a table
        (see table 4.4).  The following scaling is used:
-      
-        H[0..10] = integer(real_H[0..10] * 8192); 
+
+        H[0..10] = integer(real_H[0..10] * 8192);
     */
     /* Initialization of a temporary working array wt[0...49] */
 
@@ -205,7 +205,7 @@ static void weighting_filter(int16_t x[40],
 #define STEP(i,H) (e[k + i] * (int32_t) H)
 
         /* Every one of these multiplications is done twice,
-           but I don't see an elegant way to optimize this. 
+           but I don't see an elegant way to optimize this.
            Do you?
         */
         result += STEP( 0,  -134);
@@ -446,14 +446,14 @@ static void apcm_quantization(int16_t xM[13],
        can be calculated by using the exponent and the mantissa part of
        xmaxc (logarithmic table).
        So, this method avoids any division and uses only a scaling
-       of the RPE samples by a function of the exponent.  A direct 
+       of the RPE samples by a function of the exponent.  A direct
        multiplication by the inverse of the mantissa (NRFAC[0..7]
        found in table 4.5) gives the 3 bit coded version xMc[0..12]
        of the RPE samples.
     */
     /* Direct computation of xMc[0..12] using table 4.5 */
     assert(exp <= 4096  &&  exp >= -4096);
-    assert(mant >= 0  &&  mant <= 7); 
+    assert(mant >= 0  &&  mant <= 7);
 
     temp1 = (int16_t) (6 - exp);    /* Normalization by the exponent */
     temp2 = gsm_NRFAC[mant];        /* Inverse mantissa */

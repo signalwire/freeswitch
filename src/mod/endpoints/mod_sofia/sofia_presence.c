@@ -3530,6 +3530,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	const char *contact_port = NULL;
 	sofia_nat_parse_t np = { { 0 } };
 	int found_proto = 0;
+	const char *use_to_tag;
 	char to_tag[13] = "";
 	char buf[32] = "";
 	int subbed = 0;
@@ -3547,7 +3548,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		return;
 	}
 
-	switch_stun_random_string(to_tag, 12, NULL);
+	if (sip->sip_to && sip->sip_to->a_tag) {
+		use_to_tag = sip->sip_to->a_tag;
+	} else {
+		switch_stun_random_string(to_tag, 12, NULL);
+		use_to_tag = to_tag;
+	}
 
 	if ( sip->sip_contact && sip->sip_contact->m_url ) {
 		contact_host = sip->sip_contact->m_url->url_host;
@@ -3711,7 +3717,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								 event, contact_str, call_id, full_from, full_via,
 								 (long) switch_epoch_time_now(NULL) + exp_delta,
 								 full_agent, accept, profile->name, mod_sofia_globals.hostname, 
-								 np.network_port, np.network_ip, orig_proto, full_to, to_tag);
+								 np.network_port, np.network_ip, orig_proto, full_to, use_to_tag);
 
 			switch_assert(sql != NULL);
 			
@@ -3819,7 +3825,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 		
-		sip_to_tag(nh->nh_home, sip->sip_to, to_tag);
+		sip_to_tag(nh->nh_home, sip->sip_to, use_to_tag);
 		
 		if (mod_sofia_globals.debug_presence > 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to SUBSCRIBE with 202 Accepted\n");
@@ -3896,6 +3902,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				}
 
 				nua_notify(nh,
+						   SIPTAG_FROM(sip->sip_to),
+						   SIPTAG_TO(sip->sip_from),
 						   SIPTAG_EXPIRES_STR(exp_delta_str),
 						   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
 						   SIPTAG_EVENT_STR("line-seize"), TAG_IF(full_call_info, SIPTAG_CALL_INFO_STR(full_call_info)), TAG_END());
@@ -4251,6 +4259,12 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 			if ((tuple = switch_xml_child(xml, "tuple")) && (status = switch_xml_child(tuple, "status"))
 				&& (basic = switch_xml_child(status, "basic"))) {
 				open_closed = basic->txt;
+
+				if ((note = switch_xml_child(tuple, "note"))) {
+					rpid = note_txt = note->txt;
+				} else if ((note = switch_xml_child(tuple, "dm:note"))) {
+					rpid = note_txt = note->txt;
+				}
 			}
 
 			if ((person = switch_xml_child(xml, "dm:person"))) {

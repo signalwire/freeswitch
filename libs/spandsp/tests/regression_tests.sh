@@ -25,6 +25,15 @@ STDERR_DEST=xyzzy2
 echo Performing basic spandsp regression tests
 echo
 
+./ademco_contactid_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo ademco_contactid_tests failed!
+    exit $RETVAL
+fi
+echo ademco_contactid_tests completed OK
+
 ./adsi_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]

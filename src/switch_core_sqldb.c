@@ -1250,6 +1250,7 @@ struct switch_sql_queue_manager {
 	int thread_running;
 	switch_thread_cond_t *cond;
 	switch_mutex_t *cond_mutex;
+	switch_mutex_t *cond2_mutex;
 	switch_mutex_t *mutex;
 	char *pre_trans_execute;
 	char *post_trans_execute;
@@ -1262,10 +1263,26 @@ struct switch_sql_queue_manager {
 
 static int qm_wake(switch_sql_queue_manager_t *qm)
 {
-	if (switch_mutex_trylock(qm->cond_mutex) == SWITCH_STATUS_SUCCESS) {
+	switch_status_t status;
+	int tries = 0;
+
+ top:
+	
+	status = switch_mutex_trylock(qm->cond_mutex);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(qm->cond);
 		switch_mutex_unlock(qm->cond_mutex);
 		return 1;
+	} else {
+		if (switch_mutex_trylock(qm->cond2_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_mutex_unlock(qm->cond2_mutex);
+		} else {
+			if (++tries < 10) {
+				switch_cond_next();
+				goto top;
+			}
+		}
 	}
 
 	return 0;
@@ -1392,21 +1409,28 @@ SWITCH_DECLARE(int) switch_sql_queue_manager_size(switch_sql_queue_manager_t *qm
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_manager_t *qm)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	uint32_t i;
+	uint32_t i, sanity = 100;
 
-	if (qm->thread_running) {
-		qm->thread_running = 0;
+	if (qm->thread_running == 1) {
+		qm->thread_running = -1;
 
-		for(i = 0; i < qm->numq; i++) {
-			switch_queue_push(qm->sql_queue[i], NULL);
-			switch_queue_interrupt_all(qm->sql_queue[i]);
+		while(--sanity && qm->thread_running == -1) {
+			for(i = 0; i < qm->numq; i++) {
+				switch_queue_push(qm->sql_queue[i], NULL);
+				switch_queue_interrupt_all(qm->sql_queue[i]);
+			}
+			qm_wake(qm);
+
+			if (qm->thread_running == -1) {
+				switch_yield(100000);
+			}
 		}
-		qm_wake(qm);
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
 	if (qm->thread) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Stopping SQL thread.\n", qm->name);
+		qm_wake(qm);
 		switch_thread_join(&status, qm->thread);
 		qm->thread = NULL;
 		status = SWITCH_STATUS_SUCCESS;
@@ -1480,13 +1504,14 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_destroy(switch_sql_queu
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup)
 {
 
-	if (sql_manager.paused) {
+	if (sql_manager.paused || qm->thread_running != 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "DROP [%s]\n", sql);
 		if (!dup) free((char *)sql);
 		qm_wake(qm);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!qm->thread_running) {
+	if (qm->thread_running != 1) {
 		if (!dup) free((char *)sql);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1511,6 +1536,13 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 #ifdef EXEC_NOW
 	switch_cache_db_handle_t *dbh;
 
+	if (sql_manager.paused || qm->thread_running != 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "DROP [%s]\n", sql);
+		if (!dup) free((char *)sql);
+		qm_wake(qm);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (switch_cache_db_get_db_handle_dsn(&dbh, qm->dsn) == SWITCH_STATUS_SUCCESS) {
 		switch_cache_db_execute_sql(dbh, (char *)sql, NULL);		
 		switch_cache_db_release_db_handle(&dbh);
@@ -1529,7 +1561,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!qm->thread_running) {
+	if (qm->thread_running != 1) {
 		if (!dup) free((char *)sql);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1596,6 +1628,7 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_init_name(const char *n
 	qm->max_trans = max_trans;
 
 	switch_mutex_init(&qm->cond_mutex, SWITCH_MUTEX_NESTED, qm->pool);
+	switch_mutex_init(&qm->cond2_mutex, SWITCH_MUTEX_NESTED, qm->pool);
 	switch_mutex_init(&qm->mutex, SWITCH_MUTEX_NESTED, qm->pool);
 	switch_thread_cond_create(&qm->cond, qm->pool);
 	
@@ -1850,7 +1883,9 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 	check:
 
 		if ((lc = qm_ttl(qm)) == 0) {
+			switch_mutex_lock(qm->cond2_mutex);
 			switch_thread_cond_wait(qm->cond, qm->cond_mutex);
+			switch_mutex_unlock(qm->cond2_mutex);
 		}
 
 		i = 40;
@@ -1868,9 +1903,9 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 		do_flush(qm, i, qm->event_db);
 	}
 
-	qm->thread_running = 0;
-
 	switch_cache_db_release_db_handle(&qm->event_db);
+
+	qm->thread_running = 0;
 	
 	return NULL;
 }

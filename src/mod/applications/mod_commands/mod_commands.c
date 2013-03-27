@@ -5144,7 +5144,7 @@ SWITCH_STANDARD_API(uuid_fileman_function)
 		}
 	}
 
-	stream->write_function(stream, "-USAGE: %s\n", GETVAR_SYNTAX);
+	stream->write_function(stream, "-USAGE: %s\n", FILEMAN_SYNTAX);
 
   done:
 	switch_safe_free(mycmd);

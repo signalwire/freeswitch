@@ -24,7 +24,6 @@ case $target_os in
   ;;
   *freebsd2* | *freebsd* | *netbsd* | *openbsd* | *osf[12]*)
   echo "------- START libzrtp configuration for BSD platform ------------"
-  AC_DEFINE(PLATFORM,ZP_BSD,BSD platform)
   ;;
   hpux* | irix* | linuxaout* | linux* | osf* | solaris2* | sunos4*)
   echo "------- START libzrtp configuration for Linux platform ------------"
@@ -84,12 +83,11 @@ AC_DEFINE(INLINE,[static inline],[Define inline construction for your platform])
 #
 # Documentation
 #
+AM_CONDITIONAL([HAVE_DOXYGEN], [false])
 AC_CHECK_PROGS([DOXYGEN], [doxygen])
-if test -z "$DOXYGEN";
-   then AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
-fi
-
-if test -n "$DOXYGEN"; then
+if test -z "$DOXYGEN"; then
+  AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
+else
   AM_CONDITIONAL([HAVE_DOXYGEN], [true])
   AC_CONFIG_FILES([doc/Doxyfile])
 fi

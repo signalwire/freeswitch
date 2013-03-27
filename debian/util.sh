@@ -205,12 +205,13 @@ EOF
 create_dsc () {
   {
     set -e
-    local OPTIND OPTARG modules_conf="" modules_list="" speed="normal"
-    while getopts 'f:m:s:' o "$@"; do
+    local OPTIND OPTARG modules_conf="" modules_list="" speed="normal" zl=9
+    while getopts 'f:m:s:z:' o "$@"; do
       case "$o" in
         f) modules_conf="$OPTARG";;
         m) modules_list="$OPTARG";;
         s) speed="$OPTARG";;
+        z) zl="$OPTARG";;
       esac
     done
     shift $(($OPTIND-1))
@@ -233,11 +234,12 @@ create_dsc () {
       reckless) sed -i ./debian/rules \
         -e '/\.stamp-build:/{:l2 n; /make/{s/$/ -j/; :l3 n; b l3}; b l2};' ;;
     esac
+    [ "$zl" -ge "1" ] || zl=1
     git add debian/rules
     git rm -rf --ignore-unmatch libs/libg722_1 libs/ilbc
     dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
     git add debian/changelog && git commit -m "nightly v$orig_ver"
-    dpkg-source -i.* -Zxz -z9 -b .
+    dpkg-source -i.* -Zxz -z${zl} -b .
     dpkg-genchanges -S > ../$(dsc_base)_source.changes
     local dsc="../$(dsc_base).dsc"
     git reset --hard HEAD^ && git clean -fdx
@@ -325,7 +327,7 @@ build_all () {
       o) orig="$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
       v) orig_opts="$orig_opts -v$OPTARG";;
-      z) orig_opts="$orig_opts -z$OPTARG";;
+      z) orig_opts="$orig_opts -z$OPTARG"; dsc_opts="$dsc_opts -z$OPTARG";;
     esac
   done
   shift $(($OPTIND-1))
@@ -414,6 +416,7 @@ commands:
       Choose custom list of modules to build
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
+    -z Set compression level
 
   create-orig <treeish>
 

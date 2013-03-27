@@ -509,6 +509,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
+	memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
+
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 	//ERRORA("%s CHANNEL INIT\n", GSMOPEN_P_LOG, tech_pvt->name);
@@ -559,6 +561,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->phone_callflow == CALLFLOW_STATUS_FINISHED) {
 			tech_pvt->phone_callflow = CALLFLOW_CALL_IDLE;
 		}
+		memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 		switch_core_session_set_private(session, NULL);
 	} else {
 		DEBUGA_GSMOPEN("!!!!!!NO tech_pvt!!!! CHANNEL DESTROY %s\n", GSMOPEN_P_LOG, switch_core_session_get_uuid(session));
@@ -757,6 +760,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if (tech_pvt->no_sound) {
 		goto cng;
 	}
+	memset(buffer2, 0, sizeof(buffer2));
 	samples = tech_pvt->serialPort_serial_audio->Read(buffer2, 640);
 
 	if (samples >= 320) {
@@ -778,6 +782,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			tech_pvt->buffer2_full = 0;
 			samples = 320;
 			DEBUGA_GSMOPEN("samples=%d FROM BUFFER\n", GSMOPEN_P_LOG, samples);
+			memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 		}
 
 	}
@@ -793,6 +798,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_mutex_unlock(tech_pvt->flag_mutex);
 
 	if (samples != 320) {
+		memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 		if (samples != 0) {
 			DEBUGA_GSMOPEN("samples=%d, goto cng\n", GSMOPEN_P_LOG, samples);
 		}

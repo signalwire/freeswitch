@@ -31,7 +31,7 @@
 /*! \page tone_generation_page Tone generation
 \section tone_generation_page_sec_1 What does it do?
 The tone generation module provides for the generation of cadenced tones,
-suitable for a wide range of telephony applications. 
+suitable for a wide range of telephony applications.
 
 \section tone_generation_page_sec_2 How does it work?
 Oscillators are a problem. They oscillate due to instability, and yet we need
@@ -40,7 +40,7 @@ on this subject. Many describe rather complex solutions to the problem. However,
 we are only concerned with telephony applications. It is possible to generate
 the tones we need with a very simple efficient scheme. It is also practical to
 use an exhaustive test to prove the oscillator is stable under all the
-conditions in which we will use it. 
+conditions in which we will use it.
 */
 
 typedef struct tone_gen_tone_descriptor_s tone_gen_tone_descriptor_t;

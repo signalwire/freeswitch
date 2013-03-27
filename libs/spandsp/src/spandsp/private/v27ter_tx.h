@@ -67,7 +67,7 @@ struct v27ter_tx_state_s
 
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
-    
+
     /*! \brief The register for the training and data scrambler. */
     uint32_t scramble_reg;
     /*! \brief A counter for the number of consecutive bits of repeating pattern through

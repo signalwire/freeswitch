@@ -86,7 +86,7 @@ SPAN_DECLARE(int) rfc2198_sim_put(rfc2198_sim_state_t *s,
     memcpy(s->tx_pkt[s->next_pkt], buf, len);
     s->tx_pkt_len[s->next_pkt] = len;
     s->tx_pkt_seq_no[s->next_pkt] = seq_no;
-    
+
     /* Construct the redundant packet */
     p = buf2;
     slot = s->next_pkt;
@@ -127,7 +127,7 @@ SPAN_DECLARE(int) rfc2198_sim_get(rfc2198_sim_state_t *s,
     uint8_t *p;
     uint16_t *q;
     int redundancy_depth;
-    
+
     if (s->rx_queued_pkts)
     {
         /* We have some stuff from the last g1050_get() still to deliver */

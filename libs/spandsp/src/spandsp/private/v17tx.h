@@ -94,7 +94,7 @@ struct v17_tx_state_s
     int32_t carrier_phase_rate;
     /*! \brief The current fractional phase of the baud timing. */
     int baud_phase;
-    
+
     /*! \brief The current number of data bits per symbol. This does not include
                the redundant bit. */
     int bits_per_symbol;

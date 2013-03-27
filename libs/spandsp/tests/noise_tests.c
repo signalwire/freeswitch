@@ -202,7 +202,7 @@ int main (int argc, char *argv[])
             exit(2);
         }
     }
-    
+
     quality = 7;
     printf("Generating Hoth noise at -15dBOv to file\n");
     level = -15;
@@ -224,7 +224,7 @@ int main (int argc, char *argv[])
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
-    
+
     printf("Tests passed.\n");
     return 0;
 }

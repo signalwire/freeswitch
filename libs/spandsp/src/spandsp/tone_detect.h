@@ -191,7 +191,7 @@ static __inline__ void goertzel_samplex(goertzel_state_t *s, float amp)
 */
 SPAN_DECLARE(int) periodogram_generate_coeffs(complexf_t coeffs[], float freq, int sample_rate, int window_len);
 
-/*! Generate the phase offset to be expected between successive periodograms evaluated at the 
+/*! Generate the phase offset to be expected between successive periodograms evaluated at the
     specified interval.
     \param offset A point to the generated phase offset.
     \param freq The frequency being matched by the periodogram, in Hz.

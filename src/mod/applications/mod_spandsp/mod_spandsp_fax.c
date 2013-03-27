@@ -262,7 +262,12 @@ static void counter_increment(void)
 void spanfax_log_message(void *user_data, int level, const char *msg)
 {
 	int fs_log_level;
-
+    switch_core_session_t *session;
+    pvt_t *pvt;
+    
+	pvt = (pvt_t *) user_data;
+	session = pvt->session;
+    
 	switch (level) {
 	case SPAN_LOG_NONE:
 		return;
@@ -283,7 +288,7 @@ void spanfax_log_message(void *user_data, int level, const char *msg)
 	}
 
 	if (!zstr(msg)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, fs_log_level, "%s", msg);
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), fs_log_level, "%s", msg);
 	}
 }
 
@@ -358,9 +363,11 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 {
 	t30_stats_t t30_stats;
-	char *fax_image_resolution = NULL;
+	char *fax_file_image_resolution = NULL;
+	char *fax_line_image_resolution = NULL;
+	char *fax_file_image_pixel_size = NULL;
+	char *fax_line_image_pixel_size = NULL;
 	char *fax_image_size = NULL;
-	char *fax_image_pixel_size = NULL;
 	char *fax_bad_rows = NULL;
 	char *fax_encoding = NULL;
 	char *fax_longest_bad_row_run = NULL;
@@ -383,14 +390,24 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 
 	/* Set Channel Variable */
 
-	fax_image_resolution = switch_core_session_sprintf(session, "%ix%i", t30_stats.x_resolution, t30_stats.y_resolution);
-	if (fax_image_resolution) {
-		switch_channel_set_variable(channel, "fax_image_resolution", fax_image_resolution);
+	fax_line_image_resolution = switch_core_session_sprintf(session, "%ix%i", t30_stats.x_resolution, t30_stats.y_resolution);
+	if (fax_line_image_resolution) {
+		switch_channel_set_variable(channel, "fax_image_resolution", fax_line_image_resolution);
 	}
 
-	fax_image_pixel_size = switch_core_session_sprintf(session, "%ix%i", t30_stats.width, t30_stats.length);
-	if (fax_image_pixel_size) {
-		switch_channel_set_variable(channel, "fax_image_pixel_size", fax_image_pixel_size);;
+	fax_file_image_resolution = switch_core_session_sprintf(session, "%ix%i", t30_stats.image_x_resolution, t30_stats.image_y_resolution);
+	if (fax_file_image_resolution) {
+		switch_channel_set_variable(channel, "fax_file_image_resolution", fax_file_image_resolution);
+	}
+
+	fax_line_image_pixel_size = switch_core_session_sprintf(session, "%ix%i", t30_stats.width, t30_stats.length);
+	if (fax_line_image_pixel_size) {
+		switch_channel_set_variable(channel, "fax_image_pixel_size", fax_line_image_pixel_size);;
+	}
+
+	fax_file_image_pixel_size = switch_core_session_sprintf(session, "%ix%i", t30_stats.image_width, t30_stats.image_length);
+	if (fax_file_image_pixel_size) {
+		switch_channel_set_variable(channel, "fax_file_image_pixel_size", fax_file_image_pixel_size);;
 	}
 
 	fax_image_size = switch_core_session_sprintf(session, "%d", t30_stats.image_size);
@@ -423,8 +440,9 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==== Page %s===========================================================\n", pvt->app_mode == FUNCTION_TX ? "Sent ====": "Received ");
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Page no = %d\n", (pvt->app_mode == FUNCTION_TX)  ?  t30_stats.pages_tx  :  t30_stats.pages_rx);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image size = %d x %d pixels\n", t30_stats.width, t30_stats.length);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution = %d/m x %d/m\n", t30_stats.x_resolution, t30_stats.y_resolution);
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image type = %s (%s in the file)\n", t4_image_type_to_str(t30_stats.type), t4_image_type_to_str(t30_stats.image_type));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image size = %d x %d pixels (%d x %d pixels in the file)\n", t30_stats.width, t30_stats.length, t30_stats.image_width, t30_stats.image_length);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution = %d/m x %d/m (%d/m x %d/m in the file)\n", t30_stats.x_resolution, t30_stats.y_resolution, t30_stats.image_x_resolution, t30_stats.image_y_resolution);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compression = %s (%d)\n", t4_encoding_to_str(t30_stats.encoding), t30_stats.encoding);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compressed image size = %d bytes\n", t30_stats.image_size);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Bad rows = %d\n", t30_stats.bad_rows);
@@ -436,9 +454,11 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXPAGERESULT : SPANDSP_EVENT_RXFAXPAGERESULT) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", switch_core_session_get_uuid(session));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_image_resolution);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_line_image_resolution);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-file-image-resolution", fax_file_image_resolution);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-size", fax_image_size);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-pixel-size", fax_image_pixel_size);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-pixel-size", fax_line_image_pixel_size);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-file-image-pixel-size", fax_file_image_pixel_size);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-longest-bad-row-run", fax_longest_bad_row_run);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-encoding", fax_encoding);
@@ -709,8 +729,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 		fax_set_transmit_on_idle(fax, TRUE);
 
-		span_log_set_message_handler(fax_get_logging_state(fax), spanfax_log_message, NULL);
-		span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, NULL);
+		span_log_set_message_handler(fax_get_logging_state(fax), spanfax_log_message, pvt);
+		span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, pvt);
 
 		if (pvt->verbose) {
 			span_log_set_level(fax_get_logging_state(fax), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -765,8 +785,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 				}
 			}
 
-			span_log_set_message_handler(t38_terminal_get_logging_state(t38), spanfax_log_message, NULL);
-			span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, NULL);
+			span_log_set_message_handler(t38_terminal_get_logging_state(t38), spanfax_log_message, pvt);
+			span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, pvt);
 
 			if (pvt->verbose) {
 				span_log_set_level(t38_terminal_get_logging_state(t38), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -820,8 +840,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		}
 
 
-		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), spanfax_log_message, NULL);
-		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), spanfax_log_message, NULL);
+		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), spanfax_log_message, pvt);
+		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), spanfax_log_message, pvt);
 
 		if (pvt->verbose) {
 			span_log_set_level(t38_gateway_get_logging_state(pvt->t38_gateway_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);

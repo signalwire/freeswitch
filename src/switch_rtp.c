@@ -4232,6 +4232,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 	}
 
+	if (m) {
+		rtp_session->last_write_ts = RTP_TS_RESET;
+		rtp_session->ts = 0;
+	}
+
 	/* If the marker was set, and the timestamp seems to have started over - set a new SSRC, to indicate this is a new stream */
 	if (m && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND) && (rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER) && 
 		(rtp_session->last_write_ts == RTP_TS_RESET || (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->last_write_ts > 0))) {
@@ -4357,7 +4362,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 	this_ts = ntohl(send_msg->header.ts);
 
-	if ((this_ts < rtp_session->last_write_ts) && ((rtp_session->last_write_ts - this_ts) > 16000)) {
+	if (abs(rtp_session->last_write_ts - this_ts) > 16000) {
 		rtp_session->last_write_ts = RTP_TS_RESET;
 	}
 

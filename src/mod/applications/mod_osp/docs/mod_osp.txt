@@ -1,84 +1,322 @@
 FreeSWITCH Open Settlement Protocol (OSP) module
 
-This module provides OSP based call authentication, authorization, routing lookup and call detail record (CDR) collection services using standard FreeSWITCH application and dailplan interfaces.
+1 Introduction
+FreeSWITCH OSP module provides OSP based call authentication, authorization, routing lookup and call detail record (CDR) collection services using standard FreeSWITCH application interface and state handlers.
 
-The OSP module can be configured by the following parameters in osp.conf.xml:
+2 Configuration Parameters
+The OSP module can be configured by OSP module global parameters and OSP provider profile parameters in osp.conf.xml.
 
-Global parameters:
+2.1 Global Parameters
+FreeSWITCH OSP module global configuration parameters can be set using the following format:
 
 <settings>
-	<param name="*NAME*" value="*VALUE*"/>
+  <param name="*NAME*" value="*VALUE*"/>
 </settings>
 
 Global parameter names and values can be:
+ - debug-info: Flag to show OSP module debug information. The default is "disabled".
+ - log-level: At which log level to show OSP module debug information. The default is "info".
+ - crypto-hardware: If to use hardware for OpenSSL. The default is "disabled".
+ - sip: Used SIP module and profile. The default is "sofia" and "external".
+ - h323: Used H.323 module and profile. The default is "h323" and "external". This option has not been implemented.
+ - iax: Used IAX2 module and profile. The default is "iax" and "external". This option has not been implemented.
+ - skype: Used Skype module and profile. The default is "skypopen" and "external". This option has not been implemented.
+ - default-protocol: The VoIP protocol for destinations with unknown/undefined protocol. The default is "sip".
 
-debug-info: Flag to show OSP module debug information. The default is "disabled".
-log-level: At which log level to show OSP module debug information. The default is "info".
-crypto-hardware: If to use hardware for OpenSSL. The default is "disabled".
-sip: Used SIP module and profile. The default is "sofia" and "external".
-h323: Used H.323 module and profile. The default is "h323" and "external". This option has not been implemented.
-iax: Used IAX2 module and profile. The default is "iax" and "external". This option has not been implemented.
-skype: Used Skype module and profile. The default is "skypopen" and "external". This option has not been implemented.
-default-protocol: The VoIP protocol for destinations with unknown/undefined protocol. The default is "sip".
-
-OSP provider parameters:
+2.2 OSP Provider Parameters
+FreeSWITCH OSP module OSP provider configuration parameters can be set using the following format:
 
 <profiles>
-	<profile name="default">
-		<param name="*NAME*" value="*VALUE*"/>
-	</profile>
+  <profile name="default">
+    <param name="*NAME*" value="*VALUE*"/>
+  </profile>
 </profiles>
 
 OSP provider parameter names ane values cab be:
+ - profile: OSP provider profile name.
+ - service-point-url: OSP service point URL. This parameter must be defined. Up to 8 URLs are allowed.
+ - device-ip: FreeSWITCH IP for OSP module. This parameter must be defined.
+ - ssl-lifetime: SSL lifetime. The default is 300 in seconds.
+ - http-max-connections: HTTP max connections. The default is 20.
+ - http-persistence: HTTP persistence. The default is 60 in seconds.
+ - http-retry-delay: HTTP retry delay. The default is 0 in seconds.
+ - http-retry-limit: HTTP retry times. The default is 2.
+ - http-timeout: HTTP timeout. The default is 10000 in ms.
+ - work-mode: OSP module work mode (direct and indirect). The default is "direct".
+ - service-type: OSP service type (voice and npquery). The default is "voice".
+ - max-destinations: Max destinations OSP server will return. It is up to 12. The default is 12.
 
-profile: OSP provider profile name.
-service-point-url: OSP service point URL. This parameter must be defined. Up to 8 URLs are allowed.
-device-ip: FreeSWITCH IP for OSP module. This parameter must be defined.
-ssl-lifetime: SSL lifetime. The default is 300 in seconds.
-http-max-connections: HTTP max connections. The default is 20.
-http-persistence: HTTP persistence. The default is 60 in seconds.
-http-retry-delay: HTTP retry delay. The default is 0 in seconds.
-http-retry-limit: HTTP retry times. The default is 2.
-http-timeout: HTTP timeout. The default is 10000 in ms.
-work-mode: OSP module work mode (direct and indirect). The default is "direct".
-service-type: OSP service type (voice and npquery). The default is "voice".
-max-destinations: Max destinations OSP server will return. It is up to 12. The default is 12.
+3 OSP Applications
+The OSP applications are called in dial plan like this:
 
-The OSP application is called in dial plan like this:
+<action application="osplookup" data="*PROFILE*>"/> and <action application="ospnext"/>
 
-<action application="osp" data="<profilename>"/>
+*PROFILE* is an OSP service provider profile name configured in osp.conf.xml. If data attribute is not provided or its value is empty, profile name "default" is used.
 
-The OSP dialplan is called in dial plan like this:
+3.1 OSPLookup Application
+osplookup application does OSP authorization request and gets first supported destination for inbound calls. It exports a set channel variables for FreeSWITCH dial plan logic.
+osplookup application accepts two sets of channel variables that are used to pass additional inbound call information and outbound control parameters to OSP module. It also exports a set of channel variables for outbound channels and FreeSWITCH dial plan logic.
 
-<param name="dialplan" value="osp:<profilename>"/>
+3.1.1 Inbound Call Information
+ - osp_source_device: Actual source device IP address channel variable. It is only for FreeSWITH OSP module running in indirect mode.
+ - osp_source_nid: Source device network ID channel variable.
+ - osp_custom_info_N: Up to 8 custom info channel variables. N is the index starting from 1.
 
-For both OSP application and dialplan, the <profilename> is an OSP service provider name configured in osp.conf.xml. If it is empty, profile "default" is used.
+3.1.2 Outbound Control Parameters
+ - osp_networkid_userparam: The URI user parameter name that is used to present destination network ID. For example, sip:callednumber;networkid=dnid@host.
+ - osp_networkid_uriparam: The URI parameter name that is used to present destination network ID. For example, sip:callednumber @host;networkid=dnid.
+ - osp_user_phone: Flag to add "user=phone" URI parameter. The default is "disabled".
+ - osp_outbound_proxy: Outbound proxy IP address channel variable.
 
-Both OSP application and dialplan accept a set of inbound channel variables that are used to pass additional call information to OSP module. These channel variables include:
+3.1.3 Exported Parameters
+ - osp_profile_name: Used OSP provider profile name. It will be used by ospnext application and OSP module state handlers.
+ - osp_transaction_handle: OSP transaction handle. It will be used by ospnext application and OSP module state handlers.
+ - osp_transaction_id: OSP transaction ID. It will be used by ospnext application and OSP module state handlers for log purpose.
+ - osp_lookup_status: osplookup application status. It will be used by FreeSWITCH dial plan logic. 0 for no error.
+ - osp_route_total: Total number of destinations from OSP servers. It will be used by ospnext application and OSP module state handlers.
+ - osp_route_count: Destination index starting from 1. It will be used by ospnext application and OSP module state handlers.
+ - osp_auto_route: Bridge route string. It will be used by bridge application.
+ - osp_termiation_cause: Destination termination cause. It will be used by ospnext application and OSP module state handlers.
 
-osp_source_device: Actual source device IP address channel variable. It is only for FreeSWITH OSP module running in indirect mode.
-osp_source_nid: Source device network ID channel variable.
-osp_custom_info_N: Up to 8 custom info channel variables. N is the index starting from 1.
-osp_networkid_userparam: The URI user parameter name that is used to present destination network ID.
-osp_networkid_uriparam: The URI parameter name that is used to present destination network ID.
-osp_user_phone: Flag to add "user=phone" URI parameter. The default is "disabled".
-osp_outbound_proxy: Outbound proxy IP address channel variable.
+3.2 OSPNext Application
+ospnext application gets next supported destination for inbound calls. It exports a set channel variables for FreeSWITCH dial plan logic.
+ospnext application accepts a set of channel variables exported by osplookup application to pass OSP call transaction information to OSP module. It also exports a set of channel variables for outbound channels and FreeSWITCH dial plan logic.
 
-Both OSP application and dialplan also export a set of channel variables for outbound channels and FreeSWITCH dial plan logic (for OSP dialplan, some exported channel variables are not visible for dial plan). These channel variables include:
+3.2.1 Transaction Parameters
+ - osp_profile_name: Used OSP provider profile name.
+ - osp_transaction_handle: OSP transaction handle.
+ - osp_transaction_id: OSP transaction ID. It is for log purpose.
+ - osp_route_total: Total number of destinations from OSP servers.
+ - osp_route_count: destination index starting from 1.
+ - osp_termiation_cause: Destination termination cause.
 
-osp_profile: Used OSP profile name. Used by outbound channels.
-osp_transaction_id: OSP transaction ID. Used by outbound channels.
-osp_calling: Original inbound calling number. Used by outbound channels.
-osp_called: Original inbound called number. Used by outbound channels.
-osp_start_time: Inbound call start time. Used by outbound channels.
-osp_source_device: Actual source device. Used by outbound channels. It is only for FreeSWITH OSP module running in indirect mode.
-osp_source_nid: Source network ID. Used by outbound channels.
-osp_destination_total: Total number of destinations from OSP servers. Used by outbound channels.
-osp_destination_count: Destination index. Used by outbound channels.
-osp_destination_ip: Destination IP. Used by outbound channels.
-osp_destination_nid: Destination network ID. Used by outbound channels.
-osp_authreq_status: Authorization request result status.
-osp_route_count: Number of supported destinations.
-osp_route_N: Destination route string. N is the index starting from 1.
-osp_auto_route: Bridge route string.
+3.2.2 Exported Parameters
+ - osp_next_status: ospnext application status. It will be used by FreeSWITCH dial plan logic. 0 for no error.
+ - osp_route_count: Destination index starting from 1. It will be used by ospnext application and OSP module state handlers.
+ - osp_termiation_cause: Destination termination cause. It will be used by ospnext application and OSP module state handlers.
+ - osp_auto_route: Bridge route string. It will be used by bridge application.
+
+4 State Handler
+OSP module state handler reports usage of calls. 
+OSP module state handler accepts a set of channel variables exported by osplookup and/or ospnext applications to pass OSP call transaction information to OSP module.
+
+4.1 Transaction Parameters
+ - osp_profile_name: Used OSP provider profile name.
+ - osp_transaction_handle: OSP transaction handle.
+ - osp_transaction_id: OSP transaction ID. It is for log purpose.
+ - osp_route_total: Total number of destinations from OSP servers.
+ - osp_route_count: destination index starting from 1.
+ - osp_termiation_cause: Destination termination cause.
+
+5 Appendix
+
+5.1 Sample Configuration
+<configuration name="osp.conf" description="OSP Module Configuration">
+  <settings>
+    <!-- Debug info flag -->
+    <param name="debug-info" value="disabled"/>
+    <!-- Log level for debug info -->
+    <param name="log-level" value="info"/>
+    <!-- Crypto hareware accelerate is disabled by default -->
+    <param name="crypto-hardware" value="disabled"/>
+    <!-- SIP settings -->
+    <param name="sip" module="sofia" profile="external"/>
+    <!-- H.323 settings -->
+    <!-- <param name="h323" module="h323" profile="external"/> -->
+    <!-- IAX settings -->
+    <!-- <param name="iax" module="iax" profile="external"/> -->
+    <!-- Skype settings -->
+    <!-- <param name="skype" module="skypopen" profile="external"/> -->
+    <!-- Default destination protocol -->
+    <param name="default-protocol" value="sip"/>
+  </settings>
+
+  <profiles>
+  <!-- Default OSP profile -->
+    <profile name="default">
+      <!-- Service point URLs, up to 8 allowed -->
+      <!-- <param name="service-point-url" value="http://osptestserver.transnexus.com:5045/osp"/> -->
+      <!-- <param name="service-point-url" value="https://127.0.0.1:1443/osp"/> -->
+      <param name="service-point-url" value="http://127.0.0.1:5045/osp"/>
+
+      <!-- FreeSWITCH IP address for OSP -->
+      <param name="device-ip" value="127.0.0.1:5080"/>
+
+      <!-- SSL lifetime in seconds -->
+      <param name="ssl-lifetime" value="300"/>
+      <!-- HTTP max connections, 1~1000 -->
+      <param name="http-max-connections" value="20"/>
+      <!-- HTTP persistence in seconds -->
+      <param name="http-persistence" value="60"/>
+      <!-- HTTP retry delay in seconds, 0~10 -->
+      <param name="http-retry-delay" value="0"/>
+      <!-- HTTP retry limit, 0~100 -->
+      <param name="http-retry-limit" value="2"/>
+      <!-- HTTP timeout in milliseconds, 200~60000 -->
+      <param name="http-timeout" value="10000"/>
+
+      <!-- OSP work mode, direct or indirect -->
+      <param name="work-mode" value="direct"/>
+      <!-- OSP service type, voice or npquery -->
+      <param name="service-type" value="voice"/>
+      <!-- Max number of destinations -->
+      <param name="max-destinations" value="12"/>
+    </profile>
+  </profiles>
+</configuration>
+
+5.2 Sample Dialplan
+<include>
+  <context name="txnx">
+    <extension name="unloop">
+      <condition field="${unroll_loops}" expression="^true$"/>
+      <condition field="${sip_looped_call}" expression="^true$">
+        <action application="deflect" data="${destination_number}"/>
+      </condition>
+    </extension>
+
+    <!--
+        Tag anything pass thru here as an outside_call so you can make sure not
+        to create any routing loops based on the conditions that it came from 
+        the outside of the switch.  
+    -->
+
+    <extension name="outside_call" continue="true">
+      <condition>
+        <action application="set" data="outside_call=true"/>
+        <action application="export" data="RFC2822_DATE=${strftime(%a, %d %b %Y %T %z)}"/>
+      </condition>
+    </extension>
+
+    <extension name="call_debug" continue="true">
+      <condition field="${call_debug}" expression="^true$" break="never">
+        <action application="info"/>
+      </condition>
+    </extension>
+
+    <!-- XML dialplan for OSP -->
+    <extension name="osp">
+      <!-- For any called number -->
+      <condition field="destination_number" expression="^(.*)$">
+        <!-- Jump to OSP logic with destination_number as called number -->
+        <action application="transfer" data="$1 XML osp_lookup"/>
+      </condition>
+    </extension>
+  </context>
+
+  <!-- OSP lookup application logic -->
+  <context name="osp_lookup">
+    <extension name="lookup">
+      <condition>
+        <!-- Inbound information parameters -->
+        <!-- Actual source device -->
+        <action application="set" data="osp_source_device=${sip_h_P-Source-Device}"/>
+        <!-- Source network ID -->
+        <action application="set" data="osp_source_nid=${sip_h_P-Network-ID}"/>
+        <!-- Custom info -->
+        <action application="set" data="osp_custom_info_4=${sip_h_P-Custom-Info}"/>
+        <!-- Outbound control parameters -->
+        <!-- Destination network ID parameter name, "sip:callednumber;dnidname=dnidvalue@host" -->
+        <!-- <action application="set" data="osp_networkid_userparam=networkid"/> -->
+        <!-- Destination network ID parameter name, "sip:callednumber@host;dnidname=dnidvalue" -->
+        <action application="set" data="osp_networkid_uriparam=networkid"/>
+        <!-- Append "user=phone" -->
+        <!-- <action application="set" data="osp_user_phone=enabled"/> -->
+        <!-- Outbound proxy -->
+        <!-- <action application="set" data="osp_outbound_proxy=${network_addr}"/> -->
+        <!-- OSP lookup application with default OSP profile -->
+        <action application="osplookup" data="default"/>
+        <!-- Debug info -->
+        <!-- OSP profile name -->
+        <action application="log" data="DEBUG osp_profile_name = ${osp_profile_name}"/>
+        <!-- OSP transaction handle -->
+        <action application="log" data="DEBUG osp_transaction_handle = ${osp_transaction_handle}"/>
+        <!-- OSP transaction ID -->
+        <action application="log" data="DEBUG osp_transaction_id = ${osp_transaction_id}"/>
+        <!-- OSP lookup application status -->
+        <action application="log" data="DEBUG osp_lookup_status = ${osp_lookup_status}"/>
+        <!-- Total number of destinations -->
+        <action application="log" data="DEBUG osp_route_total = ${osp_route_total}"/>
+        <!-- Count of current destination, starting from 1 -->
+        <action application="log" data="DEBUG osp_route_count = ${osp_route_count}"/>
+        <!-- Bridge application dial string -->
+        <action application="log" data="DEBUG osp_auto_route = ${osp_auto_route}"/>
+        <!-- Jump out to check OSP Lookup status -->
+        <action application="transfer" data="lookup XML osp_check_lookup"/>
+      </condition>
+    </extension>
+  </context>
+
+  <!-- Check OSP lookup application status -->
+  <context name="osp_check_lookup">
+    <extension name="lookup">
+      <condition field="${osp_lookup_status}" expression="0">
+        <!-- OSP Lookup status success, jump to dail -->
+        <action application="transfer" data="dial XML osp_dial"/>
+        <!-- OSP Lookup status false, jump to done -->
+        <anti-action application="transfer" data="done XML osp_done"/>
+      </condition>
+    </extension>
+  </context>
+
+  <!-- Dail destination -->
+  <context name="osp_dial">
+    <extension name="dial">
+      <condition>
+        <!-- Bridge control parameters -->
+        <action application="set" data="continue_on_fail=true"/>
+        <action application="set" data="hangup_after_bridge=false"/>
+        <!-- Bridge call legs -->
+        <action application="bridge" data="${osp_auto_route}"/>
+        <!-- Debug info -->
+        <!-- Destination termination cause for failed call -->
+        <action application="log" data="DEBUG last_bridge_hangup_cause = ${last_bridge_hangup_cause}"/>
+        <!-- Jump out to run OSP Next -->
+        <action application="transfer" data="next XML osp_next"/>
+      </condition>
+    </extension>
+  </context>
+
+  <!-- OSP next application logic -->
+  <context name="osp_next">
+    <extension name="next">
+      <condition>
+        <!-- OSP next application -->
+        <action application="ospnext"/>
+        <!-- Debug info -->
+        <!-- OSP next application status -->
+        <action application="log" data="DEBUG osp_next_status = ${osp_next_status}"/>
+        <!-- Count of current destination, starting from 1 -->
+        <action application="log" data="DEBUG osp_route_count = ${osp_route_count}"/>
+        <!-- Bridge application dial string -->
+        <action application="log" data="DEBUG osp_auto_route = ${osp_auto_route}"/>
+        <!-- Jump out to check OSP Next application status -->
+        <action application="transfer" data="next XML osp_check_next"/>
+      </condition>
+    </extension>
+  </context>
+
+  <!-- Check OSP next application status -->
+  <context name="osp_check_next">
+    <extension name="next">
+      <condition field="${osp_next_status}" expression="0">
+        <!-- OSP Next status success, jump to dail -->
+        <action application="transfer" data="dial XML osp_dial"/>
+        <!-- OSP Next status false, jump to done -->
+        <anti-action application="transfer" data="done XML osp_done"/>
+      </condition>
+    </extension>
+  </context>
+
+  <!-- OSP logic for failed calls -->
+  <context name="osp_done">
+    <extension name="done">
+      <condition>
+        <!-- Respond 503 -->
+        <action application="respond" data="503 Service unavailable"/>
+        <action application="hangup" data="NORMAL_TEMPORARY_FAILURE"/>
+      </condition>
+    </extension>
+  </context>
+</include>
 

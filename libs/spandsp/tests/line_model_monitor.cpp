@@ -417,7 +417,7 @@ int start_line_model_monitor(int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void line_model_monitor_wait_to_end(void) 
+void line_model_monitor_wait_to_end(void)
 {
     fd_set rfds;
     int res;
@@ -438,7 +438,7 @@ void line_model_monitor_wait_to_end(void)
 }
 /*- End of function --------------------------------------------------------*/
 
-void line_model_monitor_update_display(void) 
+void line_model_monitor_update_display(void)
 {
     Fl::check();
     Fl::check();

@@ -228,6 +228,9 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 					/* Save the new packet. Redundancy mode won't use this, but some systems will switch into
 					   FEC mode after sending some redundant packets, and this may then be important. */
 					x = (seq_no - i) & UDPTL_BUF_MASK;
+					if (!bufs[i - 1]) {
+						return -1;
+					}
 					memcpy(s->rx[x].buf, bufs[i - 1], lengths[i - 1]);
 					s->rx[x].buf_len = lengths[i - 1];
 					s->rx[x].fec_len[0] = 0;

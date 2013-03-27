@@ -122,6 +122,26 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(int) switch_strcasecmp_any(const char *str, ...)
+{
+	va_list ap;
+	const char *next_str = 0;
+	int r = 0;
+
+	va_start(ap, str);
+
+	while ((next_str = va_arg(ap, const char *))) {
+		if (!strcasecmp(str, next_str)) {
+			r = 1;
+			break;
+		}
+	}
+	
+	va_end(ap);
+
+	return r;
+}
+
 
 SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param, switch_memory_pool_t *pool)
 {

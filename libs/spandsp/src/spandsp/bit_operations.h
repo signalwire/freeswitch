@@ -144,7 +144,7 @@ static __inline__ int top_bit(unsigned int bits)
 static __inline__ int bottom_bit(unsigned int bits)
 {
     int res;
-    
+
 #if defined(SPANDSP_USE_86_ASM)
     __asm__ (" xorl %[res],%[res];\n"
              " decl %[res];\n"

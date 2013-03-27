@@ -1181,15 +1181,18 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		if (switch_stristr("transport=tls", sip->sip_contact->m_url->url_params)) {
 			is_tls += 1;
+			is_nat++;
 		}
 
 		if (sip->sip_contact->m_url->url_type == url_sips) {
 			proto = "sips";
 			is_tls += 2;
+			is_nat++;
 		}
 
 		if (switch_stristr("transport=tcp", sip->sip_contact->m_url->url_params)) {
 			is_tcp = 1;
+			is_nat++;
 		}
 
 		display = contact->m_display;
@@ -2503,10 +2506,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	}
 
 	if (switch_xml_locate_user_merged("id", zstr(username) ? "nobody" : username, domain_name, ip, &user, params) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n"
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s] from %s\n"
 						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
 						  "and you must configure your device to use the proper domain in it's authentication credentials.\n", username, domain_name,
-						  domain_name, username);
+						  ip, domain_name, username);
 
 		ret = AUTH_FORBIDDEN;
 		goto end;

@@ -197,6 +197,11 @@ static switch_status_t nibblebill_load_config(void)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "odbc_dsn is %s\n", val);
 				switch_safe_free(globals.odbc_dsn);
 				globals.odbc_dsn = strdup(val);
+			} else if (!strcasecmp(var, "db_dsn") && !zstr(val)) {
+				/* For backwards-compatibility */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "this nibblebill param(db_dsn) is deprecated and will be removed in 1.4 - odbc_dsn is %s\n", val);
+				switch_safe_free(globals.odbc_dsn);
+				globals.odbc_dsn = strdup(val);
 			} else if (!strcasecmp(var, "db_table")) {
 				set_global_db_table(val);
 			} else if (!strcasecmp(var, "db_column_cash")) {

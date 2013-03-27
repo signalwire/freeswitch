@@ -37,7 +37,7 @@
 #include <time.h>
 
 #include "spandsp.h"
-    
+
 int main (int argc, char *argv[])
 {
     awgn_state_t *noise_source;

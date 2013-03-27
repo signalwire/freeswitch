@@ -2289,7 +2289,7 @@ SWITCH_STANDARD_APP(httapi_function)
 
 static char *load_cache_data(http_file_context_t *context, const char *url)
 {
-	char *ext = NULL;
+	char *ext = NULL, *dext = NULL, *p;
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 	char meta_buffer[1024] = "";
 	int fd;
@@ -2307,6 +2307,14 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 		} else {
 			ext = "wav";
 		}
+	}
+	
+	if (ext && (p = strchr(ext, '?'))) {
+		dext = strdup(ext);
+		if ((p = strchr(dext, '?'))) {
+			*p = '\0';
+			ext = dext;
+		} else free(dext);
 	}
 
 	context->cache_file_base = switch_core_sprintf(context->pool, "%s%s%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
@@ -2328,6 +2336,8 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 		}
 		close(fd);
 	}
+
+	switch_safe_free(dext);
 
 	return context->cache_file;
 }
@@ -2408,11 +2418,10 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	curl_handle = switch_curl_easy_init();
 
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
 
-	if (!strncasecmp(url, "https", 5)) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
-	}
+	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 
 	client.max_bytes = HTTAPI_MAX_FILE_BYTES;
 
@@ -2591,15 +2600,22 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 		
 		if ((!context->url_params || !switch_event_get_header(context->url_params, "ext")) 
 			&& headers && (ct = switch_event_get_header(headers, "content-type"))) {
-			if (!strcasecmp(ct, "audio/mpeg")) {
+			if (switch_strcasecmp_any(ct, "audio/mpeg", "audio/x-mpeg", "audio/mp3", "audio/x-mp3", "audio/mpeg3", 
+									  "audio/x-mpeg3", "audio/mpg", "audio/x-mpg", "audio/x-mpegaudio", NULL)) {
 				newext = "mp3";
-			} else if (!strcasecmp(ct, "audio/wav")) {
+			} else if (switch_strcasecmp_any(ct, "audio/wav", "audio/x-wave", "audio/wav", "audio/wave", NULL)) {
 				newext = "wav";
 			}
 		}
 
 
 		if (newext) {
+			char *p;
+
+			if ((p = strrchr(context->cache_file, '.'))) {
+				*p = '\0';
+			}
+			
 			context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file, newext);
 		}
 
@@ -2673,16 +2689,26 @@ static switch_status_t http_file_file_seek(switch_file_handle_t *handle, unsigne
 	return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
 }
 
-static switch_status_t http_file_file_open(switch_file_handle_t *handle, const char *path)
+static switch_status_t file_open(switch_file_handle_t *handle, const char *path, int is_https)
 {
 	http_file_context_t *context;
 	char *parsed = NULL, *pdup = NULL;
+	const char *pa = NULL;
 	switch_status_t status;
+
+	if (!strncmp(path, "http://", 7)) {
+		pa = path + 7;
+	} else if (!strncmp(path, "https://", 8)) {
+		pa = path + 8;
+		is_https = 1;
+	} else {
+		pa = path;
+	}
 
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	context->pool = handle->memory_pool;
 
-	pdup = switch_core_strdup(context->pool, path);
+	pdup = switch_core_strdup(context->pool, pa);
 
 	switch_event_create_brackets(pdup, '(', ')', ',', &context->url_params, &parsed, SWITCH_FALSE);
 
@@ -2693,12 +2719,15 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 		if ((var = switch_event_get_header(context->url_params, "cache")) && !switch_true(var)) {
 			context->expires = 1;
 		}
-
 	}
 
-	if (parsed) path = parsed;
+	if (parsed) pa = parsed;
 
-	context->dest_url = switch_core_sprintf(context->pool, "http://%s", path);
+	if (is_https) {
+		context->dest_url = switch_core_sprintf(context->pool, "https://%s", pa);
+	} else {
+		context->dest_url = switch_core_sprintf(context->pool, "http://%s", pa);
+	}
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		char *ext;
@@ -2787,6 +2816,14 @@ static switch_status_t http_file_file_open(switch_file_handle_t *handle, const c
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t http_file_file_open(switch_file_handle_t *handle, const char *path) {
+	return file_open(handle, path, 0);
+}
+
+static switch_status_t https_file_file_open(switch_file_handle_t *handle, const char *path) {
+	return file_open(handle, path, 1);
+}
+
 static switch_status_t http_file_file_close(switch_file_handle_t *handle)
 {
 	http_file_context_t *context = handle->private_info;
@@ -2873,6 +2910,7 @@ static switch_status_t http_file_file_read(switch_file_handle_t *handle, void *d
 /* Registration */
 
 static char *http_file_supported_formats[SWITCH_MAX_CODECS] = { 0 };
+static char *https_file_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 
 /* /HTTP FILE INTERFACE */
@@ -2881,7 +2919,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 {
 	switch_api_interface_t *httapi_api_interface;
 	switch_application_interface_t *app_interface;
-	switch_file_interface_t *file_interface;
+	switch_file_interface_t *http_file_interface;
+	switch_file_interface_t *https_file_interface;
 	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -2896,14 +2935,25 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 
 	http_file_supported_formats[0] = "http";
 
-	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
-	file_interface->interface_name = modname;
-	file_interface->extens = http_file_supported_formats;
-	file_interface->file_open = http_file_file_open;
-	file_interface->file_close = http_file_file_close;
-	file_interface->file_read = http_file_file_read;
-	file_interface->file_write = http_file_write;
-	file_interface->file_seek = http_file_file_seek;
+	http_file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	http_file_interface->interface_name = modname;
+	http_file_interface->extens = http_file_supported_formats;
+	http_file_interface->file_open = http_file_file_open;
+	http_file_interface->file_close = http_file_file_close;
+	http_file_interface->file_read = http_file_file_read;
+	http_file_interface->file_write = http_file_write;
+	http_file_interface->file_seek = http_file_file_seek;
+
+	https_file_supported_formats[0] = "https";
+
+	https_file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	https_file_interface->interface_name = modname;
+	https_file_interface->extens = https_file_supported_formats;
+	https_file_interface->file_open = https_file_file_open;
+	https_file_interface->file_close = http_file_file_close;
+	https_file_interface->file_read = http_file_file_read;
+	https_file_interface->file_write = http_file_write;
+	https_file_interface->file_seek = http_file_file_seek;
 	
 	switch_snprintf(globals.cache_path, sizeof(globals.cache_path), "%s%shttp_file_cache", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR);
 	switch_dir_make_recursive(globals.cache_path, SWITCH_DEFAULT_DIR_PERMS, pool);

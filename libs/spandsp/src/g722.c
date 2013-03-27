@@ -367,7 +367,7 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
         else if (wd1 > 18432)
             wd1 = 18432;
         s->band[0].nb = (int16_t) wd1;
-            
+
         /* Block 3L, SCALEL */
         wd1 = (s->band[0].nb >> 6) & 31;
         wd2 = 8 - (s->band[0].nb >> 11);
@@ -375,7 +375,7 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
         s->band[0].det = (int16_t) (wd3 << 2);
 
         block4(&s->band[0], dlow);
-        
+
         if (!s->eight_k)
         {
             /* Block 2H, INVQAH */
@@ -394,7 +394,7 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
             else if (wd1 > 22528)
                 wd1 = 22528;
             s->band[1].nb = (int16_t) wd1;
-            
+
             /* Block 3H, SCALEH */
             wd1 = (s->band[1].nb >> 6) & 31;
             wd2 = 10 - (s->band[1].nb >> 11);
@@ -566,7 +566,7 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
         s->band[0].det = (int16_t) (wd3 << 2);
 
         block4(&s->band[0], dlow);
-        
+
         if (s->eight_k)
         {
             /* Just leave the high bits as zero */

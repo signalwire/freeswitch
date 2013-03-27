@@ -47,16 +47,16 @@ in various formats. Currently, the supported formats are:
     - ETSI ETS 300 648, ETS 300 659-1 CLIP (Calling Line Identity Presentation) DTMF standard
       variant 1 (Belgium, Brazil, Denmark, Finland, Iceland, India, Netherlands, Saudi Arabia,
       Sweden and Uruguay).
-    
+
     - ETSI ETS 300 648, ETS 300 659-1 CLIP (Calling Line Identity Presentation) DTMF standard
       variant 2 (Denmark and Holland).
-    
+
     - ETSI ETS 300 648, ETS 300 659-1 CLIP (Calling Line Identity Presentation) DTMF standard
       variant 3.
-    
+
     - ETSI ETS 300 648, ETS 300 659-1 CLIP (Calling Line Identity Presentation) DTMF standard
       variant 4. (Taiwan and Kuwait).
-    
+
     - ETSI Caller-ID support in UK (British Telecom), British Telecomm SIN227, SIN242.
 
     - Nippon Telegraph & Telephone Corporation JCLIP (Japanese Calling Line Identity
@@ -79,7 +79,7 @@ two rings. This silence period is long in the US, so the message fits easily.
 In other places, where the standard ring tone has much smaller silences,
 a line voltage reversal is used to wake up a power saving receiver, then the
 message is sent, then the phone begins to ring.
-    
+
 The message is sent using a Bell 202 FSK modem. The data rate is 1200 bits
 per second. The message protocol uses 8-bit data words (bytes), each bounded
 by a start bit and a stop bit.
@@ -87,34 +87,34 @@ by a start bit and a stop bit.
 Channel     Carrier     Message     Message     Data        Checksum
 Seizure     Signal      Type        Length      Word(s)     Word
 Signal                  Word        Word
-    
+
 \section adsi_page_sec_2a1 CHANNEL SEIZURE SIGNAL
 The channel seizure is 30 continuous bytes of 55h (01010101), including
 the start and stop bits (i.e. 300 bits of alternations in total).
 This provides a detectable alternating function to the CPE (i.e. the
 modem data pump).
-    
+
 \section adsi_page_sec_2a2 CARRIER SIGNAL
 The carrier signal consists of 180 bits of 1s. This may be reduced to 80
 bits of 1s for caller ID on call waiting.
-    
+
 \section adsi_page_sec_2a3 MESSAGE TYPE WORD
-Various message types are defined. The commonest ones for the US CLASS 
+Various message types are defined. The commonest ones for the US CLASS
 standard are:
 
     - Type 0x04 (SDMF) - single data message. Simple caller ID (CND)
     - Type 0x80 (MDMF) - multiple data message. A more flexible caller ID,
                          with extra information.
 
-Other messages support message waiting, for voice mail, and other display features. 
+Other messages support message waiting, for voice mail, and other display features.
 
 \section adsi_page_sec_2a4 MESSAGE LENGTH WORD
 The message length word specifies the total number of data words
 to follow.
-    
+
 \section adsi_page_sec_2a5 DATA WORDS
 The data words contain the actual message.
-    
+
 \section adsi_page_sec_2a6 CHECKSUM WORD
 The Checksum Word contains the twos complement of the modulo 256
 sum of the other words in the data message (i.e., message type,
@@ -177,7 +177,7 @@ while off hook. This results in a sequence
     - CPE hangs up on receipt of the caller ID message
     - The phone line rings a second time
     - The CPE answers a second time, connecting the called party with the caller.
-    
+
 Timeouts are, obviously, required to ensure this system behaves well when the caller ID message
 or the second ring are missing.
 */

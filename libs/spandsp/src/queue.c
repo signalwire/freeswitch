@@ -52,7 +52,7 @@ SPAN_DECLARE(int) queue_empty(queue_state_t *s)
 SPAN_DECLARE(int) queue_free_space(queue_state_t *s)
 {
     int len;
-    
+
     if ((len = s->optr - s->iptr - 1) < 0)
         len += s->len;
     /*endif*/
@@ -63,7 +63,7 @@ SPAN_DECLARE(int) queue_free_space(queue_state_t *s)
 SPAN_DECLARE(int) queue_contents(queue_state_t *s)
 {
     int len;
-    
+
     if ((len = s->iptr - s->optr) < 0)
         len += s->len;
     /*endif*/
@@ -83,7 +83,7 @@ SPAN_DECLARE(int) queue_view(queue_state_t *s, uint8_t *buf, int len)
     int to_end;
     int iptr;
     int optr;
-    
+
     /* Snapshot the values (although only iptr should be changeable during this processing) */
     iptr = s->iptr;
     optr = s->optr;
@@ -134,7 +134,7 @@ SPAN_DECLARE(int) queue_read(queue_state_t *s, uint8_t *buf, int len)
     int new_optr;
     int iptr;
     int optr;
-    
+
     /* Snapshot the values (although only iptr should be changeable during this processing) */
     iptr = s->iptr;
     optr = s->optr;
@@ -191,7 +191,7 @@ SPAN_DECLARE(int) queue_read_byte(queue_state_t *s)
     int iptr;
     int optr;
     int byte;
-    
+
     /* Snapshot the values (although only iptr should be changeable during this processing) */
     iptr = s->iptr;
     optr = s->optr;

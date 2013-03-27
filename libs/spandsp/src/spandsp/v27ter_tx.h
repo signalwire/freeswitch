@@ -34,17 +34,17 @@ The V.27ter transmitter implements the transmit side of a V.27ter modem. This
 can operate at data rates of 4800 and 2400 bits/s. The audio output is a stream
 of 16 bit samples, at 8000 samples/second. The transmit and receive side of
 V.27ter modems operate independantly. V.27ter is used for FAX transmission,
-where it provides the standard 4800 and 2400 bits/s rates. 
+where it provides the standard 4800 and 2400 bits/s rates.
 
 \section v27ter_tx_page_sec_2 How does it work?
 V.27ter uses DPSK modulation. A common method of producing a DPSK modulated
 signal is to use a sampling rate which is a multiple of the baud rate. The raw
 signal is then a series of complex pulses, each an integer number of samples
 long. These can be shaped, using a suitable complex filter, and multiplied by a
-complex carrier signal to produce the final DPSK signal for transmission. 
+complex carrier signal to produce the final DPSK signal for transmission.
 
 The pulse shaping filter for V.27ter is defined in the spec. It is a root raised
-cosine filter with 50% excess bandwidth. 
+cosine filter with 50% excess bandwidth.
 
 The sampling rate for our transmitter is defined by the channel - 8000 samples/s.
 This is a multiple of the baud rate at 4800 bits/s (8-PSK at 1600 baud, 5 samples per

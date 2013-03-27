@@ -338,7 +338,7 @@ SPAN_DECLARE(void) bert_set_report(bert_state_t *s, int freq, bert_report_func_t
     s->report_frequency = freq;
     s->reporter = reporter;
     s->user_data = user_data;
-    
+
     s->rx.report_countdown = s->report_frequency;
 }
 /*- End of function --------------------------------------------------------*/
@@ -487,7 +487,7 @@ SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, 
     }
     s->error_rate = 8;
     s->rx.measurement_step = MEASUREMENT_STEP;
-    
+
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "BERT");
 

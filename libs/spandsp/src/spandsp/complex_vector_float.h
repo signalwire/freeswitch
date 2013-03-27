@@ -34,7 +34,7 @@ extern "C"
 static __inline__ void cvec_copyf(complexf_t z[], const complexf_t x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
 }
@@ -43,7 +43,7 @@ static __inline__ void cvec_copyf(complexf_t z[], const complexf_t x[], int n)
 static __inline__ void cvec_copy(complex_t z[], const complex_t x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
 }
@@ -53,7 +53,7 @@ static __inline__ void cvec_copy(complex_t z[], const complex_t x[], int n)
 static __inline__ void cvec_copyl(complexl_t z[], const complexl_t x[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x[i];
 }
@@ -63,7 +63,7 @@ static __inline__ void cvec_copyl(complexl_t z[], const complexl_t x[], int n)
 static __inline__ void cvec_zerof(complexf_t z[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = complex_setf(0.0f, 0.0f);
 }
@@ -72,7 +72,7 @@ static __inline__ void cvec_zerof(complexf_t z[], int n)
 static __inline__ void cvec_zero(complex_t z[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = complex_set(0.0, 0.0);
 }
@@ -82,7 +82,7 @@ static __inline__ void cvec_zero(complex_t z[], int n)
 static __inline__ void cvec_zerol(complexl_t z[], int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = complex_setl(0.0, 0.0);
 }
@@ -92,7 +92,7 @@ static __inline__ void cvec_zerol(complexl_t z[], int n)
 static __inline__ void cvec_setf(complexf_t z[], complexf_t *x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = *x;
 }
@@ -101,7 +101,7 @@ static __inline__ void cvec_setf(complexf_t z[], complexf_t *x, int n)
 static __inline__ void cvec_set(complex_t z[], complex_t *x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = *x;
 }
@@ -111,7 +111,7 @@ static __inline__ void cvec_set(complex_t z[], complex_t *x, int n)
 static __inline__ void cvec_setl(complexl_t z[], complexl_t *x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = *x;
 }

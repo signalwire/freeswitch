@@ -23,10 +23,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. 
-   Currently it performs the core compression and decompression functions OK.
-   However, a number of the bells and whistles in V.42bis are incomplete. */
-
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
@@ -59,7 +55,7 @@
 /* Index number of first dictionary entry used to store a string */
 #define V42BIS_N5                           (V42BIS_N4 + V42BIS_N6)
 /* Number of control codewords */
-#define V42BIS_N6                           3 
+#define V42BIS_N6                           3
 /* V.42bis/9.2 */
 #define V42BIS_ESC_STEP                     51
 
@@ -489,7 +485,7 @@ SPAN_DECLARE(int) v42bis_compress_flush(v42bis_state_t *ss)
 {
     v42bis_comp_state_t *s;
     int len;
-    
+
     s = &ss->compress;
     if (s->update_at)
         return 0;
@@ -692,7 +688,7 @@ SPAN_DECLARE(int) v42bis_decompress_flush(v42bis_state_t *ss)
 {
     v42bis_comp_state_t *s;
     int len;
-    
+
     s = &ss->decompress;
     len = s->string_length;
     send_string(s);

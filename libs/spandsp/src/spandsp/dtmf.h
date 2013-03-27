@@ -31,7 +31,7 @@
 The DTMF receiver detects the standard DTMF digits. It is compliant with
 ITU-T Q.23, ITU-T Q.24, and the local DTMF specifications of most administrations.
 Its passes the test suites. It also scores *very* well on the standard
-talk-off tests. 
+talk-off tests.
 
 The current design uses floating point extensively. It is not tolerant of DC.
 It is expected that a DC restore stage will be placed before the DTMF detector.
@@ -66,7 +66,7 @@ TODO:
 \section dtmf_tx_page_sec_1 What does it do?
 
 The DTMF tone generation module provides for the generation of the
-repertoire of 16 DTMF dual tones. 
+repertoire of 16 DTMF dual tones.
 
 \section dtmf_tx_page_sec_2 How does it work?
 */
@@ -74,6 +74,7 @@ repertoire of 16 DTMF dual tones.
 #define MAX_DTMF_DIGITS 128
 
 typedef void (*digits_rx_callback_t)(void *user_data, const char *digits, int len);
+typedef void (*digits_tx_callback_t)(void *user_data);
 
 /*!
     DTMF generator state descriptor. This defines the state of a single
@@ -95,7 +96,7 @@ extern "C"
     \param s The DTMF generator context.
     \param amp The buffer for the generated signal.
     \param max_samples The required number of generated samples.
-    \return The number of samples actually generated. This may be less than 
+    \return The number of samples actually generated. This may be less than
             max_samples if the input buffer empties. */
 SPAN_DECLARE(int) dtmf_tx(dtmf_tx_state_t *s, int16_t amp[], int max_samples);
 
@@ -122,8 +123,13 @@ SPAN_DECLARE(void) dtmf_tx_set_timing(dtmf_tx_state_t *s, int on_time, int off_t
 
 /*! \brief Initialise a DTMF tone generator context.
     \param s The DTMF generator context.
+    \param callback An optional callback routine, used to get more digits.
+    \param user_data An opaque pointer which is associated with the context,
+           and supplied in callbacks.
     \return A pointer to the DTMF generator context. */
-SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s);
+SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s,
+                                             digits_tx_callback_t callback,
+                                             void *user_data);
 
 /*! \brief Release a DTMF tone generator context.
     \param s The DTMF tone generator context.

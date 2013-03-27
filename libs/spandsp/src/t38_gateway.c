@@ -779,7 +779,7 @@ static void queue_missing_indicator(t38_gateway_state_t *s, int data_type)
     t38_core_state_t *t;
     int expected;
     int expected_alt;
-    
+
     t = &s->t38x.t38;
     expected = -1;
     expected_alt = -1;
@@ -861,7 +861,7 @@ static void queue_missing_indicator(t38_gateway_state_t *s, int data_type)
 static int process_rx_missing(t38_core_state_t *t, void *user_data, int rx_seq_no, int expected_seq_no)
 {
     t38_gateway_state_t *s;
-    
+
     s = (t38_gateway_state_t *) user_data;
     s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in].flags |= HDLC_FLAG_MISSING_DATA;
     return 0;
@@ -1030,7 +1030,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             {
                 xx->t38.v34_rate = t38_v34rate_to_bps(buf, len);
                 span_log(&s->logging, SPAN_LOG_FLOW, "V.34 rate %d bps\n", xx->t38.v34_rate);
-            }   
+            }
             else
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for V34rate message - %d\n", len);
@@ -1284,7 +1284,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             }
             else
             {
-                /* This message is expected under 2 circumstances. One is as an alternative to T38_FIELD_HDLC_FCS_OK_SIG_END - 
+                /* This message is expected under 2 circumstances. One is as an alternative to T38_FIELD_HDLC_FCS_OK_SIG_END -
                    i.e. they send T38_FIELD_HDLC_FCS_OK, and then T38_FIELD_HDLC_SIG_END when the carrier actually drops.
                    The other is because the HDLC signal drops unexpectedly - i.e. not just after a final frame. In
                    this case we just clear out any partial frame data that might be in the buffer. */
@@ -1400,7 +1400,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
 static void set_octets_per_data_packet(t38_gateway_state_t *s, int bit_rate)
 {
     int octets;
-    
+
     octets = s->core.ms_per_tx_chunk*bit_rate/(8*1000);
     if (octets < 1)
         octets = 1;
@@ -1751,7 +1751,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
     t38_gateway_state_t *s;
     t38_gateway_to_t38_state_t *u;
     int category;
-    
+
     s = (t38_gateway_state_t *) t->frame_user_data;
     u = &s->core.to_t38;
     if ((t->raw_bit_stream & 0x80))
@@ -2096,7 +2096,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     int len;
 #if defined(LOG_FAX_AUDIO)
     int required_len;
-    
+
     required_len = max_len;
 #endif
     if ((len = s->audio.modems.tx_handler(s->audio.modems.tx_user_data, amp, max_len)) < max_len)
@@ -2119,7 +2119,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     {
         /* Pad to the requested length with silence */
         memset(amp + len, 0, (max_len - len)*sizeof(int16_t));
-        len = max_len;        
+        len = max_len;
     }
     /*endif*/
 #if defined(LOG_FAX_AUDIO)

@@ -57,7 +57,7 @@
 /* The RPE-LTD coder works on a frame by frame basis.  The length of
    the frame is equal to 160 samples.  Some computations are done
    once per frame to produce at the output of the coder the
-   LARc[1..8] parameters which are the coded LAR coefficients and 
+   LARc[1..8] parameters which are the coded LAR coefficients and
    also to realize the inverse filtering operation for the entire
    frame (160 samples of signal d[0..159]).  These parts produce at
    the output of the coder:
@@ -107,7 +107,7 @@ static void encode_a_frame(gsm0610_state_t *s, gsm0610_frame_t *f, const int16_t
 SPAN_DECLARE(int) gsm0610_set_packing(gsm0610_state_t *s, int packing)
 {
     s->packing = packing;
-    return 0;    
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -147,7 +147,7 @@ SPAN_DECLARE(int) gsm0610_pack_none(uint8_t c[], const gsm0610_frame_t *s)
     int i;
     int j;
     int k;
-    
+
     i = 0;
     for (j = 0;  j < 8;  j++)
         c[i++] = (uint8_t) s->LARc[j];
@@ -169,33 +169,33 @@ SPAN_DECLARE(int) gsm0610_pack_wav49(uint8_t c[], const gsm0610_frame_t *s)
 {
     uint16_t sr;
     int i;
- 
-	sr = 0;
-	sr = (sr >> 6) | (s->LARc[0] << 10);
-	sr = (sr >> 6) | (s->LARc[1] << 10);
-	*c++ = (uint8_t) (sr >> 4);
-	sr = (sr >> 5) | (s->LARc[2] << 11);
-	*c++ = (uint8_t) (sr >> 7);
-	sr = (sr >> 5) | (s->LARc[3] << 11);
-	sr = (sr >> 4) | (s->LARc[4] << 12);
-	*c++ = (uint8_t) (sr >> 6);
-	sr = (sr >> 4) | (s->LARc[5] << 12);
-	sr = (sr >> 3) | (s->LARc[6] << 13);
-	*c++ = (uint8_t) (sr >> 7);
-	sr = (sr >> 3) | (s->LARc[7] << 13);
+
+    sr = 0;
+    sr = (sr >> 6) | (s->LARc[0] << 10);
+    sr = (sr >> 6) | (s->LARc[1] << 10);
+    *c++ = (uint8_t) (sr >> 4);
+    sr = (sr >> 5) | (s->LARc[2] << 11);
+    *c++ = (uint8_t) (sr >> 7);
+    sr = (sr >> 5) | (s->LARc[3] << 11);
+    sr = (sr >> 4) | (s->LARc[4] << 12);
+    *c++ = (uint8_t) (sr >> 6);
+    sr = (sr >> 4) | (s->LARc[5] << 12);
+    sr = (sr >> 3) | (s->LARc[6] << 13);
+    *c++ = (uint8_t) (sr >> 7);
+    sr = (sr >> 3) | (s->LARc[7] << 13);
 
     for (i = 0;  i < 4;  i++)
     {
-    	sr = (sr >> 7) | (s->Nc[i] << 9);
-    	*c++ = (uint8_t) (sr >> 5);
-    	sr = (sr >> 2) | (s->bc[i] << 14);
-    	sr = (sr >> 2) | (s->Mc[i] << 14);
-    	sr = (sr >> 6) | (s->xmaxc[i] << 10);
-    	*c++ = (uint8_t) (sr >> 3);
-    	sr = (sr >> 3) | (s->xMc[i][0] << 13);
-    	*c++ = (uint8_t) (sr >> 8);
-    	sr = (sr >> 3) | (s->xMc[i][1] << 13);
-    	sr = (sr >> 3) | (s->xMc[i][2] << 13);
+        sr = (sr >> 7) | (s->Nc[i] << 9);
+        *c++ = (uint8_t) (sr >> 5);
+        sr = (sr >> 2) | (s->bc[i] << 14);
+        sr = (sr >> 2) | (s->Mc[i] << 14);
+        sr = (sr >> 6) | (s->xmaxc[i] << 10);
+        *c++ = (uint8_t) (sr >> 3);
+        sr = (sr >> 3) | (s->xMc[i][0] << 13);
+        *c++ = (uint8_t) (sr >> 8);
+        sr = (sr >> 3) | (s->xMc[i][1] << 13);
+        sr = (sr >> 3) | (s->xMc[i][2] << 13);
         sr = (sr >> 3) | (s->xMc[i][3] << 13);
         *c++ = (uint8_t) (sr >> 7);
         sr = (sr >> 3) | (s->xMc[i][4] << 13);

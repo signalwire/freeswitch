@@ -157,7 +157,7 @@ Algorithm   Input   Intermediate    Output      Input   Intermediate    Output
                     HN40FA.I        HN40FX.O            HV40FA.I        HV40FX.O
 */
 
-#define	G726_ENCODING_NONE          9999
+#define G726_ENCODING_NONE          9999
 
 typedef struct
 {
@@ -1043,13 +1043,13 @@ static int get_test_vector(const char *file, uint8_t buf[], int max_len)
     int i;
     int sum;
     FILE *infile;
-    
+
     if ((infile = fopen(file, "r")) == NULL)
     {
         fprintf(stderr, "    Failed to open '%s'\n", file);
         exit(2);
     }
-    octets = 0;  
+    octets = 0;
     while ((i = get_vector(infile, buf + octets)) > 0)
         octets += i;
     fclose(infile);
@@ -1253,7 +1253,7 @@ int main(int argc, char *argv[])
         printf("ADPCM packing is %d\n", packing);
         g726_init(&enc_state, bit_rate, G726_ENCODING_LINEAR, packing);
         g726_init(&dec_state, bit_rate, G726_ENCODING_LINEAR, packing);
-            
+
         while ((frames = sf_readf_short(inhandle, amp, 159)))
         {
             adpcm = g726_encode(&enc_state, adpcmdata, amp, frames);

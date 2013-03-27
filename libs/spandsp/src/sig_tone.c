@@ -117,11 +117,11 @@ static const sig_tone_flat_coeffs_t flat_coeffs[1] =
 {
     {
 #if defined(SPANDSP_USE_FIXED_POINT)
-        { 12900,       -16384,         -16384}, 
+        { 12900,       -16384,         -16384},
         {     0,        -8578,         -11796},
         15,
 #else
-        {0.393676f,    -0.5f,          -0.5f}, 
+        {0.393676f,    -0.5f,          -0.5f},
         {0.0f,         -0.261778f,     -0.359985f},
 #endif
     }
@@ -136,7 +136,7 @@ static const sig_tone_descriptor_t sig_tones[3] =
         ms_to_samples(400),         /* High to low timout - 300ms to 550ms */
         ms_to_samples(225),         /* Sharp to flat timeout */
         ms_to_samples(225),         /* Notch insertion timeout */
-    
+
         ms_to_samples(3),           /* Tone on persistence check */
         ms_to_samples(8),           /* Tone off persistence check */
 
@@ -158,7 +158,7 @@ static const sig_tone_descriptor_t sig_tones[3] =
         ms_to_samples(0),
         ms_to_samples(0),
         ms_to_samples(225),
-    
+
         ms_to_samples(3),
         ms_to_samples(8),
 
@@ -168,7 +168,7 @@ static const sig_tone_descriptor_t sig_tones[3] =
             NULL,
         },
         NULL,
-    
+
         15.6f,
         -30.0f,
         -30.0f
@@ -190,7 +190,7 @@ static const sig_tone_descriptor_t sig_tones[3] =
             &notch_coeffs[NOTCH_COEFF_SET_2600HZ]
         },
         NULL,
-    
+
         15.6f,
         -30.0f,
         -30.0f
@@ -299,7 +299,7 @@ SPAN_DECLARE(void) sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode, int du
 {
     int old_tones;
     int new_tones;
-    
+
     old_tones = s->current_tx_tone & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT);
     new_tones = mode & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT);
     if (new_tones  &&  old_tones != new_tones)
@@ -490,7 +490,7 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
 #endif
             }
             flat_power = power_meter_update(&s->flat_power, bandpass_signal);
-    
+
             /* For the flat receiver we use a simple power threshold! */
             if ((s->signalling_state & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT)))
             {
@@ -634,7 +634,7 @@ SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int
 #if !defined(SPANDSP_USE_FIXED_POINT)
     int j;
 #endif
-    
+
     if (sig_update == NULL  ||  tone_type < 1  ||  tone_type > 3)
         return NULL;
     /*endif*/

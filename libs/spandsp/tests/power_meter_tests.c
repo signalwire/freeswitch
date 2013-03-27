@@ -101,7 +101,7 @@ static int power_surge_detector_tests(void)
             if (prev_signal_present != signal_present)
             {
                 signal_power = power_surge_detector_current_dbm0(sig);
-                if (signal_present) 
+                if (signal_present)
                 {
                     if (ok == 0  &&  i >= 0  &&  i < 25)
                         ok = 1;
@@ -120,7 +120,7 @@ static int power_surge_detector_tests(void)
                     if (extremes[3] < i)
                         extremes[3] = i;
                     printf("Off at %f (%fdBm0)\n", (sample + i)/8000.0, signal_power);
-                }                    
+                }
                 prev_signal_present = signal_present;
             }
             amp_out[2*i] = amp[i];

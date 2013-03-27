@@ -48,7 +48,6 @@ void compute_raised_cosine_filter(double coeffs[],
 
 void compute_hilbert_transform(double coeffs[], int len);
 
-    
 #if defined(__cplusplus)
 }
 #endif

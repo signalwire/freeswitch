@@ -224,7 +224,7 @@ static int t38_gateway_timing_update(void *user_data, struct timeval *ts)
         }
         if (t38_gateway_rx(t38_gateway_state, t30_amp, t30_len))
             break;
-    
+
         t38_len = t38_gateway_tx(t38_gateway_state, t38_amp, partial);
         if (!use_transmit_on_idle)
         {
@@ -295,7 +295,7 @@ static uint32_t parse_inet_addr(const char *s)
     uint32_t b;
     uint32_t c;
     uint32_t d;
-    
+
     a = 0;
     b = 0;
     c = 0;

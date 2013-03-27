@@ -125,7 +125,12 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	}
 
 	if (switch_is_file_path(grammar)) {
-		jsgf = switch_mprintf("%s.gram", grammar);
+		char *dot = strrchr(grammar, '.');
+		if (dot && !strcmp(dot, ".gram")) {
+			jsgf = strdup(grammar);
+		} else {
+			jsgf = switch_mprintf("%s.gram", grammar);
+		}
 	} else {
 		jsgf = switch_mprintf("%s%s%s.gram", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, grammar);
 	}

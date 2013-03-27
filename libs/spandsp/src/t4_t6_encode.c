@@ -31,23 +31,23 @@
  * Copyright (c) 1990-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
  *
- * Permission to use, copy, modify, distribute, and sell this software and 
+ * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
  * that (i) the above copyright notices and this permission notice appear in
  * all copies of the software and related documentation, and (ii) the names of
  * Sam Leffler and Silicon Graphics may not be used in any advertising or
  * publicity relating to the software without the specific, prior written
  * permission of Sam Leffler and Silicon Graphics.
- * 
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
- * 
+ *
+ * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+ * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * IN NO EVENT SHALL SAM LEFFLER OR SILICON GRAPHICS BE LIABLE FOR
  * ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
  * OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
- * WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF 
- * LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 
+ * WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF
+ * LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
  */
 
@@ -508,7 +508,7 @@ static int row_to_run_lengths(uint32_t list[], const uint8_t row[], int width)
                     x <<= frag;
                     flip ^= 0xFF000000;
                     rem -= frag;
-                }   
+                }
                 /* Save the remainder of the word */
                 span = (i << 3) + 8 - rem;
             }
@@ -647,7 +647,7 @@ static void encode_2d_row(t4_t6_encode_state_t *s, const uint8_t *row_buf)
     uint32_t *p;
 
     /*
-                                                    b1          b2 
+                                                    b1          b2
             XX  XX  XX  XX  XX  --  --  --  --  --  XX  XX  XX  --  --  --  --  --
             XX  XX  XX  --  --  --  --  --  XX  XX  XX  XX  XX  XX  --  --  --  --
                         a0                  a1                      a2
@@ -657,18 +657,18 @@ static void encode_2d_row(t4_t6_encode_state_t *s, const uint8_t *row_buf)
             This mode is identified when the position of b2 lies to the left of a1. When this mode
             has been coded, a0 is set on the element of the coding line below b2 in preparation for
             the next coding (i.e. on a0').
-            
-                                    b1          b2 
+
+                                    b1          b2
             XX  XX  XX  XX  --  --  XX  XX  XX  --  --  --  --  --
-            XX  XX  --  --  --  --  --  --  --  --  --  --  XX  XX 
+            XX  XX  --  --  --  --  --  --  --  --  --  --  XX  XX
                     a0                          a0'         a1
                                 Pass mode
-                                
+
 
             However, the state where b2 occurs just above a1, as shown in the figure below, is not
             considered as a pass mode.
 
-                                    b1          b2 
+                                    b1          b2
             XX  XX  XX  XX  --  --  XX  XX  XX  --  --  --  --  --
             XX  XX  --  --  --  --  --  --  --  XX  XX  XX  XX  XX
                     a0                          a1
@@ -693,7 +693,7 @@ static void encode_2d_row(t4_t6_encode_state_t *s, const uint8_t *row_buf)
 
                                                             Vertical
                                                             <a1 b1>
-                                                                    b1              b2 
+                                                                    b1              b2
             --  XX  XX  XX  XX  XX  --  --  --  --  --  --  --  --  XX  XX  XX  XX  --  --  --
             --  --  --  --  --  --  --  --  --  --  --  --  XX  XX  XX  XX  XX  XX  XX  --  --
                                     a0                      a1                          a2

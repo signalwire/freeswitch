@@ -92,6 +92,7 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+<File RelativePath="ademco_contactid.c"></File>
 <File RelativePath="adsi.c"></File>
 <File RelativePath="async.c"></File>
 <File RelativePath="at_interpreter.c"></File>
@@ -123,12 +124,14 @@
 <File RelativePath="gsm0610_short_term.c"></File>
 <File RelativePath="hdlc.c"></File>
 <File RelativePath="ima_adpcm.c"></File>
+<File RelativePath="image_translate.c"></File>
 <File RelativePath="logging.c"></File>
 <File RelativePath="lpc10_analyse.c"></File>
 <File RelativePath="lpc10_decode.c"></File>
 <File RelativePath="lpc10_encode.c"></File>
 <File RelativePath="lpc10_placev.c"></File>
 <File RelativePath="lpc10_voicing.c"></File>
+<File RelativePath="math_fixed.c"></File>
 <File RelativePath="modem_echo.c"></File>
 <File RelativePath="modem_connect_tones.c"></File>
 <File RelativePath="noise.c"></File>
@@ -143,6 +146,8 @@
 <File RelativePath="super_tone_rx.c"></File>
 <File RelativePath="super_tone_tx.c"></File>
 <File RelativePath="swept_tone.c"></File>
+<File RelativePath="t4_t6_decode.c"></File>
+<File RelativePath="t4_t6_encode.c"></File>
 <File RelativePath="t4_rx.c"></File>
 <File RelativePath="t4_tx.c"></File>
 <File RelativePath="t30.c"></File>
@@ -154,8 +159,13 @@
 <File RelativePath="t38_gateway.c"></File>
 <File RelativePath="t38_non_ecm_buffer.c"></File>
 <File RelativePath="t38_terminal.c"></File>
+<File RelativePath="t42.c"></File>
+<File RelativePath="t81_t82_arith_coding.c"></File>
+<File RelativePath="t85_decode.c"></File>
+<File RelativePath="t85_encode.c"></File>
 <File RelativePath="testcpuid.c"></File>
 <File RelativePath="time_scale.c"></File>
+<File RelativePath="timezone.c"></File>
 <File RelativePath="tone_detect.c"></File>
 <File RelativePath="tone_generate.c"></File>
 <File RelativePath="v17rx.c"></File>
@@ -174,6 +184,7 @@
 <File RelativePath="vector_int.c"></File>
 <File RelativePath=".\msvc\gettimeofday.c"></File>
 </Filter><Filter  Name="Header Files">
+<File RelativePath="spandsp/ademco_contactid.h"></File>
 <File RelativePath="spandsp/adsi.h"></File>
 <File RelativePath="spandsp/async.h"></File>
 <File RelativePath="spandsp/arctan2.h"></File>
@@ -205,8 +216,10 @@
 <File RelativePath="spandsp/gsm0610.h"></File>
 <File RelativePath="spandsp/hdlc.h"></File>
 <File RelativePath="spandsp/ima_adpcm.h"></File>
+<File RelativePath="spandsp/image_translate.h"></File>
 <File RelativePath="spandsp/logging.h"></File>
 <File RelativePath="spandsp/lpc10.h"></File>
+<File RelativePath="spandsp/math_fixed.h"></File>
 <File RelativePath="spandsp/modem_echo.h"></File>
 <File RelativePath="spandsp/modem_connect_tones.h"></File>
 <File RelativePath="spandsp/noise.h"></File>
@@ -222,8 +235,6 @@
 <File RelativePath="spandsp/super_tone_rx.h"></File>
 <File RelativePath="spandsp/super_tone_tx.h"></File>
 <File RelativePath="spandsp/swept_tone.h"></File>
-<File RelativePath="spandsp/t4_rx.h"></File>
-<File RelativePath="spandsp/t4_tx.h"></File>
 <File RelativePath="spandsp/t30.h"></File>
 <File RelativePath="spandsp/t30_api.h"></File>
 <File RelativePath="spandsp/t30_fcf.h"></File>
@@ -234,8 +245,16 @@
 <File RelativePath="spandsp/t38_gateway.h"></File>
 <File RelativePath="spandsp/t38_non_ecm_buffer.h"></File>
 <File RelativePath="spandsp/t38_terminal.h"></File>
+<File RelativePath="spandsp/t4_rx.h"></File>
+<File RelativePath="spandsp/t4_tx.h"></File>
+<File RelativePath="spandsp/t4_t6_decode.h"></File>
+<File RelativePath="spandsp/t4_t6_encode.h"></File>
+<File RelativePath="spandsp/t42.h"></File>
+<File RelativePath="spandsp/t81_t82_arith_coding.h"></File>
+<File RelativePath="spandsp/t85.h"></File>
 <File RelativePath="spandsp/telephony.h"></File>
 <File RelativePath="spandsp/time_scale.h"></File>
+<File RelativePath="spandsp/timezone.h"></File>
 <File RelativePath="spandsp/timing.h"></File>
 <File RelativePath="spandsp/tone_detect.h"></File>
 <File RelativePath="spandsp/tone_generate.h"></File>
@@ -253,6 +272,7 @@
 <File RelativePath="spandsp/vector_float.h"></File>
 <File RelativePath="spandsp/vector_int.h"></File>
 <File RelativePath="spandsp/version.h"></File>
+<File RelativePath="spandsp/private/ademco_contactid.h"></File>
 <File RelativePath="spandsp/private/adsi.h"></File>
 <File RelativePath="spandsp/private/async.h"></File>
 <File RelativePath="spandsp/private/at_interpreter.h"></File>
@@ -271,6 +291,7 @@
 <File RelativePath="spandsp/private/gsm0610.h"></File>
 <File RelativePath="spandsp/private/hdlc.h"></File>
 <File RelativePath="spandsp/private/ima_adpcm.h"></File>
+<File RelativePath="spandsp/private/image_translate.h"></File>
 <File RelativePath="spandsp/private/logging.h"></File>
 <File RelativePath="spandsp/private/lpc10.h"></File>
 <File RelativePath="spandsp/private/modem_connect_tones.h"></File>
@@ -293,7 +314,13 @@
 <File RelativePath="spandsp/private/t38_terminal.h"></File>
 <File RelativePath="spandsp/private/t4_rx.h"></File>
 <File RelativePath="spandsp/private/t4_tx.h"></File>
+<File RelativePath="spandsp/private/t4_t6_decode.h"></File>
+<File RelativePath="spandsp/private/t4_t6_encode.h"></File>
+<File RelativePath="spandsp/private/t42.h"></File>
+<File RelativePath="spandsp/private/t81_t82_arith_coding.h"></File>
+<File RelativePath="spandsp/private/t85.h"></File>
 <File RelativePath="spandsp/private/time_scale.h"></File>
+<File RelativePath="spandsp/private/timezone.h"></File>
 <File RelativePath="spandsp/private/tone_detect.h"></File>
 <File RelativePath="spandsp/private/tone_generate.h"></File>
 <File RelativePath="spandsp/private/v17rx.h"></File>

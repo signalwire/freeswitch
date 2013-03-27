@@ -1111,7 +1111,7 @@ static int send_csa_frame(t30_state_t *s)
 static int send_pps_frame(t30_state_t *s)
 {
     uint8_t frame[7];
-    
+
     frame[0] = ADDRESS_FIELD;
     frame[1] = CONTROL_FIELD_FINAL_FRAME;
     frame[2] = (uint8_t) (T30_PPS | s->dis_received);
@@ -1238,7 +1238,7 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE);
     if ((s->supported_resolutions & (T30_SUPPORT_400_400_RESOLUTION | T30_SUPPORT_R16_RESOLUTION)))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE);
-    /* Metric */ 
+    /* Metric */
     set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED);
     /* Superfine minimum scan line time pattern follows fine */
     if ((s->supported_t30_features & T30_SUPPORT_SELECTIVE_POLLING))
@@ -1406,7 +1406,7 @@ static int build_dcs(t30_state_t *s)
     /* We have a file to send, so tell the far end to go into receive mode. */
     set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_RECEIVE_FAX_DOCUMENT);
     /* Set the Y resolution bits */
-    bad = T30_ERR_OK;
+    bad = T30_ERR_NORESSUPPORT;
     row_squashing_ratio = 1;
     switch (s->y_resolution)
     {
@@ -1414,19 +1414,18 @@ static int build_dcs(t30_state_t *s)
         switch (s->x_resolution)
         {
         case T4_X_RESOLUTION_600:
-            if (!(s->supported_resolutions & T30_SUPPORT_600_1200_RESOLUTION))
-                bad = T30_ERR_NORESSUPPORT;
-            else
+            if ((s->supported_resolutions & T30_SUPPORT_600_1200_RESOLUTION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_1200_CAPABLE))
+            {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_1200);
+                bad = T30_ERR_OK;
+            }
             break;
         case T4_X_RESOLUTION_1200:
-            if (!(s->supported_resolutions & T30_SUPPORT_1200_1200_RESOLUTION))
-                bad = T30_ERR_NORESSUPPORT;
-            else
+            if ((s->supported_resolutions & T30_SUPPORT_1200_1200_RESOLUTION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_1200_1200_CAPABLE))
+            {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_1200_1200);
-            break;
-        default:
-            bad = T30_ERR_NORESSUPPORT;
+                bad = T30_ERR_OK;
+            }
             break;
         }
         break;
@@ -1434,13 +1433,11 @@ static int build_dcs(t30_state_t *s)
         switch (s->x_resolution)
         {
         case T4_X_RESOLUTION_R16:
-            if (!(s->supported_resolutions & T30_SUPPORT_400_800_RESOLUTION))
-                bad = T30_ERR_NORESSUPPORT;
-            else
+            if ((s->supported_resolutions & T30_SUPPORT_400_800_RESOLUTION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_400_800_CAPABLE))
+            {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_800);
-            break;
-        default:
-            bad = T30_ERR_NORESSUPPORT;
+                bad = T30_ERR_OK;
+            }
             break;
         }
         break;
@@ -1448,19 +1445,18 @@ static int build_dcs(t30_state_t *s)
         switch (s->x_resolution)
         {
         case T4_X_RESOLUTION_300:
-            if (!(s->supported_resolutions & T30_SUPPORT_300_600_RESOLUTION))
-                bad = T30_ERR_NORESSUPPORT;
-            else
+            if ((s->supported_resolutions & T30_SUPPORT_300_600_RESOLUTION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_600_CAPABLE))
+            {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_600);
+                bad = T30_ERR_OK;
+            }
             break;
         case T4_X_RESOLUTION_600:
-            if (!(s->supported_resolutions & T30_SUPPORT_600_600_RESOLUTION))
-                bad = T30_ERR_NORESSUPPORT;
-            else
+            if ((s->supported_resolutions & T30_SUPPORT_600_600_RESOLUTION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_600_CAPABLE))
+            {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_600);
-            break;
-        default:
-            bad = T30_ERR_NORESSUPPORT;
+                bad = T30_ERR_OK;
+            }
             break;
         }
         break;
@@ -1468,45 +1464,40 @@ static int build_dcs(t30_state_t *s)
         switch (s->x_resolution)
         {
         case T4_X_RESOLUTION_300:
-            if (!(s->supported_resolutions & T30_SUPPORT_300_300_RESOLUTION))
-                bad = T30_ERR_NORESSUPPORT;
-            else
+            if ((s->supported_resolutions & T30_SUPPORT_300_300_RESOLUTION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE))
+            {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_300);
-            break;
-        default:
-            bad = T30_ERR_NORESSUPPORT;
+                bad = T30_ERR_OK;
+            }
             break;
         }
         break;
     case T4_Y_RESOLUTION_SUPERFINE:
         if ((s->supported_resolutions & T30_SUPPORT_SUPERFINE_RESOLUTION))
         {
-            switch (s->x_resolution)
+            if (s->x_resolution == T4_X_RESOLUTION_R16  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE))
             {
-            case T4_X_RESOLUTION_R8:
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
-                break;
-            case T4_X_RESOLUTION_R16:
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
-                break;
-            default:
-                bad = T30_ERR_NORESSUPPORT;
+                bad = T30_ERR_OK;
                 break;
             }
-            break;
+            if (s->x_resolution == T4_X_RESOLUTION_R8  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
+            {
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
+                bad = T30_ERR_OK;
+                break;
+            }
         }
         row_squashing_ratio <<= 1;
         /* Fall through */
     case T4_Y_RESOLUTION_FINE:
-        if ((s->supported_resolutions & T30_SUPPORT_FINE_RESOLUTION))
+        if ((s->supported_resolutions & T30_SUPPORT_FINE_RESOLUTION)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
         {
             switch (s->x_resolution)
             {
             case T4_X_RESOLUTION_R8:
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-                break;
-            default:
-                bad = T30_ERR_NORESSUPPORT;
+                bad = T30_ERR_OK;
                 break;
             }
             break;
@@ -1519,9 +1510,7 @@ static int build_dcs(t30_state_t *s)
         {
         case T4_X_RESOLUTION_R8:
             /* No bits to set for this */
-            break;
-        default:
-            bad = T30_ERR_NORESSUPPORT;
+            bad = T30_ERR_OK;
             break;
         }
         break;
@@ -1533,97 +1522,89 @@ static int build_dcs(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Image resolution (%d x %d) not acceptable\n", s->x_resolution, s->y_resolution);
         return -1;
     }
-    /* Deal with the image width. The X resolution will fall in line with any valid width. */
+
+    /* Deal with the image width. */
     /* Low (R4) res widths are not supported in recent versions of T.30 */
     bad = T30_ERR_OK;
     /* The following treats a width field of 11 like 10, which does what note 6 of Table 2/T.30
        says we should do with the invalid value 11. */
-    switch (s->image_width)
+    if (((s->image_width == T4_WIDTH_R8_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_R8))
+        ||
+        ((s->image_width == T4_WIDTH_300_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_300))
+        ||
+        ((s->image_width == T4_WIDTH_R16_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_R16))
+        ||
+        ((s->image_width == T4_WIDTH_600_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_600))
+        ||
+        ((s->image_width == T4_WIDTH_1200_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
     {
-    case T4_WIDTH_R8_A4:
-    case T4_WIDTH_300_A4:
-    case T4_WIDTH_R16_A4:
-    case T4_WIDTH_600_A4:
-    case T4_WIDTH_1200_A4:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4\n");
         /* No width related bits need to be set. */
-        break;
-    case T4_WIDTH_R8_B4:
-    case T4_WIDTH_300_B4:
-    case T4_WIDTH_R16_B4:
-    case T4_WIDTH_600_B4:
-    case T4_WIDTH_1200_B4:
-        if ((s->far_dis_dtc_frame[5] & (DISBIT2 | DISBIT1)) < 1)
-            bad = T30_ERR_NOSIZESUPPORT;
-        else if (!(s->supported_image_sizes & T30_SUPPORT_255MM_WIDTH))
-            bad = T30_ERR_NOSIZESUPPORT;
-        else
+    }
+    else if (((s->image_width == T4_WIDTH_R8_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_R8))
+            ||
+            ((s->image_width == T4_WIDTH_300_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_300))
+            ||
+            ((s->image_width == T4_WIDTH_R16_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_R16))
+            ||
+            ((s->image_width == T4_WIDTH_600_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_600))
+            ||
+            ((s->image_width == T4_WIDTH_1200_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
+    {
+        if (((s->far_dis_dtc_frame[5] & (DISBIT2 | DISBIT1)) >= 1)
+            &&
+            (s->supported_image_sizes & T30_SUPPORT_255MM_WIDTH))
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4\n");
             set_ctrl_bit(s->dcs_frame, 17);
-        break;
-    case T4_WIDTH_R8_A3:
-    case T4_WIDTH_300_A3:
-    case T4_WIDTH_R16_A3:
-    case T4_WIDTH_600_A3:
-    case T4_WIDTH_1200_A3:
-        if ((s->far_dis_dtc_frame[5] & (DISBIT2 | DISBIT1)) < 2)
-            bad = T30_ERR_NOSIZESUPPORT;
-        else if (!(s->supported_image_sizes & T30_SUPPORT_303MM_WIDTH))    
-            bad = T30_ERR_NOSIZESUPPORT;
+        }
         else
+        {
+            /* We do not support this width and resolution combination */
+            bad = T30_ERR_NOSIZESUPPORT;
+        }
+    }
+    else if (((s->image_width == T4_WIDTH_R8_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_R8))
+            ||
+            ((s->image_width == T4_WIDTH_300_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_300))
+            ||
+            ((s->image_width == T4_WIDTH_R16_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_R16))
+            ||
+            ((s->image_width == T4_WIDTH_600_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_600))
+            ||
+            ((s->image_width == T4_WIDTH_1200_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
+    {
+        if (((s->far_dis_dtc_frame[5] & (DISBIT2 | DISBIT1)) >= 2)
+            &&
+            (s->supported_image_sizes & T30_SUPPORT_303MM_WIDTH))
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3\n");
             set_ctrl_bit(s->dcs_frame, 18);
-        break;
-    default:
-        /* T.30 does not support this width */
-        bad = T30_ERR_NOSIZESUPPORT;
-        break;
+        }
+        else
+        {
+            /* We do not support this width and resolution combination */
+            bad = T30_ERR_NOSIZESUPPORT;
+        }
     }
+    else
+    {
+        /* We do not support this width and resolution combination */
+        bad = T30_ERR_NOSIZESUPPORT;
+    }
+
     if (bad != T30_ERR_OK)
     {
         t30_set_status(s, bad);
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) is not an acceptable FAX image width\n", s->image_width);
+        span_log(&s->logging,
+                 SPAN_LOG_FLOW,
+                 "Image width (%d pixels) and resolution (%d x %d) is not an acceptable\n",
+                 s->image_width,
+                 s->x_resolution,
+                 s->y_resolution);
         return -1;
     }
-    switch (s->image_width)
-    {
-    case T4_WIDTH_R8_A4:
-    case T4_WIDTH_R8_B4:
-    case T4_WIDTH_R8_A3:
-        /* These are always OK */
-        break;
-    case T4_WIDTH_300_A4:
-    case T4_WIDTH_300_B4:
-    case T4_WIDTH_300_A3:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE)  &&  !test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_600_CAPABLE))
-            bad = T30_ERR_NOSIZESUPPORT;
-        break;
-    case T4_WIDTH_R16_A4:
-    case T4_WIDTH_R16_B4:
-    case T4_WIDTH_R16_A3:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE))
-            bad = T30_ERR_NOSIZESUPPORT;
-        break;
-    case T4_WIDTH_600_A4:
-    case T4_WIDTH_600_B4:
-    case T4_WIDTH_600_A3:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_600_CAPABLE)  &&  !test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_1200_CAPABLE))
-            bad = T30_ERR_NOSIZESUPPORT;
-        break;
-    case T4_WIDTH_1200_A4:
-    case T4_WIDTH_1200_B4:
-    case T4_WIDTH_1200_A3:
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_1200_1200_CAPABLE))
-            bad = T30_ERR_NOSIZESUPPORT;
-        break;
-    default:
-        /* T.30 does not support this width */
-        bad = T30_ERR_NOSIZESUPPORT;
-        break;
-    }
-    if (bad != T30_ERR_OK)
-    {
-        t30_set_status(s, bad);
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width (%d pixels) is not an acceptable FAX image width\n", s->image_width);
-        return -1;
-    }
+
     /* Deal with the image length */
     /* If the other end supports unlimited length, then use that. Otherwise, if the other end supports
        B4 use that, as its longer than the default A4 length. */
@@ -2004,6 +1985,7 @@ static int start_sending_document(t30_state_t *s)
 
     if (tx_start_page(s))
         return -1;
+
     s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
     s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);
     s->image_width = t4_tx_get_image_width(&s->t4.tx);
@@ -2337,6 +2319,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     };
     uint8_t dcs_frame[T30_MAX_DIS_DTC_DCS_LEN];
     int i;
+    int x;
     int new_status;
 
     t30_decode_dis_dtc_dcs(s, msg, len);
@@ -2368,46 +2351,104 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
     s->octets_per_ecm_frame = test_ctrl_bit(dcs_frame, T30_DCS_BIT_64_OCTET_ECM_FRAMES)  ?  256  :  64;
 
+    s->x_resolution = -1;
+    s->y_resolution = -1;
+    x = -1;
     if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_1200_1200))
-        s->x_resolution = T4_X_RESOLUTION_1200;
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_600)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_1200))
-        s->x_resolution = T4_X_RESOLUTION_600;
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_400)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_800))
-        s->x_resolution = T4_X_RESOLUTION_R16;
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_300)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_600))
-        s->x_resolution = T4_X_RESOLUTION_300;
-    else
-        s->x_resolution = T4_X_RESOLUTION_R8;
-
-    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_1200_1200)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_1200))
-        s->y_resolution = T4_Y_RESOLUTION_1200;
+    {
+        if ((s->supported_resolutions & T30_SUPPORT_1200_1200_RESOLUTION))
+        {
+            s->x_resolution = T4_X_RESOLUTION_1200;
+            s->y_resolution = T4_Y_RESOLUTION_1200;
+            x = 5;
+        }
+    }
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_1200))
+    {
+        if ((s->supported_resolutions & T30_SUPPORT_600_1200_RESOLUTION))
+        {
+            s->x_resolution = T4_X_RESOLUTION_600;
+            s->y_resolution = T4_Y_RESOLUTION_1200;
+            x = 4;
+        }
+    }
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_600))
+    {
+        if ((s->supported_resolutions & T30_SUPPORT_600_600_RESOLUTION))
+        {
+            s->x_resolution = T4_X_RESOLUTION_600;
+            s->y_resolution = T4_Y_RESOLUTION_600;
+            x = 4;
+        }
+    }
     else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_800))
-        s->y_resolution = T4_Y_RESOLUTION_800;
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_600)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_600))
-        s->y_resolution = T4_Y_RESOLUTION_600;
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_200_400)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_400))
-        s->y_resolution = T4_Y_RESOLUTION_SUPERFINE;
+    {
+        if ((s->supported_resolutions & T30_SUPPORT_400_800_RESOLUTION))
+        {
+            s->x_resolution = T4_X_RESOLUTION_R16;
+            s->y_resolution = T4_Y_RESOLUTION_800;
+            x = 3;
+        }
+    }
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_400))
+    {
+        if ((s->supported_resolutions & T30_SUPPORT_400_400_RESOLUTION))
+        {
+            s->x_resolution = T4_X_RESOLUTION_R16;
+            s->y_resolution = T4_Y_RESOLUTION_SUPERFINE;
+            x = 3;
+        }
+    }
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_600))
+    {
+        if ((s->supported_resolutions & T30_SUPPORT_300_600_RESOLUTION))
+        {
+            s->x_resolution = T4_X_RESOLUTION_300;
+            s->y_resolution = T4_Y_RESOLUTION_600;
+            x = 2;
+        }
+    }
     else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_300))
-        s->y_resolution = T4_Y_RESOLUTION_300;
+    {
+        if ((s->supported_resolutions & T30_SUPPORT_300_300_RESOLUTION))
+        {
+            s->x_resolution = T4_X_RESOLUTION_300;
+            s->y_resolution = T4_Y_RESOLUTION_300;
+            x = 2;
+        }
+    }
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_200_400))
+    {
+        if ((s->supported_resolutions & T30_SUPPORT_SUPERFINE_RESOLUTION))
+        {
+            s->x_resolution = T4_X_RESOLUTION_R8;
+            s->y_resolution = T4_Y_RESOLUTION_SUPERFINE;
+            x = 1;
+        }
+    }
     else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_200_200))
-        s->y_resolution = T4_Y_RESOLUTION_FINE;
+    {
+        if ((s->supported_resolutions & T30_SUPPORT_FINE_RESOLUTION))
+        {
+            s->x_resolution = T4_X_RESOLUTION_R8;
+            s->y_resolution = T4_Y_RESOLUTION_FINE;
+            x = 1;
+        }
+    }
     else
+    {
+        s->x_resolution = T4_X_RESOLUTION_R8;
         s->y_resolution = T4_Y_RESOLUTION_STANDARD;
+        x = 1;
+    }
 
-    if (s->x_resolution == T4_X_RESOLUTION_1200)
-        i = 5;
-    else if (s->x_resolution == T4_X_RESOLUTION_600)
-        i = 4;
-    else if (s->x_resolution == T4_X_RESOLUTION_R16)
-        i = 3;
-    else if (s->x_resolution == T4_X_RESOLUTION_300)
-        i = 2;
-    else if (s->x_resolution == T4_X_RESOLUTION_R4)
-        i = 0;
-    else
-        i = 1;
+    if (x < 0)
+    {
+        t30_set_status(s, T30_ERR_NORESSUPPORT);
+        return -1;
+    }
 
-    s->image_width = widths[i][dcs_frame[5] & (DISBIT2 | DISBIT1)];
+    s->image_width = widths[x][dcs_frame[5] & (DISBIT2 | DISBIT1)];
 
     /* Check which compression the far end has decided to use. */
 #if defined(SPANDSP_SUPPORT_T42)
@@ -2469,7 +2510,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     }
     /* Start document reception */
     span_log(&s->logging,
-             SPAN_LOG_FLOW, 
+             SPAN_LOG_FLOW,
              "Get document at %dbps, modem %d\n",
              fallback_sequence[s->current_fallback].bit_rate,
              fallback_sequence[s->current_fallback].modem_type);
@@ -2651,7 +2692,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
                         s->ecm_len[frame_no] = -1;
                     }
                 }
-            }            
+            }
             if (s->ecm_len[frame_no] < 0)
             {
                 s->ecm_frame_map[i + 3] |= (1 << j);
@@ -2753,7 +2794,7 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
         span_log(&s->logging, SPAN_LOG_FLOW, "Bad length for PPR bits - %d\n", (len - 3)*8);
         /* This frame didn't get corrupted in transit, because its CRC is OK. It was sent bad
            and there is little possibility that causing a retransmission will help. It is best
-           to just give up. */ 
+           to just give up. */
         t30_set_status(s, T30_ERR_TX_ECMPHD);
         disconnect(s);
         return;
@@ -3468,7 +3509,7 @@ static void process_state_f_doc_and_post_doc_ecm(t30_state_t *s, const uint8_t *
 {
     uint8_t fcf;
     uint8_t fcf2;
-    
+
     /* This actually handles 2 states - _DOC_ECM and _POST_DOC_ECM - as they are very similar */
     fcf = msg[2] & 0xFE;
     switch (fcf)
@@ -5109,7 +5150,7 @@ static void timer_t4b_start(t30_state_t *s)
 static void timer_t2_t4_stop(t30_state_t *s)
 {
     const char *tag;
-    
+
     switch (s->timer_t2_t4_is)
     {
     case TIMER_IS_IDLE:
@@ -5392,7 +5433,7 @@ static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int le
 static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt, int len)
 {
     uint8_t *t;
-    
+
     if ((t = malloc(len - 1)) == NULL)
         return 0;
     memcpy(t, pkt + 1, len - 1);
@@ -5848,7 +5889,7 @@ SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, i
 SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
 {
     t30_state_t *s;
-    
+
     s = (t30_state_t *) user_data;
 
     switch (status)
@@ -6272,12 +6313,21 @@ SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t)
     t->pages_tx = s->tx_page_number;
     t->pages_rx = s->rx_page_number;
     t->pages_in_file = stats.pages_in_file;
-    t->width = stats.width;
-    t->length = stats.length;
     t->bad_rows = stats.bad_rows;
     t->longest_bad_row_run = stats.longest_bad_row_run;
+
+    t->image_type = stats.image_type;
+    t->image_x_resolution = stats.image_x_resolution;
+    t->image_y_resolution = stats.image_y_resolution;
+    t->image_width = stats.image_width;
+    t->image_length = stats.image_length;
+
+    t->type = stats.type;
     t->x_resolution = stats.x_resolution;
     t->y_resolution = stats.y_resolution;
+    t->width = stats.width;
+    t->length = stats.length;
+
     t->encoding = stats.encoding;
     t->image_size = stats.line_image_size;
     t->current_status = s->current_status;

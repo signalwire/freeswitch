@@ -70,7 +70,7 @@ static __inline__ void vec_zeroi32(int32_t z[], int n)
 static __inline__ void vec_seti(int z[], int x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x;
 }
@@ -79,7 +79,7 @@ static __inline__ void vec_seti(int z[], int x, int n)
 static __inline__ void vec_seti16(int16_t z[], int16_t x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x;
 }
@@ -88,7 +88,7 @@ static __inline__ void vec_seti16(int16_t z[], int16_t x, int n)
 static __inline__ void vec_seti32(int32_t z[], int32_t x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = x;
 }
@@ -117,7 +117,7 @@ SPAN_DECLARE(void) vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, in
 /*! \brief Find the minimum and maximum values in an int16_t vector.
     \param x The vector to be searched.
     \param n The number of elements in the vector.
-    \param out A two element vector. The first will receive the 
+    \param out A two element vector. The first will receive the
            maximum. The second will receive the minimum. This parameter
            may be set to NULL.
     \return The absolute maximum value. Since the range of negative numbers

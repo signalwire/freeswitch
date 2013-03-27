@@ -69,7 +69,7 @@
 /* Tabulated medium range telephone line response
    (from p 537, Digital Communication, John G. Proakis */
 /*
-    amp 1.0 -> 2.15, freq = 3000 Hz -> 3.2, by 0.2 increments 
+    amp 1.0 -> 2.15, freq = 3000 Hz -> 3.2, by 0.2 increments
     delay = 4 ms -> 2.2
  */
 
@@ -849,7 +849,7 @@ static void generate_ad_edd(void)
                 }
                 //phase = 2.0f*M_PI*f*delay*0.001f;
                 phase = 0.0f;
-#if defined(HAVE_FFTW3_H)    
+#if defined(HAVE_FFTW3_H)
                 in[i][0] = amp*cosf(phase);
                 in[i][1] = amp*sinf(phase);
                 in[FFT_SIZE - i][0] = in[i][0];
@@ -865,7 +865,7 @@ static void generate_ad_edd(void)
             for (i = 0;  i < FFT_SIZE;  i++)
                 fprintf(outfile, "%5d %15.5f,%15.5f\n", i, in[i].re, in[i].im);
 #endif
-#if defined(HAVE_FFTW3_H)    
+#if defined(HAVE_FFTW3_H)
             fftw_execute(p);
 #else
             fftw_one(p, in, out);
@@ -892,7 +892,7 @@ static void generate_ad_edd(void)
             l = FFT_SIZE - (LINE_FILTER_SIZE - 1)/2;
             for (i = 0;  i < LINE_FILTER_SIZE;  i++)
             {
-                
+
 #if defined(HAVE_FFTW3_H)
                 impulse_responses[filter_sets][i] = out[l][0]/pw;
 #else
@@ -1023,9 +1023,9 @@ int main(int argc, char *argv[])
 
     generate_proakis();
     generate_ad_edd();
-    
+
     fclose(outfile);
-    
+
     if (argc > 1)
     {
         for (i = 0;  i < LINE_FILTER_SIZE;  i++)

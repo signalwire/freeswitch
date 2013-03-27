@@ -60,13 +60,12 @@
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define FP_SCALE                        FP_Q_6_10
-#include "v27ter_tx_4800_fixed_rrc.h"
-#include "v27ter_tx_2400_fixed_rrc.h"
 #else
 #define FP_SCALE(x)                     (x)
-#include "v27ter_tx_4800_floating_rrc.h"
-#include "v27ter_tx_2400_floating_rrc.h"
 #endif
+
+#include "v27ter_tx_4800_rrc.h"
+#include "v27ter_tx_2400_rrc.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1800.0f
@@ -121,7 +120,7 @@ static __inline__ int scramble(v27ter_tx_state_t *s, int in_bit)
 static __inline__ int get_scrambled_bit(v27ter_tx_state_t *s)
 {
     int bit;
-    
+
     if ((bit = s->current_get_bit(s->get_bit_user_data)) == SIG_STATUS_END_OF_DATA)
     {
         /* End of real data. Switch to the fake get_bit routine, until we
@@ -171,7 +170,7 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
 
     if (s->in_training)
     {
-       	/* Send the training sequence */
+        /* Send the training sequence */
         if (++s->training_step <= V27TER_TRAINING_SEG_5)
         {
             if (s->training_step <= V27TER_TRAINING_SEG_4)

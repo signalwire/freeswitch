@@ -47,12 +47,12 @@
 
 The DTMF detection test suite performs similar tests to the Mitel test tape,
 traditionally used for testing DTMF receivers. Mitel seem to have discontinued
-this product, but all it not lost. 
+this product, but all it not lost.
 
 The first side of the Mitel tape consists of a number of tone and tone+noise
 based tests. The test suite synthesizes equivalent test data. Being digitally
 generated, this data is rather more predictable than the test data on the nasty
-old stretchy cassette tapes which Mitel sold. 
+old stretchy cassette tapes which Mitel sold.
 
 The second side of the Mitel tape contains fragments of real speech from real
 phone calls captured from the North American telephone network. These are
@@ -62,14 +62,14 @@ copies of this seem to be unobtainable. However, Bellcore produce a much more
 aggressive set of three cassette tapes. All six side (about 30 minutes each) are
 filled with much tougher fragments of real speech from the North American
 telephone network. If you can do well in this test, nobody cares about your
-results against the Mitel test tape. 
+results against the Mitel test tape.
 
 A fresh set of tapes was purchased for these tests, and digitised, producing 6
 wave files of 16 bit signed PCM data, sampled at 8kHz. They were transcribed
 using a speed adjustable cassette player. The test tone at the start of the
 tapes is pretty accurate, and the new tapes should not have had much opportunity
 to stretch. It is believed these transcriptions are about as good as the source
-material permits. 
+material permits.
 
 PLEASE NOTE
 
@@ -79,7 +79,7 @@ you also have no right to use this data. The original tapes are the copyright
 material of BellCore, and they charge over US$200 for a set. I doubt they sell
 enough copies to consider this much of a business. However, it is their data,
 and it is their right to do as they wish with it. Currently I see no indication
-they wish to give it away for free. 
+they wish to give it away for free.
 */
 
 #if defined(HAVE_CONFIG_H)
@@ -460,7 +460,7 @@ static void mitel_cm7291_side_1_tests(void)
     printf("    Passed\n");
 
     /* Test 4: Acceptable amplitude ratio (twist).
-       Use only the diagonal pairs of tones (digits 1, 5, 9 and D). 
+       Use only the diagonal pairs of tones (digits 1, 5, 9 and D).
        There are eight sections to the test. Each section contains 200
        pulses with a 50ms duration for each pulse. Initially the amplitude
        of both tones is 6dB down from clip. The two sections to test one
@@ -477,7 +477,7 @@ static void mitel_cm7291_side_1_tests(void)
 
        The Acceptable Amplitude Ratio in dB is equal to the number of
        responses registered in (a) or (b), divided by 10.
-       
+
        TODO: This is supposed to work in 1/10dB steps, but here I used 1dB
              steps, as the current tone generator has its amplitude set in
              1dB steps.
@@ -527,7 +527,7 @@ static void mitel_cm7291_side_1_tests(void)
        clip. The amplitude of each is gradually attenuated by -35dB at a
        rate of 1dB per pulse. The Dynamic Range in dB is equal to the
        number of responses from the receiver during the test.
-       
+
        Well not really, but that is the Mitel test. Lets sweep a bit further,
        and see what the real range is */
     printf("Test 5: Dynamic range\n");
@@ -555,7 +555,7 @@ static void mitel_cm7291_side_1_tests(void)
        are transmitted at an amplitude of -6dB from clip per frequency.
        Pulse duration starts at 49ms and is gradually reduced to 10ms.
        Guard time in ms is equal to (500 - number of responses)/10.
-       
+
        That is the Mitel test, and we will follow it. Its totally bogus,
        though. Just what the heck is a pass or fail here? */
 
@@ -580,7 +580,7 @@ static void mitel_cm7291_side_1_tests(void)
        level is -24dBV, the second -18dBV and the third -12dBV.. The
        acceptable signal to noise ratio is the lowest ratio of signal
        to noise in the test where the receiver responds to all 1000 pulses.
-       
+
        Well, that is the Mitel test, but it doesn't tell you what the
        decoder can really do. Lets do a more comprehensive test */
 
@@ -597,7 +597,7 @@ static void mitel_cm7291_side_1_tests(void)
             // TODO: Clip
             for (sample = 0;  sample < len;  sample++)
                 amp[sample] = saturate(amp[sample] + awgn(&noise_source));
-            
+
             codec_munge(munge, amp, len);
             dtmf_rx(dtmf_state, amp, len);
 
@@ -735,10 +735,10 @@ static void dial_tone_tolerance_tests(void)
     printf("    Acceptable signal to dial tone ratio is %ddB\n", -15 - j);
     if ((use_dialtone_filter  &&  (-15 - j) > -12)
         ||
-        (!use_dialtone_filter  &&  (-15 - j) > 10)) 
+        (!use_dialtone_filter  &&  (-15 - j) > 10))
     {
         printf("    Failed\n");
-        exit(2); 
+        exit(2);
     }
     printf("    Passed\n");
 }

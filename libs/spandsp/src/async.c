@@ -35,6 +35,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
 
 #include "spandsp/private/async.h"
@@ -75,52 +76,10 @@ SPAN_DECLARE(const char *) signal_status_to_str(int status)
         return "Link disconnected";
     case SIG_STATUS_LINK_ERROR:
         return "Link error";
+    case SIG_STATUS_LINK_IDLE:
+        return "Link idle";
     }
     return "???";
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
-                                               int data_bits,
-                                               int parity,
-                                               int stop_bits,
-                                               int use_v14,
-                                               put_byte_func_t put_byte,
-                                               void *user_data)
-{
-    if (s == NULL)
-    {
-        if ((s = (async_rx_state_t *) malloc(sizeof(*s))) == NULL)
-            return NULL;
-    }
-    s->data_bits = data_bits;
-    s->parity = parity;
-    s->stop_bits = stop_bits;
-    s->use_v14 = use_v14;
-
-    s->put_byte = put_byte;
-    s->user_data = user_data;
-
-    s->byte_in_progress = 0;
-    s->bitpos = 0;
-    s->parity_bit = 0;
-
-    s->parity_errors = 0;
-    s->framing_errors = 0;
-    return s;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s)
-{
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s)
-{
-    free(s);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -205,6 +164,106 @@ SPAN_DECLARE_NONSTD(void) async_rx_put_bit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
+                                               int data_bits,
+                                               int parity,
+                                               int stop_bits,
+                                               int use_v14,
+                                               put_byte_func_t put_byte,
+                                               void *user_data)
+{
+    if (s == NULL)
+    {
+        if ((s = (async_rx_state_t *) malloc(sizeof(*s))) == NULL)
+            return NULL;
+    }
+    s->data_bits = data_bits;
+    s->parity = parity;
+    s->stop_bits = stop_bits;
+    s->use_v14 = use_v14;
+
+    s->put_byte = put_byte;
+    s->user_data = user_data;
+
+    s->byte_in_progress = 0;
+    s->bitpos = 0;
+    s->parity_bit = 0;
+
+    s->parity_errors = 0;
+    s->framing_errors = 0;
+    return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s)
+{
+    free(s);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data)
+{
+    async_tx_state_t *s;
+    int bit;
+    int parity_bit;
+
+    s = (async_tx_state_t *) user_data;
+    if (s->bitpos == 0)
+    {
+        if (s->presend_bits > 0)
+        {
+            s->presend_bits--;
+            return 1;
+        }
+        if ((s->byte_in_progress = s->get_byte(s->user_data)) < 0)
+        {
+            if (s->byte_in_progress != SIG_STATUS_LINK_IDLE)
+                return s->byte_in_progress;
+            /* Idle for a bit time. If the get byte call configured a presend
+               time we might idle for longer. */
+            return 1;
+        }
+        s->byte_in_progress &= (0xFFFF >> (16 - s->data_bits));
+        if (s->parity != ASYNC_PARITY_NONE)
+        {
+            parity_bit = parity8(s->byte_in_progress);
+            if (s->parity == ASYNC_PARITY_ODD)
+                parity_bit ^= 1;
+            s->byte_in_progress |= (parity_bit << s->data_bits);
+            s->byte_in_progress |= (0xFFFF << (s->data_bits + 1));
+        }
+        else
+        {
+            s->byte_in_progress |= (0xFFFF << s->data_bits);
+        }
+        /* Start bit */
+        bit = 0;
+        s->bitpos++;
+    }
+    else
+    {
+        bit = s->byte_in_progress & 1;
+        s->byte_in_progress >>= 1;
+        if (++s->bitpos > s->total_bits)
+            s->bitpos = 0;
+    }
+    return bit;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) async_tx_presend_bits(async_tx_state_t *s, int bits)
+{
+    s->presend_bits = bits;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
                                                int data_bits,
                                                int parity,
@@ -223,16 +282,16 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
        flow control does not exist, so V.14 stuffing is not needed. */
     s->data_bits = data_bits;
     s->parity = parity;
-    s->stop_bits = stop_bits;
+    s->total_bits = data_bits + stop_bits;
     if (parity != ASYNC_PARITY_NONE)
-        s->stop_bits++;
-        
+        s->total_bits++;
+
     s->get_byte = get_byte;
     s->user_data = user_data;
 
     s->byte_in_progress = 0;
     s->bitpos = 0;
-    s->parity_bit = 0;
+    s->presend_bits = 0;
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -247,52 +306,6 @@ SPAN_DECLARE(int) async_tx_free(async_tx_state_t *s)
 {
     free(s);
     return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data)
-{
-    async_tx_state_t *s;
-    int bit;
-    
-    s = (async_tx_state_t *) user_data;
-    if (s->bitpos == 0)
-    {
-        if ((s->byte_in_progress = s->get_byte(s->user_data)) < 0)
-        {
-            /* No more data */
-            bit = SIG_STATUS_END_OF_DATA;
-        }
-        else
-        {
-            /* Start bit */
-            bit = 0;
-            s->parity_bit = 0;
-            s->bitpos++;
-        }
-    }
-    else if (s->bitpos <= s->data_bits)
-    {
-        bit = s->byte_in_progress & 1;
-        s->byte_in_progress >>= 1;
-        s->parity_bit ^= bit;
-        s->bitpos++;
-    }
-    else if (s->parity  &&  s->bitpos == s->data_bits + 1)
-    {
-        if (s->parity == ASYNC_PARITY_ODD)
-            s->parity_bit ^= 1;
-        bit = s->parity_bit;
-        s->bitpos++;
-    }
-    else
-    {
-        /* Stop bit(s) */
-        bit = 1;
-        if (++s->bitpos > s->data_bits + s->stop_bits)
-            s->bitpos = 0;
-    }
-    return bit;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

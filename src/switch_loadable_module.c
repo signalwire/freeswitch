@@ -2165,7 +2165,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			}
 			
 			if (orate == 0) {
-				orate = 8000;
+				orate = switch_default_rate(name, 0);
 			}
 
 			switch_copy_string(jbuf, prefs[j], sizeof(jbuf));
@@ -2176,7 +2176,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			}
 
 			if (jrate == 0) {
-				jrate = 8000;
+				jrate = switch_default_rate(jname, 0);
 			}
 
 			if (!strcasecmp(name, jname) && ointerval == jinterval && orate == jrate) {
@@ -2188,6 +2188,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			/* If no specific codec interval is requested opt for the default above all else because lots of stuff assumes it */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				uint32_t default_ptime = switch_default_ptime(imp->iananame, imp->ianacode);
+				uint32_t default_rate = switch_default_rate(imp->iananame, imp->ianacode);
 				
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 					
@@ -2196,7 +2197,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 						continue;
 					}
 
-					if (((!rate && (uint32_t) imp->samples_per_second != 8000) || (rate && (uint32_t) imp->samples_per_second != rate))) {
+					if (((!rate && (uint32_t) imp->samples_per_second != default_rate) || (rate && (uint32_t) imp->samples_per_second != rate))) {
 						continue;
 					}
 

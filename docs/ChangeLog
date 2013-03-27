@@ -1,7 +1,30 @@
-freeswitch (1.2.5.2)
-	Maintenance release/bug fixes
-freeswitch (1.2.5.1)
-	Maintenance release/bug fixes
+freeswitch (1.2.7)
+	change fs_encode to support raw files to wav or to other raw
+	check for vm caller id info later so if its transfered it gets the updated details
+freeswitch (1.2.6)
+	core_sqldb: sql tuning by changing 2 Indices
+	freeswitch-core: database corruption handling
+	freeswitch-core: use system time as reference for FS uptime, instead of monotonic
+	freeswitch-core: hide sensitive dtmfs
+	freeswitch-core: record g729 calls to g729 wav files, playback g729 wav files
+	freeswitch-core: STUN: XOR_MAPPED_ADDRESS attribute not handled
+	freeswitch-core: option to record session when bridged only 
+	mod_callcenter: simple periodic announcement
+	mod_callcenter: New members joining queue don't ring agents when max-wait-time-with-no-agent-time-reached is 0
+	mod_curl: add curl content-type option
+	mod_curl: adding ability to transmit a file using CURL from API or dialplan app
+	mod_directory: option to search by first and last name
+	mod_dptools: add option to allow any key to terminate playback or record
+	mod_event_socket: enable dual-stack (IPv4/IPv6) listening in mod_event_socket on Windows
+	mod_lcr: Add 'round-robin' feature to carrer gateways
+	mod_local_stream: add an event (or filter) for mod_localstream PLAYBACK_START and PLAYBACK_STOP
+	mod_nibblebill: fix mod_nibblebill to use pgsql in core
+	mod_sofia: pass User-to-User header to variable-space
+	mod_sofia: option for freeswitch to trust users authed by proxy
+	mod_spandsp: Spandsp directory for making modem links
+	mod_voicemail: added voicemail call paging
+	build: building works on Visual Studio 2012
+	config: updating mod_cidlookup default configuration to use OpenCNAM as an example 
 freeswitch (1.2.5)
 	mod_lua: Enable mod_lua to use native pgsql dbh support  (r:2cea7f0f)
 	mod_sofia: Add att_xfer_destination_number variable to indicate the original destination number of the attended transfer leg on REFER for semi-attended transfer scenarios.  (r:893cd7be)

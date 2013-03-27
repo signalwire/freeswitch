@@ -425,7 +425,7 @@ static void octet_reserved_bit(logging_state_t *log,
     char s[10] = ".... ....";
     int bit;
     uint8_t octet;
-    
+
     /* Break out the octet and the bit number within it. */
     octet = msg[((bit_no - 1) >> 3) + 3];
     bit_no = (bit_no - 1) & 7;
@@ -488,7 +488,7 @@ static void octet_field(logging_state_t *log,
     int i;
     uint8_t octet;
     const char *tag;
-    
+
     /* Break out the octet and the bit number range within it. */
     octet = msg[((start - 1) >> 3) + 3];
     start = (start - 1) & 7;
@@ -646,7 +646,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
-    
+
     span_log(log, SPAN_LOG_FLOW, "%s:\n", t30_frametype(pkt[2]));
     if (len <= 3)
     {
@@ -674,7 +674,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *pkt, in
         span_log(log, SPAN_LOG_FLOW, "  Frame is short\n");
         return;
     }
-    
+
     if (frame_type == T30_DCS)
     {
         octet_reserved_bit(log, pkt, 9, 0);

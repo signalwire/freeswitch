@@ -129,7 +129,7 @@ struct hdlc_tx_state_s
     int byte;
     /*! \brief The number of bits remaining in byte. */
     int bits;
-    
+
     /*! \brief TRUE if transmission should end on buffer underflow .*/
     int tx_end;
 };

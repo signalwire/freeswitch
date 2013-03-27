@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
+
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
@@ -72,7 +72,7 @@
 /*
     Ways in which a V.18 call may start
     -----------------------------------
-    
+
     Originate:
         ANS
             Silence for 0.5s then send TXP
@@ -387,9 +387,9 @@ static int cmp(const void *s, const void *t)
 SPAN_DECLARE(int) v18_encode_dtmf(v18_state_t *s, char dtmf[], const char msg[])
 {
     const char *t;
-    char *u;
     const char *v;
-    
+    char *u;
+
     t = msg;
     u = dtmf;
     while (*t)
@@ -643,7 +643,7 @@ static int v18_tdd_get_async_byte(void *user_data)
 {
     v18_state_t *s;
     int ch;
-    
+
     s = (v18_state_t *) user_data;
     if ((ch = queue_read_byte(&s->queue.queue)) >= 0)
         return ch;
@@ -666,7 +666,7 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
 {
     v18_state_t *s;
     uint8_t octet;
-    
+
     s = (v18_state_t *) user_data;
     if (byte < 0)
     {
@@ -685,7 +685,8 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
             {
                 /* Whatever we have to date constitutes the message */
                 s->rx_msg[s->rx_msg_len] = '\0';
-                s->put_msg(s->user_data, s->rx_msg, s->rx_msg_len);
+                if (s->put_msg)
+                    s->put_msg(s->user_data, s->rx_msg, s->rx_msg_len);
                 s->rx_msg_len = 0;
             }
             break;
@@ -701,7 +702,8 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
     if (s->rx_msg_len >= 256)
     {
         s->rx_msg[s->rx_msg_len] = '\0';
-        s->put_msg(s->user_data, s->rx_msg, s->rx_msg_len);
+        if (s->put_msg)
+            s->put_msg(s->user_data, s->rx_msg, s->rx_msg_len);
         s->rx_msg_len = 0;
     }
 }
@@ -815,6 +817,33 @@ SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(const char *) v18_mode_to_str(int mode)
+{
+    switch (mode & 0xFF)
+    {
+    case V18_MODE_NONE:
+        return "None";
+    case V18_MODE_5BIT_45:
+        return "Weitbrecht TDD (45.45bps)";
+    case V18_MODE_5BIT_50:
+        return "Weitbrecht TDD (50bps)";
+    case V18_MODE_DTMF:
+        return "DTMF";
+    case V18_MODE_EDT:
+        return "EDT";
+    case V18_MODE_BELL103:
+        return "Bell 103";
+    case V18_MODE_V23VIDEOTEX:
+        return "Videotex";
+    case V18_MODE_V21TEXTPHONE:
+        return "V.21";
+    case V18_MODE_V18TEXTPHONE:
+        return "V.18 text telephone";
+    }
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s)
 {
     return &s->logging;
@@ -863,7 +892,7 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
         s->repeat_shifts = mode & 0x100;
         break;
     case V18_MODE_DTMF:
-        dtmf_tx_init(&s->dtmftx);
+        dtmf_tx_init(&s->dtmftx, NULL, NULL);
         dtmf_rx_init(&s->dtmfrx, v18_rx_dtmf, s);
         break;
     case V18_MODE_EDT:
@@ -907,33 +936,6 @@ SPAN_DECLARE(int) v18_free(v18_state_t *s)
 {
     free(s);
     return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(const char *) v18_mode_to_str(int mode)
-{
-    switch (mode & 0xFF)
-    {
-    case V18_MODE_NONE:
-        return "None";
-    case V18_MODE_5BIT_45:
-        return "Weitbrecht TDD (45.45bps)";
-    case V18_MODE_5BIT_50:
-        return "Weitbrecht TDD (50bps)";
-    case V18_MODE_DTMF:
-        return "DTMF";
-    case V18_MODE_EDT:
-        return "EDT";
-    case V18_MODE_BELL103:
-        return "Bell 103";
-    case V18_MODE_V23VIDEOTEX:
-        return "Videotex";
-    case V18_MODE_V21TEXTPHONE:
-        return "V.21";
-    case V18_MODE_V18TEXTPHONE:
-        return "V.18 text telephone";
-    }
-    return "???";
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

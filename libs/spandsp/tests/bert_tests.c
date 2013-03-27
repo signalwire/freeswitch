@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
-    
+
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_7_TO_1, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_7_TO_1, 300, 20);
     for (i = 0;  i < 511*2;  i++)
@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
         //    bert_put_bit(bert, bit);
         bert_put_bit(bert, bit);
     }
-    
+
     printf("Tests passed.\n");
     return 0;
 }

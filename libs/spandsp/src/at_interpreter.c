@@ -211,7 +211,7 @@ SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode)
 SPAN_DECLARE(void) at_put_response(at_state_t *s, const char *t)
 {
     uint8_t buf[3];
-    
+
     buf[0] = s->p.s_regs[3];
     buf[1] = s->p.s_regs[4];
     buf[2] = '\0';
@@ -375,7 +375,7 @@ SPAN_DECLARE(void) at_reset_call_info(at_state_t *s)
 {
     at_call_id_t *call_id;
     at_call_id_t *next;
- 
+
     for (call_id = s->call_id;  call_id;  call_id = next)
     {
         next = call_id->next;
@@ -424,7 +424,7 @@ SPAN_DECLARE(void) at_display_call_info(at_state_t *s)
     {
         snprintf(buf,
                  sizeof(buf),
-                 "%s=%s", 
+                 "%s=%s",
                  (call_id->id)  ?  call_id->id  :  "NULL",
                  (call_id->value)  ?  call_id->value  :  "<NONE>");
         at_put_response(s, buf);
@@ -437,7 +437,7 @@ SPAN_DECLARE(void) at_display_call_info(at_state_t *s)
 static int parse_num(const char **s, int max_value)
 {
     int i;
-    
+
     /* The spec. says no digits is valid, and should be treated as zero. */
     i = 0;
     while (isdigit((int) **s))
@@ -454,7 +454,7 @@ static int parse_num(const char **s, int max_value)
 static int parse_hex_num(const char **s, int max_value)
 {
     int i;
-    
+
     /* The spec. says a hex value is always 2 digits, and the alpha digits are
        upper case. */
     i = 0;
@@ -859,7 +859,7 @@ static int process_class1_cmd(at_state_t *s, const char **t)
         allowed = "24,48,72,73,74,96,97,98,121,122,145,146";
         break;
     }
-    
+
     val = -1;
     if (!parse_out(s, t, &val, 255, NULL, allowed))
         return TRUE;
@@ -4043,11 +4043,11 @@ static const char *at_cmd_plus_IBC(at_state_t *s, const char *t)
     /* 0: In-band control service disabled
        1: In-band control service enabled, 7-bit codes allowed, and top bit insignificant
        2; In-band control service enabled, 7-bit codes allowed, and 8-bit codes available
-    
+
        Circuits 105, 106, 107, 108, 109, 110, 125, 132, 133, 135, 142 in that order. For each one:
        0: disabled
        1: enabled
-       
+
        DCE line connect status reports:
        0: disabled
        1: enabled */
@@ -4081,9 +4081,9 @@ static const char *at_cmd_plus_IBM(at_state_t *s, const char *t)
            T3 = entire interval -- N*T2
         7: report the first time when <T1> is exceeded, and then each time <T2> is exceeded, and then once
            more when the mark idle period ends; T3 = entire mark idle period -- N*T2 - T1
-           
+
        T1 in units of 10ms
-        
+
        T2 in units of 10ms */
     locations[0] = NULL;
     locations[1] = NULL;
@@ -4106,7 +4106,7 @@ static const char *at_cmd_plus_ICF(at_state_t *s, const char *t)
         4:  7 data 2 stop
         5:  7 data 1 parity 1 stop
         6:  7 data 1 stop
-    
+
        Parity
         0:  Odd
         1:  Even
@@ -4235,7 +4235,7 @@ static const char *at_cmd_plus_MS(at_state_t *s, const char *t)
 static const char *at_cmd_plus_MSC(at_state_t *s, const char *t)
 {
     /* V.250 6.4.8 - Seamless rate change enable */
-    /*  0   Disables V.34 seamless rate change 
+    /*  0   Disables V.34 seamless rate change
         1   Enables V.34 seamless rate change */
     /* TODO: */
     t += 4;

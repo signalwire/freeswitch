@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
     int16_t out_amp[2*BLOCK_LEN];
     SNDFILE *inhandle;
     SNDFILE *outhandle;
-    int outframes;    
+    int outframes;
     int i;
     int j;
     int samples;
@@ -350,14 +350,14 @@ int main(int argc, char *argv[])
         }
         off_at = i;
         printf("Carrier on at %d, off at %d\n", on_at, off_at);
-        if (on_at < -29  ||  on_at > -26  
+        if (on_at < -29  ||  on_at > -26
             ||
             off_at < -35  ||  off_at > -31)
         {
             printf("Tests failed.\n");
             exit(2);
         }
-                
+
         printf("Test with BERT\n");
         test_bps = preset_fsk_specs[modem_under_test_1].baud_rate;
         if (modem_under_test_1 >= 0)
@@ -426,7 +426,7 @@ int main(int argc, char *argv[])
                 out_amp[2*i + 1] = answerer_model_amp[i];
             for (  ;  i < BLOCK_LEN;  i++)
                 out_amp[2*i + 1] = 0;
-        
+
             if (log_audio)
             {
                 outframes = sf_writef_short(outhandle, out_amp, BLOCK_LEN);
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
                     }
                     break;
                 }
-    
+
                 /* Put a little silence between the chunks in the file. */
                 memset(out_amp, 0, sizeof(out_amp));
                 if (log_audio)

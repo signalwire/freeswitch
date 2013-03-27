@@ -86,7 +86,7 @@ static __inline__ void overlap_add(int16_t amp1[], int16_t amp2[], int len)
     int i;
     float weight;
     float step;
-    
+
     step = 1.0f/len;
     weight = 0.0f;
     for (i = 0;  i < len;  i++)

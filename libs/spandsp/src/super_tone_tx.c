@@ -59,7 +59,7 @@
     oddity amongst supervisory tones. It is designed to sound loud and nasty. Most
     tones are one or two pure sine pitches, or one AM moduluated pitch. This alert
     tone varies between countries, but AT&T are a typical example.
-    
+
     AT&T Receiver Off-Hook Tone is 1400 Hz, 2060 Hz, 2450 Hz and 2600 Hz at 0dBm0/frequency
     on and off every .1 second. On some older space division switching systems
     Receiver Off-Hook was 1400 Hz, 2060 Hz, 2450 Hz and 2600 Hz at +5 VU on and
@@ -82,7 +82,7 @@ SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_
             return NULL;
     }
     if (f1 >= 1.0f)
-    {    
+    {
         s->tone[0].phase_rate = dds_phase_ratef(f1);
         s->tone[0].gain = dds_scaling_dbm0f(l1);
     }
@@ -278,7 +278,6 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
                 tree = s->levels[--s->level];
             }
         }
-        
     }
     return samples;
 }

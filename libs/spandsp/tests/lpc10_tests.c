@@ -149,13 +149,13 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot create audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
-    
+
     if ((lpc10_enc_state = lpc10_encode_init(NULL, TRUE)) == NULL)
     {
         fprintf(stderr, "    Cannot create encoder\n");
         exit(2);
     }
-            
+
     if ((lpc10_dec_state = lpc10_decode_init(NULL, TRUE)) == NULL)
     {
         fprintf(stderr, "    Cannot create decoder\n");
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
             exit(2);
         }
     }
-    
+
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);

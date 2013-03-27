@@ -77,7 +77,7 @@ struct ademco_contactid_sender_state_s
     int tx_digits_len;
     /*! \brief The number of consecutive retries. */
     int tries;
-    
+
     int tone_state;
     int duration;
     int last_hit;

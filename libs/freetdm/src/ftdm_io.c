@@ -2968,6 +2968,10 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		ftdm_buffer_zero(ftdmchan->gen_dtmf_buffer);
 	}
 
+	if (ftdmchan->dtmf_buffer) {
+		ftdm_buffer_zero(ftdmchan->dtmf_buffer);
+	}
+
 	if (ftdmchan->digit_buffer) {
 		ftdm_buffer_zero(ftdmchan->digit_buffer);
 	}
@@ -5116,6 +5120,7 @@ static ftdm_status_t load_config(void)
 	sprintf(chan_config.group_name, "__default");
 
 	if (!ftdm_config_open_file(&cfg, cfg_name)) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to open configuration file %s\n", cfg_name);
 		return FTDM_FAIL;
 	}
 

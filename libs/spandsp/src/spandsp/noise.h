@@ -37,7 +37,7 @@ AWGN. It is designed to be of sufficiently low complexity to generate large
 volumes of reasonable quality noise, in real time.
 
 Hoth noise is used to model indoor ambient noise when evaluating communications
-systems such as telephones. It is named after D.F. Hoth, who made the first 
+systems such as telephones. It is named after D.F. Hoth, who made the first
 systematic study of this. The official definition of Hoth noise is IEEE
 standard 269-2001 (revised from 269-1992), "Draft Standard Methods for Measuring
 Transmission Performance of Analog and Digital Telephone Sets, Handsets and Headsets."

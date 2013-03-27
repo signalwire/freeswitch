@@ -260,7 +260,7 @@ static void static_buffer_tests(void)
                               fr,
                               type,
                               len,
-                              next_scheduled_send, 
+                              next_scheduled_send,
                               next_actual_receive);
             switch (ret)
             {

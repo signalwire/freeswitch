@@ -2238,6 +2238,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
+	if ((var_val = switch_event_get_header(var_event, "fax_enable_t38_request"))) {
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
+	}
+
 	if ((var_val = switch_event_get_header(var_event, "ignore_early_media"))) {
 		if (switch_true(var_val)) {
 			oglobals.early_ok = 0;
@@ -2368,7 +2372,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			or_argc = 1;
 		}
 
-		for (r = 0; r < or_argc; r++) {
+		for (r = 0; r < or_argc && (!cancel_cause || *cancel_cause == 0); r++) {
 			char *p, *end = NULL;
 			int q = 0, alt = 0;
 
@@ -3041,6 +3045,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								goto notready;
 								break;
 							case SWITCH_STATUS_BREAK:
+								status = SWITCH_STATUS_FALSE;
 								goto done;
 								break;
 							default:

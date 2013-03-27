@@ -130,7 +130,9 @@ static void display_page_stats(t4_rx_state_t *s)
     printf("Pages = %d\n", stats.pages_transferred);
     printf("Compression = %s\n", t4_encoding_to_str(stats.encoding));
     printf("Compressed size = %d\n", stats.line_image_size);
+    printf("Raw image size = %d pels x %d pels\n", stats.image_width, stats.image_length);
     printf("Image size = %d pels x %d pels\n", stats.width, stats.length);
+    printf("Raw image resolution = %d pels/m x %d pels/m\n", stats.image_x_resolution, stats.image_y_resolution);
     printf("Image resolution = %d pels/m x %d pels/m\n", stats.x_resolution, stats.y_resolution);
     printf("Bad rows = %d\n", stats.bad_rows);
     printf("Longest bad row run = %d\n", stats.longest_bad_row_run);
@@ -286,10 +288,10 @@ int main(int argc, char *argv[])
 #if defined(SPANDSP_SUPPORT_T42x)
         T4_COMPRESSION_ITU_T42,
         T4_COMPRESSION_ITU_SYCC_T42,
-#endif 
+#endif
 #if defined(SPANDSP_SUPPORT_T43x)
         T4_COMPRESSION_ITU_T43,
-#endif          
+#endif
         T4_COMPRESSION_ITU_T85,
         T4_COMPRESSION_ITU_T85_L0,
         //T4_COMPRESSION_ITU_T45,

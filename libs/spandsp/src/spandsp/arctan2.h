@@ -107,7 +107,7 @@ static __inline__ float arctan2f(float y, float x)
         angle = 3.1415926f/2.0f - fx*fy/(y*y + 0.28125f*x*x);
     else
         angle = fy*fx/(x*x + 0.28125f*y*y);
-    
+
     /* Deal with the quadrants, to bring the final answer to the range +-pi */
     if (x < 0.0f)
         angle = 3.1415926f - angle;

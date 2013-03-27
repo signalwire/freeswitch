@@ -212,7 +212,7 @@ struct t31_state_s
     /*! TRUE if DLE prefix just used */
     int dled;
 
-	/*! \brief Samples of silence awaited, as specified in a "wait for silence" command */
+    /*! \brief Samples of silence awaited, as specified in a "wait for silence" command */
     int silence_awaited;
 
     /*! \brief The current bit rate for the FAX fast message transfer modem. */

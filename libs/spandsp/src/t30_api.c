@@ -653,6 +653,8 @@ SPAN_DECLARE(int) t30_set_rx_encoding(t30_state_t *s, int encoding)
     case T4_COMPRESSION_ITU_T4_1D:
     case T4_COMPRESSION_ITU_T4_2D:
     case T4_COMPRESSION_ITU_T6:
+    //case T4_COMPRESSION_ITU_T85:
+    //case T4_COMPRESSION_ITU_T85_L0:
         s->output_encoding = encoding;
         return 0;
     }

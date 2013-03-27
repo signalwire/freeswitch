@@ -121,7 +121,7 @@ SPAN_DECLARE(int) plc_rx(plc_state_t *s, int16_t amp[], int len)
     float old_weight;
     float new_weight;
     float gain;
-    
+
     if (s->missing_samples)
     {
         /* Although we have a real signal, we need to smooth it to fit well

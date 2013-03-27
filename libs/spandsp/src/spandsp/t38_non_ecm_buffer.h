@@ -68,7 +68,7 @@ successive EOL markers, with no pixel data between them.
 */
 
 /*! The buffer length much be a power of two. The chosen length is big enough for
-    over 9s of data at the V.17 14,400bps rate. */    
+    over 9s of data at the V.17 14,400bps rate. */
 #define T38_NON_ECM_TX_BUF_LEN  16384
 
 /*! \brief A flow controlled non-ECM image data buffer, for buffering T.38 to analogue

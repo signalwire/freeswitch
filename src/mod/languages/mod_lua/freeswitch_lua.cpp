@@ -366,8 +366,8 @@ Dbh::~Dbh()
 bool Dbh::release()
 {
   if (dbh) {
-	  switch_cache_db_release_db_handle(&dbh);
 	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DBH handle %p released.\n", (void *) dbh);
+	  switch_cache_db_release_db_handle(&dbh);
 	  return true;
   }
 

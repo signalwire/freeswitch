@@ -80,7 +80,7 @@ SPAN_DECLARE(int) swept_tone(swept_tone_state_t *s, int16_t amp[], int max_len)
     int i;
     int len;
     int chunk_len;
-    
+
     for (len = 0;  len < max_len;  )
     {
         chunk_len = max_len - len;

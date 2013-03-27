@@ -81,7 +81,7 @@ static __inline__ void octet_set_and_count(hdlc_rx_state_t *s)
 {
     if (s->octet_count_report_interval == 0)
         return;
-        
+
     /* If we are not in octet counting mode, we start it.
        If we are in octet counting mode, we update it. */
     if (s->octet_counting_mode)
@@ -465,7 +465,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
         {
             s->abort_octets = 0;
             return 0x7F;
-        }   
+        }
         return s->idle_octet;
     }
     if (s->len)

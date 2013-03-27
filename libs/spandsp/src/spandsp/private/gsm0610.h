@@ -54,7 +54,7 @@ struct gsm0610_state_s
     int16_t v[9];
     /*! Decoder postprocessing */
     int16_t msr;
-    
+
     /*! Encoder data */
     int16_t e[50];
 };

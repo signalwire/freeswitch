@@ -48,10 +48,10 @@ typedef __int64		        int64_t;
 #endif
 
 #if !defined(INT16_MAX)
-#define INT16_MAX   0x7FFF 
+#define INT16_MAX   0x7FFF
 #endif
 #if !defined(INT16_MIN)
-#define INT16_MIN   (-INT16_MAX - 1) 
+#define INT16_MIN   (-INT16_MAX - 1)
 #endif
 
 #if !defined(INT32_MAX)

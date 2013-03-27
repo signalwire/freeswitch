@@ -74,13 +74,23 @@ To build for a stable branch, do this:
   dpkg-buildpackage -b -us -uc -Zxz -z9
   git reset --hard origin/master
 
-Alternatively, you can build using our automated tools:
+Alternatively, you can build using our automated tools.  To build the
+source packages and all supported binary packages for sid, wheezy,
+squeeze on i386 and amd64, run the following as root from a clean
+Debian 'buildd' image:
 
-  aptitude install cowbuilder
+  aptitude update && aptitude upgrade
+  aptitude install -y \
+    rsync git less cowbuilder ccache \
+    devscripts equivs build-essential
+  mkdir /usr/src/freeswitch
+  git clone git://git.freeswitch.org/freeswitch /usr/src/freeswitch/src
+  cd /usr/src/freeswitch/src
   # if you only want to build some modules, create a modules.conf
   # outside the source tree and add -f ../path/to/modules.conf to the
-  # command below.
-  ./debian/util.sh build-all -bn -a amd64 -c sid # update as needed
+  # command below.  See ./debian/util.sh -h for further usage
+  # information.
+  ./debian/util.sh build-all -bn -z9
 
 The source packages for sounds and music on hold are maintained in a
 separate repository.  Each set of sounds has a separate version number
@@ -94,4 +104,4 @@ freeswitch-music-*:
   git clone https://github.com/traviscross/freeswitch-sounds.git
   cd freeswitch-sounds && cat debian/README.source
 
- -- Travis Cross <tc@traviscross.com>, Wed,  3 Oct 2012 02:15:24 +0000
+ -- Travis Cross <tc@traviscross.com>, Mon, 11 Mar 2013 17:09:33 +0000

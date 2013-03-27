@@ -40,10 +40,10 @@ HDLC may not be a DSP function, but is needed to accompany several DSP component
 #if !defined(_SPANDSP_HDLC_H_)
 #define _SPANDSP_HDLC_H_
 
-/*! 
+/*!
     HDLC_MAXFRAME_LEN is the maximum length of a stuffed HDLC frame, excluding the CRC.
 */
-#define HDLC_MAXFRAME_LEN       400	
+#define HDLC_MAXFRAME_LEN       400
 
 typedef void (*hdlc_frame_handler_t)(void *user_data, const uint8_t *pkt, int len, int ok);
 typedef void (*hdlc_underflow_handler_t)(void *user_data);

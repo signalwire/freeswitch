@@ -164,7 +164,7 @@ static int extra_bits_in_stuffed_frame(const uint8_t buf[], int len)
     int stuffed;
     int i;
     int j;
-    
+
     bitstream = 0;
     ones = 0;
     stuffed = 0;
@@ -212,7 +212,7 @@ static int extra_bits_in_stuffed_frame(const uint8_t buf[], int len)
 static int process_rx_missing(t38_core_state_t *t, void *user_data, int rx_seq_no, int expected_seq_no)
 {
     t38_terminal_state_t *s;
-    
+
     s = (t38_terminal_state_t *) user_data;
     s->t38_fe.rx_data_missing = TRUE;
     return 0;
@@ -223,7 +223,7 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
 {
     t38_terminal_state_t *s;
     t38_terminal_front_end_state_t *fe;
-    
+
     s = (t38_terminal_state_t *) user_data;
     fe = &s->t38_fe;
 
@@ -547,7 +547,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             /* WORKAROUND: At least some Mediatrix boxes have a bug, where they can send this message at the
                            end of non-ECM data. We need to tolerate this. We use the generic receive complete
                            indication, rather than the specific HDLC carrier down. */
-            /* This message is expected under 2 circumstances. One is as an alternative to T38_FIELD_HDLC_FCS_OK_SIG_END - 
+            /* This message is expected under 2 circumstances. One is as an alternative to T38_FIELD_HDLC_FCS_OK_SIG_END -
                i.e. they send T38_FIELD_HDLC_FCS_OK, and then T38_FIELD_HDLC_SIG_END when the carrier actually drops.
                The other is because the HDLC signal drops unexpectedly - i.e. not just after a final frame. */
             fe->hdlc_rx.len = 0;
@@ -1447,7 +1447,7 @@ SPAN_DECLARE(t38_core_state_t *) t38_terminal_get_t38_core_state(t38_terminal_st
 static int t38_terminal_t38_fe_restart(t38_terminal_state_t *t)
 {
     t38_terminal_front_end_state_t *s;
-    
+
     s = &t->t38_fe;
     t38_core_restart(&s->t38);
 
@@ -1471,7 +1471,7 @@ static int t38_terminal_t38_fe_init(t38_terminal_state_t *t,
                                     void *tx_packet_user_data)
 {
     t38_terminal_front_end_state_t *s;
-    
+
     s = &t->t38_fe;
     t38_core_init(&s->t38,
                   process_rx_indicator,

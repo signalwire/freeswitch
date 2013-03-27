@@ -69,11 +69,14 @@
 #define FP_SCALE(x)                     FP_Q_6_10(x)
 #define FP_FACTOR                       1024
 #define FP_SHIFT_FACTOR                 12
-#include "v17_v32bis_rx_fixed_rrc.h"
 #else
 #define FP_SCALE(x)                     (x)
-#include "v17_v32bis_rx_floating_rrc.h"
 #endif
+
+#include "v17_v32bis_rx_rrc.h"
+
+#define FP_CONSTELLATION_SCALE(x)       FP_SCALE(x)
+
 #include "v17_v32bis_tx_constellation_maps.h"
 #include "v17_v32bis_rx_constellation_maps.h"
 
@@ -1228,7 +1231,7 @@ static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
         }
     }
     else
-    { 
+    {
         s->low_samples = 0;
         if (diff > s->high_sample)
             s->high_sample = diff;
@@ -1560,7 +1563,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
     s->baud_phase = 0.0f;
 #endif
     s->baud_half = 0;
-    
+
     s->total_baud_timing_correction = 0;
 
     return 0;

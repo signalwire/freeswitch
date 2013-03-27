@@ -107,7 +107,7 @@ typedef struct
     float far_co_hybrid_echo;
     /*! DC offset impairment */
     float dc_offset;
-    
+
     /*! Mains pickup impairment */
     int mains_interference;
     tone_gen_state_t mains_tone;
@@ -122,7 +122,7 @@ typedef struct
     one_way_line_model_state_t line1;
     one_way_line_model_state_t line2;
     float fout1;
-    float fout2; 
+    float fout2;
 } both_ways_line_model_state_t;
 
 #ifdef __cplusplus
@@ -132,7 +132,7 @@ extern "C"
 
 SPAN_DECLARE_DATA extern const float *line_models[];
 
-SPAN_DECLARE(void) both_ways_line_model(both_ways_line_model_state_t *s, 
+SPAN_DECLARE(void) both_ways_line_model(both_ways_line_model_state_t *s,
                                         int16_t output1[],
                                         const int16_t input1[],
                                         int16_t output2[],
@@ -142,7 +142,7 @@ SPAN_DECLARE(void) both_ways_line_model(both_ways_line_model_state_t *s,
 SPAN_DECLARE(void) both_ways_line_model_set_dc(both_ways_line_model_state_t *s, float dc1, float dc2);
 
 SPAN_DECLARE(void) both_ways_line_model_set_mains_pickup(both_ways_line_model_state_t *s, int f, float level1, float level2);
-    
+
 SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model1,
                                                                        float noise1,
                                                                        float echo_level_cpe1,
@@ -156,7 +156,7 @@ SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model
 
 SPAN_DECLARE(int) both_ways_line_model_release(both_ways_line_model_state_t *s);
 
-SPAN_DECLARE(void) one_way_line_model(one_way_line_model_state_t *s, 
+SPAN_DECLARE(void) one_way_line_model(one_way_line_model_state_t *s,
                                       int16_t output[],
                                       const int16_t input[],
                                       int samples);

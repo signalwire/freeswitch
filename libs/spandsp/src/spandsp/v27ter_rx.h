@@ -35,7 +35,7 @@ The V.27ter receiver implements the receive side of a V.27ter modem. This can op
 at data rates of 4800 and 2400 bits/s. The audio input is a stream of 16 bit samples,
 at 8000 samples/second. The transmit and receive side of V.27ter modems operate
 independantly. V.27ter is mostly used for FAX transmission, where it provides the
-standard 4800 bits/s rate (the 2400 bits/s mode is not used for FAX). 
+standard 4800 bits/s rate (the 2400 bits/s mode is not used for FAX).
 
 \section v27ter_rx_page_sec_2 How does it work?
 V.27ter defines two modes of operation. One uses 8-PSK at 1600 baud, giving 4800bps.

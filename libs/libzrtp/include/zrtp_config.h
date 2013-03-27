@@ -19,6 +19,8 @@
 #if !defined(ZRTP_PLATFORM)
 #	if defined(ANDROID_NDK)
 #		define ZRTP_PLATFORM ZP_ANDROID
+#	elif defined(__FreeBSD__)
+#		define ZRTP_PLATFORM ZP_BSD
 #	elif defined(linux) || defined(__linux)
 #		include <linux/version.h>
 #		define ZRTP_PLATFORM ZP_LINUX

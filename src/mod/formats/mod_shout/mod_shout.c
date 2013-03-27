@@ -208,6 +208,7 @@ static inline void free_context(shout_context_t *context)
 				unsigned char mp3buffer[8192];
 				int len;
 				int16_t blank[2048] = { 0 }, *r = NULL;
+				int framesize;
 
 				if (context->channels == 2) {
 					r = blank;
@@ -222,13 +223,16 @@ static inline void free_context(shout_context_t *context)
 					}
 				}
 
-				while ((len = lame_encode_flush(context->gfp, mp3buffer, sizeof(mp3buffer))) > 0) {
-					ret = shout_send(context->shout, mp3buffer, len);
+				framesize = lame_get_framesize(context->gfp);
+				if ( framesize ) {
+					while ((len = lame_encode_flush(context->gfp, mp3buffer, sizeof(mp3buffer))) > 0) {
+						ret = shout_send(context->shout, mp3buffer, len);
 
-					if (ret != SHOUTERR_SUCCESS) {
-						break;
-					} else {
-						shout_sync(context->shout);
+						if (ret != SHOUTERR_SUCCESS) {
+							break;
+						} else {
+							shout_sync(context->shout);
+						}
 					}
 				}
 			}

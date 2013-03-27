@@ -180,7 +180,7 @@ SPAN_DECLARE(int16_t) fixed_sin(uint16_t x)
     }
     z = fixed_sine_table[step] + ((frac*(fixed_sine_table[step_after] - fixed_sine_table[step])) >> 6);
     if ((x & 0x8000))
-    	z = -z;
+        z = -z;
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -206,7 +206,7 @@ SPAN_DECLARE(int16_t) fixed_cos(uint16_t x)
     }
     z = fixed_sine_table[step] + ((frac*(fixed_sine_table[step_after] - fixed_sine_table[step])) >> 6);
     if ((x & 0x8000))
-    	z = -z;
+        z = -z;
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -227,7 +227,7 @@ SPAN_DECLARE(uint16_t) fixed_atan2(int16_t y, int16_t x)
         return ((y & 0x8000) | 0x4000);
     abs_x = abs(x);
     abs_y = abs(y);
-    
+
     if (abs_y < abs_x)
     {
         recip = fixed_reciprocal16(abs_x, &shift);

@@ -79,7 +79,7 @@ struct iphdr
     uint32_t daddr;
     /*The options start here. */
 };
-   
+
 #endif
 
 /* We define our own structures for Ethernet Header and IPv6 Header as they are not available on CYGWIN.
@@ -287,6 +287,9 @@ int pcap_scan_pkts(const char *file,
             fprintf(stderr, "Truncated packet - total len = %d, captured len = %d\n", pkthdr->len, pkthdr->caplen);
             exit(2);
         }
+#if 0
+        printf("%d:%d -> %d:%d\n", ntohl(iphdr->saddr), ntohs(udphdr->source), ntohl(iphdr->daddr), ntohs(udphdr->dest));
+#endif
         body = (const uint8_t *) udphdr;
         body += sizeof(struct udphdr);
         body_len = pktlen - sizeof(struct udphdr);

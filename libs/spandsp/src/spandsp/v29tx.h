@@ -35,14 +35,14 @@ operate at data rates of 9600, 7200 and 4800 bits/s. The audio output is a
 stream of 16 bit samples, at 8000 samples/second. The transmit and receive side
 of V.29 modems operate independantly. V.29 is mostly used for FAX transmission,
 where it provides the standard 9600 and 7200 bits/s rates (the 4800 bits/s mode
-is not used for FAX). 
+is not used for FAX).
 
 \section v29tx_page_sec_2 How does it work?
 V.29 uses QAM modulation. The standard method of producing a QAM modulated
 signal is to use a sampling rate which is a multiple of the baud rate. The raw
 signal is then a series of complex pulses, each an integer number of samples
 long. These can be shaped, using a suitable complex filter, and multiplied by a
-complex carrier signal to produce the final QAM signal for transmission. 
+complex carrier signal to produce the final QAM signal for transmission.
 
 The pulse shaping filter is only vaguely defined by the V.29 spec. Some of the
 other ITU modem specs. fully define the filter, typically specifying a root
@@ -65,7 +65,7 @@ The carrier is generated using the DDS method. Using two second order resonators
 started in quadrature, might be more efficient, as it would have less impact on
 the processor cache than a table lookup approach. However, the DDS approach
 suits the receiver better, so the same signal generator is also used for the
-transmitter. 
+transmitter.
 
 The equation defining QAM modulation is:
 
@@ -76,16 +76,16 @@ where phi(n) is the phase of the information, and A is the amplitude of the info
 using the identity
 
     cos(x + y) = cos(x)*cos(y) - sin(x)*sin(y)
-    
+
 we get
 
     s(n) = A {cos(2*pi*f*n)*cos(phi(n)) - sin(2*pi*f*n)*sin(phi(n))}
-    
+
 substituting with the constellation positions
 
     I(n) = A*cos(phi(n))
     Q(n) = A*sin(phi(n))
-    
+
 gives
 
     s(n) = I(n)*cos(2*pi*f*n) - Q(n)*sin(2*pi*f*n)

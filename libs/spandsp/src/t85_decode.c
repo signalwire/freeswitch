@@ -722,7 +722,7 @@ SPAN_DECLARE(int) t85_decode_new_plane(t85_decode_state_t *s)
 {
     if (s->current_bit_plane >= s->bit_planes - 1)
         return -1;
-    
+
     s->current_bit_plane++;
     s->tx = 0;
     memset(s->buffer, 0, sizeof(s->buffer));

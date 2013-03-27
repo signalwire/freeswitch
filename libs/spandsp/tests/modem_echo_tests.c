@@ -27,12 +27,12 @@
 \section modem_echo_can_tests_page_sec_1 What does it do?
 Currently the echo cancellation tests only provide simple exercising of the
 cancellor in the way it might be used for line echo cancellation. The test code
-is in echotests.c. 
+is in echotests.c.
 
 The goal is to test the echo cancellor again the G.16X specs. Clearly, that also
 means the goal for the cancellor itself is to comply with those specs. Right
 now, the only aspect of these tests implemented is the line impulse response
-models in g168tests.c. 
+models in g168tests.c.
 
 \section modem_echo_can_tests_page_sec_2 How does it work?
 The current test consists of feeding an audio file of real speech to the echo
@@ -42,7 +42,7 @@ real speech is also used to simulate a signal received form the far end of the
 line. This is gated so it is only placed for one second every 10 seconds,
 simulating the double talk condition. The resulting echo cancelled signal can
 either be store in a file for further analysis, or played back as the data is
-processed. 
+processed.
 
 A number of modified versions of this test have been performed. The signal level
 of the two speech sources has been varied. Several simple models of the
@@ -53,7 +53,7 @@ is very loud (with earlier versions, well, ....:) ). The lack of saturating
 arithmetic in general purpose CPUs is a huge disadvantage here, as software
 saturation logic would cause a major slow down. Floating point would be good,
 but is not usable in the Linux kernel. Anyway, the bottom line seems to be the
-current design is genuinely useful, if imperfect. 
+current design is genuinely useful, if imperfect.
 
 \section modem_echo_can_tests_page_sec_2 How do I use it?
 
@@ -69,7 +69,7 @@ echo_tests.c is commented out with a \#if. If this is enabled, detailed
 information about the results of the echo cancellation will be written to
 stdout. By saving this into a file, Grace (recommended), GnuPlot, or some other
 plotting package may be used to graphically display the functioning of the
-cancellor.  
+cancellor.
 */
 
 #if defined(HAVE_CONFIG_H)
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 #if defined(ENABLE_GUI)
     int16_t amp[2];
 #endif
-    
+
     line_model_no = 0;
     use_gui = FALSE;
     for (i = 1;  i < argc;  i++)
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 
     power_meter_init(&power_before, 5);
     power_meter_init(&power_after, 5);
-    
+
     /* Measure the echo power before adaption */
     modem_echo_can_adaption_mode(ctx, FALSE);
     for (i = 0;  i < 8000*5;  i++)
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
     unadapted_output_power = power_meter_current_dbm0(&power_before);
     unadapted_echo_power = power_meter_current_dbm0(&power_after);
     printf("Pre-adaption: output power %10.5fdBm0, echo power %10.5fdBm0\n", unadapted_output_power, unadapted_echo_power);
-    
+
     /* Converge the canceller */
     signal_restart(&local_css);
     modem_echo_can_adaption_mode(ctx, TRUE);
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
     adapted_output_power = power_meter_current_dbm0(&power_before);
     adapted_echo_power = power_meter_current_dbm0(&power_after);
     printf("Post-adaption: output power %10.5fdBm0, echo power %10.5fdBm0\n", adapted_output_power, adapted_echo_power);
-    
+
     if (fabsf(adapted_output_power - unadapted_output_power) > 0.1f
         ||
         adapted_echo_power > unadapted_echo_power - 30.0f)

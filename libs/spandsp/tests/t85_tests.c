@@ -219,7 +219,7 @@ static int test_cycle(const char *test_id,
        down the image, will only succeed if a new chunk is started afterwards. */
     if (comment)
         t85_encode_comment(t85_enc, comment, strlen((const char *) comment) + 1);
-    
+
     testbuf_len = 0;
     max_len = 100;
     while ((len = t85_encode_get(t85_enc, &testbuf[testbuf_len], max_len)) > 0)
@@ -321,7 +321,7 @@ static int test_cycle(const char *test_id,
     free(decoded_image);
     t85_decode_release(t85_dec);
     printf("Test passed\n");
-    
+
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

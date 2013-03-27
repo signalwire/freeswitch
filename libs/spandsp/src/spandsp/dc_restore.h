@@ -35,7 +35,7 @@
 
 Telecoms signals often contain considerable DC, but DC upsets a lot of signal
 processing functions. Placing a zero DC restorer at the front of the processing
-chain can often simplify the downstream processing. 
+chain can often simplify the downstream processing.
 
 \section dc_restore_page_sec_2 How does it work?
 
@@ -44,10 +44,10 @@ the DC bias in the signal. A 32 bit estimate is used for the 16 bit audio, so
 the noise introduced by the estimation can be keep in the lower bits, and the 16
 bit DC value, which is subtracted from the signal, is fairly clean. The
 following code fragment shows the algorithm used. dc_bias is a 32 bit integer,
-while the sample and the resulting clean_sample are 16 bit integers. 
+while the sample and the resulting clean_sample are 16 bit integers.
 
     dc_bias += ((((int32_t) sample << 15) - dc_bias) >> 14);
-    clean_sample = sample - (dc_bias >> 15); 
+    clean_sample = sample - (dc_bias >> 15);
 */
 
 /*!

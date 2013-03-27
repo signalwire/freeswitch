@@ -83,189 +83,189 @@ struct
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_FINE,
         T4_WIDTH_R8_A4,
-        2200
+        1100*2
     },
     {
         "R8_77_B4.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_FINE,
         T4_WIDTH_R8_B4,
-        2400
+        1200*2
     },
     {
         "R8_77_A3.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_FINE,
         T4_WIDTH_R8_A3,
-        3111
+        1556*2
     },
     {
         "R8_154_A4.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R8_A4,
-        4400
+        1100*4
     },
     {
         "R8_154_B4.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R8_B4,
-        4800
+        1200*4
     },
     {
         "R8_154_A3.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R8_A3,
-        6222
+        1556*4
     },
     {
         "R300_300_A4.tif",
         T4_X_RESOLUTION_300,
         T4_Y_RESOLUTION_300,
         T4_WIDTH_300_A4,
-        4400
+        1100*3
     },
     {
         "R300_300_B4.tif",
         T4_X_RESOLUTION_300,
         T4_Y_RESOLUTION_300,
         T4_WIDTH_300_B4,
-        4800
+        1200*3
     },
     {
         "R300_300_A3.tif",
         T4_X_RESOLUTION_300,
         T4_Y_RESOLUTION_300,
         T4_WIDTH_300_A3,
-        6222
+        1556*3
     },
     {
         "R300_600_A4.tif",
         T4_X_RESOLUTION_300,
         T4_Y_RESOLUTION_600,
         T4_WIDTH_300_A4,
-        4400
+        1100*6
     },
     {
         "R300_600_B4.tif",
         T4_X_RESOLUTION_300,
         T4_Y_RESOLUTION_600,
         T4_WIDTH_300_B4,
-        4800
+        1200*6
     },
     {
         "R300_600_A3.tif",
         T4_X_RESOLUTION_300,
         T4_Y_RESOLUTION_600,
         T4_WIDTH_300_A3,
-        6222
+        1556*6
     },
     {
         "R16_154_A4.tif",
         T4_X_RESOLUTION_R16,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R16_A4,
-        4400
+        1100*4
     },
     {
         "R16_154_B4.tif",
         T4_X_RESOLUTION_R16,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R16_B4,
-        4800
+        1200*4
     },
     {
         "R16_154_A3.tif",
         T4_X_RESOLUTION_R16,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R16_A3,
-        6222
+        1556*4
     },
     {
         "R16_800_A4.tif",
         T4_X_RESOLUTION_R16,
         T4_Y_RESOLUTION_800,
         T4_WIDTH_R16_A4,
-        4400
+        1100*8
     },
     {
         "R16_800_B4.tif",
         T4_X_RESOLUTION_R16,
         T4_Y_RESOLUTION_800,
         T4_WIDTH_R16_B4,
-        4800
+        1200*8
     },
     {
         "R16_800_A3.tif",
         T4_X_RESOLUTION_R16,
         T4_Y_RESOLUTION_800,
         T4_WIDTH_R16_A3,
-        6222
+        1556*8
     },
     {
         "R600_600_A4.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_600,
         T4_WIDTH_600_A4,
-        4400
+        1100*6
     },
     {
         "R600_600_B4.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_600,
         T4_WIDTH_600_B4,
-        4800
+        1200*6
     },
     {
         "R600_600_A3.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_600,
         T4_WIDTH_600_A3,
-        6222
+        1556*6
     },
     {
         "R600_1200_A4.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_600_A4,
-        4400
+        1100*12
     },
     {
         "R600_1200_B4.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_600_B4,
-        4800
+        1200*12
     },
     {
         "R600_1200_A3.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_600_A3,
-        6222
+        1556*12
     },
     {
         "R1200_1200_A4.tif",
         T4_X_RESOLUTION_1200,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_1200_A4,
-        4400
+        1100*12
     },
     {
         "R1200_1200_B4.tif",
         T4_X_RESOLUTION_1200,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_1200_B4,
-        4800
+        1200*12
     },
     {
         "R1200_1200_A3.tif",
         T4_X_RESOLUTION_1200,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_1200_A3,
-        6222
+        1556*12
     },
     {
         NULL,
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
     int compression;
     int photo_metric;
     int fill_order;
-    
+
     compression = T4_COMPRESSION_ITU_T6;
     photo_metric = PHOTOMETRIC_MINISWHITE;
     fill_order = FILLORDER_LSB2MSB;
@@ -336,17 +336,17 @@ int main(int argc, char *argv[])
         TIFFSetField(tiff_file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
         TIFFSetField(tiff_file, TIFFTAG_PHOTOMETRIC, photo_metric);
         TIFFSetField(tiff_file, TIFFTAG_FILLORDER, fill_order);
-    
+
         x_resolution = sequence[i].x_res/100.0f;
         y_resolution = sequence[i].y_res/100.0f;
         TIFFSetField(tiff_file, TIFFTAG_XRESOLUTION, floorf(x_resolution*2.54f + 0.5f));
         TIFFSetField(tiff_file, TIFFTAG_YRESOLUTION, floorf(y_resolution*2.54f + 0.5f));
         TIFFSetField(tiff_file, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
-    
+
         TIFFSetField(tiff_file, TIFFTAG_SOFTWARE, "spandsp");
         if (gethostname(buf, sizeof(buf)) == 0)
             TIFFSetField(tiff_file, TIFFTAG_HOSTCOMPUTER, buf);
-    
+
         TIFFSetField(tiff_file, TIFFTAG_IMAGEDESCRIPTION, "Blank test image");
         TIFFSetField(tiff_file, TIFFTAG_MAKE, "soft-switch.org");
         TIFFSetField(tiff_file, TIFFTAG_MODEL, "test data");
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
                 tm->tm_min,
                 tm->tm_sec);
         TIFFSetField(tiff_file, TIFFTAG_DATETIME, buf);
-    
+
         TIFFSetField(tiff_file, TIFFTAG_IMAGELENGTH, sequence[i].length);
         TIFFSetField(tiff_file, TIFFTAG_PAGENUMBER, 0, 1);
         TIFFSetField(tiff_file, TIFFTAG_CLEANFAXDATA, CLEANFAXDATA_CLEAN);

@@ -49,7 +49,7 @@ uint8_t to[1000000];
 static __inline__ int top_bit_dumb(unsigned int data)
 {
     int i;
-    
+
     if (data == 0)
         return -1;
     for (i = 31;  i >= 0;  i--)
@@ -64,7 +64,7 @@ static __inline__ int top_bit_dumb(unsigned int data)
 static __inline__ int bottom_bit_dumb(unsigned int data)
 {
     int i;
-    
+
     if (data == 0)
         return -1;
     for (i = 0;  i < 32;  i++)
@@ -80,11 +80,11 @@ static __inline__ uint8_t bit_reverse8_dumb(uint8_t data)
 {
     int i;
     int result;
-    
+
     result = 0;
     for (i = 0;  i < 8;  i++)
     {
-        result = (result << 1) | (data & 1); 
+        result = (result << 1) | (data & 1);
         data >>= 1;
     }
     return result;
@@ -95,11 +95,11 @@ static __inline__ uint32_t bit_reverse_4bytes_dumb(uint32_t data)
 {
     int i;
     uint32_t result;
-    
+
     result = 0;
     for (i = 0;  i < 8;  i++)
     {
-        result = (result << 1) | (data & 0x01010101); 
+        result = (result << 1) | (data & 0x01010101);
         data >>= 1;
     }
     return result;
@@ -110,11 +110,11 @@ static __inline__ uint16_t bit_reverse16_dumb(uint16_t data)
 {
     int i;
     uint16_t result;
-    
+
     result = 0;
     for (i = 0;  i < 16;  i++)
     {
-        result = (result << 1) | (data & 1); 
+        result = (result << 1) | (data & 1);
         data >>= 1;
     }
     return result;
@@ -125,11 +125,11 @@ static __inline__ uint32_t bit_reverse32_dumb(uint32_t data)
 {
     int i;
     uint32_t result;
-    
+
     result = 0;
     for (i = 0;  i < 32;  i++)
     {
-        result = (result << 1) | (data & 1); 
+        result = (result << 1) | (data & 1);
         data >>= 1;
     }
     return result;
@@ -154,7 +154,7 @@ static __inline__ int one_bits32_dumb(uint32_t x)
 {
     int i;
     int bits;
-    
+
     bits = 0;
     for (i = 0;  i < 32;  i++)
     {
@@ -165,7 +165,7 @@ static __inline__ int one_bits32_dumb(uint32_t x)
     return bits;
 }
 /*- End of function --------------------------------------------------------*/
-    
+
 int main(int argc, char *argv[])
 {
     int i;

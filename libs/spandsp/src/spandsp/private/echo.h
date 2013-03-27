@@ -2,8 +2,8 @@
  * SpanDSP - a series of DSP components for telephony
  *
  * private/echo.h - An echo cancellor, suitable for electrical and acoustic
- *	                cancellation. This code does not currently comply with
- *	                any relevant standards (e.g. G.164/5/7/8).
+ *                  cancellation. This code does not currently comply with
+ *                  any relevant standards (e.g. G.164/5/7/8).
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -44,11 +44,11 @@ struct echo_can_state_s
     int nonupdate_dwell;
 
     int curr_pos;
-	
+
     int taps;
     int tap_mask;
     int adaption_mode;
-    
+
     int32_t supp_test1;
     int32_t supp_test2;
     int32_t supp1;
@@ -78,14 +78,14 @@ struct echo_can_state_s
     /* DC and near DC blocking filter states */
     int32_t tx_hpf[2];
     int32_t rx_hpf[2];
-   
+
     /* Parameters for the optional Hoth noise generator */
     int cng_level;
     int cng_rndnum;
     int cng_filter;
-    
+
     /* Snapshot sample of coeffs used for development */
-    int16_t *snapshot;       
+    int16_t *snapshot;
 };
 
 #endif

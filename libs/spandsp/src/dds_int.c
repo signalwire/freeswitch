@@ -348,7 +348,7 @@ SPAN_DECLARE(int16_t) dds_lookup(uint32_t phase)
         step = DDS_STEPS - step;
     amp = sine_table[step];
     if ((phase & (2*DDS_STEPS)))
-    	amp = -amp;
+        amp = -amp;
     return amp;
 }
 /*- End of function --------------------------------------------------------*/

@@ -1230,11 +1230,27 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 static FILE *preprocess_exec(const char *cwd, const char *command, FILE *write_fd, int rlevel)
 {
 #ifdef WIN32
-	char message[] = "<!-- exec not implemented in windows yet -->";
+	FILE *fp = NULL;
+	char buffer[1024];
 
-	if (fwrite( message, 1, sizeof(message), write_fd) < 0) {
-		goto end;
-	}
+	if (!command || !strlen(command)) goto end;
+
+	if ((fp = _popen(command, "r"))) {
+		while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+			if (fwrite(buffer, 1, strlen(buffer), write_fd) <= 0) {
+					break;
+			}
+		}
+		
+		if(feof(fp)) {
+			_pclose(fp);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exec failed to read the pipe of [%s] to the end\n", command);
+		}
+	} else {
+		switch_snprintf(buffer, sizeof(buffer), "<!-- exec can not execute [%s] -->", command);
+		fwrite( buffer, 1, strlen(buffer), write_fd);
+ 	}
 #else
 	int fds[2], pid = 0;
 

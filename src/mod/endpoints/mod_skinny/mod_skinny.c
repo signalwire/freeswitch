@@ -131,7 +131,9 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "CALLS-OUT         \t%d\n", profile->ob_calls);
 	stream->write_function(stream, "FAILED-CALLS-OUT  \t%d\n", profile->ob_failed_calls);
 	/* listener */
-	stream->write_function(stream, "Listener-Threads \t%d\n", profile->listener_threads);
+	stream->write_function(stream, "Listener-Threads  \t%d\n", profile->listener_threads);
+	stream->write_function(stream, "Ext-Voicemail     \t%s\n", profile->ext_voicemail);
+	stream->write_function(stream, "Ext-Redial        \t%s\n", profile->ext_redial);
 	stream->write_function(stream, "%s\n", line);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1713,12 +1715,6 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		if (!zstr(val)) {
 			if (switch_odbc_available()) {
 				profile->odbc_dsn = switch_core_strdup(profile->pool, val);
-				if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
-					*profile->odbc_user++ = '\0';
-					if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-						*profile->odbc_pass++ = '\0';
-					}
-				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 			}
@@ -1727,6 +1723,14 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		profile->debug = atoi(val);
 	} else if (!strcasecmp(var, "auto-restart")) {
 		profile->auto_restart = switch_true(val);
+	} else if (!strcasecmp(var, "ext-voicemail")) {
+		if (!profile->ext_voicemail || strcmp(val, profile->ext_voicemail)) {
+			profile->ext_voicemail = switch_core_strdup(profile->pool, val);
+		}
+	} else if (!strcasecmp(var, "ext-redial")) {
+		if (!profile->ext_redial || strcmp(val, profile->ext_redial)) {
+			profile->ext_redial = switch_core_strdup(profile->pool, val);
+		}
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1809,6 +1813,14 @@ static switch_status_t load_skinny_config(void)
 
 				if (!profile->patterns_context) {
 					skinny_profile_set(profile, "patterns-context","skinny-patterns");
+				}
+
+				if (!profile->ext_voicemail) {
+					skinny_profile_set(profile, "ext-voicemail", "vmain");
+				}
+
+				if (!profile->ext_redial) {
+					skinny_profile_set(profile, "ext-redial", "redial");
 				}
 
 				if (profile->port == 0) {
@@ -1916,19 +1928,13 @@ static switch_status_t load_skinny_config(void)
 				
 				
 				if ((dbh = skinny_get_db_handle(profile))) {
-					switch_cache_db_test_reactive(dbh, "SELECT headset FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
-					switch_cache_db_test_reactive(dbh, "SELECT * FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
-					switch_cache_db_test_reactive(dbh, "SELECT * FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
-					switch_cache_db_test_reactive(dbh, "SELECT * FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
+					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
+					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
+					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
+					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
 					switch_cache_db_release_db_handle(&dbh);
 				}
 					
-
-				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_devices", NULL, NULL);
-				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_lines", NULL, NULL);
-				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_buttons", NULL, NULL);
-				skinny_execute_sql_callback(profile, profile->sql_mutex, "DELETE FROM skinny_active_lines", NULL, NULL);
-
 				skinny_profile_respawn(profile, 0);
 
 				/* Register profile */
@@ -2112,6 +2118,7 @@ static void skinny_message_waiting_event_handler(switch_event_t *event)
 	switch_assert(dup_account != NULL);
 	switch_split_user_domain(dup_account, &user, &host);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MWI Event received for account %s with messages waiting %s\n", account, yn);
 
 	if ((pname = switch_event_get_header(event, "skinny-profile"))) {
 		if (!(profile = skinny_find_profile(pname))) {

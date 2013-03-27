@@ -70,7 +70,7 @@ static __inline__ void cvec_zeroi32(complexi32_t z[], int n)
 static __inline__ void cvec_seti(complexi_t z[], complexi_t *x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = *x;
 }
@@ -79,7 +79,7 @@ static __inline__ void cvec_seti(complexi_t z[], complexi_t *x, int n)
 static __inline__ void cvec_seti16(complexi16_t z[], complexi16_t *x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = *x;
 }
@@ -88,7 +88,7 @@ static __inline__ void cvec_seti16(complexi16_t z[], complexi16_t *x, int n)
 static __inline__ void cvec_seti32(complexi32_t z[], complexi32_t *x, int n)
 {
     int i;
-    
+
     for (i = 0;  i < n;  i++)
         z[i] = *x;
 }

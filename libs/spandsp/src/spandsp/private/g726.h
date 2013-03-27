@@ -56,7 +56,7 @@ struct g726_state_s
     int16_t dml;
     /*! Linear weighting coefficient of 'yl' and 'yu'. */
     int16_t ap;
-    
+
     /*! Coefficients of pole portion of prediction filter. */
     int16_t a[2];
     /*! Coefficients of zero portion of prediction filter. */
@@ -71,7 +71,7 @@ struct g726_state_s
     int16_t sr[2];
     /*! Delayed tone detect */
     int td;
-    
+
     /*! \brief The bit stream processing context. */
     bitstream_state_t bs;
 

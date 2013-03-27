@@ -101,6 +101,9 @@
 #include <spandsp/v22bis.h>
 #include <spandsp/v27ter_rx.h>
 #include <spandsp/v27ter_tx.h>
+#if defined(SPANDSP_SUPPORT_V34)
+#include <spandsp/v34.h>
+#endif
 #include <spandsp/v18.h>
 #include <spandsp/timezone.h>
 #include <spandsp/t4_rx.h>

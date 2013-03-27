@@ -1720,6 +1720,16 @@ SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number)
 	return 20;
 }
 
+SWITCH_DECLARE(uint32_t) switch_default_rate(const char *name, uint32_t number)
+{
+
+	if (!strcasecmp(name, "opus")) {
+		return 48000;
+	}
+
+	return 8000;
+}
+
 static uint32_t d_30 = 30;
 
 static void switch_load_core_config(const char *file)

@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
         if ((len = rfc2198_sim_put(s, put_pkt, put_pkt_len, i, (double) i*0.001*PACKET_INTERVAL)) > 0)
             packets_really_put++;
         packets_put++;
-#if 0        
+#if 0
         if (i == 5)
             rfc2198_sim_queue_dump(s);
 #endif

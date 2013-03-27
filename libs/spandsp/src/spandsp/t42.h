@@ -51,13 +51,13 @@ extern "C"
 SPAN_DECLARE(void) srgb_to_lab(lab_params_t *s, uint8_t lab[], const uint8_t srgb[], int pixels);
 
 SPAN_DECLARE(void) lab_to_srgb(lab_params_t *s, uint8_t srgb[], const uint8_t lab[], int pixels);
-    
+
 SPAN_DECLARE(void) set_lab_illuminant(lab_params_t *s, float new_xn, float new_yn, float new_zn);
 
 SPAN_DECLARE(void) set_lab_gamut(lab_params_t *s, int L_min, int L_max, int a_min, int a_max, int b_min, int b_max, int ab_are_signed);
 
 SPAN_DECLARE(void) set_lab_gamut2(lab_params_t *s, int L_P, int L_Q, int a_P, int a_Q, int b_P, int b_Q);
-    
+
 SPAN_DECLARE(int) t42_itulab_to_itulab(logging_state_t *logging, tdata_t *dst, tsize_t *dstlen, tdata_t src, tsize_t srclen, uint32_t width, uint32_t height);
 
 SPAN_DECLARE(int) t42_itulab_to_jpeg(logging_state_t *logging, lab_params_t *s, tdata_t *dst, tsize_t *dstlen, tdata_t src, tsize_t srclen);
@@ -104,26 +104,60 @@ SPAN_DECLARE(int) t42_encode_set_row_read_handler(t42_encode_state_t *s,
     \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) t42_encode_get_logging_state(t42_encode_state_t *s);
 
+/*! \brief Restart a T.42 encode context.
+    \param s The T.42 context.
+    \param image image_width The image width, in pixels.
+    \param image image_width The image length, in pixels.
+    \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width, uint32_t image_length);
 
+/*! \brief Prepare to encode an image in T.42 format.
+    \param s The T.42 context.
+    \param image_width Image width, in pixels.
+    \param image_length Image length, in pixels.
+    \param handler A callback routine to handle encoded image rows.
+    \param user_data An opaque pointer passed to handler.
+    \return A pointer to the context, or NULL if there was a problem. */
 SPAN_DECLARE(t42_encode_state_t *) t42_encode_init(t42_encode_state_t *s,
                                                    uint32_t image_width,
                                                    uint32_t image_length,
                                                    t4_row_read_handler_t handler,
                                                    void *user_data);
 
+/*! \brief Release a T.42 encode context.
+    \param s The T.42 encode context.
+    \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t42_encode_release(t42_encode_state_t *s);
 
+/*! \brief Free a T.42 encode context.
+    \param s The T.42 encode context.
+    \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t42_encode_free(t42_encode_state_t *s);
 
 SPAN_DECLARE(void) t42_decode_rx_status(t42_decode_state_t *s, int status);
 
+/*! \brief Decode a chunk of T.42 data.
+    \param s The T.42 context.
+    \param data The data to be decoded.
+    \param len The length of the data to be decoded.
+    \return 0 for OK. */
 SPAN_DECLARE(int) t42_decode_put(t42_decode_state_t *s, const uint8_t data[], size_t len);
 
+/*! \brief Set the row handler routine.
+    \param s The T.42 context.
+    \param handler A callback routine to handle decoded image rows.
+    \param user_data An opaque pointer passed to handler.
+    \return 0 for OK. */
 SPAN_DECLARE(int) t42_decode_set_row_write_handler(t42_decode_state_t *s,
                                                    t4_row_write_handler_t handler,
                                                    void *user_data);
 
+/*! \brief Set the comment handler routine.
+    \param s The T.42 context.
+    \param max_comment_len The maximum length of comment to be passed to the handler.
+    \param handler A callback routine to handle decoded comment.
+    \param user_data An opaque pointer passed to handler.
+    \return 0 for OK. */
 SPAN_DECLARE(int) t42_decode_set_comment_handler(t42_decode_state_t *s,
                                                  uint32_t max_comment_len,
                                                  t4_row_write_handler_t handler,
@@ -133,13 +167,17 @@ SPAN_DECLARE(int) t42_decode_set_image_size_constraints(t42_decode_state_t *s,
                                                         uint32_t max_xd,
                                                         uint32_t max_yd);
 
+/*! \brief Get the width of the image.
+    \param s The T.42 context.
+    \return The width of the image, in pixels. */
 SPAN_DECLARE(uint32_t) t42_decode_get_image_width(t42_decode_state_t *s);
 
+/*! \brief Get the length of the image.
+    \param s The T.42 context.
+    \return The length of the image, in pixels. */
 SPAN_DECLARE(uint32_t) t42_decode_get_image_length(t42_decode_state_t *s);
 
 SPAN_DECLARE(int) t42_decode_get_compressed_image_size(t42_decode_state_t *s);
-
-SPAN_DECLARE(int) t42_decode_new_plane(t42_decode_state_t *s);
 
 /*! Get the logging context associated with a T.42 decode context.
     \brief Get the logging context associated with a T.42 decode context.
@@ -149,12 +187,23 @@ SPAN_DECLARE(logging_state_t *) t42_decode_get_logging_state(t42_decode_state_t 
 
 SPAN_DECLARE(int) t42_decode_restart(t42_decode_state_t *s);
 
+/*! \brief Prepare to decode an image in T.42 format.
+    \param s The T.42 context.
+    \param handler A callback routine to handle decoded image rows.
+    \param user_data An opaque pointer passed to handler.
+    \return A pointer to the context, or NULL if there was a problem. */
 SPAN_DECLARE(t42_decode_state_t *) t42_decode_init(t42_decode_state_t *s,
                                                    t4_row_write_handler_t handler,
                                                    void *user_data);
 
+/*! \brief Release a T.42 decode context.
+    \param s The T.42 decode context.
+    \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t42_decode_release(t42_decode_state_t *s);
 
+/*! \brief Free a T.42 decode context.
+    \param s The T.42 decode context.
+    \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t42_decode_free(t42_decode_state_t *s);
 
 #if defined(__cplusplus)

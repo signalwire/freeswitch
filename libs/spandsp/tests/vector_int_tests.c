@@ -81,7 +81,7 @@ static int32_t vec_min_maxi16_dumb(const int16_t x[], int n, int16_t out[])
     int16_t max;
     int16_t temp;
     int32_t z;
-    
+
     max = INT16_MIN;
     min = INT16_MAX;
     for (i = 0;  i < n;  i++)
@@ -103,7 +103,7 @@ static int32_t vec_min_maxi16_dumb(const int16_t x[], int n, int16_t out[])
     return max;
 }
 /*- End of function --------------------------------------------------------*/
-    
+
 static int test_vec_min_maxi16(void)
 {
     int i;

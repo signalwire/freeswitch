@@ -940,7 +940,13 @@ SWITCH_STANDARD_APP(ring_ready_function)
 
 SWITCH_STANDARD_APP(remove_bugs_function)
 {
-	switch_core_media_bug_remove_all(session);
+	const char *function = NULL;
+
+	if (!zstr((char *)data)) {
+		function = data;
+	}
+
+	switch_core_media_bug_remove_all_function(session, function);
 }
 
 SWITCH_STANDARD_APP(break_function)
@@ -4508,6 +4514,12 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 		goto top;
 	}
 
+	if (handle->dbuflen) {
+		free(handle->dbuf);
+		handle->dbuflen = 0;
+		handle->dbuf = NULL;
+	}
+
 	handle->samples = context->fh.samples;
 	//handle->samplerate = context->fh.samplerate;
 	//handle->channels = context->fh.channels;
@@ -4564,6 +4576,7 @@ static switch_status_t file_string_file_open(switch_file_handle_t *handle, const
 	context->index = -1;
 
 	handle->private_info = context;
+	handle->pre_buffer_datalen = 0;
 
 	return next_file(handle);
 }
@@ -5598,7 +5611,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel variable", UNSET_LONG_DESC, unset_function, "<varname>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "remove_bugs", "Remove media bugs", "Remove all media bugs from a channel.", remove_bugs_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "remove_bugs", "Remove media bugs", "Remove all media bugs from a channel.", remove_bugs_function, "[<function>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "detect_speech", "Detect speech", "Detect speech on a channel.", detect_speech_function, DETECT_SPEECH_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "play_and_detect_speech", "Play and do speech recognition", "Play and do speech recognition", play_and_detect_speech_function, PLAY_AND_DETECT_SPEECH_SYNTAX, SAF_NONE);

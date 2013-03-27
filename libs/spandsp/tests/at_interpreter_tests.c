@@ -244,7 +244,7 @@ static const struct command_response_s general_test_seq[] =
     {"AT+FIT=?\r", "\r\n+FIT:(0-255),(0-1)\r\n\r\nOK\r\n"},         /* T.31 8.5.4 - DTE inactivity timeout */
     {"AT+FIT?\r", "\r\n+FIT:0,0\r\n\r\nOK\r\n"},
     {"AT+FLO=?\r", "\r\n+FLO:(0-2)\r\n\r\nOK\r\n"},                 /* T.31 says to implement something similar to +IFC */
-    {"AT+FLO?\r", "\r\n+FLO:2\r\n\r\nOK\r\n"}, 
+    {"AT+FLO?\r", "\r\n+FLO:2\r\n\r\nOK\r\n"},
     {"AT+FMI?\r", "\r\n" MANUFACTURER "\r\n\r\nOK\r\n"},            /* T.31 says to duplicate +GMI */
     {"AT+FMM?\r", "\r\n" PACKAGE "\r\n\r\nOK\r\n"},                 /* T.31 says to duplicate +GMM */
     {"AT+FMR?\r", "\r\n" VERSION "\r\n\r\nOK\r\n"},                 /* T.31 says to duplicate +GMR */
@@ -279,7 +279,7 @@ static const struct command_response_s general_test_seq[] =
     {"AT+ICLOK?\r", "\r\n+ICLOK:0\r\n\r\nOK\r\n"},                  /* V.250 6.2.14 - Select sync transmit clock source */
     {"AT+IDSR?\r", "\r\n+IDSR:0\r\n\r\nOK\r\n"},                    /* V.250 6.2.16 - Select data set ready option */
     {"AT+IFC=?\r", "\r\n+IFC:(0-2),(0-2)\r\n\r\nOK\r\n"},           /* V.250 6.2.12 - DTE-DCE local flow control */
-    {"AT+IFC?\r", "\r\n+IFC:2,2\r\n\r\nOK\r\n"}, 
+    {"AT+IFC?\r", "\r\n+IFC:2,2\r\n\r\nOK\r\n"},
     {"AT+ILRR\r", "\r\nOK\r\n"},                                    /* V.250 6.2.13 - DTE-DCE local rate reporting */
     {"AT+ILSD=?\r", "\r\n+ILSD:(0,1)\r\n\r\nOK\r\n"},               /* V.250 6.2.15 - Select long space disconnect option */
     {"AT+ILSD?\r", "\r\n+ILSD:0\r\n\r\nOK\r\n"},
@@ -459,13 +459,13 @@ static int at_send_hdlc(at_state_t *s, uint8_t *t, int len)
 static int general_test(at_state_t *s)
 {
     int i;
-    
+
     for (i = 0;  general_test_seq[i].command[0];  i++)
     {
         response_buf_ptr = 0;
         response_buf[0] = '\0';
         command_response_test_step = i;
-        at_send(s, general_test_seq[i].command);    
+        at_send(s, general_test_seq[i].command);
         if (strcmp(general_test_seq[command_response_test_step].response, response_buf) != 0)
         {
             printf("Incorrect response\n");
@@ -544,7 +544,7 @@ static int at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, siz
         putchar(buf[i]);
     }
     response_buf[response_buf_ptr] = '\0';
-    
+
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -552,7 +552,7 @@ static int at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, siz
 int main(int argc, char *argv[])
 {
     at_state_t *at_state;
-    
+
     if ((at_state = at_init(NULL, at_tx_handler, NULL, modem_call_control, NULL)) == NULL)
     {
         fprintf(stderr, "Cannot start the AT interpreter\n");

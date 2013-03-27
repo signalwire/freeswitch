@@ -524,6 +524,8 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 			device_name, device_instance, &listener);
 	if(listener) {
 		switch_channel_t *channel = switch_core_session_get_channel(helper->tech_pvt->session);
+		switch_channel_t *remchannel = switch_core_session_get_channel(helper->remote_session);
+		switch_channel_set_state(channel, CS_ROUTING);
 		helper->lines_count++;
 		switch_channel_set_variable(channel, "effective_callee_id_number", value);
 		switch_channel_set_variable(channel, "effective_callee_id_name", caller_name);
@@ -554,7 +556,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
 		send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
-		switch_channel_mark_ring_ready(channel);
+		switch_channel_ring_ready(remchannel);
 	}
 	return 0;
 }
@@ -1213,7 +1215,7 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 	switch(request->data.stimulus.instance_type) {
 		case SKINNY_BUTTON_LAST_NUMBER_REDIAL:
 			skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, "redial", '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_redial, '\0', 0);
 			break;
 		case SKINNY_BUTTON_SPEED_DIAL:
 			skinny_speed_dial_get(listener, request->data.stimulus.instance, &button_speed_dial);
@@ -1238,7 +1240,7 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 			break;
 		case SKINNY_BUTTON_VOICEMAIL:
 			skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, "vmain", '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_voicemail, '\0', 0);
 			break;
 
 		case SKINNY_BUTTON_LINE:
@@ -1507,11 +1509,10 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 
 	/* Add buttons */
 	if ((sql = switch_mprintf(
-					"SELECT device_name, device_instance, position, MIN(type, %d) AS type "
+					"SELECT device_name, device_instance, position, type "
 					"FROM skinny_buttons "
 					"WHERE device_name='%s' AND device_instance=%d "
 					"ORDER BY position",
-					SKINNY_BUTTON_UNDEFINED,
 					listener->device_name, listener->device_instance
 				 ))) {
 		skinny_execute_sql_callback(profile, profile->sql_mutex, sql, skinny_handle_button_template_request_callback, &helper);
@@ -1790,7 +1791,7 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	switch(request->data.soft_key_event.event) {
 		case SOFTKEY_REDIAL:
 			status = skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, "redial", '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_redial, '\0', 0);
 			break;
 		case SOFTKEY_NEWCALL:
 			status = skinny_create_incoming_session(listener, &line_instance, &session);

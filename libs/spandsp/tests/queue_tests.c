@@ -546,7 +546,7 @@ static void functional_message_tests(void)
     uint8_t buf[MSG_LEN];
     int i;
     int len;
-    
+
     total_in = 0;
     total_out = 0;
 

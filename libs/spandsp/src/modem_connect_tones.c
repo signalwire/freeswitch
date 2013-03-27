@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
+
 /*! \file */
 
 /* CNG is 0.5s+-15% of 1100+-38Hz, 3s+-15% off, repeating.
@@ -36,7 +36,7 @@
 
    ANS/ is 3.3+-0.7s of 2100+-15Hz, with phase reversals (180+-10 degrees, hopping in <1ms) every 450+-25ms.
 
-   ANSam/ is 2100+-1Hz, with phase reversals (180+-10 degrees, hopping in <1ms) every 450+-25ms, and AM with a sinewave of 15+-0.1Hz. 
+   ANSam/ is 2100+-1Hz, with phase reversals (180+-10 degrees, hopping in <1ms) every 450+-25ms, and AM with a sinewave of 15+-0.1Hz.
    The modulated envelope ranges in amplitude between (0.8+-0.01) and (1.2+-0.01) times its average
    amplitude. It lasts up to 5s, but will be stopped early if the V.8 protocol proceeds. */
 
@@ -702,7 +702,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx_fillin(modem_connect_tones_rx_st
 SPAN_DECLARE(int) modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s)
 {
     int x;
-    
+
     x = s->hit;
     s->hit = MODEM_CONNECT_TONES_NONE;
     return x;

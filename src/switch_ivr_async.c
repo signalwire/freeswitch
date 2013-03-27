@@ -977,8 +977,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	char *ext;
 	const char *prefix;
 	displace_helper_t *dh;
+	const char *p;
+	switch_bool_t hangup_on_error = SWITCH_FALSE;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
+
+	if ((p = switch_channel_get_variable(channel, "DISPLACE_HANGUP_ON_ERROR"))) {
+		hangup_on_error = switch_true(p);
+	}
 
 	if (zstr(file)) {
 		return SWITCH_STATUS_FALSE;
@@ -1039,8 +1045,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 							  file,
 							  read_impl.number_of_channels,
 							  read_impl.actual_samples_per_second, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+		if (hangup_on_error) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+		}
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -3627,6 +3635,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 	switch_channel_t *channel = switch_core_session_get_channel(sth->session);
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	switch_status_t status;
+	switch_event_t *event;
 
 	switch_thread_cond_create(&sth->cond, sth->pool);
 	switch_mutex_init(&sth->mutex, SWITCH_MUTEX_NESTED, sth->pool);
@@ -3650,7 +3659,6 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 		}
 
 		if (switch_core_asr_check_results(sth->ah, &flags) == SWITCH_STATUS_SUCCESS) {
-			switch_event_t *event;
 
 			status = switch_core_asr_get_results(sth->ah, &xmlstr, &flags);
 
@@ -3731,6 +3739,25 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 		}
 	}
   done:
+
+	if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "closed");
+		if (switch_test_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS)) {
+			switch_event_t *dup;
+
+			if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(channel, dup);
+				switch_event_fire(&dup);
+			}
+
+		}
+
+		if (switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Event queue failed!\n");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+			switch_event_fire(&event);
+		}
+	}
 
 	switch_mutex_unlock(sth->mutex);
 	switch_core_session_rwunlock(sth->session);
