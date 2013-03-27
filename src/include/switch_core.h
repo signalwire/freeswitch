@@ -811,6 +811,7 @@ SWITCH_DECLARE(const char *) switch_core_get_switchname(void);
   \param value the value of the variable
 */
 SWITCH_DECLARE(void) switch_core_set_variable(_In_z_ const char *varname, _In_opt_z_ const char *value);
+SWITCH_DECLARE(switch_status_t) switch_core_get_variables(switch_event_t **event);
 
 /*! 
   \brief Conditionally add a global variable to the core

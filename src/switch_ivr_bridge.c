@@ -358,8 +358,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 #endif
 
-		if (read_frame_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
-			
+		if (read_frame_count == DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
 			switch_channel_execute_on(chan_a, SWITCH_CHANNEL_EXECUTE_ON_PRE_BRIDGE_VARIABLE);
 
 			if (!inner_bridge) {
@@ -373,8 +372,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				switch_core_session_execute_application_async(session_a, exec_app, exec_data);
 				exec_app = exec_data = NULL;
 			}
+		}
 
-
+		if (read_frame_count >= DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
 			if ((bypass_media_after_bridge || switch_channel_test_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED)
 				&& switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 				switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);

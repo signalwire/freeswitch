@@ -3337,7 +3337,7 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 	char *app;
 
 	app = switch_core_session_strdup(channel->session, variable);
-	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "EXEC %s\n", app);
 	for(p = app; p && *p; p++) {
 		if (*p == ' ' || (*p == ':' && (*(p+1) != ':'))) {
 			*p++ = '\0';
@@ -3360,10 +3360,12 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix)
 {
 	switch_event_header_t *hp;
-	switch_event_t *event;
+	switch_event_t *event, *cevent;
 	int x = 0;
 
-	switch_channel_get_variables(channel, &event);
+	switch_core_get_variables(&event);
+	switch_channel_get_variables(channel, &cevent);
+	switch_event_merge(event, cevent);
 	
 	for (hp = event->headers; hp; hp = hp->next) {
 		char *var = hp->name;
@@ -3384,6 +3386,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *chan
 	}
 	
 	switch_event_destroy(&event);
+	switch_event_destroy(&cevent);
 
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
