@@ -3045,6 +3045,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								goto notready;
 								break;
 							case SWITCH_STATUS_BREAK:
+								status = SWITCH_STATUS_FALSE;
 								goto done;
 								break;
 							default:
