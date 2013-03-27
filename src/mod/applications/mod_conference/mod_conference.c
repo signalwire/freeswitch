@@ -3681,7 +3681,9 @@ static void conference_loop_output(conference_member_t *member)
 			}
 		}
 
-		if (mux_used >= bytes) {
+		if (switch_channel_test_app_flag(channel, CF_APP_TAGGED)) {
+			switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
+		} else if (mux_used >= bytes) {
 			/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
 			switch_mutex_lock(member->audio_out_mutex);
 			write_frame.data = data;
