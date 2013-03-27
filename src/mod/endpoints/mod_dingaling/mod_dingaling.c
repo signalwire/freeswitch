@@ -1489,9 +1489,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	int r = 0;
 
 	if (tech_pvt->transports[LDL_TPORT_RTP].ready) {
-		if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) || tech_pvt->transports[LDL_TPORT_RTCP].accepted) {
-			r += activate_audio_rtp(tech_pvt);
-		}
+		r += activate_audio_rtp(tech_pvt);
 	}
 
 	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].ready) {
