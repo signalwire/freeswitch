@@ -783,6 +783,7 @@ static switch_status_t http_get(url_cache_t *cache, cached_url_t *url, switch_co
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, get_data.url->url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
