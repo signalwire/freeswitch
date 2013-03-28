@@ -170,7 +170,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_core_session_t *session_a, *session_b;
 	uint32_t read_frame_count = 0;
 	const char *app_name = NULL, *app_arg = NULL;
-	int inner_bridge = 0;
+	int inner_bridge = 0, exec_check = 0;
 	switch_codec_t silence_codec = { 0 };
 	switch_frame_t silence_frame = { 0 };
 	int16_t silence_data[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
@@ -357,11 +357,15 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 #endif
 
-		if (read_frame_count == DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
-			switch_channel_execute_on(chan_a, SWITCH_CHANNEL_EXECUTE_ON_PRE_BRIDGE_VARIABLE);
+		if (read_frame_count >= DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
 
-			if (!inner_bridge) {
-				switch_channel_api_on(chan_a, SWITCH_API_BRIDGE_START_VARIABLE);
+			if (!exec_check) {
+				switch_channel_execute_on(chan_a, SWITCH_CHANNEL_EXECUTE_ON_PRE_BRIDGE_VARIABLE);
+
+				if (!inner_bridge) {
+					switch_channel_api_on(chan_a, SWITCH_API_BRIDGE_START_VARIABLE);
+				}
+				exec_check = 1;
 			}
 			
 			if (exec_app) {
@@ -371,9 +375,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				switch_core_session_execute_application_async(session_a, exec_app, exec_data);
 				exec_app = exec_data = NULL;
 			}
-		}
-
-		if (read_frame_count >= DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
+			
 			if ((bypass_media_after_bridge || switch_channel_test_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED)
 				&& switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 				switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
