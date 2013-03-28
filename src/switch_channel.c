@@ -3337,7 +3337,7 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 	char *app;
 
 	app = switch_core_session_strdup(channel->session, variable);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "EXEC %s\n", app);
+
 	for(p = app; p && *p; p++) {
 		if (*p == ' ' || (*p == ':' && (*(p+1) != ':'))) {
 			*p++ = '\0';
