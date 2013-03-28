@@ -845,7 +845,7 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 			} else {
 				st = switch_core_file_read(&dh->fh, rframe->data, &len);
 				if (len < rframe->samples) {
-					memset(rframe->data + len * 2, 0, rframe->datalen - len * 2);
+					memset((char *)rframe->data + len * 2, 0, rframe->datalen - len * 2);
 				}
 			}
 
