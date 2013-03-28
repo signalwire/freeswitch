@@ -1090,6 +1090,8 @@ struct record_helper {
 	switch_file_handle_t in_fh;
 	switch_file_handle_t out_fh;
 	int native;
+	int rready;
+	int wready;
 	uint32_t packet_len;
 	int min_sec;
 	switch_bool_t hangup_on_error;
@@ -1115,16 +1117,24 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
 		{
-			nframe = switch_core_media_bug_get_native_read_frame(bug);
-			len = nframe->datalen;
-			switch_core_file_write(&rh->in_fh, nframe->data, &len);
+			rh->rready = 1;
+
+			if (rh->rready && rh->wready) {
+				nframe = switch_core_media_bug_get_native_read_frame(bug);
+				len = nframe->datalen;
+				switch_core_file_write(&rh->in_fh, nframe->data, &len);
+			}
 		}
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
 		{
-			nframe = switch_core_media_bug_get_native_write_frame(bug);
-			len = nframe->datalen;
-			switch_core_file_write(&rh->out_fh, nframe->data, &len);
+			rh->wready = 1;
+
+			if (rh->rready && rh->wready) {			
+				nframe = switch_core_media_bug_get_native_write_frame(bug);
+				len = nframe->datalen;
+				switch_core_file_write(&rh->out_fh, nframe->data, &len);
+			}
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
