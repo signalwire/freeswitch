@@ -931,7 +931,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 				if (switch_core_codec_init(&codec,
 								   "L16",
 								   NULL,
-								   imp.samples_per_second,
+								   imp.actual_samples_per_second,
 								   imp.microseconds_per_packet / 1000,
 								   imp.number_of_channels,
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
@@ -1439,6 +1439,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(const char *uuid, const cha
 
 	if ((session = switch_core_session_locate(uuid))) {
 		switch_ivr_hold(session, message, moh);
+		switch_core_session_rwunlock(session);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold_toggle_uuid(const char *uuid, const char *message, switch_bool_t moh)
+{
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+	switch_channel_callstate_t callstate;
+
+	if ((session = switch_core_session_locate(uuid))) {
+		if ((channel = switch_core_session_get_channel(session))) {
+			callstate = switch_channel_get_callstate(channel);
+
+			if (callstate == CCS_ACTIVE) {
+				switch_ivr_hold(session, message, moh);
+			} else if (callstate == CCS_HELD) {
+				switch_ivr_unhold(session);
+			}
+		}
 		switch_core_session_rwunlock(session);
 	}
 

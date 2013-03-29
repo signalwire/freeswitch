@@ -187,6 +187,7 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel);
   \param caller_profile the profile to assign
 */
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
+SWITCH_DECLARE(void) switch_channel_step_caller_profile(switch_channel_t *channel);
 
 /*!
   \brief Retrieve the given channel's caller profile
@@ -200,7 +201,8 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_caller_profile(swit
   \param channel channel to assign the profile to
   \param caller_profile the profile to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
+SWITCH_DECLARE(void) _switch_channel_set_originator_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
+#define switch_channel_set_originator_caller_profile(_c, _cp) switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(_c), SWITCH_LOG_CRIT, "%s SET ORIGINATOR\n", switch_channel_get_name(_c)); _switch_channel_set_originator_caller_profile(_c, _cp)
 
 SWITCH_DECLARE(void) switch_channel_set_hunt_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
@@ -216,7 +218,8 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originator_caller_p
   \param channel channel to assign the profile to
   \param caller_profile the profile to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
+SWITCH_DECLARE(void) _switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
+#define switch_channel_set_originatee_caller_profile(_c, _cp) switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(_c), SWITCH_LOG_CRIT, "%s SET ORIGINATEE\n", switch_channel_get_name(_c)); _switch_channel_set_originatee_caller_profile(_c, _cp)
 
 /*!
   \brief Retrieve the given channel's originatee caller profile
@@ -650,6 +653,7 @@ SWITCH_DECLARE(switch_hold_record_t *) switch_channel_get_hold_record(switch_cha
 SWITCH_DECLARE(void) switch_channel_state_thread_lock(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_state_thread_unlock(switch_channel_t *channel);
 SWITCH_DECLARE(switch_status_t) switch_channel_state_thread_trylock(switch_channel_t *channel);
+
 
 SWITCH_END_EXTERN_C
 #endif

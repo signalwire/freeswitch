@@ -3756,6 +3756,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		*bleg = NULL;
 	}
 
+	if (bleg && !*bleg && status == SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_STATUS_FALSE;
+	}
+
 	if (bleg && *bleg) {
 		switch_channel_t *bchan = switch_core_session_get_channel(*bleg);
 

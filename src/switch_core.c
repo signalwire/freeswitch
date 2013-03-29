@@ -307,6 +307,15 @@ SWITCH_DECLARE(const char *) switch_core_get_switchname(void)
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_get_variables(switch_event_t **event)
+{
+	switch_status_t status;
+	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
+	status = switch_event_dup(event, runtime.global_vars);
+	switch_thread_rwlock_unlock(runtime.global_var_rwlock);
+	return status;
+}
+
 SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	char *val;

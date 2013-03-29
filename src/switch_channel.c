@@ -2497,7 +2497,17 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
+SWITCH_DECLARE(void) switch_channel_step_caller_profile(switch_channel_t *channel)
+{
+	switch_caller_profile_t *cp;
 
+
+	switch_mutex_lock(channel->profile_mutex);
+	cp = switch_caller_profile_clone(channel->session, channel->caller_profile);
+	switch_mutex_unlock(channel->profile_mutex);
+	
+	switch_channel_set_caller_profile(channel, cp);
+}
 
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
@@ -2561,7 +2571,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_caller_profile(swit
 	return profile;
 }
 
-SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
+SWITCH_DECLARE(void) _switch_channel_set_originator_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
 	switch_assert(channel != NULL);
 	switch_assert(channel->caller_profile != NULL);
@@ -2625,7 +2635,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_origination_caller_
 }
 
 
-SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
+SWITCH_DECLARE(void) _switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
 	switch_assert(channel != NULL);
 	switch_assert(channel->caller_profile != NULL);
@@ -3337,7 +3347,7 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 	char *app;
 
 	app = switch_core_session_strdup(channel->session, variable);
-	
+
 	for(p = app; p && *p; p++) {
 		if (*p == ' ' || (*p == ':' && (*(p+1) != ':'))) {
 			*p++ = '\0';
@@ -3360,10 +3370,12 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix)
 {
 	switch_event_header_t *hp;
-	switch_event_t *event;
+	switch_event_t *event, *cevent;
 	int x = 0;
 
-	switch_channel_get_variables(channel, &event);
+	switch_core_get_variables(&event);
+	switch_channel_get_variables(channel, &cevent);
+	switch_event_merge(event, cevent);
 	
 	for (hp = event->headers; hp; hp = hp->next) {
 		char *var = hp->name;
@@ -3384,6 +3396,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *chan
 	}
 	
 	switch_event_destroy(&event);
+	switch_event_destroy(&cevent);
 
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }

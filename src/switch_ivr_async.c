@@ -844,8 +844,9 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 				}
 			} else {
 				st = switch_core_file_read(&dh->fh, rframe->data, &len);
-				rframe->samples = (uint32_t) len;
-				rframe->datalen = rframe->samples * 2;
+				if (len < rframe->samples) {
+					memset((char *)rframe->data + len * 2, 0, rframe->datalen - len * 2);
+				}
 			}
 
 			if (st != SWITCH_STATUS_SUCCESS || len == 0) {
@@ -1089,6 +1090,8 @@ struct record_helper {
 	switch_file_handle_t in_fh;
 	switch_file_handle_t out_fh;
 	int native;
+	int rready;
+	int wready;
 	uint32_t packet_len;
 	int min_sec;
 	switch_bool_t hangup_on_error;
@@ -1114,16 +1117,24 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
 		{
-			nframe = switch_core_media_bug_get_native_read_frame(bug);
-			len = nframe->datalen;
-			switch_core_file_write(&rh->in_fh, nframe->data, &len);
+			rh->rready = 1;
+
+			if (rh->rready && rh->wready) {
+				nframe = switch_core_media_bug_get_native_read_frame(bug);
+				len = nframe->datalen;
+				switch_core_file_write(&rh->in_fh, nframe->data, &len);
+			}
 		}
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
 		{
-			nframe = switch_core_media_bug_get_native_write_frame(bug);
-			len = nframe->datalen;
-			switch_core_file_write(&rh->out_fh, nframe->data, &len);
+			rh->wready = 1;
+
+			if (rh->rready && rh->wready) {			
+				nframe = switch_core_media_bug_get_native_write_frame(bug);
+				len = nframe->datalen;
+				switch_core_file_write(&rh->out_fh, nframe->data, &len);
+			}
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
@@ -2587,7 +2598,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 	}
 
 	if ((status = switch_core_media_bug_add(session, "inband_dtmf", NULL,
-											inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
+											inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE | SMBF_ONE_ONLY, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
