@@ -3468,10 +3468,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				} else {
 					mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
 				}
+			} else if (!strcasecmp(var, "capture-server")) {
+				mod_sofia_globals.capture_server = switch_core_strdup(mod_sofia_globals.pool, val);
 			}
-			else if (!strcasecmp(var, "capture-server")) {
-                                 mod_sofia_globals.capture_server = switch_core_strdup(mod_sofia_globals.pool, val);
-                        }
 		}
 	}
 
