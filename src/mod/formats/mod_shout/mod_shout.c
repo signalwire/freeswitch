@@ -882,7 +882,7 @@ static switch_status_t shout_file_close(switch_file_handle_t *handle)
 static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	shout_context_t *context = handle->private_info;
-
+	
 	if (handle->handler || switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		return SWITCH_STATUS_FALSE;
 	} else {

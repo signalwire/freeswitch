@@ -1217,7 +1217,7 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 	switch_status_t status;
 	struct input_callback_state *cb_state = buf;
 	switch_file_handle_t *fh = cb_state->extra;
-	struct js_session *jss = cb_state->session_state;
+	//struct js_session *jss = cb_state->session_state;
 
 	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		return SWITCH_STATUS_FALSE;
@@ -1285,11 +1285,11 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strncasecmp(ret, "seek", 4)) {
-			switch_codec_t *codec;
+			//switch_codec_t *codec;
 			uint32_t samps = 0;
 			uint32_t pos = 0;
 			char *p;
-			codec = switch_core_session_get_read_codec(jss->session);
+			//codec = switch_core_session_get_read_codec(jss->session);
 
 			if ((p = strchr(ret, ':'))) {
 				p++;
@@ -1299,14 +1299,14 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 						step = 1000;
 					}
 					if (step > 0) {
-						samps = step * (codec->implementation->actual_samples_per_second / 1000);
+						samps = step * (fh->samplerate / 1000);
 						switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
 					} else {
-						samps = abs(step) * (codec->implementation->actual_samples_per_second / 1000);
+						samps = abs(step) * (fh->samplerate / 1000);
 						switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
 					}
 				} else {
-					samps = atoi(p) * (codec->implementation->actual_samples_per_second / 1000);
+					samps = atoi(p) * (fh->samplerate / 1000);
 					switch_core_file_seek(fh, &pos, samps, SEEK_SET);
 				}
 			}
