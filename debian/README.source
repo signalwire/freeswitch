@@ -77,7 +77,7 @@ To build for a stable branch, do this:
 Alternatively, you can build using our automated tools.  To build the
 source packages and all supported binary packages for sid, wheezy,
 squeeze on i386 and amd64, run the following as root from a clean
-Debian 'buildd' image:
+Debian sid 'buildd' image:
 
   aptitude update && aptitude upgrade
   aptitude install -y \
@@ -104,4 +104,4 @@ freeswitch-music-*:
   git clone https://github.com/traviscross/freeswitch-sounds.git
   cd freeswitch-sounds && cat debian/README.source
 
- -- Travis Cross <tc@traviscross.com>, Mon, 11 Mar 2013 17:09:33 +0000
+ -- Travis Cross <tc@traviscross.com>, Fri, 29 Mar 2013 22:07:26 +0000
