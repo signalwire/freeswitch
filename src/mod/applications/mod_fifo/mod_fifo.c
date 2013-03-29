@@ -2906,7 +2906,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 			if (node && other_session) {
 				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-				switch_caller_profile_t *cloned_profile;
+				switch_caller_profile_t *cloned_profile, *a_cp, *b_cp;
 				const char *o_announce = NULL;
 				const char *record_template = switch_channel_get_variable(channel, "fifo_record_template");
 				char *expanded = NULL;
@@ -2931,7 +2931,6 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_channel_set_variable(other_channel, "fifo_serviced_by", my_id);
 				switch_channel_set_variable(other_channel, "fifo_serviced_uuid", switch_core_session_get_uuid(session));
-
 				switch_channel_set_flag(other_channel, CF_BREAK);
 
 				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) &&
@@ -2981,14 +2980,28 @@ SWITCH_STANDARD_APP(fifo_function)
 				}
 
 				switch_channel_answer(channel);
-				cloned_profile = switch_caller_profile_clone(other_session, switch_channel_get_caller_profile(channel));
+
+				a_cp = switch_channel_get_caller_profile(channel);
+				b_cp = switch_channel_get_caller_profile(other_channel);
+				
+
+
+				cloned_profile = switch_caller_profile_clone(other_session, a_cp);
 				switch_assert(cloned_profile);
 				switch_channel_set_originator_caller_profile(other_channel, cloned_profile);
 
-				cloned_profile = switch_caller_profile_clone(session, switch_channel_get_caller_profile(other_channel));
+				a_cp->callee_id_name = switch_core_strdup(a_cp->pool, b_cp->caller_id_name);
+				a_cp->callee_id_number = switch_core_strdup(a_cp->pool, b_cp->caller_id_number);
+
+
+				cloned_profile = switch_caller_profile_clone(session, b_cp);
 				switch_assert(cloned_profile);
 				switch_assert(cloned_profile->next == NULL);
 				switch_channel_set_originatee_caller_profile(channel, cloned_profile);
+
+				b_cp->callee_id_name = switch_core_strdup(b_cp->pool, a_cp->caller_id_name);
+				b_cp->callee_id_number = switch_core_strdup(b_cp->pool, a_cp->caller_id_number);
+
 
 				ts = switch_micro_time_now();
 				switch_time_exp_lt(&tm, ts);

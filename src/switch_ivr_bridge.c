@@ -1648,9 +1648,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_channel_set_variable(originator_channel, "original_caller_id_name", originator_cp->caller_id_name);
 			switch_channel_set_variable(originator_channel, "original_caller_id_number", originator_cp->caller_id_number);
 
+			switch_channel_step_caller_profile(originatee_channel);
+			switch_channel_step_caller_profile(originator_channel);
+
+			originator_cp = switch_channel_get_caller_profile(originator_channel);
+			originatee_cp = switch_channel_get_caller_profile(originatee_channel);
 
 			switch_channel_set_originator_caller_profile(originatee_channel, switch_caller_profile_clone(originatee_session, originator_cp));
 			switch_channel_set_originatee_caller_profile(originator_channel, switch_caller_profile_clone(originator_session, originatee_cp));
+			
+			originator_cp->callee_id_name = switch_core_strdup(originator_cp->pool, originatee_cp->caller_id_name);
+			originator_cp->callee_id_number = switch_core_strdup(originator_cp->pool, originatee_cp->caller_id_number);
+
+			originatee_cp->callee_id_name = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_name);
+			originatee_cp->callee_id_number = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_number);
+			
 
 			switch_channel_stop_broadcast(originator_channel);
 			switch_channel_stop_broadcast(originatee_channel);
