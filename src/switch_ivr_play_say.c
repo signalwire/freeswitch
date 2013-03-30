@@ -2141,6 +2141,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (!switch_core_codec_ready(codec)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	arg_recursion_check_start(args);
 
 	write_frame.data = abuf;

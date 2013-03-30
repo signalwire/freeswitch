@@ -2008,7 +2008,9 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	args.buflen = len;
 
 	switch_core_speech_flush_tts(&jss->speech->sh);
-	switch_ivr_speak_text_handle(jss->session, &jss->speech->sh, &jss->speech->codec, NULL, text, &args);
+	if (switch_core_codec_ready(&jss->speech->codec)) {
+		switch_ivr_speak_text_handle(jss->session, &jss->speech->sh, &jss->speech->codec, NULL, text, &args);
+	}
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
