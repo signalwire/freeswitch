@@ -603,6 +603,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(_In_ switch_channel_
 SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *channel, const char *in, switch_event_t *var_list, switch_event_t *api_list, uint32_t recur);
 #define switch_channel_expand_variables(_channel, _in) switch_channel_expand_variables_check(_channel, _in, NULL, NULL, 0)
 
+#define switch_channel_inbound_display(_channel) (switch_channel_direction(_channel) == SWITCH_CALL_DIRECTION_INBOUND || switch_channel_test_flag(_channel, CF_DIALPLAN))
 
 SWITCH_DECLARE(char *) switch_channel_build_param_string(_In_ switch_channel_t *channel, _In_opt_ switch_caller_profile_t *caller_profile,
 														 _In_opt_ const char *prefix);

@@ -787,20 +787,38 @@ void sofia_send_callee_id(switch_core_session_t *session, const char *name, cons
 	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
 
 
-	if (zstr(name)) {
-		name = caller_profile->callee_id_name;
-	}
-
-	if (zstr(number)) {
-		number = caller_profile->callee_id_number;
-	}
-
-	if (zstr(name)) {
-		name = number;
-	}
-
-	if (zstr(number)) {
-		number = caller_profile->destination_number;
+	if (switch_channel_inbound_display(channel)) {
+		if (zstr(name)) {
+			name = caller_profile->caller_id_name;
+		}
+		
+		if (zstr(number)) {
+			number = caller_profile->caller_id_number;
+		}
+		
+		if (zstr(name)) {
+			name = number;
+		}
+		
+		if (zstr(number)) {
+			name = number = "UNKNOWN";
+		}
+	} else {
+		if (zstr(name)) {
+			name = caller_profile->callee_id_name;
+		}
+		
+		if (zstr(number)) {
+			number = caller_profile->callee_id_number;
+		}
+		
+		if (zstr(name)) {
+			name = number;
+		}
+		
+		if (zstr(number)) {
+			number = caller_profile->destination_number;
+		}
 	}
 
 	if ((uuid = switch_channel_get_partner_uuid(channel)) && (session_b = switch_core_session_locate(uuid))) {
@@ -843,7 +861,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	}
 
 
-	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+	if (switch_channel_inbound_display(channel)) {
 		name_var = "caller_id_name";
 		num_var = "caller_id_number";
 		ename_var = "effective_caller_id_name";
@@ -935,7 +953,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+	if (switch_channel_inbound_display(channel)) {
 
 		if (!strcmp(caller_profile->caller_id_name, name) && !strcmp(caller_profile->caller_id_number, number)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s Same Caller ID \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
