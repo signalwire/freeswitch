@@ -833,13 +833,26 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	switch_event_t *event;
 	const char *val;
 	int fs = 0, lazy = 0, att = 0;
+	const char *name_var = "callee_id_name";
+	const char *num_var = "callee_id_number";
+	const char *ename_var = "effective_callee_id_name";
+	const char *enum_var = "effective_callee_id_number";
 
 	if (switch_true(switch_channel_get_variable(channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
 		return;
 	}
 
-	number = (char *) switch_channel_get_variable(channel, "callee_id_number");
-	name = (char *) switch_channel_get_variable(channel, "callee_id_name");
+
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		name_var = "caller_id_name";
+		num_var = "caller_id_number";
+		ename_var = "effective_caller_id_name";
+		enum_var = "effective_caller_id_number";
+	}
+
+
+	number = (char *) switch_channel_get_variable(channel, num_var);
+	name = (char *) switch_channel_get_variable(channel, name_var);
 
 	
 	if (zstr(number) && sip->sip_to) {
@@ -886,18 +899,18 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		}
 	}
 	
-	if (((tmp = switch_channel_get_variable(channel, "effective_callee_id_name")) ||
+	if (((tmp = switch_channel_get_variable(channel, ename_var)) ||
 		 (tmp = switch_channel_get_variable(channel, "sip_callee_id_name"))) && !zstr(tmp)) {
 		name = (char *) tmp;
 	}
 
-	if (((tmp = switch_channel_get_variable(channel, "effective_callee_id_number")) ||
+	if (((tmp = switch_channel_get_variable(channel, enum_var)) ||
 		 (tmp = switch_channel_get_variable(channel, "sip_callee_id_number"))) && !zstr(tmp)) {
 		number = tmp;
 	}
 
 	if (zstr(number)) {
-		if ((tmp = switch_channel_get_variable(channel, "callee_id_number")) && !zstr(tmp)) {
+		if ((tmp = switch_channel_get_variable(channel, num_var)) && !zstr(tmp)) {
 			number = (char *) tmp;
 		}
 
@@ -907,7 +920,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	}
 
 	if (zstr(name)) {
-		if ((tmp = switch_channel_get_variable(channel, "callee_id_name")) && !zstr(tmp)) {
+		if ((tmp = switch_channel_get_variable(channel, name_var)) && !zstr(tmp)) {
 			name = (char *) tmp;
 		}
 	}
@@ -922,16 +935,30 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	if (!strcmp(caller_profile->callee_id_name, name) && !strcmp(caller_profile->callee_id_number, number)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s Same Callee ID \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
-		send = 0;
-	} else {
-		caller_profile->callee_id_name = switch_sanitize_number(switch_core_strdup(caller_profile->pool, name));
-		caller_profile->callee_id_number = switch_sanitize_number(switch_core_strdup(caller_profile->pool, number));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Update Callee ID to \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 
-		if (lazy || (att && !switch_channel_get_partner_uuid(channel))) {
-			switch_channel_flip_cid(channel);
+		if (!strcmp(caller_profile->caller_id_name, name) && !strcmp(caller_profile->caller_id_number, number)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s Same Caller ID \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
+			send = 0;
+		} else {
+			caller_profile->caller_id_name = switch_sanitize_number(switch_core_strdup(caller_profile->pool, name));
+			caller_profile->caller_id_number = switch_sanitize_number(switch_core_strdup(caller_profile->pool, number));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Update Caller ID to \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
+		}
+
+	} else {
+		
+		if (!strcmp(caller_profile->callee_id_name, name) && !strcmp(caller_profile->callee_id_number, number)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "%s Same Callee ID \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
+			send = 0;
+		} else {
+			caller_profile->callee_id_name = switch_sanitize_number(switch_core_strdup(caller_profile->pool, name));
+			caller_profile->callee_id_number = switch_sanitize_number(switch_core_strdup(caller_profile->pool, number));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Update Callee ID to \"%s\" <%s>\n", switch_channel_get_name(channel), name, number);
+			
+			if (lazy || (att && !switch_channel_get_partner_uuid(channel))) {
+				switch_channel_flip_cid(channel);
+			}
 		}
 	}
 
