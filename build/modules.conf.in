@@ -51,6 +51,7 @@ applications/mod_voicemail
 codecs/mod_amr
 #codecs/mod_amrwb
 codecs/mod_bv
+codecs/mod_b64
 #codecs/mod_celt
 #codecs/mod_codec2
 #codecs/mod_com_g729
