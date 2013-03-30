@@ -175,6 +175,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\sofia_media.c"
+			>
+		</File>
+		<File
 			RelativePath=".\sofia_presence.c"
 			>
 		</File>

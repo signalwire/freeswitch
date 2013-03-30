@@ -911,6 +911,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_ws.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\ws.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_udp.c"
 					>
 				</File>

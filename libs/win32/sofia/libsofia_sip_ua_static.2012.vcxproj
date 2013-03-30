@@ -370,6 +370,8 @@ if not exist "$(ProjectDir)$(IntDir)\auth_client.obj" "autogen.cmd"
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tls.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_connect.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tcp.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_ws.c" />
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\ws.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tls.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_udp.c" />
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp.c" />

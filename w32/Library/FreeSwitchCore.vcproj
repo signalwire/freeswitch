@@ -367,6 +367,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_core_cert.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_core_codec.c"
 				>
 			</File>
@@ -392,6 +396,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\switch_core_io.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_media.c"
 				>
 			</File>
 			<File
@@ -556,6 +564,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\switch_scheduler.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_sdp.c"
 				>
 			</File>
 			<File
@@ -986,6 +998,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_core_event_hook.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_core_media.h"
 				>
 			</File>
 			<File

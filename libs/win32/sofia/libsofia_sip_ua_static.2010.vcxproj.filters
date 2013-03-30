@@ -611,6 +611,12 @@
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tcp.c">
       <Filter>Source Files\tport</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_ws.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\ws.c">
+      <Filter>Source Files\tport</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tls.c">
       <Filter>Source Files\tport</Filter>
     </ClCompile>
