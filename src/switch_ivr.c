@@ -3366,11 +3366,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 			switch_core_file_seek(fhp, &pos, 0, SEEK_SET);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strncasecmp(cmd, "seek", 4)) {
-			switch_codec_t *codec;
+			//switch_codec_t *codec;
 			unsigned int samps = 0;
 			unsigned int pos = 0;
 			char *p;
-			codec = switch_core_session_get_read_codec(session);
+			//codec = switch_core_session_get_read_codec(session);
 			
 			if ((p = strchr(cmd, ':'))) {
 				p++;
@@ -3381,7 +3381,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 						step = 1000;
 					}
 
-					samps = step * (codec->implementation->samples_per_second / 1000);
+					samps = step * (fhp->samplerate / 1000);
 					target = (int32_t)fhp->pos + samps;
 
 					if (target < 0) {
@@ -3392,7 +3392,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
 
 				} else {
-					samps = switch_atoui(p) * (codec->implementation->samples_per_second / 1000);
+					samps = switch_atoui(p) * (fhp->samplerate / 1000);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
 					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
 				}

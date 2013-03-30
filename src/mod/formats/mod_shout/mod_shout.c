@@ -882,7 +882,7 @@ static switch_status_t shout_file_close(switch_file_handle_t *handle)
 static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	shout_context_t *context = handle->private_info;
-
+	
 	if (handle->handler || switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		return SWITCH_STATUS_FALSE;
 	} else {
@@ -893,7 +893,12 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 		switch_buffer_zero(context->audio_buffer);
 		*cur_sample = mpg123_seek(context->mh, (off_t) samples, whence);
 
-		return *cur_sample >= 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+		if (*cur_sample >= 0) {
+			handle->pos = *cur_sample;
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		return SWITCH_STATUS_FALSE;
 	}
 }
 
