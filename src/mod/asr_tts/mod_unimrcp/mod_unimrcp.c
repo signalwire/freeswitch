@@ -172,7 +172,7 @@ static switch_xml_config_item_t instructions[] = {
 									 "EMERGENCY|ALERT|CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG", "Logging level for UniMRCP"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("enable-profile-events", CONFIG_REQUIRED, &globals.enable_profile_events_param, "false", "",
 									 "Fire profile events (true|false)"),
-	SWITCH_CONFIG_ITEM_STRING_STRDUP("request-timeout", CONFIG_REQUIRED, &globals.unimrcp_request_timeout, "10000", "", 
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("request-timeout", CONFIG_REQUIRED, &globals.unimrcp_request_timeout, "10000", "",
 									 "Maximum time to wait for server response to a request"),
 	SWITCH_CONFIG_ITEM_END()
 };
@@ -273,7 +273,8 @@ static switch_status_t audio_queue_destroy(audio_queue_t *queue);
  * SPEECH_CHANNEL : speech functions common to recognizer and synthesizer
  */
 
-#define SPEECH_CHANNEL_TIMEOUT_USEC (5 * 1000000)
+#define SPEECH_CHANNEL_TIMEOUT_USEC (5000 * 1000)
+#define AUDIO_TIMEOUT_USEC (SWITCH_MAX_INTERVAL * 1000)
 
 /**
  * Type of MRCP channel
@@ -725,11 +726,18 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 #endif
 	switch_mutex_lock(queue->mutex);
 
+	/* allow the initial frame to buffer */
+	if (!queue->read_bytes && switch_buffer_inuse(queue->buffer) < requested) {
+		*data_len = 0;
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
+	}
+
 	/* wait for data, if allowed */
 	if (block) {
 		while (switch_buffer_inuse(queue->buffer) < requested) {
 			queue->waiting = requested;
-			if (switch_thread_cond_timedwait(queue->cond, queue->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
+			if (switch_thread_cond_timedwait(queue->cond, queue->mutex, AUDIO_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
 				break;
 			}
 		}
@@ -774,6 +782,9 @@ static switch_status_t audio_queue_clear(audio_queue_t *queue)
 	switch_buffer_zero(queue->buffer);
 	switch_thread_cond_signal(queue->cond);
 	switch_mutex_unlock(queue->mutex);
+	queue->read_bytes = 0;
+	queue->write_bytes = 0;
+	queue->waiting = 0;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3222,7 +3233,7 @@ static switch_status_t recog_asr_feed(switch_asr_handle_t *ah, void *data, unsig
  * Process asr_feed_dtmf request from FreeSWITCH
  *
  * @param ah the FreeSWITCH speech recognition handle
- * @return SWITCH_STATUS_SUCCESS if successful 
+ * @return SWITCH_STATUS_SUCCESS if successful
  */
 static switch_status_t recog_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags)
 {
@@ -3507,9 +3518,9 @@ static apt_bool_t recog_stream_open(mpf_audio_stream_t *stream, mpf_codec_t *cod
 {
 	speech_channel_t *schannel = (speech_channel_t *) stream->obj;
 	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
-	
+
 	r->unimrcp_stream = stream;
-	
+
 	return TRUE;
 }
 
@@ -3534,7 +3545,7 @@ static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *fra
 		frame->type |= MEDIA_FRAME_TYPE_AUDIO;
 	}
 
-	switch_mutex_lock(schannel->mutex);	
+	switch_mutex_lock(schannel->mutex);
 	if (r->dtmf_generator_active) {
 		if (!mpf_dtmf_generator_put_frame(r->dtmf_generator, frame)) {
 			if (!mpf_dtmf_generator_sending(r->dtmf_generator))
