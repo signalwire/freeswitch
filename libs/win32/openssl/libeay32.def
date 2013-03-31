@@ -201,6 +201,7 @@ EXPORTS
     ASN1_item_pack                          @3136
     ASN1_item_print                         @4126
     ASN1_item_sign                          @2741
+    ASN1_item_sign_ctx                      @4671
     ASN1_item_unpack                        @2640
     ASN1_item_verify                        @2777
     ASN1_mbstring_copy                      @1937
@@ -397,6 +398,9 @@ EXPORTS
     BN_RECP_CTX_init                        @1128
     BN_RECP_CTX_new                         @1129
     BN_RECP_CTX_set                         @1131
+    BN_X931_derive_prime_ex                 @4085
+    BN_X931_generate_Xpq                    @3325
+    BN_X931_generate_prime_ex               @4060
     BN_add                                  @115
     BN_add_word                             @116
     BN_asc2bn                               @4191
@@ -519,6 +523,15 @@ EXPORTS
     CERTIFICATEPOLICIES_free                @1486
     CERTIFICATEPOLICIES_it                  @2728
     CERTIFICATEPOLICIES_new                 @1485
+    CMAC_CTX_cleanup                        @4621
+    CMAC_CTX_copy                           @4618
+    CMAC_CTX_free                           @4619
+    CMAC_CTX_get0_cipher_ctx                @4620
+    CMAC_CTX_new                            @4625
+    CMAC_Final                              @4626
+    CMAC_Init                               @4622
+    CMAC_Update                             @4623
+    CMAC_resume                             @4624
     CMS_ContentInfo_free                    @3964
     CMS_ContentInfo_it                      @3969
     CMS_ContentInfo_new                     @3987
@@ -539,6 +552,7 @@ EXPORTS
     CMS_RecipientInfo_ktri_get0_algs        @3963
     CMS_RecipientInfo_ktri_get0_signer_id   @4032
     CMS_RecipientInfo_set0_key              @4009
+    CMS_RecipientInfo_set0_password         @4660
     CMS_RecipientInfo_set0_pkey             @4043
     CMS_RecipientInfo_type                  @3988
     CMS_SignedData_init                     @4010
@@ -554,6 +568,7 @@ EXPORTS
     CMS_add0_cert                           @4004
     CMS_add0_crl                            @3957
     CMS_add0_recipient_key                  @4016
+    CMS_add0_recipient_password             @4658
     CMS_add1_ReceiptRequest                 @4023
     CMS_add1_cert                           @3952
     CMS_add1_crl                            @4405
@@ -569,6 +584,7 @@ EXPORTS
     CMS_data_create                         @3975
     CMS_decrypt                             @3978
     CMS_decrypt_set1_key                    @3950
+    CMS_decrypt_set1_password               @4659
     CMS_decrypt_set1_pkey                   @3998
     CMS_digest_create                       @3972
     CMS_digest_verify                       @4006
@@ -660,7 +676,26 @@ EXPORTS
     CRYPTO_THREADID_set_numeric             @4334
     CRYPTO_THREADID_set_pointer             @4159
     CRYPTO_add_lock                         @176
+    CRYPTO_cbc128_decrypt                   @4561
+    CRYPTO_cbc128_encrypt                   @4556
+    CRYPTO_ccm128_aad                       @4649
+    CRYPTO_ccm128_decrypt                   @4648
+    CRYPTO_ccm128_decrypt_ccm64             @4629
+    CRYPTO_ccm128_encrypt                   @4630
+    CRYPTO_ccm128_encrypt_ccm64             @4639
+    CRYPTO_ccm128_init                      @4644
+    CRYPTO_ccm128_setiv                     @4641
+    CRYPTO_ccm128_tag                       @4647
+    CRYPTO_cfb128_1_encrypt                 @4555
+    CRYPTO_cfb128_8_encrypt                 @4563
+    CRYPTO_cfb128_encrypt                   @4562
     CRYPTO_cleanup_all_ex_data              @2604
+    CRYPTO_ctr128_encrypt                   @4557
+    CRYPTO_ctr128_encrypt_ctr32             @4627
+    CRYPTO_cts128_decrypt                   @4559
+    CRYPTO_cts128_decrypt_block             @4554
+    CRYPTO_cts128_encrypt                   @4553
+    CRYPTO_cts128_encrypt_block             @4560
     CRYPTO_dbg_free                         @177
     CRYPTO_dbg_get_options                  @2246
     CRYPTO_dbg_malloc                       @178
@@ -672,6 +707,17 @@ EXPORTS
     CRYPTO_free                             @181
     CRYPTO_free_ex_data                     @1004
     CRYPTO_free_locked                      @1513
+    CRYPTO_gcm128_aad                       @4643
+    CRYPTO_gcm128_decrypt                   @4651
+    CRYPTO_gcm128_decrypt_ctr32             @4653
+    CRYPTO_gcm128_encrypt                   @4631
+    CRYPTO_gcm128_encrypt_ctr32             @4654
+    CRYPTO_gcm128_finish                    @4655
+    CRYPTO_gcm128_init                      @4650
+    CRYPTO_gcm128_new                       @4646
+    CRYPTO_gcm128_release                   @4628
+    CRYPTO_gcm128_setiv                     @4635
+    CRYPTO_gcm128_tag                       @4638
     CRYPTO_get_add_lock_callback            @182
     CRYPTO_get_dynlock_create_callback      @2420
     CRYPTO_get_dynlock_destroy_callback     @2418
@@ -700,7 +746,12 @@ EXPORTS
     CRYPTO_mem_leaks_cb                     @191
     CRYPTO_mem_leaks_fp                     @192
     CRYPTO_new_ex_data                      @1027
+    CRYPTO_nistcts128_decrypt               @4645
+    CRYPTO_nistcts128_decrypt_block         @4634
+    CRYPTO_nistcts128_encrypt               @4636
+    CRYPTO_nistcts128_encrypt_block         @4642
     CRYPTO_num_locks                        @1804
+    CRYPTO_ofb128_encrypt                   @4558
     CRYPTO_pop_info                         @2162
     CRYPTO_push_info_                       @2163
     CRYPTO_realloc                          @193
@@ -723,6 +774,7 @@ EXPORTS
     CRYPTO_set_mem_functions                @198
     CRYPTO_strdup                           @4093
     CRYPTO_thread_id                        @199
+    CRYPTO_xts128_encrypt                   @4632
     Camellia_cbc_encrypt                    @3784
     Camellia_cfb128_encrypt                 @3785
     Camellia_cfb1_encrypt                   @3786
@@ -870,7 +922,6 @@ EXPORTS
     ECDH_set_ex_data                        @3613
     ECDH_set_method                         @3611
     ECDSA_OpenSSL                           @3620
-	ECDSA_SIG_it 							@3621
     ECDSA_SIG_free                          @3455
     ECDSA_SIG_new                           @3395
     ECDSA_do_sign                           @3440
@@ -931,6 +982,7 @@ EXPORTS
     EC_GROUP_set_point_conversion_form      @3617
     EC_GROUP_set_seed                       @3494
     EC_KEY_check_key                        @3750
+    EC_KEY_clear_flags                      @4602
     EC_KEY_copy                             @3369
     EC_KEY_dup                              @3729
     EC_KEY_free                             @3422
@@ -940,6 +992,7 @@ EXPORTS
     EC_KEY_get0_public_key                  @3480
     EC_KEY_get_conv_form                    @3388
     EC_KEY_get_enc_flags                    @3622
+    EC_KEY_get_flags                        @4593
     EC_KEY_get_key_method_data              @3402
     EC_KEY_insert_key_method_data           @3557
     EC_KEY_new                              @3663
@@ -950,9 +1003,11 @@ EXPORTS
     EC_KEY_set_asn1_flag                    @3400
     EC_KEY_set_conv_form                    @3443
     EC_KEY_set_enc_flags                    @3665
+    EC_KEY_set_flags                        @4603
     EC_KEY_set_group                        @3512
     EC_KEY_set_private_key                  @3459
     EC_KEY_set_public_key                   @3682
+    EC_KEY_set_public_key_affine_coordinates @4585
     EC_KEY_up_ref                           @3418
     EC_METHOD_get_field_type                @3528
     EC_POINT_add                            @2532
@@ -1052,6 +1107,8 @@ EXPORTS
     ENGINE_load_openssl                     @2657
     ENGINE_load_private_key                 @2498
     ENGINE_load_public_key                  @2479
+    ENGINE_load_rdrand                      @4640
+    ENGINE_load_rsax                        @4652
     ENGINE_load_ssl_client_cert             @4046
     ENGINE_new                              @2515
     ENGINE_pkey_asn1_find_str               @4282
@@ -1129,6 +1186,7 @@ EXPORTS
     ENGINE_unregister_pkey_meths            @4478
     ENGINE_up_ref                           @3238
     ERR_add_error_data                      @1081
+    ERR_add_error_vdata                     @4589
     ERR_clear_error                         @222
     ERR_error_string                        @223
     ERR_error_string_n                      @2291
@@ -1363,8 +1421,10 @@ EXPORTS
     EVP_PKEY_keygen                         @4143
     EVP_PKEY_keygen_init                    @4183
     EVP_PKEY_meth_add0                      @4446
+    EVP_PKEY_meth_copy                      @4588
     EVP_PKEY_meth_find                      @4469
     EVP_PKEY_meth_free                      @4460
+    EVP_PKEY_meth_get0_info                 @4587
     EVP_PKEY_meth_new                       @4448
     EVP_PKEY_meth_set_cleanup               @4502
     EVP_PKEY_meth_set_copy                  @4527
@@ -1410,23 +1470,36 @@ EXPORTS
     EVP_add_cipher                          @292
     EVP_add_digest                          @293
     EVP_aes_128_cbc                         @2927
+    EVP_aes_128_cbc_hmac_sha1               @4637
+    EVP_aes_128_ccm                         @4609
     EVP_aes_128_cfb128                      @3222
     EVP_aes_128_cfb1                        @3251
     EVP_aes_128_cfb8                        @3248
+    EVP_aes_128_ctr                         @4590
     EVP_aes_128_ecb                         @2644
+    EVP_aes_128_gcm                         @4601
     EVP_aes_128_ofb                         @3224
+    EVP_aes_128_xts                         @4595
     EVP_aes_192_cbc                         @3155
+    EVP_aes_192_ccm                         @4617
     EVP_aes_192_cfb128                      @3225
     EVP_aes_192_cfb1                        @3264
     EVP_aes_192_cfb8                        @3252
+    EVP_aes_192_ctr                         @4586
     EVP_aes_192_ecb                         @2862
+    EVP_aes_192_gcm                         @4611
     EVP_aes_192_ofb                         @3221
     EVP_aes_256_cbc                         @2996
+    EVP_aes_256_cbc_hmac_sha1               @4656
+    EVP_aes_256_ccm                         @4605
     EVP_aes_256_cfb128                      @3223
     EVP_aes_256_cfb1                        @3271
     EVP_aes_256_cfb8                        @3255
+    EVP_aes_256_ctr                         @4591
     EVP_aes_256_ecb                         @2720
+    EVP_aes_256_gcm                         @4615
     EVP_aes_256_ofb                         @3220
+    EVP_aes_256_xts                         @4599
     EVP_bf_cbc                              @294
     EVP_bf_cfb64                            @295
     EVP_bf_ecb                              @296
@@ -1496,6 +1569,7 @@ EXPORTS
     EVP_rc2_ofb                             @328
     EVP_rc4                                 @329
     EVP_rc4_40                              @960
+    EVP_rc4_hmac_md5                        @4633
     EVP_read_pw_string                      @330
     EVP_read_pw_string_min                  @4552
     EVP_ripemd160                           @1252
@@ -1514,6 +1588,8 @@ EXPORTS
     EXTENDED_KEY_USAGE_free                 @2631
     EXTENDED_KEY_USAGE_it                   @3098
     EXTENDED_KEY_USAGE_new                  @2549
+    FIPS_mode                               @3283
+    FIPS_mode_set                           @3253
     GENERAL_NAMES_free                      @1216
     GENERAL_NAMES_it                        @2804
     GENERAL_NAMES_new                       @1215
@@ -1795,11 +1871,20 @@ EXPORTS
     OPENSSL_asc2uni                         @1282
     OPENSSL_cleanse                         @3245
     OPENSSL_config                          @3188
+    OPENSSL_cpuid_setup                     @4675
+    OPENSSL_gmtime                          @4567
+    OPENSSL_gmtime_adj                      @4568
     OPENSSL_ia32cap_loc                     @3467
+    OPENSSL_init                            @4091
     OPENSSL_isservice                       @4048
     OPENSSL_issetugid                       @2465
     OPENSSL_load_builtin_modules            @3214
+    OPENSSL_memcmp                          @4565
     OPENSSL_no_config                       @3228
+    OPENSSL_showfatal                       @4676
+    OPENSSL_stderr                          @4674
+    OPENSSL_strcasecmp                      @4564
+    OPENSSL_strncasecmp                     @4566
     OPENSSL_uni2asc                         @1283
     OTHERNAME_cmp                           @4224
     OTHERNAME_free                          @2112
@@ -2001,6 +2086,7 @@ EXPORTS
     PKCS5_pbe2_set_iv                       @4341
     PKCS5_pbe_set0_algor                    @4238
     PKCS5_pbe_set                           @1323
+    PKCS5_pbkdf2_set                        @4657
     PKCS5_v2_PBE_keyivgen                   @1796
     PKCS7_ATTR_SIGN_it                      @2632
     PKCS7_ATTR_VERIFY_it                    @3060
@@ -2155,6 +2241,9 @@ EXPORTS
     RSAPublicKey_dup                        @482
     RSAPublicKey_it                         @2737
     RSA_PKCS1_SSLeay                        @483
+    RSA_PSS_PARAMS_free                     @4668
+    RSA_PSS_PARAMS_it                       @4667
+    RSA_PSS_PARAMS_new                      @4663
     RSA_X931_hash_id                        @3319
     RSA_blinding_off                        @978
     RSA_blinding_on                         @977
@@ -2173,6 +2262,7 @@ EXPORTS
     RSA_null_method                         @1904
     RSA_padding_add_PKCS1_OAEP              @1226
     RSA_padding_add_PKCS1_PSS               @3323
+    RSA_padding_add_PKCS1_PSS_mgf1          @4594
     RSA_padding_add_PKCS1_type_1            @1031
     RSA_padding_add_PKCS1_type_2            @1032
     RSA_padding_add_SSLv23                  @1033
@@ -2201,6 +2291,7 @@ EXPORTS
     RSA_verify                              @498
     RSA_verify_ASN1_OCTET_STRING            @499
     RSA_verify_PKCS1_PSS                    @3321
+    RSA_verify_PKCS1_PSS_mgf1               @4607
     SEED_cbc_encrypt                        @3910
     SEED_cfb128_encrypt                     @3912
     SEED_decrypt                            @3908
@@ -2244,6 +2335,22 @@ EXPORTS
     SMIME_write_ASN1                        @4161
     SMIME_write_CMS                         @3994
     SMIME_write_PKCS7                       @2142
+    SRP_Calc_A                              @4581
+    SRP_Calc_B                              @4578
+    SRP_Calc_client_key                     @4575
+    SRP_Calc_server_key                     @4570
+    SRP_Calc_u                              @4573
+    SRP_Calc_x                              @4577
+    SRP_VBASE_free                          @4574
+    SRP_VBASE_get_by_user                   @4569
+    SRP_VBASE_init                          @4583
+    SRP_VBASE_new                           @4579
+    SRP_Verify_A_mod_N                      @4582
+    SRP_Verify_B_mod_N                      @4584
+    SRP_check_known_gN_param                @4580
+    SRP_create_verifier                     @4571
+    SRP_create_verifier_BN                  @4572
+    SRP_get_default_gN                      @4576
     SSLeay_version                          @2
     SXNETID_free                            @1332
     SXNETID_it                              @2669
@@ -2511,6 +2618,7 @@ EXPORTS
     X509_ALGOR_it                           @2714
     X509_ALGOR_new                          @518
     X509_ALGOR_set0                         @3928
+    X509_ALGOR_set_md                       @4612
     X509_ATTRIBUTE_count                    @2193
     X509_ATTRIBUTE_create                   @1155
     X509_ATTRIBUTE_create_by_NID            @2191
@@ -2569,6 +2677,7 @@ EXPORTS
     X509_CRL_set_nextUpdate                 @2798
     X509_CRL_set_version                    @2823
     X509_CRL_sign                           @536
+    X509_CRL_sign_ctx                       @4664
     X509_CRL_sort                           @2607
     X509_CRL_verify                         @537
     X509_EXTENSIONS_it                      @3919
@@ -2691,6 +2800,7 @@ EXPORTS
     X509_REQ_set_subject_name               @606
     X509_REQ_set_version                    @607
     X509_REQ_sign                           @608
+    X509_REQ_sign_ctx                       @4662
     X509_REQ_to_X509                        @609
     X509_REQ_verify                         @610
     X509_REVOKED_add1_ext_i2d               @3087
@@ -2875,6 +2985,8 @@ EXPORTS
     X509_set_subject_name                   @672
     X509_set_version                        @673
     X509_sign                               @674
+    X509_sign_ctx                           @4669
+    X509_signature_dump                     @4665
     X509_signature_print                    @2706
     X509_subject_name_cmp                   @675
     X509_subject_name_hash                  @676
@@ -3132,6 +3244,7 @@ EXPORTS
     d2i_RSAPublicKey_bio                    @945
     d2i_RSAPublicKey_fp                     @952
     d2i_RSA_NET                             @2408
+    d2i_RSA_PSS_PARAMS                      @4666
     d2i_RSA_PUBKEY                          @2044
     d2i_RSA_PUBKEY_bio                      @2053
     d2i_RSA_PUBKEY_fp                       @1964
@@ -3350,6 +3463,7 @@ EXPORTS
     i2d_RSAPublicKey_bio                    @946
     i2d_RSAPublicKey_fp                     @954
     i2d_RSA_NET                             @2406
+    i2d_RSA_PSS_PARAMS                      @4670
     i2d_RSA_PUBKEY                          @1974
     i2d_RSA_PUBKEY_bio                      @1985
     i2d_RSA_PUBKEY_fp                       @2113
@@ -3443,6 +3557,9 @@ EXPORTS
     pqueue_pop                              @3647
     pqueue_print                            @3428
     pqueue_size                             @4114
+    private_AES_set_decrypt_key             @4597
+    private_AES_set_encrypt_key             @4606
+    private_RC4_set_key                     @3294
     s2i_ASN1_INTEGER                        @1509
     s2i_ASN1_OCTET_STRING                   @1221
     sk_delete                               @901
