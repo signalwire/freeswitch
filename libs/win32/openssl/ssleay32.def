@@ -19,13 +19,19 @@ EXPORTS
     PEM_read_bio_SSL_SESSION                @302
     PEM_write_SSL_SESSION                   @305
     PEM_write_bio_SSL_SESSION               @296
+    SRP_Calc_A_param                        @332
+    SRP_generate_client_master_secret       @335
+    SRP_generate_server_master_secret       @333
     SSL_CIPHER_description                  @2
     SSL_CIPHER_get_bits                     @128
+    SSL_CIPHER_get_id                       @349
     SSL_CIPHER_get_name                     @130
     SSL_CIPHER_get_version                  @129
     SSL_COMP_add_compression_method         @184
     SSL_COMP_get_compression_methods        @276
     SSL_COMP_get_name                       @271
+    SSL_CTX_SRP_CTX_free                    @334
+    SSL_CTX_SRP_CTX_init                    @330
     SSL_CTX_add_client_CA                   @3
     SSL_CTX_add_session                     @4
     SSL_CTX_callback_ctrl                   @243
@@ -70,13 +76,23 @@ EXPORTS
     SSL_CTX_set_generate_session_id         @264
     SSL_CTX_set_info_callback               @286
     SSL_CTX_set_msg_callback                @266
+    SSL_CTX_set_next_proto_select_cb        @361
+    SSL_CTX_set_next_protos_advertised_cb   @355
     SSL_CTX_set_psk_client_callback         @295
     SSL_CTX_set_psk_server_callback         @303
     SSL_CTX_set_purpose                     @238
     SSL_CTX_set_quiet_shutdown              @145
     SSL_CTX_set_session_id_context          @231
+    SSL_CTX_set_srp_cb_arg                  @328
+    SSL_CTX_set_srp_client_pwd_callback     @316
+    SSL_CTX_set_srp_password                @324
+    SSL_CTX_set_srp_strength                @325
+    SSL_CTX_set_srp_username                @329
+    SSL_CTX_set_srp_username_callback       @318
+    SSL_CTX_set_srp_verify_param_callback   @326
     SSL_CTX_set_ssl_version                 @19
     SSL_CTX_set_timeout                     @178
+    SSL_CTX_set_tlsext_use_srtp             @358
     SSL_CTX_set_tmp_dh_callback             @176
     SSL_CTX_set_tmp_ecdh_callback           @269
     SSL_CTX_set_tmp_rsa_callback            @177
@@ -95,6 +111,8 @@ EXPORTS
     SSL_CTX_use_certificate_file            @30
     SSL_CTX_use_psk_identity_hint           @294
     SSL_SESSION_free                        @31
+    SSL_SESSION_get0_peer                   @340
+    SSL_SESSION_get_compress_id             @362
     SSL_SESSION_get_ex_data                 @146
     SSL_SESSION_get_ex_new_index            @168
     SSL_SESSION_get_id                      @277
@@ -103,9 +121,12 @@ EXPORTS
     SSL_SESSION_new                         @32
     SSL_SESSION_print                       @33
     SSL_SESSION_print_fp                    @34
+    SSL_SESSION_set1_id_context             @342
     SSL_SESSION_set_ex_data                 @148
     SSL_SESSION_set_time                    @135
     SSL_SESSION_set_timeout                 @137
+    SSL_SRP_CTX_free                        @338
+    SSL_SRP_CTX_init                        @331
     SSL_accept                              @35
     SSL_add_client_CA                       @36
     SSL_add_dir_cert_subjects_to_stack      @188
@@ -114,6 +135,7 @@ EXPORTS
     SSL_alert_desc_string_long              @38
     SSL_alert_type_string                   @39
     SSL_alert_type_string_long              @40
+    SSL_cache_hit                           @344
     SSL_callback_ctrl                       @244
     SSL_check_private_key                   @41
     SSL_clear                               @42
@@ -123,7 +145,9 @@ EXPORTS
     SSL_do_handshake                        @125
     SSL_dup                                 @46
     SSL_dup_CA_list                         @47
+    SSL_export_keying_material              @353
     SSL_free                                @48
+    SSL_get0_next_proto_negotiated          @356
     SSL_get1_session                        @242
     SSL_get_SSL_CTX                         @150
     SSL_get_certificate                     @49
@@ -151,11 +175,17 @@ EXPORTS
     SSL_get_rbio                            @63
     SSL_get_read_ahead                      @64
     SSL_get_rfd                             @246
+    SSL_get_selected_srtp_profile           @357
     SSL_get_servername                      @291
     SSL_get_servername_type                 @292
     SSL_get_session                         @154
     SSL_get_shared_ciphers                  @65
     SSL_get_shutdown                        @155
+    SSL_get_srp_N                           @322
+    SSL_get_srp_g                           @317
+    SSL_get_srp_userinfo                    @319
+    SSL_get_srp_username                    @323
+    SSL_get_srtp_profiles                   @360
     SSL_get_ssl_method                      @66
     SSL_get_verify_callback                 @69
     SSL_get_verify_depth                    @229
@@ -173,9 +203,11 @@ EXPORTS
     SSL_pending                             @77
     SSL_read                                @78
     SSL_renegotiate                         @79
+    SSL_renegotiate_abbreviated             @312
     SSL_renegotiate_pending                 @265
     SSL_rstate_string                       @80
     SSL_rstate_string_long                  @81
+    SSL_select_next_proto                   @359
     SSL_set1_param                          @309
     SSL_set_SSL_CTX                         @290
     SSL_set_accept_state                    @82
@@ -183,6 +215,7 @@ EXPORTS
     SSL_set_cipher_list                     @84
     SSL_set_client_CA_list                  @85
     SSL_set_connect_state                   @86
+    SSL_set_debug                           @339
     SSL_set_ex_data                         @158
     SSL_set_fd                              @87
     SSL_set_generate_session_id             @258
@@ -200,7 +233,11 @@ EXPORTS
     SSL_set_session_ticket_ext              @306
     SSL_set_session_ticket_ext_cb           @308
     SSL_set_shutdown                        @162
+    SSL_set_srp_server_param                @320
+    SSL_set_srp_server_param_pw             @321
     SSL_set_ssl_method                      @91
+    SSL_set_state                           @348
+    SSL_set_tlsext_use_srtp                 @354
     SSL_set_tmp_dh_callback                 @187
     SSL_set_tmp_ecdh_callback               @270
     SSL_set_tmp_rsa_callback                @186
@@ -210,6 +247,7 @@ EXPORTS
     SSL_set_verify_result                   @163
     SSL_set_wfd                             @95
     SSL_shutdown                            @96
+    SSL_srp_server_param_with_username      @336
     SSL_state                               @166
     SSL_state_string                        @97
     SSL_state_string_long                   @98
@@ -235,6 +273,12 @@ EXPORTS
     SSLv3_client_method                     @116
     SSLv3_method                            @117
     SSLv3_server_method                     @118
+    TLSv1_1_client_method                   @314
+    TLSv1_1_method                          @313
+    TLSv1_1_server_method                   @315
+    TLSv1_2_client_method                   @341
+    TLSv1_2_method                          @350
+    TLSv1_2_server_method                   @343
     TLSv1_client_method                     @172
     TLSv1_method                            @170
     TLSv1_server_method                     @171

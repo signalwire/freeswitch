@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -79,7 +79,7 @@
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\openssl-1.0.0a\include;..\..\openssl-1.0.0a;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\openssl-1.0.1c\include;..\..\openssl-1.0.1c;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OPENSSL_THREADS;MONOLITH;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>true</MinimalRebuild>
@@ -107,7 +107,7 @@
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..\openssl-1.0.0a\include;..\..\openssl-1.0.0a;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\openssl-1.0.1c\include;..\..\openssl-1.0.1c;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CONSOLE;OPENSSL_THREADS;MONOLITH;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>true</MinimalRebuild>
@@ -139,7 +139,7 @@
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\openssl-1.0.0a\include;..\..\openssl-1.0.0a;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\openssl-1.0.1c\include;..\..\openssl-1.0.1c;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OPENSSL_THREADS;MONOLITH;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>true</MinimalRebuild>
@@ -169,7 +169,7 @@
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..\openssl-1.0.0a\include;..\..\openssl-1.0.0a;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\openssl-1.0.1c\include;..\..\openssl-1.0.1c;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CONSOLE;OPENSSL_THREADS;MONOLITH;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_USE_APPLINK;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>true</MinimalRebuild>
@@ -193,60 +193,61 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\app_rand.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\apps.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\asn1pars.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\ca.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\ciphers.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\cms.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\crl.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\crl2p7.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\dgst.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\dh.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\dhparam.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\dsa.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\dsaparam.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\ec.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\ecparam.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\enc.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\engine.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\errstr.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\gendh.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\gendsa.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\genpkey.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\genrsa.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\nseq.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\ocsp.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\openssl.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\passwd.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\pkcs12.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\pkcs7.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\pkcs8.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\pkey.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\pkeyparam.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\pkeyutl.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\prime.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\rand.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\req.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\rsa.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\rsautl.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\s_cb.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\s_client.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\s_server.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\s_socket.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\s_time.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\sess_id.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\smime.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\speed.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\spkac.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\ts.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\verify.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\version.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\winrand.c" />
-    <ClCompile Include="..\..\openssl-1.0.0a\apps\x509.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\app_rand.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\apps.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\asn1pars.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\ca.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\ciphers.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\cms.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\crl.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\crl2p7.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\dgst.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\dh.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\dhparam.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\dsa.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\dsaparam.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\ec.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\ecparam.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\enc.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\engine.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\errstr.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\gendh.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\gendsa.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\genpkey.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\genrsa.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\nseq.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\ocsp.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\openssl.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\passwd.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\pkcs12.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\pkcs7.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\pkcs8.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\pkey.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\pkeyparam.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\pkeyutl.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\prime.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\rand.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\req.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\rsa.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\rsautl.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\srp.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\s_cb.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\s_client.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\s_server.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\s_socket.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\s_time.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\sess_id.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\smime.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\speed.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\spkac.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\ts.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\verify.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\version.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\winrand.c" />
+    <ClCompile Include="..\..\openssl-1.0.1c\apps\x509.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\openssl-1.0.0a\apps\apps.h" />
+    <ClInclude Include="..\..\openssl-1.0.1c\apps\apps.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="libeay32.2012.vcxproj">

@@ -20,147 +20,153 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\bio_ssl.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\bio_ssl.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\d1_both.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\d1_both.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\d1_clnt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\d1_clnt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\d1_enc.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\d1_enc.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\d1_lib.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\d1_lib.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\d1_meth.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\d1_meth.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\d1_pkt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\d1_pkt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\d1_srvr.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\d1_srvr.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\kssl.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\kssl.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s23_clnt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s23_clnt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s23_lib.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s23_lib.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s23_meth.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s23_meth.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s23_pkt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s23_pkt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s23_srvr.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s23_srvr.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s2_clnt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s2_clnt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s2_enc.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s2_enc.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s2_lib.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s2_lib.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s2_meth.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s2_meth.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s2_pkt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s2_pkt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s2_srvr.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s2_srvr.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s3_both.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s3_both.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s3_clnt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s3_clnt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s3_enc.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s3_enc.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s3_lib.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s3_lib.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s3_meth.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s3_meth.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s3_pkt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s3_pkt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\s3_srvr.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\s3_srvr.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_algs.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_algs.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_asn1.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_asn1.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_cert.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_cert.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_ciph.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_ciph.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_err.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_err.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_err2.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_err2.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_lib.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_lib.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_rsa.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_rsa.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_sess.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_sess.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_stat.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_stat.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\ssl_txt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\ssl_txt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\t1_clnt.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\t1_clnt.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\t1_enc.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\t1_enc.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\t1_lib.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\t1_lib.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\t1_meth.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\t1_meth.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\t1_reneg.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\t1_reneg.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\openssl-1.0.0a\ssl\t1_srvr.c">
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\t1_srvr.c">
+      <Filter>Source Files\ssl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\tls_srp.c">
+      <Filter>Source Files\ssl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\openssl-1.0.1c\ssl\d1_srtp.c">
       <Filter>Source Files\ssl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\openssl-1.0.0a\crypto\cryptlib.h">
+    <ClInclude Include="..\..\openssl-1.0.1c\crypto\cryptlib.h">
       <Filter>Header Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\openssl-1.0.0a\crypto\o_dir.h">
+    <ClInclude Include="..\..\openssl-1.0.1c\crypto\o_dir.h">
       <Filter>Header Files\crypto</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\openssl-1.0.0a\crypto\evp\evp_locl.h">
+    <ClInclude Include="..\..\openssl-1.0.1c\crypto\evp\evp_locl.h">
       <Filter>Header Files\crypto\evp</Filter>
     </ClInclude>
   </ItemGroup>
