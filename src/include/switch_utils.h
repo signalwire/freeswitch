@@ -266,6 +266,10 @@ static inline switch_bool_t switch_is_moh(const char *s)
 	return SWITCH_TRUE;
 }
 
+
+#define zset(_a, _b) if (!zstr(_b)) _a = _b
+
+
 /* find a character (find) in a string (in) and return a pointer to that point in the string where the character was found 
    using the array (allowed) as allowed non-matching characters, when (allowed) is NULL, behaviour should be identical to strchr()
  */
