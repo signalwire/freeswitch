@@ -47,6 +47,9 @@
 
 #include "ut_sim.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable:4100)
+#endif
 
 int
 ut_compar(const void *a, const void *b) {
