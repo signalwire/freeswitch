@@ -1078,7 +1078,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	switch_event_t *fsevent = NULL;
 	const char *type;
 
-	type = rtp_type(rtp_session)
+	type = rtp_type(rtp_session);
 
 	switch (event) {
 	case ZRTP_EVENT_IS_SECURE:
@@ -5005,15 +5005,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 								switch_mutex_lock(other_rtp_session->read_mutex);
 								if (zrtp_status_ok == zrtp_session_get(other_rtp_session->zrtp_session, &zrtp_session_info)) {
 									if (rtp_session->zrtp_mitm_tries > ZRTP_MITM_TRIES) {
-										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+										switch_rtp_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+										switch_rtp_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
 										rtp_session->flags[SWITCH_ZRTP_FLAG_SECURE_MITM_RECV] = 0;
 										rtp_session->flags[SWITCH_ZRTP_FLAG_SECURE_MITM_SEND] = 0;
 									} else if (zrtp_status_ok == zrtp_resolve_mitm_call(other_rtp_session->zrtp_stream, rtp_session->zrtp_stream)) {
 										rtp_session->flags[SWITCH_ZRTP_FLAG_SECURE_MITM_RECV] = 0;
 										rtp_session->flags[SWITCH_ZRTP_FLAG_SECURE_MITM_SEND] = 0;
-										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-										switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+										switch_rtp_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+										switch_rtp_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
 										rtp_session->zrtp_mitm_tries++;
 									}
 								}
@@ -5589,13 +5589,13 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 								if (rtp_session->zrtp_mitm_tries > ZRTP_MITM_TRIES) {
 									rtp_session->flags[SWITCH_ZRTP_FLAG_SECURE_MITM_RECV] = 0;
 									rtp_session->flags[SWITCH_ZRTP_FLAG_SECURE_MITM_SEND] = 0;
-									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+									switch_rtp_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+									switch_rtp_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
 								} else if (zrtp_status_ok == zrtp_resolve_mitm_call(other_rtp_session->zrtp_stream, rtp_session->zrtp_stream)) {
 									rtp_session->flags[SWITCH_ZRTP_FLAG_SECURE_MITM_RECV] = 0;
 									rtp_session->flags[SWITCH_ZRTP_FLAG_SECURE_MITM_SEND] = 0;
-									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-									switch_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+									switch_rtp_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+									switch_rtp_clear_flag(other_rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
 									rtp_session->zrtp_mitm_tries++;
 								}
 								rtp_session->zrtp_mitm_tries++;
