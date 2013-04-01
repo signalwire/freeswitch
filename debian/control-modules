@@ -262,6 +262,10 @@ Module: codecs/mod_amrwb
 Description: mod_amrwb
  Adds mod_amrwb.
 
+Module: codecs/mod_b64
+Description: mod_b64
+ Adds mod_b64.
+
 Module: codecs/mod_bv
 Description: mod_bv
  Adds mod_bv.
