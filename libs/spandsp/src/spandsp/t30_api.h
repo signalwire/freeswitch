@@ -439,8 +439,8 @@ SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, int enabled);
 /*! Specify the output encoding for TIFF files created during FAX reception.
     \brief Specify the output encoding for TIFF files created during FAX reception.
     \param s The T.30 context.
-    \param encoding The coding required. The options are T4_COMPRESSION_ITU_T4_1D,
-           T4_COMPRESSION_ITU_T4_2D, T4_COMPRESSION_ITU_T6. T6 is usually the
+    \param encoding The coding required. The options are T4_COMPRESSION_T4_1D,
+           T4_COMPRESSION_T4_2D, T4_COMPRESSION_T6. T6 is usually the
            densest option, but support for it is broken in a number of software
            packages.
     \return 0 if OK, else -1. */

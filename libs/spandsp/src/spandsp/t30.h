@@ -353,27 +353,27 @@ enum
 enum
 {
     /*! No compression */
-    T30_SUPPORT_NO_COMPRESSION = 0x01,
+    T30_SUPPORT_COMPRESSION_NONE = 0x01,
     /*! T.1 1D compression */
-    T30_SUPPORT_T4_1D_COMPRESSION = 0x02,
+    T30_SUPPORT_COMPRESSION_T4_1D = 0x02,
     /*! T.4 2D compression */
-    T30_SUPPORT_T4_2D_COMPRESSION = 0x04,
+    T30_SUPPORT_COMPRESSION_T4_2D = 0x04,
     /*! T.6 2D compression */
-    T30_SUPPORT_T6_COMPRESSION = 0x08,
+    T30_SUPPORT_COMPRESSION_T6 = 0x08,
     /*! T.85 monochrome JBIG compression, with fixed L0 */
-    T30_SUPPORT_T85_COMPRESSION = 0x10,
+    T30_SUPPORT_COMPRESSION_T85 = 0x10,
     /*! T.85 monochrome JBIG compression, with variable L0 */
-    T30_SUPPORT_T85_L0_COMPRESSION = 0x20,
+    T30_SUPPORT_COMPRESSION_T85_L0 = 0x20,
     /*! T.43 colour JBIG compression */
-    T30_SUPPORT_T43_COMPRESSION = 0x40,
+    T30_SUPPORT_COMPRESSION_T43 = 0x40,
     /*! T.45 run length colour compression */
-    T30_SUPPORT_T45_COMPRESSION = 0x80,
+    T30_SUPPORT_COMPRESSION_T45 = 0x80,
     /*! T.81 + T.30 Annex E colour JPEG compression */
-    T30_SUPPORT_T81_COMPRESSION = 0x100,
+    T30_SUPPORT_COMPRESSION_T81 = 0x100,
     /*! T.81 + T.30 Annex K colour sYCC-JPEG compression */
-    T30_SUPPORT_SYCC_T81_COMPRESSION = 0x200,
+    T30_SUPPORT_COMPRESSION_SYCC_T81 = 0x200,
     /*! T.88 monochrome JBIG2 compression */
-    T30_SUPPORT_T88_COMPRESSION = 0x400,
+    T30_SUPPORT_COMPRESSION_T88 = 0x400,
     /*! Dither a gray scale image down a simple bilevel image, with rescaling to fit a FAX page */
     T30_SUPPORT_GRAY_TO_BILEVEL = 0x10000000,
     /*! Dither a colour image down a simple bilevel image, with rescaling to fit a FAX page */

@@ -93,10 +93,8 @@ int main(int argc, char *argv[])
     /* Prepare the directory entry fully before writing the image, or libtiff complains */
     TIFFSetField(tiff_file, TIFFTAG_COMPRESSION, output_compression);
     if (output_compression == COMPRESSION_CCITT_T4)
-    {
         TIFFSetField(tiff_file, TIFFTAG_T4OPTIONS, output_t4_options);
-        TIFFSetField(tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);
-    }
+    TIFFSetField(tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);
     TIFFSetField(tiff_file, TIFFTAG_IMAGEWIDTH, image_width);
     TIFFSetField(tiff_file, TIFFTAG_BITSPERSAMPLE, 1);
     TIFFSetField(tiff_file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);

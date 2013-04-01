@@ -858,23 +858,23 @@ int main(int argc, char *argv[])
                                     | T30_SUPPORT_300_600_RESOLUTION
                                     | T30_SUPPORT_400_800_RESOLUTION
                                     | T30_SUPPORT_600_1200_RESOLUTION);
-        //t30_set_rx_encoding(t30_state[i], T4_COMPRESSION_ITU_T85);
+        //t30_set_rx_encoding(t30_state[i], T4_COMPRESSION_T85);
         t30_set_ecm_capability(t30_state[i], use_ecm);
         if (use_ecm)
         {
             t30_set_supported_compressions(t30_state[i],
-                                           T30_SUPPORT_T4_1D_COMPRESSION
-                                         | T30_SUPPORT_T4_2D_COMPRESSION
-                                         | T30_SUPPORT_T6_COMPRESSION
-                                         //| T30_SUPPORT_T81_COMPRESSION
-                                         | T30_SUPPORT_T85_COMPRESSION
-                                         | T30_SUPPORT_T85_L0_COMPRESSION);
+                                           T30_SUPPORT_COMPRESSION_T4_1D
+                                         | T30_SUPPORT_COMPRESSION_T4_2D
+                                         | T30_SUPPORT_COMPRESSION_T6
+                                         //| T30_SUPPORT_COMPRESSION_T81
+                                         | T30_SUPPORT_COMPRESSION_T85
+                                         | T30_SUPPORT_COMPRESSION_T85_L0);
         }
         else
         {
             t30_set_supported_compressions(t30_state[i],
-                                           T30_SUPPORT_T4_1D_COMPRESSION
-                                         | T30_SUPPORT_T4_2D_COMPRESSION);
+                                           T30_SUPPORT_COMPRESSION_T4_1D
+                                         | T30_SUPPORT_COMPRESSION_T4_2D);
         }
         t30_set_minimum_scan_line_time(t30_state[i], scan_line_time);
 

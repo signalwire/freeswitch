@@ -650,11 +650,11 @@ SPAN_DECLARE(int) t30_set_rx_encoding(t30_state_t *s, int encoding)
 {
     switch (encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
-    //case T4_COMPRESSION_ITU_T85:
-    //case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
+    //case T4_COMPRESSION_T85:
+    //case T4_COMPRESSION_T85_L0:
         s->output_encoding = encoding;
         return 0;
     }
@@ -696,15 +696,15 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
     int mask;
 
     /* Mask out the ones we actually support today. */
-    mask = T30_SUPPORT_T4_1D_COMPRESSION
-         | T30_SUPPORT_T4_2D_COMPRESSION
-         | T30_SUPPORT_T6_COMPRESSION
-         //| T30_SUPPORT_T81_COMPRESSION
+    mask = T30_SUPPORT_COMPRESSION_T4_1D
+         | T30_SUPPORT_COMPRESSION_T4_2D
+         | T30_SUPPORT_COMPRESSION_T6
+         //| T30_SUPPORT_COMPRESSION_T81
 #if defined(SPANDSP_SUPPORT_T43)
-         | T30_SUPPORT_T43_COMPRESSION
+         | T30_SUPPORT_COMPRESSION_T43
 #endif
-         | T30_SUPPORT_T85_COMPRESSION
-         | T30_SUPPORT_T85_L0_COMPRESSION
+         | T30_SUPPORT_COMPRESSION_T85
+         | T30_SUPPORT_COMPRESSION_T85_L0
          | 0;
     s->supported_compressions = supported_compressions & mask;
     t30_build_dis_or_dtc(s);

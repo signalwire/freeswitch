@@ -220,8 +220,8 @@ static int detect_page_end(int bit, int page_ended)
         end_marks = 0;
 
         eol_zeros = 11;
-        eol_ones = (page_ended == T4_COMPRESSION_ITU_T4_2D)  ?  2  :  1;
-        expected_eols = (page_ended == T4_COMPRESSION_ITU_T6)  ?  2  :  6;
+        eol_ones = (page_ended == T4_COMPRESSION_T4_2D)  ?  2  :  1;
+        expected_eols = (page_ended == T4_COMPRESSION_T6)  ?  2  :  6;
         return 0;
     }
 
@@ -282,19 +282,19 @@ int main(int argc, char *argv[])
     static const int compression_sequence[] =
     {
         //T4_COMPRESSION_NONE,
-        T4_COMPRESSION_ITU_T4_1D,
-        T4_COMPRESSION_ITU_T4_2D,
-        T4_COMPRESSION_ITU_T6,
+        T4_COMPRESSION_T4_1D,
+        T4_COMPRESSION_T4_2D,
+        T4_COMPRESSION_T6,
 #if defined(SPANDSP_SUPPORT_T42x)
-        T4_COMPRESSION_ITU_T42,
-        T4_COMPRESSION_ITU_SYCC_T42,
+        T4_COMPRESSION_T42,
+        T4_COMPRESSION_SYCC_T42,
 #endif
 #if defined(SPANDSP_SUPPORT_T43x)
-        T4_COMPRESSION_ITU_T43,
+        T4_COMPRESSION_T43,
 #endif
-        T4_COMPRESSION_ITU_T85,
-        T4_COMPRESSION_ITU_T85_L0,
-        //T4_COMPRESSION_ITU_T45,
+        T4_COMPRESSION_T85,
+        T4_COMPRESSION_T85_L0,
+        //T4_COMPRESSION_T45,
         -1
     };
     int sends;
@@ -353,36 +353,36 @@ int main(int argc, char *argv[])
         case 'c':
             if (strcmp(optarg, "T41D") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T4_1D;
+                compression = T4_COMPRESSION_T4_1D;
                 compression_step = -1;
             }
             else if (strcmp(optarg, "T42D") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T4_2D;
+                compression = T4_COMPRESSION_T4_2D;
                 compression_step = -1;
             }
             else if (strcmp(optarg, "T6") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T6;
+                compression = T4_COMPRESSION_T6;
                 compression_step = -1;
             }
 #if defined(SPANDSP_SUPPORT_T42)
             else if (strcmp(optarg, "T42") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T42;
+                compression = T4_COMPRESSION_T42;
                 compression_step = -1;
             }
 #endif
 #if defined(SPANDSP_SUPPORT_T43)
             else if (strcmp(optarg, "T43") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T43;
+                compression = T4_COMPRESSION_T43;
                 compression_step = -1;
             }
 #endif
             else if (strcmp(optarg, "T85") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T85;
+                compression = T4_COMPRESSION_T85;
                 compression_step = -1;
             }
             break;
@@ -426,9 +426,9 @@ int main(int argc, char *argv[])
     if (decode_file_name)
     {
         if (compression < 0)
-            compression = T4_COMPRESSION_ITU_T4_1D;
+            compression = T4_COMPRESSION_T4_1D;
         /* Receive end puts TIFF to a new file. We assume the receive width here. */
-        if ((receive_state = t4_rx_init(NULL, OUT_FILE_NAME, T4_COMPRESSION_ITU_T4_2D)) == NULL)
+        if ((receive_state = t4_rx_init(NULL, OUT_FILE_NAME, T4_COMPRESSION_T4_2D)) == NULL)
         {
             printf("Failed to init T.4 rx\n");
             exit(2);
@@ -548,7 +548,7 @@ int main(int argc, char *argv[])
         t4_tx_set_max_2d_rows_per_1d_row(send_state, 2);
 
         /* Receive end puts TIFF to a function. */
-        if ((receive_state = t4_rx_init(NULL, NULL, T4_COMPRESSION_ITU_T4_2D)) == NULL)
+        if ((receive_state = t4_rx_init(NULL, NULL, T4_COMPRESSION_T4_2D)) == NULL)
         {
             printf("Failed to init T.4 rx\n");
             exit(2);
@@ -670,7 +670,7 @@ int main(int argc, char *argv[])
         t4_tx_set_local_ident(send_state, "111 2222 3333");
 
         /* Receive end puts TIFF to a new file. */
-        if ((receive_state = t4_rx_init(NULL, OUT_FILE_NAME, T4_COMPRESSION_ITU_T4_2D)) == NULL)
+        if ((receive_state = t4_rx_init(NULL, OUT_FILE_NAME, T4_COMPRESSION_T4_2D)) == NULL)
         {
             printf("Failed to init T.4 rx for '%s'\n", OUT_FILE_NAME);
             exit(2);

@@ -34,6 +34,8 @@
 #define T30_DIS_BIT_T37                                     1
 #define T30_DCS_BIT_T37                                     1
 
+/* Bit 2 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
+
 /* Indicates that the terminal has the capability to communicate using ITU-T Rec. T.38.
    Internet address signals CIA, TSA or CSA can be sent and received. The recipient terminal
    may process or ignore this signal. */
@@ -45,15 +47,22 @@
 #define T30_DIS_BIT_3G_MOBILE                               4
 #define T30_DCS_BIT_3G_MOBILE                               4
 
+/* Bit 5 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
+
 /* When ISDN mode is used, in DIS/DTC bit 6 shall be set to "0". */
 #define T30_DIS_BIT_V8_CAPABILITY                           6
+/* Bit 6 in a DCS is "invalid", and should be set to zero */
 
 /* When ISDN mode is used, in DIS/DTC bit 7 shall be set to "0". */
 #define T30_DIS_BIT_64_OCTET_ECM_FRAMES_PREFERRED           7
+/* Bit 7 in a DCS is "invalid", and should be set to zero */
+
+/* Bit 8 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
 
 /* Bit 9 indicates that there is a facsimile document ready to be polled from the answering
    terrminal. It is not an indication of a capability. */
 #define T30_DIS_BIT_READY_TO_TRANSMIT_FAX_DOCUMENT          9
+/* Bit 9 in a DCS should be set to zero */
 
 /* In DIS/DTC bit 10 indicates that the answering terminal has receiving capabilities.
    In DCS it is a command to the receiving terminal to set itself in the receive mode. */
@@ -79,26 +88,39 @@
 
 /* When ISDN mode is used, in DIS/DTC bits 21 to 23 shall be set to "1". */
 
+/* Bit 24 is an extension bit */
+
+/* Bit 25 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
+
 #define T30_DIS_BIT_UNCOMPRESSED_CAPABLE                    26
 #define T30_DCS_BIT_UNCOMPRESSED_MODE                       26
 
 /* When ISDN mode is used, in DIS/DTC bit 27 shall be set to "1". */
 #define T30_DIS_BIT_ECM_CAPABLE                             27
-#define T30_DCS_BIT_ECM                                     27
+#define T30_DCS_BIT_ECM_MODE                                27
 
-/* The value of bit 28 in the DCS command is only valid when ECM is selected. */
+/* Bit 28 in a DIS or DTC should be set to zero */
+/* (T.30 note 7) The value of bit 28 in the DCS command is only valid when ECM is selected. */
 #define T30_DCS_BIT_64_OCTET_ECM_FRAMES                     28
 
-/* The value of bit 31 in the DCS command is only valid when ECM is selected. */
+/* Bit 29 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
+
+/* Bit 30 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
+
+/* (T.30 note 9) The value of bit 31 in the DCS command is only valid when ECM is selected. */
 #define T30_DIS_BIT_T6_CAPABLE                              31
 #define T30_DCS_BIT_T6_MODE                                 31
+
+/* Bit 32 is an extension bit */
 
 #define T30_DIS_BIT_FNV_CAPABLE                             33
 #define T30_DCS_BIT_FNV_CAPABLE                             33
 
 #define T30_DIS_BIT_MULTIPLE_SELECTIVE_POLLING_CAPABLE      34
+/* Bit 34 in a DCS should be set to zero */
 
 #define T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE            35
+/* Bit 35 in a DCS should be set to zero */
 
 #define T30_DIS_BIT_T43_CAPABLE                             36
 #define T30_DCS_BIT_T43_MODE                                36
@@ -109,33 +131,44 @@
 #define T30_DIS_BIT_G726_CAPABLE                            38
 #define T30_DCS_BIT_G726                                    38
 
+/* Bit 39 in a DIS, DTC, or DCS is "reserved for extended voice coding", so it should be set to zero */
+
+/* Bit 40 is an extension bit */
+
+/* This also enables R8 x 15.4/mm mode */
 #define T30_DIS_BIT_200_400_CAPABLE                         41
 #define T30_DCS_BIT_200_400                                 41
 
 #define T30_DIS_BIT_300_300_CAPABLE                         42
 #define T30_DCS_BIT_300_300                                 42
 
+/* This also enables R16 x 15.4/mm mode */
 #define T30_DIS_BIT_400_400_CAPABLE                         43
 #define T30_DCS_BIT_400_400                                 43
 
-/* Bits 44 and 45 are used only in conjunction with bits 15 and 43. Bit 44 in DCS, when used,
-   shall correctly indicate the resolution of the transmitted document, which means that bit 44 in DCS may
-   not always match the indication of bits 44 and 45 in DIS/DTC. Cross selection will cause the distortion
-   and reduction of reproducible area.
+/* Bits 44 and 45 are used only in conjunction with bits 15 and 43. Bit 44 in DCS, when used, shall correctly
+   indicate the resolution of the transmitted document, which means that bit 44 in DCS may not always match the
+   indication of bits 44 and 45 in DIS/DTC. Cross selection will cause the distortion and reduction of reproducible
+   area.
    If a receiver indicates in DIS that it prefers to receive metric-based information, but the transmitter has
    only the equivalent inch-based information (or vice versa), then communication shall still take place.
-   Bits 44 and 45 do not require the provision of any additional features on the terminal to
-   indicate to the sending or receiving user whether the information was transmitted or received on a metric-metric,
-   inch-inch, metric-inch, inch-metric basis. */
+   Bits 44 and 45 do not require the provision of any additional features on the terminal to indicate to the
+   sending or receiving user whether the information was transmitted or received on a metric-metric, inch-inch,
+   metric-inch, inch-metric basis. */
 
 #define T30_DIS_BIT_INCH_RESOLUTION_PREFERRED               44
 #define T30_DCS_BIT_INCH_RESOLUTION                         44
 
 #define T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED             45
+/* Bit 45 in a DCS is "don't care", so it should be set to zero */
 
 #define T30_DIS_BIT_MIN_SCAN_TIME_HALVES                    46
+/* Bit 46 in a DCS is "don't care", so it should be set to zero */
 
 #define T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE               47
+/* Bit 47 in a DCS should be set to zero */
+
+/* Bit 48 is an extension bit */
 
 #define T30_DIS_BIT_SUBADDRESSING_CAPABLE                   49
 #define T30_DCS_BIT_SUBADDRESS_TRANSMISSION                 49
@@ -146,6 +179,9 @@
 /* Bit 51 indicates that there is a data file ready to be polled from the answering terminal. It is
    not an indication of a capability. This bit is used in conjunction with bits 53, 54, 55 and 57. */
 #define T30_DIS_BIT_READY_TO_TRANSMIT_DATA_FILE             51
+/* Bit 51 in a DCS should be set to zero */
+
+/* Bit 52 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
 
 /* The binary file transfer protocol is described in ITU-T Rec. T.434.  */
 #define T30_DIS_BIT_BFT_CAPABLE                             53
@@ -157,21 +193,33 @@
 #define T30_DIS_BIT_EDI_CAPABLE                             55
 #define T30_DCS_BIT_EDI                                     55
 
+/* Bit 56 is an extension bit */
+
 #define T30_DIS_BIT_BTM_CAPABLE                             57
 #define T30_DCS_BIT_BTM                                     57
+
+/* Bit 58 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
 
 /* Bit 59 indicates that there is a character-coded or mixed-mode document ready to be polled
    from the answering terminal. It is not an indication of a capability. This bit is used in
    conjunction with bits 60, 62 and 65. */
 #define T30_DIS_BIT_READY_TO_TRANSMIT_MIXED_MODE_DOCUMENT   59
+/* Bit 59 in a DCS should be set to zero */
 
-#define T30_DIS_BIT_CHARACTER_MODE                          60
+#define T30_DIS_BIT_CHARACTER_MODE_CAPABLE                  60
 #define T30_DCS_BIT_CHARACTER_MODE                          60
+
+/* Bit 61 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
 
 #define T30_DIS_BIT_MIXED_MODE                              62
 #define T30_DCS_BIT_MIXED_MODE                              62
 
+/* Bit 63 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
+
+/* Bit 64 is an extension bit */
+
 #define T30_DIS_BIT_PROCESSABLE_MODE_26                     65
+/* Bit 65 in a DCS should be set to zero */
 
 #define T30_DIS_BIT_DIGITAL_NETWORK_CAPABLE                 66
 #define T30_DCS_BIT_DIGITAL_NETWORK_CAPABLE                 66
@@ -185,6 +233,9 @@
 #define T30_DIS_BIT_FULL_COLOUR_CAPABLE                     69
 #define T30_DCS_BIT_FULL_COLOUR_MODE                        69
 
+/* Bit 70 in a DCS should be set to zero */
+#define T30_DCS_BIT_PREFERRED_HUFFMAN_TABLES                70
+
 /* In a DIS/DTC frame, setting bit 71 to "0" indicates that the called terminal can only accept
    image data which has been digitized to 8 bits/pel/component for JPEG mode. This is also true for T.43
    mode if bit 36 is also set to "1". Setting bit 71 to "1" indicates that the called terminal can also accept
@@ -196,6 +247,8 @@
    to "1". */
 #define T30_DIS_BIT_12BIT_CAPABLE                           71
 #define T30_DCS_BIT_12BIT_COMPONENT                         71
+
+/* Bit 72 is an extension bit */
 
 #define T30_DIS_BIT_NO_SUBSAMPLING                          73
 #define T30_DCS_BIT_NO_SUBSAMPLING                          73
@@ -215,8 +268,49 @@
 #define T30_DIS_BIT_T85_CAPABLE                             78
 #define T30_DCS_BIT_T85_MODE                                78
 
+/* (T.30 note 30) This capability should only be set if T30_DIS_BIT_T85_CAPABLE is also set */
 #define T30_DIS_BIT_T85_L0_CAPABLE                          79
 #define T30_DCS_BIT_T85_L0_MODE                             79
+
+/* Bit 80 is an extension bit */
+
+#define T30_DIS_BIT_HKM_KEY_MANAGEMENT_CAPABLE              81
+#define T30_DCS_BIT_HKM_KEY_MANAGEMENT_MODE                 81
+
+#define T30_DIS_BIT_RSA_KEY_MANAGEMENT_CAPABLE              82
+#define T30_DCS_BIT_RSA_KEY_MANAGEMENT_MODE                 82
+
+#define T30_DIS_BIT_OVERRIDE_CAPABLE                        83
+#define T30_DCS_BIT_OVERRIDE_MODE                           83
+
+#define T30_DIS_BIT_HFX40_CIPHER_CAPABLE                    84
+#define T30_DCS_BIT_HFX40_CIPHER_MODE                       84
+
+#define T30_DIS_BIT_ALTERNATIVE_CIPHER_2_CAPABLE            85
+#define T30_DCS_BIT_ALTERNATIVE_CIPHER_2_MODE               85
+
+#define T30_DIS_BIT_ALTERNATIVE_CIPHER_3_CAPABLE            86
+#define T30_DCS_BIT_ALTERNATIVE_CIPHER_3_MODE               86
+
+#define T30_DIS_BIT_HFX40_I_HASHING_CAPABLE                 87
+#define T30_DCS_BIT_HFX40_I_HASHING_MODE                    87
+
+/* Bit 88 is an extension bit */
+
+#define T30_DIS_BIT_ALTERNATIVE_HASHING_2_CAPABLE           89
+#define T30_DCS_BIT_ALTERNATIVE_HASHING_2_MODE              89
+
+#define T30_DIS_BIT_ALTERNATIVE_HASHING_3_CAPABLE           90
+#define T30_DCS_BIT_ALTERNATIVE_HASHING_3_MODE              90
+
+/* Bit 91 in a DIS, DTC, or DCS is "reserved for suture security features", so it should be set to zero */
+
+/* Bits 92 to 94 specify the mixed raster content mode. */
+
+#define T30_DIS_BIT_T44_PAGE_LENGTH                         95
+#define T30_DCS_BIT_T44_PAGE_LENGTH                         95
+
+/* Bit 96 is an extension bit */
 
 /* In a DIS/DTC frame, setting bit 97 to "0" indicates that the called terminal does not have the
    capability to accept 300 pels/25.4 mm x 300 lines/25.4 mm or 400 pels/25.4 mm x 400 lines/25.4 mm
@@ -252,8 +346,8 @@
      1  1  1    yes         yes         yes         yes
         "yes" means that the called terminal has the corresponding capability.
         "no" means that the called terminal does not have the corresponding capability. */
-#define T30_DIS_BIT_COLOUR_GREY_300_300_400_400_CAPABLE     97
-#define T30_DCS_BIT_COLOUR_GREY_300_300_400_400             97
+#define T30_DIS_BIT_COLOUR_GRAY_300_300_400_400_CAPABLE     97
+#define T30_DCS_BIT_COLOUR_GRAY_300_300_400_400             97
 
 /* In a DIS/DTC frame, setting bit 98 to "0" indicates that the called terminal does not have the
    capability to accept 100 pels/25.4 mm x 100 lines/25.4 mm spatial resolution for colour or gray-scale
@@ -263,26 +357,38 @@
    not use 100 pels/25.4 mm  x 100 lines/25.4 mm spatial resolution for colour or gray-scale images. Setting
    bit 98 to "1" indicates that the calling terminal uses 100 pels/25.4 mm x 100 lines/25.4 mm spatial
    resolution for colour or gray-scale images. */
-#define T30_DIS_BIT_COLOUR_GREY_100_100_CAPABLE             98
-#define T30_DCS_BIT_COLOUR_GREY_100_100                     98
+#define T30_DIS_BIT_COLOUR_GRAY_100_100_CAPABLE             98
+#define T30_DCS_BIT_COLOUR_GRAY_100_100                     98
+
+#define T30_DIS_BIT_SIMPLE_PHASE_C_BFT_NEGOTIATIONS_CAPABLE 99
+#define T30_DCS_BIT_SIMPLE_PHASE_C_BFT_NEGOTIATIONS_CAPABLE 99
+
+#define T30_DIS_BIT_EXTENDED_BFT_NEGOTIATIONS_CAPABLE       100
+/* Bit 100 in a DCS should be set to zero */
 
 /* To provide an error recovery mechanism, when PWD/SEP/SUB/SID/PSA/IRA/ISP frames are sent with DCS or DTC,
     bits 49, 102 and 50 in DCS or bits 47, 101, 50 and 35 in DTC shall be set to "1" with the following
     meaning:
+
     Bit DIS                                             DTC                                                 DCS
-    35  Polled SubAddress capability                    Polled SubAddress transmission                      Not allowed - set to "0"
+    35  Polled sub-address capability                   Polled sub-address transmission                     Not allowed - set to "0"
     47  Selective polling capability                    Selective polling transmission                      Not allowed - set to "0"
-    49  Subaddressing capability                        Not allowed (Set to "0")                            Subaddressing transmission
-    50  Password                                        Password transmission                               Sender Identification transmission
-    101 Internet Selective Polling Address capability   Internet Selective Polling Address transmission     Not allowed - set to "0"
-    102 Internet Routing Address capability             Not allowed (Set to "0")                            Internet Routing Address transmission
+    49  Sub-addressing capability                       Not allowed (Set to "0")                            Sub-addressing transmission
+    50  Password                                        Password transmission                               Sender identification transmission
+    101 Internet selective polling address capability   Internet selective polling address transmission     Not allowed - set to "0"
+    102 Internet routing address capability             Not allowed (Set to "0")                            Internet routing address transmission
 
    Terminals conforming to the 1993 version of T.30 may set the above bits to "0" even though PWD/SEP/SUB
    frames are transmitted. */
 #define T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS      101
+/* Bit 101 in a DCS should be set to zero */
 
 #define T30_DIS_BIT_INTERNET_ROUTING_ADDRESS                102
 #define T30_DCS_BIT_INTERNET_ROUTING_ADDRESS_TRANSMISSION   102
+
+/* Bit 103 in a DIS, DTC, or DCS is "reserved", so it should be set to zero */
+
+/* Bit 104 is an extension bit */
 
 #define T30_DIS_BIT_600_600_CAPABLE                         105
 #define T30_DCS_BIT_600_600                                 105
@@ -299,11 +405,15 @@
 #define T30_DIS_BIT_600_1200_CAPABLE                        109
 #define T30_DCS_BIT_600_1200                                109
 
-#define T30_DIS_BIT_COLOUR_GREY_600_600_CAPABLE             110
-#define T30_DCS_BIT_COLOUR_GREY_600_600                     110
+/* This requires that bit 105 is also set */
+#define T30_DIS_BIT_COLOUR_GRAY_600_600_CAPABLE             110
+#define T30_DCS_BIT_COLOUR_GRAY_600_600                     110
 
-#define T30_DIS_BIT_COLOUR_GREY_1200_1200_CAPABLE           111
-#define T30_DCS_BIT_COLOUR_GREY_1200_1200                   111
+/* This requires that bit 106 is also set */
+#define T30_DIS_BIT_COLOUR_GRAY_1200_1200_CAPABLE           111
+#define T30_DCS_BIT_COLOUR_GRAY_1200_1200                   111
+
+/* Bit 112 is an extension bit */
 
 #define T30_DIS_BIT_ALTERNATE_DOUBLE_SIDED_CAPABLE          113
 #define T30_DCS_BIT_ALTERNATE_DOUBLE_SIDED_CAPABLE          113
@@ -312,9 +422,12 @@
 #define T30_DCS_BIT_CONTINUOUS_DOUBLE_SIDED_CAPABLE         114
 
 #define T30_DIS_BIT_BLACK_AND_WHITE_MRC                     115
+/* Bit 115 in a DCS should be set to zero */
 
 #define T30_DIS_BIT_T45_CAPABLE                             116
 #define T30_DCS_BIT_T45_MODE                                116
+
+/* Bits 117 to 118 specify the shared memory capability */
 
 /* This bit defines the available colour space, when bit 92, 93 or 94 is set to "1".
    Available colour space for all combinations of bits 92, 93, 94 and 119 are shown in the following table.
@@ -345,6 +458,8 @@
 #define T30_DIS_BIT_T44_COLOUR_SPACE                        119
 #define T30_DCS_BIT_T44_COLOUR_SPACE                        119
 
+/* Bit 120 is an extension bit */
+
 /* Can only be set in the communication through the T.38 gateway, to cope with delay of network.
    T.x timer (12+-1s) should be used after emitting RNR or TNR. However, after receiving
    PPS signal in ECM mode, T.5 timer should be used. */
@@ -365,6 +480,8 @@
    as defined in ITU-T Rec. T.38 in response to a device which has set the related DIS bit to "1".
    When this bit is set to "1", the data signal rate of the modem (bits 11-14) should be set to "0". */
 #define T30_DCS_BIT_T38_FAX_MODE                            123
+
+/* Bits 124 to 126 specify the T.89 applications profile. */
 
 /* When either bit of 31, 36, 38, 51, 53, 54, 55, 57, 59, 60, 62, 65, 68, 78, 79, 115, 116 and 127 is
    set to "1", ECM must be used. If the value of bit field 92 to 94 is non-zero, then ECM must be used.

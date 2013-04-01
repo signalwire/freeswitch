@@ -43,103 +43,143 @@ ITUTESTS_DIR=../test-data/itu/fax
 
 for OPTS in "-p AA" "-p AA -e" "-p TT" "-p TT -e" "-p GG" "-p GG -e" "-p TG" "-p TG -e" "-p GT" "-p GT -e"
 do
-    FILE="${ITUTESTS_DIR}/R8_385_A4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R8_385_A4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R8_385_B4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R8_385_B4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R8_385_A3.tif"
-    run_fax_test
-
-
-    FILE="${ITUTESTS_DIR}/R8_77_A4.tif"
-    run_fax_test
-
-    FILE="${ITUTESTS_DIR}/R8_77_B4.tif"
-    run_fax_test
-
-    FILE="${ITUTESTS_DIR}/R8_77_A3.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R8_385_A3.tif"
     run_fax_test
 
 
-    FILE="${ITUTESTS_DIR}/R8_154_A4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R8_77_A4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R8_154_B4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R8_77_B4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R8_154_A3.tif"
-    run_fax_test
-
-
-    FILE="${ITUTESTS_DIR}/R300_300_A4.tif"
-    run_fax_test
-
-    FILE="${ITUTESTS_DIR}/R300_300_B4.tif"
-    run_fax_test
-
-    FILE="${ITUTESTS_DIR}/R300_300_A3.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R8_77_A3.tif"
     run_fax_test
 
 
-    FILE="${ITUTESTS_DIR}/R300_600_A4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R8_154_A4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R300_600_B4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R8_154_B4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R300_600_A3.tif"
-    run_fax_test
-
-
-    FILE="${ITUTESTS_DIR}/R16_154_A4.tif"
-    run_fax_test
-
-    FILE="${ITUTESTS_DIR}/R16_154_B4.tif"
-    run_fax_test
-
-    FILE="${ITUTESTS_DIR}/R16_154_A3.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R8_154_A3.tif"
     run_fax_test
 
 
-    FILE="${ITUTESTS_DIR}/R16_800_A4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R16_154_A4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R16_800_B4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R16_154_B4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R16_800_A3.tif"
-    run_fax_test
-
-
-    FILE="${ITUTESTS_DIR}/R600_600_A4.tif"
-    run_fax_test
-
-    FILE="${ITUTESTS_DIR}/R600_600_B4.tif"
-    run_fax_test
-
-    FILE="${ITUTESTS_DIR}/R600_600_A3.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_R16_154_A3.tif"
     run_fax_test
 
 
-    FILE="${ITUTESTS_DIR}/R600_1200_A4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_200_100_A4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R600_1200_B4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_200_100_B4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R600_1200_A3.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_200_100_A3.tif"
     run_fax_test
 
 
-    FILE="${ITUTESTS_DIR}/R1200_1200_A4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_200_200_A4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R1200_1200_B4.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_200_200_B4.tif"
     run_fax_test
 
-    FILE="${ITUTESTS_DIR}/R1200_1200_A3.tif"
+    FILE="${ITUTESTS_DIR}/bilevel_200_200_A3.tif"
+    run_fax_test
+
+
+    FILE="${ITUTESTS_DIR}/bilevel_200_400_A4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_200_400_B4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_200_400_A3.tif"
+    run_fax_test
+
+
+    FILE="${ITUTESTS_DIR}/bilevel_300_300_A4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_300_300_B4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_300_300_A3.tif"
+    run_fax_test
+
+
+    FILE="${ITUTESTS_DIR}/bilevel_300_600_A4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_300_600_B4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_300_600_A3.tif"
+    run_fax_test
+
+
+    FILE="${ITUTESTS_DIR}/bilevel_400_400_A4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_400_400_B4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_400_400_A3.tif"
+    run_fax_test
+
+
+    FILE="${ITUTESTS_DIR}/bilevel_400_800_A4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_400_800_B4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_400_800_A3.tif"
+    run_fax_test
+
+
+    FILE="${ITUTESTS_DIR}/bilevel_600_600_A4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_600_600_B4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_600_600_A3.tif"
+    run_fax_test
+
+
+    FILE="${ITUTESTS_DIR}/bilevel_600_1200_A4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_600_1200_B4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_600_1200_A3.tif"
+    run_fax_test
+
+
+    FILE="${ITUTESTS_DIR}/bilevel_1200_1200_A4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_1200_1200_B4.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/bilevel_1200_1200_A3.tif"
     run_fax_test
 done
 

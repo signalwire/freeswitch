@@ -58,210 +58,294 @@ struct
 } sequence[] =
 {
     {
-        "R8_385_A4.tif",
+        "bilevel_R8_385_A4.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
         1100
     },
     {
-        "R8_385_B4.tif",
+        "bilevel_R8_385_B4.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_B4,
         1200
     },
     {
-        "R8_385_A3.tif",
+        "bilevel_R8_385_A3.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A3,
         1556
     },
     {
-        "R8_77_A4.tif",
+        "bilevel_R8_77_A4.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_FINE,
         T4_WIDTH_R8_A4,
         1100*2
     },
     {
-        "R8_77_B4.tif",
+        "bilevel_R8_77_B4.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_FINE,
         T4_WIDTH_R8_B4,
         1200*2
     },
     {
-        "R8_77_A3.tif",
+        "bilevel_R8_77_A3.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_FINE,
         T4_WIDTH_R8_A3,
         1556*2
     },
     {
-        "R8_154_A4.tif",
+        "bilevel_R8_154_A4.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R8_A4,
         1100*4
     },
     {
-        "R8_154_B4.tif",
+        "bilevel_R8_154_B4.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R8_B4,
         1200*4
     },
     {
-        "R8_154_A3.tif",
+        "bilevel_R8_154_A3.tif",
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R8_A3,
         1556*4
     },
     {
-        "R300_300_A4.tif",
-        T4_X_RESOLUTION_300,
-        T4_Y_RESOLUTION_300,
-        T4_WIDTH_300_A4,
-        1100*3
-    },
-    {
-        "R300_300_B4.tif",
-        T4_X_RESOLUTION_300,
-        T4_Y_RESOLUTION_300,
-        T4_WIDTH_300_B4,
-        1200*3
-    },
-    {
-        "R300_300_A3.tif",
-        T4_X_RESOLUTION_300,
-        T4_Y_RESOLUTION_300,
-        T4_WIDTH_300_A3,
-        1556*3
-    },
-    {
-        "R300_600_A4.tif",
-        T4_X_RESOLUTION_300,
-        T4_Y_RESOLUTION_600,
-        T4_WIDTH_300_A4,
-        1100*6
-    },
-    {
-        "R300_600_B4.tif",
-        T4_X_RESOLUTION_300,
-        T4_Y_RESOLUTION_600,
-        T4_WIDTH_300_B4,
-        1200*6
-    },
-    {
-        "R300_600_A3.tif",
-        T4_X_RESOLUTION_300,
-        T4_Y_RESOLUTION_600,
-        T4_WIDTH_300_A3,
-        1556*6
-    },
-    {
-        "R16_154_A4.tif",
+        "bilevel_R16_154_A4.tif",
         T4_X_RESOLUTION_R16,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R16_A4,
         1100*4
     },
     {
-        "R16_154_B4.tif",
+        "bilevel_R16_154_B4.tif",
         T4_X_RESOLUTION_R16,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R16_B4,
         1200*4
     },
     {
-        "R16_154_A3.tif",
+        "bilevel_R16_154_A3.tif",
         T4_X_RESOLUTION_R16,
         T4_Y_RESOLUTION_SUPERFINE,
         T4_WIDTH_R16_A3,
         1556*4
     },
     {
-        "R16_800_A4.tif",
-        T4_X_RESOLUTION_R16,
+        "bilevel_200_100_A4.tif",
+        T4_X_RESOLUTION_200,
+        T4_Y_RESOLUTION_100,
+        T4_WIDTH_200_A4,
+        1100
+    },
+    {
+        "bilevel_200_100_B4.tif",
+        T4_X_RESOLUTION_200,
+        T4_Y_RESOLUTION_100,
+        T4_WIDTH_200_B4,
+        1200
+    },
+    {
+        "bilevel_200_100_A3.tif",
+        T4_X_RESOLUTION_200,
+        T4_Y_RESOLUTION_100,
+        T4_WIDTH_200_A3,
+        1556
+    },
+    {
+        "bilevel_200_200_A4.tif",
+        T4_X_RESOLUTION_200,
+        T4_Y_RESOLUTION_200,
+        T4_WIDTH_200_A4,
+        1100*2
+    },
+    {
+        "bilevel_200_200_B4.tif",
+        T4_X_RESOLUTION_200,
+        T4_Y_RESOLUTION_200,
+        T4_WIDTH_200_B4,
+        1200*2
+    },
+    {
+        "bilevel_200_200_A3.tif",
+        T4_X_RESOLUTION_200,
+        T4_Y_RESOLUTION_200,
+        T4_WIDTH_200_A3,
+        1556*2
+    },
+    {
+        "bilevel_200_400_A4.tif",
+        T4_X_RESOLUTION_200,
+        T4_Y_RESOLUTION_400,
+        T4_WIDTH_200_A4,
+        1100*4
+    },
+    {
+        "bilevel_200_400_B4.tif",
+        T4_X_RESOLUTION_200,
+        T4_Y_RESOLUTION_400,
+        T4_WIDTH_200_B4,
+        1200*4
+    },
+    {
+        "bilevel_200_400_A3.tif",
+        T4_X_RESOLUTION_200,
+        T4_Y_RESOLUTION_400,
+        T4_WIDTH_200_A3,
+        1556*4
+    },
+    {
+        "bilevel_300_300_A4.tif",
+        T4_X_RESOLUTION_300,
+        T4_Y_RESOLUTION_300,
+        T4_WIDTH_300_A4,
+        1100*3
+    },
+    {
+        "bilevel_300_300_B4.tif",
+        T4_X_RESOLUTION_300,
+        T4_Y_RESOLUTION_300,
+        T4_WIDTH_300_B4,
+        1200*3
+    },
+    {
+        "bilevel_300_300_A3.tif",
+        T4_X_RESOLUTION_300,
+        T4_Y_RESOLUTION_300,
+        T4_WIDTH_300_A3,
+        1556*3
+    },
+    {
+        "bilevel_300_600_A4.tif",
+        T4_X_RESOLUTION_300,
+        T4_Y_RESOLUTION_600,
+        T4_WIDTH_300_A4,
+        1100*6
+    },
+    {
+        "bilevel_300_600_B4.tif",
+        T4_X_RESOLUTION_300,
+        T4_Y_RESOLUTION_600,
+        T4_WIDTH_300_B4,
+        1200*6
+    },
+    {
+        "bilevel_300_600_A3.tif",
+        T4_X_RESOLUTION_300,
+        T4_Y_RESOLUTION_600,
+        T4_WIDTH_300_A3,
+        1556*6
+    },
+    {
+        "bilevel_400_400_A4.tif",
+        T4_X_RESOLUTION_400,
+        T4_Y_RESOLUTION_400,
+        T4_WIDTH_400_A4,
+        1100*4
+    },
+    {
+        "bilevel_400_400_B4.tif",
+        T4_X_RESOLUTION_400,
+        T4_Y_RESOLUTION_400,
+        T4_WIDTH_400_B4,
+        1200*4
+    },
+    {
+        "bilevel_400_400_A3.tif",
+        T4_X_RESOLUTION_400,
+        T4_Y_RESOLUTION_400,
+        T4_WIDTH_400_A3,
+        1556*4
+    },
+    {
+        "bilevel_400_800_A4.tif",
+        T4_X_RESOLUTION_400,
         T4_Y_RESOLUTION_800,
-        T4_WIDTH_R16_A4,
+        T4_WIDTH_400_A4,
         1100*8
     },
     {
-        "R16_800_B4.tif",
-        T4_X_RESOLUTION_R16,
+        "bilevel_400_800_B4.tif",
+        T4_X_RESOLUTION_400,
         T4_Y_RESOLUTION_800,
-        T4_WIDTH_R16_B4,
+        T4_WIDTH_400_B4,
         1200*8
     },
     {
-        "R16_800_A3.tif",
-        T4_X_RESOLUTION_R16,
+        "bilevel_400_800_A3.tif",
+        T4_X_RESOLUTION_400,
         T4_Y_RESOLUTION_800,
-        T4_WIDTH_R16_A3,
+        T4_WIDTH_400_A3,
         1556*8
     },
     {
-        "R600_600_A4.tif",
+        "bilevel_600_600_A4.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_600,
         T4_WIDTH_600_A4,
         1100*6
     },
     {
-        "R600_600_B4.tif",
+        "bilevel_600_600_B4.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_600,
         T4_WIDTH_600_B4,
         1200*6
     },
     {
-        "R600_600_A3.tif",
+        "bilevel_600_600_A3.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_600,
         T4_WIDTH_600_A3,
         1556*6
     },
     {
-        "R600_1200_A4.tif",
+        "bilevel_600_1200_A4.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_600_A4,
         1100*12
     },
     {
-        "R600_1200_B4.tif",
+        "bilevel_600_1200_B4.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_600_B4,
         1200*12
     },
     {
-        "R600_1200_A3.tif",
+        "bilevel_600_1200_A3.tif",
         T4_X_RESOLUTION_600,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_600_A3,
         1556*12
     },
     {
-        "R1200_1200_A4.tif",
+        "bilevel_1200_1200_A4.tif",
         T4_X_RESOLUTION_1200,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_1200_A4,
         1100*12
     },
     {
-        "R1200_1200_B4.tif",
+        "bilevel_1200_1200_B4.tif",
         T4_X_RESOLUTION_1200,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_1200_B4,
         1200*12
     },
     {
-        "R1200_1200_A3.tif",
+        "bilevel_1200_1200_A3.tif",
         T4_X_RESOLUTION_1200,
         T4_Y_RESOLUTION_1200,
         T4_WIDTH_1200_A3,
@@ -291,8 +375,10 @@ int main(int argc, char *argv[])
     int compression;
     int photo_metric;
     int fill_order;
+    int output_t4_options;
 
-    compression = T4_COMPRESSION_ITU_T6;
+    compression = COMPRESSION_CCITT_T6;
+    output_t4_options = 0;
     photo_metric = PHOTOMETRIC_MINISWHITE;
     fill_order = FILLORDER_LSB2MSB;
     while ((opt = getopt(argc, argv, "126ir")) != -1)
@@ -300,13 +386,16 @@ int main(int argc, char *argv[])
         switch (opt)
         {
         case '1':
-            compression = T4_COMPRESSION_ITU_T4_1D;
+            compression = COMPRESSION_CCITT_T4;
+            output_t4_options = GROUP3OPT_FILLBITS;
             break;
         case '2':
-            compression = T4_COMPRESSION_ITU_T4_2D;
+            compression = COMPRESSION_CCITT_T4;
+            output_t4_options = GROUP3OPT_FILLBITS | GROUP3OPT_2DENCODING;
             break;
         case '6':
-            compression = T4_COMPRESSION_ITU_T6;
+            compression = COMPRESSION_CCITT_T6;
+            output_t4_options = 0;
             break;
         case 'i':
             photo_metric = PHOTOMETRIC_MINISBLACK;
@@ -328,6 +417,9 @@ int main(int argc, char *argv[])
 
         /* Prepare the directory entry fully before writing the image, or libtiff complains */
         TIFFSetField(tiff_file, TIFFTAG_COMPRESSION, compression);
+        if (output_t4_options)
+            TIFFSetField(tiff_file, TIFFTAG_T4OPTIONS, output_t4_options);
+        TIFFSetField(tiff_file, TIFFTAG_FAXMODE, FAXMODE_CLASSF);
         TIFFSetField(tiff_file, TIFFTAG_IMAGEWIDTH, sequence[i].width);
         TIFFSetField(tiff_file, TIFFTAG_BITSPERSAMPLE, 1);
         TIFFSetField(tiff_file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);

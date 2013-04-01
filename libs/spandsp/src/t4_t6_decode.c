@@ -401,7 +401,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
             /* We have an EOL, so now the page begins and we can proceed to
                process the bit stream as image data. */
             s->consecutive_eols = 0;
-            if (s->encoding == T4_COMPRESSION_ITU_T4_1D)
+            if (s->encoding == T4_COMPRESSION_T4_1D)
             {
                 s->row_is_2d = FALSE;
                 force_drop_rx_bits(s, 12);
@@ -439,7 +439,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
                    we should count up both EOLs, unless there is some bogus partial
                    row ahead of them. */
                 s->consecutive_eols++;
-                if (s->encoding == T4_COMPRESSION_ITU_T6)
+                if (s->encoding == T4_COMPRESSION_T6)
                 {
                     if (s->consecutive_eols >= EOLS_TO_END_T6_RX_PAGE)
                     {
@@ -466,7 +466,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
                 if (put_decoded_row(s))
                     return TRUE;
             }
-            if (s->encoding == T4_COMPRESSION_ITU_T4_2D)
+            if (s->encoding == T4_COMPRESSION_T4_2D)
             {
                 s->row_is_2d = !(s->rx_bitstream & 0x1000);
                 force_drop_rx_bits(s, 13);
@@ -663,7 +663,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
         if (s->a0 >= s->image_width)
             s->a0 = s->image_width - 1;
 
-        if (s->encoding == T4_COMPRESSION_ITU_T6)
+        if (s->encoding == T4_COMPRESSION_T6)
         {
             /* T.6 has no EOL markers. We sense the end of a line by its length alone. */
             /* The last test here is a backstop protection, so a corrupt image cannot
@@ -778,9 +778,9 @@ SPAN_DECLARE(int) t4_t6_decode_set_encoding(t4_t6_decode_state_t *s, int encodin
 {
     switch (encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
         s->encoding = encoding;
         return 0;
     }
@@ -864,10 +864,10 @@ SPAN_DECLARE(int) t4_t6_decode_restart(t4_t6_decode_state_t *s, int image_width)
     s->b1 = s->image_width;
     s->a0 = 0;
     s->run_length = 0;
-    s->row_is_2d = (s->encoding == T4_COMPRESSION_ITU_T6);
+    s->row_is_2d = (s->encoding == T4_COMPRESSION_T6);
     /* We start at -1 EOLs for 1D and 2D decoding, as an indication we are waiting for the
        first EOL. T.6 coding starts without any preamble. */
-    s->consecutive_eols = (s->encoding == T4_COMPRESSION_ITU_T6)  ?  0  :  -1;
+    s->consecutive_eols = (s->encoding == T4_COMPRESSION_T6)  ?  0  :  -1;
 
     if (s->cur_runs)
         memset(s->cur_runs, 0, run_space);

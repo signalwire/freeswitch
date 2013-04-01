@@ -406,7 +406,7 @@ static void fax_prepare(void)
                                 | T30_SUPPORT_400_800_RESOLUTION
                                 | T30_SUPPORT_600_1200_RESOLUTION);
     t30_set_supported_modems(t30, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
-    t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
+    t30_set_supported_compressions(t30, T30_SUPPORT_COMPRESSION_T4_1D | T30_SUPPORT_COMPRESSION_T4_2D | T30_SUPPORT_COMPRESSION_T6);
     t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) 'A');
     t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) 'A');
     t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) 'A');
@@ -879,7 +879,7 @@ static int next_step(faxtester_state_t *s)
             t30 = fax_get_t30_state(fax);
             t30_set_rx_file(t30, output_tiff_file_name, -1);
             /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
-            t30_set_rx_encoding(t30, T4_COMPRESSION_ITU_T4_1D);
+            t30_set_rx_encoding(t30, T4_COMPRESSION_T4_1D);
             if (value)
             {
                 sprintf(path, "%s/%s", image_path, (const char *) value);
@@ -894,7 +894,7 @@ static int next_step(faxtester_state_t *s)
             next_tx_file[0] = '\0';
             t30 = fax_get_t30_state(fax);
             /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
-            t30_set_rx_encoding(t30, T4_COMPRESSION_ITU_T4_1D);
+            t30_set_rx_encoding(t30, T4_COMPRESSION_T4_1D);
             if (value)
             {
                 sprintf(path, "%s/%s", image_path, (const char *) value);
@@ -969,13 +969,13 @@ static int next_step(faxtester_state_t *s)
                 exit(2);
             }
             t4_tx_set_header_info(&t4_tx_state, NULL);
-            compression_type = T4_COMPRESSION_ITU_T4_1D;
+            compression_type = T4_COMPRESSION_T4_1D;
             if (compression)
             {
                 if (strcasecmp((const char *) compression, "T.4 2D") == 0)
-                    compression_type = T4_COMPRESSION_ITU_T4_2D;
+                    compression_type = T4_COMPRESSION_T4_2D;
                 else if (strcasecmp((const char *) compression, "T.6") == 0)
-                    compression_type = T4_COMPRESSION_ITU_T6;
+                    compression_type = T4_COMPRESSION_T6;
             }
             t4_tx_set_tx_encoding(&t4_tx_state, compression_type);
             t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
@@ -1009,13 +1009,13 @@ static int next_step(faxtester_state_t *s)
                 exit(2);
             }
             t4_tx_set_header_info(&t4_tx_state, NULL);
-            compression_type = T4_COMPRESSION_ITU_T4_1D;
+            compression_type = T4_COMPRESSION_T4_1D;
             if (compression)
             {
                 if (strcasecmp((const char *) compression, "T.4 2D") == 0)
-                    compression_type = T4_COMPRESSION_ITU_T4_2D;
+                    compression_type = T4_COMPRESSION_T4_2D;
                 else if (strcasecmp((const char *) compression, "T.6") == 0)
-                    compression_type = T4_COMPRESSION_ITU_T6;
+                    compression_type = T4_COMPRESSION_T6;
             }
             t4_tx_set_tx_encoding(&t4_tx_state, compression_type);
             t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);

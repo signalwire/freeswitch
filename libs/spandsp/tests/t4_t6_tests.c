@@ -205,8 +205,8 @@ static int detect_page_end(int bit, int page_ended)
         end_marks = 0;
 
         eol_zeros = 11;
-        eol_ones = (page_ended == T4_COMPRESSION_ITU_T4_2D)  ?  2  :  1;
-        expected_eols = (page_ended == T4_COMPRESSION_ITU_T6)  ?  2  :  6;
+        eol_ones = (page_ended == T4_COMPRESSION_T4_2D)  ?  2  :  1;
+        expected_eols = (page_ended == T4_COMPRESSION_T6)  ?  2  :  6;
         return 0;
     }
 
@@ -266,9 +266,9 @@ int main(int argc, char *argv[])
 {
     static const int compression_sequence[] =
     {
-        T4_COMPRESSION_ITU_T4_1D,
-        T4_COMPRESSION_ITU_T4_2D,
-        T4_COMPRESSION_ITU_T6,
+        T4_COMPRESSION_T4_1D,
+        T4_COMPRESSION_T4_2D,
+        T4_COMPRESSION_T6,
         -1
     };
     int bit;
@@ -303,17 +303,17 @@ int main(int argc, char *argv[])
         case 'c':
             if (strcmp(optarg, "T41D") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T4_1D;
+                compression = T4_COMPRESSION_T4_1D;
                 compression_step = -1;
             }
             else if (strcmp(optarg, "T42D") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T4_2D;
+                compression = T4_COMPRESSION_T4_2D;
                 compression_step = -1;
             }
             else if (strcmp(optarg, "T6") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T6;
+                compression = T4_COMPRESSION_T6;
                 compression_step = -1;
             }
             break;

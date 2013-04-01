@@ -91,23 +91,23 @@ SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding)
     {
     case T4_COMPRESSION_NONE:
         return "None";
-    case T4_COMPRESSION_ITU_T4_1D:
+    case T4_COMPRESSION_T4_1D:
         return "T.4 1-D";
-    case T4_COMPRESSION_ITU_T4_2D:
+    case T4_COMPRESSION_T4_2D:
         return "T.4 2-D";
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T6:
         return "T.6";
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         return "T.42";
-    case T4_COMPRESSION_ITU_SYCC_T42:
+    case T4_COMPRESSION_SYCC_T42:
         return "sYCC T.42";
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         return "T.43";
-    case T4_COMPRESSION_ITU_T45:
+    case T4_COMPRESSION_T45:
         return "T.45";
-    case T4_COMPRESSION_ITU_T85:
+    case T4_COMPRESSION_T85:
         return "T.85";
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85_L0:
         return "T.85(L0)";
     }
     return "???";
@@ -158,20 +158,20 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     photometric = PHOTOMETRIC_MINISWHITE;
     switch (t->output_encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
+    case T4_COMPRESSION_T4_1D:
     default:
         output_compression = COMPRESSION_CCITT_T4;
         output_t4_options = GROUP3OPT_FILLBITS;
         break;
-    case T4_COMPRESSION_ITU_T4_2D:
+    case T4_COMPRESSION_T4_2D:
         output_compression = COMPRESSION_CCITT_T4;
         output_t4_options = GROUP3OPT_FILLBITS | GROUP3OPT_2DENCODING;
         break;
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T6:
         output_compression = COMPRESSION_CCITT_T6;
         break;
 #if defined(SPANDSP_SUPPORT_T42)
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         output_compression = COMPRESSION_JPEG;
         bits_per_sample = 8;
         samples_per_pixel = 3;
@@ -179,15 +179,15 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         break;
 #endif
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         output_compression = COMPRESSION_T43;
         bits_per_sample = 8;
         samples_per_pixel = 3;
         photometric = PHOTOMETRIC_ITULAB;
         break;
 #endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
         output_compression = COMPRESSION_T85;
         break;
     }
@@ -279,8 +279,8 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     image_length = 0;
     switch (s->line_encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
         /* We only get bad row info from pages received in non-ECM mode. */
         if (output_compression == COMPRESSION_CCITT_T4)
         {
@@ -296,19 +296,19 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
             }
         }
         /* Fall through */
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T6:
         image_length = t4_t6_decode_get_image_length(&s->decoder.t4_t6);
         break;
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         image_length = t42_decode_get_image_length(&s->decoder.t42);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         image_length = t43_decode_get_image_length(&s->decoder.t43);
         break;
 #endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
         image_length = t85_decode_get_image_length(&s->decoder.t85);
         break;
     }
@@ -450,18 +450,18 @@ SPAN_DECLARE(int) t4_rx_put(t4_rx_state_t *s, const uint8_t buf[], size_t len)
     s->line_image_size += 8*len;
     switch (s->line_encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
         return t4_t6_decode_put(&s->decoder.t4_t6, buf, len);
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         return t42_decode_put(&s->decoder.t42, buf, len);
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         return t43_decode_put(&s->decoder.t43, buf, len);
 #endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
         return t85_decode_put(&s->decoder.t85, buf, len);
     }
     return T4_DECODE_OK;
@@ -514,14 +514,14 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
 {
     switch (encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
         switch (s->line_encoding)
         {
-        case T4_COMPRESSION_ITU_T4_1D:
-        case T4_COMPRESSION_ITU_T4_2D:
-        case T4_COMPRESSION_ITU_T6:
+        case T4_COMPRESSION_T4_1D:
+        case T4_COMPRESSION_T4_2D:
+        case T4_COMPRESSION_T6:
             break;
         default:
             t4_t6_decode_init(&s->decoder.t4_t6, encoding, s->image_width, s->row_handler, s->row_handler_user_data);
@@ -529,10 +529,10 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
         }
         s->line_encoding = encoding;
         return t4_t6_decode_set_encoding(&s->decoder.t4_t6, encoding);
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         switch (s->line_encoding)
         {
-        case T4_COMPRESSION_ITU_T42:
+        case T4_COMPRESSION_T42:
             break;
         default:
             t42_decode_init(&s->decoder.t42, s->row_handler, s->row_handler_user_data);
@@ -545,10 +545,10 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
         s->line_encoding = encoding;
         return 0;
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         switch (s->line_encoding)
         {
-        case T4_COMPRESSION_ITU_T43:
+        case T4_COMPRESSION_T43:
             break;
         default:
             t43_decode_init(&s->decoder.t43, s->row_handler, s->row_handler_user_data);
@@ -561,12 +561,12 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
         s->line_encoding = encoding;
         return 0;
 #endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
         switch (s->line_encoding)
         {
-        case T4_COMPRESSION_ITU_T85:
-        case T4_COMPRESSION_ITU_T85_L0:
+        case T4_COMPRESSION_T85:
+        case T4_COMPRESSION_T85_L0:
             break;
         default:
             t85_decode_init(&s->decoder.t85, s->row_handler, s->row_handler_user_data);
@@ -595,18 +595,18 @@ SPAN_DECLARE(int) t4_rx_set_row_write_handler(t4_rx_state_t *s, t4_row_write_han
     s->row_handler_user_data = user_data;
     switch (s->line_encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
         return t4_t6_decode_set_row_write_handler(&s->decoder.t4_t6, handler, user_data);
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         return t42_decode_set_row_write_handler(&s->decoder.t42, handler, user_data);
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         return t43_decode_set_row_write_handler(&s->decoder.t43, handler, user_data);
 #endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
         return t85_decode_set_row_write_handler(&s->decoder.t85, handler, user_data);
     }
     return -1;
@@ -625,9 +625,9 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
     t->encoding = s->line_encoding;
     switch (s->line_encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
         t->type = T4_IMAGE_TYPE_BILEVEL;
         t->width = t4_t6_decode_get_image_width(&s->decoder.t4_t6);
         t->length = t4_t6_decode_get_image_length(&s->decoder.t4_t6);
@@ -638,7 +638,7 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
         t->bad_rows = s->decoder.t4_t6.bad_rows;
         t->longest_bad_row_run = s->decoder.t4_t6.longest_bad_row_run;
         break;
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         t->type = 0;
         t->width = t42_decode_get_image_width(&s->decoder.t42);
         t->length = t42_decode_get_image_length(&s->decoder.t42);
@@ -648,7 +648,7 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
         t->line_image_size = t42_decode_get_compressed_image_size(&s->decoder.t42)/8;
         break;
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         t->type = 0;
         t->width = t43_decode_get_image_width(&s->decoder.t43);
         t->length = t43_decode_get_image_length(&s->decoder.t43);
@@ -658,8 +658,8 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
         t->line_image_size = t43_decode_get_compressed_image_size(&s->decoder.t43)/8;
         break;
 #endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
         t->type = T4_IMAGE_TYPE_BILEVEL;
         t->width = t85_decode_get_image_width(&s->decoder.t85);
         t->length = t85_decode_get_image_length(&s->decoder.t85);
@@ -678,21 +678,21 @@ SPAN_DECLARE(int) t4_rx_start_page(t4_rx_state_t *s)
 
     switch (s->line_encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
         t4_t6_decode_restart(&s->decoder.t4_t6, s->image_width);
         break;
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         t42_decode_restart(&s->decoder.t42);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         t43_decode_restart(&s->decoder.t43);
         break;
 #endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
         t85_decode_restart(&s->decoder.t85);
         break;
     }
@@ -734,24 +734,24 @@ SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s)
     length = 0;
     switch (s->line_encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
         t4_t6_decode_put(&s->decoder.t4_t6, NULL, 0);
         length = t4_t6_decode_get_image_length(&s->decoder.t4_t6);
         break;
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         t42_decode_put(&s->decoder.t42, NULL, 0);
         length = t42_decode_get_image_length(&s->decoder.t42);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         t43_decode_put(&s->decoder.t43, NULL, 0);
         length = t43_decode_get_image_length(&s->decoder.t43);
         break;
 #endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
         t85_decode_put(&s->decoder.t85, NULL, 0);
         length = t85_decode_get_image_length(&s->decoder.t85);
         break;
@@ -836,18 +836,18 @@ SPAN_DECLARE(int) t4_rx_release(t4_rx_state_t *s)
         tiff_rx_release(s);
     switch (s->line_encoding)
     {
-    case T4_COMPRESSION_ITU_T4_1D:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
         return t4_t6_decode_release(&s->decoder.t4_t6);
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         return t42_decode_release(&s->decoder.t42);
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         return t43_decode_release(&s->decoder.t43);
 #endif
-    case T4_COMPRESSION_ITU_T85:
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
         return t85_decode_release(&s->decoder.t85);
     }
     return -1;

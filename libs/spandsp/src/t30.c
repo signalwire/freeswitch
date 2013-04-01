@@ -1180,7 +1180,7 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         s->local_dis_dtc_frame[4] |= (DISBIT6 | DISBIT4 | DISBIT3);
     if ((s->supported_resolutions & T30_SUPPORT_FINE_RESOLUTION))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE);
-    if ((s->supported_compressions & T30_SUPPORT_T4_2D_COMPRESSION))
+    if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T4_2D))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE);
     /* 215mm wide is always supported */
     if ((s->supported_image_sizes & T30_SUPPORT_303MM_WIDTH))
@@ -1194,7 +1194,7 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         set_ctrl_bit(s->local_dis_dtc_frame, 19);
     /* No scan-line padding required, but some may be specified by the application. */
     set_ctrl_bits(s->local_dis_dtc_frame, s->local_min_scan_time_code, 21);
-    if ((s->supported_compressions & T30_SUPPORT_NO_COMPRESSION))
+    if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_NONE))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_UNCOMPRESSED_CAPABLE);
     if (s->ecm_allowed)
     {
@@ -1202,25 +1202,25 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_ECM_CAPABLE);
         /* Only offer the option of fancy compression schemes, if we are
            also offering the ECM option needed to support them. */
-        if ((s->supported_compressions & T30_SUPPORT_T6_COMPRESSION))
+        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T6))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE);
-        if ((s->supported_compressions & T30_SUPPORT_T43_COMPRESSION))
+        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T43))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE);
-        if ((s->supported_compressions & T30_SUPPORT_T45_COMPRESSION))
+        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T45))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T45_CAPABLE);
-        if ((s->supported_compressions & T30_SUPPORT_T81_COMPRESSION))
+        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T81))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
-        if ((s->supported_compressions & T30_SUPPORT_SYCC_T81_COMPRESSION))
+        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_SYCC_T81))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SYCC_T81_CAPABLE);
-        if ((s->supported_compressions & T30_SUPPORT_T85_COMPRESSION))
+        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T85))
         {
             /* Bit 79 set with bit 78 clear is invalid, so only check for L0
                support here. */
-            if ((s->supported_compressions & T30_SUPPORT_T85_L0_COMPRESSION))
+            if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T85_L0))
                 set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE);
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE);
         }
-        //if ((s->supported_compressions & T30_SUPPORT_T89_COMPRESSION))
+        //if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T89))
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T89_CAPABLE);
     }
     if ((s->supported_t30_features & T30_SUPPORT_FIELD_NOT_VALID))
@@ -1370,33 +1370,33 @@ static int build_dcs(t30_state_t *s)
     /* Select the compression to use. */
     switch (s->line_encoding)
     {
-    case T4_COMPRESSION_ITU_T42:
+    case T4_COMPRESSION_T42:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_ITU_T43:
+    case T4_COMPRESSION_T43:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T43_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
 #endif
-    case T4_COMPRESSION_ITU_T85_L0:
+    case T4_COMPRESSION_T85_L0:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_L0_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
-    case T4_COMPRESSION_ITU_T85:
+    case T4_COMPRESSION_T85:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T6:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T6_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
-    case T4_COMPRESSION_ITU_T4_2D:
+    case T4_COMPRESSION_T4_2D:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_2D_MODE);
         set_ctrl_bits(s->dcs_frame, s->min_scan_time_code, 21);
         break;
-    case T4_COMPRESSION_ITU_T4_1D:
+    case T4_COMPRESSION_T4_1D:
         set_ctrl_bits(s->dcs_frame, s->min_scan_time_code, 21);
         break;
     default:
@@ -1614,7 +1614,7 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bit(s->dcs_frame, 19);
 
     if (s->error_correcting_mode)
-        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_ECM);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_ECM_MODE);
 
     if ((s->iaf & T30_IAF_MODE_FLOW_CONTROL)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38_FLOW_CONTROL_CAPABLE))
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T38_FLOW_CONTROL_CAPABLE);
@@ -2086,55 +2086,55 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     if (!s->error_correcting_mode)
     {
         /* Without error correction our choices are very limited */
-        if ((s->supported_compressions & T30_SUPPORT_T4_2D_COMPRESSION)
+        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T4_2D)
             &&
             test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
         {
-            s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
+            s->line_encoding = T4_COMPRESSION_T4_2D;
         }
         else
         {
-            s->line_encoding = T4_COMPRESSION_ITU_T4_1D;
+            s->line_encoding = T4_COMPRESSION_T4_1D;
         }
     }
     else
     {
 #if defined(SPANDSP_SUPPORT_T42x)  ||  defined(SPANDSP_SUPPORT_T43)
         /* With error correction colour may be possible/required */
-        if ((0 & (T30_SUPPORT_T43_COMPRESSION | T30_SUPPORT_T45_COMPRESSION | T30_SUPPORT_T81_COMPRESSION | T30_SUPPORT_SYCC_T81_COMPRESSION)))
+        if ((0 & (T30_SUPPORT_COMPRESSION_T43 | T30_SUPPORT_COMPRESSION_T45 | T30_SUPPORT_COMPRESSION_T81 | T30_SUPPORT_COMPRESSION_SYCC_T81)))
         {
-            s->line_encoding = T4_COMPRESSION_ITU_T85_L0;
+            s->line_encoding = T4_COMPRESSION_T85_L0;
         }
         else
 #endif
         {
-            if ((s->supported_compressions & T30_SUPPORT_T85_L0_COMPRESSION)
+            if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T85_L0)
                 &&
                 test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE))
             {
-                s->line_encoding = T4_COMPRESSION_ITU_T85_L0;
+                s->line_encoding = T4_COMPRESSION_T85_L0;
             }
-            else if ((s->supported_compressions & T30_SUPPORT_T85_COMPRESSION)
+            else if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T85)
                      &&
                      test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE))
             {
-                s->line_encoding = T4_COMPRESSION_ITU_T85;
+                s->line_encoding = T4_COMPRESSION_T85;
             }
-            else if ((s->supported_compressions & T30_SUPPORT_T6_COMPRESSION)
+            else if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T6)
                      &&
                      test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE))
             {
-                s->line_encoding = T4_COMPRESSION_ITU_T6;
+                s->line_encoding = T4_COMPRESSION_T6;
             }
-            else if ((s->supported_compressions & T30_SUPPORT_T4_2D_COMPRESSION)
+            else if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T4_2D)
                      &&
                      test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
             {
-                s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
+                s->line_encoding = T4_COMPRESSION_T4_2D;
             }
             else
             {
-                s->line_encoding = T4_COMPRESSION_ITU_T4_1D;
+                s->line_encoding = T4_COMPRESSION_T4_1D;
             }
         }
     }
@@ -2194,18 +2194,18 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     }
 #if 0
     /* T.4 1D is always available */
-    bi_level_support = T30_SUPPORT_T4_1D_COMPRESSION;
+    bi_level_support = T30_SUPPORT_COMPRESSION_T4_1D;
     if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
-        bi_level_support |= T30_SUPPORT_T4_2D_COMPRESSION;
+        bi_level_support |= T30_SUPPORT_COMPRESSION_T4_2D;
     if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE))
-        bi_level_support |= T30_SUPPORT_T6_COMPRESSION;
+        bi_level_support |= T30_SUPPORT_COMPRESSION_T6;
     /* Bit 79 set with bit 78 clear is invalid, so let's completely ignore 79
        if 78 is clear. */
     if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE))
     {
-        bi_level_support |= T30_SUPPORT_T85_COMPRESSION;
+        bi_level_support |= T30_SUPPORT_COMPRESSION_T85;
         if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE)
-            bi_level_support |= T30_SUPPORT_T85_L0_COMPRESSION;
+            bi_level_support |= T30_SUPPORT_COMPRESSION_T85_L0;
     }
 
     gray_support = 0;
@@ -2213,33 +2213,33 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE))
     {
         /* Multi-level coding available */
-        gray_support |= T30_SUPPORT_T81_COMPRESSION;
+        gray_support |= T30_SUPPORT_COMPRESSION_T81;
         if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
-            gray_support |= T30_SUPPORT_T81_12BIT_COMPRESSION;
+            gray_support |= T30_SUPPORT_COMPRESSION_T81_12BIT;
         if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE))
         {
-            gray_support |= T30_SUPPORT_T43_COMPRESSION;
+            gray_support |= T30_SUPPORT_COMPRESSION_T43;
             if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
-                gray_support |= T30_SUPPORT_T43_COMPRESSION_12BIT;
+                gray_support |= T30_SUPPORT_COMPRESSION_T43_12BIT;
         }
 
         if (test_ctrl_bit(s->far_dis_dtc_frame, bit69))
         {
             /* Colour coding available */
-            colour_support |= T30_SUPPORT_T81_COMPRESSION;
+            colour_support |= T30_SUPPORT_COMPRESSION_T81;
             if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
-                colour_support |= T30_SUPPORT_T81_12BIT_COMPRESSION;
+                colour_support |= T30_SUPPORT_COMPRESSION_T81_12BIT;
             if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING))
             {
-                colour_support |= T30_SUPPORT_T81_SUBSAMPLING_COMPRESSION;
+                colour_support |= T30_SUPPORT_COMPRESSION_T81_SUBSAMPLING;
                 if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
-                    colour_support |= T30_SUPPORT_T81_SUBSAMPLING_COMPRESSION_12BIT;
+                    colour_support |= T30_SUPPORT_COMPRESSION_T81_SUBSAMPLING_12BIT;
             }
             if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE))
             {
-                colour_support |= T30_SUPPORT_T43_COMPRESSION;
+                colour_support |= T30_SUPPORT_COMPRESSION_T43;
                 if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
-                    colour_support |= T30_SUPPORT_T43_12BIT_COMPRESSION;
+                    colour_support |= T30_SUPPORT_COMPRESSION_T43_12BIT;
             }
         }
         /* bit74 custom illuminant */
@@ -2454,36 +2454,36 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 #if defined(SPANDSP_SUPPORT_T42)
     if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE))
     {
-        s->line_encoding = T4_COMPRESSION_ITU_T42;
+        s->line_encoding = T4_COMPRESSION_T42;
     }
     else
 #endif
 #if defined(SPANDSP_SUPPORT_T43)
     if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T43_MODE))
     {
-        s->line_encoding = T4_COMPRESSION_ITU_T43;
+        s->line_encoding = T4_COMPRESSION_T43;
     }
     else
 #endif
     if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_L0_MODE))
     {
-        s->line_encoding = T4_COMPRESSION_ITU_T85_L0;
+        s->line_encoding = T4_COMPRESSION_T85_L0;
     }
     else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_MODE))
     {
-        s->line_encoding = T4_COMPRESSION_ITU_T85;
+        s->line_encoding = T4_COMPRESSION_T85;
     }
     else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T6_MODE))
     {
-        s->line_encoding = T4_COMPRESSION_ITU_T6;
+        s->line_encoding = T4_COMPRESSION_T6;
     }
     else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_MODE))
     {
-        s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
+        s->line_encoding = T4_COMPRESSION_T4_2D;
     }
     else
     {
-        s->line_encoding = T4_COMPRESSION_ITU_T4_1D;
+        s->line_encoding = T4_COMPRESSION_T4_1D;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "Far end selected compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
     if (!test_ctrl_bit(dcs_frame, T30_DCS_BIT_RECEIVE_FAX_DOCUMENT))
@@ -2494,7 +2494,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         span_log(&s->logging, SPAN_LOG_FLOW, "Remote asked for a modem standard we do not support\n");
         return -1;
     }
-    s->error_correcting_mode = (test_ctrl_bit(dcs_frame, T30_DCS_BIT_ECM) != 0);
+    s->error_correcting_mode = (test_ctrl_bit(dcs_frame, T30_DCS_BIT_ECM_MODE) != 0);
 
     if (s->phase_b_handler)
     {
@@ -6419,7 +6419,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
 
     /* Default to the basic modems. */
     s->supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
-    s->supported_compressions = T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION;
+    s->supported_compressions = T30_SUPPORT_COMPRESSION_T4_1D | T30_SUPPORT_COMPRESSION_T4_2D;
     s->supported_resolutions = T30_SUPPORT_STANDARD_RESOLUTION
                              | T30_SUPPORT_FINE_RESOLUTION
                              | T30_SUPPORT_SUPERFINE_RESOLUTION
@@ -6430,7 +6430,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
                              | T30_SUPPORT_215MM_WIDTH;
     /* Set the output encoding to something safe. Most things get 1D and 2D
        encoding right. Quite a lot get other things wrong. */
-    s->output_encoding = T4_COMPRESSION_ITU_T4_2D;
+    s->output_encoding = T4_COMPRESSION_T4_2D;
     s->local_min_scan_time_code = T30_MIN_SCAN_0MS;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.30");

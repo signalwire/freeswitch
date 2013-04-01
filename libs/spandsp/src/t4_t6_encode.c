@@ -573,7 +573,7 @@ static void encode_eol(t4_t6_encode_state_t *s)
     uint32_t code;
     int length;
 
-    if (s->encoding == T4_COMPRESSION_ITU_T4_2D)
+    if (s->encoding == T4_COMPRESSION_T4_2D)
     {
         code = 0x0800 | ((!s->row_is_2d) << 12);
         length = 13;
@@ -589,7 +589,7 @@ static void encode_eol(t4_t6_encode_state_t *s)
         /* We may need to pad the row to a minimum length, unless we are in T.6 mode.
            In T.6 we only come here at the end of the page to add the EOFB marker, which
            is like two 1D EOLs. */
-        if (s->encoding != T4_COMPRESSION_ITU_T6)
+        if (s->encoding != T4_COMPRESSION_T6)
         {
             if (s->row_bits + length < s->min_bits_per_row)
                 put_encoded_bits(s, 0, s->min_bits_per_row - (s->row_bits + length));
@@ -823,14 +823,14 @@ static int encode_row(t4_t6_encode_state_t *s, const uint8_t *row_buf, size_t le
 {
     switch (s->encoding)
     {
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T6:
         /* T.6 compression is a trivial step up from T.4 2D, so we just
            throw it in here. T.6 is only used with error correction,
            so it does not need independantly compressed (i.e. 1D) lines
            to recover from data errors. It doesn't need EOLs, either. */
         encode_2d_row(s, row_buf);
         break;
-    case T4_COMPRESSION_ITU_T4_2D:
+    case T4_COMPRESSION_T4_2D:
         encode_eol(s);
         if (s->row_is_2d)
         {
@@ -850,7 +850,7 @@ static int encode_row(t4_t6_encode_state_t *s, const uint8_t *row_buf, size_t le
         }
         break;
     default:
-    case T4_COMPRESSION_ITU_T4_1D:
+    case T4_COMPRESSION_T4_1D:
         encode_eol(s);
         encode_1d_row(s, row_buf);
         break;
@@ -864,7 +864,7 @@ static int finalise_page(t4_t6_encode_state_t *s)
 {
     int i;
 
-    if (s->encoding == T4_COMPRESSION_ITU_T6)
+    if (s->encoding == T4_COMPRESSION_T6)
     {
         /* Attach an EOFB (end of facsimile block == 2 x EOLs) to the end of the page */
         for (i = 0;  i < EOLS_TO_END_T6_TX_PAGE;  i++)
@@ -982,9 +982,9 @@ SPAN_DECLARE(int) t4_t6_encode_set_encoding(t4_t6_encode_state_t *s, int encodin
 {
     switch (encoding)
     {
-    case T4_COMPRESSION_ITU_T6:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T4_1D:
+    case T4_COMPRESSION_T6:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T4_1D:
         s->encoding = encoding;
         /* Set this to the default value for the lowest resolution in the T.4 spec. */
         s->max_rows_to_next_1d_row = 2;
@@ -1098,7 +1098,7 @@ SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width)
 {
     /* Allow for pages being of different width. */
     t4_t6_encode_set_image_width(s, image_width);
-    s->row_is_2d = (s->encoding == T4_COMPRESSION_ITU_T6);
+    s->row_is_2d = (s->encoding == T4_COMPRESSION_T6);
     s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
 
     s->tx_bitstream = 0;
