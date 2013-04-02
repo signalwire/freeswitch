@@ -3078,6 +3078,10 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 
+				if (!switch_channel_test_flag(other_channel, CF_TRANSFER) || !switch_channel_up(other_channel)) {
+					switch_channel_set_variable(other_channel, "fifo_initiated_bridge", "true");
+				}
+
 				if (outbound_id) {
 					long now = (long) switch_epoch_time_now(NULL);
 

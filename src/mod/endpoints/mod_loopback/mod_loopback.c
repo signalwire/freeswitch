@@ -954,12 +954,22 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		{
 
-			if (!zstr(msg->string_array_arg[0])) {
-				switch_channel_set_profile_var(tech_pvt->other_channel, "callee_id_name", msg->string_array_arg[0]);
-			}
-
-			if (!zstr(msg->string_array_arg[1])) {
-				switch_channel_set_profile_var(tech_pvt->other_channel, "callee_id_number", msg->string_array_arg[1]);
+			if (switch_test_flag(tech_pvt, TFLAG_BLEG)) {
+				if (!zstr(msg->string_array_arg[0])) {
+					switch_channel_set_profile_var(tech_pvt->other_channel, "caller_id_name", msg->string_array_arg[0]);
+				}
+				
+				if (!zstr(msg->string_array_arg[1])) {
+					switch_channel_set_profile_var(tech_pvt->other_channel, "caller_id_number", msg->string_array_arg[1]);
+				}
+			} else {
+				if (!zstr(msg->string_array_arg[0])) {
+					switch_channel_set_profile_var(tech_pvt->other_channel, "callee_id_name", msg->string_array_arg[0]);
+				}
+				
+				if (!zstr(msg->string_array_arg[1])) {
+					switch_channel_set_profile_var(tech_pvt->other_channel, "callee_id_number", msg->string_array_arg[1]);
+				}
 			}
 			
 			pass = 1;
