@@ -373,7 +373,7 @@ static int tport_ws_init_primary_secure(tport_primary_t *pri,
   //  OpenSSL_add_all_algorithms();   /* load & register cryptos */                                                                                       
   //  SSL_load_error_strings();     /* load all error messages */                                                                                         
   wspri->ssl_method = SSLv23_server_method();   /* create server instance */
-  wspri->ssl_ctx = SSL_CTX_new(wspri->ssl_method);         /* create context */
+  wspri->ssl_ctx = SSL_CTX_new((SSL_METHOD *)wspri->ssl_method);         /* create context */
   SSL_CTX_sess_set_remove_cb(wspri->ssl_ctx, NULL);
   wspri->ws_secure = 1;
 

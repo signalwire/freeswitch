@@ -49,6 +49,9 @@
 #include "aes_icm.h"
 #include "alloc.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable:4100)
+#endif
 
 debug_module_t mod_aes_icm = {
   0,                 /* debugging is off by default */
@@ -378,7 +381,7 @@ aes_icm_encrypt_ismacryp(aes_icm_ctx_t *c,
   for (i=0; i < (bytes_to_encr/sizeof(v128_t)); i++) {
 
     /* fill buffer with new keystream */
-    aes_icm_advance_ismacryp(c, forIsmacryp);
+    aes_icm_advance_ismacryp(c, (uint8_t)forIsmacryp);
 
     /*
      * add keystream into the data buffer (this would be a lot faster
@@ -426,7 +429,7 @@ aes_icm_encrypt_ismacryp(aes_icm_ctx_t *c,
   if ((bytes_to_encr & 0xf) != 0) {
     
     /* fill buffer with new keystream */
-    aes_icm_advance_ismacryp(c, forIsmacryp);
+    aes_icm_advance_ismacryp(c, (uint8_t)forIsmacryp);
     
     for (i=0; i < (bytes_to_encr & 0xf); i++)
       *buf++ ^= c->keystream_buffer.v8[i];

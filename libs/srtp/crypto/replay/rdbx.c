@@ -292,7 +292,7 @@ rdbx_add_index(rdbx_t *rdbx, int delta) {
   
   if (delta > 0) {
     /* shift forward by delta */
-    index_advance(&rdbx->index, delta);
+    index_advance(&rdbx->index, (sequence_number_t)delta);
     bitvector_left_shift(&rdbx->bitmask, delta);
     bitvector_set_bit(&rdbx->bitmask, bitvector_get_length(&rdbx->bitmask) - 1);
   } else {
