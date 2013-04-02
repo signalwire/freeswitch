@@ -30,6 +30,7 @@
     <load module="mod_dptools"/>
     <load module="mod_expr"/>
     <load module="mod_limit"/>
+    <!--<load module="mod_translate"/>-->
 
     <!-- Dialplan Interfaces -->
     <load module="mod_dialplan_xml"/>

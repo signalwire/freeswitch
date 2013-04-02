@@ -38,6 +38,7 @@ applications/mod_sms
 applications/mod_spandsp
 #applications/mod_spy
 #applications/mod_stress
+#applications/mod_translate
 applications/mod_valet_parking
 #applications/mod_vmd
 applications/mod_voicemail

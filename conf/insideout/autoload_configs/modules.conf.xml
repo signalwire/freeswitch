@@ -46,6 +46,7 @@
     <load module="mod_limit"/>
     <load module="mod_esf"/>
     <load module="mod_fsv"/>
+    <!--<load module="mod_translate"/>-->
 
     <!-- SNOM Module -->
     <!--<load module="mod_snom"/>-->
