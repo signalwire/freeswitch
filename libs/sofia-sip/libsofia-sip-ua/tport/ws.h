@@ -8,19 +8,24 @@
 #define B64BUFFLEN 1024
 
 #include <sys/types.h>
+#ifndef _MSC_VER
 #include <arpa/inet.h>
 #include <sys/wait.h> 
+#include <sys/socket.h>
+#else
+#pragma warning(disable:4996)
+#endif
 #include <string.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
 #include <assert.h>
 #include <errno.h>
 //#include "sha1.h"
 #include <openssl/ssl.h>
+#include <sofia-sip/su_types.h>
 
 
 struct globals_s {
@@ -57,11 +62,11 @@ typedef struct wsh_s {
 	char *buffer;
 	char *wbuffer;
 	size_t buflen;
-	ssize_t datalen;
-	ssize_t wdatalen;
+	issize_t datalen;
+	issize_t wdatalen;
 	char *payload;
-	ssize_t plen;
-	ssize_t rplen;
+	issize_t plen;
+	issize_t rplen;
 	SSL *ssl;
 	int handshake;
 	uint8_t down;
@@ -70,25 +75,26 @@ typedef struct wsh_s {
 	unsigned :0;
 } wsh_t;
 
-ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
-ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes);
+issize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
+issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes);
 
 
-ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
-ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
-ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
-ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
+issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
+issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
+issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
+issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
 int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int close_sock);
-ssize_t ws_close(wsh_t *wsh, int16_t reason);
+issize_t ws_close(wsh_t *wsh, int16_t reason);
 void init_ssl(void);
 void deinit_ssl(void);
 
 
+#ifndef _MSC_VER
 static inline uint64_t get_unaligned_uint64(const void *p)
 {   
     const struct { uint64_t d; } __attribute__((packed)) *pp = p;
     return pp->d;
 }
-
+#endif
 
 #endif
