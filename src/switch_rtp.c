@@ -794,7 +794,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	memcpy(buf, data, cpylen);
 	packet = switch_stun_packet_parse(buf, cpylen);
 	if (!packet) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received %ld %d\n", cpylen, *(uint8_t *) data);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received %ld %d\n", (long)cpylen, *(uint8_t *) data);
 		goto end;
 
 	}
@@ -3731,7 +3731,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				
 				if (*b != 0 && *b != 1 && rtp_session->dtls->state != DS_READY) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, 
-									  "Drop %s packet %ld bytes (dtls not ready!) b=%u\n", rtp_type(rtp_session), *bytes, *b);
+									  "Drop %s packet %ld bytes (dtls not ready!) b=%u\n", rtp_type(rtp_session), (long)*bytes, *b);
 					*bytes = 0;
 				}
 				
@@ -3903,7 +3903,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
 										  "Error: SRTP %s unprotect failed with code %d%s %ld\n", rtp_type(rtp_session), stat,
 										  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
-										  err_status_auth_fail ? " (auth check failed)" : "", *bytes);
+										  err_status_auth_fail ? " (auth check failed)" : "", (long)*bytes);
 						return SWITCH_STATUS_FALSE;
 					} else {
 						sbytes = 0;
@@ -5286,11 +5286,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 	if (rtp_session->ice.ice_user && !(rtp_session->ice.rready)) {
 		send = 0;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (ice not ready!)\n", rtp_type(rtp_session), bytes);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (ice not ready!)\n", rtp_type(rtp_session), (long)bytes);
 	}
 
 	if (rtp_session->dtls && rtp_session->dtls->state != DS_READY) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (dtls not ready!)\n", rtp_type(rtp_session), bytes);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (dtls not ready!)\n", rtp_type(rtp_session), (long)bytes);
 		send = 0;
 	}
 
