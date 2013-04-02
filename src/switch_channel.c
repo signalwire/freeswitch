@@ -3032,6 +3032,12 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 			switch_channel_set_variable_partner(channel, "last_bridge_" SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE, var);
 		}
 
+		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+			switch_channel_set_variable(channel, "last_bridge_role", "originator");
+		} else if (switch_channel_test_flag(channel, CF_BRIDGED)) {
+			switch_channel_set_variable(channel, "last_bridge_role", "originatee");
+		}
+
 
 		if (!switch_core_session_running(channel->session) && !switch_core_session_started(channel->session)) {
 			switch_core_session_thread_launch(channel->session);

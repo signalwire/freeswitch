@@ -100,26 +100,26 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 	caller_channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(caller_channel);
 	
-	if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(caller_channel, CF_DIALPLAN)) {
+
+	if (switch_channel_test_flag(caller_channel, CF_BRIDGE_ORIGINATOR)) {
+		name = caller_profile->caller_id_name;
+		number = caller_profile->caller_id_number;		
+
+		if (zstr(number)) {
+			number = "UNKNOWN";
+		}
+	} else {
 		name = caller_profile->callee_id_name;
 		number = caller_profile->callee_id_number;
 
-		if (zstr(name)) {
-			name = caller_profile->destination_number;
-		}
 		if (zstr(number)) {
 			number = caller_profile->destination_number;
 		}
-	} else {
-		name = caller_profile->caller_id_name;
-		number = caller_profile->caller_id_number;
+	}
 
-		if (zstr(name)) {
-			name = caller_profile->destination_number;
-		}
-		if (zstr(number)) {
-			number = caller_profile->destination_number;
-		}
+	
+	if (zstr(name)) {
+		name = number;
 	}
 
 	if ((p = strrchr(number, '/'))) {
@@ -129,6 +129,9 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 		name = p + 1;
 	}
 
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SEND %s [%s][%s]\n", switch_core_session_get_name(peer_session), name, number);
+	
 	msg = switch_core_session_alloc(peer_session, sizeof(*msg));
 	MESSAGE_STAMP_FFL(msg);
 	msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
@@ -1576,17 +1579,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			}
 
 
-
-			if (switch_channel_direction(originatee_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(originatee_channel, CF_DIALPLAN)) {
-				switch_channel_flip_cid(originatee_channel);
-				switch_channel_set_flag(originatee_channel, CF_DIALPLAN);
-			}
-
 			if (switch_channel_direction(originator_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(originator_channel, CF_DIALPLAN)) {
 				switch_channel_flip_cid(originator_channel);
 				switch_channel_set_flag(originator_channel, CF_DIALPLAN);
 			}
-
 
 			if (switch_channel_down_nosig(originator_channel)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(originator_session), SWITCH_LOG_DEBUG, "%s is hungup refusing to bridge.\n", switch_channel_get_name(originatee_channel));
@@ -1639,6 +1635,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			originator_cp = switch_channel_get_caller_profile(originator_channel);
 			originatee_cp = switch_channel_get_caller_profile(originatee_channel);
 
+			if (switch_channel_inbound_display(originatee_channel)) {
+				const char *tname = originatee_cp->caller_id_name;
+				const char *tnum = originatee_cp->caller_id_number;
+
+#ifdef DEEP_DEBUG_CID
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SWAP [%s][%s] [%s][%s]\n", originatee_cp->caller_id_name, originatee_cp->caller_id_number, originatee_cp->callee_id_name, originatee_cp->callee_id_number);
+#endif
+
+				originatee_cp->caller_id_name = originatee_cp->callee_id_name;
+				originatee_cp->caller_id_number = originatee_cp->callee_id_number;
+
+				originatee_cp->callee_id_name = tname;
+				originatee_cp->callee_id_number = tnum;
+			}
+
 
 			switch_channel_set_variable(originatee_channel, "original_destination_number", originatee_cp->destination_number);
 			switch_channel_set_variable(originatee_channel, "original_caller_id_name", originatee_cp->caller_id_name);
@@ -1654,15 +1665,43 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			originator_cp = switch_channel_get_caller_profile(originator_channel);
 			originatee_cp = switch_channel_get_caller_profile(originatee_channel);
 
+
+#ifdef DEEP_DEBUG_CID
+			{
+				switch_event_t *event;
+
+				if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
+					//switch_channel_event_set_basic_data(originator_channel, event);
+					switch_caller_profile_event_set_data(originator_cp, "ORIGINATOR", event);
+					switch_caller_profile_event_set_data(originatee_cp, "ORIGINATEE", event);
+					DUMP_EVENT(event);
+					switch_event_destroy(&event);
+				}
+			}
+#endif
+
 			switch_channel_set_originator_caller_profile(originatee_channel, switch_caller_profile_clone(originatee_session, originator_cp));
 			switch_channel_set_originatee_caller_profile(originator_channel, switch_caller_profile_clone(originator_session, originatee_cp));
 			
-			originator_cp->callee_id_name = switch_core_strdup(originator_cp->pool, originatee_cp->caller_id_name);
-			originator_cp->callee_id_number = switch_core_strdup(originator_cp->pool, originatee_cp->caller_id_number);
+			originator_cp->callee_id_name = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_name);
+			originator_cp->callee_id_number = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_number);
 
-			originatee_cp->callee_id_name = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_name);
-			originatee_cp->callee_id_number = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_number);
-			
+			originatee_cp->caller_id_name = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_name);
+			originatee_cp->caller_id_number = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_number);
+
+#ifdef DEEP_DEBUG_CID
+			{
+				switch_event_t *event;
+
+				if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
+					//switch_channel_event_set_basic_data(originator_channel, event);
+					switch_caller_profile_event_set_data(originator_cp, "POST-ORIGINATOR", event);
+					switch_caller_profile_event_set_data(originatee_cp, "POST-ORIGINATEE", event);
+					DUMP_EVENT(event);
+					switch_event_destroy(&event);
+				}
+			}
+#endif
 
 			switch_channel_stop_broadcast(originator_channel);
 			switch_channel_stop_broadcast(originatee_channel);

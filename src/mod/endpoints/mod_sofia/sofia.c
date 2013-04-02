@@ -6722,6 +6722,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Process REFER to [%s@%s]\n", exten, (char *) refer_to->r_url->url_host);
 
+		switch_channel_set_variable(tech_pvt->channel, "transfer_disposition", "recv_replace");
+		
 
 		if (refer_to->r_url &&  refer_to->r_url->url_headers) {
 			rep = (char *) switch_stristr("Replaces=", refer_to->r_url->url_headers);
@@ -6773,6 +6775,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						}
 						b_tech_pvt = (private_object_t *) switch_core_session_get_private(b_session);
 						channel_b = switch_core_session_get_channel(b_session);
+
+						switch_channel_set_variable(channel_b, "transfer_disposition", "replaced");
 
 						br_a = switch_channel_get_partner_uuid(channel_a);
 						br_b = switch_channel_get_partner_uuid(channel_b);
@@ -6918,6 +6922,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 									switch_channel_set_flag(tchannel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 								}
 
+								switch_channel_set_variable(tchannel, "transfer_disposition", "bridge");
+
 								switch_channel_set_flag(tchannel, CF_ATTENDED_TRANSFER);
 								switch_core_session_rwunlock(tmp);
 							}
@@ -6931,6 +6937,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer")) && 
 								(tmp = switch_core_session_locate(br_a))) {
+								switch_channel_set_variable(switch_core_session_get_channel(tmp), "transfer_disposition", "bridge");
 								switch_core_media_bug_transfer_recordings(session, tmp);
 								switch_core_session_rwunlock(tmp);
 							}
@@ -6944,9 +6951,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							switch_channel_set_variable_printf(channel_a, "transfer_to", "att:%s", br_b);
 							
-							mark_transfer_record(session, br_b, br_a);
+							mark_transfer_record(session, br_a, br_b);
 							
-							switch_ivr_uuid_bridge(br_b, br_a);
+							switch_ivr_uuid_bridge(br_a, br_b);
 							switch_channel_set_variable(channel_b, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 							nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
 									   NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp),
