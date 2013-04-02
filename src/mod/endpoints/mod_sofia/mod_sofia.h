@@ -115,7 +115,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SECURE_MEDIA_VARIABLE "sip_secure_media"
 #define SOFIA_SECURE_MEDIA_CONFIRMED_VARIABLE "sip_secure_media_confirmed"
 #define SOFIA_SECURE_VIDEO_CONFIRMED_VARIABLE "sip_secure_video_confirmed"
-//#define SOFIA_HAS_CRYPTO_VARIABLE "sip_has_crypto"
+//#define SOFIA_HAS_CRYPTO_VARIABLE "rtp_has_crypto"
 //#define SOFIA_HAS_VIDEO_CRYPTO_VARIABLE "sip_has_video_crypto"
 //#define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
 #define FREESWITCH_SUPPORT "update_display,send_info"

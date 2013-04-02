@@ -2372,7 +2372,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy->rtcp);
 
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			switch_channel_set_variable(channel, "sip_has_crypto", "AES_CM_128_HMAC_SHA1_80");
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_128_HMAC_SHA1_80");
 		}
 		break;
 	case AES_CM_128_HMAC_SHA1_32:
@@ -2381,7 +2381,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			switch_channel_set_variable(channel, "sip_has_crypto", "AES_CM_128_HMAC_SHA1_32");
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_128_HMAC_SHA1_32");
 		}
 		break;
 
@@ -2389,14 +2389,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		crypto_policy_set_aes_cm_256_hmac_sha1_80(&policy->rtp);
 		crypto_policy_set_aes_cm_256_hmac_sha1_80(&policy->rtcp);
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			switch_channel_set_variable(channel, "sip_has_crypto", "AES_CM_256_HMAC_SHA1_80");
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_256_HMAC_SHA1_80");
 		}
 	case AES_CM_128_NULL_AUTH:
 		crypto_policy_set_aes_cm_128_null_auth(&policy->rtp);
 		crypto_policy_set_aes_cm_128_null_auth(&policy->rtcp);
 		
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			switch_channel_set_variable(channel, "sip_has_crypto", "AES_CM_128_NULL_AUTH");
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_128_NULL_AUTH");
 		}
 		break;
 	default:
@@ -2465,7 +2465,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		if (rtp_session->dtls) {
 			switch_event_add_header(fsevent, SWITCH_STACK_BOTTOM, "secure_type", "srtp:dtls:AES_CM_128_HMAC_SHA1_80");
 		} else {
-			switch_event_add_header(fsevent, SWITCH_STACK_BOTTOM, "secure_type", "srtp:%s", switch_channel_get_variable(channel, "sip_has_crypto"));
+			switch_event_add_header(fsevent, SWITCH_STACK_BOTTOM, "secure_type", "srtp:sdes:%s", switch_channel_get_variable(channel, "rtp_has_crypto"));
 		}
 		switch_event_add_header_string(fsevent, SWITCH_STACK_BOTTOM, "caller-unique-id", switch_channel_get_uuid(channel));
 		switch_event_fire(&fsevent);

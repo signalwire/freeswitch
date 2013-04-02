@@ -135,7 +135,7 @@
 	<anti-action application="start_dtmf"/>
       </condition>
       -->
-      <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$" break="never">
+      <condition field="${rtp_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$" break="never">
 	<action application="set" data="sip_secure_media=true"/>
 	<!-- Offer SRTP on outbound legs if we have it on inbound. -->
 	<!-- <action application="export" data="sip_secure_media=true"/> -->
@@ -720,7 +720,7 @@
 
     <extension name="hold_music">
       <condition field="destination_number" expression="^9664$"/>
-      <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$">
+      <condition field="${rtp_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$">
 	<action application="answer"/>
 	<action application="execute_extension" data="is_secure XML features"/>
 	<action application="playback" data="$${hold_music}"/>
