@@ -43,6 +43,19 @@ ITUTESTS_DIR=../test-data/itu/fax
 
 for OPTS in "-p AA" "-p AA -e" "-p TT" "-p TT -e" "-p GG" "-p GG -e" "-p TG" "-p TG -e" "-p GT" "-p GT -e"
 do
+    FILE="${ITUTESTS_DIR}/itutests.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/100pages.tif"
+    run_fax_test
+
+    FILE="${ITUTESTS_DIR}/striped.tif"
+    run_fax_test
+
+
+    FILE="${ITUTESTS_DIR}/mixed_size_pages.tif"
+    run_fax_test
+
     FILE="${ITUTESTS_DIR}/bilevel_R8_385_A4.tif"
     run_fax_test
 

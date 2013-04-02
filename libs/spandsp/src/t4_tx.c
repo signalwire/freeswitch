@@ -642,7 +642,7 @@ static int set_row_read_handler(t4_tx_state_t *s, t4_row_read_handler_t handler,
     case T4_COMPRESSION_T4_2D:
     case T4_COMPRESSION_T6:
         return t4_t6_encode_set_row_read_handler(&s->encoder.t4_t6, handler, user_data);
-    case T4_COMPRESSION_T42:
+    case T4_COMPRESSION_T42_T81:
         return t42_encode_set_row_read_handler(&s->encoder.t42, handler, user_data);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
@@ -812,10 +812,10 @@ SPAN_DECLARE(int) t4_tx_set_tx_encoding(t4_tx_state_t *s, int encoding)
         }
         s->line_encoding = encoding;
         return t4_t6_encode_set_encoding(&s->encoder.t4_t6, encoding);
-    case T4_COMPRESSION_T42:
+    case T4_COMPRESSION_T42_T81:
         switch (s->line_encoding)
         {
-        case T4_COMPRESSION_T42:
+        case T4_COMPRESSION_T42_T81:
             break;
         default:
             t42_encode_init(&s->encoder.t42, s->image_width, s->image_length, s->row_handler, s->row_handler_user_data);
@@ -877,7 +877,7 @@ SPAN_DECLARE(void) t4_tx_set_image_width(t4_tx_state_t *s, int image_width)
     case T4_COMPRESSION_T6:
         t4_t6_encode_set_image_width(&s->encoder.t4_t6, image_width);
         break;
-    case T4_COMPRESSION_T42:
+    case T4_COMPRESSION_T42_T81:
         t42_encode_set_image_width(&s->encoder.t42, image_width);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
@@ -898,7 +898,7 @@ static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length)
     s->image_length = image_length;
     switch (s->line_encoding)
     {
-    case T4_COMPRESSION_T42:
+    case T4_COMPRESSION_T42_T81:
         t42_encode_set_image_length(&s->encoder.t42, image_length);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
@@ -1014,7 +1014,7 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
         t->length = t4_t6_encode_get_image_length(&s->encoder.t4_t6)/s->row_squashing_ratio;
         t->line_image_size = t4_t6_encode_get_compressed_image_size(&s->encoder.t4_t6)/8;
         break;
-    case T4_COMPRESSION_T42:
+    case T4_COMPRESSION_T42_T81:
         t->type = 0;
         t->width = t42_encode_get_image_width(&s->encoder.t42);
         t->length = t42_encode_get_image_length(&s->encoder.t42)/s->row_squashing_ratio;
@@ -1047,7 +1047,7 @@ SPAN_DECLARE(int) t4_tx_image_complete(t4_tx_state_t *s)
     case T4_COMPRESSION_T4_2D:
     case T4_COMPRESSION_T6:
         return t4_t6_encode_image_complete(&s->encoder.t4_t6);
-    case T4_COMPRESSION_T42:
+    case T4_COMPRESSION_T42_T81:
         return t42_encode_image_complete(&s->encoder.t42);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
@@ -1076,7 +1076,7 @@ SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
     case T4_COMPRESSION_T4_2D:
     case T4_COMPRESSION_T6:
         return t4_t6_encode_get(&s->encoder.t4_t6, buf, max_len);
-    case T4_COMPRESSION_T42:
+    case T4_COMPRESSION_T42_T81:
         return t42_encode_get(&s->encoder.t42, buf, max_len);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
@@ -1115,7 +1115,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
     case T4_COMPRESSION_T6:
         t4_t6_encode_restart(&s->encoder.t4_t6, s->image_width);
         break;
-    case T4_COMPRESSION_T42:
+    case T4_COMPRESSION_T42_T81:
         t42_encode_restart(&s->encoder.t42, s->image_width, s->image_length);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
@@ -1237,7 +1237,7 @@ SPAN_DECLARE(int) t4_tx_release(t4_tx_state_t *s)
     case T4_COMPRESSION_T4_2D:
     case T4_COMPRESSION_T6:
         return t4_t6_encode_release(&s->encoder.t4_t6);
-    case T4_COMPRESSION_T42:
+    case T4_COMPRESSION_T42_T81:
         return t42_encode_release(&s->encoder.t42);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:

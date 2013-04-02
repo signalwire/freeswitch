@@ -693,20 +693,18 @@ SPAN_DECLARE(int) t30_set_supported_modems(t30_state_t *s, int supported_modems)
 
 SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_compressions)
 {
-    int mask;
-
     /* Mask out the ones we actually support today. */
-    mask = T30_SUPPORT_COMPRESSION_T4_1D
-         | T30_SUPPORT_COMPRESSION_T4_2D
-         | T30_SUPPORT_COMPRESSION_T6
-         //| T30_SUPPORT_COMPRESSION_T81
+    supported_compressions &= T30_SUPPORT_COMPRESSION_T4_1D
+                            | T30_SUPPORT_COMPRESSION_T4_2D
+                            | T30_SUPPORT_COMPRESSION_T6
+                            //| T30_SUPPORT_COMPRESSION_T81
 #if defined(SPANDSP_SUPPORT_T43)
-         | T30_SUPPORT_COMPRESSION_T43
+                            | T30_SUPPORT_COMPRESSION_T43
 #endif
-         | T30_SUPPORT_COMPRESSION_T85
-         | T30_SUPPORT_COMPRESSION_T85_L0
-         | 0;
-    s->supported_compressions = supported_compressions & mask;
+                            | T30_SUPPORT_COMPRESSION_T85
+                            | T30_SUPPORT_COMPRESSION_T85_L0
+                            | 0;
+    s->supported_compressions = supported_compressions;
     t30_build_dis_or_dtc(s);
     return 0;
 }
@@ -714,7 +712,7 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
 
 SPAN_DECLARE(int) t30_set_supported_resolutions(t30_state_t *s, int supported_resolutions)
 {
-    s->supported_resolutions = supported_resolutions;
+    s->supported_bilevel_resolutions = supported_resolutions;
     t30_build_dis_or_dtc(s);
     return 0;
 }

@@ -65,9 +65,9 @@ typedef enum
     /*! T.45 run length colour compression */
     T4_COMPRESSION_T45 = 7,
     /*! T.42 + T.81 + T.30 Annex E colour JPEG coding */
-    T4_COMPRESSION_T42 = 8,
+    T4_COMPRESSION_T42_T81 = 8,
     /*! T.42 + T.81 + T.30 Annex K colour sYCC-JPEG coding */
-    T4_COMPRESSION_SYCC_T42 = 9
+    T4_COMPRESSION_SYCC_T81 = 9
 } t4_image_compression_t;
 
 /*! Image type */

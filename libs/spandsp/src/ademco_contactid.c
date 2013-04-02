@@ -437,18 +437,17 @@ static const struct ademco_code_s ademco_codes[] =
     {-1,    "???"}
 };
 
+#define GOERTZEL_SAMPLES_PER_BLOCK  55              /* We need to detect over a +-5% range */
+
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define GOERTZEL_SAMPLES_PER_BLOCK  55              /* We need to detect over a +-5% range */
-#define DETECTION_THRESHOLD         16439           /* -42dBm0 [((GOERTZEL_SAMPLES_PER_BLOCK*GOERTZEL_SAMPLES_PER_BLOCK*32768.0/(1.4142*128.0))*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
-#define TONE_TWIST                  4               /* 6dB */
-#define TONE_TO_TOTAL_ENERGY        64              /* -3dB */
+#define DETECTION_THRESHOLD         3035            /* -42dBm0 */
+#define TONE_TO_TOTAL_ENERGY        45.2233f        /* -0.85dB */
 #else
-#define GOERTZEL_SAMPLES_PER_BLOCK  55              /* We need to detect over a +-5% range */
-#define DETECTION_THRESHOLD         2104205.6f      /* -42dBm0 [((GOERTZEL_SAMPLES_PER_BLOCK*GOERTZEL_SAMPLES_PER_BLOCK*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
-#define TONE_TWIST                  3.981f          /* 6dB */
-#define TONE_TO_TOTAL_ENERGY        1.995f          /* 3dB */
+#define DETECTION_THRESHOLD         49728296.6f     /* -42dBm0 [((GOERTZEL_SAMPLES_PER_BLOCK*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
+#define TONE_TO_TOTAL_ENERGY        45.2233f        /* -0.85dB [GOERTZEL_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
 #endif
 
+static int tone_rx_init = FALSE;
 static goertzel_descriptor_t tone_1400_desc;
 static goertzel_descriptor_t tone_2300_desc;
 
@@ -1083,8 +1082,6 @@ SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ade
                                                                              tone_report_func_t callback,
                                                                              void *user_data)
 {
-    static int initialised = FALSE;
-
     if (s == NULL)
     {
         if ((s = (ademco_contactid_sender_state_t *) malloc(sizeof (*s))) == NULL)
@@ -1094,10 +1091,11 @@ SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ade
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "Ademco");
 
-    if (!initialised)
+    if (!tone_rx_init)
     {
         make_goertzel_descriptor(&tone_1400_desc, 1400.0f, GOERTZEL_SAMPLES_PER_BLOCK);
         make_goertzel_descriptor(&tone_2300_desc, 2300.0f, GOERTZEL_SAMPLES_PER_BLOCK);
+        tone_rx_init = TRUE;
     }
     goertzel_init(&s->tone_1400, &tone_1400_desc);
     goertzel_init(&s->tone_2300, &tone_2300_desc);

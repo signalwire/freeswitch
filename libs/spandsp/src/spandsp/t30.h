@@ -369,7 +369,7 @@ enum
     /*! T.45 run length colour compression */
     T30_SUPPORT_COMPRESSION_T45 = 0x80,
     /*! T.81 + T.30 Annex E colour JPEG compression */
-    T30_SUPPORT_COMPRESSION_T81 = 0x100,
+    T30_SUPPORT_COMPRESSION_T42_T81 = 0x100,
     /*! T.81 + T.30 Annex K colour sYCC-JPEG compression */
     T30_SUPPORT_COMPRESSION_SYCC_T81 = 0x200,
     /*! T.88 monochrome JBIG2 compression */
@@ -382,34 +382,37 @@ enum
 
 enum
 {
-    /*! Support standard FAX Y-resolution 98/100dpi */
-    T30_SUPPORT_STANDARD_RESOLUTION = 0x01,
-    /*! Support fine FAX Y-resolution 196/200dpi */
-    T30_SUPPORT_FINE_RESOLUTION = 0x02,
-    /*! Support super-fine FAX Y-resolution 392/400dpi */
-    T30_SUPPORT_SUPERFINE_RESOLUTION = 0x04,
+    /*! Standard FAX resolution 204dpi x 98dpi - bi-level only */
+    T30_SUPPORT_RESOLUTION_R8_STANDARD = 0x1,
+    /*! Fine FAX resolution 204dpi x 196dpi - bi-level only */
+    T30_SUPPORT_RESOLUTION_R8_FINE = 0x2,
+    /*! Super-fine FAX resolution 204dpi x 391dpi - bi-level only */
+    T30_SUPPORT_RESOLUTION_R8_SUPERFINE = 0x4,
+    /*! Double FAX resolution 408dpi x 391dpi - bi-level only */
+    T30_SUPPORT_RESOLUTION_R16_SUPERFINE = 0x8,
 
-    /*! Support half FAX X-resolution 100/102dpi */
-    T30_SUPPORT_R4_RESOLUTION = 0x10000,
-    /*! Support standard FAX X-resolution 200/204dpi */
-    T30_SUPPORT_R8_RESOLUTION = 0x20000,
-    /*! Support double FAX X-resolution 400dpi */
-    T30_SUPPORT_R16_RESOLUTION = 0x40000,
-
-    /*! Support 300dpi x 300 dpi */
-    T30_SUPPORT_300_300_RESOLUTION = 0x100000,
-    /*! Support 400dpi x 400 dpi */
-    T30_SUPPORT_400_400_RESOLUTION = 0x200000,
-    /*! Support 600dpi x 600 dpi */
-    T30_SUPPORT_600_600_RESOLUTION = 0x400000,
-    /*! Support 1200dpi x 1200 dpi */
-    T30_SUPPORT_1200_1200_RESOLUTION = 0x800000,
-    /*! Support 300dpi x 600 dpi */
-    T30_SUPPORT_300_600_RESOLUTION = 0x1000000,
-    /*! Support 400dpi x 800 dpi */
-    T30_SUPPORT_400_800_RESOLUTION = 0x2000000,
-    /*! Support 600dpi x 1200 dpi */
-    T30_SUPPORT_600_1200_RESOLUTION = 0x4000000
+    /*! 100dpi x 100 dpi - gray scale and colour only */
+    T30_SUPPORT_RESOLUTION_100_100 = 0x10,
+    /*! 200dpi x 100 dpi - bi-level only */
+    T30_SUPPORT_RESOLUTION_200_100 = 0x20,
+    /*! 200dpi x 200 dpi */
+    T30_SUPPORT_RESOLUTION_200_200 = 0x40,
+    /*! 200dpi x 400 dpi - bi-level only */
+    T30_SUPPORT_RESOLUTION_200_400 = 0x80,
+    /*! 300dpi x 300 dpi */
+    T30_SUPPORT_RESOLUTION_300_300 = 0x100,
+    /*! 300dpi x 600 dpi - bi-level only */
+    T30_SUPPORT_RESOLUTION_300_600 = 0x200,
+    /*! 400dpi x 400 dpi */
+    T30_SUPPORT_RESOLUTION_400_400 = 0x400,
+    /*! 400dpi x 800 dpi - bi-level only */
+    T30_SUPPORT_RESOLUTION_400_800 = 0x800,
+    /*! 600dpi x 600 dpi */
+    T30_SUPPORT_RESOLUTION_600_600 = 0x1000,
+    /*! 600dpi x 1200 dpi - bi-level only */
+    T30_SUPPORT_RESOLUTION_600_1200 = 0x2000,
+    /*! 1200dpi x 1200 dpi */
+    T30_SUPPORT_RESOLUTION_1200_1200 = 0x4000
 };
 
 enum

@@ -33,6 +33,7 @@ struct v18_state_s
     int mode;
     put_msg_func_t put_msg;
     void *user_data;
+    int repeat_shifts;
 
     union
     {
@@ -46,6 +47,7 @@ struct v18_state_s
     async_tx_state_t asynctx;
     int baudot_tx_shift;
     int tx_signal_on;
+    uint8_t next_byte;
     int byte_no;
 
     fsk_rx_state_t fskrx;
@@ -56,7 +58,7 @@ struct v18_state_s
     int rx_msg_len;
     int bit_pos;
     int in_progress;
-    int repeat_shifts;
+    int rx_suppression;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

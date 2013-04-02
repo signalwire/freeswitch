@@ -393,18 +393,20 @@ static void fax_prepare(void)
                                 | T30_SUPPORT_255MM_WIDTH
                                 | T30_SUPPORT_303MM_WIDTH);
     t30_set_supported_resolutions(t30,
-                                  T30_SUPPORT_STANDARD_RESOLUTION
-                                | T30_SUPPORT_FINE_RESOLUTION
-                                | T30_SUPPORT_SUPERFINE_RESOLUTION
-                                | T30_SUPPORT_R8_RESOLUTION
-                                | T30_SUPPORT_R16_RESOLUTION
-                                | T30_SUPPORT_300_300_RESOLUTION
-                                | T30_SUPPORT_400_400_RESOLUTION
-                                | T30_SUPPORT_600_600_RESOLUTION
-                                | T30_SUPPORT_1200_1200_RESOLUTION
-                                | T30_SUPPORT_300_600_RESOLUTION
-                                | T30_SUPPORT_400_800_RESOLUTION
-                                | T30_SUPPORT_600_1200_RESOLUTION);
+                                  T30_SUPPORT_RESOLUTION_R8_STANDARD
+                                | T30_SUPPORT_RESOLUTION_R8_FINE
+                                | T30_SUPPORT_RESOLUTION_R8_SUPERFINE
+                                | T30_SUPPORT_RESOLUTION_R16_SUPERFINE
+                                | T30_SUPPORT_RESOLUTION_200_100
+                                | T30_SUPPORT_RESOLUTION_200_200
+                                | T30_SUPPORT_RESOLUTION_200_400
+                                | T30_SUPPORT_RESOLUTION_300_300
+                                | T30_SUPPORT_RESOLUTION_300_600
+                                | T30_SUPPORT_RESOLUTION_400_400
+                                | T30_SUPPORT_RESOLUTION_400_800
+                                | T30_SUPPORT_RESOLUTION_600_600
+                                | T30_SUPPORT_RESOLUTION_600_1200
+                                | T30_SUPPORT_RESOLUTION_1200_1200);
     t30_set_supported_modems(t30, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
     t30_set_supported_compressions(t30, T30_SUPPORT_COMPRESSION_T4_1D | T30_SUPPORT_COMPRESSION_T4_2D | T30_SUPPORT_COMPRESSION_T6);
     t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) 'A');

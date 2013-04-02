@@ -52,8 +52,10 @@ struct t30_state_s
     int supported_modems;
     /*! \brief A bit mask of the currently supported image compression modes. */
     int supported_compressions;
-    /*! \brief A bit mask of the currently supported image resolutions. */
-    int supported_resolutions;
+    /*! \brief A bit mask of the currently supported bi-level image resolutions. */
+    int supported_bilevel_resolutions;
+    /*! \brief A bit mask of the currently supported colour image resolutions. */
+    int supported_colour_resolutions;
     /*! \brief A bit mask of the currently supported image sizes. */
     int supported_image_sizes;
     /*! \brief A bit mask of the currently supported T.30 special features. */
@@ -218,6 +220,12 @@ struct t30_state_s
 
     /*! \brief TRUE if a local T.30 interrupt is pending. */
     int local_interrupt_pending;
+    /*! \brief The common ground in compression schemes between the local and far ends. */
+    int mutual_compressions;
+    /*! \brief The common group supported bi-level image resolutions. */
+    int mutual_bilevel_resolutions;
+    /*! \brief The common group supported colour image resolutions. */
+    int mutual_colour_resolutions;
     /*! \brief The image coding to be used on the line for non-bilevel images. */
     int multilevel_line_encoding;
     /*! \brief The image coding being used on the line. */

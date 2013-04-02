@@ -62,6 +62,8 @@
 #define DEFAULT_DTMF_TX_ON_TIME     50
 #define DEFAULT_DTMF_TX_OFF_TIME    55
 
+#define DTMF_SAMPLES_PER_BLOCK      102
+
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define DTMF_THRESHOLD              10438           /* -42dBm0 */
 #define DTMF_NORMAL_TWIST           6.309f          /* 8dB */
@@ -70,16 +72,14 @@
 #define DTMF_RELATIVE_PEAK_COL      6.309f          /* 8dB */
 #define DTMF_TO_TOTAL_ENERGY        83.868f         /* -0.85dB */
 #define DTMF_POWER_OFFSET           68.251f         /* 10*log(256.0*256.0*DTMF_SAMPLES_PER_BLOCK) */
-#define DTMF_SAMPLES_PER_BLOCK      102
 #else
-#define DTMF_THRESHOLD              171032462.0f    /* -42dBm0 [((DTMF_SAMPLES_PER_BLOCK*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2 => 171032462.0] */
+#define DTMF_THRESHOLD              171032462.0f    /* -42dBm0 [((DTMF_SAMPLES_PER_BLOCK*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
 #define DTMF_NORMAL_TWIST           6.309f          /* 8dB [10^(8/10) => 6.309] */
 #define DTMF_REVERSE_TWIST          2.512f          /* 4dB */
 #define DTMF_RELATIVE_PEAK_ROW      6.309f          /* 8dB */
 #define DTMF_RELATIVE_PEAK_COL      6.309f          /* 8dB */
 #define DTMF_TO_TOTAL_ENERGY        83.868f         /* -0.85dB [DTMF_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
 #define DTMF_POWER_OFFSET           110.395f        /* 10*log(32768.0*32768.0*DTMF_SAMPLES_PER_BLOCK) */
-#define DTMF_SAMPLES_PER_BLOCK      102
 #endif
 
 static const float dtmf_row[] =
@@ -93,6 +93,7 @@ static const float dtmf_col[] =
 
 static const char dtmf_positions[] = "123A" "456B" "789C" "*0#D";
 
+static int dtmf_rx_inited = FALSE;
 static goertzel_descriptor_t dtmf_detect_row[4];
 static goertzel_descriptor_t dtmf_detect_col[4];
 
@@ -409,7 +410,6 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
                                              void *user_data)
 {
     int i;
-    static int initialised = FALSE;
 
     if (s == NULL)
     {
@@ -431,14 +431,14 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
     s->in_digit = 0;
     s->last_hit = 0;
 
-    if (!initialised)
+    if (!dtmf_rx_inited)
     {
         for (i = 0;  i < 4;  i++)
         {
             make_goertzel_descriptor(&dtmf_detect_row[i], dtmf_row[i], DTMF_SAMPLES_PER_BLOCK);
             make_goertzel_descriptor(&dtmf_detect_col[i], dtmf_col[i], DTMF_SAMPLES_PER_BLOCK);
         }
-        initialised = TRUE;
+        dtmf_rx_inited = TRUE;
     }
     for (i = 0;  i < 4;  i++)
     {

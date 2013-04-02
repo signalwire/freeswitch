@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     image_size = IMAGE_WIDTH*ROWS_PER_STRIPE/8;
     memset(image_buffer, 0x18, image_size);
 
-    for (i = 0;  i < IMAGE_LENGTH/ROWS_PER_STRIPE;  i++)
+    for (i = 0;  i*ROWS_PER_STRIPE < IMAGE_LENGTH;  i++)
     {
         if (IMAGE_LENGTH > (i + 1)*ROWS_PER_STRIPE)
             image_size = IMAGE_WIDTH*ROWS_PER_STRIPE/8;
