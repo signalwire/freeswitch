@@ -1,0 +1,11 @@
+<include>
+  <extension>
+    <condition>
+      <!-- translate the desintation_number and caller_id_number
+	   according to the default numbering plan (as seen in brian.xml) -->
+      <action application="translate" data="${destination_number} ${numbering_plan}"/>
+      <action application="log" data="info Before: ${destination_number}"/>
+      <action application="log" data="info After:  ${translated}"/>
+    </condition>
+  </extension>
+</include>
