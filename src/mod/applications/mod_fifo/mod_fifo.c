@@ -2906,7 +2906,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 			if (node && other_session) {
 				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-				switch_caller_profile_t *cloned_profile, *a_cp, *b_cp;
+				switch_caller_profile_t *originator_cp, *originatee_cp;
 				const char *o_announce = NULL;
 				const char *record_template = switch_channel_get_variable(channel, "fifo_record_template");
 				char *expanded = NULL;
@@ -2981,26 +2981,41 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_channel_answer(channel);
 
-				a_cp = switch_channel_get_caller_profile(channel);
-				b_cp = switch_channel_get_caller_profile(other_channel);
+				originator_cp = switch_channel_get_caller_profile(channel);
+				originatee_cp = switch_channel_get_caller_profile(other_channel);
+
+				if (switch_channel_inbound_display(other_channel)) {
+					const char *tname = originatee_cp->caller_id_name;
+					const char *tnum = originatee_cp->caller_id_number;
+					
+#ifdef DEEP_DEBUG_CID
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SWAP [%s][%s] [%s][%s]\n", originatee_cp->caller_id_name, originatee_cp->caller_id_number, originatee_cp->callee_id_name, originatee_cp->callee_id_number);
+#endif
+						
+					originatee_cp->caller_id_name = originatee_cp->callee_id_name;
+					originatee_cp->caller_id_number = originatee_cp->callee_id_number;
+					
+					originatee_cp->callee_id_name = tname;
+					originatee_cp->callee_id_number = tnum;
+				}
+
+
+				switch_channel_step_caller_profile(channel);
+				switch_channel_step_caller_profile(other_channel);
+
+				originator_cp = switch_channel_get_caller_profile(channel);
+				originatee_cp = switch_channel_get_caller_profile(other_channel);
 				
+				switch_channel_set_originator_caller_profile(other_channel, switch_caller_profile_clone(other_session, originator_cp));
+				switch_channel_set_originatee_caller_profile(channel, switch_caller_profile_clone(session, originatee_cp));
+				
+				
+				originator_cp->callee_id_name = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_name);
+				originator_cp->callee_id_number = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_number);
+				
+				originatee_cp->caller_id_name = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_name);
+				originatee_cp->caller_id_number = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_number);
 
-
-				cloned_profile = switch_caller_profile_clone(other_session, a_cp);
-				switch_assert(cloned_profile);
-				switch_channel_set_originator_caller_profile(other_channel, cloned_profile);
-
-				a_cp->callee_id_name = switch_core_strdup(a_cp->pool, b_cp->caller_id_name);
-				a_cp->callee_id_number = switch_core_strdup(a_cp->pool, b_cp->caller_id_number);
-
-
-				cloned_profile = switch_caller_profile_clone(session, b_cp);
-				switch_assert(cloned_profile);
-				switch_assert(cloned_profile->next == NULL);
-				switch_channel_set_originatee_caller_profile(channel, cloned_profile);
-
-				b_cp->callee_id_name = switch_core_strdup(b_cp->pool, a_cp->caller_id_name);
-				b_cp->callee_id_number = switch_core_strdup(b_cp->pool, a_cp->caller_id_number);
 
 
 				ts = switch_micro_time_now();
@@ -3028,8 +3043,10 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_core_media_bug_resume(session);
 				switch_core_media_bug_resume(other_session);
+
 				switch_process_import(session, other_channel, "fifo_caller_consumer_import", switch_channel_get_variable(channel, "fifo_import_prefix"));
 				switch_process_import(other_session, channel, "fifo_consumer_caller_import", switch_channel_get_variable(other_channel, "fifo_import_prefix"));
+
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
@@ -3080,6 +3097,12 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				if (!switch_channel_test_flag(other_channel, CF_TRANSFER) || !switch_channel_up(other_channel)) {
 					switch_channel_set_variable(other_channel, "fifo_initiated_bridge", "true");
+					switch_channel_set_variable(other_channel, "fifo_bridge_role", "caller");
+				}
+
+				if (!switch_channel_test_flag(channel, CF_TRANSFER) || !switch_channel_up(channel)) {
+					switch_channel_set_variable(channel, "fifo_initiated_bridge", "true");
+					switch_channel_set_variable(channel, "fifo_bridge_role", "consumer");
 				}
 
 				if (outbound_id) {
