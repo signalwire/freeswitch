@@ -178,6 +178,7 @@ typedef struct {
 	uint8_t ready;
 	uint8_t rready;
 	int missed_count;
+	int flips;
 } switch_rtp_ice_t;
 
 struct switch_rtp;
@@ -726,7 +727,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 		switch_snprintf(sw, sizeof(sw), "FreeSWITCH (%s)", SWITCH_VERSION_REVISION_HUMAN);
 		switch_stun_packet_attribute_add_software(packet, sw, strlen(sw));
 
-		if ((ice->type && ICE_CONTROLLED)) {
+		if ((ice->type & ICE_CONTROLLED)) {
 			switch_stun_packet_attribute_add_controlled(packet);
 		} else {
 			switch_stun_packet_attribute_add_controlling(packet);
@@ -799,11 +800,26 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 	}
 
-#if 0
-	if (ice->sending && (packet->header.type == SWITCH_STUN_BINDING_RESPONSE || packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE)) {
-		ice->sending = 0;
+
+	if (packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE) {
+
+		if (ice->flips < 4) {
+			if ((ice->type & ICE_CONTROLLED)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLING\n");
+				ice->type &= ~ICE_CONTROLLED;
+				ice->flips++;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLED\n");
+				ice->type |= ICE_CONTROLLED;
+				ice->flips++;
+			}
+
+			packet->header.type = SWITCH_STUN_BINDING_RESPONSE;
+		}
+
+	} else {
+		ice->flips = 0;
 	}
-#endif 
 
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
 
