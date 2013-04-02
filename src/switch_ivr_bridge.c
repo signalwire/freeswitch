@@ -140,9 +140,6 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 		name = p + 1;
 	}
 
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SEND %s [%s][%s]\n", switch_core_session_get_name(peer_session), name, number);
-	
 	msg = switch_core_session_alloc(peer_session, sizeof(*msg));
 	MESSAGE_STAMP_FFL(msg);
 	msg->message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
