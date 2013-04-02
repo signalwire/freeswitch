@@ -154,6 +154,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	tech_pvt->mparams.manual_rtp_bugs = profile->manual_rtp_bugs;
 	tech_pvt->mparams.manual_video_rtp_bugs = profile->manual_video_rtp_bugs;
 	tech_pvt->mparams.extsipip = profile->extsipip;
+	tech_pvt->mparams.extrtpip = profile->extrtpip;
 	tech_pvt->mparams.local_network = profile->local_network;
 	tech_pvt->mparams.mutex = tech_pvt->sofia_mutex;
 	tech_pvt->mparams.sipip = profile->sipip;
