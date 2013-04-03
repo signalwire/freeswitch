@@ -852,8 +852,6 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	int fs = 0, lazy = 0, att = 0;
 	const char *name_var = "callee_id_name";
 	const char *num_var = "callee_id_number";
-	const char *ename_var = "effective_callee_id_name";
-	const char *enum_var = "effective_callee_id_number";
 
 	if (switch_true(switch_channel_get_variable(channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
 		return;
@@ -863,8 +861,6 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	if (switch_channel_inbound_display(channel)) {
 		name_var = "caller_id_name";
 		num_var = "caller_id_number";
-		ename_var = "effective_caller_id_name";
-		enum_var = "effective_caller_id_number";
 	}
 
 
@@ -916,15 +912,6 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 		}
 	}
 	
-	if (((tmp = switch_channel_get_variable(channel, ename_var)) ||
-		 (tmp = switch_channel_get_variable(channel, "sip_callee_id_name"))) && !zstr(tmp)) {
-		name = (char *) tmp;
-	}
-
-	if (((tmp = switch_channel_get_variable(channel, enum_var)) ||
-		 (tmp = switch_channel_get_variable(channel, "sip_callee_id_number"))) && !zstr(tmp)) {
-		number = tmp;
-	}
 
 	if (zstr(number)) {
 		if ((tmp = switch_channel_get_variable(channel, num_var)) && !zstr(tmp)) {
