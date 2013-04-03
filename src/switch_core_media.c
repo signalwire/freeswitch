@@ -29,8 +29,6 @@
  *
  */
 
-//#define GOOGLE_ICE
-#define RTCP_MUX
 #include <switch.h>
 #include <switch_ssl.h>
 #include <switch_stun.h>
@@ -46,6 +44,8 @@ SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_process_udptl(switch_co
 SWITCH_DECLARE(void) switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
 SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp);
 
+//#define GOOGLE_ICE
+#define RTCP_MUX
 #define MAX_CODEC_CHECK_FRAMES 50//x:mod_sofia.h
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
 #define type2str(type) type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio"
@@ -1927,7 +1927,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 				engine->ice_in.cands[engine->ice_in.cand_idx][cid].transport = switch_core_session_strdup(smh->session, fields[2]);
 				engine->ice_in.cands[engine->ice_in.cand_idx][cid].priority = atol(fields[3]);
 				engine->ice_in.cands[engine->ice_in.cand_idx][cid].con_addr = switch_core_session_strdup(smh->session, fields[4]);
-				engine->ice_in.cands[engine->ice_in.cand_idx][cid].con_port = atoi(fields[5]);
+				engine->ice_in.cands[engine->ice_in.cand_idx][cid].con_port = (switch_port_t)atoi(fields[5]);
 						
 				j = 6;
 
@@ -1937,7 +1937,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 					} else if (!strcasecmp(fields[j], "raddr")) {
 						engine->ice_in.cands[engine->ice_in.cand_idx][cid].raddr = switch_core_session_strdup(smh->session, fields[j+1]);
 					} else if (!strcasecmp(fields[j], "rport")) {
-						engine->ice_in.cands[engine->ice_in.cand_idx][cid].rport = atoi(fields[j+1]);
+						engine->ice_in.cands[engine->ice_in.cand_idx][cid].rport = (switch_port_t)atoi(fields[j+1]);
 					} else if (!strcasecmp(fields[j], "generation")) {
 						engine->ice_in.cands[engine->ice_in.cand_idx][cid].generation = switch_core_session_strdup(smh->session, fields[j+1]);
 					}
@@ -2407,7 +2407,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 					switch_channel_set_variable(session->channel, "rtp_remote_audio_rtcp_port", attr->a_value);
-					a_engine->remote_rtcp_port = atoi(attr->a_value);
+					a_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
@@ -2804,7 +2804,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 						switch_channel_set_variable(session->channel, "rtp_remote_video_rtcp_port", attr->a_value);
-						v_engine->remote_rtcp_port = atoi(attr->a_value);
+						v_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
 					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 						int crypto_tag;
 						
@@ -4875,7 +4875,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					smh->mparams->cng_pt && use_cng  && smh->mparams->cng_pt == smh->payload_space) {
 					smh->payload_space++;
 				}
-				smh->ianacodes[i] = smh->payload_space++;
+				smh->ianacodes[i] = (switch_payload_t)smh->payload_space++;
 			}
 		}
 	}
@@ -5249,7 +5249,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		if ((v_port = v_engine->codec_params.adv_sdp_port)) {
 
 			if (switch_channel_test_flag(smh->session->channel, CF_ICE)) {
-				gen_ice(session, SWITCH_MEDIA_TYPE_VIDEO, ip, v_port);
+				gen_ice(session, SWITCH_MEDIA_TYPE_VIDEO, ip, (switch_port_t)v_port);
 			}
 			/*
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video %d RTP/%sAVP%s", 
@@ -7077,11 +7077,11 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	a_engine->codec_params.rm_fmtp = (char *) switch_channel_get_variable(session->channel, "rtp_use_codec_fmtp");
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_2833_send_payload"))) {
-		smh->mparams->te = atoi(tmp);
+		smh->mparams->te = (switch_payload_t)atoi(tmp);
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_2833_recv_payload"))) {
-		smh->mparams->recv_te = atoi(tmp);
+		smh->mparams->recv_te = (switch_payload_t)atoi(tmp);
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_codec_rate"))) {

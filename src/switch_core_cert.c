@@ -102,6 +102,28 @@ static const EVP_MD *get_evp_by_name(const char *name)
 
 	return NULL;
 }
+#ifdef _MSC_VER
+/* Visual C do not have strsep? */
+char
+    *strsep(char **stringp, const char *delim)
+{
+	char *res;
+
+	if (!stringp || !*stringp || !**stringp)
+		return (char *) 0;
+
+	res = *stringp;
+	while (**stringp && !strchr(delim, **stringp))
+		++(*stringp);
+
+	if (**stringp) {
+		**stringp = '\0';
+		++(*stringp);
+	}
+
+	return res;
+}
+#endif
 
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp)
 {
@@ -141,7 +163,7 @@ SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, 
 SWITCH_DECLARE(int) switch_core_cert_extract_fingerprint(X509* x509, dtls_fingerprint_t *fp)
 {
 	const EVP_MD *evp;
-	int i, j;
+	unsigned int i, j;
 
 	evp = get_evp_by_name(fp->type);
 	
@@ -313,7 +335,6 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 			if ((pk=EVP_PKEY_new()) == NULL)
 				{
 					abort(); 
-					return(0);
 				}
 		}
 	else

@@ -714,7 +714,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 	}
 
 	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
-	switch_stun_packet_attribute_add_username(packet, ice->ice_user, strlen(ice->ice_user));
+	switch_stun_packet_attribute_add_username(packet, ice->ice_user, (uint16_t)strlen(ice->ice_user));
 	
 	//if (ice->pass && ice->type == ICE_GOOGLE_JINGLE) {
 	//	switch_stun_packet_attribute_add_password(packet, ice->pass, (uint16_t)strlen(ice->pass));
@@ -726,7 +726,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 		switch_stun_packet_attribute_add_priority(packet, ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].priority);
 
 		switch_snprintf(sw, sizeof(sw), "FreeSWITCH (%s)", SWITCH_VERSION_REVISION_HUMAN);
-		switch_stun_packet_attribute_add_software(packet, sw, strlen(sw));
+		switch_stun_packet_attribute_add_software(packet, sw, (uint16_t)strlen(sw));
 
 		if ((ice->type & ICE_CONTROLLED)) {
 			switch_stun_packet_attribute_add_controlled(packet);
@@ -981,7 +981,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, stunbuf);
 
 			if (ice->type == ICE_GOOGLE_JINGLE) {
-				switch_stun_packet_attribute_add_username(rpacket, username, strlen(username));
+				switch_stun_packet_attribute_add_username(rpacket, username, (uint16_t)strlen(username));
 			}
 
 			remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), from_addr);
@@ -2134,7 +2134,7 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	switch_size_t bytes;
 
 	if (dtls->bytes) {
-		if ((ret = BIO_write(dtls->read_bio, dtls->data, dtls->bytes)) != dtls->bytes) {
+		if ((ret = BIO_write(dtls->read_bio, dtls->data, dtls->bytes)) != (int)dtls->bytes) {
 			ret = SSL_get_error(dtls->ssl, ret);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet read err %d\n", rtp_type(rtp_session), ret);
 			dtls_set_state(dtls, DS_FAIL);
@@ -2146,7 +2146,7 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		}
 	}
 
-	if (SSL_read(dtls->ssl, dtls->data, dtls->bytes) == dtls->bytes) {
+	if (SSL_read(dtls->ssl, dtls->data, dtls->bytes) == (int)dtls->bytes) {
 		if (BIO_reset(dtls->read_bio));
 	}
 
