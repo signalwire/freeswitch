@@ -93,17 +93,28 @@ static void send_display(switch_core_session_t *session, switch_core_session_t *
 {
 
 	switch_core_session_message_t *msg;
-	switch_caller_profile_t *caller_profile;
-	switch_channel_t *caller_channel;
+	switch_caller_profile_t *caller_profile, *peer_caller_profile;
+	switch_channel_t *caller_channel, *peer_channel;
 	const char *name, *number, *p;
 
 	caller_channel = switch_core_session_get_channel(session);
+	peer_channel = switch_core_session_get_channel(peer_session);
+
 	caller_profile = switch_channel_get_caller_profile(caller_channel);
-	
+	peer_caller_profile = switch_channel_get_caller_profile(peer_channel);
 
 	if (switch_channel_test_flag(caller_channel, CF_BRIDGE_ORIGINATOR)) {
-		name = caller_profile->caller_id_name;
-		number = caller_profile->caller_id_number;		
+		if (!zstr(peer_caller_profile->caller_id_name)) {
+			name = peer_caller_profile->caller_id_name;
+		} else {
+			name = caller_profile->caller_id_name;
+		}
+
+		if (!zstr(peer_caller_profile->caller_id_number)) {
+			number = peer_caller_profile->caller_id_number;
+		} else {
+			number = caller_profile->caller_id_number;		
+		}
 
 		if (zstr(number)) {
 			number = "UNKNOWN";

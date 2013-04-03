@@ -76,6 +76,10 @@ typedef struct profile_node_s {
 	const char *caller_id_name;
 	/*! Caller ID Number */
 	const char *caller_id_number;
+	/*! Original Caller ID Name */
+	const char *orig_caller_id_name;
+	/*! Original Caller ID Number */
+	const char *orig_caller_id_number;
 	/*! Callee ID Name */
 	const char *callee_id_name;
 	/*! Callee ID Number */
