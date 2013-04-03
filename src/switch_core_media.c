@@ -197,7 +197,7 @@ static void _switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_sessi
 	switch_rtp_engine_t *aleg_engine;
 	switch_rtp_engine_t *bleg_engine;
 
-	if (!aleg_session->media_handle && bleg_session->media_handle) return;
+	if (!aleg_session->media_handle || !bleg_session->media_handle) return;
 	aleg_engine = &aleg_session->media_handle->engines[type];
 	bleg_engine = &bleg_session->media_handle->engines[type];
 
