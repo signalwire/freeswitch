@@ -79,7 +79,7 @@ endpoints/mod_loopback
 #endpoints/mod_opal
 #endpoints/mod_portaudio
 #endpoints/mod_rtmp
-#endpoints/mod_skinny
+endpoints/mod_skinny
 #endpoints/mod_skypopen
 endpoints/mod_sofia
 event_handlers/mod_cdr_csv
