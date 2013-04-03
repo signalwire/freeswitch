@@ -14,6 +14,8 @@
 
 -->
       <param name="total-modems" value="0"/>
+      <!-- Change the directory of the devices created from /dev. Needed if FS runs as non-root -->
+      <!-- <param name="directory" value="/dev/FS"/> -->
 
       <!-- Default context and dialplan to use on inbound calls from the modems -->
       <param name="context" value="default"/>
