@@ -1219,7 +1219,9 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 			break;
 		case SKINNY_BUTTON_SPEED_DIAL:
 			skinny_speed_dial_get(listener, request->data.stimulus.instance, &button_speed_dial);
-			if(strlen(button_speed_dial->line) > 0) {
+
+			session = skinny_profile_find_session(listener->profile, listener, &line_instance, 0);
+			if(!session && strlen(button_speed_dial->line) > 0) {
 				skinny_create_incoming_session(listener, &line_instance, &session);
 				skinny_session_process_dest(session, listener, line_instance, button_speed_dial->line, '\0', 0);
 			}
