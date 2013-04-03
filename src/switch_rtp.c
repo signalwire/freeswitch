@@ -740,7 +740,6 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 
 	bytes = switch_stun_packet_length(packet);
 
-	printf("SEND.....\n");
 	switch_socket_sendto(sock_output, ice->addr, 0, (void *) packet, &bytes);
 						 
 	ice->stuncount = ice->default_stuncount;
