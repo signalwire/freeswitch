@@ -14,6 +14,9 @@
 #include "zrtp_types.h"
 #include "zrtp_error.h"
 
+#if defined(_MSC_VER)
+#pragma warning(disable:4214)
+#endif
 
 /*!
  * \defgroup dev_protocol Protocol related data types and definitions

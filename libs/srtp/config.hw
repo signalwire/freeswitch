@@ -166,7 +166,9 @@
 /* #undef const */
 
 /* Define 'inline' to nothing, since the MSVC compiler doesn't support it.  */
-#define inline 
+#ifndef inline
+#define inline
+#endif 
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */

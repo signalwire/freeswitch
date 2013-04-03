@@ -184,7 +184,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 		attr->type = ntohs(attr->type);
 		bytes_left -= 4;		/* attribute header consumed */
 
-		if (switch_stun_attribute_padded_length(attr) > bytes_left) {
+		if (switch_stun_attribute_padded_length(attr) > (int)bytes_left) {
 			/*
 			 * Note we simply don't "break" here out of the loop anymore because
 			 * we don't want the upper layers to have to deal with attributes without a value
@@ -583,7 +583,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
 		switch_stun_random_string(attribute->value, ulen, NULL);
 	}
 
-	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t) + padding) + attribute->length;
+	packet->header.length += htons((u_short)(sizeof(switch_stun_packet_attribute_t) + padding)) + attribute->length;
 
 	return 1;
 }
@@ -607,7 +607,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_software(switch_stun_pa
 		switch_stun_random_string(attribute->value, ulen, NULL);
 	}
 
-	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t) + padding) + attribute->length;
+	packet->header.length += htons((u_short)(sizeof(switch_stun_packet_attribute_t) + padding)) + attribute->length;
 
 	return 1;
 }
@@ -631,7 +631,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_password(switch_stun_pa
 		switch_stun_random_string(attribute->value, ulen, NULL);
 	}
 
-	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t) + padding) + attribute->length;
+	packet->header.length += htons((u_short)(sizeof(switch_stun_packet_attribute_t) + padding)) + attribute->length;
 
 	return 1;
 }

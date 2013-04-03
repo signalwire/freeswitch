@@ -91,6 +91,9 @@ struct sdp_parser_s {
 #define pr_error   pr_output.pru_error
 #define pr_session pr_output.pru_session
 
+#ifdef _MSC_VER
+#undef STRICT
+#endif
 #define STRICT(pr) (pr->pr_strict)
 
 /* Static parser object used when running out of memory */

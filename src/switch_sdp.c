@@ -1,4 +1,5 @@
 
+#include <switch.h>
 #include <sofia-sip/sdp.h>
 
 sdp_connection_t *sdp_media_connections(sdp_media_t const *m)
