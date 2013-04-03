@@ -2656,7 +2656,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 		int initiator = 0;
 		const char *zrtp_enabled = switch_channel_get_variable(channel, "zrtp_secure_media");
-		const char *srtp_enabled = switch_channel_get_variable(channel, "sip_secure_media");
+		const char *srtp_enabled = switch_channel_get_variable(channel, "rtp_secure_media");
 
 		if (switch_true(srtp_enabled) && switch_true(zrtp_enabled)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,

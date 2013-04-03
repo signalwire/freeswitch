@@ -95,9 +95,9 @@
 	<action application="info"/>
       </condition>
       <condition field="${rtp_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$" break="never">
-	<action application="set" data="sip_secure_media=true"/>
+	<action application="set" data="rtp_secure_media=true"/>
 	<!-- Offer SRTP on outbound legs if we have it on inbound. -->
-	<!-- <action application="export" data="sip_secure_media=true"/> -->
+	<!-- <action application="export" data="rtp_secure_media=true"/> -->
       </condition>
       <condition>
 	<action application="db" data="insert/${domain_name}-spymap/${caller_id_number}/${uuid}"/>
@@ -231,7 +231,7 @@
 	<anti-action application="db" data="insert/${domain_name}-call_return/${dialed_extension}/${caller_id_number}"/>
 	<anti-action application="db" data="insert/${domain_name}-last_dial_ext/${dialed_extension}/${uuid}"/>
 	<anti-action application="set" data="called_party_callgroup=${user_data(${dialed_extension}@${domain_name} var callgroup)}"/>
-	<!--<anti-action application="export" data="nolocal:sip_secure_media=${user_data(${dialed_extension}@${domain_name} var sip_secure_media)}"/>-->
+	<!--<anti-action application="export" data="nolocal:rtp_secure_media=${user_data(${dialed_extension}@${domain_name} var rtp_secure_media)}"/>-->
 	<anti-action application="db" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>
 	<anti-action application="bridge" data="user/${dialed_extension}@${domain_name}"/>
 	<anti-action application="answer"/>

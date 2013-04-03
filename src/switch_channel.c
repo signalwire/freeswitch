@@ -3155,8 +3155,20 @@ SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel)
 	}
 }
 
+static void check_secure(switch_channel_t *channel)
+{
+	const char *var, *sec;
 
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		if ((sec = switch_channel_get_variable(channel, "rtp_secure_media")) && switch_true(sec)) {
+			if (!(var = switch_channel_get_variable(channel, "rtp_has_crypto"))) {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "rtp_secure_media invalid in this context.\n");
+				switch_channel_set_variable(channel, "rtp_secure_media", NULL);
+			}
+		}
+	}
 
+}
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel, const char *file, const char *func, int line)
 {
@@ -3240,6 +3252,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+
+	check_secure(channel);
 
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 		msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
@@ -3511,7 +3525,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-	
+
+	check_secure(channel);
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_ANSWER;
 	msg.from = channel->name;

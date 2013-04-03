@@ -60,8 +60,8 @@
       <variable name="effective_caller_id_number" value="1000"/>
       <!-- Don't write a CDR if this is false valid values are: true, false, a_leg and b_leg -->
       <variable name="process_cdr" value="true"/>
-      <!-- sip_secure_media will offer mandatory SRTP on invite AES_CM_128_HMAC_SHA1_32, AES_CM_128_HMAC_SHA1_80 or true-->
-      <variable name="sip_secure_media" value="true"/>
+      <!-- rtp_secure_media will offer mandatory SRTP on invite AES_CM_128_HMAC_SHA1_32, AES_CM_128_HMAC_SHA1_80 or true-->
+      <variable name="rtp_secure_media" value="true"/>
       <!-- limit the max number of outgoing calls for this user -->
       <!--<variable name="max_calls" value="2"/>-->
 
