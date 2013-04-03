@@ -260,15 +260,13 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 	} else {
 		if ((fp = fopen(pvt, "w"))) {
 			PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, NULL, NULL);
+			fclose(fp);
 		}
-
-		fclose(fp);
 		
 		if ((fp = fopen(rsa, "w"))) {
 			PEM_write_X509(fp, x509);
+			fclose(fp);
 		}
-
-		fclose(fp);
 	}
 
 	X509_free(x509);
