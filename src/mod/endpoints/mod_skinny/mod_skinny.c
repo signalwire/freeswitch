@@ -698,6 +698,9 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 			case SKINNY_ACTION_WAIT:
 				/* for now, wait forever */
 				switch_channel_set_state(channel, CS_HIBERNATE);
+				if (!zstr(data)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "skinny-wait doesn't support timeout yet (See #FS-477)");
+				}
 				break;
 			case SKINNY_ACTION_DROP:
 			default:
