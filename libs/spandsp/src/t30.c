@@ -1202,6 +1202,7 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     {
         /* ECM allowed */
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_ECM_CAPABLE);
+
         /* Only offer the option of fancy compression schemes, if we are
            also offering the ECM option needed to support them. */
         if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T6))
@@ -1214,6 +1215,9 @@ int t30_build_dis_or_dtc(t30_state_t *s)
             if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T85_L0))
                 set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE);
         }
+
+        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_COLOUR))
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE);
 
         if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T42_T81))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
@@ -1232,6 +1236,15 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         }
         //if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T89))
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T89_CAPABLE);
+
+        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_12BIT))
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE);
+
+        //if ((s->supported_compressions & 30_SUPPORT_COMPRESSION_NO_SUBSAMPLING))
+        //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING);
+
+        /* No custom illuminant */
+        /* No custom gamut range */
     }
     if ((s->supported_t30_features & T30_SUPPORT_FIELD_NOT_VALID))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FNV_CAPABLE);
@@ -1262,12 +1275,6 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No mode 26 (T.505) */
     /* No digital network capability */
     /* No duplex operation */
-    /* No JPEG */
-    /* No full colour */
-    /* No 12bits/pel */
-    /* No sub-sampling (1:1:1) */
-    /* No custom illuminant */
-    /* No custom gamut range */
     if ((s->supported_image_sizes & T30_SUPPORT_US_LETTER_LENGTH))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LETTER_CAPABLE);
     if ((s->supported_image_sizes & T30_SUPPORT_US_LEGAL_LENGTH))
@@ -2329,7 +2336,6 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             return -1;
         }
     }
-
     queue_phase(s, T30_PHASE_B_TX);
     /* Try to send something */
     if (s->tx_file[0])
@@ -2439,9 +2445,26 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     s->y_resolution = -1;
     //s->current_page_resolution = 0;
     x = -1;
-    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE))
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_T43_MODE))
     {
         /* Gray scale or colour image */
+
+        /* Note 35 of Table 2/T.30 */
+        if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE))
+        {
+            /* We are going to work in full colour mode */
+        }
+
+        if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_12BIT_COMPONENT))
+        {
+            /* We are going to work in 12 bit mode */
+        }
+
+        if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING))
+        {
+            //???? = T30_SUPPORT_COMPRESSION_T42_T81_SUBSAMPLING;
+        }
+
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_COLOUR_GRAY_1200_1200))
         {
             if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_1200_1200))
@@ -2664,7 +2687,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
     /* Check which compression the far end has decided to use. */
 #if defined(SPANDSP_SUPPORT_T42)
-    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE))
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE))
     {
         s->line_encoding = T4_COMPRESSION_T42_T81;
     }
@@ -3905,6 +3928,7 @@ static void process_state_r(t30_state_t *s, const uint8_t *msg, int len)
         process_rx_dcs(s, msg, len);
         break;
     case T30_DCN:
+        /* Received a DCN while waiting for a DIS or DCN */
         t30_set_status(s, T30_ERR_RX_DCNWHY);
         disconnect(s);
         break;

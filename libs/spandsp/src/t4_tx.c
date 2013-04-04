@@ -86,10 +86,19 @@
 /*! The number of centimetres in one inch */
 #define CM_PER_INCH                 2.54f
 
+typedef struct
+{
+    uint8_t *buf;
+    int ptr;
+    int row;
+    int bit_mask;
+} t85_packer_t;
+
 static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length);
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
 /* TIFF-FX related extensions to the tag set supported by libtiff */
+
 static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
 {
     {TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, FIELD_CUSTOM, FALSE, FALSE, (char *) "Indexed"},
@@ -106,6 +115,7 @@ static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
     {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageLayer"},
 };
 
+#if 1
 static TIFFField tiff_fx_tiff_fields[] =
 {
     { TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, 0, TIFF_SETGET_UINT16, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "Indexed" },
@@ -123,6 +133,7 @@ static TIFFField tiff_fx_tiff_fields[] =
 };
 
 TIFFFieldArray tiff_fx_field_array = { tfiatOther, 0, 12, tiff_fx_tiff_fields };
+#endif
 
 static TIFFExtendProc _ParentExtender = NULL;
 
@@ -177,12 +188,13 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
         return -1;
 
     /* TODO: This only allows for 8 bit deep maps */
-    if ((s->colour_map = realloc(s->colour_map, 3*256)) == NULL)
-        return -1;
     span_log(&s->logging, SPAN_LOG_FLOW, "Got a colour map\n");
+    s->colour_map_entries = 1 << bits_per_sample;
+    if ((s->colour_map = realloc(s->colour_map, 3*s->colour_map_entries)) == NULL)
+        return -1;
 #if 0
     /* Sweep the colormap in the proper order */
-    for (i = 0;  i < (1 << bits_per_sample);  i++)
+    for (i = 0;  i < s->colour_map_entries;  i++)
     {
         s->colour_map[3*i + 0] = (map_L[i] >> 8) & 0xFF;
         s->colour_map[3*i + 1] = (map_a[i] >> 8) & 0xFF;
@@ -191,15 +203,15 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
     }
 #else
     /* Sweep the colormap in the order that seems to work for l04x_02x.tif */
-    for (i = 0;  i < (1 << bits_per_sample);  i++)
+    for (i = 0;  i < s->colour_map_entries;  i++)
     {
-        s->colour_map[0*256 + i] = (map_L[i] >> 8) & 0xFF;
-        s->colour_map[1*256 + i] = (map_a[i] >> 8) & 0xFF;
-        s->colour_map[2*256 + i] = (map_b[i] >> 8) & 0xFF;
+        s->colour_map[0*s->colour_map_entries + i] = (map_L[i] >> 8) & 0xFF;
+        s->colour_map[1*s->colour_map_entries + i] = (map_a[i] >> 8) & 0xFF;
+        s->colour_map[2*s->colour_map_entries + i] = (map_b[i] >> 8) & 0xFF;
     }
 #endif
     lab_to_srgb(&s->lab_params, s->colour_map, s->colour_map, 256);
-    for (i = 0;  i < (1 << bits_per_sample);  i++)
+    for (i = 0;  i < s->colour_map_entries;  i++)
         span_log(&s->logging, SPAN_LOG_FLOW, "Map %3d - %5d %5d %5d\n", i, s->colour_map[3*i], s->colour_map[3*i + 1], s->colour_map[3*i + 2]);
     return 0;
 }

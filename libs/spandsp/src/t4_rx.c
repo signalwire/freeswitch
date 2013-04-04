@@ -81,6 +81,12 @@
 /*! The number of centimetres in one inch */
 #define CM_PER_INCH                 2.54f
 
+typedef struct
+{
+    uint8_t *buf;
+    int ptr;
+} packer_t;
+
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
 extern TIFFFieldArray tiff_fx_field_array;
 #endif
@@ -336,9 +342,30 @@ static int open_tiff_output_file(t4_rx_state_t *s, const char *file)
 }
 /*- End of function --------------------------------------------------------*/
 
+static int row_read_handler(void *user_data, uint8_t row[], size_t len)
+{
+    packer_t *s;
+
+    s = (packer_t *) user_data;
+    memcpy(row, &s->buf[s->ptr], len);
+    s->ptr += len;
+    return len;
+}
+/*- End of function --------------------------------------------------------*/
+
 static int write_tiff_image(t4_rx_state_t *s)
 {
     t4_rx_tiff_state_t *t;
+    uint8_t *buf;
+    uint8_t *buf2;
+    int buf_len;
+    int len;
+    int len2;
+    t85_encode_state_t t85;
+#if defined(SPANDSP_SUPPORT_T43)
+    t43_encode_state_t t43;
+#endif
+    packer_t packer;
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     uint64_t offset;
 #endif
@@ -353,8 +380,79 @@ static int write_tiff_image(t4_rx_state_t *s)
     if (!TIFFCheckpointDirectory(t->tiff_file))
         span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to checkpoint directory for page %d.\n", t->file, s->current_page);
     /* ...and write out the image... */
-    if (TIFFWriteEncodedStrip(t->tiff_file, 0, t->image_buffer, t->image_size) < 0)
-        span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", t->file);
+    switch (t->output_encoding)
+    {
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
+        span_log(&s->logging, SPAN_LOG_WARNING, "%s: TODO need T.85 compression.\n", t->file);
+        buf_len = 0;
+        buf = NULL;
+        packer.buf = t->image_buffer;
+        packer.ptr = 0;
+        t85_encode_init(&t85, s->image_width, s->image_length, row_read_handler, &packer);
+        //if (t->output_encoding == T4_COMPRESSION_T85_L0)
+        //    t85_encode_set_options(&t85, 256, -1, -1);
+        len2 = 0;
+        do
+        {
+            if (buf_len < len2 + 50000)
+            {
+                buf_len += 50000;
+                if ((buf2 = realloc(buf, buf_len)) == NULL)
+                {
+                    if (buf)
+                        free(buf);
+                    return -1;
+                }
+                buf = buf2;
+            }
+            len = t85_encode_get(&t85, &buf[len2], 50000);
+            len2 += len;
+        }
+        while (len > 0);
+        if (TIFFWriteRawStrip(t->tiff_file, 0, buf, len2) < 0)
+            span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", t->file);
+        t85_encode_release(&t85);
+        free(buf);
+        break;
+#if defined(SPANDSP_SUPPORT_T43)
+    case T4_COMPRESSION_T43:
+        span_log(&s->logging, SPAN_LOG_WARNING, "%s: TODO need T.43 compression.\n", t->file);
+        buf_len = 0;
+        buf = NULL;
+        packer.buf = t->image_buffer;
+        packer.ptr = 0;
+        t43_encode_init(&t43, s->image_width, s->image_length, row_read_handler, &packer);
+        len2 = 0;
+        do
+        {
+            if (buf_len < len2 + 50000)
+            {
+                buf_len += 50000;
+                if ((buf2 = realloc(buf, buf_len)) == NULL)
+                {
+                    if (buf)
+                        free(buf);
+                    return -1;
+                }
+                buf = buf2;
+            }
+            len = t43_encode_get(&t43, &buf[len2], 50000);
+            len2 += len;
+        }
+        while (len > 0);
+        if (TIFFWriteRawStrip(t->tiff_file, 0, buf, len2) < 0)
+            span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", t->file);
+        t43_encode_release(&t43);
+        free(buf);
+        break;
+#endif
+    default:
+        /* Let libtiff do the compression */
+        if (TIFFWriteEncodedStrip(t->tiff_file, 0, t->image_buffer, t->image_size) < 0)
+            span_log(&s->logging, SPAN_LOG_WARNING, "%s: Error writing TIFF strip.\n", t->file);
+        break;
+    }
     /* ...then finalise the directory entry, and libtiff is happy. */
     if (!TIFFWriteDirectory(t->tiff_file))
         span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", t->file, s->current_page);
@@ -365,7 +463,9 @@ static int write_tiff_image(t4_rx_state_t *s)
         {
             TIFFSetField(t->tiff_file, TIFFTAG_FAXPROFILE, PROFILETYPE_G3_FAX);
             TIFFSetField(t->tiff_file, TIFFTAG_PROFILETYPE, FAXPROFILE_F);
+            TIFFSetField(t->tiff_file, TIFFTAG_CODINGMETHODS, CODINGMETHODS_T4_1D | CODINGMETHODS_T4_2D | CODINGMETHODS_T6);
             TIFFSetField(t->tiff_file, TIFFTAG_VERSIONYEAR, "1998");
+            TIFFSetField(t->tiff_file, TIFFTAG_MODENUMBER, 3);
 
             offset = 0;
             if (!TIFFWriteCustomDirectory(t->tiff_file, &offset))

@@ -374,10 +374,20 @@ enum
     T30_SUPPORT_COMPRESSION_SYCC_T81 = 0x200,
     /*! T.88 monochrome JBIG2 compression */
     T30_SUPPORT_COMPRESSION_T88 = 0x400,
+    /*! Gray-scale support by multi-level codecs */
+    T30_SUPPORT_COMPRESSION_GRAYSCALE = 0x1000000,
+    /*! Colour support by multi-level codecs */
+    T30_SUPPORT_COMPRESSION_COLOUR = 0x2000000,
+    /*! 12 bit mode for gray scale and colour */
+    T30_SUPPORT_COMPRESSION_12BIT = 0x4000000,
+    /*! Convert a colour image to a gray-scale one */
+    T30_SUPPORT_COMPRESSION_COLOUR_TO_GRAY = 0x8000000,
     /*! Dither a gray scale image down a simple bilevel image, with rescaling to fit a FAX page */
     T30_SUPPORT_GRAY_TO_BILEVEL = 0x10000000,
     /*! Dither a colour image down a simple bilevel image, with rescaling to fit a FAX page */
-    T30_SUPPORT_COLOUR_TO_BILEVEL = 0x20000000
+    T30_SUPPORT_COLOUR_TO_BILEVEL = 0x20000000,
+    /*! Rescale an image (except a bi-level image) to fit a permitted FAX width when necessary */
+    T30_SUPPORT_COMPRESSION_RESCALING = 0x40000000
 };
 
 enum
