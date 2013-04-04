@@ -875,9 +875,12 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	t30_set_supported_image_sizes(t30,
 								  T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
 								| T30_SUPPORT_215MM_WIDTH | T30_SUPPORT_255MM_WIDTH | T30_SUPPORT_303MM_WIDTH);
-	t30_set_supported_resolutions(t30,
-								  T30_SUPPORT_RESOLUTION_R8_STANDARD | T30_SUPPORT_RESOLUTION_R8_FINE | T30_SUPPORT_RESOLUTION_R8_SUPERFINE
-								| T30_SUPPORT_RESOLUTION_R16_SUPERFINE);
+	t30_set_supported_bilevel_resolutions(t30,
+										  T30_SUPPORT_RESOLUTION_R8_STANDARD
+										| T30_SUPPORT_RESOLUTION_R8_FINE
+										| T30_SUPPORT_RESOLUTION_R8_SUPERFINE
+										| T30_SUPPORT_RESOLUTION_R16_SUPERFINE);
+	t30_set_supported_colour_resolutions(t30, 0);
 
 	if (pvt->disable_v17) {
 		t30_set_supported_modems(t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER);

@@ -54,7 +54,7 @@ struct t30_state_s
     int supported_compressions;
     /*! \brief A bit mask of the currently supported bi-level image resolutions. */
     int supported_bilevel_resolutions;
-    /*! \brief A bit mask of the currently supported colour image resolutions. */
+    /*! \brief A bit mask of the currently supported gray-scale and colour image resolutions. */
     int supported_colour_resolutions;
     /*! \brief A bit mask of the currently supported image sizes. */
     int supported_image_sizes;

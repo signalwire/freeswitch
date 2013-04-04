@@ -467,12 +467,19 @@ SPAN_DECLARE(int) t30_set_supported_modems(t30_state_t *s, int supported_modems)
     \return 0 if OK, else -1. */
 SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_compressions);
 
-/*! Specify which resolutions are supported by a T.30 context.
-    \brief Specify supported resolutions.
+/*! Specify which bi-level resolutions are supported by a T.30 context.
+    \brief Specify supported bi-level resolutions.
     \param s The T.30 context.
     \param supported_resolutions Bit field list of the supported resolutions.
     \return 0 if OK, else -1. */
-SPAN_DECLARE(int) t30_set_supported_resolutions(t30_state_t *s, int supported_resolutions);
+SPAN_DECLARE(int) t30_set_supported_bilevel_resolutions(t30_state_t *s, int supported_resolutions);
+
+/*! Specify which colour resolutions are supported by a T.30 context.
+    \brief Specify supported colour resolutions.
+    \param s The T.30 context.
+    \param supported_resolutions Bit field list of the supported resolutions.
+    \return 0 if OK, else -1. */
+SPAN_DECLARE(int) t30_set_supported_colour_resolutions(t30_state_t *s, int supported_resolutions);
 
 /*! Specify which images sizes are supported by a T.30 context.
     \brief Specify supported image sizes.
