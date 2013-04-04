@@ -228,7 +228,7 @@
 #define T30_DCS_BIT_DUPLEX_CAPABLE                          67
 
 #define T30_DIS_BIT_T81_CAPABLE                             68
-#define T30_DCS_BIT_FULL_COLOUR_MODEX                       68
+#define T30_DCS_BIT_T81_MODE                                68
 
 #define T30_DIS_BIT_FULL_COLOUR_CAPABLE                     69
 #define T30_DCS_BIT_FULL_COLOUR_MODE                        69

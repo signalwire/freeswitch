@@ -149,7 +149,6 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     int bits_per_sample;
     int samples_per_pixel;
     int photometric;
-    int image_length;
 
     t = &s->tiff;
     /* Prepare the directory entry fully before writing the image, or libtiff complains */
@@ -276,7 +275,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     /* TIFF page numbers start from zero, so the number of pages in the file
        is always one greater than the highest page number in the file. */
     s->tiff.pages_in_file = s->current_page + 1;
-    image_length = 0;
+    s->image_length = 0;
     switch (s->line_encoding)
     {
     case T4_COMPRESSION_T4_1D:
@@ -297,23 +296,23 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         }
         /* Fall through */
     case T4_COMPRESSION_T6:
-        image_length = t4_t6_decode_get_image_length(&s->decoder.t4_t6);
+        s->image_length = t4_t6_decode_get_image_length(&s->decoder.t4_t6);
         break;
     case T4_COMPRESSION_T42_T81:
-        image_length = t42_decode_get_image_length(&s->decoder.t42);
+        s->image_length = t42_decode_get_image_length(&s->decoder.t42);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
-        image_length = t43_decode_get_image_length(&s->decoder.t43);
+        s->image_length = t43_decode_get_image_length(&s->decoder.t43);
         break;
 #endif
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
-        image_length = t85_decode_get_image_length(&s->decoder.t85);
+        s->image_length = t85_decode_get_image_length(&s->decoder.t85);
         break;
     }
-    TIFFSetField(t->tiff_file, TIFFTAG_IMAGELENGTH, image_length);
-    TIFFSetField(t->tiff_file, TIFFTAG_ROWSPERSTRIP, image_length);
+    TIFFSetField(t->tiff_file, TIFFTAG_IMAGELENGTH, s->image_length);
+    TIFFSetField(t->tiff_file, TIFFTAG_ROWSPERSTRIP, s->image_length);
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     TIFFSetField(t->tiff_file, TIFFTAG_PROFILETYPE, PROFILETYPE_G3_FAX);
     TIFFSetField(t->tiff_file, TIFFTAG_FAXPROFILE, FAXPROFILE_S);

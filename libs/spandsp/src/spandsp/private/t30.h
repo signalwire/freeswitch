@@ -226,8 +226,6 @@ struct t30_state_s
     int mutual_bilevel_resolutions;
     /*! \brief The common group supported colour image resolutions. */
     int mutual_colour_resolutions;
-    /*! \brief The image coding to be used on the line for non-bilevel images. */
-    int multilevel_line_encoding;
     /*! \brief The image coding being used on the line. */
     int line_encoding;
     /*! \brief The image coding being used for output files. */
@@ -238,6 +236,8 @@ struct t30_state_s
     int x_resolution;
     /*! \brief The Y direction resolution of the current image, in pixels per metre. */
     int y_resolution;
+    /*! \brief The resolution code for the current page. */
+    int current_page_resolution;
     /*! \brief The width of the current image, in pixels. */
     t4_image_width_t image_width;
     /*! \brief Current number of retries of the action in progress. */

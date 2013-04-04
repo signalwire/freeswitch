@@ -285,15 +285,15 @@ int main(int argc, char *argv[])
         T4_COMPRESSION_T4_1D,
         T4_COMPRESSION_T4_2D,
         T4_COMPRESSION_T6,
+        T4_COMPRESSION_T85,
+        T4_COMPRESSION_T85_L0,
 #if defined(SPANDSP_SUPPORT_T42x)
-        T4_COMPRESSION_T42,
-        T4_COMPRESSION_SYCC_T42,
+        T4_COMPRESSION_T42_T81,
+        T4_COMPRESSION_SYCC_T81,
 #endif
 #if defined(SPANDSP_SUPPORT_T43x)
         T4_COMPRESSION_T43,
 #endif
-        T4_COMPRESSION_T85,
-        T4_COMPRESSION_T85_L0,
         //T4_COMPRESSION_T45,
         -1
     };
@@ -366,10 +366,15 @@ int main(int argc, char *argv[])
                 compression = T4_COMPRESSION_T6;
                 compression_step = -1;
             }
-#if defined(SPANDSP_SUPPORT_T42)
-            else if (strcmp(optarg, "T42") == 0)
+            else if (strcmp(optarg, "T85") == 0)
             {
-                compression = T4_COMPRESSION_T42;
+                compression = T4_COMPRESSION_T85;
+                compression_step = -1;
+            }
+#if defined(SPANDSP_SUPPORT_T42)
+            else if (strcmp(optarg, "T81") == 0)
+            {
+                compression = T4_COMPRESSION_T42_T81;
                 compression_step = -1;
             }
 #endif
@@ -380,11 +385,6 @@ int main(int argc, char *argv[])
                 compression_step = -1;
             }
 #endif
-            else if (strcmp(optarg, "T85") == 0)
-            {
-                compression = T4_COMPRESSION_T85;
-                compression_step = -1;
-            }
             break;
         case 'd':
             decode_file_name = optarg;

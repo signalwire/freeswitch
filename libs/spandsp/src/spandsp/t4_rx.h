@@ -352,19 +352,6 @@ typedef struct
 extern "C" {
 #endif
 
-/*! Get the logging context associated with a T.4 receive context.
-    \brief Get the logging context associated with a T.4 receive context.
-    \param s The T.4 receive context.
-    \return A pointer to the logging context */
-SPAN_DECLARE(logging_state_t *) t4_rx_get_logging_state(t4_rx_state_t *s);
-
-/*! \brief Prepare for reception of a document.
-    \param s The T.4 context.
-    \param file The name of the file to be received.
-    \param output_encoding The output encoding.
-    \return A pointer to the context, or NULL if there was a problem. */
-SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int output_encoding);
-
 /*! \brief Prepare to receive the next page of the current document.
     \param s The T.4 context.
     \return zero for success, -1 for failure. */
@@ -387,20 +374,6 @@ SPAN_DECLARE(int) t4_rx_put(t4_rx_state_t *s, const uint8_t buf[], size_t len);
     \param s The T.4 receive context.
     \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s);
-
-/*! \brief End reception of a document. Tidy up and close the file.
-           This should be used to end T.4 reception started with
-           t4_rx_init.
-    \param s The T.4 receive context.
-    \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_rx_release(t4_rx_state_t *s);
-
-/*! \brief End reception of a document. Tidy up, close the file and
-           free the context. This should be used to end T.4 reception
-           started with t4_rx_init.
-    \param s The T.4 receive context.
-    \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_rx_free(t4_rx_state_t *s);
 
 /*! \brief Set the row write handler for a T.4 receive context.
     \param s The T.4 receive context.
@@ -472,6 +445,32 @@ SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding);
     \param encoding The image format.
     \return A pointer to the string. */
 SPAN_DECLARE(const char *) t4_image_type_to_str(int type);
+
+/*! Get the logging context associated with a T.4 receive context.
+    \brief Get the logging context associated with a T.4 receive context.
+    \param s The T.4 receive context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) t4_rx_get_logging_state(t4_rx_state_t *s);
+
+/*! \brief Prepare for reception of a document.
+    \param s The T.4 context.
+    \param file The name of the file to be received.
+    \param output_encoding The output encoding.
+    \return A pointer to the context, or NULL if there was a problem. */
+SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int output_encoding);
+
+/*! \brief End reception of a document. Tidy up and close the file.
+           This should be used to end T.4 reception started with t4_rx_init.
+    \param s The T.4 receive context.
+    \return 0 for success, otherwise -1. */
+SPAN_DECLARE(int) t4_rx_release(t4_rx_state_t *s);
+
+/*! \brief End reception of a document. Tidy up, close the file and
+           free the context. This should be used to end T.4 reception
+           started with t4_rx_init.
+    \param s The T.4 receive context.
+    \return 0 for success, otherwise -1. */
+SPAN_DECLARE(int) t4_rx_free(t4_rx_state_t *s);
 
 #if defined(__cplusplus)
 }

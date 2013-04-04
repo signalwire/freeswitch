@@ -50,11 +50,12 @@ MOSTLYCLEANFILES = ${DISTCLEANFILES}
 MAINTAINERCLEANFILES = ${DISTCLEANFILES}
 
 EXTRA_DIST = floating_fudge.h \
-             libspandsp.dsp \
              libspandsp.2005.sln \
              libspandsp.2008.sln \
              libspandsp.2005.vcproj \
              libspandsp.2008.vcproj \
+             libspandsp.2010.vcproj \
+             libspandsp.2012.vcproj \
              libtiff.2005.vcproj \
              libtiff.2008.vcproj \
              filter_tools.c \
@@ -475,37 +476,18 @@ v29tx.lo: ${V29_TX_INCL}
 v29tx_rrc.h: make_modem_filter$(EXEEXT)
 	./make_modem_filter$(EXEEXT) -m V.29 -t >v29tx_rrc.h
 
-DSP = libspandsp.dsp
 VCPROJ8 = libspandsp.2005.vcproj
 VCPROJ9 = libspandsp.2008.vcproj
+VCPROJ10 = libspandsp.2010.vcproj
+VCPROJ12 = libspandsp.2012.vcproj
 
 WIN32SOURCES = $(libspandsp_la_SOURCES) .\\msvc\\gettimeofday.c
 WIN32HEADERS = $(nobase_include_HEADERS) spandsp.h
 
-DSPOUT = | awk '{printf("%s\r\n", $$0)}' >> $(DSP)
 VCPROJOUT8 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ8)
 VCPROJOUT9 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ9)
-
-$(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
-	echo "creating $(DSP)"
-	@(cp $(srcdir)/msvc/msvcproj.head $(DSP); \
-	echo "# Begin Group \"Source Files\"" $(DSPOUT); \
-	for file in $(WIN32SOURCES); do \
-	echo "# Begin Source File" $(DSPOUT); \
-	echo "" $(DSPOUT); \
-	echo "SOURCE=.\\"$$file $(DSPOUT); \
-	echo "# End Source File" $(DSPOUT); \
-	done; \
-	echo "# End Group" $(DSPOUT); \
-	echo "# Begin Group \"Header Files\"" $(DSPOUT); \
-	for file in $(WIN32HEADERS); do \
-	echo "# Begin Source File" $(DSPOUT); \
-	echo "" $(DSPOUT); \
-	echo "SOURCE=.\\"$$file $(DSPOUT); \
-	echo "# End Source File" $(DSPOUT); \
-	done; \
-	echo "# End Group" $(DSPOUT); \
-	cat $(srcdir)/msvc/msvcproj.foot $(DSPOUT) )
+VCPROJOUT10 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ10)
+VCPROJOUT12 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ12)
 
 $(VCPROJ8): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
 	echo "creating $(VCPROJ8)"
@@ -530,6 +512,30 @@ $(VCPROJ9): msvc/vc9proj.head msvc/vc9proj.foot Makefile.am
 		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT9); \
 	done; \
 	cat $(srcdir)/msvc/vc9proj.foot $(VCPROJOUT9) )
+
+$(VCPROJ10): msvc/vc10proj.head msvc/vc10proj.foot Makefile.am
+	echo "creating $(VCPROJ10)"
+	@(cp $(srcdir)/msvc/vc10proj.head $(VCPROJ10); \
+	for file in $(WIN32SOURCES); do \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT10); \
+	done; \
+	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT10); \
+	for file in $(WIN32HEADERS); do \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT10); \
+	done; \
+	cat $(srcdir)/msvc/vc10proj.foot $(VCPROJOUT10) )
+
+$(VCPROJ12): msvc/vc12proj.head msvc/vc12proj.foot Makefile.am
+	echo "creating $(VCPROJ12)"
+	@(cp $(srcdir)/msvc/vc12proj.head $(VCPROJ12); \
+	for file in $(WIN32SOURCES); do \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT12); \
+	done; \
+	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT12); \
+	for file in $(WIN32HEADERS); do \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT12); \
+	done; \
+	cat $(srcdir)/msvc/vc12proj.foot $(VCPROJOUT12) )
 
 $(srcdir)/msvc/spandsp.h: spandsp.h.in
 	echo "creating $(srcdir)/msvc/spandsp.h"

@@ -98,10 +98,6 @@ struct t4_tx_state_s
     /*! \brief The type of compression used between the FAX machines. */
     int line_encoding;
 
-    int line_encoding_bilevel;
-    int line_encoding_gray;
-    int line_encoding_colour;
-
     /*! \brief When superfine and fine resolution images need to be squahed vertically
                to a lower resolution, this value sets the number of source rows which
                must be squashed to form each row on the wire. */
