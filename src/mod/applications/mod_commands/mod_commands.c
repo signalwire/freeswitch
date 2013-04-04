@@ -4811,7 +4811,7 @@ SWITCH_STANDARD_API(show_function)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 					holder.stream->write_function(holder.stream, "-ERR Memory Error!\n");
 				} else {
-					holder.stream->write_function(holder.stream, json_text);
+					holder.stream->write_function(holder.stream, "%s", json_text);
 				}
 				cJSON_Delete(result);
 				switch_safe_free(json_text);
