@@ -17,3 +17,7 @@ sdp_connection_t *sdp_media_connections(sdp_media_t const *m)
 #include <su_errno.c>
 #include <su_string.c>
 #include <sdp_parse.c>
+#ifdef _MSC_VER
+#define longlong __int64
+#include <strtoull.c>
+#endif

@@ -1814,6 +1814,13 @@ static int dtls_ok(switch_core_session_t *session)
 	return switch_channel_test_flag(session->channel, CF_DTLS_OK);
 }
 
+#ifdef _MSC_VER
+/* remove this if the break is removed from the following for loop which causes unreachable code loop */
+/* for (i = 0; i < engine->cand_acl_count; i++) { */
+#pragma warning(push)
+#pragma warning(disable:4702)
+#endif
+
 //?
 static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_session_t *sdp, sdp_media_t *m)
 {
@@ -2051,6 +2058,9 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	}
 
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
 {
@@ -6968,6 +6978,13 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 	}
 }
 
+#ifdef _MSC_VER
+/* remove this if the break is removed from the following for loop which causes unreachable code loop */
+/* for (m = sdp->sdp_media; m; m = m->m_next) { */
+#pragma warning(push)
+#pragma warning(disable:4702)
+#endif
+
 //?
 SWITCH_DECLARE(void) switch_core_media_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 {
@@ -7038,6 +7055,9 @@ SWITCH_DECLARE(void) switch_core_media_proxy_codec(switch_core_session_t *sessio
 	sdp_parser_free(parser);
 
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *session)
 {

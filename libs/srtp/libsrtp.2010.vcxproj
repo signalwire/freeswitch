@@ -340,6 +340,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="srtp\ekt.c" />
     <ClCompile Include="srtp\srtp.c" />
     <ClCompile Include="crypto\kernel\alloc.c" />
     <ClCompile Include="crypto\kernel\crypto_kernel.c" />
