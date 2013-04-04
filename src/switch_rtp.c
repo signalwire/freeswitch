@@ -961,6 +961,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			} else {
 				ice->rready = 1;
 			}
+			switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 		} else if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST)) {
 			uint8_t stunbuf[512];
 			switch_stun_packet_t *rpacket;
@@ -976,6 +977,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			}
 
 			ice->ready = 1;
+			switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 
 			memset(stunbuf, 0, sizeof(stunbuf));
 			rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, stunbuf);
@@ -3762,6 +3764,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, 
 									  "Drop %s packet %ld bytes (dtls not ready!) b=%u\n", rtp_type(rtp_session), (long)*bytes, *b);
 					*bytes = 0;
+
+					if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
+						switch_core_timer_sync(&rtp_session->timer);
+					}
+
 				}
 				
 			}
