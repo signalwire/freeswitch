@@ -2091,6 +2091,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	char *route_uri = NULL, *o_contact_dup = NULL, *tmp, *to_uri, *dcs = NULL;
 	const char *tp;
 	char *cparams = NULL;
+	char *path = NULL;
 
 	if (zstr(full_to) || zstr(full_from) || zstr(o_contact)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MISSING DATA TO SEND NOTIFY.\n");
@@ -2101,8 +2102,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 		cparams += 3;
 	}
 		
-
-
+	path = sofia_glue_get_path_from_contact((char *) o_contact);
 	
     tmp = (char *)o_contact;
 	o_contact_dup = sofia_glue_get_url_from_contact(tmp, 1);
@@ -2253,7 +2253,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)), 
 			   TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)),
 			   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
-
+			   TAG_IF(path, SIPTAG_RECORD_ROUTE_STR(path)),
 			   
 			   SIPTAG_FROM_STR(full_to),
 			   SIPTAG_TO_STR(full_from),
