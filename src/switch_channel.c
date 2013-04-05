@@ -2891,26 +2891,16 @@ SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 
 }
 
-SWITCH_DECLARE(void) switch_channel_sort_cid(switch_channel_t *channel, switch_bool_t in)
+SWITCH_DECLARE(void) switch_channel_sort_cid(switch_channel_t *channel)
 {
 
-	if (in) {
-		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(channel, CF_DIALPLAN)) {
-			switch_channel_set_flag(channel, CF_DIALPLAN);
-			switch_channel_flip_cid(channel);
-		}
-
-		return;
+	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND && switch_channel_test_flag(channel, CF_BLEG)) {
+		switch_channel_flip_cid(channel);
+		switch_channel_clear_flag(channel, CF_BLEG);
+	} else if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(channel, CF_DIALPLAN)) {
+		switch_channel_set_flag(channel, CF_DIALPLAN);
+		switch_channel_flip_cid(channel);
 	}
-
-	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && switch_channel_test_flag(channel, CF_DIALPLAN)) {
-		switch_channel_clear_flag(channel, CF_DIALPLAN);
-		switch_mutex_lock(channel->profile_mutex);
-		channel->caller_profile->callee_id_name = SWITCH_BLANK_STRING;
-		channel->caller_profile->callee_id_number = SWITCH_BLANK_STRING;
-		switch_mutex_unlock(channel->profile_mutex);
-	}
-	
 }
 
 SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_queued_extension(switch_channel_t *channel)
@@ -2939,7 +2929,7 @@ SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *chann
 {
 	switch_assert(channel != NULL);
 
-	switch_channel_sort_cid(channel, SWITCH_TRUE);
+	switch_channel_sort_cid(channel);
 	
 	switch_mutex_lock(channel->profile_mutex);
 	caller_extension->next = channel->caller_profile->caller_extension;
