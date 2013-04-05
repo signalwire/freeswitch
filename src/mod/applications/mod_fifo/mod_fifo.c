@@ -2997,6 +2997,10 @@ SWITCH_STANDARD_APP(fifo_function)
 					
 					originatee_cp->callee_id_name = tname;
 					originatee_cp->callee_id_number = tnum;
+
+					if (switch_channel_direction(other_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+						switch_channel_set_flag(other_channel, CF_BLEG);
+					}
 				}
 
 

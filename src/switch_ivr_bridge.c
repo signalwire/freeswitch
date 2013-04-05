@@ -1124,6 +1124,15 @@ static const switch_state_handler_table_t signal_bridge_state_handlers = {
 
 static void check_bridge_export(switch_channel_t *channel, switch_channel_t *peer_channel)
 {
+	switch_caller_profile_t *originator_cp, *originatee_cp;
+
+	originator_cp = switch_channel_get_caller_profile(channel);
+	originatee_cp = switch_channel_get_caller_profile(peer_channel);
+
+	originator_cp->callee_id_name = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_name);
+	originator_cp->callee_id_number = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_number);
+	
+
 	switch_channel_process_export(peer_channel, channel, NULL, SWITCH_BRIDGE_EXPORT_VARS_VARIABLE);
 	switch_channel_process_export(channel, peer_channel, NULL, SWITCH_BRIDGE_EXPORT_VARS_VARIABLE);
 }
@@ -1656,6 +1665,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 				originatee_cp->callee_id_name = tname;
 				originatee_cp->callee_id_number = tnum;
+
+				if (switch_channel_direction(originatee_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+					switch_channel_set_flag(originatee_channel, CF_BLEG);
+				}
+
 			}
 
 
