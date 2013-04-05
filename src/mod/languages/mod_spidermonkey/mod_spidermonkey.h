@@ -125,6 +125,7 @@ typedef switch_status_t (*spidermonkey_init_t) (const sm_module_interface_t ** m
 struct js_session_speech {
 	switch_speech_handle_t sh;
 	switch_codec_t codec;
+	int speaking;
 };
 
 struct js_session {
