@@ -627,7 +627,11 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 			if (switch_ivr_eavesdrop_pop_eavesdropper(session, &new_session) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_t *new_channel = switch_core_session_get_channel(new_session);
 				const char *new_uuid = switch_core_session_get_uuid(new_session);
-				
+				switch_caller_profile_t *cp = switch_channel_get_caller_profile(new_channel);
+
+				cp->caller_id_name = cp->orig_caller_id_name;
+				cp->caller_id_number = cp->orig_caller_id_number;
+
 
 				switch_channel_set_variable(new_channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 
