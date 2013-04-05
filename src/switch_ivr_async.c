@@ -1473,7 +1473,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_codec_implementation_t tread_impl = { 0 }, read_impl = { 0 };
 		switch_core_session_message_t msg = { 0 };
 		char cid_buf[1024] = "";
-		switch_caller_profile_t *cp = NULL, *my_cp = NULL;
+		switch_caller_profile_t *cp = NULL;
 		uint32_t sanity = 600;
 
 		if (!switch_channel_media_up(channel)) {
@@ -1595,28 +1595,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 		switch_core_session_receive_message(session, &msg);
 		cp = switch_channel_get_caller_profile(tchannel);
-		my_cp = switch_channel_get_caller_profile(channel);
 		name = cp->caller_id_name;
 		num = cp->caller_id_number;
 
 		if (flags & ED_COPY_DISPLAY) {
-			if (switch_channel_test_flag(tchannel, CF_BRIDGE_ORIGINATOR) || !switch_channel_test_flag(tchannel, CF_BRIDGED)) {
-				name = cp->callee_id_name;
-				num = cp->callee_id_number;
-			} else {
-				name = cp->caller_id_name;
-				num = cp->caller_id_number;
+			const char *tmp_name = NULL, *tmp_num = NULL;
+			name = cp->callee_id_name;
+			num = cp->callee_id_number;
+			
+			if (!((tmp_name = switch_channel_get_variable(tchannel, "last_sent_callee_id_name")) 
+				  && (tmp_num = switch_channel_get_variable(tchannel, "last_sent_callee_id_number")))) {
+				
+				tmp_name = switch_channel_get_variable(tchannel, "callee_id_name");
+				tmp_num = switch_channel_get_variable(tchannel, "callee_id_number");
 			}
-
-			my_cp->callee_id_name = switch_core_strdup(my_cp->pool, name);
-			my_cp->callee_id_number = switch_core_strdup(my_cp->pool, num);
+			
+			if (tmp_name) name = tmp_name;
+			if (tmp_num) num = tmp_num;
+			
 		}
-
-		sanity = 300;
-		while(switch_channel_up(channel) && !switch_channel_media_ack(channel) && --sanity) {
-			switch_yield(10000);
-		}
-
 
 		switch_snprintf(cid_buf, sizeof(cid_buf), "%s|%s", name, num);
 		msg.string_arg = cid_buf;
