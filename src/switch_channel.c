@@ -2850,6 +2850,36 @@ SWITCH_DECLARE(switch_status_t) switch_channel_caller_extension_masquerade(switc
 	return status;
 }
 
+SWITCH_DECLARE(void) switch_channel_invert_cid(switch_channel_t *channel)
+{
+	const char *tname, *tnum;
+	switch_caller_profile_t *cp;
+
+	cp = switch_channel_get_caller_profile(channel);
+
+	tname = cp->caller_id_name;
+	tnum = cp->caller_id_number;
+
+#ifdef DEEP_DEBUG_CID
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SWAP [%s][%s] [%s][%s]\n", originate_cp->caller_id_name, cp->caller_id_number, cp->callee_id_name, cp->callee_id_number);
+#endif
+
+	cp->caller_id_name = cp->callee_id_name;
+	cp->caller_id_number = cp->callee_id_number;
+	
+	cp->callee_id_name = tname;
+	cp->callee_id_number = tnum;
+
+	if (zstr(cp->caller_id_name)) {
+		cp->caller_id_name = "Unknown";
+	}
+
+	if (zstr(cp->caller_id_number)) {
+		cp->caller_id_number = "Unknown";
+	}
+}
+
+
 SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 {
 	switch_event_t *event;
