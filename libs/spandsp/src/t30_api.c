@@ -712,23 +712,23 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
 
 SPAN_DECLARE(int) t30_set_supported_bilevel_resolutions(t30_state_t *s, int supported_resolutions)
 {
-    supported_resolutions &= T4_RESOLUTION_R8_STANDARD
-                           | T4_RESOLUTION_R8_FINE
-                           | T4_RESOLUTION_R8_SUPERFINE
-                           | T4_RESOLUTION_R16_SUPERFINE
-                           | T4_RESOLUTION_200_100
-                           | T4_RESOLUTION_200_200
-                           | T4_RESOLUTION_200_400
-                           | T4_RESOLUTION_300_300
-                           | T4_RESOLUTION_300_600
-                           | T4_RESOLUTION_400_400
-                           | T4_RESOLUTION_400_800
-                           | T4_RESOLUTION_600_600
-                           | T4_RESOLUTION_600_1200
-                           | T4_RESOLUTION_1200_1200;
+    supported_resolutions &= T4_SUPPORT_RESOLUTION_R8_STANDARD
+                           | T4_SUPPORT_RESOLUTION_R8_FINE
+                           | T4_SUPPORT_RESOLUTION_R8_SUPERFINE
+                           | T4_SUPPORT_RESOLUTION_R16_SUPERFINE
+                           | T4_SUPPORT_RESOLUTION_200_100
+                           | T4_SUPPORT_RESOLUTION_200_200
+                           | T4_SUPPORT_RESOLUTION_200_400
+                           | T4_SUPPORT_RESOLUTION_300_300
+                           | T4_SUPPORT_RESOLUTION_300_600
+                           | T4_SUPPORT_RESOLUTION_400_400
+                           | T4_SUPPORT_RESOLUTION_400_800
+                           | T4_SUPPORT_RESOLUTION_600_600
+                           | T4_SUPPORT_RESOLUTION_600_1200
+                           | T4_SUPPORT_RESOLUTION_1200_1200;
     /* Make sure anything needed for colour is enabled as a bi-level image, as that is a
        rule from T.30. 100x100 is an exception, as it doesn't exist as a bi-level resolution. */
-    supported_resolutions |= (s->supported_colour_resolutions & ~T4_RESOLUTION_100_100);
+    supported_resolutions |= (s->supported_colour_resolutions & ~T4_SUPPORT_RESOLUTION_100_100);
     s->supported_bilevel_resolutions = supported_resolutions;
     t30_build_dis_or_dtc(s);
     return 0;
@@ -737,16 +737,16 @@ SPAN_DECLARE(int) t30_set_supported_bilevel_resolutions(t30_state_t *s, int supp
 
 SPAN_DECLARE(int) t30_set_supported_colour_resolutions(t30_state_t *s, int supported_resolutions)
 {
-    supported_resolutions &= T4_RESOLUTION_100_100
-                           | T4_RESOLUTION_200_200
-                           | T4_RESOLUTION_300_300
-                           | T4_RESOLUTION_400_400
-                           | T4_RESOLUTION_600_600
-                           | T4_RESOLUTION_1200_1200;
+    supported_resolutions &= T4_SUPPORT_RESOLUTION_100_100
+                           | T4_SUPPORT_RESOLUTION_200_200
+                           | T4_SUPPORT_RESOLUTION_300_300
+                           | T4_SUPPORT_RESOLUTION_400_400
+                           | T4_SUPPORT_RESOLUTION_600_600
+                           | T4_SUPPORT_RESOLUTION_1200_1200;
     s->supported_colour_resolutions = supported_resolutions;
     /* Make sure anything needed for colour is enabled as a bi-level image, as that is a
        rule from T.30. 100x100 is an exception, as it doesn't exist as a bi-level resolution. */
-    s->supported_bilevel_resolutions |= (s->supported_colour_resolutions & ~T4_RESOLUTION_100_100);
+    s->supported_bilevel_resolutions |= (s->supported_colour_resolutions & ~T4_SUPPORT_RESOLUTION_100_100);
     t30_build_dis_or_dtc(s);
     return 0;
 }

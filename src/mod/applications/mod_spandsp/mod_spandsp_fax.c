@@ -839,7 +839,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			t38_gateway_set_ecm_capability(pvt->t38_gateway_state, TRUE);
 		}
 
-
 		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), spanfax_log_message, pvt);
 		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), spanfax_log_message, pvt);
 
@@ -873,13 +872,13 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	t30_set_phase_b_handler(t30, phase_b_handler, pvt);
 
 	t30_set_supported_image_sizes(t30,
-								  T30_SUPPORT_US_LETTER_LENGTH | T30_SUPPORT_US_LEGAL_LENGTH | T30_SUPPORT_UNLIMITED_LENGTH
-								| T30_SUPPORT_215MM_WIDTH | T30_SUPPORT_255MM_WIDTH | T30_SUPPORT_303MM_WIDTH);
+								  T4_SUPPORT_LENGTH_US_LETTER | T4_SUPPORT_LENGTH_US_LEGAL | T4_SUPPORT_LENGTH_UNLIMITED
+								| T4_SUPPORT_WIDTH_215MM | T4_SUPPORT_WIDTH_255MM | T4_SUPPORT_WIDTH_303MM);
 	t30_set_supported_bilevel_resolutions(t30,
-										  T30_SUPPORT_RESOLUTION_R8_STANDARD
-										| T30_SUPPORT_RESOLUTION_R8_FINE
-										| T30_SUPPORT_RESOLUTION_R8_SUPERFINE
-										| T30_SUPPORT_RESOLUTION_R16_SUPERFINE);
+										  T4_SUPPORT_RESOLUTION_R8_STANDARD
+										| T4_SUPPORT_RESOLUTION_R8_FINE
+										| T4_SUPPORT_RESOLUTION_R8_SUPERFINE
+										| T4_SUPPORT_RESOLUTION_R16_SUPERFINE);
 	t30_set_supported_colour_resolutions(t30, 0);
 
 	if (pvt->disable_v17) {

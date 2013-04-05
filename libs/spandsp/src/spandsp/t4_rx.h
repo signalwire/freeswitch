@@ -60,7 +60,7 @@ typedef enum
     T4_COMPRESSION_T85 = 4,
     /*! T.85 monochrome JBIG coding with L0 variable. */
     T4_COMPRESSION_T85_L0 = 5,
-    /*! T.43 colour JBIG coding */
+    /*! T.43 gray-scale/colour JBIG coding */
     T4_COMPRESSION_T43 = 6,
     /*! T.45 run length colour compression */
     T4_COMPRESSION_T45 = 7,
@@ -70,15 +70,67 @@ typedef enum
     T4_COMPRESSION_SYCC_T81 = 9
 } t4_image_compression_t;
 
+enum
+{
+    /*! No compression */
+    T30_SUPPORT_COMPRESSION_NONE = 0x01,
+    /*! T.1 1D compression */
+    T30_SUPPORT_COMPRESSION_T4_1D = 0x02,
+    /*! T.4 2D compression */
+    T30_SUPPORT_COMPRESSION_T4_2D = 0x04,
+    /*! T.6 2D compression */
+    T30_SUPPORT_COMPRESSION_T6 = 0x08,
+    /*! T.85 monochrome JBIG compression, with fixed L0 */
+    T30_SUPPORT_COMPRESSION_T85 = 0x10,
+    /*! T.85 monochrome JBIG compression, with variable L0 */
+    T30_SUPPORT_COMPRESSION_T85_L0 = 0x20,
+    /*! T.43 colour JBIG compression */
+    T30_SUPPORT_COMPRESSION_T43 = 0x40,
+    /*! T.45 run length colour compression */
+    T30_SUPPORT_COMPRESSION_T45 = 0x80,
+    /*! T.81 + T.30 Annex E colour JPEG compression */
+    T30_SUPPORT_COMPRESSION_T42_T81 = 0x100,
+    /*! T.81 + T.30 Annex K colour sYCC-JPEG compression */
+    T30_SUPPORT_COMPRESSION_SYCC_T81 = 0x200,
+    /*! T.88 monochrome JBIG2 compression */
+    T30_SUPPORT_COMPRESSION_T88 = 0x400,
+    /*! Gray-scale support by multi-level codecs */
+    T30_SUPPORT_COMPRESSION_GRAYSCALE = 0x1000000,
+    /*! Colour support by multi-level codecs */
+    T30_SUPPORT_COMPRESSION_COLOUR = 0x2000000,
+    /*! 12 bit mode for gray scale and colour */
+    T30_SUPPORT_COMPRESSION_12BIT = 0x4000000,
+    /*! Convert a colour image to a gray-scale one */
+    T30_SUPPORT_COMPRESSION_COLOUR_TO_GRAY = 0x8000000,
+    /*! Dither a gray scale image down a simple bilevel image, with rescaling to fit a FAX page */
+    T30_SUPPORT_GRAY_TO_BILEVEL = 0x10000000,
+    /*! Dither a colour image down a simple bilevel image, with rescaling to fit a FAX page */
+    T30_SUPPORT_COLOUR_TO_BILEVEL = 0x20000000,
+    /*! Rescale an image (except a bi-level image) to fit a permitted FAX width when necessary */
+    T30_SUPPORT_COMPRESSION_RESCALING = 0x40000000
+};
+
 /*! Image type */
 typedef enum
 {
+    /* Traditional black and white FAX */
     T4_IMAGE_TYPE_BILEVEL = 0,
+    /* RGB or CMY image */
     T4_IMAGE_TYPE_COLOUR_BILEVEL = 1,
-    T4_IMAGE_TYPE_GRAY_8BIT = 2,
-    T4_IMAGE_TYPE_GRAY_12BIT = 3,
-    T4_IMAGE_TYPE_COLOUR_8BIT = 4,
-    T4_IMAGE_TYPE_COLOUR_12BIT = 5
+    /* CMYK image */
+    T4_IMAGE_TYPE_4COLOUR_BILEVEL = 2,
+    /* 2 to 8 bits per pixel gray-scale image */
+    T4_IMAGE_TYPE_GRAY_8BIT = 3,
+    /* 9 to 12 bits per pixel gray-scale image */
+    T4_IMAGE_TYPE_GRAY_12BIT = 4,
+    /* 2 to 8 bits per pixel RGB or CMY colour image */
+    T4_IMAGE_TYPE_COLOUR_8BIT = 5,
+    /* 2 to 8 bits per pixel CMYK colour image */
+    T4_IMAGE_TYPE_4COLOUR_8BIT = 6,
+    /* 9 to 12 bits per pixel RGB or CMY colour image */
+    T4_IMAGE_TYPE_COLOUR_12BIT = 7,
+    /* 9 to 12 bits per pixel CMYK colour image */
+    T4_IMAGE_TYPE_4COLOUR_12BIT = 8
 } t4_image_types_t;
 
 /*! Supported X resolutions, in pixels per metre. */
@@ -115,37 +167,72 @@ typedef enum
    ones are bi-level only. */
 enum
 {
-    /*! Support standard FAX resolution 204dpi x 98dpi - bi-level only */
-    T4_RESOLUTION_R8_STANDARD = 0x1,
-    /*! Support fine FAX resolution 204dpi x 196dpi - bi-level only */
-    T4_RESOLUTION_R8_FINE = 0x2,
-    /*! Support superfine FAX resolution 204dpi x 392dpi - bi-level only */
-    T4_RESOLUTION_R8_SUPERFINE = 0x4,
-    /*! Support double FAX resolution 408dpi x 392dpi - bi-level only */
-    T4_RESOLUTION_R16_SUPERFINE = 0x8,
+    /*! Standard FAX resolution 204dpi x 98dpi - bi-level only */
+    T4_RESOLUTION_R8_STANDARD = 1,
+    /*! Fine FAX resolution 204dpi x 196dpi - bi-level only */
+    T4_RESOLUTION_R8_FINE = 2,
+    /*! Super-fine FAX resolution 204dpi x 391dpi - bi-level only */
+    T4_RESOLUTION_R8_SUPERFINE = 3,
+    /*! Double FAX resolution 408dpi x 391dpi - bi-level only */
+    T4_RESOLUTION_R16_SUPERFINE = 4,
 
-    /*! Support 100dpi x 100 dpi */
-    T4_RESOLUTION_100_100 = 0x10,
+    /*! 100dpi x 100 dpi - gray-scale and colour only */
+    T4_RESOLUTION_100_100 = 5,
+    /*! 200dpi x 100 dpi - bi-level only */
+    T4_RESOLUTION_200_100 = 6,
+    /*! 200dpi x 200 dpi */
+    T4_RESOLUTION_200_200 = 7,
+    /*! 200dpi x 400 dpi - bi-level only */
+    T4_RESOLUTION_200_400 = 8,
+    /*! 300dpi x 300 dpi */
+    T4_RESOLUTION_300_300 = 9,
+    /*! 300dpi x 600 dpi - bi-level only */
+    T4_RESOLUTION_300_600 = 10,
+    /*! 400dpi x 400 dpi */
+    T4_RESOLUTION_400_400 = 11,
+    /*! 400dpi x 800 dpi - bi-level only */
+    T4_RESOLUTION_400_800 = 12,
+    /*! 600dpi x 600 dpi */
+    T4_RESOLUTION_600_600 = 13,
+    /*! 600dpi x 1200 dpi - bi-level only */
+    T4_RESOLUTION_600_1200 = 14,
+    /*! 1200dpi x 1200 dpi */
+    T4_RESOLUTION_1200_1200 = 15
+};
+
+enum
+{
+    /*! Support standard FAX resolution 204dpi x 98dpi - bi-level only */
+    T4_SUPPORT_RESOLUTION_R8_STANDARD = 0x1,
+    /*! Support fine FAX resolution 204dpi x 196dpi - bi-level only */
+    T4_SUPPORT_RESOLUTION_R8_FINE = 0x2,
+    /*! Support super-fine FAX resolution 204dpi x 391dpi - bi-level only */
+    T4_SUPPORT_RESOLUTION_R8_SUPERFINE = 0x4,
+    /*! Support double FAX resolution 408dpi x 391dpi - bi-level only */
+    T4_SUPPORT_RESOLUTION_R16_SUPERFINE = 0x8,
+
+    /*! Support 100dpi x 100 dpi - gray scale and colour only */
+    T4_SUPPORT_RESOLUTION_100_100 = 0x10,
     /*! Support 200dpi x 100 dpi - bi-level only */
-    T4_RESOLUTION_200_100 = 0x20,
+    T4_SUPPORT_RESOLUTION_200_100 = 0x20,
     /*! Support 200dpi x 200 dpi */
-    T4_RESOLUTION_200_200 = 0x40,
+    T4_SUPPORT_RESOLUTION_200_200 = 0x40,
     /*! Support 200dpi x 400 dpi - bi-level only */
-    T4_RESOLUTION_200_400 = 0x80,
+    T4_SUPPORT_RESOLUTION_200_400 = 0x80,
     /*! Support 300dpi x 300 dpi */
-    T4_RESOLUTION_300_300 = 0x100,
+    T4_SUPPORT_RESOLUTION_300_300 = 0x100,
     /*! Support 300dpi x 600 dpi - bi-level only */
-    T4_RESOLUTION_300_600 = 0x200,
+    T4_SUPPORT_RESOLUTION_300_600 = 0x200,
     /*! Support 400dpi x 400 dpi */
-    T4_RESOLUTION_400_400 = 0x400,
+    T4_SUPPORT_RESOLUTION_400_400 = 0x400,
     /*! Support 400dpi x 800 dpi - bi-level only */
-    T4_RESOLUTION_400_800 = 0x800,
+    T4_SUPPORT_RESOLUTION_400_800 = 0x800,
     /*! Support 600dpi x 600 dpi */
-    T4_RESOLUTION_600_600 = 0x1000,
+    T4_SUPPORT_RESOLUTION_600_600 = 0x1000,
     /*! Support 600dpi x 1200 dpi - bi-level only */
-    T4_RESOLUTION_600_1200 = 0x2000,
+    T4_SUPPORT_RESOLUTION_600_1200 = 0x2000,
     /*! Support 1200dpi x 1200 dpi */
-    T4_RESOLUTION_1200_1200 = 0x4000
+    T4_SUPPORT_RESOLUTION_1200_1200 = 0x4000
 };
 
 /*!
@@ -285,6 +372,19 @@ typedef enum
     T4_LENGTH_800_US_LEGAL = 11200,
     T4_LENGTH_1200_US_LEGAL = 16800
 } t4_image_length_t;
+
+enum
+{
+    T4_SUPPORT_WIDTH_215MM = 0x01,
+    T4_SUPPORT_WIDTH_255MM = 0x02,
+    T4_SUPPORT_WIDTH_303MM = 0x04,
+
+    T4_SUPPORT_LENGTH_UNLIMITED = 0x10000,
+    T4_SUPPORT_LENGTH_A4 = 0x20000,
+    T4_SUPPORT_LENGTH_B4 = 0x40000,
+    T4_SUPPORT_LENGTH_US_LETTER = 0x80000,
+    T4_SUPPORT_LENGTH_US_LEGAL = 0x100000
+};
 
 /*! Return values from the T.85 decoder */
 typedef enum

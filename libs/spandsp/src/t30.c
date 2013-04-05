@@ -1180,15 +1180,15 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         s->local_dis_dtc_frame[4] |= (DISBIT6 | DISBIT4 | DISBIT3);
 
     /* 215mm wide is always supported */
-    if ((s->supported_image_sizes & T30_SUPPORT_303MM_WIDTH))
+    if ((s->supported_image_sizes & T4_SUPPORT_WIDTH_303MM))
         set_ctrl_bit(s->local_dis_dtc_frame, 18);
-    else if ((s->supported_image_sizes & T30_SUPPORT_255MM_WIDTH))
+    else if ((s->supported_image_sizes & T4_SUPPORT_WIDTH_255MM))
         set_ctrl_bit(s->local_dis_dtc_frame, 17);
 
     /* A4 is always supported. */
-    if ((s->supported_image_sizes & T30_SUPPORT_UNLIMITED_LENGTH))
+    if ((s->supported_image_sizes & T4_SUPPORT_LENGTH_UNLIMITED))
         set_ctrl_bit(s->local_dis_dtc_frame, 20);
-    else if ((s->supported_image_sizes & T30_SUPPORT_B4_LENGTH))
+    else if ((s->supported_image_sizes & T4_SUPPORT_LENGTH_B4))
         set_ctrl_bit(s->local_dis_dtc_frame, 19);
 
     /* No scan-line padding required, but some may be specified by the application. */
@@ -1275,9 +1275,9 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No mode 26 (T.505) */
     /* No digital network capability */
     /* No duplex operation */
-    if ((s->supported_image_sizes & T30_SUPPORT_US_LETTER_LENGTH))
+    if ((s->supported_image_sizes & T4_SUPPORT_LENGTH_US_LETTER))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LETTER_CAPABLE);
-    if ((s->supported_image_sizes & T30_SUPPORT_US_LEGAL_LENGTH))
+    if ((s->supported_image_sizes & T4_SUPPORT_LENGTH_US_LEGAL))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LEGAL_CAPABLE);
     /* No HKM key management */
     /* No RSA key management */
@@ -1297,55 +1297,55 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     if ((s->supported_t30_features & T30_SUPPORT_INTERNET_ROUTING_ADDRESS))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_ROUTING_ADDRESS);
 
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_1200_1200))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_1200_1200_CAPABLE);
-        if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_1200_1200))
+        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_1200_1200_CAPABLE);
     }
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_600_1200))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_1200))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_600_1200_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_600_600))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_600))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_600_600_CAPABLE);
-        if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_600_600))
+        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_600_600))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_600_600_CAPABLE);
     }
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_400_800))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_800))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_800_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_R16_SUPERFINE))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R16_SUPERFINE))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_400_400))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_400))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE);
-        if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_400_400))
+        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_400_400))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_300_300_400_400_CAPABLE);
     }
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_300_600))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_600))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_300_600_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_300_300))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_300))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE);
-        if ((s->supported_colour_resolutions & T4_RESOLUTION_300_300))
+        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_300_300))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_300_300_400_400_CAPABLE);
     }
-    if ((s->supported_bilevel_resolutions & (T30_SUPPORT_RESOLUTION_200_400 | T30_SUPPORT_RESOLUTION_R8_SUPERFINE)))
+    if ((s->supported_bilevel_resolutions & (T4_SUPPORT_RESOLUTION_200_400 | T4_SUPPORT_RESOLUTION_R8_SUPERFINE)))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_R8_FINE))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_FINE))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_200_200))
+    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_200))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE);
-        //if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_200_200))
+        //if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_200_200))
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_???_CAPABLE);
     }
     /* Standard FAX resolution bi-level image support goes without saying */
-    if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_100_100))
+    if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_100_100))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_100_100_CAPABLE);
 
-    if ((s->supported_bilevel_resolutions & (T30_SUPPORT_RESOLUTION_R8_STANDARD | T30_SUPPORT_RESOLUTION_R8_FINE | T30_SUPPORT_RESOLUTION_R8_SUPERFINE | T30_SUPPORT_RESOLUTION_R16_SUPERFINE)))
+    if ((s->supported_bilevel_resolutions & (T4_SUPPORT_RESOLUTION_R8_STANDARD | T4_SUPPORT_RESOLUTION_R8_FINE | T4_SUPPORT_RESOLUTION_R8_SUPERFINE | T4_SUPPORT_RESOLUTION_R16_SUPERFINE)))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED);
-    if ((s->supported_bilevel_resolutions & (T30_SUPPORT_RESOLUTION_200_100 | T30_SUPPORT_RESOLUTION_200_200 | T30_SUPPORT_RESOLUTION_200_400 | T30_SUPPORT_RESOLUTION_300_300 | T30_SUPPORT_RESOLUTION_300_600 | T30_SUPPORT_RESOLUTION_400_400 | T30_SUPPORT_RESOLUTION_400_800 | T30_SUPPORT_RESOLUTION_600_600 | T30_SUPPORT_RESOLUTION_600_1200 | T30_SUPPORT_RESOLUTION_1200_1200)))
+    if ((s->supported_bilevel_resolutions & (T4_SUPPORT_RESOLUTION_200_100 | T4_SUPPORT_RESOLUTION_200_200 | T4_SUPPORT_RESOLUTION_200_400 | T4_SUPPORT_RESOLUTION_300_300 | T4_SUPPORT_RESOLUTION_300_600 | T4_SUPPORT_RESOLUTION_400_400 | T4_SUPPORT_RESOLUTION_400_800 | T4_SUPPORT_RESOLUTION_600_600 | T4_SUPPORT_RESOLUTION_600_1200 | T4_SUPPORT_RESOLUTION_1200_1200)))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED);
 
     /* No double sided printing (alternate mode) */
@@ -1461,14 +1461,14 @@ static int build_dcs(t30_state_t *s)
         switch (s->x_resolution)
         {
         case T4_X_RESOLUTION_1200:
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_1200_1200))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_1200_1200);
                 bad = T30_ERR_OK;
             }
             break;
         case T4_X_RESOLUTION_600:
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_600_1200))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_1200))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_1200);
                 bad = T30_ERR_OK;
@@ -1480,7 +1480,7 @@ static int build_dcs(t30_state_t *s)
         switch (s->x_resolution)
         {
         case T4_X_RESOLUTION_R16:
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_400_800))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_800))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_800);
                 bad = T30_ERR_OK;
@@ -1492,14 +1492,14 @@ static int build_dcs(t30_state_t *s)
         switch (s->x_resolution)
         {
         case T4_X_RESOLUTION_600:
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_600_600))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_600))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_600);
                 bad = T30_ERR_OK;
             }
             break;
         case T4_X_RESOLUTION_300:
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_300_600))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_600))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_600);
                 bad = T30_ERR_OK;
@@ -1511,7 +1511,7 @@ static int build_dcs(t30_state_t *s)
         switch (s->x_resolution)
         {
         case T4_X_RESOLUTION_300:
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_300_300))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_300))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_300);
                 bad = T30_ERR_OK;
@@ -1523,7 +1523,7 @@ static int build_dcs(t30_state_t *s)
     case T4_Y_RESOLUTION_400:
         if (s->x_resolution == T4_X_RESOLUTION_400  &&  s->y_resolution == T4_Y_RESOLUTION_400)
         {
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_400_400))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_400))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
                 bad = T30_ERR_OK;
@@ -1532,7 +1532,7 @@ static int build_dcs(t30_state_t *s)
         }
         else if (s->x_resolution == T4_X_RESOLUTION_R16  &&  s->y_resolution == T4_Y_RESOLUTION_SUPERFINE)
         {
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_R16_SUPERFINE))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R16_SUPERFINE))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
                 bad = T30_ERR_OK;
@@ -1541,7 +1541,7 @@ static int build_dcs(t30_state_t *s)
         }
         else if (s->x_resolution == T4_X_RESOLUTION_200  &&  s->y_resolution == T4_Y_RESOLUTION_400)
         {
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_200_400))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_400))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
                 bad = T30_ERR_OK;
@@ -1550,7 +1550,7 @@ static int build_dcs(t30_state_t *s)
         }
         else if (s->x_resolution == T4_X_RESOLUTION_R8  &&  s->y_resolution == T4_Y_RESOLUTION_SUPERFINE)
         {
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_R8_SUPERFINE))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_SUPERFINE))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
                 bad = T30_ERR_OK;
@@ -1563,7 +1563,7 @@ static int build_dcs(t30_state_t *s)
     case T4_Y_RESOLUTION_200:
         if (s->x_resolution == T4_X_RESOLUTION_200  &&  s->y_resolution == T4_Y_RESOLUTION_200)
         {
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_200_200))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_200))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
                 bad = T30_ERR_OK;
@@ -1572,7 +1572,7 @@ static int build_dcs(t30_state_t *s)
         }
         else if (s->x_resolution == T4_X_RESOLUTION_R8  &&  s->y_resolution == T4_Y_RESOLUTION_FINE)
         {
-            if ((s->mutual_bilevel_resolutions & T30_SUPPORT_RESOLUTION_R8_FINE))
+            if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_FINE))
             {
                 set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
                 bad = T30_ERR_OK;
@@ -1636,7 +1636,7 @@ static int build_dcs(t30_state_t *s)
     {
         if (((s->far_dis_dtc_frame[5] & (DISBIT2 | DISBIT1)) >= 1)
             &&
-            (s->supported_image_sizes & T30_SUPPORT_255MM_WIDTH))
+            (s->supported_image_sizes & T4_SUPPORT_WIDTH_255MM))
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4\n");
             set_ctrl_bit(s->dcs_frame, 17);
@@ -1659,7 +1659,7 @@ static int build_dcs(t30_state_t *s)
     {
         if (((s->far_dis_dtc_frame[5] & (DISBIT2 | DISBIT1)) >= 2)
             &&
-            (s->supported_image_sizes & T30_SUPPORT_303MM_WIDTH))
+            (s->supported_image_sizes & T4_SUPPORT_WIDTH_303MM))
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3\n");
             set_ctrl_bit(s->dcs_frame, 18);
@@ -2213,75 +2213,75 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     s->mutual_colour_resolutions = s->supported_colour_resolutions;
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_1200_1200_CAPABLE))
     {
-        s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_1200_1200;
-        s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_1200_1200;
+        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_1200_1200;
+        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_1200_1200;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_1200_1200_CAPABLE))
-            s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_1200_1200;
+            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_1200_1200;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_1200_CAPABLE))
-        s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_600_1200;
+        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_600_1200;
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_600_CAPABLE))
     {
-        s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_600_600;
-        s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_600_600;
+        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_600_600;
+        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_600_600;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_600_600_CAPABLE))
-            s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_600_600;
+            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_600_600;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_400_800_CAPABLE))
-        s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_400_800;
+        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_400_800;
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE))
     {
-        s->mutual_bilevel_resolutions &= ~(T30_SUPPORT_RESOLUTION_400_400 | T30_SUPPORT_RESOLUTION_R16_SUPERFINE);
-        s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_400_400;
+        s->mutual_bilevel_resolutions &= ~(T4_SUPPORT_RESOLUTION_400_400 | T4_SUPPORT_RESOLUTION_R16_SUPERFINE);
+        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_400_400;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_300_300_400_400_CAPABLE))
-            s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_400_400;
+            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_400_400;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_600_CAPABLE))
-        s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_300_600;
+        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_300_600;
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE))
     {
-        s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_300_300;
-        s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_300_300;
+        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_300_300;
+        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_300_300;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_300_300_400_400_CAPABLE))
-            s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_300_300;
+            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_300_300;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_200_400;
+            s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_200_400;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_R8_SUPERFINE;
+            s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_R8_SUPERFINE;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_200_200;
+            s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_200_200;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_R8_FINE;
-        s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_200_200;
+            s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_R8_FINE;
+        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_200_200;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-            s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_200_200;
+            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_200_200;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-        s->mutual_bilevel_resolutions &= ~T30_SUPPORT_RESOLUTION_200_100;
-    /* Never suppress T30_SUPPORT_RESOLUTION_R8_STANDARD */
+        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_200_100;
+    /* Never suppress T4_SUPPORT_RESOLUTION_R8_STANDARD */
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_100_100_CAPABLE))
-        s->mutual_colour_resolutions &= ~T30_SUPPORT_RESOLUTION_100_100;
+        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_100_100;
 
     switch (s->far_dis_dtc_frame[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))
     {
@@ -2467,7 +2467,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_COLOUR_GRAY_1200_1200))
         {
-            if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_1200_1200))
+            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
             {
                 s->x_resolution = T4_X_RESOLUTION_1200;
                 s->y_resolution = T4_Y_RESOLUTION_1200;
@@ -2477,7 +2477,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_COLOUR_GRAY_600_600))
         {
-            if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_600_600))
+            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_600_600))
             {
                 s->x_resolution = T4_X_RESOLUTION_600;
                 s->y_resolution = T4_Y_RESOLUTION_600;
@@ -2487,7 +2487,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_400))
         {
-            if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_400_400))
+            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_400_400))
             {
                 s->x_resolution = T4_X_RESOLUTION_400;
                 s->y_resolution = T4_Y_RESOLUTION_400;
@@ -2497,7 +2497,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_300))
         {
-            if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_300_300))
+            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_300_300))
             {
                 s->x_resolution = T4_X_RESOLUTION_300;
                 s->y_resolution = T4_Y_RESOLUTION_300;
@@ -2507,7 +2507,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_200_200))
         {
-            if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_200_200))
+            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_200_200))
             {
                 s->x_resolution = T4_X_RESOLUTION_200;
                 s->y_resolution = T4_Y_RESOLUTION_200;
@@ -2517,7 +2517,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_COLOUR_GRAY_100_100))
         {
-            if ((s->supported_colour_resolutions & T30_SUPPORT_RESOLUTION_100_100))
+            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_100_100))
             {
                 s->x_resolution = T4_X_RESOLUTION_100;
                 s->y_resolution = T4_Y_RESOLUTION_100;
@@ -2531,7 +2531,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         /* Bi-level image */
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_1200_1200))
         {
-            if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_1200_1200))
+            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
             {
                 s->x_resolution = T4_X_RESOLUTION_1200;
                 s->y_resolution = T4_Y_RESOLUTION_1200;
@@ -2541,7 +2541,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_1200))
         {
-            if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_600_1200))
+            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_1200))
             {
                 s->x_resolution = T4_X_RESOLUTION_600;
                 s->y_resolution = T4_Y_RESOLUTION_1200;
@@ -2551,7 +2551,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_600))
         {
-            if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_600_600))
+            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_600))
             {
                 s->x_resolution = T4_X_RESOLUTION_600;
                 s->y_resolution = T4_Y_RESOLUTION_600;
@@ -2561,7 +2561,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_800))
         {
-            if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_400_800))
+            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_800))
             {
                 s->x_resolution = T4_X_RESOLUTION_400;
                 s->y_resolution = T4_Y_RESOLUTION_800;
@@ -2573,7 +2573,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         {
             if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_INCH_RESOLUTION))
             {
-                if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_400_400))
+                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_400))
                 {
                     s->x_resolution = T4_X_RESOLUTION_400;
                     s->y_resolution = T4_Y_RESOLUTION_400;
@@ -2583,7 +2583,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
-                if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_R16_SUPERFINE))
+                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R16_SUPERFINE))
                 {
                     s->x_resolution = T4_X_RESOLUTION_R16;
                     s->y_resolution = T4_Y_RESOLUTION_SUPERFINE;
@@ -2594,7 +2594,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_600))
         {
-            if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_300_600))
+            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_600))
             {
                 s->x_resolution = T4_X_RESOLUTION_300;
                 s->y_resolution = T4_Y_RESOLUTION_600;
@@ -2604,7 +2604,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_300))
         {
-            if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_300_300))
+            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_300))
             {
                 s->x_resolution = T4_X_RESOLUTION_300;
                 s->y_resolution = T4_Y_RESOLUTION_300;
@@ -2616,7 +2616,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         {
             if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_INCH_RESOLUTION))
             {
-                if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_200_400))
+                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_400))
                 {
                     s->x_resolution = T4_X_RESOLUTION_200;
                     s->y_resolution = T4_Y_RESOLUTION_400;
@@ -2626,7 +2626,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
-                if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_R8_SUPERFINE))
+                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_SUPERFINE))
                 {
                     s->x_resolution = T4_X_RESOLUTION_R8;
                     s->y_resolution = T4_Y_RESOLUTION_SUPERFINE;
@@ -2639,7 +2639,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         {
             if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_INCH_RESOLUTION))
             {
-                if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_200_200))
+                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_200))
                 {
                     s->x_resolution = T4_X_RESOLUTION_200;
                     s->y_resolution = T4_Y_RESOLUTION_200;
@@ -2649,7 +2649,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
-                if ((s->supported_bilevel_resolutions & T30_SUPPORT_RESOLUTION_R8_FINE))
+                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_FINE))
                 {
                     s->x_resolution = T4_X_RESOLUTION_R8;
                     s->y_resolution = T4_Y_RESOLUTION_FINE;
@@ -6655,13 +6655,13 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
     /* Default to the basic modems. */
     s->supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
     s->supported_compressions = T30_SUPPORT_COMPRESSION_T4_1D | T30_SUPPORT_COMPRESSION_T4_2D;
-    s->supported_bilevel_resolutions = T30_SUPPORT_RESOLUTION_R8_STANDARD
-                                     | T30_SUPPORT_RESOLUTION_R8_FINE
-                                     | T30_SUPPORT_RESOLUTION_R8_SUPERFINE;
-    s->supported_image_sizes = T30_SUPPORT_US_LETTER_LENGTH
-                             | T30_SUPPORT_US_LEGAL_LENGTH
-                             | T30_SUPPORT_UNLIMITED_LENGTH
-                             | T30_SUPPORT_215MM_WIDTH;
+    s->supported_bilevel_resolutions = T4_SUPPORT_RESOLUTION_R8_STANDARD
+                                     | T4_SUPPORT_RESOLUTION_R8_FINE
+                                     | T4_SUPPORT_RESOLUTION_R8_SUPERFINE;
+    s->supported_image_sizes = T4_SUPPORT_WIDTH_215MM
+                             | T4_SUPPORT_LENGTH_US_LETTER
+                             | T4_SUPPORT_LENGTH_US_LEGAL
+                             | T4_SUPPORT_LENGTH_UNLIMITED;
     /* Set the output encoding to something safe. Most things get 1D and 2D
        encoding right. Quite a lot get other things wrong. */
     s->output_encoding = T4_COMPRESSION_T4_2D;

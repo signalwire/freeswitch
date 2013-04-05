@@ -263,6 +263,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     };
     char *u;
     char uu[10];
+    uint64_t diroff;
     uint8_t parm8;
     uint16_t parm16;
 #endif
@@ -372,6 +373,38 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     }
     if (TIFFGetField(t->tiff_file, TIFFTAG_MODENUMBER, &parm8))
         span_log(&s->logging, SPAN_LOG_FLOW, "Mode number %u\n", parm8);
+
+    /* If global parameters are present they should only be on the first page of the file.
+       However, as we scan the file we might as well look for them on any page. */
+    if (TIFFGetField(t->tiff_file, TIFFTAG_GLOBALPARAMETERSIFD, &diroff))
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Global parameters IFD at %" PRIu64 "\n", diroff);
+        if (!TIFFReadCustomDirectory(t->tiff_file, diroff, &tiff_fx_field_array))
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Global parameter read failed\n");
+        }
+        else
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Global parameters\n");
+            if (TIFFGetField(t->tiff_file, TIFFTAG_PROFILETYPE, &parm32))
+                span_log(&s->logging, SPAN_LOG_FLOW, "  Profile type %u\n", parm32);
+            if (TIFFGetField(t->tiff_file, TIFFTAG_FAXPROFILE, &parm8))
+                span_log(&s->logging, SPAN_LOG_FLOW, "  FAX profile %s (%u)\n", tiff_fx_fax_profiles[parm8], parm8);
+            if (TIFFGetField(t->tiff_file, TIFFTAG_CODINGMETHODS, &parm32))
+                span_log(&s->logging, SPAN_LOG_FLOW, "  Coding methods 0x%x\n", parm32);
+            if (TIFFGetField(t->tiff_file, TIFFTAG_VERSIONYEAR, &u))
+            {
+                memcpy(uu, u, 4);
+                uu[4] = '\0';
+                span_log(&s->logging, SPAN_LOG_FLOW, "  Version year \"%s\"\n", uu);
+            }
+            if (TIFFGetField(t->tiff_file, TIFFTAG_MODENUMBER, &parm8))
+                span_log(&s->logging, SPAN_LOG_FLOW, "  Mode number %u\n", parm8);
+
+            if (!TIFFSetDirectory(t->tiff_file, (tdir_t) s->current_page))
+                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set directory to page %d\n", s->current_page);
+        }
+    }
 #endif
     return 0;
 }

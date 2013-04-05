@@ -839,27 +839,27 @@ int main(int argc, char *argv[])
                                      | T30_SUPPORT_SELECTIVE_POLLING
                                      | T30_SUPPORT_SUB_ADDRESSING);
         t30_set_supported_image_sizes(t30_state[i],
-                                      T30_SUPPORT_US_LETTER_LENGTH
-                                    | T30_SUPPORT_US_LEGAL_LENGTH
-                                    | T30_SUPPORT_UNLIMITED_LENGTH
-                                    | T30_SUPPORT_215MM_WIDTH
-                                    | T30_SUPPORT_255MM_WIDTH
-                                    | T30_SUPPORT_303MM_WIDTH);
+                                      T4_SUPPORT_WIDTH_215MM
+                                    | T4_SUPPORT_WIDTH_255MM
+                                    | T4_SUPPORT_WIDTH_303MM
+                                    | T4_SUPPORT_LENGTH_US_LETTER
+                                    | T4_SUPPORT_LENGTH_US_LEGAL
+                                    | T4_SUPPORT_LENGTH_UNLIMITED);
         t30_set_supported_bilevel_resolutions(t30_state[i],
-                                              T30_SUPPORT_RESOLUTION_R8_STANDARD
-                                            | T30_SUPPORT_RESOLUTION_R8_FINE
-                                            | T30_SUPPORT_RESOLUTION_R8_SUPERFINE
-                                            | T30_SUPPORT_RESOLUTION_R16_SUPERFINE
-                                            | T30_SUPPORT_RESOLUTION_200_100
-                                            | T30_SUPPORT_RESOLUTION_200_200
-                                            | T30_SUPPORT_RESOLUTION_200_400
-                                            | T30_SUPPORT_RESOLUTION_300_300
-                                            | T30_SUPPORT_RESOLUTION_300_600
-                                            | T30_SUPPORT_RESOLUTION_400_400
-                                            | T30_SUPPORT_RESOLUTION_400_800
-                                            | T30_SUPPORT_RESOLUTION_600_600
-                                            | T30_SUPPORT_RESOLUTION_600_1200
-                                            | T30_SUPPORT_RESOLUTION_1200_1200);
+                                              T4_SUPPORT_RESOLUTION_R8_STANDARD
+                                            | T4_SUPPORT_RESOLUTION_R8_FINE
+                                            | T4_SUPPORT_RESOLUTION_R8_SUPERFINE
+                                            | T4_SUPPORT_RESOLUTION_R16_SUPERFINE
+                                            | T4_SUPPORT_RESOLUTION_200_100
+                                            | T4_SUPPORT_RESOLUTION_200_200
+                                            | T4_SUPPORT_RESOLUTION_200_400
+                                            | T4_SUPPORT_RESOLUTION_300_300
+                                            | T4_SUPPORT_RESOLUTION_300_600
+                                            | T4_SUPPORT_RESOLUTION_400_400
+                                            | T4_SUPPORT_RESOLUTION_400_800
+                                            | T4_SUPPORT_RESOLUTION_600_600
+                                            | T4_SUPPORT_RESOLUTION_600_1200
+                                            | T4_SUPPORT_RESOLUTION_1200_1200);
         t30_set_supported_colour_resolutions(t30_state[i], 0);
         //t30_set_rx_encoding(t30_state[i], T4_COMPRESSION_T85);
         t30_set_ecm_capability(t30_state[i], use_ecm);
