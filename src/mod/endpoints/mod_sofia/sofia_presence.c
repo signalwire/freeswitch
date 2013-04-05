@@ -3276,26 +3276,22 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 
 	data = switch_core_hash_find(sh->hash, key);
 
-	if (uuid && (session = switch_core_session_locate(uuid))) {
+	if (strcasecmp(state, "idle") && uuid && (session = switch_core_session_locate(uuid))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
-		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+			callee_name = switch_channel_get_variable(channel, "callee_id_name");
+			callee_number = switch_channel_get_variable(channel, "callee_id_number");
 
-			if (zstr((callee_name = switch_channel_get_variable(channel, "effective_callee_id_name"))) &&
-				zstr((callee_name = switch_channel_get_variable(channel, "sip_callee_id_name")))) {
-				callee_name = switch_channel_get_variable(channel, "callee_id_name");
-			}
-			
-			if (zstr((callee_number = switch_channel_get_variable(channel, "effective_callee_id_number"))) &&
-				zstr((callee_number = switch_channel_get_variable(channel, "sip_callee_id_number"))) &&
-				zstr((callee_number = switch_channel_get_variable(channel, "callee_id_number")))) {
+			if (zstr(callee_number)) {
 				callee_number = switch_channel_get_variable(channel, "destination_number");
 			}
+				
 		} else {
 			callee_name = switch_channel_get_variable(channel, "caller_id_name");
 			callee_number = switch_channel_get_variable(channel, "caller_id_number");
 		}
-		
+
 		if (zstr(callee_name) && !zstr(callee_number)) {
 			callee_name = callee_number;
 		}
@@ -3307,8 +3303,19 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 		if (!zstr(callee_name)) {
 			callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
 		}
+
+
+		//if (switch_channel_get_state(channel) != CS_EXECUTE) {
+			//callee_number = NULL;
+		//}
+
 		switch_core_session_rwunlock(session);
 	}
+
+	if (data && strstr(data, info)) {
+		return 0;
+	}
+
 
 	if (!zstr(callee_number)) {
 		if (zstr(callee_name)) {
