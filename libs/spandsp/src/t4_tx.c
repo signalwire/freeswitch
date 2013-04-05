@@ -102,7 +102,7 @@ static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length);
 static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
 {
     {TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, FIELD_CUSTOM, FALSE, FALSE, (char *) "Indexed"},
-    {TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "GlobalParametersIFD"},
+    {TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, FIELD_CUSTOM, FALSE, FALSE, (char *) "GlobalParametersIFD"},
     {TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ProfileType"},
     {TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "FaxProfile"},
     {TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "CodingMethods"},
@@ -119,7 +119,7 @@ static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
 static TIFFField tiff_fx_tiff_fields[] =
 {
     { TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, 0, TIFF_SETGET_UINT16, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "Indexed" },
-    { TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_LONG, 0, TIFF_SETGET_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "GlobalParametersIFD", NULL },
+    { TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, 0, TIFF_SETGET_IFD8, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 0, 0, (char *) "GlobalParametersIFD", NULL },
     { TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, 0, TIFF_SETGET_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "ProfileType", NULL },
     { TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, 0, TIFF_SETGET_UINT8, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "FaxProfile", NULL },
     { TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, 0, TIFF_SETGET_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "CodingMethods", NULL },
