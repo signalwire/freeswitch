@@ -1652,20 +1652,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			originator_cp = switch_channel_get_caller_profile(originator_channel);
 			originatee_cp = switch_channel_get_caller_profile(originatee_channel);
 
+
+			
+			if (switch_channel_outbound_display(originator_channel)) {
+				switch_channel_invert_cid(originator_channel);
+				
+				if (switch_channel_direction(originator_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+					switch_channel_clear_flag(originatee_channel, CF_BLEG);
+				}
+			}
+
 			if (switch_channel_inbound_display(originatee_channel)) {
-				const char *tname = originatee_cp->caller_id_name;
-				const char *tnum = originatee_cp->caller_id_number;
-
-#ifdef DEEP_DEBUG_CID
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SWAP [%s][%s] [%s][%s]\n", originatee_cp->caller_id_name, originatee_cp->caller_id_number, originatee_cp->callee_id_name, originatee_cp->callee_id_number);
-#endif
-
-				originatee_cp->caller_id_name = originatee_cp->callee_id_name;
-				originatee_cp->caller_id_number = originatee_cp->callee_id_number;
-
-				originatee_cp->callee_id_name = tname;
-				originatee_cp->callee_id_number = tnum;
-
+				switch_channel_invert_cid(originatee_channel);
+				
 				if (switch_channel_direction(originatee_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					switch_channel_set_flag(originatee_channel, CF_BLEG);
 				}

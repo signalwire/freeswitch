@@ -2985,18 +2985,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				originatee_cp = switch_channel_get_caller_profile(other_channel);
 
 				if (switch_channel_inbound_display(other_channel)) {
-					const char *tname = originatee_cp->caller_id_name;
-					const char *tnum = originatee_cp->caller_id_number;
-					
-#ifdef DEEP_DEBUG_CID
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SWAP [%s][%s] [%s][%s]\n", originatee_cp->caller_id_name, originatee_cp->caller_id_number, originatee_cp->callee_id_name, originatee_cp->callee_id_number);
-#endif
-						
-					originatee_cp->caller_id_name = originatee_cp->callee_id_name;
-					originatee_cp->caller_id_number = originatee_cp->callee_id_number;
-					
-					originatee_cp->callee_id_name = tname;
-					originatee_cp->callee_id_number = tnum;
+					switch_channel_invert_cid(other_channel);
 
 					if (switch_channel_direction(other_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 						switch_channel_set_flag(other_channel, CF_BLEG);
