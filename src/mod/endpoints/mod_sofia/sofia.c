@@ -8512,9 +8512,15 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 				const char *bridge_uuid;
 				switch_caller_profile_t *orig_cp;
-				const char *sent_name, *sent_number;
+				//const char *sent_name, *sent_number;
 				orig_cp = switch_channel_get_caller_profile(b_channel);
-				
+				tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->callee_id_name);
+				tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->callee_id_number);
+				tech_pvt->caller_profile->caller_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_name);
+				tech_pvt->caller_profile->caller_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_number);
+
+
+#if 0				
 				sent_name = switch_channel_get_variable(b_channel, "last_sent_callee_id_name");
 				sent_number = switch_channel_get_variable(b_channel, "last_sent_callee_id_number");
 
@@ -8530,6 +8536,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 						tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_number);
 					}
 				}
+#endif
 
 				if (is_nat) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Setting NAT mode based on %s\n", is_nat);
@@ -8558,13 +8565,25 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 						codec_str = switch_core_session_sprintf(session, "set:absolute_codec_string=%s@%di,", read_impl.iananame, 
 															   read_impl.microseconds_per_packet / 1000);
 					}
-					
-
 
 					if (!zstr(bridge_uuid) && switch_channel_test_flag(b_channel, CF_LEG_HOLDING)) {
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
 																						   "%sanswer,intercept:%s", codec_str, bridge_uuid);
 					} else {
+						const char *name = NULL, *num = NULL;
+						switch_caller_profile_t *bcp = switch_channel_get_caller_profile(b_channel);
+						
+						if (switch_channel_test_flag(b_channel, CF_BRIDGE_ORIGINATOR) || !switch_channel_test_flag(b_channel, CF_BRIDGED)) {
+							name = bcp->callee_id_name;
+							num = bcp->callee_id_number;
+						} else {
+							name = bcp->caller_id_name;
+							num = bcp->caller_id_number;
+						}					
+						
+						tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, name);
+						tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, num);
+
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool, 
 																						   "%sanswer,sofia_sla:%s", codec_str, b_private->uuid);
 					}

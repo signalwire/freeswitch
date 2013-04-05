@@ -681,7 +681,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *recover_via = NULL;
 	int require_timer = 1;
 
-
 	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 		const char *recover_contact = switch_channel_get_variable(tech_pvt->channel, "sip_recover_contact");
 		recover_via = switch_channel_get_variable(tech_pvt->channel, "sip_recover_via");
