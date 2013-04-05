@@ -1968,6 +1968,12 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 		return JS_FALSE;
 	}
 
+	if (jss->speech && jss->speech->speaking) {
+		eval_some_js("~throw new Error(\"Recursive call not allowed\");", cx, obj, rval);
+		return JS_FALSE;
+	}
+
+
 	if (jss->speech && strcasecmp(jss->speech->sh.name, tts_name)) {
 		destroy_speech_engine(jss);
 	}
@@ -2009,7 +2015,9 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 	switch_core_speech_flush_tts(&jss->speech->sh);
 	if (switch_core_codec_ready(&jss->speech->codec)) {
+		jss->speech->speaking = 1;
 		switch_ivr_speak_text_handle(jss->session, &jss->speech->sh, &jss->speech->codec, NULL, text, &args);
+		jss->speech->speaking = 0;
 	}
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	check_hangup_hook(jss, &ret);
