@@ -4210,12 +4210,16 @@ public class freeswitch {
     freeswitchPINVOKE.switch_channel_set_caller_extension(SWIGTYPE_p_switch_channel.getCPtr(channel), switch_caller_extension.getCPtr(caller_extension));
   }
 
+  public static void switch_channel_invert_cid(SWIGTYPE_p_switch_channel channel) {
+    freeswitchPINVOKE.switch_channel_invert_cid(SWIGTYPE_p_switch_channel.getCPtr(channel));
+  }
+
   public static void switch_channel_flip_cid(SWIGTYPE_p_switch_channel channel) {
     freeswitchPINVOKE.switch_channel_flip_cid(SWIGTYPE_p_switch_channel.getCPtr(channel));
   }
 
-  public static void switch_channel_sort_cid(SWIGTYPE_p_switch_channel channel, switch_bool_t arg1) {
-    freeswitchPINVOKE.switch_channel_sort_cid(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)arg1);
+  public static void switch_channel_sort_cid(SWIGTYPE_p_switch_channel channel) {
+    freeswitchPINVOKE.switch_channel_sort_cid(SWIGTYPE_p_switch_channel.getCPtr(channel));
   }
 
   public static switch_caller_extension switch_channel_get_caller_extension(SWIGTYPE_p_switch_channel channel) {
@@ -10690,6 +10694,18 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_caller_id_number_get")]
   public static extern string switch_caller_profile_caller_id_number_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_orig_caller_id_name_set")]
+  public static extern void switch_caller_profile_orig_caller_id_name_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_orig_caller_id_name_get")]
+  public static extern string switch_caller_profile_orig_caller_id_name_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_orig_caller_id_number_set")]
+  public static extern void switch_caller_profile_orig_caller_id_number_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_orig_caller_id_number_get")]
+  public static extern string switch_caller_profile_orig_caller_id_number_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_caller_profile_callee_id_name_set")]
   public static extern void switch_caller_profile_callee_id_name_set(HandleRef jarg1, string jarg2);
 
@@ -13513,11 +13529,14 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_caller_extension")]
   public static extern void switch_channel_set_caller_extension(HandleRef jarg1, HandleRef jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_invert_cid")]
+  public static extern void switch_channel_invert_cid(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_flip_cid")]
   public static extern void switch_channel_flip_cid(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_sort_cid")]
-  public static extern void switch_channel_sort_cid(HandleRef jarg1, int jarg2);
+  public static extern void switch_channel_sort_cid(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_caller_extension")]
   public static extern IntPtr switch_channel_get_caller_extension(HandleRef jarg1);
@@ -24677,6 +24696,26 @@ public class switch_caller_profile : IDisposable {
     } 
   }
 
+  public string orig_caller_id_name {
+    set {
+      freeswitchPINVOKE.switch_caller_profile_orig_caller_id_name_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_caller_profile_orig_caller_id_name_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string orig_caller_id_number {
+    set {
+      freeswitchPINVOKE.switch_caller_profile_orig_caller_id_number_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_caller_profile_orig_caller_id_number_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public string callee_id_name {
     set {
       freeswitchPINVOKE.switch_caller_profile_callee_id_name_set(swigCPtr, value);
@@ -25291,6 +25330,7 @@ public enum switch_channel_flag_t {
   CF_JITTERBUFFER,
   CF_JITTERBUFFER_PLC,
   CF_DIALPLAN,
+  CF_BLEG,
   CF_BLOCK_BROADCAST_UNTIL_MEDIA,
   CF_CNG_PLC,
   CF_ATTENDED_TRANSFER,

@@ -15766,6 +15766,64 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_caller_profile_caller_id_number_get(
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_caller_profile_orig_caller_id_name_set(void * jarg1, char * jarg2) {
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->orig_caller_id_name = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->orig_caller_id_name, (const char *)arg2);
+    } else {
+      arg1->orig_caller_id_name = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_caller_profile_orig_caller_id_name_get(void * jarg1) {
+  char * jresult ;
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  result = (char *) ((arg1)->orig_caller_id_name);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_caller_profile_orig_caller_id_number_set(void * jarg1, char * jarg2) {
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->orig_caller_id_number = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->orig_caller_id_number, (const char *)arg2);
+    } else {
+      arg1->orig_caller_id_number = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_caller_profile_orig_caller_id_number_get(void * jarg1) {
+  char * jresult ;
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  result = (char *) ((arg1)->orig_caller_id_number);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_caller_profile_callee_id_name_set(void * jarg1, char * jarg2) {
   switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -26794,6 +26852,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_caller_extension(void * ja
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_invert_cid(void * jarg1) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  switch_channel_invert_cid(arg1);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_flip_cid(void * jarg1) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   
@@ -26802,13 +26868,11 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_flip_cid(void * jarg1) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_sort_cid(void * jarg1, int jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_sort_cid(void * jarg1) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
-  switch_bool_t arg2 ;
   
   arg1 = (switch_channel_t *)jarg1; 
-  arg2 = (switch_bool_t)jarg2; 
-  switch_channel_sort_cid(arg1,arg2);
+  switch_channel_sort_cid(arg1);
 }
 
 
