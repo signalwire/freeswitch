@@ -2108,8 +2108,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 {
 	if (listener->profile->debug >= 10 || request->type != KEEP_ALIVE_MESSAGE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-				"Received %s (type=%x,length=%d) from %s:%d.\n", skinny_message_type2str(request->type), request->type, request->length,
-				listener->device_name, listener->device_instance);
+				"Received %s (type=%x,length=%d) from %s:%d at %s:%d.\n", skinny_message_type2str(request->type), request->type, request->length,
+				listener->device_name, listener->device_instance, listener->remote_ip, listener->remote_port);
 	}
 	if(zstr(listener->device_name) && request->type != REGISTER_MESSAGE && request->type != ALARM_MESSAGE && request->type != XML_ALARM_MESSAGE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
