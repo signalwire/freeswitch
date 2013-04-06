@@ -2101,13 +2101,13 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	if ((cparams = strstr(o_contact, ";_;"))) {
 		cparams += 3;
 	}
-		
+
 	path = sofia_glue_get_path_from_contact((char *) o_contact);
-	
-    tmp = (char *)o_contact;
+
+	tmp = (char *)o_contact;
 	o_contact_dup = sofia_glue_get_url_from_contact(tmp, 1);
 
-	
+
 	if ((tp = switch_stristr("transport=", o_contact_dup))) {
 		tp += 10;
 	}
@@ -2279,8 +2279,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	switch_safe_free(o_contact_dup);
 	switch_safe_free(send_contact);
 	switch_safe_free(our_contact_dup);
-
-
+	switch_safe_free(path);
 }
 
 
