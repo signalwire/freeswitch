@@ -1212,6 +1212,26 @@ SWITCH_DECLARE(uint32_t) switch_channel_del_variable_prefix(switch_channel_t *ch
 	return r;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_transfer_variable_prefix(switch_channel_t *orig_channel, switch_channel_t *new_channel, const char *prefix)
+{
+	switch_event_header_t *hi = NULL;
+	int x = 0;
+
+	if ((hi = switch_channel_variable_first(orig_channel))) {
+		for (; hi; hi = hi->next) {
+			char *var = hi->name;
+			char *val = hi->value;
+
+			if (zstr(prefix) || !strncasecmp(var, prefix, strlen(prefix))) {
+				x++;
+				switch_channel_set_variable(new_channel, var, val);
+			}
+		}
+		switch_channel_variable_last(orig_channel);
+	}
+	
+	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
 
 SWITCH_DECLARE(void) switch_channel_set_presence_data_vals(switch_channel_t *channel, const char *presence_data_cols)
 {

@@ -2267,16 +2267,19 @@ SWITCH_STANDARD_APP(att_xfer_function)
 {
 	switch_core_session_t *peer_session = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-	switch_channel_t *channel, *peer_channel = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session), *peer_channel = NULL;
 	const char *bond = NULL;
 	switch_core_session_t *b_session = NULL;
+	switch_bool_t follow_recording = switch_true(switch_channel_get_variable(channel, "recording_follow_attxfer"));
 	
-	channel = switch_core_session_get_channel(session);
-
 	bond = switch_channel_get_partner_uuid(channel);
 	switch_channel_set_variable(channel, SWITCH_SOFT_HOLDING_UUID_VARIABLE, bond);
 	switch_core_event_hook_add_state_change(session, tmp_hanguphook);
 
+	if (follow_recording && (b_session = switch_core_session_locate(bond))) {
+		switch_ivr_transfer_recordings(b_session, session);
+		switch_core_session_rwunlock(b_session);
+	}
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL)
 		!= SWITCH_STATUS_SUCCESS || !peer_session) {
@@ -2300,23 +2303,24 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	}
 
 	if (bond) {
-		char buf[128] = "";
 		int br = 0;
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, bond);
 
 		if (!switch_channel_down(peer_channel)) {
 			if (!switch_channel_ready(channel)) {
-				switch_status_t status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
+				switch_status_t status;
+
+				if (follow_recording) {
+					switch_ivr_transfer_recordings(session, peer_session);
+				}
+				status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
 				att_xfer_set_result(peer_channel, status);
 				br++;
 			} else if ((b_session = switch_core_session_locate(bond))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-				switch_snprintf(buf, sizeof(buf), "%s %s", switch_core_session_get_uuid(peer_session), switch_core_session_get_uuid(session));
-				switch_channel_set_variable(b_channel, "xfer_uuids", buf);
-
-				switch_snprintf(buf, sizeof(buf), "%s %s", switch_core_session_get_uuid(peer_session), bond);
-				switch_channel_set_variable(channel, "xfer_uuids", buf);
+				switch_channel_set_variable_printf(b_channel, "xfer_uuids", "%s %s", switch_core_session_get_uuid(peer_session), switch_core_session_get_uuid(session));
+				switch_channel_set_variable_printf(channel, "xfer_uuids", "%s %s", switch_core_session_get_uuid(peer_session), bond);
 
 				switch_core_event_hook_add_state_change(session, hanguphook);
 				switch_core_event_hook_add_state_change(b_session, hanguphook);

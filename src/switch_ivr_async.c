@@ -1184,9 +1184,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				switch_event_fire(&event);
 			}
 
-			switch_channel_execute_on(channel, "record_post_process_exec_app");
+			switch_channel_execute_on(channel, SWITCH_RECORD_POST_PROCESS_EXEC_APP_VARIABLE);
 
-			if ((var = switch_channel_get_variable(channel, "record_post_process_exec_api"))) {
+			if ((var = switch_channel_get_variable(channel, SWITCH_RECORD_POST_PROCESS_EXEC_API_VARIABLE))) {
 				char *cmd = switch_core_session_strdup(session, var);
 				char *data, *expanded = NULL;
 				switch_stream_handle_t stream = { 0 };
@@ -1258,6 +1258,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_sessi
 		return SWITCH_STATUS_SUCCESS;
 	}
 	return SWITCH_STATUS_FALSE;
+}
+
+static void* switch_ivr_record_user_data_dup(switch_core_session_t *session, void *user_data) 
+{
+	struct record_helper *rh = (struct record_helper *) user_data, *dup = NULL;
+
+	dup = switch_core_session_alloc(session, sizeof(*dup));
+	memcpy(dup, rh, sizeof(*rh));
+	dup->file = switch_core_session_strdup(session, rh->file);
+
+	return dup;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_recordings(switch_core_session_t *orig_session, switch_core_session_t *new_session)
+{
+	const char *var = NULL;
+	switch_channel_t *orig_channel = switch_core_session_get_channel(orig_session);
+	switch_channel_t *new_channel = switch_core_session_get_channel(new_session);
+
+	if ((var = switch_channel_get_variable(orig_channel, SWITCH_RECORD_POST_PROCESS_EXEC_API_VARIABLE))) {
+		switch_channel_set_variable(new_channel, SWITCH_RECORD_POST_PROCESS_EXEC_API_VARIABLE, var);
+	}
+	switch_channel_transfer_variable_prefix(orig_channel, new_channel, SWITCH_RECORD_POST_PROCESS_EXEC_APP_VARIABLE);
+	
+	return switch_core_media_bug_transfer_callback(orig_session, new_session, record_callback, switch_ivr_record_user_data_dup);
 }
 
 struct eavesdrop_pvt {
