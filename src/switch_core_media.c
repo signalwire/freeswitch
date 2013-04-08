@@ -4399,7 +4399,7 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 		}
 	}
 
-	if ((!secure && switch_channel_test_flag(session->channel, CF_SECURE)) || secure) {
+	if (secure) {
 		return "RTP/SAVP";
 	}
 
@@ -4559,7 +4559,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 	}
 
-	if (!zstr(a_engine->local_dtls_fingerprint.type)) {
+	if (!zstr(a_engine->local_dtls_fingerprint.type) && secure) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=fingerprint:%s %s\n", a_engine->local_dtls_fingerprint.type, 
 						a_engine->local_dtls_fingerprint.str);
 	}
