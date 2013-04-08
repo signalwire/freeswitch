@@ -949,11 +949,14 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				}
 			}
 		}
-
-
 	}
 
-	if (ok || (ice->missed_count > 3 && !ice->rready)) {
+	if (ice->missed_count > 3) {
+		ice->rready = 0;
+	}
+
+
+	if (ok || !ice->rready) {
 		if ((packet->header.type == SWITCH_STUN_BINDING_RESPONSE)) {
 			if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 				rtp_session->ice.rready = 1;
@@ -997,11 +1000,14 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 			bytes = switch_stun_packet_length(rpacket);
 
-			if ((ice->type & ICE_VANILLA) && ice->ice_params && !switch_cmp_addr(from_addr, ice->addr)) {
+			if (!ice->rready && (ice->type & ICE_VANILLA) && ice->ice_params && !switch_cmp_addr(from_addr, ice->addr)) {
 				const char *host;
 				switch_port_t port;
 				char buf[80] = "";
 				const char *err = "";
+
+				ice->missed_count = 0;
+				ice->rready = 1;
 
 				host = switch_get_addr(buf, len, from_addr);
 				port = switch_sockaddr_get_port(from_addr);
