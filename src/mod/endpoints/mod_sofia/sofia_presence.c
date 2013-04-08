@@ -3677,9 +3677,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		sstr = switch_mprintf("active;expires=%ld", exp_delta);
 		
 		sql = switch_mprintf("update sip_subscriptions "
-							 "set expires=%ld,contact='%q' "
+							 "set expires=%ld "
 							 "where hostname='%q' and profile_name='%q' and call_id='%q' and profile_name='%q'",
-							 (long) switch_epoch_time_now(NULL) + exp_delta, contact_str, mod_sofia_globals.hostname, profile->name,
+							 (long) switch_epoch_time_now(NULL) + exp_delta, mod_sofia_globals.hostname, profile->name,
 							 call_id, profile->name);
 
 		if (mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
