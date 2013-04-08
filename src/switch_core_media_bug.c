@@ -618,6 +618,50 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_recordings(switch
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_core_session_t *orig_session, switch_core_session_t *new_session, 
+																		switch_media_bug_callback_t callback, void * (*user_data_dup_func) (switch_core_session_t *, void *))
+{
+	switch_media_bug_t *new_bug = NULL, *cur = NULL, *bp = NULL, *last = NULL;
+	int total = 0;
+
+	switch_thread_rwlock_wrlock(orig_session->bug_rwlock);
+	bp = orig_session->bugs;
+	while (bp) {
+		cur = bp;
+		bp = bp->next;
+		
+		if (cur->callback == callback) {
+			if (last) {
+				last->next = cur->next;
+			} else {
+				orig_session->bugs = cur->next;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(orig_session), SWITCH_LOG_DEBUG, "Transfering %s from %s to %s\n", cur->target,
+							  switch_core_session_get_name(orig_session), switch_core_session_get_name(new_session));
+
+			switch_core_media_bug_add(new_session, cur->function, cur->target, cur->callback,
+									  user_data_dup_func(new_session, cur->user_data),
+									  cur->stop_time, cur->flags, &new_bug);
+			switch_core_media_bug_destroy(cur);
+			total++;
+		} else {
+			last = cur;
+		}
+	}
+
+	if (!orig_session->bugs && switch_core_codec_ready(&orig_session->bug_codec)) {
+		switch_core_codec_destroy(&orig_session->bug_codec);
+	}
+
+	switch_thread_rwlock_unlock(orig_session->bug_rwlock);
+
+
+	return total ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_pop(switch_core_session_t *orig_session, const char *function, switch_media_bug_t **pop)
 {
 	switch_media_bug_t *bp;
