@@ -256,7 +256,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\curl\lib\arpa_telnet.h" />
     <ClInclude Include="..\..\curl\lib\base64.h" />
-    <ClInclude Include="..\..\curl\lib\ca-bundle.h" />
     <ClInclude Include="..\..\curl\lib\config-win32.h" />
     <ClInclude Include="..\..\curl\lib\connect.h" />
     <ClInclude Include="..\..\curl\lib\content_encoding.h" />

@@ -79,9 +79,6 @@
     <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pcre\internal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\pcre\pcre.h">
       <Filter>Header Files</Filter>
     </ClInclude>

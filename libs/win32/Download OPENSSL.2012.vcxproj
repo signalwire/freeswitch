@@ -51,7 +51,7 @@
     </BuildLog>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="OPENSSL\cleancount">
+    <CustomBuild Include="cleancount">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading OPENSSL</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\openssl-1.0.1c" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/openssl-1.0.1c.tar.gz "$(ProjectDir).."

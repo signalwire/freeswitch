@@ -855,7 +855,6 @@ if not exist "$(ProjectDir)..\..\openssl-1.0.1c\include\openssl\e_os.h" xcopy "$
     <ClInclude Include="..\..\openssl-1.0.1c\include\openssl\obj_mac.h" />
     <ClInclude Include="..\..\openssl-1.0.1c\include\openssl\objects.h" />
     <ClInclude Include="..\..\openssl-1.0.1c\include\openssl\ocsp.h" />
-    <ClInclude Include="..\..\openssl-1.0.1c\opensslconf.h" />
     <ClInclude Include="..\..\openssl-1.0.1c\include\openssl\opensslv.h" />
     <ClInclude Include="..\..\openssl-1.0.1c\include\openssl\ossl_typ.h" />
     <ClInclude Include="..\..\openssl-1.0.1c\include\openssl\pem.h" />

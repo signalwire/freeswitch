@@ -195,9 +195,6 @@
     <ClInclude Include="..\..\curl\lib\base64.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\curl\lib\ca-bundle.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\curl\lib\config-win32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
