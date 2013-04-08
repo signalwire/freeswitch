@@ -83,6 +83,7 @@ static cli_profile_t *global_profile;
 static int running = 1;
 static int thread_running = 0;
 static char *filter_uuid;
+static char *logfilter;
 #ifndef WIN32
 static EditLine *el;
 static History *myhistory;
@@ -731,6 +732,12 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 							DWORD len = (DWORD) strlen(handle->last_event->body);
 							DWORD outbytes = 0;
 #endif
+							if (logfilter) {
+								if (!strstr(handle->last_event->body, logfilter)) {
+									continue;
+								}
+							}
+
 							if (lname) {
 								level = atoi(lname);
 							}
@@ -806,6 +813,7 @@ static const char *cli_usage =
 	"/log, /nolog               \tLog commands.\n"
 	"/uuid                      \tFilter logs for a single call uuid\n"
 	"/filter                    \tFilter commands.\n"
+	"/logfilter                 \tFilter Log for a single string.\n"
 	"/debug [0-7]               \tSet debug level.\n"
 	"\n";
 
@@ -826,6 +834,18 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			) {
 			esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at ClueCon http://www.cluecon.com/\n");
 			return -1;
+		} else if (!strncasecmp(cmd, "logfilter", 9)) {
+			cmd += 9;
+			while (*cmd && *cmd == ' ') {
+				cmd++;
+			}
+			if (!esl_strlen_zero(cmd)) {
+				esl_safe_free(logfilter);
+				logfilter = strdup(cmd);
+			} else {
+				esl_safe_free(logfilter);
+			}
+			output_printf("Logfilter %s\n", logfilter ? "enabled" : "disabled");
 		} else if (!strncasecmp(cmd, "uuid", 4)) {
 			cmd += 4;
 			while (*cmd && *cmd == ' ') {
