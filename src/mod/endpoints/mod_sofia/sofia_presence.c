@@ -4252,6 +4252,10 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 		switch_event_t *event;
 		char *sql;
 		char *full_agent = NULL;
+		char network_ip[80];
+		int network_port = 0;
+
+		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 			
 		pd_dup = strdup(payload->pl_data);
 
@@ -4293,15 +4297,19 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				rpid = note_txt = "Unregistered";
 				if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
 					count = sofia_reg_reg_count(profile, from_user, from_host);
-					sub_count = sofia_presence_contact_count(profile, contact_str);
+
+					if (count != 1) {
+						/* Don't broadcast offline when there is more than one client or one signing off makes them all appear to sign off on some clients */
+						count = 0;
+					} else {
+						sub_count = sofia_presence_contact_count(profile, contact_str);
+					}
 				}
 			}
 
-			/* if (count > 1) let's not and say we did or all the clients who subscribe to their own presence will think they selves is offline */
-
 			event_type = sip_header_as_string(nh->nh_home, (void *) sip->sip_event);
 
-			if (count != 1) {
+			if (count) {
 				if ((sql = switch_mprintf("delete from sip_presence where sip_user='%q' and sip_host='%q' "
 										  " and profile_name='%q' and hostname='%q'", 
 										  from_user, from_host, profile->name, mod_sofia_globals.hostname))) {
@@ -4309,10 +4317,10 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				}
 					
 				if (sub_count > 0 && (sql = switch_mprintf("insert into sip_presence (sip_user, sip_host, status, rpid, expires, user_agent,"
-														   " profile_name, hostname, open_closed) "
-														   "values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q')",
+														   " profile_name, hostname, open_closed, network_ip, network_port) "
+														   "values ('%q','%q','%q','%q',%ld,'%q','%q','%q','%q','%q','%d')",
 														   from_user, from_host, note_txt, rpid, exp, full_agent, profile->name, 
-														   mod_sofia_globals.hostname, open_closed))) {
+														   mod_sofia_globals.hostname, open_closed, network_ip, network_port))) {
 					
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 				}
