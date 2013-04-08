@@ -174,7 +174,6 @@
     <ClInclude Include="..\..\include\zrtp_engine.h" />
     <ClInclude Include="..\..\include\zrtp_error.h" />
     <ClInclude Include="..\..\include\zrtp_iface.h" />
-    <ClInclude Include="..\..\include\zrtp_iface_builtin.h" />
     <ClInclude Include="..\..\include\zrtp_iface_cache.h" />
     <ClInclude Include="..\..\include\zrtp_iface_system.h" />
     <ClInclude Include="..\..\include\zrtp_legal.h" />
@@ -186,7 +185,6 @@
     <ClInclude Include="..\..\include\zrtp_srtp_builtin.h" />
     <ClInclude Include="..\..\include\zrtp_string.h" />
     <ClInclude Include="..\..\include\zrtp_types.h" />
-    <ClInclude Include="..\..\include\zrtp_utils.h" />
     <ClInclude Include="..\..\include\zrtp_version.h" />
     <ClInclude Include="..\..\third_party\bnlib\bn.h" />
     <ClInclude Include="..\..\third_party\bnlib\bn32.h" />

@@ -457,7 +457,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
-    <ClInclude Include="..\..\pcre\internal.h" />
     <ClInclude Include="..\..\pcre\pcre.h" />
     <ClInclude Include="..\..\pcre\pcre_internal.h" />
     <ClInclude Include="..\..\pcre\pcreposix.h" />

@@ -759,7 +759,6 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
     <ClInclude Include="..\..\src\include\switch_resample.h" />
     <ClInclude Include="..\..\src\include\switch_rtp.h" />
     <ClInclude Include="..\..\src\include\switch_scheduler.h" />
-    <ClInclude Include="..\..\src\include\switch_sqlite.h" />
     <ClInclude Include="..\..\src\include\switch_stun.h" />
     <ClInclude Include="..\..\src\include\switch_types.h" />
     <ClInclude Include="..\..\src\include\switch_utils.h" />

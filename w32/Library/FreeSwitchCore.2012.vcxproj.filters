@@ -318,9 +318,6 @@
     <ClInclude Include="..\..\src\include\switch_scheduler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\switch_sqlite.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\include\switch_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>

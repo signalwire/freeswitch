@@ -45,9 +45,6 @@
     <ClInclude Include="..\..\include\zrtp_iface.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\zrtp_iface_builtin.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\zrtp_iface_cache.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -79,9 +76,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\zrtp_types.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\zrtp_utils.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\zrtp_version.h">

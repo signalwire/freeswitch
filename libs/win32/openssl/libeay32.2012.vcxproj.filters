@@ -2074,9 +2074,6 @@
     <ClInclude Include="..\..\openssl-1.0.1c\include\openssl\ocsp.h">
       <Filter>Header Files\openssl</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\openssl-1.0.1c\opensslconf.h">
-      <Filter>Header Files\openssl</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\openssl-1.0.1c\include\openssl\opensslv.h">
       <Filter>Header Files\openssl</Filter>
     </ClInclude>
