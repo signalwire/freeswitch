@@ -2843,6 +2843,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_file_path", file_path);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_read_flags", read_flags);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_time", date);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "voicemail_uuid", use_uuid);
 
 		switch_safe_free(formatted_cid_num);
 
