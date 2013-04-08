@@ -3776,6 +3776,7 @@ SWITCH_STANDARD_API(session_audio_function)
 	switch_core_session_t *u_session = NULL;
 	char *mycmd = NULL;
 	int fail = 0;
+	int nochannel = 0;
 	int argc = 0;
 	char *argv[5] = { 0 };
 	int level;
@@ -3794,7 +3795,7 @@ SWITCH_STANDARD_API(session_audio_function)
 	}
 
 	if (!(u_session = switch_core_session_locate(argv[0]))) {
-		stream->write_function(stream, "-ERR No such channel!\n");
+		nochannel++;
 		goto done;
 	}
 
@@ -3826,7 +3827,9 @@ SWITCH_STANDARD_API(session_audio_function)
 
 	switch_safe_free(mycmd);
 
-	if (fail) {
+	if (nochannel) {
+		stream->write_function(stream, "-ERR No such channel!\n");
+	} else if (fail) {
 		stream->write_function(stream, "-USAGE: %s\n", AUDIO_SYNTAX);
 	} else {
 		stream->write_function(stream, "+OK\n");
