@@ -151,7 +151,7 @@ Sub ExecPrintOutput(Str)
 		End If
 	Loop Until (Process.Status <> 0) And (Process.StdOut.atEndOfStream)
 
-	Process.Terminate 
+	Process.Terminate
 	WScript.Sleep(500)
 End Sub
 
@@ -250,7 +250,7 @@ Sub Slow_Wget(URL, DestFolder)
 	const ForReading = 1 , ForWriting = 2 , ForAppending = 8
 	Set MyFile = FSO.OpenTextFile(DestFolder & filename ,ForWriting, True)
 	For i = 1 to lenb(xml.responseBody)
-	MyFile.write Chr(Ascb(midb(xml.responseBody,i,1)))
+		MyFile.write Chr(Ascb(midb(xml.responseBody,i,1)))
 	Next
 	MyFile.Close()
 	Set MyFile = Nothing
@@ -277,8 +277,8 @@ Function FindVersionStringInConfigure(strConfigFile, strVersionString)
 
 	strResult = ""
 	If colMatches.Count > 0 Then
-	For Each strMatch in colMatches
-		strResult = objRegEx.Replace(strMatch.Value, "$1")
+		For Each strMatch in colMatches
+			strResult = objRegEx.Replace(strMatch.Value, "$1")
 		Next
 	End If
 
@@ -296,6 +296,7 @@ Sub FindReplaceInFile(FileName, sFind, sReplace)
 	Const ForReading       =  1
 
 	Set fOrgFile = FSO.OpenTextFile(FileName, ForReading, FailIfNotExist, OpenAsASCII)
+'	Wscript.echo("FindReplaceInFile: " & FileName & " s/" & sFind & "/" & sReplace)
 	sText = fOrgFile.ReadAll
 	fOrgFile.Close
 	sText = Replace(sText, sFind, sReplace)
@@ -320,7 +321,7 @@ Function ExecAndGetResult(tmpFolder, VersionDir, execStr)
 	Do
 	Loop Until (oExec.Status <> 0) And (oExec.StdOut.atEndOfStream)
 
-	oExec.Terminate 
+	oExec.Terminate
 	WScript.Sleep(500)
 
 	FSO.DeleteFile(tmpFolder & "tmpExec.Bat")
@@ -366,6 +367,8 @@ End Function
 Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	Dim oExec
 
+	Wscript.echo("Checking if we're building a newer git version")
+
 	strVerMajor = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MAJOR")
 	strVerMinor = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MINOR")
 	strVerMicro = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MICRO")
@@ -399,7 +402,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		strRevisionHuman = ExecAndGetResult(tmpFolder, VersionDir, "git rev-list -n1 --abbrev=7 --abbrev-commit HEAD")
 
 		If strLastCommit <> "" And strLastCommitHuman <> "" And strRevision <> "" And strRevisionHuman <> "" Then
-			'Bild version string
+			'Build version string
 			strGitVer = "+git~" & strLastCommit & "~" & strRevision
 			strVerHuman = "git " & strRevisionHuman & " " & strLastCommitHuman
 
@@ -427,13 +430,29 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		Set sLastFile = Nothing
 	End If
 
-	If VERSION & " " & strVerHuman <> sLastVersion Then
+	Source = "source code"
+	If FSO.GetExtensionName(includedest) <> "inc" Then
+		Dim IncFn
+
+		IncFn = VersionDir & "\w32\Library\switch_version.inc"
+		If FSO.FileExists(IncFn) Then
+			Wscript.echo("CreateVersion: deleting - " & IncFn)
+			FSO.DeleteFile IncFn
+		End If
+	Else
+		Source = "resource files"
+	End If
+
+	sNewVersion = VERSION & " " & strVerHuman
+	If sNewVersion <> sLastVersion Or not FSO.FileExists(includedest) Then
 		Dim MyFile
 
 		Set MyFile = FSO.CreateTextFile(tmpFolder & "lastversion", True)
-		MyFile.WriteLine(VERSION & " " & strVerHuman)
+		MyFile.WriteLine(sNewVersion)
 		MyFile.Close
 		Set MyFile = Nothing
+
+		Wscript.echo("Updating " & Source & " from " & sLastVersion & " to " & sNewVersion)
 
 		FSO.CopyFile includebase, includedest, true
 		FindReplaceInFile includedest, "@SWITCH_VERSION_REVISION@", VERSION
@@ -441,6 +460,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		FindReplaceInFile includedest, "@SWITCH_VERSION_MINOR@", strVerMinor
 		FindReplaceInFile includedest, "@SWITCH_VERSION_MICRO@", strVerMicro
 		FindReplaceInFile includedest, "@SWITCH_VERSION_REVISION_HUMAN@", strVerHuman
+		FindReplaceInFile includedest, "@SWITCH_VERSION_YEAR@", YEAR(lastChangedDateTime)
 	End If
 
 End Sub

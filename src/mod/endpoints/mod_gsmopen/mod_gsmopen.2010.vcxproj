@@ -92,9 +92,8 @@
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
-      <AdditionalOptions>gsmlib.lib ctbd-0.16.lib "..\..\..\..\w32\library\debug\freeswitchcore.lib" "..\..\..\..\libs\libteletone\Debug\libteletone.lib" ksuser.lib "..\..\..\..\libs\win32\apr\debug\libapr-1.lib"
-rpcrt4.lib  "..\..\..\..\debug\libtiff.lib" "..\..\..\..\libs\spandsp\src\debug\spandsp.lib" %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>gsmlib\gsmlib-1.10-patched-13ubuntu\win32\Debug;libctb-0.16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -160,6 +159,12 @@ rpcrt4.lib  "..\..\..\..\debug\libtiff.lib" "..\..\..\..\libs\spandsp\src\debug\
     <ClCompile Include="mod_gsmopen.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\libs\spandsp\src\libspandsp.2010.vcxproj">
+      <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\libs\win32\libcbt\libcbt.2010.vcxproj">
+      <Project>{77bc1dd2-c9a1-44d7-bffa-1320370cacb9}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2010.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
     </ProjectReference>
