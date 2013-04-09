@@ -216,9 +216,6 @@
       </PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_WIN64;_DEBUG</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_WIN64</PreprocessorDefinitions>
-      <ShowProgress Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ShowProgress>
-      <ResourceOutputFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)$(TargetName).res</ResourceOutputFileName>
-      <DeploymentContent>false</DeploymentContent>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>

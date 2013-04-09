@@ -783,6 +783,15 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\src\include\switch.h;..\..\src\include\switch_apr.h;..\..\src\include\switch_buffer.h;..\..\src\include\switch_caller.h;..\..\src\include\switch_channel.h;..\..\src\include\switch_console.h;..\..\src\include\switch_core.h;..\..\src\include\switch_event.h;..\..\src\include\switch_frame.h;..\..\src\include\switch_ivr.h;..\..\src\include\switch_loadable_module.h;..\..\src\include\switch_log.h;..\..\src\include\switch_module_interfaces.h;..\..\src\include\switch_platform.h;..\..\src\include\switch_resample.h;..\..\src\include\switch_rtp.h;..\..\src\include\switch_sqlite.h;..\..\src\include\switch_stun.h;..\..\src\include\switch_types.h;..\..\src\include\switch_utils.h;..\..\src\include\switch_xml.h;..\..\src\switch_buffer.c;..\..\src\switch_caller.c;..\..\src\switch_channel.c;..\..\src\switch_config.c;..\..\src\switch_console.c;..\..\src\switch_core.c;..\..\src\switch_event.c;..\..\src\switch_ivr.c;..\..\src\switch_loadable_module.c;..\..\src\switch_log.c;..\..\src\switch_resample.c;..\..\src\switch_rtp.c;..\..\src\switch_stun.c;..\..\src\switch_utils.c;..\..\src\switch_xml.c;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\src\include\switch_version.h;lastversion;%(Outputs)</Outputs>
     </CustomBuild>
+    <CustomBuild Include="switch_version.inc.template">
+      <Message>Generating switch_version.inc</Message>
+      <Command>cscript /nologo "$(ProjectDir)..\..\libs\win32\util.vbs" Version  "$(ProjectDir)" "$(ProjectDir)..\..\" "$(ProjectDir)switch_version.inc.template" "$(ProjectDir)switch_version.inc"</Command>
+      <Outputs>$(ProjectDir)switch_version.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$ProjectDir)include\switch_version.h;$(ProjectDir)lastversion</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$ProjectDir)include\switch_version.h;$(ProjectDir)lastversion</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$ProjectDir)include\switch_version.h;$(ProjectDir)lastversion</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$ProjectDir)include\switch_version.h;$(ProjectDir)lastversion</AdditionalInputs>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libs\libteletone\libteletone.2010.vcxproj">
@@ -832,6 +841,19 @@ if not exist "$(OutDir)htdocs" xcopy "$(SolutionDir)htdocs\*.*" "$(OutDir)htdocs
       <Project>{6edfefd5-3596-4fa9-8eba-b331547b35a3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FreeSwitchCoreLib.rc">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_DEBUG</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_WIN64;_DEBUG</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_WIN64</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="switch_version.rc2" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
