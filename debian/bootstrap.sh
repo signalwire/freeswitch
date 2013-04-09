@@ -808,7 +808,7 @@ print_lang_control () {
 Package: freeswitch-lang-${lang//_/-}
 Architecture: all
 Depends: \${misc:Depends}
-Recommends: freeswitch-sounds-en-${lang} (= \${binary:Version})
+Recommends: freeswitch-sounds-${lang} (= \${binary:Version})
 Description: ${lang_name} language files for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
