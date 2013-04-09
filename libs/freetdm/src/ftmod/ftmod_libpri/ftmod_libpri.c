@@ -1149,7 +1149,8 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 		if (isdn_data) {
 			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(chan);
 			struct pri_sr *sr;
-			int ton;
+			int caller_ton;
+			int called_ton;
 
 			if (!(call = pri_new_call(isdn_data->spri.pri))) {
 				ftdm_log(FTDM_LOG_ERROR, "Failed to create new call on channel %d:%d\n",
@@ -1159,19 +1160,34 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 				return FTDM_SUCCESS;
 			}
 
-			ton = caller_data->dnis.type;
-			switch (ton) {
+			caller_ton = caller_data->ani.type;
+			switch (caller_ton) {
 			case FTDM_TON_NATIONAL:
-				ton = PRI_NATIONAL_ISDN;
+				caller_ton = PRI_NATIONAL_ISDN;
 				break;
 			case FTDM_TON_INTERNATIONAL:
-				ton = PRI_INTERNATIONAL_ISDN;
+				caller_ton = PRI_INTERNATIONAL_ISDN;
 				break;
 			case FTDM_TON_SUBSCRIBER_NUMBER:
-				ton = PRI_LOCAL_ISDN;
+				caller_ton = PRI_LOCAL_ISDN;
 				break;
 			default:
-				ton = isdn_data->ton;
+				caller_ton = isdn_data->ton;
+			}
+
+			called_ton = caller_data->dnis.type;
+			switch (called_ton) {
+			case FTDM_TON_NATIONAL:
+				called_ton = PRI_NATIONAL_ISDN;
+				break;
+			case FTDM_TON_INTERNATIONAL:
+				called_ton = PRI_INTERNATIONAL_ISDN;
+				break;
+			case FTDM_TON_SUBSCRIBER_NUMBER:
+				called_ton = PRI_LOCAL_ISDN;
+				break;
+			default:
+				called_ton = isdn_data->ton;
 			}
 
 			chan_priv->call = call;
@@ -1187,14 +1203,14 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 			pri_sr_set_channel(sr, ftdm_channel_get_id(chan), 1, 0);
 			pri_sr_set_bearer(sr, PRI_TRANS_CAP_SPEECH, isdn_data->layer1);
 
-			pri_sr_set_called(sr, caller_data->dnis.digits, ton, 1);
+			pri_sr_set_called(sr, caller_data->dnis.digits, called_ton, 1);
 			pri_sr_set_caller(sr, caller_data->cid_num.digits,
 					((isdn_data->opts & FTMOD_LIBPRI_OPT_OMIT_DISPLAY_IE) ? NULL : caller_data->cid_name),
-					ton,
+					caller_ton,
 					((caller_data->pres != 1) ? PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN : PRES_PROHIB_USER_NUMBER_NOT_SCREENED));
 
 			if (!(isdn_data->opts & FTMOD_LIBPRI_OPT_OMIT_REDIRECTING_NUMBER_IE)) {
-				pri_sr_set_redirecting(sr, caller_data->cid_num.digits, ton,
+				pri_sr_set_redirecting(sr, caller_data->cid_num.digits, caller_ton,
 					PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
 			}
 #ifdef HAVE_LIBPRI_AOC
