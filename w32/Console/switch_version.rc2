@@ -1,0 +1,51 @@
+#include "switch_version.inc"
+#include <verrsrc.h>
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION SWITCH_VERSION_MAJOR,SWITCH_VERSION_MINOR,SWITCH_VERSION_MICRO,0
+ PRODUCTVERSION SWITCH_VERSION_MAJOR,SWITCH_VERSION_MINOR,SWITCH_VERSION_MICRO,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGS 0x28L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "Comments", "See you at Cluecon!!"
+            VALUE "CompanyName", "FreeSWITCH"
+#ifdef _DEBUG
+  #ifdef _WIN64
+            VALUE "FileDescription", "FreeSwitchConsole " SWITCH_VERSION_ALL " x64 Debug"
+  #else
+            VALUE "FileDescription", "FreeSwitchConsole " SWITCH_VERSION_ALL " x86/win32 Debug"
+  #endif
+#else
+  #ifdef _WIN64
+            VALUE "FileDescription", "FreeSwitchConsole " SWITCH_VERSION_ALL " x64 Release"
+  #else
+            VALUE "FileDescription", "FreeSwitchConsole " SWITCH_VERSION_ALL " x86/win32 Release"
+  #endif
+#endif
+            VALUE "FileDescription", "FreeSwitchConsole " SWITCH_VERSION_ALL
+            VALUE "FileVersion", SWITCH_VERSION_MAJOR_STR "." SWITCH_VERSION_MINOR_STR "." SWITCH_VERSION_MICRO_STR
+            VALUE "InternalName", "Freeswitch Console " SWITCH_VERSION_ALL
+            VALUE "LegalCopyright", "© 2005-" SWITCH_VERSION_YEAR " www.freeswitch.org"
+            VALUE "OriginalFilename", "FreeSwitchConsole.exe"
+            VALUE "PrivateBuild", ""
+            VALUE "ProductName", "FreeSWITCH Console " SWITCH_VERSION_REVISION_HUMAN
+            VALUE "ProductVersion", SWITCH_VERSION_ALL
+            VALUE "SpecialBuild", SWITCH_VERSION_REVISION
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END
