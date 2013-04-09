@@ -66,7 +66,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>.\;..\..\libshout-2.2.2\src;..\..\libshout-2.2.2\include;..\..\libogg-1.1.3\include;..\..\pthreads-w32-2-7-0-release;..\..\libshout-2.2.2\win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\libshout-2.2.2\src;..\..\libshout-2.2.2\include;..\..\libogg-1.1.3\include;..\..\pthreads-w32-2-9-1;..\..\libshout-2.2.2\win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_LIB;_WIN32;VERSION="2.0.0";LIBSHOUT_MAJOR=2;LIBSHOUT_MINOR=0;LIBSHOUT_MICRO=0;HAVE_WINSOCK2_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -89,7 +89,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>.\;..\..\libshout-2.2.2\src;..\..\libshout-2.2.2\include;..\..\libogg-1.1.3\include;..\..\pthreads-w32-2-7-0-release;..\..\libshout-2.2.2\win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\libshout-2.2.2\src;..\..\libshout-2.2.2\include;..\..\libogg-1.1.3\include;..\..\pthreads-w32-2-9-1;..\..\libshout-2.2.2\win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_LIB;_WIN32;VERSION="2.0.0";LIBSHOUT_MAJOR=2;LIBSHOUT_MINOR=0;LIBSHOUT_MICRO=0;HAVE_WINSOCK2_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -108,7 +108,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\;..\..\libshout-2.2.2\src;..\..\libshout-2.2.2\include;..\..\libogg-1.1.3\include;..\..\pthreads-w32-2-7-0-release;..\..\libshout-2.2.2\win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\libshout-2.2.2\src;..\..\libshout-2.2.2\include;..\..\libogg-1.1.3\include;..\..\pthreads-w32-2-9-1;..\..\libshout-2.2.2\win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_WIN32;VERSION="2.0.0";LIBSHOUT_MAJOR=2;LIBSHOUT_MINOR=0;LIBSHOUT_MICRO=0;HAVE_WINSOCK2_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -130,7 +130,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\;..\..\libshout-2.2.2\src;..\..\libshout-2.2.2\include;..\..\libogg-1.1.3\include;..\..\pthreads-w32-2-7-0-release;..\..\libshout-2.2.2\win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\libshout-2.2.2\src;..\..\libshout-2.2.2\include;..\..\libogg-1.1.3\include;..\..\pthreads-w32-2-9-1;..\..\libshout-2.2.2\win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_WIN32;VERSION="2.0.0";LIBSHOUT_MAJOR=2;LIBSHOUT_MINOR=0;LIBSHOUT_MICRO=0;HAVE_WINSOCK2_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>

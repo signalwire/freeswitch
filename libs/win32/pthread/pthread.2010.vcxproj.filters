@@ -15,26 +15,26 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\pthreads-w32-2-7-0-release\pthread.c">
+    <ClCompile Include="..\..\pthreads-w32-2-9-1\pthread.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\pthreads-w32-2-7-0-release\implement.h">
+    <ClInclude Include="..\..\pthreads-w32-2-9-1\implement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pthreads-w32-2-7-0-release\pthread.h">
+    <ClInclude Include="..\..\pthreads-w32-2-9-1\pthread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pthreads-w32-2-7-0-release\sched.h">
+    <ClInclude Include="..\..\pthreads-w32-2-9-1\sched.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pthreads-w32-2-7-0-release\semaphore.h">
+    <ClInclude Include="..\..\pthreads-w32-2-9-1\semaphore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\pthreads-w32-2-7-0-release\version.rc">
+    <ResourceCompile Include="..\..\pthreads-w32-2-9-1\version.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
