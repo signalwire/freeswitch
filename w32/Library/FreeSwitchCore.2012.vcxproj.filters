@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\src\g711.c">
@@ -347,7 +347,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\..\src\include\switch_version.h.template" />
+    <CustomBuild Include="switch_version.inc.template">
+      <Filter>Version Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\include\switch_version.h.template">
+      <Filter>Version Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -356,5 +361,18 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{a1474195-5783-4c77-977f-59657b38fd01}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Version Files">
+      <UniqueIdentifier>{e2733d35-a786-4dc1-b258-dd8885b75c6b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FreeSwitchCoreLib.rc">
+      <Filter>Version Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="switch_version.rc2">
+      <Filter>Version Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

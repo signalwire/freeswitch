@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{0a4bdcda-43d0-4907-83ce-01f3a87cdf59}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\ctb.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\fifo.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\gpib.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\getopt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\iobase.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\kbhit.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\portscan.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\serport.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\serportx.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\include\ctb-0.16\timer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

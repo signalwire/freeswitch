@@ -86,7 +86,7 @@ SWITCH_MODULE_DEFINITION(mod_gsmopen, mod_gsmopen_load, mod_gsmopen_shutdown, NU
 SWITCH_END_EXTERN_C
 #define GSMOPEN_CHAT_PROTO "sms"
 #if 1
-                      SWITCH_STANDARD_API(gsm_function);
+					  SWITCH_STANDARD_API(gsm_function);
 /* BEGIN: Changes here */
 #define GSM_SYNTAX "list [full] || console || AT_command || remove < interface_name | interface_id > || reload"
 /* END: Changes heres */
@@ -391,7 +391,7 @@ static switch_status_t remove_interface(char *the_interface)
 		goto end;
 	}
 
-        LOKKA(tech_pvt->controldev_lock);
+		LOKKA(tech_pvt->controldev_lock);
 
 	globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 
@@ -473,7 +473,7 @@ static switch_status_t remove_interface(char *the_interface)
 	close(tech_pvt->GSMopenHandles.fdesc[1]);
 #endif /* WIN32 */
 
-        UNLOCKA(tech_pvt->controldev_lock);
+		UNLOCKA(tech_pvt->controldev_lock);
 	switch_mutex_lock(globals.mutex);
 	if (globals.gsm_console == &globals.GSMOPEN_INTERFACES[interface_id]) {
 		DEBUGA_GSMOPEN("interface '%s' no more console\n", GSMOPEN_P_LOG, the_interface);
@@ -508,8 +508,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
-	memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -561,7 +559,6 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->phone_callflow == CALLFLOW_STATUS_FINISHED) {
 			tech_pvt->phone_callflow = CALLFLOW_CALL_IDLE;
 		}
-		memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 		switch_core_session_set_private(session, NULL);
 	} else {
 		DEBUGA_GSMOPEN("!!!!!!NO tech_pvt!!!! CHANNEL DESTROY %s\n", GSMOPEN_P_LOG, switch_core_session_get_uuid(session));
@@ -760,7 +757,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if (tech_pvt->no_sound) {
 		goto cng;
 	}
-	memset(buffer2, 0, sizeof(buffer2));
 	samples = tech_pvt->serialPort_serial_audio->Read(buffer2, 640);
 
 	if (samples >= 320) {
@@ -782,7 +778,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			tech_pvt->buffer2_full = 0;
 			samples = 320;
 			DEBUGA_GSMOPEN("samples=%d FROM BUFFER\n", GSMOPEN_P_LOG, samples);
-			memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 		}
 
 	}
@@ -798,7 +793,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_mutex_unlock(tech_pvt->flag_mutex);
 
 	if (samples != 320) {
-		memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 		if (samples != 0) {
 			DEBUGA_GSMOPEN("samples=%d, goto cng\n", GSMOPEN_P_LOG, samples);
 		}
@@ -1062,7 +1056,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	private_t *tech_pvt = NULL;
 	int result;
 
-        if ((*new_session = switch_core_session_request_uuid(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool, switch_event_get_header(var_event, "origination_uuid"))) != 0) {
+		if ((*new_session = switch_core_session_request_uuid(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool, switch_event_get_header(var_event, "origination_uuid"))) != 0) {
 
 		switch_channel_t *channel = NULL;
 		switch_caller_profile_t *caller_profile;

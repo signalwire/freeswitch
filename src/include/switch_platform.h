@@ -86,8 +86,10 @@ SWITCH_BEGIN_EXTERN_C
 #define __FUNCTION__ ""
 #endif
 #endif
+#ifndef __cplusplus
 #undef inline
 #define inline __inline
+#endif
 #if !defined(_STDINT) && !defined(uint32_t)
 typedef unsigned __int8 uint8_t;
 typedef unsigned __int16 uint16_t;
