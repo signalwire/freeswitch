@@ -350,14 +350,32 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\..\src\include\switch_version.h.template" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Header Files">
       <UniqueIdentifier>{a2ba3786-6272-4d39-8004-9afeed96cdc6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{a1474195-5783-4c77-977f-59657b38fd01}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Version Files">
+      <UniqueIdentifier>{5eed22da-78ee-47ae-8c7f-7760ddbee518}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="switch_version.inc.template">
+      <Filter>Version Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\include\switch_version.h.template">
+      <Filter>Version Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="switch_version.rc2">
+      <Filter>Version Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FreeSwitchCoreLib.rc">
+      <Filter>Version Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
