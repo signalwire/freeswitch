@@ -384,6 +384,7 @@ opal
 /portaudio/lib-stamp
 /portaudio/Makefile
 /pthreads-w32-2-7-0-release/
+/pthreads-w32-2-9-1/
 /silk/compile
 /silk/Decoder
 /silk/Encoder
