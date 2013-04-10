@@ -83,17 +83,18 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app,
 #define RECUR_SPACE 4
 #define MAX_RECUR_SPACE 100 * RECUR_SPACE
 
-#define check_tz() tzoff = switch_channel_get_variable(channel, "tod_tz_offset"); \
-	tzname = switch_channel_get_variable(channel, "timezone");			\
+#define check_tz()														\
 	do {																\
+		tzoff = switch_event_get_header((switch_event_t *)channel, "tod_tz_offset");		\
+		tzname = switch_event_get_header((switch_event_t *)channel, "timezone");			\
 		if (!zstr(tzoff) && switch_is_number(tzoff)) {					\
 			offset = atoi(tzoff);										\
+			break;														\
 		} else {														\
 			tzoff = NULL;												\
 		}																\
-		break;															\
 	} while(tzoff)														
-		
+
 static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, 
 					   switch_caller_extension_t **extension, const char *exten_name, int recur)
 {
