@@ -2444,7 +2444,7 @@ static char create_channels_sql[] =
 	"   write_codec  VARCHAR(128),\n"
 	"   write_rate  VARCHAR(32),\n"
 	"   write_bit_rate  VARCHAR(32),\n"
-	"   secure VARCHAR(32),\n"
+	"   secure VARCHAR(64),\n"
 	"   hostname VARCHAR(256),\n"
 	"   presence_id VARCHAR(4096),\n"
 	"   presence_data VARCHAR(4096),\n"
