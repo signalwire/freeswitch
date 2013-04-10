@@ -3721,7 +3721,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	stfu_frame_t *jb_frame;
-	uint32_t ts;
+	uint32_t ts = 0;
 	char *b = NULL;
 
 	switch_assert(bytes);
@@ -3729,6 +3729,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	*bytes = sizeof(rtp_msg_t);
 
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
+
+	if (rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
+		goto udptl;
+	}
 
 	if (*bytes) {
 		b = (char *) &rtp_session->recv_msg;
@@ -3801,6 +3805,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			}
 		}
 	}
+
+ udptl:
 
 	ts = ntohl(rtp_session->recv_msg.header.ts);
 	rtp_session->recv_msg.ebody = NULL;
