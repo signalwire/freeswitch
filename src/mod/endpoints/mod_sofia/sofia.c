@@ -5249,7 +5249,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 		
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-			sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
+			switch_media_handle_clear_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU);
 			has_t38 = 0;
 		}
 
@@ -5270,10 +5270,10 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			
 			has_t38 = 0;
 		}
-
+		printf("WTF %d %d %d\n", switch_media_handle_test_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU), has_t38, status);
 		if (status > 199 && (switch_channel_test_flag(channel, CF_PROXY_MODE) || 
 							 switch_channel_test_flag(channel, CF_PROXY_MEDIA) || 
-							 (sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && (has_t38 || status > 299)))) {
+							 (switch_media_handle_test_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU) && (has_t38 || status > 299)))) {
 
 			if (sofia_test_flag(tech_pvt, TFLAG_SENT_UPDATE)) {
 				sofia_clear_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
@@ -5293,19 +5293,20 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Passing %d %s to other leg\n", status, phrase);
 
-					if (status == 491 && (sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU)||switch_channel_test_flag(channel, CF_PROXY_MODE))) {
+					if (status == 491 && (switch_media_handle_test_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU) ||
+										  switch_channel_test_flag(channel, CF_PROXY_MODE))) {
 						nua_respond(other_tech_pvt->nh, SIP_491_REQUEST_PENDING, TAG_END());
 						switch_core_session_rwunlock(other_session);
 						goto end;
 					} else if (status > 299) {
 						switch_channel_set_private(channel, "t38_options", NULL);
 						switch_channel_set_private(other_channel, "t38_options", NULL);
-						sofia_clear_flag(tech_pvt, TFLAG_T38_PASSTHRU);
-						sofia_clear_flag(other_tech_pvt, TFLAG_T38_PASSTHRU);
+						switch_media_handle_clear_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU);
+						switch_media_handle_clear_media_flag(other_tech_pvt->media_handle, SCMF_T38_PASSTHRU);
 						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
 						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ);
 						switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_FAIL);
-					} else if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
+					} else if (status == 200 && switch_media_handle_test_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU) && has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
 						switch_t38_options_t *t38_options = switch_core_media_extract_t38_options(session, sip->sip_payload->pl_data);
 						
 						if (!t38_options) {
@@ -5326,14 +5327,14 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					msg->numeric_arg = status;
 					msg->string_arg = switch_core_session_strdup(other_session, phrase);
 
-					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
+					if (status == 200 && switch_media_handle_test_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU) && has_t38) {
 						msg->pointer_arg = switch_core_session_strdup(other_session, "t38");
 					} else if (r_sdp) {
 						msg->pointer_arg = switch_core_session_strdup(other_session, r_sdp);
 						msg->pointer_arg_size = strlen(r_sdp);
 					}
 					
-					if (status == 200 && sofia_test_flag(tech_pvt, TFLAG_T38_PASSTHRU) && has_t38) {
+					if (status == 200 && switch_media_handle_test_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU) && has_t38) {
 						if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && 
 							switch_core_media_ready(other_tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 							switch_channel_clear_flag(tech_pvt->channel, CF_NOTIMER_DURING_BRIDGE);
