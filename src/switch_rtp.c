@@ -181,6 +181,7 @@ typedef struct {
 	uint8_t rready;
 	int missed_count;
 	int flips;
+	char last_sent_id[12];
 } switch_rtp_ice_t;
 
 struct switch_rtp;
@@ -715,7 +716,9 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 
 	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
 	switch_stun_packet_attribute_add_username(packet, ice->ice_user, (uint16_t)strlen(ice->ice_user));
-	
+
+	switch_set_string(ice->last_sent_id, packet->header.id);
+
 	//if (ice->pass && ice->type == ICE_GOOGLE_JINGLE) {
 	//	switch_stun_packet_attribute_add_password(packet, ice->pass, (uint16_t)strlen(ice->pass));
 	//}
@@ -861,6 +864,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	}
 
 	if ((ice->type & ICE_VANILLA)) {
+		if (!ok) ok = !strcmp(packet->header.id, ice->last_sent_id);
+		
 		if (!ok && ice == &rtp_session->ice && rtp_session->rtcp_ice.ice_params && pri && 
 			*pri == rtp_session->rtcp_ice.ice_params->cands[rtp_session->rtcp_ice.ice_params->chosen[1]][1].priority) {
 			ice = &rtp_session->rtcp_ice;
@@ -954,7 +959,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	if (ice->missed_count > 3) {
 		ice->rready = 0;
 	}
-
 
 	if (ok || !ice->rready) {
 		if ((packet->header.type == SWITCH_STUN_BINDING_RESPONSE)) {
