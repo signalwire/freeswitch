@@ -196,6 +196,9 @@
     <ClInclude Include="getopt\getopt.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\w32\Console\FreeSwitchConsole.2010.vcxproj">
+      <Project>{1af3a893-f7be-43dd-b697-8ab2397c0d67}</Project>
+    </ProjectReference>
     <ProjectReference Include="src\esl.2010.vcxproj">
       <Project>{cf405366-9558-4ae8-90ef-5e21b51ccb4e}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -212,7 +215,8 @@
       </PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_WIN64;_DEBUG</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_WIN64</PreprocessorDefinitions>
-    </ResourceCompile>  </ItemGroup>
+    </ResourceCompile>
+  </ItemGroup>
   <ItemGroup>
     <None Include="switch_version.rc2" />
   </ItemGroup>
