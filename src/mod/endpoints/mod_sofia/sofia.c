@@ -5270,7 +5270,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			
 			has_t38 = 0;
 		}
-		printf("WTF %d %d %d\n", switch_media_handle_test_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU), has_t38, status);
+
 		if (status > 199 && (switch_channel_test_flag(channel, CF_PROXY_MODE) || 
 							 switch_channel_test_flag(channel, CF_PROXY_MEDIA) || 
 							 (switch_media_handle_test_media_flag(tech_pvt->media_handle, SCMF_T38_PASSTHRU) && (has_t38 || status > 299)))) {
