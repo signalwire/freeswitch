@@ -225,8 +225,12 @@ case $host_cpu in
      i*86 | x86_64 )
 	AC_DEFINE(CPU_CISC, 1,
 	   [Define if building for a CISC machine (e.g. Intel).])
-        AC_DEFINE(HAVE_X86, 1,
-	   [Define to use X86 inlined assembly code]);; 
+	# Do not enable use of asm for MACOSX
+        if test "x$new_AM_CFLAGS" != "x-DMACOSX"; then 
+	  AC_DEFINE(HAVE_X86, 1,
+	   [Define to use X86 inlined assembly code]) 
+	fi
+	;;
 	* )
 	# CPU_RISC is only supported for big endian machines.
 	if test "$ac_cv_c_bigendian" = "yes"; then
