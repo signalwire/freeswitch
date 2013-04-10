@@ -72,15 +72,16 @@ typedef enum {
 } break_t;
 
 
-#define check_tz() tzoff = switch_event_get_header(event, "tod_tz_offset"); \
-	tzname = switch_event_get_header(event, "timezone");			\
+#define check_tz()														\
 	do {																\
+		tzoff = switch_event_get_header(event, "tod_tz_offset");		\
+		tzname = switch_event_get_header(event, "timezone");			\
 		if (!zstr(tzoff) && switch_is_number(tzoff)) {					\
 			offset = atoi(tzoff);										\
+			break;														\
 		} else {														\
 			tzoff = NULL;												\
 		}																\
-		break;															\
 	} while(tzoff)														
 
 static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_t **extension)
@@ -259,7 +260,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 
 				if (field && strchr(expression, '(')) {
 					len = (uint32_t) (strlen(data) + strlen(field_data) + 10) * proceed;
-					if (!(substituted = malloc(len))) {
+					if (!(substituted = (char *) malloc(len))) {
 						abort();
 					}
 					memset(substituted, 0, len);
@@ -450,10 +451,10 @@ static switch_status_t chat_send(switch_event_t *message_event)
 SWITCH_STANDARD_CHAT_APP(system_function)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n", data);
-        if (switch_system(data, SWITCH_TRUE) < 0) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", data);
+	if (switch_system(data, SWITCH_TRUE) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", data);
 		return SWITCH_STATUS_FALSE;
-        }
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
