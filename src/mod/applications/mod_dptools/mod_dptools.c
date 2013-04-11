@@ -2791,6 +2791,16 @@ SWITCH_STANDARD_APP(preprocess_session_function)
 	switch_ivr_preprocess_session(session, (char *) data);
 }
 
+SWITCH_STANDARD_APP(record_session_mask_function)
+{
+	switch_ivr_record_session_mask(session, (char *) data, SWITCH_TRUE);
+}
+
+SWITCH_STANDARD_APP(record_session_unmask_function)
+{
+	switch_ivr_record_session_mask(session, (char *) data, SWITCH_FALSE);
+}
+
 SWITCH_STANDARD_APP(record_session_function)
 {
 	char *path = NULL;
@@ -5459,6 +5469,10 @@ SWITCH_STANDARD_API(page_api_function)
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
+
+#define SESS_REC_MASK_DESC "Replace audio in a recording with blank data to mask critical voice sections"
+#define SESS_REC_UNMASK_DESC "Resume normal operation after calling mask"
+
 #define STOP_SESS_REC_DESC "Stops a background recording of the entire session"
 #define SCHED_TRANSF_DESCR "Schedule a transfer in the future"
 #define SCHED_BROADCAST_DESCR "Schedule a broadcast in the future"
@@ -5690,6 +5704,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   "\n\t<min> <max> <tries> <timeout> <terminators> <file> <invalid_file> <var_name> <regexp> [<digit_timeout>] ['<failure_ext> [failure_dp [failure_context]]']", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path> [+<timeout>]", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "record_session_mask", "Mask audio in recording", SESS_REC_MASK_DESC, record_session_mask_function, "<path>", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "record_session_unmask", "Resume recording", SESS_REC_UNMASK_DESC, record_session_unmask_function, "<path>", SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "record", "Record File", "Record a file from the channels input", record_function,
 				   "<path> [<time_limit_secs>] [<silence_thresh>] [<silence_hits>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "preprocess", "pre-process", "pre-process", preprocess_session_function, "", SAF_NONE);

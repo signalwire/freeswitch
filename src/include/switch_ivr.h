@@ -982,6 +982,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t *
 SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name, const char *domain_name);
 SWITCH_DECLARE(switch_status_t) switch_ivr_kill_uuid(const char *uuid, switch_call_cause_t cause);
 SWITCH_DECLARE(switch_status_t) switch_ivr_blind_transfer_ack(switch_core_session_t *session, switch_bool_t success);
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_mask(switch_core_session_t *session, const char *file, switch_bool_t on);
 
 /** @} */
 
