@@ -2245,7 +2245,6 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
 
     span_log(&s->logging, SPAN_LOG_FLOW, "Choose compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
 
-
     s->mutual_bilevel_resolutions = s->supported_bilevel_resolutions;
     s->mutual_colour_resolutions = s->supported_colour_resolutions;
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_1200_1200_CAPABLE))
@@ -2330,9 +2329,11 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     }
     /* A4 is always supported. */
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_UNLIMITED_LENGTH_CAPABLE))
+    {
         s->mutual_image_sizes &= ~T4_SUPPORT_LENGTH_UNLIMITED;
-    if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_A4_B4_LENGTH_CAPABLE))
-        s->mutual_image_sizes &= ~T4_SUPPORT_LENGTH_B4;
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_A4_B4_LENGTH_CAPABLE))
+            s->mutual_image_sizes &= ~T4_SUPPORT_LENGTH_B4;
+    }
     if (!test_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LETTER_CAPABLE))
         s->mutual_image_sizes &= ~T4_SUPPORT_LENGTH_US_LETTER;
     if (!test_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LEGAL_CAPABLE))
@@ -6716,6 +6717,8 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
     s->supported_image_sizes = T4_SUPPORT_WIDTH_215MM
                              | T4_SUPPORT_LENGTH_US_LETTER
                              | T4_SUPPORT_LENGTH_US_LEGAL
+                             | T4_SUPPORT_LENGTH_A4
+                             | T4_SUPPORT_LENGTH_B4
                              | T4_SUPPORT_LENGTH_UNLIMITED;
     /* Set the output encoding to something safe. Most things get 1D and 2D
        encoding right. Quite a lot get other things wrong. */
