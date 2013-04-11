@@ -82,6 +82,10 @@ typedef struct
     int x_resolution;
     /*! \brief Row-to-row (Y) resolution in pixels per metre on the wire. */
     int y_resolution;
+    /*! \brief Code for the combined X and Y resolution of the image in the file. */
+    int resolution_code;
+    /*! \brief Image type - bi-level, gray, colour, etc. */
+    int image_type;
 } t4_tx_metadata_t;
 
 /*!

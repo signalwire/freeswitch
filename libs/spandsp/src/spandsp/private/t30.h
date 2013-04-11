@@ -222,10 +222,12 @@ struct t30_state_s
     int local_interrupt_pending;
     /*! \brief The common ground in compression schemes between the local and far ends. */
     int mutual_compressions;
-    /*! \brief The common group supported bi-level image resolutions. */
+    /*! \brief The common group of supported bi-level image resolutions. */
     int mutual_bilevel_resolutions;
-    /*! \brief The common group supported colour image resolutions. */
+    /*! \brief The common group of supported colour image resolutions. */
     int mutual_colour_resolutions;
+    /*! \brief The common group of supported image sizes. */
+    int mutual_image_sizes;
     /*! \brief The image coding being used on the line. */
     int line_encoding;
     /*! \brief The image coding being used for output files. */

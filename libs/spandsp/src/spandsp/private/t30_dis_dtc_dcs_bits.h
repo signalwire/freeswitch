@@ -80,9 +80,17 @@
 /* Standard facsimile terminals conforming to ITU-T Rec. T.4 must have the following capability:
    Paper length = 297 mm. */
 
-/* Bits 17, 18 - recording width */
+#define T30_DIS_BIT_215MM_255MM_WIDTH_CAPABLE               17
+#define T30_DCS_BIT_255MM_WIDTH                             17
 
-/* Bits 19, 20 - paper length */
+#define T30_DIS_BIT_215MM_255MM_303MM_WIDTH_CAPABLE         18
+#define T30_DCS_BIT_303MM_WIDTH                             18
+
+#define T30_DIS_BIT_A4_B4_LENGTH_CAPABLE                    19
+#define T30_DCS_BIT_B4_LENGTH                               19
+
+#define T30_DIS_BIT_UNLIMITED_LENGTH_CAPABLE                20
+#define T30_DCS_BIT_UNLIMITED_LENGTH                        20
 
 /* Bits 21, 22, 23 - min scan line time */
 

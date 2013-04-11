@@ -94,7 +94,57 @@ typedef struct
     int bit_mask;
 } t85_packer_t;
 
+typedef struct
+{
+    float resolution;
+    int code;
+} res_table_t;
+
 static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length);
+
+static const res_table_t x_res_table[] =
+{
+    //{ 100.0f/CM_PER_INCH, T4_X_RESOLUTION_100},
+    { 102.0f/CM_PER_INCH, T4_X_RESOLUTION_R4},
+    //{ 200.0f/CM_PER_INCH, T4_X_RESOLUTION_200},
+    { 204.0f/CM_PER_INCH, T4_X_RESOLUTION_R8},
+    { 300.0f/CM_PER_INCH, T4_X_RESOLUTION_300},
+    //{ 400.0f/CM_PER_INCH, T4_X_RESOLUTION_400},
+    { 408.0f/CM_PER_INCH, T4_X_RESOLUTION_R16},
+    { 600.0f/CM_PER_INCH, T4_X_RESOLUTION_600},
+    { 800.0f/CM_PER_INCH, T4_X_RESOLUTION_800},
+    {1200.0f/CM_PER_INCH, T4_X_RESOLUTION_1200},
+    {             -1.00f, -1}
+};
+
+static const res_table_t y_res_table[] =
+{
+    {             38.50f, T4_Y_RESOLUTION_STANDARD},
+    //{ 100.0f/CM_PER_INCH, T4_Y_RESOLUTION_100},
+    {             77.00f, T4_Y_RESOLUTION_FINE},
+    //{ 200.0f/CM_PER_INCH, T4_Y_RESOLUTION_200},
+    { 300.0f/CM_PER_INCH, T4_Y_RESOLUTION_300},
+    {            154.00f, T4_Y_RESOLUTION_SUPERFINE},
+    //{ 400.0f/CM_PER_INCH, T4_Y_RESOLUTION_400},
+    { 600.0f/CM_PER_INCH, T4_Y_RESOLUTION_600},
+    { 800.0f/CM_PER_INCH, T4_Y_RESOLUTION_800},
+    {1200.0f/CM_PER_INCH, T4_Y_RESOLUTION_1200},
+    {             -1.00f, -1}
+};
+
+static const int resolution_map[10][10] =
+{
+    {                    0, 0,                     0,  T4_RESOLUTION_R8_STANDARD,                     0,                     0,                           0,                      0, 0,                       0},
+    {T4_RESOLUTION_100_100, 0, T4_RESOLUTION_200_100,                          0,                     0,                     0,                           0,                      0, 0,                       0},
+    {                    0, 0,                     0,      T4_RESOLUTION_R8_FINE,                     0,                     0,                           0,                      0, 0,                       0},
+    {                    0, 0, T4_RESOLUTION_200_200,                          0,                     0,                     0,                           0,                      0, 0,                       0},
+    {                    0, 0,                     0,                          0, T4_RESOLUTION_300_300,                     0,                           0,                      0, 0,                       0},
+    {                    0, 0,                     0, T4_RESOLUTION_R8_SUPERFINE,                     0,                     0, T4_RESOLUTION_R16_SUPERFINE,                      0, 0,                       0},
+    {                    0, 0, T4_RESOLUTION_200_400,                          0,                     0, T4_RESOLUTION_400_400,                           0,                      0, 0,                       0},
+    {                    0, 0,                     0,                          0, T4_RESOLUTION_300_600,                     0,                           0,  T4_RESOLUTION_600_600, 0,                       0},
+    {                    0, 0,                     0,                          0,                     0, T4_RESOLUTION_400_800,                           0,                      0, 0,                       0},
+    {                    0, 0,                     0,                          0,                     0,                     0,                           0, T4_RESOLUTION_600_1200, 0, T4_RESOLUTION_1200_1200},
+};
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
 /* TIFF-FX related extensions to the tag set supported by libtiff */
@@ -163,15 +213,39 @@ SPAN_DECLARE(void) TIFF_FX_init(void)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-static int test_resolution(int res_unit, float actual, float expected)
+static int match_resolution(int res_unit, float actual, const res_table_t table[])
 {
+    int i;
+    int best_entry;
+    float best_ratio;
+    float ratio;
+
+    if (actual == 0.0f)
+        return -1;
+
     if (res_unit == RESUNIT_INCH)
-        actual *= 1.0f/CM_PER_INCH;
-    return (expected*0.95f <= actual  &&  actual <= expected*1.05f);
+        actual /= CM_PER_INCH;
+    best_ratio = 0.0f;
+    best_entry = -1;
+    for (i = 0;  table[i].code > 0;  i++)
+    {
+        if (actual > table[i].resolution)
+            ratio = table[i].resolution/actual;
+        else
+            ratio = actual/table[i].resolution;
+        if (ratio > best_ratio)
+        {
+            best_entry = i;
+            best_ratio = ratio;
+        }
+    }
+    if (best_ratio < 0.95f)
+        return -1;
+    return best_entry;
 }
 /*- End of function --------------------------------------------------------*/
 
-#if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if 0 //defined(SPANDSP_SUPPORT_TIFF_FX)
 static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
 {
     int i;
@@ -220,36 +294,6 @@ static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
 
 static int get_tiff_directory_info(t4_tx_state_t *s)
 {
-    static const struct
-    {
-        float resolution;
-        int code;
-    } x_res_table[] =
-    {
-        { 102.0f/CM_PER_INCH, T4_X_RESOLUTION_R4},
-        { 204.0f/CM_PER_INCH, T4_X_RESOLUTION_R8},
-        { 300.0f/CM_PER_INCH, T4_X_RESOLUTION_300},
-        { 408.0f/CM_PER_INCH, T4_X_RESOLUTION_R16},
-        { 600.0f/CM_PER_INCH, T4_X_RESOLUTION_600},
-        { 800.0f/CM_PER_INCH, T4_X_RESOLUTION_800},
-        {1200.0f/CM_PER_INCH, T4_X_RESOLUTION_1200},
-        {             -1.00f, -1}
-    };
-    static const struct
-    {
-        float resolution;
-        int code;
-    } y_res_table[] =
-    {
-        {             38.50f, T4_Y_RESOLUTION_STANDARD},
-        {             77.00f, T4_Y_RESOLUTION_FINE},
-        { 300.0f/CM_PER_INCH, T4_Y_RESOLUTION_300},
-        {            154.00f, T4_Y_RESOLUTION_SUPERFINE},
-        { 600.0f/CM_PER_INCH, T4_Y_RESOLUTION_600},
-        { 800.0f/CM_PER_INCH, T4_Y_RESOLUTION_800},
-        {1200.0f/CM_PER_INCH, T4_Y_RESOLUTION_1200},
-        {             -1.00f, -1}
-    };
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     static const char *tiff_fx_fax_profiles[] =
     {
@@ -265,12 +309,12 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     char uu[10];
     uint64_t diroff;
     uint8_t parm8;
-    uint16_t parm16;
 #endif
     uint32_t parm32;
+    int best_x_entry;
+    int best_y_entry;
     float x_resolution;
     float y_resolution;
-    int i;
     t4_tx_tiff_state_t *t;
     uint16_t bits_per_sample;
     uint16_t samples_per_pixel;
@@ -324,36 +368,24 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     TIFFGetField(t->tiff_file, TIFFTAG_COMPRESSION, &t->compression);
     t->fill_order = FILLORDER_LSB2MSB;
 
-    /* Allow a little range for the X resolution in centimeters. The spec doesn't pin down the
-       precise value. The other value should be exact. */
-    /* Treat everything we can't match as R8. Most FAXes are this resolution anyway. */
-    s->metadata.x_resolution = T4_X_RESOLUTION_R8;
-    for (i = 0;  x_res_table[i].code > 0;  i++)
-    {
-        if (test_resolution(res_unit, x_resolution, x_res_table[i].resolution))
-        {
-            s->metadata.x_resolution = x_res_table[i].code;
-            break;
-        }
-    }
     if (res_unit == RESUNIT_INCH)
         t->image_x_resolution = x_resolution*100.0f/CM_PER_INCH;
     else
         t->image_x_resolution = x_resolution*100.0f;
+    /* Treat everything we can't match as R8. Most FAXes are this resolution anyway. */
+    if ((best_x_entry = match_resolution(res_unit, x_resolution, x_res_table)) < 0)
+        best_x_entry = 3;
+    s->metadata.x_resolution = x_res_table[best_x_entry].code;
 
-    s->metadata.y_resolution = T4_Y_RESOLUTION_STANDARD;
-    for (i = 0;  y_res_table[i].code > 0;  i++)
-    {
-        if (test_resolution(res_unit, y_resolution, y_res_table[i].resolution))
-        {
-            s->metadata.y_resolution = y_res_table[i].code;
-            break;
-        }
-    }
     if (res_unit == RESUNIT_INCH)
         t->image_y_resolution = y_resolution*100.0f/CM_PER_INCH;
     else
         t->image_y_resolution = y_resolution*100.0f;
+    if ((best_y_entry = match_resolution(res_unit, y_resolution, y_res_table)) < 0)
+        best_y_entry = 0;
+    s->metadata.y_resolution = y_res_table[best_y_entry].code;
+
+    //s->metadata.resolution_code = resolution_map[best_y_entry][best_x_entry];
 
     t4_tx_set_image_width(s, s->image_width);
     t4_tx_set_image_length(s, s->image_length);
@@ -412,44 +444,15 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
 
 static int test_tiff_directory_info(t4_tx_state_t *s)
 {
-    static const struct
-    {
-        float resolution;
-        int code;
-    } x_res_table[] =
-    {
-        { 102.0f/CM_PER_INCH, T4_X_RESOLUTION_R4},
-        { 204.0f/CM_PER_INCH, T4_X_RESOLUTION_R8},
-        { 300.0f/CM_PER_INCH, T4_X_RESOLUTION_300},
-        { 408.0f/CM_PER_INCH, T4_X_RESOLUTION_R16},
-        { 600.0f/CM_PER_INCH, T4_X_RESOLUTION_600},
-        { 800.0f/CM_PER_INCH, T4_X_RESOLUTION_800},
-        {1200.0f/CM_PER_INCH, T4_X_RESOLUTION_1200},
-        {             -1.00f, -1}
-    };
-    static const struct
-    {
-        float resolution;
-        int code;
-    } y_res_table[] =
-    {
-        {             38.50f, T4_Y_RESOLUTION_STANDARD},
-        {             77.00f, T4_Y_RESOLUTION_FINE},
-        { 300.0f/CM_PER_INCH, T4_Y_RESOLUTION_300},
-        {            154.00f, T4_Y_RESOLUTION_SUPERFINE},
-        { 600.0f/CM_PER_INCH, T4_Y_RESOLUTION_600},
-        { 800.0f/CM_PER_INCH, T4_Y_RESOLUTION_800},
-        {1200.0f/CM_PER_INCH, T4_Y_RESOLUTION_1200},
-        {             -1.00f, -1}
-    };
     uint16_t res_unit;
     uint32_t parm32;
+    int best_x_entry;
+    int best_y_entry;
     float x_resolution;
     float y_resolution;
     uint16_t bits_per_sample;
     uint16_t samples_per_pixel;
     int image_type;
-    int i;
     t4_tx_tiff_state_t *t;
 
     t = &s->tiff;
@@ -490,23 +493,17 @@ static int test_tiff_directory_info(t4_tx_state_t *s)
     res_unit = RESUNIT_INCH;
     TIFFGetField(t->tiff_file, TIFFTAG_RESOLUTIONUNIT, &res_unit);
 
-    /* Allow a little range for the X resolution in centimeters. The spec doesn't pin down the
-       precise value. The other value should be exact. */
     /* Treat everything we can't match as R8. Most FAXes are this resolution anyway. */
-    for (i = 0;  x_res_table[i].code > 0;  i++)
-    {
-        if (test_resolution(res_unit, x_resolution, x_res_table[i].resolution))
-            break;
-    }
-    if (s->metadata.x_resolution != x_res_table[i].code)
+    if ((best_x_entry = match_resolution(res_unit, x_resolution, x_res_table)) < 0)
         return 1;
-    for (i = 0;  y_res_table[i].code > 0;  i++)
-    {
-        if (test_resolution(res_unit, y_resolution, y_res_table[i].resolution))
-            break;
-    }
-    if (s->metadata.y_resolution != y_res_table[i].code)
+    if (s->metadata.x_resolution != x_res_table[best_x_entry].code)
         return 1;
+
+    if ((best_y_entry = match_resolution(res_unit, y_resolution, y_res_table)) < 0)
+        return 1;
+    if (s->metadata.y_resolution != y_res_table[best_y_entry].code)
+        return 1;
+
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

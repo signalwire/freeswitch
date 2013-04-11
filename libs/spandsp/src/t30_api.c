@@ -754,7 +754,10 @@ SPAN_DECLARE(int) t30_set_supported_colour_resolutions(t30_state_t *s, int suppo
 
 SPAN_DECLARE(int) t30_set_supported_image_sizes(t30_state_t *s, int supported_image_sizes)
 {
-    s->supported_image_sizes = supported_image_sizes;
+    /* Force the sizes which are always available */
+    s->supported_image_sizes = supported_image_sizes
+                             | T4_SUPPORT_WIDTH_215MM
+                             | T4_SUPPORT_LENGTH_A4;
     t30_build_dis_or_dtc(s);
     return 0;
 }

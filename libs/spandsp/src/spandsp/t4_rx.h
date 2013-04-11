@@ -98,11 +98,11 @@ enum
     T30_SUPPORT_COMPRESSION_GRAYSCALE = 0x1000000,
     /*! Colour support by multi-level codecs */
     T30_SUPPORT_COMPRESSION_COLOUR = 0x2000000,
-    /*! 12 bit mode for gray scale and colour */
+    /*! 12 bit mode for gray-scale and colour */
     T30_SUPPORT_COMPRESSION_12BIT = 0x4000000,
     /*! Convert a colour image to a gray-scale one */
     T30_SUPPORT_COMPRESSION_COLOUR_TO_GRAY = 0x8000000,
-    /*! Dither a gray scale image down a simple bilevel image, with rescaling to fit a FAX page */
+    /*! Dither a gray-scale image down a simple bilevel image, with rescaling to fit a FAX page */
     T30_SUPPORT_GRAY_TO_BILEVEL = 0x10000000,
     /*! Dither a colour image down a simple bilevel image, with rescaling to fit a FAX page */
     T30_SUPPORT_COLOUR_TO_BILEVEL = 0x20000000,
@@ -141,7 +141,7 @@ typedef enum
     T4_X_RESOLUTION_200 = 7874,
     T4_X_RESOLUTION_R8 = 8031,
     T4_X_RESOLUTION_300 = 11811,
-    T4_X_RESOLUTION_400 = 15784,
+    T4_X_RESOLUTION_400 = 15748,
     T4_X_RESOLUTION_R16 = 16063,
     T4_X_RESOLUTION_600 = 23622,
     T4_X_RESOLUTION_800 = 31496,
@@ -176,27 +176,27 @@ enum
     /*! Double FAX resolution 408dpi x 391dpi - bi-level only */
     T4_RESOLUTION_R16_SUPERFINE = 4,
 
-    /*! 100dpi x 100 dpi - gray-scale and colour only */
+    /*! 100dpi x 100dpi - gray-scale and colour only */
     T4_RESOLUTION_100_100 = 5,
-    /*! 200dpi x 100 dpi - bi-level only */
+    /*! 200dpi x 100dpi - bi-level only */
     T4_RESOLUTION_200_100 = 6,
-    /*! 200dpi x 200 dpi */
+    /*! 200dpi x 200dpi */
     T4_RESOLUTION_200_200 = 7,
-    /*! 200dpi x 400 dpi - bi-level only */
+    /*! 200dpi x 400dpi - bi-level only */
     T4_RESOLUTION_200_400 = 8,
-    /*! 300dpi x 300 dpi */
+    /*! 300dpi x 300dpi */
     T4_RESOLUTION_300_300 = 9,
-    /*! 300dpi x 600 dpi - bi-level only */
+    /*! 300dpi x 600dpi - bi-level only */
     T4_RESOLUTION_300_600 = 10,
-    /*! 400dpi x 400 dpi */
+    /*! 400dpi x 400dpi */
     T4_RESOLUTION_400_400 = 11,
-    /*! 400dpi x 800 dpi - bi-level only */
+    /*! 400dpi x 800dpi - bi-level only */
     T4_RESOLUTION_400_800 = 12,
-    /*! 600dpi x 600 dpi */
+    /*! 600dpi x 600dpi */
     T4_RESOLUTION_600_600 = 13,
-    /*! 600dpi x 1200 dpi - bi-level only */
+    /*! 600dpi x 1200dpi - bi-level only */
     T4_RESOLUTION_600_1200 = 14,
-    /*! 1200dpi x 1200 dpi */
+    /*! 1200dpi x 1200dpi */
     T4_RESOLUTION_1200_1200 = 15
 };
 
@@ -211,27 +211,27 @@ enum
     /*! Support double FAX resolution 408dpi x 391dpi - bi-level only */
     T4_SUPPORT_RESOLUTION_R16_SUPERFINE = 0x8,
 
-    /*! Support 100dpi x 100 dpi - gray scale and colour only */
+    /*! Support 100dpi x 100dpi - gray-scale and colour only */
     T4_SUPPORT_RESOLUTION_100_100 = 0x10,
-    /*! Support 200dpi x 100 dpi - bi-level only */
+    /*! Support 200dpi x 100dpi - bi-level only */
     T4_SUPPORT_RESOLUTION_200_100 = 0x20,
-    /*! Support 200dpi x 200 dpi */
+    /*! Support 200dpi x 200dpi */
     T4_SUPPORT_RESOLUTION_200_200 = 0x40,
-    /*! Support 200dpi x 400 dpi - bi-level only */
+    /*! Support 200dpi x 400dpi - bi-level only */
     T4_SUPPORT_RESOLUTION_200_400 = 0x80,
-    /*! Support 300dpi x 300 dpi */
+    /*! Support 300dpi x 300dpi */
     T4_SUPPORT_RESOLUTION_300_300 = 0x100,
-    /*! Support 300dpi x 600 dpi - bi-level only */
+    /*! Support 300dpi x 600dpi - bi-level only */
     T4_SUPPORT_RESOLUTION_300_600 = 0x200,
-    /*! Support 400dpi x 400 dpi */
+    /*! Support 400dpi x 400dpi */
     T4_SUPPORT_RESOLUTION_400_400 = 0x400,
-    /*! Support 400dpi x 800 dpi - bi-level only */
+    /*! Support 400dpi x 800dpi - bi-level only */
     T4_SUPPORT_RESOLUTION_400_800 = 0x800,
-    /*! Support 600dpi x 600 dpi */
+    /*! Support 600dpi x 600dpi */
     T4_SUPPORT_RESOLUTION_600_600 = 0x1000,
-    /*! Support 600dpi x 1200 dpi - bi-level only */
+    /*! Support 600dpi x 1200dpi - bi-level only */
     T4_SUPPORT_RESOLUTION_600_1200 = 0x2000,
-    /*! Support 1200dpi x 1200 dpi */
+    /*! Support 1200dpi x 1200dpi */
     T4_SUPPORT_RESOLUTION_1200_1200 = 0x4000
 };
 
@@ -542,9 +542,15 @@ SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding);
 
 /*! Get the short text name of an image format.
     \brief Get the short text name of an image format.
-    \param encoding The image format.
+    \param type The image format.
     \return A pointer to the string. */
 SPAN_DECLARE(const char *) t4_image_type_to_str(int type);
+
+/*! Get the short text name of an image resolution.
+    \brief Get the short text name of an image resolution.
+    \param resolution_code The image resolution code.
+    \return A pointer to the string. */
+SPAN_DECLARE(const char *) t4_image_resolution_to_str(int resolution_code);
 
 /*! Get the logging context associated with a T.4 receive context.
     \brief Get the logging context associated with a T.4 receive context.
