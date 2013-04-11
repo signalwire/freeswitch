@@ -1105,6 +1105,8 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	switch_event_t *event;
 	switch_frame_t *nframe;
 	switch_size_t len;
+	int mask = switch_core_media_bug_test_flag(bug, SMBF_MASK);
+	unsigned char null_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
@@ -1122,7 +1124,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			if (rh->rready && rh->wready) {
 				nframe = switch_core_media_bug_get_native_read_frame(bug);
 				len = nframe->datalen;
-				switch_core_file_write(&rh->in_fh, nframe->data, &len);
+
+				
+				switch_core_file_write(&rh->in_fh, mask ? null_data : nframe->data, &len);
 			}
 		}
 		break;
@@ -1133,7 +1137,8 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			if (rh->rready && rh->wready) {			
 				nframe = switch_core_media_bug_get_native_write_frame(bug);
 				len = nframe->datalen;
-				switch_core_file_write(&rh->out_fh, nframe->data, &len);
+				switch_core_file_write(&rh->out_fh, mask ? null_data : nframe->data, &len);
+
 			}
 		}
 		break;
@@ -1161,7 +1166,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 					len = (switch_size_t) frame.datalen / 2;
 
-					if (len && switch_core_file_write(rh->fh, data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
+					if (len && switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -1229,7 +1234,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
 				len = (switch_size_t) frame.datalen / 2;
 
-				if (len && switch_core_file_write(rh->fh, data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
+				if (len && switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
@@ -1244,6 +1249,22 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	}
 
 	return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_mask(switch_core_session_t *session, const char *file, switch_bool_t on)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if ((bug = switch_channel_get_private(channel, file))) {
+		if (on) {
+			switch_core_media_bug_set_flag(bug, SMBF_MASK);
+		} else {
+			switch_core_media_bug_clear_flag(bug, SMBF_MASK);
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, const char *file)
