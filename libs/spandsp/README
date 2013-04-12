@@ -1,4 +1,4 @@
-spandsp 0.0.5 - A DSP library for telephony
+spandsp 0.0.6 - A DSP library for telephony
 -------------------------------------------
 
 SpanDSP is a library of DSP functions for telephony, in the 8000 sample per
