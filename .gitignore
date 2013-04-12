@@ -187,3 +187,6 @@ ipch/
 
 /UpgradeLog.*
 /_UpgradeReport_Files/
+*.aps
+/w32/Library/switch_version.inc
+/w32/Setup/Fragments
