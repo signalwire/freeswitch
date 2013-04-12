@@ -628,16 +628,11 @@
       <prompt phrase="Please hold while we connect you to an actual human being." filename="ivr-connect_actual_human_being.wav"/>
       <prompt phrase="The system is going down for maintenance." filename="ivr-system_down_for_maintenance.wav"/>
       <prompt phrase="The system will be back up in approximately..." filename="ivr-system_back_up_in_approximately.wav"/>
-      <prompt phrase="To grab a cold pop, press..." filename=""/>
       <prompt phrase="It's all there, black and white, clear as crystal! You stole fizzy lifting drinks! You bumped into the ceiling which now has to be washed and sterilized, so you get nothing! You lose! Good day, sir!" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
-      <prompt phrase="" filename=""/>
+      <prompt phrase="To grab a cold pop, press..." filename=""/>
+      <prompt phrase="If you thought someone was barbecuing, press..." filename=""/>
+      <prompt phrase="If you didn't grab no shoes or nothing and ran for your life, press..." filename=""/>
+      <prompt phrase="If ain't nobody got time for that, press..." filename=""/>
       <prompt phrase="" filename=""/>
 
     </ivr>
