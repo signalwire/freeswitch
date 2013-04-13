@@ -85,8 +85,8 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app,
 
 #define check_tz()														\
 	do {																\
-		tzoff = switch_event_get_header((switch_event_t *)channel, "tod_tz_offset");		\
-		tzname = switch_event_get_header((switch_event_t *)channel, "timezone");			\
+		tzoff = switch_channel_get_variable(channel, "tod_tz_offset");		\
+		tzname = switch_channel_get_variable(channel, "timezone");			\
 		if (!zstr(tzoff) && switch_is_number(tzoff)) {					\
 			offset = atoi(tzoff);										\
 			break;														\
