@@ -2942,7 +2942,7 @@ SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session)
 			sql = switch_mprintf("insert into recovery (runtime_uuid, technology, profile_name, hostname, uuid, metadata) "
 								 "values ('%q','%q','%q','%q','%q','%q')",
 								 switch_core_get_uuid(), switch_str_nil(technology), 
-								 switch_str_nil(profile_name), switch_core_get_hostname(), switch_core_session_get_uuid(session), xml_cdr_text);
+								 switch_str_nil(profile_name), switch_core_get_switchname(), switch_core_session_get_uuid(session), xml_cdr_text);
 		}
 
 		switch_sql_queue_manager_push(sql_manager.qm, sql, 2, SWITCH_FALSE);
