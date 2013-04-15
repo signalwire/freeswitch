@@ -90,12 +90,12 @@ if not exist "$(ProjectDir)..\..\openssl-1.0.1c\include\openssl\e_os.h" xcopy "$
     </PreBuildEvent>
     <ClCompile>
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
-      <Optimization>Full</Optimization>
+      <Optimization>Disabled</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>..\..\openssl-1.0.1c\include;..\..\openssl-1.0.1c\crypto;..\..\openssl-1.0.1c\crypto\aes;..\..\openssl-1.0.1c\crypto\asn1;..\..\openssl-1.0.1c\crypto\bf;..\..\openssl-1.0.1c\crypto\bio;..\..\openssl-1.0.1c\crypto\bn;..\..\openssl-1.0.1c\crypto\buffer;..\..\openssl-1.0.1c\crypto\camellia;..\..\openssl-1.0.1c\crypto\cast;..\..\openssl-1.0.1c\crypto\cms;..\..\openssl-1.0.1c\crypto\comp;..\..\openssl-1.0.1c\crypto\conf;..\..\openssl-1.0.1c\crypto\des;..\..\openssl-1.0.1c\crypto\dh;..\..\openssl-1.0.1c\crypto\dsa;..\..\openssl-1.0.1c\crypto\dso;..\..\openssl-1.0.1c\crypto\ec;..\..\openssl-1.0.1c\crypto\ecdh;..\..\openssl-1.0.1c\crypto\ecdsa;..\..\openssl-1.0.1c\crypto\engine;..\..\openssl-1.0.1c\crypto\err;..\..\openssl-1.0.1c\crypto\evp;..\..\openssl-1.0.1c\crypto\modes;..\..\openssl-1.0.1c\ms;..\..\openssl-1.0.1c;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINDOWS;WIN32;_DEBUG;_CRT_NON_CONFORMING_SWPRINTFS;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_ASM;OPENSSL_NO_GMP;OPENSSL_NO_JPAKE;OPENSSL_NO_KRB5;OPENSSL_NO_MD2;OPENSSL_NO_RFC3779;OPENSSL_NO_STORE;OPENSSL_NO_STATIC_ENGINE;OPENSSL_BUILD_SHLIBCRYPTO;MK1MF_BUILD;OPENSSL_NO_SCTP;OPENSSL_NO_EC_NISTP_64_GCC_128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -127,12 +127,12 @@ if not exist "$(ProjectDir)..\..\openssl-1.0.1c\include\openssl\e_os.h" xcopy "$
     </Midl>
     <ClCompile>
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
-      <Optimization>Full</Optimization>
+      <Optimization>Disabled</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>..\..\openssl-1.0.1c\include;..\..\openssl-1.0.1c\crypto;..\..\openssl-1.0.1c\crypto\aes;..\..\openssl-1.0.1c\crypto\asn1;..\..\openssl-1.0.1c\crypto\bf;..\..\openssl-1.0.1c\crypto\bio;..\..\openssl-1.0.1c\crypto\bn;..\..\openssl-1.0.1c\crypto\buffer;..\..\openssl-1.0.1c\crypto\camellia;..\..\openssl-1.0.1c\crypto\cast;..\..\openssl-1.0.1c\crypto\cms;..\..\openssl-1.0.1c\crypto\comp;..\..\openssl-1.0.1c\crypto\conf;..\..\openssl-1.0.1c\crypto\des;..\..\openssl-1.0.1c\crypto\dh;..\..\openssl-1.0.1c\crypto\dsa;..\..\openssl-1.0.1c\crypto\dso;..\..\openssl-1.0.1c\crypto\ec;..\..\openssl-1.0.1c\crypto\ecdh;..\..\openssl-1.0.1c\crypto\ecdsa;..\..\openssl-1.0.1c\crypto\engine;..\..\openssl-1.0.1c\crypto\err;..\..\openssl-1.0.1c\crypto\evp;..\..\openssl-1.0.1c\crypto\modes;..\..\openssl-1.0.1c\ms;..\..\openssl-1.0.1c;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINDOWS;WIN32;_DEBUG;_CRT_NON_CONFORMING_SWPRINTFS;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_ASM;OPENSSL_NO_GMP;OPENSSL_NO_JPAKE;OPENSSL_NO_KRB5;OPENSSL_NO_MD2;OPENSSL_NO_RFC3779;OPENSSL_NO_STORE;OPENSSL_NO_STATIC_ENGINE;OPENSSL_BUILD_SHLIBCRYPTO;MK1MF_BUILD;OPENSSL_NO_SCTP;OPENSSL_NO_EC_NISTP_64_GCC_128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
       </PrecompiledHeader>
