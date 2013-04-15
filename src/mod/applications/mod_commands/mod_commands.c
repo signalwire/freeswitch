@@ -3641,7 +3641,7 @@ SWITCH_STANDARD_API(uuid_bridge_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SESS_REC_SYNTAX "<uuid> [start|stop] <path> [<limit>]"
+#define SESS_REC_SYNTAX "<uuid> [start|stop|mask|unmask] <path> [<limit>]"
 SWITCH_STANDARD_API(session_record_function)
 {
 	switch_core_session_t *rsession = NULL;
@@ -3685,6 +3685,18 @@ SWITCH_STANDARD_API(session_record_function)
 	} else if (!strcasecmp(action, "stop")) {
 		if (switch_ivr_stop_record_session(rsession, path) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "-ERR Cannot stop record session!\n");
+		} else {
+			stream->write_function(stream, "+OK Success\n");
+		}
+	} else if (!strcasecmp(action, "mask")) {
+		if (switch_ivr_record_session_mask(rsession, path, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "-ERR Cannot mask recording session!\n");
+		} else {
+			stream->write_function(stream, "+OK Success\n");
+		}
+	} else if (!strcasecmp(action, "unmask")) {
+		if (switch_ivr_record_session_mask(rsession, path, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "-ERR Cannot unmask recording session!\n");
 		} else {
 			stream->write_function(stream, "+OK Success\n");
 		}
