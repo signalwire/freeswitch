@@ -501,7 +501,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					switch_snprintf(reason, sizeof(reason), "SIP;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 				}
 			}
+		}
 
+		if (switch_channel_test_flag(channel, CF_INTERCEPT) || cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE) {
 			switch_channel_set_variable(channel, "call_completed_elsewhere", "true");
 		}
 
