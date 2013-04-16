@@ -1078,9 +1078,9 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	}
 
  ready:
-
 	if (codec_string) {
 		char *tmp_codec_string = switch_core_session_strdup(smh->session, codec_string);
+		switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
 		smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
 		smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
 	} else {
@@ -7100,6 +7100,12 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 	a_engine->codec_params.iananame = a_engine->codec_params.rm_encoding = (char *) switch_channel_get_variable(session->channel, "rtp_use_codec_name");
 	a_engine->codec_params.rm_fmtp = (char *) switch_channel_get_variable(session->channel, "rtp_use_codec_fmtp");
+	
+	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_codec_string"))) {
+		char *tmp_codec_string = switch_core_session_strdup(smh->session, tmp);
+		smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
+		smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
+	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_2833_send_payload"))) {
 		smh->mparams->te = (switch_payload_t)atoi(tmp);
