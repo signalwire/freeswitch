@@ -2692,7 +2692,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				a_engine->codec_params.channels = mmap->rm_params ? atoi(mmap->rm_params) : 1;
 
 				if (!strcasecmp((char *) mmap->rm_encoding, "opus")) {
-					a_engine->codec_params.adv_channels = 2; /* IKR ???*/
+					if (a_engine->codec_params.channels == 1) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invald SDP for opus.  Don't ask.. but it needs a /2\n");
+						a_engine->codec_params.adv_channels = 1;
+					} else {
+						a_engine->codec_params.adv_channels = 2; /* IKR ???*/
+					}
 					if (!zstr((char *) mmap->rm_fmtp) && switch_stristr("stereo=1", (char *) mmap->rm_fmtp)) {
 						a_engine->codec_params.channels = 2;
 					} else {
