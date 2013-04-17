@@ -174,6 +174,24 @@ static switch_bool_t nibblebill_execute_sql_callback(char *sql, switch_core_db_c
 	return retval;
 }
 
+static switch_bool_t nibblebill_execute_sql(char *sql)
+{
+	switch_bool_t retval = SWITCH_FALSE;
+	switch_cache_db_handle_t *dbh = NULL;
+
+	if (globals.odbc_dsn && (dbh = nibblebill_get_db_handle())) {
+
+		if ( switch_cache_db_execute_sql(dbh, sql, NULL ) != SWITCH_STATUS_SUCCESS ) {
+			retval = SWITCH_FALSE;
+		} else {
+			retval = SWITCH_TRUE;
+		}
+	}
+	switch_cache_db_release_db_handle(&dbh);
+
+	return retval;
+}
+
 
 static switch_status_t nibblebill_load_config(void)
 {
@@ -354,7 +372,7 @@ static switch_bool_t bill_event(double billamount, const char *billaccount, swit
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doing update query\n[%s]\n", sql);
-	status = nibblebill_execute_sql_callback(sql, nibblebill_callback, NULL);
+	status = nibblebill_execute_sql(sql);
 	switch_safe_free(dsql);
 
 	return status;
