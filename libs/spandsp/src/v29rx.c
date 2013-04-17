@@ -1085,6 +1085,7 @@ SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
     s->carrier_drop_pending = FALSE;
 #endif
     s->old_train = old_train;
+    vec_zeroi32(s->diff_angles, 16);
 
     s->carrier_phase = 0;
 

@@ -305,9 +305,9 @@ static int receive_xid(v42_state_t *ss, const uint8_t *frame, int len)
                 param_id = buf[0];
                 param_len = buf[1];
                 buf += 2;
-                group_len -= (2 + param_len);
-                if (group_len < 0)
+                if (group_len < (2 + param_len))
                     break;
+                group_len -= (2 + param_len);
                 switch (param_id)
                 {
                 case PI_HDLC_OPTIONAL_FUNCTIONS:
@@ -347,9 +347,9 @@ static int receive_xid(v42_state_t *ss, const uint8_t *frame, int len)
                 param_id = buf[0];
                 param_len = buf[1];
                 buf += 2;
-                group_len -= (2 + param_len);
-                if (group_len < 0)
+                if (group_len < 2 + param_len)
                     break;
+                group_len -= (2 + param_len);
                 switch (param_id)
                 {
                 case PI_PARAMETER_SET_ID:

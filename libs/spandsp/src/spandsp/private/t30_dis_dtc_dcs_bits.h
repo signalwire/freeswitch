@@ -93,8 +93,15 @@
 #define T30_DCS_BIT_UNLIMITED_LENGTH                        20
 
 /* Bits 21, 22, 23 - min scan line time */
-
 /* When ISDN mode is used, in DIS/DTC bits 21 to 23 shall be set to "1". */
+#define T30_DIS_BIT_MIN_SCAN_LINE_TIME_CAPABILITY_1         21
+#define T30_DCS_BIT_MIN_SCAN_LINE_TIME_1                    21
+#define T30_DIS_BIT_MIN_SCAN_LINE_TIME_CAPABILITY_2         22
+#define T30_DCS_BIT_MIN_SCAN_LINE_TIME_2                    22
+#define T30_DIS_BIT_MIN_SCAN_LINE_TIME_CAPABILITY_3         23
+#define T30_DCS_BIT_MIN_SCAN_LINE_TIME_3                    23
+#define T30_DIS_BIT_MIN_SCAN_LINE_TIME_CAPABILITY_4         24
+#define T30_DCS_BIT_MIN_SCAN_LINE_TIME_4                    24
 
 /* Bit 24 is an extension bit */
 

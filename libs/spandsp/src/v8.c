@@ -190,15 +190,15 @@ SPAN_DECLARE(const char *) v8_pstn_access_to_str(int pstn_access)
         return "Calling modem on cellular";
     case V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR:
         return "Answering modem on cellular";
-    case V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR | V8_PSTN_ACCESS_CALL_DCE_CELLULAR:
+    case (V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR | V8_PSTN_ACCESS_CALL_DCE_CELLULAR):
         return "Answering and calling modems on cellular";
     case V8_PSTN_ACCESS_DCE_ON_DIGITAL:
         return "DCE on digital";
-    case V8_PSTN_ACCESS_DCE_ON_DIGITAL | V8_PSTN_ACCESS_CALL_DCE_CELLULAR:
+    case (V8_PSTN_ACCESS_DCE_ON_DIGITAL | V8_PSTN_ACCESS_CALL_DCE_CELLULAR):
         return "DCE on digital, and calling modem on cellular";
-    case V8_PSTN_ACCESS_DCE_ON_DIGITAL | V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR:
+    case (V8_PSTN_ACCESS_DCE_ON_DIGITAL | V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR):
         return "DCE on digital, answering modem on cellular";
-    case V8_PSTN_ACCESS_DCE_ON_DIGITAL | V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR | V8_PSTN_ACCESS_CALL_DCE_CELLULAR:
+    case (V8_PSTN_ACCESS_DCE_ON_DIGITAL | V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR | V8_PSTN_ACCESS_CALL_DCE_CELLULAR):
         return "DCE on digital, and answering and calling modems on cellular";
     }
     return "PSTN access unknown";
@@ -226,15 +226,15 @@ SPAN_DECLARE(const char *) v8_pcm_modem_availability_to_str(int pcm_modem_availa
         return "V.90/V.92 analogue available";
     case V8_PSTN_PCM_MODEM_V90_V92_DIGITAL:
         return "V.90/V.92 digital available";
-    case V8_PSTN_PCM_MODEM_V90_V92_DIGITAL | V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE:
+    case (V8_PSTN_PCM_MODEM_V90_V92_DIGITAL | V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE):
         return "V.90/V.92 digital/analogue available";
     case V8_PSTN_PCM_MODEM_V91:
         return "V.91 available";
-    case V8_PSTN_PCM_MODEM_V91 | V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE:
+    case (V8_PSTN_PCM_MODEM_V91 | V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE):
         return "V.91 and V.90/V.92 analogue available";
-    case V8_PSTN_PCM_MODEM_V91 | V8_PSTN_PCM_MODEM_V90_V92_DIGITAL:
+    case (V8_PSTN_PCM_MODEM_V91 | V8_PSTN_PCM_MODEM_V90_V92_DIGITAL):
         return "V.91 and V.90/V.92 digital available";
-    case V8_PSTN_PCM_MODEM_V91 | V8_PSTN_PCM_MODEM_V90_V92_DIGITAL | V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE:
+    case (V8_PSTN_PCM_MODEM_V91 | V8_PSTN_PCM_MODEM_V90_V92_DIGITAL | V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE):
         return "V.91 and V.90/V.92 digital/analogue available";
     }
     return "PCM availability unknown";

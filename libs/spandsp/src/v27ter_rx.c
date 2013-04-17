@@ -1033,6 +1033,7 @@ SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_
     s->low_samples = 0;
     s->carrier_drop_pending = FALSE;
 #endif
+    vec_zeroi32(s->diff_angles, 16);
 
     s->carrier_phase = 0;
 #if defined(SPANDSP_USE_FIXED_POINT)
