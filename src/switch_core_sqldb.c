@@ -3235,9 +3235,9 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 			
 			if (err) {
-				runtime.odbc_dsn = NULL;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Transactions not supported on your DB, disabling non-SQLite support; using SQLite\n");
-				switch_cache_db_release_db_handle(&sql_manager.dbh);
+				//runtime.odbc_dsn = NULL;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error [%s]\n", err);
+				//switch_cache_db_release_db_handle(&sql_manager.dbh);
 				free(err);
 				goto top;
 			}
