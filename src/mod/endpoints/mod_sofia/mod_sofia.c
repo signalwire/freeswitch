@@ -3579,6 +3579,180 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct list_result {
+	int row_process;
+	int single_col;
+	switch_stream_handle_t *stream;
+
+};
+static int list_result_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct list_result *cbt = (struct list_result *) pArg;
+	int i = 0;
+
+	cbt->row_process++;
+
+	if (cbt->row_process == 1) {
+		for ( i = 0; i < argc; i++) {
+			cbt->stream->write_function(cbt->stream,"%s", columnNames[i]);
+			if (i < argc - 1) {
+				cbt->stream->write_function(cbt->stream,"|");
+			}
+		}
+		cbt->stream->write_function(cbt->stream,"\n");
+
+	}
+	for ( i = 0; i < argc; i++) {
+		cbt->stream->write_function(cbt->stream,"%s", zstr(argv[i]) ? "unknown" : argv[i]);
+		if (i < argc - 1) {
+			cbt->stream->write_function(cbt->stream,"|");
+		}
+	}
+	if (!cbt->single_col)
+		cbt->stream->write_function(cbt->stream,"\n");
+	return 0;
+}
+
+
+static void get_presence_data(sofia_profile_t *profile, const char *user, const char *domain, const char *search, switch_stream_handle_t *stream)
+{
+	struct list_result cb;
+	char *sql;
+	char *select;
+
+	cb.row_process = 1;
+	cb.single_col = 1;
+	cb.stream = stream;
+
+	if (!strcasecmp(search, "status")) {
+		select = switch_mprintf(" p.status ");
+	} else if (!strcasecmp(search, "rpid")) {
+		select = switch_mprintf(" p.rpid ");
+	} else if (!strcasecmp(search, "user_agent")) {
+		select = switch_mprintf(" r.user_agent ");
+	}  else {
+		cb.row_process = 0;
+		cb.single_col = 0;
+		select = switch_mprintf(" p.status, p.rpid, r.user_agent,  r.network_ip, r.network_port ");
+	}
+
+	sql = switch_mprintf(" select %q from sip_registrations as r left join sip_presence as p "
+		" on p.sip_host = r.sip_host and p.profile_name = r.profile_name and p.hostname = r.orig_hostname "
+		" and p.sip_user = r.sip_user "
+		" where r.sip_realm = '%q' and r.sip_user = '%q' and r.profile_name = '%q' ", select, domain, user, profile->name);
+
+	switch_assert(sql);
+	sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, list_result_callback, &cb);
+	switch_safe_free(sql);
+	switch_safe_free(select);
+}
+
+/* [list|status|rpid|user_agent] [profile/]<user>@domain */
+SWITCH_STANDARD_API(sofia_presence_data_function)
+{
+	char *argv[6] = { 0 };
+	int argc;
+	char *data;
+	char *user = NULL;
+	char *domain = NULL, *dup_domain = NULL;
+	char *concat = NULL;
+	char *search = NULL;
+	char *profile_name = NULL;
+	char *p;
+	sofia_profile_t *profile = NULL;
+
+	if (!cmd) {
+		stream->write_function(stream, "%s", "");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	data = strdup(cmd);
+	switch_assert(data);
+
+
+	argc = switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	if (argc < 2) {
+		stream->write_function(stream, "%s", "");
+		return SWITCH_STATUS_SUCCESS;
+	}
+	search = argv[0];
+
+	if ((p = strchr(argv[1], '/'))) {
+		profile_name = argv[1];
+		*p++ = '\0';
+		user = p;
+	} else {
+		user = argv[1];
+	}
+
+	if ((domain = strchr(user, '@'))) {
+		*domain++ = '\0';
+		if ((concat = strchr(domain, '/'))) {
+			*concat++ = '\0';
+		}
+	} else {
+		if ((concat = strchr(user, '/'))) {
+			*concat++ = '\0';
+		}
+	}
+
+	if (zstr(domain)) {
+		dup_domain = switch_core_get_variable_dup("domain");
+		domain = dup_domain;
+	}
+
+	if (!user) goto end;
+
+	if (zstr(profile_name) || strcmp(profile_name, "*") || zstr(domain)) {
+		if (!zstr(profile_name)) {
+			profile = sofia_glue_find_profile(profile_name);
+		}
+
+		if (!profile && !zstr(domain)) {
+			profile = sofia_glue_find_profile(domain);
+		}
+	}
+
+	if (profile) {
+		if (zstr(domain)) {
+			domain = profile->name;
+		}
+
+		if (!zstr(profile->domain_name) && !zstr(profile_name) && !strcmp(profile_name, profile->name)) {
+			domain = profile->domain_name;
+		}
+
+		get_presence_data(profile, user, domain, search, stream);
+		sofia_glue_release_profile(profile);
+
+	} else if (!zstr(domain)) {
+		switch_mutex_lock(mod_sofia_globals.hash_mutex);
+		if (mod_sofia_globals.profile_hash) {
+			switch_hash_index_t *hi;
+			const void *var;
+			void *val;
+
+			for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &var, NULL, &val);
+				if ((profile = (sofia_profile_t *) val) && !strcmp((char *)var, profile->name)) {
+					get_presence_data(profile, user, domain, search, stream);
+					profile = NULL;
+				}
+			}
+		}
+		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+	}
+
+	if (!strcasecmp(search, "list"))
+		stream->write_function(stream, "+OK\n");
+
+ end:
+	switch_safe_free(data);
+	switch_safe_free(dup_domain);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /* <gateway_name> [ivar|ovar|var] <name> */
 SWITCH_STANDARD_API(sofia_gateway_data_function)
 {
@@ -5148,6 +5322,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	SWITCH_ADD_API(api_interface, "sofia_contact", "Sofia Contacts", sofia_contact_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_API(api_interface, "sofia_count_reg", "Count Sofia registration", sofia_count_reg_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_API(api_interface, "sofia_dig", "SIP DIG", sip_dig_function, "<url>");
+	SWITCH_ADD_API(api_interface, "sofia_presence_data", "Sofia Presence Data", sofia_presence_data_function, "[list|status|rpid|user_agent] [profile/]<user>@domain");
 	SWITCH_ADD_CHAT(chat_interface, SOFIA_CHAT_PROTO, sofia_presence_chat_send);
 
 	crtp_init(*module_interface);
