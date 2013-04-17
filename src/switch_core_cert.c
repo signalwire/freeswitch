@@ -267,7 +267,7 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 		
 	//bio_err=BIO_new_fp(stderr, BIO_NOCLOSE);
 		
-	mkcert(&x509, &pkey, 512, 0, 365);
+	mkcert(&x509, &pkey, 2048, 0, 365);
 
 	//RSA_print_fp(stdout, pkey->pkey.rsa, 0);
 	//X509_print_fp(stdout, x509);
@@ -390,7 +390,7 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	add_ext(x, NID_netscape_comment, "Self-Signed CERT for DTLS");
 
 
-	if (!X509_sign(x, pk, EVP_md5()))
+	if (!X509_sign(x, pk, EVP_sha1()))
 		goto err;
 
 	*x509p=x;
