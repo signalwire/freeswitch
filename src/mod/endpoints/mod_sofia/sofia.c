@@ -4478,9 +4478,18 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "tls")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_TLS);
+							if (profile->tls_bind_params) {
+								profile->tls_bind_params = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->tls_bind_params);
+							} else {
+								profile->tls_bind_params = switch_core_strdup(profile->pool, "transport=tls");
+							}
 						}
 					} else if (!strcasecmp(var, "tls-bind-params")) {
-						profile->tls_bind_params = switch_core_strdup(profile->pool, val);
+						if (switch_stristr("transport=tls", val)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Transport is already set, not adding another one.\n");
+						} else {
+							profile->tls_bind_params = switch_core_strdup(profile->pool, val);
+						}
 					} else if (!strcasecmp(var, "tls-only")) {
 						profile->tls_only = switch_true(val);
 					} else if (!strcasecmp(var, "tls-verify-date")) {
