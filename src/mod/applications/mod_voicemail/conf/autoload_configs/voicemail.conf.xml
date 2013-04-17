@@ -15,6 +15,10 @@
       <param name="callback-context" value="default"/>
       <param name="play-new-messages-key" value="1"/>
       <param name="play-saved-messages-key" value="2"/>
+      <!-- play-new-messages-lifo and play-saved-messages-lifo default is false, playing oldest messages first
+	   <param name="play-new-messages-lifo" value="false"/>
+	   <param name="play-saved-messages-lifo" value="false"/>
+      -->
       <param name="login-keys" value="0"/>
       <param name="main-menu-key" value="0"/>
       <param name="config-menu-key" value="5"/>
