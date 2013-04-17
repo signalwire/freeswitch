@@ -92,7 +92,7 @@ typedef struct
     int ptr;
     int row;
     int bit_mask;
-} t85_packer_t;
+} packer_t;
 
 typedef struct
 {
@@ -574,11 +574,11 @@ static int row_read(void *user_data, uint8_t buf[], size_t len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int t85_row_write_handler(void *user_data, const uint8_t buf[], size_t len)
+static int packing_row_write_handler(void *user_data, const uint8_t buf[], size_t len)
 {
-    t85_packer_t *s;
+    packer_t *s;
 
-    s = (t85_packer_t *) user_data;
+    s = (packer_t *) user_data;
     memcpy(&s->buf[s->ptr], buf, len);
     s->ptr += len;
     s->row++;
@@ -586,7 +586,7 @@ static int t85_row_write_handler(void *user_data, const uint8_t buf[], size_t le
 }
 /*- End of function --------------------------------------------------------*/
 
-static int t85_comment_handler(void *user_data, const uint8_t buf[], size_t len)
+static int embedded_comment_handler(void *user_data, const uint8_t buf[], size_t len)
 {
     t4_tx_state_t *s;
 
@@ -599,18 +599,235 @@ static int t85_comment_handler(void *user_data, const uint8_t buf[], size_t len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int read_tiff_image(t4_tx_state_t *s)
+static int read_tiff_t85_image(t4_tx_state_t *s)
 {
+    int biggest;
+    int num_strips;
     int total_len;
     int len;
-    int biggest;
     int i;
-    int num_strips;
     int result;
     uint8_t *t;
     uint8_t *raw_data;
     t85_decode_state_t t85;
-    t85_packer_t t85_pack;
+    packer_t pack;
+
+    /* Size up and allocate the buffer for the raw data */
+    num_strips = TIFFNumberOfStrips(s->tiff.tiff_file);
+    biggest = TIFFRawStripSize(s->tiff.tiff_file, 0);
+    for (i = 1;  i < num_strips;  i++)
+    {
+        len = TIFFRawStripSize(s->tiff.tiff_file, i);
+        if (len > biggest)
+            biggest = len;
+    }
+    if ((raw_data = malloc(biggest)) == NULL)
+        return -1;
+
+    s->tiff.image_size = s->image_length*((s->image_width + 7)/8);
+    if (s->tiff.image_size >= s->tiff.image_buffer_size)
+    {
+        if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
+            return -1;
+        s->tiff.image_buffer_size = s->tiff.image_size;
+        s->tiff.image_buffer = t;
+    }
+
+    pack.buf = s->tiff.image_buffer;
+    pack.ptr = 0;
+    pack.row = 0;
+    t85_decode_init(&t85, packing_row_write_handler, &pack);
+    t85_decode_set_comment_handler(&t85, 1000, embedded_comment_handler, s);
+
+    total_len = 0;
+    result = -1;
+    for (i = 0;  i < num_strips;  i++, total_len += len)
+    {
+        len = TIFFRawStripSize(s->tiff.tiff_file, i);
+        if ((len = TIFFReadRawStrip(s->tiff.tiff_file, i, raw_data, len)) < 0)
+        {
+            span_log(&s->logging, SPAN_LOG_WARNING, "%s: ReadRaw error.\n", s->tiff.file);
+            return -1;
+        }
+        result = t85_decode_put(&t85, raw_data, len);
+        if (result != T4_DECODE_MORE_DATA)
+            break;
+    }
+    if (result == T4_DECODE_MORE_DATA)
+        result = t85_decode_put(&t85, NULL, 0);
+
+    len = t85_decode_get_compressed_image_size(&t85);
+    span_log(&s->logging, SPAN_LOG_WARNING, "Compressed image is %d bytes, %d rows\n", len/8, s->image_length);
+    t85_decode_release(&t85);
+    free(raw_data);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+#if defined(SPANDSP_SUPPORT_T43)
+static int read_tiff_t43_image(t4_tx_state_t *s, uint8_t **buf)
+{
+    int num_strips;
+    int total_len;
+    int len;
+    int i;
+    int total_image_len;
+    int image_size;
+    logging_state_t *logging;
+    uint8_t *raw_data;
+    t43_decode_state_t t43;
+    packer_t pack;
+
+    num_strips = TIFFNumberOfStrips(s->tiff.tiff_file);
+    total_image_len = 0;
+    for (i = 0;  i < num_strips;  i++)
+        total_image_len += TIFFRawStripSize(s->tiff.tiff_file, i);
+    if ((raw_data = malloc(total_image_len)) == NULL)
+        return -1;
+
+    total_len = 0;
+    for (i = 0;  i < num_strips;  i++, total_len += len)
+    {
+        if ((len = TIFFReadRawStrip(s->tiff.tiff_file, i, &raw_data[total_len], total_image_len - total_len)) < 0)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "TIFF read error.\n");
+            return -1;
+        }
+    }
+
+    t43_decode_init(&t43, packing_row_write_handler, &pack);
+    t43_decode_set_comment_handler(&t43, 1000, embedded_comment_handler, NULL);
+    logging = t43_decode_get_logging_state(&t43);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+
+    image_size = 3*s->image_length*s->image_width;
+    if ((*buf = malloc(image_size)) == NULL)
+        return -1;
+
+    pack.buf = *buf;
+    pack.ptr = 0;
+    pack.row = 0;
+    t43_decode_put(&t43, raw_data, total_len);
+    t43_decode_release(&t43);
+    free(raw_data);
+    return image_size;
+}
+/*- End of function --------------------------------------------------------*/
+#endif
+
+#if 0
+static int read_tiff_t42_t81_image(t4_tx_state_t *s, uint8_t **buf)
+{
+    int total_len;
+    int len;
+    int i;
+    int num_strips;
+    int total_image_len;
+    int image_size;
+    uint8_t *raw_data;
+    uint8_t *jpeg_table;
+    uint32_t jpeg_table_len;
+    uint32_t w;
+    uint32_t h;
+    tsize_t off;
+
+    num_strips = TIFFNumberOfStrips(s->tiff.tiff_file);
+    total_image_len = 0;
+    jpeg_table_len = 0;
+    if (TIFFGetField(s->tiff.tiff_file, TIFFTAG_JPEGTABLES, &jpeg_table_len, &jpeg_table))
+    {
+        total_image_len += (jpeg_table_len - 4);
+        span_log(&s->logging, SPAN_LOG_FLOW, "JPEG tables %u\n", jpeg_table_len);
+    }
+
+    for (i = 0;  i < num_strips;  i++)
+        total_image_len += TIFFRawStripSize(s->tiff.tiff_file, i);
+    if ((raw_data = malloc(total_image_len)) == NULL)
+        return -1;
+
+    total_len = 0;
+    if (jpeg_table_len > 0)
+        total_len += jpeg_table_len - 4;
+    for (i = 0;  i < num_strips;  i++, total_len += len)
+    {
+        if ((len = TIFFReadRawStrip(s->tiff.tiff_file, i, &raw_data[total_len], total_image_len - total_len)) < 0)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "TIFF read error.\n");
+            return -1;
+        }
+    }
+    if (jpeg_table_len > 0)
+        memcpy(raw_data, jpeg_table, jpeg_table_len - 2);
+
+    if (total_len != total_image_len)
+        span_log(&s->logging, SPAN_LOG_FLOW, "Size mismatch %d %d\n", (int) total_len, (int) total_image_len);
+
+    image_size = 3*s->image_length*s->image_width;
+    if ((*buf = malloc(image_size)) == NULL)
+        return -1;
+
+    off = 0;
+    if (!t42_itulab_to_srgb(&s->logging, &s->lab_params, *buf, &off, raw_data, total_image_len, &w, &h))
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Failed to convert from ITULAB.\n");
+        return -1;
+    }
+    free(raw_data);
+    return image_size;
+}
+/*- End of function --------------------------------------------------------*/
+#endif
+
+static int read_tiff_decompressed_image(t4_tx_state_t *s)
+{
+    int total_len;
+    int len;
+    int num_strips;
+    int i;
+    uint8_t *t;
+
+    /* Decode the whole image into a buffer */
+    /* Let libtiff handle the decompression */
+    s->tiff.image_size = s->image_length*TIFFScanlineSize(s->tiff.tiff_file);
+    if (s->tiff.image_size >= s->tiff.image_buffer_size)
+    {
+        if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
+            return -1;
+        s->tiff.image_buffer_size = s->tiff.image_size;
+        s->tiff.image_buffer = t;
+    }
+
+    /* Allow for the image being stored in multiple strips, although it is rare to find
+       a stripped image in a T.4 or T.6 encoded file. */
+    num_strips = TIFFNumberOfStrips(s->tiff.tiff_file);
+    for (i = 0, total_len = 0;  i < num_strips;  i++, total_len += len)
+    {
+        if ((len = TIFFReadEncodedStrip(s->tiff.tiff_file, i, &s->tiff.image_buffer[total_len], s->tiff.image_size - total_len)) < 0)
+        {
+            span_log(&s->logging, SPAN_LOG_WARNING, "%s: Read error.\n", s->tiff.file);
+            return -1;
+        }
+    }
+    /* We might need to flip all the bits, so 1 = black and 0 = white. */
+    if (s->tiff.photo_metric != PHOTOMETRIC_MINISWHITE)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "%s: Photometric needs swapping.\n", s->tiff.file);
+        for (i = 0;  i < s->tiff.image_size;  i++)
+            s->tiff.image_buffer[i] = ~s->tiff.image_buffer[i];
+        s->tiff.photo_metric = PHOTOMETRIC_MINISWHITE;
+    }
+    /* We might need to bit reverse each of the bytes of the image. */
+    if (s->tiff.fill_order != FILLORDER_LSB2MSB)
+        bit_reverse(s->tiff.image_buffer, s->tiff.image_buffer, s->tiff.image_size);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int read_tiff_image(t4_tx_state_t *s)
+{
+    int total_len;
+    int i;
+    uint8_t *t;
     image_translate_state_t *translator;
 
     if (s->tiff.image_type != T4_IMAGE_TYPE_BILEVEL)
@@ -666,89 +883,15 @@ static int read_tiff_image(t4_tx_state_t *s)
         case COMPRESSION_T85:
             /* Decode the whole image into a buffer */
             /* libtiff probably cannot decompress T.85, so we must handle it ourselves */
-            /* Size up and allocate the buffer for the raw data */
-            num_strips = TIFFNumberOfStrips(s->tiff.tiff_file);
-            biggest = TIFFRawStripSize(s->tiff.tiff_file, 0);
-            for (i = 1;  i < num_strips;  i++)
-            {
-                len = TIFFRawStripSize(s->tiff.tiff_file, i);
-                if (len > biggest)
-                    biggest = len;
-            }
-            if ((raw_data = malloc(biggest)) == NULL)
+            /* Decode the whole image into a buffer */
+            if (read_tiff_t85_image(s) < 0)
                 return -1;
-
-            s->tiff.image_size = s->image_length*((s->image_width + 7)/8);
-            if (s->tiff.image_size >= s->tiff.image_buffer_size)
-            {
-                if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
-                    return -1;
-                s->tiff.image_buffer_size = s->tiff.image_size;
-                s->tiff.image_buffer = t;
-            }
-
-            t85_pack.buf = s->tiff.image_buffer;
-            t85_pack.ptr = 0;
-            t85_pack.row = 0;
-            t85_decode_init(&t85, t85_row_write_handler, &t85_pack);
-            t85_decode_set_comment_handler(&t85, 1000, t85_comment_handler, s);
-
-            total_len = 0;
-            result = -1;
-            for (i = 0;  i < num_strips;  i++, total_len += len)
-            {
-                len = TIFFRawStripSize(s->tiff.tiff_file, i);
-                if ((len = TIFFReadRawStrip(s->tiff.tiff_file, i, raw_data, len)) < 0)
-                {
-                    span_log(&s->logging, SPAN_LOG_WARNING, "%s: ReadRaw error.\n", s->tiff.file);
-                    return -1;
-                }
-                result = t85_decode_put(&t85, raw_data, len);
-                if (result != T4_DECODE_MORE_DATA)
-                    break;
-            }
-            if (result == T4_DECODE_MORE_DATA)
-                result = t85_decode_put(&t85, NULL, 0);
-
-            len = t85_decode_get_compressed_image_size(&t85);
-            span_log(&s->logging, SPAN_LOG_WARNING, "Compressed image is %d bytes, %d rows\n", len/8, s->image_length);
-            t85_decode_release(&t85);
-            free(raw_data);
             break;
         default:
             /* Decode the whole image into a buffer */
             /* Let libtiff handle the decompression */
-            s->tiff.image_size = s->image_length*TIFFScanlineSize(s->tiff.tiff_file);
-            if (s->tiff.image_size >= s->tiff.image_buffer_size)
-            {
-                if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
-                    return -1;
-                s->tiff.image_buffer_size = s->tiff.image_size;
-                s->tiff.image_buffer = t;
-            }
-
-            /* Allow for the image being stored in multiple strips, although it is rare to find
-               a stripped image in a T.4 or T.6 encoded file. */
-            num_strips = TIFFNumberOfStrips(s->tiff.tiff_file);
-            for (i = 0, total_len = 0;  i < num_strips;  i++, total_len += len)
-            {
-                if ((len = TIFFReadEncodedStrip(s->tiff.tiff_file, i, &s->tiff.image_buffer[total_len], s->tiff.image_size - total_len)) < 0)
-                {
-                    span_log(&s->logging, SPAN_LOG_WARNING, "%s: Read error.\n", s->tiff.file);
-                    return -1;
-                }
-            }
-            /* We might need to flip all the bits, so 1 = black and 0 = white. */
-            if (s->tiff.photo_metric != PHOTOMETRIC_MINISWHITE)
-            {
-                span_log(&s->logging, SPAN_LOG_FLOW, "%s: Photometric needs swapping.\n", s->tiff.file);
-                for (i = 0;  i < s->tiff.image_size;  i++)
-                    s->tiff.image_buffer[i] = ~s->tiff.image_buffer[i];
-                s->tiff.photo_metric = PHOTOMETRIC_MINISWHITE;
-            }
-            /* We might need to bit reverse each of the bytes of the image. */
-            if (s->tiff.fill_order != FILLORDER_LSB2MSB)
-                bit_reverse(s->tiff.image_buffer, s->tiff.image_buffer, s->tiff.image_size);
+            if (read_tiff_decompressed_image(s) < 0)
+                return -1;
             break;
         }
     }
@@ -788,11 +931,20 @@ static int set_row_read_handler(t4_tx_state_t *s, t4_row_read_handler_t handler,
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
         return t85_encode_set_row_read_handler(&s->encoder.t85, handler, user_data);
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        break;
+#endif
     case T4_COMPRESSION_T42_T81:
+    case T4_COMPRESSION_SYCC_T81:
         return t42_encode_set_row_read_handler(&s->encoder.t42, handler, user_data);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         return t43_encode_set_row_read_handler(&s->encoder.t43, handler, user_data);
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
+        break;
 #endif
     }
     return -1;
@@ -971,10 +1123,24 @@ SPAN_DECLARE(int) t4_tx_set_tx_encoding(t4_tx_state_t *s, int encoding)
             }
             s->line_encoding = encoding;
             return s->line_encoding;
+#if defined(SPANDSP_SUPPORT_T88)
+        case T4_COMPRESSION_T88:
+            switch (s->line_encoding)
+            {
+            case T4_COMPRESSION_T88:
+                break;
+            default:
+                break;
+            }
+            s->line_encoding = encoding;
+            return s->line_encoding;
+#endif
         case T4_COMPRESSION_T42_T81:
+        case T4_COMPRESSION_SYCC_T81:
             switch (s->line_encoding)
             {
             case T4_COMPRESSION_T42_T81:
+            case T4_COMPRESSION_SYCC_T81:
                 break;
             default:
                 t42_encode_init(&s->encoder.t42, s->image_width, s->image_length, s->row_handler, s->row_handler_user_data);
@@ -990,6 +1156,18 @@ SPAN_DECLARE(int) t4_tx_set_tx_encoding(t4_tx_state_t *s, int encoding)
                 break;
             default:
                 t43_encode_init(&s->encoder.t43, s->image_width, s->image_length, s->row_handler, s->row_handler_user_data);
+                break;
+            }
+            s->line_encoding = encoding;
+            return s->line_encoding;
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+        case T4_COMPRESSION_T45:
+            switch (s->line_encoding)
+            {
+            case T4_COMPRESSION_T45:
+                break;
+            default:
                 break;
             }
             s->line_encoding = encoding;
@@ -1028,12 +1206,21 @@ SPAN_DECLARE(void) t4_tx_set_image_width(t4_tx_state_t *s, int image_width)
     case T4_COMPRESSION_T85_L0:
         t85_encode_set_image_width(&s->encoder.t85, image_width);
         break;
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        break;
+#endif
     case T4_COMPRESSION_T42_T81:
+    case T4_COMPRESSION_SYCC_T81:
         t42_encode_set_image_width(&s->encoder.t42, image_width);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         t43_encode_set_image_width(&s->encoder.t43, image_width);
+        break;
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
         break;
 #endif
     }
@@ -1049,12 +1236,21 @@ static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length)
     case T4_COMPRESSION_T85_L0:
         t85_encode_set_image_length(&s->encoder.t85, image_length);
         break;
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        break;
+#endif
     case T4_COMPRESSION_T42_T81:
+    case T4_COMPRESSION_SYCC_T81:
         t42_encode_set_image_length(&s->encoder.t42, image_length);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         t43_encode_set_image_length(&s->encoder.t43, image_length);
+        break;
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
         break;
 #endif
     }
@@ -1180,7 +1376,12 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
         t->length = t85_encode_get_image_length(&s->encoder.t85)/s->row_squashing_ratio;
         t->line_image_size = t85_encode_get_compressed_image_size(&s->encoder.t85)/8;
         break;
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        break;
+#endif
     case T4_COMPRESSION_T42_T81:
+    case T4_COMPRESSION_SYCC_T81:
         t->type = 0;
         t->width = t42_encode_get_image_width(&s->encoder.t42);
         t->length = t42_encode_get_image_length(&s->encoder.t42)/s->row_squashing_ratio;
@@ -1192,6 +1393,10 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
         t->width = t43_encode_get_image_width(&s->encoder.t43);
         t->length = t43_encode_get_image_length(&s->encoder.t43)/s->row_squashing_ratio;
         t->line_image_size = t43_encode_get_compressed_image_size(&s->encoder.t43)/8;
+        break;
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
         break;
 #endif
     }
@@ -1209,11 +1414,20 @@ SPAN_DECLARE(int) t4_tx_image_complete(t4_tx_state_t *s)
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
         return t85_encode_image_complete(&s->encoder.t85);
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        break;
+#endif
     case T4_COMPRESSION_T42_T81:
+    case T4_COMPRESSION_SYCC_T81:
         return t42_encode_image_complete(&s->encoder.t42);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         return t43_encode_image_complete(&s->encoder.t43);
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
+        break;
 #endif
     }
     return SIG_STATUS_END_OF_DATA;
@@ -1238,11 +1452,20 @@ SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
         return t85_encode_get(&s->encoder.t85, buf, max_len);
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        break;
+#endif
     case T4_COMPRESSION_T42_T81:
+    case T4_COMPRESSION_SYCC_T81:
         return t42_encode_get(&s->encoder.t42, buf, max_len);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         return t43_encode_get(&s->encoder.t43, buf, max_len);
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
+        break;
 #endif
     }
     return 0;
@@ -1278,12 +1501,21 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
     case T4_COMPRESSION_T85_L0:
         t85_encode_restart(&s->encoder.t85, s->image_width, s->image_length);
         break;
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        break;
+#endif
     case T4_COMPRESSION_T42_T81:
+    case T4_COMPRESSION_SYCC_T81:
         t42_encode_restart(&s->encoder.t42, s->image_width, s->image_length);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         t43_encode_restart(&s->encoder.t43, s->image_width, s->image_length);
+        break;
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
         break;
 #endif
     }
@@ -1399,11 +1631,20 @@ SPAN_DECLARE(int) t4_tx_release(t4_tx_state_t *s)
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
         return t85_encode_release(&s->encoder.t85);
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        break;
+#endif
     case T4_COMPRESSION_T42_T81:
+    case T4_COMPRESSION_SYCC_T81:
         return t42_encode_release(&s->encoder.t42);
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         return t43_encode_release(&s->encoder.t43);
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
+        break;
 #endif
     }
     return -1;

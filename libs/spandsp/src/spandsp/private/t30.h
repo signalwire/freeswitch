@@ -159,8 +159,6 @@ struct t30_state_s
     int local_dis_dtc_len;
     /*! \brief The last DIS or DTC message received form the far end. */
     uint8_t far_dis_dtc_frame[T30_MAX_DIS_DTC_DCS_LEN];
-    /*! \brief The length of the last DIS or DTC message received form the far end. */
-    int far_dis_dtc_len;
     /*! \brief TRUE if a valid DIS has been received from the far end. */
     int dis_received;
 
