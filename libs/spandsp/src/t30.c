@@ -1235,8 +1235,12 @@ int t30_build_dis_or_dtc(t30_state_t *s)
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SYCC_T81_CAPABLE);
         }
-        //if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T89))
-        //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T89_CAPABLE);
+        //if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T88))
+        //{
+        //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_1);
+        //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_2);
+        //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_3);
+        //}
 
         if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_12BIT))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE);
@@ -1253,29 +1257,35 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_MULTIPLE_SELECTIVE_POLLING_CAPABLE);
     if ((s->supported_t30_features & T30_SUPPORT_POLLED_SUB_ADDRESSING))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE);
+
     /* No plane interleave */
     /* No G.726 */
     /* No extended voice coding */
     /* Superfine minimum scan line time pattern follows fine */
+
     if ((s->supported_t30_features & T30_SUPPORT_SELECTIVE_POLLING))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE);
     if ((s->supported_t30_features & T30_SUPPORT_SUB_ADDRESSING))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SUBADDRESSING_CAPABLE);
     if ((s->supported_t30_features & T30_SUPPORT_IDENTIFICATION))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_PASSWORD);
+
     /* Ready to transmit a data file (polling) */
     if (s->tx_file[0])
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_READY_TO_TRANSMIT_DATA_FILE);
+
     /* No Binary file transfer (BFT) */
     /* No Document transfer mode (DTM) */
     /* No Electronic data interchange (EDI) */
     /* No Basic transfer mode (BTM) */
+
     /* No mixed mode (polling) */
     /* No character mode */
     /* No mixed mode (T.4/Annex E) */
     /* No mode 26 (T.505) */
     /* No digital network capability */
     /* No duplex operation */
+
     /* No HKM key management */
     /* No RSA key management */
     /* No override */
@@ -1286,9 +1296,11 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No alternative hashing system number 2 */
     /* No alternative hashing system number 3 */
     /* No T.44 (mixed raster content) */
+
     /* No page length maximum strip size for T.44 (mixed raster content) */
     /* No simple phase C BFT negotiations */
     /* No extended BFT negotiations */
+
     if ((s->supported_t30_features & T30_SUPPORT_INTERNET_SELECTIVE_POLLING_ADDRESS))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS);
     if ((s->supported_t30_features & T30_SUPPORT_INTERNET_ROUTING_ADDRESS))
@@ -1418,8 +1430,8 @@ static int build_dcs(t30_state_t *s)
     s->image_width = t4_tx_get_image_width(&s->t4.tx);
     //image_type = t4_tx_get_image_type(&s->t4.tx);
 
-    /* Make a DCS frame based on local issues and the latest received DIS/DTC frame. Negotiate
-       the result based on what both parties can do. */
+    /* Make a DCS frame based on local issues and the latest received DIS/DTC frame.
+       Negotiate the result based on what both parties can do. */
     s->dcs_frame[0] = ADDRESS_FIELD;
     s->dcs_frame[1] = CONTROL_FIELD_FINAL_FRAME;
     s->dcs_frame[2] = (uint8_t) (T30_DCS | s->dis_received);
@@ -1465,6 +1477,10 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_L0_MODE);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         break;
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        break;
+#endif
     case T4_COMPRESSION_T42_T81:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T81_MODE);
         //if (image_type == T4_IMAGE_TYPE_COLOUR_8BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
@@ -1486,6 +1502,16 @@ static int build_dcs(t30_state_t *s)
         //if (???????? & T4_COMPRESSION_?????))
         //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
+        use_bilevel = FALSE;
+        break;
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
+        use_bilevel = FALSE;
+        break;
+#endif
+#if defined(SPANDSP_SUPPORT_SYCC_T81)
+    case T4_COMPRESSION_SYCC_T81:
         use_bilevel = FALSE;
         break;
 #endif
@@ -2042,7 +2068,13 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     s->y_resolution = -1;
     s->current_page_resolution = 0;
     x = -1;
-    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE)  ||  test_ctrl_bit(dcs_frame, T30_DCS_BIT_T43_MODE))
+    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE)
+        ||
+        test_ctrl_bit(dcs_frame, T30_DCS_BIT_T43_MODE)
+        ||
+        test_ctrl_bit(dcs_frame, T30_DCS_BIT_T45_MODE)
+        ||
+        test_ctrl_bit(dcs_frame, T30_DCS_BIT_SYCC_T81_MODE))
     {
         /* Gray scale or colour image */
 
