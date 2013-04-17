@@ -53,6 +53,7 @@
 
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
+SWITCH_DECLARE_DATA switch_filenames SWITCH_GLOBAL_filenames = { 0 };
 
 /* The main runtime obj we keep this hidden for ourselves */
 struct switch_runtime runtime = { 0 };
@@ -739,6 +740,10 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 	}
 
+	if (!SWITCH_GLOBAL_filenames.conf_name && (SWITCH_GLOBAL_filenames.conf_name = (char *) malloc(BUFSIZE))) {
+		switch_snprintf(SWITCH_GLOBAL_filenames.conf_name, BUFSIZE, "%s", "freeswitch.xml");
+	}
+
 	/* Do this last because it being empty is part of the above logic */
 	if (!SWITCH_GLOBAL_dirs.base_dir && (SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(BUFSIZE))) {
 		switch_snprintf(SWITCH_GLOBAL_dirs.base_dir, BUFSIZE, "%s", base_dir);
@@ -758,6 +763,8 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	switch_assert(SWITCH_GLOBAL_dirs.sounds_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.certs_dir);
 	switch_assert(SWITCH_GLOBAL_dirs.temp_dir);
+
+	switch_assert(SWITCH_GLOBAL_filenames.conf_name);
 }
 
 

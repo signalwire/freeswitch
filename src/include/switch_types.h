@@ -494,6 +494,13 @@ struct switch_directories {
 typedef struct switch_directories switch_directories;
 SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 
+struct switch_filenames {
+    char *conf_name;
+};
+
+typedef struct switch_filenames switch_filenames;
+SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
+
 #define SWITCH_MAX_STACKS 16
 #define SWITCH_THREAD_STACKSIZE 240 * 1024
 #define SWITCH_SYSTEM_THREAD_STACKSIZE 8192 * 1024

@@ -366,6 +366,7 @@ static const char usage[] =
 	"\t-c                     -- output to a console and stay in the foreground\n"
 	"\n\tOptions to control locations of files:\n"
 	"\t-base [basedir]         -- alternate prefix directory\n"
+	"\t-cfgname [filename]     -- alternate filename for FreeSWITCH main configuration file\n"
 	"\t-conf [confdir]         -- alternate directory for FreeSWITCH configuration files\n"
 	"\t-log [logdir]           -- alternate directory for logfiles\n"
 	"\t-run [rundir]           -- alternate directory for runtime files\n"
@@ -855,6 +856,21 @@ int main(int argc, char *argv[])
 				return 255;
 			}
 			strcpy(SWITCH_GLOBAL_dirs.sounds_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-cfgname")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -cfgname you must specify a filename\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_filenames.conf_name = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_filenames.conf_name) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_filenames.conf_name, local_argv[x]);
 		}
 
 		/* Unknown option (always last!) */
