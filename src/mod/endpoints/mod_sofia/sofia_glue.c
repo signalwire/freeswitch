@@ -569,6 +569,10 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 		for (; hi; hi = hi->next) {
 			const char *name = (char *) hi->name;
 			char *value = (char *) hi->value;
+			
+			if (!strcasecmp(name, "sip_geolocation")) {
+				stream.write_function(&stream, "Geolocation: %s\r\n", value);
+			}
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
 				if ( !exclude_regex || !(proceed = switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
