@@ -1,5 +1,5 @@
 /* 
- * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * FreeSWITCH Moular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
@@ -1613,6 +1613,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	}
 
 	if (switch_test_flag(dtmf, DTMF_FLAG_SENSITIVE)) {	
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_channel_test_flag(session->channel, CF_DROP_DTMF)) {
+		const char *file = switch_channel_get_variable_dup(session->channel, "drop_dtmf_masking_file", SWITCH_FALSE, -1);
+
+		if (!zstr(file)) {
+			switch_ivr_broadcast(switch_core_session_get_uuid(session), file, SMF_ECHO_ALEG);
+		}
 		return SWITCH_STATUS_SUCCESS;
 	}
 
