@@ -1173,12 +1173,12 @@ static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, 
 	char buf[512];
 	iks *tag;
 
-	if (!strchr(from, '/')) {
+	if (from && !strchr(from, '/')) {
 		snprintf(buf, sizeof(buf), "%s/talk", from);
 		from = buf;
 	}
 
-	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT) && ldl_jid_domcmp(from, to)) {
+	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT) && from && to && ldl_jid_domcmp(from, to)) {
 		globals.logger(DL_LOG_ERR, "Refusal to send presence from and to the same domain in component mode [%s][%s]\n", from, to);
 		return;
 	}
@@ -1748,7 +1748,6 @@ static void on_log(ldl_handle_t *handle, const char *data, size_t size, int is_i
 		} else {
 			globals.logger(DL_LOG_NOTICE, "+xml:%s%s:%s", iks_is_secure(handle->parser) ? "Sec" : "", is_incoming ? "RECV" : "SEND", data);
 		}
-						   
 	}
 }
 
@@ -1820,7 +1819,11 @@ static ldl_queue_t ldl_flush_queue(ldl_handle_t *handle, int done)
 	while(apr_queue_trypop(handle->queue, &pop) == APR_SUCCESS) {
 		if (pop) {
 			msg = (iks *) pop;
-			if (!done) iks_send(handle->parser, msg);
+			if (!done) {
+				if (iks_send(handle->parser, msg) != IKS_OK) {
+					globals.logger(DL_LOG_DEBUG, "Failed sending data!\n");
+				};
+			};
 			iks_delete(msg);
 			pop = NULL;
 			sent_data = LDL_QUEUE_SENT;
@@ -1850,7 +1853,9 @@ static ldl_queue_t ldl_flush_queue(ldl_handle_t *handle, int done)
 					if (globals.debug) {
 						globals.logger(DL_LOG_CRIT, "Sending packet %s (%d left)\n", packet_node->id, packet_node->retries);
 					}
-					iks_send(handle->parser, packet_node->xml);
+					if (iks_send(handle->parser, packet_node->xml) != IKS_OK) {
+						globals.logger(DL_LOG_DEBUG, "Failed trying re-sending data!\n");
+					};
 					packet_node->next = now + 5000000;
 					sent_data = LDL_QUEUE_SENT;
 				}
@@ -1876,8 +1881,8 @@ static ldl_queue_t ldl_flush_queue(ldl_handle_t *handle, int done)
 
 static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 {
-	int timeout_ka = LDL_KEEPALIVE_TIMEOUT;
-	int count_ka = timeout_ka;	
+	int count_ka = LDL_KEEPALIVE_TIMEOUT;	
+	time_t tstart, tnow;
 
 	while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 		int e;
@@ -1908,6 +1913,8 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 
 		j_setup_filter(handle);
 
+		globals.logger(DL_LOG_DEBUG, "xmpp connecting\n");
+
 		e = iks_connect_via(handle->parser,
 							handle->server ? handle->server : handle->acc->server,
 							handle->port ? handle->port : IKS_JABBER_PORT,
@@ -1931,16 +1938,12 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		}
 
 		handle->counter = opt_timeout;
+		if ((tstart = time(NULL)) == -1) {
+			globals.logger(DL_LOG_DEBUG, "error determining connection time");
+		}
 
 		while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 			e = iks_recv(handle->parser, 1);
-
-			if (count_ka-- <= 0) {
-				if( iks_send_raw(handle->parser, " ") == IKS_OK) {
-					count_ka = timeout_ka;
-					globals.logger(DL_LOG_DEBUG, "Sent keep alive signal\n");
-				}
-			}
 
 			if (handle->loop_callback) {
 				if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS) {
@@ -1958,14 +1961,24 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 			}
 
 			if (IKS_OK != e || ldl_test_flag(handle, LDL_FLAG_BREAK)) {
-				globals.logger(DL_LOG_DEBUG, "io error 2 %d retry in %d second(s)\n", e, ++handle->fail_count);
+				globals.logger(DL_LOG_DEBUG, "io error 2 %d retry in %d second(s)", e, ++handle->fail_count);
+				if ((tnow = time(NULL)) == -1) {
+					globals.logger(DL_LOG_DEBUG, "error deterniming io error time");
+				}
+				if (difftime(tnow, tstart) > 30) {
+					/* this is a new error situation: reset counter */ 
+					globals.logger(DL_LOG_DEBUG, "resetting fail count");
+					handle->fail_count = 1;
+				}
 				microsleep(1000 * handle->fail_count);
 				goto fail;
 			}
 
 			if (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
-				ldl_flush_queue(handle, 0);
-			}
+				if (ldl_flush_queue(handle, 0) == LDL_QUEUE_SENT) {
+					count_ka = LDL_KEEPALIVE_TIMEOUT;
+				}
+			} 
 
 			if (!ldl_test_flag(handle, LDL_FLAG_CONNECTED)) {
 				handle->counter--;
@@ -1983,7 +1996,17 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 				}
 			}
 
-			microsleep(100);
+			if (count_ka-- <= 0) {
+				if( iks_send_raw(handle->parser, " ") == IKS_OK) {
+					globals.logger(DL_LOG_DEBUG, "Sent keep alive signal");
+					count_ka = LDL_KEEPALIVE_TIMEOUT;
+				} else {
+					globals.logger(DL_LOG_DEBUG, "Failed sending keep alive signal");
+					microsleep(500);
+					break;
+				}
+			}
+
 		}
 
 	fail:
