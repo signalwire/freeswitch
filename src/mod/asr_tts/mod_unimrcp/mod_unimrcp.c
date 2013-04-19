@@ -2329,8 +2329,8 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 		goto done;
 	}
 
-	/* if inline, use DEFINE-GRAMMAR to cache it on the server */
-	if (type != GRAMMAR_TYPE_URI) {
+	/* if inline or requested via define-grammar param, use DEFINE-GRAMMAR to cache it on the server */
+	if (type != GRAMMAR_TYPE_URI || switch_true(switch_core_hash_find(schannel->params, "define-grammar"))) {
 		mrcp_message_t *mrcp_message;
 		mrcp_generic_header_t *generic_header;
 		const char *mime_type;
@@ -2653,6 +2653,10 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 			if (id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) \"%s\": \"%s\"\n", schannel->name, param_name, param_val);
 				recog_channel_set_header(schannel, id->id, param_val, msg, recog_hdr);
+			} else if (!strcasecmp(param_name, "define-grammar")) {
+				// This parameter is used internally only, not in MRCP headers
+			} else if (!strcasecmp(param_name, "name")) {
+				// This parameter is used internally only, not in MRCP headers
 			} else if (!strcasecmp(param_name, "start-recognize")) {
 				// This parameter is used internally only, not in MRCP headers
 			} else {
@@ -2993,6 +2997,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	switch_size_t grammar_file_size = 0, to_read = 0;
 	grammar_type_t type = GRAMMAR_TYPE_UNKNOWN;
 	char *filename = NULL;
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar = %s, name = %s\n", schannel->name, grammar, name);
 
 	grammar = skip_initial_whitespace(grammar);
@@ -3013,20 +3018,8 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Grammar is URI\n", schannel->name);
 		type = GRAMMAR_TYPE_URI;
 		grammar_data = grammar;
-
-		/* if a name was not given, just use the URI that was passed in */
-		if (zstr(name)) {
-			name = grammar;
-		}
 	} else if (text_starts_with(grammar, INLINE_ID)) {
 		grammar_data = grammar + strlen(INLINE_ID);
-
-		/* name is required for inline grammars */
-		if (zstr(name)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) missing grammar name\n", schannel->name);
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
 	} else {
 		/* grammar points to file containing the grammar text.  We assume the MRCP server can't get to this file
 		 * so read the data from the file and cache it */
@@ -3062,10 +3055,17 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 		}
 		grammar_file_data[to_read] = '\0';
 		grammar_data = grammar_file_data;
+	}
 
-		/* if a name was not given, just use the filename that was passed in */
+	/* if a name was not given, check if defined in a param */
+	if (zstr(name)) {
+		name = switch_core_hash_find(schannel->params, "name");
+
+		/* if not defined in param, create one */
 		if (zstr(name)) {
-			name = grammar;
+			char id[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
+			switch_uuid_str(id, sizeof(id));
+			name = switch_core_strdup(schannel->memory_pool, id);
 		}
 	}
 

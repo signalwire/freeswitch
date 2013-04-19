@@ -3624,7 +3624,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 	}
 
 	/* start speech detection */
-	if (switch_ivr_detect_speech(session, mod_name, grammar, grammar, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_detect_speech(session, mod_name, grammar, "", NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
 	recognizing = 1;
