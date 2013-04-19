@@ -1,6 +1,6 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2013, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -22,11 +22,12 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Brian West <brian@freeswitch.org>
+ * Christopher Rienzo <chris.rienzo@grasshopper.com>
  *
  * mod_pocketsphinx - Pocket Sphinx
- * 
+ *
  *
  */
 
@@ -48,6 +49,10 @@ static struct {
 	char *dictionary;
 	char *language_weight;
 	uint32_t thresh;
+	int no_input_timeout;
+	int speech_timeout;
+	switch_bool_t start_input_timers;
+	int confidence_threshold;
 	uint32_t silence_hits;
 	uint32_t listen_hits;
 	int auto_reload;
@@ -58,7 +63,13 @@ typedef enum {
 	PSFLAG_HAS_TEXT = (1 << 0),
 	PSFLAG_READY = (1 << 1),
 	PSFLAG_BARGE = (1 << 2),
-	PSFLAG_ALLOCATED = (1 << 3)
+	PSFLAG_ALLOCATED = (1 << 3),
+	PSFLAG_INPUT_TIMERS = (1 << 4),
+	PSFLAG_START_OF_SPEECH = (1 << 5),
+	PSFLAG_NOINPUT_TIMEOUT = (1 << 6),
+	PSFLAG_SPEECH_TIMEOUT = (1 << 7),
+	PSFLAG_NOINPUT = (1 << 8),
+	PSFLAG_NOMATCH = (1 << 9)
 } psflag_t;
 
 typedef struct {
@@ -71,6 +82,11 @@ typedef struct {
 	uint32_t listen_hits;
 	uint32_t listening;
 	uint32_t countdown;
+	int no_input_timeout;
+	int speech_timeout;
+	switch_bool_t start_input_timers;
+	switch_time_t silence_time;
+	int confidence_threshold;
 	char *hyp;
 	char *grammar;
 	int32_t score;
@@ -108,6 +124,10 @@ static switch_status_t pocketsphinx_asr_open(switch_asr_handle_t *ah, const char
 	ps->silence_hits = globals.silence_hits;
 	ps->listen_hits = globals.listen_hits;
 	ps->org_silence_hits = ps->silence_hits;
+	ps->start_input_timers = globals.start_input_timers;
+	ps->no_input_timeout = globals.no_input_timeout;
+	ps->speech_timeout = globals.speech_timeout;
+	ps->confidence_threshold = globals.confidence_threshold;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -184,6 +204,17 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	switch_mutex_unlock(ps->flag_mutex);
 
 	ps_start_utt(ps->ps, NULL);
+	ps->silence_time = switch_micro_time_now();
+	switch_clear_flag(ps, PSFLAG_START_OF_SPEECH);
+	switch_clear_flag(ps, PSFLAG_NOINPUT_TIMEOUT);
+	switch_clear_flag(ps, PSFLAG_NOINPUT);
+	switch_clear_flag(ps, PSFLAG_NOMATCH);
+	switch_clear_flag(ps, PSFLAG_SPEECH_TIMEOUT);
+	if (ps->start_input_timers) {
+		switch_set_flag(ps, PSFLAG_INPUT_TIMERS);
+	} else {
+		switch_clear_flag(ps, PSFLAG_INPUT_TIMERS);
+	}
 	switch_set_flag(ps, PSFLAG_READY);
 	switch_safe_free(ps->grammar);
 	ps->grammar = strdup(grammar);
@@ -242,7 +273,7 @@ static switch_bool_t stop_detect(pocketsphinx_t *ps, int16_t *data, unsigned int
 		return SWITCH_FALSE;
 	}
 
-
+	/* Do simple energy threshold for VAD */
 	for (count = 0; count < samples; count++) {
 		energy += abs(data[j]);
 	}
@@ -251,7 +282,34 @@ static switch_bool_t stop_detect(pocketsphinx_t *ps, int16_t *data, unsigned int
 
 	if (score >= ps->thresh) {
 		if (++ps->listening == 1) {
-			switch_set_flag_locked(ps, PSFLAG_BARGE);
+			switch_mutex_lock(ps->flag_mutex);
+			switch_set_flag(ps, PSFLAG_BARGE);
+			switch_set_flag(ps, PSFLAG_START_OF_SPEECH);
+			switch_mutex_unlock(ps->flag_mutex);
+		}
+		ps->silence_time = 0;
+	} else if (!ps->silence_time) {
+		ps->silence_time = switch_micro_time_now();
+	}
+
+	/* Check silence timeouts */
+	if (ps->silence_time && switch_test_flag(ps, PSFLAG_INPUT_TIMERS)) {
+		int elapsed_ms = (switch_micro_time_now() - ps->silence_time) / 1000;
+		if (switch_test_flag(ps, PSFLAG_START_OF_SPEECH)) {
+			if (ps->speech_timeout > 0 && !switch_test_flag(ps, PSFLAG_SPEECH_TIMEOUT) && elapsed_ms >= ps->speech_timeout) {
+				switch_set_flag_locked(ps, PSFLAG_SPEECH_TIMEOUT);
+				ps->listening = 0;
+				return SWITCH_TRUE;
+			}
+		} else {
+			if (ps->no_input_timeout > 0 && !switch_test_flag(ps, PSFLAG_NOINPUT_TIMEOUT) && elapsed_ms >= ps->no_input_timeout) {
+				switch_mutex_lock(ps->flag_mutex);
+				switch_set_flag(ps, PSFLAG_NOINPUT_TIMEOUT);
+				switch_set_flag(ps, PSFLAG_NOINPUT);
+				switch_mutex_unlock(ps->flag_mutex);
+				ps->listening = 0;
+				return SWITCH_TRUE;
+			}
 		}
 	}
 
@@ -262,7 +320,6 @@ static switch_bool_t stop_detect(pocketsphinx_t *ps, int16_t *data, unsigned int
 	} else {
 		ps->silence_hits = ps->org_silence_hits;
 	}
-
 
 	return SWITCH_FALSE;
 }
@@ -276,7 +333,7 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 	if (switch_test_flag(ah, SWITCH_ASR_FLAG_CLOSED))
 		return SWITCH_STATUS_BREAK;
 
-	if (!switch_test_flag(ps, PSFLAG_HAS_TEXT) && switch_test_flag(ps, PSFLAG_READY)) {
+	if (!switch_test_flag(ps, PSFLAG_NOMATCH) && !switch_test_flag(ps, PSFLAG_NOINPUT) && !switch_test_flag(ps, PSFLAG_HAS_TEXT) && switch_test_flag(ps, PSFLAG_READY)) {
 		if (stop_detect(ps, (int16_t *) data, len / 2)) {
 			char const *hyp;
 
@@ -287,15 +344,38 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 					switch_clear_flag(ps, PSFLAG_READY);
 					if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
 						if (zstr(hyp)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost the text, never mind....\n");
-							ps_start_utt(ps->ps, NULL);
-							switch_set_flag(ps, PSFLAG_READY);
+							if (!switch_test_flag(ps, PSFLAG_SPEECH_TIMEOUT)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost the text, never mind....\n");
+								ps_start_utt(ps->ps, NULL);
+								switch_set_flag(ps, PSFLAG_READY);
+							}
 						} else {
-							ps->hyp = switch_core_strdup(ah->memory_pool, hyp);
-							switch_set_flag(ps, PSFLAG_HAS_TEXT);
+							/* get match and confidence */
+							int32_t conf;
+
+							conf = ps_get_prob(ps->ps, &ps->uttid);
+
+							ps->confidence = (conf + 20000) / 200;
+
+							if (ps->confidence < 0) {
+								ps->confidence = 0;
+							}
+
+							if (ps->confidence_threshold <= 0 || ps->confidence >= ps->confidence_threshold) {
+								ps->hyp = switch_core_strdup(ah->memory_pool, hyp);
+								switch_set_flag(ps, PSFLAG_HAS_TEXT);
+							} else {
+								/* have match, but below confidence threshold */
+								switch_set_flag(ps, PSFLAG_NOMATCH);
+							}
 						}
 					}
 				}
+			}
+			if (switch_test_flag(ps, PSFLAG_SPEECH_TIMEOUT) && !switch_test_flag(ps, PSFLAG_HAS_TEXT)) {
+				/* heard something, but doesn't match anything */
+				switch_clear_flag(ps, PSFLAG_READY);
+				switch_set_flag(ps, PSFLAG_NOMATCH);
 			}
 			switch_mutex_unlock(ps->flag_mutex);
 		}
@@ -310,6 +390,9 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 		if (rv < 0) {
 			return SWITCH_STATUS_FALSE;
 		}
+	} else if (switch_test_flag(ps, PSFLAG_NOINPUT_TIMEOUT)) {
+		/* never heard anything */
+		switch_clear_flag_locked(ps, PSFLAG_READY);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -340,6 +423,7 @@ static switch_status_t pocketsphinx_asr_resume(switch_asr_handle_t *ah)
 
 	switch_mutex_lock(ps->flag_mutex);
 	switch_clear_flag(ps, PSFLAG_HAS_TEXT);
+	ps->silence_time = switch_micro_time_now();
 	if (!switch_test_flag(ps, PSFLAG_READY)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Manually Resuming\n");
 
@@ -359,15 +443,14 @@ static switch_status_t pocketsphinx_asr_check_results(switch_asr_handle_t *ah, s
 {
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 
-	return (switch_test_flag(ps, PSFLAG_HAS_TEXT) || switch_test_flag(ps, PSFLAG_BARGE)) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	return (switch_test_flag(ps, PSFLAG_NOINPUT) || switch_test_flag(ps, PSFLAG_NOMATCH) || switch_test_flag(ps, PSFLAG_HAS_TEXT) || switch_test_flag(ps, PSFLAG_BARGE)) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
-/*! function to read results from the ASR*/
+/*! function to read results from the ASR */
 static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags)
 {
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int32_t conf;
 
 	if (switch_test_flag(ps, PSFLAG_BARGE)) {
 		switch_clear_flag_locked(ps, PSFLAG_BARGE);
@@ -377,15 +460,8 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 	if (switch_test_flag(ps, PSFLAG_HAS_TEXT)) {
 		switch_mutex_lock(ps->flag_mutex);
 		switch_clear_flag(ps, PSFLAG_HAS_TEXT);
-		conf = ps_get_prob(ps->ps, &ps->uttid);
 
-		ps->confidence = (conf + 20000) / 200;
-
-		if (ps->confidence < 0) {
-			ps->confidence = 0;
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Confidence: %d\n", ps->hyp, ps->confidence);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recognized: %s, Confidence: %d, Confidence-Threshold: %d\n", ps->hyp, ps->confidence, ps->confidence_threshold);
 		switch_mutex_unlock(ps->flag_mutex);
 
 		*xmlstr = switch_mprintf("<?xml version=\"1.0\"?>\n"
@@ -394,7 +470,7 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 								 "    <input mode=\"speech\">%s</input>\n"
 								 "  </interpretation>\n" "</result>\n", ps->grammar, ps->grammar, ps->confidence, ps->hyp);
 
-		if (switch_test_flag(ps, SWITCH_ASR_FLAG_AUTO_RESUME)) {
+		if (!switch_test_flag(ps, PSFLAG_INPUT_TIMERS) && switch_test_flag(ah, SWITCH_ASR_FLAG_AUTO_RESUME)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto Resuming\n");
 			switch_set_flag(ps, PSFLAG_READY);
 
@@ -402,9 +478,78 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 		}
 
 		status = SWITCH_STATUS_SUCCESS;
+	} else if (switch_test_flag(ps, PSFLAG_NOINPUT)) {
+		switch_clear_flag_locked(ps, PSFLAG_NOINPUT);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NO INPUT\n");
+
+		*xmlstr = switch_mprintf("<?xml version=\"1.0\"?>\n"
+								 "<result grammar=\"%s\">\n"
+								 "  <interpretation>\n"
+								 "    <input mode=\"speech\"><noinput/></input>\n"
+								 "  </interpretation>\n"
+								 "</result>\n", ps->grammar);
+
+		status = SWITCH_STATUS_SUCCESS;
+	} else if (switch_test_flag(ps, PSFLAG_NOMATCH)) {
+		switch_clear_flag_locked(ps, PSFLAG_NOMATCH);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NO MATCH\n");
+
+		*xmlstr = switch_mprintf("<?xml version=\"1.0\"?>\n"
+								 "<result grammar=\"%s\">\n"
+								 "  <interpretation>\n"
+								 "    <input mode=\"speech\"><nomatch/></input>\n"
+								 "  </interpretation>\n"
+								 "</result>\n", ps->grammar);
+
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 	return status;
+}
+
+/*! function to start input timeouts */
+static switch_status_t pocketsphinx_asr_start_input_timers(switch_asr_handle_t *ah)
+{
+	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
+	switch_set_flag_locked(ps, PSFLAG_INPUT_TIMERS);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/*! set text parameter */
+static void pocketsphinx_asr_text_param(switch_asr_handle_t *ah, char *param, const char *val)
+{
+	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
+	if (!zstr(param) && !zstr(val)) {
+		if (!strcasecmp("no-input-timeout", param) && switch_is_number(val)) {
+			ps->no_input_timeout = atoi(val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no-input-timeout = %d\n", ps->no_input_timeout);
+		} else if (!strcasecmp("speech-timeout", param) && switch_is_number(val)) {
+			ps->speech_timeout = atoi(val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "speech-timeout = %d\n", ps->speech_timeout);
+		} else if (!strcasecmp("start-input-timers", param)) {
+			ps->start_input_timers = switch_true(val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "start-input-timers = %d\n", ps->start_input_timers);
+		} else if (!strcasecmp("confidence-threshold", param) && switch_is_number(val)) {
+			ps->confidence_threshold = atoi(val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "confidence-threshold = %d\n", ps->confidence_threshold);
+		}
+	}
+}
+
+/*! set numeric parameter */
+static void pocketsphinx_asr_numeric_param(switch_asr_handle_t *ah, char *param, int val)
+{
+	char *val_str = switch_mprintf("%d", val);
+	pocketsphinx_asr_text_param(ah, param, val_str);
+	switch_safe_free(val_str);
+}
+
+/*! set float parameter */
+static void pocketsphinx_asr_float_param(switch_asr_handle_t *ah, char *param, double val)
+{
+	char *val_str = switch_mprintf("%f", val);
+	pocketsphinx_asr_text_param(ah, param, val_str);
+	switch_safe_free(val_str);
 }
 
 static switch_status_t load_config(void)
@@ -418,6 +563,10 @@ static switch_status_t load_config(void)
 	globals.silence_hits = 35;
 	globals.listen_hits = 1;
 	globals.auto_reload = 1;
+	globals.start_input_timers = SWITCH_FALSE;
+	globals.no_input_timeout = 4000;
+	globals.speech_timeout = 1000;
+	globals.confidence_threshold = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -431,6 +580,14 @@ static switch_status_t load_config(void)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "threshold")) {
 				globals.thresh = atoi(val);
+			} else if (!strcasecmp(var, "start-input-timers")) {
+				globals.start_input_timers = switch_true(val);
+			} else if (!strcasecmp(var, "no-input-timeout")) {
+				globals.no_input_timeout = atoi(val);
+			} else if (!strcasecmp(var, "speech-timeout")) {
+				globals.speech_timeout = atoi(val);
+			} else if (!strcasecmp(var, "confidence_threshold")) {
+				globals.confidence_threshold = atoi(val);
 			} else if (!strcasecmp(var, "silence-hits")) {
 				globals.silence_hits = atoi(val);
 			} else if (!strcasecmp(var, "language-weight")) {
@@ -516,10 +673,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pocketsphinx_load)
 	asr_interface->asr_pause = pocketsphinx_asr_pause;
 	asr_interface->asr_check_results = pocketsphinx_asr_check_results;
 	asr_interface->asr_get_results = pocketsphinx_asr_get_results;
-	asr_interface->asr_start_input_timers = NULL;
-	asr_interface->asr_text_param = NULL;
-	asr_interface->asr_numeric_param = NULL;
-	asr_interface->asr_float_param = NULL;
+	asr_interface->asr_start_input_timers = pocketsphinx_asr_start_input_timers;
+	asr_interface->asr_text_param = pocketsphinx_asr_text_param;
+	asr_interface->asr_numeric_param = pocketsphinx_asr_numeric_param;
+	asr_interface->asr_float_param = pocketsphinx_asr_float_param;
 
 	err_set_logfp(NULL);
 
