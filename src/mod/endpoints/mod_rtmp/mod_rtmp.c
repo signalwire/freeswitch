@@ -292,13 +292,6 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	
 	switch_core_hash_delete_wrlock(rsession->session_hash, switch_core_session_get_uuid(session), rsession->session_rwlock);
 	
-	switch_mutex_lock(rsession->profile->mutex);
-	rsession->profile->calls--;
-	if (rsession->profile->calls < 0) {
-		rsession->profile->calls = 0;
-	}
-	switch_mutex_unlock(rsession->profile->mutex);
-
 	switch_mutex_lock(rsession->count_mutex);
 	rsession->active_sessions--;
 	switch_mutex_unlock(rsession->count_mutex);
@@ -468,31 +461,37 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 	assert(tech_pvt != NULL);
 	rsession = tech_pvt->rtmp_session;
 
+	if ( rsession == NULL ) {
+		goto error;
+	}
+
+	switch_thread_rwlock_wrlock(rsession->rwlock);
+
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TFLAG_IO not set\n");
-		return SWITCH_STATUS_FALSE;
+		goto error;
 	}
 	
 	if (switch_test_flag(tech_pvt, TFLAG_DETACHED) || !switch_test_flag(rsession, SFLAG_AUDIO)) {
-		return SWITCH_STATUS_SUCCESS;
+		goto success;
 	}
 	
 	if (!rsession || !tech_pvt->audio_codec || !tech_pvt->write_channel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing mandatory value\n");
-		return SWITCH_STATUS_FALSE;
+		goto error;
 	}
 	
 	if (rsession->state >= RS_DESTROY) {
-		return SWITCH_STATUS_FALSE;
+		goto error;
 	}
 
 	if (frame->datalen+1 > frame->buflen) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Datalen too big\n");
-		return SWITCH_STATUS_FALSE;
+		goto error;
 	}
 	
 	if (frame->flags & SFF_CNG) {
-		return SWITCH_STATUS_SUCCESS;
+		goto success;
 	}
 
 	/* Build message */
@@ -508,7 +507,14 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 	}
 
 	rtmp_send_message(rsession, RTMP_DEFAULT_STREAM_AUDIO, ts, RTMP_TYPE_AUDIO, rsession->media_streamid, buf, frame->datalen + 1, 0);
+
+ success:
+	switch_thread_rwlock_unlock(rsession->rwlock);	
 	return SWITCH_STATUS_SUCCESS;
+
+ error:
+	switch_thread_rwlock_unlock(rsession->rwlock);
+		return SWITCH_STATUS_FALSE;
 }
 
 
@@ -852,6 +858,14 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 		switch_yield(500000);
 		}*/
 	
+	switch_mutex_lock((*rsession)->profile->mutex);
+	if ( (*rsession)->profile->calls < 1 ) {
+		(*rsession)->profile->calls = 0;
+	} else {
+		(*rsession)->profile->calls--;
+	}
+	switch_mutex_unlock((*rsession)->profile->mutex);
+
 	switch_thread_rwlock_wrlock((*rsession)->rwlock);
 	switch_thread_rwlock_unlock((*rsession)->rwlock);
 	
