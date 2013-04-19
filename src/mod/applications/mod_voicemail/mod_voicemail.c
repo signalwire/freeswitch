@@ -27,6 +27,7 @@
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * John Wehle (john@feith.com)
  * Raymond Chandler <intralanman@gmail.com>
+ * Kristin King <kristin.king@quentustech.com>
  *
  * mod_voicemail.c -- Voicemail Module
  *
@@ -107,6 +108,8 @@ struct vm_profile {
 	char *name;
 	char *dbname;
 	char *odbc_dsn;
+	char *play_new_messages_lifo;
+	char *play_saved_messages_lifo;
 	char terminator_key[2];
 	char play_new_messages_key[2];
 	char play_saved_messages_key[2];
@@ -548,6 +551,10 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 						   &profile->play_new_messages_key, "1", &config_dtmf, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "play-saved-messages-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->play_saved_messages_key, "2", &config_dtmf, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "play-new-messages-lifo", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
+						   &profile->play_new_messages_lifo, SWITCH_FALSE, NULL, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "play-saved-messages-lifo", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
+						   &profile->play_saved_messages_lifo, SWITCH_FALSE, NULL, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "login-keys", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->login_keys, "0", &config_login_keys, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "main-menu-key", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
@@ -2059,7 +2066,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					{
 						switch_snprintf(sql, sizeof(sql),
 										"select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and read_epoch=0"
-										" order by read_flags, created_epoch", myid, domain_name);
+										" order by read_flags, created_epoch %s", myid, domain_name,
+										profile->play_new_messages_lifo ? "desc" : "asc");
 						total_messages = total_new_messages;
 						heard_auto_new = heard_auto_saved = 1;
 					}
@@ -2069,7 +2077,8 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					{
 						switch_snprintf(sql, sizeof(sql),
 										"select created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by from voicemail_msgs where username='%s' and domain='%s' and read_epoch !=0"
-										" order by read_flags, created_epoch", myid, domain_name);
+										" order by read_flags, created_epoch %s", myid, domain_name,
+										profile->play_saved_messages_lifo ? "desc" : "asc");
 						total_messages = total_saved_messages;
 						heard_auto_new = heard_auto_saved = 1;
 					}
@@ -5250,17 +5259,17 @@ done:
 
 /* Message API */
 
-#define VM_FSDB_MSG_LIST_USAGE "<format> <profile> <domain> <user> <folder> <filter>"
+#define VM_FSDB_MSG_LIST_USAGE "<format> <profile> <domain> <user> <folder> <filter> [msg-order = ASC | DESC]"
 SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 {
 	char *sql;
 	msg_lst_callback_t cbt = { 0 };
 	char *ebuf = NULL;
 
-	const char *id = NULL, *domain = NULL, *profile_name = NULL, *folder = NULL, *msg_type = NULL;
+	const char *id = NULL, *domain = NULL, *profile_name = NULL, *folder = NULL, *msg_type = NULL, *msg_order = NULL;
 	vm_profile_t *profile = NULL;
 
-	char *argv[6] = { 0 };
+	char *argv[7] = { 0 };
 	char *mycmd = NULL;
 
 	switch_memory_pool_t *pool;
@@ -5282,9 +5291,18 @@ SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 		folder = argv[4]; /* TODO add Support */
 	if (argv[5])
 		msg_type = argv[5];
+	if (argv[6])
+		msg_order = argv[6];
 
 	if (!profile_name || !domain || !id || !folder || !msg_type) {
 		stream->write_function(stream, "-ERR Missing Arguments\n");
+		goto done;
+	}
+
+	if (!msg_order) {
+		msg_order = "ASC";
+	} else if (strcasecmp(msg_order, "ASC") || strcasecmp(msg_order, "DESC")) {
+		stream->write_function(stream, "-ERR Bad Argument: '%s'\n", msg_order);
 		goto done;
 	}
 
@@ -5293,13 +5311,13 @@ SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 		goto done;
 	}
 	if (!strcasecmp(msg_type, "not-read")) {
-		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND read_epoch = 0 ORDER BY read_flags, created_epoch", id, domain);
+		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND read_epoch = 0 ORDER BY read_flags, created_epoch %q", id, domain, msg_order);
 	} else if (!strcasecmp(msg_type, "new")) {
-		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND flags='' ORDER BY read_flags, created_epoch", id, domain);
+		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND flags='' ORDER BY read_flags, created_epoch %q", id, domain, msg_order);
 	} else if (!strcasecmp(msg_type, "save")) {
-		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND flags='save' ORDER BY read_flags, created_epoch", id, domain);
+		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND flags='save' ORDER BY read_flags, created_epoch %q", id, domain, msg_order);
 	} else {
-		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND read_epoch != 0 ORDER BY read_flags, created_epoch", id, domain);
+		sql = switch_mprintf("SELECT uuid FROM voicemail_msgs WHERE username = '%q' AND domain = '%q' AND read_epoch != 0 ORDER BY read_flags, created_epoch %q", id, domain, msg_order);
 	}
 	memset(&cbt, 0, sizeof(cbt));
 

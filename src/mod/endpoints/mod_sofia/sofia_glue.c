@@ -652,6 +652,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 	}
 	
 	if (sofia_test_flag(tech_pvt, TFLAG_VIDEO)) {
+
 		if (!tech_pvt->local_sdp_video_port) {
 			sofia_glue_tech_choose_video_port(tech_pvt, 0);
 		}
@@ -861,6 +862,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 
 	if (codec_string) {
 		char *tmp_codec_string;
+		switch_channel_set_variable(tech_pvt->channel, "rtp_use_codec_string", codec_string);
 		if ((tmp_codec_string = switch_core_session_strdup(tech_pvt->session, codec_string))) {
 			tech_pvt->codec_order_last = switch_separate_string(tmp_codec_string, ',', tech_pvt->codec_order, SWITCH_MAX_CODECS);
 			tech_pvt->num_codecs =
@@ -875,7 +877,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 
 void sofia_glue_check_video_codecs(private_object_t *tech_pvt)
 {
-	if (tech_pvt->num_codecs && !sofia_test_flag(tech_pvt, TFLAG_VIDEO)) {
+	if (tech_pvt->num_codecs && !sofia_test_flag(tech_pvt, TFLAG_VIDEO) && !switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 		int i;
 		tech_pvt->video_count = 0;
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
@@ -2024,6 +2026,10 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 		for (; hi; hi = hi->next) {
 			const char *name = (char *) hi->name;
 			char *value = (char *) hi->value;
+			
+			if (!strcasecmp(name, "sip_geolocation")) {
+				stream.write_function(&stream, "Geolocation: %s\r\n", value);
+			}
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
 				if ( !exclude_regex || !(proceed = switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
@@ -5912,6 +5918,13 @@ int sofia_recover_callback(switch_core_session_t *session)
 			tech_pvt->recv_te = te;
 		} 
 	}
+
+	if ((tmp = switch_channel_get_variable(channel, "rtp_use_codec_string"))) {
+		char *tmp_codec_string = switch_core_session_strdup(session, tmp);
+		tech_pvt->codec_order_last = switch_separate_string(tmp_codec_string, ',', tech_pvt->codec_order, SWITCH_MAX_CODECS);
+		tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs, SWITCH_MAX_CODECS, tech_pvt->codec_order, tech_pvt->codec_order_last);
+	}
+	
 
 	rr = switch_channel_get_variable(channel, "sip_invite_record_route");
 

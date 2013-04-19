@@ -4419,9 +4419,20 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "tls")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_TLS);
+							if (profile->tls_bind_params) {
+								if (!switch_stristr("transport=tls", profile->tls_bind_params)) {
+									profile->tls_bind_params = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->tls_bind_params);
+								}
+							} else {
+								profile->tls_bind_params = switch_core_strdup(profile->pool, "transport=tls");
+							}
 						}
 					} else if (!strcasecmp(var, "tls-bind-params")) {
-						profile->tls_bind_params = switch_core_strdup(profile->pool, val);
+						if (switch_stristr("transport=tls", val)) {
+							profile->tls_bind_params = switch_core_strdup(profile->pool, val);
+						} else {
+							profile->tls_bind_params = switch_core_sprintf(profile->pool, "%s;transport=tls", val);
+						}
 					} else if (!strcasecmp(var, "tls-only")) {
 						profile->tls_only = switch_true(val);
 					} else if (!strcasecmp(var, "tls-verify-date")) {
@@ -8631,6 +8642,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				switch_channel_set_variable(channel, "push_channel_name", "true");
 			} else if (!strcasecmp(un->un_name, "X-FS-Support")) {
 				tech_pvt->x_freeswitch_support_remote = switch_core_session_strdup(session, un->un_value);
+			} else if (!strcasecmp(un->un_name, "Geolocation")) {
+				switch_channel_set_variable(channel, "sip_geolocation", un->un_value);
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2) || !strcasecmp(un->un_name, "User-to-User")) {
 				if (!zstr(un->un_value)) {
 					char new_name[512] = "";

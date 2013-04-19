@@ -251,11 +251,13 @@ SWITCH_DECLARE(const char *) API::executeString(const char *cmd)
 {
 	char *arg;
 	switch_stream_handle_t stream = { 0 };
-	char *mycmd = strdup(cmd);
-
-	switch_assert(mycmd);
+	char *mycmd = NULL;
 
 	this_check("");
+
+	mycmd = strdup(cmd);
+
+	switch_assert(mycmd);
 
 	if ((arg = strchr(mycmd, ' '))) {
 		*arg++ = '\0';
