@@ -330,7 +330,7 @@ static __inline__ void track_carrier(v17_rx_state_t *s, const complexf_t *z, con
        positions is proportional to the phase error, for any particular target. However, the
        different amplitudes of the various target positions scale things. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
-    error = z->im*(target->re >> FP_SHIFT_FACTOR) - z->re*(target->im >> FP_SHIFT_FACTOR);
+    error = z->im*(((int32_t) target->re) >> FP_SHIFT_FACTOR) - z->re*(((int32_t) target->im) >> FP_SHIFT_FACTOR);
     s->carrier_phase_rate += ((s->carrier_track_i*error) >> FP_SHIFT_FACTOR);
     s->carrier_phase += ((s->carrier_track_p*error) >> FP_SHIFT_FACTOR);
 #else
@@ -363,9 +363,9 @@ static __inline__ void put_bit(v17_rx_state_t *s, int bit)
 
     /* We need to strip the last part of the training - the test period of all 1s -
        before we let data go to the application. */
+    out_bit = descramble(s, bit);
     if (s->training_stage == TRAINING_STAGE_NORMAL_OPERATION)
     {
-        out_bit = descramble(s, bit);
         s->put_bit(s->put_bit_user_data, out_bit);
     }
     else if (s->training_stage == TRAINING_STAGE_TEST_ONES)
@@ -373,16 +373,15 @@ static __inline__ void put_bit(v17_rx_state_t *s, int bit)
         /* The bits during the final stage of training should be all ones. However,
            buggy modems mean you cannot rely on this. Therefore we don't bother
            testing for ones, but just rely on a constellation mismatch measurement. */
-        out_bit = descramble(s, bit);
         //span_log(&s->logging, SPAN_LOG_FLOW, "A 1 is really %d\n", out_bit);
     }
 }
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-static __inline__ uint32_t dist_sq(const complexi32_t *x, const complexi32_t *y)
+static __inline__ uint32_t dist_sq(const complexi16_t *x, const complexi16_t *y)
 {
-    return (x->re - y->re)*(x->re - y->re) + (x->im - y->im)*(x->im - y->im);
+    return (int32_t) (x->re - y->re)*(x->re - y->re) + (int32_t) (x->im - y->im)*(x->im - y->im);
 }
 /*- End of function --------------------------------------------------------*/
 #else
@@ -446,11 +445,11 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
 #endif
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-    re = (z->re + 9*FP_FACTOR) >> (FP_SHIFT_FACTOR - 1);
-    im = (z->im + 9*FP_FACTOR) >> (FP_SHIFT_FACTOR - 1);
+    re = (z->re + FP_CONSTELLATION_SCALE(9.0f)) >> (FP_CONSTELLATION_SHIFT_FACTOR - 1);
+    im = (z->im + FP_CONSTELLATION_SCALE(9.0f)) >> (FP_CONSTELLATION_SHIFT_FACTOR - 1);
 #else
-    re = (int) ((z->re + 9.0f)*2.0f);
-    im = (int) ((z->im + 9.0f)*2.0f);
+    re = (int) ((z->re + FP_CONSTELLATION_SCALE(9.0f))*2.0f);
+    im = (int) ((z->im + FP_CONSTELLATION_SCALE(9.0f))*2.0f);
 #endif
     if (re > 35)
         re = 35;
@@ -611,9 +610,9 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
 #if defined(SPANDSP_USE_FIXED_POINTx)
     /* TODO: The scalings used here need more thorough evaluation, to see if overflows are possible. */
     /* Cross correlate */
-    v = (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[0] >> 4)) >> 15)*SYNC_LOW_BAND_EDGE_COEFF_2
-      - (((s->symbol_sync_low[0] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_HIGH_BAND_EDGE_COEFF_2
-      + (((s->symbol_sync_low[1] >> 5)*(s->symbol_sync_high[1] >> 4)) >> 15)*SYNC_MIXED_EDGES_COEFF_3;
+    v = (((s->symbol_sync_low[1] >> (FP_SYNC_SHIFT_FACTOR/2))*(s->symbol_sync_high[0] >> (FP_SYNC_SHIFT_FACTOR/2))) >> 14)*SYNC_LOW_BAND_EDGE_COEFF_2
+      - (((s->symbol_sync_low[0] >> (FP_SYNC_SHIFT_FACTOR/2))*(s->symbol_sync_high[1] >> (FP_SYNC_SHIFT_FACTOR/2))) >> 14)*SYNC_HIGH_BAND_EDGE_COEFF_2
+      + (((s->symbol_sync_low[1] >> (FP_SYNC_SHIFT_FACTOR/2))*(s->symbol_sync_high[1] >> (FP_SYNC_SHIFT_FACTOR/2))) >> 14)*SYNC_MIXED_EDGES_COEFF_3;
     /* Filter away any DC component */
     p = v - s->symbol_sync_dc_filter[1];
     s->symbol_sync_dc_filter[1] = s->symbol_sync_dc_filter[0];
@@ -621,10 +620,10 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
     v = labs(s->baud_phase);
-    if (v > 100*FP_FACTOR)
+    if (v > FP_SYNC_SCALE_32(100.0f))
     {
-        i = (v > 1000*FP_FACTOR)  ?  15  :  1;
-        if (s->baud_phase < 0)
+        i = (v > FP_SYNC_SCALE_32(1000.0f))  ?  15  :  1;
+        if (s->baud_phase < FP_SYNC_SCALE_32(0.0f))
             i = -i;
         //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
@@ -642,10 +641,10 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
     v = fabsf(s->baud_phase);
-    if (v > 100.0f)
+    if (v > FP_SYNC_SCALE_32(100.0f))
     {
-        i = (v > 1000.0f)  ?  15  :  1;
-        if (s->baud_phase < 0.0f)
+        i = (v > FP_SYNC_SCALE_32(1000.0f))  ?  15  :  1;
+        if (s->baud_phase < FP_SYNC_SCALE_32(0.0f))
             i = -i;
         //printf("v = %10.5f %5d - %f %f %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
@@ -1274,14 +1273,14 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
         sample.re = (v*s->agc_scaling) >> 10;
         /* Symbol timing synchronisation band edge filters */
         /* Low Nyquist band edge filter */
-        v = ((s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0) >> 10)
-          + ((s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1) >> 10)
+        v = ((s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0) >> FP_SYNC_SHIFT_FACTOR)
+          + ((s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1) >> FP_SYNC_SHIFT_FACTOR)
           + sample.re;
         s->symbol_sync_low[1] = s->symbol_sync_low[0];
         s->symbol_sync_low[0] = v;
         /* High Nyquist band edge filter */
-        v = ((s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0) >> 10)
-          + ((s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1) >> 10)
+        v = ((s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0) >> FP_SYNC_SHIFT_FACTOR)
+          + ((s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1) >> FP_SYNC_SHIFT_FACTOR)
           + sample.re;
         s->symbol_sync_high[1] = s->symbol_sync_high[0];
         s->symbol_sync_high[0] = v;
@@ -1453,11 +1452,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
        at a value of zero, and all others start larger. This forces the
        initial paths to merge at the zero states. */
     for (i = 0;  i < 8;  i++)
-#if defined(SPANDSP_USE_FIXED_POINTx)
-        s->distances[i] = 99*DIST_FACTOR*DIST_FACTOR;
-#else
-        s->distances[i] = 99.0f;
-#endif
+        s->distances[i] = FP_CONSTELLATION_SCALE(99.0f)*FP_CONSTELLATION_SCALE(1.0f);
     memset(s->full_path_to_past_state_locations, 0, sizeof(s->full_path_to_past_state_locations));
     memset(s->past_state_locations, 0, sizeof(s->past_state_locations));
     s->distances[0] = 0;
