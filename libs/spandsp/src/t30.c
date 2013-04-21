@@ -1750,7 +1750,6 @@ static int build_dcs(t30_state_t *s)
     /* Deal with the image length */
     /* If the other end supports unlimited length, then use that. Otherwise, if the other end supports
        B4 use that, as its longer than the default A4 length. */
-printf("Size1 0x%x\n", s->mutual_image_sizes);
     if ((s->mutual_image_sizes & T4_SUPPORT_LENGTH_UNLIMITED))
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_UNLIMITED_LENGTH);
     else if ((s->mutual_image_sizes & T4_SUPPORT_LENGTH_B4))

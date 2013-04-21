@@ -840,6 +840,7 @@ static int read_tiff_image(t4_tx_state_t *s)
         s->image_length = image_translate_get_output_length(translator);
         s->metadata.x_resolution = T4_X_RESOLUTION_R8;
         s->metadata.y_resolution = T4_Y_RESOLUTION_FINE;
+        s->metadata.resolution_code = T4_RESOLUTION_R8_FINE;
         s->tiff.image_size = (s->image_width*s->image_length + 7)/8;
         if (s->tiff.image_size >= s->tiff.image_buffer_size)
         {
