@@ -22,28 +22,17 @@ AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 DISTCLEANFILES = $(srcdir)/at_interpreter_dictionary.h \
                  $(srcdir)/cielab_luts.h \
                  $(srcdir)/math_fixed_tables.h \
-                 $(srcdir)/v17_v32bis_rx_fixed_rrc.h \
-                 $(srcdir)/v17_v32bis_rx_floating_rrc.h \
-                 $(srcdir)/v17_v32bis_tx_fixed_rrc.h \
-                 $(srcdir)/v17_v32bis_tx_floating_rrc.h \
-                 $(srcdir)/v22bis_rx_1200_fixed_rrc.h \
-                 $(srcdir)/v22bis_rx_2400_fixed_rrc.h \
-                 $(srcdir)/v22bis_rx_1200_floating_rrc.h \
-                 $(srcdir)/v22bis_rx_2400_floating_rrc.h \
-                 $(srcdir)/v22bis_tx_fixed_rrc.h \
-                 $(srcdir)/v22bis_tx_floating_rrc.h \
-                 $(srcdir)/v27ter_rx_2400_fixed_rrc.h \
-                 $(srcdir)/v27ter_rx_4800_fixed_rrc.h \
-                 $(srcdir)/v27ter_rx_2400_floating_rrc.h \
-                 $(srcdir)/v27ter_rx_4800_floating_rrc.h \
-                 $(srcdir)/v27ter_tx_2400_fixed_rrc.h \
-                 $(srcdir)/v27ter_tx_4800_fixed_rrc.h \
-                 $(srcdir)/v27ter_tx_2400_floating_rrc.h \
-                 $(srcdir)/v27ter_tx_4800_floating_rrc.h \
-                 $(srcdir)/v29rx_fixed_rrc.h \
-                 $(srcdir)/v29rx_floating_rrc.h \
-                 $(srcdir)/v29tx_fixed_rrc.h \
-                 $(srcdir)/v29tx_floating_rrc.h
+                 $(srcdir)/v17_v32bis_rx_rrc.h \
+                 $(srcdir)/v17_v32bis_tx_rrc.h \
+                 $(srcdir)/v22bis_rx_1200_rrc.h \
+                 $(srcdir)/v22bis_rx_2400_rrc.h \
+                 $(srcdir)/v22bis_tx_rrc.h \
+                 $(srcdir)/v27ter_rx_2400_rrc.h \
+                 $(srcdir)/v27ter_rx_4800_rrc.h \
+                 $(srcdir)/v27ter_tx_2400_rrc.h \
+                 $(srcdir)/v27ter_tx_4800_rrc.h \
+                 $(srcdir)/v29rx_rrc.h \
+                 $(srcdir)/v29tx_rrc.h
 
 CLEANFILES = ${DISTCLEANFILES}
 MOSTLYCLEANFILES = ${DISTCLEANFILES}
@@ -160,6 +149,7 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         t4_rx.c \
                         t4_tx.c \
                         t42.c \
+                        t43.c \
                         t81_t82_arith_coding.c \
                         t85_decode.c \
                         t85_encode.c \
@@ -251,6 +241,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/t4_t6_decode.h \
                          spandsp/t4_t6_encode.h \
                          spandsp/t42.h \
+                         spandsp/t43.h \
                          spandsp/t81_t82_arith_coding.h \
                          spandsp/t85.h \
                          spandsp/telephony.h \
@@ -318,6 +309,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/t4_t6_decode.h \
                          spandsp/private/t4_t6_encode.h \
                          spandsp/private/t42.h \
+                         spandsp/private/t43.h \
                          spandsp/private/t81_t82_arith_coding.h \
                          spandsp/private/t85.h \
                          spandsp/private/time_scale.h \

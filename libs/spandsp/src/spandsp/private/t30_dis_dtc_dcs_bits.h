@@ -497,6 +497,12 @@
 #define T30_DCS_BIT_T38_FAX_MODE                            123
 
 /* Bits 124 to 126 specify the T.89 applications profile. */
+#define T30_DIS_BIT_T88_CAPABILITY_1                        124
+#define T30_DCS_BIT_T88_MODE_1                              124
+#define T30_DIS_BIT_T88_CAPABILITY_2                        125
+#define T30_DCS_BIT_T88_MODE_2                              125
+#define T30_DIS_BIT_T88_CAPABILITY_3                        126
+#define T30_DCS_BIT_T88_MODE_3                              126
 
 /* When either bit of 31, 36, 38, 51, 53, 54, 55, 57, 59, 60, 62, 65, 68, 78, 79, 115, 116 and 127 is
    set to "1", ECM must be used. If the value of bit field 92 to 94 is non-zero, then ECM must be used.

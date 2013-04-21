@@ -30,8 +30,8 @@
 #endif
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <inttypes.h>
+#include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
@@ -1195,9 +1195,9 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No scan-line padding required, but some may be specified by the application. */
     set_ctrl_bits(s->local_dis_dtc_frame, s->local_min_scan_time_code, T30_DIS_BIT_MIN_SCAN_LINE_TIME_CAPABILITY_1);
 
-    if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T4_2D))
+    if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE);
-    if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_NONE))
+    if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_NONE))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_UNCOMPRESSED_CAPABLE);
     if (s->ecm_allowed)
     {
@@ -1206,46 +1206,46 @@ int t30_build_dis_or_dtc(t30_state_t *s)
 
         /* Only offer the option of fancy compression schemes, if we are
            also offering the ECM option needed to support them. */
-        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T6))
+        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T6))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE);
-        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T85))
+        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85))
         {
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE);
             /* Bit 79 set with bit 78 clear is invalid, so only check for L0
                support here. */
-            if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T85_L0))
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85_L0))
                 set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE);
         }
 
-        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_COLOUR))
+        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_COLOUR))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE);
 
-        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T42_T81))
+        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T42_T81))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
-        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T43))
+        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T43))
         {
             /* Note 25 of table 2/T.30 */
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE);
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
         }
-        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T45))
+        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T45))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T45_CAPABLE);
-        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_SYCC_T81))
+        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_SYCC_T81))
         {
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SYCC_T81_CAPABLE);
         }
-        //if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_T88))
+        //if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T88))
         //{
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_1);
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_2);
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_3);
         //}
 
-        if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_12BIT))
+        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_12BIT))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE);
 
-        //if ((s->supported_compressions & T30_SUPPORT_COMPRESSION_NO_SUBSAMPLING))
+        //if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_NO_SUBSAMPLING))
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING);
 
         /* No custom illuminant */
@@ -1345,8 +1345,8 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_200))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE);
-        //if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_200_200))
-        //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_???_CAPABLE);
+        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_200_200))
+            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE);
     }
     /* Standard FAX resolution bi-level image support goes without saying */
     if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_100_100))
@@ -1421,14 +1421,14 @@ static int build_dcs(t30_state_t *s)
     int bad;
     int row_squashing_ratio;
     int use_bilevel;
-    //int image_type;
+    int image_type;
 
     /* Reacquire page information, in case the image was resized, flattened, etc. */
     s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
     s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);
-    //s->current_page_resolution = t4_tx_get_resolution(&s->t4.tx);
+    s->current_page_resolution = t4_tx_get_resolution(&s->t4.tx);
     s->image_width = t4_tx_get_image_width(&s->t4.tx);
-    //image_type = t4_tx_get_image_type(&s->t4.tx);
+    image_type = t4_tx_get_image_type(&s->t4.tx);
 
     /* Make a DCS frame based on local issues and the latest received DIS/DTC frame.
        Negotiate the result based on what both parties can do. */
@@ -1483,22 +1483,24 @@ static int build_dcs(t30_state_t *s)
 #endif
     case T4_COMPRESSION_T42_T81:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T81_MODE);
-        //if (image_type == T4_IMAGE_TYPE_COLOUR_8BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
-        //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
-        //if (image_type == T4_IMAGE_TYPE_GRAY_12BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
-        //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_12BIT_COMPONENT);
+        if (image_type == T4_IMAGE_TYPE_COLOUR_8BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
+        if (image_type == T4_IMAGE_TYPE_GRAY_12BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_12BIT_COMPONENT);
         //if (???????? & T4_COMPRESSION_?????))
         //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING);
+        //if (???????? & T4_COMPRESSION_?????))
+        //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_PREFERRED_HUFFMAN_TABLES);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         use_bilevel = FALSE;
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T43_MODE);
-        //if (image_type == T4_IMAGE_TYPE_COLOUR_8BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
-        //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
-        //if (image_type == T4_IMAGE_TYPE_GRAY_12BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
-        //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_12BIT_COMPONENT);
+        if (image_type == T4_IMAGE_TYPE_COLOUR_8BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
+        if (image_type == T4_IMAGE_TYPE_GRAY_12BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_12BIT_COMPONENT);
         //if (???????? & T4_COMPRESSION_?????))
         //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
@@ -1523,159 +1525,139 @@ static int build_dcs(t30_state_t *s)
     /* Set the Y resolution bits */
     row_squashing_ratio = 1;
     bad = T30_ERR_NORESSUPPORT;
-    if (use_bilevel)
+    if ((use_bilevel  &&  (s->current_page_resolution & s->mutual_bilevel_resolutions))
+        ||
+        (!use_bilevel  &&  (s->current_page_resolution & s->mutual_colour_resolutions)))
     {
-        switch (s->y_resolution)
+        /* The resolution is supported by both parties */
+        switch (s->current_page_resolution)
         {
-        case T4_Y_RESOLUTION_1200:
-            switch (s->x_resolution)
-            {
-            case T4_X_RESOLUTION_1200:
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_1200_1200);
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-                    bad = T30_ERR_OK;
-                }
-                break;
-            case T4_X_RESOLUTION_600:
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_1200))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_1200);
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-                    bad = T30_ERR_OK;
-                }
-                break;
-            }
+        case T4_RESOLUTION_1200_1200:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_1200_1200);
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+            if (!use_bilevel)
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_1200_1200);
             break;
-        case T4_Y_RESOLUTION_800:
-            switch (s->x_resolution)
-            {
-            case T4_X_RESOLUTION_R16:
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_800))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_800);
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-                    bad = T30_ERR_OK;
-                }
-                break;
-            }
+        case T4_RESOLUTION_600_1200:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_1200);
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
             break;
-        case T4_Y_RESOLUTION_600:
-            switch (s->x_resolution)
-            {
-            case T4_X_RESOLUTION_600:
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_600))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_600);
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-                    bad = T30_ERR_OK;
-                }
-                break;
-            case T4_X_RESOLUTION_300:
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_600))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_600);
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-                    bad = T30_ERR_OK;
-                }
-                break;
-            }
+        case T4_RESOLUTION_600_600:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_600);
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+            if (!use_bilevel)
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_600_600);
             break;
-        case T4_Y_RESOLUTION_300:
-            switch (s->x_resolution)
-            {
-            case T4_X_RESOLUTION_300:
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_300))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_300);
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-                    bad = T30_ERR_OK;
-                }
-                break;
-            }
+        case T4_RESOLUTION_400_800:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_800);
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
             break;
-        case T4_Y_RESOLUTION_SUPERFINE:
-        case T4_Y_RESOLUTION_400:
-            if (s->x_resolution == T4_X_RESOLUTION_400  &&  s->y_resolution == T4_Y_RESOLUTION_400)
+        case T4_RESOLUTION_400_400:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+            if (!use_bilevel)
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
+            break;
+        case T4_RESOLUTION_300_600:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_600);
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+            break;
+        case T4_RESOLUTION_300_300:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_300);
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+            if (!use_bilevel)
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
+            break;
+        case T4_RESOLUTION_200_400:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+            break;
+        case T4_RESOLUTION_200_200:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+            if (!use_bilevel)
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
+            break;
+        case T4_RESOLUTION_200_100:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+            break;
+        case T4_RESOLUTION_100_100:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+            if (!use_bilevel)
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_100_100);
+            break;
+        case T4_RESOLUTION_R16_SUPERFINE:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
+            break;
+        case T4_RESOLUTION_R8_SUPERFINE:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
+            break;
+        case T4_RESOLUTION_R8_FINE:
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
+            break;
+        case T4_RESOLUTION_R8_STANDARD:
+            /* Nothing special to set */
+            break;
+        }
+        bad = T30_ERR_OK;
+    }
+    else
+    {
+#if 0
+        /* Deal with resolution fudging */
+        if ((s->current_page_resolution & (T4_RESOLUTION_R16_SUPERFINE | T4_RESOLUTION_R8_SUPERFINE | T4_RESOLUTION_R8_FINE | T4_RESOLUTION_R8_STANDARD)))
+        {
+            if ((s->mutual_bilevel_resolutions & (T4_RESOLUTION_400_400 | T4_RESOLUTION_200_400 | T4_RESOLUTION_200_200 | T4_RESOLUTION_200_100)))
             {
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_400))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-                    bad = T30_ERR_OK;
-                    break;
-                }
+                /* Fudge between imperial and metric */
             }
-            else if (s->x_resolution == T4_X_RESOLUTION_R16  &&  s->y_resolution == T4_Y_RESOLUTION_SUPERFINE)
+        }
+        else if ((s->current_page_resolution & (T4_RESOLUTION_400_400 | T4_RESOLUTION_200_400 | T4_RESOLUTION_200_200 | T4_RESOLUTION_200_100))
+        {
+            if ((s->mutual_bilevel_resolutions & (T4_RESOLUTION_R16_SUPERFINE | T4_RESOLUTION_R8_SUPERFINE | T4_RESOLUTION_R8_FINE | T4_RESOLUTION_R8_STANDARD)))
             {
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R16_SUPERFINE))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
-                    bad = T30_ERR_OK;
-                    break;
-                }
+                /* Fudge between imperial and metric */
             }
-            else if (s->x_resolution == T4_X_RESOLUTION_200  &&  s->y_resolution == T4_Y_RESOLUTION_400)
+        }
+#endif
+        /* Deal with squashing options */
+        if ((s->current_page_resolution & T4_RESOLUTION_R8_SUPERFINE))
+        {
+            if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_R8_FINE))
             {
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_400))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-                    bad = T30_ERR_OK;
-                    break;
-                }
-            }
-            else if (s->x_resolution == T4_X_RESOLUTION_R8  &&  s->y_resolution == T4_Y_RESOLUTION_SUPERFINE)
-            {
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_SUPERFINE))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
-                    bad = T30_ERR_OK;
-                    break;
-                }
-            }
-            row_squashing_ratio <<= 1;
-            /* Fall through */
-        case T4_Y_RESOLUTION_FINE:
-        case T4_Y_RESOLUTION_200:
-            if (s->x_resolution == T4_X_RESOLUTION_200  &&  s->y_resolution == T4_Y_RESOLUTION_200)
-            {
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_200))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-                    bad = T30_ERR_OK;
-                    break;
-                }
-            }
-            else if (s->x_resolution == T4_X_RESOLUTION_R8  &&  s->y_resolution == T4_Y_RESOLUTION_FINE)
-            {
-                if ((s->mutual_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_FINE))
-                {
-                    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-                    bad = T30_ERR_OK;
-                    break;
-                }
-            }
-            row_squashing_ratio <<= 1;
-            /* Fall through */
-        default:
-        case T4_Y_RESOLUTION_STANDARD:
-        case T4_Y_RESOLUTION_100:
-            if (s->x_resolution == T4_X_RESOLUTION_R8  &&  s->y_resolution == T4_Y_RESOLUTION_STANDARD)
-            {
-                /* No bits to set for this */
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
+                row_squashing_ratio = 2;
                 bad = T30_ERR_OK;
-                break;
             }
-            else if (s->x_resolution == T4_X_RESOLUTION_200  &&  s->y_resolution == T4_Y_RESOLUTION_100)
+            else if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_R8_STANDARD))
             {
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+                row_squashing_ratio = 4;
                 bad = T30_ERR_OK;
-                break;
             }
-            break;
+        }
+        else if ((s->current_page_resolution & T4_RESOLUTION_R8_FINE)  &&  (s->mutual_bilevel_resolutions & T4_RESOLUTION_R8_STANDARD))
+        {
+            row_squashing_ratio = 2;
+            bad = T30_ERR_OK;
+        }
+        else if ((s->current_page_resolution & T4_RESOLUTION_200_400))
+        {
+            if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_200_200))
+            {
+                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
+                row_squashing_ratio = 2;
+                bad = T30_ERR_OK;
+            }
+            else if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_200_100))
+            {
+                row_squashing_ratio = 4;
+                bad = T30_ERR_OK;
+            }
+        }
+        else if ((s->current_page_resolution & T4_RESOLUTION_200_200)  &&  (s->mutual_bilevel_resolutions & T4_RESOLUTION_200_100))
+        {
+            row_squashing_ratio = 2;
+            bad = T30_ERR_OK;
         }
     }
 
@@ -1768,10 +1750,15 @@ static int build_dcs(t30_state_t *s)
     /* Deal with the image length */
     /* If the other end supports unlimited length, then use that. Otherwise, if the other end supports
        B4 use that, as its longer than the default A4 length. */
+printf("Size1 0x%x\n", s->mutual_image_sizes);
     if ((s->mutual_image_sizes & T4_SUPPORT_LENGTH_UNLIMITED))
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_UNLIMITED_LENGTH);
     else if ((s->mutual_image_sizes & T4_SUPPORT_LENGTH_B4))
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_B4_LENGTH);
+    else if ((s->mutual_image_sizes & T4_SUPPORT_LENGTH_US_LETTER))
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NORTH_AMERICAN_LETTER);
+    else if ((s->mutual_image_sizes & T4_SUPPORT_LENGTH_US_LEGAL))
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NORTH_AMERICAN_LEGAL);
 
     if (s->error_correcting_mode)
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_ECM_MODE);
@@ -1845,40 +1832,40 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     if (!s->error_correcting_mode)
     {
         /* Remove any compression schemes which need error correction to work. */
-        s->mutual_compressions &= (0xF0000000 | T30_SUPPORT_COMPRESSION_NONE | T30_SUPPORT_COMPRESSION_T4_1D | T30_SUPPORT_COMPRESSION_T4_2D);
+        s->mutual_compressions &= (0xF0000000 | T4_SUPPORT_COMPRESSION_NONE | T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D);
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
-            s->mutual_compressions &= ~T30_SUPPORT_COMPRESSION_T4_2D;
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T4_2D;
     }
     else
     {
         /* Check the bi-level capabilities */
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
-            s->mutual_compressions &= ~T30_SUPPORT_COMPRESSION_T4_2D;
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T4_2D;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE))
-            s->mutual_compressions &= ~T30_SUPPORT_COMPRESSION_T6;
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T6;
         /* T.85 L0 capable without T.85 capable is an invalid combination, so let
            just zap both capabilities if the far end is not T.85 capable. */
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE))
-            s->mutual_compressions &= ~(T30_SUPPORT_COMPRESSION_T85 | T30_SUPPORT_COMPRESSION_T85_L0);
+            s->mutual_compressions &= ~(T4_SUPPORT_COMPRESSION_T85 | T4_SUPPORT_COMPRESSION_T85_L0);
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE))
-            s->mutual_compressions &= ~T30_SUPPORT_COMPRESSION_T85_L0;
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T85_L0;
 
         /* Check for full colour or only gray-scale from the multi-level codecs */
-        //if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE))
-        //    s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_COLOUR;
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE))
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_COLOUR;
 
         /* Check the colour capabilities */
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE))
-            s->mutual_compressions &= ~T30_SUPPORT_COMPRESSION_T42_T81;
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T42_T81;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_SYCC_T81_CAPABLE))
-            s->mutual_compressions &= ~T30_SUPPORT_COMPRESSION_SYCC_T81;
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_SYCC_T81;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE))
-            s->mutual_compressions &= ~T30_SUPPORT_COMPRESSION_T43;
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T43;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T45_CAPABLE))
-            s->mutual_compressions &= ~T30_SUPPORT_COMPRESSION_T45;
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T45;
 
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
-            s->mutual_compressions &= ~T30_SUPPORT_COMPRESSION_12BIT;
+            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_12BIT;
         //if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING))
         //    ???? = T4_COMPRESSION_T42_T81_SUBSAMPLING;
 
@@ -1975,9 +1962,9 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_A4_B4_LENGTH_CAPABLE))
             s->mutual_image_sizes &= ~T4_SUPPORT_LENGTH_B4;
     }
-    if (!test_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LETTER_CAPABLE))
+    if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LETTER_CAPABLE))
         s->mutual_image_sizes &= ~T4_SUPPORT_LENGTH_US_LETTER;
-    if (!test_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LEGAL_CAPABLE))
+    if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_NORTH_AMERICAN_LEGAL_CAPABLE))
         s->mutual_image_sizes &= ~T4_SUPPORT_LENGTH_US_LEGAL;
 
     switch (s->far_dis_dtc_frame[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))
@@ -2067,6 +2054,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     s->x_resolution = -1;
     s->y_resolution = -1;
     s->current_page_resolution = 0;
+    s->line_encoding = -1;
     x = -1;
     if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE)
         ||
@@ -2081,17 +2069,28 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         /* Note 35 of Table 2/T.30 */
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE))
         {
-            /* We are going to work in full colour mode */
+            if ((s->supported_colour_resolutions & T4_SUPPORT_COMPRESSION_COLOUR))
+            {
+                /* We are going to work in full colour mode */
+            }
         }
 
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_12BIT_COMPONENT))
         {
-            /* We are going to work in 12 bit mode */
+            if ((s->supported_colour_resolutions & T4_SUPPORT_COMPRESSION_12BIT))
+            {
+                /* We are going to work in 12 bit mode */
+            }
         }
 
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING))
         {
-            //???? = T30_SUPPORT_COMPRESSION_T42_T81_SUBSAMPLING;
+            //???? = T4_SUPPORT_COMPRESSION_T42_T81_SUBSAMPLING;
+        }
+
+        if (!test_ctrl_bit(dcs_frame, T30_DCS_BIT_PREFERRED_HUFFMAN_TABLES))
+        {
+            //???? = T4_SUPPORT_COMPRESSION_T42_T81_HUFFMAN;
         }
 
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_COLOUR_GRAY_1200_1200))
@@ -2153,6 +2152,28 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
                 s->current_page_resolution = T4_RESOLUTION_100_100;
                 x = 0;
             }
+        }
+
+        /* Check which compression the far end has decided to use. */
+        if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE))
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T42_T81))
+                s->line_encoding = T4_COMPRESSION_T42_T81;
+        }
+        else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T43_MODE))
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T43))
+                s->line_encoding = T4_COMPRESSION_T43;
+        }
+        else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T45_MODE))
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T45))
+                s->line_encoding = T4_COMPRESSION_T45;
+        }
+        else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_SYCC_T81_MODE))
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_SYCC_T81))
+                s->line_encoding = T4_COMPRESSION_SYCC_T81;
         }
     }
     else
@@ -2304,7 +2325,50 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
                 x = 1;
             }
         }
+
+        /* Check which compression the far end has decided to use. */
+        if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T88_MODE_1)
+            ||
+            test_ctrl_bit(dcs_frame, T30_DCS_BIT_T88_MODE_2)
+            ||
+            test_ctrl_bit(dcs_frame, T30_DCS_BIT_T88_MODE_3))
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T88))
+                s->line_encoding = T4_COMPRESSION_T88;
+        }
+        if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_L0_MODE))
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85_L0))
+                s->line_encoding = T4_COMPRESSION_T85_L0;
+        }
+        else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_MODE))
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85))
+                s->line_encoding = T4_COMPRESSION_T85;
+        }
+        else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T6_MODE))
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T6))
+                s->line_encoding = T4_COMPRESSION_T6;
+        }
+        else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_MODE))
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
+                s->line_encoding = T4_COMPRESSION_T4_2D;
+        }
+        else
+        {
+            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T4_1D))
+                s->line_encoding = T4_COMPRESSION_T4_1D;
+        }
     }
+
+    if (s->line_encoding == -1)
+    {
+        t30_set_status(s, T30_ERR_INCOMPATIBLE);
+        return -1;
+    }
+    span_log(&s->logging, SPAN_LOG_FLOW, "Far end selected compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
 
     if (x < 0)
     {
@@ -2313,43 +2377,8 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     }
 
     s->image_width = widths[x][dcs_frame[5] & (DISBIT2 | DISBIT1)];
+    /* We don't care that much about the image length control bits. Just accept what arrives */
 
-    /* Check which compression the far end has decided to use. */
-#if defined(SPANDSP_SUPPORT_T42)
-    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE))
-    {
-        s->line_encoding = T4_COMPRESSION_T42_T81;
-    }
-    else
-#endif
-#if defined(SPANDSP_SUPPORT_T43)
-    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T43_MODE))
-    {
-        s->line_encoding = T4_COMPRESSION_T43;
-    }
-    else
-#endif
-    if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_L0_MODE))
-    {
-        s->line_encoding = T4_COMPRESSION_T85_L0;
-    }
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_MODE))
-    {
-        s->line_encoding = T4_COMPRESSION_T85;
-    }
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T6_MODE))
-    {
-        s->line_encoding = T4_COMPRESSION_T6;
-    }
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_MODE))
-    {
-        s->line_encoding = T4_COMPRESSION_T4_2D;
-    }
-    else
-    {
-        s->line_encoding = T4_COMPRESSION_T4_1D;
-    }
-    span_log(&s->logging, SPAN_LOG_FLOW, "Far end selected compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
     if (!test_ctrl_bit(dcs_frame, T30_DCS_BIT_RECEIVE_FAX_DOCUMENT))
         span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Remote is not requesting receive in DCS\n");
 
@@ -2749,13 +2778,13 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     }
 
     /* Choose a compression scheme from amongst those mutually available */
-    if ((s->mutual_compressions & T30_SUPPORT_COMPRESSION_T85_L0))
+    if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T85_L0))
         s->line_encoding = T4_COMPRESSION_T85_L0;
-    else if ((s->mutual_compressions & T30_SUPPORT_COMPRESSION_T85))
+    else if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T85))
         s->line_encoding = T4_COMPRESSION_T85;
-    else if ((s->mutual_compressions & T30_SUPPORT_COMPRESSION_T6))
+    else if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T6))
         s->line_encoding = T4_COMPRESSION_T6;
-    else if ((s->mutual_compressions & T30_SUPPORT_COMPRESSION_T4_2D))
+    else if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
         s->line_encoding = T4_COMPRESSION_T4_2D;
     else
         s->line_encoding = T4_COMPRESSION_T4_1D;
@@ -6766,7 +6795,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
 
     /* Default to the basic modems. */
     s->supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
-    s->supported_compressions = T30_SUPPORT_COMPRESSION_T4_1D | T30_SUPPORT_COMPRESSION_T4_2D;
+    s->supported_compressions = T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D;
     s->supported_bilevel_resolutions = T4_SUPPORT_RESOLUTION_R8_STANDARD
                                      | T4_SUPPORT_RESOLUTION_R8_FINE
                                      | T4_SUPPORT_RESOLUTION_R8_SUPERFINE;

@@ -50,8 +50,12 @@ struct t30_state_s
     int iaf;
     /*! \brief A bit mask of the currently supported modem types. */
     int supported_modems;
-    /*! \brief A bit mask of the currently supported image compression modes. */
+    /*! \brief A bit mask of the currently supported image compression modes for use
+               between FAX entities. */
     int supported_compressions;
+    /*! \brief A bit mask of the currently supported image compression modes for the output
+               of received page images. */
+    int supported_output_compressions;
     /*! \brief A bit mask of the currently supported bi-level image resolutions. */
     int supported_bilevel_resolutions;
     /*! \brief A bit mask of the currently supported gray-scale and colour image resolutions. */

@@ -47,7 +47,6 @@
 #include <tif_dir.h>
 #endif
 
-//#define IN_FILE_NAME    "../test-data/itu/t24/F21_200.TIF"
 #define IN_FILE_NAME    "../test-data/itu/t24/F21B400.TIF"
 #define OUT_FILE_NAME   "t42_tests_receive.tif"
 

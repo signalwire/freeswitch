@@ -511,6 +511,9 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
     s->use_tep = use_tep;
 
     modem_connect_tones_tx_init(&s->connect_tx, MODEM_CONNECT_TONES_FAX_CNG);
+    span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
+    span_log_set_protocol(&s->logging, "FAX modems");
+
     s->tone_callback = tone_callback;
     s->tone_callback_user_data = user_data;
     if (tone_callback)
@@ -521,9 +524,6 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
                                     s->tone_callback_user_data);
     }
     /*endif*/
-    span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
-    span_log_set_protocol(&s->logging, "FAX modems");
-
     dc_restore_init(&s->dc_restore);
 
     s->get_bit = non_ecm_get_bit;

@@ -409,7 +409,7 @@ static void fax_prepare(void)
                                         | T4_SUPPORT_RESOLUTION_1200_1200);
     t30_set_supported_colour_resolutions(t30, 0);
     t30_set_supported_modems(t30, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
-    t30_set_supported_compressions(t30, T30_SUPPORT_COMPRESSION_T4_1D | T30_SUPPORT_COMPRESSION_T4_2D | T30_SUPPORT_COMPRESSION_T6);
+    t30_set_supported_compressions(t30, T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D | T4_SUPPORT_COMPRESSION_T6);
     t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) 'A');
     t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) 'A');
     t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) 'A');
@@ -882,7 +882,7 @@ static int next_step(faxtester_state_t *s)
             t30 = fax_get_t30_state(fax);
             t30_set_rx_file(t30, output_tiff_file_name, -1);
             /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
-            t30_set_rx_encoding(t30, T4_COMPRESSION_T4_1D);
+            t30_set_supported_output_compressions(t30, T4_COMPRESSION_T4_1D);
             if (value)
             {
                 sprintf(path, "%s/%s", image_path, (const char *) value);
@@ -897,7 +897,7 @@ static int next_step(faxtester_state_t *s)
             next_tx_file[0] = '\0';
             t30 = fax_get_t30_state(fax);
             /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
-            t30_set_rx_encoding(t30, T4_COMPRESSION_T4_1D);
+            t30_set_supported_output_compressions(t30, T4_COMPRESSION_T4_1D);
             if (value)
             {
                 sprintf(path, "%s/%s", image_path, (const char *) value);

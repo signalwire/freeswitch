@@ -66,10 +66,6 @@ typedef struct
 {
     /*! \brief The FAX modem set for the audio side fo the gateway. */
     fax_modems_state_t modems;
-    /*! \brief CED detector */
-    modem_connect_tones_rx_state_t connect_rx_ced;
-    /*! \brief CNG detector */
-    modem_connect_tones_rx_state_t connect_rx_cng;
 } t38_gateway_audio_state_t;
 
 /*!

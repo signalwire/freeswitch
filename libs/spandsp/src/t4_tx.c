@@ -104,12 +104,12 @@ static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length);
 
 static const res_table_t x_res_table[] =
 {
-    //{ 100.0f/CM_PER_INCH, T4_X_RESOLUTION_100},
+    { 100.0f/CM_PER_INCH, T4_X_RESOLUTION_100},
     { 102.0f/CM_PER_INCH, T4_X_RESOLUTION_R4},
-    //{ 200.0f/CM_PER_INCH, T4_X_RESOLUTION_200},
+    { 200.0f/CM_PER_INCH, T4_X_RESOLUTION_200},
     { 204.0f/CM_PER_INCH, T4_X_RESOLUTION_R8},
     { 300.0f/CM_PER_INCH, T4_X_RESOLUTION_300},
-    //{ 400.0f/CM_PER_INCH, T4_X_RESOLUTION_400},
+    { 400.0f/CM_PER_INCH, T4_X_RESOLUTION_400},
     { 408.0f/CM_PER_INCH, T4_X_RESOLUTION_R16},
     { 600.0f/CM_PER_INCH, T4_X_RESOLUTION_600},
     { 800.0f/CM_PER_INCH, T4_X_RESOLUTION_800},
@@ -120,12 +120,12 @@ static const res_table_t x_res_table[] =
 static const res_table_t y_res_table[] =
 {
     {             38.50f, T4_Y_RESOLUTION_STANDARD},
-    //{ 100.0f/CM_PER_INCH, T4_Y_RESOLUTION_100},
+    { 100.0f/CM_PER_INCH, T4_Y_RESOLUTION_100},
     {             77.00f, T4_Y_RESOLUTION_FINE},
-    //{ 200.0f/CM_PER_INCH, T4_Y_RESOLUTION_200},
+    { 200.0f/CM_PER_INCH, T4_Y_RESOLUTION_200},
     { 300.0f/CM_PER_INCH, T4_Y_RESOLUTION_300},
     {            154.00f, T4_Y_RESOLUTION_SUPERFINE},
-    //{ 400.0f/CM_PER_INCH, T4_Y_RESOLUTION_400},
+    { 400.0f/CM_PER_INCH, T4_Y_RESOLUTION_400},
     { 600.0f/CM_PER_INCH, T4_Y_RESOLUTION_600},
     { 800.0f/CM_PER_INCH, T4_Y_RESOLUTION_800},
     {1200.0f/CM_PER_INCH, T4_Y_RESOLUTION_1200},
@@ -385,7 +385,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
         best_y_entry = 0;
     s->metadata.y_resolution = y_res_table[best_y_entry].code;
 
-    //s->metadata.resolution_code = resolution_map[best_y_entry][best_x_entry];
+    s->metadata.resolution_code = resolution_map[best_y_entry][best_x_entry];
 
     t4_tx_set_image_width(s, s->image_width);
     t4_tx_set_image_length(s, s->image_length);

@@ -107,6 +107,8 @@ SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding)
         return "T.85";
     case T4_COMPRESSION_T85_L0:
         return "T.85(L0)";
+    case T4_COMPRESSION_T88:
+        return "T.88";
     case T4_COMPRESSION_T42_T81:
         return "T.81";
     case T4_COMPRESSION_SYCC_T81:

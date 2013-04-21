@@ -890,11 +890,11 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	}
 
 	if (pvt->use_ecm) {
-		t30_set_supported_compressions(t30, T30_SUPPORT_COMPRESSION_T4_1D | T30_SUPPORT_COMPRESSION_T4_2D | T30_SUPPORT_COMPRESSION_T6 | T30_SUPPORT_COMPRESSION_T85 | T30_SUPPORT_COMPRESSION_T85_L0);
+		t30_set_supported_compressions(t30, T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D | T4_SUPPORT_COMPRESSION_T6 | T4_SUPPORT_COMPRESSION_T85 | T4_SUPPORT_COMPRESSION_T85_L0);
 		t30_set_ecm_capability(t30, TRUE);
 		switch_channel_set_variable(channel, "fax_ecm_requested", "1");
 	} else {
-		t30_set_supported_compressions(t30, T30_SUPPORT_COMPRESSION_T4_1D | T30_SUPPORT_COMPRESSION_T4_2D);
+		t30_set_supported_compressions(t30, T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D);
 		switch_channel_set_variable(channel, "fax_ecm_requested", "0");
 	}
 

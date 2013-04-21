@@ -646,19 +646,11 @@ SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, int enabled)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t30_set_rx_encoding(t30_state_t *s, int encoding)
+SPAN_DECLARE(int) t30_set_supported_output_compressions(t30_state_t *s, int supported_compressions)
 {
-    switch (encoding)
-    {
-    case T4_COMPRESSION_T4_1D:
-    case T4_COMPRESSION_T4_2D:
-    case T4_COMPRESSION_T6:
-    //case T4_COMPRESSION_T85:
-    //case T4_COMPRESSION_T85_L0:
-        s->output_encoding = encoding;
-        return 0;
-    }
-    return -1;
+    s->supported_output_compressions = supported_compressions;
+    s->output_encoding = supported_compressions;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -694,14 +686,14 @@ SPAN_DECLARE(int) t30_set_supported_modems(t30_state_t *s, int supported_modems)
 SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_compressions)
 {
     /* Mask out the ones we actually support today. */
-    supported_compressions &= T30_SUPPORT_COMPRESSION_T4_1D
-                            | T30_SUPPORT_COMPRESSION_T4_2D
-                            | T30_SUPPORT_COMPRESSION_T6
-                            | T30_SUPPORT_COMPRESSION_T85
-                            | T30_SUPPORT_COMPRESSION_T85_L0
-                            //| T30_SUPPORT_COMPRESSION_T81
+    supported_compressions &= T4_SUPPORT_COMPRESSION_T4_1D
+                            | T4_SUPPORT_COMPRESSION_T4_2D
+                            | T4_SUPPORT_COMPRESSION_T6
+                            | T4_SUPPORT_COMPRESSION_T85
+                            | T4_SUPPORT_COMPRESSION_T85_L0
+                            //| T4_SUPPORT_COMPRESSION_T81
 #if defined(SPANDSP_SUPPORT_T43)
-                            | T30_SUPPORT_COMPRESSION_T43
+                            | T4_SUPPORT_COMPRESSION_T43
 #endif
                             | 0;
     s->supported_compressions = supported_compressions;

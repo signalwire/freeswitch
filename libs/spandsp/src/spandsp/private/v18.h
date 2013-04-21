@@ -48,7 +48,6 @@ struct v18_state_s
     int baudot_tx_shift;
     int tx_signal_on;
     uint8_t next_byte;
-    int byte_no;
 
     fsk_rx_state_t fskrx;
     dtmf_rx_state_t dtmfrx;

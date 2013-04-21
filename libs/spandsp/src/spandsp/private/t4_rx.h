@@ -94,6 +94,10 @@ struct t4_rx_state_s
     /*! \brief Opaque pointer passed to row_write_handler. */
     void *row_handler_user_data;
 
+    /*! \brief A bit mask of the currently supported image compression modes for writing
+               to the TIFF file. */
+    int supported_tiff_compressions;
+
     /*! \brief The number of pages transferred to date. */
     int current_page;
 
@@ -111,12 +115,24 @@ struct t4_rx_state_s
     union
     {
         t4_t6_decode_state_t t4_t6;
+        t85_decode_state_t t85;
+#if defined(SPANDSP_SUPPORT_T88)
+        t88_decode_state_t t88;
+#endif
         t42_decode_state_t t42;
 #if defined(SPANDSP_SUPPORT_T43)
         t43_decode_state_t t43;
 #endif
-        t85_decode_state_t t85;
+#if defined(SPANDSP_SUPPORT_T45)
+        t45_decode_state_t t45;
+#endif
     } decoder;
+    int current_decoder;
+
+    uint8_t *pre_encoded_buf;
+    int pre_encoded_len;
+    int pre_encoded_ptr;
+    int pre_encoded_bit;
 
     /* Supporting information, like resolutions, which the backend may want. */
     t4_rx_metadata_t metadata;

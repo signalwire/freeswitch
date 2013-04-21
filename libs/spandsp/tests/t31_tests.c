@@ -106,9 +106,9 @@ static const struct command_response_s fax_send_test_seq[] =
     EXCHANGE("AT+FRH=3\r", "\r\nCONNECT\r\n"),
     //<DIS frame data>
 #if 1
-    RESPONSE("\xFF\x13\x80\x00\xEE\xF8\x80\x80\x91\x80\x80\x80\x18\x78\x57\x10\x03"),   // For audio FAXing
+    RESPONSE("\xFF\x13\x80\x00\xEE\xF8\x80\x80\x89\x80\x80\x80\x18\x18\xB9\x10\x03"),   // For audio FAXing
 #else
-    RESPONSE("\xFF\x13\x80\x04\xEE\xF8\x80\x80\x91\x80\x80\x80\x18\xE4\xE7\x10\x03"),   // For T.38 FAXing
+    RESPONSE("\xFF\x13\x80\x04\xEE\xF8\x80\x80\x89\x80\x80\x80\x18\x84\x09\x10\x03"),   // For T.38 FAXing
 #endif
     RESPONSE("\r\nOK\r\n"),
     //EXCHANGE("AT+FRH=3\r", "\r\nNO CARRIER\r\n"),
@@ -870,7 +870,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
     if (!done  ||  !sequence_terminated)
     {
         printf("Tests failed\n");
-        return 2;
+        return -1;
     }
 
     return 0;
@@ -934,7 +934,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    t30_tests(t38_mode, use_gui, log_audio, test_sending, g1050_model_no, g1050_speed_pattern_no);
+    if (t30_tests(t38_mode, use_gui, log_audio, test_sending, g1050_model_no, g1050_speed_pattern_no) < 0)
+        return 2;
     printf("Tests passed\n");
     return 0;
 }

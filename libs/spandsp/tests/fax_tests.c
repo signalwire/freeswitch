@@ -861,24 +861,15 @@ int main(int argc, char *argv[])
                                             | T4_SUPPORT_RESOLUTION_600_1200
                                             | T4_SUPPORT_RESOLUTION_1200_1200);
         t30_set_supported_colour_resolutions(t30_state[i], 0);
-        //t30_set_rx_encoding(t30_state[i], T4_COMPRESSION_T85);
+        //t30_set_rx_encoding(t30_state[i], T4_COMPRESSION_T6);
         t30_set_ecm_capability(t30_state[i], use_ecm);
-        if (use_ecm)
-        {
-            t30_set_supported_compressions(t30_state[i],
-                                           T30_SUPPORT_COMPRESSION_T4_1D
-                                         | T30_SUPPORT_COMPRESSION_T4_2D
-                                         | T30_SUPPORT_COMPRESSION_T6
-                                         //| T30_SUPPORT_COMPRESSION_T81
-                                         | T30_SUPPORT_COMPRESSION_T85
-                                         | T30_SUPPORT_COMPRESSION_T85_L0);
-        }
-        else
-        {
-            t30_set_supported_compressions(t30_state[i],
-                                           T30_SUPPORT_COMPRESSION_T4_1D
-                                         | T30_SUPPORT_COMPRESSION_T4_2D);
-        }
+        t30_set_supported_compressions(t30_state[i],
+                                       T4_SUPPORT_COMPRESSION_T4_1D
+                                     | T4_SUPPORT_COMPRESSION_T4_2D
+                                     | T4_SUPPORT_COMPRESSION_T6
+                                     //| T4_SUPPORT_COMPRESSION_t42_T81
+                                     | T4_SUPPORT_COMPRESSION_T85
+                                     | T4_SUPPORT_COMPRESSION_T85_L0);
         t30_set_minimum_scan_line_time(t30_state[i], scan_line_time);
 
         if (mode[i] == T38_GATEWAY_FAX)
@@ -954,6 +945,10 @@ int main(int argc, char *argv[])
                 logging = fax_get_logging_state(fax_state[i]);
                 span_log_bump_samples(logging, SAMPLES_PER_CHUNK);
 
+#if 0
+                /* Mute the signal */
+                vec_zeroi16(fax_rx_buf[i], SAMPLES_PER_CHUNK);
+#endif
                 fax_rx(fax_state[i], fax_rx_buf[i], SAMPLES_PER_CHUNK);
                 if (!t30_call_active(t30_state[i]))
                 {
