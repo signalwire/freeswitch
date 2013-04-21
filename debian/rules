@@ -7,7 +7,7 @@
 FS_CC?=gcc
 FS_CXX?=g++
 FS_CFLAGS?=-g3 -O2 -fPIC
-FS_CPPFLAGS?=
+FS_CPPFLAGS?='-DSWITCH_STORAGE_DIR="/var/lib/freeswitch/storage"' '-DSWITCH_CERTS_DIR="/etc/freeswitch/tls"'
 FS_CXXFLAGS?=$(FS_CFLAGS)
 export PATH?=/usr/lib/ccache:/usr/sbin:/usr/bin:/sbin:/bin
 export CC=$(FS_CC)
