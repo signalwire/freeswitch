@@ -118,6 +118,38 @@
 		<div id="serverStatus"></div>
 	</script>
 
+	<script type="text/x-handlebars" data-template-name="showRegistrations">
+		<h1>Registrations</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Reg User</th>
+				<th>Realm</th>
+				<th>Expires</th>
+				<th>Network IP</th>
+				<th>Network Port</th>
+				<th>Network Proto</th>
+				<th>Hostname</th>
+				<th>Metadata</th>
+				<th>Token / Url</th>
+			</tr>
+			{{#each App.registrationsController.content}}
+			<tr>
+				<td>{{ reg_user }}</td>
+				<td>{{ realm }}</td>
+				<td>{{ expires }}</td>
+				<td>{{ network_ip }}</td>
+				<td>{{ network_port }}</td>
+				<td>{{ network_proto }}</td>
+				<td>{{ hostname }}</td>
+				<td>{{ metadata }}</td>
+				<td>{{ token }}<br>{{ url }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
 	<script type="text/x-handlebars" data-template-name="showApplications">
 		<h1>Applications</h1>
 		<div>
@@ -225,6 +257,7 @@
 
 	<script type="text/x-handlebars" data-template-name="show">
 		<h1>Show</h1>
+		{{#linkTo "showRegistrations"}} Registrations {{/linkTo}} |
 		{{#linkTo "showApplications"}} Applications {{/linkTo}} |
 		{{#linkTo "showEndpoints"}} Endpoints {{/linkTo}} |
 		{{#linkTo "showCodecs"}} Codecs {{/linkTo}} |
