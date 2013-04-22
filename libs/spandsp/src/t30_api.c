@@ -649,7 +649,6 @@ SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, int enabled)
 SPAN_DECLARE(int) t30_set_supported_output_compressions(t30_state_t *s, int supported_compressions)
 {
     s->supported_output_compressions = supported_compressions;
-    s->output_encoding = supported_compressions;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

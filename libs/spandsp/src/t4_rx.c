@@ -578,13 +578,13 @@ static int write_tiff_image(t4_rx_state_t *s)
 
             offset = 0;
             if (!TIFFWriteCustomDirectory(t->tiff_file, &offset))
-                printf("Failed to write custom directory.\n");
+                span_log(&s->logging, SPAN_LOG_WARNING, "Failed to write custom directory.\n");
 
             /* Now go back and patch in the pointer to the new IFD */
             if (!TIFFSetDirectory(t->tiff_file, s->current_page))
-                printf("Failed to set directory.\n");
+                span_log(&s->logging, SPAN_LOG_WARNING, "Failed to set directory.\n");
             if (!TIFFSetField(t->tiff_file, TIFFTAG_GLOBALPARAMETERSIFD, offset))
-                printf("Failed to set field.\n");
+                span_log(&s->logging, SPAN_LOG_WARNING, "Failed to set field.\n");
             if (!TIFFWriteDirectory(t->tiff_file))
                 span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", t->file, s->current_page);
         }
@@ -726,6 +726,31 @@ SPAN_DECLARE(void) t4_rx_set_model(t4_rx_state_t *s, const char *model)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void select_tiff_compression(t4_rx_state_t *s, int output_image_type)
+{
+    if (output_image_type == T4_IMAGE_TYPE_BILEVEL)
+    {
+        /* Only provide for one form of coding throughout the file, even though the
+           coding on the wire could change between pages. */
+        if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T85))
+            s->tiff.output_encoding = T4_COMPRESSION_T85;
+        else if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T6))
+            s->tiff.output_encoding = T4_COMPRESSION_T6;
+        else if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
+            s->tiff.output_encoding = T4_COMPRESSION_T4_2D;
+        else if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T4_1D))
+            s->tiff.output_encoding = T4_COMPRESSION_T4_1D;
+    }
+    else
+    {
+        if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T42_T81))
+            s->tiff.output_encoding = T4_COMPRESSION_T42_T81;
+        else if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T43))
+            s->tiff.output_encoding = T4_COMPRESSION_T43;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
 {
     switch (encoding)
@@ -744,6 +769,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
             break;
         }
         s->line_encoding = encoding;
+        select_tiff_compression(s, T4_IMAGE_TYPE_BILEVEL);
         return t4_t6_decode_set_encoding(&s->decoder.t4_t6, encoding);
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
@@ -760,6 +786,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
             t85_decode_set_image_size_constraints(&s->decoder.t85, T4_WIDTH_1200_A3, 0);
             break;
         }
+        select_tiff_compression(s, T4_IMAGE_TYPE_BILEVEL);
         s->line_encoding = encoding;
         return 0;
 #if defined(SPANDSP_SUPPORT_T88)
@@ -771,6 +798,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
         default:
             break;
         }
+        select_tiff_compression(s, T4_IMAGE_TYPE_BILEVEL);
         s->line_encoding = encoding;
         return 0;
 #endif
@@ -790,6 +818,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
             break;
         }
         s->line_encoding = encoding;
+        select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT);
         return 0;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
@@ -806,6 +835,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
             break;
         }
         s->line_encoding = encoding;
+        select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT);
         return 0;
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
@@ -818,9 +848,11 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
             break;
         }
         s->line_encoding = encoding;
+        select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT);
         return 0;
 #endif
     }
+
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1055,7 +1087,7 @@ SPAN_DECLARE(logging_state_t *) t4_rx_get_logging_state(t4_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int output_encoding)
+SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int supported_output_compressions)
 {
     int allocated;
 
@@ -1075,9 +1107,7 @@ SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int
 
     span_log(&s->logging, SPAN_LOG_FLOW, "Start rx document\n");
 
-    /* Only provide for one form of coding throughout the file, even though the
-       coding on the wire could change between pages. */
-    s->tiff.output_encoding = output_encoding;
+    s->supported_tiff_compressions = supported_output_compressions;
 
     /* Set some default values */
     s->metadata.x_resolution = T4_X_RESOLUTION_R8;

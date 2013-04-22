@@ -232,8 +232,6 @@ struct t30_state_s
     int mutual_image_sizes;
     /*! \brief The image coding being used on the line. */
     int line_encoding;
-    /*! \brief The image coding being used for output files. */
-    int output_encoding;
     /*! \brief The current DCS message minimum scan time code. */
     uint8_t min_scan_time_code;
     /*! \brief The X direction resolution of the current image, in pixels per metre. */

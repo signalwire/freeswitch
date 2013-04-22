@@ -563,9 +563,9 @@ SPAN_DECLARE(logging_state_t *) t4_rx_get_logging_state(t4_rx_state_t *s);
 /*! \brief Prepare for reception of a document.
     \param s The T.4 context.
     \param file The name of the file to be received.
-    \param supported_compressions The compression schemes supported for output to a TIFF file.
+    \param supported_output_compressions The compression schemes supported for output to a TIFF file.
     \return A pointer to the context, or NULL if there was a problem. */
-SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int supported_compressions);
+SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int supported_output_compressions);
 
 /*! \brief End reception of a document. Tidy up and close the file.
            This should be used to end T.4 reception started with t4_rx_init.

@@ -2899,7 +2899,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     }
     if (s->operation_in_progress != OPERATION_IN_PROGRESS_T4_RX)
     {
-        if (t4_rx_init(&s->t4.rx, s->rx_file, s->output_encoding) == NULL)
+        if (t4_rx_init(&s->t4.rx, s->rx_file, s->supported_output_compressions) == NULL)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "Cannot open target TIFF file '%s'\n", s->rx_file);
             t30_set_status(s, T30_ERR_FILEERROR);
@@ -6806,7 +6806,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
                              | T4_SUPPORT_LENGTH_UNLIMITED;
     /* Set the output encoding to something safe. Most things get 1D and 2D
        encoding right. Quite a lot get other things wrong. */
-    s->output_encoding = T4_COMPRESSION_T4_2D;
+    s->supported_output_compressions = T4_COMPRESSION_T4_2D;
     s->local_min_scan_time_code = T30_MIN_SCAN_0MS;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.30");
