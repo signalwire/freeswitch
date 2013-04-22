@@ -43,9 +43,15 @@
 	<!-- Le styles -->
 	<link href="assets/bootstrap/css/bootstrap.css" rel="stylesheet">
 	<style>
-	body {
-		padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
-	}
+		body {
+			padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+		}
+		#container {
+			min-height: 500px;
+		}
+		#footer {
+			text-align: center;
+		}
 	</style>
 	<link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
 
@@ -89,11 +95,18 @@
 	</div>
 
 	<div class="container" id="container">
-		<div id="calls" style="display:none"></div>
-		<div id="channels" style="display:none"></div>
+		<div id="main">
+			<div id="calls" style="display:none"></div>
+			<div id="channels" style="display:none"></div>
+		</div>
 	</div> <!-- /container -->
 
-	<div id="aa"></div>
+
+	<div class="container" id="footer">
+		&copy; <a href="http://www.freeswitch.org">FreeSWITCH.org</a>
+		Join us on <a href="http://www.cluecon.com">ClueCon</a>!
+	</div>
+
 	<script type="text/x-handlebars" data-template-name="index">
 		<h1>Welcome to FreeSWITCH Portal</h1>
 		Welcome
