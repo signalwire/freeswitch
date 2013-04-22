@@ -150,6 +150,28 @@
 		</div>
 	</script>
 
+	<script type="text/x-handlebars" data-template-name="showModules">
+		<h1>Modules</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Type</th>
+				<th>Name</th>
+				<th>iKey</th>
+				<th>Fileame</th>
+			</tr>
+			{{#each App.showModulesController.content}}
+			<tr>
+				<td>{{ type }}</td>
+				<td>{{ name }}</td>
+				<td>{{ ikey }}</td>
+				<td>{{ filename }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
 	<script type="text/x-handlebars" data-template-name="showApplications">
 		<h1>Applications</h1>
 		<div>
@@ -258,6 +280,7 @@
 	<script type="text/x-handlebars" data-template-name="show">
 		<h1>Show</h1>
 		{{#linkTo "showRegistrations"}} Registrations {{/linkTo}} |
+		{{#linkTo "showModules"}} Modules {{/linkTo}} |
 		{{#linkTo "showApplications"}} Applications {{/linkTo}} |
 		{{#linkTo "showEndpoints"}} Endpoints {{/linkTo}} |
 		{{#linkTo "showCodecs"}} Codecs {{/linkTo}} |
@@ -268,7 +291,6 @@
 		Complete |
 		Chat |
 		Management |
-		Modules |
 		Nat_map |
 		Say |
 		Interfaces |
