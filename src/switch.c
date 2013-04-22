@@ -373,7 +373,9 @@ static const char usage[] =
 	"\t-g [group]             -- specify group to switch to\n"
 #endif
 #ifdef HAVE_SETRLIMIT
+#ifndef FS_64BIT
 	"\t-waste                 -- allow memory waste\n"
+#endif
 	"\t-core                  -- dump cores\n"
 #endif
 	"\t-help                  -- this message\n"
@@ -459,7 +461,9 @@ int main(int argc, char *argv[])
 	switch_file_t *fd;
 	switch_memory_pool_t *pool = NULL;
 #ifdef HAVE_SETRLIMIT
+#ifndef FS_64BIT
 	switch_bool_t waste = SWITCH_FALSE;
+#endif
 #endif
 
 	for (x = 0; x < argc; x++) {
@@ -623,13 +627,17 @@ int main(int argc, char *argv[])
 		}
 
 		else if (!strcmp(local_argv[x], "-waste")) {
+#ifndef FS_64BIT
 			fprintf(stderr, "WARNING: Wasting up to 8 megs of memory per thread.\n");
 			sleep(2);
 			waste = SWITCH_TRUE;
+#endif
 		}
 
 		else if (!strcmp(local_argv[x], "-no-auto-stack")) {
+#ifndef FS_64BIT
 			waste = SWITCH_TRUE;
+#endif
 		}
 #endif
 		else if (!strcmp(local_argv[x], "-hp") || !strcmp(local_argv[x], "-rp")) {
@@ -935,7 +943,7 @@ int main(int argc, char *argv[])
 		return 255;
 	}
 
-
+#ifndef FS_64BIT
 #if defined(HAVE_SETRLIMIT) && !defined(__sun)
 	if (!waste && !(flags & SCF_VG)) {
 		struct rlimit rlp;
@@ -963,7 +971,7 @@ int main(int argc, char *argv[])
 		}
 	}
 #endif
-
+#endif
 	signal(SIGILL, handle_SIGILL);
 	signal(SIGTERM, handle_SIGILL);
 #ifndef WIN32
