@@ -108,8 +108,14 @@
 	</div>
 
 	<script type="text/x-handlebars" data-template-name="index">
-		<h1>Welcome to FreeSWITCH Portal</h1>
-		Welcome
+		<h1>Welcome to FreeSWITCH !</h1>
+		---- The World's First Cross-Platform Scalable FREE Multi-Protocol Soft Switch
+
+		<br>
+		<br>
+		<br>
+		<br>
+		<div id="serverStatus"></div>
 	</script>
 
 	<script type="text/x-handlebars" data-template-name="showApplications">
@@ -175,7 +181,23 @@
 	</script>
 
 	<script type="text/x-handlebars" data-template-name="showFiles">
-		Unimplemented
+		<h1>Files</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Type</th>
+				<th>Name</th>
+				<th>iKey</th>
+			</tr>
+			{{#each App.showCodecsController.content}}
+			<tr>
+				<td>{{ type }}</td>
+				<td>{{ name }}</td>
+				<td>{{ ikey }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
 	</script>
 
 	<script type="text/x-handlebars" data-template-name="showAPIs">
@@ -189,6 +211,11 @@
 		{{#linkTo "showCodecs"}} Codecs {{/linkTo}} |
 		{{#linkTo "showFiles"}} Files {{/linkTo}} |
 		{{#linkTo "showAPIs"}} APIs {{/linkTo}}
+
+		<br>
+
+		{{#linkTo "showStatus"}} Status {{/linkTo}}
+
 	</script>
 
 	<script type="text/x-handlebars" data-template-name="about">
