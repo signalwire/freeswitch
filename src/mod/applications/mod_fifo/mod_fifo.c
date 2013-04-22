@@ -2985,8 +2985,6 @@ SWITCH_STANDARD_APP(fifo_function)
 				originatee_cp = switch_channel_get_caller_profile(other_channel);
 
 				if (switch_channel_inbound_display(other_channel)) {
-					switch_channel_invert_cid(other_channel);
-
 					if (switch_channel_direction(other_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 						switch_channel_set_flag(other_channel, CF_BLEG);
 					}
@@ -3005,9 +3003,14 @@ SWITCH_STANDARD_APP(fifo_function)
 				
 				originator_cp->callee_id_name = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_name);
 				originator_cp->callee_id_number = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_number);
+
+
+				originatee_cp->callee_id_name = switch_core_strdup(originatee_cp->pool, originatee_cp->caller_id_name);
+				originatee_cp->callee_id_number = switch_core_strdup(originatee_cp->pool, originatee_cp->caller_id_number);
 				
 				originatee_cp->caller_id_name = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_name);
 				originatee_cp->caller_id_number = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_number);
+
 
 
 
