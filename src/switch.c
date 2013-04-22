@@ -945,6 +945,16 @@ int main(int argc, char *argv[])
 	}
 #endif
 
+	if (nc) {
+#ifdef WIN32
+		FreeConsole();
+#else
+		if (!nf) {
+			daemonize(do_wait);
+		}
+#endif
+	}
+
 	switch (priority) {
 	case 2:
 		set_realtime_priority();
@@ -962,6 +972,7 @@ int main(int argc, char *argv[])
 	
 	switch_core_setrlimits();
 
+
 #ifndef WIN32
 	if (runas_user || runas_group) {
 		if (change_user_group(runas_user, runas_group) < 0) {
@@ -971,19 +982,7 @@ int main(int argc, char *argv[])
 			return 255;
 		}
 	}
-#endif
-
-	if (nc) {
-#ifdef WIN32
-		FreeConsole();
 #else
-		if (!nf) {
-			daemonize(do_wait);
-		}
-#endif
-	}
-
-#ifdef WIN32
 	if (win32_service) {
 		/* Attempt to start service */
 		SERVICE_TABLE_ENTRY dispatchTable[] = {
