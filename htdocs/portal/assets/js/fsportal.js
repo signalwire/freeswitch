@@ -68,23 +68,33 @@ App.ChannelsRoute = Ember.Route.extend({
 });
 
 
-App.ShowApplicationsRoute = Ember.Route.extend({
+App.ShowRegistrationsRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		// Set the Controller's `title`
-		controller.set('title', "ShowApplications");
-		console.log("showApplications");
-		App.applicationsController.load();
+		controller.set('title', "ShowRegistrations");
+		App.registrationsController.load();
+	}//,
+	// renderTemplate: function() {
+		// this.render('calls');
+	// }
+});
+
+App.ShowModulesRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		// Set the Controller's `title`
+		App.showModulesController.load();
   	}//,
   	// renderTemplate: function() {
 		// this.render('calls');
   	// }
 });
 
-App.ShowRegistrationsRoute = Ember.Route.extend({
+App.ShowApplicationsRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		// Set the Controller's `title`
-		controller.set('title', "ShowRegistrations");
-		App.registrationsController.load();
+		controller.set('title', "ShowApplications");
+		console.log("showApplications");
+		App.applicationsController.load();
 	}//,
 	// renderTemplate: function() {
 		// this.render('calls');
@@ -131,6 +141,7 @@ App.Router.map(function(){
 	this.route("calls");
 	this.route("channels");
 	this.route("showRegistrations");
+	this.route("showModules");
 	this.route("showApplications");
 	this.route("showEndpoints");
 	this.route("showCodecs");
@@ -403,6 +414,24 @@ App.showAPIsController = Ember.ArrayController.create({
 			});
 
 			me.pushObjects(rows);
+
+		});
+	}
+});
+
+App.showModulesController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?module%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			console.log(data);
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
 
 		});
 	}
