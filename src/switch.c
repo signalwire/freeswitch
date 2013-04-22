@@ -38,6 +38,7 @@
 #endif
 
 #ifndef WIN32
+#include <poll.h>
 #ifdef HAVE_SETRLIMIT
 #include <sys/resource.h>
 #endif
@@ -87,14 +88,6 @@ static void handle_SIGILL(int sig)
 }
 
 #ifndef WIN32
-static void handle_SIGUSR2(int sig)
-{
-	if (sig) {};
-
-	system_ready = 1;
-
-	return;
-}
 
 static void handle_SIGCHLD(int sig)
 {
@@ -239,12 +232,37 @@ void WINAPI service_main(DWORD numArgs, char **args)
 
 #else
 
-static void daemonize(int do_wait)
+static int check_fd(int fd, int ms)
+{
+	struct pollfd pfds[2] = { { 0 } };
+	int s, r = 0, i = 0;
+
+	pfds[0].fd = fd;
+	pfds[0].events = POLLIN | POLLERR;
+	s = poll(pfds, 1, ms);
+
+	if (s == 0 || s == -1) {
+		r = s;
+	} else {
+		r = -1;
+
+		if ((pfds[0].revents & POLLIN)) {
+			if ((i = read(fd, &r, sizeof(r))) > -1) {
+				i = write(fd, &r, sizeof(r));
+			}
+		}
+	}
+	
+	return r;
+}
+
+static void daemonize(int *fds)
 {
 	int fd;
 	pid_t pid;
+	unsigned int sanity = 60;
 
-	if (!do_wait) {
+	if (!fds) {
 		switch (fork()) {
 		case 0:		/* child process */
 			break;
@@ -266,6 +284,9 @@ static void daemonize(int do_wait)
 
 	switch (pid) {
 	case 0:		/* child process */
+		if (fds) {
+			close(fds[0]);
+		}
 		break;
 	case -1:
 		fprintf(stderr, "Error Backgrounding (fork2)! %d - %s\n", errno, strerror(errno));
@@ -274,9 +295,10 @@ static void daemonize(int do_wait)
 	default:	/* parent process */
 		fprintf(stderr, "%d Backgrounding.\n", (int) pid);
 
-		if (do_wait) {
-			unsigned int sanity = 60;
+		if (fds) {
 			char *o;
+
+			close(fds[1]);
 
 			if ((o = getenv("FREESWITCH_BG_TIMEOUT"))) {
 				int tmp = atoi(o);
@@ -285,14 +307,21 @@ static void daemonize(int do_wait)
 				}
 			}
 
-			while (--sanity && !system_ready) {
+			do {
+				system_ready = check_fd(fds[0], 2000);
 
-				if (sanity % 2 == 0) {
+				if (system_ready == 0) {
 					printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", (int)getpid(), (int) pid);
 				}
-				sleep(1);
-			}
-			if (!system_ready) {
+
+			} while (--sanity && system_ready == 0);
+
+			shutdown(fds[0], 2);
+			close(fds[0]);
+			fds[0] = -1;
+
+			
+			if (system_ready < 0) {
 				printf("FreeSWITCH[%d] Error starting system! pid:%d\n", (int)getpid(), (int) pid);
 				kill(pid, 9);
 				exit(EXIT_FAILURE);
@@ -300,13 +329,14 @@ static void daemonize(int do_wait)
 
 			printf("FreeSWITCH[%d] System Ready pid:%d\n", (int) getpid(), (int) pid);
 		}
+
 		exit(EXIT_SUCCESS);
 	}
 
-	if (do_wait) {
+	if (fds) {
 		setsid();
 	}
-
+	return;
 	/* redirect std* to null */
 	fd = open("/dev/null", O_RDONLY);
 	if (fd != 0) {
@@ -405,6 +435,7 @@ int main(int argc, char *argv[])
 	switch_bool_t do_wait = SWITCH_FALSE;
 	char *runas_user = NULL;
 	char *runas_group = NULL;
+	int fds[2] = { 0, 0 };
 #else
 	switch_bool_t win32_service = SWITCH_FALSE;
 #endif
@@ -940,7 +971,11 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, handle_SIGILL);
 #ifndef WIN32
 	if (do_wait) {
-		signal(SIGUSR2, handle_SIGUSR2);
+		if (pipe(fds)) {
+			fprintf(stderr, "System Error!\n");
+			exit(-1);
+		}
+
 		signal(SIGCHLD, handle_SIGCHLD);
 	}
 #endif
@@ -950,7 +985,7 @@ int main(int argc, char *argv[])
 		FreeConsole();
 #else
 		if (!nf) {
-			daemonize(do_wait);
+			daemonize(do_wait ? fds : NULL);
 		}
 #endif
 	}
@@ -1047,7 +1082,19 @@ int main(int argc, char *argv[])
 
 #ifndef WIN32
 	if (do_wait) {
-		kill(getppid(), SIGUSR2);
+		if (fds[1] > -1) {
+			int i, v = 1;
+
+			if ((i = write(fds[1], &v, sizeof(v))) < 0) {
+				fprintf(stderr, "System Error [%s]\n", strerror(errno));
+			} else {
+				i = read(fds[1], &v, sizeof(v));
+			}
+		
+			shutdown(fds[1], 2);
+			close(fds[1]);
+			fds[1] = -1;
+		}
 	}
 #endif
 
