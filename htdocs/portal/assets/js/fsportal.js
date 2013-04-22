@@ -100,7 +100,13 @@ App.ShowCodecsRoute = Ember.Route.extend({
 
 App.ShowFilesRoute = Ember.Route.extend({
 	setupController: function(controller) {
-		App.showCodecsController.load();
+		App.showFilesController.load();
+	}
+});
+
+App.ShowAPIsRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showAPIsController.load();
   	}
 });
 
@@ -118,7 +124,6 @@ App.Router.map(function(){
 	this.route("showCodecs");
 	this.route("showFiles");
 	this.route("showAPIs");
-	this.route("showStatus");
 	this.route("show");
 	this.route("users");
 	this.route("about", { path: "/about" });
@@ -336,6 +341,37 @@ App.showFilesController = Ember.ArrayController.create({
 			if (data.row_count == 0) return;
 
 			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showAPIsController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?api%20as%20json", function(data){
+			  // var channels = JSON.parse(data);
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			var rows = [];
+			data.rows.forEach(function(r) {
+				if (r.name == "show") {
+					r.syntax = r.syntax.replace(/\|/g, "\n");
+				} else if (r.name == "fsctl") {
+					r.syntax = r.syntax.replace(/\]\|/g, "]\n");
+				} else {
+					r.syntax = r.syntax.replace(/\n/g, "\n");
+				}
+				// console.log(r.syntax);
+				rows.push(r);
+			});
+
+			me.pushObjects(rows);
 
 		});
 	}

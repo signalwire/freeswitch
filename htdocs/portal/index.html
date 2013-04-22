@@ -189,7 +189,7 @@
 				<th>Name</th>
 				<th>iKey</th>
 			</tr>
-			{{#each App.showCodecsController.content}}
+			{{#each App.showFilesController.content}}
 			<tr>
 				<td>{{ type }}</td>
 				<td>{{ name }}</td>
@@ -201,7 +201,26 @@
 	</script>
 
 	<script type="text/x-handlebars" data-template-name="showAPIs">
-		Unimplemented
+		<h1>APIs</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Name /<br>Description</th>
+				<th>Syntax</th>
+				<th>iKey</th>
+			</tr>
+			{{#each App.showAPIsController.content}}
+			<tr>
+				<td>
+					<strong>{{ name }}</strong><br>
+					{{ description }}
+				</td>
+				<td><pre>{{ syntax }}</pre></td>
+				<td>{{ ikey }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
 	</script>
 
 	<script type="text/x-handlebars" data-template-name="show">
@@ -210,11 +229,19 @@
 		{{#linkTo "showEndpoints"}} Endpoints {{/linkTo}} |
 		{{#linkTo "showCodecs"}} Codecs {{/linkTo}} |
 		{{#linkTo "showFiles"}} Files {{/linkTo}} |
-		{{#linkTo "showAPIs"}} APIs {{/linkTo}}
+		{{#linkTo "showAPIs"}} APIs {{/linkTo}} |
 
-		<br>
-
-		{{#linkTo "showStatus"}} Status {{/linkTo}}
+		Aliases |
+		Complete |
+		Chat |
+		Management |
+		Modules |
+		Nat_map |
+		Say |
+		Interfaces |
+		Interface_types |
+		Tasks |
+		Limits
 
 	</script>
 
