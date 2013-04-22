@@ -2042,7 +2042,7 @@ SWITCH_STANDARD_API(status_function)
 
 	stream->write_function(stream, "FreeSWITCH (Version %s) is %s%s", SWITCH_VERSION_FULL_HUMAN,
 						   switch_core_ready() ? "ready" : "not ready", nl);
-	
+
 	stream->write_function(stream, "%" SWITCH_SIZE_T_FMT " session(s) since startup%s", switch_core_session_id() - 1, nl);
 	switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
 	switch_core_session_ctl(SCSC_SPS, &sps);
@@ -2195,7 +2195,7 @@ SWITCH_STANDARD_API(ctl_function)
 		} else if (!strcasecmp(argv[0], "debug_sql")) {
 			int x = 0;
 			switch_core_session_ctl(SCSC_DEBUG_SQL, &x);
-			stream->write_function(stream, "+OK SQL DEBUG [%s]\n", x ? "on" : "off");			
+			stream->write_function(stream, "+OK SQL DEBUG [%s]\n", x ? "on" : "off");
 
 		} else if (!strcasecmp(argv[0], "sql")) {
 			if (argv[1]) {
@@ -2204,7 +2204,7 @@ SWITCH_STANDARD_API(ctl_function)
 					x = 1;
 				}
 				switch_core_session_ctl(SCSC_SQL, &x);
-				stream->write_function(stream, "+OK\n");			
+				stream->write_function(stream, "+OK\n");
 			}
 
 		} else if (!strcasecmp(argv[0], "reclaim_mem")) {
@@ -3030,7 +3030,7 @@ SWITCH_STANDARD_API(uuid_media_neg_function)
 			msg.numeric_arg++;
 			uuid++;
 		}
-		
+
 		if ((lsession = switch_core_session_locate(uuid))) {
 			status = switch_core_session_receive_message(lsession, &msg);
 			switch_core_session_rwunlock(lsession);
@@ -4598,7 +4598,7 @@ SWITCH_STANDARD_API(show_function)
 		}
 		sprintf(sql, "select type, name, ikey from interfaces where hostname='%s' and type = '%s' order by type,name", hostname, command);
 	} else if (!strncasecmp(command, "module", 6)) {
-		if (argv[1]) {
+		if (argv[1] && strcasecmp(argv[1], "as")) {
 			sprintf(sql, "select distinct type, name, ikey, filename from interfaces where hostname='%s' and ikey = '%s' order by type,name",
 					hostname, argv[1]);
 		} else {
@@ -5556,7 +5556,7 @@ SWITCH_STANDARD_API(uuid_loglevel)
 	if (!zstr(cmd) && (uuid = strdup(cmd))) {
 		if ((text = strchr(uuid, ' '))) {
 			*text++ = '\0';
-			
+
 			if (!strncasecmp(text, "-b", 2)) {
 				b++;
 				if ((text = strchr(text, ' '))) {
@@ -6066,7 +6066,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_info", "Send info to the endpoint", uuid_send_info_function, INFO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_video_refresh", "Send video refresh.", uuid_video_refresh_function, VIDEO_REFRESH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_outgoing_answer", "Answer outgoing channel", outgoing_answer_function, OUTGOING_ANSWER_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);	
+	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit_release", "Release limit resource", uuid_limit_release_function, LIMIT_RELEASE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_loglevel", "Set loglevel on session", uuid_loglevel, UUID_LOGLEVEL_SYNTAX);
