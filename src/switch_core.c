@@ -2650,16 +2650,20 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 {
 	struct system_thread_handle *sth = (struct system_thread_handle *) obj;
 
-#if 0							// if we are a luser we can never turn this back down, didn't we already set the stack size?
 #if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
 	struct rlimit rlim;
+	struct rlimit rlim_save;
 
-	rlim.rlim_cur = SWITCH_SYSTEM_THREAD_STACKSIZE;
-	rlim.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
+	memset(&rlim, 0, sizeof(rlim));
+	getrlimit(RLIMIT_STACK, &rlim);
+
+	memset(&rlim_save, 0, sizeof(rlim_save));
+	getrlimit(RLIMIT_STACK, &rlim_save);
+
+	rlim.rlim_cur = rlim.rlim_max;
 	if (setrlimit(RLIMIT_STACK, &rlim) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setting stack size failed! (%s)\n", strerror(errno));
 	}
-#endif
 #endif
 
 	if (sth->fds) {
@@ -2668,14 +2672,10 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 
 	sth->ret = system(sth->cmd);
 
-#if 0
 #if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
-	rlim.rlim_cur = SWITCH_THREAD_STACKSIZE;
-	rlim.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
-	if (setrlimit(RLIMIT_STACK, &rlim) < 0) {
+	if (setrlimit(RLIMIT_STACK, &rlim_save) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setting stack size failed! (%s)\n", strerror(errno));
 	}
-#endif
 #endif
 
 	switch_mutex_lock(sth->mutex);
@@ -2798,6 +2798,10 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 {
 	int pid;
 	char *dcmd = strdup(cmd);
+#if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
+	struct rlimit rlim;
+	struct rlimit rlim_save;
+#endif
 
 	switch_core_set_signal_handlers();
 
@@ -2810,7 +2814,20 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 		free(dcmd);
 	} else {
 		switch_close_extra_files(NULL, 0);
-		
+
+#if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
+		memset(&rlim, 0, sizeof(rlim));
+		getrlimit(RLIMIT_STACK, &rlim);
+
+		memset(&rlim_save, 0, sizeof(rlim_save));
+		getrlimit(RLIMIT_STACK, &rlim_save);
+
+		rlim.rlim_cur = rlim.rlim_max;
+		if (setrlimit(RLIMIT_STACK, &rlim) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setting stack size failed! (%s)\n", strerror(errno));
+		}
+#endif
+
 		if (system(dcmd) == -1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute because of a command error : %s\n", dcmd);
 		}
