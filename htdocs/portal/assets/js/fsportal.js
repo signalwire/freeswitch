@@ -35,6 +35,9 @@ var App = Ember.Application.create({
 	rootElement: $('#container'),
 	total: 0,
 	ready: function(){
+		$.get("/txtapi/status", function(data){
+			$('#serverStatus').html("<pre>" + data + "</pre>");
+		});
 	}
 });
 
@@ -95,6 +98,12 @@ App.ShowCodecsRoute = Ember.Route.extend({
   	}
 });
 
+App.ShowFilesRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showCodecsController.load();
+  	}
+});
+
 App.UsersRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		App.usersController.load();
@@ -109,6 +118,7 @@ App.Router.map(function(){
 	this.route("showCodecs");
 	this.route("showFiles");
 	this.route("showAPIs");
+	this.route("showStatus");
 	this.route("show");
 	this.route("users");
 	this.route("about", { path: "/about" });
@@ -303,6 +313,24 @@ App.showCodecsController = Ember.ArrayController.create({
 		$.getJSON("/txtapi/show?codec%20as%20json", function(data){
 			  // var channels = JSON.parse(data);
 			console.log(data.row_count);
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showFilesController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?files%20as%20json", function(data){
+			  // var channels = JSON.parse(data);
 			me.set('total', data.row_count);
 			me.content.clear();
 			if (data.row_count == 0) return;
