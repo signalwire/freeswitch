@@ -947,12 +947,9 @@ int main(int argc, char *argv[])
 			char buf[1024] = "";
 			int i = 0;
 
-			fprintf(stderr, "Error: stacksize %d is not optimal: run ulimit -s %d from your shell before starting the application.\nauto-adjusting stack size for optimal performance...\n",
-					(int) (rlp.rlim_cur / 1024), SWITCH_THREAD_STACKSIZE / 1024);
-
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
-			rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
+			rlp.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
 			setrlimit(RLIMIT_STACK, &rlp);
 
 			apr_terminate();
