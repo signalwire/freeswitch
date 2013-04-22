@@ -2886,7 +2886,7 @@ SWITCH_DECLARE(void) switch_channel_invert_cid(switch_channel_t *channel)
 	tnum = cp->caller_id_number;
 
 #ifdef DEEP_DEBUG_CID
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SWAP [%s][%s] [%s][%s]\n", originate_cp->caller_id_name, cp->caller_id_number, cp->callee_id_name, cp->callee_id_number);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SWAP [%s][%s] [%s][%s]\n", cp->caller_id_name, cp->caller_id_number, cp->callee_id_name, cp->callee_id_number);
 #endif
 
 	cp->caller_id_name = cp->callee_id_name;
