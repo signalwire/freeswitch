@@ -154,6 +154,7 @@ static struct {
 	int debug;
 	int not_found_expires;
 	int cache_ttl;
+	int abs_cache_ttl;
 } globals;
 
 
@@ -1685,6 +1686,14 @@ static switch_status_t do_config(void)
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s]for file-cache-ttl\n", val);
 				}
+			} else if (!strcasecmp(var, "abs-file-cache-ttl")) {
+				int tmp = atoi(val);
+
+				if (tmp > -1) {
+					globals.abs_cache_ttl = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s]for file-cache-ttl\n", val);
+				}
 
 			} else if (!strcasecmp(var, "file-not-found-expires")) {
 				globals.not_found_expires = atoi(val);
@@ -2502,17 +2511,39 @@ static switch_status_t write_meta_file(http_file_context_t *context, const char 
 	}
 
 	if (!zstr(data)) {
-		int ttl = globals.cache_ttl;
+		int ttl = globals.cache_ttl, abs_cache_ttl = globals.abs_cache_ttl;
 		const char *cc;
 		const char *p;
+		int x;
 
-		if (headers && (cc = switch_event_get_header(headers, "Cache-Control"))) {
+		if (context->url_params) {
+			if ((cc = switch_event_get_header(context->url_params, "abs_cache_control"))) {
+				x = atoi(cc);
+
+				if (x > 0) {
+					abs_cache_ttl = x;
+				}
+			} else if ((cc = switch_event_get_header(context->url_params, "cache_control"))) {
+				x = atoi(cc);
+
+				if (x > 0) {
+					ttl = x;
+				}
+			}
+		}
+
+		if (abs_cache_ttl) {
+			ttl = abs_cache_ttl;
+		} else if (headers && (cc = switch_event_get_header(headers, "Cache-Control"))) {
 			if ((p = switch_stristr("max-age=", cc))) {
 				p += 8;
 				
 				if (!zstr(p)) {
-					ttl = atoi(p);
-					if (ttl < 0) ttl = globals.cache_ttl;
+					x = atoi(p);
+
+					if (x < ttl) {
+						ttl = x;
+					}
 				}
 			}
 
