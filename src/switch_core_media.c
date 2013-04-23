@@ -2626,14 +2626,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 								near_rate = map->rm_rate;
 								near_match = imp;
 								near_map = mmap = map;
-								
-								if (switch_true(switch_channel_get_variable_dup(channel, "rtp_negotiate_near_match", SWITCH_FALSE, -1))) {
-									mimp = imp;
-									mmap = map;
-									match = 1;
-									break;
-								}
 								match = 0;
+
+								if (switch_true(switch_channel_get_variable_dup(channel, "rtp_negotiate_near_match", SWITCH_FALSE, -1))) {
+									goto near_match;
+								}
+
 								continue;
 							}
 						}
@@ -2653,6 +2651,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					break;
 				}
 			}
+
+		near_match:
 
 			if (!match && near_match) {
 				const switch_codec_implementation_t *search[1];
