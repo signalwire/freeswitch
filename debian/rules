@@ -23,6 +23,7 @@ show_vars= \
 	echo "CC='$(CC)'"; \
 	echo "CXX='$(CXX)'"; \
 	echo "CFLAGS='$(CFLAGS)'"; \
+	echo "CPPFLAGS='$(CPPFLAGS)'"; \
 	echo "CXXFLAGS='$(CXXFLAGS)'"; \
 	echo "CCACHE_DIR='$(CCACHE_DIR)'"; \
 	echo;
