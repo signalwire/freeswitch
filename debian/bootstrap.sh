@@ -464,6 +464,7 @@ Recommends:
  freeswitch-mod-spandsp (= \${binary:Version}),
  freeswitch-mod-spy (= \${binary:Version}),
  freeswitch-mod-stress (= \${binary:Version}),
+ freeswitch-mod-translate (= \${binary:Version}),
  freeswitch-mod-valet-parking (= \${binary:Version}),
  freeswitch-mod-vmd (= \${binary:Version}),
  freeswitch-mod-voicemail (= \${binary:Version}),
