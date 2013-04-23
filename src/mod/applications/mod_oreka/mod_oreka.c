@@ -625,7 +625,7 @@ SWITCH_STANDARD_APP(oreka_start_function)
 	oreka->session = session;
 
     if (oreka->mux_streams) {
-        flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_ANSWER_REQ;
+        flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING | SMBF_ANSWER_REQ;
     } else {
         flags = SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | SMBF_ANSWER_REQ;
     }
