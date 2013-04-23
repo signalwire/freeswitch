@@ -462,7 +462,7 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 	rsession = tech_pvt->rtmp_session;
 
 	if ( rsession == NULL ) {
-		goto error;
+		goto error_null;
 	}
 
 	switch_thread_rwlock_wrlock(rsession->rwlock);
@@ -514,7 +514,9 @@ switch_status_t rtmp_write_frame(switch_core_session_t *session, switch_frame_t 
 
  error:
 	switch_thread_rwlock_unlock(rsession->rwlock);
-		return SWITCH_STATUS_FALSE;
+	
+ error_null:
+	return SWITCH_STATUS_FALSE;
 }
 
 
