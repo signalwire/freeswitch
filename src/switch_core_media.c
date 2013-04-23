@@ -2625,7 +2625,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
 								near_rate = map->rm_rate;
 								near_match = imp;
-								near_map = map;
+								near_map = mmap = map;
 								match = 0;
 								continue;
 							}
@@ -2661,8 +2661,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				
 				if (num) {
 					mimp = search[0];
+					mmap = map;
 				} else {
 					mimp = near_match;
+					mmap = map;
 				}
 				
 				if (!maxptime || mimp->microseconds_per_packet / 1000 <= maxptime) {
@@ -2676,9 +2678,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					match = 0;
 				}
 			}
-			printf("WTF %p %p\n", (void *) mimp, (void *) mmap);
-
-
+			
 			if (mimp && mmap) {
 				char tmp[50];
 				const char *mirror = switch_channel_get_variable(session->channel, "rtp_mirror_remote_audio_codec_payload");
