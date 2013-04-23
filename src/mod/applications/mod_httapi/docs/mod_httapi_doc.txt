@@ -295,6 +295,8 @@ CONFIGURATION:
 <param name="" value="">
 debug                           : <true|false>          false           Print debug data
 file-cache-ttl                  : <number of sec>       300             How long to wait before checking the server to see if audio file has changed.
+				  	     				Whichever is smaller that or the max-age returned by the server (if present).
+abs-file-cache-ttl		: <number of sec>	0		Force the cache time no matter what anything else says.
 file-not-found-expires          : <number of sec>       300             How long to still preserve cached audio files that are not found by the server.
 
 <profile name="<name>">         : CREATE NEW PROFILE TO REFERENCE BY NAME
