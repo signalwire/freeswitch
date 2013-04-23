@@ -1928,6 +1928,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
 	char *vm_storage_dir = NULL;
+	char *storage_dir = NULL;
 	char global_buf[2] = "";
 	switch_input_args_t args = { 0 };
 	const char *caller_id_name = NULL;
@@ -2470,9 +2471,12 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						convert_cmd = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-convert-ext")) {
 						convert_ext = switch_core_session_strdup(session, val);
-					} else if (!strcasecmp(var, "storage-dir")) {
+					} else if (!strcasecmp(var, "vm-storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
-
+					} else if (!strcasecmp(var, "storage-dir")) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-storage-dir'.\n");
+						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "timezone")) {
 						switch_channel_set_variable(channel, var, val);
 					}
@@ -2541,7 +2545,15 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				if (auth) {
 					if (!dir_path) {
 						if (!zstr(vm_storage_dir)) {
-							dir_path = switch_core_session_sprintf(session, "%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
+							/* check for absolute or relative path */
+							if (switch_is_file_path(vm_storage_dir)) {
+								dir_path = switch_core_session_strdup(session, vm_storage_dir);
+							} else {
+								dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s", SWITCH_GLOBAL_dirs.storage_dir,
+																	   SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, vm_storage_dir);
+							}
+						} else if (!zstr(storage_dir)) {
+							dir_path = switch_core_session_sprintf(session, "%s%s%s", storage_dir, SWITCH_PATH_SEPARATOR, myid);
 						} else if (!zstr(profile->storage_dir)) {
 							dir_path =
 								switch_core_session_sprintf(session, "%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name,
@@ -2653,6 +2665,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	int insert_db = 1;
 	int email_attach = 0;
 	char *vm_storage_dir = NULL;
+	char *storage_dir = NULL;
 	char *myfolder = "inbox";
 	int priority = 3;
 	const char *tmp;
@@ -2712,6 +2725,12 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			vm_email_from = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-email-all-messages") && (send_main = switch_true(val))) {
 			send_mail++;
+		} else if (!strcasecmp(var, "vm-storage-dir")) {
+			vm_storage_dir = switch_core_strdup(pool, val);
+		} else if (!strcasecmp(var, "storage-dir")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							  "Using deprecated 'storage-dir' directory variable: Please use 'vm-storage-dir'.\n");
+			storage_dir = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
 			send_mail++;
 		} else if (!strcasecmp(var, "vm-keep-local-after-email")) {
@@ -2731,7 +2750,15 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deliver VM to %s@%s\n", myid, domain_name);
 
 	if (!zstr(vm_storage_dir)) {
-		dir_path = switch_mprintf("%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
+		/* check for absolute or relative path */
+		if (switch_is_file_path(vm_storage_dir)) {
+			dir_path = switch_core_strdup(pool, vm_storage_dir);
+		} else {
+			dir_path = switch_mprintf("%s%svoicemail%s%s", SWITCH_GLOBAL_dirs.storage_dir,
+												   SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, vm_storage_dir);
+		}
+	} else if (!zstr(storage_dir)) {
+		dir_path = switch_mprintf("%s%s%s", storage_dir, SWITCH_PATH_SEPARATOR, myid);
 	} else if (!zstr(profile->storage_dir)) {
 		dir_path = switch_mprintf("%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, myid);
 	} else {
@@ -3271,6 +3298,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_size_t retsize;
 	switch_time_t ts = switch_micro_time_now();
 	char *vm_storage_dir = NULL;
+	char *storage_dir = NULL;
 	char *record_macro = VM_RECORD_MESSAGE_MACRO;
 	int send_main = 0;
 	int send_notify = 0;
@@ -3318,8 +3346,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						email_addr = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-email-all-messages") && (send_main = switch_true(val))) {
 						send_mail++;
-					} else if (!strcasecmp(var, "storage-dir")) {
+					} else if (!strcasecmp(var, "vm-storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "storage-dir")) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-storage-dir'.\n");
+						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
 						send_mail++;
 					} else if (!strcasecmp(var, "vm-disk-quota")) {
@@ -3376,7 +3408,15 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	}
 
 	if (!zstr(vm_storage_dir)) {
-		dir_path = switch_core_session_sprintf(session, "%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, id);
+		/* check for absolute or relative path */
+		if (switch_is_file_path(vm_storage_dir)) {
+			dir_path = switch_core_session_strdup(session, vm_storage_dir);
+		} else {
+			dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s", SWITCH_GLOBAL_dirs.storage_dir,
+												   SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, vm_storage_dir);
+		}
+	} else if (!zstr(storage_dir)) {
+		dir_path = switch_core_session_sprintf(session, "%s%s%s", storage_dir, SWITCH_PATH_SEPARATOR, id);
 	} else if (!zstr(profile->storage_dir)) {
 		dir_path = switch_core_session_sprintf(session, "%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, id);
 	} else {
