@@ -214,6 +214,10 @@ Module: applications/mod_stress
 Description: Voice stress detection
  This module attempts to detect voice stress on an audio channel.
 
+Module: applications/mod_translate
+Description: Number translation
+ This module implements number translation.
+
 Module: applications/mod_valet_parking
 Description: Valet parking
  This module implements the valet call parking strategy.
