@@ -2104,7 +2104,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	switch_media_handle_t *smh;
 	uint32_t near_rate = 0;
 	const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
-	sdp_rtpmap_t *mmap = NULL;
+	sdp_rtpmap_t *mmap = NULL, *near_map = NULL;
 	int codec_ms = 0;
 	const char *tmp;
 
@@ -2625,7 +2625,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
 								near_rate = map->rm_rate;
 								near_match = imp;
-								mmap = map;
+								near_map = map;
 								match = 0;
 								continue;
 							}
@@ -2661,16 +2661,14 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				
 				if (num) {
 					mimp = search[0];
-					mmap = map;
 				} else {
 					mimp = near_match;
-					mmap = map;
 				}
 				
 				if (!maxptime || mimp->microseconds_per_packet / 1000 <= maxptime) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Substituting codec %s@%ui@%uh\n",
 									  mimp->iananame, mimp->microseconds_per_packet / 1000, mimp->samples_per_second);
-					mmap = map;
+					mmap = near_map;
 					match = 1;
 				} else {
 					mimp = NULL;
@@ -2678,6 +2676,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					match = 0;
 				}
 			}
+			printf("WTF %p %p\n", (void *) mimp, (void *) mmap);
+
 
 			if (mimp && mmap) {
 				char tmp[50];
