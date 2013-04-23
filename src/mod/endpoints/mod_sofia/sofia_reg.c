@@ -1142,7 +1142,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		sofia_private = *sofia_private_p;
 	}
 
-	if (sip && sip->sip_contact->m_url->url_params) {
+	if (sip && sip->sip_contact && sip->sip_contact->m_url && sip->sip_contact->m_url->url_params) {
 		uparams = sip->sip_contact->m_url->url_params;
 	} else {
 		uparams = NULL;
