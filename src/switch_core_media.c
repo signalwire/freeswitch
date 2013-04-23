@@ -2621,11 +2621,18 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
-						} else {
+						} else if (!near_match) {
 							if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
 								near_rate = map->rm_rate;
 								near_match = imp;
 								near_map = mmap = map;
+								
+								if (switch_true(switch_channel_get_variable_dup(channel, "rtp_negotiate_near_match", SWITCH_FALSE, -1))) {
+									mimp = imp;
+									mmap = map;
+									match = 1;
+									break;
+								}
 								match = 0;
 								continue;
 							}
