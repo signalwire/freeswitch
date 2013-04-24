@@ -52,6 +52,8 @@
 #elif defined(__FreeBSD__)
 #include <libutil.h>
 #include <termios.h>
+#elif defined(__SunOS)
+#include <termios.h>
 #else
 #include <pty.h>
 #endif
