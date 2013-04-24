@@ -93,7 +93,7 @@ static int sock_read_ready(struct stream_data *data, int ms)
 	int s = 0, r = 0;
 	
 	pfds[0].fd = SSL_get_fd(data->ssl);
-	pfds[0].events |= POLLIN;
+	pfds[0].events = POLLIN | POLLHUP | POLLERR;
 	
 	s = poll(pfds, 1, ms);
 
@@ -103,6 +103,8 @@ static int sock_read_ready(struct stream_data *data, int ms)
 	} else if (s > 0) {
 		if ((pfds[0].revents & POLLIN)) {
 			r = 1;
+		} else if ((pfds[0].revents & POLLHUP) || (pfds[0].revents & POLLERR)) {
+			r = -1;
 		}
 	}
 
@@ -690,7 +692,9 @@ iks_recv (iksparser *prs, int timeout)
 			} else if( ret == 0 ) {
 				return IKS_OK;
 			} else {
-				len = SSL_read(data->ssl, data->buf, NET_IO_BUF_SIZE - 1);
+				do {
+					len = SSL_read(data->ssl, data->buf, NET_IO_BUF_SIZE - 1);
+				} while (len == -1 && (errno == EAGAIN || errno == EINTR || SSL_get_error(data->ssl, len) == SSL_ERROR_WANT_READ));
 			}
 			
 			if( len <= 0 ) 
