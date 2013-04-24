@@ -37,9 +37,14 @@ io_connect (iksparser *prs, void **socketptr, const char *server, int port)
 	struct addrinfo *addr_res, *addr_ptr;
 	char port_str[6];
 	int err = 0;
+	int family = AF_INET;
+
+	if (strchr(server, ':')) {
+		family = AF_INET6;
+	}
 
 	hints.ai_flags = AI_CANONNAME;
-	hints.ai_family = PF_UNSPEC;
+	hints.ai_family = family;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = 0;
 	hints.ai_addrlen = 0;
@@ -58,6 +63,7 @@ io_connect (iksparser *prs, void **socketptr, const char *server, int port)
 		if (sock != -1) {
 			err = IKS_NET_NOCONN;
 			tmp = connect (sock, addr_ptr->ai_addr, addr_ptr->ai_addrlen);
+
 			if (tmp == 0) break;
 			io_close ((void *) sock);
 			sock = -1;
