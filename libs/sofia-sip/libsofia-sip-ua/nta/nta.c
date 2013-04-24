@@ -2188,7 +2188,7 @@ int nta_agent_add_tport(nta_agent_t *self,
   if (url->url_params) {
     if (url_param(url->url_params, "transport", tp, sizeof(tp)) > 0) {
       if (strchr(tp, ',')) {
-	int i; char *t, *tps[9];
+       int i; char *t, *tps[9] = { 0 };
 
 	/* Split tp into transports */
 	for (i = 0, t = tp; t && i < 8; i++) {
