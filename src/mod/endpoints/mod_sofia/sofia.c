@@ -2611,6 +2611,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	}
 
 	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+	sofia_reg_close_handles(profile);
 
 	switch_core_session_hupall_matching_var("sofia_profile_name", profile->name, SWITCH_CAUSE_MANAGER_REQUEST);
 	sanity = 10;
@@ -2628,7 +2629,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	sofia_reg_unregister(profile);
 	nua_shutdown(profile->nua);
 
-	sanity = 10;
+	sanity = 100;
 	while (!sofia_test_pflag(profile, PFLAG_SHUTDOWN) || profile->queued_events > 0) {
 		su_root_step(profile->s_root, 1000);
 		if (!--sanity) {
@@ -2702,6 +2703,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_glue_del_profile(profile);
 	switch_core_hash_destroy(&profile->chat_hash);
+	switch_core_hash_destroy(&profile->reg_nh_hash);
 	switch_core_hash_destroy(&profile->mwi_debounce_hash);
 	
 	switch_thread_rwlock_unlock(profile->rwlock);
@@ -3622,6 +3624,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 					profile->dbname = switch_core_strdup(profile->pool, url);
 					switch_core_hash_init(&profile->chat_hash, profile->pool);
+					switch_core_hash_init(&profile->reg_nh_hash, profile->pool);
 					switch_core_hash_init(&profile->mwi_debounce_hash, profile->pool);
 					switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 					switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);

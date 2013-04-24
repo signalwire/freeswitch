@@ -644,9 +644,10 @@ void sofia_reg_check_socket(sofia_profile_t *profile, const char *call_id, const
 
 	switch_snprintf(key, sizeof(key), "%s%s%s", call_id, network_addr, network_ip);
 	switch_mutex_lock(profile->flag_mutex);
-	if ((hnh = switch_core_hash_find(profile->chat_hash, key))) {
-		switch_core_hash_delete(profile->chat_hash, key);
+	if ((hnh = switch_core_hash_find(profile->reg_nh_hash, key))) {
+		switch_core_hash_delete(profile->reg_nh_hash, key);
 		nua_handle_unref(hnh);
+		nua_handle_destroy(hnh);
 	}
 	switch_mutex_unlock(profile->flag_mutex);
 }
@@ -1081,7 +1082,34 @@ static int debounce_check(sofia_profile_t *profile, const char *user, const char
 
 	return r;
 }
-						
+
+void sofia_reg_close_handles(sofia_profile_t *profile)
+{
+	nua_handle_t *nh = NULL;
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+
+
+	switch_mutex_lock(profile->flag_mutex);
+	if (profile->reg_nh_hash) {
+	top:
+		for (hi = switch_hash_first(NULL, profile->reg_nh_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+			if ((nh = (nua_handle_t *) val)) {
+				nua_handle_unref(nh);
+				nua_handle_destroy(nh);
+				switch_core_hash_delete(profile->reg_nh_hash, (char *) var);
+				goto top;
+			}
+		}
+	}
+	switch_mutex_unlock(profile->flag_mutex);
+
+	return;
+
+}
+
 
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
 								sofia_dispatch_event_t *de, sofia_regtype_t regtype, char *key,
@@ -1699,7 +1727,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_snprintf(key, sizeof(key), "%s%s%s", call_id, network_ip, network_port_c);
 
 			switch_mutex_lock(profile->flag_mutex);
-			hnh = switch_core_hash_find(profile->chat_hash, key);
+			hnh = switch_core_hash_find(profile->reg_nh_hash, key);
 			switch_mutex_unlock(profile->flag_mutex);
 
 			if (!hnh) {
@@ -1716,7 +1744,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				*sofia_private_p = sofia_private;
 				nua_handle_bind(nh, sofia_private);
 				nua_handle_ref(nh);
-				switch_core_hash_insert(profile->chat_hash, key, nh);
+				switch_core_hash_insert(profile->reg_nh_hash, key, nh);
 			}
 		}
 		

@@ -600,6 +600,7 @@ struct sofia_profile {
 	sofia_gateway_t *gateways;
 	//su_home_t *home;
 	switch_hash_t *chat_hash;
+	switch_hash_t *reg_nh_hash;
 	switch_hash_t *mwi_debounce_hash;
 	//switch_core_db_t *master_db;
 	switch_thread_rwlock_t *rwlock;
@@ -1107,6 +1108,7 @@ int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
 switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, char **ip, switch_port_t *port,
 											  const char *sourceip, switch_memory_pool_t *pool);
 void sofia_reg_check_socket(sofia_profile_t *profile, const char *call_id, const char *network_addr, const char *network_ip);
+void sofia_reg_close_handles(sofia_profile_t *profile);
 
 /* For Emacs:
  * Local Variables:
