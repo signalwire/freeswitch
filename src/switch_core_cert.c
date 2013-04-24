@@ -102,8 +102,13 @@ static const EVP_MD *get_evp_by_name(const char *name)
 
 	return NULL;
 }
-#ifdef _MSC_VER
-/* Visual C do not have strsep? */
+#if defined(_MSC_VER) || (defined(__SunOS_5_10) && defined(__SUNPRO_C))
+/*
+ * Visual C do not have strsep?
+ *
+ * Solaris 10 with the Sun Studio compilers doesn't have strsep in the
+ * C library either.
+ */
 char
     *strsep(char **stringp, const char *delim)
 {
