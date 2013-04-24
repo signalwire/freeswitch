@@ -609,7 +609,7 @@ int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)
   ifc.ifc_len = numifs * sizeof (struct ifreq);
   buffer = malloc(sizeof(su_localinfo_t) + ifc.ifc_len + su_xtra);
   if (!buffer) {
-    SU_DEBUG_1(("su_localinfo: memory exhausted\n"));
+    SU_DEBUG_1(("su_localinfo: memory exhausted\n" VA_NONE));
     error = ELI_MEMORY;
     goto err;
   }
