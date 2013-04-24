@@ -2025,7 +2025,7 @@ static void switch_loadable_module_sort_codecs(const switch_codec_implementation
 #endif
 		}
 
-		if (this_ptime != sorted_ptime) {
+		if (i > 0 && strcasecmp(array[i]->iananame, array[i-1]->iananame) && this_ptime != sorted_ptime) {
 			int j;
 			int swapped = 0;
 
