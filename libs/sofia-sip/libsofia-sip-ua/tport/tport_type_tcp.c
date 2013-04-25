@@ -184,12 +184,23 @@ int tport_tcp_init_client(tport_primary_t *pri,
 int tport_tcp_init_secondary(tport_t *self, int socket, int accepted,
 			     char const **return_reason)
 {
-  int one = 1;
+  int val = 1;
 
   self->tp_has_connection = 1;
 
-  if (setsockopt(socket, SOL_TCP, TCP_NODELAY, (void *)&one, sizeof one) == -1)
+  if (setsockopt(socket, SOL_TCP, TCP_NODELAY, (void *)&val, sizeof val) == -1)
     return *return_reason = "TCP_NODELAY", -1;
+
+#if defined(SO_KEEPALIVE)
+  setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&val, sizeof val);
+#endif
+  val = 30;
+#if defined(TCP_KEEPIDLE)
+  setsockopt(socket, SOL_TCP, TCP_KEEPIDLE, (void *)&val, sizeof val);
+#endif
+#if defined(TCP_KEEPINTVL)
+  setsockopt(socket, SOL_TCP, TCP_KEEPINTVL, (void *)&val, sizeof val);
+#endif
 
   if (!accepted)
     tport_tcp_setsndbuf(socket, 64 * 1024);
