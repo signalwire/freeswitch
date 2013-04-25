@@ -1,0 +1,94 @@
+<include>
+
+    <extension name="test_say_pl">
+      <condition field="destination_number" expression="^^44(\d{2})$">
+        <action application="answer"/>
+        <action application="set" data="sound_prefix=$${sounds_dir}/pl/espeak"/>
+        <action application="set" data="default_language=pl"/>
+        <action application="sleep" data="1000"/>
+        <action application="transfer" data="test_say_pl_$1"/>
+      </condition>
+    </extension>
+
+    <extension name="test_say_pl_01">
+      <condition field="destination_number" expression="^test_say_pl_01$">
+        <action application="set" data="num=${expr(randomize(&x);ceil(random(0,1000000,&x)))}"/>
+        <action application="log" data="INFO Test: say pl: ${num}"/>
+        <action application="say" data="pl number pronounced ${num}"/>
+        <action application="sleep" data="2000"/>
+        <action application="transfer" data="test_say_pl_01"/>
+      </condition>
+    </extension>
+
+    <extension name="test_say_pl_02">
+      <condition field="destination_number" expression="^test_say_pl_02$">
+        <action application="set" data="num=${expr(randomize(&x);ceil(random(0,1000000,&x)))}"/>
+        <action application="log" data="INFO Test: say pl: ${num}"/>
+        <action application="say" data="pl number iterated ${num}"/>
+        <action application="sleep" data="2000"/>
+        <action application="transfer" data="test_say_pl_02"/>
+      </condition>
+    </extension>
+
+    <extension name="test_say_pl_03">
+      <condition field="destination_number" expression="^test_say_pl_03$">
+        <action application="set" data="hh=${expr(randomize(&x);ceil(random(0,24,&x)))}"/>
+        <action application="set" data="mm=${expr(randomize(&x);ceil(random(0,60,&x)))}"/>
+        <action application="set" data="ss=${expr(randomize(&x);ceil(random(0,60,&x)))}"/>
+        <action application="log" data="INFO Test: say pl: ${hh}:${mm}:${ss}"/>
+        <action application="say" data="pl TIME_MEASUREMENT pronounced ${hh}:${mm}:${ss}"/>
+        <action application="sleep" data="2000"/>
+        <action application="transfer" data="test_say_pl_03"/>
+      </condition>
+    </extension>
+
+    <extension name="test_say_pl_04">
+      <condition field="destination_number" expression="^test_say_pl_04$">
+        <action application="log" data="INFO Test: say pl: ${strftime()}"/>
+        <action application="say" data="pl TIME_MEASUREMENT pronounced ${strftime()}"/>
+        <action application="sleep" data="2000"/>
+        <action application="transfer" data="test_say_pl_04"/>
+      </condition>
+    </extension>
+
+    <extension name="test_say_pl_05">
+      <condition field="destination_number" expression="^test_say_pl_05$">
+        <action application="log" data="INFO Test: say pl: ${strftime()}"/>
+        <action application="say" data="pl current_date_time pronounced ${strepoch()}"/>
+        <action application="sleep" data="2000"/>
+        <action application="transfer" data="test_say_pl_05"/>
+      </condition>
+    </extension>
+
+    <extension name="test_say_pl_06">
+      <condition field="destination_number" expression="^test_say_pl_06$">
+        <action application="log" data="INFO Test: say pl: ${strftime()}"/>
+        <action application="say" data="pl current_date pronounced ${strepoch()}"/>
+        <action application="sleep" data="2000"/>
+        <action application="transfer" data="test_say_pl_06"/>
+      </condition>
+    </extension>
+
+    <extension name="test_say_pl_07">
+      <condition field="destination_number" expression="^test_say_pl_07$">
+        <action application="log" data="INFO Test: say pl: ${strftime()}"/>
+        <action application="say" data="pl short_date_time pronounced ${strepoch()}"/>
+        <action application="sleep" data="2000"/>
+        <action application="transfer" data="test_say_pl_07"/>
+      </condition>
+    </extension>
+
+    <extension name="test_say_pl_11">
+      <condition field="destination_number" expression="^test_say_pl_11$">
+        <action application="set" data="i1=${expr(randomize(&x);ceil(random(0,255,&x)))}"/>
+        <action application="set" data="i2=${expr(randomize(&x);ceil(random(0,255,&x)))}"/>
+        <action application="set" data="i3=${expr(randomize(&x);ceil(random(0,255,&x)))}"/>
+        <action application="set" data="i4=${expr(randomize(&x);ceil(random(0,255,&x)))}"/>
+        <action application="log" data="INFO Test: say pl: ${i1}.${i2}.${i3}.${i4}"/>
+        <action application="say" data="pl IP_ADDRESS pronounced ${i1}.${i2}.${i3}.${i4}"/>
+        <action application="sleep" data="2000"/>
+        <action application="transfer" data="test_pl_11"/>
+      </condition>
+    </extension>
+
+</include>
