@@ -2443,8 +2443,14 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									 NTATAG_USE_SRV(0)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_NAPTR),
 									 NTATAG_USE_NAPTR(0)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_PINGPONG),
+									 TPTAG_PINGPONG(profile->tcp_pingpong)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_PING2PONG),
+									 TPTAG_PINGPONG(profile->tcp_ping2pong)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV503),
 									 NTATAG_SRV_503(0)),									 
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_KEEPALIVE),
+									 TPTAG_KEEPALIVE(profile->tcp_keepalive)),									 
 							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
 							  NTATAG_SERVER_RPORT(profile->server_rport_level),
 							  NTATAG_CLIENT_RPORT(profile->client_rport_level),
@@ -3695,8 +3701,17 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_TPORT_LOG);
 					} else if (!strcasecmp(var, "sip-capture") && switch_true(val)) {
-                                                sofia_set_flag(profile, TFLAG_CAPTURE);
-                                                nua_set_params(profile->nua, TPTAG_CAPT(mod_sofia_globals.capture_server), TAG_END());
+						sofia_set_flag(profile, TFLAG_CAPTURE);
+						nua_set_params(profile->nua, TPTAG_CAPT(mod_sofia_globals.capture_server), TAG_END());						
+					} else if (!strcasecmp(var, "tcp-keepalive") && !zstr(val)) {
+						profile->tcp_keepalive = atoi(val);
+						sofia_set_pflag(profile, PFLAG_TCP_KEEPALIVE);
+					} else if (!strcasecmp(var, "tcp-pingpong") && !zstr(val)) {
+						profile->tcp_pingpong = atoi(val);
+						sofia_set_pflag(profile, PFLAG_TCP_PINGPONG);
+					} else if (!strcasecmp(var, "tcp-ping2pong") && !zstr(val)) {
+						profile->tcp_ping2pong = atoi(val);
+						sofia_set_pflag(profile, PFLAG_TCP_PING2PONG);
 					} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 						profile->odbc_dsn = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "db-pre-trans-execute") && !zstr(val)) {

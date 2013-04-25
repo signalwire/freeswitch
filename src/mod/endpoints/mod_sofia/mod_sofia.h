@@ -268,6 +268,9 @@ typedef enum {
 	PFLAG_FIRE_MESSAGE_EVENTS,
 	PFLAG_SEND_DISPLAY_UPDATE,
 	PFLAG_RUNNING_TRANS,
+	PFLAG_TCP_KEEPALIVE,
+	PFLAG_TCP_PINGPONG,
+	PFLAG_TCP_PING2PONG,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -680,6 +683,9 @@ struct sofia_profile {
 	switch_port_t ws_port;
 	char *wss_ip;
 	switch_port_t wss_port;
+	int tcp_keepalive;
+	int tcp_pingpong;
+	int tcp_ping2pong;
 };
 
 
