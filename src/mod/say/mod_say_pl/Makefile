@@ -1,2 +1,2 @@
-BASE=../../../freeswitch
+BASE=../../../..
 include $(BASE)/build/modmake.rules
