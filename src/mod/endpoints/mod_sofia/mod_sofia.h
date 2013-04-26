@@ -1065,7 +1065,6 @@ switch_status_t list_profiles_full(const char *line, const char *cursor, switch_
 switch_status_t list_profiles(const char *line, const char *cursor, switch_console_callback_match_t **matches);
 
 sofia_cid_type_t sofia_cid_name2type(const char *name);
-void sofia_glue_set_rtp_stats(private_object_t *tech_pvt);
 void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port);
 sofia_destination_t *sofia_glue_get_destination(char *data);
 void sofia_glue_free_destination(sofia_destination_t *dst);

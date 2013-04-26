@@ -675,6 +675,8 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 
 	STATE_MACRO(hangup, "HANGUP");
 
+	switch_core_media_set_stats(session);
+
 	if ((hook_var = switch_channel_get_variable(session->channel, SWITCH_API_HANGUP_HOOK_VARIABLE))) {
 
 		if (switch_true(switch_channel_get_variable(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE))) {

@@ -5748,6 +5748,11 @@ SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_sess
 {
 	switch_rtp_stats_t *s;
 
+	if (!rtp_session) {
+		return NULL;
+	}
+
+	switch_mutex_lock(rtp_session->flag_mutex);
 	if (pool) {
 		s = switch_core_alloc(pool, sizeof(*s));
 		*s = rtp_session->stats;
@@ -5758,6 +5763,7 @@ SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_sess
 	if (rtp_session->jb) {
 		s->inbound.largest_jb_size = stfu_n_get_most_qlen(rtp_session->jb);
 	}
+	switch_mutex_unlock(rtp_session->flag_mutex);
 
 	return s;
 }
