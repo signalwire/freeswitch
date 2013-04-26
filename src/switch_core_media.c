@@ -6229,20 +6229,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO:
 		{
 			if (switch_rtp_ready(a_engine->rtp_session) && !zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
-				int32_t flags = 0;
-				if (!strcasecmp(msg->string_array_arg[0], "read")) {
-					flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ;
-				} else if (!strcasecmp(msg->string_array_arg[0], "write")) {
-					flags |= SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
-				} else if (!strcasecmp(msg->string_array_arg[0], "both")) {
-					flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ | SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
+				switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
+				int both = !strcasecmp(msg->string_array_arg[0], "both");
+				int set = 0;
+
+				if (both || !strcasecmp(msg->string_array_arg[0], "read")) {
+					flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]++;
+					set++;
 				}
 
-				if (flags) {
+				if (both || !strcasecmp(msg->string_array_arg[0], "write")) {
+					flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]++;
+					set++;
+				}
+
+				if (set) {
 					if (switch_true(msg->string_array_arg[1])) {
-						switch_rtp_set_flag(a_engine->rtp_session, flags);
+						switch_rtp_set_flags(a_engine->rtp_session, flags);
 					} else {
-						switch_rtp_clear_flag(a_engine->rtp_session, flags);
+						switch_rtp_clear_flags(a_engine->rtp_session, flags);
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Options\n");
