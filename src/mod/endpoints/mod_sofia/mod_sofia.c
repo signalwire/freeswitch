@@ -1687,30 +1687,38 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 		}
 		break;
-	case SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO:
+	case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:
 		{
-			if (switch_rtp_ready(tech_pvt->rtp_session) && !zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+			switch_rtp_t *rtp = tech_pvt->rtp_session;
+			const char *direction = msg->string_array_arg[0];
+
+			if (direction && *direction == 'v') {
+				direction++;
+				rtp = tech_pvt->video_rtp_session;
+			}
+
+			if (switch_rtp_ready(rtp) && !zstr(direction) && !zstr(msg->string_array_arg[1])) {
 				int32_t flags = 0;
-				if (!strcasecmp(msg->string_array_arg[0], "read")) {
+				if (!strcasecmp(direction, "read")) {
 					flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ;
-				} else if (!strcasecmp(msg->string_array_arg[0], "write")) {
+				} else if (!strcasecmp(direction, "write")) {
 					flags |= SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
-				} else if (!strcasecmp(msg->string_array_arg[0], "both")) {
+				} else if (!strcasecmp(direction, "both")) {
 					flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ | SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
 				}
 
 				if (flags) {
 					if (switch_true(msg->string_array_arg[1])) {
-						switch_rtp_set_flag(tech_pvt->rtp_session, flags);
+						switch_rtp_set_flag(rtp, flags);
 					} else {
-						switch_rtp_clear_flag(tech_pvt->rtp_session, flags);
+						switch_rtp_clear_flag(rtp, flags);
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Options\n");
 				}
 			}
 		}
-		status = SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_SUCCESS;
 		goto end;
 	case SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY:
 		if (tech_pvt->rtp_session && switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)) {
