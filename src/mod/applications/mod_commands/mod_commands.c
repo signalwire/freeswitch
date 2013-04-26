@@ -3563,8 +3563,8 @@ SWITCH_STANDARD_API(uuid_video_refresh_function)
 }
 
 
-#define DEBUG_AUDIO_SYNTAX "<uuid> <read|write|both> <on|off>"
-SWITCH_STANDARD_API(uuid_debug_audio_function)
+#define DEBUG_MEDIA_SYNTAX "<uuid> <read|write|both|vread|vwrite|vboth> <on|off>"
+SWITCH_STANDARD_API(uuid_debug_media_function)
 {
 	char *mycmd = NULL, *argv[3] = { 0 };
 	int argc = 0;
@@ -3575,13 +3575,13 @@ SWITCH_STANDARD_API(uuid_debug_audio_function)
 	}
 
 	if (zstr(cmd) || argc < 3 || zstr(argv[0]) || zstr(argv[1]) || zstr(argv[2])) {
-		stream->write_function(stream, "-USAGE: %s\n", DEBUG_AUDIO_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", DEBUG_MEDIA_SYNTAX);
 		goto done;
 	} else {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
 
-		msg.message_id = SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA;
 		msg.string_array_arg[0] = argv[1];
 		msg.string_array_arg[1] = argv[2];
 		msg.from = __FILE__;
@@ -6034,7 +6034,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_broadcast", "Execute dialplan application", uuid_broadcast_function, BROADCAST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_buglist", "List media bugs on a session", uuid_buglist_function, BUGLIST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "uuid_debug_audio", "Debug audio", uuid_debug_audio_function, DEBUG_AUDIO_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_debug_media", "Debug media", uuid_debug_media_function, DEBUG_MEDIA_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_deflect", "Send a deflect", uuid_deflect, UUID_DEFLECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_displace", "Displace audio", session_displace_function, "<uuid> [start|stop] <path> [<limit>] [mux]");
 	SWITCH_ADD_API(commands_api_interface, "uuid_display", "Update phone display", uuid_display_function, DISPLAY_SYNTAX);
@@ -6176,7 +6176,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_broadcast ::console::list_uuid");
 	switch_console_set_complete("add uuid_buglist ::console::list_uuid");
 	switch_console_set_complete("add uuid_chat ::console::list_uuid");
-	switch_console_set_complete("add uuid_debug_audio ::console::list_uuid");
+	switch_console_set_complete("add uuid_debug_media ::console::list_uuid");
 	switch_console_set_complete("add uuid_deflect ::console::list_uuid");
 	switch_console_set_complete("add uuid_displace ::console::list_uuid");
 	switch_console_set_complete("add uuid_display ::console::list_uuid");

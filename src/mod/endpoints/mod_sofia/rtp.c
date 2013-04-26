@@ -554,7 +554,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	assert(tech_pvt != NULL);
     
     switch (msg->message_id) {
-        case SWITCH_MESSAGE_INDICATE_DEBUG_AUDIO:
+        case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:
         {
             if (switch_rtp_ready(tech_pvt->rtp_session) && !zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
 				switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
