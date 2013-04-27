@@ -4625,7 +4625,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
-								  "%sR %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u m=%d\n",
+								  "R %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u m=%d\n",
 								  switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)),
 								  (long) bytes,
 								  my_host, switch_sockaddr_get_port(rtp_session->local_addr),
