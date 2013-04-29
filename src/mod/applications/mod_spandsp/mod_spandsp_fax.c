@@ -1486,7 +1486,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					continue;
 				}
 	
-				if (switch_test_flag(read_frame, SFF_UDPTL_PACKET)) {
+				if (switch_test_flag(read_frame, SFF_UDPTL_PACKET) && read_frame->packet && read_frame->packetlen) {
 					/* now we know we can cast frame->packet to a udptl structure */
 					//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "READ %d udptl bytes\n", read_frame->packetlen);
 	
