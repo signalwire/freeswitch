@@ -32,6 +32,7 @@
  * Raymond Chandler <intralanman@freeswitch.org>
  * Nathan Patrick <npatrick at corp.sonic.net>
  * Joseph Sullivan <jossulli@amazon.com>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  *
  * sofia.c -- SOFIA SIP Endpoint (sofia code)
@@ -6797,6 +6798,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						b_tech_pvt = (private_object_t *) switch_core_session_get_private(b_session);
 						channel_b = switch_core_session_get_channel(b_session);
 
+						switch_channel_set_variable(channel_a, "refer_uuid", b_private->uuid);
 						switch_channel_set_variable(channel_b, "transfer_disposition", "replaced");
 
 						br_a = switch_channel_get_partner_uuid(channel_a);
