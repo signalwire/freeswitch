@@ -346,6 +346,8 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 	/* Fire event */
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXNEGOCIATERESULT : SPANDSP_EVENT_RXFAXNEGOCIATERESULT) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", switch_core_session_get_uuid(session));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t30_stats.error_correcting_mode) ? "on" : "off");
@@ -452,6 +454,8 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 	switch_channel_execute_on(channel, "execute_on_fax_phase_d");
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXPAGERESULT : SPANDSP_EVENT_RXFAXPAGERESULT) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", switch_core_session_get_uuid(session));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_line_image_resolution);
