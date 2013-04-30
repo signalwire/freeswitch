@@ -271,7 +271,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 
 	if (fh->buffer && switch_buffer_inuse(fh->buffer) >= *len * 2) {
 		*len = switch_buffer_read(fh->buffer, data, orig_len * 2) / 2;
-		return SWITCH_STATUS_SUCCESS;
+		return *len == 0 ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 	}
 
 	if (switch_test_flag(fh, SWITCH_FILE_DONE)) {
