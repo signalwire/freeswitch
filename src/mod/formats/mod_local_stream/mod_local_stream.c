@@ -87,7 +87,6 @@ struct local_stream_source {
 	switch_thread_rwlock_t *rwlock;
 	int ready;
 	int stopped;
-	int stop_request;
 	int part_reload;
 	int full_reload;
 	int chime_freq;
@@ -168,7 +167,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 		switch_yield(1000000);
 
-		while (RUNNING) {
+		while (RUNNING && !source->stopped) {
 			switch_size_t olen;
 			uint8_t abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
@@ -223,7 +222,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				goto done;
 			}
 
-			while (RUNNING) {
+			while (RUNNING && !source->stopped) {
 				int is_open;
 				switch_file_handle_t *use_fh = &fh;
 
@@ -324,7 +323,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		switch_dir_close(source->dir_handle);
 		source->dir_handle = NULL;
 
-		if(source->stop_request||source->full_reload) {
+		if (source->full_reload) {
 			if (source->rwlock && switch_thread_rwlock_trywrlock(source->rwlock) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot stop local_stream://%s because it is in use.\n",source->name);
 				if (source->part_reload) {
@@ -372,10 +371,6 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "local_stream://%s partially reloaded.\n",source->name);
 					source->part_reload = 0;
 				}
-			} else if(source->stop_request) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "local_stream://%s stopped.\n",source->name);
-				source->stopped = 1;
-				goto done;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "local_stream://%s fully reloaded.\n",source->name);
 				launch_streams(source->name);
@@ -760,7 +755,7 @@ SWITCH_STANDARD_API(stop_local_stream_function)
 		goto done;
 	}
 
-	source->stop_request = 1;
+	source->stopped = 1;
 	stream->write_function(stream, "+OK");
 	goto done;
 
@@ -839,7 +834,7 @@ SWITCH_STANDARD_API(show_local_stream_function)
 				stream->write_function(stream, "  total:    %d\n", source->total);
 				stream->write_function(stream, "  shuffle:  %s\n", (source->shuffle) ? "true" : "false");
 				stream->write_function(stream, "  ready:    %s\n", (source->ready) ? "true" : "false");
-				stream->write_function(stream, "  stopping: %s\n", (source->stop_request) ? "true" : "false");
+				stream->write_function(stream, "  stopped:  %s\n", (source->stopped) ? "true" : "false");
 				stream->write_function(stream, "  reloading: %s\n", (source->full_reload) ? "true" : "false");
 			}
 		} else {
@@ -888,7 +883,6 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	switch_mutex_unlock(globals.mutex);
 	if (source) {
 		source->stopped = 0;
-		source->stop_request = 0;
 		stream->write_function(stream, "+OK stream: %s", source->name);
 		goto done;
 	}
