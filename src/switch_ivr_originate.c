@@ -470,6 +470,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 
 				switch_channel_execute_on(originate_status[i].peer_channel, "execute_on_pickup");
 				switch_channel_api_on(originate_status[i].peer_channel, "api_on_pickup");
+				switch_channel_set_variable(originate_status[i].peer_channel, "picked_up_uuid", switch_core_session_get_uuid(old_session));
 
 				switch_core_session_rwunlock(old_session);
 				break;
