@@ -465,8 +465,12 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				originate_status[i].peer_channel = switch_core_session_get_channel(originate_status[i].peer_session);
 				originate_status[i].caller_profile = switch_channel_get_caller_profile(originate_status[i].peer_channel);
 				switch_channel_set_flag(originate_status[i].peer_channel, CF_ORIGINATING);
-
+				
 				switch_channel_answer(originate_status[i].peer_channel);
+
+				switch_channel_execute_on(originate_status[i].peer_channel, "execute_on_pickup");
+				switch_channel_api_on(originate_status[i].peer_channel, "api_on_pickup");
+
 				switch_core_session_rwunlock(old_session);
 				break;
 			}
