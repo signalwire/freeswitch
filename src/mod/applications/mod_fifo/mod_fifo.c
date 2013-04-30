@@ -599,6 +599,7 @@ static struct {
 	char *inner_pre_trans_execute;
 	char *inner_post_trans_execute;	
 	switch_sql_queue_manager_t *qm;
+	int allow_transcoding;
 } globals;
 
 
@@ -1415,7 +1416,8 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 	if (!total) goto end;
 
-	if ((codec = switch_event_get_header(pop, "variable_rtp_use_codec_name"))) {
+	if (!globals.allow_transcoding && !switch_true(switch_event_get_header(pop, "variable_fifo_allow_transcoding")) && 
+		(codec = switch_event_get_header(pop, "variable_rtp_use_codec_name"))) {
 		const char *rate = switch_event_get_header(pop, "variable_rtp_use_codec_rate");
 		const char *ptime = switch_event_get_header(pop, "variable_rtp_use_codec_ptime");
 		char nstr[256] = "";
@@ -4064,6 +4066,8 @@ static switch_status_t load_config(int reload, int del_all)
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 				}
+			} else if (!strcasecmp(var, "allow-transcoding") && !zstr(val)) {
+				globals.allow_transcoding = switch_true(val);
 			} else if (!strcasecmp(var, "db-pre-trans-execute") && !zstr(val)) {
 				globals.pre_trans_execute = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "db-post-trans-execute") && !zstr(val)) {
