@@ -4843,7 +4843,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 				match = 1;
 				goto done;
 			}
-
+			
 			if (switch_true(switch_channel_get_variable(channel, "refuse_t38"))) {
 				switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
 				match = 0;
@@ -4880,6 +4880,18 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
 					switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
 					char tmp[32] = "";
+
+					if (!switch_channel_test_flag(other_channel, CF_ANSWERED)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), 
+										  SWITCH_LOG_WARNING, "%s Error Passing T.38 to unanswered channel %s\n", 
+										  switch_channel_get_name(tech_pvt->channel), switch_channel_get_name(other_channel));
+						switch_core_session_rwunlock(other_session);						
+						sofia_set_flag(tech_pvt, TFLAG_NOREPLY);
+						pass = 0;
+						match = 0;
+						goto done;
+					}
+
 
 					if (switch_true(switch_channel_get_variable(tech_pvt->channel, "t38_broken_boolean")) && 
 						switch_true(switch_channel_get_variable(tech_pvt->channel, "t38_pass_broken_boolean"))) {
