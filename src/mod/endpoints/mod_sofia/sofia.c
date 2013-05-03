@@ -2016,6 +2016,32 @@ void event_handler(switch_event_t *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nCannot inject MWI event\n");
 			return;
 		}
+	} else if ((subclass = switch_event_get_header_nil(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_UNREGISTER)) {
+		char *profile_name = switch_event_get_header_nil(event, "orig-profile-name");
+		char *from_user = switch_event_get_header_nil(event, "orig-from-user");
+		char *from_host = switch_event_get_header_nil(event, "orig-from-host");
+		char *call_id = switch_event_get_header_nil(event, "orig-call-id");
+		char *contact_str = switch_event_get_header_nil(event, "orig-contact");
+
+		sofia_profile_t *profile = NULL;
+
+		if (!profile_name || !(profile = sofia_glue_find_profile(profile_name))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
+			return;
+		}
+
+		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
+			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
+		} else {
+			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", from_user, from_host);
+		}
+
+		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Expired propagated registration for %s@%s->%s\n", from_user, from_host, contact_str);
+
+		if (profile) {
+			sofia_glue_release_profile(profile);
+		}
 	} else if ((subclass = switch_event_get_header_nil(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_REGISTER)) {
 		char *from_user = switch_event_get_header_nil(event, "orig-from-user");
 		char *from_host = switch_event_get_header_nil(event, "orig-from-host");
