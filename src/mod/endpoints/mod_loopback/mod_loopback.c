@@ -60,14 +60,14 @@ typedef enum {
 	TFLAG_CLEAR = (1 << 10)
 } TFLAGS;
 
-struct private_object {
+struct loopback_private_object {
 	unsigned int flags;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *mutex;
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	switch_core_session_t *other_session;
-	struct private_object *other_tech_pvt;
+	struct loopback_private_object *other_tech_pvt;
 	switch_channel_t *other_channel;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
@@ -89,7 +89,7 @@ struct private_object {
 	int first_cng;
 };
 
-typedef struct private_object private_t;
+typedef struct loopback_private_object loopback_private_t;
 
 static struct {
 	int debug;
@@ -110,7 +110,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 
 
-static void clear_queue(private_t *tech_pvt)
+static void clear_queue(loopback_private_t *tech_pvt)
 {
 	void *pop;
 
@@ -121,7 +121,7 @@ static void clear_queue(private_t *tech_pvt)
 
 }
 
-static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, switch_codec_t *codec)
+static switch_status_t tech_init(loopback_private_t *tech_pvt, switch_core_session_t *session, switch_codec_t *codec)
 {
 	const char *iananame = "L16";
 	uint32_t rate = 8000;
@@ -224,7 +224,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
 	switch_channel_t *channel, *b_channel;
-	private_t *tech_pvt = NULL, *b_tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL, *b_tech_pvt = NULL;
 	switch_core_session_t *b_session;
 	char name[128];
 	switch_caller_profile_t *caller_profile;
@@ -254,7 +254,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 		switch_core_session_add_stream(b_session, NULL);
 		b_channel = switch_core_session_get_channel(b_session);
-		b_tech_pvt = (private_t *) switch_core_session_alloc(b_session, sizeof(*b_tech_pvt));
+		b_tech_pvt = (loopback_private_t *) switch_core_session_alloc(b_session, sizeof(*b_tech_pvt));
 
 		switch_snprintf(name, sizeof(name), "loopback/%s-b", tech_pvt->caller_profile->destination_number);
 		switch_channel_set_name(b_channel, name);
@@ -270,9 +270,11 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		b_tech_pvt->caller_profile = caller_profile;
 		switch_channel_set_state(b_channel, CS_INIT);
 
+		switch_mutex_lock(tech_pvt->mutex);
 		tech_pvt->other_session = b_session;
 		tech_pvt->other_tech_pvt = b_tech_pvt;
 		tech_pvt->other_channel = b_channel;
+		switch_mutex_unlock(tech_pvt->mutex);
 
 		//b_tech_pvt->other_session = session;
 		//b_tech_pvt->other_tech_pvt = tech_pvt;
@@ -335,9 +337,13 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			goto end;
 		}
-	} else if ((tech_pvt->other_session = switch_core_session_locate(tech_pvt->other_uuid))) {
-		tech_pvt->other_tech_pvt = switch_core_session_get_private(tech_pvt->other_session);
-		tech_pvt->other_channel = switch_core_session_get_channel(tech_pvt->other_session);
+	} else { 
+		switch_mutex_lock(tech_pvt->mutex);
+		if ((tech_pvt->other_session = switch_core_session_locate(tech_pvt->other_uuid))) {
+			tech_pvt->other_tech_pvt = switch_core_session_get_private(tech_pvt->other_session);
+			tech_pvt->other_channel = switch_core_session_get_channel(tech_pvt->other_session);
+		}
+		switch_mutex_unlock(tech_pvt->mutex);
 	}
 
 	if (!tech_pvt->other_session) {
@@ -354,7 +360,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void do_reset(private_t *tech_pvt)
+static void do_reset(loopback_private_t *tech_pvt)
 {
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
 
@@ -368,7 +374,7 @@ static void do_reset(private_t *tech_pvt)
 static switch_status_t channel_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 	const char *app, *arg;
 
 	channel = switch_core_session_get_channel(session);
@@ -410,7 +416,7 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 static switch_status_t channel_on_execute(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 	switch_caller_extension_t *exten;
 	int bow = 0;
 
@@ -459,7 +465,7 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 	void *pop;
 	switch_event_t *vars;
 
@@ -502,7 +508,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -514,8 +520,13 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_clear_flag_locked(tech_pvt, TFLAG_LINKED);
 
 	switch_mutex_lock(tech_pvt->mutex);
+
 	if (tech_pvt->other_tech_pvt) {
 		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_LINKED);
+		if (tech_pvt->other_tech_pvt->session && tech_pvt->other_tech_pvt->session != tech_pvt->other_session) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "OTHER SESSION MISMATCH????\n");
+			tech_pvt->other_session = tech_pvt->other_tech_pvt->session;
+		}
 		tech_pvt->other_tech_pvt = NULL;
 	}
 
@@ -533,7 +544,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig)
 {
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -571,7 +582,7 @@ static switch_status_t channel_on_soft_execute(switch_core_session_t *session)
 static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -586,7 +597,7 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 
 static switch_status_t channel_on_reset(switch_core_session_t *session)
 {
-	private_t *tech_pvt = (private_t *) switch_core_session_get_private(session);
+	loopback_private_t *tech_pvt = (loopback_private_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
 	do_reset(tech_pvt);
@@ -609,7 +620,7 @@ static switch_status_t channel_on_hibernate(switch_core_session_t *session)
 static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -624,7 +635,7 @@ static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -639,7 +650,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_mutex_t *mutex = NULL;
 	void *pop = NULL;
@@ -738,7 +749,7 @@ static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, 
 
 	while (a_uuid && (sp = switch_core_session_locate(a_uuid))) {
 		if (switch_core_session_check_interface(sp, loopback_endpoint_interface)) {
-			private_t *tech_pvt;
+			loopback_private_t *tech_pvt;
 			switch_channel_t *spchan = switch_core_session_get_channel(sp);
 
 			switch_channel_wait_for_state_or_greater(spchan, channel, CS_ROUTING);
@@ -769,7 +780,7 @@ static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	channel = switch_core_session_get_channel(session);
@@ -891,7 +902,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel;
-	private_t *tech_pvt;
+	loopback_private_t *tech_pvt;
 	int done = 1, pass = 0;
 	
 	channel = switch_core_session_get_channel(session);
@@ -1000,7 +1011,7 @@ static switch_status_t loopback_bowout_on_execute_state_handler(switch_core_sess
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t state = switch_channel_get_state(channel);
-	private_t *tech_pvt = NULL;
+	loopback_private_t *tech_pvt = NULL;
 
 
 	if (state == CS_EXECUTE) {
@@ -1069,14 +1080,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	if ((*new_session = switch_core_session_request(loopback_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
-		private_t *tech_pvt;
+		loopback_private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
 		switch_event_t *clone = NULL;
 
 		switch_core_session_add_stream(*new_session, NULL);
 
-		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
+		if ((tech_pvt = (loopback_private_t *) switch_core_session_alloc(*new_session, sizeof(loopback_private_t))) != 0) {
 			channel = switch_core_session_get_channel(*new_session);
 			switch_snprintf(name, sizeof(name), "loopback/%s-a", outbound_profile->destination_number);
 			switch_channel_set_name(channel, name);
