@@ -1920,6 +1920,14 @@ SWITCH_STANDARD_APP(system_session_function)
 	}
 }
 
+SWITCH_STANDARD_APP(bgsystem_session_function)
+{
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Executing command: %s\n", data);
+	if (switch_system(data, SWITCH_FALSE) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", data);
+	}
+}
+
 SWITCH_STANDARD_APP(tone_detect_session_function)
 {
 	char *argv[7] = { 0 };
@@ -5719,6 +5727,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "bridge", "Bridge Audio", "Bridge the audio between two sessions", audio_bridge_function, "<channel_url>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "system", "Execute a system command", "Execute a system command", system_session_function, "<command>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "bgsystem", "Execute a system command in the background", "Execute a background system command", bgsystem_session_function, "<command>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "say", "say", "say", say_function, SAY_SYNTAX, SAF_NONE);
 
