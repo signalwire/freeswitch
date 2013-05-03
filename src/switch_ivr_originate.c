@@ -2252,10 +2252,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
-	if ((var_val = switch_event_get_header(var_event, "fax_enable_t38_request"))) {
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
-	}
-
 	if ((var_val = switch_event_get_header(var_event, "ignore_early_media"))) {
 		if (switch_true(var_val)) {
 			oglobals.early_ok = 0;
