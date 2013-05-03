@@ -201,17 +201,22 @@ static amf0_data * amf0_boolean_read(read_proc_t read_proc, void * user_data) {
 
 /* read a string */
 static amf0_data * amf0_string_read(read_proc_t read_proc, void * user_data) {
-    uint16_t strsize;
-    uint8_t * buffer;
+  uint16_t strsize;
+  uint8_t * buffer = NULL;
+  amf0_data *data = NULL;
     if (read_proc(&strsize, sizeof(uint16_t), user_data) == sizeof(uint16_t)) {
         strsize = swap_uint16(strsize);
         if (strsize > 0) {
-            buffer = (uint8_t*)calloc(strsize, sizeof(uint8_t));
-            if (buffer != NULL && read_proc(buffer, strsize, user_data) == strsize) {
-                amf0_data * data = amf0_string_new(buffer, strsize);
-                free(buffer);
-                return data;
-            }
+	  buffer = (uint8_t*) calloc(strsize, sizeof(uint8_t));
+	  if ( buffer == NULL ) {
+	    return NULL; // Memory error
+	  }
+	  if ( read_proc(buffer, strsize, user_data) == strsize ) {
+	    data = amf0_string_new(buffer, strsize);
+	  }
+	  free(buffer);
+	  buffer = NULL;
+	  return data;
         }
         else {
             return amf0_string_new(NULL, 0);
@@ -634,9 +639,11 @@ void amf0_data_free(amf0_data * data) {
             case AMF0_TYPE_NUMBER: break;
             case AMF0_TYPE_BOOLEAN: break;
             case AMF0_TYPE_STRING:
-                if (data->u.string_data.mbstr != NULL) {
+                if (data->u.string_data.mbstr) {
                     free(data->u.string_data.mbstr);
-                } break;
+		    data->u.string_data.mbstr = NULL;
+                } 
+		break;
             case AMF0_TYPE_NULL: break;
             case AMF0_TYPE_UNDEFINED: break;
             /*case AMF0_TYPE_REFERENCE:*/
@@ -812,17 +819,19 @@ uint32_t amf0_object_size(amf0_data * data) {
 }
 
 amf0_data * amf0_object_add(amf0_data * data, const char * name, amf0_data * element) {
-    if (data != NULL) {
-        if (amf0_list_push(&data->u.list_data, amf0_str(name)) != NULL) {
-            if (amf0_list_push(&data->u.list_data, element) != NULL) {
-                return element;
-            }
-            else {
-                amf0_data_free(amf0_list_pop(&data->u.list_data));
-            }
-        }
+  if (data != NULL) {
+    amf0_data *str_name = amf0_str(name);
+    if (amf0_list_push(&data->u.list_data, str_name) != NULL) {
+      if (amf0_list_push(&data->u.list_data, element) != NULL) {
+	return element;
+      }
+      else {
+	amf0_data_free(amf0_list_pop(&data->u.list_data));
+      }
     }
-    return NULL;
+    amf0_data_free(str_name);
+  }
+  return NULL;
 }
 
 amf0_data * amf0_object_get(amf0_data * data, const char * name) {

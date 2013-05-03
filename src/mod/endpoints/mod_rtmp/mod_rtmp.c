@@ -871,8 +871,6 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 	switch_thread_rwlock_wrlock((*rsession)->rwlock);
 	switch_thread_rwlock_unlock((*rsession)->rwlock);
 	
-	(*rsession)->profile->io->close(*rsession);
-	
 #ifdef RTMP_DEBUG_IO
 	fclose((*rsession)->io_debug_in);
 	fclose((*rsession)->io_debug_out);
