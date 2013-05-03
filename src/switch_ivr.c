@@ -740,6 +740,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_event(switch_core_session_
 
 	if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 		status = switch_ivr_parse_event(session, event);
+		event->event_id = SWITCH_EVENT_PRIVATE_COMMAND;
+		switch_event_prep_for_delivery(event);
+		switch_channel_event_set_data(switch_core_session_get_channel(session), event);
 		switch_event_fire(&event);
 	}
 
