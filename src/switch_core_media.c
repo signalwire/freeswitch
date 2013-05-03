@@ -2402,6 +2402,19 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					switch_port_t remote_port = switch_rtp_get_remote_port(a_engine->rtp_session);
 					char tmp[32] = "";
 
+
+                    if (!switch_channel_test_flag(other_channel, CF_ANSWERED)) {
+                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+                                          SWITCH_LOG_WARNING, "%s Error Passing T.38 to unanswered channel %s\n",
+                                          switch_channel_get_name(session->channel), switch_channel_get_name(other_channel));
+                        switch_core_session_rwunlock(other_session);
+                        //sofia_set_flag(session, TFLAG_NOREPLY);
+                        pass = 0;
+                        match = 0;
+                        goto done;
+                    }
+
+
 					if (switch_true(switch_channel_get_variable(session->channel, "t38_broken_boolean")) && 
 						switch_true(switch_channel_get_variable(session->channel, "t38_pass_broken_boolean"))) {
 						switch_channel_set_variable(other_channel, "t38_broken_boolean", "true");
@@ -7251,7 +7264,6 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 			v_engine->codec_params.remote_sdp_ip = (char *) r_ip;
 			v_engine->codec_params.remote_sdp_port = (switch_port_t)atoi(r_port);
 		}
-		//sofia_media_tech_set_video_codec(tech_pvt, 1);
 	}
 
 	switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 1);
