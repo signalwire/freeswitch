@@ -3807,9 +3807,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "t38-passthru")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_T38_PASSTHRU);
+							sofia_set_media_flag(profile, SCMF_T38_PASSTHRU);
 						} else {
-							sofia_clear_pflag(profile, PFLAG_T38_PASSTHRU);
+							sofia_clear_media_flag(profile, SCMF_T38_PASSTHRU);
 						}
 					} else if (!strcasecmp(var, "presence-disable-early")) {
 						if (switch_true(val)) {
