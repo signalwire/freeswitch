@@ -796,7 +796,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		if (session->media_handle) {
 			status = switch_core_media_receive_message(session, message);
 		}
-		if (status == SWITCH_STATUS_SUCCESS) {
+		if (status == SWITCH_STATUS_SUCCESS || message->message_id == SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
 			if (session->endpoint_interface->io_routines->receive_message) {
 				status = session->endpoint_interface->io_routines->receive_message(session, message);
 			}
