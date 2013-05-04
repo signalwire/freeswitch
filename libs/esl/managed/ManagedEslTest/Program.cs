@@ -64,7 +64,7 @@ namespace ManagedEslTest
     static void InboundMode(Object stateInfo)
     {
       //Initializes a new instance of ESLconnection, and connects to the host $host on the port $port, and supplies $password to freeswitch
-      ESLconnection eslConnection = new ESLconnection("localhost", "8021", "ClueCon");
+      ESLconnection eslConnection = new ESLconnection("127.0.0.1", "8021", "ClueCon");
 
       if (eslConnection.Connected() != ESL_SUCCESS)
       {
