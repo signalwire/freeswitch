@@ -61,6 +61,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ESL.2012.vcxproj">
+      <Project>{fea2d0ae-6713-4e41-a473-a143849bc7ff}</Project>
+      <Name>ESL</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ManagedEsl.csproj">
       <Project>{DEE5837B-E01D-4223-B351-EDF9418F3F8E}</Project>
       <Name>ManagedEsl</Name>
