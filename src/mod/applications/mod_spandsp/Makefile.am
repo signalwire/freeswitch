@@ -12,7 +12,7 @@ SPANDSP_LA=$(SPANDSP_BUILDDIR)/src/libspandsp.la
 mod_LTLIBRARIES = mod_spandsp.la
 mod_spandsp_la_SOURCES  = mod_spandsp.c udptl.c mod_spandsp_fax.c mod_spandsp_dsp.c mod_spandsp_codecs.c mod_spandsp_modem.c
 mod_spandsp_la_CFLAGS   = $(BUILD_CFLAGS) $(AM_CFLAGS) -I$(SPANDSP_DIR)/src -I$(TIFF_DIR)/libtiff -I$(SPANDSP_BUILDDIR)/src -I$(TIFF_BUILDDIR)/libtiff -I.
-mod_spandsp_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(SPANDSP_LA) $(TIFF_LA) -ljpeg -lz -lutil
+mod_spandsp_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(SPANDSP_LA) $(TIFF_LA) $(SPANDSP_LA_JBIG) -ljpeg -lz -lutil
 mod_spandsp_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
 $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
