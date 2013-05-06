@@ -207,7 +207,7 @@ static valet_token_t *next_id(switch_core_session_t *session, valet_lot_t *lot, 
 		}
 	}
 
-	for (i = min; (i < max || max == 0); i++) {
+	for (i = min; (i <= max || max == 0); i++) {
 		switch_snprintf(buf, sizeof(buf), "%d", i);
 		switch_mutex_lock(lot->mutex);
 		token = (valet_token_t *) switch_core_hash_find(lot->hash, buf);
