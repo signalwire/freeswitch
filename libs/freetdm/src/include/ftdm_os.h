@@ -130,6 +130,18 @@ typedef uint64_t ftdm_time_t;
  */
 #define ftdm_container_of(ptr,type,member) (type *)((uintptr_t)(ptr) - ftdm_offset_of(type, member))
 
+/*!
+ * \brief Silence "unused parameter" compiler warnings
+ * \note Tested with VS 2010, GCC 4.8, clang 3.1 and suncc
+ * \code
+ *	int example(char *a) {
+ *		ftdm_unused_arg(a);
+ *		return 0;
+ *	}
+ * \endcode
+ */
+#define ftdm_unused_arg(x) (void)(x)
+
 
 /*! \brief The memory handler. 
     Do not use directly this variable, use the memory macros and ftdm_global_set_memory_handler to override */	
