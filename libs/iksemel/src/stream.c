@@ -193,8 +193,6 @@ handshake (struct stream_data *data)
 #elif HAVE_SSL
 static int wait_for_data(struct stream_data *data, int ret, int timeout)
 {
-	struct timeval tv;
-	fd_set fds;
 	int err;
 	int retval = IKS_OK;
 
@@ -228,7 +226,7 @@ handshake (struct stream_data *data)
 {
 	int ret;
 	int finished;
-	
+
 	SSL_library_init();
 	SSL_load_error_strings();
 	
@@ -238,12 +236,12 @@ handshake (struct stream_data *data)
 	data->ssl = SSL_new(data->ssl_ctx);
 	if(!data->ssl) return IKS_NOMEM;
 	
-	if( SSL_set_fd(data->ssl, (int)data->sock) != 1 ) return IKS_NOMEM;
+	if( SSL_set_fd(data->ssl, (int)(intptr_t)data->sock) != 1 ) return IKS_NOMEM;
 	
 	/* Set both the read and write BIO's to non-blocking mode */
-	BIO_set_nbio(SSL_get_rbio(data->ssl), 1);
-	BIO_set_nbio(SSL_get_wbio(data->ssl), 1);
-	
+	//BIO_set_nbio(SSL_get_rbio(data->ssl), 1);
+	//BIO_set_nbio(SSL_get_wbio(data->ssl), 1);
+
 	finished = 0;
 	
 	do
@@ -641,7 +639,7 @@ iks_connect_fd (iksparser *prs, int fd)
 		if (NULL == data->buf) return IKS_NOMEM;
 	}
 
-	data->sock = (void *) fd;
+	data->sock = (void *) (intptr_t) fd;
 	data->flags |= SF_FOREIGN;
 	data->trans = &iks_default_transport;
 
@@ -659,7 +657,7 @@ iks_fd (iksparser *prs)
 	if (prs) {
 		data = iks_user_data (prs);
 		if (data) {
-			return (int) data->sock;
+			return (int)(intptr_t) data->sock;
 		}
 	}
 	return -1;
@@ -673,8 +671,6 @@ iks_recv (iksparser *prs, int timeout)
 	
 #ifdef HAVE_SSL
 	int   err;
-	struct timeval tv;
-	fd_set fds;
 #endif
 
 	while (1) {
@@ -686,15 +682,13 @@ iks_recv (iksparser *prs, int timeout)
 #elif HAVE_SSL
 		if (data->flags & SF_SECURE) {
 			ret = sock_read_ready(data, timeout*1000);
-			
+
 			if (ret == -1) {
 				return IKS_NET_TLSFAIL;
 			} else if( ret == 0 ) {
 				return IKS_OK;
 			} else {
-				do {
-					len = SSL_read(data->ssl, data->buf, NET_IO_BUF_SIZE - 1);
-				} while (len == -1 && (errno == EAGAIN || errno == EINTR || SSL_get_error(data->ssl, len) == SSL_ERROR_WANT_READ));
+				len = SSL_read(data->ssl, data->buf, NET_IO_BUF_SIZE - 1);
 			}
 			
 			if( len <= 0 ) 
