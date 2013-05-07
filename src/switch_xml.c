@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,10 +22,11 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Simon Capper <skyjunky@sbcglobal.net>
  * Marc Olivier Chouinard <mochouinard@moctel.com>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  * switch_xml.c -- XML PARSER
  *
@@ -150,6 +151,7 @@ static switch_xml_open_root_function_t XML_OPEN_ROOT_FUNCTION = (switch_xml_open
 static void *XML_OPEN_ROOT_FUNCTION_USER_DATA = NULL;
 
 static switch_hash_t *CACHE_HASH = NULL;
+static switch_hash_t *CACHE_EXPIRES_HASH = NULL;
 
 struct xml_section_t {
 	const char *name;
@@ -416,7 +418,7 @@ SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 	if (!root->attr) {
 		return NULL;
 	}
-	
+
 	for (i = 0; root->attr[i] && xml->name && strcmp(xml->name, root->attr[i][0]); i++);
 	if (!root->attr[i])
 		return NULL;			/* no matching default attributes */
@@ -440,7 +442,7 @@ static switch_xml_t switch_xml_vget(switch_xml_t xml, va_list ap)
 
 /* Traverses the xml tree to retrieve a specific subtag. Takes a variable
    length list of tag names and indexes. The argument list must be terminated
-   by either an index of -1 or an empty string tag name. Example: 
+   by either an index of -1 or an empty string tag name. Example:
    title = switch_xml_get(library, "shelf", 0, "book", 2, "title", -1);
    This retrieves the title of the 3rd book on the 1st shelf of library.
    Returns NULL if not found. */
@@ -1241,7 +1243,7 @@ static FILE *preprocess_exec(const char *cwd, const char *command, FILE *write_f
 					break;
 			}
 		}
-		
+
 		if(feof(fp)) {
 			_pclose(fp);
 		} else {
@@ -1349,7 +1351,7 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 	}
 
 	setvbuf(read_fd, (char *) NULL, _IOFBF, 65536);
-	
+
 	for(;;) {
 		char *arg, *e;
 		const char *err = NULL;
@@ -1364,7 +1366,7 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 		eblen = len *2;
 		ebuf = malloc(eblen);
 		memset(ebuf, 0, eblen);
-		
+
 		bp = expand_vars(buf, ebuf, eblen, &cur, &err);
 		line++;
 
@@ -1579,7 +1581,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	} else {
 		abs = file;
 	}
-	
+
 	switch_mutex_lock(FILE_LOCK);
 
 	if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
@@ -1833,11 +1835,11 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *use
 SWITCH_DECLARE(switch_xml_t) switch_xml_dup(switch_xml_t xml)
 {
 	char *x = switch_xml_toxml(xml, SWITCH_FALSE);
-	return switch_xml_parse_str_dynamic(x, SWITCH_FALSE); 
+	return switch_xml_parse_str_dynamic(x, SWITCH_FALSE);
 }
 
 
-static void do_merge(switch_xml_t in, switch_xml_t src, const char *container, const char *tag_name) 
+static void do_merge(switch_xml_t in, switch_xml_t src, const char *container, const char *tag_name)
 {
 	switch_xml_t itag, tag, param, iparam, iitag;
 
@@ -1849,18 +1851,18 @@ static void do_merge(switch_xml_t in, switch_xml_t src, const char *container, c
 		for (param = switch_xml_child(tag, tag_name); param; param = param->next) {
 			const char *var = switch_xml_attr(param, "name");
 			const char *val = switch_xml_attr(param, "value");
-			
+
 			int go = 1;
 
 			for (iparam = switch_xml_child(itag, tag_name); iparam; iparam = iparam->next) {
 				const char *ivar = switch_xml_attr(iparam, "name");
-				
+
 				if (var && ivar && !strcasecmp(var, ivar)) {
 					go = 0;
 					break;
 				}
 			}
-			
+
 			if (go) {
 				iitag = switch_xml_add_child_d(itag, tag_name, 0);
 				switch_xml_set_attr_d(iitag, "name", var);
@@ -1868,7 +1870,7 @@ static void do_merge(switch_xml_t in, switch_xml_t src, const char *container, c
 			}
 		}
 	}
-	
+
 }
 
 
@@ -1897,56 +1899,93 @@ SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char
 
 		if ((lookup = switch_core_hash_find(CACHE_HASH, mega_key))) {
 			switch_core_hash_delete(CACHE_HASH, mega_key);
+			if ((lookup = switch_core_hash_find(CACHE_EXPIRES_HASH, mega_key))) {
+				switch_core_hash_delete(CACHE_EXPIRES_HASH, mega_key);
+			}
 			switch_xml_free(lookup);
 			r++;
 		}
-		
+
 	} else {
-		
+
 		while ((hi = switch_hash_first(NULL, CACHE_HASH))) {
 			switch_hash_this(hi, &var, NULL, &val);
 			switch_xml_free(val);
 			switch_core_hash_delete(CACHE_HASH, var);
 			r++;
 		}
+
+		while ((hi = switch_hash_first(NULL, CACHE_EXPIRES_HASH))) {
+			switch_hash_this(hi, &var, NULL, &val);
+			switch_safe_free(val);
+			switch_core_hash_delete(CACHE_EXPIRES_HASH, var);
+		}
 	}
 
 	switch_mutex_unlock(CACHE_MUTEX);
-		
+
 	return r;
-	
+
 }
 
 static switch_status_t switch_xml_locate_user_cache(const char *key, const char *user_name, const char *domain_name, switch_xml_t *user)
 {
 	char mega_key[1024];
-	switch_xml_t lookup;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_xml_t lookup;
 
 	switch_snprintf(mega_key, sizeof(mega_key), "%s%s%s", key, user_name, domain_name);
 
 	switch_mutex_lock(CACHE_MUTEX);
 	if ((lookup = switch_core_hash_find(CACHE_HASH, mega_key))) {
-		*user = switch_xml_dup(lookup);
-		status = SWITCH_STATUS_SUCCESS;
+		char *expires_lookup = NULL;
+
+		if ((expires_lookup = switch_core_hash_find(CACHE_EXPIRES_HASH, mega_key))) {
+			switch_time_t time_expires = 0;
+			switch_time_t time_now = 0;
+
+			time_now = switch_micro_time_now();
+			time_expires = atol(expires_lookup);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cache Info\nTime Now:\t%ld\nExpires:\t%ld\n", time_now, time_expires);
+			if (time_expires < time_now) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cache expired for %s@%s, doing fresh lookup\n", user_name, domain_name);
+			} else {
+				*user = switch_xml_dup(lookup);
+				status = SWITCH_STATUS_SUCCESS;
+			}
+		} else {
+			*user = switch_xml_dup(lookup);
+			status = SWITCH_STATUS_SUCCESS;
+		}
 	}
 	switch_mutex_unlock(CACHE_MUTEX);
 
 	return status;
 }
 
-static void switch_xml_user_cache(const char *key, const char *user_name, const char *domain_name, switch_xml_t user)
+static void switch_xml_user_cache(const char *key, const char *user_name, const char *domain_name, switch_xml_t user, switch_time_t expires)
 {
 	char mega_key[1024];
 	switch_xml_t lookup;
+	char *expires_lookup;
 
 	switch_snprintf(mega_key, sizeof(mega_key), "%s%s%s", key, user_name, domain_name);
+
 	switch_mutex_lock(CACHE_MUTEX);
 	if ((lookup = switch_core_hash_find(CACHE_HASH, mega_key))) {
 		switch_core_hash_delete(CACHE_HASH, mega_key);
 		switch_xml_free(lookup);
 	}
-	
+	if ((expires_lookup = switch_core_hash_find(CACHE_EXPIRES_HASH, mega_key))) {
+		switch_core_hash_delete(CACHE_EXPIRES_HASH, mega_key);
+		switch_safe_free(expires_lookup);
+	}
+	if (expires) {
+		char *expires_val = malloc(1024);
+		if (sprintf(expires_val, "%ld", expires)) {
+			switch_core_hash_insert(CACHE_EXPIRES_HASH, mega_key, expires_val);
+		}
+	}
 	switch_core_hash_insert(CACHE_HASH, mega_key, switch_xml_dup(user));
 	switch_mutex_unlock(CACHE_MUTEX);
 }
@@ -1960,10 +1999,24 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, c
 	if ((status = switch_xml_locate_user_cache(key, user_name, domain_name, &x_user)) == SWITCH_STATUS_SUCCESS) {
 		*user = x_user;
 	} else if ((status = switch_xml_locate_user(key, user_name, domain_name, ip, &xml, &domain, &x_user, &group, params)) == SWITCH_STATUS_SUCCESS) {
+		const char *cacheable = NULL;
+
 		x_user_dup = switch_xml_dup(x_user);
 		switch_xml_merge_user(x_user_dup, domain, group);
-		if (switch_true(switch_xml_attr(x_user_dup, "cacheable"))) {
-			switch_xml_user_cache(key, user_name, domain_name, x_user_dup);
+
+		cacheable = switch_xml_attr(x_user_dup, "cacheable");
+		if (switch_true(cacheable)) {
+			switch_time_t expires = 0;
+			switch_time_t time_now = 0;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s\n", user_name, domain_name);
+			if (switch_is_number(cacheable)) {
+				int cache_ms = atol(cacheable);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for %d milliseconds\n", cache_ms);
+				time_now = switch_micro_time_now();
+				expires = time_now + (cache_ms * 1000);
+			}
+			switch_xml_user_cache(key, user_name, domain_name, x_user_dup, expires);
 		}
 		*user = x_user_dup;
 		switch_xml_free(xml);
@@ -2058,7 +2111,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 	xml = MAIN_XML_ROOT;
 	xml->refs++;
 	switch_mutex_unlock(REFLOCK);
-	
+
 	return xml;
 }
 
@@ -2102,14 +2155,14 @@ static char not_so_threadsafe_error_buffer[256] = "";
 SWITCH_DECLARE(switch_status_t) switch_xml_set_root(switch_xml_t new_main)
 {
 	switch_xml_t old_root = NULL;
-	
+
 	switch_mutex_lock(REFLOCK);
 
 	old_root = MAIN_XML_ROOT;
 	MAIN_XML_ROOT = new_main;
 	switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
 	MAIN_XML_ROOT->refs++;
-			
+
 	if (old_root) {
 		if (old_root->refs) {
 			old_root->refs--;
@@ -2130,7 +2183,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_set_open_root_function(switch_xml_ope
 	if (XML_LOCK) {
 		switch_mutex_lock(XML_LOCK);
 	}
-	
+
 	XML_OPEN_ROOT_FUNCTION = func;
 	XML_OPEN_ROOT_FUNCTION_USER_DATA = user_data;
 
@@ -2140,7 +2193,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_set_open_root_function(switch_xml_ope
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err) 
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err)
 {
 	switch_xml_t root = NULL;
 
@@ -2204,7 +2257,7 @@ SWITCH_DECLARE_NONSTD(switch_xml_t) __switch_xml_open_root(uint8_t reload, const
 SWITCH_DECLARE(switch_status_t) switch_xml_reload(const char **err)
 {
 	switch_xml_t xml_root;
-	
+
 	if ((xml_root = switch_xml_open_root(1, err))) {
 		switch_xml_free(xml_root);
 		return SWITCH_STATUS_SUCCESS;
@@ -2225,6 +2278,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 	switch_mutex_init(&FILE_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&XML_GEN_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_core_hash_init(&CACHE_HASH, XML_MEMORY_POOL);
+	switch_core_hash_init(&CACHE_EXPIRES_HASH, XML_MEMORY_POOL);
 
 	switch_thread_rwlock_create(&B_RWLOCK, XML_MEMORY_POOL);
 
@@ -2899,7 +2953,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 	return xml;
 }
 
-SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offset, const char *tzname) 
+SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offset, const char *tzname)
 {
 
 	const char *xdt = switch_xml_attr(xcond, "date-time");
@@ -2962,7 +3016,7 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offse
 	if (time_match && dst > -1) {
 		time_match = (tm2.tm_isdst > 0 && dst > 0);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-						  "XML DateTime Check: DST[%s] == %s (%s)\n", 
+						  "XML DateTime Check: DST[%s] == %s (%s)\n",
 						  tm2.tm_isdst > 0 ? "true" : "false", dst > 0 ? "true" : "false", time_match ? "PASS" : "FAIL");
 
 	}
@@ -3124,8 +3178,8 @@ done:
 }
 
 #ifdef WIN32
-/* 
- * globbing functions for windows, part of libc on unix, this code was cut and paste from  
+/*
+ * globbing functions for windows, part of libc on unix, this code was cut and paste from
  * freebsd lib and distilled a bit to work with windows
  */
 
