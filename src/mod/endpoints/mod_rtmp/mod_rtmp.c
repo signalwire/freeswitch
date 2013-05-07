@@ -238,13 +238,6 @@ switch_status_t rtmp_on_destroy(switch_core_session_t *session)
 		
 		switch_buffer_destroy(&tech_pvt->readbuf);
 		switch_core_timer_destroy(&tech_pvt->timer);
-
-		if (tech_pvt->rtmp_session) {
-			rtmp_session_t *rsession = tech_pvt->rtmp_session;
-			if (rsession->state != RS_DESTROY) {
-				rtmp_session_destroy(&rsession);
-			} 
-		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
