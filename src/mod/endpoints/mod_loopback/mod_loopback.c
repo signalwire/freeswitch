@@ -963,7 +963,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
-		{
+		if (tech_pvt->other_channel) {
 
 			if (switch_test_flag(tech_pvt, TFLAG_BLEG)) {
 				if (!zstr(msg->string_array_arg[0])) {
