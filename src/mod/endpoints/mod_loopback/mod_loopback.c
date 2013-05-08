@@ -800,6 +800,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (!switch_test_flag(tech_pvt, TFLAG_BOWOUT) &&
 		tech_pvt->other_tech_pvt &&
 		switch_test_flag(tech_pvt, TFLAG_BRIDGE) &&
+		!switch_test_flag(tech_pvt, TFLAG_BLEG) &&
 		switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_BRIDGE) &&
 		switch_channel_test_flag(tech_pvt->channel, CF_BRIDGED) &&
 		switch_channel_test_flag(tech_pvt->other_channel, CF_BRIDGED) &&
