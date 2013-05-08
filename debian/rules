@@ -7,7 +7,7 @@
 FS_CC?=gcc
 FS_CXX?=g++
 FS_CFLAGS?=-g3 -O2 -fPIC
-FS_CPPFLAGS?=-DSWITCH_STORAGE_DIR='"/var/lib/freeswitch/storage"'
+FS_CPPFLAGS?=
 FS_CXXFLAGS?=$(FS_CFLAGS)
 export PATH?=/usr/lib/ccache:/usr/sbin:/usr/bin:/sbin:/bin
 export CC=$(FS_CC)
@@ -74,6 +74,7 @@ override_dh_auto_clean:
 		--with-dbdir=/var/lib/freeswitch/db \
 		--with-htdocsdir=/usr/share/freeswitch/htdocs \
 		--with-soundsdir=/usr/share/freeswitch/sounds \
+		--with-storagedir=/var/lib/freeswitch/storage \
 		--with-grammardir=/usr/share/freeswitch/grammar \
 		--with-certsdir=/etc/freeswitch/tls \
 		--with-scriptdir=/usr/share/freeswitch/scripts \
