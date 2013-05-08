@@ -312,7 +312,7 @@ static switch_status_t do_config()
 			"create index ld_realm on limit_data (realm)",
 			"create index ld_id on limit_data (id)",
 			"create index dd_realm on db_data (realm)",
-			"create index dd_data_key on db_data (data_key)",
+			"create unique index dd_data_key_realm on db_data (data_key,realm)",
 			"create index gd_groupname on group_data (groupname)",
 			"create index gd_url on group_data (url)",
 			NULL
