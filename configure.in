@@ -91,6 +91,11 @@ AC_ARG_WITH([recordingsdir],
 AC_SUBST(recordingsdir)
 AC_DEFINE_UNQUOTED([SWITCH_RECORDINGS_DIR],"${recordingsdir}",[where to put recording files])
 
+AC_ARG_WITH([storagedir],
+	[AS_HELP_STRING([--with-storagedir=DIR], [Put storage files into this location (default: $prefix/storage)])], [storagedir="$withval"], [storagedir="$prefix/storage"])
+AC_SUBST(storagedir)
+AC_DEFINE_UNQUOTED([SWITCH_STORAGE_DIR],"${storagedir}",[where to put storage files])
+
 if test "$sysconfdir" = "\${prefix}/etc" ; then
     confdir="$prefix/conf"
 else
