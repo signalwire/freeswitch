@@ -1946,7 +1946,7 @@ static switch_status_t switch_xml_locate_user_cache(const char *key, const char 
 
 			time_now = switch_micro_time_now();
 			time_expires = atol(expires_lookup);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cache Info\nTime Now:\t%ld\nExpires:\t%ld\n", time_now, time_expires);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cache Info\nTime Now:\t%ld\nExpires:\t%ld\n", (long)time_now, (long)time_expires);
 			if (time_expires < time_now) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cache expired for %s@%s, doing fresh lookup\n", user_name, domain_name);
 			} else {
