@@ -850,7 +850,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 									  "%s detected bridge on both ends, attempting direct connection.\n", switch_channel_get_name(channel));
 					
 					/* channel_masquerade eat your heart out....... */
-					switch_ivr_uuid_bridge(b_uuid, a_uuid);
+					switch_ivr_uuid_bridge(a_uuid, b_uuid);
 					good_to_go = 1;
 					switch_mutex_unlock(tech_pvt->mutex);
 				}
