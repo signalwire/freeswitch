@@ -2065,7 +2065,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		goto done;
 	}
 
-	if ((flags & SOF_NOBLOCK) && var_event && (var = switch_event_get_header(var_event, "originate_delay_start"))) {
+	if (!(flags & SOF_NOBLOCK) && var_event && (var = switch_event_get_header(var_event, "originate_delay_start"))) {
 		int tmp = atoi(var);
 		if (tmp > 0) {
 			while (tmp && (!cancel_cause || *cancel_cause == 0)) {
