@@ -767,6 +767,7 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 	(*newsession)->in_chunksize = (*newsession)->out_chunksize = RTMP_DEFAULT_CHUNKSIZE;
 	(*newsession)->recv_ack_window = RTMP_DEFAULT_ACK_WINDOW;
 	(*newsession)->next_streamid = 1;
+	(*newsession)->io_private = NULL;
 		
 	switch_uuid_get(&uuid);
 	switch_uuid_format((*newsession)->uuid, &uuid);
