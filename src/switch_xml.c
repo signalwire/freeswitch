@@ -1982,7 +1982,7 @@ static void switch_xml_user_cache(const char *key, const char *user_name, const 
 	}
 	if (expires) {
 		char *expires_val = malloc(1024);
-		if (sprintf(expires_val, "%ld", expires)) {
+		if (sprintf(expires_val, "%ld", (long)expires)) {
 			switch_core_hash_insert(CACHE_EXPIRES_HASH, mega_key, expires_val);
 		}
 	}
