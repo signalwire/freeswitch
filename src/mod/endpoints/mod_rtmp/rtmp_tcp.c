@@ -183,8 +183,10 @@ static switch_status_t rtmp_tcp_close(rtmp_session_t *rsession)
 		switch_buffer_destroy(&(io_pvt->sendq));
 	}
 	
-	free(rsession->io_private);
-	rsession->io_private = NULL;
+	if ( rsession->io_private ) {
+		free(rsession->io_private);
+		rsession->io_private = NULL;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
