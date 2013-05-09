@@ -1531,7 +1531,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_get_offered_pt(switch_core_ses
 	for (i = 0; i < smh->mparams->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = smh->codecs[i];
 
-		if (!strcasecmp(imp->iananame, mimp->iananame)) {
+		if (!strcasecmp(imp->iananame, mimp->iananame) && imp->actual_samples_per_second == mimp->actual_samples_per_second) {
 			*pt = smh->ianacodes[i];
 
 			return SWITCH_STATUS_SUCCESS;
