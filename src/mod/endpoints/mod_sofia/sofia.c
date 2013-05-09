@@ -5704,6 +5704,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					sdp_parser_free(parser);
 				}
 				sofia_glue_pass_sdp(tech_pvt, (char *) r_sdp);
+				sofia_set_flag(tech_pvt, TFLAG_NEW_SDP);
 			}
 		}
 	}
@@ -6261,11 +6262,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 		break;
 	case nua_callstate_ready:
-		if (r_sdp && !is_dup_sdp && switch_rtp_ready(tech_pvt->rtp_session) && !sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
+		if (r_sdp && (!is_dup_sdp || sofia_test_flag(tech_pvt, TFLAG_NEW_SDP)) && switch_rtp_ready(tech_pvt->rtp_session) && !sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
 			/* sdp changed since 18X w sdp, we're supposed to ignore it but we, of course, were pressured into supporting it */
 			uint8_t match = 0;
 
 			sofia_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+			sofia_clear_flag(tech_pvt, TFLAG_NEW_SDP);
 
 			if (tech_pvt->num_codecs) {
 				match = sofia_glue_negotiate_sdp(session, r_sdp);
