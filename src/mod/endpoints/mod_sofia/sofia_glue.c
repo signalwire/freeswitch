@@ -4638,7 +4638,7 @@ switch_status_t sofia_glue_get_offered_pt(private_object_t *tech_pvt, const swit
 	for (i = 0; i < tech_pvt->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 
-		if (!strcasecmp(imp->iananame, mimp->iananame)) {
+		if (!strcasecmp(imp->iananame, mimp->iananame) && imp->actual_samples_per_second == mimp->actual_samples_per_second) {
 			*pt = tech_pvt->ianacodes[i];
 
 			return SWITCH_STATUS_SUCCESS;
