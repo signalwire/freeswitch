@@ -2181,17 +2181,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			ringback_data = NULL;
-		} else if (zstr(ringback_data)) {
-			const char *vvar;
-
-			if ((vvar = switch_channel_get_variable(caller_channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE))) {
-				int sval = atoi(vvar);
-
-				if (sval) {
-					ringback_data = switch_core_session_sprintf(oglobals.session, "silence:%d", sval);
-				}
-
-			}
 		}
 	}
 #if 0
@@ -3030,7 +3019,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 												 oglobals.sending_ringback > 1 || oglobals.bridge_early_media > -1)) {
 						if (oglobals.ringback_ok == 1) {
 							switch_status_t rst;
-							
+
 							rst = setup_ringback(&oglobals, originate_status, and_argc, ringback_data, &ringback, &write_frame, &write_codec);
 							
 							if (oglobals.bridge_early_media > -1) {
