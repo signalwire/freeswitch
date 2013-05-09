@@ -52,12 +52,17 @@ struct switch_ivr_menu {
 	int max_timeouts;
 	int timeout;
 	int inter_timeout;
+	char *exec_on_max_fail;
+	char *exec_on_max_timeout;
 	switch_size_t inlen;
 	uint32_t flags;
 	struct switch_ivr_menu_action *actions;
 	struct switch_ivr_menu *next;
 	switch_memory_pool_t *pool;
 	int stack_count;
+	char *pin;
+	char *prompt_pin_file;
+	char *bad_pin_file;
 };
 
 struct switch_ivr_menu_action {
@@ -401,6 +406,27 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 	return status;
 }
 
+static void exec_app(switch_core_session_t *session, char *app_str)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *app = switch_core_session_strdup(session, app_str);
+	char *data = strchr(app, ' ');
+	char *expanded = NULL;
+	
+	if (data) {
+		*data++ = '\0';
+	}
+	
+	expanded = switch_channel_expand_variables(channel, data);
+	
+	switch_core_session_execute_application(session, app, expanded);
+	
+	if (expanded && expanded != data) {
+		free(expanded);
+	}
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t *stack, char *name, void *obj)
 {
 	int reps = 0, errs = 0, timeouts = 0, match = 0, running = 1;
@@ -437,6 +463,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Executing IVR menu %s\n", menu->name);
 	switch_channel_set_variable(channel, "ivr_menu_status", "success");
 
+	if (!zstr(menu->pin)) {
+		char digit_buffer[128] = "";
+		char *digits_regex = switch_core_session_sprintf(session, "^%s$", menu->pin);
+
+		switch_play_and_get_digits(session, strlen(menu->pin), strlen(menu->pin), 3, 3000, "#",
+								   menu->prompt_pin_file, menu->bad_pin_file, NULL, digit_buffer, sizeof(digit_buffer), 
+								   digits_regex, 10000, NULL);		
+	}
+
+
 	for (reps = 0; running && status == SWITCH_STATUS_SUCCESS; reps++) {
 		if (!switch_channel_ready(channel)) {
 			break;
@@ -444,11 +480,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		if (errs == menu->max_failures) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Maximum failures\n");
 			switch_channel_set_variable(channel, "ivr_menu_status", "failure");
+			if (!zstr(menu->exec_on_max_fail)) {
+				exec_app(session, menu->exec_on_max_fail);
+			}
 			break;
 		}
 		if (timeouts == menu->max_timeouts) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Maximum timeouts\n");
 			switch_channel_set_variable(channel, "ivr_menu_status", "timeout");
+			if (!zstr(menu->exec_on_max_timeout)) {
+				exec_app(session, menu->exec_on_max_timeout);
+			}
 			break;
 		}
 
@@ -781,6 +823,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *timeout = switch_xml_attr_soft(xml_menu, "timeout");	/* if the attr doesn't exist, return "" */
 		const char *max_failures = switch_xml_attr_soft(xml_menu, "max-failures");	/* if the attr doesn't exist, return "" */
 		const char *max_timeouts = switch_xml_attr_soft(xml_menu, "max-timeouts");
+		const char *exec_on_max_fail = switch_xml_attr(xml_menu, "exec-on-max-failures");
+		const char *exec_on_max_timeout = switch_xml_attr(xml_menu, "exec-on-max-timeouts");
 		const char *confirm_macro = switch_xml_attr(xml_menu, "confirm-macro");
 		const char *confirm_key = switch_xml_attr(xml_menu, "confirm-key");
 		const char *tts_engine = switch_xml_attr(xml_menu, "tts-engine");
@@ -788,7 +832,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *confirm_attempts = switch_xml_attr_soft(xml_menu, "confirm-attempts");
 		const char *digit_len = switch_xml_attr_soft(xml_menu, "digit-len");
 		const char *inter_timeout = switch_xml_attr_soft(xml_menu, "inter-digit-timeout");
-
+		const char *pin = switch_xml_attr_soft(xml_menu, "pin");
+		const char *prompt_pin_file = switch_xml_attr_soft(xml_menu, "pin-file");
+		const char *bad_pin_file = switch_xml_attr_soft(xml_menu, "bad-pin-file");
+		
 		switch_ivr_menu_t *menu = NULL;
 
 		if (zstr(max_timeouts)) {
@@ -813,6 +860,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									  atoi(digit_len),
 									  atoi(timeout),
 									  strlen(max_failures) ? atoi(max_failures) : 0, strlen(max_timeouts) ? atoi(max_timeouts) : 0, xml_menu_ctx->pool);
+
+
+		if (!zstr(exec_on_max_fail)) {
+			menu->exec_on_max_fail = switch_core_strdup(menu->pool, exec_on_max_fail);
+		}
+
+		if (!zstr(exec_on_max_timeout)) {
+			menu->exec_on_max_timeout = switch_core_strdup(menu->pool, exec_on_max_timeout);
+		}
+
+		if (!zstr(pin)) {
+			if (zstr(prompt_pin_file)) {
+				prompt_pin_file = "ivr/ivr-please_enter_pin_followed_by_pound.wav";
+			}
+			if (zstr(bad_pin_file)) {
+				prompt_pin_file = "ivr/ivr-pin_or_extension_is-invalid.wav";
+			}
+			menu->pin = switch_core_strdup(menu->pool, pin);
+			menu->prompt_pin_file = switch_core_strdup(menu->pool, prompt_pin_file);
+			menu->bad_pin_file = switch_core_strdup(menu->pool, bad_pin_file);
+		}
+
 		/* set the menu_stack for the caller */
 		if (status == SWITCH_STATUS_SUCCESS && *menu_stack == NULL) {
 			*menu_stack = menu;
