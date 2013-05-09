@@ -636,6 +636,9 @@
       <prompt phrase="If you got bronchitis, press..." filename="ivr-got_bronchitis.wav"/>
       <prompt phrase="If ain't nobody got time for that, press..." filename=""/>
       <prompt phrase="Nobody is currently leaving a message in this voicemail box." filename="vm-nobody_leaving_message.wav"/>
+      <prompt phrase="This is a call from..." filename="ivr-call_from.wav"/>
+      <prompt phrase="This is a reminder for..." filename="ivr-reminder_for.wav"/>
+      <prompt phrase="You have an appointment scheduled for..." filename="ivr-appointment_schedule_for.wav"/>
       <prompt phrase="" filename=""/>
 
     </ivr>
