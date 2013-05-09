@@ -239,8 +239,8 @@ handshake (struct stream_data *data)
 	if( SSL_set_fd(data->ssl, (int)(intptr_t)data->sock) != 1 ) return IKS_NOMEM;
 	
 	/* Set both the read and write BIO's to non-blocking mode */
-	//BIO_set_nbio(SSL_get_rbio(data->ssl), 1);
-	//BIO_set_nbio(SSL_get_wbio(data->ssl), 1);
+	BIO_set_nbio(SSL_get_rbio(data->ssl), 1);
+	BIO_set_nbio(SSL_get_wbio(data->ssl), 1);
 
 	finished = 0;
 	
