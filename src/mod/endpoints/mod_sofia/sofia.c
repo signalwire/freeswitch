@@ -5756,6 +5756,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 				
 				sofia_glue_pass_sdp(tech_pvt, (char *) r_sdp);
+				sofia_set_flag(tech_pvt, TFLAG_NEW_SDP);
+				
 			}
 		}
 	}
@@ -6315,10 +6317,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		break;
 	case nua_callstate_ready:
 		if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && !switch_channel_test_flag(channel, CF_PROXY_MEDIA) && 
-			r_sdp && !is_dup_sdp && switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && !sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
+			r_sdp && (!is_dup_sdp || sofia_test_flag(tech_pvt, TFLAG_NEW_SDP)) && switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && !sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
 			/* sdp changed since 18X w sdp, we're supposed to ignore it but we, of course, were pressured into supporting it */
 			uint8_t match = 0;
 
+			sofia_clear_flag(tech_pvt, TFLAG_NEW_SDP);
 			switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 
 			if (tech_pvt->mparams.num_codecs) {
