@@ -445,7 +445,8 @@ AC_ARG_WITH([misdn],
 AS_IF([test "${with_misdn}" != "no"],
 	[AC_MSG_RESULT([${as_nl}<<>> ftmod_misdn (Linux mISDN I/O plugin)])
 	 AC_CHECK_HEADER([mISDN/mISDNif.h],
-		[HAVE_MISDN="yes"],
+		[HAVE_MISDN="yes"
+		 AC_CHECK_LIB([rt], [clock_gettime])],
 		[AS_IF([test "${with_misdn}" = "yes"],
 			[AC_MSG_ERROR([mISDN/mISDNif.h not found])],
 			[AC_MSG_NOTICE([mISDN/mISDNif.h not found])]
