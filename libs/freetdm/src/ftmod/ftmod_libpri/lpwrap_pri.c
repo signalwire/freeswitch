@@ -61,7 +61,7 @@ static struct lpwrap_pri_event_list LPWRAP_PRI_EVENT_LIST[LPWRAP_PRI_EVENT_MAX] 
 
 const char *lpwrap_pri_event_str(lpwrap_pri_event_t event_id)
 {
-	if (event_id < 0 || event_id >= LPWRAP_PRI_EVENT_MAX)
+	if (event_id >= LPWRAP_PRI_EVENT_MAX)
 		return "";
 
 	return LPWRAP_PRI_EVENT_LIST[event_id].name;

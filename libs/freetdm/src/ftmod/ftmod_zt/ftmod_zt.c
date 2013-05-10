@@ -665,7 +665,7 @@ static FIO_OPEN_FUNCTION(zt_open)
 			}
 		}
 
-		if (zt_globals.eclevel >= 0) {
+		if (1) {
 			int len = zt_globals.eclevel;
 			if (len) {
 				ftdm_log(FTDM_LOG_INFO, "Setting echo cancel to %d taps for %d:%d\n", len, ftdmchan->span_id, ftdmchan->chan_id);

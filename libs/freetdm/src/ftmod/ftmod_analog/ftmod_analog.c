@@ -222,10 +222,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_configure_span)
 			if (!(intval = va_arg(ap, int *))) {
 				break;
 			}
-			wait_dialtone_timeout = *intval;
-			if (wait_dialtone_timeout < 0) {
-				wait_dialtone_timeout = 0;
-			}
+			wait_dialtone_timeout = ftdm_max(0, *intval);
 			ftdm_log(FTDM_LOG_DEBUG, "Wait dial tone ms = %d\n", wait_dialtone_timeout);
 		} else if (!strcasecmp(var, "enable_callerid")) {
 			if (!(val = va_arg(ap, char *))) {
