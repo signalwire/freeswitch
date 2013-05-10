@@ -272,13 +272,14 @@ static int wait_for_data(struct stream_data *data, int ret, int timeout)
 
 int iks_set_blocking(void *fd, int blocking)
 {
+#ifdef WIN32
+    unsigned long mode = !blocking;
+#endif
     if (!fd) {
 		return -1;
 	}
     
 #ifdef WIN32
-    ULONG mode = !blocking;
-
     if (ioctlsocket((SOCKET)(intptr_t) fd, FIONBIO, &mode)) {
         return -1;
     }
