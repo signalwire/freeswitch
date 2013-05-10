@@ -4548,7 +4548,7 @@ void sofia_presence_handle_sip_i_message(int status,
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from_sip_port", "%d", network_port);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to_addr);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "context", profile->context);
 				
 				if (sip->sip_content_type && sip->sip_content_type->c_subtype) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", sip->sip_content_type->c_type);
