@@ -4,7 +4,7 @@
 
 #include "windows.h"
 
-const unsigned long long int DELTA_EPOCH_IN_MICROSECS = 11644473600000000LLU
+const unsigned long long int DELTA_EPOCH_IN_MICROSECS = 11644473600000000;
 
 void gettimeofday(struct timeval *tv, void *tz)
 {
@@ -31,6 +31,6 @@ void gettimeofday(struct timeval *tv, void *tz)
     /* Add timezone bias conververt from minutes to microsecond */
     highResolutionTime -= timezone_time_bias_in_minutes*60*1000000;
     highResolutionTime -= DELTA_EPOCH_IN_MICROSECS;
-    tv->tv_sec = (long int) (highResolutionTime/1000000LLU);
-    tv->tv_usec = (highResolutionTime%1000000LLU);
+    tv->tv_sec = (long int) (highResolutionTime/1000000);
+    tv->tv_usec = (highResolutionTime%1000000);
 }
