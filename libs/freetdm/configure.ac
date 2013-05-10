@@ -236,7 +236,8 @@ then
 	AC_LINK_IFELSE(
 		[AC_LANG_PROGRAM(
 			[#include <libpri.h>],
-			[const char *version = pri_get_version();]
+			[const char *version = pri_get_version();
+			 (void)version;]
 		)],
 		[AC_MSG_RESULT([yes])
 		 HAVE_LIBPRI="yes"],
