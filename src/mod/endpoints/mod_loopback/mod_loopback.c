@@ -445,8 +445,8 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	}
 
 	if (bow) {
-		switch_core_session_t *other_session;
-		const char *other_uuid;
+		switch_core_session_t *other_session = NULL;
+		const char *other_uuid = NULL;
 
 		if ((find_non_loopback_bridge(tech_pvt->other_session, &other_session, &other_uuid) == SWITCH_STATUS_SUCCESS)) {
 			switch_caller_extension_t *extension;
@@ -740,7 +740,7 @@ static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, 
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *a_uuid = NULL;
-	switch_core_session_t *sp;
+	switch_core_session_t *sp = NULL;
 
 	*br_session = NULL;
 	*br_uuid = NULL;
