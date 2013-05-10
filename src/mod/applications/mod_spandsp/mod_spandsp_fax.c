@@ -882,7 +882,11 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 										  T4_SUPPORT_RESOLUTION_R8_STANDARD
 										| T4_SUPPORT_RESOLUTION_R8_FINE
 										| T4_SUPPORT_RESOLUTION_R8_SUPERFINE
-										| T4_SUPPORT_RESOLUTION_R16_SUPERFINE);
+										| T4_SUPPORT_RESOLUTION_R16_SUPERFINE
+                                        | T4_RESOLUTION_200_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_200_400
+                                        | T4_RESOLUTION_400_400);
 	t30_set_supported_colour_resolutions(t30, 0);
 
 	if (pvt->disable_v17) {
