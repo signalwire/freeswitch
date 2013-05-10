@@ -170,8 +170,8 @@ ftmod_wanpipe_la_SOURCES = $(SRC)/ftmod/ftmod_wanpipe/ftmod_wanpipe.c
 # some structures within Wanpipe drivers are not c99 compatible, so we need to compile ftmod_wanpipe
 # without c99 flags, use FTDM_COMPAT_CFLAGS instead
 ftmod_wanpipe_la_CFLAGS  = $(FTDM_COMPAT_CFLAGS) $(AM_CFLAGS) -D__LINUX__ -I/usr/include/wanpipe
-ftmod_wanpipe_la_LDFLAGS = -shared -module -avoid-version -lsangoma
-ftmod_wanpipe_la_LIBADD  = libfreetdm.la
+ftmod_wanpipe_la_LDFLAGS = -shared -module -avoid-version
+ftmod_wanpipe_la_LIBADD  = libfreetdm.la -lsangoma
 endif
 
 if HAVE_LIBISDN
@@ -194,8 +194,8 @@ if HAVE_PRITAP
 mod_LTLIBRARIES += ftmod_pritap.la
 ftmod_pritap_la_SOURCES = $(SRC)/ftmod/ftmod_pritap/ftmod_pritap.c 
 ftmod_pritap_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS)
-ftmod_pritap_la_LDFLAGS = -shared -module -avoid-version -lpri
-ftmod_pritap_la_LIBADD  = libfreetdm.la
+ftmod_pritap_la_LDFLAGS = -shared -module -avoid-version
+ftmod_pritap_la_LIBADD  = libfreetdm.la -lpri
 endif
 
 if HAVE_SNG_SS7
@@ -219,8 +219,8 @@ ftmod_sangoma_ss7_la_SOURCES = \
 	$(SRC)/ftmod/ftmod_sangoma_ss7/ftmod_sangoma_ss7_relay.c
 
 ftmod_sangoma_ss7_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS) -D_GNU_SOURCE
-ftmod_sangoma_ss7_la_LDFLAGS = -shared -module -avoid-version -lsng_ss7
-ftmod_sangoma_ss7_la_LIBADD  = libfreetdm.la
+ftmod_sangoma_ss7_la_LDFLAGS = -shared -module -avoid-version
+ftmod_sangoma_ss7_la_LIBADD  = libfreetdm.la -lsng_ss7
 endif
 
 if HAVE_SNG_ISDN
@@ -239,24 +239,24 @@ ftmod_sangoma_isdn_la_SOURCES = \
 	$(SRC)/ftmod/ftmod_sangoma_isdn/ftmod_sangoma_isdn_stack_out.c
 
 ftmod_sangoma_isdn_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS) -D_GNU_SOURCE
-ftmod_sangoma_isdn_la_LDFLAGS = -shared -module -avoid-version -lsng_isdn
-ftmod_sangoma_isdn_la_LIBADD  = libfreetdm.la
+ftmod_sangoma_isdn_la_LDFLAGS = -shared -module -avoid-version
+ftmod_sangoma_isdn_la_LIBADD  = libfreetdm.la -lsng_isdn
 endif
 
 if HAVE_OPENR2
 mod_LTLIBRARIES += ftmod_r2.la
 ftmod_r2_la_SOURCES = $(SRC)/ftmod/ftmod_r2/ftmod_r2.c  $(SRC)/ftmod/ftmod_r2/ftmod_r2_io_mf_lib.c
 ftmod_r2_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS)
-ftmod_r2_la_LDFLAGS = -shared -module -avoid-version -lopenr2
-ftmod_r2_la_LIBADD  = libfreetdm.la
+ftmod_r2_la_LDFLAGS = -shared -module -avoid-version
+ftmod_r2_la_LIBADD  = libfreetdm.la -lopenr2
 endif
 
 if HAVE_WAT
 mod_LTLIBRARIES += ftmod_gsm.la
 ftmod_gsm_la_SOURCES = $(SRC)/ftmod/ftmod_gsm/ftmod_gsm.c 
 ftmod_gsm_la_CFLAGS  = $(FTDM_CFLAGS) $(AM_CFLAGS)
-ftmod_gsm_la_LDFLAGS = -shared -module -avoid-version -lwat
-ftmod_gsm_la_LIBADD  = libfreetdm.la
+ftmod_gsm_la_LDFLAGS = -shared -module -avoid-version
+ftmod_gsm_la_LIBADD  = libfreetdm.la -lwat
 endif
 
 if HAVE_MISDN
