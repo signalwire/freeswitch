@@ -392,7 +392,7 @@ static ftdm_status_t misdn_event_queue_reset(struct misdn_event_queue *queue)
 	return FTDM_SUCCESS;
 }
 
-static ftdm_status_t misdn_event_queue_has_data(const struct misdn_event_queue *queue)
+static ftdm_bool_t misdn_event_queue_has_data(const struct misdn_event_queue *queue)
 {
 	if (!queue)
 		return FTDM_FALSE;
