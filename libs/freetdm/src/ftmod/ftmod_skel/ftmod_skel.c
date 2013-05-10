@@ -37,66 +37,97 @@
 
 static FIO_CONFIGURE_FUNCTION(skel_configure)
 {
+	ftdm_unused_arg(category);
+	ftdm_unused_arg(var);
+	ftdm_unused_arg(val);
+	ftdm_unused_arg(lineno);
 	return FTDM_FAIL;
 }
 
 static FIO_CONFIGURE_SPAN_FUNCTION(skel_configure_span)
 {
+	ftdm_unused_arg(span);
+	ftdm_unused_arg(str);
+	ftdm_unused_arg(type);
+	ftdm_unused_arg(name);
+	ftdm_unused_arg(number);
 	return FTDM_FAIL;
 }
 
-static FIO_OPEN_FUNCTION(skel_open) 
+static FIO_OPEN_FUNCTION(skel_open)
 {
+	ftdm_unused_arg(ftdmchan);
 	return FTDM_FAIL;
 }
 
 static FIO_CLOSE_FUNCTION(skel_close)
 {
+	ftdm_unused_arg(ftdmchan);
 	return FTDM_FAIL;
 }
 
 static FIO_WAIT_FUNCTION(skel_wait)
 {
+	ftdm_unused_arg(ftdmchan);
+	ftdm_unused_arg(flags);
+	ftdm_unused_arg(to);
 	return FTDM_FAIL;
 }
 
 static FIO_READ_FUNCTION(skel_read)
 {
+	ftdm_unused_arg(ftdmchan);
+	ftdm_unused_arg(data);
+	ftdm_unused_arg(datalen);
 	return FTDM_FAIL;
 }
 
 static FIO_WRITE_FUNCTION(skel_write)
 {
+	ftdm_unused_arg(ftdmchan);
+	ftdm_unused_arg(data);
+	ftdm_unused_arg(datalen);
 	return FTDM_FAIL;
 }
 
 static FIO_COMMAND_FUNCTION(skel_command)
 {
+	ftdm_unused_arg(ftdmchan);
+	ftdm_unused_arg(command);
+	ftdm_unused_arg(obj);
 	return FTDM_FAIL;
 }
 
 static FIO_SPAN_POLL_EVENT_FUNCTION(skel_poll_event)
 {
+	ftdm_unused_arg(span);
+	ftdm_unused_arg(ms);
+	ftdm_unused_arg(poll_events);
 	return FTDM_FAIL;
 }
 
 static FIO_SPAN_NEXT_EVENT_FUNCTION(skel_next_event)
 {
+	ftdm_unused_arg(span);
+	ftdm_unused_arg(event);
 	return FTDM_FAIL;
 }
 
 static FIO_CHANNEL_DESTROY_FUNCTION(skel_channel_destroy)
 {
+	ftdm_unused_arg(ftdmchan);
 	return FTDM_FAIL;
 }
 
 static FIO_SPAN_DESTROY_FUNCTION(skel_span_destroy)
 {
+	ftdm_unused_arg(span);
 	return FTDM_FAIL;
 }
 
 static FIO_GET_ALARMS_FUNCTION(skel_get_alarms)
 {
+	ftdm_unused_arg(ftdmchan);
 	return FTDM_FAIL;
 }
 

@@ -102,6 +102,7 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(isdn_get_span_sig_status)
  */
 static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
 {
+	ftdm_unused_arg(ftdmchan);
 	return FTDM_SUCCESS;
 }
 
@@ -116,6 +117,11 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
  */
 static FIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 {
+	ftdm_unused_arg(span);
+	ftdm_unused_arg(chan_id);
+	ftdm_unused_arg(direction);
+	ftdm_unused_arg(caller_data);
+	ftdm_unused_arg(ftdmchan);
 	return FTDM_FAIL;
 }
 
@@ -1305,6 +1311,8 @@ static int on_keypad_digit(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pr
 	ftdm_span_t *span = spri->span;
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->ring.channel);
 
+	ftdm_unused_arg(event_type);
+
 	if (!chan) {
 		ftdm_log(FTDM_LOG_ERROR, "-- Keypad event on invalid channel %d:%d\n",
 			ftdm_span_get_id(span), pevent->ring.channel);
@@ -1334,6 +1342,8 @@ static int on_information(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri
 	ftdm_libpri_b_chan_t *chan_priv = NULL;
 	ftdm_caller_data_t *caller_data = NULL;
 	ftdm_libpri_data_t *isdn_data = span->signal_data;
+
+	ftdm_unused_arg(event_type);
 
 	if (!chan) {
 		ftdm_log(FTDM_LOG_CRIT, "-- Info on channel %d:%d but it's not in use?\n", ftdm_span_get_id(span), pevent->ring.channel);
@@ -1508,6 +1518,8 @@ static int on_answer(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 	ftdm_span_t *span = spri->span;
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->answer.channel);
 
+	ftdm_unused_arg(event_type);
+
 	if (chan) {
 		if (!ftdm_test_flag(chan, FTDM_CHANNEL_OPEN)) {
 			ftdm_log(FTDM_LOG_DEBUG, "-- Call answered, opening B-Channel %d:%d\n",
@@ -1547,6 +1559,8 @@ static int on_proceeding(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_
 {
 	ftdm_span_t *span = spri->span;
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->proceeding.channel);
+
+	ftdm_unused_arg(event_type);
 
 	if (chan) {
 		/* Open channel if inband information is available */
@@ -1589,6 +1603,8 @@ static int on_progress(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 {
 	ftdm_span_t *span = spri->span;
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->proceeding.channel);
+
+	ftdm_unused_arg(event_type);
 
 	if (chan) {
 		/* Open channel if inband information is available */
@@ -1633,6 +1649,8 @@ static int on_ringing(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 {
 	ftdm_span_t *span = spri->span;
 	ftdm_channel_t *chan = ftdm_span_get_channel(span, pevent->ringing.channel);
+
+	ftdm_unused_arg(event_type);
 
 	if (chan) {
 		/* we may get on_ringing even when we're already in FTDM_CHANNEL_STATE_PROGRESS_MEDIA */
@@ -1789,6 +1807,8 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	ftdm_channel_t *chan = NULL;
 	ftdm_caller_data_t *caller_data = NULL;
 	int ret = 0;
+
+	ftdm_unused_arg(event_type);
 
 	/*
 	 * Check if call has an associated channel (duplicate ring event)
@@ -1947,6 +1967,8 @@ static int on_timeout_t302(struct lpwrap_pri *spri, struct lpwrap_timer *timer)
 	ftdm_libpri_b_chan_t *chan_priv = ftdm_container_of(timer, ftdm_libpri_b_chan_t, t302);
 	ftdm_channel_t *chan = chan_priv->channel;
 
+	ftdm_unused_arg(spri);
+
 	ftdm_log_chan_msg(chan, FTDM_LOG_INFO, "-- T302 timed out, going to state RING\n");
 	ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RING);
 	return 0;
@@ -2018,6 +2040,8 @@ static int on_timeout_t3xx(struct lpwrap_pri *spri, struct lpwrap_timer *timer)
 static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *event)
 {
 	ftdm_alarm_flag_t alarmbits;
+
+	ftdm_unused_arg(span);
 
 	ftdm_log(FTDM_LOG_DEBUG, "EVENT [%s][%d][%d:%d] STATE [%s]\n",
 			ftdm_oob_event2str(event->enum_id),
@@ -2113,6 +2137,8 @@ static int on_restart(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	ftdm_span_t *span = spri->span;
 	int i;
 
+	ftdm_unused_arg(event_type);
+
 	if (pevent->restart.channel < 1) {
 		ftdm_log_chan_msg(spri->dchan, FTDM_LOG_NOTICE, "-- Restarting interface\n");
 
@@ -2155,6 +2181,8 @@ static int on_restart_ack(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri
 	ftdm_channel_t *chan = NULL;
 	ftdm_span_t *span = spri->span;
 	int i;
+
+	ftdm_unused_arg(event_type);
 
 	if (pevent->restartack.channel < 1) {
 		ftdm_log_chan_msg(spri->dchan, FTDM_LOG_NOTICE, "-- Restart of interface completed\n");
@@ -2240,12 +2268,14 @@ static float aoc_money_amount(const struct pri_aoc_amount *amount)
 static int handle_facility_aoc_s(const struct pri_subcmd_aoc_s *aoc_s)
 {
 	/* Left as an excercise to the reader */
+	ftdm_unused_arg(aoc_s);
 	return 0;
 }
 
 static int handle_facility_aoc_d(const struct pri_subcmd_aoc_d *aoc_d)
 {
 	/* Left as an excercise to the reader */
+	ftdm_unused_arg(aoc_d);
 	return 0;
 }
 
@@ -2376,6 +2406,9 @@ static int on_facility(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
  */
 static int on_dchan_up(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
+	ftdm_unused_arg(event_type);
+	ftdm_unused_arg(pevent);
+
 	if (!ftdm_test_flag(spri, LPWRAP_PRI_READY)) {
 		ftdm_signaling_status_t status = FTDM_SIG_STATE_UP;
 		ftdm_span_t *span = spri->span;
@@ -2422,6 +2455,9 @@ static int on_dchan_up(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
  */
 static int on_dchan_down(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
+	ftdm_unused_arg(event_type);
+	ftdm_unused_arg(pevent);
+
 	if (ftdm_test_flag(spri, LPWRAP_PRI_READY)) {
 		ftdm_signaling_status_t status = FTDM_SIG_STATE_DOWN;
 		ftdm_span_t *span = spri->span;
@@ -2491,6 +2527,8 @@ static int on_anything(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
  */
 static int on_io_fail(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
 {
+	ftdm_unused_arg(pevent);
+
 	ftdm_log(FTDM_LOG_DEBUG, "-- Caught Event span %d %u (%s)\n", ftdm_span_get_id(spri->span), event_type, lpwrap_pri_event_str(event_type));
 	return 0;
 }
@@ -2509,6 +2547,8 @@ static void *ftdm_libpri_run(ftdm_thread_t *me, void *obj)
 	int down = 0;
 	int res = 0;
 	int i;
+
+	ftdm_unused_arg(me);
 
 	ftdm_set_flag(span, FTDM_SPAN_IN_THREAD);
 	isdn_data->dchan = NULL;

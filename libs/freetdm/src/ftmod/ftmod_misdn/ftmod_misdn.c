@@ -784,6 +784,8 @@ out:
 
 static int misdn_handle_ph_control_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len)
 {
+	ftdm_unused_arg(data);
+
 	ftdm_log_chan(chan, FTDM_LOG_DEBUG,
 		"PH_CONTROL_IND:\n"
 		"\tMessage:\t%s (%#x)\n"
@@ -896,6 +898,8 @@ static const char *misdn_hw_print_flags(unsigned int flags, char *buf, int bufle
 static int misdn_handle_mph_information_ind(ftdm_channel_t *chan, const struct mISDNhead *hh, const void *data, const int data_len)
 {
 	struct misdn_chan_private *priv = ftdm_chan_io_private(chan);
+
+	ftdm_unused_arg(hh);
 
 	/*
 	 * mISDN has some inconsistency issues here.
@@ -1795,6 +1799,9 @@ static FIO_CONFIGURE_SPAN_FUNCTION(misdn_configure_span)
 	char *data = strdup(str);
 	char *item_list[10];
 
+	ftdm_unused_arg(name);
+	ftdm_unused_arg(number);
+
 	/* only these are supported */
 	switch (ftdm_span_get_trunk_type(span)) {
 	case FTDM_TRUNK_E1:
@@ -1919,6 +1926,10 @@ error:
  */
 static FIO_CONFIGURE_FUNCTION(misdn_configure)
 {
+	ftdm_unused_arg(category);
+	ftdm_unused_arg(var);
+	ftdm_unused_arg(val);
+	ftdm_unused_arg(lineno);
 	return FTDM_SUCCESS;
 }
 
@@ -1928,6 +1939,7 @@ static FIO_CONFIGURE_FUNCTION(misdn_configure)
  */
 static FIO_GET_ALARMS_FUNCTION(misdn_get_alarms)
 {
+	ftdm_unused_arg(ftdmchan);
 #if 0
 /*
 	Nope, this won't work...
@@ -2028,6 +2040,8 @@ static FIO_SPAN_POLL_EVENT_FUNCTION(misdn_poll_event)
 	struct timespec ts;
 	int retval = 0, nr_events = 0;
 	int i;
+
+	ftdm_unused_arg(poll_events);
 
 	for (i = 1; i <= ftdm_span_get_chan_count(span); i++) {
 		ftdm_channel_t *chan = ftdm_span_get_channel(span, i);
@@ -2445,6 +2459,7 @@ static void *misdn_span_run(ftdm_thread_t *thread, void *data)
 	int ret;
 	int i;
 
+	ftdm_unused_arg(thread);
 	ftdm_log(FTDM_LOG_NOTICE, "mISDN[%d:%s] span thread initializing\n",
 		ftdm_span_get_id(span), ftdm_span_get_name(span));
 

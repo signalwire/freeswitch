@@ -10,6 +10,8 @@ int main(int argc, char *argv[])
 	unsigned runs = 1;
 	int spanid, chanid;
 
+	ftdm_unused_arg(argc);
+	ftdm_unused_arg(argv);
 
 	if (ftdm_global_init() != FTDM_SUCCESS) {
 		fprintf(stderr, "Error loading FreeTDM\n");

@@ -249,9 +249,9 @@ FT_DECLARE(ftdm_status_t) ftdm_mutex_destroy(ftdm_mutex_t **mutex)
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_lock(const char *file, int line, const char *func, ftdm_mutex_t *mutex)
 {
 #ifdef WIN32
-	UNREFERENCED_PARAMETER(file);
-	UNREFERENCED_PARAMETER(line);
-	UNREFERENCED_PARAMETER(func);
+	ftdm_unused_arg(file);
+	ftdm_unused_arg(line);
+	ftdm_unused_arg(func);
 
 	EnterCriticalSection(&mutex->mutex);
 #else
@@ -269,11 +269,10 @@ FT_DECLARE(ftdm_status_t) _ftdm_mutex_lock(const char *file, int line, const cha
 
 FT_DECLARE(ftdm_status_t) _ftdm_mutex_trylock(const char *file, int line, const char *func, ftdm_mutex_t *mutex)
 {
+	ftdm_unused_arg(file);
+	ftdm_unused_arg(line);
+	ftdm_unused_arg(func);
 #ifdef WIN32
-	UNREFERENCED_PARAMETER(file);
-	UNREFERENCED_PARAMETER(line);
-	UNREFERENCED_PARAMETER(func);
-
 	if (!TryEnterCriticalSection(&mutex->mutex))
 		return FTDM_FAIL;
 #else
@@ -307,9 +306,9 @@ FT_DECLARE(ftdm_status_t) _ftdm_mutex_unlock(const char *file, int line, const c
 	mutex->reentrancy--;
 #endif
 #ifdef WIN32
-	UNREFERENCED_PARAMETER(file);
-	UNREFERENCED_PARAMETER(line);
-	UNREFERENCED_PARAMETER(func);
+	ftdm_unused_arg(file);
+	ftdm_unused_arg(line);
+	ftdm_unused_arg(func);
 
 	LeaveCriticalSection(&mutex->mutex);
 #else

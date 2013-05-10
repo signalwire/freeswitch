@@ -435,7 +435,8 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	uint32_t state_counter = 0, elapsed = 0, collecting = 0, interval = 0, last_digit = 0, indicate = 0, dial_timeout = analog_data->wait_dialtone_timeout;
 	uint32_t answer_on_polarity_counter = 0;
 	ftdm_sigmsg_t sig;
-	
+
+	ftdm_unused_arg(me);
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "ANALOG CHANNEL thread starting.\n");
 
 	ts.buffer = NULL;
@@ -1185,7 +1186,8 @@ static void *ftdm_analog_run(ftdm_thread_t *me, void *obj)
 	ftdm_span_t *span = (ftdm_span_t *) obj;
 	ftdm_analog_data_t *analog_data = span->signal_data;
 	int errs = 0;
-	
+
+	ftdm_unused_arg(me);
 	ftdm_log(FTDM_LOG_DEBUG, "ANALOG thread starting.\n");
 
 	while(ftdm_running() && ftdm_test_flag(analog_data, FTDM_ANALOG_RUNNING)) {

@@ -11,6 +11,8 @@ static void *test_call(ftdm_thread_t *me, void *obj)
 	ftdm_size_t len;
 	char *number = ftdm_strdup("5551212");
 
+	ftdm_unused_arg(me);
+
 	ftdm_sleep(10 * 1000);
 	
 	ftdm_log(FTDM_LOG_DEBUG, "answer call and start echo test\n");

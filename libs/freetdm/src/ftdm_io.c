@@ -385,10 +385,11 @@ static ftdm_status_t ftdm_group_add_channels(ftdm_span_t* span, int currindex, c
 
 static void null_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
-	if (file && func && line && level && fmt) {
-		return;
-	}
-	return;
+	ftdm_unused_arg(file);
+	ftdm_unused_arg(func);
+	ftdm_unused_arg(line);
+	ftdm_unused_arg(level);
+	ftdm_unused_arg(fmt);
 }
 
 
@@ -431,7 +432,7 @@ static void default_logger(const char *file, const char *func, int line, int lev
 static __inline__ void *ftdm_std_malloc(void *pool, ftdm_size_t size)
 {
 	void *ptr = malloc(size);
-	pool = NULL; /* fix warning */
+	ftdm_unused_arg(pool);
 	ftdm_assert_return(ptr != NULL, NULL, "Out of memory\n");
 	return ptr;
 }
@@ -439,7 +440,7 @@ static __inline__ void *ftdm_std_malloc(void *pool, ftdm_size_t size)
 static __inline__ void *ftdm_std_calloc(void *pool, ftdm_size_t elements, ftdm_size_t size)
 {
 	void *ptr = calloc(elements, size);
-	pool = NULL;
+	ftdm_unused_arg(pool);
 	ftdm_assert_return(ptr != NULL, NULL, "Out of memory\n");
 	return ptr;
 }
@@ -447,14 +448,14 @@ static __inline__ void *ftdm_std_calloc(void *pool, ftdm_size_t elements, ftdm_s
 static __inline__ void *ftdm_std_realloc(void *pool, void *buff, ftdm_size_t size)
 {
 	buff = realloc(buff, size);
-	pool = NULL;
+	ftdm_unused_arg(pool);
 	ftdm_assert_return(buff != NULL, NULL, "Out of memory\n");
 	return buff;
 }
 
 static __inline__ void ftdm_std_free(void *pool, void *ptr)
 {
-	pool = NULL;
+	ftdm_unused_arg(pool);
 	ftdm_assert_return(ptr != NULL, , "Attempted to free null pointer");
 	free(ptr);
 }
@@ -2736,11 +2737,9 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 	}
 
 done:
-#ifdef __WINDOWS__
-	UNREFERENCED_PARAMETER(file);
-	UNREFERENCED_PARAMETER(func);
-	UNREFERENCED_PARAMETER(line);
-#endif
+	ftdm_unused_arg(file);
+	ftdm_unused_arg(func);
+	ftdm_unused_arg(line);
 	return status;
 }
 
@@ -6228,12 +6227,9 @@ static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)
 	monitor->running = 0;
 
 done:
+	ftdm_unused_arg(me);
 	ftdm_log(FTDM_LOG_DEBUG, "CPU monitor thread is now terminating\n");
 	return NULL;
-
-#ifdef __WINDOWS__
-	UNREFERENCED_PARAMETER(me);
-#endif
 }
 
 static ftdm_status_t ftdm_cpu_monitor_start(void)

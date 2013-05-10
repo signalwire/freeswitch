@@ -104,10 +104,10 @@ static void *run_main_schedule(ftdm_thread_t *thread, void *data)
 	int32_t sleepms;
 	ftdm_status_t status;
 	ftdm_sched_t *current = NULL;
-#ifdef __WINDOWS__
-	UNREFERENCED_PARAMETER(data);
-	UNREFERENCED_PARAMETER(thread);
-#endif
+
+	ftdm_unused_arg(data);
+	ftdm_unused_arg(thread);
+
 	while (ftdm_running()) {
 		
 		sleepms = SCHED_MAX_SLEEP;
@@ -334,14 +334,9 @@ tryagain:
 	}
 
 	status = FTDM_SUCCESS;
-
 done:
-
 	ftdm_mutex_unlock(sched->mutex);
-#ifdef __WINDOWS__
-	UNREFERENCED_PARAMETER(sched);
-#endif
-
+	ftdm_unused_arg(sched);
 	return status;
 }
 
@@ -409,16 +404,13 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_timer(ftdm_sched_t *sched, const char *name
 
 	status = FTDM_SUCCESS;
 done:
-
 	ftdm_mutex_unlock(sched->mutex);
-#ifdef __WINDOWS__
-	UNREFERENCED_PARAMETER(sched);
-	UNREFERENCED_PARAMETER(name);
-	UNREFERENCED_PARAMETER(ms);
-	UNREFERENCED_PARAMETER(callback);
-	UNREFERENCED_PARAMETER(data);
-	UNREFERENCED_PARAMETER(timerid);
-#endif
+	ftdm_unused_arg(sched);
+	ftdm_unused_arg(name);
+	ftdm_unused_arg(ms);
+	ftdm_unused_arg(callback);
+	ftdm_unused_arg(data);
+	ftdm_unused_arg(timerid);
 	return status;
 }
 
@@ -473,11 +465,8 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *
 
 done:
 	ftdm_mutex_unlock(sched->mutex);
-#ifdef __WINDOWS__
-	UNREFERENCED_PARAMETER(timeto);
-	UNREFERENCED_PARAMETER(sched);
-#endif
-
+	ftdm_unused_arg(timeto);
+	ftdm_unused_arg(sched);
 	return status;
 }
 

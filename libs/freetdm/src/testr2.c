@@ -69,6 +69,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_r2_signal)
 
 static void stop_test(int sig)
 {
+	ftdm_unused_arg(sig);
 	running = 0;
 }
 

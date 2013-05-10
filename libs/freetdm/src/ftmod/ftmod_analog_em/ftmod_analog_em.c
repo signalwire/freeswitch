@@ -91,6 +91,7 @@ static ftdm_status_t ftdm_analog_em_start(ftdm_span_t *span)
 
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_em_get_channel_sig_status)
 {
+	ftdm_unused_arg(ftdmchan);
 	*status = FTDM_SIG_STATE_UP;
 	return FTDM_SUCCESS;
 }
@@ -104,6 +105,7 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_em_get_channel_sig_status)
 
 static FIO_SPAN_GET_SIG_STATUS_FUNCTION(analog_em_get_span_sig_status)
 {
+	ftdm_unused_arg(span);
 	*status = FTDM_SIG_STATE_UP;
 	return FTDM_SUCCESS;
 }
@@ -240,7 +242,8 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 	uint32_t cas_answer = 0;
 	int cas_answer_ms = 500;
 	ftdm_bool_t digits_sent = FTDM_FALSE;
-	
+
+	ftdm_unused_arg(me);
 	ftdm_log(FTDM_LOG_DEBUG, "ANALOG EM CHANNEL thread starting.\n");
 
 	ts.buffer = NULL;
@@ -644,7 +647,7 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 	sig.span_id = event->channel->span_id;
 	sig.channel = event->channel;
 
-
+	ftdm_unused_arg(span);
 	ftdm_log(FTDM_LOG_DEBUG, "EVENT [%s][%d:%d] STATE [%s]\n", 
 			ftdm_oob_event2str(event->enum_id), event->channel->span_id, event->channel->chan_id, ftdm_channel_state2str(event->channel->state));
 
@@ -701,6 +704,7 @@ static void *ftdm_analog_em_run(ftdm_thread_t *me, void *obj)
 	ftdm_span_t *span = (ftdm_span_t *) obj;
 	ftdm_analog_em_data_t *analog_data = span->signal_data;
 
+	ftdm_unused_arg(me);
 	ftdm_log(FTDM_LOG_DEBUG, "ANALOG EM thread starting.\n");
 
 	while(ftdm_running() && ftdm_test_flag(analog_data, FTDM_ANALOG_EM_RUNNING)) {

@@ -1034,7 +1034,9 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 	struct pollfd pfds[FTDM_MAX_CHANNELS_SPAN];
 	uint32_t i, j = 0, k = 0;
 	int r;
-	
+
+	ftdm_unused_arg(poll_events);
+
 	for(i = 1; i <= span->chan_count; i++) {
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i]->sockfd;
