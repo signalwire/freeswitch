@@ -838,6 +838,7 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 		
 		/* At this point we don't know if the session still exists, so request a fresh pointer to it from the core. */
 		if ( (session = switch_core_session_locate((char *)key)) != NULL ) {
+			switch_core_session_write_lock(session);
 			channel = switch_core_session_get_channel(session);
 			tech_pvt = switch_core_session_get_private(session);
 			if ( tech_pvt && tech_pvt->rtmp_session ) {
