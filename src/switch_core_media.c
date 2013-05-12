@@ -1934,6 +1934,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			got_rtcp_mux++;
 #endif
 		} else if (!strcasecmp(attr->a_name, "candidate")) {
+			switch_channel_set_flag(smh->session->channel, CF_ICE);
 
 			if (!engine->cand_acl_count) {
 				engine->cand_acl[engine->cand_acl_count++] = "wan.auto";
