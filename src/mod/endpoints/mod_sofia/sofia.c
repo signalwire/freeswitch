@@ -2437,6 +2437,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  profile,	/* Additional data to pass to callback */
 							  TAG_IF( ! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only, NUTAG_URL(profile->bindurl)),
 							  NTATAG_USER_VIA(1),
+							  TPTAG_PONG2PING(1),
 							  NUTAG_RETRY_AFTER_ENABLE(0),
 							  TAG_IF(!strchr(profile->sipip, ':'),
 									 SOATAG_AF(SOA_AF_IP4_ONLY)),
