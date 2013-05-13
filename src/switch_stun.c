@@ -207,8 +207,10 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 		case SWITCH_STUN_ATTR_DESTINATION_ADDRESS:
 		case SWITCH_STUN_ATTR_PRIORITY:
 			{
-				uint32_t *u = (uint32_t *)attr->value;
-				*u = ntohl(*u);
+				switch_stun_ip_t *ip = (switch_stun_ip_t *) attr->value;
+				ip->port = ntohs(ip->port);
+				//uint32_t *u = (uint32_t *)attr->value;
+				//*u = ntohl(*u);
 			}
 			break;
 		case SWITCH_STUN_ATTR_SOURCE_ADDRESS2:
