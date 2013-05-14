@@ -1880,6 +1880,10 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	sdp_attribute_t *attr;
 	int i = 0, got_rtcp_mux = 0;
 
+	if (engine->ice_in.chosen[0] && engine->ice_in.chosen[1]) {
+		return;
+	}
+
 	engine->ice_in.chosen[0] = 0;
 	engine->ice_in.chosen[1] = 0;
 	engine->ice_in.cand_idx = 0;
@@ -2024,13 +2028,15 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 				!engine->ice_in.cands[i][0].rport && switch_check_network_list_ip(engine->ice_in.cands[i][0].con_addr, "localnet.auto")) {
 				engine->ice_in.chosen[0] = i;
 				engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, "No RTP candidate found; defaulting to the first local one.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
+								  "No %s RTP candidate found; defaulting to the first local one.\n", type2str(type));
 			}
 			if (!engine->ice_in.chosen[1] && engine->ice_in.cands[i][1].component_id == 2 && 
 				!engine->ice_in.cands[i][1].rport && switch_check_network_list_ip(engine->ice_in.cands[i][1].con_addr, "localnet.auto")) {
 				engine->ice_in.chosen[1] = i;
 				engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready++;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session),SWITCH_LOG_NOTICE, "No RTCP candidate found; defaulting to the first local one.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session),SWITCH_LOG_NOTICE, 
+								  "No %s RTCP candidate found; defaulting to the first local one.\n", type2str(type));
 			}
 		}
 	}
@@ -2041,12 +2047,14 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			if (!engine->ice_in.chosen[0] && engine->ice_in.cands[i][0].component_id == 1 && engine->ice_in.cands[i][0].rport) {
 				engine->ice_in.chosen[0] = i;
 				engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, "No RTP candidate found; defaulting to the first srflx one.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
+								  "No %s RTP candidate found; defaulting to the first srflx one.\n", type2str(type));
 			}
 			if (!engine->ice_in.chosen[1] && engine->ice_in.cands[i][1].component_id == 2 && engine->ice_in.cands[i][1].rport) {
 				engine->ice_in.chosen[1] = i;
 				engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready++;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session),SWITCH_LOG_NOTICE, "No RTCP candidate found; defaulting to the first srflx one.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session),SWITCH_LOG_NOTICE, 
+								  "No %s RTCP candidate found; defaulting to the first srflx one.\n", type2str(type));
 			}
 		}
 	}
@@ -2057,12 +2065,14 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			if (!engine->ice_in.chosen[0] && engine->ice_in.cands[i][0].component_id == 1) {
 				engine->ice_in.chosen[0] = i;
 				engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, "No RTP candidate found; defaulting to the first one.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
+								  "No %s RTP candidate found; defaulting to the first one.\n", type2str(type));
 			}
 			if (!engine->ice_in.chosen[1] && engine->ice_in.cands[i][1].component_id == 2) {
 				engine->ice_in.chosen[1] = i;
 				engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready++;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, "No RTCP candidate found; defaulting to the first one.\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
+								  "No %s RTCP candidate found; defaulting to the first one.\n", type2str(type));
 			}
 		}
 	}
@@ -4182,12 +4192,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			}
 
 			if (!switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-								  "VIDEO RTP [%s] %s port %d -> %s port %d codec: %u ms: %d\n", switch_channel_get_name(session->channel),
-								  a_engine->codec_params.remote_sdp_ip, v_engine->codec_params.local_sdp_port, v_engine->codec_params.remote_sdp_ip,
-								  v_engine->codec_params.remote_sdp_port, v_engine->codec_params.agreed_pt, a_engine->read_impl.microseconds_per_packet / 1000);
-
 				if (switch_rtp_ready(v_engine->rtp_session)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "VIDEO RTP [%s] %s port %d -> %s port %d codec: %u ms: %d\n", switch_channel_get_name(session->channel),
+									  a_engine->codec_params.remote_sdp_ip, v_engine->codec_params.local_sdp_port, v_engine->codec_params.remote_sdp_ip,
+									  v_engine->codec_params.remote_sdp_port, v_engine->codec_params.agreed_pt, 
+									  a_engine->read_impl.microseconds_per_packet / 1000);
+
+				
 					switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->codec_params.agreed_pt);
 				}
 			}
