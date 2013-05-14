@@ -291,7 +291,13 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	 * since it now checks for the existance of the FS session safely.
 	 */
 	if ( switch_thread_rwlock_trywrlock_timeout(rsession->session_rwlock, 10) == SWITCH_STATUS_SUCCESS) {
-		switch_core_hash_delete(rsession->session_hash, switch_core_session_get_uuid(session));
+		/*
+		 * Why the heck would rsession->session_hash ever be null here?!?
+		 * We only got here because the tech_pvt->rtmp_session wasn't null....!!!!
+		 */
+		if ( rsession->session_hash ) {
+			switch_core_hash_delete(rsession->session_hash, switch_core_session_get_uuid(session));
+		}
 		switch_thread_rwlock_unlock(rsession->session_rwlock);
 	}
 	
