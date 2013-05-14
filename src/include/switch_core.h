@@ -2477,7 +2477,7 @@ SWITCH_DECLARE(void) switch_close_extra_files(int *keep, int keep_ttl);
 SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu);
 SWITCH_DECLARE(void) switch_os_yield(void);
 SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, switch_size_t *max);
-
+SWITCH_DECLARE(void) switch_core_gen_encoded_silence(unsigned char *data, const switch_codec_implementation_t *read_impl, switch_size_t len);
 
 SWITCH_DECLARE(switch_cache_db_handle_type_t) switch_core_dbtype(void);
 SWITCH_DECLARE(void) switch_core_sql_exec(const char *sql);

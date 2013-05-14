@@ -99,6 +99,34 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	return status;
 }
 
+SWITCH_DECLARE(void) switch_core_gen_encoded_silence(unsigned char *data, const switch_codec_implementation_t *read_impl, switch_size_t len)
+{
+	unsigned char g729_filler[] = {
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
+		114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
+		229, 127, 79, 96, 207, 82, 216, 110, 245, 81
+	};
+
+	
+	if (read_impl->ianacode == 18 || switch_stristr("g729", read_impl->iananame)) {
+		memcpy(data, g729_filler, len);
+	} else {
+		memset(data, 255, len);
+	}
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags,
 															   int stream_id)
 {
@@ -334,32 +362,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 						if (bp->callback) {
 							switch_frame_t tmp_frame = {0};
 							unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
-							unsigned char g729_filler[] = {
-								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
-								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
-								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
-								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
-								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
-								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
-								229, 127, 79, 96, 207, 82, 216, 110, 245, 81,
-								114, 170, 250, 103, 54, 211, 203, 194, 94, 64, 
-								229, 127, 79, 96, 207, 82, 216, 110, 245, 81
-							};
+							
 							
 							tmp_frame.codec = (*frame)->codec;
 							tmp_frame.datalen = (*frame)->codec->implementation->encoded_bytes_per_packet;
 							tmp_frame.samples = (*frame)->codec->implementation->samples_per_packet;
 							tmp_frame.data = data;
-
-							if ((*frame)->codec->implementation->ianacode == 18 || switch_stristr("g729", (*frame)->codec->implementation->iananame)) {
-								memcpy(tmp_frame.data, g729_filler, tmp_frame.datalen);
-							}
-
+							
+							switch_core_gen_encoded_silence(data, (*frame)->codec->implementation, tmp_frame.datalen);
+							
 							bp->native_read_frame = &tmp_frame;
 							ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_TAP_NATIVE_READ);
 							bp->native_read_frame = NULL;
