@@ -501,6 +501,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 	PerlInterpreter *my_perl;
 	char code[1024];
 	switch_api_interface_t *api_interface;
+	switch_chat_application_interface_t *chat_app_interface;
 
 	globals.pool = pool;
 
@@ -521,6 +522,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 	SWITCH_ADD_APP(app_interface, "perl", NULL, NULL, perl_function, NULL, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_API(api_interface, "perlrun", "run a script", perlrun_api_function, "<script>");
 	SWITCH_ADD_API(api_interface, "perl", "run a script", perl_api_function, "<script>");
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "perl", "execute a perl script", "execute a perl script", perl_chat_function, "<script>", SCAF_NONE);
+
 	/* indicate that the module should continue to be loaded */
 
 	do_config();
