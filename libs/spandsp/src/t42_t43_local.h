@@ -34,6 +34,7 @@ extern "C"
 #endif
 
 void set_illuminant_from_code(logging_state_t *logging, lab_params_t *s, const uint8_t code[4]);
+
 void set_gamut_from_code(logging_state_t *logging, lab_params_t *s, const uint8_t code[12]);
 
 #if defined(__cplusplus)

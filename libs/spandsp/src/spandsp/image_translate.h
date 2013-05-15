@@ -66,29 +66,37 @@ SPAN_DECLARE(int) image_translate_get_output_width(image_translate_state_t *s);
     \return The length of the output image, in pixel. */
 SPAN_DECLARE(int) image_translate_get_output_length(image_translate_state_t *s);
 
+/*! \brief Set the row read callback routine for an image translation context.
+    \param s The image translation context.
+    \param row_read_handler A callback routine used to pull rows of pixels from the source image
+           into the translation process.
+    \param row_read_user_data An opaque pointer passed to read_row_handler
+    \return 0 for success, else -1. */
+SPAN_DECLARE(int) image_translate_set_row_read_handler(image_translate_state_t *s, t4_row_read_handler_t row_read_handler, void *row_read_user_data);
+
 /*! \brief Initialise an image translation context for rescaling and squashing a gray scale
            or colour image to a bi-level FAX type image.
     \param s The image translation context.
-    \param input_format x
-    \param input_width The width of the source image, in pixels.
-    \param input_length The length of the source image, in pixels.
-    \param output_format x
+    \param output_format The type of output image
     \param output_width The width of the output image, in pixels. If this is set <= 0 the image
            will not be resized.
     \param output_length The length of the output image, in pixels. If this is set to <= 0 the
            output length will be derived automatically from the width, to maintain the geometry
            of the original image.
+    \param input_format The type of source image
+    \param input_width The width of the source image, in pixels.
+    \param input_length The length of the source image, in pixels.
     \param row_read_handler A callback routine used to pull rows of pixels from the source image
            into the translation process.
-    \param row_read_user_data An opaque point passed to read_row_handler
+    \param row_read_user_data An opaque pointer passed to read_row_handler
     \return A pointer to the context, or NULL if there was a problem. */
 SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_state_t *s,
-                                                             int input_format,
-                                                             int input_width,
-                                                             int input_length,
                                                              int output_format,
                                                              int output_width,
                                                              int output_length,
+                                                             int input_format,
+                                                             int input_width,
+                                                             int input_length,
                                                              t4_row_read_handler_t row_read_handler,
                                                              void *row_read_user_data);
 

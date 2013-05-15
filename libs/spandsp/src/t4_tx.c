@@ -834,7 +834,7 @@ static int read_tiff_image(t4_tx_state_t *s)
     {
         /* We need to dither this image down to pure black and white, possibly resizing it
            along the way. */
-        if ((translator = image_translate_init(NULL, s->tiff.image_type, s->image_width, s->image_length, T4_IMAGE_TYPE_BILEVEL, 1728, -1, row_read, s)) == NULL)
+        if ((translator = image_translate_init(NULL, T4_IMAGE_TYPE_BILEVEL, 1728, -1, s->tiff.image_type, s->image_width, s->image_length, row_read, s)) == NULL)
             return -1;
         s->image_width = image_translate_get_output_width(translator);
         s->image_length = image_translate_get_output_length(translator);

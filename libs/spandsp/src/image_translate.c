@@ -48,6 +48,7 @@
 #include <math.h>
 #endif
 #include "floating_fudge.h"
+#include <jpeglib.h>
 #include <tiffio.h>
 #include <assert.h>
 
@@ -648,13 +649,21 @@ SPAN_DECLARE(int) image_translate_get_output_length(image_translate_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) image_translate_set_row_read_handler(image_translate_state_t *s, t4_row_read_handler_t row_read_handler, void *row_read_user_data)
+{
+    s->row_read_handler = row_read_handler;
+    s->row_read_user_data = row_read_user_data;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_state_t *s,
-                                                             int input_format,
-                                                             int input_width,
-                                                             int input_length,
                                                              int output_format,
                                                              int output_width,
                                                              int output_length,
+                                                             int input_format,
+                                                             int input_width,
+                                                             int input_length,
                                                              t4_row_read_handler_t row_read_handler,
                                                              void *row_read_user_data)
 {
