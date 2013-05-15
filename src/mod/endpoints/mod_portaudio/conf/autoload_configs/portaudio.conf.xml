@@ -33,7 +33,7 @@
     <param name="codec-ms" value="20"/>
 
     <!--uncomment the following line to make mod_portaudio fail to load if it fails to find a device-->
-    <param name="unload-on-device-fail" value="true"/>
+    <!-- <param name="unload-on-device-fail" value="true"/> -->
   </settings>
 
   <!-- 

@@ -2453,10 +2453,6 @@ audio_stream_t *get_audio_stream(int indev, int outdev)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid output audio device\n");
 		return NULL;
 	}
-	if (indev == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid input audio device\n");
-		return NULL;
-	}
 	if (create_codecs(0) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
