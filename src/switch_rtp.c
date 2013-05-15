@@ -4533,7 +4533,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 SWITCH_DECLARE(switch_status_t) switch_rtp_disable_vad(switch_rtp_t *rtp_session)
 {
 
-	if (!switch_rtp_ready(rtp_session)) {
+	if (!rtp_session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
