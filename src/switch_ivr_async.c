@@ -1330,6 +1330,8 @@ static void* switch_ivr_record_user_data_dup(switch_core_session_t *session, voi
 	dup = switch_core_session_alloc(session, sizeof(*dup));
 	memcpy(dup, rh, sizeof(*rh));
 	dup->file = switch_core_session_strdup(session, rh->file);
+	dup->fh = switch_core_session_alloc(session, sizeof(switch_file_handle_t));
+	memcpy(dup->fh, rh->fh, sizeof(switch_file_handle_t));
 
 	return dup;
 }
