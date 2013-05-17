@@ -775,7 +775,6 @@ static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *s
 			engine->ssec.crypto_tag = 1;
 		}
 
-		switch_channel_set_flag(session->channel, CF_CRYPTO_RECOVER);
 		switch_channel_set_flag(session->channel, CF_SECURE);
 	}
 }
@@ -835,10 +834,6 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
 			/* Change our key every time we can */
 							
-			if (switch_channel_test_flag(session->channel, CF_CRYPTO_RECOVER)) {
-				switch_channel_clear_flag(session->channel, CF_CRYPTO_RECOVER);
-			}
-			
 			if (sdp_type == SDP_TYPE_REQUEST) {
 				if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
 					switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_32);
