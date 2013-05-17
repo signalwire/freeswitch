@@ -1873,17 +1873,6 @@ int sofia_recover_callback(switch_core_session_t *session)
 	switch_channel_set_name(tech_pvt->channel, switch_channel_get_variable(channel, "channel_name"));
 
 	
-	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO, "srtp_remote_audio_crypto_key");
-	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_VIDEO, "srtp_remote_video_crypto_key");
-
-	if ((tmp = switch_channel_get_variable(channel, "rtp_local_sdp_str"))) {
-		tech_pvt->mparams.local_sdp_str = switch_core_session_strdup(session, tmp);
-	}
-
-	if ((tmp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
-		tech_pvt->mparams.remote_sdp_str = switch_core_session_strdup(session, tmp);
-	}
-
 	switch_channel_set_variable(channel, "sip_invite_call_id", switch_channel_get_variable(channel, "sip_call_id"));
 
 	if (switch_true(switch_channel_get_variable(channel, "sip_nat_detected"))) {

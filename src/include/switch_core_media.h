@@ -40,6 +40,11 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_MAX_CAND_ACL 25
 
 typedef enum {
+	SDP_TYPE_REQUEST,
+	SDP_TYPE_RESPONSE
+} switch_sdp_type_t;
+
+typedef enum {
 	ICE_GOOGLE_JINGLE = (1 << 0),
 	ICE_VANILLA = (1 << 1),
 	ICE_CONTROLLED = (1 << 2)
@@ -180,10 +185,8 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 SWITCH_DECLARE(const char *) switch_core_session_local_crypto_key(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_session_t *session, 
 															  const char *varname,
-															  switch_media_type_t type, const char *crypto, int crypto_tag);
+															  switch_media_type_t type, const char *crypto, int crypto_tag, switch_sdp_type_t sdp_type);
 
-SWITCH_DECLARE(void) switch_core_session_apply_crypto(switch_core_session_t *session, switch_media_type_t type, const char *varname);
-SWITCH_DECLARE(void) switch_core_session_get_recovery_crypto_key(switch_core_session_t *session, switch_media_type_t type, const char *varname);
 
 SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *session, switch_media_type_t type, switch_rtp_t *rtp_session);
 
@@ -195,7 +198,7 @@ SWITCH_DECLARE(const char *) switch_core_media_get_zrtp_hash(switch_core_session
 SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session);
 SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session, int sendonly);
 SWITCH_DECLARE(void) switch_core_media_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session);
-SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed);
+SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, switch_sdp_type_t sdp_type);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_session_t *session, int force);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_t *session, int force, uint32_t codec_flags);
 SWITCH_DECLARE(void) switch_core_media_check_video_codecs(switch_core_session_t *session);

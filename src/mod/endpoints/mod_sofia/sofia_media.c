@@ -34,12 +34,12 @@
 
 
 
-uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp)
+uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t type)
 {
 	uint8_t t, p = 0;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 
-	if ((t = switch_core_media_negotiate_sdp(session, r_sdp, &p))) {
+	if ((t = switch_core_media_negotiate_sdp(session, r_sdp, &p, type))) {
 		sofia_set_flag_locked(tech_pvt, TFLAG_SDP);
 	}
 
@@ -80,7 +80,7 @@ switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((match = sofia_media_negotiate_sdp(tech_pvt->session, r_sdp))) {
+	if ((match = sofia_media_negotiate_sdp(tech_pvt->session, r_sdp, SDP_TYPE_REQUEST))) {
 		if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}

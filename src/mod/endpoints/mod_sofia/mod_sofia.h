@@ -840,7 +840,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session);
 
-uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp);
+uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t type);
 
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[]);

@@ -3968,13 +3968,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				}
 
 				if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
-					if (++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] >= MAX_SRTP_ERRS) {
+					if (++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] >= MAX_SRTP_ERRS && stat != 10) {
 						
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
 										  "Error: SRTP %s unprotect failed with code %d%s %ld\n", rtp_type(rtp_session), stat,
 										  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
 										  err_status_auth_fail ? " (auth check failed)" : "", (long)*bytes);
-						return SWITCH_STATUS_FALSE;
+						return SWITCH_STATUS_GENERR;
 					} else {
 						sbytes = 0;
 					}
@@ -4264,6 +4264,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
 					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_FALSE);
+					if (status == SWITCH_STATUS_GENERR) {
+						ret = -1;
+						goto end;
+					}
 					if ((*flags & SFF_RTCP)) {
 						*flags &= ~SFF_RTCP;
 						has_rtcp = 1;
@@ -4365,6 +4369,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				read_pretriggered = 0;
 			} else {
 				status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_TRUE);
+				if (status == SWITCH_STATUS_GENERR) {
+					ret = -1;
+					goto end;
+				}
 				if ((*flags & SFF_RTCP)) {
 					*flags &= ~SFF_RTCP;
 					has_rtcp = 1;
