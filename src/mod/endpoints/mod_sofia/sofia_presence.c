@@ -28,7 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Raymond Chandler <intralanman@freeswitch.org>
- *
+ * William King <william.king@quentustech.com>
  *
  * sofia_presence.c -- SOFIA SIP Endpoint (presence code)
  *
