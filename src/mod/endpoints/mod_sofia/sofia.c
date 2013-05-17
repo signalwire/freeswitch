@@ -33,7 +33,7 @@
  * Nathan Patrick <npatrick at corp.sonic.net>
  * Joseph Sullivan <jossulli@amazon.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
- *
+ * William King <william.king@quentustech.com>
  *
  * sofia.c -- SOFIA SIP Endpoint (sofia code)
  *

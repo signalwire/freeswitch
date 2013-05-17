@@ -32,7 +32,7 @@
  * Eliot Gable <egable AT.AT broadvox.com>
  * Leon de Rooij <leon@scarlet-internet.nl>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
- *
+ * William King <william.king@quentustech.com>
  *
  * sofia_reg.c -- SOFIA SIP Endpoint (registration code)
  *
@@ -2462,6 +2462,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_from_port", sip->sip_from->a_url->url_port);
 		}
 	}
+
+	if (sip->sip_call_id && sip->sip_call_id->i_id) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_call_id", sip->sip_call_id->i_id);
+	}
+
 
 	if (sip->sip_request) {
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_request_user", sip->sip_request->rq_url->url_user);
