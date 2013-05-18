@@ -185,8 +185,6 @@ SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param,
 				r = malloc(mlen);
 			}
 
-			*(r + mlen) = '\0';
-
 			switch_snprintf(r, mlen, "%s", ptr);
 
 			break;
