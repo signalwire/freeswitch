@@ -124,6 +124,8 @@ static int read_cpu_stats(switch_profile_timer_t *p,
 		myerrno = errno;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to read CPU statistics file %s: %s\n", procfile, strerror(myerrno));
 		return -1;
+	} else {
+	  statbuff[rc] = '\0';
 	}
 
 	cpustr = strstr(statbuff, "cpu ");
