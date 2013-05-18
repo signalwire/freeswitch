@@ -1071,7 +1071,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 	char *presence_source = switch_event_get_header(event, "presence-source");
 	char *call_info_state = switch_event_get_header(event, "presence-call-info-state");
 	const char *uuid = switch_event_get_header(event, "unique-id");
-	switch_console_callback_match_t *matches;
+	switch_console_callback_match_t *matches = NULL;
 	struct presence_helper helper = { 0 };			
 	int hup = 0;
 	switch_event_t *s_event = NULL;
@@ -1118,6 +1118,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 
 		
 						if (!mod_sofia_globals.profile_hash) {
+							switch_console_free_matches(&matches);
 							goto done;
 						}
 						
