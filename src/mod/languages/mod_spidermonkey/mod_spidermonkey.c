@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
- *
+ * William King <william.king@quentustech.com>
  *
  * mod_spidermonkey.c -- Javascript Module
  *
@@ -247,6 +247,7 @@ static JSBool request_dump_env(JSContext * cx, JSObject * obj, uintN argc, jsval
 		if ((xml = switch_event_xmlize(ro->stream->param_event, SWITCH_VA_NONE))) {
 			xmlstr = switch_xml_toxml(xml, SWITCH_FALSE);
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, xmlstr));
+			free(xmlstr);
 			return JS_TRUE;
 		}
 	} else {
