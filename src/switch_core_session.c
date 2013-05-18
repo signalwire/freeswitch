@@ -716,6 +716,7 @@ static const char *message_names[] = {
 	"JITTER_BUFFER",
 	"RECOVERY_REFRESH",
 	"SIGNAL_DATA",
+	"MESSAGE",
 	"INFO",
 	"AUDIO_DATA",
 	"BLIND_TRANSFER_RESPONSE",
