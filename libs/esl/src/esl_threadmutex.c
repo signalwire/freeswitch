@@ -148,8 +148,10 @@ ESL_DECLARE(esl_status_t) esl_mutex_create(esl_mutex_t **mutex)
 #ifdef WIN32
 	InitializeCriticalSection(&check->mutex);
 #else
-	if (pthread_mutexattr_init(&attr))
+	if (pthread_mutexattr_init(&attr)) {
+		free(check);
 		goto done;
+	}
 
 	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
 		goto fail;
