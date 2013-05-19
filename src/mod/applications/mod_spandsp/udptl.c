@@ -75,7 +75,7 @@ static int decode_open_type(const uint8_t *buf, int limit, int *len, const uint8
 				return -1;
 
 			/* Was told the buffer was large enough, but in reality it didn't exist. FS-5202 */
-			if ( buf[*len] == NULL )
+			if ( buf[*len] == 0 )
 			  return -1;
 
 			*pbuf = &buf[*len];
