@@ -1535,6 +1535,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), 
 						 TAG_IF(pl, SIPTAG_PAYLOAD_STR(pl)),
 						 TAG_END());
+
+				switch_safe_free(headers);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s send_info is not supported.\n", switch_channel_get_name(channel));
 			}
@@ -1864,6 +1866,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				msg->string_reply = "no reply";
 			}
 			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BLIND_TRANSFER);
+			switch_safe_free(extra_headers);
 		}
 		break;
 
