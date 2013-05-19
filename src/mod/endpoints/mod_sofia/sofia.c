@@ -5462,7 +5462,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				if (profile->pres_type) {
 					const char *presence_data = switch_channel_get_variable(channel, "presence_data");
 					const char *presence_id = switch_channel_get_variable(channel, "presence_id");
-					char *full_contact = "";
+					char *full_contact = NULL;
 					char *p = NULL;
 					time_t now;
 					
