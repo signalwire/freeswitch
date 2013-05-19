@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * William King <william.king@quentustech.com>
  *
  * mod_valet_parking.c -- Valet Parking Module
  *
@@ -885,6 +886,7 @@ static void pres_event_handler(switch_event_t *event)
 
 				switch_mutex_unlock(lot->mutex);
 			}
+			switch_console_free_matches(&matches);
 		}
 	}
 
