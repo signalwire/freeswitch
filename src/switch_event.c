@@ -1766,8 +1766,10 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 		ret = vasprintf(&data, fmt, ap);
 #else
 		data = (char *) malloc(2048);
-		if (!data)
+		if (!data) {
+			va_end(ap);
 			return NULL;
+		}
 		ret = vsnprintf(data, 2048, fmt, ap);
 #endif
 		va_end(ap);
