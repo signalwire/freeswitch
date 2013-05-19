@@ -130,6 +130,7 @@ say/mod_say_en
 xml_int/mod_xml_cdr
 #xml_int/mod_xml_curl
 #xml_int/mod_xml_ldap
+#xml_int/mod_xml_radius
 xml_int/mod_xml_rpc
 xml_int/mod_xml_scgi
 
