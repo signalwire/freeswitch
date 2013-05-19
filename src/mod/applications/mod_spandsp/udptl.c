@@ -74,6 +74,10 @@ static int decode_open_type(const uint8_t *buf, int limit, int *len, const uint8
 			if ((*len + octet_cnt) > limit)
 				return -1;
 
+			/* Was told the buffer was large enough, but in reality it didn't exist. FS-5202 */
+			if ( buf[*len] == NULL )
+			  return -1;
+
 			*pbuf = &buf[*len];
 			*len += octet_cnt;
 		}
@@ -159,7 +163,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 	const uint8_t *data;
 	int msg_len;
 	int repaired[16];
-	const uint8_t *bufs[16];
+	const uint8_t *bufs[16] = {0};
 	int lengths[16];
 	int span;
 	int entries;
