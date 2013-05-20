@@ -8743,6 +8743,7 @@ static void call_setup_event_handler(switch_event_t *event)
 	char *dial_uri = switch_event_get_header(event, "Request-Target-URI");
 	char *action = switch_event_get_header(event, "Request-Action");
 	char *ext = switch_event_get_header(event, "Request-Target-Extension");
+	char *ext_domain = switch_event_get_header(event, "Request-Target-Domain");
 	char *full_url = switch_event_get_header(event, "full_url");
 	char *call_id = switch_event_get_header(event, "Request-Call-ID");
 
@@ -8753,7 +8754,7 @@ static void call_setup_event_handler(switch_event_t *event)
 		switch_event_header_t *hp;
 
 		if (switch_test_flag(conference, CFLAG_RFC4579)) {
-			char *key = switch_mprintf("conf_%s_%s_%s", conference->name, conference->domain, ext);
+			char *key = switch_mprintf("conf_%s_%s_%s_%s", conference->name, conference->domain, ext, ext_domain);
 			char *expanded = NULL, *ostr = dial_str;;
 			
 			if (!strcasecmp(action, "call")) {
