@@ -1877,8 +1877,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		hangup_on_error = switch_true(p);
 	}
 
-	switch_core_session_get_read_impl(session, &read_impl);
-
 	if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1888,6 +1886,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_core_session_get_read_impl(session, &read_impl);
 	channels = read_impl.number_of_channels;
 
 	if ((bug = switch_channel_get_private(channel, file))) {
