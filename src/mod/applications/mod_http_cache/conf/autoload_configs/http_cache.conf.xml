@@ -9,4 +9,19 @@
     <param name="ssl-verifyhost" value="true"/>
     <param name="ssl-verifypeer" value="true"/>
   </settings>
+
+  <profiles>
+    <profile name="s3">
+       <!-- Credentials for AWS account.  Reference by name when sending HTTP request -->
+       <!-- http_get {profile=s3}http://bucket.s3.amazonaws.com/object.wav -->
+       <!-- http_put {profile=s3}http://bucket.s3.amazonaws.com/object.wav /tmp/file.wav -->
+       <aws-s3>
+          <!-- 20 character key identifier -->
+          <access-key-id><![CDATA[AKIAIOSFODNN7EXAMPLE]]></access-key-id>
+          <!-- 40 character secret -->
+          <secret-access-key><![CDATA[wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY]]></secret-access-key>
+       <aws-s3>
+    </profile>
+  </profiles>
+
 </configuration>
