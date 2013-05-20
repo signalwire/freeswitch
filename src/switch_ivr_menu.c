@@ -467,9 +467,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		char digit_buffer[128] = "";
 		char *digits_regex = switch_core_session_sprintf(session, "^%s$", menu->pin);
 
-		switch_play_and_get_digits(session, strlen(menu->pin), strlen(menu->pin), 3, 3000, "#",
-								   menu->prompt_pin_file, menu->bad_pin_file, NULL, digit_buffer, sizeof(digit_buffer), 
-								   digits_regex, 10000, NULL);		
+		if (switch_play_and_get_digits(session, strlen(menu->pin), strlen(menu->pin), 3, 3000, "#",
+									   menu->prompt_pin_file, menu->bad_pin_file, NULL, digit_buffer, sizeof(digit_buffer), 
+									   digits_regex, 10000, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
+		}
 	}
 
 
@@ -875,7 +877,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 				prompt_pin_file = "ivr/ivr-please_enter_pin_followed_by_pound.wav";
 			}
 			if (zstr(bad_pin_file)) {
-				prompt_pin_file = "ivr/ivr-pin_or_extension_is-invalid.wav";
+				bad_pin_file = "ivr/ivr-pin_or_extension_is-invalid.wav";
 			}
 			menu->pin = switch_core_strdup(menu->pool, pin);
 			menu->prompt_pin_file = switch_core_strdup(menu->pool, prompt_pin_file);
