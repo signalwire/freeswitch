@@ -23,11 +23,7 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <inttypes.h>
-#include <memory.h>
+#include "mod_spandsp.h"
 
 #include "udptl.h"
 
@@ -59,11 +55,13 @@ static int decode_length(const uint8_t *buf, int limit, int *len, int *pvalue)
 static int decode_open_type(const uint8_t *buf, int limit, int *len, const uint8_t ** p_object, int *p_num_octets)
 {
 	int octet_cnt;
+#if 0
 	int octet_idx;
 	int stat;
 	const uint8_t **pbuf;
 
-	for (octet_idx = 0, *p_num_octets = 0;; octet_idx += octet_cnt) {
+	*p_num_octets = 0;
+	for (octet_idx = 0;; octet_idx += octet_cnt) {
 		if ((stat = decode_length(buf, limit, len, &octet_cnt)) < 0)
 			return -1;
 		if (octet_cnt > 0) {
@@ -84,6 +82,20 @@ static int decode_open_type(const uint8_t *buf, int limit, int *len, const uint8
 		if (stat == 0)
 			break;
 	}
+#else
+	/* We do not deal with fragments, so there is no point in looping through them. Just say that something
+       fragmented is bad. */
+	if (decode_length(buf, limit, len, &octet_cnt) != 0)
+		return -1;
+	*p_num_octets = octet_cnt;
+	if (octet_cnt > 0) {
+		/* Make sure the buffer contains at least the number of bits requested */
+		if ((*len + octet_cnt) > limit)
+			return -1;
+		*p_object = &buf[*len];
+		*len += octet_cnt;
+	}
+#endif
 	return 0;
 }
 
@@ -146,7 +158,6 @@ static int encode_open_type(uint8_t *buf, int *len, const uint8_t *data, int num
 int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 {
 	int stat;
-	int stat2;
 	int i;
 	int j;
 	int k;
@@ -206,15 +217,15 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 		   This greatly reduces our chances of accepting garbage. */
 		total_count = 0;
 		do {
-			if ((stat2 = decode_length(buf, len, &ptr, &count)) < 0)
+			if ((stat = decode_length(buf, len, &ptr, &count)) < 0)
 				return -1;
 			for (i = 0; i < count; i++) {
-				if ((stat = decode_open_type(buf, len, &ptr, &bufs[total_count + i], &lengths[total_count + i])) != 0)
+				if (decode_open_type(buf, len, &ptr, &bufs[total_count + i], &lengths[total_count + i]) != 0)
 					return -1;
 			}
 			total_count += count;
 		}
-		while (stat2 > 0);
+		while (stat > 0);
 		/* We should now be exactly at the end of the packet. If not, this is a fault. */
 		if (ptr != len)
 			return -1;
@@ -227,21 +238,19 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 					/* This one wasn't seen before */
 					/* Decode the secondary packet */
 #if defined(UDPTL_DEBUG)
-					fprintf(stderr, "Secondary %d, len %d\n", seq_no - i, lengths[i - 1]);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Secondary %d, len %d\n", seq_no - i, lengths[i - 1]);
 #endif
 					/* Save the new packet. Redundancy mode won't use this, but some systems will switch into
 					   FEC mode after sending some redundant packets, and this may then be important. */
 					x = (seq_no - i) & UDPTL_BUF_MASK;
-					if (!bufs[i - 1]) {
-						return -1;
-					}
-					memcpy(s->rx[x].buf, bufs[i - 1], lengths[i - 1]);
+					if (lengths[i - 1] > 0)
+						memcpy(s->rx[x].buf, bufs[i - 1], lengths[i - 1]);						
 					s->rx[x].buf_len = lengths[i - 1];
 					s->rx[x].fec_len[0] = 0;
 					s->rx[x].fec_span = 0;
 					s->rx[x].fec_entries = 0;
 					if (s->rx_packet_handler(s->user_data, bufs[i - 1], lengths[i - 1], seq_no - i) < 0)
-						fprintf(stderr, "Bad IFP\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad IFP\n");
 				}
 			}
 		}
@@ -281,10 +290,10 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 			/* Save the new FEC data */
 			memcpy(s->rx[x].fec[i], data, s->rx[x].fec_len[i]);
 #if 0
-			fprintf(stderr, "FEC: ");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FEC: ");
 			for (j = 0; j < s->rx[x].fec_len[i]; j++)
-				fprintf(stderr, "%02X ", data[j]);
-			fprintf(stderr, "\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%02X ", data[j]);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\n");
 #endif
 		}
 		/* We should now be exactly at the end of the packet. If not, this is a fault. */
@@ -319,10 +328,10 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 		for (l = (x + 1) & UDPTL_BUF_MASK, j = seq_no - UDPTL_BUF_MASK; l != x; l = (l + 1) & UDPTL_BUF_MASK, j++) {
 			if (repaired[l]) {
 #if defined(UDPTL_DEBUG)
-				fprintf(stderr, "Fixed packet %d, len %d\n", j, l);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fixed packet %d, len %d\n", j, l);
 #endif
 				if (s->rx_packet_handler(s->user_data, s->rx[l].buf, s->rx[l].buf_len, j) < 0)
-					fprintf(stderr, "Bad IFP\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad IFP\n");
 			}
 		}
 	}
@@ -331,10 +340,10 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 	if (seq_no >= s->rx_seq_no) {
 		/* Decode the primary packet */
 #if defined(UDPTL_DEBUG)
-		fprintf(stderr, "Primary packet %d, len %d\n", seq_no, msg_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Primary packet %d, len %d\n", seq_no, msg_len);
 #endif
 		if (s->rx_packet_handler(s->user_data, msg, msg_len, seq_no) < 0)
-			fprintf(stderr, "Bad IFP\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad IFP\n");
 	}
 
 	s->rx_seq_no = (seq_no + 1) & 0xFFFF;
@@ -473,8 +482,6 @@ int udptl_build_packet(udptl_state_t *s, uint8_t buf[], const uint8_t msg[], int
 		break;
 	}
 
-	if (s->verbose)
-		fprintf(stderr, "\n");
 	s->tx_seq_no++;
 	return len;
 }
