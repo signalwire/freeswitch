@@ -97,7 +97,7 @@ struct cached_url {
 };
 typedef struct cached_url cached_url_t;
 
-static cached_url_t *cached_url_create(url_cache_t *cache, const char *url);
+static cached_url_t *cached_url_create(url_cache_t *cache, const char *url, const char *filename);
 static void cached_url_destroy(cached_url_t *url, switch_memory_pool_t *pool);
 
 /**
@@ -116,7 +116,7 @@ static size_t get_file_callback(void *ptr, size_t size, size_t nmemb, void *get)
 static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *url);
 static void process_cache_control_header(cached_url_t *url, char *data);
 
-static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, const char *filename);
+static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, const char *filename, int cache_local_file);
 
 /**
  * Queue used for clock cache replacement algorithm.  This
@@ -206,9 +206,10 @@ static switch_curl_slist_t *append_aws_s3_headers(switch_curl_slist_t *headers, 
  * @param session the (optional) session uploading the file
  * @param url The URL
  * @param filename The file to upload
+ * @param cache_local_file true if local file should be mapped to url in cache
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, const char *filename)
+static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, const char *filename, int cache_local_file)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
@@ -290,6 +291,20 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 
 	if (httpRes == 200 || httpRes == 201 || httpRes == 204) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, url);
+		if (cache_local_file) {
+			cached_url_t *u = NULL;
+			/* save to cache */
+			url_cache_lock(cache, session);
+			u = cached_url_create(cache, url, filename);
+			u->size = file_info.st_size;
+			u->status = CACHED_URL_AVAILABLE;
+			if (url_cache_add(cache, session, u) != SWITCH_STATUS_SUCCESS) {
+				/* This error should never happen */
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failed to add URL to cache!\n");
+				cached_url_destroy(u, cache->pool);
+			}
+			url_cache_unlock(cache, session);
+		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received HTTP error %ld trying to save %s to %s\n", httpRes, filename, url);
 		status = SWITCH_STATUS_GENERR;
@@ -547,7 +562,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 		/* Set up URL entry and add to map to prevent simultaneous downloads */
 		cache->misses++;
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Cache MISS: size = %zu (%zu MB), hit ratio = %d/%d\n", cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses);
-		u = cached_url_create(cache, url);
+		u = cached_url_create(cache, url, NULL);
 		if (url_cache_add(cache, session, u) != SWITCH_STATUS_SUCCESS) {
 			/* This error should never happen */
 			url_cache_unlock(cache, session);
@@ -734,37 +749,12 @@ static void url_cache_http_profile_add(url_cache_t *cache, const char *name, con
 }
 
 /**
- * Create a cached URL entry
- * @param cache the cache
- * @param url the URL to cache
- * @return the cached URL
+ * Find file extension at end of URL.
+ * @return file extension or NULL if it doesn't exist
  */
-static cached_url_t *cached_url_create(url_cache_t *cache, const char *url)
+static const char *find_extension(const char *url)
 {
-	switch_uuid_t uuid;
-	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
-	char *filename = NULL;
-	char uuid_dir[3] = { 0 };
-	char *dirname = NULL;
-	cached_url_t *u = NULL;
-	const char *file_extension = "";
-	const char *ext = NULL;
-
-	if (zstr(url)) {
-		return NULL;
-	}
-
-	switch_zmalloc(u, sizeof(cached_url_t));
-
-	/* filename is constructed from UUID and is stored in cache dir (first 2 characters of UUID) */
-	switch_uuid_get(&uuid);
-	switch_uuid_format(uuid_str, &uuid);
-	strncpy(uuid_dir, uuid_str, 2);
-	dirname = switch_mprintf("%s%s%s", cache->location, SWITCH_PATH_SEPARATOR, uuid_dir);
-	filename = &uuid_str[2];
-
-	/* create sub-directory if it doesn't exist */
-	switch_dir_make_recursive(dirname, SWITCH_DEFAULT_DIR_PERMS, cache->pool);
+	const char *ext;
 
 	/* find extension on the end of URL */
 	for (ext = &url[strlen(url) - 1]; ext != url; ext--) {
@@ -773,13 +763,67 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url)
 		}
 		if (*ext == '.') {
 			/* found it */
-			file_extension = ext;
-			break;
+			return ++ext;
 		}
 	}
+	return NULL;
+}
+
+/**
+ * Create a cached URL filename.
+ * @param cache the cache
+ * @param extension the filename extension
+ * @return the cached URL filename.  Free when done.
+ */
+static char *cached_url_filename_create(url_cache_t *cache, const char *extension)
+{
+	char *filename;
+	char *dirname;
+	char uuid_dir[3] = { 0 };
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
+
+	/* filename is constructed from UUID and is stored in cache dir (first 2 characters of UUID) */
+	switch_uuid_get(&uuid);
+	switch_uuid_format(uuid_str, &uuid);
+	strncpy(uuid_dir, uuid_str, 2);
+	dirname = switch_mprintf("%s%s%s", cache->location, SWITCH_PATH_SEPARATOR, uuid_dir);
+
+	/* create sub-directory if it doesn't exist */
+	switch_dir_make_recursive(dirname, SWITCH_DEFAULT_DIR_PERMS, cache->pool);
+
+	if (!zstr(extension)) {
+		filename = switch_mprintf("%s%s%s.%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2], extension);
+	} else {
+		filename = switch_mprintf("%s%s%s", dirname, SWITCH_PATH_SEPARATOR, &uuid_str[2]);
+	}
+	free(dirname);
+	return filename;
+}
+
+/**
+ * Create a cached URL entry
+ * @param cache the cache
+ * @param url the URL to cache
+ * @param filename (optional) pre-defined local filename
+ * @return the cached URL
+ */
+static cached_url_t *cached_url_create(url_cache_t *cache, const char *url, const char *filename)
+{
+	cached_url_t *u = NULL;
+
+	if (zstr(url)) {
+		return NULL;
+	}
+
+	switch_zmalloc(u, sizeof(cached_url_t));
 
 	/* intialize cached URL */
-	u->filename = switch_mprintf("%s%s%s%s", dirname, SWITCH_PATH_SEPARATOR, filename, file_extension);
+	if (zstr(filename)) {
+		u->filename = cached_url_filename_create(cache, find_extension(url));
+	} else {
+		u->filename = strdup(filename);
+	}
 	u->url = switch_safe_strdup(url);
 	u->size = 0;
 	u->used = 1;
@@ -787,8 +831,6 @@ static cached_url_t *cached_url_create(url_cache_t *cache, const char *url)
 	u->waiters = 0;
 	u->download_time = switch_time_now();
 	u->max_age = cache->default_max_age;
-
-	switch_safe_free(dirname);
 
 	return u;
 }
@@ -1136,7 +1178,7 @@ SWITCH_STANDARD_API(http_cache_put)
 		profile = url_cache_http_profile_find(&gcache, switch_event_get_header(params, "profile"));
 	}
 
-	status = http_put(&gcache, profile, session, url, argv[1]);
+	status = http_put(&gcache, profile, session, url, argv[1], 0);
 	if (status == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK\n");
 	} else {
@@ -1353,6 +1395,9 @@ done:
  */
 struct http_context {
 	switch_file_handle_t fh;
+	http_profile_t *profile;
+	char *local_path;
+	const char *write_url;
 };
 
 /**
@@ -1364,30 +1409,38 @@ struct http_context {
 static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const char *path)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	http_profile_t *profile = NULL;
 	struct http_context *context = switch_core_alloc(handle->memory_pool, sizeof(*context));
-	const char *local_path;
-
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		/* WRITE not supported */
-		return SWITCH_STATUS_FALSE;
-	}
+	int file_flags = SWITCH_FILE_DATA_SHORT;
 
 	if (handle->params) {
-		profile = url_cache_http_profile_find(&gcache, switch_event_get_header(handle->params, "profile"));
+		context->profile = url_cache_http_profile_find(&gcache, switch_event_get_header(handle->params, "profile"));
 	}
-	local_path = url_cache_get(&gcache, profile, NULL, path, 1, handle->memory_pool);
-	if (!local_path) {
-		return SWITCH_STATUS_FALSE;
+
+	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+		/* WRITE = HTTP PUT */
+		file_flags |= SWITCH_FILE_FLAG_WRITE;
+		context->write_url = switch_core_strdup(handle->memory_pool, path);
+		/* allocate local file in cache */
+		context->local_path = cached_url_filename_create(&gcache, find_extension(context->write_url));
+	} else {
+		/* READ = HTTP GET */
+		file_flags |= SWITCH_FILE_FLAG_READ;
+		context->local_path = url_cache_get(&gcache, context->profile, NULL, path, 1, handle->memory_pool);
+		if (!context->local_path) {
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	if ((status = switch_core_file_open(&context->fh,
-			local_path,
+			context->local_path,
 			handle->channels,
 			handle->samplerate,
-			SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open HTTP cache file: %s, %s\n", local_path, path);
-		return status;
+			file_flags, NULL)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open HTTP cache file: %s, %s\n", context->local_path, path);
+			if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
+				switch_safe_free(context->local_path);
+			}
+			return status;
 	}
 
 	handle->private_info = context;
@@ -1445,6 +1498,19 @@ static switch_status_t http_file_read(switch_file_handle_t *handle, void *data, 
 }
 
 /**
+ * Write to HTTP file
+ * @param handle
+ * @param data
+ * @param len
+ * @return
+ */
+static switch_status_t http_file_write(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	struct http_context *context = (struct http_context *)handle->private_info;
+	return switch_core_file_write(&context->fh, data, len);
+}
+
+/**
  * Close HTTP file
  * @param handle
  * @return SWITCH_STATUS_SUCCESS
@@ -1452,7 +1518,15 @@ static switch_status_t http_file_read(switch_file_handle_t *handle, void *data, 
 static switch_status_t http_file_close(switch_file_handle_t *handle)
 {
 	struct http_context *context = (struct http_context *)handle->private_info;
-	return switch_core_file_close(&context->fh);
+	switch_status_t status = switch_core_file_close(&context->fh);
+
+	if (status == SWITCH_STATUS_SUCCESS && !zstr(context->write_url)) {
+		status = http_put(&gcache, context->profile, NULL, context->write_url, context->local_path, 1);
+	}
+	if (!zstr(context->write_url)) {
+		switch_safe_free(context->local_path);
+	}
+	return status;
 }
 
 static char *http_supported_formats[] = { "http", NULL };
@@ -1501,6 +1575,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 		file_interface->file_open = http_file_open;
 		file_interface->file_close = http_file_close;
 		file_interface->file_read = http_file_read;
+		file_interface->file_write = http_file_write;
 
 		file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 		file_interface->interface_name = modname;
@@ -1508,6 +1583,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 		file_interface->file_open = https_file_open;
 		file_interface->file_close = http_file_close;
 		file_interface->file_read = http_file_read;
+		file_interface->file_write = http_file_write;
 	}
 
 	/* create the queue from configuration */
