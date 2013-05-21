@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2007-2012, Anthony Minessale II
  * Copyright (c) 2010, Stefan Knoblich <s.knoblich@axsentis.de>
+ * Copyright (c) 2012-2013, Stefan Knoblich <stkn@openisdn.net>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -2140,7 +2141,7 @@ static int on_restart(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 	ftdm_unused_arg(event_type);
 
 	if (pevent->restart.channel < 1) {
-		ftdm_log_chan_msg(spri->dchan, FTDM_LOG_NOTICE, "-- Restarting interface\n");
+		ftdm_log_chan_msg(spri->dchan, FTDM_LOG_DEBUG, "-- Restarting interface\n");
 
 		for (i = 1; i <= ftdm_span_get_chan_count(span); i++) {
 			chan = ftdm_span_get_channel(span, i);
@@ -2154,11 +2155,15 @@ static int on_restart(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 		}
 	}
 	else if ((chan = ftdm_span_get_channel(span, pevent->restart.channel))) {
-		ftdm_libpri_b_chan_t *chan_priv = chan->call_data;
+		if (ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_B) {
+			ftdm_libpri_b_chan_t *chan_priv = chan->call_data;
 
-		ftdm_log_chan_msg(chan, FTDM_LOG_NOTICE, "-- Restarting single channel\n");
-		chan_priv->flags |= FTDM_LIBPRI_B_REMOTE_RESTART;
-		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
+			ftdm_log_chan_msg(chan, FTDM_LOG_DEBUG, "-- Restarting single channel\n");
+			chan_priv->flags |= FTDM_LIBPRI_B_REMOTE_RESTART;
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
+		} else {
+			ftdm_log_chan_msg(chan, FTDM_LOG_NOTICE, "Ignoring RESTART on D-Channel\n");
+		}
 	}
 	else {
 		ftdm_log(FTDM_LOG_ERROR, "Invalid restart indicator / channel id '%d' received\n",
@@ -2185,7 +2190,7 @@ static int on_restart_ack(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri
 	ftdm_unused_arg(event_type);
 
 	if (pevent->restartack.channel < 1) {
-		ftdm_log_chan_msg(spri->dchan, FTDM_LOG_NOTICE, "-- Restart of interface completed\n");
+		ftdm_log_chan_msg(spri->dchan, FTDM_LOG_DEBUG, "-- Restart of interface completed\n");
 
 		for (i = 1; i <= ftdm_span_get_chan_count(span); i++) {
 			chan = ftdm_span_get_channel(span, i);
@@ -2200,8 +2205,12 @@ static int on_restart_ack(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri
 		}
 	}
 	else if ((chan = ftdm_span_get_channel(span, pevent->restart.channel))) {
-		ftdm_log_chan_msg(chan, FTDM_LOG_NOTICE, "-- Restart of channel completed\n");
-		ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_DOWN);
+		if (ftdm_channel_get_type(chan) == FTDM_CHAN_TYPE_B) {
+			ftdm_log_chan_msg(chan, FTDM_LOG_DEBUG, "-- Restart of channel completed\n");
+			ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_DOWN);
+		} else {
+			ftdm_log_chan_msg(chan, FTDM_LOG_NOTICE, "Ignoring RESTART ACK on D-Channel\n");
+		}
 	}
 	else {
 		ftdm_log(FTDM_LOG_ERROR, "Invalid restart indicator / channel id '%d' received\n",
