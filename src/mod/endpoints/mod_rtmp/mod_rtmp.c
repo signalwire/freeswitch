@@ -288,7 +288,7 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	 * If the session_rwlock is already locked, then there is a larger possibility that the rsession
 	 * is looping through because the rsession is trying to hang them up. If that is the case, then there
 	 * is really no reason to foce this hash_delete. Just timeout, and let the rsession handle the final cleanup 
-	 * since it now checks for the existance of the FS session safely.
+	 * since it now checks for the existence of the FS session safely.
 	 */
 	if ( switch_thread_rwlock_trywrlock_timeout(rsession->session_rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 		/*
