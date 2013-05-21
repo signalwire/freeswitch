@@ -628,6 +628,10 @@ Module: say/mod_say_nl
 Description: mod_say_nl
  Adds mod_say_nl.
 
+Module: say/mod_say_pl
+Description: mod_say_pl
+ Adds mod_say_pl.
+
 Module: say/mod_say_pt
 Description: mod_say_pt
  Adds mod_say_pt.

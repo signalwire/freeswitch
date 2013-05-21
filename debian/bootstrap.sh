@@ -527,6 +527,7 @@ Suggests:
  freeswitch-mod-say-it (= \${binary:Version}),
  freeswitch-mod-say-ja (= \${binary:Version}),
  freeswitch-mod-say-nl (= \${binary:Version}),
+ freeswitch-mod-say-pl (= \${binary:Version}),
  freeswitch-mod-say-pt (= \${binary:Version}),
  freeswitch-mod-say-ru (= \${binary:Version}),
  freeswitch-mod-say-th (= \${binary:Version}),
