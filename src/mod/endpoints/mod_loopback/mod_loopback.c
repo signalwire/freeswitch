@@ -1175,6 +1175,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		if (switch_true(switch_event_get_header(var_event, "loopback_bowout_on_execute"))) {
 			switch_core_event_hook_add_state_change(*new_session, loopback_bowout_on_execute_state_handler);
+			switch_channel_set_variable(channel, "loopback_bowout", "false");
+			switch_set_flag(tech_pvt, TFLAG_BOWOUT);
 		}
 
 		switch_channel_set_state(channel, CS_INIT);
