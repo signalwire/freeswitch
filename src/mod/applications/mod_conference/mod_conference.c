@@ -210,6 +210,11 @@ typedef enum {
 } node_type_t;
 
 typedef enum {
+	NFLAG_NONE = (1 << 0),
+	NFLAG_PAUSE = (1 << 1)
+} node_flag_t;
+
+typedef enum {
 	EFLAG_ADD_MEMBER = (1 << 0),
 	EFLAG_DEL_MEMBER = (1 << 1),
 	EFLAG_ENERGY_LEVEL = (1 << 2),
@@ -245,6 +250,7 @@ typedef enum {
 typedef struct conference_file_node {
 	switch_file_handle_t fh;
 	switch_speech_handle_t *sh;
+	node_flag_t flags;
 	node_type_t type;
 	uint8_t done;
 	uint8_t async;
@@ -2134,7 +2140,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 
 		/* If a file or speech event is being played */
-		if (conference->fnode) {
+		if (conference->fnode && !switch_test_flag(conference->fnode, NFLAG_PAUSE)) {
 			/* Lead in time */
 			if (conference->fnode->leadin) {
 				conference->fnode->leadin--;
@@ -5543,6 +5549,67 @@ static switch_status_t conf_api_sub_xml_list(conference_obj_t *conference, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t conf_api_sub_pause_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	if (argc == 2) {
+		switch_mutex_lock(conference->mutex);
+		if (conference->fnode) { 
+			if (switch_test_flag(conference->fnode, NFLAG_PAUSE)) {
+				stream->write_function(stream, "+OK Resume\n");
+				switch_clear_flag(conference->fnode, NFLAG_PAUSE);
+			} else {
+				stream->write_function(stream, "+OK Pause\n");
+				switch_set_flag(conference->fnode, NFLAG_PAUSE);
+			}
+		}
+		switch_mutex_unlock(conference->mutex);
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_GENERR;
+}
+
+static switch_status_t conf_api_sub_file_seek(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	if (argc == 3) {
+		unsigned int samps = 0;
+		unsigned int pos = 0;
+		
+		switch_mutex_lock(conference->mutex);
+
+		if (conference->fnode && conference->fnode->type == NODE_TYPE_FILE) { 
+			if (*argv[2] == '+' || *argv[2] == '-') {
+				int step;
+				int32_t target;
+				if (!(step = atoi(argv[2]))) {
+					step = 1000;
+				}
+					
+				samps = step * (conference->rate / 1000);
+				target = (int32_t)conference->fnode->fh.pos + samps;
+				
+				if (target < 0) {
+					target = 0;
+				}
+					
+				stream->write_function(stream, "+OK seek to position %d\n", target);
+				switch_core_file_seek(&conference->fnode->fh, &pos, target, SEEK_SET);
+				
+			} else {
+				samps = switch_atoui(argv[2]) * (conference->rate / 1000);
+				stream->write_function(stream, "+OK seek to position %d\n", samps);
+				switch_core_file_seek(&conference->fnode->fh, &pos, samps, SEEK_SET);
+			}
+		}
+		switch_mutex_unlock(conference->mutex);
+			
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_GENERR;
+}
+
 static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	int ret_status = SWITCH_STATUS_GENERR;
@@ -6358,6 +6425,8 @@ static api_command_t conf_api_sub_commands[] = {
 	{"volume_in", (void_fn_t) & conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "volume_in", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_out", (void_fn_t) & conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "volume_out", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id>]"},
+	{"pause_play", (void_fn_t) & conf_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", ""},
+	{"file_seek", (void_fn_t) & conf_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val>"},
 	{"say", (void_fn_t) & conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "say", "<text>"},
 	{"saymember", (void_fn_t) & conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "saymember", "<member_id> <text>"},
 	{"stop", (void_fn_t) & conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "stop", "<[current|all|async|last]> [<member_id>]"},
