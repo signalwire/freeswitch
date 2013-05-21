@@ -1567,6 +1567,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	file_interface->file_open = http_cache_file_open;
 	file_interface->file_close = http_file_close;
 	file_interface->file_read = http_file_read;
+	file_interface->file_write = http_file_write;
 
 	if (gcache.enable_file_formats) {
 		file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
