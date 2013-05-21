@@ -103,11 +103,14 @@ static switch_status_t spy_on_park(switch_core_session_t *session)
 	const char *moh = switch_channel_get_hold_music(channel);
 
 	while (switch_channel_ready(channel) && switch_channel_get_state(channel) == CS_PARK) {
+		switch_status_t status = SWITCH_STATUS_SUCCESS;
 		if (moh) {
-			switch_status_t status = switch_ivr_play_file(session, NULL, moh, NULL);
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				break;
-			}
+			status = switch_ivr_play_file(session, NULL, moh, NULL);
+		} else {
+			status = switch_ivr_sleep(session, 10000, SWITCH_FALSE, NULL);
+		}
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
 		}
 	}
 	return SWITCH_STATUS_FALSE;
