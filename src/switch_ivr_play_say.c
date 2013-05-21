@@ -797,8 +797,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 	if (read_impl.actual_samples_per_second) {
-		switch_channel_set_variable_printf(channel, "record_seconds", "%d", fh->samples_out / fh->samplerate);
-		switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_out / (fh->samplerate/ 1000));
+		switch_channel_set_variable_printf(channel, "record_seconds", "%d", fh->samples_out / fh->native_rate);
+		switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_out / (fh->native_rate/ 1000));
 
 	}
 
@@ -1693,8 +1693,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done playing file %s\n", file);
 
 		if (read_impl.samples_per_second) {
-			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_in / fh->samplerate);
-			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_in / fh->samplerate);
+			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_in / fh->native_rate);
+			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_in / fh->native_rate);
 		}
 		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_in);
 

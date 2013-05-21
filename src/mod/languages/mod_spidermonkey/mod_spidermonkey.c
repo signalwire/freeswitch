@@ -1300,14 +1300,14 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 						step = 1000;
 					}
 					if (step > 0) {
-						samps = step * (fh->samplerate / 1000);
+						samps = step * (fh->native_rate / 1000);
 						switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
 					} else {
-						samps = abs(step) * (fh->samplerate / 1000);
+						samps = abs(step) * (fh->native_rate / 1000);
 						switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
 					}
 				} else {
-					samps = atoi(p) * (fh->samplerate / 1000);
+					samps = atoi(p) * (fh->native_rate / 1000);
 					switch_core_file_seek(fh, &pos, samps, SEEK_SET);
 				}
 			}

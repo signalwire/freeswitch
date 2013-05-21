@@ -3384,7 +3384,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 						step = 1000;
 					}
 
-					samps = step * (fhp->samplerate / 1000);
+					samps = step * (fhp->native_rate / 1000);
 					target = (int32_t)fhp->pos + samps;
 
 					if (target < 0) {
@@ -3395,7 +3395,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
 
 				} else {
-					samps = switch_atoui(p) * (fhp->samplerate / 1000);
+					samps = switch_atoui(p) * (fhp->native_rate / 1000);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
 					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
 				}
