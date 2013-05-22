@@ -20,7 +20,7 @@
           <access-key-id><![CDATA[AKIAIOSFODNN7EXAMPLE]]></access-key-id>
           <!-- 40 character secret -->
           <secret-access-key><![CDATA[wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY]]></secret-access-key>
-       <aws-s3>
+       </aws-s3>
     </profile>
   </profiles>
 
