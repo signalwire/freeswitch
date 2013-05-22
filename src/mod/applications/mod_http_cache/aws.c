@@ -100,7 +100,6 @@ char *aws_s3_signature(char *signature, int signature_length, const char *string
 		 &signature_raw_length);
 
 	/* convert result to base64 */
-	memset(signature, 0, signature_length);
 	switch_b64_encode((unsigned char *)signature_raw, signature_raw_length, (unsigned char *)signature, signature_length);
 #endif
 	return signature;
