@@ -4401,6 +4401,148 @@ SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid(switch_channel_t *c
 	return uuid;
 }
 
+SWITCH_DECLARE(void) switch_channel_handle_cause(switch_channel_t *channel, switch_call_cause_t cause)
+{
+	switch_core_session_t *session = channel->session;
+	const char *transfer_on_fail = NULL;
+	char *tof_data = NULL;
+	char *tof_array[4] = { 0 };
+	//int tof_arrayc = 0;
+
+	if (!switch_channel_up_nosig(channel)) {
+		return;
+	}
+
+	transfer_on_fail = switch_channel_get_variable(channel, "transfer_on_fail");
+	tof_data = switch_core_session_strdup(session, transfer_on_fail);
+	switch_split(tof_data, ' ', tof_array);
+   	transfer_on_fail = tof_array[0];
+
+	/* 
+	   if the variable continue_on_fail is set it can be:
+	   'true' to continue on all failures.
+	   'false' to not continue.
+	   A list of codes either names or numbers eg "user_busy,normal_temporary_failure,603"
+	   failure_causes acts as the opposite version  
+	   EXCEPTION... ATTENDED_TRANSFER never is a reason to continue.......
+	*/
+	if (cause != SWITCH_CAUSE_ATTENDED_TRANSFER) {
+		const char *continue_on_fail = NULL, *failure_causes = NULL;
+
+		continue_on_fail = switch_channel_get_variable(channel, "continue_on_fail");
+		failure_causes = switch_channel_get_variable(channel, "failure_causes");
+
+		if (continue_on_fail || failure_causes) {
+			const char *cause_str;
+			char cause_num[35] = "";
+
+			cause_str = switch_channel_cause2str(cause);
+			switch_snprintf(cause_num, sizeof(cause_num), "%u", cause);
+
+			if (failure_causes) {
+				char *lbuf = switch_core_session_strdup(session, failure_causes);
+				char *argv[256] = { 0 };
+				int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+				int i, x = 0;
+
+				for (i = 0; i < argc; i++) {
+					if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
+						x++;
+						break;
+					}
+				}
+				if (!x) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "Failure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
+					return;
+				}
+			}
+
+			if (continue_on_fail) {
+				if (switch_true(continue_on_fail)) {
+					return;
+				} else {
+					char *lbuf = switch_core_session_strdup(session, continue_on_fail);
+					char *argv[256] = { 0 };
+					int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+					int i;
+
+					for (i = 0; i < argc; i++) {
+						if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+											  "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
+							return;
+						}
+					}
+				}
+			}
+		} else {
+			/* no answer is *always* a reason to continue */
+			if (cause == SWITCH_CAUSE_NO_ANSWER || cause == SWITCH_CAUSE_NO_USER_RESPONSE || cause == SWITCH_CAUSE_ORIGINATOR_CANCEL) {
+				return;
+			}
+		}
+			
+		if (transfer_on_fail || failure_causes) {
+			const char *cause_str;
+			char cause_num[35] = "";
+
+			cause_str = switch_channel_cause2str(cause);
+			switch_snprintf(cause_num, sizeof(cause_num), "%u", cause);
+
+			if ((tof_array[1] == NULL ) || (!strcasecmp(tof_array[1], "auto_cause"))){
+				tof_array[1] = (char *) cause_str;
+			}
+
+			if (failure_causes) {
+				char *lbuf = switch_core_session_strdup(session, failure_causes);
+				char *argv[256] = { 0 };
+				int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+				int i, x = 0;
+
+				for (i = 0; i < argc; i++) {
+					if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
+						x++;
+						break;
+					}
+				}
+				if (!x) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									  "Failure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
+										  
+					switch_ivr_session_transfer(session, tof_array[1], tof_array[2], tof_array[3]);
+				}
+			}
+
+			if (transfer_on_fail) {
+				if (switch_true(transfer_on_fail)) {
+					return;
+				} else {
+					char *lbuf = switch_core_session_strdup(session, transfer_on_fail);
+					char *argv[256] = { 0 };
+					int argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+					int i;
+
+					for (i = 0; i < argc; i++) {
+						if (!strcasecmp(argv[i], cause_str) || !strcasecmp(argv[i], cause_num)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+											  "Transfer on fail [%s]:  Cause: %s\n", transfer_on_fail, cause_str);
+							switch_ivr_session_transfer(session, tof_array[1], tof_array[2], tof_array[3]);
+						}
+					}
+				}
+			}
+		} 
+	}
+
+
+	if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_CONFIRM_BLIND_TRANSFER) && 
+		switch_channel_get_state(channel) != CS_ROUTING) {
+		switch_channel_hangup(channel, cause);
+	}
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c
