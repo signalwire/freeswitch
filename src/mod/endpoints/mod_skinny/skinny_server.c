@@ -522,7 +522,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 
 	skinny_profile_find_listener_by_device_name_and_instance(helper->tech_pvt->profile, 
 			device_name, device_instance, &listener);
-	if(listener) {
+	if(listener && helper->tech_pvt->session && helper->remote_session) {
 		switch_channel_t *channel = switch_core_session_get_channel(helper->tech_pvt->session);
 		switch_channel_t *remchannel = switch_core_session_get_channel(helper->remote_session);
 		switch_channel_set_state(channel, CS_ROUTING);
