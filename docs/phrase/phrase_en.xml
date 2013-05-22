@@ -639,7 +639,9 @@
       <prompt phrase="This is a call from..." filename="ivr-call_from.wav"/>
       <prompt phrase="This is a reminder for..." filename="ivr-reminder_for.wav"/>
       <prompt phrase="You have an appointment scheduled for..." filename="ivr-appointment_schedule_for.wav"/>
-      <prompt phrase="" filename=""/>
+      <prompt phrase="Would you like to speak live with other members of the FreeSWITCH community?" filename="misc-speak_live_with_community.wav"/>
+      <prompt phrase="Join us each Wednesday at 1PM eastern time on the public FreeSWITCH conference." filename="misc-join_us_each_wed.wav"/>
+      <prompt phrase="More information is available online at wiki dot FreeSWITCH dot org." filename="misc-more_info_wiki.wav"/>
 
     </ivr>
     <misc>
