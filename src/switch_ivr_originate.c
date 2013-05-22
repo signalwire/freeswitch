@@ -1644,6 +1644,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 
 	for (i = 0; i < x_argc; i++) {
+
+		if (channel) {
+			switch_channel_handle_cause(channel, handles[i].cause);
+		}
+
 		if (hp == &handles[i]) {
 			continue;
 		}
@@ -1861,6 +1866,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *ringback_data = NULL;
 	switch_event_t *var_event = NULL;
 	int8_t fail_on_single_reject = 0;
+	int8_t hangup_on_single_reject = 0;
 	char *fail_on_single_reject_var = NULL;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0;
@@ -2119,6 +2125,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "fail_on_single_reject")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "hangup_on_single_reject")) {
+					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "ignore_early_media")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "bridge_early_media")) {
@@ -2216,7 +2224,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	   If the value is set to 'true' any fail cause will end the attempt otherwise it can contain a comma (,) separated
 	   list of cause names which should be considered fatal
 	 */
-	if ((var = switch_event_get_header(var_event, "fail_on_single_reject"))) {
+	if ((var = switch_event_get_header(var_event, "hangup_on_single_reject"))) {
+		hangup_on_single_reject = 1;
+	}
+
+	if (hangup_on_single_reject || (var = switch_event_get_header(var_event, "fail_on_single_reject"))) {
 		fail_on_single_reject_var = strdup(var);
 		if (switch_true(var)) {
 			fail_on_single_reject = 1;
@@ -3807,6 +3819,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_safe_free(write_frame.data);
 	switch_safe_free(fail_on_single_reject_var);
 
+	if (force_reason != SWITCH_CAUSE_NONE) {
+		*cause = force_reason;
+	}
+
 	if (caller_channel) {
 
 		switch_channel_execute_on(caller_channel, SWITCH_CHANNEL_EXECUTE_ON_POST_ORIGINATE_VARIABLE);
@@ -3814,11 +3830,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
 		switch_channel_clear_flag(caller_channel, CF_XFER_ZOMBIE);
+
+		if (hangup_on_single_reject) {
+			switch_channel_hangup(caller_channel, *cause);
+		}
 	}
 
-	if (force_reason != SWITCH_CAUSE_NONE) {
-		*cause = force_reason;
-	}
 
 	switch_core_destroy_memory_pool(&oglobals.pool);
 
