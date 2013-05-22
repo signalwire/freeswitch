@@ -1132,6 +1132,11 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 	}
 
 	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
+	if ( !session )
+	{
+		line_instance = 0;
+		session = skinny_profile_find_session(listener->profile, listener, &line_instance, 0);
+	}
 
 	if(session) {
 		switch_channel_t *channel = NULL;
@@ -1205,6 +1210,9 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 	switch_core_session_t *session = NULL;
 	struct speed_dial_stat_res_message *button_speed_dial = NULL;
 	struct line_stat_res_message *button_line = NULL;
+	uint32_t line_state;
+
+	switch_channel_t *channel = NULL;
 
 	skinny_check_data_length(request, sizeof(request->data.stimulus)-sizeof(request->data.stimulus.call_id));
 
@@ -1255,7 +1263,27 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 
 			// If session and line match, answer the call
 			if ( session && line_instance == button_line->number ) {
-				status = skinny_session_answer(session, listener, line_instance);
+				line_state = skinny_line_get_state(listener, line_instance, call_id);
+
+				if(line_state == SKINNY_OFF_HOOK) {
+					channel = switch_core_session_get_channel(session);
+					if (switch_channel_test_flag(channel, CF_HOLD)) {
+						switch_ivr_unhold(session);
+					}
+
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				} 
+				else {
+					status = skinny_session_answer(session, listener, line_instance);
+				}
+			}
+			else {
+				if(skinny_check_data_length_soft(request, sizeof(request->data.soft_key_event))) {
+					line_instance = request->data.soft_key_event.line_instance;
+				}
+
+				skinny_create_incoming_session(listener, &line_instance, &session);
+				skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 0);
 			}
 			break;
 
@@ -1276,6 +1304,7 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 	uint32_t call_id = 0;
 	switch_core_session_t *session = NULL;
 	private_t *tech_pvt = NULL;
+	uint32_t line_state;
 
 	if(skinny_check_data_length_soft(request, sizeof(request->data.off_hook))) {
 		if (request->data.off_hook.line_instance > 0) {
@@ -1286,7 +1315,9 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 
 	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
-	if(session) { /*answering a call */
+	line_state = skinny_line_get_state(listener, line_instance, call_id);
+
+	if(session && line_state != SKINNY_OFF_HOOK ) { /*answering a call */
 		skinny_session_answer(session, listener, line_instance);
 	} else { /* start a new call */
 		skinny_create_incoming_session(listener, &line_instance, &session);
