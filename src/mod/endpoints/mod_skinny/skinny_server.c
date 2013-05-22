@@ -1872,6 +1872,17 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 				status = skinny_session_answer(session, listener, line_instance);
 			}
 			break;
+		case SOFTKEY_IDIVERT:
+			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
+			if(session) {
+				switch_channel_t *channel = NULL;
+				channel = switch_core_session_get_channel(session);
+
+				if (channel) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_NO_ANSWER);
+				}
+			}
+			break;
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 					"Unknown SoftKeyEvent type: %d.\n", request->data.soft_key_event.event);
