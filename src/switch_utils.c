@@ -677,6 +677,9 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 
 		while (l >= 6) {
 			out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
+			if (bytes >= olen - 1) {
+				goto end;
+			}
 			if (++y != 72) {
 				continue;
 			}
@@ -689,10 +692,14 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 		out[bytes++] = switch_b64_table[((b % 16) << (6 - l)) % 64];
 	}
 	if (l != 0) {
-		while (l < 6) {
+		while (l < 6 && bytes < olen - 1) {
 			out[bytes++] = '=', l += 2;
 		}
 	}
+
+  end:
+
+	out[bytes] = '\0';
 
 	return SWITCH_STATUS_SUCCESS;
 }
