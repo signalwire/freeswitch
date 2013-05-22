@@ -456,7 +456,7 @@ struct PACKED reset_message {
 struct PACKED open_receive_channel_message {
 	uint32_t conference_id;
 	uint32_t pass_thru_party_id;
-	uint32_t packets;
+	uint32_t ms_per_packet;
 	uint32_t payload_capacity;
 	uint32_t echo_cancel_type;
 	uint32_t g723_bitrate;
@@ -874,7 +874,7 @@ switch_status_t send_register_reject(listener_t *listener,
 switch_status_t send_open_receive_channel(listener_t *listener,
 		uint32_t conference_id,
 		uint32_t pass_thru_party_id,
-		uint32_t packets,
+		uint32_t ms_per_packet,
 		uint32_t payload_capacity,
 		uint32_t echo_cancel_type,
 		uint32_t g723_bitrate,
