@@ -794,7 +794,10 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 					readbuf += (rsession->hdrsize - 1) - s;
 				}
 				
-				switch_assert(s < 12 && s > 0); /** XXX **/
+				if ( !(s < 12 && s > 0) ) { /** XXX **/
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Protocol error: Invalid header size\n");
+					return SWITCH_STATUS_FALSE;
+				}
 				
 				if (rsession->profile->io->read(rsession, readbuf, &s) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
@@ -875,8 +878,11 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Protocol error: exceeding max AMF packet size\n");
 					return SWITCH_STATUS_FALSE;
 				}
-				
-				switch_assert(s <= rsession->in_chunksize);
+
+				if (s > rsession->in_chunksize) {
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_ERROR, "Protocol error: invalid chunksize\n");
+					return SWITCH_STATUS_FALSE;					
+				}
 				
 				if (rsession->profile->io->read(rsession, state->buf + state->buf_pos, &s) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_NOTICE, "Disconnected from flash client\n");
