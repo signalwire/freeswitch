@@ -877,7 +877,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 				prompt_pin_file = "ivr/ivr-please_enter_pin_followed_by_pound.wav";
 			}
 			if (zstr(bad_pin_file)) {
-				bad_pin_file = "ivr/ivr-pin_or_extension_is-invalid.wav";
+				bad_pin_file = "conference/conf-bad-pin.wav";
 			}
 			menu->pin = switch_core_strdup(menu->pool, pin);
 			menu->prompt_pin_file = switch_core_strdup(menu->pool, prompt_pin_file);
