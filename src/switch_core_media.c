@@ -5874,7 +5874,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		return;
 	}
 
-	if (zstr(a_engine->codec_params.local_sdp_ip) || !a_engine->codec_params.local_sdp_port || switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
+	if (zstr(a_engine->codec_params.local_sdp_ip) || !a_engine->codec_params.local_sdp_port) {// || switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
 		if (switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_AUDIO, 1) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s I/O Error\n",
 							  switch_channel_get_name(session->channel));

@@ -522,7 +522,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 
 	skinny_profile_find_listener_by_device_name_and_instance(helper->tech_pvt->profile, 
 			device_name, device_instance, &listener);
-	if(listener) {
+	if(listener && helper->tech_pvt->session && helper->remote_session) {
 		switch_channel_t *channel = switch_core_session_get_channel(helper->tech_pvt->session);
 		switch_channel_t *remchannel = switch_core_session_get_channel(helper->remote_session);
 		switch_channel_set_state(channel, CS_ROUTING);
@@ -704,7 +704,7 @@ switch_status_t skinny_session_start_media(switch_core_session_t *session, liste
 		send_open_receive_channel(listener,
 				tech_pvt->call_id, /* uint32_t conference_id, */
 				tech_pvt->call_id, /* uint32_t pass_thru_party_id, */
-				20, /* uint32_t packets, */
+				20, /* uint32_t ms_per_packet, */
 				SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
 				0, /* uint32_t echo_cancel_type, */
 				0, /* uint32_t g723_bitrate, */
@@ -1132,6 +1132,11 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 	}
 
 	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
+	if ( !session )
+	{
+		line_instance = 0;
+		session = skinny_profile_find_session(listener->profile, listener, &line_instance, 0);
+	}
 
 	if(session) {
 		switch_channel_t *channel = NULL;
@@ -1205,6 +1210,9 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 	switch_core_session_t *session = NULL;
 	struct speed_dial_stat_res_message *button_speed_dial = NULL;
 	struct line_stat_res_message *button_line = NULL;
+	uint32_t line_state;
+
+	switch_channel_t *channel = NULL;
 
 	skinny_check_data_length(request, sizeof(request->data.stimulus)-sizeof(request->data.stimulus.call_id));
 
@@ -1255,7 +1263,27 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 
 			// If session and line match, answer the call
 			if ( session && line_instance == button_line->number ) {
-				status = skinny_session_answer(session, listener, line_instance);
+				line_state = skinny_line_get_state(listener, line_instance, call_id);
+
+				if(line_state == SKINNY_OFF_HOOK) {
+					channel = switch_core_session_get_channel(session);
+					if (switch_channel_test_flag(channel, CF_HOLD)) {
+						switch_ivr_unhold(session);
+					}
+
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				} 
+				else {
+					status = skinny_session_answer(session, listener, line_instance);
+				}
+			}
+			else {
+				if(skinny_check_data_length_soft(request, sizeof(request->data.soft_key_event))) {
+					line_instance = request->data.soft_key_event.line_instance;
+				}
+
+				skinny_create_incoming_session(listener, &line_instance, &session);
+				skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 0);
 			}
 			break;
 
@@ -1276,6 +1304,7 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 	uint32_t call_id = 0;
 	switch_core_session_t *session = NULL;
 	private_t *tech_pvt = NULL;
+	uint32_t line_state;
 
 	if(skinny_check_data_length_soft(request, sizeof(request->data.off_hook))) {
 		if (request->data.off_hook.line_instance > 0) {
@@ -1286,7 +1315,9 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 
 	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 
-	if(session) { /*answering a call */
+	line_state = skinny_line_get_state(listener, line_instance, call_id);
+
+	if(session && line_state != SKINNY_OFF_HOOK ) { /*answering a call */
 		skinny_session_answer(session, listener, line_instance);
 	} else { /* start a new call */
 		skinny_create_incoming_session(listener, &line_instance, &session);
@@ -1676,7 +1707,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 
 		/* Codec */
 		tech_pvt->iananame = "PCMU"; /* TODO */
-		tech_pvt->codec_ms = 10; /* TODO */
+		tech_pvt->codec_ms = 20; /* TODO */
 		tech_pvt->rm_rate = 8000; /* TODO */
 		tech_pvt->rm_fmtp = NULL; /* TODO */
 		tech_pvt->agreed_pt = (switch_payload_t) 0; /* TODO */
@@ -1839,6 +1870,17 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
 			if(session) {
 				status = skinny_session_answer(session, listener, line_instance);
+			}
+			break;
+		case SOFTKEY_IDIVERT:
+			session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
+			if(session) {
+				switch_channel_t *channel = NULL;
+				channel = switch_core_session_get_channel(session);
+
+				if (channel) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_NO_ANSWER);
+				}
 			}
 			break;
 		default:
