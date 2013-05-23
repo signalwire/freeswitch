@@ -429,7 +429,7 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
 
-	if ((exten = switch_channel_get_caller_extension(channel))) {
+	if (!switch_test_flag(tech_pvt, TFLAG_BOWOUT) && (exten = switch_channel_get_caller_extension(channel))) {
 		switch_caller_application_t *app_p;
 
 		for (app_p = exten->applications; app_p; app_p = app_p->next) {
@@ -447,6 +447,8 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	if (bow) {
 		switch_core_session_t *other_session = NULL;
 		const char *other_uuid = NULL;
+
+		switch_set_flag(tech_pvt, TFLAG_BOWOUT);
 
 		if ((find_non_loopback_bridge(tech_pvt->other_session, &other_session, &other_uuid) == SWITCH_STATUS_SUCCESS)) {
 			switch_caller_extension_t *extension;
