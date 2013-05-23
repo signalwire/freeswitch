@@ -1543,7 +1543,7 @@ static void *SWITCH_THREAD_FUNC skinny_profile_run(switch_thread_t *thread, void
 	}
 
 new_socket:
-	while(globals.running) {
+	while(globals.running && !profile->sock) {
 		char *listening_ip = NULL;
 		switch_clear_flag_locked(profile, PFLAG_RESPAWN);
 		rv = switch_sockaddr_info_get(&sa, profile->ip, SWITCH_UNSPEC, profile->port, 0, tmp_pool);
@@ -1570,6 +1570,10 @@ new_socket:
 		break;
 sock_fail:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error! Could not listen on %s:%u\n", profile->ip, profile->port);
+		if (profile->sock) {
+			close_socket(&profile->sock, profile);
+			profile->sock = NULL;
+		}
 		switch_yield(100000);
 	}
 
@@ -1581,6 +1585,8 @@ sock_fail:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 			goto fail;
 		}
+
+		assert(profile->sock);
 
 		if ((rv = switch_socket_accept(&inbound_socket, profile->sock, listener_pool))) {
 			if (!globals.running) {
