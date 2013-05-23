@@ -634,7 +634,7 @@
       <prompt phrase="If you didn't grab no shoes or nothing and ran for your life, press..." filename="ivr-no_shoes.wav"/>
       <prompt phrase="If the smoke got you, press..." filename="ivr-smoke_got_you.wav"/>
       <prompt phrase="If you got bronchitis, press..." filename="ivr-got_bronchitis.wav"/>
-      <prompt phrase="If ain't nobody got time for that, press..." filename=""/>
+      <prompt phrase="If ain't nobody got time for that, press..." filename="ivr-nobody_got_time_for_that.wav"/>
       <prompt phrase="Nobody is currently leaving a message in this voicemail box." filename="vm-nobody_leaving_message.wav"/>
       <prompt phrase="This is a call from..." filename="ivr-call_from.wav"/>
       <prompt phrase="This is a reminder for..." filename="ivr-reminder_for.wav"/>
@@ -642,7 +642,7 @@
       <prompt phrase="Would you like to speak live with other members of the FreeSWITCH community?" filename="misc-speak_live_with_community.wav"/>
       <prompt phrase="Join us each Wednesday at 1PM eastern time on the public FreeSWITCH conference." filename="misc-join_us_each_wed.wav"/>
       <prompt phrase="More information is available online at wiki dot FreeSWITCH dot org." filename="misc-more_info_wiki.wav"/>
-
+      <prompt phrase="Welcome to the FreeSWITCH community conference call!" filename="misc-welcome_freeswitch_conf_call.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
