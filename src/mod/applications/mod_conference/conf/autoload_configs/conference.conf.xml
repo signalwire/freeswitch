@@ -35,6 +35,12 @@
 	   absolute path means <value>/<confernece_uuid>.cdr.xml
       -->
       <!-- <param name="cdr-log-dir" value="auto"/> -->
+      <!-- How to create a CDR event 
+	   'content' means event body will contain CDR as XML
+	   'file' means 'CDR-Path' header will contain a path to file created in 'cdr-log-dir'
+	   'none' for no event
+      -->
+      <!-- <param name="cdr-event-mode" value="content"/> -->
       
       <!-- Domain (for presence) -->
       <param name="domain" value="$${domain}"/>
