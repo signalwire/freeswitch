@@ -58,6 +58,7 @@ static int EC = 0;
 /* Size to allocate for audio buffers */
 #define CONF_BUFFER_SIZE 1024 * 128
 #define CONF_EVENT_MAINT "conference::maintenance"
+#define CONF_EVENT_CDR "conference::cdr"
 #define CONF_DEFAULT_LEADIN 20
 
 #define CONF_DBLOCK_SIZE CONF_BUFFER_SIZE
@@ -129,7 +130,11 @@ typedef struct conference_cdr_reject_s {
 	struct conference_cdr_reject_s *next;
 } conference_cdr_reject_t;
 
-
+typedef enum {
+	CDRE_NONE,
+	CDRE_AS_CONTENT,
+	CDRE_AS_FILE
+} cdr_event_mode_t;
 
 
 struct call_list {
@@ -373,6 +378,7 @@ typedef struct conference_obj {
 	switch_time_t start_time;
 	switch_time_t end_time;
 	char *log_dir;
+	cdr_event_mode_t cdr_event_mode;
 	struct vid_helper vh[2];
 	struct vid_helper mh;
 } conference_obj_t;
@@ -872,10 +878,10 @@ static void conference_cdr_render(conference_obj_t *conference)
 	conference_cdr_reject_t *rp;
 	int cdr_off = 0, conf_off = 0;
 	char str[512];
-	char *path, *xml_text;
+	char *path = NULL, *xml_text;
 	int fd;
 
-	if (zstr(conference->log_dir)) return;
+	if (zstr(conference->log_dir) && (conference->cdr_event_mode == CDRE_NONE)) return;
 
 	if (!conference->cdr_nodes && !conference->cdr_rejected) return;
 
@@ -1023,27 +1029,46 @@ static void conference_cdr_render(conference_obj_t *conference)
 	xml_text = switch_xml_toxml(cdr, SWITCH_TRUE);
 
 	
-   	path = switch_mprintf("%s%s%s.cdr.xml", conference->log_dir, SWITCH_PATH_SEPARATOR, conference->uuid_str);
+	if (!zstr(conference->log_dir)) {
+		path = switch_mprintf("%s%s%s.cdr.xml", conference->log_dir, SWITCH_PATH_SEPARATOR, conference->uuid_str);
 	
 
 
 #ifdef _MSC_VER
-	if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+		if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 #else
-	if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
+		if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
 #endif
-		int wrote;
-		wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
-		wrote++;
-		close(fd);
-		fd = -1;
-	} else {
-		char ebuf[512] = { 0 };
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
-				path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
+			int wrote;
+			wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
+			wrote++;
+			close(fd);
+			fd = -1;
+		} else {
+			char ebuf[512] = { 0 };
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
+					path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
+		}
+
+		if (conference->cdr_event_mode != CDRE_NONE) {
+			switch_event_t *event;
+
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_CDR) == SWITCH_STATUS_SUCCESS)
+		//	if (switch_event_create(&event, SWITCH_EVENT_CDR) == SWITCH_STATUS_SUCCESS)
+			{
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Source", CONF_EVENT_CDR);
+				if (conference->cdr_event_mode == CDRE_AS_CONTENT) {
+					switch_event_add_body(event, xml_text);
+				} else {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Path", path);
+				}
+				switch_event_fire(&event);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not create CDR event");
+			}
+		}
 	}
 
-	
    	switch_safe_free(path);
 	switch_safe_free(xml_text);
 	switch_xml_free(cdr);
@@ -8117,6 +8142,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
 	char *conference_log_dir = NULL;
+	char *cdr_event_mode = NULL;
 	char *terminate_on_silence = NULL;
 	char *endconf_grace_time = NULL;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
@@ -8255,6 +8281,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				conference_flags = val;
 			} else if (!strcasecmp(var, "cdr-log-dir") && !zstr(val)) {
 				conference_log_dir = val;
+			} else if (!strcasecmp(var, "cdr-event-mode") && !zstr(val)) {
+				cdr_event_mode = val;
 			} else if (!strcasecmp(var, "kicked-sound") && !zstr(val)) {
 				kicked_sound = val;
 			} else if (!strcasecmp(var, "pin") && !zstr(val)) {
@@ -8416,6 +8444,20 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	}
 	
+	if (!zstr(cdr_event_mode)) {
+		if (!strcmp(cdr_event_mode, "content")) {
+			conference->cdr_event_mode = CDRE_AS_CONTENT;
+		} else if (!strcmp(cdr_event_mode, "file")) {
+			if (!zstr(conference->log_dir)) {
+				conference->cdr_event_mode = CDRE_AS_FILE;
+			} else {
+				conference->cdr_event_mode = CDRE_NONE;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "'cdr-log-dir' parameter not set; CDR event mode 'file' ignored");
+			}
+		} else {
+			conference->cdr_event_mode = CDRE_NONE;
+		}
+	}
 
 	if (!zstr(perpetual_sound)) {
 		conference->perpetual_sound = switch_core_strdup(conference->pool, perpetual_sound);
