@@ -457,6 +457,7 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "BOWOUT Transfering current extension to non-loopback leg.\n");
 			switch_channel_transfer_to_extension(other_channel, extension);
 			switch_core_session_rwunlock(other_session);
+			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
 		}
 
 	}
