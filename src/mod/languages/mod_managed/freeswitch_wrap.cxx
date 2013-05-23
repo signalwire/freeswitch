@@ -2968,6 +2968,74 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_SWITCH_GLOBAL_dirs_get() {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_filenames_conf_name_set(void * jarg1, char * jarg2) {
+  switch_filenames *arg1 = (switch_filenames *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_filenames *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg1->conf_name) delete [] arg1->conf_name;
+    if (arg2) {
+      arg1->conf_name = (char *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->conf_name, (const char *)arg2);
+    } else {
+      arg1->conf_name = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_filenames_conf_name_get(void * jarg1) {
+  char * jresult ;
+  switch_filenames *arg1 = (switch_filenames *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_filenames *)jarg1; 
+  result = (char *) ((arg1)->conf_name);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_filenames() {
+  void * jresult ;
+  switch_filenames *result = 0 ;
+  
+  result = (switch_filenames *)new switch_filenames();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_filenames(void * jarg1) {
+  switch_filenames *arg1 = (switch_filenames *) 0 ;
+  
+  arg1 = (switch_filenames *)jarg1; 
+  delete arg1;
+  
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_SWITCH_GLOBAL_filenames_set(void * jarg1) {
+  switch_filenames *arg1 = (switch_filenames *) 0 ;
+  
+  arg1 = (switch_filenames *)jarg1; 
+  SWITCH_GLOBAL_filenames = *arg1;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_SWITCH_GLOBAL_filenames_get() {
+  void * jresult ;
+  switch_filenames *result = 0 ;
+  
+  result = (switch_filenames *)&SWITCH_GLOBAL_filenames;
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_MAX_STACKS_get() {
   int jresult ;
   int result;
@@ -12637,6 +12705,24 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_get_stacksizes(void * jarg1, void 
   result = (switch_status_t)switch_core_get_stacksizes(arg1,arg2);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_gen_encoded_silence(void * jarg1, void * jarg2, void * jarg3) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  switch_codec_implementation_t *arg2 = (switch_codec_implementation_t *) 0 ;
+  switch_size_t arg3 ;
+  switch_size_t *argp3 ;
+  
+  arg1 = (unsigned char *)jarg1; 
+  arg2 = (switch_codec_implementation_t *)jarg2; 
+  argp3 = (switch_size_t *)jarg3; 
+  if (!argp3) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg3 = *argp3; 
+  switch_core_gen_encoded_silence(arg1,(switch_codec_implementation const *)arg2,arg3);
 }
 
 
@@ -28382,6 +28468,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_state_thread_trylock(void * jar
   result = (switch_status_t)switch_channel_state_thread_trylock(arg1);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_handle_cause(void * jarg1, int jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_call_cause_t arg2 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_call_cause_t)jarg2; 
+  switch_channel_handle_cause(arg1,arg2);
 }
 
 
