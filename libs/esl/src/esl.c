@@ -696,7 +696,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
 		clntLen = sizeof(echoClntAddr);
     
-		if ((client_sock = accept(server_sock, (struct sockaddr *) &echoClntAddr, &clntLen)) == ESL_SOCK_INVALID) {
+		if ((client_sock = accept(server_sock, (struct sockaddr *) &echoClntAddr, &clntLen)) == ESL_SOCK_INVALID && errno != EINTR) {
 			status = ESL_FAIL;
 			goto end;
 		}
@@ -754,7 +754,7 @@ ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port,
 
 		clntLen = sizeof(echoClntAddr);
     
-		if ((client_sock = accept(server_sock, (struct sockaddr *) &echoClntAddr, &clntLen)) == ESL_SOCK_INVALID) {
+		if ((client_sock = accept(server_sock, (struct sockaddr *) &echoClntAddr, &clntLen)) == ESL_SOCK_INVALID && errno != EINTR) {
 			status = ESL_FAIL;
 			goto end;
 		}
