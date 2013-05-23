@@ -154,13 +154,20 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	/*
+	 * NOTE: fflush() stdout before entering esl_listen().
+	 * Not doing so causes the fork()ed child to repeat the message for every incoming
+	 * connection, if stdout has been redirected (into a logfile, for example).
+	 */
 	if (thread) {
 		printf("Starting threaded listener.\n");
+		fflush(stdout);
 		esl_listen_threaded(ip, port, mycallback, 100000);
 	} else {
 		printf("Starting forking listener.\n");
+		fflush(stdout);
 		esl_listen(ip, port, my_forking_callback);
 	}
-	
+
 	return 0;
 }
