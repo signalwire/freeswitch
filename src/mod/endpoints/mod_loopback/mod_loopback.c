@@ -417,7 +417,8 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	loopback_private_t *tech_pvt = NULL;
-	switch_caller_extension_t *exten;
+	switch_caller_extension_t *exten = NULL;
+	const char *bowout = NULL;
 	int bow = 0;
 
 	channel = switch_core_session_get_channel(session);
@@ -429,7 +430,13 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
 
-	if (!switch_test_flag(tech_pvt, TFLAG_BOWOUT) && (exten = switch_channel_get_caller_extension(channel))) {
+	if (switch_test_flag(tech_pvt, TFLAG_BOWOUT) || switch_test_flag(tech_pvt, TFLAG_BLEG)) {
+		bow = 0;
+	} else if ((bowout = switch_channel_get_variable(tech_pvt->channel, "loopback_bowout_on_execute")) && switch_true(bowout)) {
+		/* loopback_bowout_on_execute variable is set */
+		bow = 1;
+	} else if ((exten = switch_channel_get_caller_extension(channel))) {
+		/* check for bowout flag */
 		switch_caller_application_t *app_p;
 
 		for (app_p = exten->applications; app_p; app_p = app_p->next) {
@@ -446,20 +453,34 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 
 	if (bow) {
 		switch_core_session_t *other_session = NULL;
+		switch_caller_profile_t *cp, *clone;
 		const char *other_uuid = NULL;
 
 		switch_set_flag(tech_pvt, TFLAG_BOWOUT);
 
 		if ((find_non_loopback_bridge(tech_pvt->other_session, &other_session, &other_uuid) == SWITCH_STATUS_SUCCESS)) {
-			switch_caller_extension_t *extension;
 			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-			switch_caller_extension_clone(&extension, exten, switch_core_session_get_pool(other_session));
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "BOWOUT Transfering current extension to non-loopback leg.\n");
-			switch_channel_transfer_to_extension(other_channel, extension);
-			switch_core_session_rwunlock(other_session);
-			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
-		}
 
+			/* Wait for real channel to be exchanging media */
+			switch_channel_wait_for_state(other_channel, channel, CS_EXCHANGE_MEDIA);
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "BOWOUT Replacing loopback channel with real channel: %s\n",
+							  switch_channel_get_name(other_channel));
+
+			if ((cp = switch_channel_get_caller_profile(channel))) {
+				clone = switch_caller_profile_clone(other_session, cp);
+				clone->originator_caller_profile = NULL;
+				clone->originatee_caller_profile = NULL;
+				switch_channel_set_caller_profile(other_channel, clone);
+			}
+
+			switch_channel_caller_extension_masquerade(channel, other_channel, 0);
+			switch_channel_set_state(other_channel, CS_RESET);
+			switch_channel_wait_for_state(other_channel, NULL, CS_RESET);
+			switch_channel_set_state(other_channel, CS_EXECUTE);
+			switch_core_session_rwunlock(other_session);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_UNSPECIFIED);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1010,64 +1031,6 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-static switch_status_t loopback_bowout_on_execute_state_handler(switch_core_session_t *session)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_channel_state_t state = switch_channel_get_state(channel);
-	loopback_private_t *tech_pvt = NULL;
-
-
-	if (state == CS_EXECUTE) {
-		const char *uuid;
-		switch_core_session_t *other_session = NULL;
-		switch_channel_t *b_channel = NULL;
-
-		tech_pvt = switch_core_session_get_private(session);
-
-		if (switch_core_session_read_lock(tech_pvt->other_session) == SWITCH_STATUS_SUCCESS) {
-			b_channel = switch_core_session_get_channel(tech_pvt->other_session);
-
-			/* Wait for b_channel to be fully bridged */
-			switch_channel_wait_for_flag(b_channel, CF_BRIDGED, SWITCH_TRUE, 5000, NULL);
-
-			uuid = switch_channel_get_partner_uuid(b_channel);
-
-			if (uuid && (other_session = switch_core_session_locate(uuid))) {
-				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-				switch_caller_profile_t *cp, *clone;
-
-				switch_channel_wait_for_state(other_channel, NULL, CS_EXCHANGE_MEDIA);
-
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->other_session), SWITCH_LOG_INFO, "Replacing loopback channel: %s with real channel: %s\n",
-								  switch_channel_get_name(b_channel), switch_channel_get_name(other_channel));
-
-				if ((cp = switch_channel_get_caller_profile(channel))) {
-					clone = switch_caller_profile_clone(other_session, cp);
-					clone->originator_caller_profile = NULL;
-					clone->originatee_caller_profile = NULL;
-					switch_channel_set_caller_profile(other_channel, clone);
-				}
-
-				switch_channel_caller_extension_masquerade(channel, other_channel, 0);
-				switch_channel_set_state(other_channel, CS_RESET);
-				switch_channel_wait_for_state(other_channel, NULL, CS_RESET);
-				switch_channel_set_variable(channel, "process_cdr", "false");
-				switch_channel_set_variable(b_channel, "process_cdr", "false");
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-				switch_channel_set_state(other_channel, CS_EXECUTE);
-				switch_core_session_rwunlock(other_session);
-			}
-
-			switch_core_session_rwunlock(tech_pvt->other_session);
-		}
-		
-		switch_core_event_hook_remove_state_change(session, loopback_bowout_on_execute_state_handler);
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_event_t *var_event,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags,
@@ -1174,12 +1137,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_ERROR, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-		}
-
-		if (switch_true(switch_event_get_header(var_event, "loopback_bowout_on_execute"))) {
-			switch_core_event_hook_add_state_change(*new_session, loopback_bowout_on_execute_state_handler);
-			switch_channel_set_variable(channel, "loopback_bowout", "false");
-			switch_set_flag(tech_pvt, TFLAG_BOWOUT);
 		}
 
 		switch_channel_set_state(channel, CS_INIT);
