@@ -2041,50 +2041,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
-			if (state == CS_ROUTING) {
-				switch_channel_event_set_data(channel, event);
-			} else {
-				const char *v;
-				
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", switch_channel_state_name(state));
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", switch_channel_callstate2str(channel->callstate));
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%d", state);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Name", channel->name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-Direction",
-											   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Call-Direction",
-											   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
-
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-HIT-Dialplan", 
-											   switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND ||
-											   switch_channel_test_flag(channel, CF_DIALPLAN) ? "true" : "false");
-				
-				if (switch_channel_down_nosig(channel)) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "hangup");
-				} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
-				} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "early");
-				} else {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "ringing");
-				}
-
-
-				if ((v = switch_channel_get_variable(channel, "presence_id"))) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-ID", v);
-				}
-				
-				if ((v = switch_channel_get_variable(channel, "presence_data"))) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-Data", v);
-				}
-				
-				if ((v = switch_channel_get_variable(channel, "presence_data_cols"))) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Data-Cols", v);
-					switch_event_add_presence_data_cols(channel, event, "PD-");
-				}
-				
-			}
+			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
 	}
