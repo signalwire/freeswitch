@@ -1058,7 +1058,7 @@ static void conference_cdr_render(conference_obj_t *conference)
 			{
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Source", CONF_EVENT_CDR);
 				if (conference->cdr_event_mode == CDRE_AS_CONTENT) {
-					switch_event_add_body(event, xml_text);
+					switch_event_set_body(event, xml_text);
 				} else {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CDR-Path", path);
 				}
