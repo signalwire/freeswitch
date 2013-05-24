@@ -2009,12 +2009,13 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, c
 			switch_time_t expires = 0;
 			switch_time_t time_now = 0;
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s\n", user_name, domain_name);
 			if (switch_is_number(cacheable)) {
 				int cache_ms = atol(cacheable);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for %d milliseconds\n", cache_ms);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s for %d milliseconds\n", user_name, domain_name, cache_ms);
 				time_now = switch_micro_time_now();
 				expires = time_now + (cache_ms * 1000);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s indefinitely\n", user_name, domain_name);
 			}
 			switch_xml_user_cache(key, user_name, domain_name, x_user_dup, expires);
 		}
