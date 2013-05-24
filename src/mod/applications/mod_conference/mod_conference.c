@@ -1526,9 +1526,6 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		switch_channel_clear_app_flag_key("conf_silent", channel, CONF_SILENT_REQ);
 		switch_channel_set_app_flag_key("conf_silent", channel, CONF_SILENT_DONE);
 
-		switch_ivr_dmachine_create(&member->dmachine, "mod_conference", NULL, 
-				conference->ivr_dtmf_timeout, conference->ivr_input_timeout, NULL, NULL, NULL);
-
 		controls = switch_channel_get_variable(channel, "conference_controls");
 
 		if (zstr(controls)) {
@@ -1544,6 +1541,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		}
 
 		if (strcasecmp(controls, "none")) {
+			switch_ivr_dmachine_create(&member->dmachine, "mod_conference", NULL, 
+									   conference->ivr_dtmf_timeout, conference->ivr_input_timeout, NULL, NULL, NULL);
 			member_bind_controls(member, controls);
 		}
 		
@@ -1596,7 +1595,9 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	member->sh = NULL;
 	unlock_member(member);
 
-	switch_ivr_dmachine_destroy(&member->dmachine);
+	if (member->dmachine) {
+		switch_ivr_dmachine_destroy(&member->dmachine);
+	}
 
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
