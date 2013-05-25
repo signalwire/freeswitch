@@ -1575,3 +1575,13 @@ ESL_DECLARE(unsigned int) esl_separate_string_string(char *buf, const char *deli
 	return count;
 }
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */
