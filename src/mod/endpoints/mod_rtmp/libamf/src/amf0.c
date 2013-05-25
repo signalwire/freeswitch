@@ -40,11 +40,13 @@ static amf0_data * amf0_list_insert_before(amf0_list * list, amf0_node * node, a
         if (new_node != NULL) {
             new_node->next = node;
             new_node->prev = node->prev;
-
+	    
             if (node->prev != NULL) {
                 node->prev->next = new_node;
-                node->prev = new_node;
             }
+
+	    node->prev = new_node;
+
             if (node == list->first_element) {
                 list->first_element = new_node;
             }
