@@ -2146,7 +2146,7 @@ int WebRtcIsac_DecodePitchGain(Bitstr *streamdata, WebRtc_Word16 *PitchGains_Q12
   *WebRtcIsac_kQPitchGainCdf_ptr = WebRtcIsac_kQPitchGainCdf;
   err = WebRtcIsac_DecHistBisectMulti(&index_comb, streamdata, WebRtcIsac_kQPitchGainCdf_ptr, WebRtcIsac_kQCdfTableSizeGain, 1);
   /* error check, Q_mean_Gain.. tables are of size 144 */
-  if ((err<0) || (index_comb<0) || (index_comb>144))
+  if ((err<0) || (index_comb<0) || (index_comb>143))
     return -ISAC_RANGE_ERROR_DECODE_PITCH_GAIN;
 
   /* unquantize back to pitch gains by table look-up */
