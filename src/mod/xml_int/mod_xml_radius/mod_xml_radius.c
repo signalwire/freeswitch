@@ -78,7 +78,9 @@ switch_status_t mod_xml_radius_new_handle(rc_handle **new_handle, switch_xml_t x
 		}
 		
 		if (strncmp(var, "dictionary", 10) == 0) {
-			rc_read_dictionary(*new_handle, val);
+			if ( rc_read_dictionary(*new_handle, val) != 0) {
+				goto err;
+			}
 		} else if (rc_add_config(*new_handle, var, val, "mod_xml_radius", 0) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error adding param '%s' with value '%s' \n", var, val);			
 			goto err;
