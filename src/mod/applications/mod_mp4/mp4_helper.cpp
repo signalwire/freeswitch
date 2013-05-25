@@ -17,7 +17,9 @@ Paulo Rogério Panhoto <paulo@voicetechnology.com.br>.
 Portions created by the Initial Developer are Copyright (C)
 the Initial Developer. All Rights Reserved.
 
+Contributors:
 
+	Seven Du <dujinfang@gmail.com>
 */
 
 #include "mp4_helper.hpp"
@@ -38,7 +40,7 @@ namespace MP4
 
 	void Context::open(const char * file)
 	{
-		fh = MP4Read(file, 0);
+		fh = MP4Read(file);
 		if (fh == MP4_INVALID_FILE_HANDLE) throw Exception(file, "Open failed");
 		getTracks(file);
 	}
