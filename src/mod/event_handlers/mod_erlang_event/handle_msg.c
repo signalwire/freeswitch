@@ -184,7 +184,7 @@ static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * 
 					/* alright, we've got the lock and we're the first to reply */
 
 					/* clone the reply so it doesn't get destroyed on us */
-					ei_x_buff *nbuf = malloc(sizeof(nbuf));
+					ei_x_buff *nbuf = malloc(sizeof(*nbuf));
 					nbuf->buff = malloc(buf->buffsz);
 					memcpy(nbuf->buff, buf->buff, buf->buffsz);
 					nbuf->index = buf->index;
