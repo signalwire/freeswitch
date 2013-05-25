@@ -414,6 +414,7 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void);
 	case 12000:
 		max_ms = 100;
 		ptime_div = 2;
+		break;
 	case 8000:
 		max_ms = 120;
 		ptime_div = 2;
