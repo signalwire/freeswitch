@@ -25,6 +25,7 @@
  * 
  * Michael Jerris <mike@jerris.com>
  * Eliot Gable <egable@gmail.com>
+ * William King <william.king@quentustech.com>
  *
  * switch_apr.c -- apr wrappers and extensions
  *
@@ -595,10 +596,6 @@ SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *bu
 
 		if (!(name = thedir->finfo.fname)) {
 			name = thedir->finfo.name;
-		}
-
-		if (!name) {
-			continue;
 		}
 
 		if (name) {
