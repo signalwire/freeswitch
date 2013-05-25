@@ -17,15 +17,21 @@ Paulo Rogério Panhoto <paulo@voicetechnology.com.br>.
 Portions created by the Initial Developer are Copyright (C)
 the Initial Developer. All Rights Reserved.
 
+Contributor(s):
+
+	Seven Du <dujinfang@gmail.com>
+
 */
 
 #ifndef MP4_HELPER_HPP_
 #define MP4_HELPER_HPP_
 
-#include <mp4.h>
+#include <mp4v2/mp4v2.h>
 #include <string>
 #include <exception>
 #include <string>
+
+typedef unsigned int u_int;
 
 namespace MP4
 {
