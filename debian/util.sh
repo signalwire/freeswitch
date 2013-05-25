@@ -46,8 +46,9 @@ find_distro () {
   case "$1" in
     experimental) echo "sid";;
     unstable) echo "sid";;
-    testing) echo "wheezy";;
-    stable) echo "squeeze";;
+    testing) echo "jessie";;
+    stable) echo "wheezy";;
+    oldstable) echo "squeeze";;
     *) echo "$1";;
   esac
 }
@@ -55,8 +56,9 @@ find_distro () {
 find_suite () {
   case "$1" in
     sid) echo "unstable";;
-    wheezy) echo "testing";;
-    squeeze) echo "stable";;
+    jessie) echo "testing";;
+    wheezy) echo "stable";;
+    squeeze) echo "oldstable";;
     *) echo "$1";;
   esac
 }
@@ -332,7 +334,7 @@ build_all () {
   done
   shift $(($OPTIND-1))
   [ -n "$archs" ] || archs="amd64 i386"
-  [ -n "$distros" ] || distros="sid wheezy squeeze"
+  [ -n "$distros" ] || distros="sid jesse wheezy squeeze"
   [ -n "$orig" ] || orig="$(create_orig $orig_opts HEAD | tail -n1)"
   mkdir -p ../log
   > ../log/changes
