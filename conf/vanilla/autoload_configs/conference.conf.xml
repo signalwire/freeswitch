@@ -82,7 +82,7 @@
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <!-- File to play when you leave the conference -->
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
-      <!-- File to play when you ae ejected from the conference -->
+      <!-- File to play when you are ejected from the conference -->
       <param name="kicked-sound" value="conference/conf-kicked.wav"/>
       <!-- File to play when the conference is locked -->
       <param name="locked-sound" value="conference/conf-locked.wav"/>
