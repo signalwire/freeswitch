@@ -55,6 +55,7 @@ switch_status_t mod_xml_radius_new_handle(rc_handle **new_handle, switch_xml_t x
 	}
 
 	if ( rc_config_init(*new_handle) == NULL ) {
+		*new_handle = NULL;
 		goto err;
 	}
 	
