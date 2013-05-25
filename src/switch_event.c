@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
- *
+ * William King <william.king@quentustech.com>
  *
  * switch_event.c -- Event System
  *
@@ -252,6 +252,10 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 		if (EVENT_DISPATCH_QUEUE_THREADS[my_id] == thread) {
 			break;
 		}
+	}
+
+	if ( my_id >= MAX_DISPATCH_VAL ) {
+		return NULL;
 	}
 
 	EVENT_DISPATCH_QUEUE_RUNNING[my_id] = 1;
