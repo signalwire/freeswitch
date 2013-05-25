@@ -2088,7 +2088,7 @@ SWITCH_DECLARE(char *) switch_escape_string(const char *in, char *out, switch_si
 
 SWITCH_DECLARE(char *) switch_escape_string_pool(const char *in, switch_memory_pool_t *pool)
 {
-	int len = strlen(in) * 2;
+	int len = strlen(in) * 2 + 1;
 	char *buf = switch_core_alloc(pool, len);
 	return switch_escape_string(in, buf, len);
 }
