@@ -1287,7 +1287,8 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 			}
 			continue;
 		} else if (rrval < 0) {
-			strerror_r(handle->errnum, handle->err, sizeof(handle->err));
+			if (!(strerror_r(handle->errnum, handle->err, sizeof(handle->err))))
+				*(handle->err)=0;
 			goto fail;
 		}
 
@@ -1319,7 +1320,8 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 				*((char *)handle->socket_buf + ESL_CLAMP(0, sizeof(handle->socket_buf) - 1, r)) = '\0';
 
 				if (r < 0) {
-					strerror_r(handle->errnum, handle->err, sizeof(handle->err));
+					if (!(strerror_r(handle->errnum, handle->err, sizeof(handle->err))))
+						*(handle->err)=0;
 					goto fail;
 				} else if (r == 0) {
 					if (++zc >= 100) {
@@ -1464,14 +1466,16 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 	
 	if (send(handle->sock, cmd, strlen(cmd), 0) != (int)strlen(cmd)) {
 		handle->connected = 0;
-		strerror_r(handle->errnum, handle->err, sizeof(handle->err));
+		if (!(strerror_r(handle->errnum, handle->err, sizeof(handle->err))))
+			*(handle->err)=0;
 		return ESL_FAIL;
 	}
 	
 	if (!(*e == '\n' && *(e-1) == '\n')) {
 		if (send(handle->sock, "\n\n", 2, 0) != 2) {
 			handle->connected = 0;
-			strerror_r(handle->errnum, handle->err, sizeof(handle->err));
+			if (!(strerror_r(handle->errnum, handle->err, sizeof(handle->err))))
+				*(handle->err)=0;
 			return ESL_FAIL;
 		}
 	}
