@@ -1501,7 +1501,9 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 			remote.sin_port = htons(4242);
 
 			memset(&iface_out, 0, sizeof(iface_out));
-			tmp_socket = socket(AF_INET, SOCK_DGRAM, 0);
+			if ( (tmp_socket = socket(AF_INET, SOCK_DGRAM, 0)) == -1 ) {
+				goto doh;
+			}
 
 			if (setsockopt(tmp_socket, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) == -1) {
 				goto doh;
@@ -1539,7 +1541,9 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 			remote.sin6_port = htons(4242);
 
 			memset(&iface_out, 0, sizeof(iface_out));
-			tmp_socket = socket(AF_INET6, SOCK_DGRAM, 0);
+			if ( (tmp_socket = socket(AF_INET6, SOCK_DGRAM, 0)) == -1 ) {
+				goto doh;
+			}
 
 			if (connect(tmp_socket, (struct sockaddr *) &remote, sizeof(remote)) == -1) {
 				goto doh;
