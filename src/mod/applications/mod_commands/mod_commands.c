@@ -5521,7 +5521,7 @@ SWITCH_STANDARD_API(escape_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	len = (int)strlen(cmd) * 2;
+	len = (int)strlen(cmd) * 2 + 1;
 	mycmd = malloc(len);
 
 	stream->write_function(stream, "%s", switch_escape_string(cmd, mycmd, len));
