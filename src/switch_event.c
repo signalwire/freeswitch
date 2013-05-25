@@ -255,6 +255,7 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 	}
 
 	if ( my_id >= MAX_DISPATCH_VAL ) {
+		switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 		return NULL;
 	}
 
