@@ -60,13 +60,15 @@ static amf0_data * amf0_list_insert_after(amf0_list * list, amf0_node * node, am
     if (node != NULL) {
         amf0_node * new_node = (amf0_node*)malloc(sizeof(amf0_node));
         if (new_node != NULL) {
-            new_node->next = node->next;
-            new_node->prev = node;
-
             if (node->next != NULL) {
                 node->next->prev = new_node;
                 node->next = new_node;
-            }
+		new_node->prev = node;
+            } else {
+	      node->next = new_node;
+	      new_node->prev = node;
+	    }
+
             if (node == list->last_element) {
                 list->last_element = new_node;
             }
