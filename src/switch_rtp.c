@@ -2000,7 +2000,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	}
 
 #ifdef ENABLE_ZRTP
-	if (zrtp_on && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+	if (zrtp_on && session && channel && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
 		switch_rtp_t *master_rtp_session = NULL;
 
 		int initiator = 0;
